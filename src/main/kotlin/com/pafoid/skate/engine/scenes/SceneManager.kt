@@ -15,17 +15,12 @@ class SceneManager {
 
     private lateinit var shader: Shader
     private lateinit var renderer: Renderer
-    private lateinit var camera: Camera
-    private lateinit var light: Light
 
     private lateinit var currentScene: Scene
 
     fun initializeScene() {
         shader = AssetPool.getShader(Shader.TEST2)
-        light = Light(Vector3f(0f, 0f, -20f))
-        camera = Camera()
-
-        renderer = Renderer(shader, camera, light)
+        renderer = Renderer(shader)
 
         changeScene(LevelEditorSceneInitializer(), true)
     }
@@ -41,20 +36,9 @@ class SceneManager {
     }
 
     fun draw(dt: Float) {
-        renderer.clearColor()
-
         if (dt >= 0) {
             currentScene.update(dt)
-            camera.move()
-            shader.start()
-
-            currentScene.gameObjects.forEach { go ->
-                go.update(dt)
-                go.getComponent<Entity>()?.let { it
-                    renderer.render(it)
-                }
-            }
-            shader.stop()
+            renderer.render(currentScene)
         }
     }
 

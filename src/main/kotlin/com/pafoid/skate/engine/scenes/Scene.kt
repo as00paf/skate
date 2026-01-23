@@ -3,10 +3,12 @@ package com.pafoid.skate.engine.scenes
 import com.google.gson.GsonBuilder
 import com.pafoid.skate.engine.Transform
 import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
 import org.joml.Vector2f
+import org.joml.Vector3f
 import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
@@ -14,6 +16,7 @@ import java.nio.file.Paths
 
 class Scene(private val initializer: SceneInitializer, val camera: Camera = Camera()) {
 
+    var light: Light = Light(Vector3f(0f, 0f, 20f))
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
     //val renderer = Renderer()
