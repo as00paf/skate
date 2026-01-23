@@ -1,7 +1,18 @@
 package com.pafoid.skate
 
-fun main() {
-    println("What's your name?")
-    val name = readln()
-    println("Hello, $name!")
+import com.pafoid.skate.engine.Window
+import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.pafcraft.GameLoop
+
+fun main(args:Array<String>){
+    val sceneManager = SceneManager()
+    val window = Window(
+        width = 512,
+        height = 512,
+        title ="Skate",
+        initCallback = sceneManager::initializeScene,
+        drawCallback = sceneManager::draw,
+        destroyCallback = sceneManager::destroy
+    )
+    window.run()
 }
