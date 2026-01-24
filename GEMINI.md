@@ -79,9 +79,9 @@
 - [x] **Physics System:** Integration into the Game Loop.
 
 ### Milestone 7: Editor & UI [Current Focus]
-- [ ] **ImGui Integration:** Setup ImGui context and render loop.
-- [ ] **Level Editor Scene:** Gizmos, Object Picking, Hierarchy view.
-- [ ] **Scene Serialization:** Loading/Saving scenes with JSON.
+- [x] **ImGui Integration:** Setup ImGui context and render loop.
+- [ ] **Level Editor Scene:** Gizmos, Object Picking, Hierarchy view (Hierarchy done).
+- [x] **Scene Serialization:** Loading/Saving scenes with JSON.
 
 ### Milestone 8: 3D Rendering & Gameplay
 - [ ] **Advanced 3D:** Lighting (Ambient, Diffuse, Specular), Skybox.

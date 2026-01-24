@@ -25,7 +25,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     private var isRunning = false
     private val gson = GsonBuilder()
         .setPrettyPrinting()
-        //.registerTypeAdapter(Component::class.java, javaComponentDeserializer())
+        .registerTypeAdapter(Component::class.java, ComponentDeserializer())
         .registerTypeAdapter(GameObject::class.java, GameObjectSerializer())
         .enableComplexMapKeySerialization()
         .create()

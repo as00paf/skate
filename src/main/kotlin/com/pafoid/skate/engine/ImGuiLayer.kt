@@ -19,6 +19,9 @@ class ImGuiLayer {
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"
+    
+    private val propertiesWindow = com.pafoid.skate.engine.editor.PropertiesWindow()
+    private val hierarchyWindow = com.pafoid.skate.engine.editor.SceneHierarchyWindow(propertiesWindow)
 
     fun init(glfwWindow: Long) {
         ImGui.createContext()
@@ -48,11 +51,13 @@ class ImGuiLayer {
     fun update(dt: Float, currentScene: Scene) {
         startFrame()
 
-        setupDockSpace()
+        setupDockSpace(currentScene)
         currentScene.imgui()
+        hierarchyWindow.imgui(currentScene)
+        propertiesWindow.imgui()
         
         // Simple demo window
-        ImGui.showDemoWindow()
+        // ImGui.showDemoWindow()
 
         endFrame()
     }
@@ -74,7 +79,7 @@ class ImGuiLayer {
         }
     }
 
-    private fun setupDockSpace() {
+    private fun setupDockSpace(currentScene: Scene) {
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
         
         val viewport = ImGui.getMainViewport()
@@ -93,6 +98,20 @@ class ImGuiLayer {
         ImGui.popStyleVar(2)
 
         ImGui.dockSpace(ImGui.getID("DockSpace"))
+
+        if (ImGui.beginMenuBar()) {
+            if (ImGui.beginMenu("File")) {
+                if (ImGui.menuItem("Save Level")) {
+                    currentScene.save()
+                }
+                if (ImGui.menuItem("Load Level")) {
+                    currentScene.load()
+                }
+                ImGui.endMenu()
+            }
+            ImGui.endMenuBar()
+        }
+
         ImGui.end()
     }
 
