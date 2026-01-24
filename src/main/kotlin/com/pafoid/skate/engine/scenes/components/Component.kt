@@ -129,6 +129,11 @@ abstract class Component {
 
     fun getUid() = uId
 
+    open fun beginCollision(collidingObject: GameObject, contact: Contact, hitNormal: Vector2f) {}
+    open fun endCollision(collidingObject: GameObject, contact: Contact, hitNormal: Vector2f) {}
+    open fun preSolve(collidingObject: GameObject, contact: Contact, hitNormal: Vector2f) {}
+    open fun postSolve(collidingObject: GameObject, contact: Contact, hitNormal: Vector2f) {}
+
     open fun destroy() {
     }
 }
