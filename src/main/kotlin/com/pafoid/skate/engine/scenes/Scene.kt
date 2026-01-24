@@ -124,8 +124,14 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
     fun save() {
         try {
-            val writer = FileWriter("level.txt")
-            writer.write(gson.toJson(gameObjects.filter { it.doSerialization() }))
+            val writer = FileWriter("level.json")
+            val data = LevelData(
+                gameObjects = gameObjects.filter { it.doSerialization() },
+                ambientLight = ambientLight,
+                lightPosition = light.position,
+                gravity = physics3d.getGravity()
+            )
+            writer.write(gson.toJson(data))
             writer.close()
         } catch (e: IOException) {
             e.printStackTrace()
@@ -135,17 +141,22 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     fun load() {
         var inFile = ""
         try {
-            inFile = String(Files.readAllBytes(Paths.get("level.txt")))
+            inFile = String(Files.readAllBytes(Paths.get("level.json")))
         } catch (e: IOException) {
-            println("Error: Could not find level.txt")
-            //e.printStackTrace()
+            println("Error: Could not find level.json")
         }
 
         if (inFile.isNotBlank()) {
+            val data: LevelData = gson.fromJson(inFile, LevelData::class.java)
+            
+            this.ambientLight.set(data.ambientLight)
+            this.light.position.set(data.lightPosition)
+            this.physics3d.setGravity(data.gravity)
+            
             var maxGoId = -1
             var maxCompId = -1
-            val objs: Array<GameObject> = gson.fromJson(inFile, Array<GameObject>::class.java)
-            objs.forEach { obj ->
+            
+            data.gameObjects.forEach { obj ->
                 addGameObjectToScene(obj)
 
                 obj.getAllComponents().forEach { component ->
@@ -161,8 +172,6 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
             maxGoId++
             maxCompId++
-            //println(maxGoId)
-            //println(maxCompId)
             GameObject.init(maxGoId)
             Component.init(maxCompId)
         }

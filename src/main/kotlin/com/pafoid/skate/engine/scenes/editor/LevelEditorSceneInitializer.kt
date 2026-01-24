@@ -76,6 +76,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         
         skateboardGo.addComponent(PlayerController())
         skateboardGo.addComponent(SkateboardPhysics())
+        skateboardGo.addComponent(TrickAnalyzer())
         
         scene.addGameObjectToScene(skateboardGo)
 
@@ -153,7 +154,26 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         }
 
         imgui.ImGui.begin("Level Editor")
+        if (imgui.ImGui.button("Save Level")) {
+            scene?.save()
+        }
+        imgui.ImGui.sameLine()
+        if (imgui.ImGui.button("Load Level")) {
+            // We should probably clear the scene before loading
+            // For now, let's just call load
+            scene?.load()
+        }
+        imgui.ImGui.separator()
         editorStuff.imgui()
+        imgui.ImGui.end()
+
+        imgui.ImGui.begin("Trick History")
+        sb?.getComponent<TrickAnalyzer>()?.let { analyzer ->
+            imgui.ImGui.text("Last Trick: ${analyzer.lastTrickName}")
+            if (analyzer.lastTrickName.isNotEmpty()) {
+                // We could store a list of tricks here if we wanted
+            }
+        }
         imgui.ImGui.end()
 
         imgui.ImGui.begin("Objects")
