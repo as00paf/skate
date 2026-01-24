@@ -64,6 +64,7 @@ class ImGuiLayer {
 
     private fun startFrame() {
         imGuiGlfw.newFrame()
+        imGuiGl3.newFrame()
         ImGui.newFrame()
     }
 
@@ -116,8 +117,8 @@ class ImGuiLayer {
     }
 
     fun destroy() {
-        // imGuiGl3.shutdown()
-        // imGuiGlfw.shutdown()
-        // ImGui.destroyContext()
+        imGuiGl3.shutdown()
+        imGuiGlfw.shutdown()
+        ImGui.destroyContext()
     }
 }
