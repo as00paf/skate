@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.controls.KeyListener
+import com.pafoid.skate.engine.controls.MouseListener
 import com.pafoid.skate.engine.utils.toRadians
 import org.joml.Matrix4f
 import org.joml.Vector2f
@@ -22,18 +23,42 @@ class Camera(
     var projectionSize = Vector2f(32f, 18f) // Default 16:9 units
 
     fun move() {
+        // Rotation
+        if (glfwGetInputMode(glfwGetCurrentContext(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
+            val sensitivity = 0.1f
+            yaw += MouseListener.getDx() * sensitivity
+            pitch += MouseListener.getDy() * sensitivity
+            
+            // Limit pitch
+            if (pitch > 89f) pitch = 89f
+            if (pitch < -89f) pitch = -89f
+        }
+
+        // Movement
         val speed = 0.1f
+        val forward = Vector3f(
+            Math.sin(Math.toRadians(yaw.toDouble())).toFloat(),
+            -Math.sin(Math.toRadians(pitch.toDouble())).toFloat(),
+            -Math.cos(Math.toRadians(yaw.toDouble())).toFloat()
+        ).normalize()
+        
+        val right = Vector3f(
+            Math.cos(Math.toRadians(yaw.toDouble())).toFloat(),
+            0f,
+            Math.sin(Math.toRadians(yaw.toDouble())).toFloat()
+        ).normalize()
+
         if (KeyListener.isKeyPressed(GLFW_KEY_W)) {
-            position.z -= speed
+            position.add(Vector3f(forward).mul(speed))
         }
         if (KeyListener.isKeyPressed(GLFW_KEY_S)) {
-            position.z += speed
+            position.sub(Vector3f(forward).mul(speed))
         }
         if (KeyListener.isKeyPressed(GLFW_KEY_D)) {
-            position.x += speed
+            position.add(Vector3f(right).mul(speed))
         }
         if (KeyListener.isKeyPressed(GLFW_KEY_A)) {
-            position.x -= speed
+            position.sub(Vector3f(right).mul(speed))
         }
         if (KeyListener.isKeyPressed(GLFW_KEY_E)) {
             position.y += speed

@@ -102,6 +102,8 @@ object MouseListener {
 
     fun getX(): Float = xPos.toFloat()
     fun getY(): Float = yPos.toFloat()
+    fun getDx(): Float = (xPos - lastX).toFloat()
+    fun getDy(): Float = (yPos - lastY).toFloat()
     fun getScrollX(): Float = scrollX.toFloat()
     fun getScrollY(): Float = scrollY.toFloat()
     fun isDragging() = isDragging
