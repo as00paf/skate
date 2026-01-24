@@ -2,24 +2,69 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.JoystickListener
+import com.pafoid.skate.engine.controls.InputBuffer
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.toMatrix
 import org.joml.Vector2f
+import org.joml.Vector3f
+import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
 
 class PlayerController : Component() {
     var pushForce = 5.0f
     var steerSpeed = 2.0f
     var jumpImpulse = 10.0f
+    var flickSensitivity = 5.0f
     
-    // @Transient private lateinit var rb: RigidBody2D // Bullet Rigidbody will replace this
+    @Transient private var rb: RigidBody3D? = null
 
     override fun start() {
-        // rb = gameObject.getComponent<RigidBody2D>() ?: throw IllegalStateException("PlayerController requires RigidBody2D")
+        rb = gameObject.getComponent<RigidBody3D>()
     }
 
     override fun update(dt: Float) {
         handleSteering(dt)
         handlePushing(dt)
         handleJumping()
+        handleFlicks(dt)
+        handleCatch(dt)
+    }
+
+    private fun handleCatch(dt: Float) {
+        val rb3d = rb ?: return
+        val rotation = gameObject.transform.rotation
+        
+        // Simple 2D catch logic for now (z-rotation)
+        // Check if within 20 degrees of 0, 180, 360, etc.
+        val angle = rotation.z % 180f
+        val absAngle = if (angle < 0) angle + 180f else angle
+        
+        if (absAngle < 20f || absAngle > 160f) {
+            val target = if (absAngle < 20f) 0f else 180f
+            val diff = target - absAngle
+            
+            // Apply "magnetic" impulse
+            val catchStrength = 0.5f
+            rb3d.rawBody?.applyTorqueImpulse(com.jme3.math.Vector3f(0f, 0f, diff * catchStrength * dt))
+        }
+    }
+
+    private fun handleFlicks(dt: Float) {
+        val flick = InputBuffer.getJoystickFlickVelocity(GLFW_JOYSTICK_1, 0.1f)
+        if (flick.length() > 5.0f) {
+            // Apply torque based on flick
+            // X-flick = Kickflip/Heelflip (Roll)
+            // Y-flick = Shuvit (Yaw)
+            
+            val localTorque = Vector3f(flick.y * flickSensitivity, flick.x * flickSensitivity, 0f)
+            val worldTorque = Vector3f()
+            
+            // Convert local torque to world space
+            val transform = gameObject.transform.toMatrix()
+            transform.transformDirection(localTorque, worldTorque)
+            
+            rb?.rawBody?.applyTorqueImpulse(com.jme3.math.Vector3f(worldTorque.x, worldTorque.y, worldTorque.z))
+        }
     }
 
     private fun handleSteering(dt: Float) {

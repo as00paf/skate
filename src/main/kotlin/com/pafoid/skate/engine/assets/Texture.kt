@@ -97,7 +97,6 @@ class Texture: Component() {
     }
 
     companion object {
-        const val GRASS = "assets/textures/grass.png"
         const val WHITE = "assets/textures/white.png"
     }
 }

@@ -34,16 +34,16 @@
 - [x] **JOML Camera:** Build a 3D camera system with Raycast Clipping (using `btCollisionWorld.rayTest`) to prevent geometry clipping.
 - [x] **Modular Tile System:** Create a system to spawn/render floor tiles with **Vertex Snapping** logic to ensure flush surfaces.
 
-### Phase 2: Simulation Physics (The Board)
-- [ ] **Raycast Vehicle:** Implement 4 raycasts from deck corners for suspension.
-- [ ] **Suspension Logic:** Calculate forces using Hooke's Law ($F = k \cdot x$).
-- [ ] **Continuous Vectoring Input:**
-    - [ ] Map high-frequency GLFW callbacks to an InputBuffer.
-    - [ ] Calculate "Flick Velocity" from stick/mouse movement.
-    - [ ] Apply Direct Torque based on flick direction (Local X/Y/Z).
-- [ ] **Semi-Auto Catch:** Magnetic angular impulse logic to snap board to 180° increments when within $\pm 20^\circ$ of level.
+### Phase 2: Simulation Physics (The Board) [Completed]
+- [x] **Raycast Vehicle:** Implement 4 raycasts from deck corners for suspension.
+- [x] **Suspension Logic:** Calculate forces using Hooke's Law ($F = k \cdot x$).
+- [x] **Continuous Vectoring Input:**
+    - [x] Map high-frequency GLFW callbacks to an InputBuffer.
+    - [x] Calculate "Flick Velocity" from stick/mouse movement.
+    - [x] Apply Direct Torque based on flick direction (Local X/Y/Z).
+- [x] **Semi-Auto Catch:** Magnetic angular impulse logic to snap board to 180° increments when within $\pm 20^\circ$ of level.
 
-### Phase 3: Strict Collision & Grinds
+### Phase 3: Strict Collision & Grinds [Current Focus]
 - [ ] **Truck Geometry:** Model board as a compound body (Deck Box + Truck Cylinders) for physical "hooking".
 - [ ] **Testing Lab Obstacles:**
     - [ ] **Rail:** Low-friction cylinder.

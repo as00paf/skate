@@ -112,6 +112,13 @@ class Window(
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
+            
+            // Record high-frequency input
+            com.pafoid.skate.engine.controls.InputBuffer.push(
+                Time.getTime(),
+                org.joml.Vector2f(MouseListener.getX(), MouseListener.getY()),
+                com.pafoid.skate.engine.controls.JoystickListener.getAxes(GLFW_JOYSTICK_1)
+            )
 
             drawCallback(dt, imGuiLayer)
 

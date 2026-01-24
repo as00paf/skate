@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import imgui.ImGui
@@ -20,9 +21,11 @@ class PropertiesWindow {
                 }
                 
                 if (ImGui.menuItem("Add BoxCollider3D")) {
-                    if (go.getComponent<BoxCollider3D>() == null) {
-                        go.addComponent(BoxCollider3D())
-                    }
+                    go.addComponent(BoxCollider3D())
+                }
+
+                if (ImGui.menuItem("Add CylinderCollider3D")) {
+                    go.addComponent(CylinderCollider3D())
                 }
                 ImGui.endPopup()
             }

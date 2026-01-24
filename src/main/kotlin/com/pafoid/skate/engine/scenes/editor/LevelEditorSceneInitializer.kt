@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
 import com.pafoid.skate.engine.scenes.components.*
+import com.pafoid.skate.engine.physics3d.components.*
 import org.joml.Vector3f
 import org.joml.Vector4f
 
@@ -21,8 +22,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     private lateinit var texture: Texture
     private lateinit var texturedModel: TexturedModel
     private lateinit var gizmoSprites: SpriteSheet
-    private lateinit var blocksSprites: SpriteSheet
-    private lateinit var peterSprites: SpriteSheet
     
     private lateinit var editorStuff: GameObject
     lateinit var entity: Entity
@@ -34,14 +33,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
             SpriteSheet(AssetPool.getTexture("assets/textures/gizmos.png"), 24, 48, 3, 0))
         gizmoSprites = AssetPool.getSpriteSheet("assets/textures/gizmos.png")!!
 
-        AssetPool.addSpriteSheet("assets/textures/blocksAndDecorations.png",
-            SpriteSheet(AssetPool.getTexture("assets/textures/blocksAndDecorations.png"), 32, 32, 14, 0))
-        blocksSprites = AssetPool.getSpriteSheet("assets/textures/blocksAndDecorations.png")!!
-
-        AssetPool.addSpriteSheet("assets/textures/peter_sprite.png",
-            SpriteSheet(AssetPool.getTexture("assets/textures/peter_sprite.png"), 100, 100, 26, 0))
-        peterSprites = AssetPool.getSpriteSheet("assets/textures/peter_sprite.png")!!
-        
         rawModel = ObjLoader().loadObjModel(ObjLoader.SKATEBOARD, loader)
         texturedModel = TexturedModel(rawModel, texture)
         entity = Entity(
@@ -60,12 +51,29 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff.addComponent(EditorCamera(scene.camera))
         scene.addGameObjectToScene(editorStuff)
 
-        // 3D Object (Skateboard)
         val skateboardGo = GameObject("skateboard")
         skateboardGo.addComponent(entity)
         
+        val skateboardRb = RigidBody3D()
+        skateboardRb.mass = 1f
+        skateboardGo.addComponent(skateboardRb)
+        
+        // Deck
+        val deckCollider = BoxCollider3D()
+        deckCollider.halfExtents.set(1.5f, 0.05f, 0.5f)
+        skateboardGo.addComponent(deckCollider)
+        
+        // Truck Front
+        val truckFront = CylinderCollider3D(0.1f, 0.8f, 2) // Z-axis cylinder
+        truckFront.offset.set(-1.0f, -0.1f, 0f)
+        skateboardGo.addComponent(truckFront)
+        
+        // Truck Back
+        val truckBack = CylinderCollider3D(0.1f, 0.8f, 2)
+        truckBack.offset.set(1.0f, -0.1f, 0f)
+        skateboardGo.addComponent(truckBack)
+        
         skateboardGo.addComponent(PlayerController())
-        skateboardGo.addComponent(SkateboardPhysics())
         
         scene.addGameObjectToScene(skateboardGo)
 
@@ -74,9 +82,44 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         groundGo.transform.translation.set(0f, -2f, -5f)
         groundGo.transform.scale.set(20f, 0.5f, 5f)
         
+        val groundRb = RigidBody3D()
+        groundRb.bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static
+        groundGo.addComponent(groundRb)
+        
+        val groundCollider = BoxCollider3D()
+        groundCollider.halfExtents.set(10f, 0.25f, 2.5f)
+        groundGo.addComponent(groundCollider)
         groundGo.addComponent(Ground())
         
         scene.addGameObjectToScene(groundGo)
+
+        // Rail
+        val railGo = GameObject("rail")
+        railGo.transform.translation.set(0f, -1.5f, -8f)
+        railGo.transform.scale.set(10f, 0.1f, 0.1f)
+        
+        val railRb = RigidBody3D()
+        railRb.bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static
+        railGo.addComponent(railRb)
+        
+        val railCollider = CylinderCollider3D(0.1f, 10f, 0) // X-axis rail
+        railGo.addComponent(railCollider)
+        scene.addGameObjectToScene(railGo)
+
+        // Kicker
+        val kickerGo = GameObject("kicker")
+        kickerGo.transform.translation.set(5f, -1.8f, -5f)
+        kickerGo.transform.scale.set(2f, 0.5f, 2f)
+        kickerGo.transform.rotation.set(0f, 0f, 20f) // 20 degree angle
+        
+        val kickerRb = RigidBody3D()
+        kickerRb.bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static
+        kickerGo.addComponent(kickerRb)
+        
+        val kickerCollider = BoxCollider3D()
+        kickerCollider.halfExtents.set(1f, 0.25f, 1f)
+        kickerGo.addComponent(kickerCollider)
+        scene.addGameObjectToScene(kickerGo)
     }
 
     override fun imgui() {
@@ -86,45 +129,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
 
         imgui.ImGui.begin("Objects")
         if (imgui.ImGui.beginTabBar("WindowTabBar")) {
-            if (imgui.ImGui.beginTabItem("Blocks")) {
-                val windowSize = imgui.ImVec2()
-                imgui.ImGui.getContentRegionAvail(windowSize)
-                val itemSpacing = imgui.ImVec2()
-                imgui.ImGui.getStyle().getItemSpacing(itemSpacing)
-                
-                for (i in 0 until blocksSprites.size()) {
-                    val sprite = blocksSprites.getSprite(i)
-                    val id = sprite.getTexId()
-                    val texCoords = sprite.getTexCoords()
-
-                    imgui.ImGui.pushID(i)
-                    if (imgui.ImGui.imageButton("BlockButton_$i", id.toLong(), 32f, 32f, texCoords[2].x, texCoords[0].y, texCoords[0].x, texCoords[2].y)) {
-                        val block = com.pafoid.skate.engine.Prefabs.generateSpriteObject(sprite, 0.25f, 0.25f, "Block_$i")
-                        editorStuff.getComponent<MouseControls>()?.pickUpObject(block)
-                    }
-                    imgui.ImGui.popID()
-
-                    val lastButtonPos = imgui.ImVec2()
-                    imgui.ImGui.getItemRectMax(lastButtonPos)
-                    val lastButtonX2 = lastButtonPos.x
-                    val nextButtonX2 = lastButtonX2 + itemSpacing.x + 32f
-                    if (i + 1 < blocksSprites.size() && nextButtonX2 < imgui.ImGui.getWindowPosX() + windowSize.x) {
-                        imgui.ImGui.sameLine()
-                    }
-                }
-                imgui.ImGui.endTabItem()
-            }
-            
-            if (imgui.ImGui.beginTabItem("Prefabs")) {
-                val sprite = peterSprites.getSprite(0)
-                val texCoords = sprite.getTexCoords()
-                if (imgui.ImGui.imageButton("PeterButton", sprite.getTexId().toLong(), 32f, 32f, texCoords[2].x, texCoords[0].y, texCoords[0].x, texCoords[2].y)) {
-                    val peter = com.pafoid.skate.engine.Prefabs.generateSpriteObject(sprite, 0.25f, 0.25f, "Peter")
-                    editorStuff.getComponent<MouseControls>()?.pickUpObject(peter)
-                }
-                imgui.ImGui.endTabItem()
-            }
-
             if (imgui.ImGui.beginTabItem("Models")) {
                 val objDir = java.io.File("assets/obj")
                 val files = objDir.listFiles { _, name -> name.endsWith(".obj") || name.endsWith(".glb") || name.endsWith(".fbx") }
@@ -135,18 +139,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
                         val entityObj = com.pafoid.skate.engine.Prefabs.generateEntityObject(model, AssetPool.getTexture(Texture.WHITE), file.nameWithoutExtension)
                         editorStuff.getComponent<MouseControls>()?.pickUpObject(entityObj)
                     }
-                }
-                imgui.ImGui.endTabItem()
-            }
-
-            if (imgui.ImGui.beginTabItem("Tiles")) {
-                if (imgui.ImGui.button("Floor Tile (1x1)")) {
-                    val tile = com.pafoid.skate.engine.Prefabs.generateTileObject(1f, 0.1f, AssetPool.getTexture(Texture.GRASS), "FloorTile")
-                    editorStuff.getComponent<MouseControls>()?.pickUpObject(tile)
-                }
-                if (imgui.ImGui.button("Wall Tile (1x1)")) {
-                    val tile = com.pafoid.skate.engine.Prefabs.generateTileObject(0.1f, 1f, AssetPool.getTexture(Texture.GRASS), "WallTile")
-                    editorStuff.getComponent<MouseControls>()?.pickUpObject(tile)
                 }
                 imgui.ImGui.endTabItem()
             }

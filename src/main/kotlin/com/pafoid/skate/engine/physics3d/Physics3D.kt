@@ -3,6 +3,8 @@ package com.pafoid.skate.engine.physics3d
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
+import com.jme3.bullet.collision.shapes.CompoundCollisionShape
+import com.jme3.bullet.collision.shapes.CylinderCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.pafoid.skate.engine.scenes.GameObject
 import org.joml.Vector3f
@@ -26,14 +28,28 @@ class Physics3D {
     fun add(go: GameObject) {
         val rb = go.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
         if (rb != null && rb.rawBody == null) {
-            val collider = go.getComponent<com.pafoid.skate.engine.physics3d.components.BoxCollider3D>()
-            val shape = if (collider != null) {
-                BoxCollisionShape(com.jme3.math.Vector3f(collider.halfExtents.x, collider.halfExtents.y, collider.halfExtents.z))
-            } else {
-                BoxCollisionShape(com.jme3.math.Vector3f(1f, 1f, 1f))
+            val boxColliders = go.components.filterIsInstance<com.pafoid.skate.engine.physics3d.components.BoxCollider3D>()
+            val cylinderColliders = go.components.filterIsInstance<com.pafoid.skate.engine.physics3d.components.CylinderCollider3D>()
+            
+            val compound = CompoundCollisionShape()
+            
+            boxColliders.forEach { c ->
+                val shape = BoxCollisionShape(com.jme3.math.Vector3f(c.halfExtents.x, c.halfExtents.y, c.halfExtents.z))
+                compound.addChildShape(shape, com.jme3.math.Vector3f(c.offset.x, c.offset.y, c.offset.z))
+            }
+            
+            cylinderColliders.forEach { c ->
+                val shape = CylinderCollisionShape(c.radius, c.height, c.axis)
+                compound.addChildShape(shape, com.jme3.math.Vector3f(c.offset.x, c.offset.y, c.offset.z))
             }
 
-            val body = PhysicsRigidBody(shape, rb.mass)
+            // If no colliders, provide a default box
+            if (boxColliders.isEmpty() && cylinderColliders.isEmpty()) {
+                compound.addChildShape(BoxCollisionShape(com.jme3.math.Vector3f(1f, 1f, 1f)), com.jme3.math.Vector3f(0f, 0f, 0f))
+            }
+
+            val mass = if (rb.bodyType == com.pafoid.skate.engine.physics3d.enums.BodyType.Static) 0f else rb.mass
+            val body = PhysicsRigidBody(compound, mass)
             val trans = go.transform.translation
             body.setPhysicsLocation(com.jme3.math.Vector3f(trans.x, trans.y, trans.z))
             
