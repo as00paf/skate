@@ -1,16 +1,19 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.models.RawModel
 import java.io.File
 
 object AssetPool {
 
     private val shaderLoader = ShaderLoader(false)
+    private val assimpLoader = AssimpLoader()
 
     private val shaders = mutableMapOf<String, Shader>()
     private val textures = mutableMapOf<String, Texture>()
     private val cubemaps = mutableMapOf<String, Cubemap>()
     private val spriteSheets = mutableMapOf<String, SpriteSheet>()
     private val sounds = mutableMapOf<String, Sound>()
+    private val rawModels = mutableMapOf<String, RawModel>()
 
     fun getShader(filePath: String): Shader {
         val file = File(filePath)
@@ -20,6 +23,17 @@ object AssetPool {
             val shader = shaderLoader.loadShader(filePath)
             shaders[file.absolutePath] = shader
             shader
+        }
+    }
+
+    fun getRawModel(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): RawModel {
+        val file = File(filePath)
+        return if (rawModels.containsKey(file.absolutePath)) {
+            rawModels[file.absolutePath]!!
+        } else {
+            val model = assimpLoader.loadModel(filePath, loader)
+            rawModels[file.absolutePath] = model
+            model
         }
     }
 
