@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.JoystickListener
-import com.pafoid.skate.engine.physics2d.components.RigidBody2D
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW.*
 
@@ -11,10 +10,10 @@ class PlayerController : Component() {
     var steerSpeed = 2.0f
     var jumpImpulse = 10.0f
     
-    @Transient private lateinit var rb: RigidBody2D
+    // @Transient private lateinit var rb: RigidBody2D // Bullet Rigidbody will replace this
 
     override fun start() {
-        rb = gameObject.getComponent<RigidBody2D>() ?: throw IllegalStateException("PlayerController requires RigidBody2D")
+        // rb = gameObject.getComponent<RigidBody2D>() ?: throw IllegalStateException("PlayerController requires RigidBody2D")
     }
 
     override fun update(dt: Float) {
@@ -44,7 +43,7 @@ class PlayerController : Component() {
             }
         }
         
-        rb.angularVelocity = rotation
+        // rb.angularVelocity = rotation
     }
 
     private fun handlePushing(dt: Float) {
@@ -68,7 +67,7 @@ class PlayerController : Component() {
         if (multiplier > 0f) {
             val angle = Math.toRadians(gameObject.transform.rotation.z.toDouble())
             val force = Vector2f(Math.cos(angle).toFloat(), Math.sin(angle).toFloat()).mul(pushForce * multiplier)
-            rb.addVelocity(force)
+            // rb.addVelocity(force)
         }
     }
 
@@ -83,7 +82,7 @@ class PlayerController : Component() {
         }
 
         if (jump) {
-            rb.addImpulse(Vector2f(0f, jumpImpulse))
+            // rb.addImpulse(Vector2f(0f, jumpImpulse))
         }
     }
 }

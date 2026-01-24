@@ -23,6 +23,10 @@ dependencies {
     implementation ("org.lwjgl", "lwjgl-openal", classifier = "natives-windows")
     implementation ("org.lwjgl", "lwjgl-opengl", classifier = "natives-windows")
     implementation ("org.lwjgl", "lwjgl-stb", classifier = "natives-windows")
+    
+    // Bullet Physics
+    implementation("com.github.stephengold:Libbulletjme:21.2.1")
+
     implementation("org.joml", "joml", "1.10.8")
     implementation("org.joml", "joml-primitives", "1.10.0")
     //implementation("org.lwjglx", "lwjgl3-awt", "0.2.3")
@@ -34,9 +38,6 @@ dependencies {
 
     // GSON
     implementation("com.google.code.gson:gson:2.8.9")
-
-    // JBox2D
-    implementation("org.jbox2d:jbox2d-library:2.2.1.1")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")

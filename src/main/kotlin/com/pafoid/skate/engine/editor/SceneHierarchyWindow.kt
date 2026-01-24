@@ -34,6 +34,14 @@ class SceneHierarchyWindow(private val propertiesWindow: PropertiesWindow) {
         if (ImGui.isItemClicked()) {
             propertiesWindow.setActiveObject(obj)
         }
+        
+        if (ImGui.beginPopupContextItem()) {
+            if (ImGui.menuItem("Delete")) {
+                obj.destroy()
+            }
+            ImGui.endPopup()
+        }
+        
         ImGui.popID()
 
         return result

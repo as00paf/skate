@@ -9,9 +9,7 @@ import com.google.gson.JsonPrimitive
 import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import com.pafoid.skate.engine.scenes.GameObject
-import imgui.internal.ImGui
 import imgui.type.ImInt
-import org.jbox2d.dynamics.contacts.Contact
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -128,11 +126,6 @@ abstract class Component {
     }
 
     fun getUid() = uId
-
-    open fun beginCollision(collidingObject: GameObject, contact: Contact, hitNormal: Vector2f) {}
-    open fun endCollision(collidingObject: GameObject, contact: Contact, hitNormal: Vector2f) {}
-    open fun preSolve(collidingObject: GameObject, contact: Contact, hitNormal: Vector2f) {}
-    open fun postSolve(collidingObject: GameObject, contact: Contact, hitNormal: Vector2f) {}
 
     open fun destroy() {
     }

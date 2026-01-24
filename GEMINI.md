@@ -1,95 +1,70 @@
-# Skate Project Context
+# SkateSim MVP - Project Context
 
 ## Project Overview
 
-**Skate** is a Kotlin-based game engine project aiming to combine the best features of a 2D engine (**MinePaf**) and a 3D engine (**PafCraft**) into a unified, high-performance engine capable of supporting both dimensions.
+**SkateSim MVP** is a high-fidelity skateboarding simulation engine built in Kotlin. It aims to combine 3D graphics, strict physics simulation, and robust editor tools to create a realistic skateboarding experience.
 
-**Current Status:** The project structure is initialized and populated with core engine classes. We are currently in the process of porting and refactoring features from the legacy projects into this new unified architecture. Milestone 4 (2D Rendering basics) is largely complete.
-
-## Project History & Goals
-
-*   **Origins:**
-    *   **MinePaf:** A 2D game engine (previous project).
-    *   **PafCraft:** A 3D game engine (previous project).
-*   **Objective:** Combine MinePaf and PafCraft to create **Skate**, a versatile engine for a skateboarding game (and potentially others).
-*   **Strategy:** Implement features one by one, ensuring high quality and stability before moving to the next.
-*   **Future:** Once parity is reached, extend capabilities (e.g., support for more 3D file types).
-
-## Architecture & Principles
-
-*   **SOLID Principles:** Rigorous adherence to Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion principles.
-*   **Clean Architecture:** Separation of concerns. Isolate core business logic/game logic from external frameworks (rendering library, input handling) where possible.
-*   **Kotlin Idioms:** Leverage Kotlin's specific features (Extensions, Coroutines, Sealed Classes, Delegates, Null Safety) for concise and safe code.
-
-## Workflow & Guidelines
-
-1.  **Feature Branches:** Before starting a task, create a branch named `feature/description` (e.g., `feature/orthographic-camera`).
-2.  **Small Commits:** Commit often with clear messages to track changes easily.
-3.  **Project Cleanliness:** Ensure the project is clean (unused files removed, code refactored) before starting a new task.
-4.  **Completion & Merging:**
-    *   Push code to the feature branch when an item is done.
-    *   Explicitly request user confirmation before merging to `master` and updating the Todo list.
-5.  **UI Strategy:** Use **ImGui** for the Level Editor and Debug UI.
+**Current Status:** Core engine infrastructure (GLFW, OpenGL, ImGui) is initialized. Basic 2D/3D rendering and JBox2D physics were implemented, but the project is now pivoting to a **3D Bullet Physics** backend for strict collision and grind simulation.
 
 ## Tech Stack
 
 *   **Language:** Kotlin (JVM Target 17)
-*   **Build System:** Gradle (Kotlin DSL)
-*   **Key Libraries:**
-    *   LWJGL (Core, Assimp, GLFW, OpenAL, OpenGL, STB)
-    *   JOML (Java OpenGL Math Library)
-    *   LWJGL3-AWT (AWT integration)
-    *   **JBox2D:** For Physics.
-    *   **ImGui:** For UI/Editor.
-*   **Testing:** JUnit Platform, Kotlin Test
+*   **Graphics:** OpenGL 3.3+ (Forward Rendering)
+*   **Math:** JOML (Java OpenGL Math Library)
+*   **Physics:** Bullet Physics (via JBullet or LWJGL-Bullet)
+*   **UI/Tweak Tool:** Dear ImGui
+*   **Input:** LWJGL (GLFW)
+*   **Data:** JSON for Level/Config persistence
+
+## Core Architecture & State
+
+### Dual-Mode System
+*   **Edit Mode:** Physics paused, Free-fly camera, ImGui Gizmos active, Object picking/placement enabled.
+*   **Play Mode:** Physics active, Spring-arm camera, Continuous Vectoring input, Session markers enabled.
+
+### Systems
+*   **The "Anchor" System:** The skater is a visual model parented to the board. On "Bail," the anchor breaks, and the skater becomes a "Tumble Cube" (Rigid Body) inheriting the board's momentum.
+*   **Session Markers:** Keybind to "Drop Marker" (saves transform) and "Reset" (teleports board/skater back with zero velocity).
 
 ## Roadmap / Todo List
 
-### Milestone 1: Core Infrastructure [Completed]
-- [x] **Windowing System:** Abstraction over GLFW window creation and management.
-- [x] **Input Handling:** Robust Keyboard and Mouse listeners with event polling.
-- [x] **Game Loop:** Fixed time-step loop (`Time`, `delta_time`).
-- [x] **Math Library Integration:** Standardizing on JOML.
-- [x] **Refactoring:** Decoupled Renderer from SceneManager.
+### Phase 1: Engine Foundation [Current Focus]
+- [x] **Physics Migration:** Replace JBox2D with Bullet Physics.
+- [x] **Main Loop:** Implement a fixed physics timestep (60Hz) with variable rendering.
+- [ ] **JOML Camera:** Build a 3D camera system with Raycast Clipping (using `btCollisionWorld.rayTest`) to prevent geometry clipping.
+- [ ] **Modular Tile System:** Create a system to spawn/render floor tiles with **Vertex Snapping** logic to ensure flush surfaces.
 
-### Milestone 2: Asset Management [Completed]
-- [x] **Resource Management System:** `AssetPool`.
-- [x] **Shader System:** Basic loading and compilation.
-- [x] **Texture System:** Basic loading.
-- [x] **Audio System:** Integration of OpenAL (Basic support present).
+### Phase 2: Simulation Physics (The Board)
+- [ ] **Raycast Vehicle:** Implement 4 raycasts from deck corners for suspension.
+- [ ] **Suspension Logic:** Calculate forces using Hooke's Law ($F = k \cdot x$).
+- [ ] **Continuous Vectoring Input:**
+    - [ ] Map high-frequency GLFW callbacks to an InputBuffer.
+    - [ ] Calculate "Flick Velocity" from stick/mouse movement.
+    - [ ] Apply Direct Torque based on flick direction (Local X/Y/Z).
+- [ ] **Semi-Auto Catch:** Magnetic angular impulse logic to snap board to 180° increments when within $\pm 20^\circ$ of level.
 
-### Milestone 3: Scene & Entity Architecture [Completed]
-- [x] **Scene Management:** `Scene`, `SceneManager`.
-- [x] **Entity Component System (ECS):** `GameObject`, `Component`, `Entity` structure.
+### Phase 3: Strict Collision & Grinds
+- [ ] **Truck Geometry:** Model board as a compound body (Deck Box + Truck Cylinders) for physical "hooking".
+- [ ] **Testing Lab Obstacles:**
+    - [ ] **Rail:** Low-friction cylinder.
+    - [ ] **Ledge:** Box with 90° edges.
+    - [ ] **Kicker:** Simple wedge.
+- [ ] **Bail Logic:** Transition to "Tumble Cube" on high impact or bad landing orientation ($> 90^\circ$ from up).
 
-### Milestone 4: 2D Rendering [Completed]
-- [x] **Sprite System:** `Sprite`, `SpriteSheet` components.
-- [x] **Batch Rendering:** `RenderBatch`, `Renderer2D`.
-- [x] **Integration:** `Renderer` delegates to `Renderer2D`.
+### Phase 4: Sandbox & Editor Tools
+- [ ] **ImGui Physics Tuner:** Sliders for Gravity, PopForce, Friction, SuspensionStiffness, and CatchStrength.
+- [ ] **Transform Gizmos:** 3D arrows in Edit Mode for modular tiles and obstacles.
+- [ ] **Trick Labeler:** Analyzer for Pitch/Yaw/Roll degrees to string together names (e.g., "Kickflip 180").
+- [ ] **Persistence:** Save/Load level layouts and physics configs to JSON.
 
-### Milestone 5: Rendering & Camera Enhancements [Completed]
-- [x] **Cleanup Assets:** Remove unused models (dragon.obj) and shaders; standardize shader files.
-- [x] **Orthographic Camera:** Implement `Camera` subclass or mode for 2D.
-- [x] **3D Camera Improvements:** Refine perspective camera (First/Third person controls).
-- [x] **Shader Refactoring:** Create dedicated shaders for 2D (batch) and 3D (lit).
-
-### Milestone 6: Physics [Completed]
-- [x] **JBox2D Integration:** Add library dependency.
-- [x] **Physics Components:** `Rigidbody2D`, `BoxCollider2D`, etc.
-- [x] **Physics System:** Integration into the Game Loop.
-
-### Milestone 7: Editor & UI [Completed]
-- [x] **ImGui Integration:** Setup ImGui context and render loop.
-- [x] **Level Editor Scene:** Gizmos, Object Picking, Hierarchy view.
-- [x] **Scene Serialization:** Loading/Saving scenes with JSON.
-
-### Milestone 8: 3D Rendering & Gameplay [Completed]
-- [x] **Advanced 3D:** Lighting (Ambient, Diffuse, Specular), Skybox.
-- [x] **Skateboarding Mechanics:** Player controller, physics tuning.
-
-### Milestone 9: Input & Advanced Assets [Current Focus]
+### Additional Features [Completed]
 - [x] **Game Controller Support:** Implement GLFW joystick/gamepad listeners.
 - [x] **Assimp Enhancements:** Support for GLB and FBX model loading.
 - [x] **Threading Support:** Coroutines integration via `JobSystem`.
 - [x] **UI Layout:** Programmatic docking setup for editor windows.
 - [ ] **Particle System:** 2D/3D visual effects.
+
+## Mathematical Constraints
+*   **Local Space Conversion:** Use `JOML Matrix4f.transformDirection()` for flick torques.
+*   **Friction Tuning:** Rails ($< 0.1$), Deck ($> 0.5$).
+*   **Stability:** Fixed delta time for `stepSimulation`.

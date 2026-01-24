@@ -136,6 +136,15 @@ class ImGuiLayer {
                 }
                 ImGui.endMenu()
             }
+            if (ImGui.beginMenu("Create")) {
+                if (ImGui.menuItem("Cube")) {
+                    // Spawning a cube logic
+                }
+                if (ImGui.menuItem("Sprite")) {
+                    // Spawning a sprite logic
+                }
+                ImGui.endMenu()
+            }
             ImGui.endMenuBar()
         }
 

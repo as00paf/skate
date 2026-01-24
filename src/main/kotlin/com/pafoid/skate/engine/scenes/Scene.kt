@@ -4,7 +4,7 @@ import com.google.gson.GsonBuilder
 import com.pafoid.skate.engine.Transform
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.assets.Cubemap
-import com.pafoid.skate.engine.physics2d.Physics2D
+import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.components.Component
@@ -23,7 +23,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     var cubemap: Cubemap? = null
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
-    val physics2d = Physics2D()
+    val physics3d = Physics3D()
 
     private var isRunning = false
     private val gson = GsonBuilder()
@@ -41,7 +41,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     fun start() {
         gameObjects.forEach { go ->
             go.start()
-            physics2d.add(go)
+            physics3d.add(go)
         }
         isRunning = true
     }
@@ -67,7 +67,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             go.editorUpdate(dt)
             if (go.isDead()) {
                 gameObjects.removeAt(i)
-                physics2d.destroyGameObject(go)
+                physics3d.remove(go)
                 i--
             }
             i++
@@ -76,7 +76,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
         pendingObjects.forEach { gameObject ->
             gameObjects.add(gameObject)
             gameObject.start()
-            physics2d.add(gameObject)
+            physics3d.add(gameObject)
         }
 
         pendingObjects.clear()
@@ -85,7 +85,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
     fun update(dt: Float) {
         camera.move() 
-        physics2d.update(dt)
+        physics3d.update(dt)
 
         var i = 0
         while (i < gameObjects.size) {
@@ -93,7 +93,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             go.update(dt)
             if (go.isDead()) {
                 gameObjects.removeAt(i)
-                physics2d.destroyGameObject(go)
+                physics3d.remove(go)
                 i--
             }
             i++
@@ -102,7 +102,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
         pendingObjects.forEach { gameObject ->
             gameObjects.add(gameObject)
             gameObject.start()
-            physics2d.add(gameObject)
+            physics3d.add(gameObject)
         }
 
         pendingObjects.clear()

@@ -7,7 +7,7 @@ import com.google.gson.JsonElement
 import com.pafoid.skate.engine.Transform
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
-import imgui.internal.ImGui
+import imgui.ImGui
 import java.lang.reflect.Type
 
 open class GameObject(
@@ -61,7 +61,7 @@ open class GameObject(
 
     fun imgui() {
         components.forEach {
-            if(imgui.ImGui.collapsingHeader(it.javaClass.simpleName))
+            if(ImGui.collapsingHeader(it.javaClass.simpleName))
                 it.imgui()
         }
     }

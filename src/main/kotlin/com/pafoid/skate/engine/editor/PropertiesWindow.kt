@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.editor
 
-import com.pafoid.skate.engine.physics2d.components.Box2DCollider
-import com.pafoid.skate.engine.physics2d.components.RigidBody2D
+import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import imgui.ImGui
 
@@ -13,18 +13,17 @@ class PropertiesWindow {
             ImGui.begin("Properties")
 
             if (ImGui.beginPopupContextWindow("ComponentAdder")) {
-                if (ImGui.menuItem("Add Rigidbody2D")) {
-                    if (go.getComponent<RigidBody2D>() == null) {
-                        go.addComponent(RigidBody2D())
+                if (ImGui.menuItem("Add RigidBody3D")) {
+                    if (go.getComponent<RigidBody3D>() == null) {
+                        go.addComponent(RigidBody3D())
                     }
                 }
-
-                if (ImGui.menuItem("Add Box2D Collider")) {
-                    if (go.getComponent<Box2DCollider>() == null) {
-                        go.addComponent(Box2DCollider())
+                
+                if (ImGui.menuItem("Add BoxCollider3D")) {
+                    if (go.getComponent<BoxCollider3D>() == null) {
+                        go.addComponent(BoxCollider3D())
                     }
                 }
-
                 ImGui.endPopup()
             }
 
