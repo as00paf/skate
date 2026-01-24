@@ -65,6 +65,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         skateboardGo.addComponent(entity)
         
         skateboardGo.addComponent(PlayerController())
+        skateboardGo.addComponent(SkateboardPhysics())
         
         scene.addGameObjectToScene(skateboardGo)
 
