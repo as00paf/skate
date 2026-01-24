@@ -43,15 +43,15 @@
     - [x] Apply Direct Torque based on flick direction (Local X/Y/Z).
 - [x] **Semi-Auto Catch:** Magnetic angular impulse logic to snap board to 180° increments when within $\pm 20^\circ$ of level.
 
-### Phase 3: Strict Collision & Grinds [Current Focus]
-- [ ] **Truck Geometry:** Model board as a compound body (Deck Box + Truck Cylinders) for physical "hooking".
-- [ ] **Testing Lab Obstacles:**
-    - [ ] **Rail:** Low-friction cylinder.
-    - [ ] **Ledge:** Box with 90° edges.
-    - [ ] **Kicker:** Simple wedge.
-- [ ] **Bail Logic:** Transition to "Tumble Cube" on high impact or bad landing orientation ($> 90^\circ$ from up).
+### Phase 3: Strict Collision & Grinds [Completed]
+- [x] **Truck Geometry:** Model board as a compound body (Deck Box + Truck Cylinders) for physical "hooking".
+- [x] **Testing Lab Obstacles:**
+    - [x] **Rail:** Low-friction cylinder.
+    - [x] **Ledge:** Box with 90° edges.
+    - [x] **Kicker:** Simple wedge.
+- [x] **Bail Logic:** Transition to "Tumble Cube" on high impact or bad landing orientation ($> 90^\circ$ from up).
 
-### Phase 4: Sandbox & Editor Tools
+### Phase 4: Sandbox & Editor Tools [Current Focus]
 - [ ] **ImGui Physics Tuner:** Sliders for Gravity, PopForce, Friction, SuspensionStiffness, and CatchStrength.
 - [ ] **Transform Gizmos:** 3D arrows in Edit Mode for modular tiles and obstacles.
 - [ ] **Trick Labeler:** Analyzer for Pitch/Yaw/Roll degrees to string together names (e.g., "Kickflip 180").
