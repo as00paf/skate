@@ -65,6 +65,10 @@ class Window(
         
         currentWidth = winWidth
         currentHeight = winHeight
+
+        // Make the OpenGL context current
+        glfwMakeContextCurrent(glfwWindow)
+
         // Enable v-sync
         glfwSwapInterval(1)
 
