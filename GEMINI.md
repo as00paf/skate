@@ -83,6 +83,11 @@
 - [x] **Level Editor Scene:** Gizmos, Object Picking, Hierarchy view.
 - [x] **Scene Serialization:** Loading/Saving scenes with JSON.
 
-### Milestone 8: 3D Rendering & Gameplay [Current Focus]
+### Milestone 8: 3D Rendering & Gameplay [Completed]
 - [x] **Advanced 3D:** Lighting (Ambient, Diffuse, Specular), Skybox.
-- [ ] **Skateboarding Mechanics:** Player controller, physics tuning.
+- [x] **Skateboarding Mechanics:** Player controller, physics tuning.
+
+### Milestone 9: Input & Advanced Assets [Current Focus]
+- [ ] **Game Controller Support:** Implement GLFW joystick/gamepad listeners.
+- [ ] **Assimp Enhancements:** Support for GLB and FBX model loading.
+- [ ] **Particle System:** 2D/3D visual effects.
