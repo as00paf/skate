@@ -12,8 +12,8 @@ import org.lwjgl.system.MemoryUtil.NULL
 class Window(
     val width: Int = 1920,
     val height: Int = 1080,
-    val initCallback: () -> Unit,
-    val drawCallback: (dt: Float) -> Unit,
+    val initCallback: (imguiLayer: ImGuiLayer) -> Unit,
+    val drawCallback: (dt: Float, imguiLayer: ImGuiLayer) -> Unit,
     val destroyCallback: () -> Unit,
     val title: String
 ) {
@@ -22,6 +22,7 @@ class Window(
     var currentHeight = height
 
     private var glfwWindow: Long = -1L
+    private val imGuiLayer = ImGuiLayer()
 
     fun run() {
         init()
@@ -64,19 +65,15 @@ class Window(
 
         installCallbacks()
 
-        initCallback()
+        imGuiLayer.init(glfwWindow)
+        initCallback(imGuiLayer)
     }
 
     private fun installCallbacks() {
-        glfwSetKeyCallback(glfwWindow, KeyListener::keyCallback)
-        glfwSetCursorPosCallback(glfwWindow, MouseListener::mousePosCallback)
-        glfwSetMouseButtonCallback(glfwWindow, MouseListener::mouseButtonCallback)
-        glfwSetScrollCallback(glfwWindow, MouseListener::mouseScrollCallback)
-
         glfwSetWindowSizeCallback(glfwWindow) { w: Long, newWidth: Int, newHeight: Int ->
             currentWidth = newWidth
             currentHeight = newHeight
-            println("Window resized to ($newWidth, $newHeight)")
+            glViewport(0, 0, newWidth, newHeight)
         }
     }
 
@@ -88,7 +85,7 @@ class Window(
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
 
-            drawCallback(dt)
+            drawCallback(dt, imGuiLayer)
 
             glfwSwapBuffers(glfwWindow)
 
@@ -101,6 +98,7 @@ class Window(
     }
 
     private fun destroy() {
+        imGuiLayer.destroy()
         destroyCallback()
 
         // Free memory

@@ -104,11 +104,11 @@ object MouseListener {
     fun getY(): Float = yPos.toFloat()
     fun getDx(): Float = (xPos - lastX).toFloat()
     fun getDy(): Float = (yPos - lastY).toFloat()
-    fun getScrollX(): Float = scrollX.toFloat()
-    fun getScrollY(): Float = scrollY.toFloat()
-    fun isDragging() = isDragging
+    fun getScrollX(): Float = if (imgui.ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()
+    fun getScrollY(): Float = if (imgui.ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
+    fun isDragging() = isDragging && !imgui.ImGui.getIO().wantCaptureMouse
     fun isMouseButtonDown(button: Int): Boolean {
-        return if (button < mouseButtonPressed.size) mouseButtonPressed[button]
+        return if (button < mouseButtonPressed.size) mouseButtonPressed[button] && !imgui.ImGui.getIO().wantCaptureMouse
         else false
     }
 }

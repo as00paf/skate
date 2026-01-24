@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.scenes
 
+import com.pafoid.skate.engine.ImGuiLayer
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.entities.Entity
@@ -19,7 +20,7 @@ class SceneManager {
 
     private lateinit var currentScene: Scene
 
-    fun initializeScene() {
+    fun initializeScene(imguiLayer: ImGuiLayer) {
         shader3D = AssetPool.getShader(Shader.SHADER_3D_DEFAULT)
         shader2D = AssetPool.getShader(Shader.SHADER_2D_BATCH)
         renderer = Renderer(shader3D, shader2D)
@@ -37,10 +38,11 @@ class SceneManager {
         scene.start()
     }
 
-    fun draw(dt: Float) {
+    fun draw(dt: Float, imguiLayer: ImGuiLayer) {
         if (dt >= 0) {
             currentScene.update(dt)
             renderer.render(currentScene)
+            imguiLayer.update(dt, currentScene)
         }
     }
 

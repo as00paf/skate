@@ -59,12 +59,12 @@ open class GameObject(
         components.forEach { it.editorUpdate(dt) }
     }
 
-    /*fun imgui() {
+    fun imgui() {
         components.forEach {
-            if(ImGui.collapsingHeader(it.javaClass.simpleName))
+            if(imgui.ImGui.collapsingHeader(it.javaClass.simpleName))
                 it.imgui()
         }
-    }*/
+    }
 
     fun getUid() = uId
     fun generateUid() { uId = ID_COUNTER++ }

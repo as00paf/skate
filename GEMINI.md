@@ -67,18 +67,18 @@
 - [x] **Batch Rendering:** `RenderBatch`, `Renderer2D`.
 - [x] **Integration:** `Renderer` delegates to `Renderer2D`.
 
-### Milestone 5: Rendering & Camera Enhancements [Current Focus]
-- [ ] **Cleanup Assets:** Remove unused models (dragon.obj) and shaders; standardize shader files.
-- [ ] **Orthographic Camera:** Implement `Camera` subclass or mode for 2D.
-- [ ] **3D Camera Improvements:** Refine perspective camera (First/Third person controls).
-- [ ] **Shader Refactoring:** Create dedicated shaders for 2D (batch) and 3D (lit).
+### Milestone 5: Rendering & Camera Enhancements [Completed]
+- [x] **Cleanup Assets:** Remove unused models (dragon.obj) and shaders; standardize shader files.
+- [x] **Orthographic Camera:** Implement `Camera` subclass or mode for 2D.
+- [x] **3D Camera Improvements:** Refine perspective camera (First/Third person controls).
+- [x] **Shader Refactoring:** Create dedicated shaders for 2D (batch) and 3D (lit).
 
-### Milestone 6: Physics
-- [ ] **JBox2D Integration:** Add library dependency.
-- [ ] **Physics Components:** `Rigidbody2D`, `BoxCollider2D`, etc.
-- [ ] **Physics System:** Integration into the Game Loop.
+### Milestone 6: Physics [Completed]
+- [x] **JBox2D Integration:** Add library dependency.
+- [x] **Physics Components:** `Rigidbody2D`, `BoxCollider2D`, etc.
+- [x] **Physics System:** Integration into the Game Loop.
 
-### Milestone 7: Editor & UI
+### Milestone 7: Editor & UI [Current Focus]
 - [ ] **ImGui Integration:** Setup ImGui context and render loop.
 - [ ] **Level Editor Scene:** Gizmos, Object Picking, Hierarchy view.
 - [ ] **Scene Serialization:** Loading/Saving scenes with JSON.

@@ -25,9 +25,9 @@ object KeyListener {
         keyBeginPressed.fill(false)
     }
 
-    fun isKeyPressed(key: Int):Boolean = keyPressed[key]
+    fun isKeyPressed(key: Int): Boolean = if (key < keyPressed.size) keyPressed[key] && !imgui.ImGui.getIO().wantCaptureKeyboard else false
 
     fun keyBeginPress(key: Int): Boolean {
-        return  keyBeginPressed[key]
+        return if (key < keyBeginPressed.size) keyBeginPressed[key] && !imgui.ImGui.getIO().wantCaptureKeyboard else false
     }
 }
