@@ -183,4 +183,25 @@ class Camera(
         return createProjectionMatrix().invert()
     }
 
+    fun screenToRay(screenX: Float, screenY: Float, width: Float, height: Float): com.pafoid.skate.engine.utils.Ray {
+        // Convert screen coordinates to NDC
+        val x = (2.0f * screenX) / width - 1.0f
+        val y = 1.0f - (2.0f * screenY) / height
+        
+        // Inverse Projection
+        val clipCoords = org.joml.Vector4f(x, y, -1.0f, 1.0f)
+        val invProj = createProjectionMatrix().invert()
+        val eyeCoords = invProj.transform(clipCoords)
+        eyeCoords.z = -1.0f
+        eyeCoords.w = 0.0f
+        
+        // Inverse View
+        val invView = createViewMatrix().invert()
+        val worldCoords = invView.transform(eyeCoords)
+        
+        val direction = Vector3f(worldCoords.x, worldCoords.y, worldCoords.z).normalize()
+        
+        return com.pafoid.skate.engine.utils.Ray(Vector3f(position), direction)
+    }
+
 }

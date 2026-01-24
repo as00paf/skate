@@ -13,6 +13,7 @@ class Renderer(
     private val defaultShader: Shader,
     private val batchShader: Shader,
     private val pickingShader: Shader,
+    private val pickingShader3D: Shader,
     private val skyboxShader: Shader
 ) {
     private val clearColor = Color.GRAY
@@ -47,6 +48,7 @@ class Renderer(
         
         renderer2D.bindCamera(scene.camera)
         render2D(scene, pickingShader)
+        render3DPicking(scene)
         
         pickingTexture.disableWriting()
 
@@ -89,6 +91,38 @@ class Renderer(
         DebugDraw.draw()
         
         Window.getFrameBuffer().unbind()
+    }
+
+    private fun render3DPicking(scene: Scene) {
+        val camera = scene.camera
+        
+        pickingShader3D.start()
+        pickingShader3D.uploadMat4f("projectionMatrix", camera.createProjectionMatrix())
+        pickingShader3D.uploadMat4f("viewMatrix", camera.createViewMatrix())
+
+        scene.gameObjects.forEach { go ->
+            val entity = go.getComponent<Entity>()
+            if (entity != null && go.getComponent<com.pafoid.skate.engine.scenes.components.NonPickable>() == null) {
+                renderEntityPicking(go, entity)
+            }
+        }
+        pickingShader3D.stop()
+    }
+    
+    private fun renderEntityPicking(go: com.pafoid.skate.engine.scenes.GameObject, entity: Entity) {
+        val texturedModel = entity.model
+        val model = texturedModel.rawModel
+
+        glBindVertexArray(model.vaoId)
+        glEnableVertexAttribArray(0)
+        
+        pickingShader3D.uploadMat4f("transformationMatrix", entity.transform.toMatrix())
+        pickingShader3D.uploadFloat("uEntityId", go.getUid().toFloat() + 1) // +1 because 0 is background
+        
+        glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, 0)
+        
+        glDisableVertexAttribArray(0)
+        glBindVertexArray(0)
     }
 
     private fun render2D(scene: Scene, shader: Shader) {
@@ -140,6 +174,7 @@ class Renderer(
         batchShader.destroy()
         skyboxShader.destroy()
         pickingShader.destroy()
+        pickingShader3D.destroy()
     }
 
 }

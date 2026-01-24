@@ -7,14 +7,14 @@ import com.pafoid.skate.engine.scenes.GameObject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_E
 import org.lwjgl.glfw.GLFW.GLFW_KEY_R
 
-class GizmoSystem(private val gizmosSprites: SpriteSheet): Component() {
+class GizmoSystem: Component() {
 
     private var usingGizmo = TRANSLATE_GIZMO
 
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
-        this.gameObject.addComponent(TranslateGizmo(gizmosSprites.getSprite(1), Window.getImGuiLayer().propertiesWindow))
-        this.gameObject.addComponent(ScaleGizmo(gizmosSprites.getSprite(2), Window.getImGuiLayer().propertiesWindow))
+        this.gameObject.addComponent(TranslateGizmo(Window.getImGuiLayer().propertiesWindow))
+        this.gameObject.addComponent(ScaleGizmo(Window.getImGuiLayer().propertiesWindow))
     }
 
     override fun editorUpdate(dt: Float) {

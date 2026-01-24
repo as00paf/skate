@@ -21,7 +21,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     private lateinit var rawModel: RawModel
     private lateinit var texture: Texture
     private lateinit var texturedModel: TexturedModel
-    private lateinit var gizmoSprites: SpriteSheet
     
     private lateinit var editorStuff: GameObject
     lateinit var entity: Entity
@@ -33,10 +32,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     override fun loadResources(scene: Scene) {
         texture = AssetPool.getTexture(Texture.WHITE)
         
-        AssetPool.addSpriteSheet("assets/textures/gizmos.png", 
-            SpriteSheet(AssetPool.getTexture("assets/textures/gizmos.png"), 24, 48, 3, 0))
-        gizmoSprites = AssetPool.getSpriteSheet("assets/textures/gizmos.png")!!
-
         rawModel = ObjLoader().loadObjModel(ObjLoader.SKATEBOARD, loader)
         texturedModel = TexturedModel(rawModel, texture)
         entity = Entity(
@@ -52,7 +47,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff = scene.createGameObject("LevelEditor")
         editorStuff.setNoSerialize()
         editorStuff.addComponent(MouseControls())
-        editorStuff.addComponent(GizmoSystem(gizmoSprites))
+        editorStuff.addComponent(GizmoSystem())
         editorStuff.addComponent(EditorCamera(scene.camera))
         scene.addGameObjectToScene(editorStuff)
 
