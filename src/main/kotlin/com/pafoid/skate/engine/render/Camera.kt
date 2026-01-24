@@ -19,8 +19,19 @@ class Camera(
     var nearPlane = 0.1f
     var farPlane = 1000f
     
-    // Orthographic specific
-    var projectionSize = Vector2f(32f, 18f) // Default 16:9 units
+    var _projectionSize = Vector2f(32f, 18f) // Default 16:9 units
+    var zoom = 1.0f
+
+    fun addZoom(value: Float) {
+        zoom += value
+        if (zoom <= 0.1f) {
+            zoom = 0.1f
+        }
+    }
+
+    fun getProjectionSize(): Vector2f {
+        return _projectionSize
+    }
 
     fun move() {
         // Rotation
@@ -77,13 +88,13 @@ class Camera(
         val aspectRatio = 1920f / 1080f 
 
         if (isOrthographic) {
-            val left = -projectionSize.x / 2f
-            val right = projectionSize.x / 2f
-            val bottom = -projectionSize.y / 2f
-            val top = projectionSize.y / 2f
+            val left = -_projectionSize.x * zoom / 2f
+            val right = _projectionSize.x * zoom / 2f
+            val bottom = -_projectionSize.y * zoom / 2f
+            val top = _projectionSize.y * zoom / 2f
             projectionMatrix.ortho(left, right, bottom, top, nearPlane, farPlane)
         } else {
-            projectionMatrix.perspective(Math.toRadians(fov.toDouble()).toFloat(), aspectRatio, nearPlane, farPlane)
+            projectionMatrix.perspective(Math.toRadians(fov.toDouble()).toFloat() * zoom, aspectRatio, nearPlane, farPlane)
         }
 
         return projectionMatrix

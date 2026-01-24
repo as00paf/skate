@@ -28,11 +28,13 @@ class ShaderLoader(private var verbose:Boolean = false) {
         val splitSrc = src.split(SPLITTER_REGEX.toRegex())
 
         var index = src.indexOf(TYPE_DELIMITER) + TYPE_DELIMITER_COUNT
-        var eol = src.indexOf(EOL_DELIMITER, index)
+        var eol = src.indexOf("\n", index)
+        if (eol == -1) eol = src.length // In case it's the last line without EOL
         val firstPattern = src.substring(index, eol).trim()
 
         index = src.indexOf(TYPE_DELIMITER, eol) + TYPE_DELIMITER_COUNT
-        eol = src.indexOf(EOL_DELIMITER, index)
+        eol = src.indexOf("\n", index)
+        if (eol == -1) eol = src.length
         val secondPattern = src.substring(index, eol).trim()
 
         var vertexSrc = ""
@@ -43,7 +45,7 @@ class ShaderLoader(private var verbose:Boolean = false) {
         } else if(firstPattern == FRAGMENT) {
             fragmentSrc = splitSrc[2]
         } else {
-            throw IOException("Unexpected token '$firstPattern'")
+            throw IOException("Unexpected token '$firstPattern' in $filePath")
         }
 
         if(secondPattern == VERTEX) {
@@ -51,7 +53,7 @@ class ShaderLoader(private var verbose:Boolean = false) {
         } else if(secondPattern == FRAGMENT) {
             fragmentSrc = splitSrc[2]
         } else {
-            throw IOException("Unexpected token '$secondPattern'")
+            throw IOException("Unexpected token '$secondPattern' in $filePath")
         }
 
         if(verbose) {

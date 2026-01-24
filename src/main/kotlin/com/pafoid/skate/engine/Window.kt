@@ -21,6 +21,7 @@ class Window(
     companion object {
         private var instance: Window? = null
         fun getImGuiLayer(): ImGuiLayer = instance!!.imGuiLayer
+        fun getFrameBuffer(): com.pafoid.skate.engine.render.FrameBuffer = instance!!.frameBuffer
     }
 
     var currentWidth = width
@@ -28,6 +29,7 @@ class Window(
 
     private var glfwWindow: Long = -1L
     private val imGuiLayer = ImGuiLayer()
+    private lateinit var frameBuffer: com.pafoid.skate.engine.render.FrameBuffer
 
     init {
         instance = this
@@ -81,6 +83,7 @@ class Window(
         glEnable(GL_BLEND)
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
 
+        frameBuffer = com.pafoid.skate.engine.render.FrameBuffer(1920, 1080)
         glViewport(0, 0, width, height)
 
         installCallbacks()

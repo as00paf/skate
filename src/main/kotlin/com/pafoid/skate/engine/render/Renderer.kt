@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render
 
+import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.Scene
@@ -36,6 +37,8 @@ class Renderer(
     }
 
     fun render(scene: Scene) {
+        DebugDraw.beginFrame()
+
         // 1. Picking Pass
         pickingTexture.enableWriting()
         glViewport(0, 0, 1920, 1080)
@@ -48,9 +51,9 @@ class Renderer(
         pickingTexture.disableWriting()
 
         // 2. Regular Pass
+        Window.getFrameBuffer().bind()
         clearColor()
-        if (scene.gameObjects.isEmpty() && scene.cubemap == null) return
-
+        
         val camera = scene.camera
         val light = scene.light
 
@@ -72,15 +75,20 @@ class Renderer(
             }
         }
         
-        defaultShader.stop() // renderEntity uses shader, so stop before 2D
+        defaultShader.stop()
         
         // Render 2D
         render2D(scene, batchShader)
         
-        // Render Skybox (Last, but depth func is set to LEQUAL)
+        // Render Skybox
         scene.cubemap?.let {
             skyboxRenderer.render(camera, it)
         }
+
+        // 3. Debug Pass
+        DebugDraw.draw()
+        
+        Window.getFrameBuffer().unbind()
     }
 
     private fun render2D(scene: Scene, shader: Shader) {
@@ -130,6 +138,8 @@ class Renderer(
     fun destroy() {
         defaultShader.destroy()
         batchShader.destroy()
+        skyboxShader.destroy()
+        pickingShader.destroy()
     }
 
 }

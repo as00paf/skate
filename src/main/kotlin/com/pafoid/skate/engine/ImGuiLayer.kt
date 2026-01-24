@@ -22,6 +22,7 @@ class ImGuiLayer {
     
     val propertiesWindow = com.pafoid.skate.engine.editor.PropertiesWindow()
     private val hierarchyWindow = com.pafoid.skate.engine.editor.SceneHierarchyWindow(propertiesWindow)
+    val gameViewWindow = com.pafoid.skate.engine.editor.GameViewWindow()
 
     fun init(glfwWindow: Long) {
         ImGui.createContext()
@@ -55,6 +56,7 @@ class ImGuiLayer {
         currentScene.imgui()
         hierarchyWindow.imgui(currentScene)
         propertiesWindow.imgui()
+        gameViewWindow.imgui()
         
         // Simple demo window
         // ImGui.showDemoWindow()

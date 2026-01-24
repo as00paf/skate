@@ -22,13 +22,26 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     private lateinit var texture: Texture
     private lateinit var texturedModel: TexturedModel
     private lateinit var gizmoSprites: SpriteSheet
+    private lateinit var blocksSprites: SpriteSheet
+    private lateinit var peterSprites: SpriteSheet
+    
+    private lateinit var editorStuff: GameObject
     lateinit var entity: Entity
 
     override fun loadResources(scene: Scene) {
         texture = AssetPool.getTexture(Texture.WHITE)
+        
         AssetPool.addSpriteSheet("assets/textures/gizmos.png", 
             SpriteSheet(AssetPool.getTexture("assets/textures/gizmos.png"), 24, 48, 3, 0))
         gizmoSprites = AssetPool.getSpriteSheet("assets/textures/gizmos.png")!!
+
+        AssetPool.addSpriteSheet("assets/textures/blocksAndDecorations.png",
+            SpriteSheet(AssetPool.getTexture("assets/textures/blocksAndDecorations.png"), 32, 32, 14, 0))
+        blocksSprites = AssetPool.getSpriteSheet("assets/textures/blocksAndDecorations.png")!!
+
+        AssetPool.addSpriteSheet("assets/textures/peter_sprite.png",
+            SpriteSheet(AssetPool.getTexture("assets/textures/peter_sprite.png"), 100, 100, 26, 0))
+        peterSprites = AssetPool.getSpriteSheet("assets/textures/peter_sprite.png")!!
         
         rawModel = ObjLoader().loadObjModel(ObjLoader.SKATEBOARD, loader)
         texturedModel = TexturedModel(rawModel, texture)
@@ -41,7 +54,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
 
     override fun init(scene: Scene) {
         // Level Editor Stuff
-        val editorStuff = scene.createGameObject("LevelEditor")
+        editorStuff = scene.createGameObject("LevelEditor")
         editorStuff.setNoSerialize()
         editorStuff.addComponent(MouseControls())
         editorStuff.addComponent(GizmoSystem(gizmoSprites))
@@ -79,18 +92,55 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         groundGo.addComponent(Ground())
         
         scene.addGameObjectToScene(groundGo)
-
-        // 2D Object (Test Sprite)
-        val spriteGo = GameObject("sprite_test")
-        spriteGo.addComponent(Transform(Vector3f(-2f, 0f, -2f), Vector3f(1f, 1f, 1f)))
-        val spriteRenderer = SpriteRenderer(color = Vector4f(1f, 0f, 0f, 1f)) // Red sprite
-        val sprite = Sprite(texture)
-        spriteRenderer.setSprite(sprite)
-        spriteGo.addComponent(spriteRenderer)
-        scene.addGameObjectToScene(spriteGo)
     }
 
     override fun imgui() {
+        imgui.ImGui.begin("Level Editor")
+        editorStuff.imgui()
+        imgui.ImGui.end()
 
+        imgui.ImGui.begin("Objects")
+        if (imgui.ImGui.beginTabBar("WindowTabBar")) {
+            if (imgui.ImGui.beginTabItem("Blocks")) {
+                val windowSize = imgui.ImVec2()
+                imgui.ImGui.getContentRegionAvail(windowSize)
+                val itemSpacing = imgui.ImVec2()
+                imgui.ImGui.getStyle().getItemSpacing(itemSpacing)
+                
+                for (i in 0 until blocksSprites.size()) {
+                    val sprite = blocksSprites.getSprite(i)
+                    val id = sprite.getTexId()
+                    val texCoords = sprite.getTexCoords()
+
+                    imgui.ImGui.pushID(i)
+                    if (imgui.ImGui.imageButton("BlockButton_$i", id.toLong(), 32f, 32f, texCoords[2].x, texCoords[0].y, texCoords[0].x, texCoords[2].y)) {
+                        val block = com.pafoid.skate.engine.Prefabs.generateSpriteObject(sprite, 0.25f, 0.25f, "Block_$i")
+                        editorStuff.getComponent<MouseControls>()?.pickUpObject(block)
+                    }
+                    imgui.ImGui.popID()
+
+                    val lastButtonPos = imgui.ImVec2()
+                    imgui.ImGui.getItemRectMax(lastButtonPos)
+                    val lastButtonX2 = lastButtonPos.x
+                    val nextButtonX2 = lastButtonX2 + itemSpacing.x + 32f
+                    if (i + 1 < blocksSprites.size() && nextButtonX2 < imgui.ImGui.getWindowPosX() + windowSize.x) {
+                        imgui.ImGui.sameLine()
+                    }
+                }
+                imgui.ImGui.endTabItem()
+            }
+            
+            if (imgui.ImGui.beginTabItem("Prefabs")) {
+                val sprite = peterSprites.getSprite(0)
+                val texCoords = sprite.getTexCoords()
+                if (imgui.ImGui.imageButton("PeterButton", sprite.getTexId().toLong(), 32f, 32f, texCoords[2].x, texCoords[0].y, texCoords[0].x, texCoords[2].y)) {
+                    val peter = com.pafoid.skate.engine.Prefabs.generateSpriteObject(sprite, 0.25f, 0.25f, "Peter")
+                    editorStuff.getComponent<MouseControls>()?.pickUpObject(peter)
+                }
+                imgui.ImGui.endTabItem()
+            }
+            imgui.ImGui.endTabBar()
+        }
+        imgui.ImGui.end()
     }
 }
