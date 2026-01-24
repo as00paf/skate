@@ -1,6 +1,9 @@
 package com.pafoid.skate.engine.controls
 
+import com.pafoid.skate.engine.scenes.SceneManager
+import org.joml.Matrix4f
 import org.joml.Vector2f
+import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
@@ -20,7 +23,7 @@ object MouseListener {
     private var mouseButtonsDown = 0
     private var mouseButtonPressed = BooleanArray(9)
     private val gameViewportPos = Vector2f()
-    private val gameViewportSize = Vector2f()
+    private val gameViewportSize = Vector2f(1920f, 1080f) // Default size
 
     fun mousePosCallback(window: Long, xpos: Double, ypos: Double) {
         isDragging = mouseButtonsDown > 0
@@ -30,6 +33,10 @@ object MouseListener {
         lastWorldY = worldY
         xPos = xpos
         yPos = ypos
+        
+        val world = getWorld()
+        worldX = world.x.toDouble()
+        worldY = world.y.toDouble()
     }
 
     fun mouseButtonCallback(window: Long, button: Int, action: Int, mods: Int) {
@@ -74,6 +81,24 @@ object MouseListener {
 
     fun getWorldDy(): Float {
         return (lastWorldY - worldY).toFloat()
+    }
+
+    fun getWorldX(): Float = worldX.toFloat()
+    fun getWorldY(): Float = worldY.toFloat()
+
+    fun getWorld(): Vector2f {
+        var currentX: Float = getX() - gameViewportPos.x
+        currentX = 2.0f * (currentX / gameViewportSize.x) - 1.0f
+        var currentY: Float = getY() - gameViewportPos.y
+        currentY = 2.0f * (1.0f - currentY / gameViewportSize.y) - 1
+
+        val camera = SceneManager.getCurrentScene()?.camera ?: return Vector2f()
+        val tmp = Vector4f(currentX, currentY, 0f, 1f)
+        val inverseView = camera.getInverseView()
+        val inverseProjection = camera.getInverseProjection()
+        tmp.mul(inverseProjection.mul(inverseView))
+
+        return Vector2f(tmp.x, tmp.y)
     }
 
     fun setGameViewportPos(pos: Vector2f) {

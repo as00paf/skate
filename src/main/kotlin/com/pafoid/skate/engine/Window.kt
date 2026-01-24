@@ -18,11 +18,20 @@ class Window(
     val title: String
 ) {
 
+    companion object {
+        private var instance: Window? = null
+        fun getImGuiLayer(): ImGuiLayer = instance!!.imGuiLayer
+    }
+
     var currentWidth = width
     var currentHeight = height
 
     private var glfwWindow: Long = -1L
     private val imGuiLayer = ImGuiLayer()
+
+    init {
+        instance = this
+    }
 
     fun run() {
         init()

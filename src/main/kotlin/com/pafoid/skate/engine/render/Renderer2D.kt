@@ -50,10 +50,10 @@ class Renderer2D {
         Renderer2D.camera = camera
     }
 
-    fun render() {
+    fun render(shader: Shader = Renderer2D.shader) {
         // shader.start() is called inside batch.render() because it sets uniforms
         for (batch in batches) {
-            batch.render()
+            batch.render(shader)
         }
     }
     

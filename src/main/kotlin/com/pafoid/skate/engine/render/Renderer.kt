@@ -10,10 +10,12 @@ import org.lwjgl.opengl.GL30.*
 
 class Renderer(
     private val defaultShader: Shader,
-    private val batchShader: Shader
+    private val batchShader: Shader,
+    private val pickingShader: Shader
 ) {
     private val clearColor = Color.GRAY
     private val renderer2D = Renderer2D()
+    private val pickingTexture = PickingTexture(1920, 1080) // TODO: Match window size
 
     init {
         renderer2D.bindShader(batchShader)
@@ -32,6 +34,18 @@ class Renderer(
     }
 
     fun render(scene: Scene) {
+        // 1. Picking Pass
+        pickingTexture.enableWriting()
+        glViewport(0, 0, 1920, 1080)
+        glClearColor(0f, 0f, 0f, 0f)
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        
+        renderer2D.bindCamera(scene.camera)
+        render2D(scene, pickingShader)
+        
+        pickingTexture.disableWriting()
+
+        // 2. Regular Pass
         clearColor()
         if (scene.gameObjects.isEmpty()) return
 
@@ -49,24 +63,33 @@ class Renderer(
         defaultShader.uploadVec3f("lightPosition", light.position)
         defaultShader.uploadVec3f("lightColor", light.color)
 
-        // Using a fresh renderer2D for this frame to avoid state persistence issues (temporary)
-        val activeRenderer2D = Renderer2D()
-        activeRenderer2D.bindShader(batchShader)
-        activeRenderer2D.bindCamera(camera)
-
         scene.gameObjects.forEach { go ->
             go.getComponent<Entity>()?.let { entity ->
                 renderEntity(entity)
-            }
-            go.getComponent<SpriteRenderer>()?.let { sprite ->
-                activeRenderer2D.add(go)
             }
         }
         
         defaultShader.stop() // renderEntity uses shader, so stop before 2D
         
         // Render 2D
-        activeRenderer2D.render() 
+        render2D(scene, batchShader)
+    }
+
+    private fun render2D(scene: Scene, shader: Shader) {
+        val activeRenderer2D = Renderer2D()
+        activeRenderer2D.bindShader(shader)
+        activeRenderer2D.bindCamera(scene.camera)
+
+        scene.gameObjects.forEach { go ->
+            go.getComponent<SpriteRenderer>()?.let { sprite ->
+                activeRenderer2D.add(go)
+            }
+        }
+        activeRenderer2D.render()
+    }
+
+    fun readPixel(x: Int, y: Int): Int {
+        return pickingTexture.readPixel(x, y)
     }
 
     private fun renderEntity(entity: Entity) {

@@ -14,22 +14,41 @@ import org.joml.Vector3f
 
 class SceneManager {
 
+    companion object {
+        private var instance: SceneManager? = null
+        
+        fun get(): SceneManager {
+            if (instance == null) {
+                instance = SceneManager()
+            }
+            return instance!!
+        }
+        
+        fun getCurrentScene(): Scene? = get().currentScene
+    }
+
+    private var currentScene: Scene? = null
     private lateinit var shader3D: Shader
     private lateinit var shader2D: Shader
+    private lateinit var shaderPicking: Shader
     private lateinit var renderer: Renderer
-
-    private lateinit var currentScene: Scene
 
     fun initializeScene(imguiLayer: ImGuiLayer) {
         shader3D = AssetPool.getShader(Shader.SHADER_3D_DEFAULT)
         shader2D = AssetPool.getShader(Shader.SHADER_2D_BATCH)
-        renderer = Renderer(shader3D, shader2D)
+        shaderPicking = AssetPool.getShader(Shader.PICKING)
+        renderer = Renderer(shader3D, shader2D, shaderPicking)
 
         changeScene(LevelEditorSceneInitializer(), true)
     }
 
+    fun getPickedObject(x: Int, y: Int): GameObject? {
+        val id = renderer.readPixel(x, y)
+        return currentScene?.getGameObject(id)
+    }
+
     private fun changeScene(initializer: SceneInitializer, isFirstScene: Boolean = false) {
-        if (!isFirstScene) currentScene.destroy()
+        if (!isFirstScene) currentScene?.destroy()
 
         val scene = Scene(initializer)
         currentScene = scene
@@ -39,16 +58,18 @@ class SceneManager {
     }
 
     fun draw(dt: Float, imguiLayer: ImGuiLayer) {
-        if (dt >= 0) {
-            currentScene.update(dt)
-            renderer.render(currentScene)
-            imguiLayer.update(dt, currentScene)
+        val scene = currentScene
+        if (dt >= 0 && scene != null) {
+            scene.update(dt)
+            renderer.render(scene)
+            imguiLayer.update(dt, scene)
         }
     }
 
     fun destroy() {
         shader3D.destroy()
         shader2D.destroy()
+        shaderPicking.destroy()
         renderer.destroy()
     }
 }

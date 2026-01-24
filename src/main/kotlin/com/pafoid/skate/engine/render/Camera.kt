@@ -102,4 +102,12 @@ class Camera(
         return viewMatrix
     }
 
+    fun getInverseView(): Matrix4f {
+        return createViewMatrix().invert()
+    }
+
+    fun getInverseProjection(): Matrix4f {
+        return createProjectionMatrix().invert()
+    }
+
 }

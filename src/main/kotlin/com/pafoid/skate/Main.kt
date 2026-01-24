@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.pafcraft.GameLoop
 
 fun main(args:Array<String>){
-    val sceneManager = SceneManager()
+    val sceneManager = SceneManager.get()
     val window = Window(
         width = 512,
         height = 512,

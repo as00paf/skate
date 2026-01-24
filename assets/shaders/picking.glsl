@@ -34,14 +34,20 @@ in float fEntityId;
 
 uniform sampler2D uTextures[8];
 
-out vec4 color;
+out vec3 color;
 
 void main()
 {
+    vec4 texColor = vec4(1, 1, 1, 1);
+
     if(fTexId > 0) {
         int id = int(fTexId);
-        color = fColor * texture(uTextures[id], fTexCoords);
-    }else {
-        color = fColor;
+        texColor = fColor * texture(uTextures[id], fTexCoords);
     }
+
+    if(texColor.a < 0.1) {
+        discard;
+    }
+
+    color = vec3(fEntityId, fEntityId, fEntityId);
 }

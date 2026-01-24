@@ -78,9 +78,9 @@
 - [x] **Physics Components:** `Rigidbody2D`, `BoxCollider2D`, etc.
 - [x] **Physics System:** Integration into the Game Loop.
 
-### Milestone 7: Editor & UI [Current Focus]
+### Milestone 7: Editor & UI [Completed]
 - [x] **ImGui Integration:** Setup ImGui context and render loop.
-- [ ] **Level Editor Scene:** Gizmos, Object Picking, Hierarchy view (Hierarchy done).
+- [x] **Level Editor Scene:** Gizmos, Object Picking, Hierarchy view.
 - [x] **Scene Serialization:** Loading/Saving scenes with JSON.
 
 ### Milestone 8: 3D Rendering & Gameplay

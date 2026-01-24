@@ -94,7 +94,7 @@ class RenderBatch(
         }
     }
 
-    fun render() {
+    fun render(shader: Shader = Renderer2D.shader) {
         var rebufferData = false
         for (i in 0 until numSprites) {
             val spr = sprites[i]
@@ -111,7 +111,6 @@ class RenderBatch(
         }
 
         // Use shader
-        val shader = Renderer2D.shader
         shader.start()
 
         val viewMatrix = Renderer2D.camera.createViewMatrix()

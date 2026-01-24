@@ -20,7 +20,7 @@ class ImGuiLayer {
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"
     
-    private val propertiesWindow = com.pafoid.skate.engine.editor.PropertiesWindow()
+    val propertiesWindow = com.pafoid.skate.engine.editor.PropertiesWindow()
     private val hierarchyWindow = com.pafoid.skate.engine.editor.SceneHierarchyWindow(propertiesWindow)
 
     fun init(glfwWindow: Long) {
