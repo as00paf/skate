@@ -37,6 +37,9 @@ dependencies {
 
     // JBox2D
     implementation("org.jbox2d:jbox2d-library:2.2.1.1")
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
 }
 
 kotlin {

@@ -10,6 +10,7 @@ import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
+import imgui.flag.*
 import imgui.type.ImBoolean
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11.*
@@ -19,6 +20,8 @@ class ImGuiLayer {
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"
+    
+    private var firstFrame = true
     
     val propertiesWindow = com.pafoid.skate.engine.editor.PropertiesWindow()
     private val hierarchyWindow = com.pafoid.skate.engine.editor.SceneHierarchyWindow(propertiesWindow)
@@ -47,6 +50,26 @@ class ImGuiLayer {
         style.scrollbarRounding = 0f
 
         ImGui.styleColorsDark()
+    }
+
+    private fun setupLayout(dockspaceId: Int) {
+        if (!firstFrame) return
+        firstFrame = false
+
+        imgui.internal.ImGui.dockBuilderRemoveNode(dockspaceId)
+        imgui.internal.ImGui.dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.None)
+        imgui.internal.ImGui.dockBuilderSetNodeSize(dockspaceId, ImGui.getMainViewport().sizeX, ImGui.getMainViewport().sizeY)
+
+        val leftId = imgui.internal.ImGui.dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.2f, null, null)
+        val rightId = imgui.internal.ImGui.dockBuilderSplitNode(dockspaceId, ImGuiDir.Right, 0.25f, null, null)
+        val bottomId = imgui.internal.ImGui.dockBuilderSplitNode(dockspaceId, ImGuiDir.Down, 0.25f, null, null)
+
+        imgui.internal.ImGui.dockBuilderDockWindow("Scene Hierarchy", leftId)
+        imgui.internal.ImGui.dockBuilderDockWindow("Properties", rightId)
+        imgui.internal.ImGui.dockBuilderDockWindow("Objects", bottomId)
+        imgui.internal.ImGui.dockBuilderDockWindow("Game Viewport", dockspaceId)
+
+        imgui.internal.ImGui.dockBuilderFinish(dockspaceId)
     }
 
     fun update(dt: Float, currentScene: Scene) {
@@ -101,6 +124,7 @@ class ImGuiLayer {
         ImGui.popStyleVar(2)
 
         ImGui.dockSpace(ImGui.getID("DockSpace"))
+        setupLayout(ImGui.getID("DockSpace"))
 
         if (ImGui.beginMenuBar()) {
             if (ImGui.beginMenu("File")) {

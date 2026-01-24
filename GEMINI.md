@@ -90,4 +90,6 @@
 ### Milestone 9: Input & Advanced Assets [Current Focus]
 - [x] **Game Controller Support:** Implement GLFW joystick/gamepad listeners.
 - [x] **Assimp Enhancements:** Support for GLB and FBX model loading.
+- [x] **Threading Support:** Coroutines integration via `JobSystem`.
+- [x] **UI Layout:** Programmatic docking setup for editor windows.
 - [ ] **Particle System:** 2D/3D visual effects.
