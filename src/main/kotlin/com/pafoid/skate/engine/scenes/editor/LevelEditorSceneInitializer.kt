@@ -25,6 +25,10 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     
     private lateinit var editorStuff: GameObject
     lateinit var entity: Entity
+    
+    private var skateboardGo: GameObject? = null
+    private val physicsTuner = com.pafoid.skate.engine.editor.PhysicsTunerWindow()
+    private var currentScene: Scene? = null
 
     override fun loadResources(scene: Scene) {
         texture = AssetPool.getTexture(Texture.WHITE)
@@ -43,6 +47,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     }
 
     override fun init(scene: Scene) {
+        this.currentScene = scene
         // Level Editor Stuff
         editorStuff = scene.createGameObject("LevelEditor")
         editorStuff.setNoSerialize()
@@ -52,6 +57,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         scene.addGameObjectToScene(editorStuff)
 
         val skateboardGo = GameObject("skateboard")
+        this.skateboardGo = skateboardGo
         skateboardGo.addComponent(entity)
         
         val skateboardRb = RigidBody3D()
@@ -140,6 +146,17 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     }
 
     override fun imgui() {
+        val scene = currentScene
+        val sb = skateboardGo
+        if (scene != null && sb != null) {
+            physicsTuner.imgui(
+                scene.physics3d,
+                sb.getComponent<PlayerController>(),
+                sb.getComponent<SkateboardPhysics>(),
+                sb.getComponent<RigidBody3D>()
+            )
+        }
+
         imgui.ImGui.begin("Level Editor")
         editorStuff.imgui()
         imgui.ImGui.end()

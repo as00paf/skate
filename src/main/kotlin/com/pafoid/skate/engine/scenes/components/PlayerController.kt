@@ -15,6 +15,7 @@ class PlayerController : Component() {
     var steerSpeed = 2.0f
     var jumpImpulse = 10.0f
     var flickSensitivity = 5.0f
+    var catchStrength = 0.5f
     
     @Transient private var rb: RigidBody3D? = null
     @Transient private var physics: SkateboardPhysics? = null
@@ -116,7 +117,6 @@ class PlayerController : Component() {
             val diff = target - absAngle
             
             // Apply "magnetic" impulse
-            val catchStrength = 0.5f
             rb3d.rawBody?.applyTorqueImpulse(com.jme3.math.Vector3f(0f, 0f, diff * catchStrength * dt))
         }
     }

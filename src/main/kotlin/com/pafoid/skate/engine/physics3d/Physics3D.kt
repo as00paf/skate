@@ -19,6 +19,15 @@ class Physics3D {
         physicsSpace.setGravity(com.jme3.math.Vector3f(0f, -9.81f, 0f))
     }
 
+    fun getGravity(): Vector3f {
+        val g = physicsSpace.getGravity(null)
+        return Vector3f(g.x, g.y, g.z)
+    }
+
+    fun setGravity(gravity: Vector3f) {
+        physicsSpace.setGravity(com.jme3.math.Vector3f(gravity.x, gravity.y, gravity.z))
+    }
+
     fun rayTest(from: Vector3f, to: Vector3f): List<PhysicsRayTestResult> {
         val start = com.jme3.math.Vector3f(from.x, from.y, from.z)
         val end = com.jme3.math.Vector3f(to.x, to.y, to.z)
