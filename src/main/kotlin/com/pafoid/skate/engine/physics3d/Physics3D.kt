@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.physics3d
 
 import com.jme3.bullet.PhysicsSpace
+import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.pafoid.skate.engine.scenes.GameObject
@@ -14,6 +15,12 @@ class Physics3D {
 
     init {
         physicsSpace.setGravity(com.jme3.math.Vector3f(0f, -9.81f, 0f))
+    }
+
+    fun rayTest(from: Vector3f, to: Vector3f): List<PhysicsRayTestResult> {
+        val start = com.jme3.math.Vector3f(from.x, from.y, from.z)
+        val end = com.jme3.math.Vector3f(to.x, to.y, to.z)
+        return physicsSpace.rayTest(start, end)
     }
 
     fun add(go: GameObject) {

@@ -57,6 +57,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff.setNoSerialize()
         editorStuff.addComponent(MouseControls())
         editorStuff.addComponent(GizmoSystem(gizmoSprites))
+        editorStuff.addComponent(EditorCamera(scene.camera))
         scene.addGameObjectToScene(editorStuff)
 
         // 3D Object (Skateboard)
@@ -133,6 +134,18 @@ class LevelEditorSceneInitializer: SceneInitializer() {
                         val entityObj = com.pafoid.skate.engine.Prefabs.generateEntityObject(model, AssetPool.getTexture(Texture.WHITE), file.nameWithoutExtension)
                         editorStuff.getComponent<MouseControls>()?.pickUpObject(entityObj)
                     }
+                }
+                imgui.ImGui.endTabItem()
+            }
+
+            if (imgui.ImGui.beginTabItem("Tiles")) {
+                if (imgui.ImGui.button("Floor Tile (1x1)")) {
+                    val tile = com.pafoid.skate.engine.Prefabs.generateTileObject(1f, 0.1f, AssetPool.getTexture(Texture.GRASS), "FloorTile")
+                    editorStuff.getComponent<MouseControls>()?.pickUpObject(tile)
+                }
+                if (imgui.ImGui.button("Wall Tile (1x1)")) {
+                    val tile = com.pafoid.skate.engine.Prefabs.generateTileObject(0.1f, 1f, AssetPool.getTexture(Texture.GRASS), "WallTile")
+                    editorStuff.getComponent<MouseControls>()?.pickUpObject(tile)
                 }
                 imgui.ImGui.endTabItem()
             }

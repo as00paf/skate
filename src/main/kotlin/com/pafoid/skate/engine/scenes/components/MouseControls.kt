@@ -35,9 +35,14 @@ class MouseControls : Component() {
         debounce -= dt
 
         holdingObject?.let { go ->
+            val tile = go.getComponent<ModularTile>()
             val worldPos = MouseListener.getWorld()
-            val x = (floor(worldPos.x / gridWidth) * gridWidth) + gridWidth / 2f
-            val y = (floor(worldPos.y / gridHeight) * gridHeight) + gridHeight / 2f
+            
+            val snapX = tile?.size?.x ?: gridWidth
+            val snapY = tile?.size?.y ?: gridHeight
+            
+            val x = (floor(worldPos.x / snapX) * snapX) + snapX / 2f
+            val y = (floor(worldPos.y / snapY) * snapY) + snapY / 2f
             
             go.transform.translation.x = x
             go.transform.translation.y = y

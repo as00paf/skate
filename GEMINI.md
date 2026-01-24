@@ -28,11 +28,11 @@
 
 ## Roadmap / Todo List
 
-### Phase 1: Engine Foundation [Current Focus]
+### Phase 1: Engine Foundation [Completed]
 - [x] **Physics Migration:** Replace JBox2D with Bullet Physics.
 - [x] **Main Loop:** Implement a fixed physics timestep (60Hz) with variable rendering.
-- [ ] **JOML Camera:** Build a 3D camera system with Raycast Clipping (using `btCollisionWorld.rayTest`) to prevent geometry clipping.
-- [ ] **Modular Tile System:** Create a system to spawn/render floor tiles with **Vertex Snapping** logic to ensure flush surfaces.
+- [x] **JOML Camera:** Build a 3D camera system with Raycast Clipping (using `btCollisionWorld.rayTest`) to prevent geometry clipping.
+- [x] **Modular Tile System:** Create a system to spawn/render floor tiles with **Vertex Snapping** logic to ensure flush surfaces.
 
 ### Phase 2: Simulation Physics (The Board)
 - [ ] **Raycast Vehicle:** Implement 4 raycasts from deck corners for suspension.

@@ -22,6 +22,11 @@ class Camera(
     var _projectionSize = Vector2f(32f, 18f) // Default 16:9 units
     var zoom = 1.0f
 
+    // Third person / Spring arm
+    var target: Vector3f? = null
+    var desiredDistance = 10.0f
+    private var currentDistance = 10.0f
+
     fun addZoom(value: Float) {
         zoom += value
         if (zoom <= 0.1f) {
@@ -31,6 +36,63 @@ class Camera(
 
     fun getProjectionSize(): Vector2f {
         return _projectionSize
+    }
+
+    fun update(dt: Float) {
+        if (target != null) {
+            updateThirdPerson(dt)
+        } else {
+            move()
+        }
+    }
+
+    private fun updateThirdPerson(dt: Float) {
+        val targetPos = target!!
+        
+        // Mouse Rotation
+        if (glfwGetInputMode(glfwGetCurrentContext(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
+            val sensitivity = 0.1f
+            yaw += MouseListener.getDx() * sensitivity
+            pitch += MouseListener.getDy() * sensitivity
+            
+            if (pitch > 89f) pitch = 89f
+            if (pitch < -89f) pitch = -89f
+        }
+
+        // Calculate offset
+        val horizontalDist = desiredDistance * Math.cos(Math.toRadians(pitch.toDouble())).toFloat()
+        val verticalDist = desiredDistance * Math.sin(Math.toRadians(pitch.toDouble())).toFloat()
+        
+        val offsetX = horizontalDist * Math.sin(Math.toRadians(yaw.toDouble())).toFloat()
+        val offsetZ = horizontalDist * Math.cos(Math.toRadians(yaw.toDouble())).toFloat()
+        
+        val desiredPos = Vector3f(targetPos.x - offsetX, targetPos.y + verticalDist, targetPos.z + offsetZ)
+        
+        // Clipping
+        val finalPos = handleClipping(targetPos, desiredPos)
+        position.set(finalPos)
+    }
+
+    private fun handleClipping(from: Vector3f, to: Vector3f): Vector3f {
+        val scene = com.pafoid.skate.engine.scenes.SceneManager.getCurrentScene()
+        if (scene != null) {
+            val results = scene.physics3d.rayTest(from, to)
+            if (results.isNotEmpty()) {
+                var closestFraction = 1.0f
+                for (result in results) {
+                    if (result.hitFraction < closestFraction) {
+                        closestFraction = result.hitFraction
+                    }
+                }
+                
+                if (closestFraction < 1.0f) {
+                    // Move slightly away from the hit point to avoid near-plane clipping
+                    val clippedPos = Vector3f(from).lerp(to, closestFraction * 0.9f)
+                    return clippedPos
+                }
+            }
+        }
+        return to
     }
 
     fun move() {

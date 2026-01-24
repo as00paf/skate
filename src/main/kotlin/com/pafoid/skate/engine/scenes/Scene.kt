@@ -59,7 +59,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     }
 
     fun editorUpdate(dt: Float) {
-        camera.move()//camera.adjustProjection()
+        camera.update(dt)//camera.adjustProjection()
 
         var i = 0
         while (i < gameObjects.size) {
@@ -84,7 +84,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
 
     fun update(dt: Float) {
-        camera.move() 
+        camera.update(dt) 
         physics3d.update(dt)
 
         var i = 0

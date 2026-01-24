@@ -7,7 +7,7 @@ import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.scenes.components.SpriteRenderer
+import com.pafoid.skate.engine.scenes.components.*
 import org.joml.Vector2f
 import org.joml.Vector3f
 
@@ -34,6 +34,28 @@ object Prefabs {
         go.addComponent(entity)
         
         // Link entity transform to game object transform for consistency
+        entity.transform.copyFrom(go.transform)
+        
+        return go
+    }
+
+    fun generateTileObject(sizeX: Float, sizeY: Float, texture: Texture, name: String = "Tile_Gen"): GameObject {
+        val scene = SceneManager.getCurrentScene() ?: throw IllegalStateException("No active scene")
+        val go = scene.createGameObject(name)
+        
+        val tile = ModularTile()
+        tile.size.set(sizeX, sizeY, 1f)
+        go.addComponent(tile)
+        
+        // We use a cube as the base model for tiles
+        val loader = com.pafoid.skate.engine.render.VAOLoader() // Inefficient to create here, but for now...
+        val cubeModel = com.pafoid.skate.engine.assets.AssetPool.getRawModel(com.pafoid.skate.engine.assets.ObjLoader.CUBE, loader)
+        
+        val texturedModel = TexturedModel(cubeModel, texture)
+        val entity = Entity(texturedModel)
+        go.addComponent(entity)
+        
+        go.transform.scale.set(sizeX, sizeY, 1f)
         entity.transform.copyFrom(go.transform)
         
         return go
