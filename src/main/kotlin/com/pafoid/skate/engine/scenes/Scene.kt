@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.scenes
 import com.google.gson.GsonBuilder
 import com.pafoid.skate.engine.Transform
 import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.assets.Cubemap
 import com.pafoid.skate.engine.physics2d.Physics2D
 import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.render.Renderer
@@ -18,6 +19,8 @@ import java.nio.file.Paths
 class Scene(private val initializer: SceneInitializer, val camera: Camera = Camera()) {
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
+    var ambientLight: Vector3f = Vector3f(0.2f, 0.2f, 0.2f)
+    var cubemap: Cubemap? = null
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
     val physics2d = Physics2D()

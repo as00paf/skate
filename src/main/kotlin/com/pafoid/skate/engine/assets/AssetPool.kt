@@ -8,6 +8,7 @@ object AssetPool {
 
     private val shaders = mutableMapOf<String, Shader>()
     private val textures = mutableMapOf<String, Texture>()
+    private val cubemaps = mutableMapOf<String, Cubemap>()
     private val spriteSheets = mutableMapOf<String, SpriteSheet>()
     private val sounds = mutableMapOf<String, Sound>()
 
@@ -19,6 +20,17 @@ object AssetPool {
             val shader = shaderLoader.loadShader(filePath)
             shaders[file.absolutePath] = shader
             shader
+        }
+    }
+
+    fun getCubemap(filePaths: Array<String>): Cubemap {
+        val key = filePaths.joinToString("|")
+        return if(cubemaps.containsKey(key)) {
+            cubemaps[key]!!
+        } else {
+            val cubemap = Cubemap().init(filePaths)
+            cubemaps[key] = cubemap
+            cubemap
         }
     }
 

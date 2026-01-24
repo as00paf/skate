@@ -23,6 +23,13 @@ class VAOLoader {
         return RawModel(vaoId, indices.size)
     }
 
+    fun loadToVAO(positions: FloatArray, coordinateSize: Int): RawModel {
+        val vaoId = createVAO()
+        storeDataInAttribList(0, coordinateSize, positions)
+        unbindVAO()
+        return RawModel(vaoId, positions.size / coordinateSize)
+    }
+
     private fun createVAO(): Int {
         val vaoId = glGenVertexArrays()
         glBindVertexArray(vaoId)

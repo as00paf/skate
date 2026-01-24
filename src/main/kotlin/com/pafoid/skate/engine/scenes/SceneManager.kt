@@ -31,13 +31,15 @@ class SceneManager {
     private lateinit var shader3D: Shader
     private lateinit var shader2D: Shader
     private lateinit var shaderPicking: Shader
+    private lateinit var shaderSkybox: Shader
     private lateinit var renderer: Renderer
 
     fun initializeScene(imguiLayer: ImGuiLayer) {
         shader3D = AssetPool.getShader(Shader.SHADER_3D_DEFAULT)
         shader2D = AssetPool.getShader(Shader.SHADER_2D_BATCH)
         shaderPicking = AssetPool.getShader(Shader.PICKING)
-        renderer = Renderer(shader3D, shader2D, shaderPicking)
+        shaderSkybox = AssetPool.getShader(Shader.SKYBOX)
+        renderer = Renderer(shader3D, shader2D, shaderPicking, shaderSkybox)
 
         changeScene(LevelEditorSceneInitializer(), true)
     }
@@ -70,6 +72,7 @@ class SceneManager {
         shader3D.destroy()
         shader2D.destroy()
         shaderPicking.destroy()
+        shaderSkybox.destroy()
         renderer.destroy()
     }
 }

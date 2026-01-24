@@ -11,11 +11,13 @@ import org.lwjgl.opengl.GL30.*
 class Renderer(
     private val defaultShader: Shader,
     private val batchShader: Shader,
-    private val pickingShader: Shader
+    private val pickingShader: Shader,
+    private val skyboxShader: Shader
 ) {
     private val clearColor = Color.GRAY
     private val renderer2D = Renderer2D()
     private val pickingTexture = PickingTexture(1920, 1080) // TODO: Match window size
+    private val skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
 
     init {
         renderer2D.bindShader(batchShader)
@@ -47,7 +49,7 @@ class Renderer(
 
         // 2. Regular Pass
         clearColor()
-        if (scene.gameObjects.isEmpty()) return
+        if (scene.gameObjects.isEmpty() && scene.cubemap == null) return
 
         val camera = scene.camera
         val light = scene.light
@@ -62,6 +64,7 @@ class Renderer(
         defaultShader.start()
         defaultShader.uploadVec3f("lightPosition", light.position)
         defaultShader.uploadVec3f("lightColor", light.color)
+        defaultShader.uploadVec3f("uAmbientLight", scene.ambientLight)
 
         scene.gameObjects.forEach { go ->
             go.getComponent<Entity>()?.let { entity ->
@@ -73,6 +76,11 @@ class Renderer(
         
         // Render 2D
         render2D(scene, batchShader)
+        
+        // Render Skybox (Last, but depth func is set to LEQUAL)
+        scene.cubemap?.let {
+            skyboxRenderer.render(camera, it)
+        }
     }
 
     private fun render2D(scene: Scene, shader: Shader) {
@@ -101,6 +109,8 @@ class Renderer(
         glEnableVertexAttribArray(1)
         glEnableVertexAttribArray(2)
         defaultShader.uploadMat4f("transformationMatrix", entity.transform.toMatrix())
+        defaultShader.uploadFloat("uShininess", entity.shininess)
+        defaultShader.uploadFloat("uReflectivity", entity.reflectivity)
         
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, texturedModel.texture.getId())

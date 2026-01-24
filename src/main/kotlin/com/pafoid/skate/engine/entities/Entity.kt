@@ -8,6 +8,8 @@ import org.joml.Vector3f
 class Entity(
     val model: TexturedModel,
     val transform: Transform = Transform(),
+    var shininess: Float = 10f,
+    var reflectivity: Float = 1f,
     val onTick: (dt:Float) -> Unit = {}
 ): Component() {
 
