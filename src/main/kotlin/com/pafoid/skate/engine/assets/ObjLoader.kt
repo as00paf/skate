@@ -96,7 +96,6 @@ class ObjLoader {
 
     companion object {
         const val CUBE = "assets/obj/cube.obj"
-        const val DRAGON = "assets/obj/dragon.obj"
-        const val STALL = "assets/obj/stall.obj"
+        const val SKATEBOARD = "assets/obj/skateboard.obj"
     }
 }

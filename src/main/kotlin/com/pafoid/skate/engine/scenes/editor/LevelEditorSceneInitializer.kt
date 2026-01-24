@@ -29,7 +29,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
             SpriteSheet(AssetPool.getTexture("assets/textures/gizmos.png"), 24, 48, 3, 0))
         gizmoSprites = AssetPool.getSpriteSheet("assets/textures/gizmos.png")!!
         
-        rawModel = ObjLoader().loadObjModel(ObjLoader.CUBE, loader)
+        rawModel = ObjLoader().loadObjModel(ObjLoader.SKATEBOARD, loader)
         texturedModel = TexturedModel(rawModel, texture)
         entity = Entity(
             model = texturedModel,
@@ -46,10 +46,10 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff.addComponent(GizmoSystem(gizmoSprites))
         scene.addGameObjectToScene(editorStuff)
 
-        // 3D Object
-        val cubeGo = GameObject("cube")
-        cubeGo.addComponent(entity)
-        scene.addGameObjectToScene(cubeGo)
+        // 3D Object (Skateboard)
+        val skateboardGo = GameObject("skateboard")
+        skateboardGo.addComponent(entity)
+        scene.addGameObjectToScene(skateboardGo)
 
         // 2D Object (Test Sprite)
         val spriteGo = GameObject("sprite_test")
