@@ -139,6 +139,20 @@ class LevelEditorSceneInitializer: SceneInitializer() {
                 }
                 imgui.ImGui.endTabItem()
             }
+
+            if (imgui.ImGui.beginTabItem("Models")) {
+                val objDir = java.io.File("assets/obj")
+                val files = objDir.listFiles { _, name -> name.endsWith(".obj") || name.endsWith(".glb") || name.endsWith(".fbx") }
+                
+                files?.forEach { file ->
+                    if (imgui.ImGui.button(file.name)) {
+                        val model = AssetPool.getRawModel(file.path, loader)
+                        val entityObj = com.pafoid.skate.engine.Prefabs.generateEntityObject(model, AssetPool.getTexture(Texture.WHITE), file.nameWithoutExtension)
+                        editorStuff.getComponent<MouseControls>()?.pickUpObject(entityObj)
+                    }
+                }
+                imgui.ImGui.endTabItem()
+            }
             imgui.ImGui.endTabBar()
         }
         imgui.ImGui.end()

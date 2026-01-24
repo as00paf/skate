@@ -51,6 +51,7 @@ class Window(
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE)
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE)
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE) // Remove borders for windowed fullscreen
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
 
@@ -61,9 +62,12 @@ class Window(
         val winWidth = videoMode?.width() ?: width
         val winHeight = videoMode?.height() ?: height
 
-        // Create the window
-        glfwWindow = glfwCreateWindow(winWidth, winHeight, title, primaryMonitor, NULL)
+        // Create the window (passing NULL for monitor makes it windowed)
+        glfwWindow = glfwCreateWindow(winWidth, winHeight, title, NULL, NULL)
         if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
+        
+        // Center/Position at 0,0
+        glfwSetWindowPos(glfwWindow, 0, 0)
         
         currentWidth = winWidth
         currentHeight = winHeight
