@@ -17,9 +17,12 @@ class PlayerController : Component() {
     var flickSensitivity = 5.0f
     
     @Transient private var rb: RigidBody3D? = null
+    @Transient private var physics: SkateboardPhysics? = null
+    @Transient private var lastVelocity = com.jme3.math.Vector3f()
 
     override fun start() {
         rb = gameObject.getComponent<RigidBody3D>()
+        physics = gameObject.getComponent<SkateboardPhysics>()
     }
 
     override fun update(dt: Float) {
@@ -28,6 +31,75 @@ class PlayerController : Component() {
         handleJumping()
         handleFlicks(dt)
         handleCatch(dt)
+        checkBail()
+
+        rb?.rawBody?.getLinearVelocity(lastVelocity)
+    }
+
+    private fun checkBail() {
+        val phys = physics ?: return
+        val raw = rb?.rawBody ?: return
+        
+        val currentVelocity = com.jme3.math.Vector3f()
+        raw.getLinearVelocity(currentVelocity)
+
+        if (phys.isGrounded) {
+            val transform = gameObject.transform.toMatrix()
+            val localUp = Vector3f(0f, 1f, 0f)
+            val worldUp = Vector3f()
+            transform.transformDirection(localUp, worldUp)
+
+            // Orientation bail
+            if (worldUp.y < 0f) {
+                bail()
+                return
+            }
+
+            // High impact bail (large vertical velocity change)
+            val dv = com.jme3.math.Vector3f(currentVelocity).subtract(lastVelocity)
+            if (dv.length() > 20f) { // Arbitrary threshold for "slam"
+                bail()
+                return
+            }
+        }
+    }
+
+    private fun bail() {
+        // Transition to Tumble Cube
+        val scene = com.pafoid.skate.engine.scenes.SceneManager.getCurrentScene() ?: return
+        
+        val tumbleCube = com.pafoid.skate.engine.Prefabs.generateEntityObject(
+            com.pafoid.skate.engine.assets.AssetPool.getRawModel(com.pafoid.skate.engine.assets.ObjLoader.CUBE, com.pafoid.skate.engine.render.VAOLoader()),
+            com.pafoid.skate.engine.assets.AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE),
+            "TumbleCube"
+        )
+        
+        tumbleCube.transform.translation.set(gameObject.transform.translation)
+        tumbleCube.transform.rotation.set(gameObject.transform.rotation)
+        
+        val cubeRb = RigidBody3D(mass = 5f)
+        tumbleCube.addComponent(cubeRb)
+        
+        val cubeCollider = com.pafoid.skate.engine.physics3d.components.BoxCollider3D()
+        cubeCollider.halfExtents.set(0.5f, 0.5f, 0.5f)
+        tumbleCube.addComponent(cubeCollider)
+        
+        scene.addGameObjectToScene(tumbleCube)
+        // Add to physics immediately so we can set velocity
+        scene.physics3d.add(tumbleCube)
+        
+        // Inherit velocity
+        val linVel = com.jme3.math.Vector3f()
+        val angVel = com.jme3.math.Vector3f()
+        rb?.rawBody?.getLinearVelocity(linVel)
+        rb?.rawBody?.getAngularVelocity(angVel)
+        
+        cubeRb.rawBody?.setLinearVelocity(linVel)
+        cubeRb.rawBody?.setAngularVelocity(angVel)
+        
+        // Disable this controller
+        this.enabled = false
+        physics?.enabled = false
     }
 
     private fun handleCatch(dt: Float) {

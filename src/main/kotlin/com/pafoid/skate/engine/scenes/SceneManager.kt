@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
-import com.pafoid.skate.pafcraft.GameLoop
 import org.joml.Vector3f
 
 class SceneManager {

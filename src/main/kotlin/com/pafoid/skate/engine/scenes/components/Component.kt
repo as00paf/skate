@@ -27,6 +27,7 @@ abstract class Component {
     }
 
     private var uId = -1
+    var enabled = true
 
     @Transient
     lateinit var gameObject: GameObject

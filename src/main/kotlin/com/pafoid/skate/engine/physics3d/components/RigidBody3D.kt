@@ -6,8 +6,9 @@ import com.pafoid.skate.engine.physics3d.enums.BodyType
 import com.jme3.math.Vector3f
 import com.jme3.math.Quaternion
 
-class RigidBody3D(val mass: Float = 1.0f) : Component() {
+class RigidBody3D(var mass: Float = 1.0f) : Component() {
     var bodyType: BodyType = BodyType.Dynamic
+    var friction: Float = 0.5f
     @Transient var rawBody: PhysicsRigidBody? = null
 
     override fun update(dt: Float) {

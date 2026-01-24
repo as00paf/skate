@@ -74,6 +74,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         skateboardGo.addComponent(truckBack)
         
         skateboardGo.addComponent(PlayerController())
+        skateboardGo.addComponent(SkateboardPhysics())
         
         scene.addGameObjectToScene(skateboardGo)
 
@@ -100,11 +101,27 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         
         val railRb = RigidBody3D()
         railRb.bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static
+        railRb.friction = 0.05f
         railGo.addComponent(railRb)
         
         val railCollider = CylinderCollider3D(0.1f, 10f, 0) // X-axis rail
         railGo.addComponent(railCollider)
         scene.addGameObjectToScene(railGo)
+
+        // Ledge
+        val ledgeGo = GameObject("ledge")
+        ledgeGo.transform.translation.set(-5f, -1.75f, -5f)
+        ledgeGo.transform.scale.set(4f, 0.5f, 2f)
+        
+        val ledgeRb = RigidBody3D()
+        ledgeRb.bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static
+        ledgeRb.friction = 0.1f
+        ledgeGo.addComponent(ledgeRb)
+        
+        val ledgeCollider = BoxCollider3D()
+        ledgeCollider.halfExtents.set(2f, 0.25f, 1f)
+        ledgeGo.addComponent(ledgeCollider)
+        scene.addGameObjectToScene(ledgeGo)
 
         // Kicker
         val kickerGo = GameObject("kicker")

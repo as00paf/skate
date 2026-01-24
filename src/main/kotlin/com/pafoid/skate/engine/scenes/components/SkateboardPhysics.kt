@@ -23,6 +23,8 @@ class SkateboardPhysics : Component() {
 
     @Transient private lateinit var rb: RigidBody3D
     private val worldUp = Vector3f(0f, 1f, 0f)
+    var isGrounded = false
+        private set
 
     override fun start() {
         rb = gameObject.getComponent<RigidBody3D>() ?: throw IllegalStateException("SkateboardPhysics requires RigidBody3D")
@@ -32,6 +34,7 @@ class SkateboardPhysics : Component() {
         val scene = SceneManager.getCurrentScene() ?: return
         val transform = gameObject.transform.toMatrix()
         
+        var groundedCount = 0
         offsets.forEach { offset ->
             // Calculate ray start and end in world space
             val rayStart = Vector3f(offset).mulProject(transform)
@@ -46,8 +49,10 @@ class SkateboardPhysics : Component() {
             if (results.isNotEmpty()) {
                 val closest = results.minByOrNull { it.hitFraction }!!
                 applySuspensionForce(closest, rayStart, localDown)
+                groundedCount++
             }
         }
+        isGrounded = groundedCount > 0
     }
 
     private fun applySuspensionForce(hit: PhysicsRayTestResult, rayStart: Vector3f, localDown: Vector3f) {

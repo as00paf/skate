@@ -23,6 +23,7 @@ open class GameObject(
 
     private var isDead: Boolean = false
     private var doSerialization = true
+    private var isEnabled = true
     private var uId = ID_COUNTER++
 
     val components = mutableListOf<Component>()
@@ -52,12 +53,21 @@ open class GameObject(
     }
 
     fun update(dt: Float) {
-        components.forEach { it.update(dt) }
+        if (!isEnabled) return
+        components.forEach { 
+            if (it.enabled) it.update(dt) 
+        }
     }
 
     fun editorUpdate(dt: Float) {
-        components.forEach { it.editorUpdate(dt) }
+        if (!isEnabled) return
+        components.forEach { 
+            if (it.enabled) it.editorUpdate(dt) 
+        }
     }
+
+    fun isEnabled(): Boolean = isEnabled
+    fun setEnabled(enabled: Boolean) { isEnabled = enabled }
 
     fun imgui() {
         components.forEach {

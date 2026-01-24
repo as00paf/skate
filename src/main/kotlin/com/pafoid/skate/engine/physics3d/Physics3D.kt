@@ -50,6 +50,7 @@ class Physics3D {
 
             val mass = if (rb.bodyType == com.pafoid.skate.engine.physics3d.enums.BodyType.Static) 0f else rb.mass
             val body = PhysicsRigidBody(compound, mass)
+            body.setFriction(rb.friction)
             val trans = go.transform.translation
             body.setPhysicsLocation(com.jme3.math.Vector3f(trans.x, trans.y, trans.z))
             
