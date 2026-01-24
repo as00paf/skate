@@ -83,6 +83,6 @@
 - [x] **Level Editor Scene:** Gizmos, Object Picking, Hierarchy view.
 - [x] **Scene Serialization:** Loading/Saving scenes with JSON.
 
-### Milestone 8: 3D Rendering & Gameplay
-- [ ] **Advanced 3D:** Lighting (Ambient, Diffuse, Specular), Skybox.
+### Milestone 8: 3D Rendering & Gameplay [Current Focus]
+- [x] **Advanced 3D:** Lighting (Ambient, Diffuse, Specular), Skybox.
 - [ ] **Skateboarding Mechanics:** Player controller, physics tuning.

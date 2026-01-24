@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
 import com.pafoid.skate.engine.scenes.components.*
+import com.pafoid.skate.engine.physics2d.components.*
 import org.joml.Vector3f
 import org.joml.Vector4f
 
@@ -49,7 +50,35 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         // 3D Object (Skateboard)
         val skateboardGo = GameObject("skateboard")
         skateboardGo.addComponent(entity)
+        
+        val rb = RigidBody2D()
+        rb.mass = 1f
+        rb.friction = 0.5f
+        skateboardGo.addComponent(rb)
+        
+        val collider = Box2DCollider()
+        collider.halfSize.set(1.5f, 0.25f) // Roughly deck size
+        skateboardGo.addComponent(collider)
+        
+        skateboardGo.addComponent(PlayerController())
+        
         scene.addGameObjectToScene(skateboardGo)
+
+        // Ground
+        val groundGo = GameObject("ground")
+        groundGo.transform.translation.set(0f, -2f, -5f)
+        groundGo.transform.scale.set(20f, 0.5f, 5f)
+        
+        val groundRb = RigidBody2D()
+        groundRb.bodyType = com.pafoid.skate.engine.physics2d.enums.BodyType.Static
+        groundGo.addComponent(groundRb)
+        
+        val groundCollider = Box2DCollider()
+        groundCollider.halfSize.set(10f, 0.25f)
+        groundGo.addComponent(groundCollider)
+        groundGo.addComponent(Ground())
+        
+        scene.addGameObjectToScene(groundGo)
 
         // 2D Object (Test Sprite)
         val spriteGo = GameObject("sprite_test")
