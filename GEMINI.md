@@ -52,8 +52,8 @@
 - [x] **Bail Logic:** Transition to "Tumble Cube" on high impact or bad landing orientation ($> 90^\circ$ from up).
 
 ### Phase 4: Sandbox & Editor Tools [Current Focus]
-- [ ] **ImGui Physics Tuner:** Sliders for Gravity, PopForce, Friction, SuspensionStiffness, and CatchStrength.
-- [ ] **Transform Gizmos:** 3D arrows in Edit Mode for modular tiles and obstacles.
+- [x] **ImGui Physics Tuner:** Sliders for Gravity, PopForce, Friction, SuspensionStiffness, and CatchStrength.
+- [x] **Transform Gizmos:** 3D arrows in Edit Mode for modular tiles and obstacles.
 - [ ] **Trick Labeler:** Analyzer for Pitch/Yaw/Roll degrees to string together names (e.g., "Kickflip 180").
 - [ ] **Persistence:** Save/Load level layouts and physics configs to JSON.
 
