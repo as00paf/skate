@@ -73,6 +73,7 @@ class Window(
         glViewport(0, 0, width, height)
 
         installCallbacks()
+        com.pafoid.skate.engine.controls.JoystickListener.init()
 
         imGuiLayer.init(glfwWindow)
         initCallback(imGuiLayer)

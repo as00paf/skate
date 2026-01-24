@@ -88,6 +88,6 @@
 - [x] **Skateboarding Mechanics:** Player controller, physics tuning.
 
 ### Milestone 9: Input & Advanced Assets [Current Focus]
-- [ ] **Game Controller Support:** Implement GLFW joystick/gamepad listeners.
+- [x] **Game Controller Support:** Implement GLFW joystick/gamepad listeners.
 - [ ] **Assimp Enhancements:** Support for GLB and FBX model loading.
 - [ ] **Particle System:** 2D/3D visual effects.
