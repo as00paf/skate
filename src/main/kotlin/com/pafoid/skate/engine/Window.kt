@@ -48,16 +48,23 @@ class Window(
         glfwDefaultWindowHints()
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE)
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
-        glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE)
+        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
 
-        // Create the window
-        glfwWindow = glfwCreateWindow(width, height, title, NULL, NULL)
-        if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
+        // Get the primary monitor and its video mode
+        val primaryMonitor = glfwGetPrimaryMonitor()
+        val videoMode = glfwGetVideoMode(primaryMonitor)
+        
+        val winWidth = videoMode?.width() ?: width
+        val winHeight = videoMode?.height() ?: height
 
-        // Make the OpenGL context current
-        glfwMakeContextCurrent(glfwWindow)
+        // Create the window
+        glfwWindow = glfwCreateWindow(winWidth, winHeight, title, primaryMonitor, NULL)
+        if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
+        
+        currentWidth = winWidth
+        currentHeight = winHeight
         // Enable v-sync
         glfwSwapInterval(1)
 
