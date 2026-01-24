@@ -96,9 +96,8 @@ class Shader(
     }
 
     companion object {
-        const val TEST = "assets/shaders/test.glsl"
-        const val TEST2 = "assets/shaders/test2.glsl"
-        const val DEFAULT = "assets/shaders/default.glsl"
+        const val SHADER_3D_DEFAULT = "assets/shaders/shader_3d_default.glsl"
+        const val SHADER_2D_BATCH = "assets/shaders/shader_2d_batch.glsl"
         const val PICKING = "assets/shaders/picking.glsl"
         const val DEBUG = "assets/shaders/debugLine2D.glsl"
     }

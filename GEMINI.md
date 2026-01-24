@@ -4,7 +4,7 @@
 
 **Skate** is a Kotlin-based game engine project aiming to combine the best features of a 2D engine (**MinePaf**) and a 3D engine (**PafCraft**) into a unified, high-performance engine capable of supporting both dimensions.
 
-**Current Status:** The project structure is initialized and populated with core engine classes. We are currently in the process of porting and refactoring features from the legacy projects into this new unified architecture.
+**Current Status:** The project structure is initialized and populated with core engine classes. We are currently in the process of porting and refactoring features from the legacy projects into this new unified architecture. Milestone 4 (2D Rendering basics) is largely complete.
 
 ## Project History & Goals
 
@@ -20,7 +20,16 @@
 *   **SOLID Principles:** Rigorous adherence to Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion principles.
 *   **Clean Architecture:** Separation of concerns. Isolate core business logic/game logic from external frameworks (rendering library, input handling) where possible.
 *   **Kotlin Idioms:** Leverage Kotlin's specific features (Extensions, Coroutines, Sealed Classes, Delegates, Null Safety) for concise and safe code.
-*   **Workflow:** The user will explicitly confirm when a milestone is complete before proceeding to the next item on the Todo list.
+
+## Workflow & Guidelines
+
+1.  **Feature Branches:** Before starting a task, create a branch named `feature/description` (e.g., `feature/orthographic-camera`).
+2.  **Small Commits:** Commit often with clear messages to track changes easily.
+3.  **Project Cleanliness:** Ensure the project is clean (unused files removed, code refactored) before starting a new task.
+4.  **Completion & Merging:**
+    *   Push code to the feature branch when an item is done.
+    *   Explicitly request user confirmation before merging to `master` and updating the Todo list.
+5.  **UI Strategy:** Use **ImGui** for the Level Editor and Debug UI.
 
 ## Tech Stack
 
@@ -30,64 +39,50 @@
     *   LWJGL (Core, Assimp, GLFW, OpenAL, OpenGL, STB)
     *   JOML (Java OpenGL Math Library)
     *   LWJGL3-AWT (AWT integration)
+    *   **JBox2D:** For Physics.
+    *   **ImGui:** For UI/Editor.
 *   **Testing:** JUnit Platform, Kotlin Test
 
 ## Roadmap / Todo List
 
-### Milestone 1: Core Infrastructure [In Progress]
-- [ ] **Windowing System:** Abstraction over GLFW window creation and management.
-- [ ] **Input Handling:** Robust Keyboard and Mouse listeners with event polling.
-- [ ] **Game Loop:** Fixed time-step loop (`Time`, `delta_time`).
-- [ ] **Math Library Integration:** standardizing on JOML for Vectors/Matrices.
+### Milestone 1: Core Infrastructure [Completed]
+- [x] **Windowing System:** Abstraction over GLFW window creation and management.
+- [x] **Input Handling:** Robust Keyboard and Mouse listeners with event polling.
+- [x] **Game Loop:** Fixed time-step loop (`Time`, `delta_time`).
+- [x] **Math Library Integration:** Standardizing on JOML.
+- [x] **Refactoring:** Decoupled Renderer from SceneManager.
 
-### Milestone 2: Asset Management
-- [ ] **Resource Management System:** Centralized `AssetPool` or Manager.
-- [ ] **Shader System:** Loading, compiling, and linking GLSL shaders.
-- [ ] **Texture System:** Loading images (STB) and creating OpenGL textures.
-- [ ] **Audio System:** Integration of OpenAL for sound playback (from MinePaf/PafCraft).
+### Milestone 2: Asset Management [Completed]
+- [x] **Resource Management System:** `AssetPool`.
+- [x] **Shader System:** Basic loading and compilation.
+- [x] **Texture System:** Basic loading.
+- [x] **Audio System:** Integration of OpenAL (Basic support present).
 
-### Milestone 3: Scene & Entity Architecture
-- [ ] **Scene Management:** Abstract `Scene` class and `SceneManager` for switching states.
-- [ ] **Entity Component System (ECS) / GameObject:**
-    - [ ] Decide on strict ECS vs GameObject/Component pattern (referencing `MinePaf` structure).
-    - [ ] Base `Component` and `GameObject`/`Entity` classes.
-    - [ ] Serialization/Deserialization support.
+### Milestone 3: Scene & Entity Architecture [Completed]
+- [x] **Scene Management:** `Scene`, `SceneManager`.
+- [x] **Entity Component System (ECS):** `GameObject`, `Component`, `Entity` structure.
 
-### Milestone 4: 2D Rendering (from MinePaf)
-- [ ] **Sprite System:** `Sprite`, `SpriteSheet` components.
-- [ ] **Batch Rendering:** Efficient `SpriteRenderer` and batching logic to minimize draw calls.
-- [ ] **2D Camera:** Orthographic camera implementation.
-- [ ] **2D Physics:** Integration (Box2D or custom AABB).
+### Milestone 4: 2D Rendering [Completed]
+- [x] **Sprite System:** `Sprite`, `SpriteSheet` components.
+- [x] **Batch Rendering:** `RenderBatch`, `Renderer2D`.
+- [x] **Integration:** `Renderer` delegates to `Renderer2D`.
 
-### Milestone 5: 3D Rendering (from PafCraft)
-- [ ] **3D Model Loading:** `ObjLoader` (and eventually Assimp for others).
-- [ ] **Mesh & VAO Abstraction:** `VAOLoader`, `RawModel`, `TexturedModel`.
-- [ ] **3D Camera:** Perspective camera implementation (First/Third person).
-- [ ] **Lighting:** Ambient, Diffuse, Specular lighting shader implementation.
-- [ ] **Skybox:** Cube map rendering.
+### Milestone 5: Rendering & Camera Enhancements [Current Focus]
+- [ ] **Cleanup Assets:** Remove unused models (dragon.obj) and shaders; standardize shader files.
+- [ ] **Orthographic Camera:** Implement `Camera` subclass or mode for 2D.
+- [ ] **3D Camera Improvements:** Refine perspective camera (First/Third person controls).
+- [ ] **Shader Refactoring:** Create dedicated shaders for 2D (batch) and 3D (lit).
 
-### Milestone 6: Editor Tools (Optional/Later)
-- [ ] **Level Editor:** Scene serialization, Gizmos (Translate, Scale), and object picking.
-- [ ] **ImGui Integration:** Debug UI for inspecting entities.
+### Milestone 6: Physics
+- [ ] **JBox2D Integration:** Add library dependency.
+- [ ] **Physics Components:** `Rigidbody2D`, `BoxCollider2D`, etc.
+- [ ] **Physics System:** Integration into the Game Loop.
 
-### Milestone 7: Polish & Expansion
-- [ ] **Advanced 3D Formats:** Support for FBX/GLTF (using Assimp).
-- [ ] **Particle System:** 2D/3D particles.
-- [ ] **Skateboarding Game Logic:** Specific gameplay mechanics.
+### Milestone 7: Editor & UI
+- [ ] **ImGui Integration:** Setup ImGui context and render loop.
+- [ ] **Level Editor Scene:** Gizmos, Object Picking, Hierarchy view.
+- [ ] **Scene Serialization:** Loading/Saving scenes with JSON.
 
-## Building and Running
-
-### Build
-```bash
-./gradlew build
-```
-
-### Testing
-```bash
-./gradlew test
-```
-
-## Development Conventions
-
-*   **Code Style:** Official Kotlin code style.
-*   **Directory Structure:** Standard Gradle/Maven layout.
+### Milestone 8: 3D Rendering & Gameplay
+- [ ] **Advanced 3D:** Lighting (Ambient, Diffuse, Specular), Skybox.
+- [ ] **Skateboarding Mechanics:** Player controller, physics tuning.

@@ -13,14 +13,16 @@ import org.joml.Vector3f
 
 class SceneManager {
 
-    private lateinit var shader: Shader
+    private lateinit var shader3D: Shader
+    private lateinit var shader2D: Shader
     private lateinit var renderer: Renderer
 
     private lateinit var currentScene: Scene
 
     fun initializeScene() {
-        shader = AssetPool.getShader(Shader.TEST2)
-        renderer = Renderer(shader)
+        shader3D = AssetPool.getShader(Shader.SHADER_3D_DEFAULT)
+        shader2D = AssetPool.getShader(Shader.SHADER_2D_BATCH)
+        renderer = Renderer(shader3D, shader2D)
 
         changeScene(LevelEditorSceneInitializer(), true)
     }
@@ -43,7 +45,8 @@ class SceneManager {
     }
 
     fun destroy() {
-        shader.destroy()
+        shader3D.destroy()
+        shader2D.destroy()
         renderer.destroy()
     }
 }
