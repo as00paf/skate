@@ -22,6 +22,11 @@ class Window(
         private var instance: Window? = null
         fun getImGuiLayer(): ImGuiLayer = instance!!.imGuiLayer
         fun getFrameBuffer(): com.pafoid.skate.engine.render.FrameBuffer = instance!!.frameBuffer
+
+        val currentWidth: Int
+            get() = instance?.currentWidth ?: 1920
+        val currentHeight: Int
+            get() = instance?.currentHeight ?: 1080
     }
 
     var currentWidth = width
@@ -103,6 +108,10 @@ class Window(
             currentHeight = newHeight
             glViewport(0, 0, newWidth, newHeight)
         }
+        glfwSetCursorPosCallback(glfwWindow, com.pafoid.skate.engine.controls.MouseListener::mousePosCallback)
+        glfwSetMouseButtonCallback(glfwWindow, com.pafoid.skate.engine.controls.MouseListener::mouseButtonCallback)
+        glfwSetScrollCallback(glfwWindow, com.pafoid.skate.engine.controls.MouseListener::mouseScrollCallback)
+        glfwSetKeyCallback(glfwWindow, com.pafoid.skate.engine.controls.KeyListener::keyCallback)
     }
 
     private fun loop() {
@@ -123,6 +132,9 @@ class Window(
             drawCallback(dt, imGuiLayer)
 
             glfwSwapBuffers(glfwWindow)
+
+            KeyListener.endFrame()
+            MouseListener.endFrame()
 
             endTime = Time.getTime()
             dt = endTime - beginTime

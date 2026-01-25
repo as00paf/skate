@@ -3,8 +3,13 @@ plugins {
     application
 }
 
+application {
+    mainClass.set("com.pafoid.skate.MainKt")
+}
+
 repositories {
     mavenCentral()
+    maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {
@@ -25,7 +30,15 @@ dependencies {
     implementation ("org.lwjgl", "lwjgl-stb", classifier = "natives-windows")
     
     // Bullet Physics
-    implementation("com.github.stephengold:Libbulletjme:21.2.1")
+    // JVM library:
+    implementation("com.github.stephengold:Libbulletjme-Windows64:22.0.3")
+
+    // native libraries:
+    runtimeOnly("com.github.stephengold:Libbulletjme-Windows64:22.0.3:SpDebug")
+    // Native libraries for other platforms could be added.
+
+    //Jsnap loader for loading native libraries
+    implementation("io.github.electrostat-lab:snaploader:1.0.0-stable")
 
     implementation("org.joml", "joml", "1.10.8")
     implementation("org.joml", "joml-primitives", "1.10.0")

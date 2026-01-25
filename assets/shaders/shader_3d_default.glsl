@@ -22,7 +22,7 @@ void main()
     
     fTexCoords = aTexCoords;
 
-    fSurfaceNormal = (transformationMatrix * vec4(aNormal, 0.0)).xyz;
+    fSurfaceNormal = normalize((transformationMatrix * vec4(aNormal, 0.0)).xyz);
     fToLightVector = lightPosition - worldPosition.xyz;
     fToCameraVector = (inverse(viewMatrix) * vec4(0.0, 0.0, 0.0, 1.0)).xyz - worldPosition.xyz;
 }
@@ -40,12 +40,31 @@ uniform vec3 lightColor;
 uniform float uShininess;
 uniform float uReflectivity;
 uniform vec3 uAmbientLight;
+uniform float uSelected;
 
 out vec4 color;
 
 void main()
 {
+    if (uSelected > 0.5 && uSelected < 1.5) {
+        color = vec4(0.0, 1.0, 0.0, 1.0); // Selected (Green)
+        return;
+    }
+    
+    vec4 textureColor = texture(textureSampler, fTexCoords);
+    if (textureColor.a < 0.1) {
+        discard;
+    }
+
+    if (uSelected > 1.5) {
+        color = mix(textureColor, vec4(1.0, 1.0, 0.0, 1.0), 0.2); // Hovered (Yellow Tint)
+        return;
+    }
+
     vec3 unitNormal = normalize(fSurfaceNormal);
+    if (length(fSurfaceNormal) < 0.001) unitNormal = vec3(0, 1, 0); // Fallback for zero normals
+    if (length(fSurfaceNormal) < 0.001) unitNormal = vec3(0, 1, 0); // Fallback for zero normals
+    
     vec3 unitLightVector = normalize(fToLightVector);
     vec3 unitVectorToCamera = normalize(fToCameraVector);
 
@@ -61,11 +80,6 @@ void main()
     specularFactor = max(specularFactor, 0.0);
     float dampedFactor = pow(specularFactor, uShininess);
     vec3 finalSpecular = dampedFactor * uReflectivity * lightColor;
-
-    vec4 textureColor = texture(textureSampler, fTexCoords);
-    if (textureColor.a < 0.1) {
-        discard;
-    }
 
     color = vec4(uAmbientLight + diffuse, 1.0) * textureColor + vec4(finalSpecular, 0.0);
 }

@@ -51,18 +51,20 @@
     - [x] **Kicker:** Simple wedge.
 - [x] **Bail Logic:** Transition to "Tumble Cube" on high impact or bad landing orientation ($> 90^\circ$ from up).
 
-### Phase 4: Sandbox & Editor Tools [Completed]
-- [x] **ImGui Physics Tuner:** Sliders for Gravity, PopForce, Friction, SuspensionStiffness, and CatchStrength.
-- [x] **Transform Gizmos:** 3D arrows in Edit Mode for modular tiles and obstacles.
-- [x] **Trick Labeler:** Analyzer for Pitch/Yaw/Roll degrees to string together names (e.g., "Kickflip 180").
-- [x] **Persistence:** Save/Load level layouts and physics configs to JSON.
+### Phase 4: Sandbox & Editor Tools [In Progress]
+- [x] **ImGui Physics Tuner**: Sliders for Gravity, PopForce, Friction, SuspensionStiffness, and CatchStrength.
+- [x] **Transform Gizmos**: 3D arrows in Edit Mode for modular tiles and obstacles.
+- [ ] **Prefabs Window**: Organized UI for spawning Skateboard, Player, Obstacles, and Tiles.
+- [ ] **Trick Labeler**: Analyzer for Pitch/Yaw/Roll degrees (Comes after Skateboard Tuning).
+- [x] **Persistence**: Save/Load level layouts and physics configs to JSON.
 
 ### Additional Features [Completed]
-- [x] **Game Controller Support:** Implement GLFW joystick/gamepad listeners.
-- [x] **Assimp Enhancements:** Support for GLB and FBX model loading.
-- [x] **Threading Support:** Coroutines integration via `JobSystem`.
-- [x] **UI Layout:** Programmatic docking setup for editor windows.
-- [ ] **Particle System:** 2D/3D visual effects.
+- [x] **Game Controller Support**: Implement GLFW joystick/gamepad listeners.
+- [x] **Assimp Enhancements**: Support for GLB and FBX model loading.
+- [x] **Threading Support**: Coroutines integration via `JobSystem`. [PENDING REFACTOR]
+- [x] **UI Layout**: Programmatic docking setup for editor windows.
+- [ ] **Particle System**: (Post-MVP) 2D/3D visual effects.
+
 
 ## Mathematical Constraints
 *   **Local Space Conversion:** Use `JOML Matrix4f.transformDirection()` for flick torques.

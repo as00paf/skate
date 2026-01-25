@@ -33,6 +33,12 @@ class Transform(
     override fun hashCode(): Int {
         return Objects.hash(translation, scale, rotation)
     }
+
+    override fun imgui() {
+        com.pafoid.skate.engine.utils.MImGui.drawVec3TransformControl("Position", translation)
+        com.pafoid.skate.engine.utils.MImGui.drawVec3TransformControl("Rotation", rotation, 0f, com.pafoid.skate.engine.utils.MImGui.sensibilityRotation)
+        com.pafoid.skate.engine.utils.MImGui.drawVec3TransformControl("Scale", scale, 1f, com.pafoid.skate.engine.utils.MImGui.sensibilityScale)
+    }
 }
 
 fun Transform.toMatrix(): Matrix4f {

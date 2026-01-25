@@ -3,7 +3,7 @@ package com.pafoid.skate.engine.render
 import com.pafoid.skate.engine.assets.Texture
 import org.lwjgl.opengl.GL30.*
 
-class FrameBuffer(private val width: Int, private val height: Int) {
+class FrameBuffer(val width: Int, val height: Int) {
     private var fboId = 0
     private var texture: Texture
 

@@ -22,6 +22,7 @@ object MouseListener {
     private var isDragging = false
     private var mouseButtonsDown = 0
     private var mouseButtonPressed = BooleanArray(9)
+    private var mouseButtonPressedLastFrame = BooleanArray(9)
     private val gameViewportPos = Vector2f()
     private val gameViewportSize = Vector2f(1920f, 1080f) // Default size
 
@@ -42,7 +43,9 @@ object MouseListener {
     fun mouseButtonCallback(window: Long, button: Int, action: Int, mods: Int) {
         if (action == GLFW_PRESS) {
             mouseButtonsDown++
-            mouseButtonPressed[button] = true
+            if (button < mouseButtonPressed.size) {
+                mouseButtonPressed[button] = true
+            }
         } else if (action == GLFW_RELEASE) {
             mouseButtonsDown--
             if (button < mouseButtonPressed.size) {
@@ -60,6 +63,14 @@ object MouseListener {
     fun endFrame() {
         scrollX = 0.0
         scrollY = 0.0
+        lastX = xPos
+        lastY = yPos
+        System.arraycopy(mouseButtonPressed, 0, mouseButtonPressedLastFrame, 0, mouseButtonPressed.size)
+    }
+    
+    fun mouseButtonBeginPress(button: Int): Boolean {
+        if (button >= mouseButtonPressed.size) return false
+        return mouseButtonPressed[button] && !mouseButtonPressedLastFrame[button]
     }
 
     fun clear() {
@@ -109,31 +120,41 @@ object MouseListener {
         gameViewportSize.set(size)
     }
 
+    fun getX(): Float = xPos.toFloat()
+    fun getY(): Float = yPos.toFloat()
+
     fun getScreenX(): Float {
-        return getScreen().x
+        val mousePos = imgui.ImGui.getMousePos()
+        val relativeX = mousePos.x - gameViewportPos.x
+        val pickingX = ((relativeX / gameViewportSize.x) * 1920f).toInt().coerceIn(0, 1919)
+        return pickingX.toFloat()
     }
 
     fun getScreenY(): Float {
-        return getScreen().y
+        val mousePos = imgui.ImGui.getMousePos()
+        val relativeY = mousePos.y - gameViewportPos.y
+        val pickingY = ((relativeY / gameViewportSize.y) * 1080f).toInt().coerceIn(0, 1079)
+        return pickingY.toFloat()
     }
 
-    fun getScreen(): Vector2f {
-        var currentX: Float = getX() - gameViewportPos.x
-        currentX = currentX / gameViewportSize.x * 1920.0f
-        var currentY: Float = getY() - gameViewportPos.y
-        currentY = (1.0f - currentY / gameViewportSize.y) * 1080.0f
-        return Vector2f(currentX, currentY)
+    fun getScreenDx(): Float {
+        return (getDx() / gameViewportSize.x) * 1920f
     }
 
-    fun getX(): Float = xPos.toFloat()
-    fun getY(): Float = yPos.toFloat()
+    fun getScreenDy(): Float {
+        return (getDy() / gameViewportSize.y) * 1080f
+    }
+
     fun getDx(): Float = (xPos - lastX).toFloat()
     fun getDy(): Float = (yPos - lastY).toFloat()
     fun getScrollX(): Float = if (imgui.ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()
     fun getScrollY(): Float = if (imgui.ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
-    fun isDragging() = isDragging && !imgui.ImGui.getIO().wantCaptureMouse
-    fun isMouseButtonDown(button: Int): Boolean {
-        return if (button < mouseButtonPressed.size) mouseButtonPressed[button] && !imgui.ImGui.getIO().wantCaptureMouse
-        else false
+    fun isDragging() = isDragging
+    fun isMouseButtonDown(button: Int, ignoreImGui: Boolean = false): Boolean {
+        val down = if (button < mouseButtonPressed.size) mouseButtonPressed[button] else false
+        return if (ignoreImGui) down else down && !imgui.ImGui.getIO().wantCaptureMouse
     }
+
+    fun getGameViewportSize(): Vector2f = gameViewportSize
+    fun getGameViewportPos(): Vector2f = gameViewportPos
 }

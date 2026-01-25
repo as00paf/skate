@@ -22,5 +22,5 @@ out vec3 color;
 
 void main()
 {
-    color = vec3(uEntityId, uEntityId, uEntityId);
+    color = vec3(uEntityId, 0.0, 0.0);
 }

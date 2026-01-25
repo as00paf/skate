@@ -41,30 +41,38 @@ abstract class Component {
 
     open fun imgui() {
         try {
+            imgui.ImGui.pushID(this.javaClass.simpleName)
             val fields = this.javaClass.declaredFields
             fields.forEach { field ->
-                val isTransient = Modifier.isTransient(field.modifiers)
-                if (isTransient) return@forEach
-                val isPrivate = Modifier.isPrivate(field.modifiers)
-                if (isPrivate) field.isAccessible = true
+                val modifiers = field.modifiers
+                if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) return@forEach
+                
+                if (Modifier.isPrivate(modifiers)) field.isAccessible = true
 
                 val type = field.type
                 val value = field.get(this)
                 val name = field.name
+                val isFinal = Modifier.isFinal(modifiers)
 
                 when (type) {
                     Int::class.java -> {
-                        val typedValue = value as Int
-                        field.set(this, com.pafoid.skate.engine.utils.MImGui.dragInt(name, typedValue))
+                        if (!isFinal) {
+                            val typedValue = value as Int
+                            field.set(this, com.pafoid.skate.engine.utils.MImGui.dragInt(name, typedValue))
+                        }
                     }
                     Float::class.java -> {
-                        val typedValue = value as Float
-                        field.set(this, com.pafoid.skate.engine.utils.MImGui.dragFloat(name, typedValue))
+                        if (!isFinal) {
+                            val typedValue = value as Float
+                            field.set(this, com.pafoid.skate.engine.utils.MImGui.dragFloat(name, typedValue))
+                        }
                     }
                     Boolean::class.java -> {
-                        val typedValue = value as Boolean
-                        if (imgui.ImGui.checkbox("$name : ", typedValue)) {
-                            field.set(this, !typedValue)
+                        if (!isFinal) {
+                            val typedValue = value as Boolean
+                            if (imgui.ImGui.checkbox("$name", typedValue)) {
+                                field.set(this, !typedValue)
+                            }
                         }
                     }
                     Vector2f::class.java -> {
@@ -73,33 +81,33 @@ abstract class Component {
                     }
                     Vector3f::class.java -> {
                         val typedValue = value as Vector3f
-                        val imVec = floatArrayOf(typedValue.x, typedValue.y, typedValue.z)
-                        if (imgui.ImGui.dragFloat3("$name : ", imVec)) {
-                            typedValue.set(imVec[0], imVec[1], imVec[2])
-                        }
+                        com.pafoid.skate.engine.utils.MImGui.drawVec3Control(name, typedValue)
                     }
                     Vector4f::class.java -> {
                         val typedValue = value as Vector4f
                         val imVec = floatArrayOf(typedValue.x, typedValue.y, typedValue.z, typedValue.w)
-                        if (imgui.ImGui.dragFloat4("$name : ", imVec)) {
+                        if (imgui.ImGui.dragFloat4("$name", imVec)) {
                             typedValue.set(imVec[0], imVec[1], imVec[2], imVec[3])
+                        }
+                    }
+                    else -> {
+                        if (type.isEnum && !isFinal) {
+                            val enumValues = getEnumValues(type as Class<out Enum<*>>)
+                            val enumType = (value as Enum<*>).name
+                            val index = imgui.type.ImInt(indexOf(enumType, enumValues))
+                            if (imgui.ImGui.combo(field.name, index, enumValues, enumValues.size)) {
+                                field.set(this, type.enumConstants[index.get()])
+                            }
                         }
                     }
                 }
 
-                if(type.isEnum) {
-                    val enumValues = getEnumValues(type as Class<out Enum<*>>)
-                    val enumType = (value as Enum<*>).name
-                    val index = imgui.type.ImInt(indexOf(enumType, enumValues))
-                    if(imgui.ImGui.combo(field.name, index, enumValues, enumValues.size)) {
-                        field.set(this, type.enumConstants[index.get()])
-                    }
-                }
-
-                if (isPrivate) field.isAccessible = false
+                if (Modifier.isPrivate(modifiers)) field.isAccessible = false
             }
-        } catch (e: IllegalAccessException) {
+        } catch (e: Exception) {
             e.printStackTrace()
+        } finally {
+            imgui.ImGui.popID()
         }
     }
 

@@ -59,18 +59,18 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     }
 
     fun editorUpdate(dt: Float) {
-        camera.update(dt)//camera.adjustProjection()
+        camera.update(dt)
 
-        var i = 0
-        while (i < gameObjects.size) {
-            val go = gameObjects[i]
-            go.editorUpdate(dt)
+        val iterator = gameObjects.iterator()
+        while (iterator.hasNext()) {
+            val go = iterator.next()
             if (go.isDead()) {
-                gameObjects.removeAt(i)
                 physics3d.remove(go)
-                i--
+                iterator.remove()
+                continue
             }
-            i++
+            go.editorUpdate(dt)
+            physics3d.add(go)
         }
 
         pendingObjects.forEach { gameObject ->
@@ -87,16 +87,15 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
         camera.update(dt) 
         physics3d.update(dt)
 
-        var i = 0
-        while (i < gameObjects.size) {
-            val go = gameObjects[i]
-            go.update(dt)
+        val iterator = gameObjects.iterator()
+        while (iterator.hasNext()) {
+            val go = iterator.next()
             if (go.isDead()) {
-                gameObjects.removeAt(i)
                 physics3d.remove(go)
-                i--
+                iterator.remove()
+                continue
             }
-            i++
+            go.update(dt)
         }
 
         pendingObjects.forEach { gameObject ->

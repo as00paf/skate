@@ -38,7 +38,7 @@ class PickingTexture(private var width: Int, private var height: Int) {
         // Create the texture object for the depth buffer
         depthTexture = glGenTextures()
         glBindTexture(GL_TEXTURE_2D, depthTexture)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0,
             GL_DEPTH_COMPONENT, GL_FLOAT, 0)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
             GL_TEXTURE_2D, depthTexture, 0)
@@ -71,9 +71,11 @@ class PickingTexture(private var width: Int, private var height: Int) {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo)
         glReadBuffer(GL_COLOR_ATTACHMENT0)
 
+        glFinish() // Wait for GPU to finish rendering to ensure we read fresh data
+        glPixelStorei(GL_PACK_ALIGNMENT, 1)
         val pixels = FloatArray(3)
         glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, pixels)
 
-        return pixels[0].toInt() - 1
+        return Math.round(pixels[0]) - 1
     }
 }

@@ -14,30 +14,36 @@ class GizmoSystem: Component() {
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
         this.gameObject.addComponent(TranslateGizmo(Window.getImGuiLayer().propertiesWindow))
-        this.gameObject.addComponent(ScaleGizmo(Window.getImGuiLayer().propertiesWindow))
+        this.gameObject.addComponent(RotationGizmo(Window.getImGuiLayer().propertiesWindow))
     }
 
     override fun editorUpdate(dt: Float) {
         val translateGizmo = gameObject.getComponent<TranslateGizmo>()!!
-        val scaleGizmo = gameObject.getComponent<ScaleGizmo>()!!
+        val rotationGizmo = gameObject.getComponent<RotationGizmo>()!!
 
         if (usingGizmo == TRANSLATE_GIZMO) {
             translateGizmo.setInUse()
-            scaleGizmo.setNotInUse()
-        } else if (usingGizmo == SCALE_GIZMO) {
-            scaleGizmo.setInUse()
+            rotationGizmo.setNotInUse()
+        } else if (usingGizmo == ROTATION_GIZMO) {
+            rotationGizmo.setInUse()
             translateGizmo.setNotInUse()
         }
 
         if(KeyListener.isKeyPressed(GLFW_KEY_E)) {
             usingGizmo = TRANSLATE_GIZMO
         } else if(KeyListener.isKeyPressed(GLFW_KEY_R)) {
-            usingGizmo = SCALE_GIZMO
+            usingGizmo = ROTATION_GIZMO
         }
+    }
+
+    fun isInteracting(): Boolean {
+        val tg = gameObject.getComponent<TranslateGizmo>()
+        val rg = gameObject.getComponent<RotationGizmo>()
+        return tg?.isHot() == true || tg?.anyAxisActive() == true || rg?.isHot() == true || rg?.anyAxisActive() == true
     }
 
     companion object {
         const val TRANSLATE_GIZMO = 0
-        const val SCALE_GIZMO = 1
+        const val ROTATION_GIZMO = 1
     }
 }

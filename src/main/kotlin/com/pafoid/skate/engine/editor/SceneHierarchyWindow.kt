@@ -1,9 +1,11 @@
 package com.pafoid.skate.engine.editor
 
+import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
+import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
 
 class SceneHierarchyWindow(private val propertiesWindow: PropertiesWindow) {
 
@@ -16,6 +18,14 @@ class SceneHierarchyWindow(private val propertiesWindow: PropertiesWindow) {
             val treeNodeOpen = doTreeNode(obj, index)
             if (treeNodeOpen) {
                 ImGui.treePop()
+            }
+        }
+        
+        // Handle global deletion input
+        if (ImGui.isKeyPressed(GLFW_KEY_DELETE)) {
+            propertiesWindow.getActiveObject()?.let {
+                it.destroy()
+                propertiesWindow.setActiveObject(null)
             }
         }
 

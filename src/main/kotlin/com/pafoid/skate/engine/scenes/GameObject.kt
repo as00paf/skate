@@ -30,6 +30,10 @@ open class GameObject(
 
     @Transient var transform: Transform = Transform()
 
+    init {
+        addComponent(transform)
+    }
+
     inline fun <reified T> getComponent(): T? {
         return components.filterIsInstance<T>().firstOrNull()
     }
@@ -41,9 +45,13 @@ open class GameObject(
     }
 
     fun addComponent(component: Component): GameObject{
+        if (component is Transform) {
+            // If we already have a transform in components, remove it first
+            components.removeAll { it is Transform }
+            this.transform = component
+        }
         component.generateId()
         components.add(component)
-        if(component is Transform) { this.transform = component }
         component.init(this)
         return this
     }

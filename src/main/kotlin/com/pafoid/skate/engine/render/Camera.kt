@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.utils.toRadians
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
 
 class Camera(
@@ -133,10 +134,10 @@ class Camera(
         if (KeyListener.isKeyPressed(GLFW_KEY_A)) {
             position.sub(Vector3f(right).mul(speed))
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_E)) {
+        if (KeyListener.isKeyPressed(GLFW_KEY_SPACE)) {
             position.y += speed
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_Q)) {
+        if (KeyListener.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
             position.y -= speed
         }
     }
@@ -184,24 +185,26 @@ class Camera(
     }
 
     fun screenToRay(screenX: Float, screenY: Float, width: Float, height: Float): com.pafoid.skate.engine.utils.Ray {
-        // Convert screen coordinates to NDC
+        // Convert screen coordinates to NDC (-1 to 1)
         val x = (2.0f * screenX) / width - 1.0f
         val y = 1.0f - (2.0f * screenY) / height
         
-        // Inverse Projection
-        val clipCoords = org.joml.Vector4f(x, y, -1.0f, 1.0f)
-        val invProj = createProjectionMatrix().invert()
-        val eyeCoords = invProj.transform(clipCoords)
-        eyeCoords.z = -1.0f
-        eyeCoords.w = 0.0f
+        val projectionMatrix = createProjectionMatrix()
+        val viewMatrix = createViewMatrix()
         
-        // Inverse View
-        val invView = createViewMatrix().invert()
-        val worldCoords = invView.transform(eyeCoords)
+        val invProjView = Matrix4f(projectionMatrix).mul(viewMatrix).invert()
         
-        val direction = Vector3f(worldCoords.x, worldCoords.y, worldCoords.z).normalize()
+        // Ray start (near plane) and end (far plane) in world space
+        val near = Vector4f(x, y, -1f, 1f).mul(invProjView)
+        val far = Vector4f(x, y, 1f, 1f).mul(invProjView)
         
-        return com.pafoid.skate.engine.utils.Ray(Vector3f(position), direction)
+        near.div(near.w)
+        far.div(far.w)
+        
+        val rayOrigin = Vector3f(near.x, near.y, near.z)
+        val rayDirection = Vector3f(far.x - near.x, far.y - near.y, far.z - near.z).normalize()
+        
+        return com.pafoid.skate.engine.utils.Ray(rayOrigin, rayDirection)
     }
 
 }

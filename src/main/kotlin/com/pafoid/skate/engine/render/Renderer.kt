@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.toMatrix
 import com.pafoid.skate.engine.utils.Color
+import org.joml.Vector3f
 import org.lwjgl.opengl.GL30.*
 
 class Renderer(
@@ -16,9 +17,11 @@ class Renderer(
     private val pickingShader3D: Shader,
     private val skyboxShader: Shader
 ) {
+    var useFbo = false // Default to false for initial feature tests
+    
     private val clearColor = Color.GRAY
     private val renderer2D = Renderer2D()
-    private val pickingTexture = PickingTexture(1920, 1080) // TODO: Match window size
+    private val pickingTexture = PickingTexture(1920, 1080)
     private val skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
 
     init {
@@ -28,21 +31,27 @@ class Renderer(
     private fun loadProjectionMatrix(camera: Camera) {
         defaultShader.start()
         defaultShader.uploadMat4f("projectionMatrix", camera.createProjectionMatrix())
-        defaultShader.stop()
     }
 
     private fun loadViewMatrix(camera: Camera) {
         defaultShader.start()
         defaultShader.uploadMat4f("viewMatrix", camera.createViewMatrix())
-        defaultShader.stop()
     }
 
-    fun render(scene: Scene) {
+    fun render(scene: Scene, activeGameObject: com.pafoid.skate.engine.scenes.GameObject? = null, hoveredGameObject: com.pafoid.skate.engine.scenes.GameObject? = null) {
         DebugDraw.beginFrame()
-
+        
         // 1. Picking Pass
         pickingTexture.enableWriting()
         glViewport(0, 0, 1920, 1080)
+        
+        // CRITICAL: Reset state that might have been changed by ImGui or previous passes
+        glDisable(GL_SCISSOR_TEST)
+        glDepthMask(true)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
+        glDisable(GL_CULL_FACE)
+        
         glClearColor(0f, 0f, 0f, 0f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
         
@@ -53,11 +62,21 @@ class Renderer(
         pickingTexture.disableWriting()
 
         // 2. Regular Pass
-        Window.getFrameBuffer().bind()
+        val mainFbo = Window.getFrameBuffer()
+        if (useFbo) {
+            mainFbo.bind()
+            glViewport(0, 0, mainFbo.width, mainFbo.height)
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0)
+            glViewport(0, 0, Window.currentWidth, Window.currentHeight)
+        }
+        
         clearColor()
         
         val camera = scene.camera
         val light = scene.light
+        // Offset light from camera slightly so we get some shading but plenty of light
+        light.position.set(camera.position).add(5f, 5f, 10f)
 
         // 2D Rendering Setup
         renderer2D.bindCamera(camera)
@@ -68,15 +87,32 @@ class Renderer(
 
         defaultShader.start()
         defaultShader.uploadVec3f("lightPosition", light.position)
-        defaultShader.uploadVec3f("lightColor", light.color)
-        defaultShader.uploadVec3f("uAmbientLight", scene.ambientLight)
+        defaultShader.uploadVec3f("lightColor", Vector3f(1.5f, 1.5f, 1.5f)) // Brighter light
+        defaultShader.uploadVec3f("uAmbientLight", Vector3f(0.5f, 0.5f, 0.5f)) // High ambient
+        defaultShader.uploadInt("textureSampler", 0)
 
         scene.gameObjects.forEach { go ->
             go.getComponent<Entity>()?.let { entity ->
-                renderEntity(entity)
+                var selectionState = 0.0f
+                if (go == activeGameObject) selectionState = 1.0f
+                else if (go == hoveredGameObject) selectionState = 2.0f
+                
+                defaultShader.uploadFloat("uSelected", selectionState)
+                renderEntity(go, entity)
             }
         }
         
+        // Highlight Active Object (Outline effect via wireframe)
+        activeGameObject?.let { go ->
+            go.getComponent<Entity>()?.let { entity ->
+                defaultShader.uploadFloat("uSelected", 1.0f)
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+                glLineWidth(4f)
+                renderEntity(go, entity)
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            }
+        }
+
         defaultShader.stop()
         
         // Render 2D
@@ -90,7 +126,18 @@ class Renderer(
         // 3. Debug Pass
         DebugDraw.draw()
         
-        Window.getFrameBuffer().unbind()
+        if (useFbo) {
+            mainFbo.unbind()
+        }
+        
+        // Final state cleanup
+        glUseProgram(0)
+        glBindVertexArray(0)
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        
+        // Final screen viewport reset
+        glViewport(0, 0, Window.currentWidth, Window.currentHeight)
     }
 
     private fun render3DPicking(scene: Scene) {
@@ -111,17 +158,17 @@ class Renderer(
     
     private fun renderEntityPicking(go: com.pafoid.skate.engine.scenes.GameObject, entity: Entity) {
         val texturedModel = entity.model
-        val model = texturedModel.rawModel
 
-        glBindVertexArray(model.vaoId)
-        glEnableVertexAttribArray(0)
-        
-        pickingShader3D.uploadMat4f("transformationMatrix", entity.transform.toMatrix())
-        pickingShader3D.uploadFloat("uEntityId", go.getUid().toFloat() + 1) // +1 because 0 is background
-        
-        glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, 0)
-        
-        glDisableVertexAttribArray(0)
+        pickingShader3D.uploadMat4f("transformationMatrix", go.transform.toMatrix())
+        pickingShader3D.uploadFloat("uEntityId", go.getUid().toFloat() + 1)
+
+        for (part in texturedModel.parts) {
+            val model = part.rawModel
+            glBindVertexArray(model.vaoId)
+            glEnableVertexAttribArray(0)
+            glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, 0)
+            glDisableVertexAttribArray(0)
+        }
         glBindVertexArray(0)
     }
 
@@ -139,27 +186,35 @@ class Renderer(
     }
 
     fun readPixel(x: Int, y: Int): Int {
-        return pickingTexture.readPixel(x, y)
+        // Clamp coordinates to picking texture bounds (1920x1080)
+        val safeX = x.coerceIn(0, 1919)
+        val safeY = y.coerceIn(0, 1079)
+        // Invert Y coordinate (0 at top becomes 1079 at bottom)
+        return pickingTexture.readPixel(safeX, 1079 - safeY)
     }
 
-    private fun renderEntity(entity: Entity) {
+    private fun renderEntity(go: com.pafoid.skate.engine.scenes.GameObject, entity: Entity) {
         val texturedModel = entity.model
-        val model = texturedModel.rawModel
 
-        glBindVertexArray(model.vaoId)
-        glEnableVertexAttribArray(0)
-        glEnableVertexAttribArray(1)
-        glEnableVertexAttribArray(2)
-        defaultShader.uploadMat4f("transformationMatrix", entity.transform.toMatrix())
+        defaultShader.uploadMat4f("transformationMatrix", go.transform.toMatrix())
         defaultShader.uploadFloat("uShininess", entity.shininess)
         defaultShader.uploadFloat("uReflectivity", entity.reflectivity)
-        
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, texturedModel.texture.getId())
-        glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, 0)
-        glDisableVertexAttribArray(0)
-        glDisableVertexAttribArray(1)
-        glDisableVertexAttribArray(2)
+
+        for (part in texturedModel.parts) {
+            val model = part.rawModel
+            glBindVertexArray(model.vaoId)
+            glEnableVertexAttribArray(0)
+            glEnableVertexAttribArray(1)
+            glEnableVertexAttribArray(2)
+
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, part.texture.getId())
+            glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, 0)
+
+            glDisableVertexAttribArray(0)
+            glDisableVertexAttribArray(1)
+            glDisableVertexAttribArray(2)
+        }
         glBindVertexArray(0)
     }
 

@@ -1,6 +1,11 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.models.MeshPart
 import com.pafoid.skate.engine.models.RawModel
+import com.pafoid.skate.engine.models.TexturedModel
+import com.pafoid.skate.engine.utils.JobSystem
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.runBlocking
 import java.io.File
 
 object AssetPool {
@@ -13,7 +18,7 @@ object AssetPool {
     private val cubemaps = mutableMapOf<String, Cubemap>()
     private val spriteSheets = mutableMapOf<String, SpriteSheet>()
     private val sounds = mutableMapOf<String, Sound>()
-    private val rawModels = mutableMapOf<String, RawModel>()
+    private val models = mutableMapOf<String, TexturedModel>()
 
     fun getShader(filePath: String): Shader {
         val file = File(filePath)
@@ -27,14 +32,76 @@ object AssetPool {
     }
 
     fun getRawModel(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): RawModel {
-        val file = File(filePath)
-        return if (rawModels.containsKey(file.absolutePath)) {
-            rawModels[file.absolutePath]!!
-        } else {
-            val model = assimpLoader.loadModel(filePath, loader)
-            rawModels[file.absolutePath] = model
-            model
+        return getModel(filePath, loader).parts[0].rawModel
+    }
+
+    private val mainThreadQueue = mutableListOf<suspend () -> Unit>()
+
+    fun update() {
+        synchronized(mainThreadQueue) {
+            val iterator = mainThreadQueue.iterator()
+            while (iterator.hasNext()) {
+                // In a real engine, we'd limit this to a few ms per frame
+                val task = iterator.next()
+                // We can't really 'await' here easily without making update suspend, 
+                // so we run it blocking or launch it in a way that respects the main thread.
+                runBlocking { task() }
+                iterator.remove()
+            }
         }
+    }
+
+    fun getModelAsync(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader, callback: (TexturedModel) -> Unit) {
+        JobSystem.runAsync {
+            val preLoaded = assimpLoader.preLoadModel(filePath)
+            
+            // Jump back to main thread via some mechanism. 
+            // Since we don't have a robust main-thread dispatcher yet, let's use a simple queue.
+            synchronized(mainThreadQueue) {
+                mainThreadQueue.add {
+                    val file = File(filePath)
+                    val parts = preLoaded.parts.map { p ->
+                        val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices)
+                        val texture = if (p.texturePath != null) {
+                            if (p.embeddedBuffer != null) {
+                                getTexture(p.texturePath, p.embeddedBuffer)
+                            } else {
+                                val finalPath = File(filePath).parentFile.resolve(p.texturePath).path
+                                getTexture(finalPath)
+                            }
+                        } else {
+                            getTexture(Texture.WHITE)
+                        }
+                        com.pafoid.skate.engine.models.MeshPart(model, texture)
+                    }
+                    val texturedModel = TexturedModel(parts)
+                    models[file.absolutePath] = texturedModel
+                    callback(texturedModel)
+                }
+            }
+        }
+    }
+
+    fun getModel(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): TexturedModel {
+        val file = File(filePath)
+        if (models.containsKey(file.absolutePath)) {
+            return models[file.absolutePath]!!
+        }
+
+        val loadedParts = assimpLoader.loadModel(filePath, loader)
+        val parts = loadedParts.map { loadedPart ->
+            MeshPart(loadedPart.model, loadedPart.texture)
+        }
+
+        val texturedModel = TexturedModel(parts)
+        models[file.absolutePath] = texturedModel
+        return texturedModel
+    }
+
+    fun getRawModelWithTexture(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): Triple<RawModel, String?, java.nio.ByteBuffer?> {
+        val model = getModel(filePath, loader)
+        val firstPart = model.parts[0]
+        return Triple(firstPart.rawModel, firstPart.texture.getFilePath(), null)
     }
 
     fun getCubemap(filePaths: Array<String>): Cubemap {
@@ -49,12 +116,25 @@ object AssetPool {
     }
 
     fun getTexture(resourceName: String): Texture {
+        if (textures.containsKey(resourceName)) {
+            return textures[resourceName]!!
+        }
         val file = File(resourceName)
         return if(textures.containsKey(file.absolutePath)) {
             textures[file.absolutePath]!!
         } else{
             val texture = Texture().init(resourceName)
             textures[file.absolutePath] = texture
+            texture
+        }
+    }
+
+    fun getTexture(resourceName: String, buffer: java.nio.ByteBuffer): Texture {
+        return if(textures.containsKey(resourceName)) {
+            textures[resourceName]!!
+        } else {
+            val texture = Texture().init(buffer)
+            textures[resourceName] = texture
             texture
         }
     }

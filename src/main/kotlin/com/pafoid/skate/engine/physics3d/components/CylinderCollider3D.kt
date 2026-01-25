@@ -9,4 +9,5 @@ class CylinderCollider3D(
     var axis: Int = 1 // 0=X, 1=Y, 2=Z
 ) : Component() {
     val offset: Vector3f = Vector3f()
+    var margin: Float = 0.04f
 }

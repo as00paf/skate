@@ -5,4 +5,5 @@ import org.joml.Vector3f
 
 class BoxCollider3D(val halfExtents: Vector3f = Vector3f(1f, 1f, 1f)) : Component() {
     val offset: Vector3f = Vector3f()
+    var margin: Float = 0.04f
 }

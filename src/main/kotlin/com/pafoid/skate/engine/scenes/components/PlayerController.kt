@@ -140,14 +140,14 @@ class PlayerController : Component() {
     }
 
     private fun handleSteering(dt: Float) {
-        var rotation = 0f
+        var steer = 0f
         
         // Keyboard
         if (KeyListener.isKeyPressed(GLFW_KEY_A)) {
-            rotation += steerSpeed
+            steer += steerSpeed
         }
         if (KeyListener.isKeyPressed(GLFW_KEY_D)) {
-            rotation -= steerSpeed
+            steer -= steerSpeed
         }
         
         // Controller (Joystick 0)
@@ -155,12 +155,16 @@ class PlayerController : Component() {
             if (axes.size > 0) {
                 val stickX = axes[0]
                 if (Math.abs(stickX) > 0.1f) {
-                    rotation -= stickX * steerSpeed
+                    steer -= stickX * steerSpeed
                 }
             }
         }
         
-        // rb.angularVelocity = rotation
+        if (steer != 0f && (physics?.isGrounded == true)) {
+            val angVel = rb?.angularVelocity ?: return
+            angVel.y = steer
+            rb?.angularVelocity = angVel
+        }
     }
 
     private fun handlePushing(dt: Float) {
@@ -181,10 +185,13 @@ class PlayerController : Component() {
             }
         }
 
-        if (multiplier > 0f) {
-            val angle = Math.toRadians(gameObject.transform.rotation.z.toDouble())
-            val force = Vector2f(Math.cos(angle).toFloat(), Math.sin(angle).toFloat()).mul(pushForce * multiplier)
-            // rb.addVelocity(force)
+        if (multiplier > 0f && (physics?.isGrounded == true)) {
+            val transform = gameObject.transform.toMatrix()
+            val forward = Vector3f(1f, 0f, 0f) // X is forward for our board
+            transform.transformDirection(forward)
+            forward.mul(pushForce * multiplier)
+            
+            rb?.rawBody?.applyCentralForce(com.jme3.math.Vector3f(forward.x, forward.y, forward.z))
         }
     }
 
@@ -198,8 +205,8 @@ class PlayerController : Component() {
             }
         }
 
-        if (jump) {
-            // rb.addImpulse(Vector2f(0f, jumpImpulse))
+        if (jump && (physics?.isGrounded == true)) {
+            rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
         }
     }
 }

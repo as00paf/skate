@@ -24,9 +24,12 @@ class SceneManager {
         }
         
         fun getCurrentScene(): Scene? = get().currentScene
+        fun isPlaying(): Boolean = get().runtimePlaying
+        fun setPlaying(playing: Boolean) { get().runtimePlaying = playing }
     }
 
     private var currentScene: Scene? = null
+    private var runtimePlaying = false
     private lateinit var shader3D: Shader
     private lateinit var shader2D: Shader
     private lateinit var shaderPicking: Shader
@@ -41,6 +44,7 @@ class SceneManager {
         shaderPicking3D = AssetPool.getShader(Shader.PICKING_3D)
         shaderSkybox = AssetPool.getShader(Shader.SKYBOX)
         renderer = Renderer(shader3D, shader2D, shaderPicking, shaderPicking3D, shaderSkybox)
+        renderer.useFbo = true
 
         changeScene(LevelEditorSceneInitializer(), true)
     }
@@ -61,10 +65,15 @@ class SceneManager {
     }
 
     fun draw(dt: Float, imguiLayer: ImGuiLayer) {
+        AssetPool.update()
         val scene = currentScene
         if (dt >= 0 && scene != null) {
-            scene.update(dt)
-            renderer.render(scene)
+            if (runtimePlaying) {
+                scene.update(dt)
+            } else {
+                scene.editorUpdate(dt)
+            }
+            renderer.render(scene, imguiLayer.propertiesWindow.getActiveObject(), imguiLayer.gameViewWindow.getHoveredObject())
             imguiLayer.update(dt, scene)
         }
     }
