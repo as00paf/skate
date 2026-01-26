@@ -18,6 +18,11 @@ class EnvironmentWindow {
             ImGui.separator()
             ImGui.text("Sun (Directional Light)")
             
+            val useSun = imgui.type.ImBoolean(scene.useSun)
+            if (ImGui.checkbox("Use Sun", useSun)) {
+                scene.useSun = useSun.get()
+            }
+            
             val sunDir = floatArrayOf(scene.sun.direction.x, scene.sun.direction.y, scene.sun.direction.z)
             if (ImGui.dragFloat3("Sun Direction", sunDir, 0.01f, -1f, 1f)) {
                 scene.sun.direction.set(sunDir[0], sunDir[1], sunDir[2]).normalize()
@@ -52,6 +57,11 @@ class EnvironmentWindow {
         }
 
         if (ImGui.collapsingHeader("Lighting")) {
+            val useAmbient = imgui.type.ImBoolean(scene.useAmbient)
+            if (ImGui.checkbox("Use Ambient", useAmbient)) {
+                scene.useAmbient = useAmbient.get()
+            }
+
             val ambient = floatArrayOf(scene.ambientLight.x, scene.ambientLight.y, scene.ambientLight.z)
             if (ImGui.colorEdit3("Ambient Light", ambient)) {
                 scene.ambientLight.set(ambient[0], ambient[1], ambient[2])

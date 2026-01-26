@@ -88,12 +88,14 @@ class Renderer(
         defaultShader.start()
         defaultShader.uploadVec3f("lightPosition", light.position)
         defaultShader.uploadVec3f("lightColor", Vector3f(1.5f, 1.5f, 1.5f)) // Brighter light
-        defaultShader.uploadVec3f("uAmbientLight", Vector3f(0.5f, 0.5f, 0.5f)) // High ambient
+        
+        val ambient = if (scene.useAmbient) Vector3f(0.5f, 0.5f, 0.5f) else Vector3f(0f, 0f, 0f)
+        defaultShader.uploadVec3f("uAmbientLight", ambient)
         defaultShader.uploadInt("textureSampler", 0)
 
         // Sun
         defaultShader.uploadVec3f("uSunDirection", scene.sun.direction)
-        val finalSunColor = Vector3f(scene.sun.color).mul(scene.sun.intensity)
+        val finalSunColor = if (scene.useSun) Vector3f(scene.sun.color).mul(scene.sun.intensity) else Vector3f(0f, 0f, 0f)
         defaultShader.uploadVec3f("uSunColor", finalSunColor)
 
         // Fog

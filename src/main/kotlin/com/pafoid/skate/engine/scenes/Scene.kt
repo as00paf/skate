@@ -20,6 +20,8 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
     var sun: com.pafoid.skate.engine.render.DirectionalLight = com.pafoid.skate.engine.render.DirectionalLight()
+    var useSun: Boolean = true
+    var useAmbient: Boolean = true
     var ambientLight: Vector3f = Vector3f(0.2f, 0.2f, 0.2f)
     var skyColor: Vector3f = Vector3f(0.6f, 0.7f, 0.9f)
     var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f)
@@ -145,6 +147,8 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             val data = LevelData(
                 gameObjects = gameObjects.filter { it.doSerialization() },
                 ambientLight = ambientLight,
+                useAmbient = useAmbient,
+                useSun = useSun,
                 skyColor = skyColor,
                 sunDirection = sun.direction,
                 sunColor = sun.color,
@@ -173,6 +177,8 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             val data: LevelData = gson.fromJson(inFile, LevelData::class.java)
             
             this.ambientLight.set(data.ambientLight)
+            this.useAmbient = data.useAmbient
+            this.useSun = data.useSun
             this.skyColor.set(data.skyColor)
             this.sun.direction.set(data.sunDirection)
             this.sun.color.set(data.sunColor)
