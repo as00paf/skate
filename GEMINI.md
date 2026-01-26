@@ -73,7 +73,7 @@
     - [~] **Diagnostics**: Implement a real-time FPS counter (Physics debug toggle pending SPORT migration).
 - [ ] **Atmosphere & Environment**
     - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
-    - [x] **Cloud Dome**: Implement a multi-layered scrolling cloud dome with rim-lighting using directional lights.
+    - [x] **Dynamic Sky (HDRI)**: Implement a SkyDome (UV Sphere) with HDRI texture, exposure, tint, and automatic sun/light syncing.
     - [ ] **Obstacle Palette**: Add the Rail, Ledge, and Kicker Ramp prefabs to the editor’s object library.
 - [ ] **Analog Control & Skater Integration**
     - [ ] **Skater Model**: Add the player model to the scene and link it to the physics rig so it follows the board and tumbles during bails.
