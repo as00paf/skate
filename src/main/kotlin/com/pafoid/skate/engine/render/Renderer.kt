@@ -16,7 +16,7 @@ class Renderer(
     private val pickingShader: Shader,
     private val pickingShader3D: Shader,
     private val skyboxShader: Shader,
-    private val cloudDomeShader: Shader
+    private val skyDomeShader: Shader
 ) {
     var useFbo = false // Default to false for initial feature tests
     
@@ -24,7 +24,7 @@ class Renderer(
     private val renderer2D = Renderer2D()
     private val pickingTexture = PickingTexture(1920, 1080)
     private val skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
-    private val cloudDomeRenderer = CloudDomeRenderer(cloudDomeShader, VAOLoader())
+    private val skyDomeRenderer = SkyDomeRenderer(skyDomeShader, VAOLoader())
 
     init {
         renderer2D.bindShader(batchShader)
@@ -137,13 +137,8 @@ class Renderer(
         // Render 2D
         render2D(scene, batchShader)
         
-        // Render Skybox
-        scene.cubemap?.let {
-            skyboxRenderer.render(camera, it)
-        }
-
-        // Render Cloud Dome
-        cloudDomeRenderer.render(camera, scene)
+        // Render Skybox / Dome
+        skyDomeRenderer.render(camera, scene)
 
         // 3. Debug Pass
         DebugDraw.draw()
@@ -222,7 +217,6 @@ class Renderer(
         defaultShader.uploadFloat("uShininess", entity.shininess)
         defaultShader.uploadFloat("uReflectivity", entity.reflectivity)
         defaultShader.uploadFloat("uTextureScale", entity.textureScale)
-        defaultShader.uploadFloat("uIsCloud", if (entity.isCloud) 1.0f else 0.0f)
 
         for (part in texturedModel.parts) {
             val model = part.rawModel

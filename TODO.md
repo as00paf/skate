@@ -10,10 +10,11 @@
 
 ### 2. Atmosphere & Environment
 - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
-- [x] **Cloud Dome**:
-    - [x] **Cloud Shader**: Create a shader that pans two noise textures for a dynamic sky.
-    - [x] **Lighting Integration**: Add rim-lighting to clouds using the Directional Light.
-    - [x] **Dome Rendering**: Implement a renderer for the cloud dome geometry.
+- [ ] **Dynamic Skybox (Skater XL Style)**:
+    - [ ] **HDRI Generation**: Generate an equirectangular HDRI texture using nanobanana.
+    - [ ] **Sky Dome Rendering**: Implement a UV Sphere renderer for the Sky Dome.
+    - [ ] **Sky Shader**: Create a shader with u_skyTint, u_exposure, and fog blending.
+    - [ ] **Light Sync**: Sync Directional Light vector to Sky Dome rotation.
 - [ ] **Obstacle Palette**: Add Rail, Ledge, and Kicker Ramp prefabs to the editor library.
 
 ### 3. Analog Control & Skater Integration

@@ -2,8 +2,9 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.scenes.Scene
 import imgui.ImGui
-import imgui.type.ImFloat
+import imgui.type.ImBoolean
 import org.joml.Vector3f
+import kotlin.math.*
 
 class EnvironmentWindow {
     fun imgui(scene: Scene) {
@@ -23,14 +24,24 @@ class EnvironmentWindow {
 
         if (ImGui.collapsingHeader("Atmosphere")) {
             val skyColor = floatArrayOf(scene.skyColor.x, scene.skyColor.y, scene.skyColor.z)
-            if (ImGui.colorEdit3("Sky Color", skyColor)) {
+            if (ImGui.colorEdit3("Sky Color (Clear)", skyColor)) {
                 scene.skyColor.set(skyColor[0], skyColor[1], skyColor[2])
+            }
+
+            val skyTint = floatArrayOf(scene.skyTint.x, scene.skyTint.y, scene.skyTint.z)
+            if (ImGui.colorEdit3("Sky Tint", skyTint)) {
+                scene.skyTint.set(skyTint[0], skyTint[1], skyTint[2])
+            }
+
+            val exposure = floatArrayOf(scene.skyExposure)
+            if (ImGui.dragFloat("Sky Exposure", exposure, 0.01f, 0f, 10f)) {
+                scene.skyExposure = exposure[0]
             }
             
             ImGui.separator()
             ImGui.text("Sun (Directional Light)")
             
-            val useSun = imgui.type.ImBoolean(scene.useSun)
+            val useSun = ImBoolean(scene.useSun)
             if (ImGui.checkbox("Use Sun", useSun)) {
                 scene.useSun = useSun.get()
             }
@@ -69,7 +80,7 @@ class EnvironmentWindow {
         }
 
         if (ImGui.collapsingHeader("Lighting")) {
-            val useAmbient = imgui.type.ImBoolean(scene.useAmbient)
+            val useAmbient = ImBoolean(scene.useAmbient)
             if (ImGui.checkbox("Use Ambient", useAmbient)) {
                 scene.useAmbient = useAmbient.get()
             }
@@ -87,13 +98,12 @@ class EnvironmentWindow {
         val t = scene.timeOfDay / 24.0f // Map to 0..1
         
         // 1. Sun & Moon Direction
-        // Noon (0.5) is straight down (-1 on Y)
-        val angle = (t - 0.5f) * 2.0f * Math.PI.toFloat()
+        val angle = (t - 0.5f) * 2.0f * PI.toFloat()
         
         // Sun position
         scene.sun.direction.set(
-            Math.sin(angle.toDouble()).toFloat(),
-            -Math.cos(angle.toDouble()).toFloat(),
+            sin(angle.toDouble()).toFloat(),
+            -cos(angle.toDouble()).toFloat(),
             0.2f
         ).normalize()
         
@@ -102,10 +112,9 @@ class EnvironmentWindow {
 
         // 2. Intensities
         val sunCos = -scene.sun.direction.y
-        val moonCos = -scene.moon.direction.y
         
         val sunIntensity = sunCos.coerceIn(0f, 1f)
-        val moonIntensity = moonCos.coerceIn(0f, 1f)
+        val moonIntensity = (-sunCos).coerceIn(0f, 1f)
         
         scene.sun.intensity = sunIntensity * 1.5f
         scene.moon.intensity = moonIntensity * 0.5f // Moon is dimmer
@@ -125,15 +134,12 @@ class EnvironmentWindow {
         val nightSky = Vector3f(0.02f, 0.02f, 0.05f)
         
         if (sunCos > 0.2f) {
-            // Day to Sunset transition
             val factor = ((sunCos - 0.2f) / 0.8f).coerceIn(0f, 1f)
             scene.skyColor.set(sunsetSky).lerp(noonSky, factor)
         } else if (sunCos > 0.0f) {
-            // Sunset to Twilight transition
             val factor = (sunCos / 0.2f).coerceIn(0f, 1f)
             scene.skyColor.set(twilightSky).lerp(sunsetSky, factor)
         } else if (sunCos > -0.2f) {
-            // Twilight to Night transition
             val factor = ((sunCos + 0.2f) / 0.2f).coerceIn(0f, 1f)
             scene.skyColor.set(nightSky).lerp(twilightSky, factor)
         } else {
@@ -142,8 +148,8 @@ class EnvironmentWindow {
 
         // 5. Fog
         scene.fogColor.set(scene.skyColor)
-        // Fog increases slightly at night/twilight for depth
-        scene.fogDensity = 0.001f + (1f - sunIntensity.coerceAtLeast(0.5f)) * 0.004f
+        scene.fogDensity = 0.0005f + (1f - sunIntensity.coerceAtLeast(0.5f)) * 0.0006f
+        scene.fogGradient = 0.8f
 
         // 6. Dynamic Ambient
         val baseAmbient = Vector3f(0.05f, 0.05f, 0.1f)
