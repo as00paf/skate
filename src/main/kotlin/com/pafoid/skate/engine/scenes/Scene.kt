@@ -20,6 +20,9 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
     var ambientLight: Vector3f = Vector3f(0.2f, 0.2f, 0.2f)
+    var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f)
+    var fogDensity: Float = 0.0f
+    var fogGradient: Float = 1.5f
     var cubemap: Cubemap? = null
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
@@ -128,7 +131,10 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
                 gameObjects = gameObjects.filter { it.doSerialization() },
                 ambientLight = ambientLight,
                 lightPosition = light.position,
-                gravity = physics3d.getGravity()
+                gravity = physics3d.getGravity(),
+                fogColor = fogColor,
+                fogDensity = fogDensity,
+                fogGradient = fogGradient
             )
             writer.write(gson.toJson(data))
             writer.close()
@@ -151,6 +157,9 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             this.ambientLight.set(data.ambientLight)
             this.light.position.set(data.lightPosition)
             this.physics3d.setGravity(data.gravity)
+            this.fogColor.set(data.fogColor)
+            this.fogDensity = data.fogDensity
+            this.fogGradient = data.fogGradient
             
             var maxGoId = -1
             var maxCompId = -1

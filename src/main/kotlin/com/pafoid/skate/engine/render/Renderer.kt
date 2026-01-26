@@ -91,6 +91,11 @@ class Renderer(
         defaultShader.uploadVec3f("uAmbientLight", Vector3f(0.5f, 0.5f, 0.5f)) // High ambient
         defaultShader.uploadInt("textureSampler", 0)
 
+        // Fog
+        defaultShader.uploadVec3f("uFogColor", scene.fogColor)
+        defaultShader.uploadFloat("uFogDensity", scene.fogDensity)
+        defaultShader.uploadFloat("uFogGradient", scene.fogGradient)
+
         scene.gameObjects.forEach { go ->
             go.getComponent<Entity>()?.let { entity ->
                 var selectionState = 0.0f
