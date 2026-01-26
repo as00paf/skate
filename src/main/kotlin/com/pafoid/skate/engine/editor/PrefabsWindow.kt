@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import org.joml.Vector3f
+import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
 
 class PrefabsWindow {
     private val loader = VAOLoader()
@@ -86,7 +87,7 @@ class PrefabsWindow {
     private fun spawnRail() {
         val scene = SceneManager.getCurrentScene() ?: return
         val rail = GameObject("Rail_${scene.gameObjects.size}")
-        rail.transform.translation.set(0f, 0.5f, 0f) // Half height to be on ground
+        rail.transform.translation.set(0f, 0.5f, 0f) 
         rail.transform.scale.set(1f, 1f, 1f)
         rail.addComponent(Entity(
             model = com.pafoid.skate.engine.models.TexturedModel(
@@ -102,7 +103,7 @@ class PrefabsWindow {
     private fun spawnLedge() {
         val scene = SceneManager.getCurrentScene() ?: return
         val ledge = GameObject("Ledge_${scene.gameObjects.size}")
-        ledge.transform.translation.set(0f, 0.25f, 0f) // Half height to be on ground
+        ledge.transform.translation.set(0f, 0.25f, 0f) 
         ledge.transform.scale.set(1f, 1f, 1f)
         ledge.addComponent(Entity(
             model = com.pafoid.skate.engine.models.TexturedModel(
@@ -127,11 +128,15 @@ class PrefabsWindow {
             )
         ))
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
-        // Use a ConvexHullShape for the kicker to match its geometry
+        
         val kickerRawModel = AssetPool.getRawModel(ObjLoader.KICKER, loader)
-        val vertices = kickerRawModel.vertices.chunked(3) { Vector3f(it[0], it[1], it[2]) }
-        val kickerShape = com.jme3.bullet.collision.shapes.ConvexHullShape(vertices.map { com.jme3.math.Vector3f(it.x, it.y, it.z) })
+        val jmeVertices = mutableListOf<JmeVector3f>()
+        for (i in 0 until kickerRawModel.vertices.size / 3) {
+            jmeVertices.add(JmeVector3f(kickerRawModel.vertices[i*3], kickerRawModel.vertices[i*3+1], kickerRawModel.vertices[i*3+2]))
+        }
+        val kickerShape = com.jme3.bullet.collision.shapes.HullCollisionShape(jmeVertices)
         kicker.addComponent(com.pafoid.skate.engine.physics3d.components.CustomCollider3D(kickerShape))
+        
         scene.addGameObjectToScene(kicker)
     }
 }

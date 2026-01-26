@@ -74,7 +74,7 @@
 - [ ] **Atmosphere & Environment**
     - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
     - [x] **Dynamic Sky (HDRI)**: Implement a SkyDome (UV Sphere) with HDRI texture, exposure, tint, and automatic sun/light syncing.
-    - [ ] **Obstacle Palette**: Add the Rail, Ledge, and Kicker Ramp prefabs to the editor’s object library.
+    - [x] **Obstacle Palette**: Add the Rail, Ledge, and Kicker Ramp prefabs to the editor’s object library.
 - [ ] **Analog Control & Skater Integration**
     - [ ] **Skater Model**: Add the player model to the scene and link it to the physics rig so it follows the board and tumbles during bails.
     - [ ] **Controller Support**: Add Full Gamepad Support. Use the sticks for analog steering and "flick" mechanics.

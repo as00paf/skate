@@ -14,7 +14,7 @@
     - [x] **Sky Dome Rendering**: Implement a UV Sphere renderer for the Sky Dome.
     - [x] **Sky Shader**: Create a shader with u_skyTint, u_exposure, and fog blending.
     - [x] **Light Sync**: Sync Directional Light vector to Sky Dome rotation.
-- [ ] **Obstacle Palette**: Add Rail, Ledge, and Kicker Ramp prefabs to the editor library.
+- [x] **Obstacle Palette**: Add Rail, Ledge, and Kicker Ramp prefabs to the editor library.
 
 ### 3. Analog Control & Skater Integration
 - [ ] **Skater Model**:

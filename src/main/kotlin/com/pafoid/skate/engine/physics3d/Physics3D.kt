@@ -6,6 +6,11 @@ import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.collision.shapes.CylinderCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.bounding.BoundingBox
+import com.jme3.math.Matrix3f
+import com.jme3.math.Quaternion
+import com.jme3.math.Transform
+import com.jme3.math.Vector3f as JmeVector3f // Alias to avoid conflict with JOML Vector3f
 import com.pafoid.skate.engine.scenes.GameObject
 import electrostatic4j.snaploader.LibraryInfo
 import electrostatic4j.snaploader.LoadingCriterion
@@ -23,7 +28,7 @@ class Physics3D {
     init {
         loadNativeLibrary()
         physicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
-        physicsSpace.setGravity(com.jme3.math.Vector3f(0f, -9.81f, 0f))
+        physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
     }
 
     private fun loadNativeLibrary() {
@@ -48,12 +53,12 @@ class Physics3D {
     }
 
     fun setGravity(gravity: Vector3f) {
-        physicsSpace.setGravity(com.jme3.math.Vector3f(gravity.x, gravity.y, gravity.z))
+        physicsSpace.setGravity(JmeVector3f(gravity.x, gravity.y, gravity.z))
     }
 
     fun rayTest(from: Vector3f, to: Vector3f): List<PhysicsRayTestResult> {
-        val start = com.jme3.math.Vector3f(from.x, from.y, from.z)
-        val end = com.jme3.math.Vector3f(to.x, to.y, to.z)
+        val start = JmeVector3f(from.x, from.y, from.z)
+        val end = JmeVector3f(to.x, to.y, to.z)
         return physicsSpace.rayTest(start, end)
     }
 
@@ -79,26 +84,26 @@ class Physics3D {
                 val compound = CompoundCollisionShape()
                 
                 boxColliders.forEach { c ->
-                    val shape = BoxCollisionShape(com.jme3.math.Vector3f(c.halfExtents.x, c.halfExtents.y, c.halfExtents.z))
+                    val shape = BoxCollisionShape(JmeVector3f(c.halfExtents.x, c.halfExtents.y, c.halfExtents.z))
                     shape.setMargin(c.margin)
-                    compound.addChildShape(shape, com.jme3.math.Vector3f(c.offset.x, c.offset.y, c.offset.z))
+                    compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
                 }
                 
                 cylinderColliders.forEach { c ->
                     val shape = CylinderCollisionShape(c.radius, c.height, c.axis)
                     shape.setMargin(c.margin)
-                    compound.addChildShape(shape, com.jme3.math.Vector3f(c.offset.x, c.offset.y, c.offset.z))
+                    compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
                 }
 
                 customColliders.forEach { c ->
-                    compound.addChildShape(c.collisionShape, com.jme3.math.Vector3f(0f, 0f, 0f))
+                    compound.addChildShape(c.collisionShape, JmeVector3f(0f, 0f, 0f))
                 }
 
                 // If no colliders, provide a default box
                 if (boxColliders.isEmpty() && cylinderColliders.isEmpty() && customColliders.isEmpty()) {
-                    val shape = BoxCollisionShape(com.jme3.math.Vector3f(1f, 1f, 1f))
+                    val shape = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
                     shape.setMargin(0.04f)
-                    compound.addChildShape(shape, com.jme3.math.Vector3f(0f, 0f, 0f))
+                    compound.addChildShape(shape, JmeVector3f(0f, 0f, 0f))
                 }
 
                 val body = PhysicsRigidBody(compound, desiredMass)
@@ -115,7 +120,7 @@ class Physics3D {
                 
                 val trans = go.transform.translation
                 val rot = go.transform.rotation
-                body.setPhysicsLocation(com.jme3.math.Vector3f(trans.x, trans.y, trans.z))
+                body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
                 
                 // Set rotation from euler (JOML -> JME)
                 val q = org.joml.Quaternionf().rotationXYZ(
@@ -123,7 +128,7 @@ class Physics3D {
                     Math.toRadians(rot.y.toDouble()).toFloat(),
                     Math.toRadians(rot.z.toDouble()).toFloat()
                 )
-                body.setPhysicsRotation(com.jme3.math.Quaternion(q.x, q.y, q.z, q.w))
+                body.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
                 
                 physicsSpace.add(body)
                 rb.rawBody = body
@@ -183,7 +188,7 @@ class Physics3D {
                     radius = halfExtents.x
                     height = halfExtents.z * 2f
                 }
-                else -> { // Should not happen, default to Y-axis
+                else -> {
                     radius = halfExtents.x
                     height = halfExtents.y * 2f
                 }
@@ -204,19 +209,11 @@ class Physics3D {
                 
                 debugDrawShape(childShape, combinedPos, combinedRot, color)
             }
-        } else if (shape is com.jme3.bullet.collision.shapes.MeshCollisionShape) {
-            // For general mesh shapes, drawing all triangles can be very slow.
-            // A simple bounding box or a wireframe approximation is often preferred.
-            // For now, let's draw a bounding box.
-            val boundingBox = shape.boundingBox
-            val halfExtents = Vector3f(boundingBox.xExtent, boundingBox.yExtent, boundingBox.zExtent)
-            dd.addBox3D(pos, rot, halfExtents, color)
-        } else if (shape is com.jme3.bullet.collision.shapes.ConvexHullShape) {
-            // TODO: Implement proper debug drawing for ConvexHullShape (iterate faces/edges)
-            // For now, draw a bounding box.
-            val boundingBox = shape.boundingBox
-            val halfExtents = Vector3f(boundingBox.xExtent, boundingBox.yExtent, boundingBox.zExtent)
-            dd.addBox3D(pos, rot, halfExtents, color)
+        } else if (shape is com.jme3.bullet.collision.shapes.MeshCollisionShape || shape is com.jme3.bullet.collision.shapes.HullCollisionShape) {
+            // Complex shapes - just draw a small cross for now to indicate position
+            dd.addLine3D(Vector3f(pos).add(-0.5f, 0f, 0f), Vector3f(pos).add(0.5f, 0f, 0f), color)
+            dd.addLine3D(Vector3f(pos).add(0f, -0.5f, 0f), Vector3f(pos).add(0f, 0.5f, 0f), color)
+            dd.addLine3D(Vector3f(pos).add(0f, 0f, -0.5f), Vector3f(pos).add(0f, 0f, 0.5f), color)
         }
     }
 
