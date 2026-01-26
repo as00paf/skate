@@ -20,6 +20,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
     var ambientLight: Vector3f = Vector3f(0.2f, 0.2f, 0.2f)
+    var skyColor: Vector3f = Vector3f(0.6f, 0.7f, 0.9f)
     var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f)
     var fogDensity: Float = 0.0f
     var fogGradient: Float = 1.5f
@@ -130,6 +131,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             val data = LevelData(
                 gameObjects = gameObjects.filter { it.doSerialization() },
                 ambientLight = ambientLight,
+                skyColor = skyColor,
                 lightPosition = light.position,
                 gravity = physics3d.getGravity(),
                 fogColor = fogColor,
@@ -155,6 +157,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             val data: LevelData = gson.fromJson(inFile, LevelData::class.java)
             
             this.ambientLight.set(data.ambientLight)
+            this.skyColor.set(data.skyColor)
             this.light.position.set(data.lightPosition)
             this.physics3d.setGravity(data.gravity)
             this.fogColor.set(data.fogColor)

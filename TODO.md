@@ -9,7 +9,7 @@
     - [x] **Custom Physics Debug**: Implement manual wireframe rendering for Bullet collision shapes using DebugDraw.
 
 ### 2. Atmosphere & Environment
-- [ ] **Sky & Fog**: Add a Skybox (Cube Map) to the world and implement Fog in the shaders.
+- [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
 - [ ] **Obstacle Palette**: Add Rail, Ledge, and Kicker Ramp prefabs to the editor library.
 
 ### 3. Analog Control & Skater Integration

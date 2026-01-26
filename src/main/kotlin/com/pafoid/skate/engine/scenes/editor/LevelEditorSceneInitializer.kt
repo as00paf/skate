@@ -19,22 +19,13 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     private var currentScene: Scene? = null
     private lateinit var editorStuff: GameObject
 
-    override fun loadResources(scene: Scene) {
-        val skyboxTextures = arrayOf(
-            "assets/textures/skybox/right.png",
-            "assets/textures/skybox/left.png",
-            "assets/textures/skybox/top.png",
-            "assets/textures/skybox/bottom.png",
-            "assets/textures/skybox/front.png",
-            "assets/textures/skybox/back.png"
-        )
-        scene.cubemap = com.pafoid.skate.engine.assets.Cubemap().init(skyboxTextures)
-    }
+    override fun loadResources(scene: Scene) {}
 
     override fun init(scene: Scene) {
         this.currentScene = scene
 
-        scene.fogColor.set(0.7f, 0.8f, 0.9f) // Light blue fog
+        scene.skyColor.set(0.6f, 0.7f, 0.9f)
+        scene.fogColor.set(0.6f, 0.7f, 0.9f) // Match sky for infinite horizon
         scene.fogDensity = 0.005f
         scene.fogGradient = 1.5f
 

@@ -9,6 +9,13 @@ class EnvironmentWindow {
     fun imgui(scene: Scene) {
         ImGui.begin("Environment")
 
+        if (ImGui.collapsingHeader("Atmosphere")) {
+            val skyColor = floatArrayOf(scene.skyColor.x, scene.skyColor.y, scene.skyColor.z)
+            if (ImGui.colorEdit3("Sky Color", skyColor)) {
+                scene.skyColor.set(skyColor[0], skyColor[1], skyColor[2])
+            }
+        }
+
         if (ImGui.collapsingHeader("Fog")) {
             val fogColor = floatArrayOf(scene.fogColor.x, scene.fogColor.y, scene.fogColor.z)
             if (ImGui.colorEdit3("Fog Color", fogColor)) {
