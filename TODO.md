@@ -12,9 +12,9 @@
 - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
 - [ ] **Dynamic Skybox (Skater XL Style)**:
     - [ ] **HDRI Generation**: Generate an equirectangular HDRI texture using nanobanana.
-    - [ ] **Sky Dome Rendering**: Implement a UV Sphere renderer for the Sky Dome.
-    - [ ] **Sky Shader**: Create a shader with u_skyTint, u_exposure, and fog blending.
-    - [ ] **Light Sync**: Sync Directional Light vector to Sky Dome rotation.
+    - [x] **Sky Dome Rendering**: Implement a UV Sphere renderer for the Sky Dome.
+    - [x] **Sky Shader**: Create a shader with u_skyTint, u_exposure, and fog blending.
+    - [x] **Light Sync**: Sync Directional Light vector to Sky Dome rotation.
 - [ ] **Obstacle Palette**: Add Rail, Ledge, and Kicker Ramp prefabs to the editor library.
 
 ### 3. Analog Control & Skater Integration

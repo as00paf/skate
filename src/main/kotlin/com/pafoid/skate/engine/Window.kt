@@ -7,6 +7,7 @@ import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.system.MemoryUtil.NULL
 
 class Window(
@@ -91,6 +92,7 @@ class Window(
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
 
         frameBuffer = com.pafoid.skate.engine.render.FrameBuffer(1920, 1080)
         glViewport(0, 0, width, height)

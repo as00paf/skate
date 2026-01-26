@@ -43,10 +43,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
                 vertices.add(y * radius)
                 vertices.add(z * radius)
 
-                // Shift U by 0.5 to move seam
-                var u = s * S + 0.5f
-                if (u > 1.0f) u -= 1.0f
-                texCoords.add(u)
+                texCoords.add(s * S)
                 texCoords.add(r * R)
 
                 normals.add(-x)
@@ -99,6 +96,8 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
 
         glActiveTexture(GL_TEXTURE0)
         hdriTexture.bind()
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
         shader.uploadInt("u_hdriTexture", 0)
 
         glBindVertexArray(sphere.vaoId)

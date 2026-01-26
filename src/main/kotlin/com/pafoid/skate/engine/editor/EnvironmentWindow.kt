@@ -103,14 +103,18 @@ class EnvironmentWindow {
         val t = scene.timeOfDay / 24.0f // Map to 0..1
         
         // 1. Sun & Moon Direction
+        // The dome rotates by -angle + skyRotation
         val angle = (t - 0.5f) * 2.0f * PI.toFloat()
+        val totalRotation = -angle + Math.toRadians(scene.skyRotation.toDouble()).toFloat()
         
-        // Sun position
-        scene.sun.direction.set(
-            sin(angle.toDouble()).toFloat(),
-            -cos(angle.toDouble()).toFloat(),
-            0.2f
-        ).normalize()
+        // Sun position (starts at -Z in local texture space usually, but let's assume it matches the dome rotation)
+        // We'll calculate it so it matches the SkyDomeRenderer's modelMatrix rotation
+        scene.sun.direction.set(0f, 0f, -1f) // Base direction (forward)
+        // Rotate it to match the dome
+        val rotMatrix = org.joml.Matrix4f().rotateY(totalRotation).rotateX(Math.toRadians(15.0).toFloat()) // Slight incline
+        val dir4 = org.joml.Vector4f(scene.sun.direction, 0f)
+        rotMatrix.transform(dir4)
+        scene.sun.direction.set(dir4.x, dir4.y, dir4.z).normalize()
         
         // Moon position (opposite to sun)
         scene.moon.direction.set(scene.sun.direction).negate()
