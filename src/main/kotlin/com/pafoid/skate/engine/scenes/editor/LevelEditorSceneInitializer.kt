@@ -51,7 +51,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         ground.transform.translation.set(0f, -0.5f, 0f)
         ground.transform.scale.set(100f, 0.5f, 100f)
         ground.addComponent(Entity(
-            model = TexturedModel(AssetPool.getRawModel(ObjLoader.CUBE, loader), AssetPool.getTexture(Texture.WHITE))
+            model = TexturedModel(AssetPool.getRawModel(ObjLoader.CUBE, loader), AssetPool.getTexture(Texture.ASPHALT))
         ))
         val groundRb = RigidBody3D(0f)
         groundRb.bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static
