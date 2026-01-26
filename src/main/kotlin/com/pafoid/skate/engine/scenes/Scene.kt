@@ -19,7 +19,20 @@ import java.nio.file.Paths
 class Scene(private val initializer: SceneInitializer, val camera: Camera = Camera()) {
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
-    var ambientLight: Vector3f = Vector3f(0.2f, 0.2f, 0.2f)
+    var sun: com.pafoid.skate.engine.render.DirectionalLight = com.pafoid.skate.engine.render.DirectionalLight()
+    var moon: com.pafoid.skate.engine.render.DirectionalLight = com.pafoid.skate.engine.render.DirectionalLight()
+    var useSun: Boolean = true
+    var useAmbient: Boolean = true
+    var timeOfDay: Float = 12.0f // 0.0 to 24.0, 12.0 is noon
+    var ambientLight: Vector3f = Vector3f(0.1f, 0.1f, 0.15f) // Subtle blue-ish ambient
+    var skyColor: Vector3f = Vector3f(0.6f, 0.7f, 0.9f)
+    var skyTint: Vector3f = Vector3f(1.0f, 1.0f, 1.0f)
+    var skyExposure: Float = 1.0f
+    var skyRotation: Float = 0.0f
+    var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f)
+    var fogDensity: Float = 0.0f
+    var fogGradient: Float = 1.5f
+    
     var cubemap: Cubemap? = null
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
@@ -39,11 +52,24 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     }
 
     fun start() {
+        isRunning = true
         gameObjects.forEach { go ->
             go.start()
             physics3d.add(go)
         }
-        isRunning = true
+        
+        // Flush any objects added during startup
+        while (pendingObjects.isNotEmpty()) {
+            val toAdd = mutableListOf<GameObject>()
+            toAdd.addAll(pendingObjects)
+            pendingObjects.clear()
+            
+            toAdd.forEach { go ->
+                gameObjects.add(go)
+                go.start()
+                physics3d.add(go)
+            }
+        }
     }
 
     fun addGameObjectToScene(gameObject: GameObject) {
@@ -127,8 +153,22 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             val data = LevelData(
                 gameObjects = gameObjects.filter { it.doSerialization() },
                 ambientLight = ambientLight,
+                useAmbient = useAmbient,
+                useSun = useSun,
+                timeOfDay = timeOfDay,
+                skyColor = skyColor,
+                skyTint = skyTint,
+                skyExposure = skyExposure,
+                skyRotation = skyRotation,
+                sunDirection = sun.direction,
+                sunColor = sun.color,
+                moonDirection = moon.direction,
+                moonColor = moon.color,
                 lightPosition = light.position,
-                gravity = physics3d.getGravity()
+                gravity = physics3d.getGravity(),
+                fogColor = fogColor,
+                fogDensity = fogDensity,
+                fogGradient = fogGradient
             )
             writer.write(gson.toJson(data))
             writer.close()
@@ -149,8 +189,22 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             val data: LevelData = gson.fromJson(inFile, LevelData::class.java)
             
             this.ambientLight.set(data.ambientLight)
+            this.useAmbient = data.useAmbient
+            this.useSun = data.useSun
+            this.timeOfDay = data.timeOfDay
+            this.skyColor.set(data.skyColor)
+            this.skyTint.set(data.skyTint)
+            this.skyExposure = data.skyExposure
+            this.skyRotation = data.skyRotation
+            this.sun.direction.set(data.sunDirection)
+            this.sun.color.set(data.sunColor)
+            this.moon.direction.set(data.moonDirection)
+            this.moon.color.set(data.moonColor)
             this.light.position.set(data.lightPosition)
             this.physics3d.setGravity(data.gravity)
+            this.fogColor.set(data.fogColor)
+            this.fogDensity = data.fogDensity
+            this.fogGradient = data.fogGradient
             
             var maxGoId = -1
             var maxCompId = -1

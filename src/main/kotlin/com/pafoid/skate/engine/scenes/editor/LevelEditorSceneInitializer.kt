@@ -24,6 +24,11 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     override fun init(scene: Scene) {
         this.currentScene = scene
 
+        scene.skyColor.set(0.6f, 0.7f, 0.9f)
+        scene.fogColor.set(0.6f, 0.7f, 0.9f) // Match sky for infinite horizon
+        scene.fogDensity = 0.0008f
+        scene.fogGradient = 0.8f
+
         // Set camera position
         scene.camera.position.set(0f, 5f, 20f)
         scene.camera.yaw = 0f
@@ -74,6 +79,11 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         ground.addComponent(groundRb)
         ground.addComponent(BoxCollider3D(Vector3f(100f, 0.5f, 100f)))
         scene.addGameObjectToScene(ground)
+
+        // Atmosphere (Spawned last for simple transparency sorting)
+        val atmosphere = scene.createGameObject("Atmosphere")
+        atmosphere.setNoSerialize()
+        scene.addGameObjectToScene(atmosphere)
     }
 
     override fun imgui() {

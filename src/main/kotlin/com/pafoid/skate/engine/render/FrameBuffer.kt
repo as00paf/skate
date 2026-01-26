@@ -6,6 +6,7 @@ import org.lwjgl.opengl.GL30.*
 class FrameBuffer(val width: Int, val height: Int) {
     private var fboId = 0
     private var texture: Texture
+    private var depthTexture: Int = 0
 
     init {
         // Generate frame buffer
@@ -16,11 +17,13 @@ class FrameBuffer(val width: Int, val height: Int) {
         texture = Texture().init(width, height)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.getId(), 0)
 
-        // Create renderbuffer to store the depth info
-        val rboId = glGenRenderbuffers()
-        glBindRenderbuffer(GL_RENDERBUFFER, rboId)
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, width, height)
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboId)
+        // Create depth texture
+        depthTexture = glGenTextures()
+        glBindTexture(GL_TEXTURE_2D, depthTexture)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0)
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
             assert(false) { "Error: Framebuffer is not complete" }
@@ -37,5 +40,6 @@ class FrameBuffer(val width: Int, val height: Int) {
     }
 
     fun getTextureId() = texture.getId()
+    fun getDepthTextureId() = depthTexture
     fun getFboId() = fboId
 }

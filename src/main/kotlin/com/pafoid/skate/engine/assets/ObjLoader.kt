@@ -75,7 +75,7 @@ class ObjLoader {
                 indicesArray[i] = indices[i]
             }
 
-            return loader.loadToVAO(verticesArray, texturesArray, normalsArray, indicesArray)
+            return loader.loadToVAO(verticesArray, texturesArray, normalsArray, indicesArray, verticesArray)
         } catch (e: Exception) {
             println("Could not load obj file $fileName")
             throw e

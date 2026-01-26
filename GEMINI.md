@@ -68,12 +68,13 @@
 - [ ] **Particle System**: (Post-MVP) 2D/3D visual effects.
 
 ### Phase 5: High-Level Execution Plan
-- [ ] **File Management & Setup**
+- [x] **File Management & Setup**
     - [x] **Asset Extraction**: Unzip the player model from the assets folder and organize the resulting files into the appropriate directory structure for the loader.
-    - [~] **Diagnostics**: Implement a real-time FPS counter (Physics debug toggle pending SPORT migration).
+    - [x] **Diagnostics**: Implement a real-time FPS counter (Physics debug toggle pending SPORT migration).
 - [ ] **Atmosphere & Environment**
-    - [ ] **Sky & Fog**: Add a Skybox (Cube Map) to the world and implement Fog in the shaders to handle distance fading and hide the world edges.
-    - [ ] **Obstacle Palette**: Add the Rail, Ledge, and Kicker Ramp prefabs to the editor’s object library.
+    - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
+    - [x] **Dynamic Sky (HDRI)**: Implement a SkyDome (UV Sphere) with HDRI texture, exposure, tint, and automatic sun/light syncing.
+    - [x] **Obstacle Palette**: Add the Rail, Ledge, and Kicker Ramp prefabs to the editor’s object library.
 - [ ] **Analog Control & Skater Integration**
     - [ ] **Skater Model**: Add the player model to the scene and link it to the physics rig so it follows the board and tumbles during bails.
     - [ ] **Controller Support**: Add Full Gamepad Support. Use the sticks for analog steering and "flick" mechanics.

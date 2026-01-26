@@ -12,21 +12,49 @@ class Texture: Component() {
 
     private var width: Int = 0
     private var height: Int = 0
+    private var depth: Int = 0
+    private var target: Int = GL_TEXTURE_2D
     private var filePath: String? = null
 
     fun init(width: Int, height: Int):Texture {
         this.id = glGenTextures()
         this.width = width
         this.height = height
+        this.depth = 1
+        this.target = GL_TEXTURE_2D
         this.filePath = "Generated::$id"
 
-        glBindTexture(GL_TEXTURE_2D, id)
+        glBindTexture(target, id)
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
+        glTexImage2D(target, 0, GL_RGB, width, height,
             0, GL_RGB, GL_UNSIGNED_BYTE, 0)
+
+        return this
+    }
+
+    fun init3D(width: Int, height: Int, depth: Int, data: java.nio.ByteBuffer? = null): Texture {
+        this.id = glGenTextures()
+        this.width = width
+        this.height = height
+        this.depth = depth
+        this.target = GL_TEXTURE_3D
+        this.filePath = "Generated3D::$id"
+
+        glBindTexture(target, id)
+
+        // Noise textures for clouds usually want linear interpolation and repeating
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_REPEAT)
+
+        glTexImage3D(target, 0, GL_RGBA, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
 
         return this
     }
@@ -34,12 +62,13 @@ class Texture: Component() {
     fun init(buffer: java.nio.ByteBuffer): Texture {
         this.filePath = "Buffer::" + System.identityHashCode(buffer)
         this.id = glGenTextures()
-        glBindTexture(GL_TEXTURE_2D, id)
+        this.target = GL_TEXTURE_2D
+        glBindTexture(target, id)
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         val width = BufferUtils.createIntBuffer(1)
         val height = BufferUtils.createIntBuffer(1)
@@ -50,9 +79,10 @@ class Texture: Component() {
         if (image != null) {
             this.width = width.get(0)
             this.height = height.get(0)
+            this.depth = 1
             val format = if (channels.get(0) == 3) GL_RGB else GL_RGBA
-            glTexImage2D(GL_TEXTURE_2D, 0, format, this.width, this.height, 0, format, GL_UNSIGNED_BYTE, image)
-            glGenerateMipmap(GL_TEXTURE_2D)
+            glTexImage2D(target, 0, format, this.width, this.height, 0, format, GL_UNSIGNED_BYTE, image)
+            glGenerateMipmap(target)
             stbi_image_free(image)
         } else {
             val reason = stbi_failure_reason()
@@ -66,15 +96,16 @@ class Texture: Component() {
     fun init(filePath: String, flipOnLoad:Boolean = false):Texture {
         this.filePath = filePath
         this.id = glGenTextures()
-        glBindTexture(GL_TEXTURE_2D, id)
+        this.target = GL_TEXTURE_2D
+        glBindTexture(target, id)
 
         // Set params
         // Repeat in both directions
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
         // Linear filtering with mipmaps
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         val width = BufferUtils.createIntBuffer(1)
         val height = BufferUtils.createIntBuffer(1)
@@ -85,9 +116,10 @@ class Texture: Component() {
         if (image != null) {
             this.width = width.get(0)
             this.height = height.get(0)
+            this.depth = 1
             val format = if(channels.get(0) == 3) GL_RGB else GL_RGBA
-            glTexImage2D(GL_TEXTURE_2D, 0, format, this.width, this.height, 0, format, GL_UNSIGNED_BYTE, image)
-            glGenerateMipmap(GL_TEXTURE_2D)
+            glTexImage2D(target, 0, format, this.width, this.height, 0, format, GL_UNSIGNED_BYTE, image)
+            glGenerateMipmap(target)
             stbi_image_free(image)
         } else {
             assert(false) { "Error: (Texture) Unable to load image : $filePath" }
@@ -97,15 +129,17 @@ class Texture: Component() {
     }
 
     fun bind() {
-        glBindTexture(GL_TEXTURE_2D, id)
+        glBindTexture(target, id)
     }
 
     fun unbind() {
-        glBindTexture(GL_TEXTURE_2D, 0)
+        glBindTexture(target, 0)
     }
 
     fun getWidth() = width
     fun getHeight() = height
+    fun getDepth() = depth
+    fun getTarget() = target
     fun getFilePath() = filePath
     fun getId() = id
 
@@ -126,5 +160,6 @@ class Texture: Component() {
     companion object {
         const val WHITE = "assets/textures/white.png"
         const val ASPHALT = "assets/textures/asphalt.png"
+        const val CONCRETE_SIMPLE = "assets/textures/concrete_simple.png"
     }
 }

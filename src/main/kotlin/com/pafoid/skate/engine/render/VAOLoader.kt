@@ -13,21 +13,21 @@ class VAOLoader {
     private val vbos = mutableListOf<Int>()
     private val textures = mutableListOf<Int>()
 
-    fun loadToVAO(positions: FloatArray, textureCoords: FloatArray, normals: FloatArray, indices: IntArray): RawModel {
+    fun loadToVAO(positions: FloatArray, textureCoords: FloatArray, normals: FloatArray, indices: IntArray, rawVertices: FloatArray = floatArrayOf()): RawModel {
         val vaoId = createVAO()
         bindIndicesBuffer(indices)
         storeDataInAttribList(0, 3, positions)
         storeDataInAttribList(1, 2, textureCoords)
         storeDataInAttribList(2, 3, normals)
         unbindVAO()
-        return RawModel(vaoId, indices.size)
+        return RawModel(vaoId, indices.size, rawVertices)
     }
 
-    fun loadToVAO(positions: FloatArray, coordinateSize: Int): RawModel {
+    fun loadToVAO(positions: FloatArray, coordinateSize: Int, rawVertices: FloatArray = floatArrayOf()): RawModel {
         val vaoId = createVAO()
         storeDataInAttribList(0, coordinateSize, positions)
         unbindVAO()
-        return RawModel(vaoId, positions.size / coordinateSize)
+        return RawModel(vaoId, positions.size / coordinateSize, rawVertices)
     }
 
     private fun createVAO(): Int {

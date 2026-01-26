@@ -116,7 +116,7 @@ class AssimpLoader {
     fun loadModel(filePath: String, loader: VAOLoader): List<LoadedMeshPart> {
         val preLoaded = preLoadModel(filePath)
         return preLoaded.parts.map { p ->
-            val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices)
+            val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices)
             val texture = if (p.texturePath != null) {
                 if (p.embeddedBuffer != null) {
                     AssetPool.getTexture(p.texturePath, p.embeddedBuffer)

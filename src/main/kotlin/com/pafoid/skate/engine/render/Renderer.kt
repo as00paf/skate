@@ -15,7 +15,8 @@ class Renderer(
     private val batchShader: Shader,
     private val pickingShader: Shader,
     private val pickingShader3D: Shader,
-    private val skyboxShader: Shader
+    private val skyboxShader: Shader,
+    private val skyDomeShader: Shader
 ) {
     var useFbo = false // Default to false for initial feature tests
     
@@ -23,6 +24,7 @@ class Renderer(
     private val renderer2D = Renderer2D()
     private val pickingTexture = PickingTexture(1920, 1080)
     private val skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
+    private val skyDomeRenderer = SkyDomeRenderer(skyDomeShader, VAOLoader())
 
     init {
         renderer2D.bindShader(batchShader)
@@ -71,7 +73,7 @@ class Renderer(
             glViewport(0, 0, Window.currentWidth, Window.currentHeight)
         }
         
-        clearColor()
+        clearColor(scene.skyColor)
         
         val camera = scene.camera
         val light = scene.light
@@ -88,8 +90,25 @@ class Renderer(
         defaultShader.start()
         defaultShader.uploadVec3f("lightPosition", light.position)
         defaultShader.uploadVec3f("lightColor", Vector3f(1.5f, 1.5f, 1.5f)) // Brighter light
-        defaultShader.uploadVec3f("uAmbientLight", Vector3f(0.5f, 0.5f, 0.5f)) // High ambient
+        
+        val ambient = if (scene.useAmbient) scene.ambientLight else Vector3f(0f, 0f, 0f)
+        defaultShader.uploadVec3f("uAmbientLight", ambient)
         defaultShader.uploadInt("textureSampler", 0)
+
+        // Sun
+        defaultShader.uploadVec3f("uSunDirection", scene.sun.direction)
+        val finalSunColor = if (scene.useSun) Vector3f(scene.sun.color).mul(scene.sun.intensity) else Vector3f(0f, 0f, 0f)
+        defaultShader.uploadVec3f("uSunColor", finalSunColor)
+
+        // Moon
+        defaultShader.uploadVec3f("uMoonDirection", scene.moon.direction)
+        val finalMoonColor = Vector3f(scene.moon.color).mul(scene.moon.intensity)
+        defaultShader.uploadVec3f("uMoonColor", finalMoonColor)
+
+        // Fog
+        defaultShader.uploadVec3f("uFogColor", scene.fogColor)
+        defaultShader.uploadFloat("uFogDensity", scene.fogDensity)
+        defaultShader.uploadFloat("uFogGradient", scene.fogGradient)
 
         scene.gameObjects.forEach { go ->
             go.getComponent<Entity>()?.let { entity ->
@@ -118,10 +137,8 @@ class Renderer(
         // Render 2D
         render2D(scene, batchShader)
         
-        // Render Skybox
-        scene.cubemap?.let {
-            skyboxRenderer.render(camera, it)
-        }
+        // Render Skybox / Dome
+        skyDomeRenderer.render(camera, scene)
 
         // 3. Debug Pass
         DebugDraw.draw()
@@ -219,10 +236,10 @@ class Renderer(
         glBindVertexArray(0)
     }
 
-    fun clearColor() {
+    fun clearColor(sky: Vector3f) {
         glEnable(GL_DEPTH_TEST)
+        glClearColor(sky.x, sky.y, sky.z, 1.0f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-        glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w)
     }
 
     fun destroy() {
