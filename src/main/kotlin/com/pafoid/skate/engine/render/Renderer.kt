@@ -199,6 +199,7 @@ class Renderer(
         defaultShader.uploadMat4f("transformationMatrix", go.transform.toMatrix())
         defaultShader.uploadFloat("uShininess", entity.shininess)
         defaultShader.uploadFloat("uReflectivity", entity.reflectivity)
+        defaultShader.uploadFloat("uTextureScale", entity.textureScale)
 
         for (part in texturedModel.parts) {
             val model = part.rawModel

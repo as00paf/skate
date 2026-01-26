@@ -10,6 +10,7 @@ class Entity(
     val transform: Transform = Transform(),
     var shininess: Float = 10f,
     var reflectivity: Float = 1f,
+    var textureScale: Float = 1.0f,
     val onTick: (dt:Float) -> Unit = {}
 ): Component() {
 

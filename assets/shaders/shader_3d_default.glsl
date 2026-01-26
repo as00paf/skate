@@ -13,6 +13,7 @@ uniform mat4 transformationMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform vec3 lightPosition;
+uniform float uTextureScale;
 
 void main()
 {
@@ -20,7 +21,7 @@ void main()
     vec4 positionRelativeToCamera = viewMatrix * worldPosition;
     gl_Position = projectionMatrix * positionRelativeToCamera;
     
-    fTexCoords = aTexCoords;
+    fTexCoords = aTexCoords * uTextureScale;
 
     fSurfaceNormal = normalize((transformationMatrix * vec4(aNormal, 0.0)).xyz);
     fToLightVector = lightPosition - worldPosition.xyz;
