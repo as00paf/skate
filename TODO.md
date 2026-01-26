@@ -17,10 +17,10 @@
 - [x] **Obstacle Palette**: Add Rail, Ledge, and Kicker Ramp prefabs to the editor library.
 
 ### 3. Analog Control & Skater Integration
-- [ ] **Skater Model**:
-    - [ ] Add player model to the scene.
-    - [ ] Link player model to physics rig.
-- [ ] **Controller Support**: Full Gamepad Support (analog steering, flick mechanics).
+- [x] **Skater Model**:
+    - [x] Add player model to the scene.
+    - [x] Link player model to physics rig.
+- [x] **Controller Support**: Full Gamepad Support (analog steering, flick mechanics).
 
 ### 4. Trick Detection
 - [ ] **The Labeler**: Rotation monitoring and trick identification system.

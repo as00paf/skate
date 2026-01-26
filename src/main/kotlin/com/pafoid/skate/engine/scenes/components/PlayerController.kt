@@ -134,7 +134,7 @@ class PlayerController : Component() {
     }
 
     private fun handleFlicks(dt: Float) {
-        val flick = InputBuffer.getJoystickFlickVelocity(GLFW_JOYSTICK_1, 0.1f)
+        val flick = InputBuffer.getRightStickFlickVelocity(GLFW_JOYSTICK_1, 0.1f)
         if (flick.length() > 5.0f) {
             // Apply torque based on flick
             // X-flick = Kickflip/Heelflip (Roll)
@@ -162,10 +162,10 @@ class PlayerController : Component() {
             steer -= steerSpeed
         }
         
-        // Controller (Joystick 0)
+        // Controller (Joystick 1 - Left Stick X)
         JoystickListener.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > 0) {
-                val stickX = axes[0]
+            if (axes.size > JoystickListener.AXIS_LEFT_X) {
+                val stickX = axes[JoystickListener.AXIS_LEFT_X]
                 if (Math.abs(stickX) > 0.1f) {
                     steer -= stickX * steerSpeed
                 }
@@ -187,12 +187,19 @@ class PlayerController : Component() {
             multiplier = 1f
         }
         
-        // Controller
+        // Controller (Left Stick Y for forward movement, or triggers)
         JoystickListener.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > 1) {
-                val stickY = -axes[1] // Inverted stick Y
+            if (axes.size > JoystickListener.AXIS_LEFT_Y) {
+                val stickY = -axes[JoystickListener.AXIS_LEFT_Y] // Inverted stick Y
                 if (stickY > 0.1f) {
                     multiplier = Math.max(multiplier, stickY)
+                }
+            }
+            // Optional: Support Right Trigger for acceleration
+            if (axes.size > JoystickListener.AXIS_RIGHT_TRIGGER) {
+                val rt = (axes[JoystickListener.AXIS_RIGHT_TRIGGER] + 1f) / 2f // Normalize -1..1 to 0..1
+                if (rt > 0.1f) {
+                    multiplier = Math.max(multiplier, rt)
                 }
             }
         }
@@ -210,9 +217,9 @@ class PlayerController : Component() {
     private fun handleJumping() {
         var jump = KeyListener.keyBeginPress(GLFW_KEY_SPACE)
         
-        // Controller
+        // Controller (Button A/Cross)
         JoystickListener.getButtons(GLFW_JOYSTICK_1)?.let { buttons ->
-            if (buttons.size > 0 && buttons[0]) { // Button 0 is usually A/Cross
+            if (buttons.size > JoystickListener.BUTTON_A && buttons[JoystickListener.BUTTON_A]) {
                 jump = true
             }
         }

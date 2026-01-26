@@ -34,6 +34,14 @@ object InputBuffer {
     }
     
     fun getJoystickFlickVelocity(jid: Int, timeWindow: Float): Vector2f {
+        return getJoystickFlickVelocity(jid, timeWindow, JoystickListener.AXIS_LEFT_X, JoystickListener.AXIS_LEFT_Y)
+    }
+
+    fun getRightStickFlickVelocity(jid: Int, timeWindow: Float): Vector2f {
+        return getJoystickFlickVelocity(jid, timeWindow, JoystickListener.AXIS_RIGHT_X, JoystickListener.AXIS_RIGHT_Y)
+    }
+
+    private fun getJoystickFlickVelocity(jid: Int, timeWindow: Float, axisX: Int, axisY: Int): Vector2f {
         if (buffer.size < 2) return Vector2f(0f, 0f)
 
         val now = buffer.last.timestamp
@@ -43,9 +51,10 @@ object InputBuffer {
         val startAxes = startState.joystickAxes ?: return Vector2f(0f, 0f)
         val endAxes = endState.joystickAxes ?: return Vector2f(0f, 0f)
         
-        if (startAxes.size < 2 || endAxes.size < 2) return Vector2f(0f, 0f)
+        val maxAxis = Math.max(axisX, axisY)
+        if (startAxes.size <= maxAxis || endAxes.size <= maxAxis) return Vector2f(0f, 0f)
 
-        val deltaPos = Vector2f(endAxes[0] - startAxes[0], endAxes[1] - startAxes[1])
+        val deltaPos = Vector2f(endAxes[axisX] - startAxes[axisX], endAxes[axisY] - startAxes[axisY])
         val deltaTime = endState.timestamp - startState.timestamp
 
         return if (deltaTime > 0) deltaPos.div(deltaTime) else Vector2f(0f, 0f)
