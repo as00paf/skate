@@ -160,5 +160,6 @@ class Texture: Component() {
     companion object {
         const val WHITE = "assets/textures/white.png"
         const val ASPHALT = "assets/textures/asphalt.png"
+        const val CONCRETE_SIMPLE = "assets/textures/concrete_simple.png"
     }
 }

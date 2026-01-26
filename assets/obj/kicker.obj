@@ -1,183 +1,57 @@
-# Kicker Model - Simple Ramp
+o Kicker
+# A proper wedge kicker with hard edges and correct CCW winding.
+# 18 vertices total to support duplicated positions for different face normals.
 
-# Vertices
-v -0.5 0.0 0.5   # 1: Bottom-Left-Front
-v 0.5 0.0 0.5    # 2: Bottom-Right-Front
-v 0.5 0.5 0.5    # 3: Top-Right-Front (slanted)
-v -0.5 0.5 0.5   # 4: Top-Left-Front (slanted)
-v -0.5 0.0 -0.5  # 5: Bottom-Left-Back
-v 0.5 0.0 -0.5   # 6: Bottom-Right-Back
-v 0.5 0.5 -0.5   # 7: Top-Right-Back (slanted)
-v -0.5 0.5 -0.5  # 8: Top-Left-Back (slanted)
-
-# This is still a box.
-# For a kicker, I need a ramp shape.
-# Let's try to simplify it to a wedge.
-
+# Ramp surface (Normal: 0, 0.707, 0.707)
 v -0.5 0.0 0.5
 v 0.5 0.0 0.5
-v 0.5 0.5 0.5 # Top right front
-v -0.5 0.5 0.5 # Top left front
-v -0.5 0.0 -0.5
+v 0.5 1.0 -0.5
+v -0.5 1.0 -0.5
+
+# Bottom surface (Normal: 0, -1, 0)
+v -0.5 0.0 0.5
+v 0.5 0.0 0.5
 v 0.5 0.0 -0.5
-v 0.5 0.5 -0.5 # Top right back
-v -0.5 0.5 -0.5 # Top left back
+v -0.5 0.0 -0.5
 
-# Vertices for a simple ramp (wedge)
-v -0.5 0.0 0.5   # 1: Bottom-Left-Front
-v 0.5 0.0 0.5    # 2: Bottom-Right-Front
-v 0.5 0.5 -0.5   # 3: Top-Right-Back (endpoint of ramp)
-v -0.5 0.5 -0.5  # 4: Top-Left-Back (endpoint of ramp)
-v -0.5 0.0 -0.5  # 5: Bottom-Left-Back
-v 0.5 0.0 -0.5   # 6: Bottom-Right-Back
+# Back surface (Normal: 0, 0, -1)
+v 0.5 0.0 -0.5
+v -0.5 0.0 -0.5
+v -0.5 1.0 -0.5
+v 0.5 1.0 -0.5
 
-vt 0.0 0.0
-vt 1.0 0.0
-vt 1.0 1.0
-vt 0.0 1.0
+# Left side (Normal: -1, 0, 0)
+v -0.5 0.0 0.5
+v -0.5 1.0 -0.5
+v -0.5 0.0 -0.5
 
-# Normals
-vn 0.0 1.0 0.0   # Top
-vn 0.0 -1.0 0.0  # Bottom
-vn 0.0 0.0 1.0   # Front
-vn 0.0 0.0 -1.0  # Back
-vn 1.0 0.0 0.0   # Right
-vn -1.0 0.0 0.0  # Left
-vn 0.0 0.707 0.707 # Ramp (approximation)
-vn 0.0 0.707 -0.707 # Ramp (approximation for other side if needed)
+# Right side (Normal: 1, 0, 0)
+v 0.5 0.0 0.5
+v 0.5 0.0 -0.5
+v 0.5 1.0 -0.5
 
-# Faces
-# Bottom face
-f 1/1/2 6/2/2 5/3/2
-f 1/1/2 2/4/2 6/2/2
+vt 0 0
+vt 1 0
+vt 1 1
+vt 0 1
 
-# Back face (flat)
-f 5/1/4 6/2/4 3/3/4
-f 3/3/4 4/4/4 5/1/4
+vn 0 0.707 0.707
+vn 0 -1 0
+vn 0 0 -1
+vn -1 0 0
+vn 1 0 0
 
-# Front face (the ramp itself)
-f 1/1/7 4/4/7 3/3/7
-f 3/3/7 2/2/7 1/1/7
-
-# Left side
-f 5/1/6 1/2/6 4/3/6
-f 4/3/6 8/4/6 5/1/6 # Vertex 8 was removed. This is wrong.
-
-# Simplified kicker, assuming front-facing ramp
-# Vertices for a simple ramp (wedge)
-# Base at Y=0, ramp goes up in Z- (backwards) direction.
-
-v -0.5 0.0 0.5   # 1 (Bottom-Left-Front)
-v 0.5 0.0 0.5    # 2 (Bottom-Right-Front)
-v 0.5 0.0 -0.5   # 3 (Bottom-Right-Back)
-v -0.5 0.0 -0.5  # 4 (Bottom-Left-Back)
-v 0.5 1.0 -0.5   # 5 (Top-Right-Back - top of the ramp)
-v -0.5 1.0 -0.5  # 6 (Top-Left-Back - top of the ramp)
-
-vt 0.0 0.0
-vt 1.0 0.0
-vt 1.0 1.0
-vt 0.0 1.0
-
-# Normals
-vn 0.0 1.0 0.0   # Up
-vn 0.0 -1.0 0.0  # Down
-vn 0.0 0.0 1.0   # Front (flat)
-vn 0.0 0.0 -1.0  # Back (flat)
-vn 1.0 0.0 0.0   # Right (flat)
-vn -1.0 0.0 0.0  # Left (flat)
-vn 0.0 0.707 -0.707 # Ramp face
-
-# Faces:
-# Bottom
-f 1/1/2 4/4/2 3/3/2
-f 1/1/2 3/3/2 2/2/2
-
-# Front (flat)
-f 1/1/3 2/2/3 1/1/3 # This is wrong. Should be a quad or two triangles
-f 1/1/3 2/2/3 3/3/3
-f 3/3/3 4/4/3 1/1/3 # Back to quad for consistency.
-
-# Try again with a clean approach for a simple wedge.
-# Vertices:
-v -0.5 0.0 0.5   # 1  Bottom-Left-Front
-v 0.5 0.0 0.5    # 2  Bottom-Right-Front
-v 0.5 0.0 -0.5   # 3  Bottom-Right-Back
-v -0.5 0.0 -0.5  # 4  Bottom-Left-Back
-v 0.5 1.0 -0.5   # 5  Top-Right-Back
-v -0.5 1.0 -0.5  # 6  Top-Left-Back
-
-vt 0.0 0.0
-vt 1.0 0.0
-vt 1.0 1.0
-vt 0.0 1.0
-
-vn 0.0 1.0 0.0   # Up
-vn 0.0 -1.0 0.0  # Down
-vn 0.0 0.0 1.0   # Front
-vn 0.0 0.0 -1.0  # Back
-vn 1.0 0.0 0.0   # Right
-vn -1.0 0.0 0.0  # Left
-vn 0.0 0.707 -0.707 # Ramp surface normal (for Z-ramp)
-
-# Faces
-# Bottom (1-2-3-4)
-f 1/1/2 4/4/2 3/3/2
-f 1/1/2 3/3/2 2/2/2
-
-# Front (1-2-5-6) - This is the ramp face
-# Note: For a ramp up towards -Z, points 1,2 remain at y=0, points 5,6 are at y=1.
-# Normals need to be calculated carefully.
-# Let's assume a ramp face going from 1,2 to 6,5
-# v1(-0.5,0,0.5) v2(0.5,0,0.5) v6(-0.5,1,0.5) v5(0.5,1,0.5)
-# This is a vertical wall.
-
-# Let's assume the ramp goes from front (Z=0.5) to back (Z=-0.5), rising in Y.
-# Vertices
-v -0.5 0.0 0.5   # 1 (Bottom-Left-Front)
-v 0.5 0.0 0.5    # 2 (Bottom-Right-Front)
-v 0.5 1.0 -0.5   # 3 (Top-Right-Back)
-v -0.5 1.0 -0.5  # 4 (Top-Left-Back)
-v -0.5 0.0 -0.5  # 5 (Bottom-Left-Back)
-v 0.5 0.0 -0.5   # 6 (Bottom-Right-Back)
-
-# UVs (simplified, assuming basic texture mapping)
-vt 0.0 0.0
-vt 1.0 0.0
-vt 1.0 1.0
-vt 0.0 1.0
-
-# Normals
-# Normal for the ramp face (triangle 1-2-3 and 1-3-4)
-# (v2-v1) = (1,0,0)
-# (v3-v1) = (1,1,-1)
-# Cross product (v2-v1) x (v3-v1) = (0*(-1) - 0*1, 0*1 - 1*(-1), 1*1 - 0*0) = (0,1,1) -> normalized (0, 0.707, 0.707)
-vn 0.0 0.707 0.707 # 1 (Ramp face normal)
-vn 0.0 -1.0 0.0  # 2 (Bottom face normal)
-vn 0.0 0.0 1.0   # 3 (Front face normal)
-vn 0.0 0.0 -1.0  # 4 (Back face normal)
-vn 1.0 0.0 0.0   # 5 (Right face normal)
-vn -1.0 0.0 0.0  # 6 (Left face normal)
-
-# Faces (simplified for a basic ramp)
-# Bottom face (vertices 1, 2, 6, 5)
-f 1/1/2 5/4/2 6/3/2
-f 1/1/2 6/3/2 2/2/2
-
-# Back face (vertices 5, 6, 3, 4) - this is the vertical back of the ramp
-f 5/1/4 6/2/4 3/3/4
-f 3/3/4 4/4/4 5/1/4
-
-# Right face (vertices 2, 3, 6) - this is the side triangle
-f 2/1/5 3/2/5 6/3/5
-
-# Left face (vertices 1, 4, 5) - this is the side triangle
-f 1/1/6 4/2/6 5/3/6
-
-# Top ramp face (vertices 1, 2, 3, 4) - this is the actual slanted ramp surface
-# No, this is wrong. Top ramp face vertices are 1,2,3,4.
-# It should be v1,v2,v3,v4. These are for a quad.
-# The ramp is formed by (1,2) at y=0,z=0.5 and (4,3) at y=1.0,z=-0.5
-# Vertices for the ramp face: 1, 2, 3, 4
+# Faces (triangulated)
+# Ramp
 f 1/1/1 2/2/1 3/3/1
 f 1/1/1 3/3/1 4/4/1
+# Bottom
+f 8/4/2 7/3/2 6/2/2
+f 8/4/2 6/2/2 5/1/2
+# Back
+f 9/1/3 12/4/3 11/3/3
+f 9/1/3 11/3/3 10/2/3
+# Left
+f 13/1/4 14/2/4 15/3/4
+# Right
+f 16/1/5 17/2/5 18/3/5

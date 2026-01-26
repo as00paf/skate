@@ -61,7 +61,7 @@ object AssetPool {
                 mainThreadQueue.add {
                     val file = File(filePath)
                     val parts = preLoaded.parts.map { p ->
-                        val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices)
+                        val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices)
                         val texture = if (p.texturePath != null) {
                             if (p.embeddedBuffer != null) {
                                 getTexture(p.texturePath, p.embeddedBuffer)

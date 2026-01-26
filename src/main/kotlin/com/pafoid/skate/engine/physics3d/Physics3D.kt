@@ -91,7 +91,7 @@ class Physics3D {
                 
                 cylinderColliders.forEach { c ->
                     val shape = CylinderCollisionShape(c.radius, c.height, c.axis)
-                    shape.setMargin(c.margin)
+                    shape.margin = c.margin
                     compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
                 }
 
@@ -102,15 +102,15 @@ class Physics3D {
                 // If no colliders, provide a default box
                 if (boxColliders.isEmpty() && cylinderColliders.isEmpty() && customColliders.isEmpty()) {
                     val shape = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
-                    shape.setMargin(0.04f)
+                    shape.margin = 0.04f
                     compound.addChildShape(shape, JmeVector3f(0f, 0f, 0f))
                 }
 
                 val body = PhysicsRigidBody(compound, desiredMass)
-                body.setFriction(rb.friction)
+                body.friction = rb.friction
                 
                 if (rb.bodyType == com.pafoid.skate.engine.physics3d.enums.BodyType.Kinematic) {
-                    body.setKinematic(true)
+                    body.isKinematic = true
                 }
 
                 if (rb.useCCD) {
@@ -169,12 +169,12 @@ class Physics3D {
             val halfExtents = shape.getHalfExtents(null)
             dd.addBox3D(pos, rot, Vector3f(halfExtents.x, halfExtents.y, halfExtents.z), color)
         } else if (shape is CylinderCollisionShape) {
-            val halfExtents = shape.getHalfExtents(null)
             val axis = shape.axis
             
             val radius: Float
             val height: Float
             
+            val halfExtents = shape.getHalfExtents(null)
             when (axis) {
                 0 -> { // X-axis is height
                     radius = halfExtents.y
@@ -209,7 +209,7 @@ class Physics3D {
                 
                 debugDrawShape(childShape, combinedPos, combinedRot, color)
             }
-        } else if (shape is com.jme3.bullet.collision.shapes.MeshCollisionShape || shape is com.jme3.bullet.collision.shapes.HullCollisionShape) {
+        } else if (shape is com.jme3.bullet.collision.shapes.HullCollisionShape || shape is com.jme3.bullet.collision.shapes.MeshCollisionShape) {
             // Complex shapes - just draw a small cross for now to indicate position
             dd.addLine3D(Vector3f(pos).add(-0.5f, 0f, 0f), Vector3f(pos).add(0.5f, 0f, 0f), color)
             dd.addLine3D(Vector3f(pos).add(0f, -0.5f, 0f), Vector3f(pos).add(0f, 0.5f, 0f), color)

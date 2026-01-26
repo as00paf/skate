@@ -19,6 +19,12 @@ import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
 class PrefabsWindow {
     private val loader = VAOLoader()
 
+    enum class MaterialType(val displayName: String, val texturePath: String) {
+        SIMPLE_CONCRETE("Concrete (Simple)", Texture.CONCRETE_SIMPLE)
+    }
+
+    private var selectedMaterial = MaterialType.SIMPLE_CONCRETE
+
     fun imgui() {
         ImGui.begin("Prefabs")
 
@@ -38,6 +44,21 @@ class PrefabsWindow {
         }
 
         if (ImGui.collapsingHeader("Obstacles")) {
+            ImGui.text("Material Style:")
+            if (ImGui.beginCombo("##material_style", selectedMaterial.displayName)) {
+                for (mat in MaterialType.entries) {
+                    val isSelected = selectedMaterial == mat
+                    if (ImGui.selectable(mat.displayName, isSelected)) {
+                        selectedMaterial = mat
+                    }
+                    if (isSelected) {
+                        ImGui.setItemDefaultFocus()
+                    }
+                }
+                ImGui.endCombo()
+            }
+            ImGui.separator()
+
             if (ImGui.button("Spawn Rail")) {
                 spawnRail()
             }
@@ -92,7 +113,7 @@ class PrefabsWindow {
         rail.addComponent(Entity(
             model = com.pafoid.skate.engine.models.TexturedModel(
                 AssetPool.getRawModel(ObjLoader.RAIL, loader),
-                AssetPool.getTexture(Texture.WHITE)
+                AssetPool.getTexture(selectedMaterial.texturePath)
             )
         ))
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
@@ -108,7 +129,7 @@ class PrefabsWindow {
         ledge.addComponent(Entity(
             model = com.pafoid.skate.engine.models.TexturedModel(
                 AssetPool.getRawModel(ObjLoader.LEDGE, loader),
-                AssetPool.getTexture(Texture.WHITE)
+                AssetPool.getTexture(selectedMaterial.texturePath)
             )
         ))
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
@@ -124,7 +145,7 @@ class PrefabsWindow {
         kicker.addComponent(Entity(
             model = com.pafoid.skate.engine.models.TexturedModel(
                 AssetPool.getRawModel(ObjLoader.KICKER, loader),
-                AssetPool.getTexture(Texture.WHITE)
+                AssetPool.getTexture(selectedMaterial.texturePath)
             )
         ))
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
@@ -134,6 +155,13 @@ class PrefabsWindow {
         for (i in 0 until kickerRawModel.vertices.size / 3) {
             jmeVertices.add(JmeVector3f(kickerRawModel.vertices[i*3], kickerRawModel.vertices[i*3+1], kickerRawModel.vertices[i*3+2]))
         }
+        
+        if (jmeVertices.isEmpty()) {
+            println("Error: (spawnKicker) Kicker model vertex data is empty. HullCollisionShape cannot be created.")
+            scene.addGameObjectToScene(kicker) // Add it anyway so it appears in hierarchy, though physics-less
+            return
+        }
+
         val kickerShape = com.jme3.bullet.collision.shapes.HullCollisionShape(jmeVertices)
         kicker.addComponent(com.pafoid.skate.engine.physics3d.components.CustomCollider3D(kickerShape))
         
