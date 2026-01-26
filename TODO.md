@@ -6,7 +6,7 @@
 - [x] **Asset Extraction**: Unzip the player model from the assets folder and organize the resulting files.
 - [ ] **Diagnostics**:
     - [x] Implement a real-time FPS counter.
-    - [ ] **Custom Physics Debug**: Implement manual wireframe rendering for Bullet collision shapes using DebugDraw.
+    - [x] **Custom Physics Debug**: Implement manual wireframe rendering for Bullet collision shapes using DebugDraw.
 
 ### 2. Atmosphere & Environment
 - [ ] **Sky & Fog**: Add a Skybox (Cube Map) to the world and implement Fog in the shaders.
