@@ -102,6 +102,6 @@ class Shader(
         const val PICKING_3D = "assets/shaders/shader_3d_picking.glsl"
         const val SKYBOX = "assets/shaders/skybox.glsl"
         const val DEBUG = "assets/shaders/debugLine2D.glsl"
-        const val CLOUDS = "assets/shaders/volumetric_clouds.glsl"
+        const val CLOUD_DOME = "assets/shaders/cloud_dome.glsl"
     }
 }

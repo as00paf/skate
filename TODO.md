@@ -10,14 +10,10 @@
 
 ### 2. Atmosphere & Environment
 - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
-- [x] **Volumetric Clouds**:
-    - [x] **Directional Light (The Sun)**: Implement global light with direction/color and ImGui control.
-    - [x] **3D Texture Support**: Add GL_TEXTURE_3D support to the texture loader.
-    - [x] **Noise Generation**: Generate or load Perlin-Worley noise textures.
-    - [x] **Cloud Shader**: Fragment shader with ray-marching through a cloud layer.
-    - [x] **Fog Integration**: Ensure distance-based fog is applied to clouds.
-    - [x] **Lighting Integration**: Beer's Law for absorption and self-shadowing from the Sun.
-    - [x] **Depth Buffer Sync**: Ensure clouds render behind opaque geometry.
+- [x] **Cloud Dome**:
+    - [x] **Cloud Shader**: Create a shader that pans two noise textures for a dynamic sky.
+    - [x] **Lighting Integration**: Add rim-lighting to clouds using the Directional Light.
+    - [x] **Dome Rendering**: Implement a renderer for the cloud dome geometry.
 - [ ] **Obstacle Palette**: Add Rail, Ledge, and Kicker Ramp prefabs to the editor library.
 
 ### 3. Analog Control & Skater Integration

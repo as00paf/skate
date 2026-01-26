@@ -20,14 +20,16 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
     var sun: com.pafoid.skate.engine.render.DirectionalLight = com.pafoid.skate.engine.render.DirectionalLight()
+    var moon: com.pafoid.skate.engine.render.DirectionalLight = com.pafoid.skate.engine.render.DirectionalLight()
     var useSun: Boolean = true
-    var useAmbient: Boolean = false
-    var timeOfDay: Float = 0.5f // 0.0 to 1.0, 0.5 is noon
-    var ambientLight: Vector3f = Vector3f(0.2f, 0.2f, 0.2f)
+    var useAmbient: Boolean = true
+    var timeOfDay: Float = 12.0f // 0.0 to 24.0, 12.0 is noon
+    var ambientLight: Vector3f = Vector3f(0.1f, 0.1f, 0.15f) // Subtle blue-ish ambient
     var skyColor: Vector3f = Vector3f(0.6f, 0.7f, 0.9f)
     var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f)
     var fogDensity: Float = 0.0f
     var fogGradient: Float = 1.5f
+    
     var cubemap: Cubemap? = null
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
@@ -154,6 +156,8 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
                 skyColor = skyColor,
                 sunDirection = sun.direction,
                 sunColor = sun.color,
+                moonDirection = moon.direction,
+                moonColor = moon.color,
                 lightPosition = light.position,
                 gravity = physics3d.getGravity(),
                 fogColor = fogColor,
@@ -185,6 +189,8 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             this.skyColor.set(data.skyColor)
             this.sun.direction.set(data.sunDirection)
             this.sun.color.set(data.sunColor)
+            this.moon.direction.set(data.moonDirection)
+            this.moon.color.set(data.moonColor)
             this.light.position.set(data.lightPosition)
             this.physics3d.setGravity(data.gravity)
             this.fogColor.set(data.fogColor)

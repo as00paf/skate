@@ -16,7 +16,7 @@ class Renderer(
     private val pickingShader: Shader,
     private val pickingShader3D: Shader,
     private val skyboxShader: Shader,
-    private val cloudShader: Shader
+    private val cloudDomeShader: Shader
 ) {
     var useFbo = false // Default to false for initial feature tests
     
@@ -24,7 +24,7 @@ class Renderer(
     private val renderer2D = Renderer2D()
     private val pickingTexture = PickingTexture(1920, 1080)
     private val skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
-    private val cloudRenderer = VolumetricCloudRenderer(cloudShader, VAOLoader())
+    private val cloudDomeRenderer = CloudDomeRenderer(cloudDomeShader, VAOLoader())
 
     init {
         renderer2D.bindShader(batchShader)
@@ -91,7 +91,7 @@ class Renderer(
         defaultShader.uploadVec3f("lightPosition", light.position)
         defaultShader.uploadVec3f("lightColor", Vector3f(1.5f, 1.5f, 1.5f)) // Brighter light
         
-        val ambient = if (scene.useAmbient) Vector3f(0.5f, 0.5f, 0.5f) else Vector3f(0f, 0f, 0f)
+        val ambient = if (scene.useAmbient) scene.ambientLight else Vector3f(0f, 0f, 0f)
         defaultShader.uploadVec3f("uAmbientLight", ambient)
         defaultShader.uploadInt("textureSampler", 0)
 
@@ -99,6 +99,11 @@ class Renderer(
         defaultShader.uploadVec3f("uSunDirection", scene.sun.direction)
         val finalSunColor = if (scene.useSun) Vector3f(scene.sun.color).mul(scene.sun.intensity) else Vector3f(0f, 0f, 0f)
         defaultShader.uploadVec3f("uSunColor", finalSunColor)
+
+        // Moon
+        defaultShader.uploadVec3f("uMoonDirection", scene.moon.direction)
+        val finalMoonColor = Vector3f(scene.moon.color).mul(scene.moon.intensity)
+        defaultShader.uploadVec3f("uMoonColor", finalMoonColor)
 
         // Fog
         defaultShader.uploadVec3f("uFogColor", scene.fogColor)
@@ -137,9 +142,8 @@ class Renderer(
             skyboxRenderer.render(camera, it)
         }
 
-        // Render Volumetric Clouds
-        val depthId = if (useFbo) Window.getFrameBuffer().getDepthTextureId() else 0
-        cloudRenderer.render(camera, scene, depthId)
+        // Render Cloud Dome
+        cloudDomeRenderer.render(camera, scene)
 
         // 3. Debug Pass
         DebugDraw.draw()

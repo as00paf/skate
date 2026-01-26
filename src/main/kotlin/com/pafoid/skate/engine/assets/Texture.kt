@@ -45,12 +45,12 @@ class Texture: Component() {
 
         glBindTexture(target, id)
 
-        // Noise textures for clouds usually want linear interpolation and clamping
+        // Noise textures for clouds usually want linear interpolation and repeating
         glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-        glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_REPEAT)
 
         glTexImage3D(target, 0, GL_RGBA, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
 
