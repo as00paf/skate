@@ -43,11 +43,24 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     }
 
     fun start() {
+        isRunning = true
         gameObjects.forEach { go ->
             go.start()
             physics3d.add(go)
         }
-        isRunning = true
+        
+        // Flush any objects added during startup (e.g. by CloudSystem)
+        while (pendingObjects.isNotEmpty()) {
+            val toAdd = mutableListOf<GameObject>()
+            toAdd.addAll(pendingObjects)
+            pendingObjects.clear()
+            
+            toAdd.forEach { go ->
+                gameObjects.add(go)
+                go.start()
+                physics3d.add(go)
+            }
+        }
     }
 
     fun addGameObjectToScene(gameObject: GameObject) {
