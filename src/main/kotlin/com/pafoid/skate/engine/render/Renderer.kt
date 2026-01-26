@@ -15,7 +15,8 @@ class Renderer(
     private val batchShader: Shader,
     private val pickingShader: Shader,
     private val pickingShader3D: Shader,
-    private val skyboxShader: Shader
+    private val skyboxShader: Shader,
+    private val cloudShader: Shader
 ) {
     var useFbo = false // Default to false for initial feature tests
     
@@ -23,6 +24,7 @@ class Renderer(
     private val renderer2D = Renderer2D()
     private val pickingTexture = PickingTexture(1920, 1080)
     private val skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
+    private val cloudRenderer = VolumetricCloudRenderer(cloudShader, VAOLoader())
 
     init {
         renderer2D.bindShader(batchShader)
@@ -134,6 +136,10 @@ class Renderer(
         scene.cubemap?.let {
             skyboxRenderer.render(camera, it)
         }
+
+        // Render Volumetric Clouds
+        val depthId = if (useFbo) Window.getFrameBuffer().getDepthTextureId() else 0
+        cloudRenderer.render(camera, scene, depthId)
 
         // 3. Debug Pass
         DebugDraw.draw()
