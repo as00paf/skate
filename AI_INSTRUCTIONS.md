@@ -29,7 +29,7 @@ One Step at a Time: Work on exactly one item from the TODO list. Do not anticipa
 
 User Confirmation: After completing an item, you must wait for the user to say "Ready to move on" or "Proceed" before starting the next item. You can also ask if we are ready to move on to the next item on the todo list.
 
-TODO Management: Maintain and update a TODO.md file in the root. Mark items as complete [x] only after they are merged into master.
+TODO Management: Maintain and update a TODO.md file in the root. Mark items as complete [x] only after they are merged into master and pushed to the repository.
 
 Troubleshooting: If a bug arises, immediately branch off to a bug/ branch. Do not fix bugs directly in a feature/ branch or master.
 
