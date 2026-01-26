@@ -48,6 +48,19 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         skateGo.addComponent(SkateboardPhysics())
         scene.addGameObjectToScene(skateGo)
 
+        // FEATURE 1.1: Player Character (Skater)
+        val playerGo = GameObject("Skater")
+        // Parenting: Skater follows Skateboard
+        skateGo.addChild(playerGo)
+        
+        // Position relative to board (standing on it)
+        playerGo.transform.translation.set(0f, 0.1f, 0f) 
+        playerGo.transform.scale.set(100f, 100f, 100f) // Scale back up to be "human" sized relative to the 0.01 board
+        playerGo.addComponent(Entity(
+            model = AssetPool.getModel(ObjLoader.PLAYER_GLTF, loader)
+        ))
+        scene.addGameObjectToScene(playerGo)
+
         // FEATURE 2: Bullet Physics (Floor)
         val ground = GameObject("Floor")
         ground.transform.translation.set(0f, -0.5f, 0f)

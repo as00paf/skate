@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
-import com.pafoid.skate.engine.toMatrix
+import com.pafoid.skate.engine.toWorldMatrix
 import com.pafoid.skate.engine.utils.Color
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL30.*
@@ -159,7 +159,7 @@ class Renderer(
     private fun renderEntityPicking(go: com.pafoid.skate.engine.scenes.GameObject, entity: Entity) {
         val texturedModel = entity.model
 
-        pickingShader3D.uploadMat4f("transformationMatrix", go.transform.toMatrix())
+        pickingShader3D.uploadMat4f("transformationMatrix", go.transform.toWorldMatrix())
         pickingShader3D.uploadFloat("uEntityId", go.getUid().toFloat() + 1)
 
         for (part in texturedModel.parts) {
@@ -196,7 +196,7 @@ class Renderer(
     private fun renderEntity(go: com.pafoid.skate.engine.scenes.GameObject, entity: Entity) {
         val texturedModel = entity.model
 
-        defaultShader.uploadMat4f("transformationMatrix", go.transform.toMatrix())
+        defaultShader.uploadMat4f("transformationMatrix", go.transform.toWorldMatrix())
         defaultShader.uploadFloat("uShininess", entity.shininess)
         defaultShader.uploadFloat("uReflectivity", entity.reflectivity)
         defaultShader.uploadFloat("uTextureScale", entity.textureScale)

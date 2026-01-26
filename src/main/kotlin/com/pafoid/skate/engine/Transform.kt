@@ -51,3 +51,13 @@ fun Transform.toMatrix(): Matrix4f {
     matrix.scale(scale)
     return matrix
 }
+
+fun Transform.toWorldMatrix(): Matrix4f {
+    val worldMatrix = toMatrix()
+    val parent = gameObject.parent
+    if (parent != null) {
+        val parentMatrix = parent.transform.toWorldMatrix()
+        parentMatrix.mul(worldMatrix, worldMatrix)
+    }
+    return worldMatrix
+}

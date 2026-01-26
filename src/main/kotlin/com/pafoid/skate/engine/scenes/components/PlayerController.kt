@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.JoystickListener
 import com.pafoid.skate.engine.controls.InputBuffer
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.toMatrix
+import com.pafoid.skate.engine.toWorldMatrix
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Matrix4f
@@ -45,7 +45,7 @@ class PlayerController : Component() {
         raw.getLinearVelocity(currentVelocity)
 
         if (phys.isGrounded) {
-            val transform = gameObject.transform.toMatrix()
+            val transform = gameObject.transform.toWorldMatrix()
             val localUp = Vector3f(0f, 1f, 0f)
             val worldUp = Vector3f()
             transform.transformDirection(localUp, worldUp)
@@ -69,6 +69,9 @@ class PlayerController : Component() {
         // Transition to Tumble Cube
         val scene = com.pafoid.skate.engine.scenes.SceneManager.getCurrentScene() ?: return
         
+        // Find the skater child
+        val skater = gameObject.children.find { it.name == "Skater" }
+        
         val tumbleCube = com.pafoid.skate.engine.Prefabs.generateEntityObject(
             com.pafoid.skate.engine.assets.AssetPool.getRawModel(com.pafoid.skate.engine.assets.ObjLoader.CUBE, com.pafoid.skate.engine.render.VAOLoader()),
             com.pafoid.skate.engine.assets.AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE),
@@ -88,6 +91,15 @@ class PlayerController : Component() {
         scene.addGameObjectToScene(tumbleCube)
         // Add to physics immediately so we can set velocity
         scene.physics3d.add(tumbleCube)
+
+        // Reparent skater to the tumble cube
+        skater?.let {
+            tumbleCube.addChild(it)
+            // Reset local transform relative to cube
+            it.transform.translation.set(0f, 0f, 0f)
+            it.transform.rotation.set(0f, 0f, 0f)
+            it.transform.scale.set(1f, 1f, 1f) // Adjust scale if needed, since cube is 1.0
+        }
         
         // Inherit velocity
         val linVel = com.jme3.math.Vector3f()
@@ -132,7 +144,7 @@ class PlayerController : Component() {
             val worldTorque = Vector3f()
             
             // Convert local torque to world space
-            val transform = gameObject.transform.toMatrix()
+            val transform = gameObject.transform.toWorldMatrix()
             transform.transformDirection(localTorque, worldTorque)
             
             rb?.rawBody?.applyTorqueImpulse(com.jme3.math.Vector3f(worldTorque.x, worldTorque.y, worldTorque.z))
@@ -186,7 +198,7 @@ class PlayerController : Component() {
         }
 
         if (multiplier > 0f && (physics?.isGrounded == true)) {
-            val transform = gameObject.transform.toMatrix()
+            val transform = gameObject.transform.toWorldMatrix()
             val forward = Vector3f(1f, 0f, 0f) // X is forward for our board
             transform.transformDirection(forward)
             forward.mul(pushForce * multiplier)

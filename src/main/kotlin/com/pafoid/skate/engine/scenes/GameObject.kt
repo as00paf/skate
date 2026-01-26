@@ -29,9 +29,22 @@ open class GameObject(
     val components = mutableListOf<Component>()
 
     @Transient var transform: Transform = Transform()
+    @Transient var parent: GameObject? = null
+    @Transient val children = mutableListOf<GameObject>()
 
     init {
         addComponent(transform)
+    }
+
+    fun addChild(child: GameObject) {
+        child.parent?.removeChild(child)
+        child.parent = this
+        children.add(child)
+    }
+
+    fun removeChild(child: GameObject) {
+        children.remove(child)
+        child.parent = null
     }
 
     inline fun <reified T> getComponent(): T? {
