@@ -36,15 +36,17 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff.addComponent(EditorCamera(scene.camera))
         scene.addGameObjectToScene(editorStuff)
 
-        // FEATURE 1: Basic Rendering (Cube)
-        val cubeGo = GameObject("PhysicsCube")
-        cubeGo.transform.translation.set(0f, 10f, 0f)
-        cubeGo.addComponent(Entity(
-            model = TexturedModel(AssetPool.getRawModel(ObjLoader.CUBE, loader), AssetPool.getTexture(Texture.WHITE))
+        // FEATURE 1: Basic Rendering (Skateboard)
+        val skateGo = GameObject("Skateboard")
+        skateGo.transform.translation.set(0f, 5f, 0f)
+        skateGo.transform.scale.set(0.01f, 0.01f, 0.01f)
+        skateGo.addComponent(Entity(
+            model = AssetPool.getModel(ObjLoader.SKATEBOARD_GLB, loader)
         ))
-        cubeGo.addComponent(RigidBody3D(1.0f))
-        cubeGo.addComponent(BoxCollider3D(Vector3f(1f, 1f, 1f)))
-        scene.addGameObjectToScene(cubeGo)
+        skateGo.addComponent(RigidBody3D(1.0f).apply { friction = 0.1f })
+        skateGo.addComponent(BoxCollider3D(Vector3f(1.5f, 0.1f, 0.4f)))
+        skateGo.addComponent(SkateboardPhysics())
+        scene.addGameObjectToScene(skateGo)
 
         // FEATURE 2: Bullet Physics (Floor)
         val ground = GameObject("Floor")
@@ -66,19 +68,19 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         imgui.ImGui.text("Feature 1: Basic Rendering [COMPLETE]")
         imgui.ImGui.text("Feature 2: Bullet Physics (Floor) [COMPLETE]")
         imgui.ImGui.text("Feature 3: Modular Tile System [COMPLETE]")
-        imgui.ImGui.text("Feature 4: Skateboard Physics [PENDING]")
+        imgui.ImGui.text("Feature 4: Skateboard Physics [COMPLETE]")
 
-        if (imgui.ImGui.button("Reset Physics Cube")) {
+        if (imgui.ImGui.button("Reset Skateboard")) {
             val scene = SceneManager.getCurrentScene()
-            val cubeGo = scene?.gameObjects?.find { it.name == "PhysicsCube" }
-            cubeGo?.let { go ->
+            val skateGo = scene?.gameObjects?.find { it.name == "Skateboard" }
+            skateGo?.let { go ->
                 val rb = go.getComponent<RigidBody3D>()
                 rb?.let { r ->
-                    r.rawBody?.setPhysicsLocation(com.jme3.math.Vector3f(0f, 10f, 0f))
+                    r.rawBody?.setPhysicsLocation(com.jme3.math.Vector3f(0f, 5f, 0f))
                     r.rawBody?.setPhysicsRotation(com.jme3.math.Quaternion.IDENTITY)
                     r.rawBody?.setLinearVelocity(com.jme3.math.Vector3f.ZERO)
                     r.rawBody?.setAngularVelocity(com.jme3.math.Vector3f.ZERO)
-                    go.transform.translation.set(0f, 10f, 0f)
+                    go.transform.translation.set(0f, 5f, 0f)
                     go.transform.rotation.set(0f, 0f, 0f)
                 }
             }
