@@ -52,6 +52,7 @@ uniform float uReflectivity;
 uniform vec3 uAmbientLight;
 uniform float uSelected;
 uniform vec3 uFogColor;
+uniform float uIsCloud;
 
 out vec4 color;
 
@@ -63,9 +64,16 @@ void main()
     }
     
     vec4 textureColor = texture(textureSampler, fTexCoords);
-    // Cloud transparency: discard black pixels
-    if (textureColor.a < 0.1 || (textureColor.r < 0.05 && textureColor.g < 0.05 && textureColor.b < 0.05)) {
-        discard;
+    
+    if (uIsCloud > 0.5) {
+        // Use luminosity as alpha for clouds
+        float alpha = max(max(textureColor.r, textureColor.g), textureColor.b);
+        if (alpha < 0.1) discard;
+        textureColor.a *= alpha;
+    } else {
+        if (textureColor.a < 0.1) {
+            discard;
+        }
     }
 
     if (uSelected > 1.5) {

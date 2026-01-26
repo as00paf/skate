@@ -71,7 +71,7 @@ class Renderer(
             glViewport(0, 0, Window.currentWidth, Window.currentHeight)
         }
         
-        clearColor(scene)
+        clearColor(scene.skyColor)
         
         val camera = scene.camera
         val light = scene.light
@@ -205,6 +205,7 @@ class Renderer(
         defaultShader.uploadFloat("uShininess", entity.shininess)
         defaultShader.uploadFloat("uReflectivity", entity.reflectivity)
         defaultShader.uploadFloat("uTextureScale", entity.textureScale)
+        defaultShader.uploadFloat("uIsCloud", if (entity.isCloud) 1.0f else 0.0f)
 
         for (part in texturedModel.parts) {
             val model = part.rawModel
@@ -224,11 +225,10 @@ class Renderer(
         glBindVertexArray(0)
     }
 
-    fun clearColor(scene: Scene) {
+    fun clearColor(sky: Vector3f) {
         glEnable(GL_DEPTH_TEST)
-        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-        val sky = scene.skyColor
         glClearColor(sky.x, sky.y, sky.z, 1.0f)
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
     }
 
     fun destroy() {

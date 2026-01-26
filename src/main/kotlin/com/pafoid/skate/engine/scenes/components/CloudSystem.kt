@@ -26,25 +26,28 @@ class CloudSystem(private val count: Int = 20) : Component() {
 
         for (i in 0 until count) {
             val cloud = GameObject("Cloud_$i")
-            val x = random.nextFloat() * 1000f - 500f
-            val y = random.nextFloat() * 50f + 100f // High in the sky
-            val z = random.nextFloat() * 1000f - 500f
+            val x = random.nextFloat() * 2000f - 500f
+            val y = random.nextFloat() * 100f + 150f // Higher and more varied
+            val z = random.nextFloat() * 2000f - 1000f
             
             cloud.transform.translation.set(x, y, z)
-            val scale = random.nextFloat() * 20f + 20f
-            cloud.transform.scale.set(scale, scale * 0.5f, scale)
+            val scaleX = random.nextFloat() * 50f + 50f
+            val scaleY = scaleX * (random.nextFloat() * 0.3f + 0.3f)
+            cloud.transform.scale.set(scaleX, scaleY, 1f) // 2D scale since billboarding
             
-            // Randomly rotate to add variety
-            cloud.transform.rotation.y = random.nextFloat() * 360f
-
             val texPath = cloudTextures[random.nextInt(cloudTextures.size)]
             val model = TexturedModel(AssetPool.getRawModel(ObjLoader.CUBE, loader), AssetPool.getTexture(texPath))
             
             cloud.addComponent(Entity(model = model).apply {
                 reflectivity = 0f
                 shininess = 0f
+                isCloud = true
             })
-            cloud.addComponent(CloudDrift(speed = random.nextFloat() * 2f + 0.5f))
+            cloud.addComponent(CloudDrift(
+                speed = random.nextFloat() * 5f + 2f,
+                resetX = 1500f,
+                startX = -1500f
+            ))
             cloud.addComponent(NonPickable())
             
             scene.addGameObjectToScene(cloud)

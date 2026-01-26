@@ -41,12 +41,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff.addComponent(EditorCamera(scene.camera))
         scene.addGameObjectToScene(editorStuff)
 
-        // Atmosphere
-        val atmosphere = scene.createGameObject("Atmosphere")
-        atmosphere.setNoSerialize()
-        atmosphere.addComponent(CloudSystem(30))
-        scene.addGameObjectToScene(atmosphere)
-
         // FEATURE 1: Basic Rendering (Skateboard)
         val skateGo = GameObject("Skateboard")
         skateGo.transform.translation.set(0f, 5f, 0f)
@@ -72,6 +66,12 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         ground.addComponent(groundRb)
         ground.addComponent(BoxCollider3D(Vector3f(100f, 0.5f, 100f)))
         scene.addGameObjectToScene(ground)
+
+        // Atmosphere (Spawned last for simple transparency sorting)
+        val atmosphere = scene.createGameObject("Atmosphere")
+        atmosphere.setNoSerialize()
+        atmosphere.addComponent(CloudSystem(50))
+        scene.addGameObjectToScene(atmosphere)
     }
 
     override fun imgui() {
