@@ -55,24 +55,12 @@ object AssetPool {
         JobSystem.runAsync {
             val preLoaded = assimpLoader.preLoadModel(filePath)
             
-            // Jump back to main thread via some mechanism. 
-            // Since we don't have a robust main-thread dispatcher yet, let's use a simple queue.
             synchronized(mainThreadQueue) {
                 mainThreadQueue.add {
                     val file = File(filePath)
                     val parts = preLoaded.parts.map { p ->
-                        val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices)
-                        val texture = if (p.texturePath != null) {
-                            if (p.embeddedBuffer != null) {
-                                getTexture(p.texturePath, p.embeddedBuffer)
-                            } else {
-                                val finalPath = File(filePath).parentFile.resolve(p.texturePath).path
-                                getTexture(finalPath)
-                            }
-                        } else {
-                            getTexture(Texture.WHITE)
-                        }
-                        com.pafoid.skate.engine.models.MeshPart(model, texture)
+                        val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
+                        com.pafoid.skate.engine.models.MeshPart(model, p.material)
                     }
                     val texturedModel = TexturedModel(parts)
                     models[file.absolutePath] = texturedModel
@@ -90,7 +78,7 @@ object AssetPool {
 
         val loadedParts = assimpLoader.loadModel(filePath, loader)
         val parts = loadedParts.map { loadedPart ->
-            MeshPart(loadedPart.model, loadedPart.texture)
+            MeshPart(loadedPart.model, loadedPart.material)
         }
 
         val texturedModel = TexturedModel(parts)
@@ -101,7 +89,7 @@ object AssetPool {
     fun getRawModelWithTexture(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): Triple<RawModel, String?, java.nio.ByteBuffer?> {
         val model = getModel(filePath, loader)
         val firstPart = model.parts[0]
-        return Triple(firstPart.rawModel, firstPart.texture.getFilePath(), null)
+        return Triple(firstPart.rawModel, firstPart.material.baseColorTexture?.getFilePath(), null)
     }
 
     fun getCubemap(filePaths: Array<String>): Cubemap {

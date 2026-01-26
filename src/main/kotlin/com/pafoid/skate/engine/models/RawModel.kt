@@ -1,3 +1,10 @@
 package com.pafoid.skate.engine.models
 
-data class RawModel(val vaoId: Int, val vertexCount: Int, val vertices: FloatArray = floatArrayOf())
+import org.lwjgl.opengl.GL11.GL_TRIANGLES
+
+data class RawModel(
+    val vaoId: Int, 
+    val vertexCount: Int, 
+    val vertices: FloatArray = floatArrayOf(),
+    val drawMode: Int = GL_TRIANGLES
+)

@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.Window
+import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.Scene
@@ -183,7 +184,7 @@ class Renderer(
             val model = part.rawModel
             glBindVertexArray(model.vaoId)
             glEnableVertexAttribArray(0)
-            glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, 0)
+            glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
             glDisableVertexAttribArray(0)
         }
         glBindVertexArray(0)
@@ -212,26 +213,103 @@ class Renderer(
 
     private fun renderEntity(go: com.pafoid.skate.engine.scenes.GameObject, entity: Entity) {
         val texturedModel = entity.model
+        val camera = com.pafoid.skate.engine.scenes.SceneManager.getCurrentScene()?.camera
 
         defaultShader.uploadMat4f("transformationMatrix", go.transform.toWorldMatrix())
-        defaultShader.uploadFloat("uShininess", entity.shininess)
-        defaultShader.uploadFloat("uReflectivity", entity.reflectivity)
         defaultShader.uploadFloat("uTextureScale", entity.textureScale)
+        if (camera != null) {
+            defaultShader.uploadVec3f("uCameraPos", camera.position)
+        }
 
         for (part in texturedModel.parts) {
             val model = part.rawModel
+            val material = part.material
+            
             glBindVertexArray(model.vaoId)
-            glEnableVertexAttribArray(0)
-            glEnableVertexAttribArray(1)
-            glEnableVertexAttribArray(2)
+            glEnableVertexAttribArray(0) // Pos
+            glEnableVertexAttribArray(1) // UV
+            glEnableVertexAttribArray(2) // Normal
+            glEnableVertexAttribArray(3) // Tangent
+            glEnableVertexAttribArray(4) // Color
+            glEnableVertexAttribArray(5) // UV1
+            glEnableVertexAttribArray(6) // Joints
+            glEnableVertexAttribArray(7) // Weights
 
+            // Base Color
             glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, part.texture.getId())
-            glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, 0)
+            material.baseColorTexture?.bind() ?: AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind()
+            defaultShader.uploadInt("u_BaseColorTexture", 0)
+            defaultShader.uploadVec4f("u_BaseColorFactor", material.baseColorFactor)
+
+            // Normal Map
+            glActiveTexture(GL_TEXTURE1)
+            val hasNormal = material.normalMap != null
+            if (hasNormal) material.normalMap!!.bind()
+            defaultShader.uploadInt("u_NormalMap", 1)
+            defaultShader.uploadBoolean("u_HasNormalMap", hasNormal)
+
+            // Metallic Roughness
+            glActiveTexture(GL_TEXTURE2)
+            val hasMR = material.metallicRoughnessTexture != null
+            if (hasMR) material.metallicRoughnessTexture!!.bind()
+            defaultShader.uploadInt("u_MetallicRoughnessTexture", 2)
+            defaultShader.uploadBoolean("u_HasMetallicRoughnessTexture", hasMR)
+            defaultShader.uploadFloat("u_MetallicFactor", material.metallicFactor)
+            defaultShader.uploadFloat("u_RoughnessFactor", material.roughnessFactor)
+
+            // AO
+            glActiveTexture(GL_TEXTURE3)
+            val hasAO = material.aoTexture != null
+            material.aoTexture?.bind() ?: AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind()
+            defaultShader.uploadInt("u_AOTexture", 3)
+            defaultShader.uploadBoolean("u_HasAOTexture", hasAO)
+
+            // Emissive
+            glActiveTexture(GL_TEXTURE4)
+            val hasEmissive = material.emissiveTexture != null
+            if (hasEmissive) material.emissiveTexture!!.bind()
+            defaultShader.uploadInt("u_EmissiveTexture", 4)
+            defaultShader.uploadBoolean("u_HasEmissiveTexture", hasEmissive)
+            defaultShader.uploadVec3f("u_EmissiveFactor", material.emissiveFactor)
+
+            // Alpha
+            val alphaInt = when(material.alphaMode) {
+                "OPAQUE" -> 0
+                "MASK" -> 1
+                "BLEND" -> 2
+                else -> 0
+            }
+            defaultShader.uploadInt("u_AlphaMode", alphaInt)
+            defaultShader.uploadFloat("u_AlphaCutoff", material.alphaCutoff)
+
+            defaultShader.uploadBoolean("u_HasSkin", false) // TODO: Implement skinning data passing
+
+            if (alphaInt == 2) {
+                glEnable(GL_BLEND)
+                glDepthMask(false)
+            } else {
+                glDisable(GL_BLEND)
+                glDepthMask(true)
+            }
+
+            if (material.doubleSided) glDisable(GL_CULL_FACE)
+            else glEnable(GL_CULL_FACE)
+
+            glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
+
+            if (alphaInt == 2) {
+                glDisable(GL_BLEND)
+                glDepthMask(true)
+            }
 
             glDisableVertexAttribArray(0)
             glDisableVertexAttribArray(1)
             glDisableVertexAttribArray(2)
+            glDisableVertexAttribArray(3)
+            glDisableVertexAttribArray(4)
+            glDisableVertexAttribArray(5)
+            glDisableVertexAttribArray(6)
+            glDisableVertexAttribArray(7)
         }
         glBindVertexArray(0)
     }

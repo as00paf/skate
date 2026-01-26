@@ -13,14 +13,56 @@ class VAOLoader {
     private val vbos = mutableListOf<Int>()
     private val textures = mutableListOf<Int>()
 
-    fun loadToVAO(positions: FloatArray, textureCoords: FloatArray, normals: FloatArray, indices: IntArray, rawVertices: FloatArray = floatArrayOf()): RawModel {
+    fun loadToVAO(
+        positions: FloatArray, 
+        textureCoords: FloatArray, 
+        normals: FloatArray, 
+        indices: IntArray, 
+        rawVertices: FloatArray = floatArrayOf(),
+        tangents: FloatArray = floatArrayOf(),
+        colors: FloatArray = floatArrayOf(),
+        drawMode: Int = GL_TRIANGLES,
+        textureCoords1: FloatArray = floatArrayOf(),
+        joints: IntArray = intArrayOf(),
+        weights: FloatArray = floatArrayOf()
+    ): RawModel {
         val vaoId = createVAO()
-        bindIndicesBuffer(indices)
+        if (indices.isNotEmpty()) {
+            bindIndicesBuffer(indices)
+        }
         storeDataInAttribList(0, 3, positions)
         storeDataInAttribList(1, 2, textureCoords)
         storeDataInAttribList(2, 3, normals)
+        
+        if (tangents.isNotEmpty()) {
+            storeDataInAttribList(3, 3, tangents)
+        }
+        if (colors.isNotEmpty()) {
+            storeDataInAttribList(4, 4, colors)
+        }
+        if (textureCoords1.isNotEmpty()) {
+            storeDataInAttribList(5, 2, textureCoords1)
+        }
+        if (joints.isNotEmpty()) {
+            storeDataInAttribListInt(6, 4, joints)
+        }
+        if (weights.isNotEmpty()) {
+            storeDataInAttribList(7, 4, weights)
+        }
+        
         unbindVAO()
-        return RawModel(vaoId, indices.size, rawVertices)
+        val vertexCount = if (indices.isNotEmpty()) indices.size else positions.size / 3
+        return RawModel(vaoId, vertexCount, rawVertices, drawMode)
+    }
+
+    private fun storeDataInAttribListInt(attributeNumber: Int, coordinateSize: Int, data: IntArray) {
+        val vboId = glGenBuffers()
+        vbos.add(vboId)
+        glBindBuffer(GL_ARRAY_BUFFER, vboId)
+        val buffer = storeDataInIntBuffer(data)
+        glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW)
+        glVertexAttribIPointer(attributeNumber, coordinateSize, GL_INT, 0, 0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
     }
 
     fun loadToVAO(positions: FloatArray, coordinateSize: Int, rawVertices: FloatArray = floatArrayOf()): RawModel {

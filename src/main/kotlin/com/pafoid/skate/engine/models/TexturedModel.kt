@@ -2,13 +2,30 @@ package com.pafoid.skate.engine.models
 
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.scenes.components.Component
+import org.joml.Vector4f
 
-data class MeshPart(val rawModel: RawModel, val texture: Texture)
+data class Material(
+    var baseColorTexture: Texture? = null,
+    var normalMap: Texture? = null,
+    var metallicRoughnessTexture: Texture? = null,
+    var aoTexture: Texture? = null,
+    var emissiveTexture: Texture? = null,
+    var baseColorFactor: Vector4f = Vector4f(1f, 1f, 1f, 1f),
+    var metallicFactor: Float = 1f,
+    var roughnessFactor: Float = 1f,
+    var emissiveFactor: org.joml.Vector3f = org.joml.Vector3f(0f, 0f, 0f),
+    var doubleSided: Boolean = false,
+    var alphaMode: String = "OPAQUE",
+    var alphaCutoff: Float = 0.5f
+)
+
+data class MeshPart(val rawModel: RawModel, val material: Material)
 
 data class TexturedModel (val parts: List<MeshPart>): Component() {
-    constructor(rawModel: RawModel, texture: Texture) : this(listOf(MeshPart(rawModel, texture)))
+    constructor(rawModel: RawModel, texture: Texture) : this(listOf(MeshPart(rawModel, Material(baseColorTexture = texture))))
+    constructor(rawModel: RawModel, material: Material) : this(listOf(MeshPart(rawModel, material)))
     
-    // For backward compatibility during migration
+    // For backward compatibility
     val rawModel: RawModel get() = parts[0].rawModel
-    val texture: Texture get() = parts[0].texture
+    val texture: Texture get() = parts[0].material.baseColorTexture ?: com.pafoid.skate.engine.assets.AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE)
 }
