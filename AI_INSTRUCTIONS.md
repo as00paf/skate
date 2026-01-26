@@ -20,9 +20,9 @@ Commits: Make small, atomic commits with descriptive messages. Do not bundle mul
 
 Completion: Once a task is finished, push the code to the feature/bug branch.
 
-Merging: Request explicit user confirmation to merge the branch into master. Do not merge automatically.
+Merging: Request explicit user confirmation to merge the branch into master. Do not merge automatically. After merging, always push the master branch to the remote repository.
 
-Clean up: Delete the branch only after a successful merge and user approval.
+Clean up: Delete the local and remote branch only after a successful merge and push to master, and with user approval.
 
 🚦 3. Operational Flow
 One Step at a Time: Work on exactly one item from the TODO list. Do not anticipate or jump to the next item.
