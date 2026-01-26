@@ -10,7 +10,7 @@
 
 ### 2. Atmosphere & Environment
 - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
-- [ ] **Dynamic Skybox (Skater XL Style)**:
+- [x] **Dynamic Skybox (Skater XL Style)**:
     - [ ] **HDRI Generation**: Generate an equirectangular HDRI texture using nanobanana.
     - [x] **Sky Dome Rendering**: Implement a UV Sphere renderer for the Sky Dome.
     - [x] **Sky Shader**: Create a shader with u_skyTint, u_exposure, and fog blending.

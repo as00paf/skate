@@ -141,88 +141,65 @@ class Physics3D {
         if (debugEnabled) {
             val debugColor = Vector3f(0f, 1f, 0f)
             physicsSpace.rigidBodyList.forEach { body ->
-                val shape = body.collisionShape
                 val location = body.getPhysicsLocation(null)
                 val rotation = body.getPhysicsRotation(null)
                 
-                // Convert JME types to JOML for DebugDraw
                 val pos = Vector3f(location.x, location.y, location.z)
                 val rot = org.joml.Quaternionf(rotation.getX(), rotation.getY(), rotation.getZ(), rotation.getW())
 
-                if (shape is BoxCollisionShape) {
-                    val halfExtents = shape.getHalfExtents(null)
-                    val h = Vector3f(halfExtents.x, halfExtents.y, halfExtents.z)
-                    drawDebugBox(pos, rot, h, debugColor)
-                } else if (shape is CompoundCollisionShape) {
-                    shape.listChildren().forEach { child ->
-                        val childShape = child.shape
-                        val worldOffset = Vector3f()
-                        val jmeOffset = child.copyOffset(null)
-                        worldOffset.set(jmeOffset.x, jmeOffset.y, jmeOffset.z)
-                        
-                        // Calculate world position of child shape
-                        rot.transform(worldOffset)
-                        val childPos = Vector3f(pos).add(worldOffset)
-                        
-                        if (childShape is BoxCollisionShape) {
-                            val halfExtents = childShape.getHalfExtents(null)
-                            val h = Vector3f(halfExtents.x, halfExtents.y, halfExtents.z)
-                            drawDebugBox(childPos, rot, h, debugColor)
-                        } else if (childShape is CylinderCollisionShape) {
-                            val halfExtents = childShape.getHalfExtents(null)
-                            val h = Vector3f(halfExtents.x, halfExtents.y, halfExtents.z)
-                            drawDebugBox(childPos, rot, h, debugColor)
-                        }
-                    }
-                } else {
-                    // For other shapes, just draw a small cross at the origin
-                    com.pafoid.skate.engine.render.DebugDraw.addLine3D(
-                        Vector3f(pos).add(-0.5f, 0f, 0f),
-                        Vector3f(pos).add(0.5f, 0f, 0f),
-                        debugColor
-                    )
-                    com.pafoid.skate.engine.render.DebugDraw.addLine3D(
-                        Vector3f(pos).add(0f, -0.5f, 0f),
-                        Vector3f(pos).add(0f, 0.5f, 0f),
-                        debugColor
-                    )
-                }
+                debugDrawShape(body.collisionShape, pos, rot, debugColor)
             }
         }
     }
 
-    private fun drawDebugBox(center: Vector3f, rotation: org.joml.Quaternionf, halfExtents: Vector3f, color: Vector3f) {
-        val h = halfExtents
-        val corners = arrayOf(
-            Vector3f(-h.x, -h.y, -h.z), Vector3f(h.x, -h.y, -h.z),
-            Vector3f(h.x, h.y, -h.z), Vector3f(-h.x, h.y, -h.z),
-            Vector3f(-h.x, -h.y, h.z), Vector3f(h.x, -h.y, h.z),
-            Vector3f(h.x, h.y, h.z), Vector3f(-h.x, h.y, h.z)
-        )
-
-        // Rotate and translate corners
-        corners.forEach { c ->
-            rotation.transform(c)
-            c.add(center)
-        }
-
-        // Draw edges
+    private fun debugDrawShape(shape: com.jme3.bullet.collision.shapes.CollisionShape, pos: Vector3f, rot: org.joml.Quaternionf, color: Vector3f) {
         val dd = com.pafoid.skate.engine.render.DebugDraw
-        // Bottom square
-        dd.addLine3D(corners[0], corners[1], color)
-        dd.addLine3D(corners[1], corners[2], color)
-        dd.addLine3D(corners[2], corners[3], color)
-        dd.addLine3D(corners[3], corners[0], color)
-        // Top square
-        dd.addLine3D(corners[4], corners[5], color)
-        dd.addLine3D(corners[5], corners[6], color)
-        dd.addLine3D(corners[6], corners[7], color)
-        dd.addLine3D(corners[7], corners[4], color)
-        // Vertical lines
-        dd.addLine3D(corners[0], corners[4], color)
-        dd.addLine3D(corners[1], corners[5], color)
-        dd.addLine3D(corners[2], corners[6], color)
-        dd.addLine3D(corners[3], corners[7], color)
+        
+        if (shape is BoxCollisionShape) {
+            val halfExtents = shape.getHalfExtents(null)
+            dd.addBox3D(pos, rot, Vector3f(halfExtents.x, halfExtents.y, halfExtents.z), color)
+        } else if (shape is CylinderCollisionShape) {
+            val halfExtents = shape.getHalfExtents(null)
+            val axis = shape.axis
+            
+            val radius: Float
+            val height: Float
+            
+            when (axis) {
+                0 -> { // X-axis is height
+                    radius = halfExtents.y
+                    height = halfExtents.x * 2f
+                }
+                1 -> { // Y-axis is height
+                    radius = halfExtents.x
+                    height = halfExtents.y * 2f
+                }
+                2 -> { // Z-axis is height
+                    radius = halfExtents.x
+                    height = halfExtents.z * 2f
+                }
+                else -> { // Should not happen, default to Y-axis
+                    radius = halfExtents.x
+                    height = halfExtents.y * 2f
+                }
+            }
+            dd.addCylinder3D(pos, rot, radius, height, axis, color)
+        } else if (shape is CompoundCollisionShape) {
+            shape.listChildren().forEach { child ->
+                val childShape = child.shape
+                val childOffset = child.copyOffset(null)
+                val childRot = child.copyRotation(null)
+                
+                // Child's local to world: WorldPos + WorldRot * (ChildOffset + ChildRot * LocalPoint)
+                // We can combine them into a single transform
+                val combinedRot = org.joml.Quaternionf(rot).mul(org.joml.Quaternionf(childRot.getX(), childRot.getY(), childRot.getZ(), childRot.getW()))
+                val combinedPos = Vector3f(childOffset.x, childOffset.y, childOffset.z)
+                rot.transform(combinedPos)
+                combinedPos.add(pos)
+                
+                debugDrawShape(childShape, combinedPos, combinedRot, color)
+            }
+        }
     }
 
     fun destroy() {

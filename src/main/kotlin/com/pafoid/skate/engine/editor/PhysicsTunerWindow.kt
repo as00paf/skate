@@ -15,6 +15,11 @@ class PhysicsTunerWindow {
         
         // Gravity
         if (ImGui.collapsingHeader("Global Settings")) {
+            val debugPhysics = ImBoolean(physics.debugEnabled)
+            if (ImGui.checkbox("Debug Physics", debugPhysics)) {
+                physics.debugEnabled = debugPhysics.get()
+            }
+
             val gravity = physics.getGravity()
             val gVal = floatArrayOf(gravity.x, gravity.y, gravity.z)
             if (ImGui.dragFloat3("Gravity", gVal)) {
