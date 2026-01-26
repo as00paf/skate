@@ -54,9 +54,11 @@
 ### Phase 4: Sandbox & Editor Tools [In Progress]
 - [x] **ImGui Physics Tuner**: Sliders for Gravity, PopForce, Friction, SuspensionStiffness, and CatchStrength.
 - [x] **Transform Gizmos**: 3D arrows in Edit Mode for modular tiles and obstacles.
-- [ ] **Prefabs Window**: Organized UI for spawning Skateboard, Player, Obstacles, and Tiles.
+- [~] **Prefabs Window**: Organized UI for spawning Skateboard and Tiles. (Player/Obstacles pending).
 - [ ] **Trick Labeler**: Analyzer for Pitch/Yaw/Roll degrees (Comes after Skateboard Tuning).
 - [x] **Persistence**: Save/Load level layouts and physics configs to JSON.
+- [x] **Environment Upgrade**: High-quality tileable asphalt texture with UV scaling support.
+- [x] **Scene Integration**: Replaced debug cube with functional Skateboard prefab in Level Editor.
 
 ### Additional Features [Completed]
 - [x] **Game Controller Support**: Implement GLFW joystick/gamepad listeners.
@@ -65,6 +67,22 @@
 - [x] **UI Layout**: Programmatic docking setup for editor windows.
 - [ ] **Particle System**: (Post-MVP) 2D/3D visual effects.
 
+### Phase 5: High-Level Execution Plan
+- [ ] **File Management & Setup**
+    - [x] **Asset Extraction**: Unzip the player model from the assets folder and organize the resulting files into the appropriate directory structure for the loader.
+    - [~] **Diagnostics**: Implement a real-time FPS counter (Physics debug toggle pending SPORT migration).
+- [ ] **Atmosphere & Environment**
+    - [ ] **Sky & Fog**: Add a Skybox (Cube Map) to the world and implement Fog in the shaders to handle distance fading and hide the world edges.
+    - [ ] **Obstacle Palette**: Add the Rail, Ledge, and Kicker Ramp prefabs to the editor’s object library.
+- [ ] **Analog Control & Skater Integration**
+    - [ ] **Skater Model**: Add the player model to the scene and link it to the physics rig so it follows the board and tumbles during bails.
+    - [ ] **Controller Support**: Add Full Gamepad Support. Use the sticks for analog steering and "flick" mechanics.
+- [ ] **Trick Detection**
+    - [ ] **The Labeler**: Implement a system that monitors the board's rotation while in the air to identify and display trick names upon landing.
+- [ ] **Editor Improvements**
+    - [ ] **Enhanced Gizmo**: Upgrade the manipulation tools to include a Scale Gizmo.
+    - [ ] **Physics Sync**: Ensure that any scaling done in the editor is instantly reflected in the physical collision bounds.
+    - [ ] **Workflow**: Add industry-standard hotkeys (QWER) to quickly switch between selection and transformation modes.
 
 ## Mathematical Constraints
 *   **Local Space Conversion:** Use `JOML Matrix4f.transformDirection()` for flick torques.

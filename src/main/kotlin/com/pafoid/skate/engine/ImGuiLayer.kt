@@ -159,6 +159,10 @@ class ImGuiLayer {
                 }
                 ImGui.endMenu()
             }
+            if (ImGui.beginMenu("View")) {
+                ImGui.text("FPS: ${(1.0f / ImGui.getIO().deltaTime).toInt()}")
+                ImGui.endMenu()
+            }
             ImGui.endMenuBar()
         }
 
