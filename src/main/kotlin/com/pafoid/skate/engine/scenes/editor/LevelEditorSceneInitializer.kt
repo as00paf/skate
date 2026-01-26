@@ -26,8 +26,8 @@ class LevelEditorSceneInitializer: SceneInitializer() {
 
         scene.skyColor.set(0.6f, 0.7f, 0.9f)
         scene.fogColor.set(0.6f, 0.7f, 0.9f) // Match sky for infinite horizon
-        scene.fogDensity = 0.005f
-        scene.fogGradient = 1.5f
+        scene.fogDensity = 0.0008f
+        scene.fogGradient = 0.8f
 
         // Set camera position
         scene.camera.position.set(0f, 5f, 20f)

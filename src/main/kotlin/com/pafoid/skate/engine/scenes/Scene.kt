@@ -28,6 +28,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     var skyColor: Vector3f = Vector3f(0.6f, 0.7f, 0.9f)
     var skyTint: Vector3f = Vector3f(1.0f, 1.0f, 1.0f)
     var skyExposure: Float = 1.0f
+    var skyRotation: Float = 0.0f
     var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f)
     var fogDensity: Float = 0.0f
     var fogGradient: Float = 1.5f
@@ -158,6 +159,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
                 skyColor = skyColor,
                 skyTint = skyTint,
                 skyExposure = skyExposure,
+                skyRotation = skyRotation,
                 sunDirection = sun.direction,
                 sunColor = sun.color,
                 moonDirection = moon.direction,
@@ -193,6 +195,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             this.skyColor.set(data.skyColor)
             this.skyTint.set(data.skyTint)
             this.skyExposure = data.skyExposure
+            this.skyRotation = data.skyRotation
             this.sun.direction.set(data.sunDirection)
             this.sun.color.set(data.sunColor)
             this.moon.direction.set(data.moonDirection)

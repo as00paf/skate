@@ -36,14 +36,13 @@ uniform vec3 uCameraPos;
 
 void main()
 {
-    vec4 texColor = texture(u_hdriTexture, fTexCoords);
+    // Use textureLod with 0.0 to avoid mipmap seam artifacts at the 0/1 UV boundary
+    vec4 texColor = textureLod(u_hdriTexture, fTexCoords, 0.0);
     
     // Apply exposure and tint
     vec3 finalSkyColor = texColor.rgb * u_skyTint * u_exposure;
 
     // Horizon blending with fog
-    // We want the bottom part of the sphere to fade into the fog color
-    // fTexCoords.y goes from 0 (bottom) to 1 (top)
     float horizonFactor = smoothstep(0.4, 0.55, fTexCoords.y);
     finalSkyColor = mix(uFogColor, finalSkyColor, horizonFactor);
 

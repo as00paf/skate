@@ -19,32 +19,30 @@ object NoiseGenerator {
         val buffer = BufferUtils.createByteBuffer(size * size * size * 4)
         val random = Random(42)
         
-        // Worley Points
-        val coarsePoints = Array(8) { Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat()) }
-        val mediumPoints = Array(16) { Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat()) }
-        val finePoints = Array(32) { Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat()) }
+        // Worley Points for different scales
+        val points1 = Array(12) { Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat()) }
+        val points2 = Array(24) { Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat()) }
+        val points3 = Array(48) { Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat()) }
 
         for (z in 0 until size) {
             for (y in 0 until size) {
                 for (x in 0 until size) {
-                    val u = x.toFloat() / size
-                    val v = y.toFloat() / size
-                    val w = z.toFloat() / size
-                    val p = Vector3f(u, v, w)
+                    val p = Vector3f(x.toFloat() / size, y.toFloat() / size, z.toFloat() / size)
 
-                    val wCoarse = 1.0f - worley(p, coarsePoints)
-                    val wMedium = 1.0f - worley(p, mediumPoints)
-                    val wFine = 1.0f - worley(p, finePoints)
+                    val w1 = 1.0f - worley(p, points1)
+                    val w2 = 1.0f - worley(p, points2)
+                    val w3 = 1.0f - worley(p, points3)
                     
-                    // Simple Perlin-ish approximation using sine waves
-                    val perlin = (sin(u * 10.0) * cos(v * 10.0) * sin(w * 10.0)).toFloat() * 0.5f + 0.5f
-                    
-                    val combined = (perlin * wCoarse).coerceIn(0f, 1f)
+                    // Combine into a multi-scale Perlin-Worley like texture
+                    val r = (w1 * 0.6f + w2 * 0.3f + w3 * 0.1f).coerceIn(0f, 1f)
+                    val g = w1
+                    val b = w2
+                    val a = w3
 
-                    buffer.put((combined * 255).toInt().toByte())
-                    buffer.put((wFine * 255).toInt().toByte())
-                    buffer.put((wMedium * 255).toInt().toByte())
-                    buffer.put((wCoarse * 255).toInt().toByte())
+                    buffer.put((r * 255).toInt().toByte())
+                    buffer.put((g * 255).toInt().toByte())
+                    buffer.put((b * 255).toInt().toByte())
+                    buffer.put((a * 255).toInt().toByte())
                 }
             }
         }

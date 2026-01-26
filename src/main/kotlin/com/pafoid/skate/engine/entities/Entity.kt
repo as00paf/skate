@@ -11,7 +11,6 @@ class Entity(
     var shininess: Float = 10f,
     var reflectivity: Float = 1f,
     var textureScale: Float = 1.0f,
-    var isCloud: Boolean = false,
     val onTick: (dt:Float) -> Unit = {}
 ): Component() {
 

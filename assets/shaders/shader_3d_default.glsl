@@ -49,12 +49,13 @@ uniform sampler2D textureSampler;
 uniform vec3 lightColor;
 uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
+uniform vec3 uMoonDirection;
+uniform vec3 uMoonColor;
 uniform float uShininess;
 uniform float uReflectivity;
 uniform vec3 uAmbientLight;
 uniform float uSelected;
 uniform vec3 uFogColor;
-uniform float uIsCloud;
 
 out vec4 color;
 
@@ -67,15 +68,8 @@ void main()
     
     vec4 textureColor = texture(textureSampler, fTexCoords);
     
-    if (uIsCloud > 0.5) {
-        // Use luminosity as alpha for clouds
-        float alpha = max(max(textureColor.r, textureColor.g), textureColor.b);
-        if (alpha < 0.1) discard;
-        textureColor.a *= alpha;
-    } else {
-        if (textureColor.a < 0.1) {
-            discard;
-        }
+    if (textureColor.a < 0.1) {
+        discard;
     }
 
     if (uSelected > 1.5) {
@@ -99,6 +93,11 @@ void main()
     float sunNDotL = dot(unitNormal, unitSunVector);
     vec3 sunDiffuse = max(sunNDotL, 0.0) * uSunColor;
 
+    // Moon (Directional Light) Diffuse
+    vec3 unitMoonVector = normalize(-uMoonDirection);
+    float moonNDotL = dot(unitNormal, unitMoonVector);
+    vec3 moonDiffuse = max(moonNDotL, 0.0) * uMoonColor;
+
     // Specular
     vec3 lightDirection = -unitLightVector;
     vec3 reflectedLightDirection = reflect(lightDirection, unitNormal);
@@ -107,6 +106,6 @@ void main()
     float dampedFactor = pow(specularFactor, uShininess);
     vec3 finalSpecular = dampedFactor * uReflectivity * lightColor;
 
-    vec4 finalColor = vec4(uAmbientLight + diffuse + sunDiffuse, 1.0) * textureColor + vec4(finalSpecular, 0.0);
+    vec4 finalColor = vec4(uAmbientLight + diffuse + sunDiffuse + moonDiffuse, 1.0) * textureColor + vec4(finalSpecular, 0.0);
     color = mix(vec4(uFogColor, 1.0), finalColor, fVisibility);
 }

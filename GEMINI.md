@@ -72,7 +72,8 @@
     - [x] **Asset Extraction**: Unzip the player model from the assets folder and organize the resulting files into the appropriate directory structure for the loader.
     - [~] **Diagnostics**: Implement a real-time FPS counter (Physics debug toggle pending SPORT migration).
 - [ ] **Atmosphere & Environment**
-    - [ ] **Sky & Fog**: Add a Skybox (Cube Map) to the world and implement Fog in the shaders to handle distance fading and hide the world edges.
+    - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
+    - [x] **Cloud Dome**: Implement a multi-layered scrolling cloud dome with rim-lighting using directional lights.
     - [ ] **Obstacle Palette**: Add the Rail, Ledge, and Kicker Ramp prefabs to the editor’s object library.
 - [ ] **Analog Control & Skater Integration**
     - [ ] **Skater Model**: Add the player model to the scene and link it to the physics rig so it follows the board and tumbles during bails.

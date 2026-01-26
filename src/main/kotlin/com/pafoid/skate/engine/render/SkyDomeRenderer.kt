@@ -43,7 +43,10 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
                 vertices.add(y * radius)
                 vertices.add(z * radius)
 
-                texCoords.add(s * S)
+                // Shift U by 0.5 to move seam
+                var u = s * S + 0.5f
+                if (u > 1.0f) u -= 1.0f
+                texCoords.add(u)
                 texCoords.add(r * R)
 
                 normals.add(-x)
@@ -75,16 +78,16 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         
         // Center on camera
         modelMatrix.identity().translation(camera.position)
-        // Match rotation to sun direction (sync sun to texture light source)
-        // The texture's light source is typically at some fixed position.
-        // We'll rotate the dome so that 'sun' matches our directional light.
-        // For now, let's just use rotation from time of day.
+        // Match rotation to sun direction + manual offset
         val angle = (scene.timeOfDay / 24.0f - 0.5f) * 2.0f * PI.toFloat()
-        modelMatrix.rotateY(-angle)
+        modelMatrix.rotateY(-angle + Math.toRadians(scene.skyRotation.toDouble()).toFloat())
 
         shader.uploadMat4f("transformationMatrix", modelMatrix)
         shader.uploadMat4f("viewMatrix", camera.createViewMatrix())
         shader.uploadMat4f("projectionMatrix", camera.createProjectionMatrix())
+        shader.uploadVec3f("uSunColor", scene.sun.color)
+        
+        // Scrolling offsets (Slowed down)
         
         shader.uploadVec3f("u_skyTint", scene.skyTint)
         shader.uploadFloat("u_exposure", scene.skyExposure)

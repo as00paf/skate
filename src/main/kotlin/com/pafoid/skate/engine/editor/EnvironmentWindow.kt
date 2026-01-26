@@ -37,6 +37,11 @@ class EnvironmentWindow {
             if (ImGui.dragFloat("Sky Exposure", exposure, 0.01f, 0f, 10f)) {
                 scene.skyExposure = exposure[0]
             }
+
+            val skyRot = floatArrayOf(scene.skyRotation)
+            if (ImGui.dragFloat("Sky Rotation", skyRot, 0.1f, 0f, 360f)) {
+                scene.skyRotation = skyRot[0]
+            }
             
             ImGui.separator()
             ImGui.text("Sun (Directional Light)")
