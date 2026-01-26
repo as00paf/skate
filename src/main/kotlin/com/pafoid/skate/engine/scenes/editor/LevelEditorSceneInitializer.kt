@@ -70,7 +70,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         // Atmosphere (Spawned last for simple transparency sorting)
         val atmosphere = scene.createGameObject("Atmosphere")
         atmosphere.setNoSerialize()
-        atmosphere.addComponent(CloudSystem(50))
         scene.addGameObjectToScene(atmosphere)
     }
 

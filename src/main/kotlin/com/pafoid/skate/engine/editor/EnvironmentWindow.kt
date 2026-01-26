@@ -14,6 +14,24 @@ class EnvironmentWindow {
             if (ImGui.colorEdit3("Sky Color", skyColor)) {
                 scene.skyColor.set(skyColor[0], skyColor[1], skyColor[2])
             }
+            
+            ImGui.separator()
+            ImGui.text("Sun (Directional Light)")
+            
+            val sunDir = floatArrayOf(scene.sun.direction.x, scene.sun.direction.y, scene.sun.direction.z)
+            if (ImGui.dragFloat3("Sun Direction", sunDir, 0.01f, -1f, 1f)) {
+                scene.sun.direction.set(sunDir[0], sunDir[1], sunDir[2]).normalize()
+            }
+            
+            val sunColor = floatArrayOf(scene.sun.color.x, scene.sun.color.y, scene.sun.color.z)
+            if (ImGui.colorEdit3("Sun Color", sunColor)) {
+                scene.sun.color.set(sunColor[0], sunColor[1], sunColor[2])
+            }
+            
+            val sunIntensity = floatArrayOf(scene.sun.intensity)
+            if (ImGui.dragFloat("Sun Intensity", sunIntensity, 0.1f, 0f, 10f)) {
+                scene.sun.intensity = sunIntensity[0]
+            }
         }
 
         if (ImGui.collapsingHeader("Fog")) {

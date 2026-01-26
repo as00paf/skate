@@ -91,6 +91,11 @@ class Renderer(
         defaultShader.uploadVec3f("uAmbientLight", Vector3f(0.5f, 0.5f, 0.5f)) // High ambient
         defaultShader.uploadInt("textureSampler", 0)
 
+        // Sun
+        defaultShader.uploadVec3f("uSunDirection", scene.sun.direction)
+        val finalSunColor = Vector3f(scene.sun.color).mul(scene.sun.intensity)
+        defaultShader.uploadVec3f("uSunColor", finalSunColor)
+
         // Fog
         defaultShader.uploadVec3f("uFogColor", scene.fogColor)
         defaultShader.uploadFloat("uFogDensity", scene.fogDensity)

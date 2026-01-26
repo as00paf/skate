@@ -19,6 +19,7 @@ import java.nio.file.Paths
 class Scene(private val initializer: SceneInitializer, val camera: Camera = Camera()) {
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
+    var sun: com.pafoid.skate.engine.render.DirectionalLight = com.pafoid.skate.engine.render.DirectionalLight()
     var ambientLight: Vector3f = Vector3f(0.2f, 0.2f, 0.2f)
     var skyColor: Vector3f = Vector3f(0.6f, 0.7f, 0.9f)
     var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f)
@@ -145,6 +146,8 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
                 gameObjects = gameObjects.filter { it.doSerialization() },
                 ambientLight = ambientLight,
                 skyColor = skyColor,
+                sunDirection = sun.direction,
+                sunColor = sun.color,
                 lightPosition = light.position,
                 gravity = physics3d.getGravity(),
                 fogColor = fogColor,
@@ -171,6 +174,8 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             
             this.ambientLight.set(data.ambientLight)
             this.skyColor.set(data.skyColor)
+            this.sun.direction.set(data.sunDirection)
+            this.sun.color.set(data.sunColor)
             this.light.position.set(data.lightPosition)
             this.physics3d.setGravity(data.gravity)
             this.fogColor.set(data.fogColor)

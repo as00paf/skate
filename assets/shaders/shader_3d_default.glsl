@@ -47,6 +47,8 @@ in float fVisibility;
 
 uniform sampler2D textureSampler;
 uniform vec3 lightColor;
+uniform vec3 uSunDirection;
+uniform vec3 uSunColor;
 uniform float uShininess;
 uniform float uReflectivity;
 uniform vec3 uAmbientLight;
@@ -87,10 +89,15 @@ void main()
     vec3 unitLightVector = normalize(fToLightVector);
     vec3 unitVectorToCamera = normalize(fToCameraVector);
 
-    // Diffuse
+    // Point Light Diffuse
     float nDot1 = dot(unitNormal, unitLightVector);
     float brightness = max(nDot1, 0.0);
     vec3 diffuse = brightness * lightColor;
+
+    // Sun (Directional Light) Diffuse
+    vec3 unitSunVector = normalize(-uSunDirection);
+    float sunNDotL = dot(unitNormal, unitSunVector);
+    vec3 sunDiffuse = max(sunNDotL, 0.0) * uSunColor;
 
     // Specular
     vec3 lightDirection = -unitLightVector;
@@ -100,6 +107,6 @@ void main()
     float dampedFactor = pow(specularFactor, uShininess);
     vec3 finalSpecular = dampedFactor * uReflectivity * lightColor;
 
-    vec4 finalColor = vec4(uAmbientLight + diffuse, 1.0) * textureColor + vec4(finalSpecular, 0.0);
+    vec4 finalColor = vec4(uAmbientLight + diffuse + sunDiffuse, 1.0) * textureColor + vec4(finalSpecular, 0.0);
     color = mix(vec4(uFogColor, 1.0), finalColor, fVisibility);
 }
