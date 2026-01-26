@@ -161,6 +161,11 @@ class ImGuiLayer {
             }
             if (ImGui.beginMenu("View")) {
                 ImGui.text("FPS: ${(1.0f / ImGui.getIO().deltaTime).toInt()}")
+                ImGui.separator()
+                val debugEnabled = ImBoolean(currentScene.physics3d.debugEnabled)
+                if (ImGui.checkbox("Physics Debug", debugEnabled)) {
+                    currentScene.physics3d.debugEnabled = debugEnabled.get()
+                }
                 ImGui.endMenu()
             }
             ImGui.endMenuBar()
