@@ -74,6 +74,7 @@ class Physics3D {
             if (rb.rawBody == null) {
                 val boxColliders = go.components.filterIsInstance<com.pafoid.skate.engine.physics3d.components.BoxCollider3D>()
                 val cylinderColliders = go.components.filterIsInstance<com.pafoid.skate.engine.physics3d.components.CylinderCollider3D>()
+                val customColliders = go.components.filterIsInstance<com.pafoid.skate.engine.physics3d.components.CustomCollider3D>()
                 
                 val compound = CompoundCollisionShape()
                 
@@ -89,8 +90,12 @@ class Physics3D {
                     compound.addChildShape(shape, com.jme3.math.Vector3f(c.offset.x, c.offset.y, c.offset.z))
                 }
 
+                customColliders.forEach { c ->
+                    compound.addChildShape(c.collisionShape, com.jme3.math.Vector3f(0f, 0f, 0f))
+                }
+
                 // If no colliders, provide a default box
-                if (boxColliders.isEmpty() && cylinderColliders.isEmpty()) {
+                if (boxColliders.isEmpty() && cylinderColliders.isEmpty() && customColliders.isEmpty()) {
                     val shape = BoxCollisionShape(com.jme3.math.Vector3f(1f, 1f, 1f))
                     shape.setMargin(0.04f)
                     compound.addChildShape(shape, com.jme3.math.Vector3f(0f, 0f, 0f))
@@ -199,6 +204,19 @@ class Physics3D {
                 
                 debugDrawShape(childShape, combinedPos, combinedRot, color)
             }
+        } else if (shape is com.jme3.bullet.collision.shapes.MeshCollisionShape) {
+            // For general mesh shapes, drawing all triangles can be very slow.
+            // A simple bounding box or a wireframe approximation is often preferred.
+            // For now, let's draw a bounding box.
+            val boundingBox = shape.boundingBox
+            val halfExtents = Vector3f(boundingBox.xExtent, boundingBox.yExtent, boundingBox.zExtent)
+            dd.addBox3D(pos, rot, halfExtents, color)
+        } else if (shape is com.jme3.bullet.collision.shapes.ConvexHullShape) {
+            // TODO: Implement proper debug drawing for ConvexHullShape (iterate faces/edges)
+            // For now, draw a bounding box.
+            val boundingBox = shape.boundingBox
+            val halfExtents = Vector3f(boundingBox.xExtent, boundingBox.yExtent, boundingBox.zExtent)
+            dd.addBox3D(pos, rot, halfExtents, color)
         }
     }
 

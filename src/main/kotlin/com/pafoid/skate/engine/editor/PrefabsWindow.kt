@@ -38,10 +38,13 @@ class PrefabsWindow {
 
         if (ImGui.collapsingHeader("Obstacles")) {
             if (ImGui.button("Spawn Rail")) {
-                // TODO: Implement Rail Prefab
+                spawnRail()
             }
             if (ImGui.button("Spawn Ledge")) {
-                // TODO: Implement Ledge Prefab
+                spawnLedge()
+            }
+            if (ImGui.button("Spawn Kicker")) {
+                spawnKicker()
             }
         }
 
@@ -78,5 +81,57 @@ class PrefabsWindow {
         tile.addComponent(RigidBody3D(0f).apply { bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
         tile.addComponent(BoxCollider3D(Vector3f(1f, 1f, 1f)))
         scene.addGameObjectToScene(tile)
+    }
+
+    private fun spawnRail() {
+        val scene = SceneManager.getCurrentScene() ?: return
+        val rail = GameObject("Rail_${scene.gameObjects.size}")
+        rail.transform.translation.set(0f, 0.5f, 0f) // Half height to be on ground
+        rail.transform.scale.set(1f, 1f, 1f)
+        rail.addComponent(Entity(
+            model = com.pafoid.skate.engine.models.TexturedModel(
+                AssetPool.getRawModel(ObjLoader.RAIL, loader),
+                AssetPool.getTexture(Texture.WHITE)
+            )
+        ))
+        rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        rail.addComponent(com.pafoid.skate.engine.physics3d.components.CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0)) // X-axis aligned
+        scene.addGameObjectToScene(rail)
+    }
+
+    private fun spawnLedge() {
+        val scene = SceneManager.getCurrentScene() ?: return
+        val ledge = GameObject("Ledge_${scene.gameObjects.size}")
+        ledge.transform.translation.set(0f, 0.25f, 0f) // Half height to be on ground
+        ledge.transform.scale.set(1f, 1f, 1f)
+        ledge.addComponent(Entity(
+            model = com.pafoid.skate.engine.models.TexturedModel(
+                AssetPool.getRawModel(ObjLoader.LEDGE, loader),
+                AssetPool.getTexture(Texture.WHITE)
+            )
+        ))
+        ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
+        scene.addGameObjectToScene(ledge)
+    }
+
+    private fun spawnKicker() {
+        val scene = SceneManager.getCurrentScene() ?: return
+        val kicker = GameObject("Kicker_${scene.gameObjects.size}")
+        kicker.transform.translation.set(0f, 0f, 0f)
+        kicker.transform.scale.set(1f, 1f, 1f)
+        kicker.addComponent(Entity(
+            model = com.pafoid.skate.engine.models.TexturedModel(
+                AssetPool.getRawModel(ObjLoader.KICKER, loader),
+                AssetPool.getTexture(Texture.WHITE)
+            )
+        ))
+        kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        // Use a ConvexHullShape for the kicker to match its geometry
+        val kickerRawModel = AssetPool.getRawModel(ObjLoader.KICKER, loader)
+        val vertices = kickerRawModel.vertices.chunked(3) { Vector3f(it[0], it[1], it[2]) }
+        val kickerShape = com.jme3.bullet.collision.shapes.ConvexHullShape(vertices.map { com.jme3.math.Vector3f(it.x, it.y, it.z) })
+        kicker.addComponent(com.pafoid.skate.engine.physics3d.components.CustomCollider3D(kickerShape))
+        scene.addGameObjectToScene(kicker)
     }
 }

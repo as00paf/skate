@@ -68,9 +68,9 @@
 - [ ] **Particle System**: (Post-MVP) 2D/3D visual effects.
 
 ### Phase 5: High-Level Execution Plan
-- [ ] **File Management & Setup**
+- [x] **File Management & Setup**
     - [x] **Asset Extraction**: Unzip the player model from the assets folder and organize the resulting files into the appropriate directory structure for the loader.
-    - [~] **Diagnostics**: Implement a real-time FPS counter (Physics debug toggle pending SPORT migration).
+    - [x] **Diagnostics**: Implement a real-time FPS counter (Physics debug toggle pending SPORT migration).
 - [ ] **Atmosphere & Environment**
     - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
     - [x] **Dynamic Sky (HDRI)**: Implement a SkyDome (UV Sphere) with HDRI texture, exposure, tint, and automatic sun/light syncing.
