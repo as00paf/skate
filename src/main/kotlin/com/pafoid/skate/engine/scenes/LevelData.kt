@@ -5,8 +5,9 @@ import org.joml.Vector3f
 data class LevelData(
     val gameObjects: List<GameObject>,
     val ambientLight: Vector3f,
-    val useAmbient: Boolean = true,
+    val useAmbient: Boolean = false,
     val useSun: Boolean = true,
+    val timeOfDay: Float = 0.5f,
     val skyColor: Vector3f = Vector3f(0.6f, 0.7f, 0.9f),
     val sunDirection: Vector3f = Vector3f(-1f, -1f, -1f).normalize(),
     val sunColor: Vector3f = Vector3f(1f, 1f, 1f),

@@ -9,6 +9,15 @@ class EnvironmentWindow {
     fun imgui(scene: Scene) {
         ImGui.begin("Environment")
 
+        if (ImGui.collapsingHeader("Time of Day")) {
+            val time = floatArrayOf(scene.timeOfDay)
+            if (ImGui.sliderFloat("Time", time, 0f, 1f, "%.2f")) {
+                scene.timeOfDay = time[0]
+                updateEnvironment(scene)
+            }
+            ImGui.text("0.0 = Sunrise, 0.5 = Noon, 1.0 = Sunset/Night")
+        }
+
         if (ImGui.collapsingHeader("Atmosphere")) {
             val skyColor = floatArrayOf(scene.skyColor.x, scene.skyColor.y, scene.skyColor.z)
             if (ImGui.colorEdit3("Sky Color", skyColor)) {
@@ -69,5 +78,45 @@ class EnvironmentWindow {
         }
 
         ImGui.end()
+    }
+
+    private fun updateEnvironment(scene: Scene) {
+        val t = scene.timeOfDay
+        
+        // 1. Sun Direction (Rotation)
+        // Noon (0.5) is straight down (-1 on Y)
+        // Sunrise (0.0) is from East, Sunset (1.0) is West
+        val angle = (t - 0.5f) * Math.PI.toFloat()
+        scene.sun.direction.set(
+            Math.sin(angle.toDouble()).toFloat(),
+            -Math.cos(angle.toDouble()).toFloat(),
+            0.2f // Slight tilt
+        ).normalize()
+
+        // 2. Sun Intensity & Color
+        // Sun is strongest at noon, fades at edges
+        val intensityFactor = Math.cos(angle.toDouble()).toFloat().coerceIn(0f, 1f)
+        scene.sun.intensity = intensityFactor * 1.5f
+        
+        // Color shifts to orange/red at sunrise/sunset
+        val dayColor = Vector3f(1f, 1f, 0.9f)
+        val sunsetColor = Vector3f(1f, 0.4f, 0.2f)
+        scene.sun.color.set(dayColor).lerp(sunsetColor, 1f - intensityFactor)
+
+        // 3. Sky Color
+        val noonSky = Vector3f(0.6f, 0.7f, 0.9f)
+        val sunsetSky = Vector3f(0.8f, 0.4f, 0.3f)
+        val nightSky = Vector3f(0.02f, 0.02f, 0.05f)
+        
+        if (intensityFactor > 0.1f) {
+            scene.skyColor.set(noonSky).lerp(sunsetSky, 1f - intensityFactor)
+        } else {
+            val nightFactor = (0.1f - intensityFactor) * 10f
+            scene.skyColor.set(sunsetSky).lerp(nightSky, nightFactor.coerceIn(0f, 1f))
+        }
+
+        // 4. Fog
+        scene.fogColor.set(scene.skyColor)
+        scene.fogDensity = 0.002f + (1f - intensityFactor) * 0.01f
     }
 }
