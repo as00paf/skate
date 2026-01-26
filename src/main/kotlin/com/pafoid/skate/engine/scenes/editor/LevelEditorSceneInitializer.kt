@@ -41,6 +41,12 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff.addComponent(EditorCamera(scene.camera))
         scene.addGameObjectToScene(editorStuff)
 
+        // Atmosphere
+        val atmosphere = scene.createGameObject("Atmosphere")
+        atmosphere.setNoSerialize()
+        atmosphere.addComponent(CloudSystem(30))
+        scene.addGameObjectToScene(atmosphere)
+
         // FEATURE 1: Basic Rendering (Skateboard)
         val skateGo = GameObject("Skateboard")
         skateGo.transform.translation.set(0f, 5f, 0f)

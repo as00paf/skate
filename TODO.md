@@ -10,6 +10,7 @@
 
 ### 2. Atmosphere & Environment
 - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
+- [x] **Cloud System**: Added procedurally spawned drifting cloud sprites high in the sky.
 - [ ] **Obstacle Palette**: Add Rail, Ledge, and Kicker Ramp prefabs to the editor library.
 
 ### 3. Analog Control & Skater Integration

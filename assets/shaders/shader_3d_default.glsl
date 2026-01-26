@@ -63,7 +63,8 @@ void main()
     }
     
     vec4 textureColor = texture(textureSampler, fTexCoords);
-    if (textureColor.a < 0.1) {
+    // Cloud transparency: discard black pixels
+    if (textureColor.a < 0.1 || (textureColor.r < 0.05 && textureColor.g < 0.05 && textureColor.b < 0.05)) {
         discard;
     }
 
