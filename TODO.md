@@ -70,6 +70,16 @@
 - [x] **Physics Sync**: Instant reflection of scaling in physical collision bounds.
 - [x] **Workflow**: Add hotkeys (QWER) for tool switching.
 
+### 7. Performance & Boot Sequence
+- [ ] **Boot Strapping:** Refactor the `init()` sequence to use Kotlin Coroutines.
+  - The Main Thread must immediately open the window and show the Splash Screen.
+  - Heavy assets must load on `Dispatchers.IO`.
+- [ ] **Splash Screen:** - Generate a splash screen named `splash_screen.png` based on this prompt : A professional game splash screen for a skateboarding simulation titled 'PAFSK8'
+- [ ] **Splash Screen:** - Implement a full-screen quad shader to display the `splash_screen.png`.
+  - Integrate a "Loading Progress" variable that updates based on completed tasks.
+- [ ] **OpenGL Context Sync:** Use a thread-safe queue to "upload" loaded textures and meshes to the GPU once the background worker finishes parsing them.
+- [ ] **Thread Monitoring:** Add a debug view in ImGui showing CPU usage per thread (Main, Physics, Asset-IO).
+
 ### 7. 🛹 The Board Rig Technical Checklist
 
 #### 1. Physics Assembly (Bullet Physics)
