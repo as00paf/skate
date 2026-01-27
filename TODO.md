@@ -66,9 +66,9 @@
     - [x] **Input Simulation**: Create MockGamepad class for controller simulation.
 
 ### 6. Editor Improvements
-- [ ] **Enhanced Gizmo**: Upgrade to include a Scale Gizmo.
-- [ ] **Physics Sync**: Instant reflection of scaling in physical collision bounds.
-- [ ] **Workflow**: Add hotkeys (QWER) for tool switching.
+- [x] **Enhanced Gizmo**: Upgrade to include a Scale Gizmo.
+- [x] **Physics Sync**: Instant reflection of scaling in physical collision bounds.
+- [x] **Workflow**: Add hotkeys (QWER) for tool switching.
 
 ### 7. 🛹 The Board Rig Technical Checklist
 

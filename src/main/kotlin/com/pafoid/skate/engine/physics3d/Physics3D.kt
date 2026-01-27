@@ -73,6 +73,21 @@ class Physics3D : IPhysics3D {
                 if (currentMass != desiredMass) {
                     physicsSpace.remove(rb.rawBody)
                     rb.rawBody = null
+                } else {
+                    // Sync transform and scale for existing body (important for Editor)
+                    val trans = go.transform.translation
+                    val rot = go.transform.rotation
+                    val scale = go.transform.scale
+                    
+                    rb.rawBody!!.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
+                    rb.rawBody!!.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
+                    
+                    val q = org.joml.Quaternionf().rotationXYZ(
+                        Math.toRadians(rot.x.toDouble()).toFloat(),
+                        Math.toRadians(rot.y.toDouble()).toFloat(),
+                        Math.toRadians(rot.z.toDouble()).toFloat()
+                    )
+                    rb.rawBody!!.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
                 }
             }
 
