@@ -33,6 +33,7 @@ class Window(
             instance?.let {
                 glfwShowWindow(it.glfwWindow)
                 glfwFocusWindow(it.glfwWindow)
+                glfwRequestWindowAttention(it.glfwWindow)
             }
         }
     }

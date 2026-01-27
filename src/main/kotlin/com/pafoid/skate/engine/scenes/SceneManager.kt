@@ -226,11 +226,31 @@ class SceneManager {
 
         
 
-        loadingProgress.set(1.0f)
+                loadingProgress.set(1.0f)
 
-        engineState.set(EngineState.RUNNING)
+        
 
-    }
+                engineState.set(EngineState.RUNNING)
+
+        
+
+                withContext(JobSystem.Main) {
+
+        
+
+                    com.pafoid.skate.engine.Window.show()
+
+        
+
+                }
+
+        
+
+            }
+
+        
+
+        
 
 
 
