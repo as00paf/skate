@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.JoystickListener
 import com.pafoid.skate.engine.controls.InputBuffer
+import com.pafoid.skate.engine.controls.IInputBuffer
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.toWorldMatrix
 import org.joml.Vector2f
@@ -16,14 +17,16 @@ class PlayerController : Component() {
     var jumpImpulse = 10.0f
     var flickSensitivity = 5.0f
     var catchStrength = 0.5f
+
+    @Transient var inputBuffer: IInputBuffer = InputBuffer.instance
     
     @Transient private var rb: RigidBody3D? = null
     @Transient private var physics: SkateboardPhysics? = null
     @Transient private var lastVelocity = com.jme3.math.Vector3f()
 
     override fun start() {
-        rb = gameObject.getComponent<RigidBody3D>()
-        physics = gameObject.getComponent<SkateboardPhysics>()
+        rb = gameObject.getComponent(RigidBody3D::class.java)
+        physics = gameObject.getComponent(SkateboardPhysics::class.java)
     }
 
     override fun update(dt: Float) {
@@ -129,12 +132,12 @@ class PlayerController : Component() {
             val diff = target - absAngle
             
             // Apply "magnetic" impulse
-            rb3d.rawBody?.applyTorqueImpulse(com.jme3.math.Vector3f(0f, 0f, diff * catchStrength * dt))
+            rb3d.applyTorqueImpulse(org.joml.Vector3f(0f, 0f, diff * catchStrength * dt))
         }
     }
 
     private fun handleFlicks(dt: Float) {
-        val flick = InputBuffer.getRightStickFlickVelocity(GLFW_JOYSTICK_1, 0.1f)
+        val flick = inputBuffer.getRightStickFlickVelocity(GLFW_JOYSTICK_1, 0.1f)
         if (flick.length() > 5.0f) {
             // Apply torque based on flick
             // X-flick = Kickflip/Heelflip (Roll)
@@ -147,7 +150,7 @@ class PlayerController : Component() {
             val transform = gameObject.transform.toWorldMatrix()
             transform.transformDirection(localTorque, worldTorque)
             
-            rb?.rawBody?.applyTorqueImpulse(com.jme3.math.Vector3f(worldTorque.x, worldTorque.y, worldTorque.z))
+            rb?.applyTorqueImpulse(org.joml.Vector3f(worldTorque.x, worldTorque.y, worldTorque.z))
         }
     }
 
