@@ -14,12 +14,12 @@ class SpriteSheet(
 
     init {
         var currentX = 0
-        var currentY = texture.getHeight() - spriteHeight
+        var currentY = texture.height - spriteHeight
         for(i in 0 until spriteCount) {
-            val topY = (currentY + spriteHeight) / texture.getHeight().toFloat()
-            val rightX = (currentX + spriteWidth) / texture.getWidth().toFloat()
-            val leftX = currentX / texture.getWidth().toFloat()
-            val bottomY = currentY / texture.getHeight().toFloat()
+            val topY = (currentY + spriteHeight) / texture.height.toFloat()
+            val rightX = (currentX + spriteWidth) / texture.width.toFloat()
+            val leftX = currentX / texture.width.toFloat()
+            val bottomY = currentY / texture.height.toFloat()
 
             val textCoords = arrayOf(
                 Vector2f(rightX, topY),
@@ -35,7 +35,7 @@ class SpriteSheet(
             sprites.add(sprite)
 
             currentX += spriteWidth + spacing
-            if(currentX >= texture.getWidth()) {
+            if(currentX >= texture.width) {
                 currentX = 0
                 currentY -= spriteHeight + spacing
             }

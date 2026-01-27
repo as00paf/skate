@@ -68,8 +68,8 @@ class Renderer(
         // 2. Regular Pass
         val mainFbo = Window.getFrameBuffer()
         if (useFbo) {
-            mainFbo.bind()
-            glViewport(0, 0, mainFbo.width, mainFbo.height)
+            mainFbo?.bind()
+            glViewport(0, 0, mainFbo?.width ?: 0, mainFbo?.height ?: 0)
         } else {
             glBindFramebuffer(GL_FRAMEBUFFER, 0)
             glViewport(0, 0, Window.currentWidth, Window.currentHeight)
@@ -146,7 +146,7 @@ class Renderer(
         DebugDraw.draw()
         
         if (useFbo) {
-            mainFbo.unbind()
+            mainFbo?.unbind()
         }
         
         // Final state cleanup

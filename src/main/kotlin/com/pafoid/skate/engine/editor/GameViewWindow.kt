@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.MouseListener
+import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Icons
 import imgui.ImGui
@@ -13,12 +14,20 @@ import kotlin.math.roundToInt
 
 class GameViewWindow {
 
-    private var imageScreenPosX = 0f
-    private var imageScreenPosY = 0f
-    private var imageSizeX = 0f
-    private var imageSizeY = 0f
+    var imageScreenPosX = 0f
+    var imageScreenPosY = 0f
+    var imageSizeX = 0f
+    var imageSizeY = 0f
+
+    val imageScreenPos: Vector2f
+        get() = Vector2f(imageScreenPosX, imageScreenPosY)
+
+    val imageSize: Vector2f
+        get() = Vector2f(imageSizeX, imageSizeY)
+
     private var isPlaying = false
-    private var hoveredGameObject: com.pafoid.skate.engine.scenes.GameObject? = null
+    private var hoveredGameObject: GameObject? = null
+    private val gamepadOverlay = GamepadOverlay()
 
     fun imgui() {
         ImGui.begin("Game Viewport", ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
@@ -35,7 +44,7 @@ class GameViewWindow {
         imageSizeX = windowSize.x
         imageSizeY = windowSize.y
 
-        val texId = Window.getFrameBuffer().getTextureId()
+        val texId = Window.getFrameBuffer()?.getTextureId() ?: 0
         ImGui.image(texId.toLong(), windowSize.x, windowSize.y, 0f, 1f, 1f, 0f)
 
         // Drag and Drop Target
@@ -78,8 +87,12 @@ class GameViewWindow {
 
         renderViewportOverlays(windowPos, windowSize)
 
+        // Render Gamepad Overlay
+        gamepadOverlay.imgui()
+
         MouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
         MouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
+
         
         // ... (rest of picking logic)
 
@@ -157,7 +170,7 @@ class GameViewWindow {
         ImGui.endChild()
     }
 
-    fun getHoveredObject(): com.pafoid.skate.engine.scenes.GameObject? = hoveredGameObject
+    fun getHoveredObject(): GameObject? = hoveredGameObject
 
     private fun getLargestSizeForViewport(): ImVec2 {
         val windowSize = ImVec2()

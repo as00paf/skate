@@ -15,7 +15,7 @@ class FrameBuffer(val width: Int, val height: Int) {
 
         // Create the texture to render the data to, and attach it to our framebuffer
         texture = Texture().init(width, height)
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.getId(), 0)
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texId, 0)
 
         // Create depth texture
         depthTexture = glGenTextures()
@@ -39,7 +39,7 @@ class FrameBuffer(val width: Int, val height: Int) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
     }
 
-    fun getTextureId() = texture.getId()
+    fun getTextureId() = texture.texId
     fun getDepthTextureId() = depthTexture
     fun getFboId() = fboId
 }

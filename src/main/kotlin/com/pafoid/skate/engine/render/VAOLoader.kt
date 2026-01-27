@@ -80,7 +80,7 @@ class VAOLoader {
     }
 
     fun loadTexture(fileName: String):Int {
-        val id = AssetPool.getTexture(fileName).getId()
+        val id = AssetPool.getTexture(fileName).texId
         textures.add(id)
 
         return id

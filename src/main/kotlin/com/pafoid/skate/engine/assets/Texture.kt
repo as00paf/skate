@@ -20,22 +20,22 @@ class TextureData(
 
 class Texture: Component() {
 
-    @Transient private var id: Int = -1
+    var texId: Int = -1
 
-    private var width: Int = 0
-    private var height: Int = 0
+    var width: Int = 0
+    var height: Int = 0
     private var depth: Int = 0
     private var target: Int = GL_TEXTURE_2D
-    private var filePath: String? = null
+    var filePath: String? = null
 
     fun uploadToGPU(data: TextureData) {
-        this.id = glGenTextures()
+        this.texId = glGenTextures()
         this.target = GL_TEXTURE_2D
         this.width = data.width
         this.height = data.height
         this.depth = 1
 
-        glBindTexture(target, id)
+        glBindTexture(target, texId)
 
         glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
@@ -48,14 +48,14 @@ class Texture: Component() {
     }
 
     fun init(width: Int, height: Int):Texture {
-        this.id = glGenTextures()
+        this.texId = glGenTextures()
         this.width = width
         this.height = height
         this.depth = 1
         this.target = GL_TEXTURE_2D
-        this.filePath = "Generated::$id"
+        this.filePath = "Generated::$texId"
 
-        glBindTexture(target, id)
+        glBindTexture(target, texId)
 
         glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -69,14 +69,14 @@ class Texture: Component() {
     }
 
     fun init3D(width: Int, height: Int, depth: Int, data: java.nio.ByteBuffer? = null): Texture {
-        this.id = glGenTextures()
+        this.texId = glGenTextures()
         this.width = width
         this.height = height
         this.depth = depth
         this.target = GL_TEXTURE_3D
-        this.filePath = "Generated3D::$id"
+        this.filePath = "Generated3D::$texId"
 
-        glBindTexture(target, id)
+        glBindTexture(target, texId)
 
         // Noise textures for clouds usually want linear interpolation and repeating
         glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
@@ -91,32 +91,27 @@ class Texture: Component() {
     }
 
     fun bind() {
-        glBindTexture(target, id)
+        glBindTexture(target, texId)
     }
 
     fun unbind() {
         glBindTexture(target, 0)
     }
 
-    fun getWidth() = width
-    fun getHeight() = height
-    fun getDepth() = depth
-    fun getTarget() = target
-    fun getFilePath() = filePath
-    fun getId() = id
+
 
     override fun equals(other: Any?): Boolean {
         return when (other) {
             null -> false
             !is Texture -> false
             else -> {
-                other.width == width && other.height == height && other.id == id && other.filePath == filePath
+                other.width == width && other.height == height && other.texId == texId && other.filePath == filePath
             }
         }
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(id, width, height, filePath)
+        return Objects.hash(texId, width, height, filePath)
     }
 
     companion object {

@@ -143,7 +143,7 @@ object AssetPool {
     fun getRawModelWithTexture(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): Triple<RawModel, String?, java.nio.ByteBuffer?> {
         val model = getModel(filePath, loader)
         val firstPart = model.parts[0]
-        return Triple(firstPart.rawModel, firstPart.material.baseColorTexture?.getFilePath(), null)
+        return Triple(firstPart.rawModel, firstPart.material.baseColorTexture?.filePath, null)
     }
 
     fun getCubemap(filePaths: Array<String>): Cubemap {

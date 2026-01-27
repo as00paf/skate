@@ -132,6 +132,16 @@
   - Use dynamic stick and button highlights.
 - [x] **Task 7.10:** Scene Serialization: Implement JSON Save/Load for all level GameObjects.
 - [x] **Task 7.11:** Viewport Overlays: Move simulation controls and FPS to a transparent viewport layer.
+- [] **Task 7.12:** GamePad Overlay: Use 'xbox_controller.png' or 'playstation_controller.png' as the background for the simulation controls and move it to the bottom right of the game viewport window.
+- [] **Task 7.13:** Prefab Window Thumbnail System:
+  - Implement a `ThumbnailCache` that renders small snapshots of prefabs to textures.
+- [ ] **Task 7.14: Grid Layout Widget:** - Replace the list of buttons with a multi-column grid (`ImGui::BeginTable` with `ImGuiTableColumnFlags_WidthFixed`).
+- [ ] **Task 7.15: Drag and Drop Source:** - Implement `ImGui::BeginDragDropSource()` for each thumbnail in the Prefab window.
+- [ ] **Task 7.16: Viewport Drop Target:** - Implement `ImGui::BeginDragDropTarget()` on the Game Viewport.
+  - Logic: On drop, spawn the prefab at the `worldPosition` of the mouse cursor.
+- [ ] **Task 7.17: Search & Filter:** - Add an `ImGui::InputText` bar at the top of the Prefabs window to filter items by name.
+- [ ] **Task 7.18: New Prefabs: ** - Generate obj files and add new prefabs based on the obstacle list in obstacles.md
+- [ ] **Task 7.18: New Textures: ** - I added 'skatelite.png' in the texture folder, it contains the 4 textures to be used for the obstacles that can be made out of wood like ramps, manual pads, stair sets, ledges, hubbas and all of the ramps
 
 
 ### 10. Trick Detection

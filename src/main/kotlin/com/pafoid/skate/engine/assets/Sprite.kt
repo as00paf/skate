@@ -16,7 +16,7 @@ class Sprite(
     var height: Float = 0f
 
     fun getTexCoords() = texCoords
-    fun getTexId() = texture?.getId() ?: 0
+    fun getTexId() = texture?.texId ?: 0
     fun getTexture() = texture
     fun setTexture(tex: Texture) {
         texture = tex

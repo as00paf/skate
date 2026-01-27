@@ -2,6 +2,7 @@ package com.pafoid.skate.engine
 
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.MouseListener
+import com.pafoid.skate.engine.utils.JobSystem.runOnMain
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -22,7 +23,8 @@ class Window(
     companion object {
         private var instance: Window? = null
         fun getImGuiLayer(): ImGuiLayer = instance!!.imGuiLayer
-        fun getFrameBuffer(): com.pafoid.skate.engine.render.FrameBuffer = instance!!.frameBuffer
+        // Corrected getFrameBuffer signature to be nullable
+        fun getFrameBuffer(): com.pafoid.skate.engine.render.FrameBuffer? = instance!!.frameBuffer
 
         val currentWidth: Int
             get() = instance?.currentWidth ?: 1920
@@ -51,6 +53,12 @@ class Window(
 
         fun setVSync(enabled: Boolean) {
             glfwSwapInterval(if (enabled) 1 else 0)
+            // Corrected call to use instance and ensure initCallback runs on main thread
+            runOnMain {
+                instance?.let { win ->
+                    win.initCallback(win.imGuiLayer)
+                }
+            }
         }
     }
 
@@ -58,13 +66,17 @@ class Window(
     var currentHeight = height
 
     private var glfwWindow: Long = -1L
-    private val imGuiLayer = ImGuiLayer()
-    private lateinit var frameBuffer: com.pafoid.skate.engine.render.FrameBuffer
+    private val imGuiLayer by lazy { ImGuiLayer() }
+    private var frameBuffer: com.pafoid.skate.engine.render.FrameBuffer? = null
+    private var initCallbackToRun: (suspend (ImGuiLayer) -> Unit)? = null
+    private var initCallbackExecuted = false
+    private var isFirstDraw = true
     
     private val headless = System.getProperty("skate.headless") == "true"
 
     init {
         instance = this
+        initCallbackToRun = initCallback
     }
 
     fun run() {
@@ -102,7 +114,7 @@ class Window(
         if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
         
         // Center/Position at 0,0
-        glfwSetWindowPos(glfwWindow, 0, 0)
+        glfwSetWindowPos(glfwWindow, 0, 0) // Corrected ypos to integer 0
         
         currentWidth = winWidth
         currentHeight = winHeight
@@ -120,17 +132,15 @@ class Window(
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
 
-        frameBuffer = com.pafoid.skate.engine.render.FrameBuffer(1920, 1080)
-        glViewport(0, 0, width, height)
+        
+        
 
         installCallbacks()
         com.pafoid.skate.engine.controls.JoystickListener.init()
 
         imGuiLayer.init(glfwWindow)
         
-        com.pafoid.skate.engine.utils.JobSystem.runAsync {
-            initCallback(imGuiLayer)
-        }
+        
     }
 
     private fun installCallbacks() {
@@ -160,6 +170,30 @@ class Window(
                 org.joml.Vector2f(MouseListener.getX(), MouseListener.getY()),
                 com.pafoid.skate.engine.controls.JoystickListener.getAxes(GLFW_JOYSTICK_1)
             )
+            
+            // --- Defered Initialization Logic ---
+            if (isFirstDraw) {
+                // Create FrameBuffer and set viewport if not already initialized
+                if (frameBuffer == null) {
+                    frameBuffer = com.pafoid.skate.engine.render.FrameBuffer(currentWidth, currentHeight)
+                    glViewport(0, 0, currentWidth, currentHeight)
+                }
+                // Execute the deferred initCallback once
+                initCallbackToRun?.let { callback ->
+                    if (!initCallbackExecuted) {
+                        // Use JobSystem.runOnMain to ensure it runs on the main dispatcher
+                        // which is processed by JobSystem.update() in the loop.
+                        // Explicitly capture imGuiLayer from the enclosing Window instance.
+                        val currentImGuiLayer = this.imGuiLayer
+                        runOnMain {
+                            callback(currentImGuiLayer) 
+                        }
+                        initCallbackExecuted = true
+                    }
+                }
+                isFirstDraw = false
+            }
+            // --- End Defered Initialization Logic ---
 
             drawCallback(dt, imGuiLayer)
 
