@@ -36,7 +36,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     var cubemap: Cubemap? = null
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
-    val physics3d = Physics3D()
+    val physics3d: com.pafoid.skate.engine.physics3d.IPhysics3D = com.pafoid.skate.engine.physics3d.Physics3D()
 
     private var isRunning = false
     private val gson = GsonBuilder()

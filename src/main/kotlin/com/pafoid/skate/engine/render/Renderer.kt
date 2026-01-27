@@ -18,8 +18,8 @@ class Renderer(
     private val pickingShader3D: Shader,
     private val skyboxShader: Shader,
     private val skyDomeShader: Shader
-) {
-    var useFbo = false // Default to false for initial feature tests
+) : IRenderer {
+    override var useFbo = false // Default to false for initial feature tests
     
     private val clearColor = Color.GRAY
     private val renderer2D = Renderer2D()
@@ -41,7 +41,7 @@ class Renderer(
         defaultShader.uploadMat4f("viewMatrix", camera.createViewMatrix())
     }
 
-    fun render(scene: Scene, activeGameObject: com.pafoid.skate.engine.scenes.GameObject? = null, hoveredGameObject: com.pafoid.skate.engine.scenes.GameObject? = null) {
+    override fun render(scene: Scene, activeGameObject: com.pafoid.skate.engine.scenes.GameObject? = null, hoveredGameObject: com.pafoid.skate.engine.scenes.GameObject? = null) {
         DebugDraw.beginFrame()
         
         // 1. Picking Pass
@@ -203,7 +203,7 @@ class Renderer(
         activeRenderer2D.render()
     }
 
-    fun readPixel(x: Int, y: Int): Int {
+    override fun readPixel(x: Int, y: Int): Int {
         // Clamp coordinates to picking texture bounds (1920x1080)
         val safeX = x.coerceIn(0, 1919)
         val safeY = y.coerceIn(0, 1079)
@@ -320,13 +320,13 @@ class Renderer(
         glBindVertexArray(0)
     }
 
-    fun clearColor(sky: Vector3f) {
+    override fun clearColor(sky: Vector3f) {
         glEnable(GL_DEPTH_TEST)
         glClearColor(sky.x, sky.y, sky.z, 1.0f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
     }
 
-    fun destroy() {
+    override fun destroy() {
         defaultShader.destroy()
         batchShader.destroy()
         skyboxShader.destroy()

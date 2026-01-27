@@ -31,7 +31,7 @@ class BoardRigTest {
     private lateinit var rb3d: RigidBody3D
     private lateinit var rawBody: PhysicsRigidBody
     private lateinit var scene: Scene
-    private lateinit var physics3d: Physics3D
+    private lateinit var physics3d: com.pafoid.skate.engine.physics3d.IPhysics3D
 
     @BeforeEach
     fun setup() {

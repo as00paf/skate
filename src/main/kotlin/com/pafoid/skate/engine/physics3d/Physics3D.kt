@@ -21,9 +21,9 @@ import electrostatic4j.snaploader.platform.util.PlatformPredicate
 import org.joml.Vector3f
 
 
-class Physics3D {
+class Physics3D : IPhysics3D {
     private val physicsSpace: PhysicsSpace
-    var debugEnabled = false
+    override var debugEnabled = false
 
     init {
         loadNativeLibrary()
@@ -47,22 +47,22 @@ class Physics3D {
         loader.loadLibrary(LoadingCriterion.CLEAN_EXTRACTION)
     }
 
-    fun getGravity(): Vector3f {
+    override fun getGravity(): Vector3f {
         val g = physicsSpace.getGravity(null)
         return Vector3f(g.x, g.y, g.z)
     }
 
-    fun setGravity(gravity: Vector3f) {
+    override fun setGravity(gravity: Vector3f) {
         physicsSpace.setGravity(JmeVector3f(gravity.x, gravity.y, gravity.z))
     }
 
-    fun rayTest(from: Vector3f, to: Vector3f): List<PhysicsRayTestResult> {
+    override fun rayTest(from: Vector3f, to: Vector3f): List<PhysicsRayTestResult> {
         val start = JmeVector3f(from.x, from.y, from.z)
         val end = JmeVector3f(to.x, to.y, to.z)
         return physicsSpace.rayTest(start, end)
     }
 
-    fun add(go: GameObject) {
+    override fun add(go: GameObject) {
         val rb = go.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
         if (rb != null) {
             val desiredMass = if (rb.bodyType == com.pafoid.skate.engine.physics3d.enums.BodyType.Static) 0f else rb.mass
@@ -138,7 +138,7 @@ class Physics3D {
         }
     }
 
-    fun remove(go: GameObject) {
+    override fun remove(go: GameObject) {
         val rb = go.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
         rb?.rawBody?.let {
             physicsSpace.remove(it)
@@ -146,7 +146,7 @@ class Physics3D {
         }
     }
 
-    fun update(dt: Float) {
+    override fun update(dt: Float) {
         // Bullet's update(dt, maxSteps) is more stable for variable frame rates
         physicsSpace.update(dt, 10)
 
@@ -163,7 +163,7 @@ class Physics3D {
             }
         }
     }
-
+    
     private fun debugDrawShape(shape: com.jme3.bullet.collision.shapes.CollisionShape, pos: Vector3f, rot: org.joml.Quaternionf, color: Vector3f) {
         val dd = com.pafoid.skate.engine.render.DebugDraw
         
@@ -219,7 +219,7 @@ class Physics3D {
         }
     }
 
-    fun destroy() {
+    override fun destroy() {
         physicsSpace.destroy()
     }
 }

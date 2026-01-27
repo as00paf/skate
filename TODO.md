@@ -53,17 +53,17 @@
 
 ### 5. Testing & Quality Assurance
 - **Unit Testing Framework**
-    - [ ] **Framework Setup**: Integrate JUnit 5 and MockK.
-    - [ ] **Physics Unit Tests**: Create tests for the BoardRig and ContinuousVectoring logic.
-    - [ ] **Math Validation**: Unit tests for JOML transformations.
+    - [x] **Framework Setup**: Integrate JUnit 5 and MockK.
+    - [x] **Physics Unit Tests**: Create tests for the BoardRig and ContinuousVectoring logic.
+    - [x] **Math Validation**: Unit tests for JOML transformations.
 - **Graphics Regression Testing**
-    - [ ] **Frame Capture Utility**: Implement utility to capture framebuffer and save as .png.
-    - [ ] **Offscreen Rendering**: Configure a test mode for rendering without a physical window.
-    - [ ] **Visual Assertion Engine**: Compare new renders against "Gold Master" screenshots.
-    - [ ] **Shader Validation**: Automated tests to ensure shaders compile successfully.
+    - [x] **Frame Capture Utility**: Implement utility to capture framebuffer and save as .png.
+    - [x] **Offscreen Rendering**: Configure a test mode for rendering without a physical window.
+    - [x] **Visual Assertion Engine**: Compare new renders against "Gold Master" screenshots.
+    - [x] **Shader Validation**: Automated tests to ensure shaders compile successfully.
 - **Architecture & Mocking**
-    - [ ] **Interface Extraction**: Refactor Renderer and PhysicsWorld into interfaces.
-    - [ ] **Input Simulation**: Create MockGamepad class for controller simulation.
+    - [x] **Interface Extraction**: Refactor Renderer and PhysicsWorld into interfaces.
+    - [x] **Input Simulation**: Create MockGamepad class for controller simulation.
 
 ### 6. Editor Improvements
 - [ ] **Enhanced Gizmo**: Upgrade to include a Scale Gizmo.

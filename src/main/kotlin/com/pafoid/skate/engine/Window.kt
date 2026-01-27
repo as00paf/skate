@@ -36,6 +36,8 @@ class Window(
     private var glfwWindow: Long = -1L
     private val imGuiLayer = ImGuiLayer()
     private lateinit var frameBuffer: com.pafoid.skate.engine.render.FrameBuffer
+    
+    private val headless = System.getProperty("skate.headless") == "true"
 
     init {
         instance = this
@@ -85,7 +87,9 @@ class Window(
         glfwSwapInterval(1)
 
         // Make window visible
-        glfwShowWindow(glfwWindow)
+        if (!headless) {
+            glfwShowWindow(glfwWindow)
+        }
 
         // This is needed for OpenGL
         GL.createCapabilities()
