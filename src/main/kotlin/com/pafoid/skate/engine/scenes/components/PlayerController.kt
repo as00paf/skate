@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.Stance
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.JoystickListener
 import com.pafoid.skate.engine.controls.InputBuffer
@@ -12,6 +13,7 @@ import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
 
 class PlayerController : Component() {
+    var stance = Stance.REGULAR
     var pushForce = 5.0f
     var steerSpeed = 2.0f
     var jumpImpulse = 10.0f
@@ -23,6 +25,9 @@ class PlayerController : Component() {
     @Transient private var rb: RigidBody3D? = null
     @Transient private var physics: SkateboardPhysics? = null
     @Transient private var lastVelocity = com.jme3.math.Vector3f()
+
+    private val stanceMultiplier: Float
+        get() = if (stance == Stance.REGULAR) 1f else -1f
 
     override fun start() {
         rb = gameObject.getComponent(RigidBody3D::class.java)
@@ -143,7 +148,8 @@ class PlayerController : Component() {
             // X-flick = Kickflip/Heelflip (Roll)
             // Y-flick = Shuvit (Yaw)
             
-            val localTorque = Vector3f(flick.y * flickSensitivity, flick.x * flickSensitivity, 0f)
+            // Mirroring: In Goofy, Kickflip/Heelflip direction is inverted relative to the board's forward
+            val localTorque = Vector3f(flick.y * flickSensitivity * stanceMultiplier, flick.x * flickSensitivity, 0f)
             val worldTorque = Vector3f()
             
             // Convert local torque to world space
@@ -159,10 +165,10 @@ class PlayerController : Component() {
         
         // Keyboard
         if (KeyListener.isKeyPressed(GLFW_KEY_A)) {
-            steer += steerSpeed
+            steer += steerSpeed * stanceMultiplier
         }
         if (KeyListener.isKeyPressed(GLFW_KEY_D)) {
-            steer -= steerSpeed
+            steer -= steerSpeed * stanceMultiplier
         }
         
         // Controller (Joystick 1 - Left Stick X)
@@ -170,7 +176,7 @@ class PlayerController : Component() {
             if (axes.size > JoystickListener.AXIS_LEFT_X) {
                 val stickX = axes[JoystickListener.AXIS_LEFT_X]
                 if (Math.abs(stickX) > 0.1f) {
-                    steer -= stickX * steerSpeed
+                    steer -= stickX * steerSpeed * stanceMultiplier
                 }
             }
         }
