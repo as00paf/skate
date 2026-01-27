@@ -20,13 +20,14 @@ uniform float uProgress;
 uniform float uAlpha;
 
 void main() {
-    vec4 texColor = texture(uTexture, fTexCoords);
+    vec2 uv = vec2(fTexCoords.x, 1.0 - fTexCoords.y);
+    vec4 texColor = texture(uTexture, uv);
     
     // Simple progress bar effect at the bottom
     float barHeight = 0.05;
     vec4 finalColor;
-    if (fTexCoords.y < barHeight) {
-        if (fTexCoords.x < uProgress) {
+    if (uv.y < barHeight) {
+        if (uv.x < uProgress) {
             finalColor = vec4(0.8, 0.2, 0.2, 1.0); // Red progress
         } else {
             finalColor = vec4(0.2, 0.2, 0.2, 1.0); // Grey background

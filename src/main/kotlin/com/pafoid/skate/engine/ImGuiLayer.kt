@@ -28,9 +28,10 @@ class ImGuiLayer {
     val propertiesWindow = com.pafoid.skate.engine.editor.PropertiesWindow()
     private val hierarchyWindow = com.pafoid.skate.engine.editor.SceneHierarchyWindow(propertiesWindow)
     val gameViewWindow = com.pafoid.skate.engine.editor.GameViewWindow()
-    private val prefabsWindow = com.pafoid.skate.engine.editor.PrefabsWindow()
+    val prefabsWindow = com.pafoid.skate.engine.editor.PrefabsWindow()
     private val environmentWindow = com.pafoid.skate.engine.editor.EnvironmentWindow()
     private val threadMonitorWindow = com.pafoid.skate.engine.editor.ThreadMonitorWindow()
+    private val gamepadOverlay = com.pafoid.skate.engine.editor.GamepadOverlay()
 
     fun init(glfwWindow: Long) {
         this.glfwWindow = glfwWindow
@@ -48,14 +49,63 @@ class ImGuiLayer {
 
     private fun setupStyle() {
         val style = ImGui.getStyle()
-        style.windowRounding = 0f
-        style.childRounding = 0f
-        style.frameRounding = 0f
-        style.grabRounding = 0f
-        style.popupRounding = 0f
-        style.scrollbarRounding = 0f
-
-        ImGui.styleColorsDark()
+        
+        // Pro Dark Theme (Slate / Charcoal)
+        style.windowRounding = 4f
+        style.childRounding = 4f
+        style.frameRounding = 4f
+        style.grabRounding = 4f
+        style.popupRounding = 4f
+        style.scrollbarRounding = 4f
+        
+        style.setColor(imgui.flag.ImGuiCol.Text, 0.90f, 0.90f, 0.90f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.TextDisabled, 0.60f, 0.60f, 0.60f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.WindowBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ChildBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.PopupBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.Border, 0.26f, 0.26f, 0.26f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.BorderShadow, 0.00f, 0.00f, 0.00f, 0.00f)
+        style.setColor(imgui.flag.ImGuiCol.FrameBg, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.FrameBgHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.FrameBgActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.TitleBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.TitleBgActive, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.TitleBgCollapsed, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.MenuBarBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ScrollbarBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ScrollbarGrab, 0.31f, 0.31f, 0.31f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ScrollbarGrabHovered, 0.41f, 0.41f, 0.41f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ScrollbarGrabActive, 0.51f, 0.51f, 0.51f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.CheckMark, 0.80f, 0.80f, 0.80f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.SliderGrab, 0.39f, 0.39f, 0.39f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.SliderGrabActive, 0.51f, 0.51f, 0.51f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.Button, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ButtonHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ButtonActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.Header, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.HeaderHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.HeaderActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.Separator, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.SeparatorHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.SeparatorActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ResizeGrip, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ResizeGripHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.ResizeGripActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.Tab, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.TabHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.TabActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.TabUnfocused, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.TabUnfocusedActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.PlotLines, 0.61f, 0.61f, 0.61f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.PlotLinesHovered, 1.00f, 0.43f, 0.35f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.PlotHistogram, 0.90f, 0.70f, 0.00f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.PlotHistogramHovered, 1.00f, 0.60f, 0.00f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.TextSelectedBg, 0.26f, 0.59f, 0.98f, 0.35f)
+        style.setColor(imgui.flag.ImGuiCol.DragDropTarget, 1.00f, 1.00f, 0.00f, 0.90f)
+        style.setColor(imgui.flag.ImGuiCol.NavHighlight, 0.26f, 0.59f, 0.98f, 1.00f)
+        style.setColor(imgui.flag.ImGuiCol.NavWindowingHighlight, 1.00f, 1.00f, 1.00f, 0.70f)
+        style.setColor(imgui.flag.ImGuiCol.NavWindowingDimBg, 0.80f, 0.80f, 0.80f, 0.20f)
+        style.setColor(imgui.flag.ImGuiCol.ModalWindowDimBg, 0.80f, 0.80f, 0.80f, 0.35f)
     }
 
     private fun setupLayout(dockspaceId: Int) {
@@ -94,6 +144,7 @@ class ImGuiLayer {
         prefabsWindow.imgui()
         environmentWindow.imgui(currentScene)
         threadMonitorWindow.imgui()
+        gamepadOverlay.imgui()
         
         // Simple demo window
         // ImGui.showDemoWindow()
@@ -142,11 +193,14 @@ class ImGuiLayer {
 
         if (ImGui.beginMenuBar()) {
             if (ImGui.beginMenu("File")) {
-                if (ImGui.menuItem("Save Level")) {
+                if (ImGui.menuItem("Save Level", "Ctrl+S")) {
                     currentScene.save()
                 }
-                if (ImGui.menuItem("Load Level")) {
-                    currentScene.load()
+                if (ImGui.menuItem("Save As...")) {
+                    currentScene.saveAs()
+                }
+                if (ImGui.menuItem("Open Level", "Ctrl+O")) {
+                    currentScene.open()
                 }
                 ImGui.separator()
                 if (ImGui.menuItem("Quit")) {

@@ -7,6 +7,7 @@ import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
 import org.joml.Vector2f
+import org.joml.Vector3f
 import kotlin.math.roundToInt
 
 class GameViewWindow {
@@ -19,19 +20,7 @@ class GameViewWindow {
     private var hoveredGameObject: com.pafoid.skate.engine.scenes.GameObject? = null
 
     fun imgui() {
-        ImGui.begin("Game Viewport", ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.MenuBar)
-
-        val isPlaying = SceneManager.isPlaying()
-        ImGui.beginMenuBar()
-        if (ImGui.menuItem("Play", "", isPlaying, !isPlaying)) {
-            SceneManager.setPlaying(true)
-        }
-        if (ImGui.menuItem("Stop", "", !isPlaying, isPlaying)) {
-            SceneManager.setPlaying(false)
-        }
-        
-        ImGui.text("World (${MouseListener.getWorldX().roundToInt()},${MouseListener.getWorldY().roundToInt()})")
-        ImGui.endMenuBar()
+        ImGui.begin("Game Viewport", ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
 
         val windowSize = getLargestSizeForViewport()
         val windowPos = getCenteredPositionForViewport(windowSize)
@@ -48,8 +37,50 @@ class GameViewWindow {
         val texId = Window.getFrameBuffer().getTextureId()
         ImGui.image(texId.toLong(), windowSize.x, windowSize.y, 0f, 1f, 1f, 0f)
 
+        // Drag and Drop Target
+        if (ImGui.beginDragDropTarget()) {
+            val payloadRail = ImGui.acceptDragDropPayload<String>("PREFAB_RAIL")
+            val payloadLedge = ImGui.acceptDragDropPayload<String>("PREFAB_LEDGE")
+            val payloadKicker = ImGui.acceptDragDropPayload<String>("PREFAB_KICKER")
+
+            val payload = payloadRail ?: payloadLedge ?: payloadKicker
+            
+            if (payload != null) {
+                val scene = SceneManager.getCurrentScene()
+                if (scene != null) {
+                    val mousePos = ImVec2()
+                    ImGui.getMousePos(mousePos)
+                    val relX = mousePos.x - imageScreenPosX
+                    val relY = mousePos.y - imageScreenPosY
+                    
+                    val ray = scene.camera.screenToRay(relX, relY, imageSizeX, imageSizeY)
+                    
+                    // Intersect ray with ground plane (Y=0)
+                    // P = O + t*D -> Py = 0 -> Oy + t*Dy = 0 -> t = -Oy / Dy
+                    if (Math.abs(ray.direction.y) > 0.0001f) {
+                        val t = -ray.origin.y / ray.direction.y
+                        if (t > 0) {
+                            val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
+                            val prefabs = Window.getImGuiLayer().prefabsWindow
+                            
+                            when {
+                                payloadRail != null -> prefabs.spawnRail(hitPoint)
+                                payloadLedge != null -> prefabs.spawnLedge(hitPoint)
+                                payloadKicker != null -> prefabs.spawnKicker(hitPoint)
+                            }
+                        }
+                    }
+                }
+            }
+            ImGui.endDragDropTarget()
+        }
+
+        renderViewportOverlays(windowPos, windowSize)
+
         MouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
         MouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
+        
+        // ... (rest of picking logic)
 
         // Handle Object Hover & Picking
         val mousePos = ImVec2()
@@ -92,6 +123,37 @@ class GameViewWindow {
         }
 
         ImGui.end()
+    }
+
+    private fun renderViewportOverlays(windowPos: ImVec2, windowSize: ImVec2) {
+        val isPlaying = SceneManager.isPlaying()
+        
+        // FPS Overlay (Top Left)
+        ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
+        ImGui.beginChild("FPS_Overlay", 80f, 30f, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+        ImGui.textColored(0f, 1f, 0f, 1f, "FPS: ${ImGui.getIO().framerate.toInt()}")
+        ImGui.endChild()
+
+        // Controls Overlay (Top Right)
+        val buttonSize = 60f
+        ImGui.setCursorPos(windowPos.x + windowSize.x - (buttonSize * 2f) - 20f, windowPos.y + 10f)
+        ImGui.beginChild("Controls_Overlay", buttonSize * 2f + 10f, 40f, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+        
+        if (isPlaying) {
+            if (ImGui.button("Stop", buttonSize, 30f)) {
+                SceneManager.setPlaying(false)
+            }
+        } else {
+            if (ImGui.button("Play", buttonSize, 30f)) {
+                SceneManager.setPlaying(true)
+            }
+        }
+        ImGui.sameLine()
+        if (ImGui.button("Reset", buttonSize, 30f)) {
+            // Reset logic could go here
+        }
+        
+        ImGui.endChild()
     }
 
     fun getHoveredObject(): com.pafoid.skate.engine.scenes.GameObject? = hoveredGameObject

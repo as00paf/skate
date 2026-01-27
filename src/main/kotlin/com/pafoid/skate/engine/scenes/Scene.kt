@@ -11,6 +11,9 @@ import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.lwjgl.PointerBuffer
+import org.lwjgl.system.MemoryUtil
+import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
@@ -32,6 +35,8 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f)
     var fogDensity: Float = 0.0f
     var fogGradient: Float = 1.5f
+    
+    var levelPath: String = "level.json"
     
     var cubemap: Cubemap? = null
     val gameObjects = mutableListOf<GameObject>()
@@ -148,8 +153,28 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     }
 
     fun save() {
+        saveToFile(levelPath)
+    }
+
+    fun saveAs() {
+        val filter = MemoryUtil.memUTF8("*.json")
+        val filters = MemoryUtil.memAllocPointer(1)
+        filters.put(0, filter)
+        
+        val path = TinyFileDialogs.tinyfd_saveFileDialog("Save Level", levelPath, filters, "JSON Files")
+        
+        MemoryUtil.memFree(filters)
+        MemoryUtil.memFree(filter)
+
+        if (path != null) {
+            levelPath = path
+            saveToFile(path)
+        }
+    }
+
+    private fun saveToFile(path: String) {
         try {
-            val writer = FileWriter("level.json")
+            val writer = FileWriter(path)
             val data = LevelData(
                 gameObjects = gameObjects.filter { it.doSerialization() },
                 ambientLight = ambientLight,
@@ -178,14 +203,39 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     }
 
     fun load() {
+        loadFromFile(levelPath)
+    }
+
+    fun open() {
+        val filter = MemoryUtil.memUTF8("*.json")
+        val filters = MemoryUtil.memAllocPointer(1)
+        filters.put(0, filter)
+        
+        val path = TinyFileDialogs.tinyfd_openFileDialog("Open Level", levelPath, filters, "JSON Files", false)
+        
+        MemoryUtil.memFree(filters)
+        MemoryUtil.memFree(filter)
+
+        if (path != null) {
+            levelPath = path
+            loadFromFile(path)
+        }
+    }
+
+    private fun loadFromFile(path: String) {
         var inFile = ""
         try {
-            inFile = String(Files.readAllBytes(Paths.get("level.json")))
+            inFile = String(Files.readAllBytes(Paths.get(path)))
         } catch (e: IOException) {
-            println("Error: Could not find level.json")
+            println("Error: Could not find $path")
         }
 
         if (inFile.isNotBlank()) {
+            // Clear current scene first if loading a new one
+            gameObjects.forEach { it.destroy() }
+            gameObjects.clear()
+            pendingObjects.clear()
+            
             val data: LevelData = gson.fromJson(inFile, LevelData::class.java)
             
             this.ambientLight.set(data.ambientLight)

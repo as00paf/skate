@@ -62,23 +62,40 @@ class PrefabsWindow {
             if (ImGui.button("Spawn Rail")) {
                 spawnRail()
             }
+            if (ImGui.beginDragDropSource()) {
+                ImGui.setDragDropPayload("PREFAB_RAIL", "Rail")
+                ImGui.text("Spawn Rail")
+                ImGui.endDragDropSource()
+            }
+
             if (ImGui.button("Spawn Ledge")) {
                 spawnLedge()
             }
+            if (ImGui.beginDragDropSource()) {
+                ImGui.setDragDropPayload("PREFAB_LEDGE", "Ledge")
+                ImGui.text("Spawn Ledge")
+                ImGui.endDragDropSource()
+            }
+
             if (ImGui.button("Spawn Kicker")) {
                 spawnKicker()
+            }
+            if (ImGui.beginDragDropSource()) {
+                ImGui.setDragDropPayload("PREFAB_KICKER", "Kicker")
+                ImGui.text("Spawn Kicker")
+                ImGui.endDragDropSource()
             }
         }
 
         ImGui.end()
     }
 
-    private fun spawnSkateboard() {
+    fun spawnSkateboard(position: Vector3f = Vector3f(0f, 5f, 0f)) {
         val scene = SceneManager.getCurrentScene() ?: return
         
         AssetPool.getModelAsync(ObjLoader.SKATEBOARD_GLB, loader) { model ->
             val skate = GameObject("Skateboard")
-            skate.transform.translation.set(0f, 5f, 0f)
+            skate.transform.translation.set(position)
             skate.transform.scale.set(0.01f, 0.01f, 0.01f)
             skate.addComponent(Entity(model = model))
             skate.addComponent(RigidBody3D(1.0f).apply { friction = 0.1f })
@@ -89,10 +106,10 @@ class PrefabsWindow {
         }
     }
 
-    private fun spawnTile() {
+    fun spawnTile(position: Vector3f = Vector3f(0f, 0f, 0f)) {
         val scene = SceneManager.getCurrentScene() ?: return
         val tile = GameObject("Tile_${scene.gameObjects.size}")
-        tile.transform.translation.set(0f, 0f, 0f)
+        tile.transform.translation.set(position)
         tile.addComponent(Entity(
             model = com.pafoid.skate.engine.models.TexturedModel(
                 AssetPool.getRawModel(ObjLoader.CUBE, loader), 
@@ -105,10 +122,10 @@ class PrefabsWindow {
         scene.addGameObjectToScene(tile)
     }
 
-    private fun spawnRail() {
+    fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f)) {
         val scene = SceneManager.getCurrentScene() ?: return
         val rail = GameObject("Rail_${scene.gameObjects.size}")
-        rail.transform.translation.set(0f, 0.5f, 0f) 
+        rail.transform.translation.set(position) 
         rail.transform.scale.set(1f, 1f, 1f)
         rail.addComponent(Entity(
             model = com.pafoid.skate.engine.models.TexturedModel(
@@ -121,10 +138,10 @@ class PrefabsWindow {
         scene.addGameObjectToScene(rail)
     }
 
-    private fun spawnLedge() {
+    fun spawnLedge(position: Vector3f = Vector3f(0f, 0.25f, 0f)) {
         val scene = SceneManager.getCurrentScene() ?: return
         val ledge = GameObject("Ledge_${scene.gameObjects.size}")
-        ledge.transform.translation.set(0f, 0.25f, 0f) 
+        ledge.transform.translation.set(position) 
         ledge.transform.scale.set(1f, 1f, 1f)
         ledge.addComponent(Entity(
             model = com.pafoid.skate.engine.models.TexturedModel(
@@ -137,10 +154,10 @@ class PrefabsWindow {
         scene.addGameObjectToScene(ledge)
     }
 
-    private fun spawnKicker() {
+    fun spawnKicker(position: Vector3f = Vector3f(0f, 0f, 0f)) {
         val scene = SceneManager.getCurrentScene() ?: return
         val kicker = GameObject("Kicker_${scene.gameObjects.size}")
-        kicker.transform.translation.set(0f, 0f, 0f)
+        kicker.transform.translation.set(position)
         kicker.transform.scale.set(1f, 1f, 1f)
         kicker.addComponent(Entity(
             model = com.pafoid.skate.engine.models.TexturedModel(

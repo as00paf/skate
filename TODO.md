@@ -113,12 +113,32 @@
 - [x] **Preferred Stance Logic**: Support Regular vs Goofy by mirroring input-to-torque mapping.
 - [x] **Current Stance Logic**: Support Regular, Switch, Nollie and Fakie to define how the player is standing on the board.    
 
-### 9. Trick Detection
+### 9. Professional Level Editor
+- [ ] **Task 7.1: UI Styling & Icons:** - Apply a custom 'Pro Dark' theme (like a Slate or Charcoal gray).
+  - Merge FontAwesome .ttf into the ImGui font atlas for buttons.
+- [ ] **Task 7.2: Scene Serialization (JSON):** - Integrate a JSON library (e.g., Jackson or kotlinx.serialization).
+  - Implement `SceneSerializer` to save/load all objects in the Hierarchy.
+- [ ] **Task 7.3: Viewport Overlays:** - Move 'Play/Stop' and 'FPS' to a transparent `ImGuiWindowFlags_NoDecoration` overlay inside the 3D viewport.
+- [ ] **Task 7.4: Drag-and-Drop:** - Allow dragging items from the 'Prefabs' window directly into the 3D Viewport.
+- [ ] **Task 7.5: Modern Property Widgets:** - Implement 'Color Pickers' for materials and 'Draggable Floats' for all transform values.
+- [ ] **Task 7.6: File Dialog Integration:** - Add 'Save As...' and 'Open...' buttons using a native file picker (like TinyFileDialogs).
+  [ ] **Task 7.7: Splash Fix:** Correct the UV coordinates in the Splash Shader to fix the vertical flip (Y-axis inversion).
+- [ ] **Task 7.8:** **System Settings Persistence:**
+  - Create a `SettingsManager` to save/load `settings.json`.
+  - Implement ImGui toggles for Windowed vs. Borderless Fullscreen and other available options
+  - Persist resolution and V-Sync settings.
+- [ ] **Task 7.9:** **Input Visualization (Gamepad Overlay):**
+  - Render a semi-transparent HUD element showing an Xbox/PlayStation controller.
+  - Use dynamic tinting or highlight overlays to show real-time analog stick movement and button presses.
+- [ ] **Task 7.10:** Scene Serialization: Implement JSON Save/Load for all level GameObjects.
+- [ ] **Task 7.11:** Viewport Overlays: Move simulation controls and FPS to a transparent viewport layer.
+
+### 10. Trick Detection
 - [ ] **The Labeler**: Rotation monitoring and trick identification system.
 - [ ] **ImGui Debug Window**: ImGui Window to display the tricks identified
 - [ ] **Unit tests**: Add unit tests for trick detection.
 
-### 10. Skeletal Animation & UI Integration
+### 11. Skeletal Animation & UI Integration
 - [ ] **Animation Pipeline:** Implement Skeleton hierarchy, SLERP interpolation, and Global Transform calculation.
 - [ ] **GPU Skinning:** Update Vertex Shader for 4-bone influence and pass the Matrix Palette.
-- [ ] **ImGui Debugger:** Build a playback UI with clip selection, timeline scrubbing, and a bone visualizer overlay.
+- [ ] **ImGui Debugger Window:** Build a playback UI with clip selection, timeline scrubbing, and a bone visualizer overlay.
