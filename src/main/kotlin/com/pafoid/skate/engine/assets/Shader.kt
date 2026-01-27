@@ -88,6 +88,18 @@ class Shader(
         glUniform1i(varLocation, boolValue)
     }
 
+    fun uploadMat4fArray(varName: String, matrices: Array<Matrix4f>) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        val matBuffer = BufferUtils.createFloatBuffer(matrices.size * 16)
+        for (mat in matrices) {
+            mat.get(matBuffer)
+            matBuffer.position(matBuffer.position() + 16)
+        }
+        matBuffer.flip()
+        glUniformMatrix4fv(varLocation, false, matBuffer)
+    }
+
     fun destroy() {
         stop()
         glDeleteShader(vertexShaderId)

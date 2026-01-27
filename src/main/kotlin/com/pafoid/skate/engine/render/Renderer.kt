@@ -282,7 +282,13 @@ class Renderer(
             defaultShader.uploadInt("u_AlphaMode", alphaInt)
             defaultShader.uploadFloat("u_AlphaCutoff", material.alphaCutoff)
 
-            defaultShader.uploadBoolean("u_HasSkin", false) // TODO: Implement skinning data passing
+            val hasSkin = part.inverseBindMatrices.isNotEmpty()
+            defaultShader.uploadBoolean("u_HasSkin", hasSkin)
+            if (hasSkin) {
+                // Identity matrices for now
+                val identities = Array(part.inverseBindMatrices.size) { org.joml.Matrix4f() }
+                defaultShader.uploadMat4fArray("u_JointMatrices", identities)
+            }
 
             if (alphaInt == 2) {
                 glEnable(GL_BLEND)

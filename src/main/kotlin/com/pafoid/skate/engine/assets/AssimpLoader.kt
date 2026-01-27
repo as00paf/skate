@@ -11,7 +11,8 @@ class AssimpLoader {
 
     data class LoadedMeshPart(
         val model: RawModel,
-        val material: com.pafoid.skate.engine.models.Material
+        val material: com.pafoid.skate.engine.models.Material,
+        val inverseBindMatrices: List<org.joml.Matrix4f>
     )
 
     data class PreLoadedMeshPart(
@@ -26,7 +27,8 @@ class AssimpLoader {
         val indices: IntArray,
         val material: com.pafoid.skate.engine.models.Material,
         val drawMode: Int,
-        val embeddedTextures: Map<String, java.nio.ByteBuffer>
+        val embeddedTextures: Map<String, java.nio.ByteBuffer>,
+        val inverseBindMatrices: List<org.joml.Matrix4f> = emptyList()
     )
 
     data class PreLoadedModel(
@@ -161,8 +163,11 @@ class AssimpLoader {
         }
 
         // Process Bones for Joints/Weights
+        val inverseBindMatrices = mutableListOf<org.joml.Matrix4f>()
         for (b in 0 until mesh.mNumBones()) {
             val bone = AIBone.create(mesh.mBones()!!.get(b))
+            inverseBindMatrices.add(toJomlMatrix(bone.mOffsetMatrix()))
+            
             for (w in 0 until bone.mNumWeights()) {
                 val weight = bone.mWeights().get(w)
                 val vertexId = weight.mVertexId()
@@ -188,7 +193,7 @@ class AssimpLoader {
             }
         }
 
-        return PreLoadedMeshPart(vertices, texCoords, texCoords1, normals, tangents, colors, joints, weights, indices, materialData, org.lwjgl.opengl.GL11.GL_TRIANGLES, embeddedTextures)
+        return PreLoadedMeshPart(vertices, texCoords, texCoords1, normals, tangents, colors, joints, weights, indices, materialData, org.lwjgl.opengl.GL11.GL_TRIANGLES, embeddedTextures, inverseBindMatrices)
     }
 
     private fun toJomlMatrix(aiMatrix: AIMatrix4x4): org.joml.Matrix4f {
@@ -232,8 +237,8 @@ class AssimpLoader {
     fun loadModel(filePath: String, loader: VAOLoader): List<LoadedMeshPart> {
         val preLoaded = preLoadModel(filePath)
         return preLoaded.parts.map { p ->
-            val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1)
-            LoadedMeshPart(model, p.material)
+            val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
+            LoadedMeshPart(model, p.material, p.inverseBindMatrices)
         }
     }
 }

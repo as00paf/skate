@@ -23,7 +23,7 @@
     - [x] Link player model to physics rig.
 - [x] **Controller Support**: Full Gamepad Support (analog steering, flick mechanics).
 
-### 4. glTF Core Features Implementation
+### 4. glTF Core Features Implementation [COMPLETE]
 - **Mesh & Geometry**
     - [x] **Primitive Support**: Handle GL_TRIANGLES, GL_TRIANGLE_STRIP, and GL_TRIANGLE_FAN.
     - [x] **Standard Attributes**: Support Position (VEC3), Normal (VEC3), and Tangent (VEC4).
@@ -44,7 +44,7 @@
     - [x] **Coordinate System**: Convert glTF Right-Handed (Y-Up) to your engine's internal coordinate system if different.
 - **Skinning & Animation**
     - [x] **Joints & Weights**: Support for vertex skinning with up to 4 joint influences (JOINTS_0, WEIGHTS_0).
-    - [ ] **Inverse Bind Matrices**: Proper calculation of the skin's global transform.
+    - [x] **Inverse Bind Matrices**: Proper calculation of the skin's global transform.
     - [ ] **Animation Samplers**: Implementation of LINEAR, STEP, and CUBICSPLINE interpolation.
 - **Data & Buffers**
     - [x] **Binary Format**: Support for .glb (Binary glTF) container parsing.

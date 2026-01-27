@@ -60,7 +60,7 @@ object AssetPool {
                     val file = File(filePath)
                     val parts = preLoaded.parts.map { p ->
                         val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
-                        com.pafoid.skate.engine.models.MeshPart(model, p.material)
+                        com.pafoid.skate.engine.models.MeshPart(model, p.material, p.inverseBindMatrices)
                     }
                     val texturedModel = TexturedModel(parts)
                     models[file.absolutePath] = texturedModel
@@ -78,7 +78,7 @@ object AssetPool {
 
         val loadedParts = assimpLoader.loadModel(filePath, loader)
         val parts = loadedParts.map { loadedPart ->
-            MeshPart(loadedPart.model, loadedPart.material)
+            MeshPart(loadedPart.model, loadedPart.material, loadedPart.inverseBindMatrices)
         }
 
         val texturedModel = TexturedModel(parts)
