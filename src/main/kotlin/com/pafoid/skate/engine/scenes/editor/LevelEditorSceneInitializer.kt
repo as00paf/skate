@@ -71,8 +71,12 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         val ground = GameObject("Floor")
         ground.transform.translation.set(0f, -0.5f, 0f)
         ground.transform.scale.set(100f, 0.5f, 100f)
+        val groundTex = AssetPool.getTexture(Texture.ASPHALT)
+        val groundModel = TexturedModel(AssetPool.getRawModel(ObjLoader.CUBE, loader), groundTex)
+        groundModel.parts[0].material.baseColorPath = Texture.ASPHALT
+        
         ground.addComponent(Entity(
-            model = TexturedModel(AssetPool.getRawModel(ObjLoader.CUBE, loader), AssetPool.getTexture(Texture.ASPHALT)),
+            model = groundModel,
             textureScale = 20.0f
         ))
         val groundRb = RigidBody3D(0f)

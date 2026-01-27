@@ -11,87 +11,96 @@ import java.lang.Exception
 
 class ObjLoader {
 
+    private data class VertexIndices(val p: Int, val t: Int, val n: Int)
+
     fun loadObjModel(fileName: String, loader: VAOLoader): RawModel {
         try {
-            val fr = FileReader(File(fileName))
-            val reader = BufferedReader(fr)
-            var line: String?
-            val vertices = mutableListOf<Vector3f>()
-            val textures = mutableListOf<Vector2f>()
+            val file = File(fileName)
+            val reader = BufferedReader(FileReader(file))
+            
+            val positions = mutableListOf<Vector3f>()
+            val texCoords = mutableListOf<Vector2f>()
             val normals = mutableListOf<Vector3f>()
-            val indices = mutableListOf<Int>()
-            val normalsArray: FloatArray
-            val texturesArray: FloatArray
+            val faces = mutableListOf<List<VertexIndices>>()
 
-            while(true) {
-                line = reader.readLine()
-                val currentLine = line.split(" ")
-                if(line.startsWith("v ")) {
-                    val vertex = Vector3f(currentLine[1].toFloat(), currentLine[2].toFloat(), currentLine[3].toFloat())
-                    vertices.add(vertex)
-                }else if(line.startsWith("vt ")) {
-                    val texture = Vector2f(currentLine[1].toFloat(), currentLine[2].toFloat())
-                    textures.add(texture)
-                }else if(line.startsWith("vn ")) {
-                    val normal = Vector3f(currentLine[1].toFloat(), currentLine[2].toFloat(), currentLine[3].toFloat())
-                    normals.add(normal)
-                }else if(line.startsWith("f ")) {
-                    texturesArray = FloatArray(vertices.size * 2)
-                    normalsArray = FloatArray(vertices.size * 3)
-                    break
+            reader.forEachLine { line ->
+                val tokens = line.trim().split(Regex("\\s+"))
+                if (tokens.isEmpty()) return@forEachLine
+
+                when (tokens[0]) {
+                    "v" -> positions.add(Vector3f(tokens[1].toFloat(), tokens[2].toFloat(), tokens[3].toFloat()))
+                    "vt" -> texCoords.add(Vector2f(tokens[1].toFloat(), tokens[2].toFloat()))
+                    "vn" -> normals.add(Vector3f(tokens[1].toFloat(), tokens[2].toFloat(), tokens[3].toFloat()))
+                    "f" -> {
+                        val faceIndices = mutableListOf<VertexIndices>()
+                        for (i in 1 until tokens.size) {
+                            val parts = tokens[i].split("/")
+                            val p = parts[0].toInt() - 1
+                            val t = if (parts.size > 1 && parts[1].isNotEmpty()) parts[1].toInt() - 1 else -1
+                            val n = if (parts.size > 2 && parts[2].isNotEmpty()) parts[2].toInt() - 1 else -1
+                            faceIndices.add(VertexIndices(p, t, n))
+                        }
+                        // Triangulate fan if necessary
+                        for (i in 1 until faceIndices.size - 1) {
+                            faces.add(listOf(faceIndices[0], faceIndices[i], faceIndices[i + 1]))
+                        }
+                    }
                 }
             }
-
-            while(line != null) {
-                if(!line.startsWith("f ")) {
-                    line = reader.readLine()
-                    continue
-                }
-
-                val currentLine = line.split(" ")
-                val vertex1 = currentLine[1].split("/")
-                val vertex2 = currentLine[2].split("/")
-                val vertex3 = currentLine[3].split("/")
-
-                processVertex(vertex1, indices, textures, normals, texturesArray, normalsArray)
-                processVertex(vertex2, indices, textures, normals, texturesArray, normalsArray)
-                processVertex(vertex3, indices, textures, normals, texturesArray, normalsArray)
-                line = reader.readLine()
-            }
-
             reader.close()
 
-            val verticesArray = FloatArray(vertices.size * 3)
-            val indicesArray = IntArray(indices.size)
+            // Map unique combinations to new vertex indices
+            val uniqueVertices = mutableMapOf<VertexIndices, Int>()
+            val outPositions = mutableListOf<Float>()
+            val outTexCoords = mutableListOf<Float>()
+            val outNormals = mutableListOf<Float>()
+            val outColors = mutableListOf<Float>() // Added for vertex colors
+            val outIndices = mutableListOf<Int>()
 
-            var vertexPointer = 0
-            vertices.forEach { vertex ->
-                verticesArray[vertexPointer++] = vertex.x
-                verticesArray[vertexPointer++] = vertex.y
-                verticesArray[vertexPointer++] = vertex.z
+            for (face in faces) {
+                for (vIndices in face) {
+                    if (!uniqueVertices.containsKey(vIndices)) {
+                        val index = uniqueVertices.size
+                        uniqueVertices[vIndices] = index
+                        
+                        val p = positions[vIndices.p]
+                        outPositions.add(p.x); outPositions.add(p.y); outPositions.add(p.z)
+                        
+                        if (vIndices.t != -1) {
+                            val t = texCoords[vIndices.t]
+                            outTexCoords.add(t.x); outTexCoords.add(1f - t.y)
+                        } else {
+                            outTexCoords.add(0f); outTexCoords.add(0f)
+                        }
+                        
+                        if (vIndices.n != -1) {
+                            val n = normals[vIndices.n]
+                            outNormals.add(n.x); outNormals.add(n.y); outNormals.add(n.z)
+                        } else {
+                            outNormals.add(0f); outNormals.add(1f); outNormals.add(0f)
+                        }
+
+                        // Default to white vertex color
+                        outColors.add(1f); outColors.add(1f); outColors.add(1f); outColors.add(1f)
+                    }
+                    outIndices.add(uniqueVertices[vIndices]!!)
+                }
             }
 
-            for(i in 0 until indices.size) {
-                indicesArray[i] = indices[i]
-            }
-
-            return loader.loadToVAO(verticesArray, texturesArray, normalsArray, indicesArray, verticesArray)
+            val posArray = outPositions.toFloatArray()
+            return loader.loadToVAO(
+                posArray, 
+                outTexCoords.toFloatArray(), 
+                outNormals.toFloatArray(), 
+                outIndices.toIntArray(),
+                posArray,
+                floatArrayOf(), // tangents
+                outColors.toFloatArray() // colors
+            )
         } catch (e: Exception) {
-            println("Could not load obj file $fileName")
+            println("Could not load obj file $fileName: ${e.message}")
             throw e
         }
-    }
-
-    private fun processVertex(vertexData: List<String>, indices: MutableList<Int>, textures: List<Vector2f>, normals: List<Vector3f>, textureArray: FloatArray, normalsArray: FloatArray) {
-        val currentVertexPointer = vertexData[0].toInt() - 1
-        indices.add(currentVertexPointer)
-        val currentTex = textures[vertexData[1].toInt() - 1]
-        textureArray[currentVertexPointer*2] = currentTex.x
-        textureArray[currentVertexPointer*2 + 1] = 1 - currentTex.y
-        val currentNorm = normals[vertexData[2].toInt() - 1]
-        normalsArray[currentVertexPointer * 3] = currentNorm.x
-        normalsArray[currentVertexPointer * 3 + 1] = currentNorm.y
-        normalsArray[currentVertexPointer * 3 + 2] = currentNorm.z
     }
 
     companion object {
@@ -99,6 +108,9 @@ class ObjLoader {
         const val RAIL = "assets/obj/rail.obj"
         const val LEDGE = "assets/obj/ledge.obj"
         const val KICKER = "assets/obj/kicker.obj"
+        const val MANUAL_PAD = "assets/obj/manual_pad.obj"
+        const val BANK = "assets/obj/bank.obj"
+        const val QUARTER_PIPE = "assets/obj/quarter_pipe.obj"
         const val SKATEBOARD_GLB = "assets/obj/skateboard_free_model.glb"
         const val PLAYER_GLTF = "assets/characters/Superhero_Male_FullBody.gltf"
     }

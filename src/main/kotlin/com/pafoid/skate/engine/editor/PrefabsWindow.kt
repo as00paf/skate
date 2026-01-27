@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.editor
 
-import com.pafoid.skate.engine.Prefabs
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.Texture
@@ -12,7 +11,6 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
-import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import org.joml.Vector3f
 import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
@@ -21,74 +19,132 @@ class PrefabsWindow {
     private val loader = VAOLoader()
 
     enum class MaterialType(val displayName: String, val texturePath: String) {
-        SIMPLE_CONCRETE("Concrete (Simple)", Texture.CONCRETE_SIMPLE)
+        SIMPLE_CONCRETE("Concrete (Simple)", Texture.CONCRETE_SIMPLE),
+        SKATELITE("Skatelite (Wood)", "assets/textures/skatelite.png")
     }
 
     private var selectedMaterial = MaterialType.SIMPLE_CONCRETE
+    private var searchText = imgui.type.ImString("")
 
     fun imgui() {
         ImGui.begin("Prefabs")
 
-        if (ImGui.collapsingHeader("${Icons.CUBE} Simulation")) {
-            if (ImGui.button("${Icons.PLUS} Spawn Skateboard")) {
-                spawnSkateboard()
-            }
-            if (ImGui.button("${Icons.PLUS} Spawn Player")) {
-                // TODO: Implement Player Prefab
-            }
+        ImGui.inputTextWithHint("##search", "${Icons.SEARCH} Search...", searchText)
+        ImGui.separator()
+
+        if (ImGui.collapsingHeader("${Icons.CUBE} Simulation", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) {
+            renderSimulationPrefabs()
         }
 
-        if (ImGui.collapsingHeader("${Icons.PALETTE} Environment")) {
-            if (ImGui.button("${Icons.PLUS} Spawn Modular Tile")) {
-                spawnTile()
-            }
+        if (ImGui.collapsingHeader("${Icons.PALETTE} Environment", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) {
+            renderEnvironmentPrefabs()
         }
 
-        if (ImGui.collapsingHeader("${Icons.GEAR} Obstacles")) {
-            ImGui.text("Material Style:")
-            if (ImGui.beginCombo("##material_style", selectedMaterial.displayName)) {
-                for (mat in MaterialType.entries) {
-                    val isSelected = selectedMaterial == mat
-                    if (ImGui.selectable(mat.displayName, isSelected)) {
-                        selectedMaterial = mat
-                    }
-                    if (isSelected) {
-                        ImGui.setItemDefaultFocus()
-                    }
-                }
-                ImGui.endCombo()
-            }
-            ImGui.separator()
-
-            if (ImGui.button("${Icons.PLUS} Spawn Rail")) {
-                spawnRail()
-            }
-            if (ImGui.beginDragDropSource()) {
-                ImGui.setDragDropPayload("PREFAB_RAIL", "Rail")
-                ImGui.text("${Icons.PLUS} Spawn Rail")
-                ImGui.endDragDropSource()
-            }
-
-            if (ImGui.button("${Icons.PLUS} Spawn Ledge")) {
-                spawnLedge()
-            }
-            if (ImGui.beginDragDropSource()) {
-                ImGui.setDragDropPayload("PREFAB_LEDGE", "Ledge")
-                ImGui.text("${Icons.PLUS} Spawn Ledge")
-                ImGui.endDragDropSource()
-            }
-
-            if (ImGui.button("${Icons.PLUS} Spawn Kicker")) {
-                spawnKicker()
-            }
-            if (ImGui.beginDragDropSource()) {
-                ImGui.setDragDropPayload("PREFAB_KICKER", "Kicker")
-                ImGui.text("${Icons.PLUS} Spawn Kicker")
-                ImGui.endDragDropSource()
-            }
+        if (ImGui.collapsingHeader("${Icons.GEAR} Obstacles", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) {
+            renderObstaclePrefabs()
         }
 
         ImGui.end()
+    }
+
+    private fun renderSimulationPrefabs() {
+        val items = listOf(
+            Triple("Skateboard", ObjLoader.SKATEBOARD_GLB, { spawnSkateboard() }),
+            Triple("Player", null, { /* TODO */ })
+        ).filter { it.first.contains(searchText.get(), ignoreCase = true) }
+
+        if (items.isNotEmpty()) {
+            if (ImGui.beginTable("SimulationTable", 2, imgui.flag.ImGuiTableFlags.SizingFixedFit)) {
+                for (item in items) {
+                    ImGui.tableNextColumn()
+                    renderPrefabItem(item.first, item.second, onSpawn = item.third)
+                }
+                ImGui.endTable()
+            }
+        }
+    }
+
+    private fun renderEnvironmentPrefabs() {
+        val items = listOf(
+            Triple("Tile", ObjLoader.CUBE, { spawnTile() })
+        ).filter { it.first.contains(searchText.get(), ignoreCase = true) }
+
+        if (items.isNotEmpty()) {
+            if (ImGui.beginTable("EnvironmentTable", 2, imgui.flag.ImGuiTableFlags.SizingFixedFit)) {
+                for (item in items) {
+                    ImGui.tableNextColumn()
+                    renderPrefabItem(item.first, item.second, onSpawn = item.third)
+                }
+                ImGui.endTable()
+            }
+        }
+    }
+
+    private fun renderObstaclePrefabs() {
+        ImGui.text("Material Style:")
+        if (ImGui.beginCombo("##material_style", selectedMaterial.displayName)) {
+            for (mat in MaterialType.entries) {
+                val isSelected = selectedMaterial == mat
+                if (ImGui.selectable(mat.displayName, isSelected)) {
+                    selectedMaterial = mat
+                }
+                if (isSelected) {
+                    ImGui.setItemDefaultFocus()
+                }
+            }
+            ImGui.endCombo()
+        }
+        ImGui.separator()
+
+        val items = listOf(
+            ItemData("Rail", ObjLoader.RAIL, "PREFAB_RAIL", { spawnRail() }),
+            ItemData("Ledge", ObjLoader.LEDGE, "PREFAB_LEDGE", { spawnLedge() }),
+            ItemData("Kicker", ObjLoader.KICKER, "PREFAB_KICKER", { spawnKicker() }),
+            ItemData("Manual Pad", ObjLoader.MANUAL_PAD, "PREFAB_MANUAL_PAD", { spawnManualPad() }),
+            ItemData("Bank", ObjLoader.BANK, "PREFAB_BANK", { spawnBank() }),
+            ItemData("Quarter Pipe", ObjLoader.QUARTER_PIPE, "PREFAB_QUARTER_PIPE", { spawnQuarterPipe() })
+        ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
+
+        if (items.isNotEmpty()) {
+            if (ImGui.beginTable("ObstacleTable", 3, imgui.flag.ImGuiTableFlags.SizingFixedFit)) {
+                for (item in items) {
+                    ImGui.tableNextColumn()
+                    renderPrefabItem(item.name, item.modelPath, item.dragDropPayload, item.onSpawn)
+                }
+                ImGui.endTable()
+            }
+        }
+    }
+
+    private data class ItemData(val name: String, val modelPath: String?, val dragDropPayload: String? = null, val onSpawn: () -> Unit)
+
+    private fun renderPrefabItem(name: String, modelPath: String?, dragDropPayload: String? = null, onSpawn: () -> Unit) {
+        val size = 80f
+        val padding = 5f
+        
+        ImGui.beginGroup()
+        
+        val texId = if (modelPath != null) {
+            val model = AssetPool.getModel(modelPath, loader)
+            ThumbnailCache.getThumbnail(modelPath, model)
+        } else {
+            AssetPool.getTexture(Texture.WHITE).texId
+        }
+
+        if (ImGui.imageButton("PrefabItem_$name", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
+            onSpawn()
+        }
+        
+        if (dragDropPayload != null && ImGui.beginDragDropSource()) {
+            ImGui.setDragDropPayload(dragDropPayload, name)
+            ImGui.image(texId.toLong(), 64f, 64f, 0f, 1f, 1f, 0f)
+            ImGui.text(name)
+            ImGui.endDragDropSource()
+        }
+
+        ImGui.text(name)
+        ImGui.dummy(0f, padding)
+        ImGui.endGroup()
     }
 
     fun spawnSkateboard(position: Vector3f = Vector3f(0f, 5f, 0f)) {
@@ -184,5 +240,68 @@ class PrefabsWindow {
         kicker.addComponent(com.pafoid.skate.engine.physics3d.components.CustomCollider3D(kickerShape))
         
         scene.addGameObjectToScene(kicker)
+    }
+
+    fun spawnManualPad(position: Vector3f = Vector3f(0f, 0.1f, 0f)) {
+        val scene = SceneManager.getCurrentScene() ?: return
+        val go = GameObject("ManualPad_${scene.gameObjects.size}")
+        go.transform.translation.set(position)
+        go.addComponent(Entity(
+            model = com.pafoid.skate.engine.models.TexturedModel(
+                AssetPool.getRawModel(ObjLoader.MANUAL_PAD, loader),
+                AssetPool.getTexture(selectedMaterial.texturePath)
+            )
+        ))
+        go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
+        scene.addGameObjectToScene(go)
+    }
+
+    fun spawnBank(position: Vector3f = Vector3f(0f, 0f, 0f)) {
+        val scene = SceneManager.getCurrentScene() ?: return
+        val go = GameObject("Bank_${scene.gameObjects.size}")
+        go.transform.translation.set(position)
+        go.addComponent(Entity(
+            model = com.pafoid.skate.engine.models.TexturedModel(
+                AssetPool.getRawModel(ObjLoader.BANK, loader),
+                AssetPool.getTexture(selectedMaterial.texturePath)
+            )
+        ))
+        go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        
+        // Simple hull collider for bank
+        val rawModel = AssetPool.getRawModel(ObjLoader.BANK, loader)
+        val jmeVertices = mutableListOf<JmeVector3f>()
+        for (i in 0 until rawModel.vertices.size / 3) {
+            jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
+        }
+        val shape = com.jme3.bullet.collision.shapes.HullCollisionShape(jmeVertices)
+        go.addComponent(com.pafoid.skate.engine.physics3d.components.CustomCollider3D(shape))
+        
+        scene.addGameObjectToScene(go)
+    }
+
+    fun spawnQuarterPipe(position: Vector3f = Vector3f(0f, 0f, 0f)) {
+        val scene = SceneManager.getCurrentScene() ?: return
+        val go = GameObject("QuarterPipe_${scene.gameObjects.size}")
+        go.transform.translation.set(position)
+        go.addComponent(Entity(
+            model = com.pafoid.skate.engine.models.TexturedModel(
+                AssetPool.getRawModel(ObjLoader.QUARTER_PIPE, loader),
+                AssetPool.getTexture(selectedMaterial.texturePath)
+            )
+        ))
+        go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        
+        // Mesh collider for curved surface
+        val rawModel = AssetPool.getRawModel(ObjLoader.QUARTER_PIPE, loader)
+        val jmeVertices = mutableListOf<JmeVector3f>()
+        for (i in 0 until rawModel.vertices.size / 3) {
+            jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
+        }
+        val shape = com.jme3.bullet.collision.shapes.HullCollisionShape(jmeVertices)
+        go.addComponent(com.pafoid.skate.engine.physics3d.components.CustomCollider3D(shape))
+        
+        scene.addGameObjectToScene(go)
     }
 }

@@ -81,33 +81,38 @@ object AssetPool {
                     // Assign textures on main thread
                     val mat = p.material
                     mat.baseColorPath?.let { path -> 
-                        mat.baseColorTexture = textures[path] ?: Texture().apply { 
+                        val absPath = File(path).absolutePath
+                        mat.baseColorTexture = textures[absPath] ?: Texture().apply { 
                             textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[path] = this 
+                            textures[absPath] = this 
                         }
                     }
                     mat.normalMapPath?.let { path -> 
-                        mat.normalMap = textures[path] ?: Texture().apply { 
+                        val absPath = File(path).absolutePath
+                        mat.normalMap = textures[absPath] ?: Texture().apply { 
                             textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[path] = this 
+                            textures[absPath] = this 
                         }
                     }
                     mat.metallicRoughnessPath?.let { path -> 
-                        mat.metallicRoughnessTexture = textures[path] ?: Texture().apply { 
+                        val absPath = File(path).absolutePath
+                        mat.metallicRoughnessTexture = textures[absPath] ?: Texture().apply { 
                             textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[path] = this 
+                            textures[absPath] = this 
                         }
                     }
                     mat.aoPath?.let { path -> 
-                        mat.aoTexture = textures[path] ?: Texture().apply { 
+                        val absPath = File(path).absolutePath
+                        mat.aoTexture = textures[absPath] ?: Texture().apply { 
                             textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[path] = this 
+                            textures[absPath] = this 
                         }
                     }
                     mat.emissivePath?.let { path -> 
-                        mat.emissiveTexture = textures[path] ?: Texture().apply { 
+                        val absPath = File(path).absolutePath
+                        mat.emissiveTexture = textures[absPath] ?: Texture().apply { 
                             textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[path] = this 
+                            textures[absPath] = this 
                         }
                     }
 
@@ -125,18 +130,33 @@ object AssetPool {
     }
 
     fun getModel(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): TexturedModel {
-        val file = File(filePath)
-        if (models.containsKey(file.absolutePath)) {
-            return models[file.absolutePath]!!
+        val absolutePath = File(filePath).absolutePath
+        if (models.containsKey(absolutePath)) {
+            return models[absolutePath]!!
         }
 
-        val loadedParts = assimpLoader.loadModel(filePath, loader)
-        val parts = loadedParts.map { loadedPart ->
-            MeshPart(loadedPart.model, loadedPart.material, loadedPart.inverseBindMatrices)
+        val texturedModel = if (filePath.lowercase().endsWith(".obj")) {
+            val rawModel = ObjLoader().loadObjModel(filePath, loader)
+            val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = getTexture(Texture.WHITE)), emptyList()))
+            TexturedModel(parts)
+        } else {
+            val preLoaded = assimpLoader.preLoadModel(filePath)
+            val parts = preLoaded.parts.map { p ->
+                val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
+                
+                val mat = p.material
+                mat.baseColorPath?.let { mat.baseColorTexture = getTexture(it, p.embeddedTextures[it]) }
+                mat.normalMapPath?.let { mat.normalMap = getTexture(it, p.embeddedTextures[it]) }
+                mat.metallicRoughnessPath?.let { mat.metallicRoughnessTexture = getTexture(it, p.embeddedTextures[it]) }
+                mat.aoPath?.let { mat.aoTexture = getTexture(it, p.embeddedTextures[it]) }
+                mat.emissivePath?.let { mat.emissiveTexture = getTexture(it, p.embeddedTextures[it]) }
+                
+                MeshPart(model, mat, p.inverseBindMatrices)
+            }
+            TexturedModel(parts)
         }
 
-        val texturedModel = TexturedModel(parts)
-        models[file.absolutePath] = texturedModel
+        models[absolutePath] = texturedModel
         return texturedModel
     }
 
@@ -157,40 +177,23 @@ object AssetPool {
         }
     }
 
-    fun getTexture(resourceName: String): Texture {
-        val file = File(resourceName)
-        if (textures.containsKey(file.absolutePath)) {
-            return textures[file.absolutePath]!!
+    fun getTexture(resourceName: String, buffer: java.nio.ByteBuffer? = null): Texture {
+        val absolutePath = if (resourceName.startsWith("Embedded::")) resourceName else File(resourceName).absolutePath
+        if (textures.containsKey(absolutePath)) {
+            return textures[absolutePath]!!
         }
         
-        val data = Texture.loadData(resourceName)
+        val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(resourceName)
         if (data != null) {
             val texture = Texture()
             texture.uploadToGPU(data)
             data.free()
-            textures[file.absolutePath] = texture
+            texture.filePath = resourceName // Store original path for identification
+            textures[absolutePath] = texture
             return texture
         }
         
-        // Fallback or error
         throw RuntimeException("Failed to load texture: $resourceName")
-    }
-
-    fun getTexture(resourceName: String, buffer: java.nio.ByteBuffer): Texture {
-        if (textures.containsKey(resourceName)) {
-            return textures[resourceName]!!
-        }
-        
-        val data = Texture.loadData(buffer)
-        if (data != null) {
-            val texture = Texture()
-            texture.uploadToGPU(data)
-            data.free()
-            textures[resourceName] = texture
-            return texture
-        }
-        
-        throw RuntimeException("Failed to load texture from buffer: $resourceName")
     }
 
     fun addSpriteSheet(resourceName: String, spriteSheet: SpriteSheet) {

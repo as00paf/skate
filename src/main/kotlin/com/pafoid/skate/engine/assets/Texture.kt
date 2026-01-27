@@ -42,7 +42,8 @@ class Texture: Component() {
         glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
-        val format = if (data.channels == 3) GL_RGB else GL_RGBA
+        // Always use GL_RGBA if we forced 4 channels on load
+        val format = GL_RGBA
         glTexImage2D(target, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data.pixels)
         glGenerateMipmap(target)
     }
@@ -62,8 +63,8 @@ class Texture: Component() {
         glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
-        glTexImage2D(target, 0, GL_RGB, width, height,
-            0, GL_RGB, GL_UNSIGNED_BYTE, 0)
+        glTexImage2D(target, 0, GL_RGBA, width, height,
+            0, GL_RGBA, GL_UNSIGNED_BYTE, null as java.nio.ByteBuffer?)
 
         return this
     }
@@ -124,9 +125,9 @@ class Texture: Component() {
             val height = BufferUtils.createIntBuffer(1)
             val channels = BufferUtils.createIntBuffer(1)
             stbi_set_flip_vertically_on_load(flipOnLoad)
-            val image = stbi_load(filePath, width, height, channels, 0)
+            val image = stbi_load(filePath, width, height, channels, 4) // Force 4 channels
             return if (image != null) {
-                TextureData(width.get(0), height.get(0), channels.get(0), image, flipOnLoad)
+                TextureData(width.get(0), height.get(0), 4, image, flipOnLoad)
             } else {
                 null
             }
@@ -137,9 +138,9 @@ class Texture: Component() {
             val height = BufferUtils.createIntBuffer(1)
             val channels = BufferUtils.createIntBuffer(1)
             stbi_set_flip_vertically_on_load(flipOnLoad)
-            val image = stbi_load_from_memory(buffer, width, height, channels, 0)
+            val image = stbi_load_from_memory(buffer, width, height, channels, 4) // Force 4 channels
             return if (image != null) {
-                TextureData(width.get(0), height.get(0), channels.get(0), image, flipOnLoad)
+                TextureData(width.get(0), height.get(0), 4, image, flipOnLoad)
             } else {
                 null
             }

@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.render
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.MouseListener
 import com.pafoid.skate.engine.utils.toRadians
+import com.pafoid.skate.engine.utils.toDegrees
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -182,6 +183,12 @@ class Camera(
 
     fun getInverseProjection(): Matrix4f {
         return createProjectionMatrix().invert()
+    }
+
+    fun lookAt(target: Vector3f) {
+        val dir = Vector3f(target).sub(position).normalize()
+        pitch = Math.asin(-dir.y.toDouble()).toDegrees().toFloat()
+        yaw = Math.atan2(dir.x.toDouble(), -dir.z.toDouble()).toDegrees().toFloat()
     }
 
     fun screenToRay(screenX: Float, screenY: Float, width: Float, height: Float): com.pafoid.skate.engine.utils.Ray {

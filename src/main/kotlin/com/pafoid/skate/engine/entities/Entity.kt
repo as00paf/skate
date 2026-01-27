@@ -45,51 +45,39 @@ class Entity(
     
 
         override fun imgui() {
-
             if (imgui.ImGui.collapsingHeader("Material")) {
+                for ((index, part) in model.parts.withIndex()) {
+                    if (imgui.ImGui.treeNode("Part $index")) {
+                        val mat = part.material
+                        
+                        // Texture Display
+                        val tex = mat.baseColorTexture ?: com.pafoid.skate.engine.assets.AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE)
+                        imgui.ImGui.text("Base Texture: ${mat.baseColorPath ?: "Embedded/Generated"}")
+                        imgui.ImGui.image(tex.texId.toLong(), 64f, 64f, 0f, 1f, 1f, 0f)
+                        
+                        if (com.pafoid.skate.engine.utils.MImGui.colorPicker4("Base Color", mat.baseColorFactor)) {
+                            // Color changed
+                        }
+                        
+                        val roughness = floatArrayOf(mat.roughnessFactor)
+                        if (imgui.ImGui.dragFloat("Roughness", roughness, 0.01f, 0f, 1f)) {
+                            mat.roughnessFactor = roughness[0]
+                        }
+                        
+                        val metallic = floatArrayOf(mat.metallicFactor)
+                        if (imgui.ImGui.dragFloat("Metallic", metallic, 0.01f, 0f, 1f)) {
+                            mat.metallicFactor = metallic[0]
+                        }
 
-                val mat = model.parts[0].material
-
-                
-
-                if (com.pafoid.skate.engine.utils.MImGui.colorPicker4("Base Color", mat.baseColorFactor)) {
-
-                    // Color changed
-
+                        imgui.ImGui.treePop()
+                    }
                 }
-
-                
-
-                val roughness = floatArrayOf(mat.roughnessFactor)
-
-                if (imgui.ImGui.dragFloat("Roughness", roughness, 0.01f, 0f, 1f)) {
-
-                    mat.roughnessFactor = roughness[0]
-
-                }
-
-                
-
-                val metallic = floatArrayOf(mat.metallicFactor)
-
-                if (imgui.ImGui.dragFloat("Metallic", metallic, 0.01f, 0f, 1f)) {
-
-                    mat.metallicFactor = metallic[0]
-
-                }
-
     
-
                 val scale = floatArrayOf(textureScale)
-
                 if (imgui.ImGui.dragFloat("UV Scale", scale, 0.1f, 0.01f, 100f)) {
-
                     textureScale = scale[0]
-
                 }
-
             }
-
         }
 
     }

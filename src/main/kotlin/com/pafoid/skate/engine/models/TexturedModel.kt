@@ -19,8 +19,8 @@ data class Material(
     var emissivePath: String? = null,
 
     var baseColorFactor: Vector4f = Vector4f(1f, 1f, 1f, 1f),
-    var metallicFactor: Float = 1f,
-    var roughnessFactor: Float = 1f,
+    var metallicFactor: Float = 0f,
+    var roughnessFactor: Float = 0.5f,
     var emissiveFactor: org.joml.Vector3f = org.joml.Vector3f(0f, 0f, 0f),
     var doubleSided: Boolean = false,
     var alphaMode: String = "OPAQUE",

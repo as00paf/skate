@@ -1,0 +1,127 @@
+package com.pafoid.skate.engine.editor
+
+import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.models.TexturedModel
+import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.FrameBuffer
+import com.pafoid.skate.engine.toMatrix
+import com.pafoid.skate.engine.Transform
+import org.joml.Matrix4f
+import org.joml.Vector3f
+import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL13.*
+import org.lwjgl.opengl.GL20.*
+import org.lwjgl.opengl.GL30.*
+
+object ThumbnailCache {
+    private val thumbnails = mutableMapOf<String, Int>()
+    private var frameBuffer: FrameBuffer? = null
+    private const val THUMBNAIL_SIZE = 256
+    
+    private val camera = Camera(Vector3f(2.5f, 2.5f, 2.5f))
+    private val transform = Transform()
+    
+    init {
+        camera.lookAt(Vector3f(0f, 0f, 0f))
+    }
+
+    fun getThumbnail(id: String, model: TexturedModel): Int {
+        if (thumbnails.containsKey(id)) {
+            return thumbnails[id]!!
+        }
+
+        val texId = renderThumbnail(model)
+        thumbnails[id] = texId
+        return texId
+    }
+
+    private fun renderThumbnail(model: TexturedModel): Int {
+        if (frameBuffer == null) {
+            frameBuffer = FrameBuffer(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
+        }
+
+        // Save current state
+        val lastFbo = glGetInteger(GL_FRAMEBUFFER_BINDING)
+        val lastViewport = IntArray(4)
+        glGetIntegerv(GL_VIEWPORT, lastViewport)
+
+        val fbo = frameBuffer!!
+        fbo.bind()
+        
+        glViewport(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE)
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f)
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_DEPTH_TEST)
+
+        val shader = AssetPool.getShader(Shader.SHADER_3D_DEFAULT)
+        shader.start()
+        
+        // Setup simple matrices
+        val projectionMatrix = Matrix4f().perspective(Math.toRadians(45.0).toFloat(), 1.0f, 0.1f, 100f)
+        val viewMatrix = camera.createViewMatrix()
+        
+        shader.uploadMat4f("projectionMatrix", projectionMatrix)
+        shader.uploadMat4f("viewMatrix", viewMatrix)
+        shader.uploadMat4f("transformationMatrix", transform.toMatrix())
+        
+        // Simple lighting
+        shader.uploadVec3f("lightPosition", Vector3f(5f, 5f, 5f))
+        shader.uploadVec3f("lightColor", Vector3f(1.5f, 1.5f, 1.5f))
+        shader.uploadVec3f("uAmbientLight", Vector3f(0.4f, 0.4f, 0.4f))
+        shader.uploadVec3f("uSunDirection", Vector3f(1f, -1f, 1f).normalize())
+        shader.uploadVec3f("uSunColor", Vector3f(1.0f, 1.0f, 1.0f))
+        
+        // Render each part
+        for (part in model.parts) {
+            val rawModel = part.rawModel
+            val material = part.material
+            
+            glBindVertexArray(rawModel.vaoId)
+            glEnableVertexAttribArray(0) // Pos
+            glEnableVertexAttribArray(1) // UV
+            glEnableVertexAttribArray(2) // Normal
+            
+            glActiveTexture(GL_TEXTURE0)
+            material.baseColorTexture?.bind() ?: AssetPool.getTexture("assets/textures/white.png").bind()
+            shader.uploadInt("u_BaseColorTexture", 0)
+            shader.uploadVec4f("u_BaseColorFactor", material.baseColorFactor)
+            
+            shader.uploadBoolean("u_HasNormalMap", false)
+            shader.uploadBoolean("u_HasMetallicRoughnessTexture", false)
+            shader.uploadBoolean("u_HasAOTexture", false)
+            shader.uploadBoolean("u_HasEmissiveTexture", false)
+            shader.uploadInt("u_AlphaMode", 0)
+            shader.uploadBoolean("u_HasSkin", false)
+
+            glDrawElements(rawModel.drawMode, rawModel.vertexCount, GL_UNSIGNED_INT, 0)
+            
+            glDisableVertexAttribArray(0)
+            glDisableVertexAttribArray(1)
+            glDisableVertexAttribArray(2)
+        }
+        
+        shader.stop()
+        
+        // Create a new texture and copy the FBO content
+        val resultTexId = glGenTextures()
+        glBindTexture(GL_TEXTURE_2D, resultTexId)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, THUMBNAIL_SIZE, THUMBNAIL_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, null as java.nio.ByteBuffer?)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        
+        val tempFbo = glGenFramebuffers()
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo.getFboId())
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, tempFbo)
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, resultTexId, 0)
+        
+        glBlitFramebuffer(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE, 0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE, GL_COLOR_BUFFER_BIT, GL_NEAREST)
+        
+        // Restore state
+        glBindFramebuffer(GL_FRAMEBUFFER, lastFbo)
+        glViewport(lastViewport[0], lastViewport[1], lastViewport[2], lastViewport[3])
+        glDeleteFramebuffers(tempFbo)
+        
+        return resultTexId
+    }
+}

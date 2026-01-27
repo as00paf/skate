@@ -95,7 +95,6 @@ class Renderer(
         
         val ambient = if (scene.useAmbient) scene.ambientLight else Vector3f(0f, 0f, 0f)
         defaultShader.uploadVec3f("uAmbientLight", ambient)
-        defaultShader.uploadInt("textureSampler", 0)
 
         // Sun
         defaultShader.uploadVec3f("uSunDirection", scene.sun.direction)
@@ -246,6 +245,7 @@ class Renderer(
             glActiveTexture(GL_TEXTURE1)
             val hasNormal = material.normalMap != null
             if (hasNormal) material.normalMap!!.bind()
+            else AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind() // Bind dummy
             defaultShader.uploadInt("u_NormalMap", 1)
             defaultShader.uploadBoolean("u_HasNormalMap", hasNormal)
 
@@ -253,6 +253,7 @@ class Renderer(
             glActiveTexture(GL_TEXTURE2)
             val hasMR = material.metallicRoughnessTexture != null
             if (hasMR) material.metallicRoughnessTexture!!.bind()
+            else AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind() // Bind dummy
             defaultShader.uploadInt("u_MetallicRoughnessTexture", 2)
             defaultShader.uploadBoolean("u_HasMetallicRoughnessTexture", hasMR)
             defaultShader.uploadFloat("u_MetallicFactor", material.metallicFactor)
@@ -269,6 +270,7 @@ class Renderer(
             glActiveTexture(GL_TEXTURE4)
             val hasEmissive = material.emissiveTexture != null
             if (hasEmissive) material.emissiveTexture!!.bind()
+            else AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind() // Bind dummy
             defaultShader.uploadInt("u_EmissiveTexture", 4)
             defaultShader.uploadBoolean("u_HasEmissiveTexture", hasEmissive)
             defaultShader.uploadVec3f("u_EmissiveFactor", material.emissiveFactor)
@@ -286,7 +288,6 @@ class Renderer(
             val hasSkin = part.inverseBindMatrices.isNotEmpty()
             defaultShader.uploadBoolean("u_HasSkin", hasSkin)
             if (hasSkin) {
-                // Identity matrices for now
                 val identities = Array(part.inverseBindMatrices.size) { org.joml.Matrix4f() }
                 defaultShader.uploadMat4fArray("u_JointMatrices", identities)
             }
