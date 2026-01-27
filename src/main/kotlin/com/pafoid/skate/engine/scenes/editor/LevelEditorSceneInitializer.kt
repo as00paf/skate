@@ -51,6 +51,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         skateGo.addComponent(RigidBody3D(1.0f).apply { friction = 0.1f })
         skateGo.addComponent(BoxCollider3D(Vector3f(1.5f, 0.1f, 0.4f)))
         skateGo.addComponent(SkateboardPhysics())
+        skateGo.addComponent(PlayerController())
         scene.addGameObjectToScene(skateGo)
 
         // FEATURE 1.1: Player Character (Skater)

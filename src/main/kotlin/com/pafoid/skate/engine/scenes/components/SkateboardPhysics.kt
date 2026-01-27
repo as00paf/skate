@@ -27,7 +27,7 @@ class SkateboardPhysics : Component() {
         private set
 
     override fun start() {
-        rb = gameObject.getComponent<RigidBody3D>() ?: throw IllegalStateException("SkateboardPhysics requires RigidBody3D")
+        rb = gameObject.getComponent(RigidBody3D::class.java) ?: throw IllegalStateException("SkateboardPhysics requires RigidBody3D")
     }
 
     override fun update(dt: Float) {

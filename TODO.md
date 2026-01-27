@@ -93,3 +93,8 @@
 ### 8. Trick Detection
 - [ ] **The Labeler**: Rotation monitoring and trick identification system.
 - [ ] **Unit tests**: Add unit tests for trick detection.
+
+### 9. Skeletal Animation & UI Integration
+- [ ] **Task 3.1: Animation Pipeline:** Implement Skeleton hierarchy, SLERP interpolation, and Global Transform calculation.
+- [ ] **Task 3.2: GPU Skinning:** Update Vertex Shader for 4-bone influence and pass the Matrix Palette.
+- [ ] **Task 3.3: ImGui Debugger:** Build a playback UI with clip selection, timeline scrubbing, and a bone visualizer overlay.
