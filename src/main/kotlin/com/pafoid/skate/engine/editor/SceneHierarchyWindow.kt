@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.editor
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
+import com.pafoid.skate.engine.utils.Icons
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
@@ -46,7 +47,7 @@ class SceneHierarchyWindow(private val propertiesWindow: PropertiesWindow) {
         }
         
         if (ImGui.beginPopupContextItem()) {
-            if (ImGui.menuItem("Delete")) {
+            if (ImGui.menuItem("${Icons.TRASH} Delete")) {
                 obj.destroy()
             }
             ImGui.endPopup()

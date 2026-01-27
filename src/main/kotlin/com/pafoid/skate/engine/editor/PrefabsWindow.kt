@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.Prefabs
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.Texture
+import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
@@ -28,22 +29,22 @@ class PrefabsWindow {
     fun imgui() {
         ImGui.begin("Prefabs")
 
-        if (ImGui.collapsingHeader("Simulation")) {
-            if (ImGui.button("Spawn Skateboard")) {
+        if (ImGui.collapsingHeader("${Icons.CUBE} Simulation")) {
+            if (ImGui.button("${Icons.PLUS} Spawn Skateboard")) {
                 spawnSkateboard()
             }
-            if (ImGui.button("Spawn Player")) {
+            if (ImGui.button("${Icons.PLUS} Spawn Player")) {
                 // TODO: Implement Player Prefab
             }
         }
 
-        if (ImGui.collapsingHeader("Environment")) {
-            if (ImGui.button("Spawn Modular Tile")) {
+        if (ImGui.collapsingHeader("${Icons.PALETTE} Environment")) {
+            if (ImGui.button("${Icons.PLUS} Spawn Modular Tile")) {
                 spawnTile()
             }
         }
 
-        if (ImGui.collapsingHeader("Obstacles")) {
+        if (ImGui.collapsingHeader("${Icons.GEAR} Obstacles")) {
             ImGui.text("Material Style:")
             if (ImGui.beginCombo("##material_style", selectedMaterial.displayName)) {
                 for (mat in MaterialType.entries) {
@@ -59,30 +60,30 @@ class PrefabsWindow {
             }
             ImGui.separator()
 
-            if (ImGui.button("Spawn Rail")) {
+            if (ImGui.button("${Icons.PLUS} Spawn Rail")) {
                 spawnRail()
             }
             if (ImGui.beginDragDropSource()) {
                 ImGui.setDragDropPayload("PREFAB_RAIL", "Rail")
-                ImGui.text("Spawn Rail")
+                ImGui.text("${Icons.PLUS} Spawn Rail")
                 ImGui.endDragDropSource()
             }
 
-            if (ImGui.button("Spawn Ledge")) {
+            if (ImGui.button("${Icons.PLUS} Spawn Ledge")) {
                 spawnLedge()
             }
             if (ImGui.beginDragDropSource()) {
                 ImGui.setDragDropPayload("PREFAB_LEDGE", "Ledge")
-                ImGui.text("Spawn Ledge")
+                ImGui.text("${Icons.PLUS} Spawn Ledge")
                 ImGui.endDragDropSource()
             }
 
-            if (ImGui.button("Spawn Kicker")) {
+            if (ImGui.button("${Icons.PLUS} Spawn Kicker")) {
                 spawnKicker()
             }
             if (ImGui.beginDragDropSource()) {
                 ImGui.setDragDropPayload("PREFAB_KICKER", "Kicker")
-                ImGui.text("Spawn Kicker")
+                ImGui.text("${Icons.PLUS} Spawn Kicker")
                 ImGui.endDragDropSource()
             }
         }

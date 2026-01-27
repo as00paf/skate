@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.editor
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.MouseListener
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.utils.Icons
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -140,16 +141,16 @@ class GameViewWindow {
         ImGui.beginChild("Controls_Overlay", buttonSize * 2f + 10f, 40f, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
         
         if (isPlaying) {
-            if (ImGui.button("Stop", buttonSize, 30f)) {
+            if (ImGui.button("${Icons.STOP} Stop", buttonSize, 30f)) {
                 SceneManager.setPlaying(false)
             }
         } else {
-            if (ImGui.button("Play", buttonSize, 30f)) {
+            if (ImGui.button("${Icons.PLAY} Play", buttonSize, 30f)) {
                 SceneManager.setPlaying(true)
             }
         }
         ImGui.sameLine()
-        if (ImGui.button("Reset", buttonSize, 30f)) {
+        if (ImGui.button("${Icons.GEAR} Reset", buttonSize, 30f)) {
             // Reset logic could go here
         }
         

@@ -3,6 +3,7 @@ package com.pafoid.skate.engine
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.MouseListener
 import com.pafoid.skate.engine.scenes.Scene
+import com.pafoid.skate.engine.utils.Icons
 import imgui.ImGui
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
@@ -41,6 +42,24 @@ class ImGuiLayer {
         io.iniFilename = "imgui.ini"
         io.addConfigFlags(ImGuiConfigFlags.DockingEnable or ImGuiConfigFlags.ViewportsEnable)
         io.backendPlatformName = "imgui_java_impl_glfw"
+
+        // Load Fonts
+        val fontAtlas = io.fonts
+        val fontConfig = imgui.ImFontConfig()
+        
+        // Default Font
+        fontAtlas.addFontDefault()
+        
+        // Merge FontAwesome
+        fontConfig.setMergeMode(true)
+        fontConfig.setPixelSnapH(true)
+        fontConfig.setGlyphMinAdvanceX(14f) // Use size of font
+        
+        val iconRanges = shortArrayOf(0xe000.toShort(), 0xf8ff.toShort(), 0)
+        fontAtlas.addFontFromFileTTF("assets/fonts/Font Awesome 7 Free-Solid-900.otf", 14f, fontConfig, iconRanges)
+        
+        fontAtlas.build()
+        fontConfig.destroy()
 
         imGuiGlfw.init(glfwWindow, true) // TRUE means install callbacks
         setupStyle()
@@ -193,19 +212,38 @@ class ImGuiLayer {
 
         if (ImGui.beginMenuBar()) {
             if (ImGui.beginMenu("File")) {
-                if (ImGui.menuItem("Save Level", "Ctrl+S")) {
+                if (ImGui.menuItem("${Icons.SAVE} Save Level", "Ctrl+S")) {
                     currentScene.save()
                 }
-                if (ImGui.menuItem("Save As...")) {
+                if (ImGui.menuItem("${Icons.SAVE} Save As...")) {
                     currentScene.saveAs()
                 }
-                if (ImGui.menuItem("Open Level", "Ctrl+O")) {
+                if (ImGui.menuItem("${Icons.FOLDER_OPEN} Open Level", "Ctrl+O")) {
                     currentScene.open()
                 }
                 ImGui.separator()
-                if (ImGui.menuItem("Quit")) {
+                if (ImGui.menuItem("${Icons.TRASH} Quit")) {
                     glfwSetWindowShouldClose(glfwWindow, true)
                 }
+                ImGui.endMenu()
+            }
+            if (ImGui.beginMenu("Settings")) {
+                val settings = com.pafoid.skate.engine.utils.SettingsManager.settings
+                
+                val vsync = imgui.type.ImBoolean(settings.vsync)
+                if (ImGui.checkbox("V-Sync", vsync)) {
+                    settings.vsync = vsync.get()
+                    Window.setVSync(settings.vsync)
+                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                }
+
+                val fullscreen = imgui.type.ImBoolean(settings.fullscreen)
+                if (ImGui.checkbox("Fullscreen", fullscreen)) {
+                    settings.fullscreen = fullscreen.get()
+                    Window.setFullscreen(settings.fullscreen)
+                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                }
+
                 ImGui.endMenu()
             }
             if (ImGui.beginMenu("Create")) {

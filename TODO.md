@@ -115,12 +115,12 @@
 
 ### 9. Professional Level Editor
 - [x] **Task 7.1: UI Styling & Icons:** - Apply a custom 'Pro Dark' theme (like a Slate or Charcoal gray).
-  - Merge FontAwesome .ttf into the ImGui font atlas for buttons. (Style applied, Icons pending font file)
+  - Merge FontAwesome .ttf into the ImGui font atlas for buttons.
 - [x] **Task 7.2: Scene Serialization (JSON):** - Integrate a JSON library (e.g., Jackson or kotlinx.serialization).
-  - Implement `SceneSerializer` to save/load all objects in the Hierarchy. (Implemented via GSON in Scene.kt)
+  - Implement `SceneSerializer` to save/load all objects in the Hierarchy. (Using GSON)
 - [x] **Task 7.3: Viewport Overlays:** - Move 'Play/Stop' and 'FPS' to a transparent `ImGuiWindowFlags_NoDecoration` overlay inside the 3D viewport.
 - [x] **Task 7.4: Drag-and-Drop:** - Allow dragging items from the 'Prefabs' window directly into the 3D Viewport.
-- [ ] **Task 7.5: Modern Property Widgets:** - Implement 'Color Pickers' for materials and 'Draggable Floats' for all transform values.
+- [x] **Task 7.5: Modern Property Widgets:** - Implement 'Color Pickers' for materials and 'Draggable Floats' for all transform values.
 - [x] **Task 7.6: File Dialog Integration:** - Add 'Save As...' and 'Open...' buttons using a native file picker (like TinyFileDialogs).
 - [x] **Task 7.7: Splash Fix:** Correct the UV coordinates in the Splash Shader to fix the vertical flip (Y-axis inversion).
 - [x] **Task 7.8:** **System Settings Persistence:**

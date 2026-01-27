@@ -1,0 +1,23 @@
+package com.pafoid.skate.engine.utils
+
+object Icons {
+    const val PLAY = "\uf04b"
+    const val STOP = "\uf04d"
+    const val SAVE = "\uf0c7"
+    const val FOLDER_OPEN = "\uf07c"
+    const val PLUS = "\uf067"
+    const val TRASH = "\uf1f8"
+    const val GEAR = "\uf013"
+    const val CUBE = "\uf1b2"
+    const val PALETTE = "\uf53f"
+    const val EYE = "\uf06e"
+    const val EYE_SLASH = "\uf070"
+    const val SUN = "\uf185"
+    const val MOON = "\uf186"
+    const val CLOUD = "\uf0c2"
+    const val SEARCH = "\uf002"
+    const val ARROW_UP = "\uf062"
+    const val ARROW_DOWN = "\uf063"
+    const val ARROW_LEFT = "\uf060"
+    const val ARROW_RIGHT = "\uf061"
+}

@@ -36,6 +36,22 @@ class Window(
                 glfwRequestWindowAttention(it.glfwWindow)
             }
         }
+
+        fun setFullscreen(enabled: Boolean) {
+            instance?.let { win ->
+                val monitor = glfwGetPrimaryMonitor()
+                val vidMode = glfwGetVideoMode(monitor) ?: return
+                if (enabled) {
+                    glfwSetWindowMonitor(win.glfwWindow, monitor, 0, 0, vidMode.width(), vidMode.height(), vidMode.refreshRate())
+                } else {
+                    glfwSetWindowMonitor(win.glfwWindow, NULL, 100, 100, win.width, win.height, GLFW_DONT_CARE)
+                }
+            }
+        }
+
+        fun setVSync(enabled: Boolean) {
+            glfwSwapInterval(if (enabled) 1 else 0)
+        }
     }
 
     var currentWidth = width
@@ -57,6 +73,9 @@ class Window(
     }
 
     private fun init() {
+        com.pafoid.skate.engine.utils.SettingsManager.load()
+        val settings = com.pafoid.skate.engine.utils.SettingsManager.settings
+
         // Error callback
         GLFWErrorCallback.createPrint(System.err).set()
 
@@ -92,7 +111,7 @@ class Window(
         glfwMakeContextCurrent(glfwWindow)
 
         // Enable v-sync
-        glfwSwapInterval(1)
+        glfwSwapInterval(if (settings.vsync) 1 else 0)
 
         // This is needed for OpenGL
         GL.createCapabilities()

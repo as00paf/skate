@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.scenes.Scene
+import com.pafoid.skate.engine.utils.Icons
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.joml.Vector3f
@@ -10,7 +11,7 @@ class EnvironmentWindow {
     fun imgui(scene: Scene) {
         ImGui.begin("Environment")
 
-        if (ImGui.collapsingHeader("Time of Day")) {
+        if (ImGui.collapsingHeader("${Icons.GEAR} Time of Day")) {
             val time = floatArrayOf(scene.timeOfDay)
             val hours = time[0].toInt()
             val minutes = ((time[0] - hours) * 60).toInt()
@@ -22,7 +23,7 @@ class EnvironmentWindow {
             }
         }
 
-        if (ImGui.collapsingHeader("Atmosphere")) {
+        if (ImGui.collapsingHeader("${Icons.PALETTE} Atmosphere")) {
             val skyColor = floatArrayOf(scene.skyColor.x, scene.skyColor.y, scene.skyColor.z)
             if (ImGui.colorEdit3("Sky Color (Clear)", skyColor)) {
                 scene.skyColor.set(skyColor[0], skyColor[1], skyColor[2])
@@ -44,7 +45,7 @@ class EnvironmentWindow {
             }
             
             ImGui.separator()
-            ImGui.text("Sun (Directional Light)")
+            ImGui.text("${Icons.SUN} Sun (Directional Light)")
             
             val useSun = ImBoolean(scene.useSun)
             if (ImGui.checkbox("Use Sun", useSun)) {
@@ -67,7 +68,7 @@ class EnvironmentWindow {
             }
         }
 
-        if (ImGui.collapsingHeader("Fog")) {
+        if (ImGui.collapsingHeader("${Icons.CLOUD} Fog")) {
             val fogColor = floatArrayOf(scene.fogColor.x, scene.fogColor.y, scene.fogColor.z)
             if (ImGui.colorEdit3("Fog Color", fogColor)) {
                 scene.fogColor.set(fogColor[0], fogColor[1], fogColor[2])
@@ -84,7 +85,7 @@ class EnvironmentWindow {
             }
         }
 
-        if (ImGui.collapsingHeader("Lighting")) {
+        if (ImGui.collapsingHeader("${Icons.PALETTE} Lighting")) {
             val useAmbient = ImBoolean(scene.useAmbient)
             if (ImGui.checkbox("Use Ambient", useAmbient)) {
                 scene.useAmbient = useAmbient.get()
