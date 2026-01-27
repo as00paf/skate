@@ -35,16 +35,88 @@ object AssetPool {
         return getModel(filePath, loader).parts[0].rawModel
     }
 
+    fun getTextureAsync(resourceName: String, callback: (Texture) -> Unit) {
+        val file = File(resourceName)
+        if (textures.containsKey(file.absolutePath)) {
+            callback(textures[file.absolutePath]!!)
+            return
+        }
+
+        JobSystem.runIO {
+            val data = Texture.loadData(resourceName)
+            if (data != null) {
+                JobSystem.runOnMain {
+                    val texture = Texture()
+                    texture.uploadToGPU(data)
+                    data.free()
+                    textures[file.absolutePath] = texture
+                    callback(texture)
+                }
+            }
+        }
+    }
+
     fun getModelAsync(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader, callback: (TexturedModel) -> Unit) {
         JobSystem.runAsync {
             val preLoaded = assimpLoader.preLoadModel(filePath)
             
+            // Task 0.3: Loading textures data in background
+            val textureDataMap = mutableMapOf<String, TextureData>()
+            preLoaded.parts.forEach { part ->
+                listOfNotNull(part.material.baseColorPath, part.material.normalMapPath, 
+                    part.material.metallicRoughnessPath, part.material.aoPath, part.material.emissivePath).forEach { path ->
+                    if (!textureDataMap.containsKey(path)) {
+                        val buffer = part.embeddedTextures[path]
+                        val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(path)
+                        if (data != null) textureDataMap[path] = data
+                    }
+                }
+            }
+
             JobSystem.runOnMain {
                 val file = File(filePath)
                 val parts = preLoaded.parts.map { p ->
                     val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
-                    com.pafoid.skate.engine.models.MeshPart(model, p.material, p.inverseBindMatrices)
+                    
+                    // Assign textures on main thread
+                    val mat = p.material
+                    mat.baseColorPath?.let { path -> 
+                        mat.baseColorTexture = textures[path] ?: Texture().apply { 
+                            textureDataMap[path]?.let { uploadToGPU(it) }
+                            textures[path] = this 
+                        }
+                    }
+                    mat.normalMapPath?.let { path -> 
+                        mat.normalMap = textures[path] ?: Texture().apply { 
+                            textureDataMap[path]?.let { uploadToGPU(it) }
+                            textures[path] = this 
+                        }
+                    }
+                    mat.metallicRoughnessPath?.let { path -> 
+                        mat.metallicRoughnessTexture = textures[path] ?: Texture().apply { 
+                            textureDataMap[path]?.let { uploadToGPU(it) }
+                            textures[path] = this 
+                        }
+                    }
+                    mat.aoPath?.let { path -> 
+                        mat.aoTexture = textures[path] ?: Texture().apply { 
+                            textureDataMap[path]?.let { uploadToGPU(it) }
+                            textures[path] = this 
+                        }
+                    }
+                    mat.emissivePath?.let { path -> 
+                        mat.emissiveTexture = textures[path] ?: Texture().apply { 
+                            textureDataMap[path]?.let { uploadToGPU(it) }
+                            textures[path] = this 
+                        }
+                    }
+
+                    com.pafoid.skate.engine.models.MeshPart(model, mat, p.inverseBindMatrices)
                 }
+                
+                // Free texture data
+                textureDataMap.values.forEach { it.free() }
+                
                 val texturedModel = TexturedModel(parts)
                 models[file.absolutePath] = texturedModel
                 callback(texturedModel)
@@ -86,27 +158,39 @@ object AssetPool {
     }
 
     fun getTexture(resourceName: String): Texture {
-        if (textures.containsKey(resourceName)) {
-            return textures[resourceName]!!
-        }
         val file = File(resourceName)
-        return if(textures.containsKey(file.absolutePath)) {
-            textures[file.absolutePath]!!
-        } else{
-            val texture = Texture().init(resourceName)
-            textures[file.absolutePath] = texture
-            texture
+        if (textures.containsKey(file.absolutePath)) {
+            return textures[file.absolutePath]!!
         }
+        
+        val data = Texture.loadData(resourceName)
+        if (data != null) {
+            val texture = Texture()
+            texture.uploadToGPU(data)
+            data.free()
+            textures[file.absolutePath] = texture
+            return texture
+        }
+        
+        // Fallback or error
+        throw RuntimeException("Failed to load texture: $resourceName")
     }
 
     fun getTexture(resourceName: String, buffer: java.nio.ByteBuffer): Texture {
-        return if(textures.containsKey(resourceName)) {
-            textures[resourceName]!!
-        } else {
-            val texture = Texture().init(buffer)
-            textures[resourceName] = texture
-            texture
+        if (textures.containsKey(resourceName)) {
+            return textures[resourceName]!!
         }
+        
+        val data = Texture.loadData(buffer)
+        if (data != null) {
+            val texture = Texture()
+            texture.uploadToGPU(data)
+            data.free()
+            textures[resourceName] = texture
+            return texture
+        }
+        
+        throw RuntimeException("Failed to load texture from buffer: $resourceName")
     }
 
     fun addSpriteSheet(resourceName: String, spriteSheet: SpriteSheet) {

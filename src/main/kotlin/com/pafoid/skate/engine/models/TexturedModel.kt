@@ -10,6 +10,14 @@ data class Material(
     var metallicRoughnessTexture: Texture? = null,
     var aoTexture: Texture? = null,
     var emissiveTexture: Texture? = null,
+
+    // Background loading paths
+    var baseColorPath: String? = null,
+    var normalMapPath: String? = null,
+    var metallicRoughnessPath: String? = null,
+    var aoPath: String? = null,
+    var emissivePath: String? = null,
+
     var baseColorFactor: Vector4f = Vector4f(1f, 1f, 1f, 1f),
     var metallicFactor: Float = 1f,
     var roughnessFactor: Float = 1f,

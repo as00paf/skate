@@ -78,7 +78,19 @@
 - [x] **Splash Screen:** - Implement a full-screen quad shader to display the `splash_screen.png`.
   - Integrate a "Loading Progress" variable that updates based on completed tasks.
 - [x] **OpenGL Context Sync:** Use a thread-safe queue to "upload" loaded textures and meshes to the GPU once the background worker finishes parsing them.
-- [ ] **Thread Monitoring:** Add a debug view in ImGui showing CPU usage per thread (Main, Physics, Asset-IO).
+- [x] **Thread Monitoring:** Add a debug view in ImGui showing CPU usage per thread (Main, Physics, Asset-IO).
+  Async Boot & Splash UX :
+- [x] **Task 0.1: Window Lifecycle & Focus:** - Set `GLFW_VISIBLE` to false initially.
+  - Create the window, then call `glfwShowWindow` and `glfwFocusWindow` once the Splash Shader is ready.
+- [x] **Task 0.2: Loading State Machine:** - Implement `EngineState { BOOTING, LOADING, RUNNING }`.
+  - Create a `LoadingProgress` atomic float (0.0 to 1.0) shared between threads.
+- [x] **Task 0.3: Background Asset Thread:** - Use `Dispatchers.IO` to unzip assets and run Assimp parsing.
+  - **Crucial:** Background thread must *not* call OpenGL functions. It must store raw data in a `ConcurrentLinkedQueue`.
+- [x] **Task 0.4: Main Thread Splash Loop:** - Render a full-screen quad with the splash image.
+  - Render an ImGui progress bar synced to `LoadingProgress`.
+- [x] **Task 0.5: GPU Upload & Handoff:** - On the Main Thread, poll the `ConcurrentLinkedQueue`.
+  - Call `glBufferData` only when the Main Thread sees data is ready.
+  - Transition to `RUNNING` with a 1-second alpha fade-out.
 
 ### 8. 🛹 The Board Rig Technical Checklist
 

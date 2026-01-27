@@ -6,6 +6,18 @@ import org.lwjgl.opengl.GL30.*
 import org.lwjgl.stb.STBImage.*
 import java.util.*
 
+class TextureData(
+    val width: Int,
+    val height: Int,
+    val channels: Int,
+    val pixels: java.nio.ByteBuffer,
+    val flip: Boolean = false
+) {
+    fun free() {
+        org.lwjgl.stb.STBImage.stbi_image_free(pixels)
+    }
+}
+
 class Texture: Component() {
 
     @Transient private var id: Int = -1
@@ -15,6 +27,25 @@ class Texture: Component() {
     private var depth: Int = 0
     private var target: Int = GL_TEXTURE_2D
     private var filePath: String? = null
+
+    fun uploadToGPU(data: TextureData) {
+        this.id = glGenTextures()
+        this.target = GL_TEXTURE_2D
+        this.width = data.width
+        this.height = data.height
+        this.depth = 1
+
+        glBindTexture(target, id)
+
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+        val format = if (data.channels == 3) GL_RGB else GL_RGBA
+        glTexImage2D(target, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data.pixels)
+        glGenerateMipmap(target)
+    }
 
     fun init(width: Int, height: Int):Texture {
         this.id = glGenTextures()
@@ -59,75 +90,6 @@ class Texture: Component() {
         return this
     }
 
-    fun init(buffer: java.nio.ByteBuffer): Texture {
-        this.filePath = "Buffer::" + System.identityHashCode(buffer)
-        this.id = glGenTextures()
-        this.target = GL_TEXTURE_2D
-        glBindTexture(target, id)
-
-        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        val width = BufferUtils.createIntBuffer(1)
-        val height = BufferUtils.createIntBuffer(1)
-        val channels = BufferUtils.createIntBuffer(1)
-        stbi_set_flip_vertically_on_load(false) // GLB/glTF usually don't need flip if aiProcess_FlipUVs is used
-        val image = stbi_load_from_memory(buffer, width, height, channels, 0)
-
-        if (image != null) {
-            this.width = width.get(0)
-            this.height = height.get(0)
-            this.depth = 1
-            val format = if (channels.get(0) == 3) GL_RGB else GL_RGBA
-            glTexImage2D(target, 0, format, this.width, this.height, 0, format, GL_UNSIGNED_BYTE, image)
-            glGenerateMipmap(target)
-            stbi_image_free(image)
-        } else {
-            val reason = stbi_failure_reason()
-            println("Error: (Texture) Unable to load image from memory: $reason")
-            // Initialize with a 1x1 white texture as fallback if desired, 
-            // but for now we'll just log the error.
-        }
-        return this
-    }
-
-    fun init(filePath: String, flipOnLoad:Boolean = false):Texture {
-        this.filePath = filePath
-        this.id = glGenTextures()
-        this.target = GL_TEXTURE_2D
-        glBindTexture(target, id)
-
-        // Set params
-        // Repeat in both directions
-        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        // Linear filtering with mipmaps
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        val width = BufferUtils.createIntBuffer(1)
-        val height = BufferUtils.createIntBuffer(1)
-        val channels = BufferUtils.createIntBuffer(1)
-        stbi_set_flip_vertically_on_load(flipOnLoad)
-        val image = stbi_load(filePath, width, height, channels, 0)
-
-        if (image != null) {
-            this.width = width.get(0)
-            this.height = height.get(0)
-            this.depth = 1
-            val format = if(channels.get(0) == 3) GL_RGB else GL_RGBA
-            glTexImage2D(target, 0, format, this.width, this.height, 0, format, GL_UNSIGNED_BYTE, image)
-            glGenerateMipmap(target)
-            stbi_image_free(image)
-        } else {
-            assert(false) { "Error: (Texture) Unable to load image : $filePath" }
-        }
-
-        return this
-    }
-
     fun bind() {
         glBindTexture(target, id)
     }
@@ -161,5 +123,32 @@ class Texture: Component() {
         const val WHITE = "assets/textures/white.png"
         const val ASPHALT = "assets/textures/asphalt.png"
         const val CONCRETE_SIMPLE = "assets/textures/concrete_simple.png"
+
+        fun loadData(filePath: String, flipOnLoad: Boolean = false): TextureData? {
+            val width = BufferUtils.createIntBuffer(1)
+            val height = BufferUtils.createIntBuffer(1)
+            val channels = BufferUtils.createIntBuffer(1)
+            stbi_set_flip_vertically_on_load(flipOnLoad)
+            val image = stbi_load(filePath, width, height, channels, 0)
+            return if (image != null) {
+                TextureData(width.get(0), height.get(0), channels.get(0), image, flipOnLoad)
+            } else {
+                null
+            }
+        }
+
+        fun loadData(buffer: java.nio.ByteBuffer, flipOnLoad: Boolean = false): TextureData? {
+            val width = BufferUtils.createIntBuffer(1)
+            val height = BufferUtils.createIntBuffer(1)
+            val channels = BufferUtils.createIntBuffer(1)
+            stbi_set_flip_vertically_on_load(flipOnLoad)
+            val image = stbi_load_from_memory(buffer, width, height, channels, 0)
+            return if (image != null) {
+                TextureData(width.get(0), height.get(0), channels.get(0), image, flipOnLoad)
+            } else {
+                null
+            }
+        }
     }
+
 }

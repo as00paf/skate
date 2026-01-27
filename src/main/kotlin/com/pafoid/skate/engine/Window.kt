@@ -28,6 +28,13 @@ class Window(
             get() = instance?.currentWidth ?: 1920
         val currentHeight: Int
             get() = instance?.currentHeight ?: 1080
+
+        fun show() {
+            instance?.let {
+                glfwShowWindow(it.glfwWindow)
+                glfwFocusWindow(it.glfwWindow)
+            }
+        }
     }
 
     var currentWidth = width
@@ -80,16 +87,11 @@ class Window(
         currentWidth = winWidth
         currentHeight = winHeight
 
-        // Make the OpenGL context current
+        // Make OpenGL context current
         glfwMakeContextCurrent(glfwWindow)
 
         // Enable v-sync
         glfwSwapInterval(1)
-
-        // Make window visible
-        if (!headless) {
-            glfwShowWindow(glfwWindow)
-        }
 
         // This is needed for OpenGL
         GL.createCapabilities()

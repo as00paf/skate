@@ -70,18 +70,18 @@ class AssimpLoader {
         if (materialIndex >= 0) {
             val material = AIMaterial.create(scene.mMaterials()!!.get(materialIndex))
             
-            materialData.baseColorTexture = loadMaterialTexture(scene, material, aiTextureType_DIFFUSE, filePath, embeddedTextures) ?: 
+            materialData.baseColorPath = loadMaterialTexture(scene, material, aiTextureType_DIFFUSE, filePath, embeddedTextures) ?: 
                                            loadMaterialTexture(scene, material, aiTextureType_BASE_COLOR, filePath, embeddedTextures)
             
-            materialData.normalMap = loadMaterialTexture(scene, material, aiTextureType_NORMALS, filePath, embeddedTextures)
+            materialData.normalMapPath = loadMaterialTexture(scene, material, aiTextureType_NORMALS, filePath, embeddedTextures)
             
-            materialData.metallicRoughnessTexture = loadMaterialTexture(scene, material, aiTextureType_METALNESS, filePath, embeddedTextures) ?:
+            materialData.metallicRoughnessPath = loadMaterialTexture(scene, material, aiTextureType_METALNESS, filePath, embeddedTextures) ?:
                                                    loadMaterialTexture(scene, material, aiTextureType_UNKNOWN, filePath, embeddedTextures)
             
-            materialData.aoTexture = loadMaterialTexture(scene, material, aiTextureType_AMBIENT_OCCLUSION, filePath, embeddedTextures) ?:
+            materialData.aoPath = loadMaterialTexture(scene, material, aiTextureType_AMBIENT_OCCLUSION, filePath, embeddedTextures) ?:
                                     loadMaterialTexture(scene, material, aiTextureType_LIGHTMAP, filePath, embeddedTextures)
             
-            materialData.emissiveTexture = loadMaterialTexture(scene, material, aiTextureType_EMISSIVE, filePath, embeddedTextures)
+            materialData.emissivePath = loadMaterialTexture(scene, material, aiTextureType_EMISSIVE, filePath, embeddedTextures)
             
             val color = AIColor4D.create()
             if (aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, 0, 0, color) == aiReturn_SUCCESS) {
@@ -205,7 +205,7 @@ class AssimpLoader {
         )
     }
 
-    private fun loadMaterialTexture(scene: AIScene, material: AIMaterial, type: Int, modelPath: String, embeddedTextures: MutableMap<String, java.nio.ByteBuffer>): Texture? {
+    private fun loadMaterialTexture(scene: AIScene, material: AIMaterial, type: Int, modelPath: String, embeddedTextures: MutableMap<String, java.nio.ByteBuffer>): String? {
         val path = AIString.calloc()
         val result = aiGetMaterialTexture(material, type, 0, path, null as IntBuffer?, null, null, null, null, null)
         if (result != aiReturn_SUCCESS) {
@@ -222,15 +222,16 @@ class AssimpLoader {
             val tex = AITexture.create(scene.mTextures()!!.get(index))
             val texturePath = "Embedded::$modelPath::$index"
             
-            val originalBuffer = org.lwjgl.system.MemoryUtil.memByteBuffer(tex.pcData().address(), tex.mWidth())
-            val copy = java.nio.ByteBuffer.allocateDirect(originalBuffer.remaining())
-            copy.put(originalBuffer)
-            copy.flip()
-            embeddedTextures[texturePath] = copy
-            AssetPool.getTexture(texturePath, copy)
+            if (!embeddedTextures.containsKey(texturePath)) {
+                val originalBuffer = org.lwjgl.system.MemoryUtil.memByteBuffer(tex.pcData().address(), tex.mWidth())
+                val copy = java.nio.ByteBuffer.allocateDirect(originalBuffer.remaining())
+                copy.put(originalBuffer)
+                copy.flip()
+                embeddedTextures[texturePath] = copy
+            }
+            texturePath
         } else {
-            val finalPath = File(modelPath).parentFile.resolve(p).path
-            AssetPool.getTexture(finalPath)
+            File(modelPath).parentFile.resolve(p).path
         }
     }
 
