@@ -12,14 +12,29 @@ import org.joml.Vector3f
 import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
 
+import com.pafoid.skate.engine.Stance
+import com.pafoid.skate.engine.SkateStance
+import com.pafoid.skate.engine.controls.KeyListener
+import com.pafoid.skate.engine.controls.JoystickListener
+import com.pafoid.skate.engine.controls.InputBuffer
+import com.pafoid.skate.engine.controls.IInputBuffer
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.toWorldMatrix
+import org.joml.Vector2f
+import org.joml.Vector3f
+import org.joml.Matrix4f
+import org.lwjgl.glfw.GLFW.*
+
 class PlayerController : Component() {
-    var stance = Stance.REGULAR
+    var preferredStance = Stance.REGULAR
     var pushForce = 5.0f
     var steerSpeed = 2.0f
     var jumpImpulse = 10.0f
     var flickSensitivity = 5.0f
     var catchStrength = 0.5f
 
+    @Transient var currentStance = SkateStance.REGULAR
+    @Transient var isSwitch = false
     @Transient var inputBuffer: IInputBuffer = InputBuffer.instance
     
     @Transient private var rb: RigidBody3D? = null
@@ -27,7 +42,7 @@ class PlayerController : Component() {
     @Transient private var lastVelocity = com.jme3.math.Vector3f()
 
     private val stanceMultiplier: Float
-        get() = if (stance == Stance.REGULAR) 1f else -1f
+        get() = if (preferredStance == Stance.REGULAR) 1f else -1f
 
     override fun start() {
         rb = gameObject.getComponent(RigidBody3D::class.java)
@@ -35,6 +50,7 @@ class PlayerController : Component() {
     }
 
     override fun update(dt: Float) {
+        updateCurrentStance()
         handleSteering(dt)
         handlePushing(dt)
         handleJumping()
@@ -43,6 +59,49 @@ class PlayerController : Component() {
         checkBail()
 
         rb?.rawBody?.getLinearVelocity(lastVelocity)
+    }
+
+    private fun updateCurrentStance() {
+        val body = rb ?: return
+        val velocity = body.linearVelocity
+        if (velocity.length() < 0.5f) return 
+
+        val transform = gameObject.transform.toWorldMatrix()
+        // Our board forward is X.
+        val forward = Vector3f(1f, 0f, 0f)
+        transform.transformDirection(forward)
+
+        val dot = forward.dot(velocity)
+        val movingForward = dot > 0
+
+        currentStance = when {
+            !isSwitch && movingForward -> SkateStance.REGULAR
+            !isSwitch && !movingForward -> SkateStance.FAKIE
+            isSwitch && movingForward -> SkateStance.SWITCH
+            isSwitch && !movingForward -> SkateStance.NOLLIE
+            else -> SkateStance.REGULAR
+        }
+    }
+
+    override fun imgui() {
+        imgui.ImGui.begin("Skater Debug")
+        imgui.ImGui.text("Preferred Stance: $preferredStance")
+        imgui.ImGui.text("Current Stance: $currentStance")
+        imgui.ImGui.text("Is Switch: $isSwitch")
+        imgui.ImGui.text("Grounded: ${physics?.isGrounded}")
+        
+        val vel = rb?.linearVelocity ?: Vector3f()
+        imgui.ImGui.text("Velocity: ${String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z)}")
+        
+        if (imgui.ImGui.button("Toggle Switch")) {
+            isSwitch = !isSwitch
+        }
+
+        if (imgui.ImGui.button("Toggle Preferred Stance")) {
+            preferredStance = if (preferredStance == Stance.REGULAR) Stance.GOOFY else Stance.REGULAR
+        }
+        
+        imgui.ImGui.end()
     }
 
     private fun checkBail() {
@@ -127,17 +186,32 @@ class PlayerController : Component() {
         val rb3d = rb ?: return
         val rotation = gameObject.transform.rotation
         
-        // Simple 2D catch logic for now (z-rotation)
-        // Check if within 20 degrees of 0, 180, 360, etc.
-        val angle = rotation.z % 180f
-        val absAngle = if (angle < 0) angle + 180f else angle
+        // Wrap rotation to 0-360
+        var yaw = rotation.y % 360f
+        if (yaw < 0) yaw += 360f
+
+        // Check for 180 increments
+        val target180 = Math.round(yaw / 180f) * 180f
+        val diff = target180 - yaw
         
-        if (absAngle < 20f || absAngle > 160f) {
-            val target = if (absAngle < 20f) 0f else 180f
-            val diff = target - absAngle
-            
-            // Apply "magnetic" impulse
-            rb3d.applyTorqueImpulse(org.joml.Vector3f(0f, 0f, diff * catchStrength * dt))
+        if (Math.abs(diff) < 20f && (physics?.isGrounded == false)) {
+            // Apply "magnetic" impulse to snap to 180 increments
+            rb3d.applyTorqueImpulse(org.joml.Vector3f(0f, diff * catchStrength * dt, 0f))
+        }
+        
+        // Pitch/Roll catch
+        val pAngle = rotation.x % 180f
+        val absPAngle = if (pAngle < 0) pAngle + 180f else pAngle
+        if (absPAngle < 20f || absPAngle > 160f) {
+            val pTarget = if (absPAngle < 20f) 0f else 180f
+            rb3d.applyTorqueImpulse(org.joml.Vector3f((pTarget - absPAngle) * catchStrength * dt, 0f, 0f))
+        }
+
+        val rAngle = rotation.z % 180f
+        val absRAngle = if (rAngle < 0) rAngle + 180f else rAngle
+        if (absRAngle < 20f || absRAngle > 160f) {
+            val rTarget = if (absRAngle < 20f) 0f else 180f
+            rb3d.applyTorqueImpulse(org.joml.Vector3f(0f, 0f, (rTarget - absRAngle) * catchStrength * dt))
         }
     }
 

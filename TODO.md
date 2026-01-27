@@ -110,7 +110,8 @@
 
 #### 4. State Management
 - [x] **Grounded Check**: Consider grounded if at least 3 of 4 rays hit the floor.
-- [ ] **Stance Logic**: Support Regular vs Goofy by mirroring input-to-torque mapping.
+- [ ] **Preffered Stance Logic**: Support Regular vs Goofy by mirroring input-to-torque mapping.
+- [ ] **Current Stance Logic**: Support Regular, Switch, Nollie and Fakie to define how the player is standing on the board.  
 
 ### 9. Trick Detection
 - [ ] **The Labeler**: Rotation monitoring and trick identification system.
