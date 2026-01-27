@@ -59,9 +59,9 @@ class GamepadOverlay {
             val buttons = JoystickListener.getButtons(GLFW_JOYSTICK_1)
 
             // Dynamic Stick Highlights
-            val lsPos = ImVec2(windowPos.x + displayWidth * 0.25f, windowPos.y + displayHeight * 0.275f)
-            val rsPos = ImVec2(windowPos.x + displayWidth * 0.625f, windowPos.y + displayHeight * 0.525f)
-            val stickRadius = 125f * scale
+            val lsPos = ImVec2(windowPos.x + displayWidth * 0.245f, windowPos.y + displayHeight * 0.305f)
+            val rsPos = ImVec2(windowPos.x + displayWidth * 0.615f, windowPos.y + displayHeight * 0.518f)
+            val stickRadius = 75f * scale
 
             if (axes != null && axes.size >= 4) {
                 // Background of the stick area for better visibility

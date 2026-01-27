@@ -135,7 +135,7 @@
   - It needs to be no bigger than 10% of the width of the screen and 10% of the height of the screen (Added: Configurable slider 5%-50% with default 22.5%)
 - [x] **Task 7.10:** Scene Serialization: Impelement JSON Save/Load for all level GameObjects.
 - [x] **Task 7.11:** Viewport Overlays: Move simulation controls and FPS to a transparent viewport layer.
-- [] **Task 7.12:** GamePad Overlay: Use 'xbox_controller.png' or 'playstation_controller.png' as the background for the simulation controls and move it to the bottom right of the game viewport window.
+- [x] **Task 7.12:** GamePad Overlay: Use 'xbox_controller.png' or 'playstation_controller.png' as the background for the simulation controls and move it to the bottom right of the game viewport window.
 - [] **Task 7.13:** Prefab Window Thumbnail System:
   - Implement a `ThumbnailCache` that renders small snapshots of prefabs to textures.
 - [ ] **Task 7.14: Grid Layout Widget:** - Replace the list of buttons with a multi-column grid (`ImGui::BeginTable` with `ImGuiTableColumnFlags_WidthFixed`).
