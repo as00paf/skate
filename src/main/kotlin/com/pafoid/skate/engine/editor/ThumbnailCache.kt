@@ -50,7 +50,7 @@ object ThumbnailCache {
         fbo.bind()
         
         glViewport(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f)
+        glClearColor(0.5f, 0.5f, 0.5f, 1.0f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
 
@@ -67,10 +67,10 @@ object ThumbnailCache {
         
         // Simple lighting
         shader.uploadVec3f("lightPosition", Vector3f(5f, 5f, 5f))
-        shader.uploadVec3f("lightColor", Vector3f(1.5f, 1.5f, 1.5f))
-        shader.uploadVec3f("uAmbientLight", Vector3f(0.4f, 0.4f, 0.4f))
+        shader.uploadVec3f("lightColor", Vector3f(2.0f, 2.0f, 2.0f))
+        shader.uploadVec3f("uAmbientLight", Vector3f(0.8f, 0.8f, 0.8f))
         shader.uploadVec3f("uSunDirection", Vector3f(1f, -1f, 1f).normalize())
-        shader.uploadVec3f("uSunColor", Vector3f(1.0f, 1.0f, 1.0f))
+        shader.uploadVec3f("uSunColor", Vector3f(2.0f, 2.0f, 2.0f))
         
         // Render each part
         for (part in model.parts) {
@@ -78,9 +78,7 @@ object ThumbnailCache {
             val material = part.material
             
             glBindVertexArray(rawModel.vaoId)
-            glEnableVertexAttribArray(0) // Pos
-            glEnableVertexAttribArray(1) // UV
-            glEnableVertexAttribArray(2) // Normal
+            rawModel.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
             
             glActiveTexture(GL_TEXTURE0)
             material.baseColorTexture?.bind() ?: AssetPool.getTexture("assets/textures/white.png").bind()
@@ -96,9 +94,7 @@ object ThumbnailCache {
 
             glDrawElements(rawModel.drawMode, rawModel.vertexCount, GL_UNSIGNED_INT, 0)
             
-            glDisableVertexAttribArray(0)
-            glDisableVertexAttribArray(1)
-            glDisableVertexAttribArray(2)
+            rawModel.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
         }
         
         shader.stop()

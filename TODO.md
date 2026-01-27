@@ -143,7 +143,7 @@
 - [x] **Task 7.16: Viewport Drop Target:** - Implement `ImGui::BeginDragDropTarget()` on the Game Viewport.
   - Logic: On drop, spawn the prefab at the `worldPosition` of the mouse cursor.
 - [x] **Task 7.17: Search & Filter:** - Add an `ImGui::InputText` bar at the top of the Prefabs window to filter items by name.
-- [] **Task 7.18: New Prefabs & Textures: ** - Generate obj files and add new prefabs based on the obstacle list in obstacles.md.
+- [x] **Task 7.18: New Prefabs & Textures: ** - Generate obj files and add new prefabs based on the obstacle list in obstacles.md.
   - Integrate 'skatelite.png' for wood-based obstacles.
 
 
