@@ -6,5 +6,6 @@ data class RawModel(
     val vaoId: Int, 
     val vertexCount: Int, 
     val vertices: FloatArray = floatArrayOf(),
-    val drawMode: Int = GL_TRIANGLES
+    val drawMode: Int = GL_TRIANGLES,
+    val enabledAttributes: List<Int> = listOf(0, 1, 2)
 )

@@ -27,32 +27,44 @@ class VAOLoader {
         weights: FloatArray = floatArrayOf()
     ): RawModel {
         val vaoId = createVAO()
+        val enabledAttribs = mutableListOf<Int>()
+        
         if (indices.isNotEmpty()) {
             bindIndicesBuffer(indices)
         }
         storeDataInAttribList(0, 3, positions)
+        enabledAttribs.add(0)
+        
         storeDataInAttribList(1, 2, textureCoords)
+        enabledAttribs.add(1)
+        
         storeDataInAttribList(2, 3, normals)
+        enabledAttribs.add(2)
         
         if (tangents.isNotEmpty()) {
             storeDataInAttribList(3, 3, tangents)
+            enabledAttribs.add(3)
         }
         if (colors.isNotEmpty()) {
             storeDataInAttribList(4, 4, colors)
+            enabledAttribs.add(4)
         }
         if (textureCoords1.isNotEmpty()) {
             storeDataInAttribList(5, 2, textureCoords1)
+            enabledAttribs.add(5)
         }
         if (joints.isNotEmpty()) {
             storeDataInAttribListInt(6, 4, joints)
+            enabledAttribs.add(6)
         }
         if (weights.isNotEmpty()) {
             storeDataInAttribList(7, 4, weights)
+            enabledAttribs.add(7)
         }
         
         unbindVAO()
         val vertexCount = if (indices.isNotEmpty()) indices.size else positions.size / 3
-        return RawModel(vaoId, vertexCount, rawVertices, drawMode)
+        return RawModel(vaoId, vertexCount, rawVertices, drawMode, enabledAttribs)
     }
 
     private fun storeDataInAttribListInt(attributeNumber: Int, coordinateSize: Int, data: IntArray) {
@@ -69,7 +81,7 @@ class VAOLoader {
         val vaoId = createVAO()
         storeDataInAttribList(0, coordinateSize, positions)
         unbindVAO()
-        return RawModel(vaoId, positions.size / coordinateSize, rawVertices)
+        return RawModel(vaoId, positions.size / coordinateSize, rawVertices, enabledAttributes = listOf(0))
     }
 
     private fun createVAO(): Int {

@@ -3,12 +3,14 @@ package com.pafoid.skate.engine
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.MouseListener
 import com.pafoid.skate.engine.utils.JobSystem.runOnMain
+import com.pafoid.skate.engine.utils.SettingsManager
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
+import org.lwjgl.opengl.GLUtil
 import org.lwjgl.system.MemoryUtil.NULL
 
 class Window(
@@ -74,6 +76,8 @@ class Window(
     
     private val headless = System.getProperty("skate.headless") == "true"
 
+    private val openGLDebug = GLFW_FALSE
+
     init {
         instance = this
         initCallbackToRun = initCallback
@@ -85,8 +89,8 @@ class Window(
     }
 
     private fun init() {
-        com.pafoid.skate.engine.utils.SettingsManager.load()
-        val settings = com.pafoid.skate.engine.utils.SettingsManager.settings
+        SettingsManager.load()
+        val settings = SettingsManager.settings
 
         // Error callback
         GLFWErrorCallback.createPrint(System.err).set()
@@ -99,6 +103,7 @@ class Window(
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE)
         glfwWindowHint(GLFW_DECORATED, GLFW_TRUE)
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, openGLDebug)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
 
@@ -127,6 +132,9 @@ class Window(
 
         // This is needed for OpenGL
         GL.createCapabilities()
+        if(openGLDebug == GLFW_TRUE) {
+            GLUtil.setupDebugMessageCallback(System.err)
+        }
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)

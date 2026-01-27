@@ -264,4 +264,10 @@ class RenderBatch(
     override fun compareTo(other: RenderBatch): Int {
         return Integer.compare(this.zIndex, other.zIndex)
     }
+
+    fun clear() {
+        numSprites = 0
+        texSlots.clear()
+        hasRoom = true
+    }
 }

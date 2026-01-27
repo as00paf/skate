@@ -191,16 +191,16 @@ class Renderer(
     }
 
     private fun render2D(scene: Scene, shader: Shader) {
-        val activeRenderer2D = Renderer2D()
-        activeRenderer2D.bindShader(shader)
-        activeRenderer2D.bindCamera(scene.camera)
+        renderer2D.bindShader(shader)
+        renderer2D.bindCamera(scene.camera)
 
         scene.gameObjects.forEach { go ->
             go.getComponent<SpriteRenderer>()?.let { sprite ->
-                activeRenderer2D.add(go)
+                renderer2D.add(go)
             }
         }
-        activeRenderer2D.render()
+        renderer2D.render()
+        renderer2D.clear()
     }
 
     override fun readPixel(x: Int, y: Int): Int {
@@ -226,14 +226,9 @@ class Renderer(
             val material = part.material
             
             glBindVertexArray(model.vaoId)
-            glEnableVertexAttribArray(0) // Pos
-            glEnableVertexAttribArray(1) // UV
-            glEnableVertexAttribArray(2) // Normal
-            glEnableVertexAttribArray(3) // Tangent
-            glEnableVertexAttribArray(4) // Color
-            glEnableVertexAttribArray(5) // UV1
-            glEnableVertexAttribArray(6) // Joints
-            glEnableVertexAttribArray(7) // Weights
+            
+            // Enable only available attributes
+            model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
 
             // Base Color
             glActiveTexture(GL_TEXTURE0)
@@ -310,14 +305,7 @@ class Renderer(
                 glDepthMask(true)
             }
 
-            glDisableVertexAttribArray(0)
-            glDisableVertexAttribArray(1)
-            glDisableVertexAttribArray(2)
-            glDisableVertexAttribArray(3)
-            glDisableVertexAttribArray(4)
-            glDisableVertexAttribArray(5)
-            glDisableVertexAttribArray(6)
-            glDisableVertexAttribArray(7)
+            model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
         }
         glBindVertexArray(0)
     }

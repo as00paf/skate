@@ -60,4 +60,10 @@ class Renderer2D {
     fun destroy() {
         // destroy batches
     }
+
+    fun clear() {
+        for (batch in batches) {
+            batch.clear()
+        }
+    }
 }
