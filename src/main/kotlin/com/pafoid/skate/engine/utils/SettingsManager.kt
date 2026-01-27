@@ -11,7 +11,9 @@ data class SystemSettings(
     var height: Int = 1080,
     var vsync: Boolean = true,
     var fullscreen: Boolean = false,
-    var borderless: Boolean = false
+    var borderless: Boolean = false,
+    var gamepadOverlaySize: Float = 0.225f,
+    var showGamepadOverlay: Boolean = true
 )
 
 object SettingsManager {

@@ -88,7 +88,9 @@ class GameViewWindow {
         renderViewportOverlays(windowPos, windowSize)
 
         // Render Gamepad Overlay
-        gamepadOverlay.imgui()
+        if (com.pafoid.skate.engine.utils.SettingsManager.settings.showGamepadOverlay) {
+            gamepadOverlay.imgui(Vector2f(imageScreenPosX, imageScreenPosY), Vector2f(imageSizeX, imageSizeY))
+        }
 
         MouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
         MouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))

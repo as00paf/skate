@@ -32,7 +32,6 @@ class ImGuiLayer {
     val prefabsWindow = com.pafoid.skate.engine.editor.PrefabsWindow()
     private val environmentWindow = com.pafoid.skate.engine.editor.EnvironmentWindow()
     private val threadMonitorWindow = com.pafoid.skate.engine.editor.ThreadMonitorWindow()
-    private val gamepadOverlay = com.pafoid.skate.engine.editor.GamepadOverlay()
 
     fun init(glfwWindow: Long) {
         this.glfwWindow = glfwWindow
@@ -163,7 +162,6 @@ class ImGuiLayer {
         prefabsWindow.imgui()
         environmentWindow.imgui(currentScene)
         threadMonitorWindow.imgui()
-        gamepadOverlay.imgui()
         
         // Simple demo window
         // ImGui.showDemoWindow()
@@ -241,6 +239,19 @@ class ImGuiLayer {
                 if (ImGui.checkbox("Fullscreen", fullscreen)) {
                     settings.fullscreen = fullscreen.get()
                     Window.setFullscreen(settings.fullscreen)
+                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                }
+
+                ImGui.separator()
+                val overlaySize = floatArrayOf(settings.gamepadOverlaySize)
+                if (ImGui.sliderFloat("Gamepad Overlay Size", overlaySize, 0.05f, 0.5f)) {
+                    settings.gamepadOverlaySize = overlaySize[0]
+                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                }
+
+                val showOverlay = imgui.type.ImBoolean(settings.showGamepadOverlay)
+                if (ImGui.checkbox("Show Gamepad Overlay", showOverlay)) {
+                    settings.showGamepadOverlay = showOverlay.get()
                     com.pafoid.skate.engine.utils.SettingsManager.save()
                 }
 
