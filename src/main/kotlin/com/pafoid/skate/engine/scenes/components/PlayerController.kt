@@ -7,23 +7,9 @@ import com.pafoid.skate.engine.controls.InputBuffer
 import com.pafoid.skate.engine.controls.IInputBuffer
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.toWorldMatrix
-import org.joml.Vector2f
 import org.joml.Vector3f
-import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
-
-import com.pafoid.skate.engine.Stance
 import com.pafoid.skate.engine.SkateStance
-import com.pafoid.skate.engine.controls.KeyListener
-import com.pafoid.skate.engine.controls.JoystickListener
-import com.pafoid.skate.engine.controls.InputBuffer
-import com.pafoid.skate.engine.controls.IInputBuffer
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.toWorldMatrix
-import org.joml.Vector2f
-import org.joml.Vector3f
-import org.joml.Matrix4f
-import org.lwjgl.glfw.GLFW.*
 
 class PlayerController : Component() {
     var preferredStance = Stance.REGULAR
