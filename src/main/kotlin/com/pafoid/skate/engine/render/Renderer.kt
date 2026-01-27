@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.toWorldMatrix
@@ -41,7 +42,7 @@ class Renderer(
         defaultShader.uploadMat4f("viewMatrix", camera.createViewMatrix())
     }
 
-    override fun render(scene: Scene, activeGameObject: com.pafoid.skate.engine.scenes.GameObject? = null, hoveredGameObject: com.pafoid.skate.engine.scenes.GameObject? = null) {
+    override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
         DebugDraw.beginFrame()
         
         // 1. Picking Pass
