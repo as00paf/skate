@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.3.0"
+    kotlin("jvm") version "2.0.21"
     application
 }
 
@@ -14,7 +14,7 @@ repositories {
 
 dependencies {
     //LWJGL
-    implementation(platform("org.lwjgl:lwjgl-bom:3.4.0"))
+    implementation(platform("org.lwjgl:lwjgl-bom:3.3.6"))
 
     implementation("org.lwjgl", "lwjgl")
     implementation("org.lwjgl", "lwjgl-assimp")
@@ -57,10 +57,12 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testImplementation("io.mockk:mockk:1.13.12")
 }
 
 tasks.test {
     useJUnitPlatform()
+    maxHeapSize = "2G"
 }
 
 kotlin {
