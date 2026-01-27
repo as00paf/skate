@@ -51,12 +51,7 @@
     - [x] **External Buffers**: Loading of external .bin files and URI-based image assets.
     - [x] **Embedded Data**: Decoding of Base64 Data URIs within the JSON.
 
-### 5. Editor Improvements
-- [ ] **Enhanced Gizmo**: Upgrade to include a Scale Gizmo.
-- [ ] **Physics Sync**: Instant reflection of scaling in physical collision bounds.
-- [ ] **Workflow**: Add hotkeys (QWER) for tool switching.
-
-### 6. Testing & Quality Assurance
+### 5. Testing & Quality Assurance
 - **Unit Testing Framework**
     - [ ] **Framework Setup**: Integrate JUnit 5 and MockK.
     - [ ] **Physics Unit Tests**: Create tests for the BoardRig and ContinuousVectoring logic.
@@ -69,6 +64,11 @@
 - **Architecture & Mocking**
     - [ ] **Interface Extraction**: Refactor Renderer and PhysicsWorld into interfaces.
     - [ ] **Input Simulation**: Create MockGamepad class for controller simulation.
+
+### 6. Editor Improvements
+- [ ] **Enhanced Gizmo**: Upgrade to include a Scale Gizmo.
+- [ ] **Physics Sync**: Instant reflection of scaling in physical collision bounds.
+- [ ] **Workflow**: Add hotkeys (QWER) for tool switching.
 
 ### 7. 🛹 The Board Rig Technical Checklist
 
@@ -93,3 +93,8 @@
 ### 8. Trick Detection
 - [ ] **The Labeler**: Rotation monitoring and trick identification system.
 - [ ] **Unit tests**: Add unit tests for trick detection.
+
+### 9. Skeletal Animation & UI Integration
+- [ ] **Animation Pipeline:** Implement Skeleton hierarchy, SLERP interpolation, and Global Transform calculation.
+- [ ] **GPU Skinning:** Update Vertex Shader for 4-bone influence and pass the Matrix Palette.
+- [ ] **ImGui Debugger:** Build a playback UI with clip selection, timeline scrubbing, and a bone visualizer overlay.
