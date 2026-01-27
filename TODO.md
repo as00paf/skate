@@ -49,7 +49,7 @@
 - **Data & Buffers**
     - [x] **Binary Format**: Support for .glb (Binary glTF) container parsing.
     - [x] **External Buffers**: Loading of external .bin files and URI-based image assets.
-    - [x] **Embedded Data**: Decoding of Base64 Data URIs within the JSON.
+    - [x] **Embedded Data**: Decoding of Base64 Data URIs within t3he JSON.
 
 ### 5. Testing & Quality Assurance
 - **Unit Testing Framework**
