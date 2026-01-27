@@ -120,7 +120,9 @@ class Physics3D {
                 
                 val trans = go.transform.translation
                 val rot = go.transform.rotation
+                val scale = go.transform.scale
                 body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
+                body.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
                 
                 // Set rotation from euler (JOML -> JME)
                 val q = org.joml.Quaternionf().rotationXYZ(

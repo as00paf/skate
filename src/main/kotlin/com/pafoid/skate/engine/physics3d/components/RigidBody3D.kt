@@ -34,6 +34,7 @@ class RigidBody3D(var mass: Float = 1.0f) : Component() {
                 // In editor, update physics body from transform if it's changed via UI
                 val trans = gameObject.transform.translation
                 val rot = gameObject.transform.rotation
+                val scale = gameObject.transform.scale
                 
                 body.setPhysicsLocation(Vector3f(trans.x, trans.y, trans.z))
                 
@@ -43,6 +44,7 @@ class RigidBody3D(var mass: Float = 1.0f) : Component() {
                     Math.toRadians(rot.z.toDouble()).toFloat()
                 )
                 body.setPhysicsRotation(com.jme3.math.Quaternion(q.x, q.y, q.z, q.w))
+                body.collisionShape.setScale(com.jme3.math.Vector3f(scale.x, scale.y, scale.z))
                 
                 body.setLinearVelocity(Vector3f.ZERO)
                 body.setAngularVelocity(Vector3f.ZERO)
@@ -60,6 +62,10 @@ class RigidBody3D(var mass: Float = 1.0f) : Component() {
 
     fun applyImpulse(impulse: org.joml.Vector3f) {
         rawBody?.applyImpulse(Vector3f(impulse.x, impulse.y, impulse.z), Vector3f.ZERO)
+    }
+
+    fun applyTorqueImpulse(torque: org.joml.Vector3f) {
+        rawBody?.applyTorqueImpulse(Vector3f(torque.x, torque.y, torque.z))
     }
 
     var linearVelocity: org.joml.Vector3f
