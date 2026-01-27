@@ -35,37 +35,19 @@ object AssetPool {
         return getModel(filePath, loader).parts[0].rawModel
     }
 
-    private val mainThreadQueue = mutableListOf<suspend () -> Unit>()
-
-    fun update() {
-        synchronized(mainThreadQueue) {
-            val iterator = mainThreadQueue.iterator()
-            while (iterator.hasNext()) {
-                // In a real engine, we'd limit this to a few ms per frame
-                val task = iterator.next()
-                // We can't really 'await' here easily without making update suspend, 
-                // so we run it blocking or launch it in a way that respects the main thread.
-                runBlocking { task() }
-                iterator.remove()
-            }
-        }
-    }
-
     fun getModelAsync(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader, callback: (TexturedModel) -> Unit) {
         JobSystem.runAsync {
             val preLoaded = assimpLoader.preLoadModel(filePath)
             
-            synchronized(mainThreadQueue) {
-                mainThreadQueue.add {
-                    val file = File(filePath)
-                    val parts = preLoaded.parts.map { p ->
-                        val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
-                        com.pafoid.skate.engine.models.MeshPart(model, p.material, p.inverseBindMatrices)
-                    }
-                    val texturedModel = TexturedModel(parts)
-                    models[file.absolutePath] = texturedModel
-                    callback(texturedModel)
+            JobSystem.runOnMain {
+                val file = File(filePath)
+                val parts = preLoaded.parts.map { p ->
+                    val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
+                    com.pafoid.skate.engine.models.MeshPart(model, p.material, p.inverseBindMatrices)
                 }
+                val texturedModel = TexturedModel(parts)
+                models[file.absolutePath] = texturedModel
+                callback(texturedModel)
             }
         }
     }

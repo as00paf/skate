@@ -46,7 +46,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
         .enableComplexMapKeySerialization()
         .create()
 
-    fun init() {
+    suspend fun init() {
         initializer.loadResources(this)
         initializer.init(this)
     }

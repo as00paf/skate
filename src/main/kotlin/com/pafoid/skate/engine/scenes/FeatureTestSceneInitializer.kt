@@ -16,11 +16,11 @@ class FeatureTestSceneInitializer : SceneInitializer() {
     private val loader = VAOLoader()
     private lateinit var texture: Texture
 
-    override fun loadResources(scene: Scene) {
+    override suspend fun loadResources(scene: Scene) {
         texture = AssetPool.getTexture(Texture.WHITE)
     }
 
-    override fun init(scene: Scene) {
+    override suspend fun init(scene: Scene) {
         // Center camera on the cube
         scene.camera.position.set(0f, 0f, 5f)
         scene.camera.pitch = 0f

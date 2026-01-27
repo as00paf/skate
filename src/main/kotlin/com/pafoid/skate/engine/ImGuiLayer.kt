@@ -30,6 +30,7 @@ class ImGuiLayer {
     val gameViewWindow = com.pafoid.skate.engine.editor.GameViewWindow()
     private val prefabsWindow = com.pafoid.skate.engine.editor.PrefabsWindow()
     private val environmentWindow = com.pafoid.skate.engine.editor.EnvironmentWindow()
+    private val threadMonitorWindow = com.pafoid.skate.engine.editor.ThreadMonitorWindow()
 
     fun init(glfwWindow: Long) {
         this.glfwWindow = glfwWindow
@@ -92,6 +93,7 @@ class ImGuiLayer {
         gameViewWindow.imgui()
         prefabsWindow.imgui()
         environmentWindow.imgui(currentScene)
+        threadMonitorWindow.imgui()
         
         // Simple demo window
         // ImGui.showDemoWindow()
@@ -99,13 +101,13 @@ class ImGuiLayer {
         endFrame()
     }
 
-    private fun startFrame() {
+    fun startFrame() {
         imGuiGlfw.newFrame()
         imGuiGl3.newFrame()
         ImGui.newFrame()
     }
 
-    private fun endFrame() {
+    fun endFrame() {
         ImGui.render()
         imGuiGl3.renderDrawData(ImGui.getDrawData())
 

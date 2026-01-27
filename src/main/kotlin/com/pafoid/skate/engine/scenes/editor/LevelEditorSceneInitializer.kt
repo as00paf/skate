@@ -19,9 +19,9 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     private var currentScene: Scene? = null
     private lateinit var editorStuff: GameObject
 
-    override fun loadResources(scene: Scene) {}
+    override suspend fun loadResources(scene: Scene) {}
 
-    override fun init(scene: Scene) {
+    override suspend fun init(scene: Scene) {
         this.currentScene = scene
 
         scene.skyColor.set(0.6f, 0.7f, 0.9f)

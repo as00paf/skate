@@ -13,7 +13,7 @@ import org.lwjgl.system.MemoryUtil.NULL
 class Window(
     val width: Int = 1920,
     val height: Int = 1080,
-    val initCallback: (imguiLayer: ImGuiLayer) -> Unit,
+    val initCallback: suspend (imguiLayer: ImGuiLayer) -> Unit,
     val drawCallback: (dt: Float, imguiLayer: ImGuiLayer) -> Unit,
     val destroyCallback: () -> Unit,
     val title: String
@@ -105,7 +105,10 @@ class Window(
         com.pafoid.skate.engine.controls.JoystickListener.init()
 
         imGuiLayer.init(glfwWindow)
-        initCallback(imGuiLayer)
+        
+        com.pafoid.skate.engine.utils.JobSystem.runAsync {
+            initCallback(imGuiLayer)
+        }
     }
 
     private fun installCallbacks() {
@@ -127,6 +130,7 @@ class Window(
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
+            com.pafoid.skate.engine.utils.JobSystem.update()
             
             // Record high-frequency input
             com.pafoid.skate.engine.controls.InputBuffer.push(
