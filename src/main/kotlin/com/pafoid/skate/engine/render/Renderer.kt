@@ -44,6 +44,7 @@ class Renderer(
 
     override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
         DebugDraw.beginFrame()
+        PickingDraw.beginFrame()
         
         // 1. Picking Pass
         pickingTexture.enableWriting()
@@ -62,6 +63,7 @@ class Renderer(
         renderer2D.bindCamera(scene.camera)
         render2D(scene, pickingShader)
         render3DPicking(scene)
+        PickingDraw.draw()
         
         pickingTexture.disableWriting()
 

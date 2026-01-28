@@ -1,0 +1,66 @@
+package com.pafoid.skate.engine.animation
+
+import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.render.PickingDraw
+import com.pafoid.skate.engine.render.PickingMesh
+import com.pafoid.skate.engine.scenes.components.Component
+import com.pafoid.skate.engine.toWorldMatrix
+import org.joml.Matrix4f
+import org.joml.Vector3f
+
+class PoseGizmo : Component() {
+
+    companion object {
+        private const val BONE_ID_OFFSET = 1000000 // To differentiate from GameObject IDs
+        private val CUBE_VERTICES = listOf(
+            //-X
+            Vector3f(-0.5f, -0.5f, -0.5f), Vector3f(-0.5f, -0.5f, 0.5f), Vector3f(-0.5f, 0.5f, 0.5f),
+            Vector3f(-0.5f, 0.5f, 0.5f), Vector3f(-0.5f, 0.5f, -0.5f), Vector3f(-0.5f, -0.5f, -0.5f),
+            //+X
+            Vector3f(0.5f, -0.5f, -0.5f), Vector3f(0.5f, 0.5f, -0.5f), Vector3f(0.5f, 0.5f, 0.5f),
+            Vector3f(0.5f, 0.5f, 0.5f), Vector3f(0.5f, -0.5f, 0.5f), Vector3f(0.5f, -0.5f, -0.5f),
+            //-Y
+            Vector3f(-0.5f, -0.5f, -0.5f), Vector3f(0.5f, -0.5f, -0.5f), Vector3f(0.5f, -0.5f, 0.5f),
+            Vector3f(0.5f, -0.5f, 0.5f), Vector3f(-0.5f, -0.5f, 0.5f), Vector3f(-0.5f, -0.5f, -0.5f),
+            //+Y
+            Vector3f(-0.5f, 0.5f, -0.5f), Vector3f(-0.5f, 0.5f, 0.5f), Vector3f(0.5f, 0.5f, 0.5f),
+            Vector3f(0.5f, 0.5f, 0.5f), Vector3f(0.5f, 0.5f, -0.5f), Vector3f(-0.5f, 0.5f, -0.5f),
+            //-Z
+            Vector3f(-0.5f, -0.5f, -0.5f), Vector3f(-0.5f, 0.5f, -0.5f), Vector3f(0.5f, 0.5f, -0.5f),
+            Vector3f(0.5f, 0.5f, -0.5f), Vector3f(0.5f, -0.5f, -0.5f), Vector3f(-0.5f, -0.5f, -0.5f),
+            //+Z
+            Vector3f(-0.5f, -0.5f, 0.5f), Vector3f(0.5f, -0.5f, 0.5f), Vector3f(0.5f, 0.5f, 0.5f),
+            Vector3f(0.5f, 0.5f, 0.5f), Vector3f(-0.5f, 0.5f, 0.5f), Vector3f(-0.5f, -0.5f, 0.5f)
+        )
+    }
+
+    private val jointMap = mutableMapOf<Int, Joint>()
+
+    override fun editorUpdate(dt: Float) {
+        val skeleton = gameObject.getComponent<Entity>()?.model?.skeleton ?: return
+        jointMap.clear()
+
+        skeleton.getAllJoints().forEach { joint ->
+            val modelMatrix = gameObject.transform.toWorldMatrix()
+            val jointWorldTransform = Matrix4f(modelMatrix).mul(joint.worldTransform)
+            
+            // Add a small scale to the joint's transform for visibility
+            val gizmoTransform = Matrix4f(jointWorldTransform).scale(0.05f)
+
+            val objectId = joint.index + BONE_ID_OFFSET
+            jointMap[objectId] = joint
+
+            PickingDraw.addMesh(
+                PickingMesh(
+                    vertices = CUBE_VERTICES,
+                    transform = gizmoTransform,
+                    objectId = objectId
+                )
+            )
+        }
+    }
+    
+    fun getJointById(id: Int): Joint? {
+        return jointMap[id]
+    }
+}

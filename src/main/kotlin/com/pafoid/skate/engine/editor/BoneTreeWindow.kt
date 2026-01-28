@@ -9,9 +9,17 @@ import imgui.flag.ImGuiTreeNodeFlags
 
 class BoneTreeWindow {
     private var activeGameObject: GameObject? = null
+    private var selectedBone: Joint? = null
 
     fun setActiveObject(go: GameObject?) {
         activeGameObject = go
+        if (go == null) {
+            selectedBone = null
+        }
+    }
+
+    fun setSelectedBone(joint: Joint?) {
+        selectedBone = joint
     }
 
     fun imgui() {
@@ -28,12 +36,19 @@ class BoneTreeWindow {
 
     private fun drawJointNode(joint: Joint) {
         joint.children.forEach { child ->
-            val flags = if (child.children.isEmpty()) {
+            var flags = if (child.children.isEmpty()) {
                 ImGuiTreeNodeFlags.Leaf or ImGuiTreeNodeFlags.Bullet
             } else {
                 ImGuiTreeNodeFlags.DefaultOpen or ImGuiTreeNodeFlags.FramePadding
             }
+            if (child == selectedBone) {
+                flags = flags or ImGuiTreeNodeFlags.Selected
+            }
             val isNodeOpen = ImGui.treeNodeEx(child.name, flags)
+
+            if (ImGui.isItemClicked()) {
+                selectedBone = child
+            }
 
             if (isNodeOpen) {
                 drawJointNode(child)

@@ -68,6 +68,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
             model = AssetPool.getModel(ObjLoader.PLAYER_GLTF, loader)
         ))
         playerGo.addComponent(com.pafoid.skate.engine.animation.Animator())
+        playerGo.addComponent(com.pafoid.skate.engine.animation.PoseGizmo())
         scene.addGameObjectToScene(playerGo)
 
         val ground = GameObject("Floor")

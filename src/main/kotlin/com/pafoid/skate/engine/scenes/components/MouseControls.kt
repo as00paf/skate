@@ -61,12 +61,23 @@ class MouseControls : Component() {
                 val x = MouseListener.getScreenX().toInt()
                 val y = MouseListener.getScreenY().toInt()
                 
-                val selectedObject = SceneManager.get().getPickedObject(x, y)
-                
+                val pickedId = SceneManager.get().getPickedId(x, y)
+                val selectedObject = SceneManager.get().getObjectById(pickedId)
+
                 if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
                     Window.getImGuiLayer().propertiesWindow.setActiveObject(selectedObject)
-                } else if (selectedObject == null && !MouseListener.isDragging()) {
+                    Window.getImGuiLayer().boneTreeWindow.setActiveObject(selectedObject) // Also set for bone tree
+                } else {
                     Window.getImGuiLayer().propertiesWindow.setActiveObject(null)
+                    val bone = SceneManager.get().getJointById(pickedId)
+                    if (bone != null) {
+                        // A bone was selected, find which GO it belongs to
+                        val skater = SceneManager.getCurrentScene()?.gameObjects?.find { it.getComponent<com.pafoid.skate.engine.animation.PoseGizmo>() != null }
+                        Window.getImGuiLayer().boneTreeWindow.setActiveObject(skater)
+                        Window.getImGuiLayer().boneTreeWindow.setSelectedBone(bone)
+                    } else {
+                        Window.getImGuiLayer().boneTreeWindow.setActiveObject(null)
+                    }
                 }
                 
                 debounce = debounceTime

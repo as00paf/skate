@@ -260,6 +260,27 @@ class SceneManager {
 
 
 
+    fun getPickedId(x: Int, y: Int): Int {
+        if (engineState.get() != EngineState.RUNNING) return -1
+        return renderer.readPixel(x, y)
+    }
+
+    fun getObjectById(id: Int): GameObject? {
+        if (engineState.get() != EngineState.RUNNING) return null
+        return currentScene?.getGameObject(id)
+    }
+
+    fun getJointById(id: Int): com.pafoid.skate.engine.animation.Joint? {
+        if (engineState.get() != EngineState.RUNNING) return null
+        currentScene?.gameObjects?.forEach { go ->
+            go.getComponent<com.pafoid.skate.engine.animation.PoseGizmo>()?.let { pg ->
+                val joint = pg.getJointById(id)
+                if (joint != null) return joint
+            }
+        }
+        return null
+    }
+
     fun getPickedObject(x: Int, y: Int): GameObject? {
         if (engineState.get() != EngineState.RUNNING) return null
         val id = renderer.readPixel(x, y)

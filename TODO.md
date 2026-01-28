@@ -84,7 +84,7 @@
 
 ### 11. Procedural Pose Editor 
 - [x] **Bone Tree UI**: Implement an ImGui tree view showing the hierarchy of `aiNodes`.
-- [ ] **Local Override System**: Create a `BoneOverride` component that stores custom Quaternions for specific bone IDs.
+- [x] **Local Override System**: Create a `BoneOverride` component that stores custom Quaternions for specific bone IDs.
 - [ ] **Pose Gizmos**: (Optional) Allow clicking a bone in the viewport to select it in the UI.
 - [ ] **JSON Pose Persistence**: Implement Save/Load for bone rotation maps (e.g., `assets/poses/ride_pose.json`).
 - [ ] **Test Tool**: Add a "Mirror Pose" toggle (e.g., if you pose the left leg, it copies to the right) to speed up stance creation.
