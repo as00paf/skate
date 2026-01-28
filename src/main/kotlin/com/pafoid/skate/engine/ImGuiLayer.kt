@@ -27,7 +27,8 @@ class ImGuiLayer {
     private var firstFrame = true
     
     val propertiesWindow = com.pafoid.skate.engine.editor.PropertiesWindow()
-    private val hierarchyWindow = com.pafoid.skate.engine.editor.SceneHierarchyWindow(propertiesWindow)
+    val boneTreeWindow = com.pafoid.skate.engine.editor.BoneTreeWindow()
+    private val hierarchyWindow = com.pafoid.skate.engine.editor.SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
     val gameViewWindow = com.pafoid.skate.engine.editor.GameViewWindow()
     val prefabsWindow = com.pafoid.skate.engine.editor.PrefabsWindow()
     private val environmentWindow = com.pafoid.skate.engine.editor.EnvironmentWindow()
@@ -158,6 +159,7 @@ class ImGuiLayer {
         currentScene.imgui()
         hierarchyWindow.imgui(currentScene)
         propertiesWindow.imgui()
+        boneTreeWindow.imgui()
         gameViewWindow.imgui()
         prefabsWindow.imgui()
         environmentWindow.imgui(currentScene)
