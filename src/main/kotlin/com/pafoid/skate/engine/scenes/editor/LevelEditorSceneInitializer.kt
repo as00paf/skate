@@ -39,17 +39,19 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff.addComponent(MouseControls())
         editorStuff.addComponent(GizmoSystem())
         editorStuff.addComponent(EditorCamera(scene.camera))
+        editorStuff.addComponent(GridLines())
+        editorStuff.addComponent(MeasureTool())
         scene.addGameObjectToScene(editorStuff)
 
         // FEATURE 1: Basic Rendering (Skateboard)
         val skateGo = GameObject("Skateboard")
-        skateGo.transform.translation.set(0f, 5f, 0f)
-        skateGo.transform.scale.set(0.01f, 0.01f, 0.01f)
+        skateGo.transform.translation.set(0f, 2f, 0f)
+        skateGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
         skateGo.addComponent(Entity(
             model = AssetPool.getModel(ObjLoader.SKATEBOARD_GLB, loader)
         ))
-        skateGo.addComponent(RigidBody3D(1.0f).apply { friction = 0.1f })
-        skateGo.addComponent(BoxCollider3D(Vector3f(1.5f, 0.1f, 0.4f)))
+        skateGo.addComponent(RigidBody3D(1.8f).apply { friction = 0.1f }) // 1.8kg mass
+        skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f))) // 0.8m x 0.04m x 0.2m
         skateGo.addComponent(SkateboardPhysics())
         skateGo.addComponent(PlayerController())
         scene.addGameObjectToScene(skateGo)
@@ -60,8 +62,8 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         skateGo.addChild(playerGo)
         
         // Position relative to board (standing on it)
-        playerGo.transform.translation.set(0f, 0.1f, 0f) 
-        playerGo.transform.scale.set(100f, 100f, 100f) // Scale back up to be "human" sized relative to the 0.01 board
+        playerGo.transform.translation.set(0f, 0.05f, 0f) 
+        playerGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
         playerGo.addComponent(Entity(
             model = AssetPool.getModel(ObjLoader.PLAYER_GLTF, loader)
         ))
@@ -104,11 +106,11 @@ class LevelEditorSceneInitializer: SceneInitializer() {
             skateGo?.let { go ->
                 val rb = go.getComponent<RigidBody3D>()
                 rb?.let { r ->
-                    r.rawBody?.setPhysicsLocation(com.jme3.math.Vector3f(0f, 5f, 0f))
+                    r.rawBody?.setPhysicsLocation(com.jme3.math.Vector3f(0f, 2f, 0f))
                     r.rawBody?.setPhysicsRotation(com.jme3.math.Quaternion.IDENTITY)
                     r.rawBody?.setLinearVelocity(com.jme3.math.Vector3f.ZERO)
                     r.rawBody?.setAngularVelocity(com.jme3.math.Vector3f.ZERO)
-                    go.transform.translation.set(0f, 5f, 0f)
+                    go.transform.translation.set(0f, 2f, 0f)
                     go.transform.rotation.set(0f, 0f, 0f)
                 }
             }

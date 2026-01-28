@@ -6,6 +6,11 @@ import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
 
+enum class UnitSystem {
+    METRIC,
+    IMPERIAL
+}
+
 data class SystemSettings(
     var width: Int = 1920,
     var height: Int = 1080,
@@ -13,7 +18,8 @@ data class SystemSettings(
     var fullscreen: Boolean = false,
     var borderless: Boolean = false,
     var gamepadOverlaySize: Float = 0.225f,
-    var showGamepadOverlay: Boolean = true
+    var showGamepadOverlay: Boolean = true,
+    var unitSystem: UnitSystem = UnitSystem.METRIC
 )
 
 object SettingsManager {

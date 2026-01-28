@@ -57,31 +57,31 @@ Establish **1.0 Engine Unit = 1.0 Meter** as the global standard. All physics, a
 ---
 
 #### 7.1. Core Unit Utility (TDD Required)
-- [ ] **Task 1.1:** Create a `Units` utility class/object in Kotlin.
+- [x] **Task 1.1:** Create a `Units` utility class/object in Kotlin.
   - Define constants: `M_TO_CM = 100.0`, `IN_TO_M = 0.0254`, `FT_TO_M = 0.3048`.
   - Implement conversion functions: `toMeters(value, unit)`, `fromMeters(value, unit)`.
-- [ ] **Task 1.2 (TDD):** Write unit tests to verify conversion accuracy (e.g., 12 inches must equal 0.3048m within a 0.0001 epsilon).
+- [x] **Task 1.2 (TDD):** Write unit tests to verify conversion accuracy (e.g., 12 inches must equal 0.3048m within a 0.0001 epsilon).
 
 #### 7.2. Physics Calibration (Bullet Physics)
-- [ ] **Task 2.1:** Set global gravity to exactly `-9.81` m/s².
-- [ ] **Task 2.2:** Update `BoardRig` dimensions using real-world metric data:
+- [x] **Task 2.1:** Set global gravity to exactly `-9.81` m/s².
+- [x] **Task 2.2:** Update `BoardRig` dimensions using real-world metric data:
   - Deck: ~0.8m x 0.2m.
   - Wheelbase: ~0.35m.
   - Mass: ~1.8kg.
-- [ ] **Task 2.3 (TDD):** Implement a "Freefall Test" case. Assert that a rigid body dropped from 1.0m hits the floor at approx 0.45s ($t = \sqrt{2h/g}$).
+- [x] **Task 2.3 (TDD):** Implement a "Freefall Test" case. Assert that a rigid body dropped from 1.0m hits the floor at approx 0.45s ($t = \sqrt{2h/g}$).
 
 #### 7.3. Asset Pipeline Scaling
-- [ ] **Task 3.1:** Update `ModelLoader` (Assimp) to handle unit normalization.
+- [x] **Task 3.1:** Update `ModelLoader` (Assimp) to handle unit normalization.
   - Check for "Unit" metadata in glTF/FBX files.
   - Apply a global `u_modelScale` multiplier to the root node to ensure the model matches the 1.0m engine scale.
-- [ ] **Task 3.2:** Recalibrate the Editor Grid.
+- [x] **Task 3.2:** Recalibrate the Editor Grid.
   - Set major grid lines to 1.0m.
   - Set minor grid lines to 0.1m (10cm).
 
 #### 7.4. UI & Interaction
-- [ ] **Task 4.1:** Implement **ImGui Unit Toggle** in the settings (Metric vs. Imperial).
-- [ ] **Task 4.2:** Update the Speedometer to calculate velocity in `m/s` and convert to `km/h` or `mph` for the display.
-- [ ] **Task 4.3:** Add a "Measure Tool" to the editor to verify distances between obstacles in meters/feet.
+- [x] **Task 4.1:** Implement **ImGui Unit Toggle** in the settings (Metric vs. Imperial).
+- [x] **Task 4.2:** Update the Speedometer to calculate velocity in `m/s` and convert to `km/h` or `mph` for the display.
+- [x] **Task 4.3:** Add a "Measure Tool" to the editor to verify distances between obstacles in meters/feet.
 
 ---
 

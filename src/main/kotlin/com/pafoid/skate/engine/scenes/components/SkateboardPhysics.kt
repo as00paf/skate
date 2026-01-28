@@ -8,17 +8,19 @@ import org.joml.Matrix4f
 import org.joml.Vector3f
 
 class SkateboardPhysics : Component() {
-    // Suspension parameters
-    var suspensionRestLength = 0.5f
-    var stiffness = 50.0f
-    var damping = 5.0f
+    // Suspension parameters (Real-world Meters)
+    var suspensionRestLength = 0.1f // 10cm total height
+    var stiffness = 500.0f          // Much stiffer for 1.8kg board
+    var damping = 20.0f
     
-    // Corner offsets for 4 raycasts (deck corners)
+    // Corner offsets for 4 raycasts (deck corners/wheels)
+    // Real-world Skateboard: ~0.8m length, ~0.2m width
+    // Wheelbase: ~0.35m
     private val offsets = arrayOf(
-        Vector3f(-1.4f, -0.05f, -0.4f), // Front Left
-        Vector3f(-1.4f, -0.05f, 0.4f),  // Front Right
-        Vector3f(1.4f, -0.05f, -0.4f),  // Back Left
-        Vector3f(1.4f, -0.05f, 0.4f)    // Back Right
+        Vector3f(-0.175f, -0.02f, -0.1f), // Front Left (Wheel position)
+        Vector3f(-0.175f, -0.02f, 0.1f),  // Front Right
+        Vector3f(0.175f, -0.02f, -0.1f),  // Back Left
+        Vector3f(0.175f, -0.02f, 0.1f)    // Back Right
     )
 
     @Transient private lateinit var rb: RigidBody3D

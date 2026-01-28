@@ -182,11 +182,11 @@ class PrefabsWindow {
         
         AssetPool.getModelAsync(ObjLoader.SKATEBOARD_GLB, loader) { model ->
             val skate = GameObject("Skateboard")
-            skate.transform.translation.set(0f, 5f, 0f)
-            skate.transform.scale.set(0.01f, 0.01f, 0.01f)
+            skate.transform.translation.set(0f, 2f, 0f)
+            skate.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
             skate.addComponent(Entity(model = model))
-            skate.addComponent(RigidBody3D(1.0f).apply { friction = 0.1f })
-            skate.addComponent(BoxCollider3D(Vector3f(1.5f, 0.1f, 0.4f)))
+            skate.addComponent(RigidBody3D(1.8f).apply { friction = 0.1f }) // 1.8kg mass
+            skate.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f))) // 0.8m x 0.04m x 0.2m
             skate.addComponent(SkateboardPhysics())
             
             scene.addGameObjectToScene(skate)

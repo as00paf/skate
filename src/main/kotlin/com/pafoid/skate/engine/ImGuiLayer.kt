@@ -255,6 +255,14 @@ class ImGuiLayer {
                     com.pafoid.skate.engine.utils.SettingsManager.save()
                 }
 
+                ImGui.separator()
+                val unitSystems = com.pafoid.skate.engine.utils.UnitSystem.values()
+                val currentUnitIdx = intArrayOf(settings.unitSystem.ordinal)
+                if (ImGui.combo("Unit System", currentUnitIdx, unitSystems.map { it.name }.toTypedArray())) {
+                    settings.unitSystem = unitSystems[currentUnitIdx[0]]
+                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                }
+
                 ImGui.endMenu()
             }
             if (ImGui.beginMenu("Create")) {

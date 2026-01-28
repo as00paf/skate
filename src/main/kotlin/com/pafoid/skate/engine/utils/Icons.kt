@@ -16,6 +16,7 @@ object Icons {
     const val MOON = "\uf186"
     const val CLOUD = "\uf0c2"
     const val SEARCH = "\uf002"
+    const val RULER = "\uf545"
     const val ARROW_UP = "\uf062"
     const val ARROW_DOWN = "\uf063"
     const val ARROW_LEFT = "\uf060"

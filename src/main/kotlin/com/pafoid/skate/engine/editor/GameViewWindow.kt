@@ -143,6 +143,7 @@ class GameViewWindow {
 
     private fun renderViewportOverlays(windowPos: ImVec2, windowSize: ImVec2) {
         val isPlaying = SceneManager.isPlaying()
+        val scene = SceneManager.getCurrentScene()
         
         // FPS Overlay (Top Left)
         ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
@@ -150,10 +151,29 @@ class GameViewWindow {
         ImGui.textColored(0f, 1f, 0f, 1f, "FPS: ${ImGui.getIO().framerate.toInt()}")
         ImGui.endChild()
 
+        // Speedometer Overlay (Bottom Left)
+        val skateGo = scene?.gameObjects?.find { it.name == "Skateboard" }
+        val rb = skateGo?.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
+        val velocity = rb?.rawBody?.getLinearVelocity(null)
+        if (velocity != null) {
+            val speedMS = velocity.length()
+            val settings = com.pafoid.skate.engine.utils.SettingsManager.settings
+            val (speedDisplay, unitLabel) = if (settings.unitSystem == com.pafoid.skate.engine.utils.UnitSystem.METRIC) {
+                Pair(speedMS * 3.6f, "km/h")
+            } else {
+                Pair(speedMS * 2.23694f, "mph")
+            }
+
+            ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + windowSize.y - 40f)
+            ImGui.beginChild("Speed_Overlay", 120f, 30f, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+            ImGui.textColored(1f, 1f, 1f, 1f, "${speedDisplay.roundToInt()} $unitLabel")
+            ImGui.endChild()
+        }
+
         // Controls Overlay (Top Right)
         val buttonSize = 60f
-        ImGui.setCursorPos(windowPos.x + windowSize.x - (buttonSize * 2f) - 20f, windowPos.y + 10f)
-        ImGui.beginChild("Controls_Overlay", buttonSize * 2f + 10f, 40f, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+        ImGui.setCursorPos(windowPos.x + windowSize.x - (buttonSize * 3f) - 30f, windowPos.y + 10f)
+        ImGui.beginChild("Controls_Overlay", buttonSize * 3f + 20f, 40f, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
         
         if (isPlaying) {
             if (ImGui.button("${Icons.STOP} Stop", buttonSize, 30f)) {
@@ -164,6 +184,20 @@ class GameViewWindow {
                 SceneManager.setPlaying(true)
             }
         }
+        ImGui.sameLine()
+        
+        val measureTool = scene?.gameObjects?.find { it.name == "EditorTools" }?.getComponent<com.pafoid.skate.engine.scenes.components.MeasureTool>()
+        val measureActive = measureTool?.isEnabled() ?: false
+        if (measureActive) {
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+        }
+        if (ImGui.button("${Icons.RULER} Measure", buttonSize + 10f, 30f)) {
+            measureTool?.toggle()
+        }
+        if (measureActive) {
+            ImGui.popStyleColor()
+        }
+
         ImGui.sameLine()
         if (ImGui.button("${Icons.GEAR} Reset", buttonSize, 30f)) {
             // Reset logic could go here

@@ -8,38 +8,30 @@ import kotlin.math.floor
 import kotlin.math.max
 
 class GridLines : Component() {
-    private val gridWidth = 0.25f
-    private val gridHeight = 0.25f
-    private val color = Vector3f(0.2f, 0.2f, 0.2f)
+    private val majorStep = 1.0f
+    private val minorStep = 0.1f
+    private val majorColor = Vector3f(0.4f, 0.4f, 0.4f)
+    private val minorColor = Vector3f(0.2f, 0.2f, 0.2f)
+    private val gridSize = 50 // lines in each direction
 
     override fun editorUpdate(dt: Float) {
         val scene = SceneManager.getCurrentScene() ?: return
-        val camera = scene.camera
-        val cameraPos = camera.position
-        val projectionSize = camera.getProjectionSize()
-        val zoom = camera.zoom
+        
+        // Draw Minor Grid (0.1m)
+        for (i in -gridSize..gridSize) {
+            val pos = i * minorStep
+            val isMajor = (i % 10 == 0)
+            val color = if (isMajor) majorColor else minorColor
+            
+            val startX = -gridSize * minorStep
+            val endX = gridSize * minorStep
+            val startZ = -gridSize * minorStep
+            val endZ = gridSize * minorStep
 
-        val firstX = (floor(cameraPos.x / gridWidth) - 1) * gridWidth
-        val firstY = (floor(cameraPos.y / gridHeight) - 1) * gridHeight
-
-        val width = (projectionSize.x * zoom) + gridWidth * 4
-        val height = (projectionSize.y * zoom) + gridHeight * 4
-
-        val numVtLines = (width / gridWidth).toInt() + 2
-        val numHzLines = (height / gridHeight).toInt() + 2
-
-        val maxLines = max(numVtLines, numHzLines)
-
-        for (i in 0 until maxLines) {
-            val x = firstX + (gridWidth * i)
-            val y = firstY + (gridHeight * i)
-
-            if (i < numVtLines) {
-                DebugDraw.addLine2D(Vector2f(x, firstY), Vector2f(x, firstY + height), color)
-            }
-            if (i < numHzLines) {
-                DebugDraw.addLine2D(Vector2f(firstX, y), Vector2f(firstX + width, y), color)
-            }
+            // Lines along X
+            DebugDraw.addLine3D(Vector3f(startX, 0f, pos), Vector3f(endX, 0f, pos), color)
+            // Lines along Z
+            DebugDraw.addLine3D(Vector3f(pos, 0f, startZ), Vector3f(pos, 0f, endZ), color)
         }
     }
 }
