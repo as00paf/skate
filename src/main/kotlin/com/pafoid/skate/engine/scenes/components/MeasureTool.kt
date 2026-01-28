@@ -17,16 +17,27 @@ class MeasureTool : Component() {
     private var endPoint: Vector3f? = null
     private var isActive = false
 
+    var measurementText: String? = null
+        private set
+    var measurementPos: org.joml.Vector2f? = null
+        private set
+
     override fun editorUpdate(dt: Float) {
         if (!isActive) return
 
         val scene = SceneManager.getCurrentScene() ?: return
-        val mousePos = MouseListener.get()
+        val mousePos = ImGui.getMousePos() // This might still be unsafe if called outside ImGui frame? 
+                                          // Actually getMousePos is usually safe as it reads IO.
+                                          // But let's use MouseListener inputs if possible or assume IO is updated.
         val viewportSize = MouseListener.getGameViewportSize()
         val viewportPos = MouseListener.getGameViewportPos()
 
         val relX = mousePos.x - viewportPos.x
         val relY = mousePos.y - viewportPos.y
+        
+        // Clear previous text
+        measurementText = null
+        measurementPos = null
 
         if (relX >= 0 && relX <= viewportSize.x && relY >= 0 && relY <= viewportSize.y) {
             val ray = scene.camera.screenToRay(relX, relY, viewportSize.x, viewportSize.y)
@@ -62,13 +73,9 @@ class MeasureTool : Component() {
                             String.format("%.2f ft", feet)
                         }
                         
-                        // Draw label at midpoint
-                        val mid = Vector3f(start).add(currentEnd).mul(0.5f)
-                        // We can't draw text in 3D easily, so we'll show it in a tooltip or overlay
-                        ImGui.setNextWindowPos(mousePos.x + 20, mousePos.y + 20)
-                        ImGui.beginTooltip()
-                        ImGui.text("Distance: $displayText")
-                        ImGui.endTooltip()
+                        // Store for rendering
+                        measurementText = "Distance: $displayText"
+                        measurementPos = org.joml.Vector2f(mousePos.x + 20, mousePos.y + 20)
                     }
                 }
             }
@@ -82,20 +89,16 @@ class MeasureTool : Component() {
     }
 
     fun toggle() {
-        isActive = !isActive
-        if (!isActive) {
-            startPoint = null
-            endPoint = null
-        }
+        setToolActive(!isActive)
     }
     
-    fun setEnabled(enabled: Boolean) {
-        isActive = enabled
+    fun setToolActive(active: Boolean) {
+        isActive = active
         if (!isActive) {
             startPoint = null
             endPoint = null
         }
     }
 
-    fun isEnabled() = isActive
+    fun isToolActive() = isActive
 }

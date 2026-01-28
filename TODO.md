@@ -44,53 +44,65 @@
 - [x] **Input Mapping**: Continuous Vectoring for local-space torques based on RS-flicks.
 - [x] **Stance Engine**: Support for Regular/Goofy and Switch/Nollie/Fakie states.
 
----
-
-## 🔴 Phase C: Active Tasks [NEXT STEPS]
-
 ### 7. Real-World Scaling (Unit System)
-# 📏 Unit System & Scaling Implementation
+- [x] **Unit Infrastructure**: Base 1.0m = 1.0 Unit established.
+- [x] **Physics Calibration**: Gravity at -9.81 m/s² and real-world board mass/inertia.
+- [x] **Asset Scaling**: Assimp normalization and manual overrides for legacy assets.
+- [x] **Metric Grid**: Camera-following "infinite" grid with 0.1m/1.0m hierarchy.
+- [x] **Measure Tool**: Editor-mode ruler with Metric/Imperial toggling.
 
-## 🎯 Objective
-Establish **1.0 Engine Unit = 1.0 Meter** as the global standard. All physics, assets, and UI measurements must derive from this base to ensure simulation accuracy.
+---
+
+## 🚨 PRIORITY 1: GLOBAL METRIC GRID FIX
+*Crucial fix for spatial awareness and scale validation.*
+
+- [ ] **Task P1.1: World-Space Decoupling**: Unparent the grid from the Skateboard/Player. Force rendering at World $Y = 0$.
+- [ ] **Task P1.2: Infinite Procedural Grid**:
+  - Replace local grid mesh with a single large plane (Minimum 500m x 500m).
+  - Update Shader to use **World Position** (via `fract()`) rather than UVs.
+- [ ] **Task P1.3: Metric Hierarchy**:
+  - **Minor**: Lines every $0.1$ units (10cm), Alpha = $0.2$.
+  - **Major**: Lines every $1.0$ units (1m), Alpha = $0.5$.
+  - **Axes**: Highlight $X=0$ (Red) and $Z=0$ (Blue).
+- [ ] **Task P1.4: Depth & Blend Fix**:
+  - Set `glDepthFunc(GL_LEQUAL)`.
+  - Render grid *after* skybox but *before* player to eliminate "floating" artifacts.
 
 ---
 
-#### 7.1. Core Unit Utility (TDD Required)
-- [x] **Task 1.1:** Create a `Units` utility class/object in Kotlin.
-  - Define constants: `M_TO_CM = 100.0`, `IN_TO_M = 0.0254`, `FT_TO_M = 0.3048`.
-  - Implement conversion functions: `toMeters(value, unit)`, `fromMeters(value, unit)`.
-- [x] **Task 1.2 (TDD):** Write unit tests to verify conversion accuracy (e.g., 12 inches must equal 0.3048m within a 0.0001 epsilon).
-
-#### 7.2. Physics Calibration (Bullet Physics)
-- [x] **Task 2.1:** Set global gravity to exactly `-9.81` m/s².
-- [x] **Task 2.2:** Update `BoardRig` dimensions using real-world metric data:
-  - Deck: ~0.8m x 0.2m.
-  - Wheelbase: ~0.35m.
-  - Mass: ~1.8kg.
-- [x] **Task 2.3 (TDD):** Implement a "Freefall Test" case. Assert that a rigid body dropped from 1.0m hits the floor at approx 0.45s ($t = \sqrt{2h/g}$).
-
-#### 7.3. Asset Pipeline Scaling
-- [x] **Task 3.1:** Update `ModelLoader` (Assimp) to handle unit normalization.
-  - Check for "Unit" metadata in glTF/FBX files.
-  - Apply a global `u_modelScale` multiplier to the root node to ensure the model matches the 1.0m engine scale.
-- [x] **Task 3.2:** Recalibrate the Editor Grid.
-  - Set major grid lines to 1.0m.
-  - Set minor grid lines to 0.1m (10cm).
-
-#### 7.4. UI & Interaction
-- [x] **Task 4.1:** Implement **ImGui Unit Toggle** in the settings (Metric vs. Imperial).
-- [x] **Task 4.2:** Update the Speedometer to calculate velocity in `m/s` and convert to `km/h` or `mph` for the display.
-- [x] **Task 4.3:** Add a "Measure Tool" to the editor to verify distances between obstacles in meters/feet.
-
----
+## 🔴 Phase D: Active Tasks 
 
 ### 8. Skeletal Animation Pipeline
 - [ ] **Animation Samplers**: Implement Skeleton hierarchy traversal and LINEAR/STEP/CUBICSPLINE interpolation.
-- [ ] **GPU Skinning**: Update PBR Vertex Shader to compute final vertex positions using the Matrix Palette (4-bone influence).
+- [ ] **GPU Skinning**: Update PBR Vertex Shader to compute final positions using the Matrix Palette (4-bone influence).
 - [ ] **Animation Debugger**: Build ImGui window with clip selection, timeline scrubbing, and bone visualizer overlay.
 
 ### 9. Trick Detection System
 - [ ] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.
 - [ ] **Trick UI**: Viewport overlay to display identified tricks (e.g., "Kickflip", "360 Shove-it").
 - [ ] **TDD Validation**: Unit tests for rotation-to-string trick identification.
+
+### 10. Riding Integration
+- [ ] **Task 10.1: Physics Locking**: Parent Player Model to `BoardRig` with vertical offset. **Verify scale proportions with User.**
+- [ ] **Task 10.2: Stability Logic**: Implement "Snap to Board" logic to prevent drift during high-speed turns.
+- [ ] **Task 10.3: Animation Posing**: Apply static "Ride" pose (knees bent, arms out).
+- [ ] **Task 10.4: Procedural Lean**: Implement spine rotation tied to LS steering input.
+- [ ] **Task 10.5: State Manager**: Implement `PlayerState` manager (IDLE, RIDING, PUSHING).
+- [ ] **Task 10.6: Push Mechanic**: Trigger physics impulses based on specific animation frames.
+
+### 11. Character Controller & Camera
+- [ ] **Task 11.1: State Toggle**: Map Gamepad **Y Button** to toggle Walking/Riding with teleport offsets.
+- [ ] **Task 11.2: On-Foot Locomotion**:
+  - Implement LS movement relative to Camera Forward.
+  - Implement **A Button** Jump logic for Walking state.
+  - Trigger `WALK` and `JUMP` animation clips.
+- [ ] **Task 11.3: Orbital Camera**:
+  - Implement RS **Orbit Control** (Yaw/Pitch).
+  - Create presets for FOV, Offset, and Distance.
+  - Implement smooth LERP transitions between presets.
+- [ ] **Task 11.4: World Alignment**:
+  - Audit all Y-offsets for unit consistency.
+  - Implement raycast floor snapping for the Walking state.
+
+### 12. Final Polish
+- [ ] **App Icon**: Design and integrate native window icon.

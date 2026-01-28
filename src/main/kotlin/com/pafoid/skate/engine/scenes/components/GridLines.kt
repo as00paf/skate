@@ -10,28 +10,49 @@ import kotlin.math.max
 class GridLines : Component() {
     private val majorStep = 1.0f
     private val minorStep = 0.1f
-    private val majorColor = Vector3f(0.4f, 0.4f, 0.4f)
-    private val minorColor = Vector3f(0.2f, 0.2f, 0.2f)
-    private val gridSize = 50 // lines in each direction
+    private val majorColor = Vector3f(0.3f, 0.3f, 0.3f)
+    private val minorColor = Vector3f(0.15f, 0.15f, 0.15f)
+    private val gridSize = 40 // Total lines in each direction around the camera
 
     override fun editorUpdate(dt: Float) {
         val scene = SceneManager.getCurrentScene() ?: return
+        val camPos = scene.camera.position
         
-        // Draw Minor Grid (0.1m)
-        for (i in -gridSize..gridSize) {
-            val pos = i * minorStep
-            val isMajor = (i % 10 == 0)
-            val color = if (isMajor) majorColor else minorColor
-            
-            val startX = -gridSize * minorStep
-            val endX = gridSize * minorStep
-            val startZ = -gridSize * minorStep
-            val endZ = gridSize * minorStep
+        // Snap the grid center to the nearest major step to keep the lines aligned to the world origin
+        val centerX = (floor(camPos.x / majorStep) * majorStep).toFloat()
+        val centerZ = (floor(camPos.z / majorStep) * majorStep).toFloat()
+        
+        val halfRange = gridSize * minorStep
+        val startX = centerX - halfRange
+        val endX = centerX + halfRange
+        val startZ = centerZ - halfRange
+        val endZ = centerZ + halfRange
 
-            // Lines along X
-            DebugDraw.addLine3D(Vector3f(startX, 0f, pos), Vector3f(endX, 0f, pos), color)
-            // Lines along Z
-            DebugDraw.addLine3D(Vector3f(pos, 0f, startZ), Vector3f(pos, 0f, endZ), color)
+        // Draw lines
+        for (i in -gridSize..gridSize) {
+            val offset = i * minorStep
+            
+            // X-aligned lines
+            val worldZ = centerZ + offset
+            val isMajorZ = (Math.abs(worldZ % majorStep) < 0.01f || Math.abs(worldZ % majorStep - majorStep) < 0.01f)
+            DebugDraw.addLine3D(
+                Vector3f(startX, -0.001f, worldZ), 
+                Vector3f(endX, -0.001f, worldZ), 
+                if (isMajorZ) majorColor else minorColor
+            )
+
+            // Z-aligned lines
+            val worldX = centerX + offset
+            val isMajorX = (Math.abs(worldX % majorStep) < 0.01f || Math.abs(worldX % majorStep - majorStep) < 0.01f)
+            DebugDraw.addLine3D(
+                Vector3f(worldX, -0.001f, startZ), 
+                Vector3f(worldX, -0.001f, endZ), 
+                if (isMajorX) majorColor else minorColor
+            )
         }
+        
+        // Draw Origin Axes
+        DebugDraw.addLine3D(Vector3f(-100f, 0.001f, 0f), Vector3f(100f, 0.001f, 0f), Vector3f(1f, 0.2f, 0.2f)) // X-Axis (Red)
+        DebugDraw.addLine3D(Vector3f(0f, 0.001f, -100f), Vector3f(0f, 0.001f, 100f), Vector3f(0.2f, 1f, 0.2f)) // Z-Axis (Green)
     }
 }

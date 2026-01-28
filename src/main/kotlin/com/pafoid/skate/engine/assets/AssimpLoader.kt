@@ -46,9 +46,6 @@ class AssimpLoader {
         var unitScale = 1.0f
         val metadata = scene.mMetaData()
         if (metadata != null) {
-            val key = AIString.calloc()
-            key.dataString("UnitScaleFactor")
-            val value = AIMetaDataEntry.calloc()
             // Assimp uses "UnitScaleFactor" for FBX. glTF is always meters (1.0).
             // Some models might have other metadata for units.
             // For now, check if we can get it. 
@@ -61,17 +58,15 @@ class AssimpLoader {
                     // val scale = entry.mData().getDouble(0) // This is tricky in LWJGL
                 }
             }
-            key.free()
-            value.free()
         }
         
         // Manual override for known models if metadata is missing or incorrect
         if (filePath.contains("skateboard", ignoreCase = true)) {
             unitScale = 0.01f // Skateboard model is in CM
         }
-        if (filePath.contains("Superhero", ignoreCase = true)) {
-            unitScale = 0.01f // Player model is in CM
-        }
+        // if (filePath.contains("Superhero", ignoreCase = true)) {
+        //     unitScale = 0.01f // Player model is in CM
+        // }
 
         val rootTransform = org.joml.Matrix4f().scale(unitScale)
         processNode(scene.mRootNode()!!, scene, rootTransform, meshParts, embeddedTextures, filePath)

@@ -187,9 +187,19 @@ class GameViewWindow {
         ImGui.sameLine()
         
         val measureTool = scene?.gameObjects?.find { it.name == "EditorTools" }?.getComponent<com.pafoid.skate.engine.scenes.components.MeasureTool>()
-        val measureActive = measureTool?.isEnabled() ?: false
+        val measureActive = measureTool?.isToolActive() ?: false
         if (measureActive) {
             ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+            
+            // Render Measure Tooltip
+            measureTool?.measurementText?.let { text ->
+                measureTool.measurementPos?.let { pos ->
+                    ImGui.setNextWindowPos(pos.x, pos.y)
+                    ImGui.beginTooltip()
+                    ImGui.text(text)
+                    ImGui.endTooltip()
+                }
+            }
         }
         if (ImGui.button("${Icons.RULER} Measure", buttonSize + 10f, 30f)) {
             measureTool?.toggle()
@@ -200,7 +210,15 @@ class GameViewWindow {
 
         ImGui.sameLine()
         if (ImGui.button("${Icons.GEAR} Reset", buttonSize, 30f)) {
-            // Reset logic could go here
+            // Reset logic
+            scene?.gameObjects?.find { it.name == "Skateboard" }?.let { skate ->
+                skate.transform.translation.set(0f, 0.5f, 0f)
+                skate.transform.rotation.set(0f, 0f, 0f)
+                val rb = skate.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
+                // In Editor update, the RB syncs from transform, so we just reset velocities
+                rb?.linearVelocity = Vector3f(0f, 0f, 0f)
+                rb?.angularVelocity = Vector3f(0f, 0f, 0f)
+            }
         }
         
         ImGui.endChild()
