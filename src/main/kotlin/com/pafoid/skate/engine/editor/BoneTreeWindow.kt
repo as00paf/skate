@@ -1,13 +1,16 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.animation.Joint
+import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.GameObject
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
 import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.animation.BoneOverride
+import com.pafoid.skate.engine.animation.BoneMirrorUtil
 import imgui.type.ImString
+import imgui.type.ImBoolean
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
@@ -15,6 +18,7 @@ class BoneTreeWindow {
     private var activeGameObject: GameObject? = null
     private var selectedBone: Joint? = null
     private val poseFileName = ImString(128)
+    private val mirrorPoseEnabled = ImBoolean(false)
 
     fun setActiveObject(go: GameObject?) {
         activeGameObject = go
@@ -53,6 +57,8 @@ class BoneTreeWindow {
                     }
                 }
             }
+
+            ImGui.checkbox("Mirror Pose", mirrorPoseEnabled)
 
             if (ImGui.treeNodeEx(skeleton.rootJoint.name, ImGuiTreeNodeFlags.DefaultOpen or ImGuiTreeNodeFlags.FramePadding)) {
                 drawJointNode(skeleton.rootJoint)
@@ -97,6 +103,20 @@ class BoneTreeWindow {
                             Math.toRadians(rotationXYZ[2].toDouble()).toFloat()
                         )
                         bo.addOverride(child.name, newRotation)
+
+                        // Apply to mirrored bone if enabled
+                        if (mirrorPoseEnabled.get()) {
+                            val mirroredBoneName = BoneMirrorUtil.getMirroredBoneName(child.name)
+                            if (mirroredBoneName != child.name) {
+                                // Negate X and Z Euler angles for mirrored rotation
+                                val mirroredRotation = Quaternionf().rotationXYZ(
+                                    Math.toRadians(-rotationXYZ[0].toDouble()).toFloat(),
+                                    Math.toRadians(rotationXYZ[1].toDouble()).toFloat(),
+                                    Math.toRadians(-rotationXYZ[2].toDouble()).toFloat()
+                                )
+                                bo.addOverride(mirroredBoneName, mirroredRotation)
+                            }
+                        }
                     }
                 }
             }
@@ -108,3 +128,4 @@ class BoneTreeWindow {
         }
     }
 }
+
