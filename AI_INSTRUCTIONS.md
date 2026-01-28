@@ -21,7 +21,7 @@ Every task must follow this strict lifecycle:
     * **Bug Fixes:** `bug/description-of-bug`
 2.  **Commits:** Make small, atomic commits with descriptive messages. Do not bundle multiple logical changes into one commit.
 3.  **Completion:** Once a task is finished, push the code to the feature/bug branch.
-4.  **Merging:** Request explicit user confirmation to merge the branch into `master`. **Do not merge automatically.**
+4.  **Merging:** Request explicit user confirmation to merge the feature/bug branch into `master`. **Do not merge automatically.**
 5.  **Pushing:** After merging, always push the `master` branch to the remote repository.
 6.  **Clean up:** Delete local and remote branches only after a successful merge and push to `master`, and only with user approval.
 
@@ -29,7 +29,7 @@ Every task must follow this strict lifecycle:
 
 ## 🚦 3. Operational Flow
 * **One Step at a Time:** Work on exactly one item from the `TODO.md` list. Do not anticipate or jump to the next item.
-* **User Confirmation:** After completing an item, you must wait for the user to say "Ready to move on" or "Proceed" before starting the next item.
+* **User Confirmation:** After completing an item or a task, you must wait for the user to say "Ready to move on" or "Proceed" before starting the next item.
 * **TODO Management:** Maintain and update a `TODO.md` file in the root. Mark items as complete `[x]` only after they are merged into `master` and pushed to the repository.
 * **Troubleshooting:** If a bug arises, immediately branch off to a `bug/` branch if we are not currently on a feature branch. Do not fix bugs directly in `master`.
 
@@ -69,6 +69,6 @@ Follow a strict **Red-Green-Refactor** cycle for all logic-heavy tasks (Physics,
 
 ---
 
-##  skateboard 7. Project Specifics
+##  7. Project Specifics
 * **State Management:** Maintain a clear distinction between **Edit Mode** (Editor tools, Gizmos) and **Play Mode** (Active physical simulation).
 * **Simulation Intent:** Prioritize "Skate Sim" realism (similar to *Skater XL* or *Session*) over arcade physics.

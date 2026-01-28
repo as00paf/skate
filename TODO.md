@@ -79,7 +79,7 @@
 - [x] **Task 10.2: Stability Logic**: Implement "Snap to Board" logic to prevent drift during high-speed turns.
 - [x] **Task 10.3: Animation Posing**: Apply static "Ride" pose (knees bent, arms out) using the new `james.dae` model and orient the skater relative to the skateboard.
 - [x] **Task 10.4: Procedural Lean**: Implement spine rotation tied to LS steering input.
-- [ ] **Task 10.5: State Manager**: Implement `PlayerState` manager (IDLE, RIDING, PUSHING).
+- [x] **Task 10.5: State Manager**: Implement `PlayerState` manager (IDLE, RIDING, PUSHING).
 - [ ] **Task 10.6: Push Mechanic**: Trigger physics impulses based on specific animation frames.
 
 ### 11. Procedural Pose Editor 
