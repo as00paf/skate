@@ -7,11 +7,17 @@ import com.pafoid.skate.engine.utils.SettingsManager
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
+import org.lwjgl.glfw.GLFWImage
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GLUtil
+import org.lwjgl.stb.STBImage
+import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.IntBuffer
 
 class Window(
     val width: Int = 1920,
@@ -124,6 +130,9 @@ class Window(
         currentWidth = winWidth
         currentHeight = winHeight
 
+        // Set the window icon
+        setWindowIcon("assets/textures/app_icon.png")
+
         // Make OpenGL context current
         glfwMakeContextCurrent(glfwWindow)
 
@@ -147,6 +156,36 @@ class Window(
         imGuiLayer.init(glfwWindow)
         
         
+    }
+
+    private fun setWindowIcon(iconPath: String) {
+        MemoryStack.stackPush().use { stack ->
+            val w = stack.mallocInt(1)
+            val h = stack.mallocInt(1)
+            val comp = stack.mallocInt(1)
+
+            // Ensure flip vertical is disabled for UI images
+            STBImage.stbi_set_flip_vertically_on_load(false)
+            val pixels: ByteBuffer? = STBImage.stbi_load(iconPath, w, h, comp, 4) // Force 4 channels (RGBA)
+            STBImage.stbi_set_flip_vertically_on_load(true) // Re-enable for other textures
+
+            if (pixels == null) {
+                System.err.println("Failed to load image at path: $iconPath")
+                return
+            }
+
+            val icon = GLFWImage.malloc(stack)
+            icon.width(w.get(0))
+            icon.height(h.get(0))
+            icon.pixels(pixels)
+
+            val icons = GLFWImage.malloc(1, stack)
+            icons.put(0, icon)
+
+            glfwSetWindowIcon(glfwWindow, icons)
+
+            STBImage.stbi_image_free(pixels) // Free the image data
+        }
     }
 
     private fun installCallbacks() {

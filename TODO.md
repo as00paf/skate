@@ -95,7 +95,7 @@
 - [x] **TDD Validation**: Unit tests for rotation-to-string trick identification.
 
 ### 13. Final Polish
-- [ ] **App Icon**: Design and integrate native window icon.
+- [x] **App Icon**: Design and integrate native window icon.
 
 ### 14. Maintenance & Integrity
 - [x] **Lingering Branches**: List all the branches on the local and remote repository that are not main and master.

@@ -16,4 +16,11 @@ Revised App Icon Design:
     * No strong contrasts or neon.
 * Minimalism: Clean lines, simple shapes, focusing on clarity and a relaxed feel.
 
-This aims for a sophisticated, calm, and inviting look, reflecting the simulation's realism from the player's perspective.   
+This aims for a sophisticated, calm, and inviting look, reflecting the simulation's realism from the player's perspective.
+
+
+app icn
+
+A professional, minimalist app icon for a skateboarding simulation. Top-down, birds-eye view of a single minimalist skate shoe positioned on a skateboard deck. The skateboard
+deck features realistic dark grey textured griptape. The background is a solid, soft, muted powder blue (#B0C4DE). Use clean, sophisticated lines and simple geometric shapes to  
+create a calm and inviting aesthetic. Avoid high contrast, neon colors, or busy details. Focus on clarity and a relaxed 'skate sim' feel.
