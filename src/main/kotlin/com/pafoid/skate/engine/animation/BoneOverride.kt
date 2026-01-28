@@ -14,6 +14,10 @@ class BoneOverride : Component() {
         return overrides[boneName]
     }
 
+    fun getOverrides(): Map<String, Quaternionf> {
+        return overrides.toMap()
+    }
+
     fun clearOverrides() {
         overrides.clear()
     }
