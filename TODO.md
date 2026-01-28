@@ -103,7 +103,7 @@
 - [x] **Branch cleanup**: Delete all the branches except for the master branch and the main branch. This is a risky operation so you must absolutely confirm with the user before proceeding.
 
 ### 15.1 Structural Integrity
-- [ ] **Task 15.1.1: File Atomization**: Ensure every class has its own dedicated file. No multi-class files (e.g., separating `PlayerState` from `PlayerController`).
+- [ ] **Task 15.1.1: File Atomization**: Ensure every class has its own dedicated file. No multi-class files. This is a big refactor so we must be careful and make sure the project still compiles after each class has been separated into its own file. Make sure to fix the import statements as we go. 
 - [ ] **Task 15.1.2: Hardcode Purge**: Move "Magic Numbers" (physics constants, shader paths, default FOV) into a centralized `Constants.kt` or relevant companion objects.
 - [ ] **Task 15.1.3: Package Reorganization**: Audit the package structure (e.g., `com.skatesim.physics`, `com.skatesim.render`) to ensure logic is logically grouped.
 
