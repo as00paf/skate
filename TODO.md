@@ -77,15 +77,22 @@
 ### 10. Riding Integration
 - [x] **Task 10.1: Physics Locking**: Parent Player Model to `BoardRig` with vertical offset. **Verify scale proportions with User.**
 - [x] **Task 10.2: Stability Logic**: Implement "Snap to Board" logic to prevent drift during high-speed turns.
-- [ ] **Task 10.3: Animation Posing**: Apply static "Ride" pose (knees bent, arms out) and orient the skater relative to the skateboard.
+- [x] **Task 10.3: Animation Posing**: Apply static "Ride" pose (knees bent, arms out) using the new `james.dae` model and orient the skater relative to the skateboard.
 - [ ] **Task 10.4: Procedural Lean**: Implement spine rotation tied to LS steering input.
 - [ ] **Task 10.5: State Manager**: Implement `PlayerState` manager (IDLE, RIDING, PUSHING).
 - [ ] **Task 10.6: Push Mechanic**: Trigger physics impulses based on specific animation frames.
 
-### 11. Trick Detection System
+### 11. Procedural Pose Editor 
+- [ ] **Bone Tree UI**: Implement an ImGui tree view showing the hierarchy of `aiNodes`.
+- [ ] **Local Override System**: Create a `BoneOverride` component that stores custom Quaternions for specific bone IDs.
+- [ ] **Pose Gizmos**: (Optional) Allow clicking a bone in the viewport to select it in the UI.
+- [ ] **JSON Pose Persistence**: Implement Save/Load for bone rotation maps (e.g., `assets/poses/ride_pose.json`).
+- [ ] **Test Tool**: Add a "Mirror Pose" toggle (e.g., if you pose the left leg, it copies to the right) to speed up stance creation.
+
+### 12. Trick Detection System
 - [ ] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.
 - [ ] **Trick UI**: Viewport overlay to display identified tricks (e.g., "Kickflip", "360 Shove-it").
 - [ ] **TDD Validation**: Unit tests for rotation-to-string trick identification.
 
-### 12. Final Polish
+### 13. Final Polish
 - [ ] **App Icon**: Design and integrate native window icon.

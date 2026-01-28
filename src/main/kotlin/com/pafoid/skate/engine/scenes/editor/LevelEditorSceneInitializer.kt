@@ -62,9 +62,10 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         
         // Position relative to board (standing on it)
         playerGo.transform.translation.set(0f, 0.05f, 0f) 
+        playerGo.transform.rotation.set(0f, 90f, 0f) // Face sideways for skating
         playerGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
         playerGo.addComponent(Entity(
-            model = AssetPool.getModel(ObjLoader.PLAYER_GLTF, loader)
+            model = AssetPool.getModel(ObjLoader.JAMES, loader)
         ))
         playerGo.addComponent(com.pafoid.skate.engine.animation.Animator())
         scene.addGameObjectToScene(playerGo)

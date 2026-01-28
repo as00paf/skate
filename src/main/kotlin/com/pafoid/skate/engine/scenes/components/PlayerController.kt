@@ -67,8 +67,9 @@ class PlayerController : Component() {
             handlePushing(dt)
             handleJumping()
             handleFlicks(dt)
-            handleCatch(dt)
             handleStability()
+            handleCatch(dt)
+            updateRidingAnimation(dt)
             checkBail()
         } else {
             handleWalking(dt)
@@ -85,7 +86,20 @@ class PlayerController : Component() {
         val s = skater ?: return
         // Force snap to board top center
         s.transform.translation.set(0f, 0.02f, 0f)
-        s.transform.rotation.set(0f, 0f, 0f)
+        
+        // Face sideways relative to board (90 degrees)
+        s.transform.rotation.set(0f, 90f, 0f)
+    }
+
+    private fun updateRidingAnimation(dt: Float) {
+        val anim = animator ?: return
+        
+        // Try to find "ride" or "idle" for riding, otherwise use the first available
+        // The james.dae only has one animation: "mixamorig9_Hips"
+        anim.play("mixamorig9_Hips", 0.2f)
+        
+        // If it's a static pose, we might want to pause it at frame 0
+        // but for now let's let it play to see what it is.
     }
 
     private fun handleWalking(dt: Float) {

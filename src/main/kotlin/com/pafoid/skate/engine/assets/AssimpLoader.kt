@@ -38,9 +38,9 @@ class AssimpLoader {
         var unitScale = 1.0f
         
         if (filePath.contains("skateboard", ignoreCase = true)) {
-            unitScale = 0.01f
+            unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
         } else if (filePath.contains("Superhero", ignoreCase = true)) {
-            unitScale = 6.0f // Superhero model is tiny (~0.3m), scale up to ~1.8m
+            unitScale = 1.0f // Superhero model is actually ~1.8m at unit scale
         }
         
         val rootTransform = org.joml.Matrix4f().scale(unitScale)
