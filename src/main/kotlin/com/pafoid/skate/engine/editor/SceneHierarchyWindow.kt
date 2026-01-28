@@ -8,7 +8,10 @@ import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
 
-class SceneHierarchyWindow(private val propertiesWindow: PropertiesWindow) {
+class SceneHierarchyWindow(
+    private val propertiesWindow: PropertiesWindow,
+    private val boneTreeWindow: BoneTreeWindow
+) {
 
     fun imgui(scene: Scene) {
         ImGui.begin("Scene Hierarchy")
@@ -16,45 +19,59 @@ class SceneHierarchyWindow(private val propertiesWindow: PropertiesWindow) {
         val gameObjects = scene.gameObjects
 
         gameObjects.forEachIndexed { index, obj ->
-            val treeNodeOpen = doTreeNode(obj, index)
-            if (treeNodeOpen) {
-                ImGui.treePop()
+            if (obj.parent == null) { // Only draw root objects
+                doTreeNode(obj, index)
             }
         }
         
         // Handle global deletion input
-        if (ImGui.isKeyPressed(GLFW_KEY_DELETE)) {
+        if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_DELETE)) {
             propertiesWindow.getActiveObject()?.let {
                 it.destroy()
                 propertiesWindow.setActiveObject(null)
+                boneTreeWindow.setActiveObject(null)
             }
         }
 
         ImGui.end()
     }
 
-    private fun doTreeNode(obj: GameObject, index: Int): Boolean {
+    private fun doTreeNode(obj: GameObject, index: Int) {
         ImGui.pushID(index)
 
         var flags = ImGuiTreeNodeFlags.FramePadding or ImGuiTreeNodeFlags.OpenOnArrow or ImGuiTreeNodeFlags.SpanAvailWidth
+        if (obj.children.isEmpty()) {
+            flags = flags or ImGuiTreeNodeFlags.Leaf
+        }
         if (obj == propertiesWindow.getActiveObject()) {
             flags = flags or ImGuiTreeNodeFlags.Selected
         }
         
-        val result = ImGui.treeNodeEx(obj.name + "##" + index, flags, obj.name)
+        val nodeOpen = ImGui.treeNodeEx(obj.name + "##" + index, flags)
+
         if (ImGui.isItemClicked()) {
             propertiesWindow.setActiveObject(obj)
+            boneTreeWindow.setActiveObject(obj)
         }
         
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.menuItem("${Icons.TRASH} Delete")) {
                 obj.destroy()
+                if (obj == propertiesWindow.getActiveObject()) {
+                    propertiesWindow.setActiveObject(null)
+                    boneTreeWindow.setActiveObject(null)
+                }
             }
             ImGui.endPopup()
         }
+
+        if (nodeOpen) {
+            obj.children.forEachIndexed { childIndex, child ->
+                doTreeNode(child, childIndex)
+            }
+            ImGui.treePop()
+        }
         
         ImGui.popID()
-
-        return result
     }
 }
