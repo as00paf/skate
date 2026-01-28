@@ -85,7 +85,7 @@
 ## Riding Integration
 ### Phase A: Physics Locking
 - [x] **Task 10.1:** Parent Player Model transform to the `BoardRig` transform with a vertical offset. Make sure the skateboard and player model are rendered in a proportional way, ask for confirmation.
-- [ ] **Task 10.2:** Implement "Snap to Board" logic to prevent the player from drifting off during high-speed turns.
+- [x] **Task 10.2:** Implement "Snap to Board" logic to prevent the player from drifting off during high-speed turns.
 
 ### Phase B: Animation Posing
 - [ ] **Task 10.3:** Load and apply a static "Ride" pose (knees bent, arms out).

@@ -68,6 +68,7 @@ class PlayerController : Component() {
             handleJumping()
             handleFlicks(dt)
             handleCatch(dt)
+            handleStability()
             checkBail()
         } else {
             handleWalking(dt)
@@ -78,6 +79,13 @@ class PlayerController : Component() {
         if (vel != null) {
             lastVelocity.set(vel.x, vel.y, vel.z)
         }
+    }
+
+    private fun handleStability() {
+        val s = skater ?: return
+        // Force snap to board top center
+        s.transform.translation.set(0f, 0.02f, 0f)
+        s.transform.rotation.set(0f, 0f, 0f)
     }
 
     private fun handleWalking(dt: Float) {

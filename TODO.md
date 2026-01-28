@@ -76,7 +76,7 @@
 
 ### 10. Riding Integration
 - [x] **Task 10.1: Physics Locking**: Parent Player Model to `BoardRig` with vertical offset. **Verify scale proportions with User.**
-- [ ] **Task 10.2: Stability Logic**: Implement "Snap to Board" logic to prevent drift during high-speed turns.
+- [x] **Task 10.2: Stability Logic**: Implement "Snap to Board" logic to prevent drift during high-speed turns.
 - [ ] **Task 10.3: Animation Posing**: Apply static "Ride" pose (knees bent, arms out).
 - [ ] **Task 10.4: Procedural Lean**: Implement spine rotation tied to LS steering input.
 - [ ] **Task 10.5: State Manager**: Implement `PlayerState` manager (IDLE, RIDING, PUSHING).

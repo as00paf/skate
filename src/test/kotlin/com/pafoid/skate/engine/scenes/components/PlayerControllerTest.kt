@@ -93,4 +93,26 @@ class PlayerControllerTest {
         // Then: State should be RIDING
         assertEquals(PlayerState.RIDING, controller.state)
     }
+
+    @Test
+    fun `test snap to board logic during riding`() {
+        // Given: RIDING state
+        controller.state = PlayerState.RIDING
+        val skater = gameObject.children.find { it.name == "Skater" }!!
+        
+        // When: Local transform is modified (drift)
+        skater.transform.translation.set(1f, 1f, 1f)
+        skater.transform.rotation.set(45f, 45f, 45f)
+        
+        controller.update(0.016f)
+        
+        // Then: It should be snapped back to (0, 0.02, 0) and (0, 0, 0)
+        assertEquals(0f, skater.transform.translation.x)
+        assertEquals(0.02f, skater.transform.translation.y)
+        assertEquals(0f, skater.transform.translation.z)
+        
+        assertEquals(0f, skater.transform.rotation.x)
+        assertEquals(0f, skater.transform.rotation.y)
+        assertEquals(0f, skater.transform.rotation.z)
+    }
 }
