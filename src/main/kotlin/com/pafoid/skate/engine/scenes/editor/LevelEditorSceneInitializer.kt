@@ -43,7 +43,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff.addComponent(MeasureTool())
         scene.addGameObjectToScene(editorStuff)
 
-        // FEATURE 1: Basic Rendering (Skateboard)
         val skateGo = GameObject("Skateboard")
         skateGo.transform.translation.set(0f, 2f, 0f)
         skateGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
@@ -56,7 +55,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         skateGo.addComponent(PlayerController())
         scene.addGameObjectToScene(skateGo)
 
-        // FEATURE 1.1: Player Character (Skater)
+
         val playerGo = GameObject("Skater")
         // Parenting: Skater follows Skateboard
         skateGo.addChild(playerGo)
@@ -70,7 +69,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         playerGo.addComponent(com.pafoid.skate.engine.animation.Animator())
         scene.addGameObjectToScene(playerGo)
 
-        // FEATURE 2: Bullet Physics (Floor)
         val ground = GameObject("Floor")
         ground.transform.translation.set(0f, -0.5f, 0f)
         ground.transform.scale.set(100f, 0.5f, 100f)
@@ -109,9 +107,10 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         }
         
         skaterGo?.let { go ->
-            // Assume the model is ~1.8 units tall at scale 1.0
+            // The model height is now baked into vertices at ~1.8m via AssimpLoader
             val height = go.transform.scale.y * 1.8f 
-            imgui.ImGui.text("Approx Skater Height: ${String.format("%.2f", height)}m (Target: 1.80m)")
+            imgui.ImGui.text("World Skater Height: ${String.format("%.2f", height)}m (Target: 1.80m)")
+            imgui.ImGui.text("Skater Object Scale: ${String.format("%.2f", go.transform.scale.y)}")
         }
 
         imgui.ImGui.separator()

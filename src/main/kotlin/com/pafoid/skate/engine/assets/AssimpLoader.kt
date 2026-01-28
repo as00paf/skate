@@ -36,17 +36,12 @@ class AssimpLoader {
 
         // Task 3.1: Unit Normalization
         var unitScale = 1.0f
-        val metadata = scene.mMetaData()
-        if (metadata != null) {
-            for (i in 0 until metadata.mNumProperties()) {
-                val mKey = metadata.mKeys()!!.get(i).dataString()
-                if (mKey == "UnitScaleFactor") {
-                    // entry.mData() is a pointer to the value
-                }
-            }
-        }
         
-        if (filePath.contains("skateboard", ignoreCase = true)) unitScale = 0.01f
+        if (filePath.contains("skateboard", ignoreCase = true)) {
+            unitScale = 0.01f
+        } else if (filePath.contains("Superhero", ignoreCase = true)) {
+            unitScale = 6.0f // Superhero model is tiny (~0.3m), scale up to ~1.8m
+        }
         
         val rootTransform = org.joml.Matrix4f().scale(unitScale)
         processNode(scene.mRootNode()!!, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
