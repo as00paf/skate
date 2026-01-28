@@ -96,3 +96,23 @@
 
 ### 13. Final Polish
 - [ ] **App Icon**: Design and integrate native window icon.
+
+### 14. Maintenance & Integrity
+- [x] **Lingering Branches**: List all the branches on the local and remote repository that are not main and master.
+- [x] **Branch Audit**: Make sure no code was lost in any of these branches and confirm with the user if necessary.
+- [x] **Branch cleanup**: Delete all the branches except for the master branch and the main branch. This is a risky operation so you must absolutely confirm with the user before proceeding.
+
+### 15.1 Structural Integrity
+- [ ] **Task 15.1.1: File Atomization**: Ensure every class has its own dedicated file. No multi-class files (e.g., separating `PlayerState` from `PlayerController`).
+- [ ] **Task 15.1.2: Hardcode Purge**: Move "Magic Numbers" (physics constants, shader paths, default FOV) into a centralized `Constants.kt` or relevant companion objects.
+- [ ] **Task 15.1.3: Package Reorganization**: Audit the package structure (e.g., `com.skatesim.physics`, `com.skatesim.render`) to ensure logic is logically grouped.
+
+### 15.2 Readability & Documentation
+- [ ] **Task 15.2.1: Semantic Naming**: Rename variables, methods, and classes to be descriptive (e.g., `rot` -> `currentRotation`, `handle()` -> `processInput()`).
+- [ ] **Task 15.2.2: Contextual Commenting**: Add KDoc/Javadoc comments to complex math functions, especially in the **Skeletal Animation** and **Raycast Suspension** modules.
+- [ ] **Task 15.2.3: Shader Documentation**: Add comments to `.vert` and `.frag` files explaining the coordinate spaces (World vs. View vs. Clip).
+
+### 15.3 Formatting & Style
+- [ ] **Task 15.3.1: Whitespace Consolidation**: Remove all double/triple breaking spaces. Enforce a single-line break between methods and properties.
+- [ ] **Task 15.3.2: Linting Pass**: Apply standard Kotlin/JVM formatting rules (consistent indentation, curly brace placement, and trailing commas).
+- [ ] **Task 15.3.3: Import Optimization**: Remove unused imports and organize them alphabetically.
