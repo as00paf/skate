@@ -60,10 +60,19 @@
 - [ ] **GPU Skinning**: Update PBR Vertex Shader to compute final positions using the Matrix Palette (4-bone influence).
 - [ ] **Animation Debugger**: Build ImGui window with clip selection, timeline scrubbing, and bone visualizer overlay.
 
-### 9. Trick Detection System
-- [ ] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.
-- [ ] **Trick UI**: Viewport overlay to display identified tricks (e.g., "Kickflip", "360 Shove-it").
-- [ ] **TDD Validation**: Unit tests for rotation-to-string trick identification.
+### 9. Character Controller & Camera
+- [ ] **Task 9.1: State Toggle**: Map Gamepad **Y Button** to toggle Walking/Riding with teleport offsets.
+- [ ] **Task 9.2: On-Foot Locomotion**:
+  - Implement LS movement relative to Camera Forward.
+  - Implement **A Button** Jump logic for Walking state.
+  - Trigger `WALK` and `JUMP` animation clips.
+- [ ] **Task 9.3: Orbital Camera**:
+  - Implement RS **Orbit Control** (Yaw/Pitch).
+  - Create presets for FOV, Offset, and Distance.
+  - Implement smooth LERP transitions between presets.
+- [ ] **Task 9.4: World Alignment**:
+  - Audit all Y-offsets for unit consistency.
+  - Implement raycast floor snapping for the Walking state.
 
 ### 10. Riding Integration
 - [ ] **Task 10.1: Physics Locking**: Parent Player Model to `BoardRig` with vertical offset. **Verify scale proportions with User.**
@@ -73,19 +82,10 @@
 - [ ] **Task 10.5: State Manager**: Implement `PlayerState` manager (IDLE, RIDING, PUSHING).
 - [ ] **Task 10.6: Push Mechanic**: Trigger physics impulses based on specific animation frames.
 
-### 11. Character Controller & Camera
-- [ ] **Task 11.1: State Toggle**: Map Gamepad **Y Button** to toggle Walking/Riding with teleport offsets.
-- [ ] **Task 11.2: On-Foot Locomotion**:
-  - Implement LS movement relative to Camera Forward.
-  - Implement **A Button** Jump logic for Walking state.
-  - Trigger `WALK` and `JUMP` animation clips.
-- [ ] **Task 11.3: Orbital Camera**:
-  - Implement RS **Orbit Control** (Yaw/Pitch).
-  - Create presets for FOV, Offset, and Distance.
-  - Implement smooth LERP transitions between presets.
-- [ ] **Task 11.4: World Alignment**:
-  - Audit all Y-offsets for unit consistency.
-  - Implement raycast floor snapping for the Walking state.
+### 9. Trick Detection System
+- [ ] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.
+- [ ] **Trick UI**: Viewport overlay to display identified tricks (e.g., "Kickflip", "360 Shove-it").
+- [ ] **TDD Validation**: Unit tests for rotation-to-string trick identification.
 
 ### 12. Final Polish
 - [ ] **App Icon**: Design and integrate native window icon.
