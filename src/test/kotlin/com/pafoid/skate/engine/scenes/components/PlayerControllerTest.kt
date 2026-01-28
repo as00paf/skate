@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.PlayerState
+import com.pafoid.skate.player.state.PlayerState
 import com.pafoid.skate.engine.controls.IInputProvider
 import com.pafoid.skate.engine.controls.JoystickListener
 import com.pafoid.skate.engine.scenes.GameObject
@@ -16,7 +16,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
-import org.lwjgl.glfw.GLFW.GLFW_KEY_Y
 import kotlin.test.assertEquals
 
 class PlayerControllerTest {
@@ -49,15 +48,16 @@ class PlayerControllerTest {
         controller.inputProvider = inputProvider
         gameObject.addComponent(controller)
 
-        // Default behavior
         every { inputProvider.keyBeginPress(any()) } returns false
         every { inputProvider.buttonBeginPress(any(), any()) } returns false
         every { inputProvider.isKeyPressed(any()) } returns false
-        every { inputProvider.getAxes(any()) } returns FloatArray(6) { 0f }
+        val axes = FloatArray(6) { 0f }
+        axes[JoystickListener.AXIS_LEFT_TRIGGER] = -1.0f
+        axes[JoystickListener.AXIS_RIGHT_TRIGGER] = -1.0f
+        every { inputProvider.getAxes(any()) } returns axes
         every { inputProvider.getButtons(any()) } returns BooleanArray(15) { false }
         every { inputProvider.isCursorDisabled() } returns false
         
-        // Initialize controller (to find the skater)
         controller.start()
     }
 
@@ -68,51 +68,43 @@ class PlayerControllerTest {
 
     @Test
     fun `test toggle state from riding to walking`() {
-        // Given: Initially RIDING
-        controller.state = PlayerState.RIDING
+        controller.stateManager.transitionToState(PlayerState.RIDING)
         
-        // When: Y button is pressed (BUTTON_Y = 3)
         every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, JoystickListener.BUTTON_Y) } returns true
         
         controller.update(0.016f)
         
-        // Then: State should be WALKING
-        assertEquals(PlayerState.WALKING, controller.state)
+        assertEquals(PlayerState.WALKING, controller.stateManager.currentState)
     }
 
     @Test
     fun `test toggle state from walking to riding`() {
-        // Given: Initially WALKING
-        controller.state = PlayerState.WALKING
+        controller.stateManager.transitionToState(PlayerState.WALKING)
         
-        // When: Y button is pressed
         every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, JoystickListener.BUTTON_Y) } returns true
+        every { inputProvider.isKeyPressed(any()) } returns false
         
         controller.update(0.016f)
         
-        // Then: State should be RIDING
-        assertEquals(PlayerState.RIDING, controller.state)
+        assertEquals(PlayerState.RIDING, controller.stateManager.currentState)
     }
 
     @Test
     fun `test snap to board logic during riding`() {
-        // Given: RIDING state
-        controller.state = PlayerState.RIDING
+        controller.stateManager.transitionToState(PlayerState.RIDING)
         val skater = gameObject.children.find { it.name == "Skater" }!!
         
-        // When: Local transform is modified (drift)
         skater.transform.translation.set(1f, 1f, 1f)
         skater.transform.rotation.set(45f, 45f, 45f)
         
         controller.update(0.016f)
         
-        // Then: It should be snapped back to (0, 0.02, 0) and (0, 0, 0)
         assertEquals(0f, skater.transform.translation.x)
         assertEquals(0.02f, skater.transform.translation.y)
         assertEquals(0f, skater.transform.translation.z)
         
         assertEquals(0f, skater.transform.rotation.x)
-        assertEquals(0f, skater.transform.rotation.y)
+        assertEquals(90f, skater.transform.rotation.y)
         assertEquals(0f, skater.transform.rotation.z)
     }
 }

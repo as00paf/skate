@@ -10,7 +10,8 @@ import com.pafoid.skate.engine.toWorldMatrix
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 import com.pafoid.skate.engine.SkateStance
-import com.pafoid.skate.engine.PlayerState
+import com.pafoid.skate.player.state.PlayerState
+import com.pafoid.skate.player.state.PlayerStateManager
 
 import com.pafoid.skate.engine.controls.IInputProvider
 import com.pafoid.skate.engine.controls.InputProvider
@@ -32,7 +33,7 @@ class PlayerController : Component() {
     
     var walkSpeed = 3.0f
 
-    var state = PlayerState.RIDING
+    @Transient lateinit var stateManager: PlayerStateManager
 
     @Transient var currentStance = SkateStance.REGULAR
     @Transient var isSwitch = false
@@ -60,26 +61,13 @@ class PlayerController : Component() {
         skater?.let { s: GameObject ->
             animator = s.getComponent<Animator>()
         }
+        stateManager = PlayerStateManager(this)
+        stateManager.transitionToState(PlayerState.RIDING)
     }
 
     override fun update(dt: Float) {
         handleStateToggle()
-
-        if (state == PlayerState.RIDING) {
-            updateCurrentStance()
-            handleSteering(dt)
-            handlePushing(dt)
-            handleJumping()
-            handleFlicks(dt)
-            handleStability()
-            handleCatch(dt)
-            updateRidingAnimation(dt)
-            updateProceduralLean(dt)
-            checkBail()
-        } else {
-            handleWalking(dt)
-            handleGroundSnapping()
-        }
+        stateManager.update(dt)
 
         val vel = rb?.linearVelocity
         if (vel != null) {
@@ -87,7 +75,33 @@ class PlayerController : Component() {
         }
     }
 
-    private fun handleStability() {
+    fun isMoving(): Boolean {
+        return rb?.linearVelocity?.length() ?: 0f > 0.1f
+    }
+
+    fun isPushing(): Boolean {
+        var multiplier = 0f
+        if (inputProvider.isKeyPressed(GLFW_KEY_W)) {
+            multiplier = 1f
+        }
+        inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
+            if (axes.size > JoystickListener.AXIS_LEFT_Y) {
+                val stickY = -axes[JoystickListener.AXIS_LEFT_Y]
+                if (stickY > 0.1f) {
+                    multiplier = Math.max(multiplier, stickY)
+                }
+            }
+            if (axes.size > JoystickListener.AXIS_RIGHT_TRIGGER) {
+                val rt = (axes[JoystickListener.AXIS_RIGHT_TRIGGER] + 1f) / 2f
+                if (rt > 0.1f) {
+                    multiplier = Math.max(multiplier, rt)
+                }
+            }
+        }
+        return multiplier > 0f
+    }
+
+    fun handleStability() {
         val s = skater ?: return
         // Force snap to board top center
         s.transform.translation.set(0f, 0.02f, 0f)
@@ -96,7 +110,7 @@ class PlayerController : Component() {
         s.transform.rotation.set(0f, 90f, 0f)
     }
 
-    private fun updateRidingAnimation(dt: Float) {
+    fun updateRidingAnimation(dt: Float) {
         val anim = animator ?: return
         
         // Try to find "ride" or "idle" for riding, otherwise use the first available
@@ -107,10 +121,10 @@ class PlayerController : Component() {
         // but for now let's let it play to see what it is.
     }
 
-    private fun updateProceduralLean(dt: Float) {
-        if (state != PlayerState.RIDING) return
-        val entity = skater?.getComponent<Entity>() ?: return
-        val skeleton = entity.gameObject.getComponent<com.pafoid.skate.engine.animation.Skeleton>() ?: entity.model.skeleton ?: return
+fun updateProceduralLean(dt: Float) {
+    if (stateManager.currentState !is PlayerState.RIDING) return
+    val entity = skater?.getComponent<Entity>() ?: return
+    val skeleton = entity.gameObject.getComponent<com.pafoid.skate.engine.animation.Skeleton>() ?: entity.model.skeleton ?: return
 
         var steerInput = 0f
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
@@ -141,7 +155,7 @@ class PlayerController : Component() {
         }
     }
 
-    private fun handleWalking(dt: Float) {
+    fun handleWalking(dt: Float) {
         val scene = SceneManager.getCurrentScene() ?: return
         val camera = scene.camera
         val target = skater ?: return
@@ -205,7 +219,7 @@ class PlayerController : Component() {
         }
     }
 
-    private fun handleGroundSnapping() {
+    fun handleGroundSnapping() {
         val scene = SceneManager.getCurrentScene() ?: return
         val target = skater ?: return
         val pos = target.transform.translation
@@ -231,8 +245,8 @@ class PlayerController : Component() {
             val s = skater ?: return
             val scene = SceneManager.getCurrentScene() ?: return
 
-            if (state == PlayerState.RIDING) {
-                state = PlayerState.WALKING
+            if (stateManager.currentState == PlayerState.RIDING) {
+                stateManager.transitionToState(PlayerState.WALKING)
                 physics?.enabled = false
                 
                 // Transition to World Space
@@ -256,7 +270,7 @@ class PlayerController : Component() {
                 s.transform.translation.add(right)
                 
             } else {
-                state = PlayerState.RIDING
+                stateManager.transitionToState(PlayerState.RIDING)
                 physics?.enabled = true
                 
                 // Reparent back to board
@@ -270,7 +284,7 @@ class PlayerController : Component() {
         }
     }
 
-    private fun updateCurrentStance() {
+    fun updateCurrentStance() {
         val body = rb ?: return
         val velocity = body.linearVelocity
         if (velocity.length() < 0.5f) return 
@@ -294,7 +308,7 @@ class PlayerController : Component() {
 
     override fun imgui() {
         imgui.ImGui.begin("Skater Debug")
-        imgui.ImGui.text("State: $state")
+        imgui.ImGui.text("State: ${stateManager.currentState::class.simpleName}")
         imgui.ImGui.text("Preferred Stance: $preferredStance")
         imgui.ImGui.text("Current Stance: $currentStance")
         imgui.ImGui.text("Is Switch: $isSwitch")
@@ -314,7 +328,7 @@ class PlayerController : Component() {
         imgui.ImGui.end()
     }
 
-    private fun checkBail() {
+    fun checkBail() {
         val phys = physics ?: return
         val currentVelocityJOML = rb?.linearVelocity ?: return
         
@@ -389,7 +403,7 @@ class PlayerController : Component() {
         physics?.enabled = false
     }
 
-    private fun handleCatch(dt: Float) {
+    fun handleCatch(dt: Float) {
         val rb3d = rb ?: return
         val rotation = gameObject.transform.rotation
         
@@ -422,7 +436,7 @@ class PlayerController : Component() {
         }
     }
 
-    private fun handleFlicks(dt: Float) {
+    fun handleFlicks(dt: Float) {
         val flick = inputBuffer.getRightStickFlickVelocity(GLFW_JOYSTICK_1, 0.1f)
         if (flick.length() > 5.0f) {
             // Apply torque based on flick
@@ -441,7 +455,7 @@ class PlayerController : Component() {
         }
     }
 
-    private fun handleSteering(dt: Float) {
+    fun handleSteering(dt: Float) {
         var steer = 0f
         
         // Keyboard
@@ -469,7 +483,7 @@ class PlayerController : Component() {
         }
     }
 
-    private fun handlePushing(dt: Float) {
+    fun handlePushing(dt: Float) {
         var multiplier = 0f
         
         // Keyboard
@@ -504,7 +518,7 @@ class PlayerController : Component() {
         }
     }
 
-    private fun handleJumping() {
+    fun handleJumping() {
         var jump = inputProvider.keyBeginPress(GLFW_KEY_SPACE)
         
         // Controller (Button A/Cross)

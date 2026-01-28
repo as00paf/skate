@@ -65,6 +65,10 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
     maxHeapSize = "2G"
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+    }
 }
 
 kotlin {
