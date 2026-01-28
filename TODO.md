@@ -87,7 +87,7 @@
 - [x] **Local Override System**: Create a `BoneOverride` component that stores custom Quaternions for specific bone IDs.
 - [x] **Pose Gizmos**: (Optional) Allow clicking a bone in the viewport to select it in the UI.
 - [x] **JSON Pose Persistence**: Implement Save/Load for bone rotation maps (e.g., `assets/poses/ride_pose.json`).
-- [ ] **Test Tool**: Add a "Mirror Pose" toggle (e.g., if you pose the left leg, it copies to the right) to speed up stance creation.
+- [x] **Test Tool**: Add a "Mirror Pose" toggle (e.g., if you pose the left leg, it copies to the right) to speed up stance creation.
 
 ### 12. Trick Detection System
 - [ ] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.

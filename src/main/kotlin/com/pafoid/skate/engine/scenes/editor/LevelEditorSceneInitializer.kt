@@ -53,6 +53,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f))) // 0.8m x 0.04m x 0.2m
         skateGo.addComponent(SkateboardPhysics())
         skateGo.addComponent(PlayerController())
+        skateGo.addComponent(TrickDetector())
         scene.addGameObjectToScene(skateGo)
 
 
