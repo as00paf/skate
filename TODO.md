@@ -1,158 +1,96 @@
-# SkateSim MVP - TODO List
+# 🛹 SkateSim MVP - Master TODO
 
-## Phase 5: High-Level Execution Plan
+## 🟢 Phase A: Core Infrastructure [COMPLETE]
 
-### 1. File Management & Setup
-- [x] **Asset Extraction**: Unzip the player model from the assets folder and organize the resulting files.
-    - [x] **Diagnostics**:
-        - [x] Implement a real-time FPS counter.
-        - [x] **Custom Physics Debug**: Implement manual wireframe rendering for Bullet collision shapes using DebugDraw.
+### 1. Engine & File Management
+- [x] **Async Boot**: Refactored `init()` with Kotlin Coroutines for non-blocking splash screen.
+- [x] **Splash UX**: Implemented `EngineState` machine and full-screen splash shader (Y-flip fixed).
+- [x] **Asset Extraction**: Automated unzip and organization of `player_model.zip`.
+- [x] **GPU Sync**: Thread-safe `ConcurrentLinkedQueue` for uploading meshes/textures from background threads.
 
-### 2. Atmosphere & Environment
-- [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
-- [x] **Dynamic Skybox (Skater XL Style)**:
-    - [x] **HDRI Generation**: Generate an equirectangular HDRI texture using nanobanana.
-    - [x] **Sky Dome Rendering**: Implement a UV Sphere renderer for the Sky Dome.
-    - [x] **Sky Shader**: Create a shader with u_skyTint, u_exposure, and fog blending.
-    - [x] **Light Sync**: Sync Directional Light vector to Sky Dome rotation.
-- [x] **Obstacle Palette**: Add Rail, Ledge, and Kicker Ramp prefabs to the editor library.
+### 2. glTF 2.0 Integration
+- [x] **Geometry**: Support for Standard Attributes (Tangent space), Index Accessors, and Primitives.
+- [x] **PBR Material**: Metallic-Roughness model with sRGB-to-Linear pipeline and Alpha/Double-Sided support.
+- [x] **Hierarchy**: Full TRS (Translation, Rotation, Scale) support with parent-child matrix multiplication.
+- [x] **Skinning Data**: Support for `JOINTS_0` and `WEIGHTS_0` accessors and Inverse Bind Matrices.
+- [x] **Binary/Embedded**: Support for `.glb` and Base64 Data URIs.
 
-### 3. Analog Control & Skater Integration
-- [x] **Skater Model**:
-    - [x] Add player model to the scene.
-    - [x] Link player model to physics rig.
-- [x] **Controller Support**: Full Gamepad Support (analog steering, flick mechanics).
+### 3. Professional Level Editor
+- [x] **UI/UX Styling**: 'Pro Dark' theme with FontAwesome icon integration.
+- [x] **Viewport Overlays**: Transparent overlays for Simulation Controls, FPS, and Gamepad HUD.
+- [x] **Prefab System**: Grid-based thumbnail system with Search/Filter and Viewport Drag-and-Drop.
+- [x] **Serialization**: JSON Scene Save/Load (GSON) and Persistent `settings.json`.
+- [x] **Gizmo Suite**: Complete Translate/Rotate/Scale (QWER) with instant Bullet Physics scaling sync.
 
-### 4. glTF Core Features Implementation [COMPLETE]
-- **Mesh & Geometry**
-    - [x] **Primitive Support**: Handle GL_TRIANGLES, GL_TRIANGLE_STRIP, and GL_TRIANGLE_FAN.
-    - [x] **Standard Attributes**: Support Position (VEC3), Normal (VEC3), and Tangent (VEC4).
-    - [x] **Texture Coordinates**: Support at least two UV sets (TEXCOORD_0, TEXCOORD_1).
-    - [x] **Vertex Coloring**: Support COLOR_0 (RGB/RGBA) multiplication in the fragment shader.
-    - [x] **Index Buffer Accessors**: Support for UNSIGNED_BYTE, UNSIGNED_SHORT, and UNSIGNED_INT.
-- **PBR Material Model (Metallic-Roughness)**
-    - [x] **Base Color**: Factor (RGBA) and Texture (RGBA) with sRGB-to-Linear conversion.
-    - [x] **Metallic-Roughness**: Blue channel = Metallic, Green channel = Roughness.
-    - [x] **Normal Map**: Support for tangent-space normals with scale influence.
-    - [x] **Ambient Occlusion**: Support for the occlusionTexture (Red channel).
-    - [x] **Emissive Map**: Support for emissiveTexture and emissiveFactor.
-    - [x] **Alpha Pipeline**: Handle OPAQUE, MASK (alphaCutoff), and BLEND modes.
-    - [x] **Double Sided**: Implement the doubleSided flag by disabling backface culling per-material.
-- **Transformation & Hierarchy**
-    - [x] **Node Hierarchy**: Proper parent-child matrix multiplication to maintain local-to-world transforms.
-    - [x] **TRS Support**: Handle nodes defined by Translation, Rotation (Quaternions), and Scale.
-    - [x] **Coordinate System**: Convert glTF Right-Handed (Y-Up) to your engine's internal coordinate system if different.
-- **Skinning & Animation**
-    - [x] **Joints & Weights**: Support for vertex skinning with up to 4 joint influences (JOINTS_0, WEIGHTS_0).
-    - [x] **Inverse Bind Matrices**: Proper calculation of the skin's global transform.
-    - [ ] **Animation Samplers**: Implementation of LINEAR, STEP, and CUBICSPLINE interpolation.
-- **Data & Buffers**
-    - [x] **Binary Format**: Support for .glb (Binary glTF) container parsing.
-    - [x] **External Buffers**: Loading of external .bin files and URI-based image assets.
-    - [x] **Embedded Data**: Decoding of Base64 Data URIs within t3he JSON.
+### 4. Testing & QA
+- [x] **Unit Testing**: JUnit 5 + MockK integration for Physics and JOML math.
+- [x] **Graphics Regression**: Offscreen rendering and "Gold Master" image comparison engine.
+- [x] **Simulation Tools**: MockGamepad for input testing and DebugDraw for Bullet wireframes.
 
-### 5. Testing & Quality Assurance
-- **Unit Testing Framework**
-    - [x] **Framework Setup**: Integrate JUnit 5 and MockK.
-    - [x] **Physics Unit Tests**: Create tests for the BoardRig and ContinuousVectoring logic.
-    - [x] **Math Validation**: Unit tests for JOML transformations.
-- **Graphics Regression Testing**
-    - [x] **Frame Capture Utility**: Implement utility to capture framebuffer and save as .png.
-    - [x] **Offscreen Rendering**: Configure a test mode for rendering without a physical window.
-    - [x] **Visual Assertion Engine**: Compare new renders against "Gold Master" screenshots.
-    - [x] **Shader Validation**: Automated tests to ensure shaders compile successfully.
-- **Architecture & Mocking**
-    - [x] **Interface Extraction**: Refactor Renderer and PhysicsWorld into interfaces.
-    - [x] **Input Simulation**: Create MockGamepad class for controller simulation.
+---
 
-### 6. Editor Improvements
-- [x] **Enhanced Gizmo**: Upgrade to include a Scale Gizmo.
-- [x] **Physics Sync**: Instant reflection of scaling in physical collision bounds.
-- [x] **Workflow**: Add hotkeys (QWER) for tool switching.
+## 🟡 Phase B: Simulation & Atmosphere [COMPLETE]
 
-### 7. Performance & Boot Sequence
-- [x] **Boot Strapping:** Refactor the `init()` sequence to use Kotlin Coroutines.
-  - The Main Thread must immediately open the window and show the Splash Screen.
-  - Heavy assets must load on `Dispatchers.IO`.
-- [x] **Splash Screen:** - Generate a splash screen named `splash_screen.png` based on this prompt : A professional game splash screen for a skateboarding simulation titled 'PAFSK8' that looks like a Thrasher magazine cover
-- [x] **Splash Screen:** - Implement a full-screen quad shader to display the `splash_screen.png`.
-  - Integrate a "Loading Progress" variable that updates based on completed tasks.
-- [x] **OpenGL Context Sync:** Use a thread-safe queue to "upload" loaded textures and meshes to the GPU once the background worker finishes parsing them.
-- [x] **Thread Monitoring:** Add a debug view in ImGui showing CPU usage per thread (Main, Physics, Asset-IO).
-  Async Boot & Splash UX :
-- [x] **Task 0.1: Window Lifecycle & Focus:** - Set `GLFW_VISIBLE` to false initially.
-  - Create the window, then call `glfwShowWindow` and `glfwFocusWindow` once the Splash Shader is ready.
-- [x] **Task 0.2: Loading State Machine:** - Implement `EngineState { BOOTING, LOADING, RUNNING }`.
-  - Create a `LoadingProgress` atomic float (0.0 to 1.0) shared between threads.
-- [x] **Task 0.3: Background Asset Thread:** - Use `Dispatchers.IO` to unzip assets and run Assimp parsing.
-  - **Crucial:** Background thread must *not* call OpenGL functions. It must store raw data in a `ConcurrentLinkedQueue`.
-- [x] **Task 0.4: Main Thread Splash Loop:** - Render a full-screen quad with the splash image.
-  - Render an ImGui progress bar synced to `LoadingProgress`.
-- [x] **Task 0.5: GPU Upload & Handoff:** - On the Main Thread, poll the `ConcurrentLinkedQueue`.
-  - Call `glBufferData` only when the Main Thread sees data is ready.
-  - Transition to `RUNNING` with a 1-second alpha fade-out.
+### 5. Atmosphere & Environment
+- [x] **Dynamic Sky (XL Style)**: UV Sphere Sky Dome with HDRI, Exposure, and Tint controls.
+- [x] **Light Sync**: Directional Light (Sun) synced to Sky Dome rotation.
+- [x] **Fog System**: Distance-based fading integrated into PBR shader.
+- [x] **Obstacle Library**: Rail, Ledge, Kicker, and Skatelite-textured ramps.
 
-### 8. 🛹 The Board Rig Technical Checklist
+### 6. The Board Rig (Physics)
+- [x] **Assembly**: `btCompoundShape` for Deck/Trucks with mass-inertia calibration.
+- [x] **Raycast Suspension**: 4-point Hooke’s Law ($F = kx + dv$) spring logic.
+- [x] **Procedural Pop**: Localized tail impulses and center-of-mass leverage.
+- [x] **Input Mapping**: Continuous Vectoring for local-space torques based on RS-flicks.
+- [x] **Stance Engine**: Support for Regular/Goofy and Switch/Nollie/Fakie states.
 
-#### 1. Physics Assembly (Bullet Physics)
-- [x] **Compound Shape**: Create a btCompoundShape with Deck and Trucks.
-- [x] **Rigid Body Config**: Initialize with specific mass and calculated inertia.
-- [x] **Material Properties**: Set appropriate friction for Deck (high) and Trucks (low).
+---
 
-#### 2. Raycast Suspension (The "Wheels")
-- [x] **Suspension Points**: Define 4 local vectors for wheel positions.
-- [x] **Spring Logic**: Implement Hooke’s Law ($F = k \cdot x + d \cdot v$) for each point.
-- [x] **Impulse Application**: Apply forces at raycast origins for realistic leaning.
+## 🔴 Phase C: Active Tasks [NEXT STEPS]
 
-#### 3. Procedural "Pop" & "Flick" Logic
-- [x] **Pop Point**: Localized upward impulse at tail with center downward force.
-- [x] **Torque Mapping**: Local-space torques ($X, Y, Z$) based on analog stick flick velocity.
+### 7. Real-World Scaling (Unit System)
+# 📏 Unit System & Scaling Implementation
 
-#### 4. State Management
-- [x] **Grounded Check**: Consider grounded if at least 3 of 4 rays hit the floor.
-- [x] **Preferred Stance Logic**: Support Regular vs Goofy by mirroring input-to-torque mapping.
-- [x] **Current Stance Logic**: Support Regular, Switch, Nollie and Fakie to define how the player is standing on the board.    
+## 🎯 Objective
+Establish **1.0 Engine Unit = 1.0 Meter** as the global standard. All physics, assets, and UI measurements must derive from this base to ensure simulation accuracy.
 
-### 9. Professional Level Editor
-- [x] **Task 7.1: UI Styling & Icons:** - Apply a custom 'Pro Dark' theme (like a Slate or Charcoal gray).
-  - Merge FontAwesome .ttf into the ImGui font atlas for buttons.
-- [x] **Task 7.2: Scene Serialization (JSON):** - Integrate a JSON library (e.g., Jackson or kotlinx.serialization).
-  - Implement `SceneSerializer` to save/load all objects in the Hierarchy. (Using GSON)
-- [x] **Task 7.3: Viewport Overlays:** - Move 'Play/Stop' and 'FPS' to a transparent `ImGuiWindowFlags_NoDecoration` overlay inside the 3D viewport.
-- [x] **Task 7.4: Drag-and-Drop:** - Allow dragging items from the 'Prefabs' window directly into the 3D Viewport.
-- [x] **Task 7.5: Modern Property Widgets:** - Implement 'Color Pickers' for materials and 'Draggable Floats' for all transform values.
-- [x] **Task 7.6: File Dialog Integration:** - Add 'Save As...' and 'Open...' buttons using a native file picker (like TinyFileDialogs).
-- [x] **Task 7.7: Splash Fix:** Correct the UV coordinates in the Splash Shader to fix the vertical flip (Y-axis inversion).
-- [x] **Task 7.8:** **System Settings Persistence:**
-  - Create a `SettingsManager` to save/load `settings.json`.
-  - Implement ImGui toggles for Windowed vs. Borderless Fullscreen and other available options
-  - Persist resolution and V-Sync settings.
-- [x] **Task 7.9:** **Input Visualization (Gamepad Overlay):**
-  - Move the GamePad overlay to the bottom right of the game viewport
-  - Render a semi-transparent HUD background element showing an Xbox/PlayStation controller.
-  - It should visually represent the Analog Stick positions and button presses.
-  - Use dynamic stick and button highlights.
-  - It needs to be no bigger than 10% of the width of the screen and 10% of the height of the screen (Added: Configurable slider 5%-50% with default 22.5%)
-- [x] **Task 7.10:** Scene Serialization: Impelement JSON Save/Load for all level GameObjects.
-- [x] **Task 7.11:** Viewport Overlays: Move simulation controls and FPS to a transparent viewport layer.
-- [x] **Task 7.12:** GamePad Overlay: Use 'xbox_controller.png' or 'playstation_controller.png' as the background for the simulation controls and move it to the bottom right of the game viewport window.
-- [x] **Task 7.13:** Prefab Window Thumbnail System:
-  - Implement a `ThumbnailCache` that renders small snapshots of prefabs to textures.
-- [x] **Task 7.14: Grid Layout Widget:** - Replace the list of buttons with a multi-column grid (`ImGui::BeginTable` with `ImGuiTableColumnFlags_WidthFixed`).
-- [x] **Task 7.15: Drag and Drop Source:** - Implement `ImGui::BeginDragDropSource()` for each thumbnail in the Prefab window.
-- [x] **Task 7.16: Viewport Drop Target:** - Implement `ImGui::BeginDragDropTarget()` on the Game Viewport.
-  - Logic: On drop, spawn the prefab at the `worldPosition` of the mouse cursor.
-- [x] **Task 7.17: Search & Filter:** - Add an `ImGui::InputText` bar at the top of the Prefabs window to filter items by name.
-- [x] **Task 7.18: New Prefabs & Textures: ** - Generate obj files and add new prefabs based on the obstacle list in obstacles.md.
-  - Integrate 'skatelite.png' for wood-based obstacles.
+---
 
+#### 7.1. Core Unit Utility (TDD Required)
+- [ ] **Task 1.1:** Create a `Units` utility class/object in Kotlin.
+  - Define constants: `M_TO_CM = 100.0`, `IN_TO_M = 0.0254`, `FT_TO_M = 0.3048`.
+  - Implement conversion functions: `toMeters(value, unit)`, `fromMeters(value, unit)`.
+- [ ] **Task 1.2 (TDD):** Write unit tests to verify conversion accuracy (e.g., 12 inches must equal 0.3048m within a 0.0001 epsilon).
 
-### 10. Trick Detection
-- [ ] **The Labeler**: Rotation monitoring and trick identification system.
-- [ ] **ImGui Debug Window**: ImGui Window to display the tricks identified
-- [ ] **Unit tests**: Add unit tests for trick detection.
+#### 7.2. Physics Calibration (Bullet Physics)
+- [ ] **Task 2.1:** Set global gravity to exactly `-9.81` m/s².
+- [ ] **Task 2.2:** Update `BoardRig` dimensions using real-world metric data:
+  - Deck: ~0.8m x 0.2m.
+  - Wheelbase: ~0.35m.
+  - Mass: ~1.8kg.
+- [ ] **Task 2.3 (TDD):** Implement a "Freefall Test" case. Assert that a rigid body dropped from 1.0m hits the floor at approx 0.45s ($t = \sqrt{2h/g}$).
 
-### 11. Skeletal Animation & UI Integration
-- [ ] **Animation Pipeline:** Implement Skeleton hierarchy, SLERP interpolation, and Global Transform calculation.
-- [ ] **GPU Skinning:** Update Vertex Shader for 4-bone influence and pass the Matrix Palette.
-- [ ] **ImGui Debugger Window:** Build a playback UI with clip selection, timeline scrubbing, and a bone visualizer overlay.
+#### 7.3. Asset Pipeline Scaling
+- [ ] **Task 3.1:** Update `ModelLoader` (Assimp) to handle unit normalization.
+  - Check for "Unit" metadata in glTF/FBX files.
+  - Apply a global `u_modelScale` multiplier to the root node to ensure the model matches the 1.0m engine scale.
+- [ ] **Task 3.2:** Recalibrate the Editor Grid.
+  - Set major grid lines to 1.0m.
+  - Set minor grid lines to 0.1m (10cm).
+
+#### 7.4. UI & Interaction
+- [ ] **Task 4.1:** Implement **ImGui Unit Toggle** in the settings (Metric vs. Imperial).
+- [ ] **Task 4.2:** Update the Speedometer to calculate velocity in `m/s` and convert to `km/h` or `mph` for the display.
+- [ ] **Task 4.3:** Add a "Measure Tool" to the editor to verify distances between obstacles in meters/feet.
+
+---
+
+### 8. Skeletal Animation Pipeline
+- [ ] **Animation Samplers**: Implement Skeleton hierarchy traversal and LINEAR/STEP/CUBICSPLINE interpolation.
+- [ ] **GPU Skinning**: Update PBR Vertex Shader to compute final vertex positions using the Matrix Palette (4-bone influence).
+- [ ] **Animation Debugger**: Build ImGui window with clip selection, timeline scrubbing, and bone visualizer overlay.
+
+### 9. Trick Detection System
+- [ ] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.
+- [ ] **Trick UI**: Viewport overlay to display identified tricks (e.g., "Kickflip", "360 Shove-it").
+- [ ] **TDD Validation**: Unit tests for rotation-to-string trick identification.
