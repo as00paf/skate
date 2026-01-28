@@ -96,6 +96,25 @@ class LevelEditorSceneInitializer: SceneInitializer() {
 
     override fun imgui() {
         imgui.ImGui.begin("Skate Lab")
+        imgui.ImGui.text("Phase D: Task 10.1 - Proportions")
+        
+        val scene = SceneManager.getCurrentScene()
+        val skateGo = scene?.gameObjects?.find { it.name == "Skateboard" }
+        val skaterGo = scene?.gameObjects?.find { it.name == "Skater" }
+        
+        skateGo?.let { go ->
+            val collider = go.getComponent<BoxCollider3D>()
+            val length = (collider?.halfExtents?.x ?: 0f) * 2f
+            imgui.ImGui.text("Board Length: ${String.format("%.2f", length)}m (Target: 0.80m)")
+        }
+        
+        skaterGo?.let { go ->
+            // Assume the model is ~1.8 units tall at scale 1.0
+            val height = go.transform.scale.y * 1.8f 
+            imgui.ImGui.text("Approx Skater Height: ${String.format("%.2f", height)}m (Target: 1.80m)")
+        }
+
+        imgui.ImGui.separator()
         imgui.ImGui.text("Feature 1: Basic Rendering [COMPLETE]")
         imgui.ImGui.text("Feature 2: Bullet Physics (Floor) [COMPLETE]")
         imgui.ImGui.text("Feature 3: Modular Tile System [COMPLETE]")
