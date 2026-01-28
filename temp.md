@@ -1,0 +1,5 @@
+- Branches cleanup, keep only master and main on local and remote repository
+- Code cleanup, empty spaces everywhere, comments
+- UI review to make it up to par with industry standards, compare features of Unity, Unreal, Godot and Stride
+- Feature review to make sure everything is working as intended
+- 

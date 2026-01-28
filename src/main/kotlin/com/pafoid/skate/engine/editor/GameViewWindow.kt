@@ -28,6 +28,18 @@ class GameViewWindow {
     private var isPlaying = false
     private var hoveredGameObject: GameObject? = null
     private val gamepadOverlay = GamepadOverlay()
+    private val trickUIWindow = TrickUIWindow()
+
+    // Overlay Constants
+    private val OVERLAY_PADDING = 10f
+    private val FPS_OVERLAY_WIDTH = 80f
+    private val FPS_OVERLAY_HEIGHT = 30f
+    private val SPEED_OVERLAY_WIDTH = 120f
+    private val SPEED_OVERLAY_HEIGHT = 30f
+    private val TRICK_OVERLAY_WIDTH = 200f // Adjusted width for trick names
+    private val TRICK_OVERLAY_HEIGHT = 30f
+    private val CONTROLS_OVERLAY_BUTTON_SIZE = 60f
+    private val CONTROLS_OVERLAY_HEIGHT = 40f
 
     fun imgui() {
         ImGui.begin("Game Viewport", ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
@@ -146,8 +158,8 @@ class GameViewWindow {
         val scene = SceneManager.getCurrentScene()
         
         // FPS Overlay (Top Left)
-        ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
-        ImGui.beginChild("FPS_Overlay", 80f, 30f, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+        ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + OVERLAY_PADDING)
+        ImGui.beginChild("FPS_Overlay", FPS_OVERLAY_WIDTH, FPS_OVERLAY_HEIGHT, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
         ImGui.textColored(0f, 1f, 0f, 1f, "FPS: ${ImGui.getIO().framerate.toInt()}")
         ImGui.endChild()
 
@@ -164,16 +176,26 @@ class GameViewWindow {
                 Pair(speedMS * 2.23694f, "mph")
             }
 
-            ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + windowSize.y - 40f)
-            ImGui.beginChild("Speed_Overlay", 120f, 30f, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+            ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + windowSize.y - SPEED_OVERLAY_HEIGHT - OVERLAY_PADDING)
+            ImGui.beginChild("Speed_Overlay", SPEED_OVERLAY_WIDTH, SPEED_OVERLAY_HEIGHT, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
             ImGui.textColored(1f, 1f, 1f, 1f, "${speedDisplay.roundToInt()} $unitLabel")
             ImGui.endChild()
         }
 
+        // Trick UI Overlay (Bottom Left, above Speedometer)
+        skateGo?.let { go ->
+            trickUIWindow.setTrickGameObject(go)
+            // Position above the speed overlay
+            val trickX = windowPos.x + OVERLAY_PADDING
+            val trickY = windowPos.y + windowSize.y - SPEED_OVERLAY_HEIGHT - TRICK_OVERLAY_HEIGHT - (OVERLAY_PADDING * 2)
+
+            trickUIWindow.imgui(trickX, trickY, TRICK_OVERLAY_WIDTH, TRICK_OVERLAY_HEIGHT)
+        }
+
         // Controls Overlay (Top Right)
-        val buttonSize = 60f
-        ImGui.setCursorPos(windowPos.x + windowSize.x - (buttonSize * 3f) - 30f, windowPos.y + 10f)
-        ImGui.beginChild("Controls_Overlay", buttonSize * 3f + 20f, 40f, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+        val buttonSize = CONTROLS_OVERLAY_BUTTON_SIZE
+        ImGui.setCursorPos(windowPos.x + windowSize.x - (buttonSize * 3f) - (OVERLAY_PADDING * 3), windowPos.y + OVERLAY_PADDING)
+        ImGui.beginChild("Controls_Overlay", buttonSize * 3f + (OVERLAY_PADDING * 2), CONTROLS_OVERLAY_HEIGHT, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
         
         if (isPlaying) {
             if (ImGui.button("${Icons.STOP} Stop", buttonSize, 30f)) {

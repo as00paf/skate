@@ -90,7 +90,7 @@
 - [x] **Test Tool**: Add a "Mirror Pose" toggle (e.g., if you pose the left leg, it copies to the right) to speed up stance creation.
 
 ### 12. Trick Detection System
-- [ ] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.
+- [x] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.
 - [ ] **Trick UI**: Viewport overlay to display identified tricks (e.g., "Kickflip", "360 Shove-it").
 - [ ] **TDD Validation**: Unit tests for rotation-to-string trick identification.
 
