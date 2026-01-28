@@ -23,7 +23,7 @@ class SkateboardPhysics : Component() {
         Vector3f(0.175f, -0.02f, 0.1f)    // Back Right
     )
 
-    @Transient private lateinit var rb: RigidBody3D
+    @Transient private lateinit var rb: com.pafoid.skate.engine.physics3d.IPhysicsBody3D
     private val worldUp = Vector3f(0f, 1f, 0f)
     var isGrounded = false
         private set
@@ -73,9 +73,6 @@ class SkateboardPhysics : Component() {
         val worldForce = forceDir.mul(forceMagnitude)
         
         // Apply force at the specific corner position
-        rb.rawBody?.applyForce(
-            com.jme3.math.Vector3f(worldForce.x, worldForce.y, worldForce.z),
-            com.jme3.math.Vector3f(rayStart.x, rayStart.y, rayStart.z)
-        )
+        rb.applyForce(worldForce, rayStart)
     }
 }

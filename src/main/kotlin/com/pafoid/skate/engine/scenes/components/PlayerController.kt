@@ -10,6 +10,11 @@ import com.pafoid.skate.engine.toWorldMatrix
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 import com.pafoid.skate.engine.SkateStance
+import com.pafoid.skate.engine.PlayerState
+
+import com.pafoid.skate.engine.controls.IInputProvider
+import com.pafoid.skate.engine.controls.InputProvider
+import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 
 class PlayerController : Component() {
     var preferredStance = Stance.REGULAR
@@ -19,11 +24,14 @@ class PlayerController : Component() {
     var flickSensitivity = 5.0f
     var catchStrength = 0.5f
 
+    var state = PlayerState.RIDING
+
     @Transient var currentStance = SkateStance.REGULAR
     @Transient var isSwitch = false
     @Transient var inputBuffer: IInputBuffer = InputBuffer.instance
+    @Transient var inputProvider: IInputProvider = InputProvider
     
-    @Transient private var rb: RigidBody3D? = null
+    @Transient private var rb: IPhysicsBody3D? = null
     @Transient private var physics: SkateboardPhysics? = null
     @Transient private var lastVelocity = com.jme3.math.Vector3f()
 
@@ -36,15 +44,44 @@ class PlayerController : Component() {
     }
 
     override fun update(dt: Float) {
-        updateCurrentStance()
-        handleSteering(dt)
-        handlePushing(dt)
-        handleJumping()
-        handleFlicks(dt)
-        handleCatch(dt)
-        checkBail()
+        handleStateToggle()
 
-        rb?.rawBody?.getLinearVelocity(lastVelocity)
+        if (state == PlayerState.RIDING) {
+            updateCurrentStance()
+            handleSteering(dt)
+            handlePushing(dt)
+            handleJumping()
+            handleFlicks(dt)
+            handleCatch(dt)
+            checkBail()
+        }
+
+        val vel = rb?.linearVelocity
+        if (vel != null) {
+            lastVelocity.set(vel.x, vel.y, vel.z)
+        }
+    }
+
+    private fun handleStateToggle() {
+        var toggle = inputProvider.keyBeginPress(GLFW_KEY_Y)
+        if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, JoystickListener.BUTTON_Y)) {
+            toggle = true
+        }
+
+        if (toggle) {
+            if (state == PlayerState.RIDING) {
+                state = PlayerState.WALKING
+                physics?.enabled = false
+                // Teleport offset: Move slightly up and to the side when getting off
+                gameObject.transform.translation.y += 0.2f
+                gameObject.transform.translation.z += 0.5f 
+            } else {
+                state = PlayerState.RIDING
+                physics?.enabled = true
+                // Teleport offset: Move back to center
+                gameObject.transform.translation.z -= 0.5f
+            }
+        }
     }
 
     private fun updateCurrentStance() {
@@ -71,6 +108,7 @@ class PlayerController : Component() {
 
     override fun imgui() {
         imgui.ImGui.begin("Skater Debug")
+        imgui.ImGui.text("State: $state")
         imgui.ImGui.text("Preferred Stance: $preferredStance")
         imgui.ImGui.text("Current Stance: $currentStance")
         imgui.ImGui.text("Is Switch: $isSwitch")
@@ -92,10 +130,9 @@ class PlayerController : Component() {
 
     private fun checkBail() {
         val phys = physics ?: return
-        val raw = rb?.rawBody ?: return
+        val currentVelocityJOML = rb?.linearVelocity ?: return
         
-        val currentVelocity = com.jme3.math.Vector3f()
-        raw.getLinearVelocity(currentVelocity)
+        val currentVelocity = com.jme3.math.Vector3f(currentVelocityJOML.x, currentVelocityJOML.y, currentVelocityJOML.z)
 
         if (phys.isGrounded) {
             val transform = gameObject.transform.toWorldMatrix()
@@ -155,13 +192,11 @@ class PlayerController : Component() {
         }
         
         // Inherit velocity
-        val linVel = com.jme3.math.Vector3f()
-        val angVel = com.jme3.math.Vector3f()
-        rb?.rawBody?.getLinearVelocity(linVel)
-        rb?.rawBody?.getAngularVelocity(angVel)
+        val linVel = rb?.linearVelocity ?: Vector3f()
+        val angVel = rb?.angularVelocity ?: Vector3f()
         
-        cubeRb.rawBody?.setLinearVelocity(linVel)
-        cubeRb.rawBody?.setAngularVelocity(angVel)
+        cubeRb.linearVelocity = linVel
+        cubeRb.angularVelocity = angVel
         
         // Disable this controller
         this.enabled = false
@@ -224,15 +259,15 @@ class PlayerController : Component() {
         var steer = 0f
         
         // Keyboard
-        if (KeyListener.isKeyPressed(GLFW_KEY_A)) {
+        if (inputProvider.isKeyPressed(GLFW_KEY_A)) {
             steer += steerSpeed * stanceMultiplier
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_D)) {
+        if (inputProvider.isKeyPressed(GLFW_KEY_D)) {
             steer -= steerSpeed * stanceMultiplier
         }
         
         // Controller (Joystick 1 - Left Stick X)
-        JoystickListener.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
+        inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
             if (axes.size > JoystickListener.AXIS_LEFT_X) {
                 val stickX = axes[JoystickListener.AXIS_LEFT_X]
                 if (Math.abs(stickX) > 0.1f) {
@@ -252,12 +287,12 @@ class PlayerController : Component() {
         var multiplier = 0f
         
         // Keyboard
-        if (KeyListener.isKeyPressed(GLFW_KEY_W)) {
+        if (inputProvider.isKeyPressed(GLFW_KEY_W)) {
             multiplier = 1f
         }
         
         // Controller (Left Stick Y for forward movement, or triggers)
-        JoystickListener.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
+        inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
             if (axes.size > JoystickListener.AXIS_LEFT_Y) {
                 val stickY = -axes[JoystickListener.AXIS_LEFT_Y] // Inverted stick Y
                 if (stickY > 0.1f) {
@@ -279,15 +314,15 @@ class PlayerController : Component() {
             transform.transformDirection(forward)
             forward.mul(pushForce * multiplier)
             
-            rb?.rawBody?.applyCentralForce(com.jme3.math.Vector3f(forward.x, forward.y, forward.z))
+            rb?.applyCentralForce(forward)
         }
     }
 
     private fun handleJumping() {
-        var jump = KeyListener.keyBeginPress(GLFW_KEY_SPACE)
+        var jump = inputProvider.keyBeginPress(GLFW_KEY_SPACE)
         
         // Controller (Button A/Cross)
-        JoystickListener.getButtons(GLFW_JOYSTICK_1)?.let { buttons ->
+        inputProvider.getButtons(GLFW_JOYSTICK_1)?.let { buttons ->
             if (buttons.size > JoystickListener.BUTTON_A && buttons[JoystickListener.BUTTON_A]) {
                 jump = true
             }

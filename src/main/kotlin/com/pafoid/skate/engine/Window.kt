@@ -168,6 +168,7 @@ class Window(
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
+            com.pafoid.skate.engine.controls.JoystickListener.update()
             com.pafoid.skate.engine.utils.JobSystem.update()
             
             // Record high-frequency input
