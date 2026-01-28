@@ -5,23 +5,27 @@ class Animation(
     val channels: List<AnimationChannel>,
     val duration: Float
 ) {
-    fun update(time: Float, nodes: Map<Int, com.pafoid.skate.engine.scenes.GameObject>) {
+    fun update(time: Float, skeleton: Skeleton) {
         val loopTime = time % duration
+        val tempVec3 = org.joml.Vector3f()
         val tempQuat = org.joml.Quaternionf()
+        
         for (channel in channels) {
-            val node = nodes[channel.targetNodeId] ?: continue
+            val joint = skeleton.getJointByName(channel.targetNodeName) ?: continue
+            
             when (channel.path) {
-                AnimationPath.TRANSLATION -> channel.sampler.sampleVector3f(loopTime, node.transform.translation)
+                AnimationPath.TRANSLATION -> {
+                    channel.sampler.sampleVector3f(loopTime, tempVec3)
+                    joint.localTransform.translation(tempVec3)
+                }
                 AnimationPath.ROTATION -> {
                     channel.sampler.sampleQuaternionf(loopTime, tempQuat)
-                    val euler = tempQuat.getEulerAnglesXYZ(org.joml.Vector3f())
-                    node.transform.rotation.set(
-                        Math.toDegrees(euler.x.toDouble()).toFloat(),
-                        Math.toDegrees(euler.y.toDouble()).toFloat(),
-                        Math.toDegrees(euler.z.toDouble()).toFloat()
-                    )
+                    joint.localTransform.rotation(tempQuat)
                 }
-                AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, node.transform.scale)
+                AnimationPath.SCALE -> {
+                    channel.sampler.sampleVector3f(loopTime, tempVec3)
+                    joint.localTransform.scale(tempVec3)
+                }
             }
         }
     }

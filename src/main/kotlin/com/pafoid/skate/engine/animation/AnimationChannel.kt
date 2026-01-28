@@ -8,6 +8,6 @@ enum class AnimationPath {
 
 class AnimationChannel(
     val sampler: AnimationSampler,
-    val targetNodeId: Int,
+    val targetNodeName: String,
     val path: AnimationPath
 )
