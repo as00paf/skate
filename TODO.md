@@ -82,7 +82,7 @@
 - [ ] **Task 10.5: State Manager**: Implement `PlayerState` manager (IDLE, RIDING, PUSHING).
 - [ ] **Task 10.6: Push Mechanic**: Trigger physics impulses based on specific animation frames.
 
-### 9. Trick Detection System
+### 11. Trick Detection System
 - [ ] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.
 - [ ] **Trick UI**: Viewport overlay to display identified tricks (e.g., "Kickflip", "360 Shove-it").
 - [ ] **TDD Validation**: Unit tests for rotation-to-string trick identification.
