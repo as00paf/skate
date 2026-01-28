@@ -80,10 +80,10 @@
 - [x] **Task 10.3: Animation Posing**: Apply static "Ride" pose (knees bent, arms out) using the new `james.dae` model and orient the skater relative to the skateboard.
 - [x] **Task 10.4: Procedural Lean**: Implement spine rotation tied to LS steering input.
 - [x] **Task 10.5: State Manager**: Implement `PlayerState` manager (IDLE, RIDING, PUSHING).
-- [ ] **Task 10.6: Push Mechanic**: Trigger physics impulses based on specific animation frames.
+- [x] **Task 10.6: Push Mechanic**: Trigger physics impulses based on specific animation frames.
 
 ### 11. Procedural Pose Editor 
-- [ ] **Bone Tree UI**: Implement an ImGui tree view showing the hierarchy of `aiNodes`.
+- [x] **Bone Tree UI**: Implement an ImGui tree view showing the hierarchy of `aiNodes`.
 - [ ] **Local Override System**: Create a `BoneOverride` component that stores custom Quaternions for specific bone IDs.
 - [ ] **Pose Gizmos**: (Optional) Allow clicking a bone in the viewport to select it in the UI.
 - [ ] **JSON Pose Persistence**: Implement Save/Load for bone rotation maps (e.g., `assets/poses/ride_pose.json`).

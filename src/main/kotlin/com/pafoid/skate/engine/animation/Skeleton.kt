@@ -41,6 +41,10 @@ class Skeleton(
         return joints.find { it?.name == name }
     }
 
+    fun getAllJoints(): List<Joint> {
+        return joints.filterNotNull()
+    }
+
     fun copy(): Skeleton {
         return Skeleton(rootJoint.copy(), jointCount)
     }

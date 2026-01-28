@@ -70,6 +70,27 @@ class Animator : Component() {
             }
         }
         
+        // Apply bone overrides if they exist
+        gameObject.getComponent<BoneOverride>()?.let { overrideComponent ->
+            skeleton.getAllJoints().forEach { joint ->
+                overrideComponent.getOverride(joint.name)?.let { overrideRotation ->
+                    // Decompose matrix
+                    val translation = Vector3f()
+                    val rotation = Quaternionf()
+                    val scale = Vector3f()
+                    joint.localTransform.getTranslation(translation)
+                    joint.localTransform.getUnnormalizedRotation(rotation)
+                    joint.localTransform.getScale(scale)
+                    
+                    // Apply override by multiplying rotations
+                    rotation.mul(overrideRotation)
+                    
+                    // Recompose matrix
+                    joint.localTransform.translationRotateScale(translation, rotation, scale)
+                }
+            }
+        }
+        
         // Always update skeleton matrices even if animation is paused
         // This allows procedural logic in other components to take effect
         skeleton.update()
