@@ -7,9 +7,9 @@ import kotlin.math.abs
 
 class TrickDetector : Component() {
 
-    private var accumulatedRotationX = 0f
-    private var accumulatedRotationY = 0f
-    private var accumulatedRotationZ = 0f
+    var accumulatedRotationX = 0f
+    var accumulatedRotationY = 0f
+    var accumulatedRotationZ = 0f
 
     private var lastGroundedState = true
     private var detectedTrick: String? = null
@@ -40,13 +40,37 @@ class TrickDetector : Component() {
         }
     }
 
-    private fun detectTrick() {
-        // Simple 360 flip detection for now (rotation around X axis)
-        if (abs(accumulatedRotationX) >= 360f && abs(accumulatedRotationX) < 720f) {
-            detectedTrick = "360 Flip"
-        } else {
-            detectedTrick = null
+    internal fun detectTrick() {
+        // Reset detected trick each frame before re-evaluation
+        detectedTrick = null
+
+        // Kickflip (360 around X, positive)
+        if (abs(accumulatedRotationX) >= 360f && accumulatedRotationX > 0f && abs(accumulatedRotationX) < 720f) {
+            detectedTrick = "Kickflip"
+            return
         }
+
+        // Heelflip (360 around X, negative)
+        if (abs(accumulatedRotationX) >= 360f && accumulatedRotationX < 0f && abs(accumulatedRotationX) < 720f) {
+            detectedTrick = "Heelflip"
+            return
+        }
+
+        // Pop Shuvit (180 around Y)
+        if (abs(accumulatedRotationY) >= 180f && abs(accumulatedRotationY) < 360f) {
+            detectedTrick = "Pop Shuvit"
+            return
+        }
+
+        // 360 Pop Shuvit (360 around Y)
+        if (abs(accumulatedRotationY) >= 360f && abs(accumulatedRotationY) < 540f) { // Limit for a single 360
+            detectedTrick = "360 Pop Shuvit"
+            return
+        }
+
+        // TODO: Add detection for other tricks involving Z rotation (e.g., Varial)
+        // TODO: Add detection for multi-axis tricks (e.g., Varial Kickflip)
+
     }
 
     fun getDetectedTrick(): String? {
