@@ -65,10 +65,17 @@ Follow a strict **Red-Green-Refactor** cycle for all logic-heavy tasks (Physics,
 2.  **Compute vs. Shader:** Perform skinning on the **GPU (Vertex Shader)** for performance. Avoid CPU-side vertex transformation.
 3.  **Data Decoupling:** The `AnimationController` must be independent of the `Mesh` data so multiple characters can share the same animation logic.
 
-
-
 ---
 
 ##  7. Project Specifics
 * **State Management:** Maintain a clear distinction between **Edit Mode** (Editor tools, Gizmos) and **Play Mode** (Active physical simulation).
 * **Simulation Intent:** Prioritize "Skate Sim" realism (similar to *Skater XL* or *Session*) over arcade physics.
+
+---
+
+## 💻 8. Development Environment Protocol
+- **OS**: Windows 10 (Native PowerShell / Windows Terminal).
+- **Shell**: PowerShell 7+ (Avoid Bash/Sh/Zsh).
+- **Build Tool**: `gradlew.bat` (Not `./gradlew`).
+- **File System**: Windows-style paths (`C:\path\to\file`).
+- **Commands**: Use PowerShell cmdlets (`Remove-Item`, `Copy-Item`, `Expand-Archive`) or standard Windows binaries. Do not use Linux utilities like `find`, `grep`, or `tar -xvf`.
