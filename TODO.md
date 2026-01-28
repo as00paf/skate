@@ -70,7 +70,7 @@
   - Implement RS **Orbit Control** (Yaw/Pitch).
   - Create presets for FOV, Offset, and Distance.
   - Implement smooth LERP transitions between presets.
-- [ ] **Task 9.4: World Alignment**:
+- [x] **Task 9.4: World Alignment**:
   - Audit all Y-offsets for unit consistency.
   - Implement raycast floor snapping for the Walking state.
 

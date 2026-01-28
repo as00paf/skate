@@ -17,6 +17,8 @@ import com.pafoid.skate.engine.controls.InputProvider
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.Transform
 import org.joml.Matrix4f
 
 class PlayerController : Component() {
@@ -40,6 +42,7 @@ class PlayerController : Component() {
     @Transient private var physics: SkateboardPhysics? = null
     @Transient private var lastVelocity = com.jme3.math.Vector3f()
     @Transient private var animator: Animator? = null
+    @Transient private var skater: GameObject? = null
 
     private val stanceMultiplier: Float
         get() = if (preferredStance == Stance.REGULAR) 1f else -1f
@@ -48,9 +51,10 @@ class PlayerController : Component() {
         rb = gameObject.getComponent(RigidBody3D::class.java)
         physics = gameObject.getComponent(SkateboardPhysics::class.java)
         
-        // Find animator in children (Skater model)
-        gameObject.children.forEach { child ->
-            child.getComponent<Animator>()?.let { animator = it }
+        // Find animator and skater object
+        skater = gameObject.children.find { it.name == "Skater" }
+        skater?.let { s: GameObject ->
+            animator = s.getComponent<Animator>()
         }
     }
 
@@ -79,6 +83,7 @@ class PlayerController : Component() {
     private fun handleWalking(dt: Float) {
         val scene = SceneManager.getCurrentScene() ?: return
         val camera = scene.camera
+        val target = skater ?: return
         
         var moveX = 0f
         var moveZ = 0f
@@ -120,11 +125,11 @@ class PlayerController : Component() {
             
             // Apply movement to transform
             val velocity = Vector3f(moveDir).mul(walkSpeed * dt)
-            gameObject.transform.translation.add(velocity)
+            target.transform.translation.add(velocity)
             
             // Face movement direction
             val targetRotationY = Math.toDegrees(Math.atan2(moveDir.x.toDouble(), moveDir.z.toDouble())).toFloat()
-            gameObject.transform.rotation.y = com.pafoid.skate.engine.utils.Interpolation.lerp(gameObject.transform.rotation.y, targetRotationY, 10f * dt)
+            target.transform.rotation.y = com.pafoid.skate.engine.utils.Interpolation.lerp(target.transform.rotation.y, targetRotationY, 10f * dt)
             
             animator?.play("walk", 0.2f)
         } else {
@@ -134,13 +139,15 @@ class PlayerController : Component() {
         // Jump Button A
         if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, JoystickListener.BUTTON_A) || inputProvider.keyBeginPress(GLFW_KEY_SPACE)) {
             animator?.play("jump", 0.1f)
-            rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
+            // Note: Since unparented, board doesn't jump. Character just plays anim.
+            // In a full controller, we'd add vertical velocity to the character transform.
         }
     }
 
     private fun handleGroundSnapping() {
         val scene = SceneManager.getCurrentScene() ?: return
-        val pos = gameObject.transform.translation
+        val target = skater ?: return
+        val pos = target.transform.translation
         
         val rayStart = Vector3f(pos.x, pos.y + 1f, pos.z)
         val rayEnd = Vector3f(pos.x, pos.y - 2f, pos.z)
@@ -160,17 +167,44 @@ class PlayerController : Component() {
         }
 
         if (toggle) {
+            val s = skater ?: return
+            val scene = SceneManager.getCurrentScene() ?: return
+
             if (state == PlayerState.RIDING) {
                 state = PlayerState.WALKING
                 physics?.enabled = false
-                // Teleport offset: Move slightly up and to the side when getting off
-                gameObject.transform.translation.y += 0.2f
-                gameObject.transform.translation.z += 0.5f 
+                
+                // Transition to World Space
+                val worldPos = Vector3f()
+                val worldMatrix = s.transform.toWorldMatrix()
+                worldMatrix.getTranslation(worldPos)
+                
+                // Get world rotation Y
+                val worldRot = gameObject.transform.rotation.y + s.transform.rotation.y
+
+                // Unparent (It remains in scene.gameObjects list)
+                gameObject.removeChild(s)
+                
+                s.transform.translation.set(worldPos)
+                s.transform.rotation.set(0f, worldRot, 0f)
+                
+                // Teleport offset: Move slightly to the right side of the board
+                val right = Vector3f(0f, 0f, 0.4f)
+                val boardWorldMatrix = gameObject.transform.toWorldMatrix()
+                boardWorldMatrix.transformDirection(right)
+                s.transform.translation.add(right)
+                
             } else {
                 state = PlayerState.RIDING
                 physics?.enabled = true
-                // Teleport offset: Move back to center
-                gameObject.transform.translation.z -= 0.5f
+                
+                // Reparent back to board
+                gameObject.addChild(s)
+                
+                // Reset local transform relative to board
+                // Board top is ~0.02 above center. Feet at 0.02.
+                s.transform.translation.set(0f, 0.02f, 0f) 
+                s.transform.rotation.set(0f, 0f, 0f)
             }
         }
     }
