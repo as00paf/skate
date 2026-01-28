@@ -1,0 +1,126 @@
+package com.pafoid.skate.engine.animation
+
+import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.scenes.components.Component
+import com.pafoid.skate.engine.toWorldMatrix
+import imgui.ImGui
+import imgui.type.ImFloat
+import org.joml.Matrix4f
+import org.joml.Quaternionf
+import org.joml.Vector3f
+
+class Animator : Component() {
+    var currentTime = 0f
+        private set
+    var currentAnimation: Animation? = null
+        private set
+    var isPlaying = true
+
+    val normalizedTime: Float
+        get() {
+            val anim = currentAnimation ?: return 0f
+            return (currentTime % anim.duration) / anim.duration
+        }
+
+    val duration: Float
+        get() = currentAnimation?.duration ?: 0f
+
+    fun play(animation: Animation) {
+        currentAnimation = animation
+        currentTime = 0f
+        isPlaying = true
+    }
+
+    override fun update(dt: Float) {
+        if (!isPlaying) return
+        val entity = gameObject.getComponent<Entity>() ?: return
+        
+        // Use skeleton from Entity or from a separate component if available
+        val skeleton = entity.model.skeleton ?: return
+        val animation = currentAnimation ?: entity.model.animations.firstOrNull() ?: return
+
+        currentTime += dt
+        animation.update(currentTime, skeleton)
+    }
+
+    override fun editorUpdate(dt: Float) {
+        val entity = gameObject.getComponent<Entity>() ?: return
+        val skeleton = entity.model.skeleton ?: return
+        
+        // Visualize bones in editor mode
+        visualizeJoint(skeleton.rootJoint, gameObject.transform.toWorldMatrix())
+        
+        if (isPlaying) {
+            update(dt)
+        }
+    }
+
+    private fun visualizeJoint(joint: Joint, modelMatrix: Matrix4f) {
+        val jointPos = Vector3f()
+        joint.worldTransform.getTranslation(jointPos)
+        modelMatrix.transformPosition(jointPos)
+        
+        val color = Vector3f(0f, 1f, 1f) // Cyan for bones
+        
+        for (child in joint.children) {
+            val childPos = Vector3f()
+            child.worldTransform.getTranslation(childPos)
+            modelMatrix.transformPosition(childPos)
+            
+            com.pafoid.skate.engine.render.DebugDraw.addLine3D(jointPos, childPos, color)
+            visualizeJoint(child, modelMatrix)
+        }
+        
+        // Draw joint point as a tiny box
+        val quat = Quaternionf()
+        joint.worldTransform.getUnnormalizedRotation(quat)
+        com.pafoid.skate.engine.render.DebugDraw.addBox3D(jointPos, quat, Vector3f(0.01f), color)
+    }
+
+    fun stop() {
+        isPlaying = false
+    }
+
+    fun resume() {
+        isPlaying = true
+    }
+
+    override fun imgui() {
+        val entity = gameObject.getComponent<Entity>() ?: return
+        val animations = entity.model.animations
+        if (animations.isEmpty()) {
+            ImGui.text("No animations found in model")
+            return
+        }
+
+        if (ImGui.beginCombo("Animations", currentAnimation?.name ?: "Select...")) {
+            for (anim in animations) {
+                if (ImGui.selectable("${anim.name} (${String.format("%.2f", anim.duration)}s)", currentAnimation == anim)) {
+                    play(anim)
+                }
+            }
+            ImGui.endCombo()
+        }
+
+        val anim = currentAnimation ?: animations.firstOrNull() ?: return
+        
+        ImGui.text("Duration: ${String.format("%.2f", anim.duration)}s")
+        val timeArr = floatArrayOf(currentTime)
+        if (ImGui.sliderFloat("Timeline", timeArr, 0f, anim.duration)) {
+            currentTime = timeArr[0]
+            isPlaying = false // Scrubbing pauses playback for precision
+            
+            // Force update skeleton when scrubbing
+            entity.model.skeleton?.let { anim.update(currentTime, it) }
+        }
+
+        if (ImGui.button(if (isPlaying) "Pause" else "Play")) {
+            isPlaying = !isPlaying
+        }
+        ImGui.sameLine()
+        if (ImGui.button("Reset")) {
+            currentTime = 0f
+            entity.model.skeleton?.let { anim.update(currentTime, it) }
+        }
+    }
+}

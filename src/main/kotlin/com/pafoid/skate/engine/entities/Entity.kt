@@ -14,8 +14,16 @@ class Entity(
     val onTick: (dt:Float) -> Unit = {}
 ): Component() {
 
+    var skeleton: com.pafoid.skate.engine.animation.Skeleton? = null
+        private set
+
+    init {
+        skeleton = model.skeleton?.copy()
+    }
+
     override fun update(dt: Float) {
         onTick(dt)
+        skeleton?.update()
     }
 
     fun translate(dx: Float = 0f, dy: Float = 0f, dz: Float = 0f) {

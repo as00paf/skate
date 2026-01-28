@@ -67,6 +67,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         playerGo.addComponent(Entity(
             model = AssetPool.getModel(ObjLoader.PLAYER_GLTF, loader)
         ))
+        playerGo.addComponent(com.pafoid.skate.engine.animation.Animator())
         scene.addGameObjectToScene(playerGo)
 
         // FEATURE 2: Bullet Physics (Floor)

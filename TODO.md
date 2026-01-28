@@ -56,9 +56,9 @@
 ## 🔴 Phase D: Next Tasks 
 
 ### 8. Skeletal Animation Pipeline
-- [ ] **Animation Samplers**: Implement Skeleton hierarchy traversal and LINEAR/STEP/CUBICSPLINE interpolation.
-- [ ] **GPU Skinning**: Update PBR Vertex Shader to compute final positions using the Matrix Palette (4-bone influence).
-- [ ] **Animation Debugger**: Build ImGui window with clip selection, timeline scrubbing, and bone visualizer overlay.
+- [x] **Animation Samplers**: Implement Skeleton hierarchy traversal and LINEAR/STEP/CUBICSPLINE interpolation.
+- [x] **GPU Skinning**: Updated PBR Vertex Shader to compute final positions using the Matrix Palette (4-bone influence).
+- [x] **Animation Debugger**: Build ImGui window with clip selection, timeline scrubbing, and bone visualizer overlay.
 
 ### 9. Character Controller & Camera
 - [ ] **Task 9.1: State Toggle**: Map Gamepad **Y Button** to toggle Walking/Riding with teleport offsets.
