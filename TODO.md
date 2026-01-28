@@ -92,7 +92,7 @@
 ### 12. Trick Detection System
 - [x] **The Labeler**: Logic for monitoring local-space rotation accumulation in air.
 - [x] **Trick UI**: Viewport overlay to display identified tricks (e.g., "Kickflip", "360 Shove-it").
-- [ ] **TDD Validation**: Unit tests for rotation-to-string trick identification.
+- [x] **TDD Validation**: Unit tests for rotation-to-string trick identification.
 
 ### 13. Final Polish
 - [ ] **App Icon**: Design and integrate native window icon.

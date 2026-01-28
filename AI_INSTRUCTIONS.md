@@ -20,7 +20,7 @@ Every task must follow this strict lifecycle:
     * **New Features:** `feature/description-of-task`
     * **Bug Fixes:** `bug/description-of-bug`
 2.  **Commits:** Make small, atomic commits with descriptive messages. Do not bundle multiple logical changes into one commit.
-3.  **Completion:** Once a task is finished, push the code to the feature/bug branch.
+3.  **Completion:** Once a task is finished, push the code to the feature/bug branch and to the remote repository.
 4.  **Merging:** Request explicit user confirmation to merge the feature/bug branch into `master`. **Do not merge automatically.**
 5.  **Pushing:** After merging, always push the `master` branch to the remote repository.
 6.  **Clean up:** Delete local and remote branches only after a successful merge and push to `master`, and only with user approval.
