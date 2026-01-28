@@ -1,16 +1,6 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.animation.Joint
-import com.pafoid.skate.engine.animation.Skeleton
-import com.pafoid.skate.engine.entities.Entity
-import com.pafoid.skate.engine.scenes.GameObject
-import imgui.ImGui
-import imgui.flag.ImGuiTreeNodeFlags
-
-package com.pafoid.skate.engine.editor
-
-import com.pafoid.skate.engine.animation.Joint
-import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.GameObject
 import imgui.ImGui
@@ -42,7 +32,7 @@ class BoneTreeWindow {
         if (skeleton != null) {
             ImGui.begin("Bone Tree")
 
-            ImGui.textInput("Pose File Name", poseFileName)
+            ImGui.inputText("Pose File Name", poseFileName)
             ImGui.sameLine()
             if (ImGui.button("Save Pose")) {
                 activeGameObject?.let { go ->
