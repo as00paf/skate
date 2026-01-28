@@ -180,12 +180,19 @@ class Renderer(
         pickingShader3D.uploadMat4f("transformationMatrix", go.transform.toWorldMatrix())
         pickingShader3D.uploadFloat("uEntityId", go.getUid().toFloat() + 1)
 
+        val skeleton = go.getComponent<com.pafoid.skate.engine.animation.Skeleton>() ?: texturedModel.skeleton
+        val hasSkin = skeleton != null
+        pickingShader3D.uploadBoolean("u_HasSkin", hasSkin)
+        if (skeleton != null) {
+            pickingShader3D.uploadMat4fArray("u_JointMatrices", skeleton.getMatrixPalette())
+        }
+
         for (part in texturedModel.parts) {
             val model = part.rawModel
             glBindVertexArray(model.vaoId)
-            glEnableVertexAttribArray(0)
+            model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
             glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
-            glDisableVertexAttribArray(0)
+            model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
         }
         glBindVertexArray(0)
     }
@@ -280,11 +287,11 @@ class Renderer(
             defaultShader.uploadInt("u_AlphaMode", alphaInt)
             defaultShader.uploadFloat("u_AlphaCutoff", material.alphaCutoff)
 
-            val hasSkin = part.inverseBindMatrices.isNotEmpty()
+            val skeleton = entity.gameObject.getComponent<com.pafoid.skate.engine.animation.Skeleton>() ?: entity.model.skeleton
+            val hasSkin = skeleton != null
             defaultShader.uploadBoolean("u_HasSkin", hasSkin)
-            if (hasSkin) {
-                val identities = Array(part.inverseBindMatrices.size) { org.joml.Matrix4f() }
-                defaultShader.uploadMat4fArray("u_JointMatrices", identities)
+            if (skeleton != null) {
+                defaultShader.uploadMat4fArray("u_JointMatrices", skeleton.getMatrixPalette())
             }
 
             if (alphaInt == 2) {

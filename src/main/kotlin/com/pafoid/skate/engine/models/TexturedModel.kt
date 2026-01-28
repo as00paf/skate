@@ -33,7 +33,11 @@ data class MeshPart(
     val inverseBindMatrices: List<org.joml.Matrix4f> = emptyList()
 )
 
-data class TexturedModel (val parts: List<MeshPart>): Component() {
+data class TexturedModel (
+    val parts: List<MeshPart>,
+    val skeleton: com.pafoid.skate.engine.animation.Skeleton? = null,
+    val animations: List<com.pafoid.skate.engine.animation.Animation> = emptyList()
+): Component() {
     constructor(rawModel: RawModel, texture: Texture) : this(listOf(MeshPart(rawModel, Material(baseColorTexture = texture))))
     constructor(rawModel: RawModel, material: Material) : this(listOf(MeshPart(rawModel, material)))
     constructor(rawModel: RawModel, material: Material, inverseBindMatrices: List<org.joml.Matrix4f>) : this(listOf(MeshPart(rawModel, material, inverseBindMatrices)))

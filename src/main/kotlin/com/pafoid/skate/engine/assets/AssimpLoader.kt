@@ -9,88 +9,161 @@ import java.nio.IntBuffer
 
 class AssimpLoader {
 
-    data class LoadedMeshPart(
-        val model: RawModel,
-        val material: com.pafoid.skate.engine.models.Material,
-        val inverseBindMatrices: List<org.joml.Matrix4f>
-    )
-
-    data class PreLoadedMeshPart(
-        val vertices: FloatArray,
-        val texCoords: FloatArray,
-        val texCoords1: FloatArray,
-        val normals: FloatArray,
-        val tangents: FloatArray,
-        val colors: FloatArray,
-        val joints: IntArray,
-        val weights: FloatArray,
-        val indices: IntArray,
-        val material: com.pafoid.skate.engine.models.Material,
-        val drawMode: Int,
-        val embeddedTextures: Map<String, java.nio.ByteBuffer>,
-        val inverseBindMatrices: List<org.joml.Matrix4f> = emptyList()
-    )
-
-    data class PreLoadedModel(
-        val parts: List<PreLoadedMeshPart>
-    )
+    private data class BoneInfo(val index: Int, val offsetMatrix: org.joml.Matrix4f)
 
     fun preLoadModel(filePath: String): PreLoadedModel {
-        val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace)
+        val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
 
         val meshParts = mutableListOf<PreLoadedMeshPart>()
         val embeddedTextures = mutableMapOf<String, java.nio.ByteBuffer>()
 
+        // Collect Bone Information
+        val boneNames = mutableListOf<String>()
+        val boneInfoMap = mutableMapOf<String, BoneInfo>()
+        
+        for (i in 0 until scene.mNumMeshes()) {
+            val mesh = AIMesh.create(scene.mMeshes()!!.get(i))
+            for (b in 0 until mesh.mNumBones()) {
+                val bone = AIBone.create(mesh.mBones()!!.get(b))
+                val name = bone.mName().dataString()
+                if (!boneNames.contains(name)) {
+                    boneNames.add(name)
+                    boneInfoMap[name] = BoneInfo(boneNames.size - 1, toJomlMatrix(bone.mOffsetMatrix()))
+                }
+            }
+        }
+
         // Task 3.1: Unit Normalization
         var unitScale = 1.0f
         val metadata = scene.mMetaData()
         if (metadata != null) {
-            // Assimp uses "UnitScaleFactor" for FBX. glTF is always meters (1.0).
-            // Some models might have other metadata for units.
-            // For now, check if we can get it. 
-            // In LWJGL Assimp, we might need to iterate or use specific index if known.
             for (i in 0 until metadata.mNumProperties()) {
                 val mKey = metadata.mKeys()!!.get(i).dataString()
                 if (mKey == "UnitScaleFactor") {
-                    val entry = metadata.mValues()!!.get(i)
-                    // The type can be double
-                    // val scale = entry.mData().getDouble(0) // This is tricky in LWJGL
+                    // entry.mData() is a pointer to the value
                 }
             }
         }
         
-        // Manual override for known models if metadata is missing or incorrect
-        if (filePath.contains("skateboard", ignoreCase = true)) {
-            unitScale = 0.01f // Skateboard model is in CM
-        }
-        // if (filePath.contains("Superhero", ignoreCase = true)) {
-        //     unitScale = 0.01f // Player model is in CM
-        // }
-
+        if (filePath.contains("skateboard", ignoreCase = true)) unitScale = 0.01f
+        
         val rootTransform = org.joml.Matrix4f().scale(unitScale)
-        processNode(scene.mRootNode()!!, scene, rootTransform, meshParts, embeddedTextures, filePath)
+        processNode(scene.mRootNode()!!, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
+
+        // Build Skeleton Hierarchy
+        val rootJoint = buildHierarchy(scene.mRootNode()!!, boneInfoMap)
+        val skeleton = if (rootJoint != null) com.pafoid.skate.engine.animation.Skeleton(rootJoint, boneNames.size) else null
+
+        // Load Animations
+        val animations = mutableListOf<com.pafoid.skate.engine.animation.Animation>()
+        for (i in 0 until scene.mNumAnimations()) {
+            val aiAnim = AIAnimation.create(scene.mAnimations()!!.get(i))
+            animations.add(processAnimation(aiAnim))
+        }
 
         aiReleaseImport(scene)
-        return PreLoadedModel(meshParts)
+        return PreLoadedModel(meshParts, skeleton, animations)
     }
 
-    private fun processNode(node: AINode, scene: AIScene, parentTransform: org.joml.Matrix4f, meshParts: MutableList<PreLoadedMeshPart>, embeddedTextures: MutableMap<String, java.nio.ByteBuffer>, filePath: String) {
+    private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>): com.pafoid.skate.engine.animation.Joint? {
+        val name = aiNode.mName().dataString()
+        val boneInfo = boneInfoMap[name]
+        
+        val joint = com.pafoid.skate.engine.animation.Joint(boneInfo?.index ?: -1, name, toJomlMatrix(aiNode.mTransformation()))
+        boneInfo?.let { joint.inverseBindMatrix.set(it.offsetMatrix) }
+
+        for (i in 0 until aiNode.mNumChildren()) {
+            val childAiNode = AINode.create(aiNode.mChildren()!!.get(i))
+            val childJoint = buildHierarchy(childAiNode, boneInfoMap)
+            if (childJoint != null) {
+                joint.addChild(childJoint)
+            }
+        }
+        
+        if (joint.index != -1 || joint.children.isNotEmpty()) {
+            return joint
+        }
+        return null
+    }
+
+    private fun processAnimation(aiAnim: AIAnimation): com.pafoid.skate.engine.animation.Animation {
+        val name = aiAnim.mName().dataString()
+        val duration = aiAnim.mDuration().toFloat()
+        val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 25f
+        val durationInSeconds = duration / ticksPerSecond
+
+        val channels = mutableListOf<com.pafoid.skate.engine.animation.AnimationChannel>()
+        for (i in 0 until aiAnim.mNumChannels()) {
+            val aiChannel = AINodeAnim.create(aiAnim.mChannels()!!.get(i))
+            val nodeName = aiChannel.mNodeName().dataString()
+            
+            // Translation
+            if (aiChannel.mNumPositionKeys() > 0) {
+                val times = FloatArray(aiChannel.mNumPositionKeys())
+                val values = FloatArray(aiChannel.mNumPositionKeys() * 3)
+                for (k in 0 until aiChannel.mNumPositionKeys()) {
+                    val key = aiChannel.mPositionKeys()!!.get(k)
+                    times[k] = key.mTime().toFloat() / ticksPerSecond
+                    values[k * 3] = key.mValue().x()
+                    values[k * 3 + 1] = key.mValue().y()
+                    values[k * 3 + 2] = key.mValue().z()
+                }
+                val sampler = com.pafoid.skate.engine.animation.AnimationSampler(times, values, com.pafoid.skate.engine.animation.InterpolationType.LINEAR, 3)
+                channels.add(com.pafoid.skate.engine.animation.AnimationChannel(sampler, nodeName, com.pafoid.skate.engine.animation.AnimationPath.TRANSLATION))
+            }
+
+            // Rotation
+            if (aiChannel.mNumRotationKeys() > 0) {
+                val times = FloatArray(aiChannel.mNumRotationKeys())
+                val values = FloatArray(aiChannel.mNumRotationKeys() * 4)
+                for (k in 0 until aiChannel.mNumRotationKeys()) {
+                    val key = aiChannel.mRotationKeys()!!.get(k)
+                    times[k] = key.mTime().toFloat() / ticksPerSecond
+                    values[k * 4] = key.mValue().x()
+                    values[k * 4 + 1] = key.mValue().y()
+                    values[k * 4 + 2] = key.mValue().z()
+                    values[k * 4 + 3] = key.mValue().w()
+                }
+                val sampler = com.pafoid.skate.engine.animation.AnimationSampler(times, values, com.pafoid.skate.engine.animation.InterpolationType.LINEAR, 4)
+                channels.add(com.pafoid.skate.engine.animation.AnimationChannel(sampler, nodeName, com.pafoid.skate.engine.animation.AnimationPath.ROTATION))
+            }
+
+            // Scale
+            if (aiChannel.mNumScalingKeys() > 0) {
+                val times = FloatArray(aiChannel.mNumScalingKeys())
+                val values = FloatArray(aiChannel.mNumScalingKeys() * 3)
+                for (k in 0 until aiChannel.mNumScalingKeys()) {
+                    val key = aiChannel.mScalingKeys()!!.get(k)
+                    times[k] = key.mTime().toFloat() / ticksPerSecond
+                    values[k * 3] = key.mValue().x()
+                    values[k * 3 + 1] = key.mValue().y()
+                    values[k * 3 + 2] = key.mValue().z()
+                }
+                val sampler = com.pafoid.skate.engine.animation.AnimationSampler(times, values, com.pafoid.skate.engine.animation.InterpolationType.LINEAR, 3)
+                channels.add(com.pafoid.skate.engine.animation.AnimationChannel(sampler, nodeName, com.pafoid.skate.engine.animation.AnimationPath.SCALE))
+            }
+        }
+
+        return com.pafoid.skate.engine.animation.Animation(name, channels, durationInSeconds)
+    }
+
+    private fun processNode(node: AINode, scene: AIScene, parentTransform: org.joml.Matrix4f, meshParts: MutableList<PreLoadedMeshPart>, embeddedTextures: MutableMap<String, java.nio.ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>) {
         val nodeTransform = parentTransform.mul(toJomlMatrix(node.mTransformation()), org.joml.Matrix4f())
 
         for (i in 0 until node.mNumMeshes()) {
             val meshIndex = node.mMeshes()!!.get(i)
             val mesh = AIMesh.create(scene.mMeshes()!!.get(meshIndex))
-            meshParts.add(processMesh(mesh, scene, nodeTransform, embeddedTextures, filePath))
+            meshParts.add(processMesh(mesh, scene, nodeTransform, embeddedTextures, filePath, boneInfoMap))
         }
 
         for (i in 0 until node.mNumChildren()) {
             val child = AINode.create(node.mChildren()!!.get(i))
-            processNode(child, scene, nodeTransform, meshParts, embeddedTextures, filePath)
+            processNode(child, scene, nodeTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
         }
     }
 
-    private fun processMesh(mesh: AIMesh, scene: AIScene, transform: org.joml.Matrix4f, embeddedTextures: MutableMap<String, java.nio.ByteBuffer>, filePath: String): PreLoadedMeshPart {
+    private fun processMesh(mesh: AIMesh, scene: AIScene, transform: org.joml.Matrix4f, embeddedTextures: MutableMap<String, java.nio.ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>): PreLoadedMeshPart {
         val materialData = com.pafoid.skate.engine.models.Material()
         
         val materialIndex = mesh.mMaterialIndex()
@@ -193,6 +266,9 @@ class AssimpLoader {
         val inverseBindMatrices = mutableListOf<org.joml.Matrix4f>()
         for (b in 0 until mesh.mNumBones()) {
             val bone = AIBone.create(mesh.mBones()!!.get(b))
+            val name = bone.mName().dataString()
+            val boneIndex = boneInfoMap[name]?.index ?: b
+            
             inverseBindMatrices.add(toJomlMatrix(bone.mOffsetMatrix()))
             
             for (w in 0 until bone.mNumWeights()) {
@@ -203,7 +279,7 @@ class AssimpLoader {
                 // Find empty slot in joints/weights for this vertex
                 for (slot in 0 until 4) {
                     if (weights[vertexId * 4 + slot] == 0f) {
-                        joints[vertexId * 4 + slot] = b
+                        joints[vertexId * 4 + slot] = boneIndex
                         weights[vertexId * 4 + slot] = weightValue
                         break
                     }
@@ -262,11 +338,11 @@ class AssimpLoader {
         }
     }
 
-    fun loadModel(filePath: String, loader: VAOLoader): List<LoadedMeshPart> {
+    fun loadModel(filePath: String, loader: VAOLoader): List<com.pafoid.skate.engine.assets.LoadedMeshPart> {
         val preLoaded = preLoadModel(filePath)
         return preLoaded.parts.map { p ->
             val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
-            LoadedMeshPart(model, p.material, p.inverseBindMatrices)
+            com.pafoid.skate.engine.assets.LoadedMeshPart(model, p.material, p.inverseBindMatrices)
         }
     }
 }

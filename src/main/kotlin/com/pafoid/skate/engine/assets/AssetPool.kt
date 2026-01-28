@@ -122,7 +122,7 @@ object AssetPool {
                 // Free texture data
                 textureDataMap.values.forEach { it.free() }
                 
-                val texturedModel = TexturedModel(parts)
+                val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
                 models[file.absolutePath] = texturedModel
                 callback(texturedModel)
             }
@@ -153,7 +153,7 @@ object AssetPool {
                 
                 MeshPart(model, mat, p.inverseBindMatrices)
             }
-            TexturedModel(parts)
+            TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
         }
 
         models[absolutePath] = texturedModel
