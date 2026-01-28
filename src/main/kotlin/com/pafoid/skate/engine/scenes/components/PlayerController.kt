@@ -15,6 +15,9 @@ import com.pafoid.skate.engine.PlayerState
 import com.pafoid.skate.engine.controls.IInputProvider
 import com.pafoid.skate.engine.controls.InputProvider
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
+import com.pafoid.skate.engine.animation.Animator
+import com.pafoid.skate.engine.scenes.SceneManager
+import org.joml.Matrix4f
 
 class PlayerController : Component() {
     var preferredStance = Stance.REGULAR
@@ -23,6 +26,8 @@ class PlayerController : Component() {
     var jumpImpulse = 10.0f
     var flickSensitivity = 5.0f
     var catchStrength = 0.5f
+    
+    var walkSpeed = 3.0f
 
     var state = PlayerState.RIDING
 
@@ -34,6 +39,7 @@ class PlayerController : Component() {
     @Transient private var rb: IPhysicsBody3D? = null
     @Transient private var physics: SkateboardPhysics? = null
     @Transient private var lastVelocity = com.jme3.math.Vector3f()
+    @Transient private var animator: Animator? = null
 
     private val stanceMultiplier: Float
         get() = if (preferredStance == Stance.REGULAR) 1f else -1f
@@ -41,6 +47,11 @@ class PlayerController : Component() {
     override fun start() {
         rb = gameObject.getComponent(RigidBody3D::class.java)
         physics = gameObject.getComponent(SkateboardPhysics::class.java)
+        
+        // Find animator in children (Skater model)
+        gameObject.children.forEach { child ->
+            child.getComponent<Animator>()?.let { animator = it }
+        }
     }
 
     override fun update(dt: Float) {
@@ -54,11 +65,91 @@ class PlayerController : Component() {
             handleFlicks(dt)
             handleCatch(dt)
             checkBail()
+        } else {
+            handleWalking(dt)
+            handleGroundSnapping()
         }
 
         val vel = rb?.linearVelocity
         if (vel != null) {
             lastVelocity.set(vel.x, vel.y, vel.z)
+        }
+    }
+
+    private fun handleWalking(dt: Float) {
+        val scene = SceneManager.getCurrentScene() ?: return
+        val camera = scene.camera
+        
+        var moveX = 0f
+        var moveZ = 0f
+        
+        // LS Input
+        inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
+            if (axes.size > JoystickListener.AXIS_LEFT_Y) {
+                moveZ = -axes[JoystickListener.AXIS_LEFT_Y]
+                moveX = axes[JoystickListener.AXIS_LEFT_X]
+            }
+        }
+        
+        // Keyboard
+        if (inputProvider.isKeyPressed(GLFW_KEY_W)) moveZ += 1f
+        if (inputProvider.isKeyPressed(GLFW_KEY_S)) moveZ -= 1f
+        if (inputProvider.isKeyPressed(GLFW_KEY_A)) moveX -= 1f
+        if (inputProvider.isKeyPressed(GLFW_KEY_D)) moveX += 1f
+        
+        val moveInput = Vector3f(moveX, 0f, moveZ)
+        if (moveInput.length() > 1f) moveInput.normalize()
+        
+        if (moveInput.length() > 0.1f) {
+            // Calculate movement relative to camera
+            val viewInv = camera.getInverseView()
+            val camForward = Vector3f(0f, 0f, -1f)
+            viewInv.transformDirection(camForward)
+            camForward.y = 0f
+            camForward.normalize()
+            
+            val camRight = Vector3f(1f, 0f, 0f)
+            viewInv.transformDirection(camRight)
+            camRight.y = 0f
+            camRight.normalize()
+            
+            val moveDir = Vector3f()
+            camForward.mul(moveInput.z, moveDir)
+            val rightPart = Vector3f(camRight).mul(moveInput.x)
+            moveDir.add(rightPart)
+            
+            // Apply movement to transform
+            val velocity = Vector3f(moveDir).mul(walkSpeed * dt)
+            gameObject.transform.translation.add(velocity)
+            
+            // Face movement direction
+            val targetRotationY = Math.toDegrees(Math.atan2(moveDir.x.toDouble(), moveDir.z.toDouble())).toFloat()
+            gameObject.transform.rotation.y = com.pafoid.skate.engine.utils.Interpolation.lerp(gameObject.transform.rotation.y, targetRotationY, 10f * dt)
+            
+            animator?.play("walk", 0.2f)
+        } else {
+            animator?.play("idle", 0.2f)
+        }
+        
+        // Jump Button A
+        if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, JoystickListener.BUTTON_A) || inputProvider.keyBeginPress(GLFW_KEY_SPACE)) {
+            animator?.play("jump", 0.1f)
+            rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
+        }
+    }
+
+    private fun handleGroundSnapping() {
+        val scene = SceneManager.getCurrentScene() ?: return
+        val pos = gameObject.transform.translation
+        
+        val rayStart = Vector3f(pos.x, pos.y + 1f, pos.z)
+        val rayEnd = Vector3f(pos.x, pos.y - 2f, pos.z)
+        
+        val results = scene.physics3d.rayTest(rayStart, rayEnd)
+        if (results.isNotEmpty()) {
+            val closest = results.minByOrNull { it.hitFraction }!!
+            val hitY = rayStart.y + (rayEnd.y - rayStart.y) * closest.hitFraction
+            pos.y = hitY
         }
     }
 

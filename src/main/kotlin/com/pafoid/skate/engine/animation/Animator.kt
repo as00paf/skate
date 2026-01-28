@@ -15,6 +15,10 @@ class Animator : Component() {
     var currentAnimation: Animation? = null
         private set
     var isPlaying = true
+    private var blendTime = 0f
+    private var blendDuration = 0.2f
+    private var previousAnimation: Animation? = null
+    private var previousTime = 0f
 
     val normalizedTime: Float
         get() {
@@ -25,10 +29,23 @@ class Animator : Component() {
     val duration: Float
         get() = currentAnimation?.duration ?: 0f
 
-    fun play(animation: Animation) {
+    fun play(animation: Animation, blend: Float = 0.2f) {
+        if (currentAnimation == animation) return
+        
+        previousAnimation = currentAnimation
+        previousTime = currentTime
+        blendTime = blend
+        blendDuration = blend
+        
         currentAnimation = animation
         currentTime = 0f
         isPlaying = true
+    }
+
+    fun play(name: String, blend: Float = 0.2f) {
+        val entity = gameObject.getComponent<Entity>() ?: return
+        val anim = entity.model.animations.find { it.name.contains(name, ignoreCase = true) } ?: return
+        play(anim, blend)
     }
 
     override fun update(dt: Float) {
@@ -40,7 +57,18 @@ class Animator : Component() {
         val animation = currentAnimation ?: entity.model.animations.firstOrNull() ?: return
 
         currentTime += dt
-        animation.update(currentTime, skeleton)
+        
+        if (blendTime > 0f) {
+            blendTime -= dt
+            val alpha = 1f - (blendTime / blendDuration)
+            previousAnimation?.let { prev ->
+                prev.update(previousTime, skeleton)
+                previousTime += dt
+                animation.updateBlended(currentTime, skeleton, alpha)
+            } ?: animation.update(currentTime, skeleton)
+        } else {
+            animation.update(currentTime, skeleton)
+        }
     }
 
     override fun editorUpdate(dt: Float) {

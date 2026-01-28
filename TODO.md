@@ -62,7 +62,7 @@
 
 ### 9. Character Controller & Camera
 - [x] **Task 9.1: State Toggle**: Map Gamepad **Y Button** to toggle Walking/Riding with teleport offsets.
-- [ ] **Task 9.2: On-Foot Locomotion**:
+- [x] **Task 9.2: On-Foot Locomotion**:
   - Implement LS movement relative to Camera Forward.
   - Implement **A Button** Jump logic for Walking state.
   - Trigger `WALK` and `JUMP` animation clips.
