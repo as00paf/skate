@@ -1,10 +1,15 @@
 # SkateSim MVP - Project Context
 
+This is the main instructions :
+@./AI_INSTRUCTIONS.md
+
+This is the to-do list.
+
+@./TODO.md
+
 ## Project Overview
 
-**SkateSim MVP** is a high-fidelity skateboarding simulation engine built in Kotlin. It aims to combine 3D graphics, strict physics simulation, and robust editor tools to create a realistic skateboarding experience.
-
-**Current Status:** Core engine infrastructure (GLFW, OpenGL, ImGui) is initialized. Basic 2D/3D rendering and JBox2D physics were implemented, but the project is now pivoting to a **3D Bullet Physics** backend for strict collision and grind simulation.
+**PAFSK8** is a high-fidelity skateboarding simulation engine built in Kotlin. It aims to combine 3D graphics, strict physics simulation, and robust editor tools to create a realistic skateboarding experience.
 
 ## Tech Stack
 
@@ -22,70 +27,7 @@
 *   **Edit Mode:** Physics paused, Free-fly camera, ImGui Gizmos active, Object picking/placement enabled.
 *   **Play Mode:** Physics active, Spring-arm camera, Continuous Vectoring input, Session markers enabled.
 
-### Systems
-*   **The "Anchor" System:** The skater is a visual model parented to the board. On "Bail," the anchor breaks, and the skater becomes a "Tumble Cube" (Rigid Body) inheriting the board's momentum.
-*   **Session Markers:** Keybind to "Drop Marker" (saves transform) and "Reset" (teleports board/skater back with zero velocity).
 
-## Roadmap / Todo List
+This is the obstacle list :
 
-### Phase 1: Engine Foundation [Completed]
-- [x] **Physics Migration:** Replace JBox2D with Bullet Physics.
-- [x] **Main Loop:** Implement a fixed physics timestep (60Hz) with variable rendering.
-- [x] **JOML Camera:** Build a 3D camera system with Raycast Clipping (using `btCollisionWorld.rayTest`) to prevent geometry clipping.
-- [x] **Modular Tile System:** Create a system to spawn/render floor tiles with **Vertex Snapping** logic to ensure flush surfaces.
-
-### Phase 2: Simulation Physics (The Board) [Completed]
-- [x] **Raycast Vehicle:** Implement 4 raycasts from deck corners for suspension.
-- [x] **Suspension Logic:** Calculate forces using Hooke's Law ($F = k \cdot x$).
-- [x] **Continuous Vectoring Input:**
-    - [x] Map high-frequency GLFW callbacks to an InputBuffer.
-    - [x] Calculate "Flick Velocity" from stick/mouse movement.
-    - [x] Apply Direct Torque based on flick direction (Local X/Y/Z).
-- [x] **Semi-Auto Catch:** Magnetic angular impulse logic to snap board to 180° increments when within $\pm 20^\circ$ of level.
-
-### Phase 3: Strict Collision & Grinds [Completed]
-- [x] **Truck Geometry:** Model board as a compound body (Deck Box + Truck Cylinders) for physical "hooking".
-- [x] **Testing Lab Obstacles:**
-    - [x] **Rail:** Low-friction cylinder.
-    - [x] **Ledge:** Box with 90° edges.
-    - [x] **Kicker:** Simple wedge.
-- [x] **Bail Logic:** Transition to "Tumble Cube" on high impact or bad landing orientation ($> 90^\circ$ from up).
-
-### Phase 4: Sandbox & Editor Tools [In Progress]
-- [x] **ImGui Physics Tuner**: Sliders for Gravity, PopForce, Friction, SuspensionStiffness, and CatchStrength.
-- [x] **Transform Gizmos**: 3D arrows in Edit Mode for modular tiles and obstacles.
-- [~] **Prefabs Window**: Organized UI for spawning Skateboard and Tiles. (Player/Obstacles pending).
-- [ ] **Trick Labeler**: Analyzer for Pitch/Yaw/Roll degrees (Comes after Skateboard Tuning).
-- [x] **Persistence**: Save/Load level layouts and physics configs to JSON.
-- [x] **Environment Upgrade**: High-quality tileable asphalt texture with UV scaling support.
-- [x] **Scene Integration**: Replaced debug cube with functional Skateboard prefab in Level Editor.
-
-### Additional Features [Completed]
-- [x] **Game Controller Support**: Implement GLFW joystick/gamepad listeners.
-- [x] **Assimp Enhancements**: Support for GLB and FBX model loading.
-- [x] **Threading Support**: Coroutines integration via `JobSystem`. [PENDING REFACTOR]
-- [x] **UI Layout**: Programmatic docking setup for editor windows.
-- [ ] **Particle System**: (Post-MVP) 2D/3D visual effects.
-
-### Phase 5: High-Level Execution Plan
-- [x] **File Management & Setup**
-    - [x] **Asset Extraction**: Unzip the player model from the assets folder and organize the resulting files into the appropriate directory structure for the loader.
-    - [x] **Diagnostics**: Implement a real-time FPS counter (Physics debug toggle pending SPORT migration).
-- [ ] **Atmosphere & Environment**
-    - [x] **Sky & Fog**: Implement a solid color sky and fog system with distance fading.
-    - [x] **Dynamic Sky (HDRI)**: Implement a SkyDome (UV Sphere) with HDRI texture, exposure, tint, and automatic sun/light syncing.
-    - [x] **Obstacle Palette**: Add the Rail, Ledge, and Kicker Ramp prefabs to the editor’s object library.
-- [ ] **Analog Control & Skater Integration**
-    - [ ] **Controller Support**: Add Full Gamepad Support. Use the sticks for analog steering and "flick" mechanics.
-    - [ ] **Skater Model**: Add the player model to the scene and link it to the physics rig so it follows the board and tumbles during bails.
-- [ ] **Trick Detection**
-    - [ ] **The Labeler**: Implement a system that monitors the board's rotation while in the air to identify and display trick names upon landing.
-- [ ] **Editor Improvements**
-    - [ ] **Enhanced Gizmo**: Upgrade the manipulation tools to include a Scale Gizmo.
-    - [ ] **Physics Sync**: Ensure that any scaling done in the editor is instantly reflected in the physical collision bounds.
-    - [ ] **Workflow**: Add industry-standard hotkeys (QWER) to quickly switch between selection and transformation modes.
-
-## Mathematical Constraints
-*   **Local Space Conversion:** Use `JOML Matrix4f.transformDirection()` for flick torques.
-*   **Friction Tuning:** Rails ($< 0.1$), Deck ($> 0.5$).
-*   **Stability:** Fixed delta time for `stepSimulation`.
+@./obstacles.md

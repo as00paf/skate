@@ -45,5 +45,5 @@ bin/
 .DS_Store
 
 # Generated files
-imgui.ini
+# imgui.ini
 level.txt

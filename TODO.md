@@ -48,29 +48,12 @@
 - [x] **Unit Infrastructure**: Base 1.0m = 1.0 Unit established.
 - [x] **Physics Calibration**: Gravity at -9.81 m/s² and real-world board mass/inertia.
 - [x] **Asset Scaling**: Assimp normalization and manual overrides for legacy assets.
-- [x] **Metric Grid**: Camera-following "infinite" grid with 0.1m/1.0m hierarchy.
+- [x] **Metric Grid**: Camera-following "infinite"N grid with 0.1m/1.0m hierarchy.
 - [x] **Measure Tool**: Editor-mode ruler with Metric/Imperial toggling.
 
 ---
 
-## 🚨 PRIORITY 1: GLOBAL METRIC GRID FIX
-*Crucial fix for spatial awareness and scale validation.*
-
-- [ ] **Task P1.1: World-Space Decoupling**: Unparent the grid from the Skateboard/Player. Force rendering at World $Y = 0$.
-- [ ] **Task P1.2: Infinite Procedural Grid**:
-  - Replace local grid mesh with a single large plane (Minimum 500m x 500m).
-  - Update Shader to use **World Position** (via `fract()`) rather than UVs.
-- [ ] **Task P1.3: Metric Hierarchy**:
-  - **Minor**: Lines every $0.1$ units (10cm), Alpha = $0.2$.
-  - **Major**: Lines every $1.0$ units (1m), Alpha = $0.5$.
-  - **Axes**: Highlight $X=0$ (Red) and $Z=0$ (Blue).
-- [ ] **Task P1.4: Depth & Blend Fix**:
-  - Set `glDepthFunc(GL_LEQUAL)`.
-  - Render grid *after* skybox but *before* player to eliminate "floating" artifacts.
-
----
-
-## 🔴 Phase D: Active Tasks 
+## 🔴 Phase D: Next Tasks 
 
 ### 8. Skeletal Animation Pipeline
 - [ ] **Animation Samplers**: Implement Skeleton hierarchy traversal and LINEAR/STEP/CUBICSPLINE interpolation.
