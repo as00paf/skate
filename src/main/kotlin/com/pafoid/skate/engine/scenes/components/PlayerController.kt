@@ -19,6 +19,7 @@ import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.Transform
+import com.pafoid.skate.engine.entities.Entity
 import org.joml.Matrix4f
 
 class PlayerController : Component() {
@@ -43,6 +44,9 @@ class PlayerController : Component() {
     @Transient private var lastVelocity = com.jme3.math.Vector3f()
     @Transient private var animator: Animator? = null
     @Transient private var skater: GameObject? = null
+    @Transient private var currentLean = 0f
+    private val maxLeanAngle = 20f
+    private val leanSmoothness = 5f
 
     private val stanceMultiplier: Float
         get() = if (preferredStance == Stance.REGULAR) 1f else -1f
@@ -70,6 +74,7 @@ class PlayerController : Component() {
             handleStability()
             handleCatch(dt)
             updateRidingAnimation(dt)
+            updateProceduralLean(dt)
             checkBail()
         } else {
             handleWalking(dt)
@@ -100,6 +105,40 @@ class PlayerController : Component() {
         
         // If it's a static pose, we might want to pause it at frame 0
         // but for now let's let it play to see what it is.
+    }
+
+    private fun updateProceduralLean(dt: Float) {
+        if (state != PlayerState.RIDING) return
+        val entity = skater?.getComponent<Entity>() ?: return
+        val skeleton = entity.gameObject.getComponent<com.pafoid.skate.engine.animation.Skeleton>() ?: entity.model.skeleton ?: return
+
+        var steerInput = 0f
+        inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
+            if (axes.size > JoystickListener.AXIS_LEFT_X) {
+                steerInput = axes[JoystickListener.AXIS_LEFT_X]
+            }
+        }
+        if (inputProvider.isKeyPressed(GLFW_KEY_A)) steerInput = -1f
+        if (inputProvider.isKeyPressed(GLFW_KEY_D)) steerInput = 1f
+
+        // Target lean based on steering
+        val targetLean = -steerInput * maxLeanAngle * stanceMultiplier
+        currentLean = com.pafoid.skate.engine.utils.Interpolation.lerp(currentLean, targetLean, leanSmoothness * dt)
+
+        // Apply to spine joints
+        val spineNames = listOf("mixamorig9_Spine", "mixamorig9_Spine1", "mixamorig9_Spine2")
+        val leanPerJoint = currentLean / spineNames.size
+        
+        val rotationQuat = org.joml.Quaternionf().rotateZ(Math.toRadians(leanPerJoint.toDouble()).toFloat())
+
+        spineNames.forEach { name ->
+            skeleton.getJointByName(name)?.let { joint ->
+                // Multiply current local rotation by procedural lean
+                // Since james model is facing sideways, lean might need to be on a different axis
+                // Based on standard Mixamo: X is usually pitch, Y is yaw, Z is roll (side lean)
+                joint.localTransform.rotate(rotationQuat)
+            }
+        }
     }
 
     private fun handleWalking(dt: Float) {

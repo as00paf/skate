@@ -49,26 +49,30 @@ class Animator : Component() {
     }
 
     override fun update(dt: Float) {
-        if (!isPlaying) return
         val entity = gameObject.getComponent<Entity>() ?: return
+        val skeleton = entity.gameObject.getComponent<Skeleton>() ?: entity.model.skeleton ?: return
         
-        // Use skeleton from Entity or from a separate component if available
-        val skeleton = entity.model.skeleton ?: return
-        val animation = currentAnimation ?: entity.model.animations.firstOrNull() ?: return
+        if (isPlaying) {
+            val animation = currentAnimation ?: entity.model.animations.firstOrNull() ?: return
 
-        currentTime += dt
-        
-        if (blendTime > 0f) {
-            blendTime -= dt
-            val alpha = 1f - (blendTime / blendDuration)
-            previousAnimation?.let { prev ->
-                prev.update(previousTime, skeleton)
-                previousTime += dt
-                animation.updateBlended(currentTime, skeleton, alpha)
-            } ?: animation.update(currentTime, skeleton)
-        } else {
-            animation.update(currentTime, skeleton)
+            currentTime += dt
+            
+            if (blendTime > 0f) {
+                blendTime -= dt
+                val alpha = 1f - (blendTime / blendDuration)
+                previousAnimation?.let { prev ->
+                    prev.update(previousTime, skeleton)
+                    previousTime += dt
+                    animation.updateBlended(currentTime, skeleton, alpha)
+                } ?: animation.update(currentTime, skeleton)
+            } else {
+                animation.update(currentTime, skeleton)
+            }
         }
+        
+        // Always update skeleton matrices even if animation is paused
+        // This allows procedural logic in other components to take effect
+        skeleton.update()
     }
 
     override fun editorUpdate(dt: Float) {

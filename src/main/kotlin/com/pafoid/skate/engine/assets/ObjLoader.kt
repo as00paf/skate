@@ -113,6 +113,5 @@ class ObjLoader {
         const val QUARTER_PIPE = "assets/obj/quarter_pipe.obj"
         const val SKATEBOARD_GLB = "assets/obj/skateboard_free_model.glb"
         const val PLAYER_GLTF = "assets/characters/Superhero_Male_FullBody.gltf"
-        const val JAMES = "assets/characters/james.dae"
     }
 }
