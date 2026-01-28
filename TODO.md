@@ -66,7 +66,7 @@
   - Implement LS movement relative to Camera Forward.
   - Implement **A Button** Jump logic for Walking state.
   - Trigger `WALK` and `JUMP` animation clips.
-- [ ] **Task 9.3: Orbital Camera**:
+- [x] **Task 9.3: Orbital Camera**:
   - Implement RS **Orbit Control** (Yaw/Pitch).
   - Create presets for FOV, Offset, and Distance.
   - Implement smooth LERP transitions between presets.

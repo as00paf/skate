@@ -2,13 +2,29 @@ package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.controls.MouseListener
+import com.pafoid.skate.engine.controls.JoystickListener
+import com.pafoid.skate.engine.controls.IInputProvider
+import com.pafoid.skate.engine.controls.InputProvider
 import com.pafoid.skate.engine.utils.toRadians
 import com.pafoid.skate.engine.utils.toDegrees
+import com.pafoid.skate.engine.utils.Interpolation
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
+
+data class CameraPreset(
+    val fov: Float,
+    val distance: Float,
+    val offset: Vector3f
+) {
+    companion object {
+        val LOW = CameraPreset(fov = 45f, distance = 3.0f, offset = Vector3f(0f, 0.4f, 0f))
+        val HIGH = CameraPreset(fov = 50f, distance = 4.5f, offset = Vector3f(0f, 0.8f, 0f))
+        val WIDE = CameraPreset(fov = 70f, distance = 5.0f, offset = Vector3f(0f, 0.6f, 0f))
+    }
+}
 
 class Camera(
     val position: Vector3f = Vector3f(),
@@ -24,10 +40,22 @@ class Camera(
     var _projectionSize = Vector2f(32f, 18f) // Default 16:9 units
     var zoom = 1.0f
 
+    // Input
+    var inputProvider: IInputProvider = InputProvider
+
     // Third person / Spring arm
     var target: Vector3f? = null
     var desiredDistance = 10.0f
+    var targetOffset = Vector3f(0f, 0.5f, 0f)
     private var currentDistance = 10.0f
+
+    // Interpolation
+    private var targetPreset: CameraPreset? = null
+    private var lerpTime = 0f
+    private var lerpDuration = 0f
+    private var startFov = 0f
+    private var startDistance = 0f
+    private val startOffset = Vector3f()
 
     fun addZoom(value: Float) {
         zoom += value
@@ -40,7 +68,24 @@ class Camera(
         return _projectionSize
     }
 
+    fun applyPreset(preset: CameraPreset) {
+        this.fov = preset.fov
+        this.desiredDistance = preset.distance
+        this.targetOffset.set(preset.offset)
+        this.targetPreset = null
+    }
+
+    fun lerpToPreset(preset: CameraPreset, duration: Float) {
+        this.targetPreset = preset
+        this.lerpDuration = duration
+        this.lerpTime = 0f
+        this.startFov = fov
+        this.startDistance = desiredDistance
+        this.startOffset.set(targetOffset)
+    }
+
     fun update(dt: Float) {
+        handleLerp(dt)
         if (target != null) {
             updateThirdPerson(dt)
         } else {
@@ -48,18 +93,47 @@ class Camera(
         }
     }
 
+    private fun handleLerp(dt: Float) {
+        val target = targetPreset ?: return
+        lerpTime += dt
+        val t = (lerpTime / lerpDuration).coerceIn(0f, 1f)
+        
+        fov = Interpolation.lerp(startFov, target.fov, t)
+        desiredDistance = Interpolation.lerp(startDistance, target.distance, t)
+        targetOffset.lerp(target.offset, t)
+        
+        if (t >= 1f) {
+            targetPreset = null
+        }
+    }
+
     private fun updateThirdPerson(dt: Float) {
-        val targetPos = target!!
+        val rawTarget = target!!
+        val targetPos = Vector3f(rawTarget).add(targetOffset)
+        
+        // Input Handling
+        val sensitivity = 0.1f
+        val controllerSensitivity = 2.0f
         
         // Mouse Rotation
-        if (glfwGetInputMode(glfwGetCurrentContext(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
-            val sensitivity = 0.1f
+        if (inputProvider.isCursorDisabled()) {
             yaw += MouseListener.getDx() * sensitivity
             pitch += MouseListener.getDy() * sensitivity
-            
-            if (pitch > 89f) pitch = 89f
-            if (pitch < -89f) pitch = -89f
         }
+        
+        // RS Rotation (Joystick 1)
+        inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
+            if (axes.size > JoystickListener.AXIS_RIGHT_Y) {
+                val rsX = axes[JoystickListener.AXIS_RIGHT_X]
+                val rsY = axes[JoystickListener.AXIS_RIGHT_Y]
+                
+                if (Math.abs(rsX) > 0.1f) yaw += rsX * controllerSensitivity
+                if (Math.abs(rsY) > 0.1f) pitch += rsY * controllerSensitivity
+            }
+        }
+
+        if (pitch > 89f) pitch = 89f
+        if (pitch < -89f) pitch = -89f
 
         // Calculate offset
         val horizontalDist = desiredDistance * Math.cos(Math.toRadians(pitch.toDouble())).toFloat()
@@ -99,7 +173,7 @@ class Camera(
 
     fun move() {
         // Rotation
-        if (glfwGetInputMode(glfwGetCurrentContext(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
+        if (inputProvider.isCursorDisabled()) {
             val sensitivity = 0.1f
             yaw += MouseListener.getDx() * sensitivity
             pitch += MouseListener.getDy() * sensitivity

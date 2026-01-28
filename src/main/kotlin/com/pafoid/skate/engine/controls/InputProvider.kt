@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.controls
 
+import org.lwjgl.glfw.GLFW.*
+
 interface IInputProvider {
     fun isKeyPressed(key: Int): Boolean
     fun keyBeginPress(key: Int): Boolean
@@ -8,6 +10,7 @@ interface IInputProvider {
     fun getButtons(jid: Int): BooleanArray?
     fun buttonPressed(jid: Int, button: Int): Boolean
     fun buttonBeginPress(jid: Int, button: Int): Boolean
+    fun isCursorDisabled(): Boolean
 }
 
 object InputProvider : IInputProvider {
@@ -18,4 +21,9 @@ object InputProvider : IInputProvider {
     override fun getButtons(jid: Int): BooleanArray? = JoystickListener.getButtons(jid)
     override fun buttonPressed(jid: Int, button: Int): Boolean = JoystickListener.buttonPressed(jid, button)
     override fun buttonBeginPress(jid: Int, button: Int): Boolean = JoystickListener.buttonBeginPress(jid, button)
+    override fun isCursorDisabled(): Boolean {
+        val window = glfwGetCurrentContext()
+        if (window == 0L) return false
+        return glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED
+    }
 }
