@@ -3,6 +3,8 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.scenes.SceneManager
+import org.joml.Matrix4f
+import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 
@@ -37,7 +39,7 @@ class ScaleGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow) {
         val s2 = worldToScreen(p2, view, proj, 1920f, 1080f)
         
         val axisScreenDir = s2.sub(s1).normalize()
-        val mouseDelta = org.joml.Vector2f(MouseListener.getDx(), -MouseListener.getDy())
+        val mouseDelta = Vector2f(MouseListener.getDx(), -MouseListener.getDy())
         
         val projection = mouseDelta.dot(axisScreenDir)
         
@@ -49,16 +51,16 @@ class ScaleGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow) {
         return projection * sensitivity
     }
     
-    private fun worldToScreen(worldPos: Vector3f, view: org.joml.Matrix4f, proj: org.joml.Matrix4f, width: Float, height: Float): org.joml.Vector2f {
+    private fun worldToScreen(worldPos: Vector3f, view: Matrix4f, proj: Matrix4f, width: Float, height: Float): Vector2f {
         val coords = Vector4f(worldPos, 1.0f)
         view.transform(coords)
         proj.transform(coords)
         
-        if (coords.w == 0f) return org.joml.Vector2f()
+        if (coords.w == 0f) return Vector2f()
         
         val x = (coords.x + 1) * width / 2f
         val y = (1 - coords.y) * height / 2f
         
-        return org.joml.Vector2f(x, y)
+        return Vector2f(x, y)
     }
 }

@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.animation.Animator
+import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.Texture
@@ -134,7 +135,7 @@ class PlayerController : Component() {
 fun updateProceduralLean(dt: Float) {
     if (stateManager.currentState !is PlayerState.RIDING) return
     val entity = skater?.getComponent<Entity>() ?: return
-    val skeleton = entity.gameObject.getComponent<com.pafoid.skate.engine.animation.Skeleton>() ?: entity.model.skeleton ?: return
+    val skeleton = entity.gameObject.getComponent<Skeleton>() ?: entity.model.skeleton ?: return
 
         var steerInput = 0f
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->

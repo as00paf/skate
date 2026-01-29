@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import org.joml.Vector3f
 import kotlin.math.abs
 

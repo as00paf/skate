@@ -2,10 +2,9 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
-import org.joml.Vector2f
 import org.joml.Vector3f
+import kotlin.math.abs
 import kotlin.math.floor
-import kotlin.math.max
 
 class GridLines : Component() {
     private val majorStep = 1.0f
@@ -19,8 +18,8 @@ class GridLines : Component() {
         val camPos = scene.camera.position
         
         // Snap the grid center to the nearest major step to keep the lines aligned to the world origin
-        val centerX = (floor(camPos.x / majorStep) * majorStep).toFloat()
-        val centerZ = (floor(camPos.z / majorStep) * majorStep).toFloat()
+        val centerX = (floor(camPos.x / majorStep) * majorStep)
+        val centerZ = (floor(camPos.z / majorStep) * majorStep)
         
         val halfRange = gridSize * minorStep
         val startX = centerX - halfRange
@@ -34,7 +33,7 @@ class GridLines : Component() {
             
             // X-aligned lines
             val worldZ = centerZ + offset
-            val isMajorZ = (Math.abs(worldZ % majorStep) < 0.01f || Math.abs(worldZ % majorStep - majorStep) < 0.01f)
+            val isMajorZ = (abs(worldZ % majorStep) < 0.01f || abs(worldZ % majorStep - majorStep) < 0.01f)
             DebugDraw.addLine3D(
                 Vector3f(startX, -0.001f, worldZ), 
                 Vector3f(endX, -0.001f, worldZ), 
@@ -43,7 +42,7 @@ class GridLines : Component() {
 
             // Z-aligned lines
             val worldX = centerX + offset
-            val isMajorX = (Math.abs(worldX % majorStep) < 0.01f || Math.abs(worldX % majorStep - majorStep) < 0.01f)
+            val isMajorX = (abs(worldX % majorStep) < 0.01f || abs(worldX % majorStep - majorStep) < 0.01f)
             DebugDraw.addLine3D(
                 Vector3f(worldX, -0.001f, startZ), 
                 Vector3f(worldX, -0.001f, endZ), 

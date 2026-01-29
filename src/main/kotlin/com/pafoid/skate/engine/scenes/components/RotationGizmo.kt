@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
+import kotlin.math.abs
 
 class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow) {
 
@@ -80,7 +81,7 @@ class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow
     private fun rayToCircleDist(ray: com.pafoid.skate.engine.utils.Ray, center: Vector3f, axis: Vector3f, rad: Float): Float {
         // Plane intersection
         val denom = axis.dot(ray.direction)
-        if (Math.abs(denom) < 0.0001f) return Float.MAX_VALUE
+        if (abs(denom) < 0.0001f) return Float.MAX_VALUE
 
         val t = Vector3f(center).sub(ray.origin).dot(axis) / denom
         if (t < 0) return Float.MAX_VALUE
@@ -88,6 +89,6 @@ class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow
         val hitPoint = Vector3f(ray.origin).add(Vector3f(ray.direction).mul(t))
         val distToCenter = hitPoint.distance(center)
         
-        return Math.abs(distToCenter - rad)
+        return abs(distToCenter - rad)
     }
 }

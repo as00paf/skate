@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.scenes
 import com.pafoid.skate.engine.EngineState
 
 import com.pafoid.skate.engine.ImGuiLayer
+import com.pafoid.skate.engine.Window
 
 import com.pafoid.skate.engine.assets.AssetPool
 
@@ -11,6 +12,7 @@ import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.Texture
 
 import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.models.RawModel
 
 import com.pafoid.skate.engine.render.Camera
 
@@ -36,229 +38,111 @@ import java.util.concurrent.atomic.AtomicReference
 
 class SceneManager {
 
-
-
     companion object {
-
         private var instance: SceneManager? = null
 
-        
-
         fun get(): SceneManager {
-
             if (instance == null) {
-
                 instance = SceneManager()
-
             }
 
             return instance!!
-
         }
 
-        
-
         fun getCurrentScene(): Scene? = get().currentScene
-
         fun isPlaying(): Boolean = get().runtimePlaying
-
         fun setPlaying(playing: Boolean) { get().runtimePlaying = playing }
-
     }
 
-
-
     private var currentScene: Scene? = null
-
     private var runtimePlaying = false
-
-    
-
     private val engineState = AtomicReference(EngineState.BOOTING)
-
-    private val loadingProgress = java.util.concurrent.atomic.AtomicReference(0f)
-
+    private val loadingProgress = AtomicReference(0f)
     private var loadingText = "Initializing Engine..."
-
     private var splashAlpha = 1.0f
-
     private val fadeSpeed = 1.0f // 1 second fade
 
-
-
     private lateinit var shader3D: Shader
-
     private lateinit var shader2D: Shader
-
     private lateinit var shaderPicking: Shader
-
     private lateinit var shaderPicking3D: Shader
-
     private lateinit var shaderSkybox: Shader
-
     private lateinit var shaderSkyDome: Shader
-
     private lateinit var renderer: Renderer
 
-
-
     private var splashShader: Shader? = null
-
     private var splashTexture: Texture? = null
-
-    private var splashQuad: com.pafoid.skate.engine.models.RawModel? = null
+    private var splashQuad: RawModel? = null
 
     private val loader = VAOLoader()
 
-
-
     suspend fun initializeScene(imguiLayer: ImGuiLayer) {
-
         // Load Splash Assets on Main Thread first
-
         withContext(JobSystem.Main) {
-
             splashShader = AssetPool.getShader("assets/shaders/splash.glsl")
-
             splashTexture = AssetPool.getTexture("assets/textures/splash_screen.png")
-
             splashQuad = loader.loadToVAO(
-
                 floatArrayOf(
-
                     -1f, -1f, 0f,
-
                      1f, -1f, 0f,
-
                      1f,  1f, 0f,
-
                     -1f,  1f, 0f
-
                 ),
 
                 floatArrayOf(
-
                     0f, 0f,
-
                     1f, 0f,
-
                     1f, 1f,
-
                     0f, 1f
-
                 ),
 
                 floatArrayOf(0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f),
-
                 intArrayOf(0, 1, 2, 2, 3, 0)
-
             )
 
-            
-
-            // Task 0.1: Window Lifecycle & Focus
-
-            com.pafoid.skate.engine.Window.show()
-
+            Window.show()
             engineState.set(EngineState.LOADING)
-
         }
-
-
 
         loadingText = "Loading Shaders..."
-
         loadingProgress.set(0.1f)
 
-        
-
         withContext(JobSystem.Main) {
-
             shader3D = AssetPool.getShader(Shader.SHADER_3D_DEFAULT)
-
             shader2D = AssetPool.getShader(Shader.SHADER_2D_BATCH)
-
             shaderPicking = AssetPool.getShader(Shader.PICKING)
-
             shaderPicking3D = AssetPool.getShader(Shader.PICKING_3D)
-
             shaderSkybox = AssetPool.getShader(Shader.SKYBOX)
-
             shaderSkyDome = AssetPool.getShader(Shader.SKY_DOME)
-
         }
-
-        
 
         delay(10) // Small delay to let loading screen render
 
-        
-
         loadingProgress.set(0.4f)
-
         loadingText = "Initializing Renderer..."
 
         withContext(JobSystem.Main) {
-
             renderer = Renderer(shader3D, shader2D, shaderPicking, shaderPicking3D, shaderSkybox, shaderSkyDome)
-
             renderer.useFbo = true
-
         }
-
-
 
         delay(10)
 
-
-
         loadingProgress.set(0.6f)
-
         loadingText = "Loading Scene..."
 
         // Scene initialization might also need to be on main thread if it creates GL objects
-
         withContext(JobSystem.Main) {
-
             changeScene(LevelEditorSceneInitializer(), true)
-
         }
 
-        
+        loadingProgress.set(1.0f)
+        engineState.set(EngineState.RUNNING)
 
-                loadingProgress.set(1.0f)
-
-        
-
-                engineState.set(EngineState.RUNNING)
-
-        
-
-                withContext(JobSystem.Main) {
-
-        
-
-                    com.pafoid.skate.engine.Window.show()
-
-        
-
-                }
-
-        
-
-            }
-
-        
-
-        
-
-
-
-
-
-    
-
-
+        withContext(JobSystem.Main) {
+            Window.show()
+        }
+}
 
     fun getPickedId(x: Int, y: Int): Int {
         if (engineState.get() != EngineState.RUNNING) return -1

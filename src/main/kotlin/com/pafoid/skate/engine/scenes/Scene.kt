@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.scenes
 import com.google.gson.GsonBuilder
 import com.pafoid.skate.engine.Transform
 import com.pafoid.skate.engine.render.Camera
-import com.pafoid.skate.engine.assets.CubeMap
 import com.pafoid.skate.engine.render.DirectionalLight
 import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.scenes.components.Component
@@ -34,8 +33,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     var fogGradient: Float = 1.5f
     
     var levelPath: String = "level.json"
-    
-    var cubemap: CubeMap? = null
+
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
     val physics3d: com.pafoid.skate.engine.physics3d.IPhysics3D = com.pafoid.skate.engine.physics3d.Physics3D()

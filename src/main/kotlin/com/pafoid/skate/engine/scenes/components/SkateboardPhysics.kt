@@ -4,7 +4,6 @@ import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.toWorldMatrix
-import org.joml.Matrix4f
 import org.joml.Vector3f
 
 class SkateboardPhysics : Component() {

@@ -94,7 +94,7 @@ abstract class Component {
                         if (type.isEnum && !isFinal) {
                             val enumValues = getEnumValues(type as Class<out Enum<*>>)
                             val enumType = (value as Enum<*>).name
-                            val index = imgui.type.ImInt(indexOf(enumType, enumValues))
+                            val index = ImInt(indexOf(enumType, enumValues))
                             if (imgui.ImGui.combo(field.name, index, enumValues, enumValues.size)) {
                                 field.set(this, type.enumConstants[index.get()])
                             }
