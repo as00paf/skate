@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.player.state.PlayerState
-import com.pafoid.skate.engine.controls.IInputProvider
-import com.pafoid.skate.engine.controls.JoystickListener
+import com.pafoid.skate.engine.controls.input.IInputProvider
+import com.pafoid.skate.engine.controls.listeners.GamepadConstants
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
@@ -52,8 +52,8 @@ class PlayerControllerTest {
         every { inputProvider.buttonBeginPress(any(), any()) } returns false
         every { inputProvider.isKeyPressed(any()) } returns false
         val axes = FloatArray(6) { 0f }
-        axes[JoystickListener.AXIS_LEFT_TRIGGER] = -1.0f
-        axes[JoystickListener.AXIS_RIGHT_TRIGGER] = -1.0f
+        axes[GamepadConstants.AXIS_LEFT_TRIGGER] = -1.0f
+        axes[GamepadConstants.AXIS_RIGHT_TRIGGER] = -1.0f
         every { inputProvider.getAxes(any()) } returns axes
         every { inputProvider.getButtons(any()) } returns BooleanArray(15) { false }
         every { inputProvider.isCursorDisabled() } returns false
@@ -70,7 +70,7 @@ class PlayerControllerTest {
     fun `test toggle state from riding to walking`() {
         controller.stateManager.transitionToState(PlayerState.RIDING)
         
-        every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, JoystickListener.BUTTON_Y) } returns true
+        every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, GamepadConstants.BUTTON_Y) } returns true
         
         controller.update(0.016f)
         
@@ -81,7 +81,7 @@ class PlayerControllerTest {
     fun `test toggle state from walking to riding`() {
         controller.stateManager.transitionToState(PlayerState.WALKING)
         
-        every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, JoystickListener.BUTTON_Y) } returns true
+        every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, GamepadConstants.BUTTON_Y) } returns true
         every { inputProvider.isKeyPressed(any()) } returns false
         
         controller.update(0.016f)

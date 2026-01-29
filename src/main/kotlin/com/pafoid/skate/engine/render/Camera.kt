@@ -1,10 +1,11 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.controls.KeyListener
-import com.pafoid.skate.engine.controls.MouseListener
-import com.pafoid.skate.engine.controls.JoystickListener
-import com.pafoid.skate.engine.controls.IInputProvider
-import com.pafoid.skate.engine.controls.InputProvider
+import com.pafoid.skate.engine.controls.listeners.KeyListener
+import com.pafoid.skate.engine.controls.listeners.MouseListener
+import com.pafoid.skate.engine.controls.input.IInputProvider
+import com.pafoid.skate.engine.controls.input.InputProvider
+import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_X
+import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_Y
 import com.pafoid.skate.engine.utils.toRadians
 import com.pafoid.skate.engine.utils.toDegrees
 import com.pafoid.skate.engine.utils.Interpolation
@@ -123,9 +124,9 @@ class Camera(
         
         // RS Rotation (Joystick 1)
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > JoystickListener.AXIS_RIGHT_Y) {
-                val rsX = axes[JoystickListener.AXIS_RIGHT_X]
-                val rsY = axes[JoystickListener.AXIS_RIGHT_Y]
+            if (axes.size > AXIS_RIGHT_Y) {
+                val rsX = axes[AXIS_RIGHT_X]
+                val rsY = axes[AXIS_RIGHT_Y]
                 
                 if (Math.abs(rsX) > 0.1f) yaw += rsX * controllerSensitivity
                 if (Math.abs(rsY) > 0.1f) pitch += rsY * controllerSensitivity

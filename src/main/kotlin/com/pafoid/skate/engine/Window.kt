@@ -1,7 +1,9 @@
 package com.pafoid.skate.engine
 
-import com.pafoid.skate.engine.controls.KeyListener
-import com.pafoid.skate.engine.controls.MouseListener
+import com.pafoid.skate.engine.controls.input.InputBuffer
+import com.pafoid.skate.engine.controls.listeners.KeyListener
+import com.pafoid.skate.engine.controls.listeners.JoystickListener
+import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.utils.JobSystem.runOnMain
 import com.pafoid.skate.engine.utils.SettingsManager
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
@@ -15,9 +17,7 @@ import org.lwjgl.opengl.GLUtil
 import org.lwjgl.stb.STBImage
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
-import java.io.IOException
 import java.nio.ByteBuffer
-import java.nio.IntBuffer
 
 class Window(
     val width: Int = 1920,
@@ -151,7 +151,7 @@ class Window(
 
 
         installCallbacks()
-        com.pafoid.skate.engine.controls.JoystickListener.init()
+        JoystickListener.init()
 
         imGuiLayer.init(glfwWindow)
         
@@ -194,10 +194,10 @@ class Window(
             currentHeight = newHeight
             glViewport(0, 0, newWidth, newHeight)
         }
-        glfwSetCursorPosCallback(glfwWindow, com.pafoid.skate.engine.controls.MouseListener::mousePosCallback)
-        glfwSetMouseButtonCallback(glfwWindow, com.pafoid.skate.engine.controls.MouseListener::mouseButtonCallback)
-        glfwSetScrollCallback(glfwWindow, com.pafoid.skate.engine.controls.MouseListener::mouseScrollCallback)
-        glfwSetKeyCallback(glfwWindow, com.pafoid.skate.engine.controls.KeyListener::keyCallback)
+        glfwSetCursorPosCallback(glfwWindow, MouseListener::mousePosCallback)
+        glfwSetMouseButtonCallback(glfwWindow, MouseListener::mouseButtonCallback)
+        glfwSetScrollCallback(glfwWindow, MouseListener::mouseScrollCallback)
+        glfwSetKeyCallback(glfwWindow, KeyListener::keyCallback)
     }
 
     private fun loop() {
@@ -207,14 +207,14 @@ class Window(
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
-            com.pafoid.skate.engine.controls.JoystickListener.update()
+            JoystickListener.update()
             com.pafoid.skate.engine.utils.JobSystem.update()
             
             // Record high-frequency input
-            com.pafoid.skate.engine.controls.InputBuffer.push(
+            InputBuffer.push(
                 Time.getTime(),
                 org.joml.Vector2f(MouseListener.getX(), MouseListener.getY()),
-                com.pafoid.skate.engine.controls.JoystickListener.getAxes(GLFW_JOYSTICK_1)
+                JoystickListener.getAxes(GLFW_JOYSTICK_1)
             )
             
             // --- Defered Initialization Logic ---

@@ -1,7 +1,7 @@
-package com.pafoid.skate.engine.controls
+package com.pafoid.skate.engine.controls.listeners
 
 import com.pafoid.skate.engine.scenes.SceneManager
-import org.joml.Matrix4f
+import imgui.ImGui
 import org.joml.Vector2f
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
@@ -124,14 +124,14 @@ object MouseListener {
     fun getY(): Float = yPos.toFloat()
 
     fun getScreenX(): Float {
-        val mousePos = imgui.ImGui.getMousePos()
+        val mousePos = ImGui.getMousePos()
         val relativeX = mousePos.x - gameViewportPos.x
         val pickingX = ((relativeX / gameViewportSize.x) * 1920f).toInt().coerceIn(0, 1919)
         return pickingX.toFloat()
     }
 
     fun getScreenY(): Float {
-        val mousePos = imgui.ImGui.getMousePos()
+        val mousePos = ImGui.getMousePos()
         val relativeY = mousePos.y - gameViewportPos.y
         val pickingY = ((relativeY / gameViewportSize.y) * 1080f).toInt().coerceIn(0, 1079)
         return pickingY.toFloat()
@@ -147,12 +147,12 @@ object MouseListener {
 
     fun getDx(): Float = (xPos - lastX).toFloat()
     fun getDy(): Float = (yPos - lastY).toFloat()
-    fun getScrollX(): Float = if (imgui.ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()
-    fun getScrollY(): Float = if (imgui.ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
+    fun getScrollX(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()
+    fun getScrollY(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
     fun isDragging() = isDragging
     fun isMouseButtonDown(button: Int, ignoreImGui: Boolean = false): Boolean {
         val down = if (button < mouseButtonPressed.size) mouseButtonPressed[button] else false
-        return if (ignoreImGui) down else down && !imgui.ImGui.getIO().wantCaptureMouse
+        return if (ignoreImGui) down else down && !ImGui.getIO().wantCaptureMouse
     }
 
     fun getGameViewportSize(): Vector2f = gameViewportSize

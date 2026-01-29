@@ -1,5 +1,6 @@
-package com.pafoid.skate.engine.controls
+package com.pafoid.skate.engine.controls.listeners
 
+import imgui.ImGui
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
@@ -25,9 +26,9 @@ object KeyListener {
         keyBeginPressed.fill(false)
     }
 
-    fun isKeyPressed(key: Int): Boolean = if (key < keyPressed.size) keyPressed[key] && !imgui.ImGui.getIO().wantCaptureKeyboard else false
+    fun isKeyPressed(key: Int): Boolean = if (key < keyPressed.size) keyPressed[key] && !ImGui.getIO().wantCaptureKeyboard else false
 
     fun keyBeginPress(key: Int): Boolean {
-        return if (key < keyBeginPressed.size) keyBeginPressed[key] && !imgui.ImGui.getIO().wantCaptureKeyboard else false
+        return if (key < keyBeginPressed.size) keyBeginPressed[key] && !ImGui.getIO().wantCaptureKeyboard else false
     }
 }

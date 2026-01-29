@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.controls.KeyListener
-import com.pafoid.skate.engine.controls.MouseListener
+import com.pafoid.skate.engine.controls.listeners.KeyListener
+import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW.GLFW_KEY_HOME

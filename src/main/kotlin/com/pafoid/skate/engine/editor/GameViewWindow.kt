@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.Window
-import com.pafoid.skate.engine.controls.MouseListener
+import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Icons

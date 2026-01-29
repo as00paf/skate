@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.editor
 
-import com.pafoid.skate.engine.controls.KeyListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.utils.Icons

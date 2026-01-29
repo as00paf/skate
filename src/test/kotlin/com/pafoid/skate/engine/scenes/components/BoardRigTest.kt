@@ -1,17 +1,13 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.jme3.bullet.collision.PhysicsRayTestResult
-import com.pafoid.skate.engine.controls.IInputBuffer
-import com.pafoid.skate.engine.controls.IInputProvider
-import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
+import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import io.mockk.*
-import org.joml.Matrix4f
 import org.joml.Vector2f
-import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

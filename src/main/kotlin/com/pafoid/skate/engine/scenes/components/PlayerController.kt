@@ -1,27 +1,37 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.Prefabs
 import com.pafoid.skate.engine.Stance
-import com.pafoid.skate.engine.controls.KeyListener
-import com.pafoid.skate.engine.controls.JoystickListener
-import com.pafoid.skate.engine.controls.InputBuffer
-import com.pafoid.skate.engine.controls.IInputBuffer
+import com.pafoid.skate.engine.controls.input.InputBuffer
+import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.toWorldMatrix
-import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 import com.pafoid.skate.engine.SkateStance
 import com.pafoid.skate.player.state.PlayerState
 import com.pafoid.skate.player.state.PlayerStateManager
-
-import com.pafoid.skate.engine.controls.IInputProvider
-import com.pafoid.skate.engine.controls.InputProvider
+import com.pafoid.skate.engine.controls.input.IInputProvider
+import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.animation.Animator
+import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.ObjLoader
+import com.pafoid.skate.engine.assets.Texture
+import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_X
+import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_Y
+import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_TRIGGER
+import com.pafoid.skate.engine.controls.listeners.GamepadConstants.BUTTON_A
+import com.pafoid.skate.engine.controls.listeners.GamepadConstants.BUTTON_Y
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.GameObject
-import com.pafoid.skate.engine.Transform
 import com.pafoid.skate.engine.entities.Entity
-import org.joml.Matrix4f
+import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.render.VAOLoader
+import org.joml.Vector3f
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.max
+import kotlin.math.roundToLong
 
 class PlayerController : Component() {
     var preferredStance = Stance.REGULAR
@@ -76,7 +86,7 @@ class PlayerController : Component() {
     }
 
     fun isMoving(): Boolean {
-        return rb?.linearVelocity?.length() ?: 0f > 0.1f
+        return (rb?.linearVelocity?.length() ?: 0f) > 0.1f
     }
 
     fun isPushing(): Boolean {
@@ -85,16 +95,16 @@ class PlayerController : Component() {
             multiplier = 1f
         }
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > JoystickListener.AXIS_LEFT_Y) {
-                val stickY = -axes[JoystickListener.AXIS_LEFT_Y]
+            if (axes.size > AXIS_LEFT_Y) {
+                val stickY = -axes[AXIS_LEFT_Y]
                 if (stickY > 0.1f) {
-                    multiplier = Math.max(multiplier, stickY)
+                    multiplier = max(multiplier, stickY)
                 }
             }
-            if (axes.size > JoystickListener.AXIS_RIGHT_TRIGGER) {
-                val rt = (axes[JoystickListener.AXIS_RIGHT_TRIGGER] + 1f) / 2f
+            if (axes.size > AXIS_RIGHT_TRIGGER) {
+                val rt = (axes[AXIS_RIGHT_TRIGGER] + 1f) / 2f
                 if (rt > 0.1f) {
-                    multiplier = Math.max(multiplier, rt)
+                    multiplier = max(multiplier, rt)
                 }
             }
         }
@@ -128,8 +138,8 @@ fun updateProceduralLean(dt: Float) {
 
         var steerInput = 0f
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > JoystickListener.AXIS_LEFT_X) {
-                steerInput = axes[JoystickListener.AXIS_LEFT_X]
+            if (axes.size > AXIS_LEFT_X) {
+                steerInput = axes[AXIS_LEFT_X]
             }
         }
         if (inputProvider.isKeyPressed(GLFW_KEY_A)) steerInput = -1f
@@ -146,12 +156,10 @@ fun updateProceduralLean(dt: Float) {
         val rotationQuat = org.joml.Quaternionf().rotateZ(Math.toRadians(leanPerJoint.toDouble()).toFloat())
 
         spineNames.forEach { name ->
-            skeleton.getJointByName(name)?.let { joint ->
-                // Multiply current local rotation by procedural lean
-                // Since james model is facing sideways, lean might need to be on a different axis
-                // Based on standard Mixamo: X is usually pitch, Y is yaw, Z is roll (side lean)
-                joint.localTransform.rotate(rotationQuat)
-            }
+            // Multiply current local rotation by procedural lean
+            // Since james model is facing sideways, lean might need to be on a different axis
+            // Based on standard Mixamo: X is usually pitch, Y is yaw, Z is roll (side lean)
+            skeleton.getJointByName(name)?.localTransform?.rotate(rotationQuat)
         }
     }
 
@@ -165,9 +173,9 @@ fun updateProceduralLean(dt: Float) {
         
         // LS Input
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > JoystickListener.AXIS_LEFT_Y) {
-                moveZ = -axes[JoystickListener.AXIS_LEFT_Y]
-                moveX = axes[JoystickListener.AXIS_LEFT_X]
+            if (axes.size > AXIS_LEFT_Y) {
+                moveZ = -axes[AXIS_LEFT_Y]
+                moveX = axes[AXIS_LEFT_X]
             }
         }
         
@@ -203,7 +211,7 @@ fun updateProceduralLean(dt: Float) {
             target.transform.translation.add(velocity)
             
             // Face movement direction
-            val targetRotationY = Math.toDegrees(Math.atan2(moveDir.x.toDouble(), moveDir.z.toDouble())).toFloat()
+            val targetRotationY = Math.toDegrees(atan2(moveDir.x.toDouble(), moveDir.z.toDouble())).toFloat()
             target.transform.rotation.y = com.pafoid.skate.engine.utils.Interpolation.lerp(target.transform.rotation.y, targetRotationY, 10f * dt)
             
             animator?.play("walk", 0.2f)
@@ -212,7 +220,7 @@ fun updateProceduralLean(dt: Float) {
         }
         
         // Jump Button A
-        if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, JoystickListener.BUTTON_A) || inputProvider.keyBeginPress(GLFW_KEY_SPACE)) {
+        if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, BUTTON_A) || inputProvider.keyBeginPress(GLFW_KEY_SPACE)) {
             animator?.play("jump", 0.1f)
             // Note: Since unparented, board doesn't jump. Character just plays anim.
             // In a full controller, we'd add vertical velocity to the character transform.
@@ -237,13 +245,13 @@ fun updateProceduralLean(dt: Float) {
 
     private fun handleStateToggle() {
         var toggle = inputProvider.keyBeginPress(GLFW_KEY_Y)
-        if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, JoystickListener.BUTTON_Y)) {
+        if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, BUTTON_Y)) {
             toggle = true
         }
 
         if (toggle) {
             val s = skater ?: return
-            val scene = SceneManager.getCurrentScene() ?: return
+            SceneManager.getCurrentScene() ?: return
 
             if (stateManager.currentState == PlayerState.RIDING) {
                 stateManager.transitionToState(PlayerState.WALKING)
@@ -357,14 +365,14 @@ fun updateProceduralLean(dt: Float) {
 
     private fun bail() {
         // Transition to Tumble Cube
-        val scene = com.pafoid.skate.engine.scenes.SceneManager.getCurrentScene() ?: return
+        val scene = SceneManager.getCurrentScene() ?: return
         
         // Find the skater child
         val skater = gameObject.children.find { it.name == "Skater" }
         
-        val tumbleCube = com.pafoid.skate.engine.Prefabs.generateEntityObject(
-            com.pafoid.skate.engine.assets.AssetPool.getRawModel(com.pafoid.skate.engine.assets.ObjLoader.CUBE, com.pafoid.skate.engine.render.VAOLoader()),
-            com.pafoid.skate.engine.assets.AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE),
+        val tumbleCube = Prefabs.generateEntityObject(
+            AssetPool.getRawModel(ObjLoader.CUBE, VAOLoader()),
+            AssetPool.getTexture(Texture.WHITE),
             "TumbleCube"
         )
         
@@ -374,7 +382,7 @@ fun updateProceduralLean(dt: Float) {
         val cubeRb = RigidBody3D(mass = 5f)
         tumbleCube.addComponent(cubeRb)
         
-        val cubeCollider = com.pafoid.skate.engine.physics3d.components.BoxCollider3D()
+        val cubeCollider = BoxCollider3D()
         cubeCollider.halfExtents.set(0.5f, 0.5f, 0.5f)
         tumbleCube.addComponent(cubeCollider)
         
@@ -412,27 +420,27 @@ fun updateProceduralLean(dt: Float) {
         if (yaw < 0) yaw += 360f
 
         // Check for 180 increments
-        val target180 = Math.round(yaw / 180f) * 180f
+        val target180 = (yaw / 180f).roundToLong() * 180f
         val diff = target180 - yaw
         
-        if (Math.abs(diff) < 20f && (physics?.isGrounded == false)) {
+        if (abs(diff) < 20f && (physics?.isGrounded == false)) {
             // Apply "magnetic" impulse to snap to 180 increments
-            rb3d.applyTorqueImpulse(org.joml.Vector3f(0f, diff * catchStrength * dt, 0f))
+            rb3d.applyTorqueImpulse(Vector3f(0f, diff * catchStrength * dt, 0f))
         }
         
         // Pitch/Roll catch
         val pAngle = rotation.x % 180f
         val absPAngle = if (pAngle < 0) pAngle + 180f else pAngle
-        if (absPAngle < 20f || absPAngle > 160f) {
+        if (absPAngle !in 20f..160f) {
             val pTarget = if (absPAngle < 20f) 0f else 180f
-            rb3d.applyTorqueImpulse(org.joml.Vector3f((pTarget - absPAngle) * catchStrength * dt, 0f, 0f))
+            rb3d.applyTorqueImpulse(Vector3f((pTarget - absPAngle) * catchStrength * dt, 0f, 0f))
         }
 
         val rAngle = rotation.z % 180f
         val absRAngle = if (rAngle < 0) rAngle + 180f else rAngle
-        if (absRAngle < 20f || absRAngle > 160f) {
+        if (absRAngle !in 20f..160f) {
             val rTarget = if (absRAngle < 20f) 0f else 180f
-            rb3d.applyTorqueImpulse(org.joml.Vector3f(0f, 0f, (rTarget - absRAngle) * catchStrength * dt))
+            rb3d.applyTorqueImpulse(Vector3f(0f, 0f, (rTarget - absRAngle) * catchStrength * dt))
         }
     }
 
@@ -451,7 +459,7 @@ fun updateProceduralLean(dt: Float) {
             val transform = gameObject.transform.toWorldMatrix()
             transform.transformDirection(localTorque, worldTorque)
             
-            rb?.applyTorqueImpulse(org.joml.Vector3f(worldTorque.x, worldTorque.y, worldTorque.z))
+            rb?.applyTorqueImpulse(Vector3f(worldTorque.x, worldTorque.y, worldTorque.z))
         }
     }
 
@@ -468,9 +476,9 @@ fun updateProceduralLean(dt: Float) {
         
         // Controller (Joystick 1 - Left Stick X)
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > JoystickListener.AXIS_LEFT_X) {
-                val stickX = axes[JoystickListener.AXIS_LEFT_X]
-                if (Math.abs(stickX) > 0.1f) {
+            if (axes.size > AXIS_LEFT_X) {
+                val stickX = axes[AXIS_LEFT_X]
+                if (abs(stickX) > 0.1f) {
                     steer -= stickX * steerSpeed * stanceMultiplier
                 }
             }
@@ -493,17 +501,17 @@ fun updateProceduralLean(dt: Float) {
         
         // Controller (Left Stick Y for forward movement, or triggers)
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > JoystickListener.AXIS_LEFT_Y) {
-                val stickY = -axes[JoystickListener.AXIS_LEFT_Y] // Inverted stick Y
+            if (axes.size > AXIS_LEFT_Y) {
+                val stickY = -axes[AXIS_LEFT_Y] // Inverted stick Y
                 if (stickY > 0.1f) {
-                    multiplier = Math.max(multiplier, stickY)
+                    multiplier = multiplier.coerceAtLeast(stickY)
                 }
             }
             // Optional: Support Right Trigger for acceleration
-            if (axes.size > JoystickListener.AXIS_RIGHT_TRIGGER) {
-                val rt = (axes[JoystickListener.AXIS_RIGHT_TRIGGER] + 1f) / 2f // Normalize -1..1 to 0..1
+            if (axes.size > AXIS_RIGHT_TRIGGER) {
+                val rt = (axes[AXIS_RIGHT_TRIGGER] + 1f) / 2f // Normalize -1..1 to 0..1
                 if (rt > 0.1f) {
-                    multiplier = Math.max(multiplier, rt)
+                    multiplier = multiplier.coerceAtLeast(rt)
                 }
             }
         }
@@ -523,7 +531,7 @@ fun updateProceduralLean(dt: Float) {
         
         // Controller (Button A/Cross)
         inputProvider.getButtons(GLFW_JOYSTICK_1)?.let { buttons ->
-            if (buttons.size > JoystickListener.BUTTON_A && buttons[JoystickListener.BUTTON_A]) {
+            if (buttons.size > BUTTON_A && buttons[BUTTON_A]) {
                 jump = true
             }
         }

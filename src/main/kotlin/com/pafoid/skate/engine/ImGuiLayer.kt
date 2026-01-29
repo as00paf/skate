@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine
 
-import com.pafoid.skate.engine.controls.KeyListener
-import com.pafoid.skate.engine.controls.MouseListener
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.utils.Icons
 import imgui.ImGui
@@ -15,7 +13,6 @@ import imgui.flag.*
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW.*
-import org.lwjgl.opengl.GL11.*
 
 class ImGuiLayer {
 

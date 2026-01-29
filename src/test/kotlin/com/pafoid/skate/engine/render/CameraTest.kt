@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.controls.IInputProvider
+import com.pafoid.skate.engine.controls.input.IInputProvider
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

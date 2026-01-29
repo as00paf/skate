@@ -2,13 +2,15 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Texture
-import com.pafoid.skate.engine.controls.JoystickListener
+import com.pafoid.skate.engine.controls.listeners.GamepadConstants
+import com.pafoid.skate.engine.controls.listeners.JoystickListener
 import com.pafoid.skate.engine.utils.SettingsManager
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
+import kotlin.math.min
 
 class GamepadOverlay {
     private val controllerTexture: Texture by lazy {
@@ -31,7 +33,7 @@ class GamepadOverlay {
         // Calculate scale to fit within user-defined percentage of viewport
         val scaleX = maxOverlayWidth / controllerTexture.width
         val scaleY = maxOverlayHeight / controllerTexture.height
-        val scale = Math.min(scaleX, scaleY)
+        val scale = min(scaleX, scaleY)
         
         val displayWidth = controllerTexture.width * scale
         val displayHeight = controllerTexture.height * scale
@@ -86,7 +88,7 @@ class GamepadOverlay {
                 
                 // Highlight pressed buttons with 50% transparency
                 // A (Bottom)
-                if (buttons.size > JoystickListener.BUTTON_A && buttons[JoystickListener.BUTTON_A]) {
+                if (buttons.size > GamepadConstants.BUTTON_A && buttons[GamepadConstants.BUTTON_A]) {
                     drawList.addCircleFilled(
                         buttonBaseX,
                         buttonBaseY + verticalSpacing,
@@ -95,7 +97,7 @@ class GamepadOverlay {
                     )
                 }
                 // B (Right)
-                if (buttons.size > JoystickListener.BUTTON_B && buttons[JoystickListener.BUTTON_B]) {
+                if (buttons.size > GamepadConstants.BUTTON_B && buttons[GamepadConstants.BUTTON_B]) {
                     drawList.addCircleFilled(
                         buttonBaseX + horizontalSpacing,
                         buttonBaseY,
@@ -104,7 +106,7 @@ class GamepadOverlay {
                     )
                 }
                 // X (Left)
-                if (buttons.size > JoystickListener.BUTTON_X && buttons[JoystickListener.BUTTON_X]) {
+                if (buttons.size > GamepadConstants.BUTTON_X && buttons[GamepadConstants.BUTTON_X]) {
                     drawList.addCircleFilled(
                         buttonBaseX - horizontalSpacing,
                         buttonBaseY,
@@ -113,7 +115,7 @@ class GamepadOverlay {
                     )
                 }
                 // Y (Top)
-                if (buttons.size > JoystickListener.BUTTON_Y && buttons[JoystickListener.BUTTON_Y]) {
+                if (buttons.size > GamepadConstants.BUTTON_Y && buttons[GamepadConstants.BUTTON_Y]) {
                     drawList.addCircleFilled(
                         buttonBaseX,
                         buttonBaseY - verticalSpacing,
