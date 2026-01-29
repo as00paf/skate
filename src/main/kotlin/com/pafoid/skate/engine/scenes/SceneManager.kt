@@ -12,6 +12,8 @@ import com.pafoid.skate.engine.utils.JobSystem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.abs
+import kotlin.math.max
 
 class SceneManager {
 
@@ -45,6 +47,7 @@ class SceneManager {
     private lateinit var renderer: Renderer
 
     private val splashScreenManager = SplashScreenManager()
+    private val fadeDuration = 2f
 
     suspend fun initializeScene(imguiLayer: ImGuiLayer) = withContext(JobSystem.Main) {
         splashScreenManager.init()
@@ -101,7 +104,7 @@ class SceneManager {
         val isSplashing = state != EngineState.RUNNING || splashScreenManager.splashAlpha > 0f
 
         if(isSplashing) {
-            splash(dt, imguiLayer)
+            splash(dt, imguiLayer, state)
         }
     }
 
@@ -119,15 +122,17 @@ class SceneManager {
         }
     }
 
-    private fun splash(dt: Float, imguiLayer: ImGuiLayer) {
+    private fun splash(dt: Float, imguiLayer: ImGuiLayer, state: EngineState) {
         val isSplashing = splashScreenManager.splashAlpha > 0f
-        val shouldDie = !splashScreenManager.isDestroyed
+        val shouldDie = !splashScreenManager.isDestroyed && !isSplashing
         if(isSplashing) {
-            println("splashAlpha: ${splashScreenManager.splashAlpha}")
+            if(state == EngineState.RUNNING){
+                splashScreenManager.splashAlpha -= dt / fadeDuration
+            }
+
+            if (splashScreenManager.splashAlpha < 0f) splashScreenManager.splashAlpha = 0f
             splashScreenManager.render(dt, imguiLayer, engineState.get())
-            splashScreenManager.splashAlpha -= 1f / 600f
         } else if(shouldDie) {
-            splashScreenManager.splashAlpha = 0f
             splashScreenManager.destroy()
         }
     }

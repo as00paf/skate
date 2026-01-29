@@ -62,11 +62,6 @@ class SplashScreenManager {
     }
 
     fun render(dt: Float, imguiLayer: ImGuiLayer,engineState: EngineState) {
-        if(engineState != EngineState.RUNNING) {
-            GL11.glClearColor(0f, 0f, 0f, 1.0f)
-            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
-        }
-
         // Render Splash Quad
         val shader = splashShader
         val texture = splashTexture

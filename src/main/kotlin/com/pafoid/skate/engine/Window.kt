@@ -37,7 +37,7 @@ class Window(
         private var instance: Window? = null
         fun getImGuiLayer(): ImGuiLayer = instance!!.imGuiLayer
         // Corrected getFrameBuffer signature to be nullable
-        fun getFrameBuffer(): com.pafoid.skate.engine.render.FrameBuffer? = instance!!.frameBuffer
+        fun getFrameBuffer(): FrameBuffer? = instance!!.frameBuffer
 
         val currentWidth: Int
             get() = instance?.currentWidth ?: 1920
@@ -80,7 +80,7 @@ class Window(
 
     private var glfwWindow: Long = -1L
     private val imGuiLayer by lazy { ImGuiLayer() }
-    private var frameBuffer: com.pafoid.skate.engine.render.FrameBuffer? = null
+    private var frameBuffer: FrameBuffer? = null
     private var initCallbackToRun: (suspend (ImGuiLayer) -> Unit)? = null
     private var initCallbackExecuted = false
     private var isFirstDraw = true
@@ -159,8 +159,6 @@ class Window(
         JoystickListener.init()
 
         imGuiLayer.init(glfwWindow)
-        
-        
     }
 
     private fun setWindowIcon(iconPath: String) {
