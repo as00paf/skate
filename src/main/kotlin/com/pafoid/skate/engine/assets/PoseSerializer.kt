@@ -8,6 +8,7 @@ import java.io.File
 
 object PoseSerializer {
 
+    // TODO: take from injection
     private val gson = GsonBuilder()
         .registerTypeAdapter(Component::class.java, ComponentDeserializer())
         .setPrettyPrinting()

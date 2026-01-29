@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.animation.AnimationPath
 import com.pafoid.skate.engine.animation.AnimationSampler
 import com.pafoid.skate.engine.animation.InterpolationType
 import com.pafoid.skate.engine.animation.Joint
+import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.render.VAOLoader
 import org.joml.Matrix4f
 import org.lwjgl.assimp.*
@@ -16,11 +17,11 @@ import java.io.File
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
+
 class AssimpLoader {
 
-    private data class BoneInfo(val index: Int, val offsetMatrix: Matrix4f)
-
     fun preLoadModel(filePath: String): PreLoadedModel {
+        // TODO: handle error
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
 
@@ -30,7 +31,8 @@ class AssimpLoader {
         // Collect Bone Information
         val boneNames = mutableListOf<String>()
         val boneInfoMap = mutableMapOf<String, BoneInfo>()
-        
+
+        // TODO: fix nullability
         for (i in 0 until scene.mNumMeshes()) {
             val mesh = AIMesh.create(scene.mMeshes()!!.get(i))
             for (b in 0 until mesh.mNumBones()) {
@@ -48,16 +50,15 @@ class AssimpLoader {
         
         if (filePath.contains("skateboard", ignoreCase = true)) {
             unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
-        } else if (filePath.contains("Superhero", ignoreCase = true)) {
-            unitScale = 1.0f // Superhero model is actually ~1.8m at unit scale
         }
-        
+
+        // TODO: fix nullability
         val rootTransform = Matrix4f().scale(unitScale)
         processNode(scene.mRootNode()!!, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
 
         // Build Skeleton Hierarchy
         val rootJoint = buildHierarchy(scene.mRootNode()!!, boneInfoMap)
-        val skeleton = if (rootJoint != null) com.pafoid.skate.engine.animation.Skeleton(rootJoint, boneNames.size) else null
+        val skeleton = if (rootJoint != null) Skeleton(rootJoint, boneNames.size) else null
 
         // Load Animations
         val animations = mutableListOf<Animation>()
@@ -101,7 +102,8 @@ class AssimpLoader {
         for (i in 0 until aiAnim.mNumChannels()) {
             val aiChannel = AINodeAnim.create(aiAnim.mChannels()!!.get(i))
             val nodeName = aiChannel.mNodeName().dataString()
-            
+
+            //TODO: extract
             // Translation
             if (aiChannel.mNumPositionKeys() > 0) {
                 val times = FloatArray(aiChannel.mNumPositionKeys())

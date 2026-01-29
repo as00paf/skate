@@ -101,6 +101,7 @@ class ObjLoader {
         }
     }
 
+    //TODO: move
     companion object {
         const val CUBE = "assets/obj/cube.obj"
         const val RAIL = "assets/obj/rail.obj"

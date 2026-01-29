@@ -13,7 +13,7 @@ object AssetPool {
 
     private val shaders = mutableMapOf<String, Shader>()
     private val textures = mutableMapOf<String, Texture>()
-    private val cubemaps = mutableMapOf<String, CubeMap>()
+    private val cubeMaps = mutableMapOf<String, CubeMap>()
     private val spriteSheets = mutableMapOf<String, SpriteSheet>()
     private val sounds = mutableMapOf<String, Sound>()
     private val models = mutableMapOf<String, TexturedModel>()
@@ -114,7 +114,7 @@ object AssetPool {
                         }
                     }
 
-                    com.pafoid.skate.engine.models.MeshPart(model, mat, p.inverseBindMatrices)
+                    MeshPart(model, mat, p.inverseBindMatrices)
                 }
                 
                 // Free texture data
@@ -164,13 +164,13 @@ object AssetPool {
         return Triple(firstPart.rawModel, firstPart.material.baseColorTexture?.filePath, null)
     }
 
-    fun getCubemap(filePaths: Array<String>): CubeMap {
+    fun getCubeMap(filePaths: Array<String>): CubeMap {
         val key = filePaths.joinToString("|")
-        return if(cubemaps.containsKey(key)) {
-            cubemaps[key]!!
+        return if(cubeMaps.containsKey(key)) {
+            cubeMaps[key]!!
         } else {
             val cubemap = CubeMap().init(filePaths)
-            cubemaps[key] = cubemap
+            cubeMaps[key] = cubemap
             cubemap
         }
     }

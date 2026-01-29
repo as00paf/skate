@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine
+package com.pafoid.skate.skateboard
 
 enum class Stance {
     REGULAR,

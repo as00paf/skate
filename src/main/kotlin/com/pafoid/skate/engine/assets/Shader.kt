@@ -107,6 +107,7 @@ class Shader(
         glDeleteProgram(shaderProgId)
     }
 
+    // TODO: move
     companion object {
         const val SHADER_3D_DEFAULT = "assets/shaders/shader_3d_default.glsl"
         const val SHADER_2D_BATCH = "assets/shaders/shader_2d_batch.glsl"

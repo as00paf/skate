@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.controls.listeners
 import org.lwjgl.glfw.GLFW.*
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
+import kotlin.math.min
 
 object JoystickListener {
     private val joystickPresent = BooleanArray(GLFW_JOYSTICK_LAST + 1)
@@ -34,7 +35,7 @@ object JoystickListener {
                 
                 val buttons: ByteBuffer? = glfwGetJoystickButtons(i)
                 if (buttons != null) {
-                    for (j in 0 until Math.min(buttons.remaining(), 15)) {
+                    for (j in 0 until min(buttons.remaining(), 15)) {
                         currentButtons[i][j] = buttons.get() == 1.toByte()
                     }
                 }
