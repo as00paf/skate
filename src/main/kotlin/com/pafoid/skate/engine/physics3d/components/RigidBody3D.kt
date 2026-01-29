@@ -4,9 +4,10 @@ import com.jme3.bullet.objects.PhysicsRigidBody
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.physics3d.enums.BodyType
 import com.pafoid.skate.engine.scenes.SceneManager
-import com.jme3.math.Vector3f
-import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
+import com.pafoid.skate.engine.utils.JmeVector3f
+import com.pafoid.skate.engine.utils.JomlVector3f
+import org.joml.Quaternionf
 
 open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
     var bodyType: BodyType = BodyType.Dynamic
@@ -23,8 +24,8 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
                 gameObject.transform.translation.set(pos.x, pos.y, pos.z)
                 
                 // JME Quaternion to Euler (JOML)
-                val q = org.joml.Quaternionf(rot.x, rot.y, rot.z, rot.w)
-                val euler = org.joml.Vector3f()
+                val q = Quaternionf(rot.x, rot.y, rot.z, rot.w)
+                val euler = JomlVector3f()
                 q.getEulerAnglesXYZ(euler)
                 gameObject.transform.rotation.set(
                     Math.toDegrees(euler.x.toDouble()).toFloat(),
@@ -37,9 +38,9 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
                 val rot = gameObject.transform.rotation
                 val scale = gameObject.transform.scale
                 
-                body.setPhysicsLocation(Vector3f(trans.x, trans.y, trans.z))
+                body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
                 
-                val q = org.joml.Quaternionf().rotationXYZ(
+                val q = Quaternionf().rotationXYZ(
                     Math.toRadians(rot.x.toDouble()).toFloat(),
                     Math.toRadians(rot.y.toDouble()).toFloat(),
                     Math.toRadians(rot.z.toDouble()).toFloat()
@@ -47,8 +48,8 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
                 body.setPhysicsRotation(com.jme3.math.Quaternion(q.x, q.y, q.z, q.w))
                 body.collisionShape.setScale(com.jme3.math.Vector3f(scale.x, scale.y, scale.z))
                 
-                body.setLinearVelocity(Vector3f.ZERO)
-                body.setAngularVelocity(Vector3f.ZERO)
+                body.setLinearVelocity(JmeVector3f.ZERO)
+                body.setAngularVelocity(JmeVector3f.ZERO)
             }
         }
     }
@@ -57,37 +58,37 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
         update(dt)
     }
 
-    override fun applyCentralForce(force: org.joml.Vector3f) {
-        rawBody?.applyCentralForce(Vector3f(force.x, force.y, force.z))
+    override fun applyCentralForce(force: JomlVector3f) {
+        rawBody?.applyCentralForce(JmeVector3f(force.x, force.y, force.z))
     }
 
-    override fun applyImpulse(impulse: org.joml.Vector3f) {
-        rawBody?.applyImpulse(Vector3f(impulse.x, impulse.y, impulse.z), Vector3f.ZERO)
+    override fun applyImpulse(impulse: JomlVector3f) {
+        rawBody?.applyImpulse(JmeVector3f(impulse.x, impulse.y, impulse.z), JmeVector3f.ZERO)
     }
 
-    override fun applyTorqueImpulse(torque: org.joml.Vector3f) {
-        rawBody?.applyTorqueImpulse(Vector3f(torque.x, torque.y, torque.z))
+    override fun applyTorqueImpulse(torque: JomlVector3f) {
+        rawBody?.applyTorqueImpulse(JmeVector3f(torque.x, torque.y, torque.z))
     }
 
-    override fun applyForce(force: org.joml.Vector3f, relPos: org.joml.Vector3f) {
-        rawBody?.applyForce(Vector3f(force.x, force.y, force.z), Vector3f(relPos.x, relPos.y, relPos.z))
+    override fun applyForce(force: JomlVector3f, relPos: JomlVector3f) {
+        rawBody?.applyForce(JmeVector3f(force.x, force.y, force.z), JmeVector3f(relPos.x, relPos.y, relPos.z))
     }
 
-    override var linearVelocity: org.joml.Vector3f
+    override var linearVelocity: JomlVector3f
         get() {
-            val v:com.jme3.math.Vector3f = rawBody?.getLinearVelocity(null) ?: Vector3f.ZERO
-            return org.joml.Vector3f(v.x, v.y, v.z)
+            val v: JmeVector3f = rawBody?.getLinearVelocity(null) ?: JmeVector3f.ZERO
+            return JomlVector3f(v.x, v.y, v.z)
         }
         set(value) {
-            rawBody?.setLinearVelocity(Vector3f(value.x, value.y, value.z))
+            rawBody?.setLinearVelocity(JmeVector3f(value.x, value.y, value.z))
         }
 
-    override var angularVelocity: org.joml.Vector3f
+    override var angularVelocity: JomlVector3f
         get() {
-            val v = rawBody?.getAngularVelocity(null) ?: Vector3f.ZERO
-            return org.joml.Vector3f(v.x, v.y, v.z)
+            val v = rawBody?.getAngularVelocity(null) ?: JmeVector3f.ZERO
+            return JomlVector3f(v.x, v.y, v.z)
         }
         set(value) {
-            rawBody?.setAngularVelocity(Vector3f(value.x, value.y, value.z))
+            rawBody?.setAngularVelocity(JmeVector3f(value.x, value.y, value.z))
         }
 }

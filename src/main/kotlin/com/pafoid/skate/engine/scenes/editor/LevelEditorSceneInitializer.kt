@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.scenes.editor
 
+import com.pafoid.skate.engine.animation.Animator
+import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.Texture
@@ -66,10 +68,10 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         playerGo.transform.rotation.set(0f, 90f, 0f) // Face sideways for skating
         playerGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
         playerGo.addComponent(Entity(
-            model = AssetPool.getModel(ObjLoader.PLAYER_GLTF, loader)
+            model = AssetPool.getModel(ObjLoader.JAMES, loader)
         ))
-        playerGo.addComponent(com.pafoid.skate.engine.animation.Animator())
-        playerGo.addComponent(com.pafoid.skate.engine.animation.PoseGizmo())
+        playerGo.addComponent(Animator())
+        playerGo.addComponent(PoseGizmo())
         scene.addGameObjectToScene(playerGo)
 
         val ground = GameObject("Floor")
@@ -117,10 +119,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         }
 
         imgui.ImGui.separator()
-        imgui.ImGui.text("Feature 1: Basic Rendering [COMPLETE]")
-        imgui.ImGui.text("Feature 2: Bullet Physics (Floor) [COMPLETE]")
-        imgui.ImGui.text("Feature 3: Modular Tile System [COMPLETE]")
-        imgui.ImGui.text("Feature 4: Skateboard Physics [COMPLETE]")
 
         if (imgui.ImGui.button("Reset Skateboard")) {
             val scene = SceneManager.getCurrentScene()
