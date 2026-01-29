@@ -4,6 +4,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import kotlin.math.abs
 
 class AnimationSamplerTest {
 
@@ -109,6 +110,6 @@ class AnimationSamplerTest {
         val expected = Quaternionf().rotateX(Math.toRadians(45.0).toFloat())
         
         // Check if dot product is close to 1 (same orientation)
-        assertEquals(1.0f, Math.abs(result.dot(expected)), 1e-5f)
+        assertEquals(1.0f, abs(result.dot(expected)), 1e-5f)
     }
 }

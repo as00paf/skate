@@ -2,8 +2,6 @@ package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.assets.AssimpLoader
 import org.junit.jupiter.api.Test
-import java.io.File
-
 class SkeletonJointTest {
 
     @Test

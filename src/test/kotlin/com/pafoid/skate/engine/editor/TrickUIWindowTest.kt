@@ -2,13 +2,10 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.components.TrickDetector
-import imgui.ImGui
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.joml.Vector2f
 
 // NOTE: Direct testing of ImGui rendering is challenging. These tests primarily verify
 // the underlying logic that *precedes* ImGui calls. For actual UI correctness, visual
