@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.imgui
 
 import com.pafoid.skate.engine.Window
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.editor.BoneTreeWindow
 import com.pafoid.skate.engine.editor.EnvironmentWindow
 import com.pafoid.skate.engine.editor.GameViewWindow
@@ -29,8 +30,6 @@ import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
 import java.io.File
 
-private const val fontsFile = "assets/fonts/Font Awesome 7 Free-Solid-900.otf"
-private const val imGuiFile = "imgui.ini"
 
 class ImGuiLayer {
 
@@ -52,10 +51,10 @@ class ImGuiLayer {
         ImGui.createContext()
 
         with(ImGui.getIO()) {
-            iniFilename = imGuiFile
+            iniFilename = Assets.INI.IMGUI
             backendPlatformName = "imgui_java_impl_glfw"
             addConfigFlags(ImGuiConfigFlags.DockingEnable or ImGuiConfigFlags.ViewportsEnable)
-            loadFonts(fontsFile)
+            loadFonts(Assets.Fonts.fontsFile)
         }
 
         imGuiGlfw.init(glfwWindow, true)
@@ -65,7 +64,7 @@ class ImGuiLayer {
     }
 
     private fun setupLayout(dockspaceId: Int) {
-        val iniFile = File("imgui.ini")
+        val iniFile = File(Assets.INI.IMGUI)
         if (iniFile.exists()) return
 
         dockBuilderRemoveNode(dockspaceId)

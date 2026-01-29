@@ -37,4 +37,10 @@ object Assets {
         const val SKATEBOARD_GLB = "assets/obj/skateboard_free_model.glb"
         const val JAMES = "assets/characters/james.glb"
     }
+    object Fonts {
+        const val fontsFile = "assets/fonts/Font Awesome 7 Free-Solid-900.otf"
+    }
+    object INI {
+        const val IMGUI = "imgui.ini"
+    }
 }
