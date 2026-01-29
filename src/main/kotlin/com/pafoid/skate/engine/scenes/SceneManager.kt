@@ -124,8 +124,8 @@ class SceneManager {
         val shouldDie = !splashScreenManager.isDestroyed
         if(isSplashing) {
             println("splashAlpha: ${splashScreenManager.splashAlpha}")
-            splashScreenManager.splashAlpha -= 0.1f / 100f
             splashScreenManager.render(dt, imguiLayer, engineState.get())
+            splashScreenManager.splashAlpha -= 1f / 600f
         } else if(shouldDie) {
             splashScreenManager.splashAlpha = 0f
             splashScreenManager.destroy()
