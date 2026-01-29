@@ -1,40 +1,24 @@
 package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.EngineState
-
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.Window
-
 import com.pafoid.skate.engine.assets.AssetPool
-
 import com.pafoid.skate.engine.assets.Shader
-
 import com.pafoid.skate.engine.assets.Texture
-
-import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.RawModel
-
-import com.pafoid.skate.engine.render.Camera
-
-import com.pafoid.skate.engine.render.Light
-
 import com.pafoid.skate.engine.render.Renderer
-
 import com.pafoid.skate.engine.render.VAOLoader
-
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
-
 import com.pafoid.skate.engine.utils.JobSystem
-
+import imgui.ImGui
 import kotlinx.coroutines.delay
-
 import kotlinx.coroutines.withContext
-
-import org.joml.Vector3f
-
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL13
+import org.lwjgl.opengl.GL20
+import org.lwjgl.opengl.GL30
 import java.util.concurrent.atomic.AtomicReference
-
-
 
 class SceneManager {
 
@@ -171,662 +155,98 @@ class SceneManager {
         return currentScene?.getGameObject(id)
     }
 
-
-
-        private suspend fun changeScene(initializer: SceneInitializer, isFirstScene: Boolean = false) {
-
-
-
-            if (!isFirstScene) currentScene?.destroy()
-
-
-
-    
-
-
-
+    private suspend fun changeScene(initializer: SceneInitializer, isFirstScene: Boolean = false) {
+        if (!isFirstScene) currentScene?.destroy()
             val scene = Scene(initializer)
-
-
-
             currentScene = scene
-
-
-
             //scene.load()
-
-
-
             scene.init()
-
-
-
             scene.start()
-
-
-
         }
 
-
-
-    
-
-
-
-        fun draw(dt: Float, imguiLayer: ImGuiLayer) {
-
-
-
-    
-
-
-
-            val state = engineState.get()
-
-
-
-    
-
-
-
-            if (state != EngineState.RUNNING || splashAlpha > 0f) {
-
-
-
-    
-
-
-
-                renderLoadingScreen(imguiLayer)
-
-
-
-    
-
-
-
-                if (state == EngineState.RUNNING && splashAlpha > 0f) {
-
-
-
-    
-
-
-
-                    splashAlpha -= fadeSpeed * dt
-
-
-
-    
-
-
-
-                    if (splashAlpha < 0f) splashAlpha = 0f
-
-
-
-    
-
-
-
-                }
-
-
-
-    
-
-
-
-                if (state != EngineState.RUNNING) return
-
-
-
-    
-
-
-
+    fun draw(dt: Float, imguiLayer: ImGuiLayer) {
+        val state = engineState.get()
+        if (state != EngineState.RUNNING || splashAlpha > 0f) {
+            renderLoadingScreen(imguiLayer)
+            if (state == EngineState.RUNNING && splashAlpha > 0f) {
+                splashAlpha -= fadeSpeed * dt
+                if (splashAlpha < 0f) splashAlpha = 0f
             }
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-            val scene = currentScene
-
-
-
-    
-
-
-
-            if (dt >= 0 && scene != null) {
-
-
-
-    
-
-
-
-                if (runtimePlaying) {
-
-
-
-    
-
-
-
-                    scene.update(dt)
-
-
-
-    
-
-
-
-                } else {
-
-
-
-    
-
-
-
-                    scene.editorUpdate(dt)
-
-
-
-    
-
-
-
-                }
-
-
-
-    
-
-
-
-                renderer.render(scene, imguiLayer.propertiesWindow.getActiveObject(), imguiLayer.gameViewWindow.getHoveredObject())
-
-
-
-    
-
-
-
-                imguiLayer.update(dt, scene)
-
-
-
-    
-
-
-
-            }
-
-
-
-    
-
-
-
+            if (state != EngineState.RUNNING) return
         }
 
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-        private fun renderLoadingScreen(imguiLayer: ImGuiLayer) {
-
-
-
-    
-
-
-
-            // Clear screen
-
-
-
-    
-
-
-
-            org.lwjgl.opengl.GL11.glClearColor(0f, 0f, 0f, 1.0f)
-
-
-
-    
-
-
-
-            org.lwjgl.opengl.GL11.glClear(org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT)
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-            // Render Splash Quad
-
-
-
-    
-
-
-
-            val shader = splashShader
-
-
-
-    
-
-
-
-            val texture = splashTexture
-
-
-
-    
-
-
-
-            val quad = splashQuad
-
-
-
-    
-
-
-
-            
-
-
-
-    
-
-
-
-            if (shader != null && texture != null && quad != null) {
-
-
-
-    
-
-
-
-                shader.start()
-
-
-
-    
-
-
-
-                shader.uploadFloat("uProgress", loadingProgress.get())
-
-
-
-    
-
-
-
-                shader.uploadFloat("uAlpha", splashAlpha)
-
-
-
-    
-
-
-
-                org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0)
-
-
-
-    
-
-
-
-                texture.bind()
-
-
-
-    
-
-
-
-                shader.uploadInt("uTexture", 0)
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-                org.lwjgl.opengl.GL30.glBindVertexArray(quad.vaoId)
-
-
-
-    
-
-
-
-                org.lwjgl.opengl.GL20.glEnableVertexAttribArray(0)
-
-
-
-    
-
-
-
-                org.lwjgl.opengl.GL20.glEnableVertexAttribArray(1)
-
-
-
-    
-
-
-
-                
-
-
-
-    
-
-
-
-                org.lwjgl.opengl.GL11.glDrawElements(org.lwjgl.opengl.GL11.GL_TRIANGLES, quad.vertexCount, org.lwjgl.opengl.GL11.GL_UNSIGNED_INT, 0)
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-                org.lwjgl.opengl.GL20.glDisableVertexAttribArray(0)
-
-
-
-    
-
-
-
-                org.lwjgl.opengl.GL20.glDisableVertexAttribArray(1)
-
-
-
-    
-
-
-
-                org.lwjgl.opengl.GL30.glBindVertexArray(0)
-
-
-
-    
-
-
-
-                texture.unbind()
-
-
-
-    
-
-
-
-                shader.stop()
-
-
-
-    
-
-
-
+        val scene = currentScene
+        if (dt >= 0 && scene != null) {
+            if (runtimePlaying) {
+                scene.update(dt)
+            } else {
+                scene.editorUpdate(dt)
             }
 
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-            // Only show ImGui if we are still loading, not during fade out
-
-
-
-    
-
-
-
-            if (engineState.get() != EngineState.RUNNING) {
-
-
-
-    
-
-
-
-                // Simple ImGui Loading Overlay
-
-
-
-    
-
-
-
-                imguiLayer.startFrame()
-
-
-
-    
-
-
-
-                
-
-
-
-    
-
-
-
-                val viewport = imgui.ImGui.getMainViewport()
-
-
-
-    
-
-
-
-                imgui.ImGui.setNextWindowPos(viewport.getCenter().x, viewport.getCenter().y + 200f, imgui.flag.ImGuiCond.Always, 0.5f, 0.5f)
-
-
-
-    
-
-
-
-                imgui.ImGui.setNextWindowSize(400f, 100f)
-
-
-
-    
-
-
-
-                
-
-
-
-    
-
-
-
-                if (imgui.ImGui.begin("Loading Status", imgui.flag.ImGuiWindowFlags.NoDecoration or imgui.flag.ImGuiWindowFlags.NoMove or imgui.flag.ImGuiWindowFlags.NoSavedSettings or imgui.flag.ImGuiWindowFlags.NoBackground)) {
-
-
-
-    
-
-
-
-                    imgui.ImGui.setWindowFontScale(1.5f)
-
-
-
-    
-
-
-
-                    imgui.ImGui.text(loadingText)
-
-
-
-    
-
-
-
-                    imgui.ImGui.end()
-
-
-
-    
-
-
-
-                }
-
-
-
-    
-
-
-
-                
-
-
-
-    
-
-
-
-                imguiLayer.endFrame()
-
-
-
-    
-
-
-
-            }
-
-
-
-    
-
-
-
+            renderer.render(scene, imguiLayer.propertiesWindow.getActiveObject(), imguiLayer.gameViewWindow.getHoveredObject())
+            imguiLayer.update(dt, scene)
+        }
+    }
+
+    private fun renderLoadingScreen(imguiLayer: ImGuiLayer) {
+        GL11.glClearColor(0f, 0f, 0f, 1.0f)
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
+
+        // Render Splash Quad
+        val shader = splashShader
+        val texture = splashTexture
+        val quad = splashQuad
+
+        if (shader != null && texture != null && quad != null) {
+            shader.start()
+            shader.uploadFloat("uProgress", loadingProgress.get())
+            shader.uploadFloat("uAlpha", splashAlpha)
+            GL13.glActiveTexture(GL13.GL_TEXTURE0)
+
+            texture.bind()
+            shader.uploadInt("uTexture", 0)
+
+            GL30.glBindVertexArray(quad.vaoId)
+            GL20.glEnableVertexAttribArray(0)
+            GL20.glEnableVertexAttribArray(1)
+            GL11.glDrawElements(GL11.GL_TRIANGLES, quad.vertexCount, GL11.GL_UNSIGNED_INT, 0)
+            GL20.glDisableVertexAttribArray(0)
+            GL20.glDisableVertexAttribArray(1)
+            GL30.glBindVertexArray(0)
+
+            texture.unbind()
+            shader.stop()
         }
 
+        // Only show ImGui if we are still loading, not during fade out
+        if (engineState.get() != EngineState.RUNNING) {
+            // Simple ImGui Loading Overlay
+            imguiLayer.startFrame()
 
+            val viewport = ImGui.getMainViewport()
+            ImGui.setNextWindowPos(viewport.getCenter().x, viewport.getCenter().y + 200f, imgui.flag.ImGuiCond.Always, 0.5f, 0.5f)
+            ImGui.setNextWindowSize(400f, 100f)
 
-    
+            if (ImGui.begin("Loading Status", imgui.flag.ImGuiWindowFlags.NoDecoration or imgui.flag.ImGuiWindowFlags.NoMove or imgui.flag.ImGuiWindowFlags.NoSavedSettings or imgui.flag.ImGuiWindowFlags.NoBackground)) {
+                ImGui.setWindowFontScale(1.5f)
+                ImGui.text(loadingText)
+                ImGui.end()
+            }
 
+            imguiLayer.endFrame()
+        }
+    }
 
+    fun destroy() {
+        if (engineState.get() != EngineState.RUNNING) return
 
-        fun destroy() {
-
-
-
-    
-
-
-
-            if (engineState.get() != EngineState.RUNNING) return
-
-
-
-    
-
-
-
-            shader3D.destroy()
-
-
-
-    
-
-
-
-    
-
+        shader3D.destroy()
         shader2D.destroy()
-
         shaderPicking.destroy()
-
         shaderPicking3D.destroy()
-
         shaderSkybox.destroy()
-
         shaderSkyDome.destroy()
-
         renderer.destroy()
-
     }
 
 }
