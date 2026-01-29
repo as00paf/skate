@@ -1,17 +1,23 @@
 package com.pafoid.skate.engine.editor
 
+import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.physics3d.enums.BodyType
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import imgui.ImGui
+import imgui.flag.ImGuiTableFlags
+import imgui.flag.ImGuiTreeNodeFlags
 import org.joml.Vector3f
 import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
 
@@ -35,15 +41,15 @@ class PrefabsWindow {
         ImGui.inputTextWithHint("##search", "${Icons.SEARCH} Search...", searchText)
         ImGui.separator()
 
-        if (ImGui.collapsingHeader("${Icons.CUBE} Simulation", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) {
+        if (ImGui.collapsingHeader("${Icons.CUBE} Simulation", ImGuiTreeNodeFlags.DefaultOpen)) {
             renderSimulationPrefabs()
         }
 
-        if (ImGui.collapsingHeader("${Icons.PALETTE} Environment", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) {
+        if (ImGui.collapsingHeader("${Icons.PALETTE} Environment", ImGuiTreeNodeFlags.DefaultOpen)) {
             renderEnvironmentPrefabs()
         }
 
-        if (ImGui.collapsingHeader("${Icons.GEAR} Obstacles", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) {
+        if (ImGui.collapsingHeader("${Icons.GEAR} Obstacles", ImGuiTreeNodeFlags.DefaultOpen)) {
             renderObstaclePrefabs()
         }
 
@@ -57,7 +63,7 @@ class PrefabsWindow {
         ).filter { it.first.contains(searchText.get(), ignoreCase = true) }
 
         if (items.isNotEmpty()) {
-            if (ImGui.beginTable("SimulationTable", 2, imgui.flag.ImGuiTableFlags.SizingFixedFit)) {
+            if (ImGui.beginTable("SimulationTable", 2, ImGuiTableFlags.SizingFixedFit)) {
                 for (item in items) {
                     ImGui.tableNextColumn()
                     renderPrefabItem(item.first, item.second, MaterialType.CONCRETE, onSpawn = item.third)
@@ -73,7 +79,7 @@ class PrefabsWindow {
         ).filter { it.first.contains(searchText.get(), ignoreCase = true) }
 
         if (items.isNotEmpty()) {
-            if (ImGui.beginTable("EnvironmentTable", 2, imgui.flag.ImGuiTableFlags.SizingFixedFit)) {
+            if (ImGui.beginTable("EnvironmentTable", 2, ImGuiTableFlags.SizingFixedFit)) {
                 for (item in items) {
                     ImGui.tableNextColumn()
                     renderPrefabItem(item.first, item.second, MaterialType.CONCRETE, onSpawn = item.third)
@@ -107,7 +113,7 @@ class PrefabsWindow {
 
         if (configs.isNotEmpty()) {
             // Use 4 columns to show more variants
-            if (ImGui.beginTable("ObstacleTable", 4, imgui.flag.ImGuiTableFlags.SizingFixedFit)) {
+            if (ImGui.beginTable("ObstacleTable", 4, ImGuiTableFlags.SizingFixedFit)) {
                 for (config in configs) {
                     for (material in config.allowedMaterials) {
                         ImGui.tableNextColumn()
@@ -144,7 +150,7 @@ class PrefabsWindow {
             val rawModel = AssetPool.getRawModel(modelPath, loader)
             val texture = AssetPool.getTexture(material.texturePath)
             // Create a temporary TexturedModel for the thumbnail generator
-            val model = com.pafoid.skate.engine.models.TexturedModel(rawModel, texture)
+            val model = TexturedModel(rawModel, texture)
             // Use specific ID per variant so they don't overwrite each other in cache
             val cacheId = "${modelPath}_${material.name}"
             ThumbnailCache.getThumbnail(cacheId, model)
@@ -197,13 +203,13 @@ class PrefabsWindow {
         val scene = SceneManager.getCurrentScene() ?: return
         val tile = GameObject("Tile_${scene.gameObjects.size}")
         tile.addComponent(Entity(
-            model = com.pafoid.skate.engine.models.TexturedModel(
+            model = TexturedModel(
                 AssetPool.getRawModel(ObjLoader.CUBE, loader), 
                 AssetPool.getTexture(Texture.WHITE)
             )
         ))
         tile.addComponent(com.pafoid.skate.engine.scenes.components.ModularTile())
-        tile.addComponent(RigidBody3D(0f).apply { bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        tile.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         tile.addComponent(BoxCollider3D(Vector3f(1f, 1f, 1f)))
         scene.addGameObjectToScene(tile)
     }
@@ -214,12 +220,12 @@ class PrefabsWindow {
         rail.transform.translation.set(position) 
         rail.transform.scale.set(1f, 1f, 1f)
         rail.addComponent(Entity(
-            model = com.pafoid.skate.engine.models.TexturedModel(
+            model = TexturedModel(
                 AssetPool.getRawModel(ObjLoader.RAIL, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
-        rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
         rail.addComponent(com.pafoid.skate.engine.physics3d.components.CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0)) 
         scene.addGameObjectToScene(rail)
     }
@@ -230,12 +236,12 @@ class PrefabsWindow {
         ledge.transform.translation.set(position) 
         ledge.transform.scale.set(1f, 1f, 1f)
         ledge.addComponent(Entity(
-            model = com.pafoid.skate.engine.models.TexturedModel(
+            model = TexturedModel(
                 AssetPool.getRawModel(ObjLoader.LEDGE, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
-        ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
         scene.addGameObjectToScene(ledge)
     }
@@ -246,12 +252,12 @@ class PrefabsWindow {
         kicker.transform.translation.set(position)
         kicker.transform.scale.set(1f, 1f, 1f)
         kicker.addComponent(Entity(
-            model = com.pafoid.skate.engine.models.TexturedModel(
+            model = TexturedModel(
                 AssetPool.getRawModel(ObjLoader.KICKER, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
-        kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         
         val kickerRawModel = AssetPool.getRawModel(ObjLoader.KICKER, loader)
         val jmeVertices = mutableListOf<JmeVector3f>()
@@ -260,8 +266,8 @@ class PrefabsWindow {
         }
         
         if (jmeVertices.isNotEmpty()) {
-            val kickerShape = com.jme3.bullet.collision.shapes.HullCollisionShape(jmeVertices)
-            kicker.addComponent(com.pafoid.skate.engine.physics3d.components.CustomCollider3D(kickerShape))
+            val kickerShape = HullCollisionShape(jmeVertices)
+            kicker.addComponent(CustomCollider3D(kickerShape))
         }
         
         scene.addGameObjectToScene(kicker)
@@ -272,12 +278,12 @@ class PrefabsWindow {
         val go = GameObject("ManualPad_${scene.gameObjects.size}")
         go.transform.translation.set(position)
         go.addComponent(Entity(
-            model = com.pafoid.skate.engine.models.TexturedModel(
+            model = TexturedModel(
                 AssetPool.getRawModel(ObjLoader.MANUAL_PAD, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
-        go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
         scene.addGameObjectToScene(go)
     }
@@ -287,20 +293,20 @@ class PrefabsWindow {
         val go = GameObject("Bank_${scene.gameObjects.size}")
         go.transform.translation.set(position)
         go.addComponent(Entity(
-            model = com.pafoid.skate.engine.models.TexturedModel(
+            model = TexturedModel(
                 AssetPool.getRawModel(ObjLoader.BANK, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
-        go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         
         val rawModel = AssetPool.getRawModel(ObjLoader.BANK, loader)
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
             jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
         }
-        val shape = com.jme3.bullet.collision.shapes.HullCollisionShape(jmeVertices)
-        go.addComponent(com.pafoid.skate.engine.physics3d.components.CustomCollider3D(shape))
+        val shape = HullCollisionShape(jmeVertices)
+        go.addComponent(CustomCollider3D(shape))
         
         scene.addGameObjectToScene(go)
     }
@@ -310,20 +316,20 @@ class PrefabsWindow {
         val go = GameObject("QuarterPipe_${scene.gameObjects.size}")
         go.transform.translation.set(position)
         go.addComponent(Entity(
-            model = com.pafoid.skate.engine.models.TexturedModel(
+            model = TexturedModel(
                 AssetPool.getRawModel(ObjLoader.QUARTER_PIPE, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
-        go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static })
+        go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         
         val rawModel = AssetPool.getRawModel(ObjLoader.QUARTER_PIPE, loader)
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
             jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
         }
-        val shape = com.jme3.bullet.collision.shapes.HullCollisionShape(jmeVertices)
-        go.addComponent(com.pafoid.skate.engine.physics3d.components.CustomCollider3D(shape))
+        val shape = HullCollisionShape(jmeVertices)
+        go.addComponent(CustomCollider3D(shape))
         
         scene.addGameObjectToScene(go)
     }
