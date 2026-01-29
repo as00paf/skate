@@ -10,8 +10,18 @@ import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.render.VAOLoader
 import imgui.ImGui
+import imgui.flag.ImGuiCond
+import imgui.flag.ImGuiWindowFlags
 import kotlinx.coroutines.delay
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_BLEND
+import org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT
+import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
+import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
+import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
+import org.lwjgl.opengl.GL11.glBlendFunc
+import org.lwjgl.opengl.GL11.glDisable
+import org.lwjgl.opengl.GL11.glEnable
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
@@ -52,8 +62,10 @@ class SplashScreenManager {
     }
 
     fun render(dt: Float, imguiLayer: ImGuiLayer,engineState: EngineState) {
-        GL11.glClearColor(0f, 0f, 0f, 1.0f)
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
+        if(engineState != EngineState.RUNNING) {
+            GL11.glClearColor(0f, 0f, 0f, 1.0f)
+            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
+        }
 
         // Render Splash Quad
         val shader = splashShader
@@ -72,6 +84,9 @@ class SplashScreenManager {
             GL30.glBindVertexArray(quad.vaoId)
             GL20.glEnableVertexAttribArray(0)
             GL20.glEnableVertexAttribArray(1)
+            glDisable(GL_DEPTH_TEST)
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             GL11.glDrawElements(GL11.GL_TRIANGLES, quad.vertexCount, GL11.GL_UNSIGNED_INT, 0)
             GL20.glDisableVertexAttribArray(0)
             GL20.glDisableVertexAttribArray(1)
@@ -79,6 +94,7 @@ class SplashScreenManager {
 
             texture.unbind()
             shader.stop()
+            glDisable(GL11.GL_BLEND)
         }
 
         // Only show ImGui if we are still loading, not during fade out
@@ -87,10 +103,10 @@ class SplashScreenManager {
             imguiLayer.startFrame()
 
             val viewport = ImGui.getMainViewport()
-            ImGui.setNextWindowPos(viewport.getCenter().x, viewport.getCenter().y + 200f, imgui.flag.ImGuiCond.Always, 0.5f, 0.5f)
+            ImGui.setNextWindowPos(viewport.getCenter().x, viewport.getCenter().y + 200f, ImGuiCond.Always, 0.5f, 0.5f)
             ImGui.setNextWindowSize(400f, 100f)
 
-            if (ImGui.begin("Loading Status", imgui.flag.ImGuiWindowFlags.NoDecoration or imgui.flag.ImGuiWindowFlags.NoMove or imgui.flag.ImGuiWindowFlags.NoSavedSettings or imgui.flag.ImGuiWindowFlags.NoBackground)) {
+            if (ImGui.begin("Loading Status", ImGuiWindowFlags.NoDecoration or ImGuiWindowFlags.NoMove or ImGuiWindowFlags.NoSavedSettings or ImGuiWindowFlags.NoBackground)) {
                 ImGui.setWindowFontScale(1.5f)
                 ImGui.text(loadingText)
                 ImGui.end()

@@ -46,7 +46,7 @@ bin/
 
 # Generated files
 imgui.ini
-level.txt
+level.json
 
 # Temp files
 #temp.md

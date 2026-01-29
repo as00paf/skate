@@ -48,9 +48,11 @@ class SceneManager {
 
     suspend fun initializeScene(imguiLayer: ImGuiLayer) = withContext(JobSystem.Main) {
         splashScreenManager.init()
+        delay(10)
         engineState.set(EngineState.LOADING)
+        delay(10)
         initRenderSystem()
-
+        delay(10)
         splashScreenManager.loadingProgress.set(1.0f)
         delay(10)
         engineState.set(EngineState.RUNNING)
@@ -94,17 +96,16 @@ class SceneManager {
 
     fun draw(dt: Float, imguiLayer: ImGuiLayer) {
         val state = engineState.get()
-        if (state != EngineState.RUNNING || splashScreenManager.splashAlpha > 0f) {
-            splashScreenManager.render(dt, imguiLayer, engineState.get())
-            if (state == EngineState.RUNNING && splashScreenManager.splashAlpha > 0f) {
-                splashScreenManager.splashAlpha -= 0.01f
-                if (splashScreenManager.splashAlpha < 0f) {
-                    splashScreenManager.splashAlpha = 0f
-                }
-            }
-            if (state != EngineState.RUNNING) return
-        } else if(!splashScreenManager.isDestroyed) splashScreenManager.destroy()
 
+        if(state == EngineState.RUNNING) drawScene(dt, imguiLayer)
+        val isSplashing = state != EngineState.RUNNING || splashScreenManager.splashAlpha > 0f
+
+        if(isSplashing) {
+            splash(dt, imguiLayer)
+        }
+    }
+
+    private fun drawScene(dt: Float, imguiLayer: ImGuiLayer) {
         val scene = currentScene
         if (dt >= 0 && scene != null) {
             if (runtimePlaying) {
@@ -115,6 +116,19 @@ class SceneManager {
 
             renderer.render(scene, imguiLayer.propertiesWindow.getActiveObject(), imguiLayer.gameViewWindow.getHoveredObject())
             imguiLayer.update(dt, scene)
+        }
+    }
+
+    private fun splash(dt: Float, imguiLayer: ImGuiLayer) {
+        val isSplashing = splashScreenManager.splashAlpha > 0f
+        val shouldDie = !splashScreenManager.isDestroyed
+        if(isSplashing) {
+            println("splashAlpha: ${splashScreenManager.splashAlpha}")
+            splashScreenManager.splashAlpha -= 0.1f / 100f
+            splashScreenManager.render(dt, imguiLayer, engineState.get())
+        } else if(shouldDie) {
+            splashScreenManager.splashAlpha = 0f
+            splashScreenManager.destroy()
         }
     }
 
