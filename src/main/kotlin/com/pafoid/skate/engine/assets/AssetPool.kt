@@ -136,7 +136,7 @@ object AssetPool {
 
         val texturedModel = if (filePath.lowercase().endsWith(".obj")) {
             val rawModel = ObjLoader().loadObjModel(filePath, loader)
-            val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = getTexture(Texture.WHITE)), emptyList()))
+            val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = getTexture(Assets.Textures.WHITE)), emptyList()))
             TexturedModel(parts)
         } else {
             val preLoaded = assimpLoader.preLoadModel(filePath)

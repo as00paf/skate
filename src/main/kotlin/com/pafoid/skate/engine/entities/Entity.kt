@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.entities
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.utils.MImGui
@@ -56,7 +57,7 @@ class Entity(
                     val mat = part.material
 
                     // Texture Display
-                    val tex = mat.baseColorTexture ?: AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE)
+                    val tex = mat.baseColorTexture ?: AssetPool.getTexture(Assets.Textures.WHITE)
                     imgui.ImGui.text("Base Texture: ${mat.baseColorPath ?: "Embedded/Generated"}")
                     imgui.ImGui.image(tex.texId.toLong(), 64f, 64f, 0f, 1f, 1f, 0f)
 

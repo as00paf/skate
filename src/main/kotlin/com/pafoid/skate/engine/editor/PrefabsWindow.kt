@@ -2,8 +2,7 @@ package com.pafoid.skate.engine.editor
 
 import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.pafoid.skate.engine.assets.AssetPool
-import com.pafoid.skate.engine.assets.ObjLoader
-import com.pafoid.skate.engine.assets.Texture
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.TexturedModel
@@ -25,12 +24,12 @@ class PrefabsWindow {
     private val loader = VAOLoader()
 
     enum class MaterialType(val displayName: String, val texturePath: String) {
-        CONCRETE("Concrete", Texture.CONCRETE_SIMPLE),
-        WOOD_BROWN("Wood (Brown)", "assets/textures/skatelite_brown.png"),
-        WOOD_LIGHT("Wood (Light)", "assets/textures/skatelite_light.png"),
-        WOOD_TAN("Wood (Tan)", "assets/textures/skatelite_tan.png"),
-        WOOD_DARK("Wood (Dark)", "assets/textures/skatelite_dark.png"),
-        METAL("Metal", "assets/textures/white.png") // Fallback
+        CONCRETE("Concrete", Assets.Textures.CONCRETE_SIMPLE),
+        WOOD_BROWN("Wood (Brown)", Assets.Textures.WOOD_BROWN),
+        WOOD_LIGHT("Wood (Light)", Assets.Textures.WOOD_LIGHT),
+        WOOD_TAN("Wood (Tan)", Assets.Textures.WOOD_TAN),
+        WOOD_DARK("Wood (Dark)", Assets.Textures.WOOD_DARK),
+        METAL("Metal", Assets.Textures.WHITE) // Fallback
     }
 
     private var searchText = imgui.type.ImString("")
@@ -58,7 +57,7 @@ class PrefabsWindow {
 
     private fun renderSimulationPrefabs() {
         val items = listOf(
-            Triple("Skateboard", ObjLoader.SKATEBOARD_GLB) { _: MaterialType -> spawnSkateboard() },
+            Triple("Skateboard", Assets.Models.SKATEBOARD_GLB) { _: MaterialType -> spawnSkateboard() },
             Triple("Player", null) { _: MaterialType -> /* TODO */ }
         ).filter { it.first.contains(searchText.get(), ignoreCase = true) }
 
@@ -75,7 +74,7 @@ class PrefabsWindow {
 
     private fun renderEnvironmentPrefabs() {
         val items = listOf(
-            Triple("Tile", ObjLoader.CUBE) { _: MaterialType -> spawnTile() }
+            Triple("Tile", Assets.Models.CUBE) { _: MaterialType -> spawnTile() }
         ).filter { it.first.contains(searchText.get(), ignoreCase = true) }
 
         if (items.isNotEmpty()) {
@@ -103,12 +102,12 @@ class PrefabsWindow {
         // Jersey Barrier -> Concrete only
 
         val configs = listOf(
-            PrefabConfig("Rail", ObjLoader.RAIL, "PREFAB_RAIL", metalOnly) { mat -> spawnRail(material = mat) },
-            PrefabConfig("Ledge", ObjLoader.LEDGE, "PREFAB_LEDGE", woodOrConcrete) { mat -> spawnLedge(material = mat) },
-            PrefabConfig("Kicker", ObjLoader.KICKER, "PREFAB_KICKER", woodOrConcrete) { mat -> spawnKicker(material = mat) },
-            PrefabConfig("Manual Pad", ObjLoader.MANUAL_PAD, "PREFAB_MANUAL_PAD", woodOrConcrete) { mat -> spawnManualPad(material = mat) },
-            PrefabConfig("Bank", ObjLoader.BANK, "PREFAB_BANK", woodOrConcrete) { mat -> spawnBank(material = mat) },
-            PrefabConfig("Quarter Pipe", ObjLoader.QUARTER_PIPE, "PREFAB_QUARTER_PIPE", woodOrConcrete) { mat -> spawnQuarterPipe(material = mat) }
+            PrefabConfig("Rail", Assets.Models.RAIL, "PREFAB_RAIL", metalOnly) { mat -> spawnRail(material = mat) },
+            PrefabConfig("Ledge", Assets.Models.LEDGE, "PREFAB_LEDGE", woodOrConcrete) { mat -> spawnLedge(material = mat) },
+            PrefabConfig("Kicker", Assets.Models.KICKER, "PREFAB_KICKER", woodOrConcrete) { mat -> spawnKicker(material = mat) },
+            PrefabConfig("Manual Pad", Assets.Models.MANUAL_PAD, "PREFAB_MANUAL_PAD", woodOrConcrete) { mat -> spawnManualPad(material = mat) },
+            PrefabConfig("Bank", Assets.Models.BANK, "PREFAB_BANK", woodOrConcrete) { mat -> spawnBank(material = mat) },
+            PrefabConfig("Quarter Pipe", Assets.Models.QUARTER_PIPE, "PREFAB_QUARTER_PIPE", woodOrConcrete) { mat -> spawnQuarterPipe(material = mat) }
         ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
         if (configs.isNotEmpty()) {
@@ -155,7 +154,7 @@ class PrefabsWindow {
             val cacheId = "${modelPath}_${material.name}"
             ThumbnailCache.getThumbnail(cacheId, model)
         } else {
-            AssetPool.getTexture(Texture.WHITE).texId
+            AssetPool.getTexture(Assets.Textures.WHITE).texId
         }
 
         // Push ID to avoid collision if names are identical (though we made them unique with variant name)
@@ -186,7 +185,7 @@ class PrefabsWindow {
     fun spawnSkateboard() {
         val scene = SceneManager.getCurrentScene() ?: return
         
-        AssetPool.getModelAsync(ObjLoader.SKATEBOARD_GLB, loader) { model ->
+        AssetPool.getModelAsync(Assets.Models.SKATEBOARD_GLB, loader) { model ->
             val skate = GameObject("Skateboard")
             skate.transform.translation.set(0f, 2f, 0f)
             skate.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
@@ -204,8 +203,8 @@ class PrefabsWindow {
         val tile = GameObject("Tile_${scene.gameObjects.size}")
         tile.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(ObjLoader.CUBE, loader), 
-                AssetPool.getTexture(Texture.WHITE)
+                AssetPool.getRawModel(Assets.Models.CUBE, loader),
+                AssetPool.getTexture(Assets.Textures.WHITE)
             )
         ))
         tile.addComponent(com.pafoid.skate.engine.scenes.components.ModularTile())
@@ -221,7 +220,7 @@ class PrefabsWindow {
         rail.transform.scale.set(1f, 1f, 1f)
         rail.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(ObjLoader.RAIL, loader),
+                AssetPool.getRawModel(Assets.Models.RAIL, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
@@ -237,7 +236,7 @@ class PrefabsWindow {
         ledge.transform.scale.set(1f, 1f, 1f)
         ledge.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(ObjLoader.LEDGE, loader),
+                AssetPool.getRawModel(Assets.Models.LEDGE, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
@@ -253,13 +252,13 @@ class PrefabsWindow {
         kicker.transform.scale.set(1f, 1f, 1f)
         kicker.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(ObjLoader.KICKER, loader),
+                AssetPool.getRawModel(Assets.Models.KICKER, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         
-        val kickerRawModel = AssetPool.getRawModel(ObjLoader.KICKER, loader)
+        val kickerRawModel = AssetPool.getRawModel(Assets.Models.KICKER, loader)
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until kickerRawModel.vertices.size / 3) {
             jmeVertices.add(JmeVector3f(kickerRawModel.vertices[i*3], kickerRawModel.vertices[i*3+1], kickerRawModel.vertices[i*3+2]))
@@ -279,7 +278,7 @@ class PrefabsWindow {
         go.transform.translation.set(position)
         go.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(ObjLoader.MANUAL_PAD, loader),
+                AssetPool.getRawModel(Assets.Models.MANUAL_PAD, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
@@ -294,13 +293,13 @@ class PrefabsWindow {
         go.transform.translation.set(position)
         go.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(ObjLoader.BANK, loader),
+                AssetPool.getRawModel(Assets.Models.BANK, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         
-        val rawModel = AssetPool.getRawModel(ObjLoader.BANK, loader)
+        val rawModel = AssetPool.getRawModel(Assets.Models.BANK, loader)
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
             jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
@@ -317,13 +316,13 @@ class PrefabsWindow {
         go.transform.translation.set(position)
         go.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(ObjLoader.QUARTER_PIPE, loader),
+                AssetPool.getRawModel(Assets.Models.QUARTER_PIPE, loader),
                 AssetPool.getTexture(material.texturePath)
             )
         ))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         
-        val rawModel = AssetPool.getRawModel(ObjLoader.QUARTER_PIPE, loader)
+        val rawModel = AssetPool.getRawModel(Assets.Models.QUARTER_PIPE, loader)
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
             jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))

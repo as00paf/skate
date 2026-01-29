@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_X
@@ -371,8 +372,8 @@ fun updateProceduralLean(dt: Float) {
         val skater = gameObject.children.find { it.name == "Skater" }
         
         val tumbleCube = Prefabs.generateEntityObject(
-            AssetPool.getRawModel(ObjLoader.CUBE, VAOLoader()),
-            AssetPool.getTexture(Texture.WHITE),
+            AssetPool.getRawModel(Assets.Models.CUBE, VAOLoader()),
+            AssetPool.getTexture(Assets.Textures.WHITE),
             "TumbleCube"
         )
         

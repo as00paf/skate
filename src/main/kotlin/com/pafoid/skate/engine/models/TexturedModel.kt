@@ -3,8 +3,10 @@ package com.pafoid.skate.engine.models
 import com.pafoid.skate.engine.animation.Animation
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.scenes.components.Component
+import org.joml.Matrix4f
 import org.joml.Vector4f
 
 data class Material(
@@ -33,7 +35,7 @@ data class Material(
 data class MeshPart(
     val rawModel: RawModel, 
     val material: Material,
-    val inverseBindMatrices: List<org.joml.Matrix4f> = emptyList()
+    val inverseBindMatrices: List<Matrix4f> = emptyList()
 )
 
 data class TexturedModel (
@@ -43,9 +45,9 @@ data class TexturedModel (
 ): Component() {
     constructor(rawModel: RawModel, texture: Texture) : this(listOf(MeshPart(rawModel, Material(baseColorTexture = texture))))
     constructor(rawModel: RawModel, material: Material) : this(listOf(MeshPart(rawModel, material)))
-    constructor(rawModel: RawModel, material: Material, inverseBindMatrices: List<org.joml.Matrix4f>) : this(listOf(MeshPart(rawModel, material, inverseBindMatrices)))
+    constructor(rawModel: RawModel, material: Material, inverseBindMatrices: List<Matrix4f>) : this(listOf(MeshPart(rawModel, material, inverseBindMatrices)))
     
     // For backward compatibility
     val rawModel: RawModel get() = parts[0].rawModel
-    val texture: Texture get() = parts[0].material.baseColorTexture ?: AssetPool.getTexture(Texture.WHITE)
+    val texture: Texture get() = parts[0].material.baseColorTexture ?: AssetPool.getTexture(Assets.Textures.WHITE)
 }

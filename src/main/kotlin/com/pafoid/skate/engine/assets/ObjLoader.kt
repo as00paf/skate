@@ -100,17 +100,4 @@ class ObjLoader {
             throw e
         }
     }
-
-    //TODO: move
-    companion object {
-        const val CUBE = "assets/obj/cube.obj"
-        const val RAIL = "assets/obj/rail.obj"
-        const val LEDGE = "assets/obj/ledge.obj"
-        const val KICKER = "assets/obj/kicker.obj"
-        const val MANUAL_PAD = "assets/obj/manual_pad.obj"
-        const val BANK = "assets/obj/bank.obj"
-        const val QUARTER_PIPE = "assets/obj/quarter_pipe.obj"
-        const val SKATEBOARD_GLB = "assets/obj/skateboard_free_model.glb"
-        const val JAMES = "assets/characters/james.glb"
-    }
 }

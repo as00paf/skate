@@ -5,13 +5,6 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 
-const val SPLITTER_REGEX = "(#type)( )+([a-zA-Z]+)"
-const val TYPE_DELIMITER = "#type"
-const val EOL_DELIMITER = "\r\n"
-const val TYPE_DELIMITER_COUNT = 6
-const val FRAGMENT = "fragment"
-const val VERTEX = "vertex"
-
 class ShaderLoader(private var verbose:Boolean = false) {
 
     fun loadShader(filePath: String): Shader {
@@ -25,14 +18,14 @@ class ShaderLoader(private var verbose:Boolean = false) {
 
     private fun loadFromFile(filePath: String): Shader {
         val src = String(Files.readAllBytes(Paths.get(filePath)))
-        val splitSrc = src.split(SPLITTER_REGEX.toRegex())
+        val splitSrc = src.split(ShaderConst.SPLITTER_REGEX.toRegex())
 
-        var index = src.indexOf(TYPE_DELIMITER) + TYPE_DELIMITER_COUNT
+        var index = src.indexOf(ShaderConst.TYPE_DELIMITER) + ShaderConst.TYPE_DELIMITER_COUNT
         var eol = src.indexOf("\n", index)
         if (eol == -1) eol = src.length // In case it's the last line without EOL
         val firstPattern = src.substring(index, eol).trim()
 
-        index = src.indexOf(TYPE_DELIMITER, eol) + TYPE_DELIMITER_COUNT
+        index = src.indexOf(ShaderConst.TYPE_DELIMITER, eol) + ShaderConst.TYPE_DELIMITER_COUNT
         eol = src.indexOf("\n", index)
         if (eol == -1) eol = src.length
         val secondPattern = src.substring(index, eol).trim()
@@ -40,17 +33,17 @@ class ShaderLoader(private var verbose:Boolean = false) {
         var vertexSrc = ""
         var fragmentSrc = ""
 
-        if(firstPattern == VERTEX) {
+        if(firstPattern == ShaderConst.VERTEX) {
             vertexSrc = splitSrc[1]
-        } else if(firstPattern == FRAGMENT) {
+        } else if(firstPattern == ShaderConst.FRAGMENT) {
             fragmentSrc = splitSrc[2]
         } else {
             throw IOException("Unexpected token '$firstPattern' in $filePath")
         }
 
-        if(secondPattern == VERTEX) {
+        if(secondPattern == ShaderConst.VERTEX) {
             vertexSrc = splitSrc[1]
-        } else if(secondPattern == FRAGMENT) {
+        } else if(secondPattern == ShaderConst.FRAGMENT) {
             fragmentSrc = splitSrc[2]
         } else {
             throw IOException("Unexpected token '$secondPattern' in $filePath")
@@ -101,9 +94,9 @@ class ShaderLoader(private var verbose:Boolean = false) {
         GL20.glAttachShader(shaderProgId, fragmentShaderId)
 
         // Bind attribs, new stuff
-        bindAttribute(shaderProgId,0, "aPos")
-        bindAttribute(shaderProgId,1, "aTexCoords")
-        bindAttribute(shaderProgId,2, "aNormal")
+        bindAttribute(shaderProgId,0, ShaderConst.Attribs.POSITION)
+        bindAttribute(shaderProgId,1, ShaderConst.Attribs.TEX_COORDS)
+        bindAttribute(shaderProgId,2, ShaderConst.Attribs.NORMAL)
 
         GL20.glLinkProgram(shaderProgId)
 

@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.Sprite
 import com.pafoid.skate.engine.assets.Texture
@@ -49,7 +50,7 @@ object Prefabs {
 
         // We use a cube as the base model for tiles
         val loader = VAOLoader() // Inefficient to create here, but for now...
-        val cubeModel = AssetPool.getRawModel(ObjLoader.CUBE, loader)
+        val cubeModel = AssetPool.getRawModel(Assets.Models.CUBE, loader)
 
         val texturedModel = TexturedModel(cubeModel, texture)
         val entity = Entity(texturedModel)
