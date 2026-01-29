@@ -1,10 +1,9 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.assets.Cubemap
+import com.pafoid.skate.engine.assets.CubeMap
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.models.RawModel
 import org.lwjgl.opengl.GL11.*
-import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP
 import org.lwjgl.opengl.GL20.glDisableVertexAttribArray
 import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
 import org.lwjgl.opengl.GL30.glBindVertexArray
@@ -59,7 +58,7 @@ class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
 
     private val cube: RawModel = loader.loadToVAO(VERTICES, 3)
 
-    fun render(camera: Camera, cubemap: Cubemap) {
+    fun render(camera: Camera, cubemap: CubeMap) {
         shader.start()
         shader.uploadMat4f("viewMatrix", camera.createViewMatrix())
         shader.uploadMat4f("projectionMatrix", camera.createProjectionMatrix())

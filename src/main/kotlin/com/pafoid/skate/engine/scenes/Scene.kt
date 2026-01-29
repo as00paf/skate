@@ -3,15 +3,11 @@ package com.pafoid.skate.engine.scenes
 import com.google.gson.GsonBuilder
 import com.pafoid.skate.engine.Transform
 import com.pafoid.skate.engine.render.Camera
-import com.pafoid.skate.engine.assets.Cubemap
-import com.pafoid.skate.engine.physics3d.Physics3D
+import com.pafoid.skate.engine.assets.CubeMap
 import com.pafoid.skate.engine.render.Light
-import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
-import org.joml.Vector2f
 import org.joml.Vector3f
-import org.lwjgl.PointerBuffer
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.FileWriter
@@ -38,7 +34,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     
     var levelPath: String = "level.json"
     
-    var cubemap: Cubemap? = null
+    var cubemap: CubeMap? = null
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
     val physics3d: com.pafoid.skate.engine.physics3d.IPhysics3D = com.pafoid.skate.engine.physics3d.Physics3D()

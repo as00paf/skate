@@ -4,8 +4,6 @@ import com.pafoid.skate.engine.models.MeshPart
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.utils.JobSystem
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.runBlocking
 import java.io.File
 
 object AssetPool {
@@ -15,7 +13,7 @@ object AssetPool {
 
     private val shaders = mutableMapOf<String, Shader>()
     private val textures = mutableMapOf<String, Texture>()
-    private val cubemaps = mutableMapOf<String, Cubemap>()
+    private val cubemaps = mutableMapOf<String, CubeMap>()
     private val spriteSheets = mutableMapOf<String, SpriteSheet>()
     private val sounds = mutableMapOf<String, Sound>()
     private val models = mutableMapOf<String, TexturedModel>()
@@ -166,12 +164,12 @@ object AssetPool {
         return Triple(firstPart.rawModel, firstPart.material.baseColorTexture?.filePath, null)
     }
 
-    fun getCubemap(filePaths: Array<String>): Cubemap {
+    fun getCubemap(filePaths: Array<String>): CubeMap {
         val key = filePaths.joinToString("|")
         return if(cubemaps.containsKey(key)) {
             cubemaps[key]!!
         } else {
-            val cubemap = Cubemap().init(filePaths)
+            val cubemap = CubeMap().init(filePaths)
             cubemaps[key] = cubemap
             cubemap
         }

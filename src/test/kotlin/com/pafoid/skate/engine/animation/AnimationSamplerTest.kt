@@ -64,7 +64,7 @@ class AnimationSamplerTest {
             10f, 0f, 0f,  // value
             0f, 0f, 0f    // out-tangent (not used for last keyframe)
         )
-        val sampler = AnimationSampler(times, values, InterpolationType.CUBICSPLINE, 3)
+        val sampler = AnimationSampler(times, values, InterpolationType.CUBIC_SPLINE, 3)
         val result = Vector3f()
 
         // At t=0.5, h00=0.5, h10=0.125, h01=0.5, h11=-0.125

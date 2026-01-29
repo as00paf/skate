@@ -2,6 +2,8 @@
 - Code cleanup, empty spaces everywhere, comments
 - UI review to make it up to par with industry standards, compare features of Unity, Unreal, Godot and Stride
 - Feature review to make sure everything is working as intended
+- Dependency injection and better manage serialization
+- Resource management
 
 Icon design 
 

@@ -22,5 +22,4 @@ class Sprite(
         texture = tex
     }
 
-
 }

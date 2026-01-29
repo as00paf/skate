@@ -4,17 +4,18 @@ import com.pafoid.skate.engine.scenes.components.Component
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30.*
 import org.lwjgl.stb.STBImage.*
+import java.nio.ByteBuffer
 import java.util.*
 
 class TextureData(
     val width: Int,
     val height: Int,
     val channels: Int,
-    val pixels: java.nio.ByteBuffer,
+    val pixels: ByteBuffer,
     val flip: Boolean = false
 ) {
     fun free() {
-        org.lwjgl.stb.STBImage.stbi_image_free(pixels)
+        stbi_image_free(pixels)
     }
 }
 
@@ -64,12 +65,12 @@ class Texture: Component() {
         glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
         glTexImage2D(target, 0, GL_RGBA, width, height,
-            0, GL_RGBA, GL_UNSIGNED_BYTE, null as java.nio.ByteBuffer?)
+            0, GL_RGBA, GL_UNSIGNED_BYTE, null as ByteBuffer?)
 
         return this
     }
 
-    fun init3D(width: Int, height: Int, depth: Int, data: java.nio.ByteBuffer? = null): Texture {
+    fun init3D(width: Int, height: Int, depth: Int, data: ByteBuffer? = null): Texture {
         this.texId = glGenTextures()
         this.width = width
         this.height = height
@@ -133,7 +134,7 @@ class Texture: Component() {
             }
         }
 
-        fun loadData(buffer: java.nio.ByteBuffer, flipOnLoad: Boolean = false): TextureData? {
+        fun loadData(buffer: ByteBuffer, flipOnLoad: Boolean = false): TextureData? {
             val width = BufferUtils.createIntBuffer(1)
             val height = BufferUtils.createIntBuffer(1)
             val channels = BufferUtils.createIntBuffer(1)

@@ -11,8 +11,6 @@ import java.lang.Exception
 
 class ObjLoader {
 
-    private data class VertexIndices(val p: Int, val t: Int, val n: Int)
-
     fun loadObjModel(fileName: String, loader: VAOLoader): RawModel {
         try {
             val file = File(fileName)
@@ -112,7 +110,6 @@ class ObjLoader {
         const val BANK = "assets/obj/bank.obj"
         const val QUARTER_PIPE = "assets/obj/quarter_pipe.obj"
         const val SKATEBOARD_GLB = "assets/obj/skateboard_free_model.glb"
-        const val PLAYER_GLTF = "assets/characters/Superhero_Male_FullBody.gltf"
         const val JAMES = "assets/characters/james.glb"
     }
 }

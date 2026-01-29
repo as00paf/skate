@@ -8,10 +8,10 @@ import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP
 import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X
 import org.lwjgl.stb.STBImage.*
 
-class Cubemap {
+class CubeMap {
     private var id: Int = -1
 
-    fun init(filePaths: Array<String>): Cubemap {
+    fun init(filePaths: Array<String>): CubeMap {
         id = glGenTextures()
         glBindTexture(GL_TEXTURE_CUBE_MAP, id)
 
@@ -30,7 +30,7 @@ class Cubemap {
                 )
                 stbi_image_free(image)
             } else {
-                assert(false) { "Error: (Cubemap) Unable to load image: ${filePaths[i]}" }
+                assert(false) { "Error: (CubeMap) Unable to load image: ${filePaths[i]}" }
             }
         }
 

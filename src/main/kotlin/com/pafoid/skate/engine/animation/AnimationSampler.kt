@@ -4,12 +4,6 @@ import com.pafoid.skate.engine.utils.Interpolation
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
-enum class InterpolationType {
-    STEP,
-    LINEAR,
-    CUBICSPLINE
-}
-
 class AnimationSampler(
     val times: FloatArray,
     val values: FloatArray,
@@ -29,16 +23,16 @@ class AnimationSampler(
         val clampedTime = time.coerceIn(times.first(), times.last())
         
         if (clampedTime <= times.first()) {
-            val stride = if (interpolation == InterpolationType.CUBICSPLINE) 3 * componentsPerValue else componentsPerValue
-            val offset = if (interpolation == InterpolationType.CUBICSPLINE) componentsPerValue else 0
+            val stride = if (interpolation == InterpolationType.CUBIC_SPLINE) 3 * componentsPerValue else componentsPerValue
+            val offset = if (interpolation == InterpolationType.CUBIC_SPLINE) componentsPerValue else 0
             for (i in 0 until componentsPerValue) {
                 dest[i] = values[offset + i]
             }
             return
         }
         if (clampedTime >= times.last()) {
-            val stride = if (interpolation == InterpolationType.CUBICSPLINE) 3 * componentsPerValue else componentsPerValue
-            val offset = (times.size - 1) * stride + (if (interpolation == InterpolationType.CUBICSPLINE) componentsPerValue else 0)
+            val stride = if (interpolation == InterpolationType.CUBIC_SPLINE) 3 * componentsPerValue else componentsPerValue
+            val offset = (times.size - 1) * stride + (if (interpolation == InterpolationType.CUBIC_SPLINE) componentsPerValue else 0)
             for (i in 0 until componentsPerValue) {
                 dest[i] = values[offset + i]
             }
@@ -63,7 +57,7 @@ class AnimationSampler(
                     dest[i] = v0 + (v1 - v0) * t
                 }
             }
-            InterpolationType.CUBICSPLINE -> {
+            InterpolationType.CUBIC_SPLINE -> {
                 val dt = t1 - t0
                 val stride = 3 * componentsPerValue
                 for (i in 0 until componentsPerValue) {
@@ -80,14 +74,14 @@ class AnimationSampler(
     fun sampleVector3f(time: Float, dest: Vector3f) {
         if (times.isEmpty()) return
         if (time <= times.first()) {
-            val stride = if (interpolation == InterpolationType.CUBICSPLINE) 9 else 3
-            val offset = if (interpolation == InterpolationType.CUBICSPLINE) 3 else 0
+            val stride = if (interpolation == InterpolationType.CUBIC_SPLINE) 9 else 3
+            val offset = if (interpolation == InterpolationType.CUBIC_SPLINE) 3 else 0
             dest.set(values[offset], values[offset + 1], values[offset + 2])
             return
         }
         if (time >= times.last()) {
-            val stride = if (interpolation == InterpolationType.CUBICSPLINE) 9 else 3
-            val offset = (times.size - 1) * stride + (if (interpolation == InterpolationType.CUBICSPLINE) 3 else 0)
+            val stride = if (interpolation == InterpolationType.CUBIC_SPLINE) 9 else 3
+            val offset = (times.size - 1) * stride + (if (interpolation == InterpolationType.CUBIC_SPLINE) 3 else 0)
             dest.set(values[offset], values[offset + 1], values[offset + 2])
             return
         }
@@ -110,7 +104,7 @@ class AnimationSampler(
                 val v1z = values[(index + 1) * 3 + 2]
                 dest.set(v0x + (v1x - v0x) * t, v0y + (v1y - v0y) * t, v0z + (v1z - v0z) * t)
             }
-            InterpolationType.CUBICSPLINE -> {
+            InterpolationType.CUBIC_SPLINE -> {
                 val dt = t1 - t0
                 val stride = 9
                 val p0x = values[index * stride + 3]
@@ -144,14 +138,14 @@ class AnimationSampler(
     fun sampleQuaternionf(time: Float, dest: Quaternionf) {
         if (times.isEmpty()) return
         if (time <= times.first()) {
-            val stride = if (interpolation == InterpolationType.CUBICSPLINE) 12 else 4
-            val offset = if (interpolation == InterpolationType.CUBICSPLINE) 4 else 0
+            val stride = if (interpolation == InterpolationType.CUBIC_SPLINE) 12 else 4
+            val offset = if (interpolation == InterpolationType.CUBIC_SPLINE) 4 else 0
             dest.set(values[offset], values[offset + 1], values[offset + 2], values[offset + 3])
             return
         }
         if (time >= times.last()) {
-            val stride = if (interpolation == InterpolationType.CUBICSPLINE) 12 else 4
-            val offset = (times.size - 1) * stride + (if (interpolation == InterpolationType.CUBICSPLINE) 4 else 0)
+            val stride = if (interpolation == InterpolationType.CUBIC_SPLINE) 12 else 4
+            val offset = (times.size - 1) * stride + (if (interpolation == InterpolationType.CUBIC_SPLINE) 4 else 0)
             dest.set(values[offset], values[offset + 1], values[offset + 2], values[offset + 3])
             return
         }
@@ -171,7 +165,7 @@ class AnimationSampler(
                 val q1 = Quaternionf(values[(index + 1) * 4], values[(index + 1) * 4 + 1], values[(index + 1) * 4 + 2], values[(index + 1) * 4 + 3])
                 q0.slerp(q1, t, dest)
             }
-            InterpolationType.CUBICSPLINE -> {
+            InterpolationType.CUBIC_SPLINE -> {
                 val dt = t1 - t0
                 val stride = 12
                 val p0x = values[index * stride + 4]; val p0y = values[index * stride + 5]; val p0z = values[index * stride + 6]; val p0w = values[index * stride + 7]
