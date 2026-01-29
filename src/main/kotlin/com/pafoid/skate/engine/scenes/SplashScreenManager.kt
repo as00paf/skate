@@ -9,37 +9,29 @@ import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.render.VAOLoader
-import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.collections.minusAssign
-import kotlin.compareTo
-import kotlin.text.get
-import kotlin.times
 
 class SplashScreenManager {
     val loadingProgress = AtomicReference(0f)
     var loadingText = "Initializing Engine..."
 
-    private var splashAlpha = 1.0f
-    private val fadeSpeed = 1.0f // 1 second fade
+    var splashAlpha = 1.0f
+    var isDestroyed = false
 
     private var splashShader: Shader? = null
     private var splashTexture: Texture? = null
     private var splashQuad: RawModel? = null
 
-    private val loader = VAOLoader()
-
-    // Load Splash Assets on Main Thread first
-    suspend fun init() {
+    fun init() {
         splashShader = AssetPool.getShader(Assets.Shaders.SPLASH)
         splashTexture = AssetPool.getTexture(Assets.Textures.SPLASH)
-        splashQuad = loader.loadToVAO(
+        splashQuad = VAOLoader().loadToVAO( // TODO: inject loader ?
             positions = floatArrayOf(
                 -1f, -1f, 0f,
                 1f, -1f, 0f,
@@ -59,12 +51,7 @@ class SplashScreenManager {
         Window.show()
     }
 
-    fun render(dt: Float, imguiLayer: ImGuiLayer) {
-        if (splashAlpha > 0f) {
-            splashAlpha -= fadeSpeed * dt
-            if (splashAlpha < 0f) splashAlpha = 0f
-        }
-
+    fun render(dt: Float, imguiLayer: ImGuiLayer,engineState: EngineState) {
         GL11.glClearColor(0f, 0f, 0f, 1.0f)
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
 
@@ -95,7 +82,7 @@ class SplashScreenManager {
         }
 
         // Only show ImGui if we are still loading, not during fade out
-        //if (engineState.get() != EngineState.RUNNING) {
+        if (engineState != EngineState.RUNNING) {
             // Simple ImGui Loading Overlay
             imguiLayer.startFrame()
 
@@ -110,6 +97,21 @@ class SplashScreenManager {
             }
 
             imguiLayer.endFrame()
-        //}
+        }
+    }
+
+    suspend fun increaseLoadingProgress(message: String = "...", progress:Float = 0.1f) {
+        loadingProgress.set(loadingProgress.get() + progress)
+        loadingText = message
+        delay(10)
+    }
+
+    fun destroy() {
+        splashShader?.destroy()
+        splashQuad = null
+
+        splashTexture?.destroy()
+        splashTexture = null
+        isDestroyed = true
     }
 }

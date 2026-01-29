@@ -5,9 +5,12 @@ import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.JoystickListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.imgui.ImGuiLayer
+import com.pafoid.skate.engine.render.FrameBuffer
+import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.JobSystem.runOnMain
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.Time
+import org.joml.Vector2f
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -205,17 +208,17 @@ class Window(
     private fun loop() {
         var beginTime = Time.getTime()
         var endTime: Float
-        var dt = -1.0f
+        var dt = 0.0f
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
             JoystickListener.update()
-            com.pafoid.skate.engine.utils.JobSystem.update()
+            JobSystem.update()
             
             // Record high-frequency input
             InputBuffer.push(
                 Time.getTime(),
-                org.joml.Vector2f(MouseListener.getX(), MouseListener.getY()),
+                Vector2f(MouseListener.getX(), MouseListener.getY()),
                 JoystickListener.getAxes(GLFW_JOYSTICK_1)
             )
             
@@ -223,7 +226,7 @@ class Window(
             if (isFirstDraw) {
                 // Create FrameBuffer and set viewport if not already initialized
                 if (frameBuffer == null) {
-                    frameBuffer = com.pafoid.skate.engine.render.FrameBuffer(currentWidth, currentHeight)
+                    frameBuffer = FrameBuffer(currentWidth, currentHeight)
                     glViewport(0, 0, currentWidth, currentHeight)
                 }
                 // Execute the deferred initCallback once

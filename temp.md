@@ -2,4 +2,3 @@
 - Feature review to make sure everything is working as intended
 - Dependency injection and better manage serialization
 - Resource management
-- fix splash
