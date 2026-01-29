@@ -58,8 +58,8 @@ class PrefabsWindow {
 
     private fun renderSimulationPrefabs() {
         val items = listOf(
-            Triple("Skateboard", ObjLoader.SKATEBOARD_GLB, { _: MaterialType -> spawnSkateboard() }),
-            Triple("Player", null, { _: MaterialType -> /* TODO */ })
+            Triple("Skateboard", ObjLoader.SKATEBOARD_GLB) { _: MaterialType -> spawnSkateboard() },
+            Triple("Player", null) { _: MaterialType -> /* TODO */ }
         ).filter { it.first.contains(searchText.get(), ignoreCase = true) }
 
         if (items.isNotEmpty()) {
@@ -75,7 +75,7 @@ class PrefabsWindow {
 
     private fun renderEnvironmentPrefabs() {
         val items = listOf(
-            Triple("Tile", ObjLoader.CUBE, { _: MaterialType -> spawnTile() })
+            Triple("Tile", ObjLoader.CUBE) { _: MaterialType -> spawnTile() }
         ).filter { it.first.contains(searchText.get(), ignoreCase = true) }
 
         if (items.isNotEmpty()) {

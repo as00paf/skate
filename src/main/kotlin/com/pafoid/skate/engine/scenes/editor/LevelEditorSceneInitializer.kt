@@ -46,6 +46,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         editorStuff.addComponent(MeasureTool())
         scene.addGameObjectToScene(editorStuff)
 
+        // TODO: Should be a prefab
         val skateGo = GameObject("Skateboard")
         skateGo.transform.translation.set(0f, 2f, 0f)
         skateGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
@@ -59,7 +60,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         skateGo.addComponent(TrickDetector())
         scene.addGameObjectToScene(skateGo)
 
-
+        // TODO: Should be a prefab
         val playerGo = GameObject("Skater")
         // Parenting: Skater follows Skateboard
         skateGo.addChild(playerGo)
@@ -75,6 +76,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         playerGo.addComponent(PoseGizmo())
         scene.addGameObjectToScene(playerGo)
 
+        // TODO: Should be a prefab
         val ground = GameObject("Floor")
         ground.transform.translation.set(0f, -0.5f, 0f)
         ground.transform.scale.set(100f, 0.5f, 100f)

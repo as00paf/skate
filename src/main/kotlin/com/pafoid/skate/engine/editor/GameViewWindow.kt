@@ -11,6 +11,7 @@ import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
 import org.joml.Vector2f
 import org.joml.Vector3f
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class GameViewWindow {
@@ -20,27 +21,10 @@ class GameViewWindow {
     var imageSizeX = 0f
     var imageSizeY = 0f
 
-    val imageScreenPos: Vector2f
-        get() = Vector2f(imageScreenPosX, imageScreenPosY)
-
-    val imageSize: Vector2f
-        get() = Vector2f(imageSizeX, imageSizeY)
-
     private var isPlaying = false
     private var hoveredGameObject: GameObject? = null
     private val gamepadOverlay = GamepadOverlay()
     private val trickUIWindow = TrickUIWindow()
-
-    // Overlay Constants
-    private val OVERLAY_PADDING = 10f
-    private val FPS_OVERLAY_WIDTH = 80f
-    private val FPS_OVERLAY_HEIGHT = 30f
-    private val SPEED_OVERLAY_WIDTH = 120f
-    private val SPEED_OVERLAY_HEIGHT = 30f
-    private val TRICK_OVERLAY_WIDTH = 200f // Adjusted width for trick names
-    private val TRICK_OVERLAY_HEIGHT = 30f
-    private val CONTROLS_OVERLAY_BUTTON_SIZE = 60f
-    private val CONTROLS_OVERLAY_HEIGHT = 40f
 
     fun imgui() {
         ImGui.begin("Game Viewport", ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
@@ -80,7 +64,7 @@ class GameViewWindow {
                     
                     // Intersect ray with ground plane (Y=0)
                     // P = O + t*D -> Py = 0 -> Oy + t*Dy = 0 -> t = -Oy / Dy
-                    if (Math.abs(ray.direction.y) > 0.0001f) {
+                    if (abs(ray.direction.y) > 0.0001f) {
                         val t = -ray.origin.y / ray.direction.y
                         if (t > 0) {
                             val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
@@ -160,7 +144,7 @@ class GameViewWindow {
         
         // FPS Overlay (Top Left)
         ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + OVERLAY_PADDING)
-        ImGui.beginChild("FPS_Overlay", FPS_OVERLAY_WIDTH, FPS_OVERLAY_HEIGHT, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+        ImGui.beginChild("FPS_Overlay", FPS_OVERLAY_WIDTH, FPS_OVERLAY_HEIGHT, false, ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration)
         ImGui.textColored(0f, 1f, 0f, 1f, "FPS: ${ImGui.getIO().framerate.toInt()}")
         ImGui.endChild()
 
@@ -178,7 +162,7 @@ class GameViewWindow {
             }
 
             ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + windowSize.y - SPEED_OVERLAY_HEIGHT - OVERLAY_PADDING)
-            ImGui.beginChild("Speed_Overlay", SPEED_OVERLAY_WIDTH, SPEED_OVERLAY_HEIGHT, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+            ImGui.beginChild("Speed_Overlay", SPEED_OVERLAY_WIDTH, SPEED_OVERLAY_HEIGHT, false, ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration)
             ImGui.textColored(1f, 1f, 1f, 1f, "${speedDisplay.roundToInt()} $unitLabel")
             ImGui.endChild()
         }
@@ -196,7 +180,7 @@ class GameViewWindow {
         // Controls Overlay (Top Right)
         val buttonSize = CONTROLS_OVERLAY_BUTTON_SIZE
         ImGui.setCursorPos(windowPos.x + windowSize.x - (buttonSize * 3f) - (OVERLAY_PADDING * 3), windowPos.y + OVERLAY_PADDING)
-        ImGui.beginChild("Controls_Overlay", buttonSize * 3f + (OVERLAY_PADDING * 2), CONTROLS_OVERLAY_HEIGHT, false, imgui.flag.ImGuiWindowFlags.NoBackground or imgui.flag.ImGuiWindowFlags.NoDecoration)
+        ImGui.beginChild("Controls_Overlay", buttonSize * 3f + (OVERLAY_PADDING * 2), CONTROLS_OVERLAY_HEIGHT, false, ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration)
         
         if (isPlaying) {
             if (ImGui.button("${Icons.STOP} Stop", buttonSize, 30f)) {
@@ -215,7 +199,7 @@ class GameViewWindow {
             ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             
             // Render Measure Tooltip
-            measureTool?.measurementText?.let { text ->
+            measureTool.measurementText?.let { text ->
                 measureTool.measurementPos?.let { pos ->
                     ImGui.setNextWindowPos(pos.x, pos.y)
                     ImGui.beginTooltip()
@@ -279,5 +263,18 @@ class GameViewWindow {
         ImGui.getMousePos(mousePos)
         return mousePos.x >= imageScreenPosX && mousePos.x <= (imageScreenPosX + imageSizeX) && 
                mousePos.y >= imageScreenPosY && mousePos.y <= (imageScreenPosY + imageSizeY)
+    }
+
+    companion object {
+        // Overlay Constants
+        private const val OVERLAY_PADDING = 10f
+        private const val FPS_OVERLAY_WIDTH = 80f
+        private const val FPS_OVERLAY_HEIGHT = 30f
+        private const val SPEED_OVERLAY_WIDTH = 120f
+        private const val SPEED_OVERLAY_HEIGHT = 30f
+        private const val TRICK_OVERLAY_WIDTH = 200f // Adjusted width for trick names
+        private const val TRICK_OVERLAY_HEIGHT = 30f
+        private const val CONTROLS_OVERLAY_BUTTON_SIZE = 60f
+        private const val CONTROLS_OVERLAY_HEIGHT = 40f
     }
 }

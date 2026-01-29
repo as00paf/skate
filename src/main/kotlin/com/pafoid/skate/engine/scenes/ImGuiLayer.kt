@@ -22,6 +22,12 @@ import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
+import imgui.internal.ImGui.dockBuilderAddNode
+import imgui.internal.ImGui.dockBuilderDockWindow
+import imgui.internal.ImGui.dockBuilderFinish
+import imgui.internal.ImGui.dockBuilderRemoveNode
+import imgui.internal.ImGui.dockBuilderSetNodeSize
+import imgui.internal.ImGui.dockBuilderSplitNode
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
@@ -38,11 +44,11 @@ class ImGuiLayer {
 
     val propertiesWindow = PropertiesWindow()
     val boneTreeWindow = BoneTreeWindow()
-    private val hierarchyWindow = SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
     val gameViewWindow = GameViewWindow()
     val prefabsWindow = PrefabsWindow()
     private val environmentWindow = EnvironmentWindow()
     private val threadMonitorWindow = ThreadMonitorWindow()
+    private val hierarchyWindow = SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
 
     fun init(glfwWindow: Long) {
         this.glfwWindow = glfwWindow
@@ -144,22 +150,22 @@ class ImGuiLayer {
         val iniFile = File("imgui.ini")
         if (iniFile.exists()) return
 
-        imgui.internal.ImGui.dockBuilderRemoveNode(dockspaceId)
-        imgui.internal.ImGui.dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.None)
-        imgui.internal.ImGui.dockBuilderSetNodeSize(dockspaceId, ImGui.getMainViewport().sizeX, ImGui.getMainViewport().sizeY)
+        dockBuilderRemoveNode(dockspaceId)
+        dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.None)
+        dockBuilderSetNodeSize(dockspaceId, ImGui.getMainViewport().sizeX, ImGui.getMainViewport().sizeY)
 
         val mainBodyId = ImInt(0)
-        val leftId = imgui.internal.ImGui.dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.2f, null, mainBodyId)
-        val rightId = imgui.internal.ImGui.dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.25f, null, mainBodyId)
-        val bottomId = imgui.internal.ImGui.dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
+        val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.2f, null, mainBodyId)
+        val rightId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.25f, null, mainBodyId)
+        val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
 
-        imgui.internal.ImGui.dockBuilderDockWindow("Scene Hierarchy", leftId)
-        imgui.internal.ImGui.dockBuilderDockWindow("Prefabs", leftId)
-        imgui.internal.ImGui.dockBuilderDockWindow("Properties", rightId)
-        imgui.internal.ImGui.dockBuilderDockWindow("Objects", bottomId)
-        imgui.internal.ImGui.dockBuilderDockWindow("Game Viewport", mainBodyId.get())
+        dockBuilderDockWindow("Scene Hierarchy", leftId)
+        dockBuilderDockWindow("Prefabs", leftId)
+        dockBuilderDockWindow("Properties", rightId)
+        dockBuilderDockWindow("Objects", bottomId)
+        dockBuilderDockWindow("Game Viewport", mainBodyId.get())
 
-        imgui.internal.ImGui.dockBuilderFinish(dockspaceId)
+        dockBuilderFinish(dockspaceId)
     }
 
     fun update(dt: Float, currentScene: Scene) {
