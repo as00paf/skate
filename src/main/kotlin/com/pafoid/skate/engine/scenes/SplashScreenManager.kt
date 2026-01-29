@@ -27,6 +27,9 @@ import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
 import java.util.concurrent.atomic.AtomicReference
 
+import org.joml.Matrix4f
+import org.joml.Vector3f
+
 class SplashScreenManager {
     val loadingProgress = AtomicReference(0f)
     var loadingText = "Initializing Engine..."
@@ -43,10 +46,10 @@ class SplashScreenManager {
         splashTexture = AssetPool.getTexture(Assets.Textures.SPLASH)
         splashQuad = VAOLoader().loadToVAO( // TODO: inject loader ?
             positions = floatArrayOf(
-                -1f, -1f, 0f,
-                1f, -1f, 0f,
-                1f,  1f, 0f,
-                -1f,  1f, 0f
+                0f, 0f, 0f, // Top-Left (will be flipped by projection if needed, or matched by UVs)
+                1f, 0f, 0f,
+                1f, 1f, 0f,
+                0f, 1f, 0f
             ),
             textureCoords = floatArrayOf(
                 0f, 0f,
@@ -61,7 +64,12 @@ class SplashScreenManager {
         Window.show()
     }
 
-    fun render(dt: Float, imguiLayer: ImGuiLayer,engineState: EngineState) {
+    fun render(dt: Float, imguiLayer: ImGuiLayer, engineState: EngineState) {
+        if(engineState != EngineState.RUNNING) {
+            GL11.glClearColor(0f, 0f, 0f, 0.0f)
+            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
+        }
+
         // Render Splash Quad
         val shader = splashShader
         val texture = splashTexture
@@ -71,6 +79,27 @@ class SplashScreenManager {
             shader.start()
             shader.uploadFloat("uProgress", loadingProgress.get())
             shader.uploadFloat("uAlpha", splashAlpha)
+
+            // --- Matrix Calculation ---
+            val screenWidth = Window.currentWidth.toFloat()
+            val screenHeight = Window.currentHeight.toFloat()
+            
+            // 1. Projection: Orthographic (0,0 at Top-Left)
+            val projection = Matrix4f().ortho(0f, screenWidth, screenHeight, 0f, -1f, 1f)
+            shader.uploadMat4f("uProjection", projection)
+
+            // 2. Model: Scale & Center
+            val imgWidth = texture.width.toFloat() / 2f // Divide by 2 to make it smaller
+            val imgHeight = texture.height.toFloat() / 2f
+            val xPos = (screenWidth - imgWidth) / 2f
+            val yPos = (screenHeight - imgHeight) / 2f
+
+            val model = Matrix4f()
+                .translate(xPos, yPos, 0f)
+                .scale(imgWidth, imgHeight, 1f)
+            shader.uploadMat4f("uModel", model)
+            // --------------------------
+
             GL13.glActiveTexture(GL13.GL_TEXTURE0)
 
             texture.bind()

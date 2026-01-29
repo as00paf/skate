@@ -5,9 +5,12 @@ layout (location = 1) in vec2 aTexCoords;
 
 out vec2 fTexCoords;
 
+uniform mat4 uProjection;
+uniform mat4 uModel;
+
 void main() {
     fTexCoords = aTexCoords;
-    gl_Position = vec4(aPos, 1.0);
+    gl_Position = uProjection * uModel * vec4(aPos, 1.0);
 }
 
 #type fragment
