@@ -3,6 +3,8 @@ package com.pafoid.skate.engine.editor
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.ShaderConst
+import com.pafoid.skate.engine.assets.ShaderConst.Attribs
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.FrameBuffer
@@ -62,16 +64,16 @@ object ThumbnailCache {
         val projectionMatrix = Matrix4f().perspective(Math.toRadians(45.0).toFloat(), 1.0f, 0.1f, 100f)
         val viewMatrix = camera.createViewMatrix()
         
-        shader.uploadMat4f("projectionMatrix", projectionMatrix)
-        shader.uploadMat4f("viewMatrix", viewMatrix)
-        shader.uploadMat4f("transformationMatrix", transform.toMatrix())
+        shader.uploadMat4f(Attribs.PROJECTION_MATRIX, projectionMatrix)
+        shader.uploadMat4f(Attribs.VIEW_MATRIX, viewMatrix)
+        shader.uploadMat4f(Attribs.TRANSFORMATION_MATRIX, transform.toMatrix())
         
         // Simple lighting
-        shader.uploadVec3f("lightPosition", Vector3f(5f, 5f, 5f))
-        shader.uploadVec3f("lightColor", Vector3f(2.0f, 2.0f, 2.0f))
-        shader.uploadVec3f("uAmbientLight", Vector3f(0.8f, 0.8f, 0.8f))
-        shader.uploadVec3f("uSunDirection", Vector3f(1f, -1f, 1f).normalize())
-        shader.uploadVec3f("uSunColor", Vector3f(2.0f, 2.0f, 2.0f))
+        shader.uploadVec3f(Attribs.LIGHT_POSITION, Vector3f(5f, 5f, 5f))
+        shader.uploadVec3f(Attribs.LIGHT_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
+        shader.uploadVec3f(Attribs.AMBIENT_LIGHT, Vector3f(0.8f, 0.8f, 0.8f))
+        shader.uploadVec3f(Attribs.SUN_DIRECTION, Vector3f(1f, -1f, 1f).normalize())
+        shader.uploadVec3f(Attribs.SUN_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
         
         // Render each part
         for (part in model.parts) {
@@ -82,16 +84,16 @@ object ThumbnailCache {
             rawModel.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
             
             glActiveTexture(GL_TEXTURE0)
-            material.baseColorTexture?.bind() ?: AssetPool.getTexture("assets/textures/white.png").bind()
-            shader.uploadInt("u_BaseColorTexture", 0)
-            shader.uploadVec4f("u_BaseColorFactor", material.baseColorFactor)
+            material.baseColorTexture?.bind() ?: AssetPool.getTexture(Assets.Textures.WHITE).bind()
+            shader.uploadInt(Attribs.BASE_COLOR_TEXTURE, 0)
+            shader.uploadVec4f(Attribs.BASE_COLOR_FACTOR, material.baseColorFactor)
             
-            shader.uploadBoolean("u_HasNormalMap", false)
-            shader.uploadBoolean("u_HasMetallicRoughnessTexture", false)
-            shader.uploadBoolean("u_HasAOTexture", false)
-            shader.uploadBoolean("u_HasEmissiveTexture", false)
-            shader.uploadInt("u_AlphaMode", 0)
-            shader.uploadBoolean("u_HasSkin", false)
+            shader.uploadBoolean(Attribs.HAS_NORMAL_MAP, false)
+            shader.uploadBoolean(Attribs.HAS_METALLIC_ROUGHNESS_TEXTURE, false)
+            shader.uploadBoolean(Attribs.HAS_AO_TEXTURE, false)
+            shader.uploadBoolean(Attribs.HAS_EMISSIVE_TEXTURE, false)
+            shader.uploadInt(Attribs.ALPHA_MODE, 0)
+            shader.uploadBoolean(Attribs.HAS_SKIN, false)
 
             glDrawElements(rawModel.drawMode, rawModel.vertexCount, GL_UNSIGNED_INT, 0)
             

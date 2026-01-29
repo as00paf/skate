@@ -2,7 +2,7 @@
   "width": 1920,
   "height": 1080,
   "vsync": false,
-  "fullscreen": false,
+  "fullscreen": true,
   "borderless": false,
   "gamepadOverlaySize": 0.214,
   "showGamepadOverlay": true,

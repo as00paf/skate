@@ -7,14 +7,12 @@ import com.pafoid.skate.engine.editor.GameViewWindow
 import com.pafoid.skate.engine.editor.PrefabsWindow
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.editor.SceneHierarchyWindow
-import com.pafoid.skate.engine.editor.ThreadMonitorWindow
+import com.pafoid.skate.engine.editor.ProfilerWindow
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.UnitSystem
-import imgui.ImFontConfig
 import imgui.ImGui
-import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiDir
@@ -29,7 +27,6 @@ import imgui.internal.ImGui.dockBuilderSetNodeSize
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
-import sun.security.krb5.internal.KDCOptions.with
 import java.io.File
 
 private const val fontsFile = "assets/fonts/Font Awesome 7 Free-Solid-900.otf"
@@ -47,7 +44,7 @@ class ImGuiLayer {
     val gameViewWindow = GameViewWindow()
     val prefabsWindow = PrefabsWindow()
     private val environmentWindow = EnvironmentWindow()
-    private val threadMonitorWindow = ThreadMonitorWindow()
+    private val profilerWindow = ProfilerWindow()
     private val hierarchyWindow = SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
 
     fun init(glfwWindow: Long) {
@@ -106,7 +103,7 @@ class ImGuiLayer {
         gameViewWindow.imgui()
         prefabsWindow.imgui()
         environmentWindow.imgui(currentScene)
-        threadMonitorWindow.imgui()
+        profilerWindow.imgui()
 
         endFrame()
     }

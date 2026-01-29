@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants
 import com.pafoid.skate.engine.controls.listeners.JoystickListener
@@ -14,7 +15,7 @@ import kotlin.math.min
 
 class GamepadOverlay {
     private val controllerTexture: Texture by lazy {
-        AssetPool.getTexture("assets/textures/xbox_controller.png")
+        AssetPool.getTexture(Assets.Textures.XBOX_CONTROLLER)
     }
 
     fun imgui(gameViewPos: Vector2f, gameViewSize: Vector2f) {

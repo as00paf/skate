@@ -4,7 +4,7 @@ import imgui.ImGui
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadMXBean
 
-class ThreadMonitorWindow {
+class ProfilerWindow {
     private val threadBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
     private val threadIds = mutableMapOf<String, Long>()
     private val threadCpuUsage = mutableMapOf<String, Float>()
@@ -18,7 +18,7 @@ class ThreadMonitorWindow {
     }
 
     fun imgui() {
-        ImGui.begin("Thread Monitor")
+        ImGui.begin("Profiler")
 
         if (!threadBean.isThreadCpuTimeSupported) {
             ImGui.text("Thread CPU time not supported on this JVM")
