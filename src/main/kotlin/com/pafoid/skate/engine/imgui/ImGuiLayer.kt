@@ -42,8 +42,6 @@ class ImGuiLayer {
     private val glslVersion = "#version 330"
     private var glfwWindow: Long = 0
 
-    private var firstFrame = true
-
     val propertiesWindow = PropertiesWindow()
     val boneTreeWindow = BoneTreeWindow()
     val gameViewWindow = GameViewWindow()

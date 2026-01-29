@@ -42,8 +42,7 @@ class SceneManager {
     private var currentScene: Scene? = null
     private var runtimePlaying = false
     private val engineState = AtomicReference(EngineState.BOOTING)
-    private val loadingProgress = AtomicReference(0f)
-    private var loadingText = "Initializing Engine..."
+
     private var splashAlpha = 1.0f
     private val fadeSpeed = 1.0f // 1 second fade
 
@@ -61,14 +60,16 @@ class SceneManager {
 
     private val loader = VAOLoader()
 
+    private val splashScreenManager = SplashScreenManager()
+
     suspend fun initializeScene(imguiLayer: ImGuiLayer) {
         initSplashScreen()
         loadShaders()
 
         delay(10) // Small delay to let loading screen render
 
-        loadingProgress.set(0.4f)
-        loadingText = "Initializing Renderer..."
+        splashScreenManager.loadingProgress.set(0.4f)
+        splashScreenManager.loadingText = "Initializing Renderer..."
 
         withContext(JobSystem.Main) {
             renderer = Renderer(shader3D, shader2D, shaderPicking, shaderPicking3D, shaderSkybox, shaderSkyDome)
@@ -77,15 +78,15 @@ class SceneManager {
 
         delay(10)
 
-        loadingProgress.set(0.6f)
-        loadingText = "Loading Scene..."
+        splashScreenManager.loadingProgress.set(0.6f)
+        splashScreenManager.loadingText = "Loading Scene..."
 
         // Scene initialization might also need to be on main thread if it creates GL objects
         withContext(JobSystem.Main) {
             changeScene(LevelEditorSceneInitializer(), true)
         }
 
-        loadingProgress.set(1.0f)
+        splashScreenManager.loadingProgress.set(1.0f)
         engineState.set(EngineState.RUNNING)
 
         withContext(JobSystem.Main) {
@@ -119,8 +120,8 @@ class SceneManager {
     }
 
     private suspend fun loadShaders() {
-        loadingText = "Loading Shaders..."
-        loadingProgress.set(0.1f)
+        splashScreenManager.loadingText = "Loading Shaders..."
+        splashScreenManager.loadingProgress.set(0.1f)
 
         withContext(JobSystem.Main) {
             val shaders = listOf(
@@ -134,8 +135,8 @@ class SceneManager {
 
             shaders.forEachIndexed { index, function ->
                 function.invoke()
-                loadingProgress.set(loadingProgress.get() + index/shaders.size)
-                loadingText = "Loading Shaders $index/${shaders.size}"
+                splashScreenManager.loadingProgress.set(splashScreenManager.loadingProgress.get() + index/shaders.size)
+                splashScreenManager.loadingText = "Loading Shaders $index/${shaders.size}"
             }
         }
     }
@@ -211,7 +212,7 @@ class SceneManager {
 
         if (shader != null && texture != null && quad != null) {
             shader.start()
-            shader.uploadFloat("uProgress", loadingProgress.get())
+            shader.uploadFloat("uProgress", splashScreenManager.loadingProgress.get())
             shader.uploadFloat("uAlpha", splashAlpha)
             GL13.glActiveTexture(GL13.GL_TEXTURE0)
 
@@ -241,7 +242,7 @@ class SceneManager {
 
             if (ImGui.begin("Loading Status", imgui.flag.ImGuiWindowFlags.NoDecoration or imgui.flag.ImGuiWindowFlags.NoMove or imgui.flag.ImGuiWindowFlags.NoSavedSettings or imgui.flag.ImGuiWindowFlags.NoBackground)) {
                 ImGui.setWindowFontScale(1.5f)
-                ImGui.text(loadingText)
+                ImGui.text(splashScreenManager.loadingText)
                 ImGui.end()
             }
 
