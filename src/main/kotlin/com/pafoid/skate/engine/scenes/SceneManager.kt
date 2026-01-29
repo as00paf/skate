@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.EngineState
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.models.RawModel
@@ -61,44 +62,8 @@ class SceneManager {
     private val loader = VAOLoader()
 
     suspend fun initializeScene(imguiLayer: ImGuiLayer) {
-        // Load Splash Assets on Main Thread first
-        withContext(JobSystem.Main) {
-            splashShader = AssetPool.getShader("assets/shaders/splash.glsl")
-            splashTexture = AssetPool.getTexture("assets/textures/splash_screen.png")
-            splashQuad = loader.loadToVAO(
-                floatArrayOf(
-                    -1f, -1f, 0f,
-                     1f, -1f, 0f,
-                     1f,  1f, 0f,
-                    -1f,  1f, 0f
-                ),
-
-                floatArrayOf(
-                    0f, 0f,
-                    1f, 0f,
-                    1f, 1f,
-                    0f, 1f
-                ),
-
-                floatArrayOf(0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f),
-                intArrayOf(0, 1, 2, 2, 3, 0)
-            )
-
-            Window.show()
-            engineState.set(EngineState.LOADING)
-        }
-
-        loadingText = "Loading Shaders..."
-        loadingProgress.set(0.1f)
-
-        withContext(JobSystem.Main) {
-            shader3D = AssetPool.getShader(Shader.SHADER_3D_DEFAULT)
-            shader2D = AssetPool.getShader(Shader.SHADER_2D_BATCH)
-            shaderPicking = AssetPool.getShader(Shader.PICKING)
-            shaderPicking3D = AssetPool.getShader(Shader.PICKING_3D)
-            shaderSkybox = AssetPool.getShader(Shader.SKYBOX)
-            shaderSkyDome = AssetPool.getShader(Shader.SKY_DOME)
-        }
+        initSplashScreen()
+        loadShaders()
 
         delay(10) // Small delay to let loading screen render
 
@@ -126,7 +91,54 @@ class SceneManager {
         withContext(JobSystem.Main) {
             Window.show()
         }
-}
+    }
+
+    // Load Splash Assets on Main Thread first
+    private suspend fun initSplashScreen() = withContext(JobSystem.Main) {
+        splashShader = AssetPool.getShader(Assets.Shaders.SPLASH)
+        splashTexture = AssetPool.getTexture(Assets.Textures.SPLASH)
+        splashQuad = loader.loadToVAO(
+            positions = floatArrayOf(
+                -1f, -1f, 0f,
+                1f, -1f, 0f,
+                1f,  1f, 0f,
+                -1f,  1f, 0f
+            ),
+            textureCoords = floatArrayOf(
+                0f, 0f,
+                1f, 0f,
+                1f, 1f,
+                0f, 1f
+            ),
+            normals = floatArrayOf(0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f),
+            indices = intArrayOf(0, 1, 2, 2, 3, 0)
+        )
+
+        Window.show()
+        engineState.set(EngineState.LOADING)
+    }
+
+    private suspend fun loadShaders() {
+        loadingText = "Loading Shaders..."
+        loadingProgress.set(0.1f)
+
+        withContext(JobSystem.Main) {
+            val shaders = listOf(
+                { shader3D = AssetPool.getShader(Assets.Shaders.SHADER_3D_DEFAULT) },
+                { shader2D = AssetPool.getShader(Assets.Shaders.SHADER_2D_BATCH) },
+                { shaderPicking = AssetPool.getShader(Assets.Shaders.PICKING) },
+                { shaderPicking3D = AssetPool.getShader(Assets.Shaders.PICKING_3D) },
+                { shaderSkybox = AssetPool.getShader(Assets.Shaders.SKYBOX) },
+                { shaderSkyDome = AssetPool.getShader(Assets.Shaders.SKY_DOME) },
+            )
+
+            shaders.forEachIndexed { index, function ->
+                function.invoke()
+                loadingProgress.set(loadingProgress.get() + index/shaders.size)
+                loadingText = "Loading Shaders $index/${shaders.size}"
+            }
+        }
+    }
 
     fun getPickedId(x: Int, y: Int): Int {
         if (engineState.get() != EngineState.RUNNING) return -1

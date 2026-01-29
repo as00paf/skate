@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector2f
@@ -30,7 +31,7 @@ object DebugDraw {
     private var started = false
 
     fun start() {
-        shader = AssetPool.getShader(Shader.DEBUG)
+        shader = AssetPool.getShader(Assets.Shaders.DEBUG)
         
         // Lines
         vaoId = glGenVertexArrays()

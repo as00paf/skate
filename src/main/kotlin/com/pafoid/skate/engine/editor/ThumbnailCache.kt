@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.Camera
@@ -54,7 +55,7 @@ object ThumbnailCache {
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
 
-        val shader = AssetPool.getShader(Shader.SHADER_3D_DEFAULT)
+        val shader = AssetPool.getShader(Assets.Shaders.SHADER_3D_DEFAULT)
         shader.start()
         
         // Setup simple matrices

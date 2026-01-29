@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.assets
 import com.pafoid.skate.engine.models.MeshPart
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.models.TexturedModel
+import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.JobSystem
 import java.io.File
 
@@ -29,7 +30,7 @@ object AssetPool {
         }
     }
 
-    fun getRawModel(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): RawModel {
+    fun getRawModel(filePath: String, loader: VAOLoader): RawModel {
         return getModel(filePath, loader).parts[0].rawModel
     }
 
@@ -54,7 +55,7 @@ object AssetPool {
         }
     }
 
-    fun getModelAsync(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader, callback: (TexturedModel) -> Unit) {
+    fun getModelAsync(filePath: String, loader: VAOLoader, callback: (TexturedModel) -> Unit) {
         JobSystem.runAsync {
             val preLoaded = assimpLoader.preLoadModel(filePath)
             
@@ -127,7 +128,7 @@ object AssetPool {
         }
     }
 
-    fun getModel(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): TexturedModel {
+    fun getModel(filePath: String, loader: VAOLoader): TexturedModel {
         val absolutePath = File(filePath).absolutePath
         if (models.containsKey(absolutePath)) {
             return models[absolutePath]!!
@@ -158,7 +159,7 @@ object AssetPool {
         return texturedModel
     }
 
-    fun getRawModelWithTexture(filePath: String, loader: com.pafoid.skate.engine.render.VAOLoader): Triple<RawModel, String?, java.nio.ByteBuffer?> {
+    fun getRawModelWithTexture(filePath: String, loader: VAOLoader): Triple<RawModel, String?, java.nio.ByteBuffer?> {
         val model = getModel(filePath, loader)
         val firstPart = model.parts[0]
         return Triple(firstPart.rawModel, firstPart.material.baseColorTexture?.filePath, null)

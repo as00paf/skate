@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Matrix4f
@@ -27,7 +28,7 @@ object PickingDraw {
     private var started = false
 
     fun start() {
-        shader = AssetPool.getShader(Shader.PICKING)
+        shader = AssetPool.getShader(Assets.Shaders.PICKING)
         
         vaoId = glGenVertexArrays()
         glBindVertexArray(vaoId)
