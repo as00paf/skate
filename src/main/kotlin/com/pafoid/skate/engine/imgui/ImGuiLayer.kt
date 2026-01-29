@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.scenes
+package com.pafoid.skate.engine.imgui
 
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.editor.BoneTreeWindow
@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.editor.PrefabsWindow
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.editor.SceneHierarchyWindow
 import com.pafoid.skate.engine.editor.ThreadMonitorWindow
+import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.UnitSystem
@@ -23,15 +24,16 @@ import imgui.flag.ImGuiWindowFlags
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import imgui.internal.ImGui.dockBuilderAddNode
-import imgui.internal.ImGui.dockBuilderDockWindow
-import imgui.internal.ImGui.dockBuilderFinish
 import imgui.internal.ImGui.dockBuilderRemoveNode
 import imgui.internal.ImGui.dockBuilderSetNodeSize
-import imgui.internal.ImGui.dockBuilderSplitNode
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
+import sun.security.krb5.internal.KDCOptions.with
 import java.io.File
+
+private const val fontsFile = "assets/fonts/Font Awesome 7 Free-Solid-900.otf"
+private const val imGuiFile = "imgui.ini"
 
 class ImGuiLayer {
 
@@ -54,118 +56,45 @@ class ImGuiLayer {
         this.glfwWindow = glfwWindow
         ImGui.createContext()
 
-        val io = ImGui.getIO()
-        io.iniFilename = "imgui.ini"
-        io.addConfigFlags(ImGuiConfigFlags.DockingEnable or ImGuiConfigFlags.ViewportsEnable)
-        io.backendPlatformName = "imgui_java_impl_glfw"
+        with(ImGui.getIO()) {
+            iniFilename = imGuiFile
+            backendPlatformName = "imgui_java_impl_glfw"
+            addConfigFlags(ImGuiConfigFlags.DockingEnable or ImGuiConfigFlags.ViewportsEnable)
+            loadFonts(fontsFile)
+        }
 
-        // Load Fonts
-        val fontAtlas = io.fonts
-        val fontConfig = ImFontConfig()
-
-        // Default Font
-        fontAtlas.addFontDefault()
-
-        // Merge FontAwesome
-        fontConfig.mergeMode = true
-        fontConfig.pixelSnapH = true
-        fontConfig.glyphMinAdvanceX = 14f // Use size of font
-
-        val iconRanges = shortArrayOf(0xe000.toShort(), 0xf8ff.toShort(), 0)
-        fontAtlas.addFontFromFileTTF("assets/fonts/Font Awesome 7 Free-Solid-900.otf", 14f, fontConfig, iconRanges)
-
-        fontAtlas.build()
-        fontConfig.destroy()
-
-        imGuiGlfw.init(glfwWindow, true) // TRUE means install callbacks
-        setupStyle()
+        imGuiGlfw.init(glfwWindow, true)
         imGuiGl3.init(glslVersion)
-    }
 
-    private fun setupStyle() {
-        val style = ImGui.getStyle()
-
-        // Pro Dark Theme (Slate / Charcoal)
-        style.windowRounding = 4f
-        style.childRounding = 4f
-        style.frameRounding = 4f
-        style.grabRounding = 4f
-        style.popupRounding = 4f
-        style.scrollbarRounding = 4f
-
-        style.setColor(ImGuiCol.Text, 0.90f, 0.90f, 0.90f, 1.00f)
-        style.setColor(ImGuiCol.TextDisabled, 0.60f, 0.60f, 0.60f, 1.00f)
-        style.setColor(ImGuiCol.WindowBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(ImGuiCol.ChildBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(ImGuiCol.PopupBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(ImGuiCol.Border, 0.26f, 0.26f, 0.26f, 1.00f)
-        style.setColor(ImGuiCol.BorderShadow, 0.00f, 0.00f, 0.00f, 0.00f)
-        style.setColor(ImGuiCol.FrameBg, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(ImGuiCol.FrameBgHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.FrameBgActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.TitleBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(ImGuiCol.TitleBgActive, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(ImGuiCol.TitleBgCollapsed, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(ImGuiCol.MenuBarBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(ImGuiCol.ScrollbarBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(ImGuiCol.ScrollbarGrab, 0.31f, 0.31f, 0.31f, 1.00f)
-        style.setColor(ImGuiCol.ScrollbarGrabHovered, 0.41f, 0.41f, 0.41f, 1.00f)
-        style.setColor(ImGuiCol.ScrollbarGrabActive, 0.51f, 0.51f, 0.51f, 1.00f)
-        style.setColor(ImGuiCol.CheckMark, 0.80f, 0.80f, 0.80f, 1.00f)
-        style.setColor(ImGuiCol.SliderGrab, 0.39f, 0.39f, 0.39f, 1.00f)
-        style.setColor(ImGuiCol.SliderGrabActive, 0.51f, 0.51f, 0.51f, 1.00f)
-        style.setColor(ImGuiCol.Button, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(ImGuiCol.ButtonHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.ButtonActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.Header, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(ImGuiCol.HeaderHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.HeaderActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.Separator, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(ImGuiCol.SeparatorHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.SeparatorActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.ResizeGrip, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(ImGuiCol.ResizeGripHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.ResizeGripActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.Tab, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(ImGuiCol.TabHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.TabActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.TabUnfocused, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(ImGuiCol.TabUnfocusedActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(ImGuiCol.PlotLines, 0.61f, 0.61f, 0.61f, 1.00f)
-        style.setColor(ImGuiCol.PlotLinesHovered, 1.00f, 0.43f, 0.35f, 1.00f)
-        style.setColor(ImGuiCol.PlotHistogram, 0.90f, 0.70f, 0.00f, 1.00f)
-        style.setColor(ImGuiCol.PlotHistogramHovered, 1.00f, 0.60f, 0.00f, 1.00f)
-        style.setColor(ImGuiCol.TextSelectedBg, 0.26f, 0.59f, 0.98f, 0.35f)
-        style.setColor(ImGuiCol.DragDropTarget, 1.00f, 1.00f, 0.00f, 0.90f)
-        style.setColor(ImGuiCol.NavHighlight, 0.26f, 0.59f, 0.98f, 1.00f)
-        style.setColor(ImGuiCol.NavWindowingHighlight, 1.00f, 1.00f, 1.00f, 0.70f)
-        style.setColor(ImGuiCol.NavWindowingDimBg, 0.80f, 0.80f, 0.80f, 0.20f)
-        style.setColor(ImGuiCol.ModalWindowDimBg, 0.80f, 0.80f, 0.80f, 0.35f)
+        ImGuiStyleManager.setupStyle()
     }
 
     private fun setupLayout(dockspaceId: Int) {
-        if (!firstFrame) return
-        firstFrame = false
-
         val iniFile = File("imgui.ini")
         if (iniFile.exists()) return
 
         dockBuilderRemoveNode(dockspaceId)
         dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.None)
-        dockBuilderSetNodeSize(dockspaceId, ImGui.getMainViewport().sizeX, ImGui.getMainViewport().sizeY)
+        dockBuilderSetNodeSize(
+            dockspaceId,
+            ImGui.getMainViewport().sizeX,
+            ImGui.getMainViewport().sizeY
+        )
 
         val mainBodyId = ImInt(0)
-        val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.2f, null, mainBodyId)
-        val rightId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.25f, null, mainBodyId)
-        val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
+        val leftId = imgui.internal.ImGui.dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.2f, null, mainBodyId)
+        val rightId =
+            imgui.internal.ImGui.dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.25f, null, mainBodyId)
+        val bottomId =
+            imgui.internal.ImGui.dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
 
-        dockBuilderDockWindow("Scene Hierarchy", leftId)
-        dockBuilderDockWindow("Prefabs", leftId)
-        dockBuilderDockWindow("Properties", rightId)
-        dockBuilderDockWindow("Objects", bottomId)
-        dockBuilderDockWindow("Game Viewport", mainBodyId.get())
+        imgui.internal.ImGui.dockBuilderDockWindow("Scene Hierarchy", leftId)
+        imgui.internal.ImGui.dockBuilderDockWindow("Prefabs", leftId)
+        imgui.internal.ImGui.dockBuilderDockWindow("Properties", rightId)
+        imgui.internal.ImGui.dockBuilderDockWindow("Objects", bottomId)
+        imgui.internal.ImGui.dockBuilderDockWindow("Game Viewport", mainBodyId.get())
 
-        dockBuilderFinish(dockspaceId)
+        imgui.internal.ImGui.dockBuilderFinish(dockspaceId)
     }
 
     fun update(dt: Float, currentScene: Scene) {
@@ -246,14 +175,14 @@ class ImGuiLayer {
                 val vsync = ImBoolean(settings.vsync)
                 if (ImGui.checkbox("V-Sync", vsync)) {
                     settings.vsync = vsync.get()
-                    Window.setVSync(settings.vsync)
+                    Window.Companion.setVSync(settings.vsync)
                     SettingsManager.save()
                 }
 
                 val fullscreen = ImBoolean(settings.fullscreen)
                 if (ImGui.checkbox("Fullscreen", fullscreen)) {
                     settings.fullscreen = fullscreen.get()
-                    Window.setFullscreen(settings.fullscreen)
+                    Window.Companion.setFullscreen(settings.fullscreen)
                     SettingsManager.save()
                 }
 

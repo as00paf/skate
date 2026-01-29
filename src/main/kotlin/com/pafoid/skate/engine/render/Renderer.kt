@@ -23,8 +23,7 @@ class Renderer(
     private val skyDomeShader: Shader
 ) : IRenderer {
     override var useFbo = false // Default to false for initial feature tests
-    
-    private val clearColor = Color.GRAY
+
     private val renderer2D = Renderer2D()
     private val pickingTexture = PickingTexture(1920, 1080)
     private val skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
