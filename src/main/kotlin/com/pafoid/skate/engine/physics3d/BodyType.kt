@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.physics3d.enums
+package com.pafoid.skate.engine.physics3d
 
 enum class BodyType {
     Static,

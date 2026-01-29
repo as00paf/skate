@@ -10,7 +10,7 @@ import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.physics3d.enums.BodyType
+import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager

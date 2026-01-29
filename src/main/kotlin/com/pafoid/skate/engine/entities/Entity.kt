@@ -1,8 +1,11 @@
 package com.pafoid.skate.engine.entities
 
 import com.pafoid.skate.engine.Transform
+import com.pafoid.skate.engine.animation.Skeleton
+import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.scenes.components.Component
+import com.pafoid.skate.engine.utils.MImGui
 import org.joml.Vector3f
 
 class Entity(
@@ -14,7 +17,7 @@ class Entity(
     val onTick: (dt:Float) -> Unit = {}
 ): Component() {
 
-    var skeleton: com.pafoid.skate.engine.animation.Skeleton? = null
+    var skeleton: Skeleton? = null
         private set
 
     init {
@@ -40,54 +43,47 @@ class Entity(
         rotate(Vector3f(rx, ry, rz))
     }
 
-        fun rotate(rotation: Vector3f) {
+    fun rotate(rotation: Vector3f) {
+        transform.rotation.x += rotation.x
+        transform.rotation.y += rotation.y
+        transform.rotation.z += rotation.z
+    }
 
-            transform.rotation.x += rotation.x
+    override fun imgui() {
+        if (imgui.ImGui.collapsingHeader("Material")) {
+            for ((index, part) in model.parts.withIndex()) {
+                if (imgui.ImGui.treeNode("Part $index")) {
+                    val mat = part.material
 
-            transform.rotation.y += rotation.y
+                    // Texture Display
+                    val tex = mat.baseColorTexture ?: AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE)
+                    imgui.ImGui.text("Base Texture: ${mat.baseColorPath ?: "Embedded/Generated"}")
+                    imgui.ImGui.image(tex.texId.toLong(), 64f, 64f, 0f, 1f, 1f, 0f)
 
-            transform.rotation.z += rotation.z
-
-        }
-
-    
-
-        override fun imgui() {
-            if (imgui.ImGui.collapsingHeader("Material")) {
-                for ((index, part) in model.parts.withIndex()) {
-                    if (imgui.ImGui.treeNode("Part $index")) {
-                        val mat = part.material
-                        
-                        // Texture Display
-                        val tex = mat.baseColorTexture ?: com.pafoid.skate.engine.assets.AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE)
-                        imgui.ImGui.text("Base Texture: ${mat.baseColorPath ?: "Embedded/Generated"}")
-                        imgui.ImGui.image(tex.texId.toLong(), 64f, 64f, 0f, 1f, 1f, 0f)
-                        
-                        if (com.pafoid.skate.engine.utils.MImGui.colorPicker4("Base Color", mat.baseColorFactor)) {
-                            // Color changed
-                        }
-                        
-                        val roughness = floatArrayOf(mat.roughnessFactor)
-                        if (imgui.ImGui.dragFloat("Roughness", roughness, 0.01f, 0f, 1f)) {
-                            mat.roughnessFactor = roughness[0]
-                        }
-                        
-                        val metallic = floatArrayOf(mat.metallicFactor)
-                        if (imgui.ImGui.dragFloat("Metallic", metallic, 0.01f, 0f, 1f)) {
-                            mat.metallicFactor = metallic[0]
-                        }
-
-                        imgui.ImGui.treePop()
+                    if (MImGui.colorPicker4("Base Color", mat.baseColorFactor)) {
+                        // Color changed
                     }
-                }
-    
-                val scale = floatArrayOf(textureScale)
-                if (imgui.ImGui.dragFloat("UV Scale", scale, 0.1f, 0.01f, 100f)) {
-                    textureScale = scale[0]
+
+                    val roughness = floatArrayOf(mat.roughnessFactor)
+                    if (imgui.ImGui.dragFloat("Roughness", roughness, 0.01f, 0f, 1f)) {
+                        mat.roughnessFactor = roughness[0]
+                    }
+
+                    val metallic = floatArrayOf(mat.metallicFactor)
+                    if (imgui.ImGui.dragFloat("Metallic", metallic, 0.01f, 0f, 1f)) {
+                        mat.metallicFactor = metallic[0]
+                    }
+
+                    imgui.ImGui.treePop()
                 }
             }
-        }
 
+            val scale = floatArrayOf(textureScale)
+            if (imgui.ImGui.dragFloat("UV Scale", scale, 0.1f, 0.01f, 100f)) {
+                textureScale = scale[0]
+            }
+        }
     }
+}
 
     

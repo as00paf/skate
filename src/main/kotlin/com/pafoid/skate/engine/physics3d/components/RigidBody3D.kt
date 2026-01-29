@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.physics3d.components
 
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.physics3d.enums.BodyType
+import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.utils.JmeVector3f

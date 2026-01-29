@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.models
 
+import com.pafoid.skate.engine.animation.Animation
+import com.pafoid.skate.engine.animation.Skeleton
+import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.scenes.components.Component
 import org.joml.Vector4f
@@ -35,8 +38,8 @@ data class MeshPart(
 
 data class TexturedModel (
     val parts: List<MeshPart>,
-    val skeleton: com.pafoid.skate.engine.animation.Skeleton? = null,
-    val animations: List<com.pafoid.skate.engine.animation.Animation> = emptyList()
+    val skeleton: Skeleton? = null,
+    val animations: List<Animation> = emptyList()
 ): Component() {
     constructor(rawModel: RawModel, texture: Texture) : this(listOf(MeshPart(rawModel, Material(baseColorTexture = texture))))
     constructor(rawModel: RawModel, material: Material) : this(listOf(MeshPart(rawModel, material)))
@@ -44,5 +47,5 @@ data class TexturedModel (
     
     // For backward compatibility
     val rawModel: RawModel get() = parts[0].rawModel
-    val texture: Texture get() = parts[0].material.baseColorTexture ?: com.pafoid.skate.engine.assets.AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE)
+    val texture: Texture get() = parts[0].material.baseColorTexture ?: AssetPool.getTexture(Texture.WHITE)
 }

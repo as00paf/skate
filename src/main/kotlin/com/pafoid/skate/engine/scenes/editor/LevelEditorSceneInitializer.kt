@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.TexturedModel
+import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
@@ -86,7 +87,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
             textureScale = 20.0f
         ))
         val groundRb = RigidBody3D(0f)
-        groundRb.bodyType = com.pafoid.skate.engine.physics3d.enums.BodyType.Static
+        groundRb.bodyType = BodyType.Static
         ground.addComponent(groundRb)
         ground.addComponent(BoxCollider3D(Vector3f(100f, 0.5f, 100f)))
         scene.addGameObjectToScene(ground)
