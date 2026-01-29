@@ -1,15 +1,14 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.Prefabs
+import com.pafoid.skate.engine.scenes.Prefabs
 import com.pafoid.skate.engine.Stance
 import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.toWorldMatrix
 import org.lwjgl.glfw.GLFW.*
 import com.pafoid.skate.engine.SkateStance
-import com.pafoid.skate.player.state.PlayerState
-import com.pafoid.skate.player.state.PlayerStateManager
+import com.pafoid.skate.engine.player.PlayerState
+import com.pafoid.skate.engine.player.PlayerStateManager
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D

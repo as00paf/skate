@@ -4,7 +4,6 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.stb.STBImage.*
 import org.lwjgl.stb.STBImageWrite.stbi_write_png
 import org.lwjgl.system.MemoryUtil
-import java.io.File
 import java.nio.ByteBuffer
 import kotlin.math.abs
 

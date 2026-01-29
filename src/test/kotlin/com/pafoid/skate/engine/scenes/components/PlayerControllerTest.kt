@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.player.state.PlayerState
+import com.pafoid.skate.engine.player.PlayerState
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants
 import com.pafoid.skate.engine.scenes.GameObject

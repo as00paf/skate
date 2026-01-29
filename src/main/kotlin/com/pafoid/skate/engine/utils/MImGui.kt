@@ -2,9 +2,7 @@ package com.pafoid.skate.engine.utils
 
 import imgui.ImGui
 import imgui.flag.ImGuiCol
-import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiStyleVar
-import imgui.type.ImString
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -12,11 +10,11 @@ import org.joml.Vector4f
 object MImGui {
 
     private const val DEFAULT_COLUMN_WIDTH = 220f
-    private const val sensibility = 0.01f
-    const val sensibilityScale = 0.005f
-    const val sensibilityRotation = 0.1f
+    private const val SENSIBILITY = 0.01f
+    const val SENSIBILITY_SCALE = 0.005f
+    const val SENSIBILITY_ROTATION = 0.1f
 
-    fun drawVec2Control(label: String, values: Vector2f, resetValue: Float = 0f, columnWidth: Float = DEFAULT_COLUMN_WIDTH, sens: Float = sensibility) {
+    fun drawVec2Control(label: String, values: Vector2f, resetValue: Float = 0f, columnWidth: Float = DEFAULT_COLUMN_WIDTH, sens: Float = SENSIBILITY) {
         ImGui.pushID(label)
 
         ImGui.columns(2)
@@ -106,7 +104,7 @@ object MImGui {
         return valArray[0]
     }
 
-    fun drawVec3Control(label: String, values: Vector3f, resetValue: Float = 0f, columnWidth: Float = DEFAULT_COLUMN_WIDTH, sens: Float = sensibility) {
+    fun drawVec3Control(label: String, values: Vector3f, resetValue: Float = 0f, columnWidth: Float = DEFAULT_COLUMN_WIDTH, sens: Float = SENSIBILITY) {
         ImGui.pushID(label)
 
         ImGui.columns(2)
@@ -181,7 +179,7 @@ object MImGui {
 
     private var uniformScaling = true
     
-    fun drawVec3TransformControl(label: String, values: Vector3f, resetValue: Float = 0f, sens: Float = sensibility) {
+    fun drawVec3TransformControl(label: String, values: Vector3f, resetValue: Float = 0f, sens: Float = SENSIBILITY) {
         ImGui.pushID(label)
 
         ImGui.columns(2)

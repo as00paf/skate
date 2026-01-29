@@ -1,6 +1,6 @@
-package com.pafoid.skate.engine
+package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.scenes.components.Component
+import com.pafoid.skate.engine.utils.MImGui
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.util.Objects
@@ -35,9 +35,9 @@ class Transform(
     }
 
     override fun imgui() {
-        com.pafoid.skate.engine.utils.MImGui.drawVec3TransformControl("Position", translation)
-        com.pafoid.skate.engine.utils.MImGui.drawVec3TransformControl("Rotation", rotation, 0f, com.pafoid.skate.engine.utils.MImGui.sensibilityRotation)
-        com.pafoid.skate.engine.utils.MImGui.drawVec3TransformControl("Scale", scale, 1f, com.pafoid.skate.engine.utils.MImGui.sensibilityScale)
+        MImGui.drawVec3TransformControl("Position", translation)
+        MImGui.drawVec3TransformControl("Rotation", rotation, 0f, MImGui.SENSIBILITY_ROTATION)
+        MImGui.drawVec3TransformControl("Scale", scale, 1f, MImGui.SENSIBILITY_SCALE)
     }
 }
 

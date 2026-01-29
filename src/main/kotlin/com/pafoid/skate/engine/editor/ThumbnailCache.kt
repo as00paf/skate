@@ -5,8 +5,8 @@ import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.FrameBuffer
-import com.pafoid.skate.engine.toMatrix
-import com.pafoid.skate.engine.Transform
+import com.pafoid.skate.engine.scenes.components.toMatrix
+import com.pafoid.skate.engine.scenes.components.Transform
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.*

@@ -1,18 +1,31 @@
-package com.pafoid.skate.engine
+package com.pafoid.skate.engine.scenes
 
-import com.pafoid.skate.engine.scenes.Scene
+import com.pafoid.skate.engine.Window
+import com.pafoid.skate.engine.editor.BoneTreeWindow
+import com.pafoid.skate.engine.editor.EnvironmentWindow
+import com.pafoid.skate.engine.editor.GameViewWindow
+import com.pafoid.skate.engine.editor.PrefabsWindow
+import com.pafoid.skate.engine.editor.PropertiesWindow
+import com.pafoid.skate.engine.editor.SceneHierarchyWindow
+import com.pafoid.skate.engine.editor.ThreadMonitorWindow
 import com.pafoid.skate.engine.utils.Icons
+import com.pafoid.skate.engine.utils.SettingsManager
+import com.pafoid.skate.engine.utils.UnitSystem
+import imgui.ImFontConfig
 import imgui.ImGui
+import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
+import imgui.flag.ImGuiDir
+import imgui.flag.ImGuiDockNodeFlags
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
-import imgui.flag.*
 import imgui.type.ImBoolean
 import imgui.type.ImInt
-import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFW
+import java.io.File
 
 class ImGuiLayer {
 
@@ -20,16 +33,16 @@ class ImGuiLayer {
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"
     private var glfwWindow: Long = 0
-    
+
     private var firstFrame = true
-    
-    val propertiesWindow = com.pafoid.skate.engine.editor.PropertiesWindow()
-    val boneTreeWindow = com.pafoid.skate.engine.editor.BoneTreeWindow()
-    private val hierarchyWindow = com.pafoid.skate.engine.editor.SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
-    val gameViewWindow = com.pafoid.skate.engine.editor.GameViewWindow()
-    val prefabsWindow = com.pafoid.skate.engine.editor.PrefabsWindow()
-    private val environmentWindow = com.pafoid.skate.engine.editor.EnvironmentWindow()
-    private val threadMonitorWindow = com.pafoid.skate.engine.editor.ThreadMonitorWindow()
+
+    val propertiesWindow = PropertiesWindow()
+    val boneTreeWindow = BoneTreeWindow()
+    private val hierarchyWindow = SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
+    val gameViewWindow = GameViewWindow()
+    val prefabsWindow = PrefabsWindow()
+    private val environmentWindow = EnvironmentWindow()
+    private val threadMonitorWindow = ThreadMonitorWindow()
 
     fun init(glfwWindow: Long) {
         this.glfwWindow = glfwWindow
@@ -42,19 +55,19 @@ class ImGuiLayer {
 
         // Load Fonts
         val fontAtlas = io.fonts
-        val fontConfig = imgui.ImFontConfig()
-        
+        val fontConfig = ImFontConfig()
+
         // Default Font
         fontAtlas.addFontDefault()
-        
+
         // Merge FontAwesome
-        fontConfig.setMergeMode(true)
-        fontConfig.setPixelSnapH(true)
-        fontConfig.setGlyphMinAdvanceX(14f) // Use size of font
-        
+        fontConfig.mergeMode = true
+        fontConfig.pixelSnapH = true
+        fontConfig.glyphMinAdvanceX = 14f // Use size of font
+
         val iconRanges = shortArrayOf(0xe000.toShort(), 0xf8ff.toShort(), 0)
         fontAtlas.addFontFromFileTTF("assets/fonts/Font Awesome 7 Free-Solid-900.otf", 14f, fontConfig, iconRanges)
-        
+
         fontAtlas.build()
         fontConfig.destroy()
 
@@ -65,7 +78,7 @@ class ImGuiLayer {
 
     private fun setupStyle() {
         val style = ImGui.getStyle()
-        
+
         // Pro Dark Theme (Slate / Charcoal)
         style.windowRounding = 4f
         style.childRounding = 4f
@@ -73,62 +86,62 @@ class ImGuiLayer {
         style.grabRounding = 4f
         style.popupRounding = 4f
         style.scrollbarRounding = 4f
-        
-        style.setColor(imgui.flag.ImGuiCol.Text, 0.90f, 0.90f, 0.90f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.TextDisabled, 0.60f, 0.60f, 0.60f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.WindowBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ChildBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.PopupBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.Border, 0.26f, 0.26f, 0.26f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.BorderShadow, 0.00f, 0.00f, 0.00f, 0.00f)
-        style.setColor(imgui.flag.ImGuiCol.FrameBg, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.FrameBgHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.FrameBgActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.TitleBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.TitleBgActive, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.TitleBgCollapsed, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.MenuBarBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ScrollbarBg, 0.13f, 0.14f, 0.17f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ScrollbarGrab, 0.31f, 0.31f, 0.31f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ScrollbarGrabHovered, 0.41f, 0.41f, 0.41f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ScrollbarGrabActive, 0.51f, 0.51f, 0.51f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.CheckMark, 0.80f, 0.80f, 0.80f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.SliderGrab, 0.39f, 0.39f, 0.39f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.SliderGrabActive, 0.51f, 0.51f, 0.51f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.Button, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ButtonHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ButtonActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.Header, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.HeaderHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.HeaderActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.Separator, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.SeparatorHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.SeparatorActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ResizeGrip, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ResizeGripHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.ResizeGripActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.Tab, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.TabHovered, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.TabActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.TabUnfocused, 0.21f, 0.22f, 0.26f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.TabUnfocusedActive, 0.30f, 0.31f, 0.36f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.PlotLines, 0.61f, 0.61f, 0.61f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.PlotLinesHovered, 1.00f, 0.43f, 0.35f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.PlotHistogram, 0.90f, 0.70f, 0.00f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.PlotHistogramHovered, 1.00f, 0.60f, 0.00f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.TextSelectedBg, 0.26f, 0.59f, 0.98f, 0.35f)
-        style.setColor(imgui.flag.ImGuiCol.DragDropTarget, 1.00f, 1.00f, 0.00f, 0.90f)
-        style.setColor(imgui.flag.ImGuiCol.NavHighlight, 0.26f, 0.59f, 0.98f, 1.00f)
-        style.setColor(imgui.flag.ImGuiCol.NavWindowingHighlight, 1.00f, 1.00f, 1.00f, 0.70f)
-        style.setColor(imgui.flag.ImGuiCol.NavWindowingDimBg, 0.80f, 0.80f, 0.80f, 0.20f)
-        style.setColor(imgui.flag.ImGuiCol.ModalWindowDimBg, 0.80f, 0.80f, 0.80f, 0.35f)
+
+        style.setColor(ImGuiCol.Text, 0.90f, 0.90f, 0.90f, 1.00f)
+        style.setColor(ImGuiCol.TextDisabled, 0.60f, 0.60f, 0.60f, 1.00f)
+        style.setColor(ImGuiCol.WindowBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(ImGuiCol.ChildBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(ImGuiCol.PopupBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(ImGuiCol.Border, 0.26f, 0.26f, 0.26f, 1.00f)
+        style.setColor(ImGuiCol.BorderShadow, 0.00f, 0.00f, 0.00f, 0.00f)
+        style.setColor(ImGuiCol.FrameBg, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(ImGuiCol.FrameBgHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.FrameBgActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.TitleBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(ImGuiCol.TitleBgActive, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(ImGuiCol.TitleBgCollapsed, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(ImGuiCol.MenuBarBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(ImGuiCol.ScrollbarBg, 0.13f, 0.14f, 0.17f, 1.00f)
+        style.setColor(ImGuiCol.ScrollbarGrab, 0.31f, 0.31f, 0.31f, 1.00f)
+        style.setColor(ImGuiCol.ScrollbarGrabHovered, 0.41f, 0.41f, 0.41f, 1.00f)
+        style.setColor(ImGuiCol.ScrollbarGrabActive, 0.51f, 0.51f, 0.51f, 1.00f)
+        style.setColor(ImGuiCol.CheckMark, 0.80f, 0.80f, 0.80f, 1.00f)
+        style.setColor(ImGuiCol.SliderGrab, 0.39f, 0.39f, 0.39f, 1.00f)
+        style.setColor(ImGuiCol.SliderGrabActive, 0.51f, 0.51f, 0.51f, 1.00f)
+        style.setColor(ImGuiCol.Button, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(ImGuiCol.ButtonHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.ButtonActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.Header, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(ImGuiCol.HeaderHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.HeaderActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.Separator, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(ImGuiCol.SeparatorHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.SeparatorActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.ResizeGrip, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(ImGuiCol.ResizeGripHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.ResizeGripActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.Tab, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(ImGuiCol.TabHovered, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.TabActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.TabUnfocused, 0.21f, 0.22f, 0.26f, 1.00f)
+        style.setColor(ImGuiCol.TabUnfocusedActive, 0.30f, 0.31f, 0.36f, 1.00f)
+        style.setColor(ImGuiCol.PlotLines, 0.61f, 0.61f, 0.61f, 1.00f)
+        style.setColor(ImGuiCol.PlotLinesHovered, 1.00f, 0.43f, 0.35f, 1.00f)
+        style.setColor(ImGuiCol.PlotHistogram, 0.90f, 0.70f, 0.00f, 1.00f)
+        style.setColor(ImGuiCol.PlotHistogramHovered, 1.00f, 0.60f, 0.00f, 1.00f)
+        style.setColor(ImGuiCol.TextSelectedBg, 0.26f, 0.59f, 0.98f, 0.35f)
+        style.setColor(ImGuiCol.DragDropTarget, 1.00f, 1.00f, 0.00f, 0.90f)
+        style.setColor(ImGuiCol.NavHighlight, 0.26f, 0.59f, 0.98f, 1.00f)
+        style.setColor(ImGuiCol.NavWindowingHighlight, 1.00f, 1.00f, 1.00f, 0.70f)
+        style.setColor(ImGuiCol.NavWindowingDimBg, 0.80f, 0.80f, 0.80f, 0.20f)
+        style.setColor(ImGuiCol.ModalWindowDimBg, 0.80f, 0.80f, 0.80f, 0.35f)
     }
 
     private fun setupLayout(dockspaceId: Int) {
         if (!firstFrame) return
         firstFrame = false
 
-        val iniFile = java.io.File("imgui.ini")
+        val iniFile = File("imgui.ini")
         if (iniFile.exists()) return
 
         imgui.internal.ImGui.dockBuilderRemoveNode(dockspaceId)
@@ -161,9 +174,6 @@ class ImGuiLayer {
         prefabsWindow.imgui()
         environmentWindow.imgui(currentScene)
         threadMonitorWindow.imgui()
-        
-        // Simple demo window
-        // ImGui.showDemoWindow()
 
         endFrame()
     }
@@ -179,24 +189,24 @@ class ImGuiLayer {
         imGuiGl3.renderDrawData(ImGui.getDrawData())
 
         if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-            val backupWindowPtr = glfwGetCurrentContext()
+            val backupWindowPtr = GLFW.glfwGetCurrentContext()
             ImGui.updatePlatformWindows()
             ImGui.renderPlatformWindowsDefault()
-            glfwMakeContextCurrent(backupWindowPtr)
+            GLFW.glfwMakeContextCurrent(backupWindowPtr)
         }
     }
 
     private fun setupDockSpace(currentScene: Scene) {
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
-        
+
         val viewport = ImGui.getMainViewport()
         ImGui.setNextWindowPos(viewport.workPosX, viewport.workPosY)
         ImGui.setNextWindowSize(viewport.workSizeX, viewport.workSizeY)
         ImGui.setNextWindowViewport(viewport.id)
         ImGui.setNextWindowPos(0.0f, 0.0f, ImGuiCond.Always)
-        
-        windowFlags = windowFlags or (ImGuiWindowFlags.NoTitleBar or ImGuiWindowFlags.NoCollapse or 
-                ImGuiWindowFlags.NoResize or ImGuiWindowFlags.NoMove or 
+
+        windowFlags = windowFlags or (ImGuiWindowFlags.NoTitleBar or ImGuiWindowFlags.NoCollapse or
+                ImGuiWindowFlags.NoResize or ImGuiWindowFlags.NoMove or
                 ImGuiWindowFlags.NoBringToFrontOnFocus or ImGuiWindowFlags.NoNavFocus)
 
         ImGui.pushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f)
@@ -220,46 +230,46 @@ class ImGuiLayer {
                 }
                 ImGui.separator()
                 if (ImGui.menuItem("${Icons.TRASH} Quit")) {
-                    glfwSetWindowShouldClose(glfwWindow, true)
+                    GLFW.glfwSetWindowShouldClose(glfwWindow, true)
                 }
                 ImGui.endMenu()
             }
             if (ImGui.beginMenu("Settings")) {
-                val settings = com.pafoid.skate.engine.utils.SettingsManager.settings
-                
-                val vsync = imgui.type.ImBoolean(settings.vsync)
+                val settings = SettingsManager.settings
+
+                val vsync = ImBoolean(settings.vsync)
                 if (ImGui.checkbox("V-Sync", vsync)) {
                     settings.vsync = vsync.get()
                     Window.setVSync(settings.vsync)
-                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                    SettingsManager.save()
                 }
 
-                val fullscreen = imgui.type.ImBoolean(settings.fullscreen)
+                val fullscreen = ImBoolean(settings.fullscreen)
                 if (ImGui.checkbox("Fullscreen", fullscreen)) {
                     settings.fullscreen = fullscreen.get()
                     Window.setFullscreen(settings.fullscreen)
-                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                    SettingsManager.save()
                 }
 
                 ImGui.separator()
                 val overlaySize = floatArrayOf(settings.gamepadOverlaySize)
                 if (ImGui.sliderFloat("Gamepad Overlay Size", overlaySize, 0.05f, 0.5f)) {
                     settings.gamepadOverlaySize = overlaySize[0]
-                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                    SettingsManager.save()
                 }
 
-                val showOverlay = imgui.type.ImBoolean(settings.showGamepadOverlay)
+                val showOverlay = ImBoolean(settings.showGamepadOverlay)
                 if (ImGui.checkbox("Show Gamepad Overlay", showOverlay)) {
                     settings.showGamepadOverlay = showOverlay.get()
-                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                    SettingsManager.save()
                 }
 
                 ImGui.separator()
-                val unitSystems = com.pafoid.skate.engine.utils.UnitSystem.values()
+                val unitSystems = UnitSystem.entries.toTypedArray()
                 val currentUnitIdx = ImInt(settings.unitSystem.ordinal)
                 if (ImGui.combo("Unit System", currentUnitIdx, unitSystems.map { it.name }.toTypedArray())) {
                     settings.unitSystem = unitSystems[currentUnitIdx.get()]
-                    com.pafoid.skate.engine.utils.SettingsManager.save()
+                    SettingsManager.save()
                 }
 
                 ImGui.endMenu()

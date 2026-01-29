@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Icons
+import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -170,7 +171,7 @@ class GameViewWindow {
         if (velocity != null) {
             val speedMS = velocity.length()
             val settings = com.pafoid.skate.engine.utils.SettingsManager.settings
-            val (speedDisplay, unitLabel) = if (settings.unitSystem == com.pafoid.skate.engine.utils.UnitSystem.METRIC) {
+            val (speedDisplay, unitLabel) = if (settings.unitSystem == UnitSystem.METRIC) {
                 Pair(speedMS * 3.6f, "km/h")
             } else {
                 Pair(speedMS * 2.23694f, "mph")

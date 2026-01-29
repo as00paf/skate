@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.EngineState
 
-import com.pafoid.skate.engine.ImGuiLayer
+import com.pafoid.skate.engine.scenes.ImGuiLayer
 import com.pafoid.skate.engine.Window
 
 import com.pafoid.skate.engine.assets.AssetPool

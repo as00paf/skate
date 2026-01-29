@@ -1,9 +1,7 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.Transform
 import com.pafoid.skate.engine.assets.Sprite
 import com.pafoid.skate.engine.assets.Texture
-import com.pafoid.skate.engine.utils.Color
 import org.joml.Vector2f
 import org.joml.Vector4f
 

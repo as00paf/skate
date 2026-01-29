@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.scenes
 
 import com.google.gson.GsonBuilder
-import com.pafoid.skate.engine.Transform
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.DirectionalLight
 import com.pafoid.skate.engine.render.Light

@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.render.PickingMesh
 import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.toWorldMatrix
+import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import org.joml.Matrix4f
 import org.joml.Vector3f
 

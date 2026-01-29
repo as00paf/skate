@@ -9,7 +9,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.components.NonPickable
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
-import com.pafoid.skate.engine.toWorldMatrix
+import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import com.pafoid.skate.engine.utils.Color
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL30.*

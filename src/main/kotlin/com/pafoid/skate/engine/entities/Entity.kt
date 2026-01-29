@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.entities
 
-import com.pafoid.skate.engine.Transform
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.models.TexturedModel

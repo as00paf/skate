@@ -1,4 +1,4 @@
-package com.pafoid.skate.player.state
+package com.pafoid.skate.engine.player
 
 sealed class PlayerState {
     object IDLE : PlayerState()

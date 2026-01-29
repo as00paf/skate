@@ -1,4 +1,4 @@
-package com.pafoid.skate.player.state
+package com.pafoid.skate.engine.player
 
 import com.pafoid.skate.engine.scenes.components.PlayerController
 

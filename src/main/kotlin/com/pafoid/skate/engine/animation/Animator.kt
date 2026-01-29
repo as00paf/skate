@@ -2,9 +2,8 @@ package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.toWorldMatrix
+import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import imgui.ImGui
-import imgui.type.ImFloat
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f

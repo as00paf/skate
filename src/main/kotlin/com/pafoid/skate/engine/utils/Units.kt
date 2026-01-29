@@ -1,12 +1,5 @@
 package com.pafoid.skate.engine.utils
 
-enum class UnitType {
-    METERS,
-    CENTIMETERS,
-    INCHES,
-    FEET
-}
-
 object Units {
     const val M_TO_CM = 100.0
     const val IN_TO_M = 0.0254
