@@ -10,55 +10,9 @@ import org.lwjgl.opengl.GL30.glBindVertexArray
 
 class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
 
-    private val SIZE = 500f
-
-    private val VERTICES = floatArrayOf(
-        -SIZE,  SIZE, -SIZE,
-        -SIZE, -SIZE, -SIZE,
-         SIZE, -SIZE, -SIZE,
-         SIZE, -SIZE, -SIZE,
-         SIZE,  SIZE, -SIZE,
-        -SIZE,  SIZE, -SIZE,
-
-        -SIZE, -SIZE,  SIZE,
-        -SIZE, -SIZE, -SIZE,
-        -SIZE,  SIZE, -SIZE,
-        -SIZE,  SIZE, -SIZE,
-        -SIZE,  SIZE,  SIZE,
-        -SIZE, -SIZE,  SIZE,
-
-         SIZE, -SIZE, -SIZE,
-         SIZE, -SIZE,  SIZE,
-         SIZE,  SIZE,  SIZE,
-         SIZE,  SIZE,  SIZE,
-         SIZE,  SIZE, -SIZE,
-         SIZE, -SIZE, -SIZE,
-
-        -SIZE, -SIZE,  SIZE,
-        -SIZE,  SIZE,  SIZE,
-         SIZE,  SIZE,  SIZE,
-         SIZE,  SIZE,  SIZE,
-         SIZE, -SIZE,  SIZE,
-        -SIZE, -SIZE,  SIZE,
-
-        -SIZE,  SIZE, -SIZE,
-         SIZE,  SIZE, -SIZE,
-         SIZE,  SIZE,  SIZE,
-         SIZE,  SIZE,  SIZE,
-        -SIZE,  SIZE,  SIZE,
-        -SIZE,  SIZE, -SIZE,
-
-        -SIZE, -SIZE, -SIZE,
-        -SIZE, -SIZE,  SIZE,
-         SIZE, -SIZE, -SIZE,
-         SIZE, -SIZE, -SIZE,
-        -SIZE, -SIZE,  SIZE,
-         SIZE, -SIZE,  SIZE
-    )
-
     private val cube: RawModel = loader.loadToVAO(VERTICES, 3)
 
-    fun render(camera: Camera, cubemap: CubeMap) {
+    fun render(camera: Camera, cubeMap: CubeMap) {
         shader.start()
         shader.uploadMat4f("viewMatrix", camera.createViewMatrix())
         shader.uploadMat4f("projectionMatrix", camera.createProjectionMatrix())
@@ -66,7 +20,7 @@ class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
         glBindVertexArray(cube.vaoId)
         glEnableVertexAttribArray(0)
         
-        cubemap.bind()
+        cubeMap.bind()
         
         // Depth test should be less or equal to pass since skybox is at max depth
         glDepthFunc(GL_LEQUAL)
@@ -78,3 +32,48 @@ class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
         shader.stop()
     }
 }
+
+private const val SIZE = 500f
+private val VERTICES = floatArrayOf(
+    -SIZE,  SIZE, -SIZE,
+    -SIZE, -SIZE, -SIZE,
+    SIZE, -SIZE, -SIZE,
+    SIZE, -SIZE, -SIZE,
+    SIZE,  SIZE, -SIZE,
+    -SIZE,  SIZE, -SIZE,
+
+    -SIZE, -SIZE,  SIZE,
+    -SIZE, -SIZE, -SIZE,
+    -SIZE,  SIZE, -SIZE,
+    -SIZE,  SIZE, -SIZE,
+    -SIZE,  SIZE,  SIZE,
+    -SIZE, -SIZE,  SIZE,
+
+    SIZE, -SIZE, -SIZE,
+    SIZE, -SIZE,  SIZE,
+    SIZE,  SIZE,  SIZE,
+    SIZE,  SIZE,  SIZE,
+    SIZE,  SIZE, -SIZE,
+    SIZE, -SIZE, -SIZE,
+
+    -SIZE, -SIZE,  SIZE,
+    -SIZE,  SIZE,  SIZE,
+    SIZE,  SIZE,  SIZE,
+    SIZE,  SIZE,  SIZE,
+    SIZE, -SIZE,  SIZE,
+    -SIZE, -SIZE,  SIZE,
+
+    -SIZE,  SIZE, -SIZE,
+    SIZE,  SIZE, -SIZE,
+    SIZE,  SIZE,  SIZE,
+    SIZE,  SIZE,  SIZE,
+    -SIZE,  SIZE,  SIZE,
+    -SIZE,  SIZE, -SIZE,
+
+    -SIZE, -SIZE, -SIZE,
+    -SIZE, -SIZE,  SIZE,
+    SIZE, -SIZE, -SIZE,
+    SIZE, -SIZE, -SIZE,
+    -SIZE, -SIZE,  SIZE,
+    SIZE, -SIZE,  SIZE
+)

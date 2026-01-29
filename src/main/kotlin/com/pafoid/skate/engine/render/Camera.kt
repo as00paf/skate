@@ -6,26 +6,21 @@ import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_Y
+import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.toRadians
 import com.pafoid.skate.engine.utils.toDegrees
 import com.pafoid.skate.engine.utils.Interpolation
+import com.pafoid.skate.engine.utils.Ray
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
-
-data class CameraPreset(
-    val fov: Float,
-    val distance: Float,
-    val offset: Vector3f
-) {
-    companion object {
-        val LOW = CameraPreset(fov = 45f, distance = 3.0f, offset = Vector3f(0f, 0.4f, 0f))
-        val HIGH = CameraPreset(fov = 50f, distance = 4.5f, offset = Vector3f(0f, 0.8f, 0f))
-        val WIDE = CameraPreset(fov = 70f, distance = 5.0f, offset = Vector3f(0f, 0.6f, 0f))
-    }
-}
+import kotlin.math.abs
+import kotlin.math.asin
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 
 class Camera(
     val position: Vector3f = Vector3f(),
@@ -38,7 +33,7 @@ class Camera(
     var nearPlane = 0.1f
     var farPlane = 1000f
     
-    var _projectionSize = Vector2f(32f, 18f) // Default 16:9 units
+    var projectionSize = Vector2f(32f, 18f) // Default 16:9 units
     var zoom = 1.0f
 
     // Input
@@ -63,10 +58,6 @@ class Camera(
         if (zoom <= 0.1f) {
             zoom = 0.1f
         }
-    }
-
-    fun getProjectionSize(): Vector2f {
-        return _projectionSize
     }
 
     fun applyPreset(preset: CameraPreset) {
@@ -128,8 +119,8 @@ class Camera(
                 val rsX = axes[AXIS_RIGHT_X]
                 val rsY = axes[AXIS_RIGHT_Y]
                 
-                if (Math.abs(rsX) > 0.1f) yaw += rsX * controllerSensitivity
-                if (Math.abs(rsY) > 0.1f) pitch += rsY * controllerSensitivity
+                if (abs(rsX) > 0.1f) yaw += rsX * controllerSensitivity
+                if (abs(rsY) > 0.1f) pitch += rsY * controllerSensitivity
             }
         }
 
@@ -137,11 +128,11 @@ class Camera(
         if (pitch < -89f) pitch = -89f
 
         // Calculate offset
-        val horizontalDist = desiredDistance * Math.cos(Math.toRadians(pitch.toDouble())).toFloat()
-        val verticalDist = desiredDistance * Math.sin(Math.toRadians(pitch.toDouble())).toFloat()
+        val horizontalDist = desiredDistance * cos(Math.toRadians(pitch.toDouble())).toFloat()
+        val verticalDist = desiredDistance * sin(Math.toRadians(pitch.toDouble())).toFloat()
         
-        val offsetX = horizontalDist * Math.sin(Math.toRadians(yaw.toDouble())).toFloat()
-        val offsetZ = horizontalDist * Math.cos(Math.toRadians(yaw.toDouble())).toFloat()
+        val offsetX = horizontalDist * sin(Math.toRadians(yaw.toDouble())).toFloat()
+        val offsetZ = horizontalDist * cos(Math.toRadians(yaw.toDouble())).toFloat()
         
         val desiredPos = Vector3f(targetPos.x - offsetX, targetPos.y + verticalDist, targetPos.z + offsetZ)
         
@@ -151,7 +142,7 @@ class Camera(
     }
 
     private fun handleClipping(from: Vector3f, to: Vector3f): Vector3f {
-        val scene = com.pafoid.skate.engine.scenes.SceneManager.getCurrentScene()
+        val scene = SceneManager.getCurrentScene()
         if (scene != null) {
             val results = scene.physics3d.rayTest(from, to)
             if (results.isNotEmpty()) {
@@ -187,15 +178,15 @@ class Camera(
         // Movement
         val speed = 0.1f
         val forward = Vector3f(
-            Math.sin(Math.toRadians(yaw.toDouble())).toFloat(),
-            -Math.sin(Math.toRadians(pitch.toDouble())).toFloat(),
-            -Math.cos(Math.toRadians(yaw.toDouble())).toFloat()
+            sin(Math.toRadians(yaw.toDouble())).toFloat(),
+            -sin(Math.toRadians(pitch.toDouble())).toFloat(),
+            -cos(Math.toRadians(yaw.toDouble())).toFloat()
         ).normalize()
         
         val right = Vector3f(
-            Math.cos(Math.toRadians(yaw.toDouble())).toFloat(),
+            cos(Math.toRadians(yaw.toDouble())).toFloat(),
             0f,
-            Math.sin(Math.toRadians(yaw.toDouble())).toFloat()
+            sin(Math.toRadians(yaw.toDouble())).toFloat()
         ).normalize()
 
         if (KeyListener.isKeyPressed(GLFW_KEY_W)) {
@@ -227,10 +218,10 @@ class Camera(
         val aspectRatio = 1920f / 1080f 
 
         if (isOrthographic) {
-            val left = -_projectionSize.x * zoom / 2f
-            val right = _projectionSize.x * zoom / 2f
-            val bottom = -_projectionSize.y * zoom / 2f
-            val top = _projectionSize.y * zoom / 2f
+            val left = -projectionSize.x * zoom / 2f
+            val right = projectionSize.x * zoom / 2f
+            val bottom = -projectionSize.y * zoom / 2f
+            val top = projectionSize.y * zoom / 2f
             projectionMatrix.ortho(left, right, bottom, top, nearPlane, farPlane)
         } else {
             projectionMatrix.perspective(Math.toRadians(fov.toDouble()).toFloat() * zoom, aspectRatio, nearPlane, farPlane)
@@ -262,11 +253,11 @@ class Camera(
 
     fun lookAt(target: Vector3f) {
         val dir = Vector3f(target).sub(position).normalize()
-        pitch = Math.asin(-dir.y.toDouble()).toDegrees().toFloat()
-        yaw = Math.atan2(dir.x.toDouble(), -dir.z.toDouble()).toDegrees().toFloat()
+        pitch = asin(-dir.y.toDouble()).toDegrees().toFloat()
+        yaw = atan2(dir.x.toDouble(), -dir.z.toDouble()).toDegrees().toFloat()
     }
 
-    fun screenToRay(screenX: Float, screenY: Float, width: Float, height: Float): com.pafoid.skate.engine.utils.Ray {
+    fun screenToRay(screenX: Float, screenY: Float, width: Float, height: Float): Ray {
         // Convert screen coordinates to NDC (-1 to 1)
         val x = (2.0f * screenX) / width - 1.0f
         val y = 1.0f - (2.0f * screenY) / height
@@ -286,7 +277,7 @@ class Camera(
         val rayOrigin = Vector3f(near.x, near.y, near.z)
         val rayDirection = Vector3f(far.x - near.x, far.y - near.y, far.z - near.z).normalize()
         
-        return com.pafoid.skate.engine.utils.Ray(rayOrigin, rayDirection)
+        return Ray(rayOrigin, rayDirection)
     }
 
 }

@@ -1,14 +1,10 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import org.joml.Matrix4f
-import org.joml.Vector2f
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30.*
 
 class RenderBatch(
@@ -16,20 +12,6 @@ class RenderBatch(
     private val zIndex: Int,
     private val renderer: Renderer2D // Callback reference for texture slots? Or just pass logic here
 ) : Comparable<RenderBatch> {
-
-    private val POS_SIZE = 2
-    private val COLOR_SIZE = 4
-    private val TEX_COORDS_SIZE = 2
-    private val TEX_ID_SIZE = 1
-    private val ENTITY_ID_SIZE = 1
-
-    private val POS_OFFSET = 0
-    private val COLOR_OFFSET = POS_OFFSET + POS_SIZE * Float.SIZE_BYTES
-    private val TEX_COORDS_OFFSET = COLOR_OFFSET + COLOR_SIZE * Float.SIZE_BYTES
-    private val TEX_ID_OFFSET = TEX_COORDS_OFFSET + TEX_COORDS_SIZE * Float.SIZE_BYTES
-    private val ENTITY_ID_OFFSET = TEX_ID_OFFSET + TEX_ID_SIZE * Float.SIZE_BYTES
-    private val VERTEX_SIZE = 10
-    private val VERTEX_SIZE_BYTES = VERTEX_SIZE * Float.SIZE_BYTES
 
     private val sprites = arrayOfNulls<SpriteRenderer>(maxBatchSize * 4)
     private var numSprites = 0
@@ -271,3 +253,17 @@ class RenderBatch(
         hasRoom = true
     }
 }
+
+private const val POS_SIZE = 2
+private const val COLOR_SIZE = 4
+private const val TEX_COORDS_SIZE = 2
+private const val TEX_ID_SIZE = 1
+private const val ENTITY_ID_SIZE = 1
+
+private const val POS_OFFSET = 0
+private const val COLOR_OFFSET = POS_OFFSET + POS_SIZE * Float.SIZE_BYTES
+private const val TEX_COORDS_OFFSET = COLOR_OFFSET + COLOR_SIZE * Float.SIZE_BYTES
+private const val TEX_ID_OFFSET = TEX_COORDS_OFFSET + TEX_COORDS_SIZE * Float.SIZE_BYTES
+private const val ENTITY_ID_OFFSET = TEX_ID_OFFSET + TEX_ID_SIZE * Float.SIZE_BYTES
+private const val VERTEX_SIZE = 10
+private const val VERTEX_SIZE_BYTES = VERTEX_SIZE * Float.SIZE_BYTES

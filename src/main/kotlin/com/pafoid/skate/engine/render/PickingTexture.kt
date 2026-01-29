@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.render
 
-import org.joml.Vector2i
 import org.lwjgl.opengl.GL30.*
+import kotlin.math.roundToInt
 
 class PickingTexture(private var width: Int, private var height: Int) {
 
@@ -76,6 +76,6 @@ class PickingTexture(private var width: Int, private var height: Int) {
         val pixels = FloatArray(3)
         glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, pixels)
 
-        return Math.round(pixels[0]) - 1
+        return pixels[0].roundToInt() - 1
     }
 }

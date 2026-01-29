@@ -3,9 +3,11 @@ package com.pafoid.skate.engine.render
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
+import com.pafoid.skate.engine.scenes.components.NonPickable
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.toWorldMatrix
 import com.pafoid.skate.engine.utils.Color
@@ -169,14 +171,14 @@ class Renderer(
 
         scene.gameObjects.forEach { go ->
             val entity = go.getComponent<Entity>()
-            if (entity != null && go.getComponent<com.pafoid.skate.engine.scenes.components.NonPickable>() == null) {
+            if (entity != null && go.getComponent<NonPickable>() == null) {
                 renderEntityPicking(go, entity)
             }
         }
         pickingShader3D.stop()
     }
     
-    private fun renderEntityPicking(go: com.pafoid.skate.engine.scenes.GameObject, entity: Entity) {
+    private fun renderEntityPicking(go: GameObject, entity: Entity) {
         val texturedModel = entity.model
 
         pickingShader3D.uploadMat4f("transformationMatrix", go.transform.toWorldMatrix())
@@ -220,7 +222,7 @@ class Renderer(
         return pickingTexture.readPixel(safeX, 1079 - safeY)
     }
 
-    private fun renderEntity(go: com.pafoid.skate.engine.scenes.GameObject, entity: Entity) {
+    private fun renderEntity(go: GameObject, entity: Entity) {
         val texturedModel = entity.model
         val camera = com.pafoid.skate.engine.scenes.SceneManager.getCurrentScene()?.camera
 
@@ -241,7 +243,7 @@ class Renderer(
 
             // Base Color
             glActiveTexture(GL_TEXTURE0)
-            material.baseColorTexture?.bind() ?: AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind()
+            material.baseColorTexture?.bind() ?: AssetPool.getTexture(Texture.WHITE).bind()
             defaultShader.uploadInt("u_BaseColorTexture", 0)
             defaultShader.uploadVec4f("u_BaseColorFactor", material.baseColorFactor)
 
@@ -249,7 +251,7 @@ class Renderer(
             glActiveTexture(GL_TEXTURE1)
             val hasNormal = material.normalMap != null
             if (hasNormal) material.normalMap!!.bind()
-            else AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind() // Bind dummy
+            else AssetPool.getTexture(Texture.WHITE).bind() // Bind dummy
             defaultShader.uploadInt("u_NormalMap", 1)
             defaultShader.uploadBoolean("u_HasNormalMap", hasNormal)
 
@@ -257,7 +259,7 @@ class Renderer(
             glActiveTexture(GL_TEXTURE2)
             val hasMR = material.metallicRoughnessTexture != null
             if (hasMR) material.metallicRoughnessTexture!!.bind()
-            else AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind() // Bind dummy
+            else AssetPool.getTexture(Texture.WHITE).bind() // Bind dummy
             defaultShader.uploadInt("u_MetallicRoughnessTexture", 2)
             defaultShader.uploadBoolean("u_HasMetallicRoughnessTexture", hasMR)
             defaultShader.uploadFloat("u_MetallicFactor", material.metallicFactor)
@@ -266,7 +268,7 @@ class Renderer(
             // AO
             glActiveTexture(GL_TEXTURE3)
             val hasAO = material.aoTexture != null
-            material.aoTexture?.bind() ?: AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind()
+            material.aoTexture?.bind() ?: AssetPool.getTexture(Texture.WHITE).bind()
             defaultShader.uploadInt("u_AOTexture", 3)
             defaultShader.uploadBoolean("u_HasAOTexture", hasAO)
 
@@ -274,7 +276,7 @@ class Renderer(
             glActiveTexture(GL_TEXTURE4)
             val hasEmissive = material.emissiveTexture != null
             if (hasEmissive) material.emissiveTexture!!.bind()
-            else AssetPool.getTexture(com.pafoid.skate.engine.assets.Texture.WHITE).bind() // Bind dummy
+            else AssetPool.getTexture(Texture.WHITE).bind() // Bind dummy
             defaultShader.uploadInt("u_EmissiveTexture", 4)
             defaultShader.uploadBoolean("u_HasEmissiveTexture", hasEmissive)
             defaultShader.uploadVec3f("u_EmissiveFactor", material.emissiveFactor)

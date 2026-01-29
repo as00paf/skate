@@ -7,6 +7,8 @@ import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow) {
 
@@ -44,13 +46,13 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
         
         if (xAxisActive) {
             go.transform.translation.x += calculateDelta(Vector3f(1f, 0f, 0f))
-            if (go.getComponent<ModularTile>() != null) go.transform.translation.x = Math.round(go.transform.translation.x / 2.0f) * 2.0f
+            if (go.getComponent<ModularTile>() != null) go.transform.translation.x = (go.transform.translation.x / 2.0f).roundToInt() * 2.0f
         } else if (yAxisActive) {
             go.transform.translation.y += calculateDelta(Vector3f(0f, 1f, 0f))
-            if (go.getComponent<ModularTile>() != null) go.transform.translation.y = Math.round(go.transform.translation.y / 2.0f) * 2.0f
+            if (go.getComponent<ModularTile>() != null) go.transform.translation.y = (go.transform.translation.y / 2.0f).roundToInt() * 2.0f
         } else if (zAxisActive) {
             go.transform.translation.z += calculateDelta(Vector3f(0f, 0f, 1f))
-            if (go.getComponent<ModularTile>() != null) go.transform.translation.z = Math.round(go.transform.translation.z / 2.0f) * 2.0f
+            if (go.getComponent<ModularTile>() != null) go.transform.translation.z = (go.transform.translation.z / 2.0f).roundToInt() * 2.0f
         }
 
         // 2. Draw Arrows
@@ -64,7 +66,7 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
         DebugDraw.addLine3D(origin, end, color)
         
         // Solid Pyramid at the end
-        val ortho1 = if (Math.abs(direction.x) > 0.9f) Vector3f(0f, 1f, 0f) else Vector3f(1f, 0f, 0f)
+        val ortho1 = if (abs(direction.x) > 0.9f) Vector3f(0f, 1f, 0f) else Vector3f(1f, 0f, 0f)
         val ortho2 = Vector3f(direction).cross(ortho1).normalize().mul(cSize)
         val ortho3 = Vector3f(direction).cross(ortho2).normalize().mul(cSize)
         

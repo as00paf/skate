@@ -38,7 +38,7 @@ class Renderer2D {
             newBatch.start()
             batches.add(newBatch)
             newBatch.addSprite(spr)
-            Collections.sort(batches)
+            batches.sort()
         }
     }
     

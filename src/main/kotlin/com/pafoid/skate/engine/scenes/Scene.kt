@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import com.pafoid.skate.engine.Transform
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.assets.CubeMap
+import com.pafoid.skate.engine.render.DirectionalLight
 import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
@@ -18,8 +19,8 @@ import java.nio.file.Paths
 class Scene(private val initializer: SceneInitializer, val camera: Camera = Camera()) {
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
-    var sun: com.pafoid.skate.engine.render.DirectionalLight = com.pafoid.skate.engine.render.DirectionalLight()
-    var moon: com.pafoid.skate.engine.render.DirectionalLight = com.pafoid.skate.engine.render.DirectionalLight()
+    var sun: DirectionalLight = DirectionalLight()
+    var moon: DirectionalLight = DirectionalLight()
     var useSun: Boolean = true
     var useAmbient: Boolean = true
     var timeOfDay: Float = 12.0f // 0.0 to 24.0, 12.0 is noon
