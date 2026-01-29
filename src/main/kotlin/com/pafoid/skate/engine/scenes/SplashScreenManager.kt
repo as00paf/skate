@@ -46,10 +46,10 @@ class SplashScreenManager {
         splashTexture = AssetPool.getTexture(Assets.Textures.SPLASH)
         splashQuad = VAOLoader().loadToVAO( // TODO: inject loader ?
             positions = floatArrayOf(
-                0f, 0f, 0f, // Top-Left (will be flipped by projection if needed, or matched by UVs)
-                1f, 0f, 0f,
-                1f, 1f, 0f,
-                0f, 1f, 0f
+                -1f, -1f, 0f,
+                1f, -1f, 0f,
+                1f,  1f, 0f,
+                -1f,  1f, 0f
             ),
             textureCoords = floatArrayOf(
                 0f, 0f,
@@ -79,26 +79,6 @@ class SplashScreenManager {
             shader.start()
             shader.uploadFloat("uProgress", loadingProgress.get())
             shader.uploadFloat("uAlpha", splashAlpha)
-
-            // --- Matrix Calculation ---
-            val screenWidth = Window.currentWidth.toFloat()
-            val screenHeight = Window.currentHeight.toFloat()
-            
-            // 1. Projection: Orthographic (0,0 at Top-Left)
-            val projection = Matrix4f().ortho(0f, screenWidth, screenHeight, 0f, -1f, 1f)
-            shader.uploadMat4f("uProjection", projection)
-
-            // 2. Model: Scale & Center
-            val imgWidth = texture.width.toFloat() / 2f // Divide by 2 to make it smaller
-            val imgHeight = texture.height.toFloat() / 2f
-            val xPos = (screenWidth - imgWidth) / 2f
-            val yPos = (screenHeight - imgHeight) / 2f
-
-            val model = Matrix4f()
-                .translate(xPos, yPos, 0f)
-                .scale(imgWidth, imgHeight, 1f)
-            shader.uploadMat4f("uModel", model)
-            // --------------------------
 
             GL13.glActiveTexture(GL13.GL_TEXTURE0)
 
