@@ -114,3 +114,30 @@
 - [x] **Task 15.3.1: Whitespace Consolidation**: Remove all double/triple breaking spaces. Enforce a single-line break between methods and properties.
 - [x] **Task 15.3.2: Linting Pass**: Apply standard Kotlin/JVM formatting rules (consistent indentation, curly brace placement, and trailing commas).
 - [x] **Task 15.3.3: Import Optimization**: Remove unused imports and organize them alphabetically.
+
+# 🧪 16. Skateboard Physics: Unit Test Suite
+
+## 🏗️ 16.1: Static & Structural Integrity
+- [ ] **Test T1.1: Mass & Inertia Tensor**: Verify the `btCompoundShape` total mass equals the sum of parts (Deck + Trucks + Wheels).
+- [ ] **Test T1.2: Center of Mass (CoM)**: Confirm the CoM is slightly lower than the deck surface (simulating truck weight) and centered between axles.
+- [ ] **Test T1.3: Static Friction**: Place the board on a 15° slope; verify it does not move until an external force is applied.
+
+## 🏁 16.2: Locomotion & Steering
+- [ ] **Test T2.1: Roll Resistance**: Measure velocity decay on a flat plane. A board starting at $5.0 m/s$ must travel exactly the distance dictated by the friction/damping coefficients.
+- [ ] **Test T2.2: Hooke's Law (Suspension)**: Apply a $75kg$ load ($735.5N$) to the center; verify raycast springs compress by $d = F/k$.
+- [ ] **Test T2.3: Turning Radius**: Apply maximum local Z-torque (lean); verify the board traces a circular path consistent with the physical "Wheelbase vs. Truck Angle" formula.
+
+## 🚀 16.3: The "Pop" Mechanics (Ollie Physics)
+- [ ] **Test T3.1: Tail Snap (Leverage)**: Apply downward impulse to the tail. Verify the **Nose** vertical velocity is positive (Lever action check).
+- [ ] **Test T3.2: Ground Impact Impulse**: Verify that when the tail hits the ground ($Y=0$), a secondary upward impulse is generated (The "Bounce").
+- [ ] **Test T3.3: Front Foot Leveling**: Simulate the "Slide" by applying forward/downward force to the nose while airborne. Verify board pitch returns to $0$ (Leveling out).
+
+## 🔄 16.4: Trick Detection Logic
+- [ ] **Test T4.1: Rotation Accumulation**: Spin the board 360° on the local Y-axis in a vacuum; verify the `TrickTracker` returns "360 Shove-it".
+- [ ] **Test T4.2: Kickflip Detection**: Spin the board 360° on the local X-axis; verify the "Kickflip" state is triggered.
+- [ ] **Test T4.3: Stance Validation**: Perform a pop while moving backwards; verify the system identifies the trick as "Fakie Ollie" rather than "Nollie".
+
+## 🛠️ 16.5: Boundary & Stress Testing
+- [ ] **Test T5.1: High-Speed Stability**: Run the simulation at $50 m/s$; verify raycast wheels do not "tunnel" (clip) through the floor.
+- [ ] **Test T5.2: Frame-Rate Independence**: Run the same "Push" test at $30fps$ and $120fps$; verify the final displacement is identical within a 1% margin.
+- [ ] **Test T5.3: Access Violation Regression**: Repeatedly instantiate and destroy 100 `PhysicsRigidBody` objects to ensure the `-Xverify:none` flag and JNI bindings are stable.
