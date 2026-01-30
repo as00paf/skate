@@ -148,7 +148,50 @@
 - [ ] **Dependency Injection**: Integrate **Koin** to manage component lifecycles, improve testability, and decouple engine systems.
 - [ ] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using Kotlinx.serialization) for handling save states, configurations, and object properties.
 
-# 🔧 18. Physics Implementation Fixes (Deferred)
+# 🛠️ Phase 18. Editor UX & Workspace Overhaul
+
+## 18.1. UI Navigation & Menu Cleanup
+- [ ] **Revamp 'View' Menu**:
+  - [ ] Remove the FPS counter from the menu (moving to Profiler).
+  - [ ] Add a "Windows" sub-menu with checkboxes to toggle all ImGui windows (Inspector, Console, Assets, etc.).
+  - [ ] Remove Physics Debug toggle (moving to Viewport Toolbar).
+- [ ] **Remove 'Create' Menu**: Deprecate the top-level Create menu in favor of the new Asset Browser workflow.
+
+## 18.2. Integrated Console & Profiling
+- [ ] **Dual-Tab Console Window**:
+  - [ ] **Engine Tab**: Display system logs, shader compilation errors, and JNI/Physics warnings.
+  - [ ] **Editor Tab**: Log user actions (e.g., "Object Moved," "Prefab Spawned," "Scene Reset").
+- [ ] **Advanced Profiler**:
+  - [ ] Display **RAM Usage** (using `Runtime.getRuntime()`).
+  - [ ] Display **CPU/GPU Frame Times** (in ms).
+  - [ ] Display **Draw Call Count** (per frame).
+  - [ ] Display **Physics Step Duration** (timing the JBullet `stepSimulation`).
+
+## 18.3. Unified Asset Browser
+- [ ] **Transform Prefabs Window**: Rename and expand the "Prefabs" window into a multi-tab **Asset Browser**.
+  - [ ] **Models Tab**: List all `.gltf`, `.fbx`, and `.obj` files in resources.
+  - [ ] **Textures Tab**: List all `.png` and `.jpg` files.
+  - [ ] **Prefabs Tab**: List saved `.json` entity templates.
+
+## 18.4. Game Viewport & Toolbar
+- [ ] **External Toolbar**: Move buttons from inside the viewport to a dedicated toolbar strip above the viewport.
+- [ ] **Icon-Only Buttons**:
+  - [ ] Replace text labels with icons (using FontAwesome or high-res textures).
+  - [ ] Add tooltips for every button (on hover).
+- [ ] **New Features & Keybinds**:
+  - [ ] **Reset Scene**: Full scene reload/re-initialization.
+  - [ ] **Pause**: Toggle engine time scale ($0.0$ vs $1.0$).
+  - [ ] **Screenshot**: Capture frame buffer to PNG.
+  - [ ] **Physics Toggle**: Move the debug wireframe toggle here.
+  - [ ] **Maximize Viewport (F12)**: Toggle between "Editor Layout" and "Fullscreen Viewport" mode.
+
+## 18.5. Interaction & Shortcuts
+- [ ] **Middle-Mouse Pan**: Implement `View Panning` in the editor camera. Pressing **MMB** + Mouse move shifts the camera on its local Up/Right axes.
+- [ ] **Standard Editor Shortcuts**:
+  - [ ] **Ctrl + C / V / X**: Copy, Paste, and Cut selected `GameObject` (handling deep clones).
+  - [ ] **Ctrl + Z / Y**: Implement a basic Undo/Redo stack for Transform changes and object deletions.
+
+# 🔧 19. Physics Implementation Fixes (Deferred)
 - [ ] **Task 18.1: Friction Propagation**: Fix `RigidBody3D` to ensure the `friction` property is correctly applied to the Bullet `rawBody` during initialization and runtime updates.
 - [ ] **Task 18.2: Rolling Resistance**: Implement `linearDamping` logic in `RigidBody3D` to satisfy the `rollResistance` test.
 - [ ] **Task 18.3: Steering Geometry**: Implement local-space steering forces in `SkateboardPhysics` to translate board lean (roll) into actual turning (yaw).
