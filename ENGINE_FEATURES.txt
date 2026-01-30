@@ -1,0 +1,64 @@
+# 🎮 PAFSK8 Engine Features Report
+**Date:** January 30, 2026
+**Tech Stack:** Kotlin (JVM 17), LWJGL 3, OpenGL 3.3+, JBullet (Physics), JOML (Math), Dear ImGui (UI).
+
+## 1. Core Architecture
+*   **Entity-Component-System (ECS):** Flexible `GameObject` and `Component` architecture allowing modular behavior attachment.
+*   **Scene Management:** `Scene` and `SceneManager` handle lifecycle, serialization (JSON), and object graph management.
+*   **State Machine:** `EngineState` handles high-level application flow (Splash -> Editor/Game).
+*   **Input System:** Abstraced `InputProvider` supporting Keyboard and Gamepad (GLFW), with an `InputBuffer` for complex gesture detection (flicks).
+
+## 2. Rendering Engine
+*   **Pipeline:** Forward Rendering with depth buffering and transparency handling.
+*   **PBR (Physically Based Rendering):**
+    *   **Workflow:** Metallic-Roughness.
+    *   **Maps Supported:** Base Color, Normal, Metallic-Roughness, Ambient Occlusion (AO), Emissive.
+    *   **Alpha Modes:** Opaque, Mask (Cutoff), Blend.
+*   **Lighting:**
+    *   **Directional Light:** Sun/Moon with intensity and color control.
+    *   **Ambient:** Global ambient light term.
+    *   **Environment:** Skybox and procedural SkyDome rendering.
+    *   **Fog:** Distance-based fog with configurable density, gradient, and color.
+*   **2D Rendering:** Sprite batching system for UI elements and 2D overlays.
+*   **Selection/Picking:** Pixel-perfect picking via a dedicated framebuffer pass (`pickingShader`).
+*   **Post-Processing:** (Architecture exists via Framebuffers, though specific effects like Bloom are not currently active in `Renderer.kt`).
+
+## 3. Physics Engine
+*   **Integration:** JBullet (Bullet Physics port).
+*   **Simulation:**
+    *   **Rigid Bodies:** Dynamic, Static, and Kinematic body types.
+    *   **Collision Shapes:** Box, Sphere, Capsule, Cylinder, Mesh (Convex/Concave).
+    *   **Constraints:** Point-to-Point, Hinge, Slider, 6DOF (implied by JBullet presence).
+*   **Skateboard Physics:**
+    *   **Suspension:** Raycast-based vehicle suspension (Hooke's Law) for 4 wheels.
+    *   **Friction:** Configurable lateral and longitudinal friction.
+    *   **Pop/Jump:** Force/Impulse application at specific leverage points (Tail/Nose).
+*   **Raycasting:** World-space ray tests for ground detection, rail grinding, and interaction.
+
+## 4. Animation System
+*   **Skeletal Animation:**
+    *   **Skinning:** GPU-based vertex skinning (up to 4 weights per vertex).
+    *   **Formats:** glTF 2.0 (via Assimp) and DAE support.
+    *   **Features:** Matrix Palette generation, Joint hierarchy traversal.
+*   **Playback:**
+    *   **Blending:** Cross-fading between animation clips.
+    *   **Controls:** Play, Pause, Stop, Scrubbing, Speed control.
+*   **Procedural Animation:**
+    *   **Bone Overrides:** System to manually rotate specific bones (e.g., Spine lean, Head look-at) on top of baked animation data.
+
+## 5. Level Editor ("Skate Lab")
+*   **UI Framework:** Dear ImGui integration.
+*   **Tools:**
+    *   **Gizmos:** 3D Translation, Rotation, and Scale gizmos for object manipulation.
+    *   **Grid:** Infinite grid rendering for spatial reference.
+    *   **Scene Graph:** Hierarchy view (implied by `GameObject` structure).
+    *   **Inspector:** Property editing for Transforms, Materials, and Physics parameters.
+*   **Camera:** Free-fly Editor Camera with orbit and pan controls.
+*   **Prefabs:** System for instantiating complex objects (e.g., Skateboards, Obstacles) from templates.
+
+## 6. Asset Management
+*   **Asset Pool:** Centralized caching for Textures, Shaders, Sounds, and Models to prevent duplicates.
+*   **Loaders:**
+    *   **Assimp:** Robust model loading (glTF, OBJ, FBX, DAE).
+    *   **ShaderLoader:** Compiles and links vertex/fragment shaders with error reporting.
+    *   **TextureLoader:** Handles 2D images (PNG, JPG) and CubeMaps.
