@@ -104,13 +104,11 @@
 
 ### 15.1 Structural Integrity
 - [x] **Task 15.1.1: File Atomization**: Ensure every class has its own dedicated file. No multi-class files. This is a big refactor so we must be careful and make sure the project still compiles after each class has been separated into its own file. Make sure to fix the import statements as we go. 
-- [ ] **Task 15.1.2: Hardcode Purge**: Move "Magic Numbers" (physics constants, shader paths, default FOV) into a centralized `Constants.kt` or relevant companion objects.
-- [ ] **Task 15.1.3: Package Reorganization**: Audit the package structure (e.g., `com.skatesim.physics`, `com.skatesim.render`) to ensure logic is logically grouped.
+- [x] **Task 15.1.2: Hardcode Purge**: Move "Magic Numbers" (physics constants, shader paths, default FOV) into a centralized `Constants.kt` or relevant companion objects.
 
 ### 15.2 Readability & Documentation
-- [ ] **Task 15.2.1: Semantic Naming**: Rename variables, methods, and classes to be descriptive (e.g., `rot` -> `currentRotation`, `handle()` -> `processInput()`).
-- [ ] **Task 15.2.2: Contextual Commenting**: Add KDoc/Javadoc comments to complex math functions, especially in the **Skeletal Animation** and **Raycast Suspension** modules.
-- [ ] **Task 15.2.3: Shader Documentation**: Add comments to `.vert` and `.frag` files explaining the coordinate spaces (World vs. View vs. Clip).
+- [ ] **Task 15.2.1: Contextual Commenting**: Add KDoc/Javadoc comments to complex math functions, especially in the **Skeletal Animation** and **Raycast Suspension** modules.
+- [ ] **Task 15.2.2: Shader Documentation**: Add comments to `.vert` and `.frag` files explaining the coordinate spaces (World vs. View vs. Clip).
 
 ### 15.3 Formatting & Style
 - [ ] **Task 15.3.1: Whitespace Consolidation**: Remove all double/triple breaking spaces. Enforce a single-line break between methods and properties.
