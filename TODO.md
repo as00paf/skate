@@ -111,6 +111,6 @@
 - [x] **Task 15.2.2: Shader Documentation**: Add comments to `.vert` and `.frag` files explaining the coordinate spaces (World vs. View vs. Clip).
 
 ### 15.3 Formatting & Style
-- [ ] **Task 15.3.1: Whitespace Consolidation**: Remove all double/triple breaking spaces. Enforce a single-line break between methods and properties.
-- [ ] **Task 15.3.2: Linting Pass**: Apply standard Kotlin/JVM formatting rules (consistent indentation, curly brace placement, and trailing commas).
-- [ ] **Task 15.3.3: Import Optimization**: Remove unused imports and organize them alphabetically.
+- [x] **Task 15.3.1: Whitespace Consolidation**: Remove all double/triple breaking spaces. Enforce a single-line break between methods and properties.
+- [x] **Task 15.3.2: Linting Pass**: Apply standard Kotlin/JVM formatting rules (consistent indentation, curly brace placement, and trailing commas).
+- [x] **Task 15.3.3: Import Optimization**: Remove unused imports and organize them alphabetically.
