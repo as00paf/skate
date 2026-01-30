@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkAll

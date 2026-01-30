@@ -11,8 +11,26 @@ import org.joml.Quaternionf
 
 open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
     var bodyType: BodyType = BodyType.Dynamic
-    var friction: Float = 0.5f
     var useCCD: Boolean = false
+    
+    var friction: Float = 0.5f
+        set(value) {
+            field = value
+            rawBody?.friction = value
+        }
+        
+    var linearDamping: Float = 0.0f
+        set(value) {
+            field = value
+            rawBody?.setDamping(value, angularDamping)
+        }
+        
+    var angularDamping: Float = 0.0f
+        set(value) {
+            field = value
+            rawBody?.setDamping(linearDamping, value)
+        }
+
     @Transient var rawBody: PhysicsRigidBody? = null
 
     override fun update(dt: Float) {
