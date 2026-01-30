@@ -8,7 +8,7 @@ fun main(args:Array<String>){
     val window = Window(
         width = 512,
         height = 512,
-        title ="Skate",
+        title ="PAFSK8",
         initCallback = sceneManager::initializeScene,
         drawCallback = sceneManager::draw,
         destroyCallback = sceneManager::destroy

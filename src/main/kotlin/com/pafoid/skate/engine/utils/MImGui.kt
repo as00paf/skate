@@ -9,6 +9,8 @@ import org.joml.Vector4f
 
 object MImGui {
 
+    private var uniformScaling = true
+
     private const val DEFAULT_COLUMN_WIDTH = 220f
     private const val SENSIBILITY = 0.01f
     const val SENSIBILITY_SCALE = 0.005f
@@ -176,8 +178,6 @@ object MImGui {
         ImGui.columns(1)
         ImGui.popID()
     }
-
-    private var uniformScaling = true
     
     fun drawVec3TransformControl(label: String, values: Vector3f, resetValue: Float = 0f, sens: Float = SENSIBILITY) {
         ImGui.pushID(label)
@@ -292,87 +292,46 @@ object MImGui {
     }
 
         fun colorPicker4(label: String, color: Vector4f): Boolean {
-
             var res = false
-
             ImGui.pushID(label)
-
-    
-
             ImGui.columns(2)
-
             ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
-
             ImGui.text(label)
-
             ImGui.nextColumn()
-
-    
 
             val imColor = floatArrayOf(color.x, color.y, color.z, color.w)
-
             if (ImGui.colorEdit4("##colorPicker", imColor)) {
-
                 color.set(imColor[0], imColor[1], imColor[2], imColor[3])
-
                 res = true
-
             }
 
-    
-
             ImGui.columns(1)
-
             ImGui.popID()
 
-    
-
             return res
-
         }
 
-    
-
         fun colorPicker3(label: String, color: Vector3f): Boolean {
-
             var res = false
-
             ImGui.pushID(label)
-
-    
-
             ImGui.columns(2)
-
             ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
-
             ImGui.text(label)
-
             ImGui.nextColumn()
 
-    
 
             val imColor = floatArrayOf(color.x, color.y, color.z)
 
             if (ImGui.colorEdit3("##colorPicker3", imColor)) {
-
                 color.set(imColor[0], imColor[1], imColor[2])
-
                 res = true
-
             }
 
-    
-
             ImGui.columns(1)
-
             ImGui.popID()
 
-    
-
             return res
-
         }
-
     }
 
     
