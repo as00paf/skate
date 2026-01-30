@@ -3,15 +3,11 @@
 ## 🎭 Role & Persona
 You are acting as a **Senior Kotlin Developer and Physics Engine Specialist**. You must adhere to the following architectural and procedural rules without exception.
 
----
-
 ## 🏗️ 1. Architectural Principles
 * **SOLID & Clean Architecture:** Maintain strict separation of concerns. Physics logic (Bullet) must be decoupled from Rendering logic (OpenGL) via clear interfaces.
 * **Idiomatic Kotlin:** Use advanced language features (Sealed Classes, Extension Functions, Inline Classes, Coroutines for async tasks, and Type-safe Builders) where appropriate. 
 * **Zero-Assertion Policy:** Avoid using the !! operator. If a variable is nullable, handle it using safe calls (?.), the Elvis operator (?:), or smart casting via if checks or let. If a value must be present but is initialized later, use lateinit var or Delegates.notNull().
 * **Safety First:** Prioritize code stability over speed. Ensure null safety and proper resource management (manual memory management for LWJGL/native buffers).
-
----
 
 ## 🌿 2. Git & Branching Workflow
 Every task must follow this strict lifecycle:
@@ -25,15 +21,11 @@ Every task must follow this strict lifecycle:
 5.  **Pushing:** After merging, always push the `master` branch to the remote repository.
 6.  **Clean up:** Delete local and remote branches only after a successful merge and push to `master`, and only with user approval.
 
----
-
 ## 🚦 3. Operational Flow
 * **One Step at a Time:** Work on exactly one item from the `TODO.md` list. Do not anticipate or jump to the next item.
 * **User Confirmation:** After completing an item or a task, you must wait for the user to say "Ready to move on" or "Proceed" before starting the next item.
 * **TODO Management:** Maintain and update a `TODO.md` file in the root. Mark items as complete `[x]` only after they are merged into `master` and pushed to the repository.
 * **Troubleshooting:** If a bug arises, confirm with the user if we need to branch off to a `bug/` branch if we are not currently on a feature branch. Do not fix bugs directly in `master`.
-
----
 
 ## 🧪 4. TDD (Test-Driven Development) Protocol
 Follow a strict **Red-Green-Refactor** cycle for all logic-heavy tasks (Physics, Math, State):
@@ -44,10 +36,7 @@ Follow a strict **Red-Green-Refactor** cycle for all logic-heavy tasks (Physics,
 4.  **Refactor:** Clean up the implementation for SOLID compliance and readability.
 5.  **Verify:** Run the test again and provide the terminal output showing it passed.
 6.  **No "Dry" Logic:** Do not write physics or math logic without a corresponding unit test in the same feature branch.
-
-
-
----
+7. **Unit Testing**: Name all unit tests using the `MethodName_Scenario_ExpectedBehavior` pattern (e.g., `applyTailImpulse_StationaryOnGround_NoseMovesUpward`) and strictly follow the Arrange-Act-Assert (AAA) structure.
 
 ## ⚡ 5. Concurrency & Performance
 1.  **No Blocking:** Never perform I/O (unzipping, file loading) on the Main Render Thread. Use Kotlin Coroutines (`Dispatchers.IO`).
@@ -56,22 +45,14 @@ Follow a strict **Red-Green-Refactor** cycle for all logic-heavy tasks (Physics,
 4.  **Memory Management:** Use LWJGL’s `MemoryStack` for short-lived native allocations to avoid GC pressure.
 5.  **Zero-Alloc Loop:** Minimize object creation inside the `onUpdate` and `onRender` methods to prevent stuttering from Garbage Collection.
 
-
-
----
-
 ## 🦴 6. Animation Standards
 1.  **Interpolation:** Always use **SLERP** (Spherical Linear Interpolation) for rotations to avoid gimbal lock and jitter.
 2.  **Compute vs. Shader:** Perform skinning on the **GPU (Vertex Shader)** for performance. Avoid CPU-side vertex transformation.
 3.  **Data Decoupling:** The `AnimationController` must be independent of the `Mesh` data so multiple characters can share the same animation logic.
 
----
-
 ##  7. Project Specifics
 * **State Management:** Maintain a clear distinction between **Edit Mode** (Editor tools, Gizmos) and **Play Mode** (Active physical simulation).
 * **Simulation Intent:** Prioritize "Skate Sim" realism (similar to *Skater XL* or *Session*) over arcade physics.
-
----
 
 ## 💻 8. Development Environment Protocol
 - **OS**: Windows 10 (Native PowerShell / Windows Terminal).
