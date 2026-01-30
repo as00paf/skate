@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.models.RawModel
@@ -77,13 +78,13 @@ class SplashScreenManager {
 
         if (shader != null && texture != null && quad != null) {
             shader.start()
-            shader.uploadFloat("uProgress", loadingProgress.get())
-            shader.uploadFloat("uAlpha", splashAlpha)
+            shader.uploadFloat(Uniforms.PROGRESS, loadingProgress.get())
+            shader.uploadFloat(Uniforms.ALPHA, splashAlpha)
 
             GL13.glActiveTexture(GL13.GL_TEXTURE0)
 
             texture.bind()
-            shader.uploadInt("uTexture", 0)
+            shader.uploadInt(Uniforms.TEXTURE, 0)
 
             GL30.glBindVertexArray(quad.vaoId)
             GL20.glEnableVertexAttribArray(0)

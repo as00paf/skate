@@ -19,6 +19,10 @@ object ShaderConst {
     }
 
     object Uniforms {
+        const val PROGRESS = "uProgress"
+        const val ALPHA = "uAlpha"
+        const val TEXTURE = "uTexture"
+
         const val TEXTURES = "uTextures"
         const val TEXTURE_SCALE = "uTextureScale"
 

@@ -133,10 +133,6 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
         pendingObjects.clear()
     }
 
-    /*fun render() {
-        this.renderer.render()
-    }*/
-
     fun imgui() {
         initializer.imgui()
     }
