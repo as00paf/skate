@@ -102,47 +102,6 @@ class LevelEditorSceneInitializer: SceneInitializer() {
     }
 
     override fun imgui() {
-        imgui.ImGui.begin("Skate Lab")
-        imgui.ImGui.text("Phase D: Task 10.1 - Proportions")
-        
-        val scene = SceneManager.getCurrentScene()
-        val skateGo = scene?.gameObjects?.find { it.name == "Skateboard" }
-        val skaterGo = scene?.gameObjects?.find { it.name == "Skater" }
-        
-        skateGo?.let { go ->
-            val collider = go.getComponent<BoxCollider3D>()
-            val length = (collider?.halfExtents?.x ?: 0f) * 2f
-            imgui.ImGui.text("Board Length: ${String.format("%.2f", length)}m (Target: 0.80m)")
-        }
-        
-        skaterGo?.let { go ->
-            // The model height is now baked into vertices at ~1.8m via AssimpLoader
-            val height = go.transform.scale.y * 1.8f 
-            imgui.ImGui.text("World Skater Height: ${String.format("%.2f", height)}m (Target: 1.80m)")
-            imgui.ImGui.text("Skater Object Scale: ${String.format("%.2f", go.transform.scale.y)}")
-        }
 
-        imgui.ImGui.separator()
-
-        if (imgui.ImGui.button("Reset Skateboard")) {
-            val scene = SceneManager.getCurrentScene()
-            val skateGo = scene?.gameObjects?.find { it.name == "Skateboard" }
-            skateGo?.let { go ->
-                val rb = go.getComponent<RigidBody3D>()
-                rb?.let { r ->
-                    r.rawBody?.setPhysicsLocation(com.jme3.math.Vector3f(0f, 2f, 0f))
-                    r.rawBody?.setPhysicsRotation(com.jme3.math.Quaternion.IDENTITY)
-                    r.rawBody?.setLinearVelocity(com.jme3.math.Vector3f.ZERO)
-                    r.rawBody?.setAngularVelocity(com.jme3.math.Vector3f.ZERO)
-                    go.transform.translation.set(0f, 2f, 0f)
-                    go.transform.rotation.set(0f, 0f, 0f)
-                }
-            }
-        }
-
-        imgui.ImGui.separator()
-        imgui.ImGui.text("Spawn modular tiles and skateboards from the 'Prefabs' window.")
-
-        imgui.ImGui.end()
     }
 }

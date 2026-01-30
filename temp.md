@@ -1,5 +1,4 @@
 For the next phase of the project, here is what I would like to do :
-- Remove the SkateLab window
 - Add a menu to manage imgui windows
 - Add a console window with a tab for the engine and another one for the actions taken in the level editor 
 - Remove fps counter from menu
@@ -8,6 +7,8 @@ For the next phase of the project, here is what I would like to do :
 - Move buttons out of the game viewport to be in their own toolbar above the viewport. Use only icons and tools tips for those buttons, no labels. Add pause and screenshot buttons. The reset button should reset the whole scene. Add a button with keybind (F12) to make game viewport fullscreen or go back to the game in the viewport.
 - Add support for to move the camera (up, down, left, or right) in the game viewport by pressing down the middle mouse button and moving the mouse. 
 - Add support for Ctrl+C/V/X/Z in the level editor
+
+Create a todo list in a markdown format so I can copy and paste it for this next phase.
 
   Bugs
 - Fix the scale translate arrows changing size when the camera moves.
