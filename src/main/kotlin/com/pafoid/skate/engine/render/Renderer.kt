@@ -1,9 +1,13 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.Window
+import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.ShaderConst
+import com.pafoid.skate.engine.assets.ShaderConst.Attribs
+import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.GameObject
@@ -36,12 +40,12 @@ class Renderer(
 
     private fun loadProjectionMatrix(camera: Camera) {
         defaultShader.start()
-        defaultShader.uploadMat4f("projectionMatrix", camera.createProjectionMatrix())
+        defaultShader.uploadMat4f(Attribs.PROJECTION_MATRIX, camera.createProjectionMatrix())
     }
 
     private fun loadViewMatrix(camera: Camera) {
         defaultShader.start()
-        defaultShader.uploadMat4f("viewMatrix", camera.createViewMatrix())
+        defaultShader.uploadMat4f(Attribs.VIEW_MATRIX, camera.createViewMatrix())
     }
 
     override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
@@ -94,26 +98,26 @@ class Renderer(
         loadViewMatrix(camera)
 
         defaultShader.start()
-        defaultShader.uploadVec3f("lightPosition", light.position)
-        defaultShader.uploadVec3f("lightColor", Vector3f(1.5f, 1.5f, 1.5f)) // Brighter light
+        defaultShader.uploadVec3f(Uniforms.LIGHT_POSITION, light.position)
+        defaultShader.uploadVec3f(Uniforms.LIGHT_COLOR, Vector3f(1.5f, 1.5f, 1.5f)) // Brighter light
         
         val ambient = if (scene.useAmbient) scene.ambientLight else Vector3f(0f, 0f, 0f)
-        defaultShader.uploadVec3f("uAmbientLight", ambient)
+        defaultShader.uploadVec3f(Uniforms.AMBIENT_LIGHT, ambient)
 
         // Sun
-        defaultShader.uploadVec3f("uSunDirection", scene.sun.direction)
+        defaultShader.uploadVec3f(Uniforms.SUN_DIRECTION, scene.sun.direction)
         val finalSunColor = if (scene.useSun) Vector3f(scene.sun.color).mul(scene.sun.intensity) else Vector3f(0f, 0f, 0f)
-        defaultShader.uploadVec3f("uSunColor", finalSunColor)
+        defaultShader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
 
         // Moon
-        defaultShader.uploadVec3f("uMoonDirection", scene.moon.direction)
+        defaultShader.uploadVec3f(Uniforms.MOON_DIRECTION, scene.moon.direction)
         val finalMoonColor = Vector3f(scene.moon.color).mul(scene.moon.intensity)
-        defaultShader.uploadVec3f("uMoonColor", finalMoonColor)
+        defaultShader.uploadVec3f(Uniforms.MOON_COLOR, finalMoonColor)
 
         // Fog
-        defaultShader.uploadVec3f("uFogColor", scene.fogColor)
-        defaultShader.uploadFloat("uFogDensity", scene.fogDensity)
-        defaultShader.uploadFloat("uFogGradient", scene.fogGradient)
+        defaultShader.uploadVec3f(Uniforms.FOG_COLOR, scene.fogColor)
+        defaultShader.uploadFloat(Uniforms.FOG_DENSITY, scene.fogDensity)
+        defaultShader.uploadFloat(Uniforms.FOG_GRADIENT, scene.fogGradient)
 
         scene.gameObjects.forEach { go ->
             go.getComponent<Entity>()?.let { entity ->
@@ -121,7 +125,7 @@ class Renderer(
                 if (go == activeGameObject) selectionState = 1.0f
                 else if (go == hoveredGameObject) selectionState = 2.0f
                 
-                defaultShader.uploadFloat("uSelected", selectionState)
+                defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
                 renderEntity(go, entity)
             }
         }
@@ -129,7 +133,7 @@ class Renderer(
         // Highlight Active Object (Outline effect via wireframe)
         activeGameObject?.let { go ->
             go.getComponent<Entity>()?.let { entity ->
-                defaultShader.uploadFloat("uSelected", 1.0f)
+                defaultShader.uploadFloat(Uniforms.SELECTED, 1.0f)
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 glLineWidth(4f)
                 renderEntity(go, entity)
@@ -166,8 +170,8 @@ class Renderer(
         val camera = scene.camera
         
         pickingShader3D.start()
-        pickingShader3D.uploadMat4f("projectionMatrix", camera.createProjectionMatrix())
-        pickingShader3D.uploadMat4f("viewMatrix", camera.createViewMatrix())
+        pickingShader3D.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
+        pickingShader3D.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
 
         scene.gameObjects.forEach { go ->
             val entity = go.getComponent<Entity>()
@@ -181,14 +185,14 @@ class Renderer(
     private fun renderEntityPicking(go: GameObject, entity: Entity) {
         val texturedModel = entity.model
 
-        pickingShader3D.uploadMat4f("transformationMatrix", go.transform.toWorldMatrix())
-        pickingShader3D.uploadFloat("uEntityId", go.getUid().toFloat() + 1)
+        pickingShader3D.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, go.transform.toWorldMatrix())
+        pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, go.getUid().toFloat() + 1)
 
-        val skeleton = go.getComponent<com.pafoid.skate.engine.animation.Skeleton>() ?: texturedModel.skeleton
+        val skeleton = go.getComponent<Skeleton>() ?: texturedModel.skeleton
         val hasSkin = skeleton != null
-        pickingShader3D.uploadBoolean("u_HasSkin", hasSkin)
+        pickingShader3D.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
         if (skeleton != null) {
-            pickingShader3D.uploadMat4fArray("u_JointMatrices", skeleton.getMatrixPalette())
+            pickingShader3D.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeleton.getMatrixPalette())
         }
 
         for (part in texturedModel.parts) {
@@ -226,10 +230,10 @@ class Renderer(
         val texturedModel = entity.model
         val camera = com.pafoid.skate.engine.scenes.SceneManager.getCurrentScene()?.camera
 
-        defaultShader.uploadMat4f("transformationMatrix", go.transform.toWorldMatrix())
-        defaultShader.uploadFloat("uTextureScale", entity.textureScale)
+        defaultShader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, go.transform.toWorldMatrix())
+        defaultShader.uploadFloat(Uniforms.TEXTURE_SCALE, entity.textureScale)
         if (camera != null) {
-            defaultShader.uploadVec3f("uCameraPos", camera.position)
+            defaultShader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
         }
 
         for (part in texturedModel.parts) {
@@ -244,42 +248,42 @@ class Renderer(
             // Base Color
             glActiveTexture(GL_TEXTURE0)
             material.baseColorTexture?.bind() ?: AssetPool.getTexture(Assets.Textures.WHITE).bind()
-            defaultShader.uploadInt("u_BaseColorTexture", 0)
-            defaultShader.uploadVec4f("u_BaseColorFactor", material.baseColorFactor)
+            defaultShader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, 0)
+            defaultShader.uploadVec4f(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
 
             // Normal Map
             glActiveTexture(GL_TEXTURE1)
             val hasNormal = material.normalMap != null
-            if (hasNormal) material.normalMap!!.bind()
+            if (hasNormal) material.normalMap?.bind()
             else AssetPool.getTexture(Assets.Textures.WHITE).bind() // Bind dummy
-            defaultShader.uploadInt("u_NormalMap", 1)
-            defaultShader.uploadBoolean("u_HasNormalMap", hasNormal)
+            defaultShader.uploadInt(Uniforms.NORMAL_MAP, 1)
+            defaultShader.uploadBoolean(Uniforms.HAS_NORMAL_MAP, hasNormal)
 
             // Metallic Roughness
             glActiveTexture(GL_TEXTURE2)
             val hasMR = material.metallicRoughnessTexture != null
-            if (hasMR) material.metallicRoughnessTexture!!.bind()
+            if (hasMR) material.metallicRoughnessTexture?.bind()
             else AssetPool.getTexture(Assets.Textures.WHITE).bind() // Bind dummy
-            defaultShader.uploadInt("u_MetallicRoughnessTexture", 2)
-            defaultShader.uploadBoolean("u_HasMetallicRoughnessTexture", hasMR)
-            defaultShader.uploadFloat("u_MetallicFactor", material.metallicFactor)
-            defaultShader.uploadFloat("u_RoughnessFactor", material.roughnessFactor)
+            defaultShader.uploadInt(Uniforms.METALLIC_ROUGHNESS_TEXTURE, 2)
+            defaultShader.uploadBoolean(Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, hasMR)
+            defaultShader.uploadFloat(Uniforms.METALLIC_FACTOR, material.metallicFactor)
+            defaultShader.uploadFloat(Uniforms.ROUGHNESS_FACTOR, material.roughnessFactor)
 
             // AO
             glActiveTexture(GL_TEXTURE3)
             val hasAO = material.aoTexture != null
             material.aoTexture?.bind() ?: AssetPool.getTexture(Assets.Textures.WHITE).bind()
-            defaultShader.uploadInt("u_AOTexture", 3)
-            defaultShader.uploadBoolean("u_HasAOTexture", hasAO)
+            defaultShader.uploadInt(Uniforms.AO_TEXTURE, 3)
+            defaultShader.uploadBoolean(Uniforms.HAS_AO_TEXTURE, hasAO)
 
             // Emissive
             glActiveTexture(GL_TEXTURE4)
             val hasEmissive = material.emissiveTexture != null
-            if (hasEmissive) material.emissiveTexture!!.bind()
+            if (hasEmissive) material.emissiveTexture?.bind()
             else AssetPool.getTexture(Assets.Textures.WHITE).bind() // Bind dummy
-            defaultShader.uploadInt("u_EmissiveTexture", 4)
-            defaultShader.uploadBoolean("u_HasEmissiveTexture", hasEmissive)
-            defaultShader.uploadVec3f("u_EmissiveFactor", material.emissiveFactor)
+            defaultShader.uploadInt(Uniforms.EMISSIVE_TEXTURE, 4)
+            defaultShader.uploadBoolean(Uniforms.HAS_EMISSIVE_TEXTURE, hasEmissive)
+            defaultShader.uploadVec3f(Uniforms.EMISSIVE_FACTOR, material.emissiveFactor)
 
             // Alpha
             val alphaInt = when(material.alphaMode) {
@@ -288,14 +292,14 @@ class Renderer(
                 "BLEND" -> 2
                 else -> 0
             }
-            defaultShader.uploadInt("u_AlphaMode", alphaInt)
-            defaultShader.uploadFloat("u_AlphaCutoff", material.alphaCutoff)
+            defaultShader.uploadInt(Uniforms.ALPHA_MODE, alphaInt)
+            defaultShader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
 
-            val skeleton = entity.gameObject.getComponent<com.pafoid.skate.engine.animation.Skeleton>() ?: entity.model.skeleton
+            val skeleton = entity.gameObject.getComponent<Skeleton>() ?: entity.model.skeleton
             val hasSkin = skeleton != null
-            defaultShader.uploadBoolean("u_HasSkin", hasSkin)
+            defaultShader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
             if (skeleton != null) {
-                defaultShader.uploadMat4fArray("u_JointMatrices", skeleton.getMatrixPalette())
+                defaultShader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeleton.getMatrixPalette())
             }
 
             if (alphaInt == 2) {

@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.render
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -49,12 +50,12 @@ object PickingDraw {
     fun draw() {
         shader.start()
         val camera = SceneManager.getCurrentScene()?.camera ?: return
-        shader.uploadMat4f("uProjection", camera.createProjectionMatrix())
-        shader.uploadMat4f("uView", camera.createViewMatrix())
+        shader.uploadMat4f(Uniforms.PROJECTION, camera.createProjectionMatrix())
+        shader.uploadMat4f(Uniforms.VIEW, camera.createViewMatrix())
 
         for (mesh in meshes) {
-            shader.uploadMat4f("uModel", mesh.transform)
-            shader.uploadInt("uObjectId", mesh.objectId)
+            shader.uploadMat4f(Uniforms.MODEL, mesh.transform)
+            shader.uploadInt(Uniforms.OBJECT_ID, mesh.objectId)
 
             var index = 0
             for(vertex in mesh.vertices) {

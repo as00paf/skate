@@ -2,9 +2,8 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.Shader
-import com.pafoid.skate.engine.assets.ShaderConst
 import com.pafoid.skate.engine.assets.ShaderConst.Attribs
+import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.FrameBuffer
@@ -69,11 +68,11 @@ object ThumbnailCache {
         shader.uploadMat4f(Attribs.TRANSFORMATION_MATRIX, transform.toMatrix())
         
         // Simple lighting
-        shader.uploadVec3f(Attribs.LIGHT_POSITION, Vector3f(5f, 5f, 5f))
-        shader.uploadVec3f(Attribs.LIGHT_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
-        shader.uploadVec3f(Attribs.AMBIENT_LIGHT, Vector3f(0.8f, 0.8f, 0.8f))
-        shader.uploadVec3f(Attribs.SUN_DIRECTION, Vector3f(1f, -1f, 1f).normalize())
-        shader.uploadVec3f(Attribs.SUN_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
+        shader.uploadVec3f(Uniforms.LIGHT_POSITION, Vector3f(5f, 5f, 5f))
+        shader.uploadVec3f(Uniforms.LIGHT_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
+        shader.uploadVec3f(Uniforms.AMBIENT_LIGHT, Vector3f(0.8f, 0.8f, 0.8f))
+        shader.uploadVec3f(Uniforms.SUN_DIRECTION, Vector3f(1f, -1f, 1f).normalize())
+        shader.uploadVec3f(Uniforms.SUN_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
         
         // Render each part
         for (part in model.parts) {
@@ -85,15 +84,15 @@ object ThumbnailCache {
             
             glActiveTexture(GL_TEXTURE0)
             material.baseColorTexture?.bind() ?: AssetPool.getTexture(Assets.Textures.WHITE).bind()
-            shader.uploadInt(Attribs.BASE_COLOR_TEXTURE, 0)
-            shader.uploadVec4f(Attribs.BASE_COLOR_FACTOR, material.baseColorFactor)
+            shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, 0)
+            shader.uploadVec4f(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
             
-            shader.uploadBoolean(Attribs.HAS_NORMAL_MAP, false)
-            shader.uploadBoolean(Attribs.HAS_METALLIC_ROUGHNESS_TEXTURE, false)
-            shader.uploadBoolean(Attribs.HAS_AO_TEXTURE, false)
-            shader.uploadBoolean(Attribs.HAS_EMISSIVE_TEXTURE, false)
-            shader.uploadInt(Attribs.ALPHA_MODE, 0)
-            shader.uploadBoolean(Attribs.HAS_SKIN, false)
+            shader.uploadBoolean(Uniforms.HAS_NORMAL_MAP, false)
+            shader.uploadBoolean(Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, false)
+            shader.uploadBoolean(Uniforms.HAS_AO_TEXTURE, false)
+            shader.uploadBoolean(Uniforms.HAS_EMISSIVE_TEXTURE, false)
+            shader.uploadInt(Uniforms.ALPHA_MODE, 0)
+            shader.uploadBoolean(Uniforms.HAS_SKIN, false)
 
             glDrawElements(rawModel.drawMode, rawModel.vertexCount, GL_UNSIGNED_INT, 0)
             

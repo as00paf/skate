@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.assets.ShaderConst.Attribs
 import org.lwjgl.opengl.GL20
 import java.io.IOException
 import java.nio.file.Files
@@ -93,10 +94,10 @@ class ShaderLoader(private var verbose:Boolean = false) {
         GL20.glAttachShader(shaderProgId, vertexShaderId)
         GL20.glAttachShader(shaderProgId, fragmentShaderId)
 
-        // Bind attribs, new stuff
-        bindAttribute(shaderProgId,0, ShaderConst.Attribs.POSITION)
-        bindAttribute(shaderProgId,1, ShaderConst.Attribs.TEX_COORDS)
-        bindAttribute(shaderProgId,2, ShaderConst.Attribs.NORMAL)
+        // Bind attribs
+        bindAttribute(shaderProgId,0, Attribs.POSITION)
+        bindAttribute(shaderProgId,1, Attribs.TEX_COORDS)
+        bindAttribute(shaderProgId,2, Attribs.NORMAL)
 
         GL20.glLinkProgram(shaderProgId)
 

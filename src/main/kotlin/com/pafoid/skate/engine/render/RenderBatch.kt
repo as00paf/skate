@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import org.joml.Matrix4f
@@ -97,14 +98,14 @@ class RenderBatch(
 
         val viewMatrix = Renderer2D.camera.createViewMatrix()
         val projectionMatrix = Renderer2D.camera.createProjectionMatrix()
-        shader.uploadMat4f("uProjection", projectionMatrix)
-        shader.uploadMat4f("uView", viewMatrix)
+        shader.uploadMat4f(Uniforms.PROJECTION, projectionMatrix)
+        shader.uploadMat4f(Uniforms.VIEW, viewMatrix)
 
         for (i in 0 until texSlots.size) {
             glActiveTexture(GL_TEXTURE0 + i + 1)
             texSlots[i].bind()
         }
-        shader.uploadIntArray("uTextures", intArrayOf(0, 1, 2, 3, 4, 5, 6, 7))
+        shader.uploadIntArray(Uniforms.TEXTURES, intArrayOf(0, 1, 2, 3, 4, 5, 6, 7))
 
         glBindVertexArray(vaoId)
         glEnableVertexAttribArray(0)
