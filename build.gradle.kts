@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.0.21"
+    alias(libs.plugins.kotlin.jvm)
     application
 }
 
@@ -14,51 +14,49 @@ repositories {
 
 dependencies {
     //LWJGL
-    implementation(platform("org.lwjgl:lwjgl-bom:3.3.6"))
+    implementation(platform(libs.lwjgl.bom))
 
-    implementation("org.lwjgl", "lwjgl")
-    implementation("org.lwjgl", "lwjgl-assimp")
-    implementation("org.lwjgl", "lwjgl-glfw")
-    implementation("org.lwjgl", "lwjgl-openal")
-    implementation("org.lwjgl", "lwjgl-opengl")
-    implementation("org.lwjgl", "lwjgl-stb")
-    implementation("org.lwjgl", "lwjgl-tinyfd")
-    implementation ("org.lwjgl", "lwjgl", classifier = "natives-windows")
-    implementation ("org.lwjgl", "lwjgl-assimp", classifier = "natives-windows")
-    implementation ("org.lwjgl", "lwjgl-glfw", classifier = "natives-windows")
-    implementation ("org.lwjgl", "lwjgl-openal", classifier = "natives-windows")
-    implementation ("org.lwjgl", "lwjgl-opengl", classifier = "natives-windows")
-    implementation ("org.lwjgl", "lwjgl-stb", classifier = "natives-windows")
-    implementation ("org.lwjgl", "lwjgl-tinyfd", classifier = "natives-windows")
+    implementation(libs.lwjgl)
+    implementation(libs.lwjgl.assimp)
+    implementation(libs.lwjgl.glfw)
+    implementation(libs.lwjgl.openal)
+    implementation(libs.lwjgl.opengl)
+    implementation(libs.lwjgl.stb)
+    implementation(libs.lwjgl.tinyfd)
+    
+    val lwjglNatives = "natives-windows"
+    implementation(libs.lwjgl) { artifact { classifier = lwjglNatives } }
+    implementation(libs.lwjgl.assimp) { artifact { classifier = lwjglNatives } }
+    implementation(libs.lwjgl.glfw) { artifact { classifier = lwjglNatives } }
+    implementation(libs.lwjgl.openal) { artifact { classifier = lwjglNatives } }
+    implementation(libs.lwjgl.opengl) { artifact { classifier = lwjglNatives } }
+    implementation(libs.lwjgl.stb) { artifact { classifier = lwjglNatives } }
+    implementation(libs.lwjgl.tinyfd) { artifact { classifier = lwjglNatives } }
     
     // Bullet Physics
-    // JVM library:
-    implementation("com.github.stephengold:Libbulletjme-Windows64:22.0.3")
-
-    // native libraries:
-    runtimeOnly("com.github.stephengold:Libbulletjme-Windows64:22.0.3:SpDebug")
-    // Native libraries for other platforms could be added.
+    implementation(libs.libbulletjme)
+    runtimeOnly(libs.libbulletjme) { artifact { classifier = "SpDebug" } }
 
     //Jsnap loader for loading native libraries
-    implementation("io.github.electrostat-lab:snaploader:1.0.0-stable")
+    implementation(libs.snaploader)
 
-    implementation("org.joml", "joml", "1.10.8")
-    implementation("org.joml", "joml-primitives", "1.10.0")
+    implementation(libs.joml)
+    implementation(libs.joml.primitives)
 
     // IM GUI
-    implementation("io.github.spair:imgui-java-binding:1.90.0")
-    implementation("io.github.spair:imgui-java-lwjgl3:1.90.0")
-    implementation("io.github.spair:imgui-java-natives-windows:1.90.0")
+    implementation(libs.imgui.binding)
+    implementation(libs.imgui.lwjgl3)
+    implementation(libs.imgui.natives.windows)
 
     // GSON
-    implementation("com.google.code.gson:gson:2.8.9")
+    implementation(libs.gson)
 
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
-    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockk)
 }
 
 tasks.test {
