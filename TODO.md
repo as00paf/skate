@@ -142,6 +142,12 @@
 - [ ] **Test T5.2: Frame-Rate Independence**: Run the same "Push" test at $30fps$ and $120fps$; verify the final displacement is identical within a 1% margin. (FAILED - See Task 17.4)
 - [x] **Test T5.3: Access Violation Regression**: Repeatedly instantiate and destroy 100 `PhysicsRigidBody` objects to ensure the `-Xverify:none` flag and JNI bindings are stable. (PASSED)
 
+# 🏗️ Phase 17. Architecture & Infrastructure Optimization
+- [ ] **Dependency Migration**: Move all dependency versions from `build.gradle.kts` to `libs.versions.toml` for centralized version management.
+- [ ] **Resource Management System**: Implement a centralized system to handle efficient loading, caching, and unloading of engine assets (Textures, Shaders, Models).
+- [ ] **Dependency Injection**: Integrate **Koin** to manage component lifecycles, improve testability, and decouple engine systems.
+- [ ] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using Kotlinx.serialization) for handling save states, configurations, and object properties.
+
 # 🔧 17. Physics Implementation Fixes (Deferred)
 - [ ] **Task 17.1: Friction Propagation**: Fix `RigidBody3D` to ensure the `friction` property is correctly applied to the Bullet `rawBody` during initialization and runtime updates.
 - [ ] **Task 17.2: Rolling Resistance**: Implement `linearDamping` logic in `RigidBody3D` to satisfy the `rollResistance` test.
