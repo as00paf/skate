@@ -1,7 +1,10 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.ShaderConst
+import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.scenes.Scene
@@ -21,7 +24,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
 
     init {
         sphere = generateUVSphere(loader, 50, 50, 500f)
-        hdriTexture = AssetPool.getTexture("assets/textures/sky_hdri.png")
+        hdriTexture = AssetPool.getTexture(Assets.Textures.SKY_HDRI)
     }
 
     private fun generateUVSphere(loader: VAOLoader, rings: Int, sectors: Int, radius: Float): RawModel {
@@ -79,26 +82,23 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         val angle = (scene.timeOfDay / 24.0f - 0.5f) * 2.0f * PI.toFloat()
         modelMatrix.rotateY(-angle + Math.toRadians(scene.skyRotation.toDouble()).toFloat())
 
-        shader.uploadMat4f("transformationMatrix", modelMatrix)
-        shader.uploadMat4f("viewMatrix", camera.createViewMatrix())
-        shader.uploadMat4f("projectionMatrix", camera.createProjectionMatrix())
-        shader.uploadVec3f("uSunColor", scene.sun.color)
+        shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, modelMatrix)
+        shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
+        shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
+        shader.uploadVec3f(Uniforms.SUN_COLOR, scene.sun.color)
+        shader.uploadVec3f(Uniforms.SKY_TINT, scene.skyTint)
+        shader.uploadFloat(Uniforms.SKY_EXPOSURE, scene.skyExposure)
         
-        // Scrolling offsets (Slowed down)
-        
-        shader.uploadVec3f("u_skyTint", scene.skyTint)
-        shader.uploadFloat("u_exposure", scene.skyExposure)
-        
-        shader.uploadVec3f("uFogColor", scene.fogColor)
-        shader.uploadFloat("uFogDensity", scene.fogDensity)
-        shader.uploadFloat("uFogGradient", scene.fogGradient)
-        shader.uploadVec3f("uCameraPos", camera.position)
+        shader.uploadVec3f(Uniforms.FOG_COLOR, scene.fogColor)
+        shader.uploadFloat(Uniforms.FOG_DENSITY, scene.fogDensity)
+        shader.uploadFloat(Uniforms.FOG_GRADIENT, scene.fogGradient)
+        shader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
 
         glActiveTexture(GL_TEXTURE0)
         hdriTexture.bind()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-        shader.uploadInt("u_hdriTexture", 0)
+        shader.uploadInt(Uniforms.HDRI_TEXTURE, 0)
 
         glBindVertexArray(sphere.vaoId)
         glEnableVertexAttribArray(0)

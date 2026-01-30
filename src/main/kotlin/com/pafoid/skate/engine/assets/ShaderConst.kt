@@ -26,6 +26,10 @@ object ShaderConst {
         const val LIGHT_COLOR = "lightColor"
         const val AMBIENT_LIGHT = "uAmbientLight"
 
+        const val SKY_TINT = "u_skyTint"
+        const val SKY_EXPOSURE = "u_exposure"
+        const val HDRI_TEXTURE= "u_hdriTexture"
+
         const val SUN_DIRECTION = "uSunDirection"
         const val SUN_COLOR = "uSunColor"
 

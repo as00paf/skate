@@ -20,11 +20,13 @@ object Assets {
         const val ASPHALT = "assets/textures/asphalt.png"
         const val CONCRETE_SIMPLE = "assets/textures/concrete_simple.png"
 
-         const val WOOD_BROWN = "assets/textures/skatelite_brown.png"
-         const val WOOD_LIGHT = "assets/textures/skatelite_light.png"
-         const val WOOD_TAN = "assets/textures/skatelite_tan.png"
-         const val WOOD_DARK = "assets/textures/skatelite_dark.png"
-         const val METAL = "assets/textures/white.png"
+        const val WOOD_BROWN = "assets/textures/skatelite_brown.png"
+        const val WOOD_LIGHT = "assets/textures/skatelite_light.png"
+        const val WOOD_TAN = "assets/textures/skatelite_tan.png"
+        const val WOOD_DARK = "assets/textures/skatelite_dark.png"
+        const val METAL = "assets/textures/metal.png"
+
+        const val SKY_HDRI = "assets/textures/sky_hdri.png"
     }
     object Models {
         const val CUBE = "assets/obj/cube.obj"

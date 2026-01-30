@@ -2,6 +2,8 @@ package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.CubeMap
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.ShaderConst
+import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.models.RawModel
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL20.glDisableVertexAttribArray
@@ -14,8 +16,8 @@ class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
 
     fun render(camera: Camera, cubeMap: CubeMap) {
         shader.start()
-        shader.uploadMat4f("viewMatrix", camera.createViewMatrix())
-        shader.uploadMat4f("projectionMatrix", camera.createProjectionMatrix())
+        shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
+        shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
         
         glBindVertexArray(cube.vaoId)
         glEnableVertexAttribArray(0)
