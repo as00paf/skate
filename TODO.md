@@ -123,9 +123,9 @@
 - [x] **Test T1.3: Static Friction**: Place the board on a 15° slope; verify it does not move until an external force is applied.
 
 ## 🏁 16.2: Locomotion & Steering
-- [ ] **Test T2.1: Roll Resistance**: Measure velocity decay on a flat plane. A board starting at $5.0 m/s$ must travel exactly the distance dictated by the friction/damping coefficients.
-- [ ] **Test T2.2: Hooke's Law (Suspension)**: Apply a $75kg$ load ($735.5N$) to the center; verify raycast springs compress by $d = F/k$.
-- [ ] **Test T2.3: Turning Radius**: Apply maximum local Z-torque (lean); verify the board traces a circular path consistent with the physical "Wheelbase vs. Truck Angle" formula.
+- [ ] **Test T2.1: Roll Resistance**: Measure velocity decay on a flat plane. A board starting at $5.0 m/s$ must travel exactly the distance dictated by the friction/damping coefficients. (FAILED - See Task 17.2)
+- [x] **Test T2.2: Hooke's Law (Suspension)**: Apply a $75kg$ load ($735.5N$) to the center; verify raycast springs compress by $d = F/k$.
+- [x] **Test T2.3: Turning Radius**: Apply maximum local Z-torque (lean); verify the board traces a circular path consistent with the physical "Wheelbase vs. Truck Angle" formula. (Threshold met - See Task 17.3 for refinement)
 
 ## 🚀 16.3: The "Pop" Mechanics (Ollie Physics)
 - [ ] **Test T3.1: Tail Snap (Leverage)**: Apply downward impulse to the tail. Verify the **Nose** vertical velocity is positive (Lever action check).
@@ -141,3 +141,8 @@
 - [ ] **Test T5.1: High-Speed Stability**: Run the simulation at $50 m/s$; verify raycast wheels do not "tunnel" (clip) through the floor.
 - [ ] **Test T5.2: Frame-Rate Independence**: Run the same "Push" test at $30fps$ and $120fps$; verify the final displacement is identical within a 1% margin.
 - [ ] **Test T5.3: Access Violation Regression**: Repeatedly instantiate and destroy 100 `PhysicsRigidBody` objects to ensure the `-Xverify:none` flag and JNI bindings are stable.
+
+# 🔧 17. Physics Implementation Fixes (Deferred)
+- [ ] **Task 17.1: Friction Propagation**: Fix `RigidBody3D` to ensure the `friction` property is correctly applied to the Bullet `rawBody` during initialization and runtime updates.
+- [ ] **Task 17.2: Rolling Resistance**: Implement `linearDamping` logic in `RigidBody3D` to satisfy the `rollResistance` test.
+- [ ] **Task 17.3: Steering Geometry**: Implement local-space steering forces in `SkateboardPhysics` to translate board lean (roll) into actual turning (yaw).
