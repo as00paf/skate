@@ -143,7 +143,7 @@
 - [x] **Test T5.3: Access Violation Regression**: Repeatedly instantiate and destroy 100 `PhysicsRigidBody` objects to ensure the `-Xverify:none` flag and JNI bindings are stable. (PASSED)
 
 # 🏗️ Phase 17. Architecture & Infrastructure Optimization
-- [ ] **Dependency Migration**: Move all dependency versions from `build.gradle.kts` to `libs.versions.toml` for centralized version management.
+- [x] **Dependency Migration**: Move all dependency versions from `build.gradle.kts` to `libs.versions.toml` for centralized version management.
 - [ ] **Resource Management System**: Implement a centralized system to handle efficient loading, caching, and unloading of engine assets (Textures, Shaders, Models).
 - [ ] **Dependency Injection**: Integrate **Koin** to manage component lifecycles, improve testability, and decouple engine systems.
 - [ ] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using Kotlinx.serialization) for handling save states, configurations, and object properties.
