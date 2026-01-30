@@ -118,9 +118,9 @@
 # 🧪 16. Skateboard Physics: Unit Test Suite
 
 ## 🏗️ 16.1: Static & Structural Integrity
-- [ ] **Test T1.1: Mass & Inertia Tensor**: Verify the `btCompoundShape` total mass equals the sum of parts (Deck + Trucks + Wheels).
-- [ ] **Test T1.2: Center of Mass (CoM)**: Confirm the CoM is slightly lower than the deck surface (simulating truck weight) and centered between axles.
-- [ ] **Test T1.3: Static Friction**: Place the board on a 15° slope; verify it does not move until an external force is applied.
+- [x] **Test T1.1: Mass & Inertia Tensor**: Verify the `btCompoundShape` total mass equals the sum of parts (Deck + Trucks + Wheels).
+- [x] **Test T1.2: Center of Mass (CoM)**: Confirm the CoM is slightly lower than the deck surface (simulating truck weight) and centered between axles.
+- [x] **Test T1.3: Static Friction**: Place the board on a 15° slope; verify it does not move until an external force is applied.
 
 ## 🏁 16.2: Locomotion & Steering
 - [ ] **Test T2.1: Roll Resistance**: Measure velocity decay on a flat plane. A board starting at $5.0 m/s$ must travel exactly the distance dictated by the friction/damping coefficients.
