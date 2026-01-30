@@ -8,6 +8,16 @@ import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
+/**
+ * Component responsible for managing and playing skeletal animations.
+ * 
+ * It handles:
+ * - Playback state (isPlaying, currentTime).
+ * - Cross-fading between animations (Blending).
+ * - Applying bone overrides from other components.
+ * - Skeleton hierarchy updates.
+ * - Editor visualization of the bone hierarchy.
+ */
 class Animator : Component() {
     var currentTime = 0f
         private set
@@ -28,6 +38,12 @@ class Animator : Component() {
     val duration: Float
         get() = currentAnimation?.duration ?: 0f
 
+    /**
+     * Starts playing a new animation with an optional [blend] time for smooth transitions.
+     * 
+     * @param animation The animation to play.
+     * @param blend Transition duration in seconds.
+     */
     fun play(animation: Animation, blend: Float = 0.2f) {
         if (currentAnimation == animation) return
         

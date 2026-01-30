@@ -1,25 +1,36 @@
+// ----------------------------------------------------------------------------
+// PBR 3D Shader - Main Rendering Pipeline
+// ----------------------------------------------------------------------------
+// Handles:
+// - Skeletal Skinning (up to 4 bone influences)
+// - PBR (Metallic-Roughness) lighting model
+// - Normal Mapping (TBN Space)
+// - Distance-based Fog
+// - HDR Tonemapping & Gamma Correction
+// ----------------------------------------------------------------------------
+
 #type vertex
 #version 330 core
-layout (location=0) in vec3 aPos;
+layout (location=0) in vec3 aPos;      // Local Space (Model coordinates)
 layout (location=1) in vec2 aTexCoords;
-layout (location=2) in vec3 aNormal;
-layout (location=3) in vec3 aTangent;
+layout (location=2) in vec3 aNormal;   // Local Space Normal
+layout (location=3) in vec3 aTangent;  // Local Space Tangent
 layout (location=4) in vec4 aColor;
 layout (location=5) in vec2 aTexCoords1;
-layout (location=6) in ivec4 aJoints;
-layout (location=7) in vec4 aWeights;
+layout (location=6) in ivec4 aJoints;  // Bone IDs for skinning
+layout (location=7) in vec4 aWeights; // Bone weights for skinning
 
 out vec2 fTexCoords;
 out vec2 fTexCoords1;
-out vec3 fWorldPos;
-out vec3 fNormal;
+out vec3 fWorldPos;    // World Space Position (Used for lighting)
+out vec3 fNormal;      // World Space Normal
 out vec4 fColor;
-out mat3 fTBN;
+out mat3 fTBN;         // Tangent-Bitangent-Normal matrix for Normal Mapping
 out float fVisibility;
 
-uniform mat4 transformationMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+uniform mat4 transformationMatrix; // Model-to-World Matrix
+uniform mat4 projectionMatrix;     // View-to-Clip Matrix
+uniform mat4 viewMatrix;           // World-to-View (Camera) Matrix
 
 uniform float uTextureScale;
 uniform float uFogDensity;
@@ -31,6 +42,8 @@ uniform bool u_HasSkin;
 
 void main()
 {
+    // --- Skeletal Skinning ---
+    // Computes the weighted average of joint matrices in local space.
     mat4 skinMatrix = mat4(1.0);
     if (u_HasSkin) {
         skinMatrix = 
@@ -40,24 +53,33 @@ void main()
             aWeights.w * u_JointMatrices[aJoints.w];
     }
 
+    // --- Coordinate Transformations ---
+    // 1. World Space: Apply skinning then model-to-world transformation
     vec4 worldPos = transformationMatrix * skinMatrix * vec4(aPos, 1.0);
     fWorldPos = worldPos.xyz;
     
+    // 2. View Space: Transform world coordinates relative to the camera
     vec4 posRelativeToCamera = viewMatrix * worldPos;
+    
+    // 3. Clip Space: Final transformation for rasterization
     gl_Position = projectionMatrix * posRelativeToCamera;
     
     fTexCoords = aTexCoords * uTextureScale;
     fTexCoords1 = aTexCoords1 * uTextureScale;
     fColor = aColor;
 
-    // Normal mapping setup
+    // --- Normal Mapping (TBN Matrix) ---
+    // Transform tangent and normal into world space to create the TBN basis.
+    // This allows us to perform lighting in world space using normal map details.
     vec3 T = normalize(vec3(transformationMatrix * skinMatrix * vec4(aTangent, 0.0)));
     vec3 N = normalize(vec3(transformationMatrix * skinMatrix * vec4(aNormal, 0.0)));
-    T = normalize(T - dot(T, N) * N);
+    T = normalize(T - dot(T, N) * N); // Re-orthogonalize T with respect to N
     vec3 B = cross(N, T);
     fTBN = mat3(T, B, N);
     fNormal = N;
 
+    // --- Fog Calculation ---
+    // Distance-based visibility using the distance from the camera in view space.
     float distance = length(posRelativeToCamera.xyz);
     fVisibility = exp(-pow((distance * uFogDensity), uFogGradient));
     fVisibility = clamp(fVisibility, 0.0, 1.0);
@@ -74,14 +96,14 @@ in vec4 fColor;
 in mat3 fTBN;
 in float fVisibility;
 
-// PBR Textures
+// --- PBR Textures (glTF 2.0 Standard) ---
 uniform sampler2D u_BaseColorTexture;
 uniform sampler2D u_NormalMap;
-uniform sampler2D u_MetallicRoughnessTexture;
+uniform sampler2D u_MetallicRoughnessTexture; // Blue = Metallic, Green = Roughness
 uniform sampler2D u_AOTexture;
 uniform sampler2D u_EmissiveTexture;
 
-// PBR Factors
+// --- PBR Material Factors ---
 uniform vec4 u_BaseColorFactor;
 uniform float u_MetallicFactor;
 uniform float u_RoughnessFactor;
@@ -89,7 +111,7 @@ uniform vec3 u_EmissiveFactor;
 uniform int u_AlphaMode; // 0: OPAQUE, 1: MASK, 2: BLEND
 uniform float u_AlphaCutoff;
 
-// Scene Lighting
+// --- Scene Environmental Data ---
 uniform vec3 uCameraPos;
 uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
@@ -98,7 +120,7 @@ uniform vec3 uMoonColor;
 uniform vec3 uAmbientLight;
 uniform vec3 uFogColor;
 
-// Flags
+// --- Feature Toggles ---
 uniform bool u_HasNormalMap;
 uniform bool u_HasMetallicRoughnessTexture;
 uniform bool u_HasAOTexture;
@@ -108,7 +130,10 @@ out vec4 color;
 
 const float PI = 3.14159265359;
 
-// ----------------------------------------------------------------------------
+// --- PBR Math Functions (Cook-Torrance Microfacet Model) ---
+
+// Normal Distribution Function (NDF) - GGX/Trowbridge-Reitz
+// Describes the alignment of microfacets.
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
     float a = roughness*roughness;
@@ -122,7 +147,9 @@ float DistributionGGX(vec3 N, vec3 H, float roughness)
 
     return nom / denom;
 }
-// ----------------------------------------------------------------------------
+
+// Geometry Function - Schlick-GGX
+// Describes the self-shadowing of microfacets.
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
     float r = (roughness + 1.0);
@@ -133,7 +160,8 @@ float GeometrySchlickGGX(float NdotV, float roughness)
 
     return nom / denom;
 }
-// ----------------------------------------------------------------------------
+
+// Smith's method for Geometry Shadowing
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 {
     float NdotV = max(dot(N, V), 0.0);
@@ -143,15 +171,17 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
     return ggx2 * ggx1;
 }
-// ----------------------------------------------------------------------------
+
+// Fresnel Equation - Schlick Approximation
+// Describes the ratio of light reflected vs refracted.
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
-// ----------------------------------------------------------------------------
 
 void main()
 {
+    // 1. Albedo & Alpha Setup
     vec4 baseColorSample = texture(u_BaseColorTexture, fTexCoords);
     vec4 albedo = baseColorSample * u_BaseColorFactor * fColor;
 
@@ -162,8 +192,8 @@ void main()
         if (alpha < u_AlphaCutoff) discard;
         alpha = 1.0;
     }
-    // BLEND (2) just uses alpha as is
 
+    // 2. Normal Reconstruction (Tangent Space to World Space)
     vec3 N;
     if (u_HasNormalMap) {
         N = texture(u_NormalMap, fTexCoords).rgb;
@@ -175,6 +205,7 @@ void main()
 
     vec3 V = normalize(uCameraPos - fWorldPos);
 
+    // 3. Material Properties
     float metallic = u_MetallicFactor;
     float roughness = u_RoughnessFactor;
     if (u_HasMetallicRoughnessTexture) {
@@ -193,18 +224,18 @@ void main()
         emissive *= texture(u_EmissiveTexture, fTexCoords).rgb;
     }
 
+    // 4. Cook-Torrance BRDF calculation
     vec3 F0 = vec3(0.04); 
     F0 = mix(F0, albedo.rgb, metallic);
 
     vec3 Lo = vec3(0.0);
     
-    // Sun light
+    // --- Sun Light Pass ---
     {
         vec3 L = normalize(-uSunDirection);
         vec3 H = normalize(V + L);
-        float distance = 1.0; // Directional
-        float attenuation = 1.0;
-        vec3 radiance = uSunColor * attenuation;
+        float radianceScale = 1.0;
+        vec3 radiance = uSunColor * radianceScale;
 
         float NDF = DistributionGGX(N, H, roughness);   
         float G   = GeometrySmith(N, V, L, roughness);    
@@ -222,7 +253,7 @@ void main()
         Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL;
     }
 
-    // Moon light
+    // --- Moon Light Pass ---
     {
         vec3 L = normalize(-uMoonDirection);
         vec3 H = normalize(V + L);
@@ -244,14 +275,18 @@ void main()
         Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL;
     }
 
+    // 5. Ambient & Final Composition
     vec3 ambient = uAmbientLight * albedo.rgb * ao;
     vec3 colorOut = ambient + Lo + emissive;
 
-    // HDR tonemapping (Simple Reinard)
+    // 6. HDR Tonemapping & Gamma Correction
+    // Simple Reinhard tonemapping to bring HDR values into [0,1] range.
     colorOut = colorOut / (colorOut + vec3(1.0));
-    // Gamma correction
+    // Linear to sRGB conversion.
     colorOut = pow(colorOut, vec3(1.0/2.2)); 
 
     vec4 finalColor = vec4(colorOut, alpha);
+    
+    // 7. Atmospheric Fog
     color = mix(vec4(uFogColor, 1.0), finalColor, fVisibility);
 }

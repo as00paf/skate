@@ -5,6 +5,18 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector3f
 
+/**
+ * Handles the physics simulation for a skateboard, primarily focused on the raycast suspension system.
+ * 
+ * The suspension uses 4 raycasts (one at each wheel position) to simulate spring-damper behavior.
+ * This approach (Hooke's Law) provides more stable behavior for skateboards than primitive colliders
+ * because it allows for high-frequency impulses and realistic weight transfer.
+ * 
+ * Physics parameters:
+ * - [suspensionRestLength]: The maximum extension of the springs in meters.
+ * - [stiffness]: The spring constant (k). Higher values mean stiffer suspension.
+ * - [damping]: Resistance to oscillation. Prevents the board from bouncing indefinitely.
+ */
 class SkateboardPhysics : Component() {
     // Suspension parameters (Real-world Meters)
     var suspensionRestLength = 0.08f // 8cm total height
@@ -55,6 +67,19 @@ class SkateboardPhysics : Component() {
         isGrounded = groundedCount > 0
     }
 
+    /**
+     * Calculates and applies upward force based on spring compression.
+     * 
+     * Uses Hooke's Law: F = k * x
+     * where:
+     * - F is the resulting force
+     * - k is the [stiffness]
+     * - x is the compression distance (restLength - currentLength)
+     * 
+     * @param hit The raycast result containing hit fraction and normal.
+     * @param rayStart The origin of the ray in world space, where the force is applied.
+     * @param localDown The local downward vector of the board in world space.
+     */
     private fun applySuspensionForce(hit: PhysicsRayTestResult, rayStart: Vector3f, localDown: Vector3f) {
         val compression = 1.0f - hit.hitFraction
         val currentLength = suspensionRestLength * hit.hitFraction

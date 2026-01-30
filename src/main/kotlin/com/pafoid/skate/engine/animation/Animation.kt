@@ -1,10 +1,17 @@
 package com.pafoid.skate.engine.animation
 
+/**
+ * Represents a single animation clip containing multiple channels (TRS tracks).
+ */
 class Animation(
     val name: String,
     val channels: List<AnimationChannel>,
     val duration: Float
 ) {
+    /**
+     * Updates the [skeleton] based on the specified [time].
+     * Individual channels sample their data and apply it to the corresponding joints.
+     */
     fun update(time: Float, skeleton: Skeleton) {
         val loopTime = time % duration
         val tempVec3 = org.joml.Vector3f()
@@ -30,6 +37,11 @@ class Animation(
         }
     }
 
+    /**
+     * Updates the [skeleton] by blending this animation with its current state.
+     * 
+     * @param alpha Interpolation factor (0.0 = current state, 1.0 = this animation).
+     */
     fun updateBlended(time: Float, skeleton: Skeleton, alpha: Float) {
         val loopTime = time % duration
         val tempVec3 = org.joml.Vector3f()

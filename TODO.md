@@ -107,8 +107,8 @@
 - [x] **Task 15.1.2: Hardcode Purge**: Move "Magic Numbers" (physics constants, shader paths, default FOV) into a centralized `Constants.kt` or relevant companion objects.
 
 ### 15.2 Readability & Documentation
-- [ ] **Task 15.2.1: Contextual Commenting**: Add KDoc/Javadoc comments to complex math functions, especially in the **Skeletal Animation** and **Raycast Suspension** modules.
-- [ ] **Task 15.2.2: Shader Documentation**: Add comments to `.vert` and `.frag` files explaining the coordinate spaces (World vs. View vs. Clip).
+- [x] **Task 15.2.1: Contextual Commenting**: Add KDoc/Javadoc comments to complex math functions, especially in the **Skeletal Animation** and **Raycast Suspension** modules.
+- [x] **Task 15.2.2: Shader Documentation**: Add comments to `.vert` and `.frag` files explaining the coordinate spaces (World vs. View vs. Clip).
 
 ### 15.3 Formatting & Style
 - [ ] **Task 15.3.1: Whitespace Consolidation**: Remove all double/triple breaking spaces. Enforce a single-line break between methods and properties.

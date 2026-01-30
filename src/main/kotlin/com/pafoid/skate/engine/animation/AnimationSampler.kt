@@ -4,12 +4,29 @@ import com.pafoid.skate.engine.utils.Interpolation
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
+/**
+ * Responsible for interpolating animation data (translation, rotation, scale) over time.
+ * 
+ * Supports standard glTF 2.0 interpolation methods:
+ * - [InterpolationType.STEP]: Holds the current value until the next keyframe.
+ * - [InterpolationType.LINEAR]: Linearly interpolates between values (SLERP for rotations).
+ * - [InterpolationType.CUBIC_SPLINE]: Uses Hermite spline interpolation for smooth transitions.
+ * 
+ * @param times Array of keyframe timestamps in seconds.
+ * @param values Array of raw component values (x, y, z, etc.).
+ * @param interpolation The interpolation algorithm to use.
+ * @param componentsPerValue Number of floats per keyframe (3 for Vec3, 4 for Quat).
+ */
 class AnimationSampler(
     val times: FloatArray,
     val values: FloatArray,
     val interpolation: InterpolationType,
     val componentsPerValue: Int
 ) {
+    /**
+     * Finds the index of the last keyframe whose timestamp is less than or equal to [time].
+     * Uses binary search for efficient lookup.
+     */
     private fun findKeyframeIndex(time: Float): Int {
         var index = times.binarySearch(time)
         if (index < 0) {
@@ -18,6 +35,9 @@ class AnimationSampler(
         return index.coerceIn(0, times.size - 2)
     }
 
+    /**
+     * Samples the animation at a specific [time] and writes the result into [dest].
+     */
     fun sample(time: Float, dest: FloatArray) {
         if (times.isEmpty()) return
         val clampedTime = time.coerceIn(times.first(), times.last())
@@ -71,6 +91,9 @@ class AnimationSampler(
         }
     }
 
+    /**
+     * Specialized sampler for [Vector3f] targets (Translation/Scale).
+     */
     fun sampleVector3f(time: Float, dest: Vector3f) {
         if (times.isEmpty()) return
         if (time <= times.first()) {
@@ -135,6 +158,11 @@ class AnimationSampler(
         }
     }
 
+    /**
+     * Specialized sampler for [Quaternionf] targets (Rotation).
+     * 
+     * Note: LINEAR interpolation for rotations in glTF is defined as SLERP.
+     */
     fun sampleQuaternionf(time: Float, dest: Quaternionf) {
         if (times.isEmpty()) return
         if (time <= times.first()) {
