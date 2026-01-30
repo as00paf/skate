@@ -3,3 +3,4 @@
 - Dependency injection and better manage serialization
 - Resource management
 - Gizmo system scaling
+- toml

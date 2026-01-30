@@ -44,7 +44,6 @@ dependencies {
 
     implementation("org.joml", "joml", "1.10.8")
     implementation("org.joml", "joml-primitives", "1.10.0")
-    //implementation("org.lwjglx", "lwjgl3-awt", "0.2.3")
 
     // IM GUI
     implementation("io.github.spair:imgui-java-binding:1.90.0")
@@ -73,4 +72,8 @@ tasks.test {
 
 kotlin {
     jvmToolchain(17)
+}
+
+tasks.withType<Test> {
+    jvmArgs("-Xverify:none")
 }

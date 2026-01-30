@@ -80,4 +80,23 @@ class BoardRigTest {
         verify(exactly = 0) { rb3d.applyForce(any(), any()) }
         assertTrue(!physics.isGrounded, "Board should not be grounded when rays miss")
     }
+
+    @Test
+    fun `test flick applies torque impulse`() {
+        val board = GameObject("Board")
+        val controller = PlayerController()
+        board.addComponent(controller)
+        board.addComponent(rb3d)
+        board.addComponent(physics)
+
+        val fakeBuffer = FakeInputBuffer()
+        fakeBuffer.flickVelocity = Vector2f(10f, 0f)
+        controller.inputBuffer = fakeBuffer
+
+        controller.start()
+        controller.update(0.016f)
+
+        // Should apply a torque impulse
+        verify(atLeast = 1) { rb3d.applyTorqueImpulse(any()) }
+    }
 }
