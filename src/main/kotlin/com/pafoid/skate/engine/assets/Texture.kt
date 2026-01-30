@@ -100,6 +100,10 @@ class Texture: Component() {
         glBindTexture(target, 0)
     }
 
+    override fun destroy() {
+        glDeleteTextures(texId)
+    }
+
     override fun equals(other: Any?): Boolean {
         return when (other) {
             null -> false

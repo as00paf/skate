@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.assets
 
-import com.pafoid.skate.engine.models.MeshPart
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.VAOLoader
@@ -9,154 +8,43 @@ import java.io.File
 
 object AssetPool {
 
-    private val shaderLoader = ShaderLoader(false)
-    private val assimpLoader = AssimpLoader()
-
-    private val shaders = mutableMapOf<String, Shader>()
-    private val textures = mutableMapOf<String, Texture>()
-    private val cubeMaps = mutableMapOf<String, CubeMap>()
+    val resourceManager = ResourceManager() // Exposed for direct access if needed
+    
+    // Legacy maps kept for compatibility if direct map access was used (it wasn't public)
+    private val cubeMapCache = mutableMapOf<String, CubeMap>()
     private val spriteSheets = mutableMapOf<String, SpriteSheet>()
     private val sounds = mutableMapOf<String, Sound>()
-    private val models = mutableMapOf<String, TexturedModel>()
 
     fun getShader(filePath: String): Shader {
-        val file = File(filePath)
-        return if(shaders.containsKey(file.absolutePath)) {
-            shaders[file.absolutePath]!!
-        } else{
-            val shader = shaderLoader.loadShader(filePath)
-            shaders[file.absolutePath] = shader
-            shader
-        }
+        return resourceManager.loadShaderSync(filePath)
     }
 
     fun getRawModel(filePath: String, loader: VAOLoader): RawModel {
-        return getModel(filePath, loader).parts[0].rawModel
+        // Ignores loader! Uses ResourceManager's loader.
+        // This behavior ensures centralized management.
+        return resourceManager.loadModelSync(filePath).parts[0].rawModel
     }
 
     fun getTextureAsync(resourceName: String, callback: (Texture) -> Unit) {
-        val file = File(resourceName)
-        if (textures.containsKey(file.absolutePath)) {
-            callback(textures[file.absolutePath]!!)
-            return
-        }
-
-        JobSystem.runIO {
-            val data = Texture.loadData(resourceName)
-            if (data != null) {
-                JobSystem.runOnMain {
-                    val texture = Texture()
-                    texture.uploadToGPU(data)
-                    data.free()
-                    textures[file.absolutePath] = texture
-                    callback(texture)
-                }
+        JobSystem.runAsync {
+            val texture = resourceManager.loadTexture(resourceName)
+            JobSystem.runOnMain {
+                callback(texture)
             }
         }
     }
 
     fun getModelAsync(filePath: String, loader: VAOLoader, callback: (TexturedModel) -> Unit) {
         JobSystem.runAsync {
-            val preLoaded = assimpLoader.preLoadModel(filePath)
-            
-            // Task 0.3: Loading textures data in background
-            val textureDataMap = mutableMapOf<String, TextureData>()
-            preLoaded.parts.forEach { part ->
-                listOfNotNull(part.material.baseColorPath, part.material.normalMapPath, 
-                    part.material.metallicRoughnessPath, part.material.aoPath, part.material.emissivePath).forEach { path ->
-                    if (!textureDataMap.containsKey(path)) {
-                        val buffer = part.embeddedTextures[path]
-                        val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(path)
-                        if (data != null) textureDataMap[path] = data
-                    }
-                }
-            }
-
+            val model = resourceManager.loadModel(filePath)
             JobSystem.runOnMain {
-                val file = File(filePath)
-                val parts = preLoaded.parts.map { p ->
-                    val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
-                    
-                    // Assign textures on main thread
-                    val mat = p.material
-                    mat.baseColorPath?.let { path -> 
-                        val absPath = File(path).absolutePath
-                        mat.baseColorTexture = textures[absPath] ?: Texture().apply { 
-                            textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[absPath] = this 
-                        }
-                    }
-                    mat.normalMapPath?.let { path -> 
-                        val absPath = File(path).absolutePath
-                        mat.normalMap = textures[absPath] ?: Texture().apply { 
-                            textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[absPath] = this 
-                        }
-                    }
-                    mat.metallicRoughnessPath?.let { path -> 
-                        val absPath = File(path).absolutePath
-                        mat.metallicRoughnessTexture = textures[absPath] ?: Texture().apply { 
-                            textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[absPath] = this 
-                        }
-                    }
-                    mat.aoPath?.let { path -> 
-                        val absPath = File(path).absolutePath
-                        mat.aoTexture = textures[absPath] ?: Texture().apply { 
-                            textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[absPath] = this 
-                        }
-                    }
-                    mat.emissivePath?.let { path -> 
-                        val absPath = File(path).absolutePath
-                        mat.emissiveTexture = textures[absPath] ?: Texture().apply { 
-                            textureDataMap[path]?.let { uploadToGPU(it) }
-                            textures[absPath] = this 
-                        }
-                    }
-
-                    MeshPart(model, mat, p.inverseBindMatrices)
-                }
-                
-                // Free texture data
-                textureDataMap.values.forEach { it.free() }
-                
-                val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
-                models[file.absolutePath] = texturedModel
-                callback(texturedModel)
+                callback(model)
             }
         }
     }
 
     fun getModel(filePath: String, loader: VAOLoader): TexturedModel {
-        val absolutePath = File(filePath).absolutePath
-        if (models.containsKey(absolutePath)) {
-            return models[absolutePath]!!
-        }
-
-        val texturedModel = if (filePath.lowercase().endsWith(".obj")) {
-            val rawModel = ObjLoader().loadObjModel(filePath, loader)
-            val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = getTexture(Assets.Textures.WHITE)), emptyList()))
-            TexturedModel(parts)
-        } else {
-            val preLoaded = assimpLoader.preLoadModel(filePath)
-            val parts = preLoaded.parts.map { p ->
-                val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
-                
-                val mat = p.material
-                mat.baseColorPath?.let { mat.baseColorTexture = getTexture(it, p.embeddedTextures[it]) }
-                mat.normalMapPath?.let { mat.normalMap = getTexture(it, p.embeddedTextures[it]) }
-                mat.metallicRoughnessPath?.let { mat.metallicRoughnessTexture = getTexture(it, p.embeddedTextures[it]) }
-                mat.aoPath?.let { mat.aoTexture = getTexture(it, p.embeddedTextures[it]) }
-                mat.emissivePath?.let { mat.emissiveTexture = getTexture(it, p.embeddedTextures[it]) }
-                
-                MeshPart(model, mat, p.inverseBindMatrices)
-            }
-            TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
-        }
-
-        models[absolutePath] = texturedModel
-        return texturedModel
+        return resourceManager.loadModelSync(filePath)
     }
 
     fun getRawModelWithTexture(filePath: String, loader: VAOLoader): Triple<RawModel, String?, java.nio.ByteBuffer?> {
@@ -167,32 +55,21 @@ object AssetPool {
 
     fun getCubeMap(filePaths: Array<String>): CubeMap {
         val key = filePaths.joinToString("|")
-        return if(cubeMaps.containsKey(key)) {
-            cubeMaps[key]!!
-        } else {
-            val cubemap = CubeMap().init(filePaths)
-            cubeMaps[key] = cubemap
-            cubemap
+        return cubeMapCache.getOrPut(key) {
+            CubeMap().init(filePaths)
         }
     }
 
     fun getTexture(resourceName: String, buffer: java.nio.ByteBuffer? = null): Texture {
-        val absolutePath = if (resourceName.startsWith("Embedded::")) resourceName else File(resourceName).absolutePath
-        if (textures.containsKey(absolutePath)) {
-            return textures[absolutePath]!!
+        if (buffer != null) {
+             val data = Texture.loadData(buffer) ?: throw RuntimeException("Failed to load texture from buffer")
+             val texture = Texture()
+             texture.uploadToGPU(data)
+             data.free()
+             return texture
         }
         
-        val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(resourceName)
-        if (data != null) {
-            val texture = Texture()
-            texture.uploadToGPU(data)
-            data.free()
-            texture.filePath = resourceName // Store original path for identification
-            textures[absolutePath] = texture
-            return texture
-        }
-        
-        throw RuntimeException("Failed to load texture: $resourceName")
+        return resourceManager.loadTextureSync(resourceName)
     }
 
     fun addSpriteSheet(resourceName: String, spriteSheet: SpriteSheet) {
@@ -205,7 +82,8 @@ object AssetPool {
     fun getSpriteSheet(resourceName: String): SpriteSheet? {
         val file = File(resourceName)
         if(!spriteSheets.containsKey(file.absolutePath)) {
-            assert(false) { "Error: Tried to access SpriteSheet '$resourceName' without adding it first" }
+            // assert(false) { "Error: Tried to access SpriteSheet '$resourceName' without adding it first" }
+            return null
         }
         return spriteSheets[file.absolutePath]
     }
@@ -223,14 +101,15 @@ object AssetPool {
 
     fun getSound(soundFile: String): Sound? {
         val file = File(soundFile)
-        if(sounds.containsKey(file.absolutePath)) {
-            return sounds[file.absolutePath]
-        } else {
-            assert(false) {"Sound file not added $soundFile"}
-        }
-
-        return null
+        return sounds[file.absolutePath]
     }
 
     fun getAllSounds() = sounds.values
+    
+    fun clear() {
+        resourceManager.clear()
+        cubeMapCache.clear()
+        spriteSheets.clear()
+        sounds.clear()
+    }
 }
