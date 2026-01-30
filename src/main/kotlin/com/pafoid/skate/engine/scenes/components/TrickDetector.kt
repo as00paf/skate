@@ -44,33 +44,40 @@ class TrickDetector : Component() {
         // Reset detected trick each frame before re-evaluation
         detectedTrick = null
 
+        var baseTrick: String? = null
+
         // Kickflip (360 around X, positive)
         if (abs(accumulatedRotationX) >= 360f && accumulatedRotationX > 0f && abs(accumulatedRotationX) < 720f) {
-            detectedTrick = "Kickflip"
-            return
+            baseTrick = "Kickflip"
         }
-
         // Heelflip (360 around X, negative)
-        if (abs(accumulatedRotationX) >= 360f && accumulatedRotationX < 0f && abs(accumulatedRotationX) < 720f) {
-            detectedTrick = "Heelflip"
-            return
+        else if (abs(accumulatedRotationX) >= 360f && accumulatedRotationX < 0f && abs(accumulatedRotationX) < 720f) {
+            baseTrick = "Heelflip"
         }
-
-        // Pop Shuvit (180 around Y)
-        if (abs(accumulatedRotationY) >= 180f && abs(accumulatedRotationY) < 360f) {
-            detectedTrick = "Pop Shuvit"
-            return
-        }
-
         // 360 Pop Shuvit (360 around Y)
-        if (abs(accumulatedRotationY) >= 360f && abs(accumulatedRotationY) < 540f) { // Limit for a single 360
-            detectedTrick = "360 Pop Shuvit"
-            return
+        else if (abs(accumulatedRotationY) >= 360f && abs(accumulatedRotationY) < 540f) {
+            baseTrick = "360 Shove-it"
+        }
+        // Pop Shuvit (180 around Y)
+        else if (abs(accumulatedRotationY) >= 180f && abs(accumulatedRotationY) < 360f) {
+            baseTrick = "Shove-it"
+        }
+        else {
+            baseTrick = "Ollie"
         }
 
-        // TODO: Add detection for other tricks involving Z rotation (e.g., Varial)
-        // TODO: Add detection for multi-axis tricks (e.g., Varial Kickflip)
-
+        // Apply stance prefix
+        val controller = gameObject.getComponent(PlayerController::class.java)
+        if (controller != null) {
+            val stance = controller.currentStance
+            detectedTrick = if (stance == com.pafoid.skate.skateboard.SkateStance.REGULAR) {
+                baseTrick
+            } else {
+                "${stance.name.lowercase().replaceFirstChar { it.uppercase() }} $baseTrick"
+            }
+        } else {
+            detectedTrick = baseTrick
+        }
     }
 
     fun getDetectedTrick(): String? {

@@ -133,9 +133,9 @@
 - [x] **Test T3.3: Front Foot Leveling**: Simulate the "Slide" by applying downward force to the nose while airborne. Verify board pitch returns to $0$. (PASSED)
 
 ## 🔄 16.4: Trick Detection Logic
-- [ ] **Test T4.1: Rotation Accumulation**: Spin the board 360° on the local Y-axis in a vacuum; verify the `TrickTracker` returns "360 Shove-it".
-- [ ] **Test T4.2: Kickflip Detection**: Spin the board 360° on the local X-axis; verify the "Kickflip" state is triggered.
-- [ ] **Test T4.3: Stance Validation**: Perform a pop while moving backwards; verify the system identifies the trick as "Fakie Ollie" rather than "Nollie".
+- [x] **Test T4.1: Rotation Accumulation**: Spin the board 360° on the local Y-axis in a vacuum; verify the `TrickTracker` returns "360 Shove-it".
+- [x] **Test T4.2: Kickflip Detection**: Spin the board 360° on the local X-axis; verify the "Kickflip" state is triggered.
+- [x] **Test T4.3: Stance Validation**: Perform a pop while moving backwards; verify the system identifies the trick as "Fakie Ollie" rather than "Nollie".
 
 ## 🛠️ 16.5: Boundary & Stress Testing
 - [ ] **Test T5.1: High-Speed Stability**: Run the simulation at $50 m/s$; verify raycast wheels do not "tunnel" (clip) through the floor.
