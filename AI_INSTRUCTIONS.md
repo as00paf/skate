@@ -38,6 +38,7 @@ Follow a strict **Red-Green-Refactor** cycle for all logic-heavy tasks (Physics,
 5.  **Verify:** Run the test again and provide the terminal output showing it passed.
 6.  **No "Dry" Logic:** Do not write physics or math logic without a corresponding unit test in the same feature branch.
 7. **Unit Testing**: Name all unit tests using the `MethodName_Scenario_ExpectedBehavior` pattern (e.g., `applyTailImpulse_StationaryOnGround_NoseMovesUpward`) and strictly follow the Arrange-Act-Assert (AAA) structure.
+8. **Task Completion Criteria**: A task is considered "Done" only when all possible unit tests are implemented, and any missing or incorrect logic identified during testing has been documented as a new item in the TODO list.
 
 ## ⚡ 5. Concurrency & Performance
 1.  **No Blocking:** Never perform I/O (unzipping, file loading) on the Main Render Thread. Use Kotlin Coroutines (`Dispatchers.IO`).
