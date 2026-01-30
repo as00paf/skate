@@ -1,18 +1,75 @@
 For the next phase of the project, here is what I would like to do :
-- Remove SkateLab window
+- Remove the SkateLab window
 - Add a menu to manage imgui windows
 - Add a console window with a tab for the engine and another one for the actions taken in the level editor 
+- Remove fps counter from menu
 - Show ram usage, cpu/gpu frame times, draw call counts, physics steps duration in profiler
-- Move fps counter from menu to profiler
-- Update prefabs window to be an assets browser for textures, models and prefabs
-- Move buttons out of the game viewport to be in their own toolbar, just icons no labels, add pause and screenshot buttons, reset should reset the whole scene, add button with keybind (F12) to make game viewport fullscreen
-- Mouse support for game viewport
-- Ctrl C-V-X-Z support for level editor
-- Fix Gizmo system scaling
+- Update prefabs window to be an assets browser for textures, models and prefabs with tabs for each of the 3 categories.
+- Move buttons out of the game viewport to be in their own toolbar above the viewport. Use only icons and tools tips for those buttons, no labels. Add pause and screenshot buttons. The reset button should reset the whole scene. Add a button with keybind (F12) to make game viewport fullscreen or go back to the game in the viewport.
+- Add support for to move the camera (up, down, left, or right) in the game viewport by pressing down the middle mouse button and moving the mouse. 
+- Add support for Ctrl+C/V/X/Z in the level editor
 
-Bugs
+  Bugs
+- Fix the scale translate arrows changing size when the camera moves.
 
 
 Reports
 - UI review to make it up to par with industry standards, compare features of Unity, Unreal, Godot and Stride
 - Feature review to make sure everything is working as intended
+
+# 🛠️ "Pose Master" Animation Authoring Tool: TODO
+
+## 1. Foundation: Pose & Bone Manipulation
+- [ ] **Bone Selection System**: Implement raycast-based bone selection in the 3D viewport to click and select joints directly on the Skater model.
+- [ ] **Hierarchy Tree**: Create an ImGui window that displays the `SkeletalAnimation` joint hierarchy for manual bone selection.
+- [ ] **TRS Gizmo Linking**: Bind the existing translation/rotation/scale gizmos to modify the `localTransform` of the selected bone.
+- [ ] **Pose Mirroring**: Implement a utility to copy transformations from Left-side bones to Right-side bones (and vice-versa) across the X-axis.
+- [ ] **Pose Presets**: Create a JSON-based system to save and load static poses (e.g., `ollie_crouch.json`, `kickflip_catch.json`).
+
+## 2. Timeline & Keyframing Engine
+- [ ] **Timeline UI Bar**: Add a draggable timeline at the bottom of the editor with play, pause, stop, and frame-step buttons.
+- [ ] **Keyframe Data Structure**: Define a `KeyframeSequence` that stores a list of bone transforms indexed by timestamps (in seconds or frames).
+- [ ] **Interpolation Logic**: Implement Slerp (Spherical Linear Interpolation) for bone rotations to ensure smooth movement between keyframes.
+- [ ] **Keyframe Manipulation**:
+    - [ ] Add/Delete keyframes at the current timeline position.
+    - [ ] Drag existing keyframe markers to adjust animation timing.
+- [ ] **Onion Skinning**: Render semi-transparent "ghost" meshes of the previous and next keyframes to visualize the motion arc.
+
+
+
+## 3. Skate-Specific Rigging & Constraints
+- [ ] **Board-Relative Locking**: Implement a constraint that locks the skater's feet bones to the skateboard's coordinate space.
+- [ ] **Stance Auto-Flip**: Add a global toggle to mirror an entire animation sequence from **Regular** to **Goofy** stance.
+- [ ] **Ground Alignment Tool**: Add a "Snap to Ground" feature that shifts the entire skeleton vertically so the lowest bone (wheels/feet) touches $Y=0$.
+- [ ] **Root Motion Toggle**: Allow the option to extract the forward movement of the Hips bone and apply it as world-space velocity for the `GameObject`.
+
+## 4. Export & Pipeline Integration
+- [ ] **Native Format Exporter**: Create a serializer to export animations to the engine's internal `.skanim` format (binary or JSON).
+- [ ] **Animation Metadata**: Support tagging specific frames with "Events" (e.g., a "Pop" sound effect trigger or "Collision Enabled" trigger).
+- [ ] **Scale Validation**: Add an automated check to ensure the exported animation matches the standard 1.80m Skater scale.
+- [ ] **Hot-Reloading**: Ensure the `AnimationComponent` can refresh and play a newly saved animation without a scene restart.
+
+
+
+## 5. Advanced Refinement Tools
+- [ ] **Dope Sheet View**: Expand the timeline into a spreadsheet-style view to edit individual bone tracks.
+- [ ] **Easing Curves**: Implement Bezier curves for keyframe transitions to allow for "snappy" snaps or "slow-mo" catches.
+- [ ] **Bone Weight Visualizer**: Add a debug overlay to see which vertices are influenced by the currently selected bone.
+
+# 📥 Mixamo Asset Pipeline: TODO
+
+- [ ] **Import Validation**: Verify `Assimp` reads the `mNumVertices` and `mWeights` from the FBX to confirm the mesh is correctly bound to the skeleton.
+- [ ] **Bone Mapping (The Strip Utility)**:
+    - Create a utility to map `mixamorig:LeftFoot` -> `LeftFoot`.
+    - Ensure your `SkateboardPhysics` component can find these renamed bones for its "Foot Placement" logic.
+- [ ] **Coordinate System Fix**:
+    - Mixamo uses **Y-Up**, but FBX often exports in **Centimeters**.
+    - Apply a `0.01` scale factor during the `aiImportFile` process to bring the 180cm model down to 1.8 units.
+- [ ] **Animation Sampling**: Ensure the `AnimationComponent` samples the FBX at exactly 60fps to match the JBullet physics step.
+
+# 🖼️ Asset Pipeline: Texture & Material Fixes
+
+- [ ] **Path Stripping**: Implement a utility in `ShaderLoader` or `ModelLoader` to strip absolute directory paths from texture metadata (e.g., `C:/Path/To/Texture.png` -> `Texture.png`).
+- [ ] **Fallback Texture**: Implement a "Pink Checkerboard" fallback texture. If a texture is missing, the engine should log a warning but still load the model so you don't get a crash.
+- [ ] **Search Heuristic**: If a texture isn't in the model folder, have the engine check a global `textures/` folder as a secondary search location.
+- [ ] **Y-Axis Flip**: FBX textures often have inverted UVs compared to OpenGL. Add a toggle in the loader to `aiProcess_FlipUVs`. Make sure to add the constant in the right place.
