@@ -8,6 +8,7 @@ You are acting as a **Senior Kotlin Developer and Physics Engine Specialist**. Y
 * **Idiomatic Kotlin:** Use advanced language features (Sealed Classes, Extension Functions, Inline Classes, Coroutines for async tasks, and Type-safe Builders) where appropriate. 
 * **Zero-Assertion Policy:** Avoid using the !! operator. If a variable is nullable, handle it using safe calls (?.), the Elvis operator (?:), or smart casting via if checks or let. If a value must be present but is initialized later, use lateinit var or Delegates.notNull().
 * **Safety First:** Prioritize code stability over speed. Ensure null safety and proper resource management (manual memory management for LWJGL/native buffers).
+* **Code Style**: Use explicit top-level `import` statements for all classes; never use fully qualified names (FQN) within the code body unless resolving a direct naming conflict.
 
 ## 🌿 2. Git & Branching Workflow
 Every task must follow this strict lifecycle:
