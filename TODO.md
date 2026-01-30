@@ -138,11 +138,12 @@
 - [x] **Test T4.3: Stance Validation**: Perform a pop while moving backwards; verify the system identifies the trick as "Fakie Ollie" rather than "Nollie".
 
 ## 🛠️ 16.5: Boundary & Stress Testing
-- [ ] **Test T5.1: High-Speed Stability**: Run the simulation at $50 m/s$; verify raycast wheels do not "tunnel" (clip) through the floor.
-- [ ] **Test T5.2: Frame-Rate Independence**: Run the same "Push" test at $30fps$ and $120fps$; verify the final displacement is identical within a 1% margin.
-- [ ] **Test T5.3: Access Violation Regression**: Repeatedly instantiate and destroy 100 `PhysicsRigidBody` objects to ensure the `-Xverify:none` flag and JNI bindings are stable.
+- [x] **Test T5.1: High-Speed Stability**: Run the simulation at $50 m/s$; verify raycast wheels do not "tunnel" (clip) through the floor. (PASSED)
+- [ ] **Test T5.2: Frame-Rate Independence**: Run the same "Push" test at $30fps$ and $120fps$; verify the final displacement is identical within a 1% margin. (FAILED - See Task 17.4)
+- [x] **Test T5.3: Access Violation Regression**: Repeatedly instantiate and destroy 100 `PhysicsRigidBody` objects to ensure the `-Xverify:none` flag and JNI bindings are stable. (PASSED)
 
 # 🔧 17. Physics Implementation Fixes (Deferred)
 - [ ] **Task 17.1: Friction Propagation**: Fix `RigidBody3D` to ensure the `friction` property is correctly applied to the Bullet `rawBody` during initialization and runtime updates.
 - [ ] **Task 17.2: Rolling Resistance**: Implement `linearDamping` logic in `RigidBody3D` to satisfy the `rollResistance` test.
 - [ ] **Task 17.3: Steering Geometry**: Implement local-space steering forces in `SkateboardPhysics` to translate board lean (roll) into actual turning (yaw).
+- [ ] **Task 17.4: Fixed Timestep Integration**: Implement an accumulator-based fixed timestep loop in `Engine` or `Physics3D` to ensure deterministic physics regardless of render framerate.
