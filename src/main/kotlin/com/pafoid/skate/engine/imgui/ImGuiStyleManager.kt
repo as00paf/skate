@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.utils.Color
 import imgui.ImGui
 import imgui.flag.ImGuiCol.*
 
-
 object ImGuiStyleManager {
 
     fun setupStyle(s:Style = Style()) {

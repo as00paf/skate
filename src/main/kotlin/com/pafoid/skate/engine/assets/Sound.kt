@@ -5,7 +5,6 @@ import org.lwjgl.stb.STBVorbis.stb_vorbis_decode_filename
 import org.lwjgl.system.MemoryStack.*
 import org.lwjgl.system.libc.LibCStdlib.free
 
-
 class Sound(val filePath:String, val loops: Boolean) {
 
     private var bufferId = -1
@@ -24,7 +23,7 @@ class Sound(val filePath:String, val loops: Boolean) {
         val sampleRateBuffer = stackMallocInt(1)
 
         val rawAudioBuffer = stb_vorbis_decode_filename(filePath, channelsBuffer, sampleRateBuffer)
-        if(rawAudioBuffer == null) {
+        if (rawAudioBuffer == null) {
             println("Error: could not load sound $filePath")
             stackPop()
             stackPop()
@@ -48,7 +47,7 @@ class Sound(val filePath:String, val loops: Boolean) {
         // Generate the source
         sourceId = alGenSources()
 
-        val shouldLoop = if(loops) 1 else 0
+        val shouldLoop = if (loops) 1 else 0
         alSourcei(sourceId, AL_BUFFER, bufferId)
         alSourcei(sourceId, AL_LOOPING, shouldLoop)
         alSourcei(sourceId, AL_POSITION, 0)
@@ -65,19 +64,19 @@ class Sound(val filePath:String, val loops: Boolean) {
 
     fun play() {
         val state = alGetSourcei(sourceId, AL_SOURCE_STATE)
-        if(state == AL_STOPPED) {
+        if (state == AL_STOPPED) {
             isPlaying = false
             alSourcei(sourceId, AL_POSITION, 0)
         }
 
-        if(!isPlaying) {
+        if (!isPlaying) {
             alSourcePlay(sourceId)
             isPlaying = true
         }
     }
 
     fun stop() {
-        if(isPlaying) {
+        if (isPlaying) {
             alSourceStop(sourceId)
             isPlaying = false
         }
@@ -85,7 +84,7 @@ class Sound(val filePath:String, val loops: Boolean) {
 
     fun isPlaying(): Boolean {
         val state = alGetSourcei(sourceId, AL_SOURCE_STATE)
-        if(state == AL_STOPPED) {
+        if (state == AL_STOPPED) {
             isPlaying = false
         }
         return isPlaying

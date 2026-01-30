@@ -291,47 +291,46 @@ object MImGui {
         ImGui.popID()
     }
 
-        fun colorPicker4(label: String, color: Vector4f): Boolean {
-            var res = false
-            ImGui.pushID(label)
-            ImGui.columns(2)
-            ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
-            ImGui.text(label)
-            ImGui.nextColumn()
+    fun colorPicker4(label: String, color: Vector4f): Boolean {
+        var res = false
+        ImGui.pushID(label)
+        ImGui.columns(2)
+        ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
+        ImGui.text(label)
+        ImGui.nextColumn()
 
-            val imColor = floatArrayOf(color.x, color.y, color.z, color.w)
-            if (ImGui.colorEdit4("##colorPicker", imColor)) {
-                color.set(imColor[0], imColor[1], imColor[2], imColor[3])
-                res = true
-            }
-
-            ImGui.columns(1)
-            ImGui.popID()
-
-            return res
+        val imColor = floatArrayOf(color.x, color.y, color.z, color.w)
+        if (ImGui.colorEdit4("##colorPicker", imColor)) {
+            color.set(imColor[0], imColor[1], imColor[2], imColor[3])
+            res = true
         }
 
-        fun colorPicker3(label: String, color: Vector3f): Boolean {
-            var res = false
-            ImGui.pushID(label)
-            ImGui.columns(2)
-            ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
-            ImGui.text(label)
-            ImGui.nextColumn()
+        ImGui.columns(1)
+        ImGui.popID()
 
-
-            val imColor = floatArrayOf(color.x, color.y, color.z)
-
-            if (ImGui.colorEdit3("##colorPicker3", imColor)) {
-                color.set(imColor[0], imColor[1], imColor[2])
-                res = true
-            }
-
-            ImGui.columns(1)
-            ImGui.popID()
-
-            return res
-        }
+        return res
     }
+
+    fun colorPicker3(label: String, color: Vector3f): Boolean {
+        var res = false
+        ImGui.pushID(label)
+        ImGui.columns(2)
+        ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
+        ImGui.text(label)
+        ImGui.nextColumn()
+
+        val imColor = floatArrayOf(color.x, color.y, color.z)
+
+        if (ImGui.colorEdit3("##colorPicker3", imColor)) {
+            color.set(imColor[0], imColor[1], imColor[2])
+            res = true
+        }
+
+        ImGui.columns(1)
+        ImGui.popID()
+
+        return res
+    }
+}
 
     

@@ -177,7 +177,6 @@ class RenderBatch(
                  currentPos.x = currentPos.x * sprite.gameObject.transform.scale.x + sprite.gameObject.transform.translation.x
                  currentPos.y = currentPos.y * sprite.gameObject.transform.scale.y + sprite.gameObject.transform.translation.y
             }
-            
 
             // Load position
             vertices[offset] = currentPos.x

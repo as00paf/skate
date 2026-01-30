@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine
 
 import com.pafoid.skate.engine.controls.input.InputBuffer
-import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.JoystickListener
+import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.render.FrameBuffer
@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.JobSystem.runOnMain
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.Time
+import java.nio.ByteBuffer
 import org.joml.Vector2f
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW.*
@@ -22,7 +23,6 @@ import org.lwjgl.opengl.GLUtil
 import org.lwjgl.stb.STBImage
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
-import java.nio.ByteBuffer
 
 class Window(
     val width: Int = 1920,
@@ -153,7 +153,6 @@ class Window(
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
-
 
         installCallbacks()
         JoystickListener.init()

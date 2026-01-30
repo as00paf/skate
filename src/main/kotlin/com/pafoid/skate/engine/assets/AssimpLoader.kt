@@ -17,7 +17,6 @@ import java.io.File
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
-
 class AssimpLoader {
 
     fun preLoadModel(filePath: String): PreLoadedModel {

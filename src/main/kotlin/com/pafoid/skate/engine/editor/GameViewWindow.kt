@@ -92,7 +92,6 @@ class GameViewWindow {
         MouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
         MouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
 
-        
         // ... (rest of picking logic)
 
         // Handle Object Hover & Picking

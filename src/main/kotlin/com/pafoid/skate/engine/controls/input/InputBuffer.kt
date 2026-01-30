@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.controls.input
 
-
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_Y
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_X

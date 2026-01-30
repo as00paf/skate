@@ -1,14 +1,9 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.Window
-
 import com.pafoid.skate.engine.controls.listeners.KeyListener
-
 import com.pafoid.skate.engine.scenes.GameObject
-
 import org.lwjgl.glfw.GLFW.*
-
-
 
 class GizmoSystem: Component() {
 
@@ -37,13 +32,13 @@ class GizmoSystem: Component() {
             SCALE_GIZMO -> scaleGizmo.setInUse()
         }
 
-        if(KeyListener.isKeyPressed(GLFW_KEY_W)) {
+        if (KeyListener.isKeyPressed(GLFW_KEY_W)) {
             usingGizmo = TRANSLATE_GIZMO
-        } else if(KeyListener.isKeyPressed(GLFW_KEY_E)) {
+        } else if (KeyListener.isKeyPressed(GLFW_KEY_E)) {
             usingGizmo = ROTATION_GIZMO
-        } else if(KeyListener.isKeyPressed(GLFW_KEY_R)) {
+        } else if (KeyListener.isKeyPressed(GLFW_KEY_R)) {
             usingGizmo = SCALE_GIZMO
-        } else if(KeyListener.isKeyPressed(GLFW_KEY_Q)) {
+        } else if (KeyListener.isKeyPressed(GLFW_KEY_Q)) {
             usingGizmo = -1 // Selection mode (no gizmo)
         }
     }

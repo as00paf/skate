@@ -26,7 +26,6 @@ import electrostatic4j.snaploader.platform.NativeDynamicLibrary
 import electrostatic4j.snaploader.platform.util.PlatformPredicate
 import org.joml.Quaternionf
 
-
 class Physics3D : IPhysics3D {
     private val dd = DebugDraw
     private val physicsSpace: PhysicsSpace

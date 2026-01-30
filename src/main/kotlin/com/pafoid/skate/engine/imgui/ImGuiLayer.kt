@@ -6,9 +6,9 @@ import com.pafoid.skate.engine.editor.BoneTreeWindow
 import com.pafoid.skate.engine.editor.EnvironmentWindow
 import com.pafoid.skate.engine.editor.GameViewWindow
 import com.pafoid.skate.engine.editor.PrefabsWindow
+import com.pafoid.skate.engine.editor.ProfilerWindow
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.editor.SceneHierarchyWindow
-import com.pafoid.skate.engine.editor.ProfilerWindow
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.SettingsManager
@@ -27,9 +27,8 @@ import imgui.internal.ImGui.dockBuilderRemoveNode
 import imgui.internal.ImGui.dockBuilderSetNodeSize
 import imgui.type.ImBoolean
 import imgui.type.ImInt
-import org.lwjgl.glfw.GLFW
 import java.io.File
-
+import org.lwjgl.glfw.GLFW
 
 class ImGuiLayer {
 

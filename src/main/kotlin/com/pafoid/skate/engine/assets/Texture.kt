@@ -100,8 +100,6 @@ class Texture: Component() {
         glBindTexture(target, 0)
     }
 
-
-
     override fun equals(other: Any?): Boolean {
         return when (other) {
             null -> false

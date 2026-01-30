@@ -1,19 +1,19 @@
 package com.pafoid.skate.engine.scenes
 
 import com.google.gson.GsonBuilder
-import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.DirectionalLight
 import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
-import org.joml.Vector3f
-import org.lwjgl.system.MemoryUtil
-import org.lwjgl.util.tinyfd.TinyFileDialogs
+import com.pafoid.skate.engine.scenes.components.Transform
 import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
+import org.joml.Vector3f
+import org.lwjgl.system.MemoryUtil
+import org.lwjgl.util.tinyfd.TinyFileDialogs
 
 class Scene(private val initializer: SceneInitializer, val camera: Camera = Camera()) {
 
@@ -107,7 +107,6 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
         pendingObjects.clear()
     }
-
 
     fun update(dt: Float) {
         camera.update(dt) 
