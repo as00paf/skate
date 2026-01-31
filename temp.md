@@ -75,6 +75,29 @@ Reports
 ## 🛠️ Phase L2: Code Refactoring (The "Hardcoded Hunt")
 - [ ] **Refactor "Skate Lab" UI**: Replace all `ImGui.text("...")` and button labels in `LevelEditorSceneInitializer.kt` with localized lookups.
 - [ ] **Refactor Inspector Labels**: Move component field names (e.g., "Mass", "Friction") from `SkateboardPhysics.kt` into the properties file.
+- [ ] **Refactor Trick Analyzer**: Move trick names ("Kickflip", "Ollie") to `tricks.properties` to allow for "Trick Name" variations in the future.
+
+## 🚀 Phase L3: Advanced Features (Android-Inspired)
+- [ ] **String Formatting**: Implement support for placeholders (e.g., `lbl_speed=Speed: %f m/s`) using `String.format()`.
+- [ ] **Pluralization Support**: Add a logic handler for quantities (e.g., "1 Trick" vs "5 Tricks").
+- [ ] **Language Switching Logic**: Add a setting in the Editor to toggle between `strings_en.properties` and `strings_fr.properties` (or others) at runtime without restarting the engine.
+
+## 🧪 Phase L4: Validation & Quality
+- [ ] **Missing Key Fallback**: Ensure that if a key is missing, the engine returns the key name (e.g., `!!MISSING_KEY!!`) instead of crashing.
+- [ ] **Unit Test - String Retrieval**: Verify that the `StringManager` correctly pulls values from the resources folder.
+- [ ] **Unit Test - Format Validation**: Verify that string placeholders are filled correctly with float and integer values.
+
+# 🌍 Localization & String Management System (i18n)
+
+## 🏗️ Phase L1: Infrastructure Setup
+- [ ] **Define String Schema**: Create a centralized directory `src/main/resources/values/` to hold string data.
+- [ ] **Initial String Resource**: Create `strings.properties` (the "Default" language) to host all current UI labels.
+- [ ] **String Manager Singleton**: Implement `StringManager` (or `R`) class to handle the loading and retrieval of strings via keys (e.g., `R.string("lbl_reset_board")`).
+- [ ] **Koin Integration**: Register the `StringManager` in your Koin module for easy injection into UI components.
+
+## 🛠️ Phase L2: Code Refactoring (The "Hardcoded Hunt")
+- [ ] **Refactor "Skate Lab" UI**: Replace all `ImGui.text("...")` and button labels in `LevelEditorSceneInitializer.kt` with localized lookups.
+- [ ] **Refactor Inspector Labels**: Move component field names (e.g., "Mass", "Friction") from `SkateboardPhysics.kt` into the properties file.
 - [ ] **Refactor Trick Analyzer**: Move trick names ("Kickflip", "Ollie") to `strings.properties` to allow for "Trick Name" variations in the future.
 
 ## 🚀 Phase L3: Advanced Features (Android-Inspired)

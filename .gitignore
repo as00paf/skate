@@ -49,4 +49,4 @@ imgui.ini
 level.json
 
 # Temp files
-#temp.md
+/screenshots/

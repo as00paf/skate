@@ -9,6 +9,8 @@ You are acting as a **Senior Kotlin Developer and Physics Engine Specialist**. Y
 * **Zero-Assertion Policy:** Avoid using the !! operator. If a variable is nullable, handle it using safe calls (?.), the Elvis operator (?:), or smart casting via if checks or let. If a value must be present but is initialized later, use lateinit var or Delegates.notNull().
 * **Safety First:** Prioritize code stability over speed. Ensure null safety and proper resource management (manual memory management for LWJGL/native buffers).
 * **Code Style**: Use explicit top-level `import` statements for all classes; never use fully qualified names (FQN) within the code body unless resolving a direct naming conflict.
+* **Dependency Injection**: Use Koin for object lifecycles. If a class needs a dependency, add it to the constructor and define it in a Koin `module`. Never use manual singletons or static "Instances" for engine systems.
+* **Localization**: Never hardcode user-facing strings in ImGui or Logic. Add the key to `strings.properties` and access it via the `Strings` utility class.
 
 ## 🌿 2. Git & Branching Workflow
 Every task must follow this strict lifecycle:
@@ -16,11 +18,13 @@ Every task must follow this strict lifecycle:
 1.  **Preparation:** Before starting any work, create a new branch:
     * **New Features:** `feature/description-of-task`
     * **Bug Fixes:** `bug/description-of-bug`
-2.  **Commits:** Make small, atomic commits with descriptive messages. Do not bundle multiple logical changes into one commit. Ask and await for the user to review and test the code before commiting.
-3.  **Completion:** Once a task is finished, push the code to the feature/bug branch and to the remote repository.
-4.  **Merging:** Request explicit user confirmation to merge the feature/bug branch into `master`. **Do not merge automatically.**
-5.  **Pushing:** After merging, always push the `master` branch to the remote repository.
-6.  **Clean up:** Delete local and remote branches only after a successful merge and push to `master`, and only with user approval.
+2.  **Commits:** Make small, atomic commits with descriptive messages and do not bundle multiple logical changes into one commit. 
+3.  **Confirmation:** Ask and await for the user to review and test the code before commiting. Summerize the changes and the decisions that were made.
+4.  **Completion:** Once the user reviewed and tested the changes, push the changes to the feature/bug branch and to the remote repository.
+5.  **Merging:** Request explicit user confirmation to merge the feature or bug branch into `master`. **Do not merge automatically.**
+6.  **Pushing:** After merging, always push the `master` branch to the remote repository.
+7.  **Clean up:** Delete local and remote branches only after a successful merge and push to `master`, and only with user approval.
+8.  **Await:** Go back to the master branch and wait for further instructions.
 
 ## 🚦 3. Operational Flow
 * **One Step at a Time:** Work on exactly one item from the `TODO.md` list. Do not anticipate or jump to the next item.
@@ -61,4 +65,5 @@ Follow a strict **Red-Green-Refactor** cycle for all logic-heavy tasks (Physics,
 - **Shell**: PowerShell 7+ (Avoid Bash/Sh/Zsh).
 - **Build Tool**: `gradlew.bat` (Not `./gradlew`).
 - **File System**: Windows-style paths (`C:\path\to\file`).
-- **Commands**: Use PowerShell cmdlets (`Remove-Item`, `Copy-Item`, `Expand-Archive`) or standard Windows binaries. Do not use Linux utilities like `find`, `grep`, or `tar -xvf`.
+- **Commands**: Use PowerShell cmdlets (`Remove-Item`, `Copy-Item`, `Expand-Archive`) or standard Windows binaries. 
+- **Avoid**: Do not use Linux utilities like `find`, `grep`, or `tar -xvf`.

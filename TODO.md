@@ -146,10 +146,9 @@
 - [x] **Dependency Migration**: Move all dependency versions from `build.gradle.kts` to `libs.versions.toml` for centralized version management.
 - [x] **Resource Management System**: Implement a centralized system to handle efficient loading, caching, and unloading of engine assets (Textures, Shaders, Models).
 - [x] **Dependency Injection**: Integrate **Koin** to manage component lifecycles, improve testability, and decouple engine systems.
-- [ ] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using Kotlinx.serialization) for handling save states, configurations, and object properties.
+- [x] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using kotlinx.serialization) for handling save states, configurations, and object properties.
 
 # 🛠️ Phase 18. Editor UX & Workspace Overhaul
-
 ## 18.1. UI Navigation & Menu Cleanup
 - [ ] **Revamp 'View' Menu**:
   - [ ] Remove the FPS counter from the menu (moving to Profiler).
@@ -196,3 +195,4 @@
 - [ ] **Task 18.2: Rolling Resistance**: Implement `linearDamping` logic in `RigidBody3D` to satisfy the `rollResistance` test.
 - [ ] **Task 18.3: Steering Geometry**: Implement local-space steering forces in `SkateboardPhysics` to translate board lean (roll) into actual turning (yaw).
 - [ ] **Task 18.4: Fixed Timestep Integration**: Implement an accumulator-based fixed timestep loop in `Engine` or `Physics3D` to ensure deterministic physics regardless of render framerate.
+- [ ] **Task 18.5: Unit Tests**: Fix and add missing physics unit tests.
