@@ -181,8 +181,8 @@
 - [ ] **New Features & Keybinds**:
   - [ ] **Reset Scene**: Full scene reload/re-initialization.
   - [ ] **Pause**: Toggle engine time scale ($0.0$ vs $1.0$).
-  - [ ] **Screenshot**: Capture frame buffer to PNG.
-  - [ ] **Physics Toggle**: Move the debug wireframe toggle here.
+  - [ ] **Screenshot**: Capture frame buffer to PNG. Save to screenshots folder and show a popup asking the user if he wants to open the screenshot or its containing folder.
+  - [ ] **Physics Toggle**: Move the debug wireframe toggle here and make it a toggle button.
   - [ ] **Maximize Viewport (F12)**: Toggle between "Editor Layout" and "Fullscreen Viewport" mode.
 
 ## 18.5. Interaction & Shortcuts
