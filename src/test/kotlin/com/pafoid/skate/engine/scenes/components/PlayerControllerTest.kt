@@ -15,6 +15,9 @@ import io.mockk.unmockkAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
 import kotlin.test.assertEquals
 
@@ -31,6 +34,11 @@ class PlayerControllerTest {
 
     @BeforeEach
     fun setup() {
+        startKoin {
+            modules(module {
+                single { com.pafoid.skate.engine.assets.ResourceManager() }
+            })
+        }
         MockKAnnotations.init(this)
         mockkObject(SceneManager)
         
@@ -63,6 +71,7 @@ class PlayerControllerTest {
 
     @AfterEach
     fun teardown() {
+        stopKoin()
         unmockkAll()
     }
 

@@ -4,11 +4,13 @@ import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.JobSystem
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.io.File
 
-object AssetPool {
+object AssetPool : KoinComponent {
 
-    val resourceManager = ResourceManager() // Exposed for direct access if needed
+    val resourceManager: ResourceManager by inject() // Injected via Koin
     
     // Legacy maps kept for compatibility if direct map access was used (it wasn't public)
     private val cubeMapCache = mutableMapOf<String, CubeMap>()

@@ -11,7 +11,11 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-class ResourceManager {
+class ResourceManager(
+    private val shaderLoader: ShaderLoader = ShaderLoader(false),
+    private val assimpLoader: AssimpLoader = AssimpLoader(),
+    private val objLoader: ObjLoader = ObjLoader()
+) {
 
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
@@ -21,11 +25,8 @@ class ResourceManager {
     // Central VAO Loader for models managed by this manager
     private val vaoLoader = VAOLoader()
     
-    // Loaders
-    private val shaderLoader = ShaderLoader(false)
-    private val assimpLoader = AssimpLoader()
-    private val objLoader = ObjLoader()
-
+    // Loaders are now passed via constructor
+    
     // --- Texture Loading ---
 
     suspend fun loadTexture(path: String): Texture {

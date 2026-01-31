@@ -1,9 +1,15 @@
 package com.pafoid.skate
 
 import com.pafoid.skate.engine.Window
+import com.pafoid.skate.engine.di.engineModule
 import com.pafoid.skate.engine.scenes.SceneManager
+import org.koin.core.context.startKoin
 
 fun main(args:Array<String>){
+    startKoin {
+        modules(engineModule)
+    }
+
     val sceneManager = SceneManager.get()
     val window = Window(
         width = 512,

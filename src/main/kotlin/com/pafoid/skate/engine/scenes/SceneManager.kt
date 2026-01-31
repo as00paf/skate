@@ -11,23 +11,14 @@ import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.engine.utils.JobSystem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.math.abs
-import kotlin.math.max
 
-class SceneManager {
+class SceneManager : KoinComponent {
 
-    // TODO: inject
     companion object {
-        private var instance: SceneManager? = null
-
-        fun get(): SceneManager {
-            if (instance == null) {
-                instance = SceneManager()
-            }
-
-            return instance!!
-        }
+        fun get(): SceneManager = (object : KoinComponent {}).get()
 
         fun getCurrentScene(): Scene? = get().currentScene
         fun isPlaying(): Boolean = get().runtimePlaying
@@ -78,7 +69,7 @@ class SceneManager {
 
         shaders.forEachIndexed { index, function ->
             function.invoke()
-            splashScreenManager.increaseLoadingProgress("Loading Shaders $index/${shaders.size}")
+            splashScreenProgress(index, shaders.size)
         }
 
         splashScreenManager.increaseLoadingProgress("Initializing Renderer...")
@@ -87,15 +78,19 @@ class SceneManager {
         renderer.useFbo = true
     }
 
+    private suspend fun splashScreenProgress(index: Int, total: Int) {
+        splashScreenManager.increaseLoadingProgress("Loading Shaders $index/$total")
+    }
+
     private suspend fun changeScene(initializer: SceneInitializer, isFirstScene: Boolean = false) {
         if (!isFirstScene) currentScene?.destroy()
-            val scene = Scene(initializer)
-            currentScene = scene
+        val scene = Scene(initializer)
+        currentScene = scene
         // TODO: fix loading of saved scene
-            //scene.load()
-            scene.init()
-            scene.start()
-        }
+        //scene.load()
+        scene.init()
+        scene.start()
+    }
 
     fun draw(dt: Float, imguiLayer: ImGuiLayer) {
         val state = engineState.get()
@@ -149,7 +144,6 @@ class SceneManager {
         renderer.destroy()
     }
 
-    // TODO: these should probably move
     fun getPickedId(x: Int, y: Int): Int {
         if (engineState.get() != EngineState.RUNNING) return -1
         return renderer.readPixel(x, y)
