@@ -144,8 +144,8 @@
 
 # 🏗️ Phase 17. Architecture & Infrastructure Optimization
 - [x] **Dependency Migration**: Move all dependency versions from `build.gradle.kts` to `libs.versions.toml` for centralized version management.
-- [ ] **Resource Management System**: Implement a centralized system to handle efficient loading, caching, and unloading of engine assets (Textures, Shaders, Models).
-- [ ] **Dependency Injection**: Integrate **Koin** to manage component lifecycles, improve testability, and decouple engine systems.
+- [x] **Resource Management System**: Implement a centralized system to handle efficient loading, caching, and unloading of engine assets (Textures, Shaders, Models).
+- [x] **Dependency Injection**: Integrate **Koin** to manage component lifecycles, improve testability, and decouple engine systems.
 - [ ] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using Kotlinx.serialization) for handling save states, configurations, and object properties.
 
 # 🛠️ Phase 18. Editor UX & Workspace Overhaul
@@ -157,11 +157,11 @@
   - [ ] Remove Physics Debug toggle (moving to Viewport Toolbar).
 - [ ] **Remove 'Create' Menu**: Deprecate the top-level Create menu in favor of the new Asset Browser workflow.
 
-## 18.2. Integrated Console & Profiling
+## 18.2. Integrated Console 
 - [ ] **Dual-Tab Console Window**:
   - [ ] **Engine Tab**: Display system logs, shader compilation errors, and JNI/Physics warnings.
   - [ ] **Editor Tab**: Log user actions (e.g., "Object Moved," "Prefab Spawned," "Scene Reset").
-- [ ] **Advanced Profiler**:
+- [ ] **Profiler Window**:
   - [ ] Display **RAM Usage** (using `Runtime.getRuntime()`).
   - [ ] Display **CPU/GPU Frame Times** (in ms).
   - [ ] Display **Draw Call Count** (per frame).
