@@ -29,8 +29,6 @@ Reports
     - [ ] Drag existing keyframe markers to adjust animation timing.
 - [ ] **Onion Skinning**: Render semi-transparent "ghost" meshes of the previous and next keyframes to visualize the motion arc.
 
-
-
 ## 3. Skate-Specific Rigging & Constraints
 - [ ] **Board-Relative Locking**: Implement a constraint that locks the skater's feet bones to the skateboard's coordinate space.
 - [ ] **Stance Auto-Flip**: Add a global toggle to mirror an entire animation sequence from **Regular** to **Goofy** stance.
@@ -42,8 +40,6 @@ Reports
 - [ ] **Animation Metadata**: Support tagging specific frames with "Events" (e.g., a "Pop" sound effect trigger or "Collision Enabled" trigger).
 - [ ] **Scale Validation**: Add an automated check to ensure the exported animation matches the standard 1.80m Skater scale.
 - [ ] **Hot-Reloading**: Ensure the `AnimationComponent` can refresh and play a newly saved animation without a scene restart.
-
-
 
 ## 5. Advanced Refinement Tools
 - [ ] **Dope Sheet View**: Expand the timeline into a spreadsheet-style view to edit individual bone tracks.
