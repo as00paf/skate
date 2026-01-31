@@ -150,12 +150,12 @@
 
 # 🛠️ Phase 18. Editor UX & Workspace Overhaul
 ## 18.1. UI Navigation & Menu Cleanup
-- [ ] **Revamp 'View' Menu**:
-  - [ ] Remove the FPS counter from the menu (moving to Profiler).
-  - [ ] Add a "Windows" sub-menu with checkboxes to toggle all ImGui windows (Inspector, Console, Assets, etc.).
-  - [ ] Remove Physics Debug toggle (moving to Viewport Toolbar).
-- [ ] **Remove 'Create' Menu**: Deprecate the top-level Create menu in favor of the new Asset Browser workflow.
-
+- [x] **Revamp 'View' Menu**:
+  - [x] Remove the FPS counter from the menu (moving to Profiler).
+  - [x] Add a "Windows" sub-menu with checkboxes to toggle all ImGui windows (Inspector, Console, Assets, etc.).
+  - [x] Remove Physics Debug toggle (moving to Viewport Toolbar).
+- [x] **Remove 'Create' Menu**: Deprecate the top-level Create menu in favor of the new Asset Browser workflow.
+  ok we are back on the master branch and everything is working as expected. we are ready to move on to task 18.1. UI Navigation & Menu Cleanup. Follow protocol from AI_IN
 ## 18.2. Integrated Console 
 - [ ] **Dual-Tab Console Window**:
   - [ ] **Engine Tab**: Display system logs, shader compilation errors, and JNI/Physics warnings.

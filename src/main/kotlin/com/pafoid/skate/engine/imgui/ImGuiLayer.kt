@@ -45,6 +45,15 @@ class ImGuiLayer {
     private val profilerWindow = ProfilerWindow()
     private val hierarchyWindow = SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
 
+    // Window Visibility Flags
+    private val showHierarchy = ImBoolean(true)
+    private val showProperties = ImBoolean(true)
+    private val showBoneTree = ImBoolean(true)
+    private val showGameView = ImBoolean(true)
+    private val showPrefabs = ImBoolean(true)
+    private val showEnvironment = ImBoolean(true)
+    private val showProfiler = ImBoolean(true)
+
     fun init(glfwWindow: Long) {
         this.glfwWindow = glfwWindow
         ImGui.createContext()
@@ -95,13 +104,14 @@ class ImGuiLayer {
 
         setupDockSpace(currentScene)
         currentScene.imgui()
-        hierarchyWindow.imgui(currentScene)
-        propertiesWindow.imgui()
-        boneTreeWindow.imgui()
-        gameViewWindow.imgui()
-        prefabsWindow.imgui()
-        environmentWindow.imgui(currentScene)
-        profilerWindow.imgui()
+        
+        if (showHierarchy.get()) hierarchyWindow.imgui(currentScene)
+        if (showProperties.get()) propertiesWindow.imgui()
+        if (showBoneTree.get()) boneTreeWindow.imgui()
+        if (showGameView.get()) gameViewWindow.imgui()
+        if (showPrefabs.get()) prefabsWindow.imgui()
+        if (showEnvironment.get()) environmentWindow.imgui(currentScene)
+        if (showProfiler.get()) profilerWindow.imgui()
 
         endFrame()
     }
@@ -202,21 +212,16 @@ class ImGuiLayer {
 
                 ImGui.endMenu()
             }
-            if (ImGui.beginMenu("Create")) {
-                if (ImGui.menuItem("Cube")) {
-                    // Spawning a cube logic
-                }
-                if (ImGui.menuItem("Sprite")) {
-                    // Spawning a sprite logic
-                }
-                ImGui.endMenu()
-            }
             if (ImGui.beginMenu("View")) {
-                ImGui.text("FPS: ${(1.0f / ImGui.getIO().deltaTime).toInt()}")
-                ImGui.separator()
-                val debugEnabled = ImBoolean(currentScene.physics3d.debugEnabled)
-                if (ImGui.checkbox("Physics Debug", debugEnabled)) {
-                    currentScene.physics3d.debugEnabled = debugEnabled.get()
+                if (ImGui.beginMenu("Windows")) {
+                    ImGui.checkbox("Scene Hierarchy", showHierarchy)
+                    ImGui.checkbox("Properties", showProperties)
+                    ImGui.checkbox("Bone Tree", showBoneTree)
+                    ImGui.checkbox("Game Viewport", showGameView)
+                    ImGui.checkbox("Prefabs", showPrefabs)
+                    ImGui.checkbox("Environment", showEnvironment)
+                    ImGui.checkbox("Profiler", showProfiler)
+                    ImGui.endMenu()
                 }
                 ImGui.endMenu()
             }
