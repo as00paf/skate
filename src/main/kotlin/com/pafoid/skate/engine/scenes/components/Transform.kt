@@ -1,14 +1,17 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.utils.MImGui
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.util.Objects
 
+@Serializable
 class Transform(
-    val translation: Vector3f = Vector3f(),
-    val scale: Vector3f = Vector3f(1f, 1f, 1f),
-    val rotation: Vector3f = Vector3f()
+    @Contextual val translation: Vector3f = Vector3f(),
+    @Contextual val scale: Vector3f = Vector3f(1f, 1f, 1f),
+    @Contextual val rotation: Vector3f = Vector3f()
 ): Component() {
     
     fun copy(to: Transform) {

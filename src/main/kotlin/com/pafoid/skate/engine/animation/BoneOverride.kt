@@ -1,10 +1,13 @@
 package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.scenes.components.Component
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.joml.Quaternionf
 
+@Serializable
 class BoneOverride : Component() {
-    private val overrides = mutableMapOf<String, Quaternionf>()
+    private val overrides:MutableMap<String, @Contextual Quaternionf> = mutableMapOf()
 
     fun addOverride(boneName: String, rotation: Quaternionf) {
         overrides[boneName] = rotation

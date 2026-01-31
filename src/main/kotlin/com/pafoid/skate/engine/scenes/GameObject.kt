@@ -1,15 +1,15 @@
 package com.pafoid.skate.engine.scenes
 
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
+import com.pafoid.skate.engine.utils.serialization.Serializer
 import imgui.ImGui
-import java.lang.reflect.Type
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 
+@Serializable
 open class GameObject(
     var name: String,
 ) {
@@ -127,47 +127,21 @@ open class GameObject(
     }
 
     fun copy(): GameObject {
-        val gson = GsonBuilder()
-            .registerTypeAdapter(Component::class.java, ComponentDeserializer())
-            .registerTypeAdapter(GameObject::class.java, GameObjectSerializer())
-            .enableComplexMapKeySerialization()
-            .create()
-
-        val objAsJSON = gson.toJson(this)
-        val result = gson.fromJson(objAsJSON, GameObject::class.java)
+        val objAsJSON = Serializer.json.encodeToString(this)
+        val result = Serializer.json.decodeFromString<GameObject>(objAsJSON)
         result.generateUid()
         result.getAllComponents().forEach {
             it.generateId()
+            it.init(result) // Re-initialize with the new parent
         }
-
-        /*val sprite = result.getComponent(SpriteRenderer::class.java)
-        sprite?.getTexture()?.let{
-            sprite.setTexture(AssetPool.getTexture(it.getFilePath().orEmpty()))
-        }*/
+        
+        // Restore transform reference
+        result.transform = result.getComponent<Transform>() ?: Transform()
 
         return result
     }
 
     override fun toString(): String {
         return super.toString() + "::$name"
-    }
-}
-
-class GameObjectSerializer: JsonDeserializer<GameObject> {
-
-    override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): GameObject {
-        val obj = json.asJsonObject
-        val name = obj.get("name").asString
-        val components = obj.getAsJsonArray("components")
-
-        val go = GameObject(name)
-        components.forEach { element ->
-            val component = context.deserialize<Component>(element, Component::class.java)
-            go.addComponent(component)
-        }
-
-        go.transform = go.getComponent<Transform>() ?: Transform()
-
-        return go
     }
 }

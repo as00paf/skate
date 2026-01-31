@@ -146,7 +146,7 @@
 - [x] **Dependency Migration**: Move all dependency versions from `build.gradle.kts` to `libs.versions.toml` for centralized version management.
 - [x] **Resource Management System**: Implement a centralized system to handle efficient loading, caching, and unloading of engine assets (Textures, Shaders, Models).
 - [x] **Dependency Injection**: Integrate **Koin** to manage component lifecycles, improve testability, and decouple engine systems.
-- [x] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using kotlinx.serialization) for handling save states, configurations, and object properties.
+- [ ] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using kotlinx.serialization) for handling save states, configurations, and object properties.
 
 # 🛠️ Phase 18. Editor UX & Workspace Overhaul
 ## 18.1. UI Navigation & Menu Cleanup
@@ -155,7 +155,7 @@
   - [x] Add a "Windows" sub-menu with checkboxes to toggle all ImGui windows (Inspector, Console, Assets, etc.).
   - [x] Remove Physics Debug toggle (moving to Viewport Toolbar).
 - [x] **Remove 'Create' Menu**: Deprecate the top-level Create menu in favor of the new Asset Browser workflow.
-  ok we are back on the master branch and everything is working as expected. we are ready to move on to task 18.1. UI Navigation & Menu Cleanup. Follow protocol from AI_IN
+  
 ## 18.2. Integrated Console 
 - [ ] **Dual-Tab Console Window**:
   - [ ] **Engine Tab**: Display system logs, shader compilation errors, and JNI/Physics warnings.

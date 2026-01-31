@@ -1,8 +1,6 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.scenes.components.Component
-import org.joml.Vector3f
 import kotlin.math.abs
 
 class TrickDetector : Component() {

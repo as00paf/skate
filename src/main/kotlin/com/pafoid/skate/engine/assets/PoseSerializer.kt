@@ -1,21 +1,14 @@
 package com.pafoid.skate.engine.assets
 
-import com.google.gson.GsonBuilder
 import com.pafoid.skate.engine.animation.BoneOverride
-import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
+import com.pafoid.skate.engine.utils.serialization.Serializer
+import kotlinx.serialization.encodeToString
 import java.io.File
 
 object PoseSerializer {
 
-    // TODO: take from injection
-    private val gson = GsonBuilder()
-        .registerTypeAdapter(Component::class.java, ComponentDeserializer())
-        .setPrettyPrinting()
-        .create()
-
     fun savePose(boneOverride: BoneOverride, filePath: String) {
-        val json = gson.toJson(boneOverride)
+        val json = Serializer.json.encodeToString(boneOverride)
         File(filePath).writeText(json)
     }
 
@@ -26,6 +19,6 @@ object PoseSerializer {
             return null
         }
         val json = file.readText()
-        return gson.fromJson(json, BoneOverride::class.java)
+        return Serializer.json.decodeFromString(json)
     }
 }

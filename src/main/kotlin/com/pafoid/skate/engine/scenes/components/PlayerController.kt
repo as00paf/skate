@@ -16,8 +16,6 @@ import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ObjLoader
-import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_Y
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_TRIGGER
@@ -44,19 +42,19 @@ class PlayerController : Component() {
     
     var walkSpeed = 3.0f
 
-    @Transient lateinit var stateManager: PlayerStateManager
+    lateinit var stateManager: PlayerStateManager
 
-    @Transient var currentStance = SkateStance.REGULAR
-    @Transient var isSwitch = false
-    @Transient var inputBuffer: IInputBuffer = InputBuffer.instance
-    @Transient var inputProvider: IInputProvider = InputProvider
+    var currentStance = SkateStance.REGULAR
+    var isSwitch = false
+    var inputBuffer: IInputBuffer = InputBuffer.instance
+    var inputProvider: IInputProvider = InputProvider
     
-    @Transient private var rb: IPhysicsBody3D? = null
-    @Transient private var physics: SkateboardPhysics? = null
-    @Transient private var lastVelocity = com.jme3.math.Vector3f()
-    @Transient private var animator: Animator? = null
-    @Transient private var skater: GameObject? = null
-    @Transient private var currentLean = 0f
+    private var rb: IPhysicsBody3D? = null
+    private var physics: SkateboardPhysics? = null
+    private var lastVelocity = com.jme3.math.Vector3f()
+    private var animator: Animator? = null
+    private var skater: GameObject? = null
+    private var currentLean = 0f
     private val maxLeanAngle = 20f
     private val leanSmoothness = 5f
 

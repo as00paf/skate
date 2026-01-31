@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
     application
 }
 
@@ -48,11 +49,11 @@ dependencies {
     implementation(libs.imgui.lwjgl3)
     implementation(libs.imgui.natives.windows)
 
-    // GSON
-    implementation(libs.gson)
-
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
+
+    // Serialization
+    implementation(libs.kotlinx.serialization.json)
 
     // Koin
     implementation(libs.koin.core)

@@ -7,18 +7,21 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.utils.MImGui
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Vector3f
 
+@Serializable
 class Entity(
     val model: TexturedModel,
     val transform: Transform = Transform(),
     var shininess: Float = 10f,
     var reflectivity: Float = 1f,
     var textureScale: Float = 1.0f,
-    val onTick: (dt:Float) -> Unit = {}
+    @Transient val onTick: (dt:Float) -> Unit = {}
 ): Component() {
 
-    var skeleton: Skeleton? = null
+    @Transient var skeleton: Skeleton? = null
         private set
 
     init {

@@ -1,12 +1,13 @@
 package com.pafoid.skate.engine.scenes
 
-import com.google.gson.GsonBuilder
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.DirectionalLight
 import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
 import com.pafoid.skate.engine.scenes.components.Transform
+import com.pafoid.skate.engine.utils.serialization.Serializer
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
@@ -39,12 +40,6 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     val physics3d: com.pafoid.skate.engine.physics3d.IPhysics3D = com.pafoid.skate.engine.physics3d.Physics3D()
 
     private var isRunning = false
-    private val gson = GsonBuilder()
-        .setPrettyPrinting()
-        .registerTypeAdapter(Component::class.java, ComponentDeserializer())
-        .registerTypeAdapter(GameObject::class.java, GameObjectSerializer())
-        .enableComplexMapKeySerialization()
-        .create()
 
     suspend fun init() {
         initializer.loadResources(this)
@@ -185,7 +180,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
                 fogDensity = fogDensity,
                 fogGradient = fogGradient
             )
-            writer.write(gson.toJson(data))
+            writer.write(Serializer.json.encodeToString(data))
             writer.close()
         } catch (e: IOException) {
             e.printStackTrace()
@@ -226,7 +221,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             gameObjects.clear()
             pendingObjects.clear()
             
-            val data: LevelData = gson.fromJson(inFile, LevelData::class.java)
+            val data: LevelData = Serializer.json.decodeFromString(inFile)
             
             this.ambientLight.set(data.ambientLight)
             this.useAmbient = data.useAmbient

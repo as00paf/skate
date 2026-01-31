@@ -1,21 +1,17 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonParseException
-import com.google.gson.JsonPrimitive
-import com.google.gson.JsonSerializationContext
-import com.google.gson.JsonSerializer
 import com.pafoid.skate.engine.scenes.GameObject
 import imgui.type.ImInt
+import kotlinx.serialization.Polymorphic
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import java.lang.reflect.Modifier
-import java.lang.reflect.Type
 
+@Serializable
+@Polymorphic
 abstract class Component {
 
     companion object {
@@ -137,27 +133,5 @@ abstract class Component {
     fun getUid() = uId
 
     open fun destroy() {
-    }
-}
-
-class ComponentDeserializer: JsonSerializer<Component>, JsonDeserializer<Component> {
-    override fun serialize(src: Component, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
-        val result = JsonObject()
-        result.add("type", JsonPrimitive(src.javaClass.canonicalName))
-        result.add("properties", context.serialize(src, src.javaClass))
-
-        return result
-    }
-
-    override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): Component {
-        val obj = json.asJsonObject
-        val type = obj.get("type").asString
-        val element = obj.get("properties")
-
-        try {
-            return context.deserialize(element, Class.forName(type))
-        } catch (e: ClassNotFoundException){
-            throw JsonParseException("Unknown element type: $type", e)
-        }
     }
 }

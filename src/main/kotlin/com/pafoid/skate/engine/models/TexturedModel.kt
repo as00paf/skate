@@ -6,15 +6,18 @@ import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.scenes.components.Component
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Vector4f
 
+@Serializable
 data class Material(
-    var baseColorTexture: Texture? = null,
-    var normalMap: Texture? = null,
-    var metallicRoughnessTexture: Texture? = null,
-    var aoTexture: Texture? = null,
-    var emissiveTexture: Texture? = null,
+    @Transient var baseColorTexture: Texture? = null,
+    @Transient var normalMap: Texture? = null,
+    @Transient var metallicRoughnessTexture: Texture? = null,
+    @Transient var aoTexture: Texture? = null,
+    @Transient var emissiveTexture: Texture? = null,
 
     // Background loading paths
     var baseColorPath: String? = null,
@@ -23,25 +26,27 @@ data class Material(
     var aoPath: String? = null,
     var emissivePath: String? = null,
 
-    var baseColorFactor: Vector4f = Vector4f(1f, 1f, 1f, 1f),
+    @kotlinx.serialization.Contextual var baseColorFactor: Vector4f = Vector4f(1f, 1f, 1f, 1f),
     var metallicFactor: Float = 0f,
     var roughnessFactor: Float = 0.5f,
-    var emissiveFactor: org.joml.Vector3f = org.joml.Vector3f(0f, 0f, 0f),
+    @kotlinx.serialization.Contextual var emissiveFactor: org.joml.Vector3f = org.joml.Vector3f(0f, 0f, 0f),
     var doubleSided: Boolean = false,
     var alphaMode: String = "OPAQUE",
     var alphaCutoff: Float = 0.5f
 )
 
+@Serializable
 data class MeshPart(
     val rawModel: RawModel, 
     val material: Material,
-    val inverseBindMatrices: List<Matrix4f> = emptyList()
+    val inverseBindMatrices: List<@kotlinx.serialization.Contextual Matrix4f> = emptyList()
 )
 
+@Serializable
 data class TexturedModel (
     val parts: List<MeshPart>,
-    val skeleton: Skeleton? = null,
-    val animations: List<Animation> = emptyList()
+    @Transient val skeleton: Skeleton? = null,
+    @Transient val animations: List<Animation> = emptyList()
 ): Component() {
     constructor(rawModel: RawModel, texture: Texture) : this(listOf(MeshPart(rawModel, Material(baseColorTexture = texture))))
     constructor(rawModel: RawModel, material: Material) : this(listOf(MeshPart(rawModel, material)))

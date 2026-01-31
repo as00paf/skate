@@ -33,7 +33,7 @@ class SkateboardPhysics : Component() {
         Vector3f(0.175f, -0.01f, 0.1f)    // Back Right
     )
 
-    @Transient private lateinit var rb: com.pafoid.skate.engine.physics3d.IPhysicsBody3D
+    private lateinit var rb: com.pafoid.skate.engine.physics3d.IPhysicsBody3D
     private val worldUp = Vector3f(0f, 1f, 0f)
     var isGrounded = false
         private set

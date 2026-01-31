@@ -1,8 +1,9 @@
 package com.pafoid.skate.engine.animation
 
-import com.google.gson.GsonBuilder
+
 import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.scenes.components.ComponentDeserializer
+import com.pafoid.skate.engine.utils.serialization.Serializer
+import kotlinx.serialization.encodeToString
 import org.joml.Quaternionf
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
@@ -10,10 +11,6 @@ import org.junit.jupiter.api.Test
 import java.io.File
 
 class BoneOverrideSerializationTest {
-
-    private val gson = GsonBuilder()
-        .registerTypeAdapter(Component::class.java, ComponentDeserializer())
-        .create()
 
     private val tempFile = File("temp_bone_override.json")
 
@@ -37,11 +34,11 @@ class BoneOverrideSerializationTest {
         originalOverride.addOverride(boneName2, rotation2)
 
         // When
-        val json = gson.toJson(originalOverride)
+        val json = Serializer.json.encodeToString(originalOverride)
         tempFile.writeText(json)
 
         val loadedJson = tempFile.readText()
-        val deserializedOverride = gson.fromJson(loadedJson, BoneOverride::class.java)
+        val deserializedOverride: BoneOverride = Serializer.json.decodeFromString(loadedJson)
 
         // Then
         assertNotNull(deserializedOverride)

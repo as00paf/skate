@@ -1,7 +1,9 @@
 package com.pafoid.skate.engine.models
 
+import kotlinx.serialization.Serializable
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
 
+@Serializable
 data class RawModel(
     val vaoId: Int, 
     val vertexCount: Int, 

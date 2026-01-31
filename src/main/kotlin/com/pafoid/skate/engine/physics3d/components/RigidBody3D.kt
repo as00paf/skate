@@ -7,8 +7,11 @@ import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Quaternionf
 
+@Serializable
 open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
     var bodyType: BodyType = BodyType.Dynamic
     var useCCD: Boolean = false

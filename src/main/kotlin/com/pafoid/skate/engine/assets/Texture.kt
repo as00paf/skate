@@ -1,6 +1,8 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.scenes.components.Component
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30.*
 import org.lwjgl.stb.STBImage.*
@@ -19,14 +21,15 @@ class TextureData(
     }
 }
 
+@Serializable
 class Texture: Component() {
 
-    var texId: Int = -1
+    @Transient var texId: Int = -1
 
     var width: Int = 0
     var height: Int = 0
-    private var depth: Int = 0
-    private var target: Int = GL_TEXTURE_2D
+    @Transient private var depth: Int = 0
+    @Transient private var target: Int = GL_TEXTURE_2D
     var filePath: String? = null
 
     fun uploadToGPU(data: TextureData) {

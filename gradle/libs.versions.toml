@@ -6,7 +6,6 @@ snaploader = "1.0.0-stable"
 joml = "1.10.8"
 joml-primitives = "1.10.0"
 imgui = "1.90.0"
-gson = "2.8.9"
 kotlinx-coroutines = "1.8.0"
 kotlinx-serialization = "1.7.3"
 junit = "5.10.0"
@@ -31,7 +30,6 @@ joml-primitives = { group = "org.joml", name = "joml-primitives", version.ref = 
 imgui-binding = { group = "io.github.spair", name = "imgui-java-binding", version.ref = "imgui" }
 imgui-lwjgl3 = { group = "io.github.spair", name = "imgui-java-lwjgl3", version.ref = "imgui" }
 imgui-natives-windows = { group = "io.github.spair", name = "imgui-java-natives-windows", version.ref = "imgui" }
-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }

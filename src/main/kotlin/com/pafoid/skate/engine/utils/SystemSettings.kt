@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.utils
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class SystemSettings(
     var width: Int = 1920,
     var height: Int = 1080,
