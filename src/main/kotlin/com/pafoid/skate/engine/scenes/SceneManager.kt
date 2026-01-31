@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
@@ -13,9 +14,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
+import org.koin.core.component.inject
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.collections.forEachIndexed
+import kotlin.getValue
 
 class SceneManager : KoinComponent {
+
+    private val resourceManager: ResourceManager by inject()
 
     companion object {
         fun get(): SceneManager = (object : KoinComponent {}).get()
@@ -57,14 +63,14 @@ class SceneManager : KoinComponent {
 
     private suspend fun initRenderSystem() {
         splashScreenManager.increaseLoadingProgress("Initializing Render System...")
-
-        val shaders = listOf(
-            { shader3D = AssetPool.getShader(Assets.Shaders.SHADER_3D_DEFAULT) },
-            { shader2D = AssetPool.getShader(Assets.Shaders.SHADER_2D_BATCH) },
-            { shaderPicking = AssetPool.getShader(Assets.Shaders.PICKING) },
-            { shaderPicking3D = AssetPool.getShader(Assets.Shaders.PICKING_3D) },
-            { shaderSkybox = AssetPool.getShader(Assets.Shaders.SKYBOX) },
-            { shaderSkyDome = AssetPool.getShader(Assets.Shaders.SKY_DOME) },
+        val shaders = listOf<suspend ()->Unit>(
+            { shader3D = resourceManager.loadShader(Assets.Shaders.SHADER_3D_DEFAULT) },
+            { shader2D = resourceManager.loadShader(Assets.Shaders.SHADER_2D_BATCH) },
+            { shaderPicking = resourceManager.loadShader(Assets.Shaders.PICKING) },
+            { shaderPicking3D = resourceManager.loadShader(Assets.Shaders.PICKING_3D) },
+            { shaderSkybox = resourceManager.loadShader(Assets.Shaders.SKYBOX) },
+            { shaderSkyDome = resourceManager.loadShader(Assets.Shaders.SKY_DOME) },
+            { resourceManager.loadShader(Assets.Shaders.DEBUG) },
         )
 
         shaders.forEachIndexed { index, function ->

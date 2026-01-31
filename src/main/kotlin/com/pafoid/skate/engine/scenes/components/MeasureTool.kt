@@ -9,9 +9,14 @@ import com.pafoid.skate.engine.utils.Units
 import com.pafoid.skate.engine.utils.UnitType
 import imgui.ImGui
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 import kotlin.math.abs
 
-class MeasureTool : Component() {
+class MeasureTool : Component(), KoinComponent {
+    private val debugDraw: DebugDraw by inject()
+
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
     private var isActive = false
@@ -61,7 +66,7 @@ class MeasureTool : Component() {
                     // Preview line if we have a start point
                     startPoint?.let { start ->
                         val currentEnd = endPoint ?: hitPoint
-                        DebugDraw.addLine3D(start, currentEnd, Vector3f(1f, 1f, 0f))
+                        debugDraw.addLine3D(start, currentEnd, Vector3f(1f, 1f, 0f))
                         
                         val distance = start.distance(currentEnd)
                         val settings = SettingsManager.settings

@@ -1,14 +1,19 @@
 package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.render.PickingMesh
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 
-class PoseGizmo : Component() {
+class PoseGizmo : Component(), KoinComponent {
+    private val pickingDraw: PickingDraw by inject()
 
     private val jointMap = mutableMapOf<Int, Joint>()
 
@@ -26,7 +31,7 @@ class PoseGizmo : Component() {
             val objectId = joint.index + BONE_ID_OFFSET
             jointMap[objectId] = joint
 
-            PickingDraw.addMesh(
+            pickingDraw.addMesh(
                 PickingMesh(
                     vertices = CUBE_VERTICES,
                     transform = gizmoTransform,

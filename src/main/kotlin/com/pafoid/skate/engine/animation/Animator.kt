@@ -1,12 +1,16 @@
 package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 
 /**
  * Component responsible for managing and playing skeletal animations.
@@ -18,7 +22,9 @@ import org.joml.Vector3f
  * - Skeleton hierarchy updates.
  * - Editor visualization of the bone hierarchy.
  */
-class Animator : Component() {
+class Animator : Component(), KoinComponent {
+    private val debugDraw: DebugDraw by inject()
+
     var currentTime = 0f
         private set
     var currentAnimation: Animation? = null
@@ -135,14 +141,14 @@ class Animator : Component() {
             child.worldTransform.getTranslation(childPos)
             modelMatrix.transformPosition(childPos)
             
-            com.pafoid.skate.engine.render.DebugDraw.addLine3D(jointPos, childPos, color)
+            debugDraw.addLine3D(jointPos, childPos, color)
             visualizeJoint(child, modelMatrix)
         }
         
         // Draw joint point as a tiny box
         val quat = Quaternionf()
         joint.worldTransform.getUnnormalizedRotation(quat)
-        com.pafoid.skate.engine.render.DebugDraw.addBox3D(jointPos, quat, Vector3f(0.01f), color)
+        debugDraw.addBox3D(jointPos, quat, Vector3f(0.01f), color)
     }
 
     fun stop() {

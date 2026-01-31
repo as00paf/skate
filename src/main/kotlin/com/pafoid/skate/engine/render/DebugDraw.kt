@@ -1,20 +1,31 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL15.*
 import org.lwjgl.opengl.GL20.*
 import org.lwjgl.opengl.GL30.*
+import kotlin.getValue
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
-object DebugDraw {
-    private const val MAX_LINES = 3000
-    private const val MAX_TRIANGLES = 1000
-    
+private const val MAX_LINES = 3000
+private const val MAX_TRIANGLES = 1000
+
+class DebugDraw: KoinComponent {
+    private val resourceManager: ResourceManager by inject()
+    private val logger: LoggerService by inject()
+
     private val lines = mutableListOf<Line3D>()
     private val triangles = mutableListOf<Triangle3D>()
     
@@ -31,7 +42,10 @@ object DebugDraw {
     private var started = false
 
     fun start() {
-        shader = AssetPool.getShader(Assets.Shaders.DEBUG)
+        shader = resourceManager.getShader(Assets.Shaders.DEBUG) ?: run {
+            logger.logEngine("Could not load debug shader", LogLevel.ERROR)
+            return
+        }
         
         // Lines
         vaoId = glGenVertexArrays()
@@ -130,7 +144,7 @@ object DebugDraw {
     }
 
     fun drawCircle(center: Vector3f, radius: Float, axis: Vector3f, color: Vector3f, segments: Int = 32) {
-        val ortho1 = if (Math.abs(axis.x) > 0.9f) Vector3f(0f, 1f, 0f) else Vector3f(1f, 0f, 0f)
+        val ortho1 = if (abs(axis.x) > 0.9f) Vector3f(0f, 1f, 0f) else Vector3f(1f, 0f, 0f)
         val v1 = Vector3f(axis).cross(ortho1).normalize().mul(radius)
         val v2 = Vector3f(axis).cross(v1).normalize().mul(radius)
 
@@ -138,8 +152,8 @@ object DebugDraw {
         for (i in 1..segments) {
             val angle = (i.toFloat() / segments) * Math.PI.toFloat() * 2f
             val nextPt = Vector3f(center)
-                .add(Vector3f(v1).mul(Math.cos(angle.toDouble()).toFloat()))
-                .add(Vector3f(v2).mul(Math.sin(angle.toDouble()).toFloat()))
+                .add(Vector3f(v1).mul(cos(angle.toDouble()).toFloat()))
+                .add(Vector3f(v2).mul(sin(angle.toDouble()).toFloat()))
             
             addLine3D(lastPt, nextPt, color)
             lastPt = nextPt
@@ -189,7 +203,7 @@ object DebugDraw {
         }
 
         // Base points in local space (assuming Y-axis as default for circle generation)
-        val ortho1 = if (Math.abs(axisVec.y) > 0.9f) Vector3f(1f, 0f, 0f) else Vector3f(0f, 1f, 0f)
+        val ortho1 = if (abs(axisVec.y) > 0.9f) Vector3f(1f, 0f, 0f) else Vector3f(0f, 1f, 0f)
         val v1 = Vector3f(axisVec).cross(ortho1).normalize().mul(radius)
         val v2 = Vector3f(axisVec).cross(v1).normalize().mul(radius)
 
@@ -197,8 +211,8 @@ object DebugDraw {
             val a1 = (i.toFloat() / segments) * Math.PI.toFloat() * 2f
             val a2 = ((i + 1).toFloat() / segments) * Math.PI.toFloat() * 2f
 
-            val p1 = Vector3f(v1).mul(Math.cos(a1.toDouble()).toFloat()).add(Vector3f(v2).mul(Math.sin(a1.toDouble()).toFloat()))
-            val p2 = Vector3f(v1).mul(Math.cos(a2.toDouble()).toFloat()).add(Vector3f(v2).mul(Math.sin(a2.toDouble()).toFloat()))
+            val p1 = Vector3f(v1).mul(cos(a1.toDouble()).toFloat()).add(Vector3f(v2).mul(sin(a1.toDouble()).toFloat()))
+            val p2 = Vector3f(v1).mul(cos(a2.toDouble()).toFloat()).add(Vector3f(v2).mul(sin(a2.toDouble()).toFloat()))
 
             val bottom1 = Vector3f(p1).add(Vector3f(axisVec).mul(-halfHeight))
             val bottom2 = Vector3f(p2).add(Vector3f(axisVec).mul(-halfHeight))

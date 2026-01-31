@@ -3,10 +3,15 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 import kotlin.math.abs
 import kotlin.math.floor
 
-class GridLines : Component() {
+class GridLines : Component(), KoinComponent {
+    private val debugDraw: DebugDraw by inject()
+
     private val majorStep = 1.0f
     private val minorStep = 0.1f
     private val majorColor = Vector3f(0.3f, 0.3f, 0.3f)
@@ -34,7 +39,7 @@ class GridLines : Component() {
             // X-aligned lines
             val worldZ = centerZ + offset
             val isMajorZ = (abs(worldZ % majorStep) < 0.01f || abs(worldZ % majorStep - majorStep) < 0.01f)
-            DebugDraw.addLine3D(
+            debugDraw.addLine3D(
                 Vector3f(startX, -0.001f, worldZ), 
                 Vector3f(endX, -0.001f, worldZ), 
                 if (isMajorZ) majorColor else minorColor
@@ -43,7 +48,7 @@ class GridLines : Component() {
             // Z-aligned lines
             val worldX = centerX + offset
             val isMajorX = (abs(worldX % majorStep) < 0.01f || abs(worldX % majorStep - majorStep) < 0.01f)
-            DebugDraw.addLine3D(
+            debugDraw.addLine3D(
                 Vector3f(worldX, -0.001f, startZ), 
                 Vector3f(worldX, -0.001f, endZ), 
                 if (isMajorX) majorColor else minorColor
@@ -51,7 +56,7 @@ class GridLines : Component() {
         }
         
         // Draw Origin Axes
-        DebugDraw.addLine3D(Vector3f(-100f, 0.001f, 0f), Vector3f(100f, 0.001f, 0f), Vector3f(1f, 0.2f, 0.2f)) // X-Axis (Red)
-        DebugDraw.addLine3D(Vector3f(0f, 0.001f, -100f), Vector3f(0f, 0.001f, 100f), Vector3f(0.2f, 1f, 0.2f)) // Z-Axis (Green)
+        debugDraw.addLine3D(Vector3f(-100f, 0.001f, 0f), Vector3f(100f, 0.001f, 0f), Vector3f(1f, 0.2f, 0.2f)) // X-Axis (Red)
+        debugDraw.addLine3D(Vector3f(0f, 0.001f, -100f), Vector3f(0f, 0.001f, 100f), Vector3f(0.2f, 1f, 0.2f)) // Z-Axis (Green)
     }
 }

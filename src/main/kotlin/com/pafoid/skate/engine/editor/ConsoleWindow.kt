@@ -1,33 +1,19 @@
 package com.pafoid.skate.engine.editor
 
+import com.pafoid.skate.engine.editor.logs.LogEntry
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.utils.Icons
 import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
-import java.util.concurrent.ConcurrentLinkedQueue
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 
-class ConsoleWindow {
-    
-    enum class LogLevel {
-        INFO, WARN, ERROR, ACTION
-    }
-    
-    data class LogEntry(val message: String, val level: LogLevel, val timestamp: Long = System.currentTimeMillis())
+class ConsoleWindow : KoinComponent {
 
-    companion object {
-        private val engineLogs = ConcurrentLinkedQueue<LogEntry>()
-        private val editorLogs = ConcurrentLinkedQueue<LogEntry>()
-        
-        fun logEngine(message: String, level: LogLevel = LogLevel.INFO) {
-            engineLogs.add(LogEntry(message, level))
-            if (engineLogs.size > 1000) engineLogs.poll()
-        }
-        
-        fun logEditor(message: String, level: LogLevel = LogLevel.ACTION) {
-            editorLogs.add(LogEntry(message, level))
-            if (editorLogs.size > 1000) editorLogs.poll()
-        }
-    }
+    private val logger: LoggerService by inject() // Injected via Koin
 
     fun imgui(pOpen: ImBoolean) {
         if (!ImGui.begin("Console", pOpen)) {
@@ -37,11 +23,11 @@ class ConsoleWindow {
 
         if (ImGui.beginTabBar("ConsoleTabs")) {
             if (ImGui.beginTabItem("${Icons.GEAR} Engine")) {
-                renderLogList(engineLogs)
+                renderLogList(logger.engineLogs)
                 ImGui.endTabItem()
             }
             if (ImGui.beginTabItem("${Icons.USER} Editor")) {
-                renderLogList(editorLogs)
+                renderLogList(logger.editorLogs)
                 ImGui.endTabItem()
             }
             ImGui.endTabBar()
@@ -71,3 +57,4 @@ class ConsoleWindow {
         ImGui.endChild()
     }
 }
+

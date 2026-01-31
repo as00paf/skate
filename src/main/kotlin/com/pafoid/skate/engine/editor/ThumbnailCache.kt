@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.ShaderConst.Attribs
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.models.TexturedModel
@@ -11,16 +12,22 @@ import com.pafoid.skate.engine.scenes.components.toMatrix
 import com.pafoid.skate.engine.scenes.components.Transform
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13.*
 import org.lwjgl.opengl.GL20.*
 import org.lwjgl.opengl.GL30.*
+import kotlin.getValue
 
-object ThumbnailCache {
+private const val THUMBNAIL_SIZE = 256
+
+class ThumbnailCache: KoinComponent {
+    private val resourceManager: ResourceManager by inject()
+
     private val thumbnails = mutableMapOf<String, Int>()
     private var frameBuffer: FrameBuffer? = null
-    private const val THUMBNAIL_SIZE = 256
-    
+
     private val camera = Camera(Vector3f(2.5f, 2.5f, 2.5f))
     private val transform = Transform()
     
@@ -56,7 +63,7 @@ object ThumbnailCache {
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
 
-        val shader = AssetPool.getShader(Assets.Shaders.SHADER_3D_DEFAULT)
+        val shader = AssetPool.resourceManager.loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
         shader.start()
         
         // Setup simple matrices

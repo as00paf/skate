@@ -18,9 +18,14 @@ import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
 
-class PrefabsWindow {
+class PrefabsWindow : KoinComponent {
+    private val thumbnailCache: ThumbnailCache by inject()
+
     private val loader = VAOLoader()
 
     private var searchText = imgui.type.ImString("")
@@ -135,7 +140,7 @@ class PrefabsWindow {
             val model = TexturedModel(rawModel, texture)
             // Use specific ID per variant so they don't overwrite each other in cache
             val cacheId = "${modelPath}_${material.name}"
-            ThumbnailCache.getThumbnail(cacheId, model)
+            thumbnailCache.getThumbnail(cacheId, model)
         } else {
             AssetPool.getTexture(Assets.Textures.WHITE).texId
         }

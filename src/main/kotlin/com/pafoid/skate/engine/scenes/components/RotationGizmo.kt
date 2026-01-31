@@ -5,10 +5,14 @@ import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
+import kotlin.getValue
 import kotlin.math.abs
 
-class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow) {
+class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow), KoinComponent {
+    private val debugDraw: DebugDraw by inject()
 
     private val radius = 2.0f
     private val hitThreshold = 0.4f
@@ -40,9 +44,11 @@ class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow
         }
 
         // Draw Rings
-        DebugDraw.drawCircle(pos, dynamicRadius, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f)) // X - Red/Yellow
-        DebugDraw.drawCircle(pos, dynamicRadius, Vector3f(0f, 1f, 0f), if (yAxisActive || yAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 1f, 0f)) // Y - Green/Yellow
-        DebugDraw.drawCircle(pos, dynamicRadius, Vector3f(0f, 0f, 1f), if (zAxisActive || zAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 0f, 1f)) // Z - Blue/Yellow
+        with(debugDraw) {
+            drawCircle(pos, dynamicRadius, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f)) // X - Red/Yellow
+            drawCircle(pos, dynamicRadius, Vector3f(0f, 1f, 0f), if (yAxisActive || yAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 1f, 0f)) // Y - Green/Yellow
+            drawCircle(pos, dynamicRadius, Vector3f(0f, 0f, 1f), if (zAxisActive || zAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 0f, 1f)) // Z - Blue/Yellow
+        }
     }
 
     override fun isHot(): Boolean = xAxisHot || yAxisHot || zAxisHot

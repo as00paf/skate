@@ -5,20 +5,20 @@ import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
-import com.pafoid.skate.engine.assets.ShaderConst
 import com.pafoid.skate.engine.assets.ShaderConst.Attribs
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
-import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.components.NonPickable
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
-import com.pafoid.skate.engine.utils.Color
 import com.pafoid.skate.engine.utils.EngineStats
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.opengl.GL30.*
+import kotlin.getValue
 
 class Renderer(
     private val defaultShader: Shader,
@@ -27,7 +27,10 @@ class Renderer(
     private val pickingShader3D: Shader,
     private val skyboxShader: Shader,
     private val skyDomeShader: Shader
-) : IRenderer {
+) : IRenderer, KoinComponent {
+    private val debugDraw: DebugDraw by inject()
+    private val pickingDraw: PickingDraw by inject()
+
     override var useFbo = false // Default to false for initial feature tests
 
     private val renderer2D = Renderer2D()
@@ -51,8 +54,8 @@ class Renderer(
 
     override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
         EngineStats.resetDrawCalls()
-        DebugDraw.beginFrame()
-        PickingDraw.beginFrame()
+        debugDraw.beginFrame()
+        pickingDraw.beginFrame()
         
         // 1. Picking Pass
         pickingTexture.enableWriting()
@@ -71,7 +74,7 @@ class Renderer(
         renderer2D.bindCamera(scene.camera)
         render2D(scene, pickingShader)
         render3DPicking(scene)
-        PickingDraw.draw()
+        pickingDraw.draw()
         
         pickingTexture.disableWriting()
 
@@ -152,7 +155,7 @@ class Renderer(
         skyDomeRenderer.render(camera, scene)
 
         // 3. Debug Pass
-        DebugDraw.draw()
+        debugDraw.draw()
         
         if (useFbo) {
             mainFbo?.unbind()

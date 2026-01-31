@@ -2,8 +2,8 @@ package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.EngineState
 import com.pafoid.skate.engine.Window
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.assets.Texture
@@ -16,7 +16,6 @@ import imgui.flag.ImGuiWindowFlags
 import kotlinx.coroutines.delay
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_BLEND
-import org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
 import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
 import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
@@ -27,11 +26,13 @@ import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
 import java.util.concurrent.atomic.AtomicReference
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 
-import org.joml.Matrix4f
-import org.joml.Vector3f
+class SplashScreenManager: KoinComponent {
+    val resourceManager: ResourceManager by inject()
 
-class SplashScreenManager {
     val loadingProgress = AtomicReference(0f)
     var loadingText = "Initializing Engine..."
 
@@ -42,9 +43,9 @@ class SplashScreenManager {
     private var splashTexture: Texture? = null
     private var splashQuad: RawModel? = null
 
-    fun init() {
-        splashShader = AssetPool.getShader(Assets.Shaders.SPLASH)
-        splashTexture = AssetPool.getTexture(Assets.Textures.SPLASH)
+    suspend fun init() {
+        splashShader = resourceManager.loadShader(Assets.Shaders.SPLASH)
+        splashTexture = resourceManager.loadTexture(Assets.Textures.SPLASH)
         splashQuad = VAOLoader().loadToVAO( // TODO: inject loader ?
             positions = floatArrayOf(
                 -1f, -1f, 0f,

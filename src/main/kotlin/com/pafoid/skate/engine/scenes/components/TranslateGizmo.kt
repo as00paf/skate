@@ -6,11 +6,15 @@ import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector3f
 import org.joml.Vector4f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
+import kotlin.getValue
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow) {
+class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow), KoinComponent {
+    private val debugDraw: DebugDraw by inject()
 
     private val arrowLength = 2.0f
     private val coneSize = 0.3f
@@ -63,7 +67,7 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
 
     private fun drawArrow(origin: Vector3f, direction: Vector3f, color: Vector3f, length: Float, cSize: Float) {
         val end = Vector3f(origin).add(Vector3f(direction).mul(length))
-        DebugDraw.addLine3D(origin, end, color)
+        debugDraw.addLine3D(origin, end, color)
         
         // Solid Pyramid at the end
         val ortho1 = if (abs(direction.x) > 0.9f) Vector3f(0f, 1f, 0f) else Vector3f(1f, 0f, 0f)
@@ -77,14 +81,14 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
         val p4 = Vector3f(base).sub(ortho3)
         
         // Draw 4 triangles for the sides
-        DebugDraw.addTriangle3D(end, p1, p3, color)
-        DebugDraw.addTriangle3D(end, p3, p2, color)
-        DebugDraw.addTriangle3D(end, p2, p4, color)
-        DebugDraw.addTriangle3D(end, p4, p1, color)
+        debugDraw.addTriangle3D(end, p1, p3, color)
+        debugDraw.addTriangle3D(end, p3, p2, color)
+        debugDraw.addTriangle3D(end, p2, p4, color)
+        debugDraw.addTriangle3D(end, p4, p1, color)
         
         // Base triangles
-        DebugDraw.addTriangle3D(p1, p2, p3, color)
-        DebugDraw.addTriangle3D(p1, p2, p4, color)
+        debugDraw.addTriangle3D(p1, p2, p3, color)
+        debugDraw.addTriangle3D(p1, p2, p4, color)
     }
 
     private fun checkInput(length: Float, threshold: Float) {

@@ -1,25 +1,26 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.scenes.SceneManager
-import org.joml.Matrix4f
-import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL15.*
 import org.lwjgl.opengl.GL20.*
 import org.lwjgl.opengl.GL30.*
+import kotlin.getValue
 
-data class PickingMesh(
-    val vertices: List<Vector3f>,
-    val transform: Matrix4f,
-    val objectId: Int
-)
+private const val MAX_VERTICES = 10000
 
-object PickingDraw {
-    private const val MAX_VERTICES = 10000
+class PickingDraw: KoinComponent {
+    private val resourceManager: ResourceManager by inject()
+    private val logger: LoggerService by inject()
+
     private val meshes = mutableListOf<PickingMesh>()
     private val vertexArray = FloatArray(MAX_VERTICES * 3)
 
@@ -29,7 +30,10 @@ object PickingDraw {
     private var started = false
 
     fun start() {
-        shader = AssetPool.getShader(Assets.Shaders.PICKING)
+        shader = resourceManager.getShader(Assets.Shaders.PICKING)?: run {
+            logger.logEngine("Could not load picking shader", LogLevel.ERROR)
+            return
+        }
         
         vaoId = glGenVertexArrays()
         glBindVertexArray(vaoId)

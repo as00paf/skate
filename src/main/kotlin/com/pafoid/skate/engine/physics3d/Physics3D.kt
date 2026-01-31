@@ -25,9 +25,12 @@ import electrostatic4j.snaploader.filesystem.DirectoryPath
 import electrostatic4j.snaploader.platform.NativeDynamicLibrary
 import electrostatic4j.snaploader.platform.util.PlatformPredicate
 import org.joml.Quaternionf
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 
-class Physics3D : IPhysics3D {
-    private val dd = DebugDraw
+class Physics3D : IPhysics3D, KoinComponent {
+    private val debugDraw: DebugDraw by inject()
     private val physicsSpace: PhysicsSpace
     override var debugEnabled = false
 
@@ -204,9 +207,9 @@ class Physics3D : IPhysics3D {
         color: JomlVector3f
     ) {
         // Complex shapes - just draw a small cross for now to indicate position
-        dd.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
-        dd.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
-        dd.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
+        debugDraw.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
+        debugDraw.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
+        debugDraw.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
     }
 
     private fun drawCompoundCollisionShape(
@@ -259,12 +262,12 @@ class Physics3D : IPhysics3D {
                 height = halfExtents.y * 2f
             }
         }
-        dd.addCylinder3D(pos, rot, radius, height, axis, color)
+        debugDraw.addCylinder3D(pos, rot, radius, height, axis, color)
     }
 
     private fun drawBoxCollisionShape(shape: BoxCollisionShape, pos: JomlVector3f, rot: Quaternionf, color: JomlVector3f) {
         val halfExtents = shape.getHalfExtents(null)
-        dd.addBox3D(pos, rot, JomlVector3f(halfExtents.x, halfExtents.y, halfExtents.z), color)
+        debugDraw.addBox3D(pos, rot, JomlVector3f(halfExtents.x, halfExtents.y, halfExtents.z), color)
     }
 
     override fun destroy() {

@@ -157,14 +157,14 @@
 - [x] **Remove 'Create' Menu**: Deprecate the top-level Create menu in favor of the new Asset Browser workflow.
   
 ## 18.2. Integrated Console 
-- [ ] **Dual-Tab Console Window**:
-  - [ ] **Engine Tab**: Display system logs, shader compilation errors, and JNI/Physics warnings.
-  - [ ] **Editor Tab**: Log user actions (e.g., "Object Moved," "Prefab Spawned," "Scene Reset").
-- [ ] **Profiler Window**:
-  - [ ] Display **RAM Usage** (using `Runtime.getRuntime()`).
-  - [ ] Display **CPU/GPU Frame Times** (in ms).
-  - [ ] Display **Draw Call Count** (per frame).
-  - [ ] Display **Physics Step Duration** (timing the JBullet `stepSimulation`).
+- [x] **Dual-Tab Console Window**:
+  - [x] **Engine Tab**: Display system logs, shader compilation errors, and JNI/Physics warnings.
+  - [x] **Editor Tab**: Log user actions (e.g., "Object Moved," "Prefab Spawned," "Scene Reset").
+- [x] **Profiler Window**:
+  - [x] Display **RAM Usage** (using `Runtime.getRuntime()`).
+  - [x] Display **CPU/GPU Frame Times** (in ms).
+  - [x] Display **Draw Call Count** (per frame).
+  - [x] Display **Physics Step Duration** (timing the JBullet `stepSimulation`).
 
 ## 18.3. Unified Asset Browser
 - [ ] **Transform Prefabs Window**: Rename and expand the "Prefabs" window into a multi-tab **Asset Browser**.
