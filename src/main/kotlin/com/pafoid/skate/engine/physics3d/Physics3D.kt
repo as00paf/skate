@@ -169,7 +169,10 @@ class Physics3D : IPhysics3D {
 
     override fun update(dt: Float) {
         // Bullet's update(dt, maxSteps) is more stable for variable frame rates
+        val startTime = System.nanoTime()
         physicsSpace.update(dt, 10)
+        val endTime = System.nanoTime()
+        com.pafoid.skate.engine.utils.EngineStats.physicsStepTime.set(endTime - startTime)
 
         if (debugEnabled) {
             val debugColor = JomlVector3f(0f, 1f, 0f)

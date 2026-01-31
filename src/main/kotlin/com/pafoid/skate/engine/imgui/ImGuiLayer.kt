@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.imgui
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.editor.BoneTreeWindow
+import com.pafoid.skate.engine.editor.ConsoleWindow
 import com.pafoid.skate.engine.editor.EnvironmentWindow
 import com.pafoid.skate.engine.editor.GameViewWindow
 import com.pafoid.skate.engine.editor.PrefabsWindow
@@ -23,8 +24,11 @@ import imgui.flag.ImGuiWindowFlags
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import imgui.internal.ImGui.dockBuilderAddNode
+import imgui.internal.ImGui.dockBuilderDockWindow
+import imgui.internal.ImGui.dockBuilderFinish
 import imgui.internal.ImGui.dockBuilderRemoveNode
 import imgui.internal.ImGui.dockBuilderSetNodeSize
+import imgui.internal.ImGui.dockBuilderSplitNode
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import java.io.File
@@ -41,6 +45,7 @@ class ImGuiLayer {
     val boneTreeWindow = BoneTreeWindow()
     val gameViewWindow = GameViewWindow()
     val prefabsWindow = PrefabsWindow()
+    val consoleWindow = ConsoleWindow()
     private val environmentWindow = EnvironmentWindow()
     private val profilerWindow = ProfilerWindow()
     private val hierarchyWindow = SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
@@ -53,6 +58,7 @@ class ImGuiLayer {
     private val showPrefabs = ImBoolean(true)
     private val showEnvironment = ImBoolean(true)
     private val showProfiler = ImBoolean(true)
+    private val showConsole = ImBoolean(true)
 
     fun init(glfwWindow: Long) {
         this.glfwWindow = glfwWindow
@@ -84,19 +90,20 @@ class ImGuiLayer {
         )
 
         val mainBodyId = ImInt(0)
-        val leftId = imgui.internal.ImGui.dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.2f, null, mainBodyId)
+        val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.2f, null, mainBodyId)
         val rightId =
-            imgui.internal.ImGui.dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.25f, null, mainBodyId)
+            dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.25f, null, mainBodyId)
         val bottomId =
-            imgui.internal.ImGui.dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
+            dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
 
-        imgui.internal.ImGui.dockBuilderDockWindow("Scene Hierarchy", leftId)
-        imgui.internal.ImGui.dockBuilderDockWindow("Prefabs", leftId)
-        imgui.internal.ImGui.dockBuilderDockWindow("Properties", rightId)
-        imgui.internal.ImGui.dockBuilderDockWindow("Objects", bottomId)
-        imgui.internal.ImGui.dockBuilderDockWindow("Game Viewport", mainBodyId.get())
+        dockBuilderDockWindow("Scene Hierarchy", leftId)
+        dockBuilderDockWindow("Prefabs", leftId)
+        dockBuilderDockWindow("Properties", rightId)
+        dockBuilderDockWindow("Objects", bottomId)
+        dockBuilderDockWindow("Console", bottomId)
+        dockBuilderDockWindow("Game Viewport", mainBodyId.get())
 
-        imgui.internal.ImGui.dockBuilderFinish(dockspaceId)
+        dockBuilderFinish(dockspaceId)
     }
 
     fun update(dt: Float, currentScene: Scene) {
@@ -112,6 +119,7 @@ class ImGuiLayer {
         if (showPrefabs.get()) prefabsWindow.imgui()
         if (showEnvironment.get()) environmentWindow.imgui(currentScene)
         if (showProfiler.get()) profilerWindow.imgui()
+        if (showConsole.get()) consoleWindow.imgui(showConsole)
 
         endFrame()
     }
@@ -221,6 +229,7 @@ class ImGuiLayer {
                     ImGui.checkbox("Prefabs", showPrefabs)
                     ImGui.checkbox("Environment", showEnvironment)
                     ImGui.checkbox("Profiler", showProfiler)
+                    ImGui.checkbox("Console", showConsole)
                     ImGui.endMenu()
                 }
                 ImGui.endMenu()

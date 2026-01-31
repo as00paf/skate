@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.editor
 
+import com.pafoid.skate.engine.utils.EngineStats
 import imgui.ImGui
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadMXBean
@@ -11,14 +12,41 @@ class ProfilerWindow {
     private val lastCpuTime = mutableMapOf<String, Long>()
     private var lastSampleTime = System.nanoTime()
 
+    private val showMemoryStats = imgui.type.ImBoolean(true)
+
     init {
         if (threadBean.isThreadCpuTimeSupported) {
             threadBean.isThreadCpuTimeEnabled = true
         }
     }
 
-    fun imgui() {
-        ImGui.begin("Profiler")
+    fun imgui(pOpen: imgui.type.ImBoolean? = null) {
+        if (pOpen != null) {
+            if (!ImGui.begin("Profiler", pOpen)) {
+                ImGui.end()
+                return
+            }
+        } else {
+            ImGui.begin("Profiler")
+        }
+
+        val io = ImGui.getIO()
+        ImGui.text("Application average %.3f ms/frame (%.1f FPS)".format(1000.0f / io.framerate, io.framerate))
+
+        val runtime = Runtime.getRuntime()
+        val usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+        val totalMemory = runtime.totalMemory() / 1024 / 1024
+        ImGui.text("Draw Calls: %d".format(EngineStats.drawCalls.get()))
+        ImGui.text("Physics Step: %.3f ms".format(EngineStats.physicsStepTime.get().toFloat() / 1_000_000f))
+        ImGui.text("RAM Usage: %d MB / %d MB".format(usedMemory, totalMemory))
+
+        ImGui.separator()
+        ImGui.checkbox("Show Memory Stats", showMemoryStats)
+        if (showMemoryStats.get()) {
+            ImGui.progressBar(usedMemory.toFloat() / totalMemory.toFloat(), -1f, 0f, "%d%%".format((usedMemory.toFloat() / totalMemory.toFloat() * 100).toInt()))
+        }
+
+        ImGui.separator()
 
         if (!threadBean.isThreadCpuTimeSupported) {
             ImGui.text("Thread CPU time not supported on this JVM")

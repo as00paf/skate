@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.scenes.components.NonPickable
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import com.pafoid.skate.engine.utils.Color
+import com.pafoid.skate.engine.utils.EngineStats
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL30.*
 
@@ -49,6 +50,7 @@ class Renderer(
     }
 
     override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+        EngineStats.resetDrawCalls()
         DebugDraw.beginFrame()
         PickingDraw.beginFrame()
         
@@ -200,6 +202,7 @@ class Renderer(
             glBindVertexArray(model.vaoId)
             model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
             glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
+            EngineStats.drawCalls.incrementAndGet()
             model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
         }
         glBindVertexArray(0)
@@ -314,6 +317,7 @@ class Renderer(
             else glEnable(GL_CULL_FACE)
 
             glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
+            EngineStats.drawCalls.incrementAndGet()
 
             if (alphaInt == 2) {
                 glDisable(GL_BLEND)
