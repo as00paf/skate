@@ -169,7 +169,7 @@
 
 ## 18.3. Unified Asset Browser
 - [ ] **Transform Prefabs Window**: Rename and expand the "Prefabs" window into a multi-tab **Asset Browser**.
-  - [ ] **Models Tab**: List all `.gltf`, `.fbx`, and `.obj` files in resources.
+  - [ ] **Models Tab**: List all `.gltf`, `.fbx`, `.dae`, and `.obj` files in resources.
   - [ ] **Textures Tab**: List all `.png` and `.jpg` files.
   - [ ] **Prefabs Tab**: List saved `.json` entity templates.
 
