@@ -29,7 +29,7 @@ class AssetBrowser : KoinComponent {
     private val thumbnailCache: ThumbnailCache by inject()
     private val resourceManager: ResourceManager by inject()
 
-    private var searchText = ImString("")
+    private var searchText = ImString(256)
     
     private val modelFiles = mutableListOf<File>()
     private val textureFiles = mutableListOf<File>()
