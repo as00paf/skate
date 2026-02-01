@@ -1,10 +1,8 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_Y
 import com.pafoid.skate.engine.scenes.SceneManager
@@ -34,6 +32,7 @@ class Camera(
     var isOrthographic: Boolean = false
 ): KoinComponent {
     private val inputProvider: IInputProvider by inject()
+    private val keyListener: KeyListener by inject()
 
     var fov = 45f
     var nearPlane = 0.1f
@@ -192,22 +191,22 @@ class Camera(
             sin(Math.toRadians(yaw.toDouble())).toFloat()
         ).normalize()
 
-        if (KeyListener.isKeyPressed(GLFW_KEY_W)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_W)) {
             position.add(Vector3f(forward).mul(speed))
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_S)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_S)) {
             position.sub(Vector3f(forward).mul(speed))
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_D)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_D)) {
             position.add(Vector3f(right).mul(speed))
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_A)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_A)) {
             position.sub(Vector3f(right).mul(speed))
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_SPACE)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_SPACE)) {
             position.y += speed
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
             position.y -= speed
         }
     }

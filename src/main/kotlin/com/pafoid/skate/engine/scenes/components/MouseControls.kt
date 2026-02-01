@@ -5,10 +5,14 @@ import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
 import kotlin.math.floor
 
-class MouseControls : Component() {
+class MouseControls : Component(), KoinComponent {
+    private val keyListener: KeyListener by inject()
+
     private var holdingObject: GameObject? = null
     private val debounceTime = 0.2f
     private var debounce = debounceTime
@@ -51,7 +55,7 @@ class MouseControls : Component() {
                 debounce = debounceTime
             }
 
-            if (KeyListener.isKeyPressed(GLFW_KEY_ESCAPE)) {
+            if (keyListener.isKeyPressed(GLFW_KEY_ESCAPE)) {
                 go.destroy()
                 holdingObject = null
             }

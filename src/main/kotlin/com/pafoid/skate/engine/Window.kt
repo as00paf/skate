@@ -36,6 +36,7 @@ class Window(
 ): KoinComponent {
 
     private val joystickListener: JoystickListener by inject()
+    private val keyListener: KeyListener by inject()
 
     companion object {
         private var instance: Window? = null
@@ -203,7 +204,7 @@ class Window(
         glfwSetCursorPosCallback(glfwWindow, MouseListener::mousePosCallback)
         glfwSetMouseButtonCallback(glfwWindow, MouseListener::mouseButtonCallback)
         glfwSetScrollCallback(glfwWindow, MouseListener::mouseScrollCallback)
-        glfwSetKeyCallback(glfwWindow, KeyListener::keyCallback)
+        glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
     }
 
     private fun loop() {
@@ -251,7 +252,7 @@ class Window(
 
             glfwSwapBuffers(glfwWindow)
 
-            KeyListener.endFrame()
+            keyListener.endFrame()
             MouseListener.endFrame()
 
             endTime = Time.getTime()

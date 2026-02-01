@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.assets.ShaderLoader
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.controls.listeners.JoystickListener
+import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.editor.ThumbnailCache
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.DebugDraw
@@ -24,7 +25,8 @@ val engineModule = module {
     single { PickingDraw() }
 
     single { JoystickListener() }
-    single<IInputProvider> { InputProvider(get()) }
+    single { KeyListener() }
+    single<IInputProvider> { InputProvider(get(), get()) }
 }
 
 val appModule = module {

@@ -4,13 +4,17 @@ import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector2f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_HOME
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_MIDDLE
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sign
 
-class EditorCamera(private val camera: Camera) : Component() {
+class EditorCamera(private val camera: Camera) : Component(), KoinComponent {
+    private val keyListener: KeyListener by inject()
+
     private val clickOrigin = Vector2f()
     private var dragDebounce = 0.032f
     private val dragSensitivity = 30f
@@ -36,7 +40,7 @@ class EditorCamera(private val camera: Camera) : Component() {
             camera.addZoom((addValue.toFloat() * -sign(MouseListener.getScrollY())))
         }
 
-        if (KeyListener.isKeyPressed(GLFW_KEY_HOME)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_HOME)) {
             reset = true
         }
 

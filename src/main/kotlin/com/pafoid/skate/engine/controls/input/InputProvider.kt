@@ -4,9 +4,11 @@ import com.pafoid.skate.engine.controls.listeners.JoystickListener
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import org.lwjgl.glfw.GLFW.*
 
-class InputProvider(private val joystickListener: JoystickListener) : IInputProvider {
-    override fun isKeyPressed(key: Int): Boolean = KeyListener.isKeyPressed(key)
-    override fun keyBeginPress(key: Int): Boolean = KeyListener.keyBeginPress(key)
+class InputProvider(
+    private val joystickListener: JoystickListener,
+    private val keyListener: KeyListener, ) : IInputProvider {
+    override fun isKeyPressed(key: Int): Boolean = keyListener.isKeyPressed(key)
+    override fun keyBeginPress(key: Int): Boolean = keyListener.keyBeginPress(key)
     override fun isJoystickPresent(jid: Int): Boolean = joystickListener.isJoystickPresent(jid)
     override fun getAxes(jid: Int): FloatArray? = joystickListener.getAxes(jid)
     override fun getButtons(jid: Int): BooleanArray? = joystickListener.getButtons(jid)
