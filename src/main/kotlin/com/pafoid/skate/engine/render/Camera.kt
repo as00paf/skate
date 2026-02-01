@@ -34,6 +34,7 @@ class Camera(
     private val inputProvider: IInputProvider by inject()
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
+    private val sceneManager: SceneManager by inject()
 
     var fov = 45f
     var nearPlane = 0.1f
@@ -145,7 +146,7 @@ class Camera(
     }
 
     private fun handleClipping(from: Vector3f, to: Vector3f): Vector3f {
-        val scene = SceneManager.getCurrentScene()
+        val scene = sceneManager.currentScene
         if (scene != null) {
             val results = scene.physics3d.rayTest(from, to)
             if (results.isNotEmpty()) {

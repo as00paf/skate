@@ -4,10 +4,14 @@ import com.pafoid.skate.engine.scenes.SceneManager
 import imgui.ImGui
 import org.joml.Vector2f
 import org.joml.Vector4f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
-class MouseListener {
+class MouseListener: KoinComponent {
+    private val sceneManager: SceneManager by inject()
+
     private var scrollX: Double = 0.0
     private var scrollY: Double = 0.0
     private var xPos: Double = 0.0
@@ -102,7 +106,7 @@ class MouseListener {
         var currentY: Float = getY() - gameViewportPos.y
         currentY = 2.0f * (1.0f - currentY / gameViewportSize.y) - 1
 
-        val camera = SceneManager.getCurrentScene()?.camera ?: return Vector2f()
+        val camera = sceneManager.currentScene?.camera ?: return Vector2f()
         val tmp = Vector4f(currentX, currentY, 0f, 1f)
         val inverseView = camera.getInverseView()
         val inverseProjection = camera.getInverseProjection()

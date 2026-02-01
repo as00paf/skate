@@ -24,6 +24,7 @@ import kotlin.getValue
 class SceneManager : KoinComponent {
 
     private val resourceManager: ResourceManager by inject()
+    private val keyListener: KeyListener by inject()
     private val logger: LoggerService by inject()
     private var selectedGameObject: GameObject? = null
 
@@ -112,11 +113,11 @@ class SceneManager : KoinComponent {
     }
 
     private fun handleEditorShortcuts(dt: Float, imguiLayer: ImGuiLayer) {
-        val ctrlDown = KeyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || KeyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
+        val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
         if (ctrlDown) {
             // Copy
-            if (KeyListener.keyBeginPress(GLFW.GLFW_KEY_C)) {
+            if (keyListener.keyBeginPress(GLFW.GLFW_KEY_C)) {
                 val selected = getSelectedGameObject()
                 if (selected != null) {
                     ClipboardService.copy(selected)
@@ -124,7 +125,7 @@ class SceneManager : KoinComponent {
                 }
             }
             // Cut
-            else if (KeyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
+            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
                 val selected = getSelectedGameObject()
                 if (selected != null) {
                     val destroyedObject = ClipboardService.cut(selected)
@@ -134,7 +135,7 @@ class SceneManager : KoinComponent {
                 }
             }
             // Paste
-            else if (KeyListener.keyBeginPress(GLFW.GLFW_KEY_V)) {
+            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_V)) {
                 val clonedGameObject = ClipboardService.paste()
                 if (clonedGameObject != null) {
                     // Add to scene at origin for now

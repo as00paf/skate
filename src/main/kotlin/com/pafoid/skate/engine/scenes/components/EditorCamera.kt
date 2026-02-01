@@ -38,15 +38,15 @@ class EditorCamera(private val camera: Camera) : Component(), KoinComponent {
         }
 
         // Panning Logic
-        if (MouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_MIDDLE)) {
+        if (mouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_MIDDLE)) {
             isPanning = true
-        } else if (!MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
+        } else if (!mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
             isPanning = false
         }
 
         if (isPanning) {
-            val worldDeltaX = MouseListener.getWorldDx()
-            val worldDeltaY = MouseListener.getWorldDy()
+            val worldDeltaX = mouseListener.getWorldDx()
+            val worldDeltaY = mouseListener.getWorldDy()
 
             // Translate camera position by the world delta scaled by sensitivity.
             camera.position.x -= worldDeltaX * dragSensitivity
