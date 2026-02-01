@@ -16,6 +16,7 @@ object Assets {
 
         const val XBOX_CONTROLLER = "assets/textures/xbox_controller.png"
 
+        const val DEFAULT = "assets/textures/default.png"
         const val WHITE = "assets/textures/white.png"
         const val ASPHALT = "assets/textures/asphalt.png"
         const val CONCRETE_SIMPLE = "assets/textures/concrete_simple.png"
