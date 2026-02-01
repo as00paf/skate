@@ -173,16 +173,16 @@
   - [x] **Prefabs Tab**: List saved `.json` entity templates.
 
 ## 18.4. Game Viewport & Toolbar
-- [ ] **External Toolbar**: Move buttons from inside the viewport to a dedicated toolbar strip in the top of the game viewport with the buttons centered. Don't change the dockspace if you don't need to.
-- [ ] **Icon-Only Buttons**:
-  - [ ] Replace text labels with icons (using FontAwesome or high-res textures).
-  - [ ] Add tooltips for every button (on hover).
-- [ ] **New Features & Keybinds**:
-  - [ ] **Reset Scene**: Full scene reload/re-initialization.
-  - [ ] **Pause**: Toggle engine time scale ($0.0$ vs $1.0$).
-  - [ ] **Screenshot**: Capture frame buffer to PNG. Save to screenshots folder and show a popup asking the user if he wants to open the screenshot or its containing folder.
-  - [ ] **Physics Toggle**: Move the debug wireframe toggle here and make it a toggle button.
-  - [ ] **Maximize Viewport (F12)**: Toggle between "Editor Layout" and "Fullscreen Viewport" mode. Make sure to use the right method so its not triggered multiple times.
+- [x] **External Toolbar**: Move buttons from inside the viewport to a dedicated toolbar strip in the top of the game viewport with the buttons centered. Don't change the dockspace if you don't need to.
+- [x] **Icon-Only Buttons**:
+  - [x] Replace text labels with icons (using FontAwesome or high-res textures).
+  - [x] Add tooltips for every button (on hover).
+- [x] **New Features & Keybinds**:
+  - [x] **Reset Scene**: Full scene reload/re-initialization.
+  - [x] **Pause**: Toggle engine time scale ($0.0$ vs $1.0$).
+  - [x] **Screenshot**: Capture frame buffer to PNG. Save to screenshots folder and show a popup asking the user if he wants to open the screenshot or its containing folder.
+  - [x] **Physics Toggle**: Move the debug wireframe toggle here and make it a toggle button.
+  - [x] **Maximize Viewport (F12)**: Toggle between "Editor Layout" and "Fullscreen Viewport" mode. Make sure to use the right method so its not triggered multiple times.
 
 ## 18.5. Interaction & Shortcuts
 - [ ] **Middle-Mouse Pan**: Implement `View Panning` in the editor camera. Pressing **MMB** + Mouse move shifts the camera on its local Up/Right axes. Ensure mouse capture works as expected.
@@ -191,11 +191,11 @@
   - [ ] **Ctrl + Z / Y**: Fully implement a Undo/Redo stack for Transform changes and object deletions.
 
 # 🔧 19. Physics Implementation Fixes (Deferred)
-- [ ] **Task 18.1: Friction Propagation**: Fix `RigidBody3D` to ensure the `friction` property is correctly applied to the Bullet `rawBody` during initialization and runtime updates.
-- [ ] **Task 18.2: Rolling Resistance**: Implement `linearDamping` logic in `RigidBody3D` to satisfy the `rollResistance` test.
-- [ ] **Task 18.3: Steering Geometry**: Implement local-space steering forces in `SkateboardPhysics` to translate board lean (roll) into actual turning (yaw).
-- [ ] **Task 18.4: Fixed Timestep Integration**: Implement an accumulator-based fixed timestep loop in `Engine` or `Physics3D` to ensure deterministic physics regardless of render framerate.
-- [ ] **Task 18.5: Unit Tests**: Fix and add missing physics unit tests.
+- [ ] **Task 19.1: Friction Propagation**: Fix `RigidBody3D` to ensure the `friction` property is correctly applied to the Bullet `rawBody` during initialization and runtime updates.
+- [ ] **Task 19.2: Rolling Resistance**: Implement `linearDamping` logic in `RigidBody3D` to satisfy the `rollResistance` test.
+- [ ] **Task 19.3: Steering Geometry**: Implement local-space steering forces in `SkateboardPhysics` to translate board lean (roll) into actual turning (yaw).
+- [ ] **Task 19.4: Fixed Timestep Integration**: Implement an accumulator-based fixed timestep loop in `Engine` or `Physics3D` to ensure deterministic physics regardless of render framerate.
+- [ ] **Task 19.5: Unit Tests**: Fix and add missing physics unit tests.
 
 # 🌍 20. Localization & String Management System (i18n)
 
