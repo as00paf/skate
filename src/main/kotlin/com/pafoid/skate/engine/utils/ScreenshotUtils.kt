@@ -38,7 +38,7 @@ object ScreenshotUtils {
         if (stbi_write_png(filePath, width, height, 4, flippedPixels, width * 4)) {
             showScreenshotPopup(filePath)
         } else {
-            TinyFileDialogs.tinyfd_messageBox("Screenshot Failed", "Failed to save screenshot.", "ok", "error", 1)
+            TinyFileDialogs.tinyfd_messageBox("Screenshot Failed", "Failed to save screenshot.", "ok", "error", true)
         }
     }
 
