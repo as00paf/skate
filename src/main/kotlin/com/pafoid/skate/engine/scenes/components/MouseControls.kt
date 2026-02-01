@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.sun.tools.sjavac.Main.go
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
@@ -39,54 +40,57 @@ class MouseControls : Component(), KoinComponent {
     override fun editorUpdate(dt: Float) {
         debounce -= dt
 
-        holdingObject?.let { go ->
-            val tile = go.getComponent<ModularTile>()
-            val worldPos = mouseListener.getWorld()
-            
-            val snapX = tile?.size?.x ?: gridWidth
-            val snapY = tile?.size?.y ?: gridHeight
-            
-            val x = (floor(worldPos.x / snapX) * snapX) + snapX / 2f
-            val y = (floor(worldPos.y / snapY) * snapY) + snapY / 2f
-            
-            go.transform.translation.x = x
-            go.transform.translation.y = y
+        val go = holdingObject
+        if(go != null){
+            handleGameObject(go)
+        } else if (!mouseListener.isDragging() && mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
+            val x = mouseListener.getScreenX().toInt()
+            val y = mouseListener.getScreenY().toInt()
 
-            if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
-                place()
-                debounce = debounceTime
-            }
+            val pickedId = sceneManager.getPickedId(x, y)
+            val selectedObject = sceneManager.getObjectById(pickedId)
 
-            if (keyListener.isKeyPressed(GLFW_KEY_ESCAPE)) {
-                go.destroy()
-                holdingObject = null
-            }
-        } ?: run {
-            if (!mouseListener.isDragging() && mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
-                val x = mouseListener.getScreenX().toInt()
-                val y = mouseListener.getScreenY().toInt()
-                
-                val pickedId = sceneManager.getPickedId(x, y)
-                val selectedObject = sceneManager.getObjectById(pickedId)
-
-                if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
-                    Window.getImGuiLayer().propertiesWindow.setActiveObject(selectedObject)
-                    Window.getImGuiLayer().boneTreeWindow.setActiveObject(selectedObject) // Also set for bone tree
+            if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
+                Window.getImGuiLayer().propertiesWindow.setActiveObject(selectedObject)
+                Window.getImGuiLayer().boneTreeWindow.setActiveObject(selectedObject) // Also set for bone tree
+            } else {
+                Window.getImGuiLayer().propertiesWindow.setActiveObject(null)
+                val bone = sceneManager.getJointById(pickedId)
+                if (bone != null) {
+                    // A bone was selected, find which GO it belongs to
+                    val skater = sceneManager.currentScene?.gameObjects?.find { it.getComponent<com.pafoid.skate.engine.animation.PoseGizmo>() != null }
+                    Window.getImGuiLayer().boneTreeWindow.setActiveObject(skater)
+                    Window.getImGuiLayer().boneTreeWindow.setSelectedBone(bone)
                 } else {
-                    Window.getImGuiLayer().propertiesWindow.setActiveObject(null)
-                    val bone = sceneManager.getJointById(pickedId)
-                    if (bone != null) {
-                        // A bone was selected, find which GO it belongs to
-                        val skater = sceneManager.currentScene?.gameObjects?.find { it.getComponent<com.pafoid.skate.engine.animation.PoseGizmo>() != null }
-                        Window.getImGuiLayer().boneTreeWindow.setActiveObject(skater)
-                        Window.getImGuiLayer().boneTreeWindow.setSelectedBone(bone)
-                    } else {
-                        Window.getImGuiLayer().boneTreeWindow.setActiveObject(null)
-                    }
+                    Window.getImGuiLayer().boneTreeWindow.setActiveObject(null)
                 }
-                
-                debounce = debounceTime
             }
+
+            debounce = debounceTime
+        }
+    }
+
+    private fun handleGameObject(go: GameObject) {
+        val tile = go.getComponent<ModularTile>()
+        val worldPos = mouseListener.getWorld()
+
+        val snapX = tile?.size?.x ?: gridWidth
+        val snapY = tile?.size?.y ?: gridHeight
+
+        val x = (floor(worldPos.x / snapX) * snapX) + snapX / 2f
+        val y = (floor(worldPos.y / snapY) * snapY) + snapY / 2f
+
+        go.transform.translation.x = x
+        go.transform.translation.y = y
+
+        if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
+            place()
+            debounce = debounceTime
+        }
+
+        if (keyListener.isKeyPressed(GLFW_KEY_ESCAPE)) {
+            go.destroy()
+            holdingObject = null
         }
     }
 }
