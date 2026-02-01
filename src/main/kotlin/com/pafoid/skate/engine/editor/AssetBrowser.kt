@@ -157,15 +157,20 @@ class AssetBrowser : KoinComponent {
              }
         }
 
+        // Flip UVs for direct texture rendering (stb_image loads top-down usually, but OpenGL expects bottom-up)
+        // For FBOs (Models), we usually render them correctly for the quad.
+        val uv0Y = if (type == "TEXTURE") 0f else 1f
+        val uv1Y = if (type == "TEXTURE") 1f else 0f
+
         ImGui.pushID(file.absolutePath)
-        if (ImGui.imageButton("FileItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
+        if (ImGui.imageButton("FileItem", texId.toLong(), size, size, 0f, uv0Y, 1f, uv1Y)) {
             // On Click
         }
         ImGui.popID()
         
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("ASSET_$type", file.path)
-            ImGui.image(texId.toLong(), 64f, 64f, 0f, 1f, 1f, 0f)
+            ImGui.image(texId.toLong(), 64f, 64f, 0f, uv0Y, 1f, uv1Y)
             ImGui.text(file.name)
             ImGui.endDragDropSource()
         }
