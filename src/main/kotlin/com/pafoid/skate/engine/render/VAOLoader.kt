@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.models.RawModel
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30.*
@@ -12,7 +11,6 @@ class VAOLoader {
     private val vaos = mutableListOf<Int>()
     private val vbos = mutableListOf<Int>()
     private val vaoVboMap = mutableMapOf<Int, MutableList<Int>>()
-    private val textures = mutableListOf<Int>()
 
     fun loadToVAO(
         positions: FloatArray, 
@@ -100,13 +98,6 @@ class VAOLoader {
         return vaoId
     }
 
-    fun loadTexture(fileName: String):Int {
-        val id = AssetPool.getTexture(fileName).texId
-        textures.add(id)
-
-        return id
-    }
-
     private fun storeDataInAttribList(attributeNumber: Int, coordinateSize: Int, data: FloatArray): Int {
         val vboId = glGenBuffers()
         vbos.add(vboId)
@@ -148,10 +139,8 @@ class VAOLoader {
     fun cleanUp() {
         vaos.forEach { glDeleteVertexArrays(it) }
         vbos.forEach { glDeleteBuffers(it) }
-        textures.forEach { glDeleteTextures(it) }
         vaos.clear()
         vbos.clear()
-        textures.clear()
         vaoVboMap.clear()
     }
 

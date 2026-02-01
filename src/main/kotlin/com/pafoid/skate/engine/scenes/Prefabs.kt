@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.scenes
 
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ObjLoader
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Sprite
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.entities.Entity
@@ -11,8 +11,12 @@ import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.components.ModularTile
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-object Prefabs {
+object Prefabs : KoinComponent {
+
+    private val resourceManager: ResourceManager by inject()
 
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
         val scene = SceneManager.getCurrentScene() ?: throw IllegalStateException("No active scene")
@@ -49,8 +53,8 @@ object Prefabs {
         go.addComponent(tile)
 
         // We use a cube as the base model for tiles
-        val loader = VAOLoader() // Inefficient to create here, but for now...
-        val cubeModel = AssetPool.getRawModel(Assets.Models.CUBE, loader)
+        val loader = resourceManager.getVAOLoader() 
+        val cubeModel = resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel
 
         val texturedModel = TexturedModel(cubeModel, texture)
         val entity = Entity(texturedModel)

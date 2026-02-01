@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.editor
 
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.ShaderConst.Attribs
@@ -63,7 +62,7 @@ class ThumbnailCache: KoinComponent {
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
 
-        val shader = AssetPool.resourceManager.loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
+        val shader = resourceManager.loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
         shader.start()
         
         // Setup simple matrices
@@ -90,7 +89,7 @@ class ThumbnailCache: KoinComponent {
             rawModel.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
             
             glActiveTexture(GL_TEXTURE0)
-            material.baseColorTexture?.bind() ?: AssetPool.getTexture(Assets.Textures.WHITE).bind()
+            material.baseColorTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.WHITE).bind()
             shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, 0)
             shader.uploadVec4f(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
             

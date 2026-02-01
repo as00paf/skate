@@ -2,14 +2,16 @@ package com.pafoid.skate.engine.entities
 
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.animation.Skeleton
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.utils.MImGui
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 @Serializable
 class Entity(
@@ -19,13 +21,21 @@ class Entity(
     var reflectivity: Float = 1f,
     var textureScale: Float = 1.0f,
     @Transient val onTick: (dt:Float) -> Unit = {}
-): Component() {
+): Component(), KoinComponent {
+
+    @Transient
+    lateinit var resourceManager: ResourceManager
 
     @Transient var skeleton: Skeleton? = null
         private set
 
     init {
         skeleton = model.skeleton?.copy()
+        // Inject dependencies manually if needed, or rely on external injection
+        // Since it's a KoinComponent, we can use get() if not using inject delegate
+        if (!this::resourceManager.isInitialized) {
+            resourceManager = org.koin.core.context.GlobalContext.get().get()
+        }
     }
 
     override fun update(dt: Float) {
@@ -60,7 +70,7 @@ class Entity(
                     val mat = part.material
 
                     // Texture Display
-                    val tex = mat.baseColorTexture ?: AssetPool.getTexture(Assets.Textures.WHITE)
+                    val tex = mat.baseColorTexture ?: resourceManager.loadTextureSync(Assets.Textures.WHITE)
                     imgui.ImGui.text("Base Texture: ${mat.baseColorPath ?: "Embedded/Generated"}")
                     imgui.ImGui.image(tex.texId.toLong(), 64f, 64f, 0f, 1f, 1f, 0f)
 

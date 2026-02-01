@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.models
 
 import com.pafoid.skate.engine.animation.Animation
 import com.pafoid.skate.engine.animation.Skeleton
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.scenes.components.Component
@@ -54,5 +53,5 @@ data class TexturedModel (
     
     // For backward compatibility
     val rawModel: RawModel get() = parts[0].rawModel
-    val texture: Texture get() = parts[0].material.baseColorTexture ?: AssetPool.getTexture(Assets.Textures.WHITE)
+    val texture: Texture? get() = parts[0].material.baseColorTexture
 }

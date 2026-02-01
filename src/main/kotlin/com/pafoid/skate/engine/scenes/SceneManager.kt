@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.scenes
 import com.pafoid.skate.engine.EngineState
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.Window
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
@@ -23,6 +22,7 @@ class SceneManager : KoinComponent {
 
     private val resourceManager: ResourceManager by inject()
 
+    // TODO: remove
     companion object {
         fun get(): SceneManager = (object : KoinComponent {}).get()
 

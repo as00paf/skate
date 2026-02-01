@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.editor
 
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants
 import com.pafoid.skate.engine.controls.listeners.JoystickListener
@@ -10,12 +10,16 @@ import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
 import org.joml.Vector2f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
 import kotlin.math.min
 
-class GamepadOverlay {
+class GamepadOverlay : KoinComponent {
+    private val resourceManager: ResourceManager by inject()
+    
     private val controllerTexture: Texture by lazy {
-        AssetPool.getTexture(Assets.Textures.XBOX_CONTROLLER)
+        resourceManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER)
     }
 
     fun imgui(gameViewPos: Vector2f, gameViewSize: Vector2f) {

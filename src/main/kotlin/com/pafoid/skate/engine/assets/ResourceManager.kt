@@ -1,11 +1,11 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.models.MeshPart
-import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.editor.logs.LoggerService
+import com.pafoid.skate.engine.editor.logs.LogLevel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -14,7 +14,8 @@ import java.util.concurrent.ConcurrentHashMap
 class ResourceManager(
     private val shaderLoader: ShaderLoader = ShaderLoader(false),
     private val assimpLoader: AssimpLoader = AssimpLoader(),
-    private val objLoader: ObjLoader = ObjLoader()
+    private val objLoader: ObjLoader = ObjLoader(),
+    private val logger: LoggerService? = null
 ) {
 
     private val textures = ConcurrentHashMap<String, Texture>()
@@ -36,7 +37,18 @@ class ResourceManager(
         textures[absolutePath]?.let { return it }
 
         val data = withContext(Dispatchers.IO) {
-            Texture.loadData(path) ?: throw RuntimeException("Failed to load texture: $path")
+            try {
+                Texture.loadData(path)
+            } catch (e: Exception) {
+                logger?.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
+                null
+            }
+        }
+
+        if (data == null) {
+            logger?.logEngine("Texture not found: $path. Loading default WHITE texture.", LogLevel.ERROR)
+            if (path == Assets.Textures.WHITE) throw RuntimeException("Critical Error: Default WHITE texture not found!")
+            return loadTexture(Assets.Textures.WHITE)
         }
 
         return withContext(JobSystem.Main) {
@@ -55,7 +67,19 @@ class ResourceManager(
         
         textures[absolutePath]?.let { return it }
 
-        val data = Texture.loadData(path) ?: throw RuntimeException("Failed to load texture: $path")
+        val data = try {
+            Texture.loadData(path)
+        } catch (e: Exception) {
+            logger?.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
+            null
+        }
+
+        if (data == null) {
+            logger?.logEngine("Texture not found: $path. Loading default WHITE texture.", LogLevel.ERROR)
+            if (path == Assets.Textures.WHITE) throw RuntimeException("Critical Error: Default WHITE texture not found!")
+            return loadTextureSync(Assets.Textures.WHITE)
+        }
+
         val texture = Texture()
         texture.uploadToGPU(data) // Must be called on GL thread
         data.free()
@@ -76,10 +100,17 @@ class ResourceManager(
 
         shaders[absolutePath]?.let { return it }
 
-        return withContext(JobSystem.Main) {
-            val shader = shaderLoader.loadShader(path)
-            shaders[absolutePath] = shader
-            shader
+        return try {
+            withContext(JobSystem.Main) {
+                val shader = shaderLoader.loadShader(path)
+                shaders[absolutePath] = shader
+                shader
+            }
+        } catch (e: Exception) {
+            logger?.logEngine("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
+            if (path == Assets.Shaders.SHADER_3D_DEFAULT) throw RuntimeException("Critical Error: Default 3D shader not found!")
+            logger?.logEngine("Loading default 3D shader instead of $path", LogLevel.ERROR)
+            loadShader(Assets.Shaders.SHADER_3D_DEFAULT)
         }
     }
 
@@ -89,13 +120,42 @@ class ResourceManager(
 
         shaders[absolutePath]?.let { return it }
 
-        val shader = shaderLoader.loadShader(path)
-        shaders[absolutePath] = shader
-        return shader
+        return try {
+            val shader = shaderLoader.loadShader(path)
+            shaders[absolutePath] = shader
+            shader
+        } catch (e: Exception) {
+            logger?.logEngine("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
+            if (path == Assets.Shaders.SHADER_3D_DEFAULT) throw RuntimeException("Critical Error: Default 3D shader not found!")
+            logger?.logEngine("Loading default 3D shader instead of $path", LogLevel.ERROR)
+            loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
+        }
     }
     
     fun getShader(path: String): Shader? {
         return shaders[File(path).absolutePath]
+    }
+
+    // --- Sound Loading ---
+
+    fun loadSound(path: String, loops: Boolean): Sound {
+        val file = File(path)
+        val absolutePath = file.absolutePath
+
+        sounds[absolutePath]?.let { return it }
+
+        return try {
+            val sound = Sound(absolutePath, loops)
+            sounds[absolutePath] = sound
+            sound
+        } catch (e: Exception) {
+            logger?.logEngine("Failed to load sound: $path. Error: ${e.message}", LogLevel.ERROR)
+            throw e // Sounds might not have a good default fallback yet
+        }
+    }
+
+    fun getSound(path: String): Sound? {
+        return sounds[File(path).absolutePath]
     }
 
     // --- Model Loading ---
@@ -106,67 +166,74 @@ class ResourceManager(
 
         models[absolutePath]?.let { return it }
 
-        return if (path.lowercase().endsWith(".obj")) {
-            withContext(JobSystem.Main) {
-                val rawModel = objLoader.loadObjModel(path, vaoLoader)
-                val whiteTex = loadTexture(Assets.Textures.WHITE) 
-                val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = whiteTex), emptyList()))
-                val model = TexturedModel(parts)
-                models[absolutePath] = model
-                model
-            }
-        } else {
-             val preLoaded = withContext(Dispatchers.IO) {
-                 assimpLoader.preLoadModel(path)
-             }
+        return try {
+            if (path.lowercase().endsWith(".obj")) {
+                withContext(JobSystem.Main) {
+                    val rawModel = objLoader.loadObjModel(path, vaoLoader)
+                    val whiteTex = loadTexture(Assets.Textures.WHITE) 
+                    val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = whiteTex), emptyList()))
+                    val model = TexturedModel(parts)
+                    models[absolutePath] = model
+                    model
+                }
+            } else {
+                 val preLoaded = withContext(Dispatchers.IO) {
+                     assimpLoader.preLoadModel(path)
+                 }
 
-             val textureDataMap = mutableMapOf<String, TextureData>()
-             withContext(Dispatchers.IO) {
-                 preLoaded.parts.forEach { part ->
-                     listOfNotNull(part.material.baseColorPath, part.material.normalMapPath, 
-                        part.material.metallicRoughnessPath, part.material.aoPath, part.material.emissivePath).forEach { texPath ->
-                        if (!textureDataMap.containsKey(texPath)) {
-                            val buffer = part.embeddedTextures[texPath]
-                            val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(texPath)
-                            if (data != null) textureDataMap[texPath] = data
-                        }
+                 val textureDataMap = mutableMapOf<String, TextureData>()
+                 withContext(Dispatchers.IO) {
+                     preLoaded.parts.forEach { part ->
+                         listOfNotNull(part.material.baseColorPath, part.material.normalMapPath, 
+                            part.material.metallicRoughnessPath, part.material.aoPath, part.material.emissivePath).forEach { texPath ->
+                            if (!textureDataMap.containsKey(texPath)) {
+                                val buffer = part.embeddedTextures[texPath]
+                                val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(texPath)
+                                if (data != null) textureDataMap[texPath] = data
+                            }
+                         }
                      }
                  }
-             }
 
-             withContext(JobSystem.Main) {
-                 val parts = preLoaded.parts.map { p ->
-                     val model = vaoLoader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
-                     
-                     val mat = p.material
-                     fun getOrCreateTex(texPath: String?): Texture? {
-                         if (texPath == null) return null
-                         val absTexPath = File(texPath).absolutePath
-                         if (textures.containsKey(absTexPath)) return textures[absTexPath]
+                 withContext(JobSystem.Main) {
+                     val parts = preLoaded.parts.map { p ->
+                         val model = vaoLoader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
                          
-                         val data = textureDataMap[texPath] ?: return null
-                         val tex = Texture()
-                         tex.uploadToGPU(data)
-                         tex.filePath = texPath
-                         textures[absTexPath] = tex
-                         return tex
+                         val mat = p.material
+                         fun getOrCreateTex(texPath: String?): Texture? {
+                             if (texPath == null) return null
+                             val absTexPath = File(texPath).absolutePath
+                             if (textures.containsKey(absTexPath)) return textures[absTexPath]
+                             
+                             val data = textureDataMap[texPath] ?: return null
+                             val tex = Texture()
+                             tex.uploadToGPU(data)
+                             tex.filePath = texPath
+                             textures[absTexPath] = tex
+                             return tex
+                         }
+
+                         mat.baseColorTexture = getOrCreateTex(mat.baseColorPath)
+                         mat.normalMap = getOrCreateTex(mat.normalMapPath)
+                         mat.metallicRoughnessTexture = getOrCreateTex(mat.metallicRoughnessPath)
+                         mat.aoTexture = getOrCreateTex(mat.aoPath)
+                         mat.emissiveTexture = getOrCreateTex(mat.emissivePath)
+
+                         MeshPart(model, mat, p.inverseBindMatrices)
                      }
+                     
+                     textureDataMap.values.forEach { it.free() }
 
-                     mat.baseColorTexture = getOrCreateTex(mat.baseColorPath)
-                     mat.normalMap = getOrCreateTex(mat.normalMapPath)
-                     mat.metallicRoughnessTexture = getOrCreateTex(mat.metallicRoughnessPath)
-                     mat.aoTexture = getOrCreateTex(mat.aoPath)
-                     mat.emissiveTexture = getOrCreateTex(mat.emissivePath)
-
-                     MeshPart(model, mat, p.inverseBindMatrices)
+                     val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
+                     models[absolutePath] = texturedModel
+                     texturedModel
                  }
-                 
-                 textureDataMap.values.forEach { it.free() }
-
-                 val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
-                 models[absolutePath] = texturedModel
-                 texturedModel
-             }
+            }
+        } catch (e: Exception) {
+            logger?.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
+            if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
+            logger?.logEngine("Loading default CUBE model instead of $path", LogLevel.ERROR)
+            loadModel(Assets.Models.CUBE)
         }
     }
     
@@ -176,53 +243,60 @@ class ResourceManager(
 
         models[absolutePath]?.let { return it }
         
-        // Synchronous loading (blocking)
-        if (path.lowercase().endsWith(".obj")) {
-            val rawModel = objLoader.loadObjModel(path, vaoLoader)
-            val whiteTex = loadTextureSync(Assets.Textures.WHITE) 
-            val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = whiteTex), emptyList()))
-            val model = TexturedModel(parts)
-            models[absolutePath] = model
-            return model
-        } else {
-             val preLoaded = assimpLoader.preLoadModel(path)
-             
-             // Process immediately
-             val parts = preLoaded.parts.map { p ->
-                 val model = vaoLoader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
+        return try {
+            // Synchronous loading (blocking)
+            if (path.lowercase().endsWith(".obj")) {
+                val rawModel = objLoader.loadObjModel(path, vaoLoader)
+                val whiteTex = loadTextureSync(Assets.Textures.WHITE) 
+                val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = whiteTex), emptyList()))
+                val model = TexturedModel(parts)
+                models[absolutePath] = model
+                model
+            } else {
+                 val preLoaded = assimpLoader.preLoadModel(path)
                  
-                 val mat = p.material
-                 fun getOrCreateTexSync(texPath: String?): Texture? {
-                     if (texPath == null) return null
-                     val absTexPath = File(texPath).absolutePath
-                     if (textures.containsKey(absTexPath)) return textures[absTexPath]
+                 // Process immediately
+                 val parts = preLoaded.parts.map { p ->
+                     val model = vaoLoader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
                      
-                     val buffer = p.embeddedTextures[texPath]
-                     val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(texPath)
-                     
-                     if (data != null) {
-                         val tex = Texture()
-                         tex.uploadToGPU(data)
-                         tex.filePath = texPath
-                         data.free()
-                         textures[absTexPath] = tex
-                         return tex
+                     val mat = p.material
+                     fun getOrCreateTexSync(texPath: String?): Texture? {
+                         if (texPath == null) return null
+                         val absTexPath = File(texPath).absolutePath
+                         if (textures.containsKey(absTexPath)) return textures[absTexPath]
+                         
+                         val buffer = p.embeddedTextures[texPath]
+                         val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(texPath)
+                         
+                         if (data != null) {
+                             val tex = Texture()
+                             tex.uploadToGPU(data)
+                             tex.filePath = texPath
+                             data.free()
+                             textures[absTexPath] = tex
+                             return tex
+                         }
+                         return null
                      }
-                     return null
+
+                     mat.baseColorTexture = getOrCreateTexSync(mat.baseColorPath)
+                     mat.normalMap = getOrCreateTexSync(mat.normalMapPath)
+                     mat.metallicRoughnessTexture = getOrCreateTexSync(mat.metallicRoughnessPath)
+                     mat.aoTexture = getOrCreateTexSync(mat.aoPath)
+                     mat.emissiveTexture = getOrCreateTexSync(mat.emissivePath)
+
+                     MeshPart(model, mat, p.inverseBindMatrices)
                  }
 
-                 mat.baseColorTexture = getOrCreateTexSync(mat.baseColorPath)
-                 mat.normalMap = getOrCreateTexSync(mat.normalMapPath)
-                 mat.metallicRoughnessTexture = getOrCreateTexSync(mat.metallicRoughnessPath)
-                 mat.aoTexture = getOrCreateTexSync(mat.aoPath)
-                 mat.emissiveTexture = getOrCreateTexSync(mat.emissivePath)
-
-                 MeshPart(model, mat, p.inverseBindMatrices)
-             }
-
-             val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
-             models[absolutePath] = texturedModel
-             return texturedModel
+                 val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
+                 models[absolutePath] = texturedModel
+                 texturedModel
+            }
+        } catch (e: Exception) {
+            logger?.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
+            if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
+            logger?.logEngine("Loading default CUBE model instead of $path", LogLevel.ERROR)
+            loadModelSync(Assets.Models.CUBE)
         }
     }
     
@@ -270,7 +344,12 @@ class ResourceManager(
         val shaderKeys = shaders.keys.toList()
         shaderKeys.forEach { unloadShader(it) }
         
-        sounds.clear() // TODO: Sound cleanup
+        // Sound cleanup
+        sounds.values.forEach { 
+            it.stop()
+            it.delete()
+        }
+        sounds.clear()
     }
     
     fun getVAOLoader() = vaoLoader

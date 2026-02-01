@@ -2,24 +2,22 @@ package com.pafoid.skate.engine.scenes.editor
 
 import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.animation.PoseGizmo
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ObjLoader
-import com.pafoid.skate.engine.assets.Texture
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.physics3d.BodyType
-import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
-import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.*
 import com.pafoid.skate.engine.physics3d.components.*
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class LevelEditorSceneInitializer: SceneInitializer() {
-    private val loader = VAOLoader()
+class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
+    private val resourceManager: ResourceManager by inject()
     private var currentScene: Scene? = null
     private lateinit var editorStuff: GameObject
 
@@ -52,7 +50,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         skateGo.transform.translation.set(0f, 2f, 0f)
         skateGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
         skateGo.addComponent(Entity(
-            model = AssetPool.getModel(Assets.Models.SKATEBOARD_GLB, loader)
+            model = resourceManager.loadModelSync(Assets.Models.SKATEBOARD_GLB)
         ))
         skateGo.addComponent(RigidBody3D(1.8f).apply { friction = 0.1f }) // 1.8kg mass
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f))) // 0.8m x 0.04m x 0.2m
@@ -71,7 +69,7 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         playerGo.transform.rotation.set(0f, 90f, 0f) // Face sideways for skating
         playerGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
         playerGo.addComponent(Entity(
-            model = AssetPool.getModel(Assets.Models.JAMES, loader)
+            model = resourceManager.loadModelSync(Assets.Models.JAMES)
         ))
         playerGo.addComponent(Animator())
         playerGo.addComponent(PoseGizmo())
@@ -81,8 +79,8 @@ class LevelEditorSceneInitializer: SceneInitializer() {
         val ground = GameObject("Floor")
         ground.transform.translation.set(0f, -0.5f, 0f)
         ground.transform.scale.set(100f, 0.5f, 100f)
-        val groundTex = AssetPool.getTexture(Assets.Textures.ASPHALT)
-        val groundModel = TexturedModel(AssetPool.getRawModel(Assets.Models.CUBE, loader), groundTex)
+        val groundTex = resourceManager.loadTextureSync(Assets.Textures.ASPHALT)
+        val groundModel = TexturedModel(resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel, groundTex)
         groundModel.parts[0].material.baseColorPath = Assets.Textures.ASPHALT
         
         ground.addComponent(Entity(

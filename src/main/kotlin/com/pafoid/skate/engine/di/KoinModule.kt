@@ -16,10 +16,9 @@ val engineModule = module {
     single { ShaderLoader(false) }
     single { AssimpLoader() }
     single { ObjLoader() }
-    single { ResourceManager(get(), get(), get()) }
+    single { ResourceManager(get(), get(), get(), get()) }
     single { ThumbnailCache() }
     single { SceneManager() }
-    single { DebugDraw() }
     single { DebugDraw() }
     single { PickingDraw() }
 }

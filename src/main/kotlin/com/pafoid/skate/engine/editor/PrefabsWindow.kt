@@ -1,9 +1,10 @@
 package com.pafoid.skate.engine.editor
 
 import com.jme3.bullet.collision.shapes.HullCollisionShape
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.utils.Icons
+import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
@@ -17,6 +18,7 @@ import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
+import imgui.type.ImString
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -25,10 +27,9 @@ import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
 
 class PrefabsWindow : KoinComponent {
     private val thumbnailCache: ThumbnailCache by inject()
+    private val resourceManager: ResourceManager by inject()
 
-    private val loader = VAOLoader()
-
-    private var searchText = imgui.type.ImString("")
+    private var searchText = ImString("")
 
     fun imgui() {
         ImGui.begin("Prefabs")
@@ -134,15 +135,15 @@ class PrefabsWindow : KoinComponent {
         ImGui.beginGroup()
         
         val texId = if (modelPath != null) {
-            val rawModel = AssetPool.getRawModel(modelPath, loader)
-            val texture = AssetPool.getTexture(material.texturePath)
+            val rawModel = resourceManager.loadModelSync(modelPath).parts[0].rawModel
+            val texture = resourceManager.loadTextureSync(material.texturePath)
             // Create a temporary TexturedModel for the thumbnail generator
             val model = TexturedModel(rawModel, texture)
             // Use specific ID per variant so they don't overwrite each other in cache
             val cacheId = "${modelPath}_${material.name}"
             thumbnailCache.getThumbnail(cacheId, model)
         } else {
-            AssetPool.getTexture(Assets.Textures.WHITE).texId
+            resourceManager.loadTextureSync(Assets.Textures.WHITE).texId
         }
 
         // Push ID to avoid collision if names are identical (though we made them unique with variant name)
@@ -173,16 +174,19 @@ class PrefabsWindow : KoinComponent {
     fun spawnSkateboard() {
         val scene = SceneManager.getCurrentScene() ?: return
         
-        AssetPool.getModelAsync(Assets.Models.SKATEBOARD_GLB, loader) { model ->
-            val skate = GameObject("Skateboard")
-            skate.transform.translation.set(0f, 2f, 0f)
-            skate.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
-            skate.addComponent(Entity(model = model))
-            skate.addComponent(RigidBody3D(1.8f).apply { friction = 0.1f }) // 1.8kg mass
-            skate.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f))) // 0.8m x 0.04m x 0.2m
-            skate.addComponent(SkateboardPhysics())
-            
-            scene.addGameObjectToScene(skate)
+        JobSystem.runAsync {
+            val model = resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
+            JobSystem.runOnMain {
+                val skate = GameObject("Skateboard")
+                skate.transform.translation.set(0f, 2f, 0f)
+                skate.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
+                skate.addComponent(Entity(model = model))
+                skate.addComponent(RigidBody3D(1.8f).apply { friction = 0.1f }) // 1.8kg mass
+                skate.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f))) // 0.8m x 0.04m x 0.2m
+                skate.addComponent(SkateboardPhysics())
+                
+                scene.addGameObjectToScene(skate)
+            }
         }
     }
 
@@ -191,8 +195,8 @@ class PrefabsWindow : KoinComponent {
         val tile = GameObject("Tile_${scene.gameObjects.size}")
         tile.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(Assets.Models.CUBE, loader),
-                AssetPool.getTexture(Assets.Textures.WHITE)
+                resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel,
+                resourceManager.loadTextureSync(Assets.Textures.WHITE)
             )
         ))
         tile.addComponent(com.pafoid.skate.engine.scenes.components.ModularTile())
@@ -208,8 +212,8 @@ class PrefabsWindow : KoinComponent {
         rail.transform.scale.set(1f, 1f, 1f)
         rail.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(Assets.Models.RAIL, loader),
-                AssetPool.getTexture(material.texturePath)
+                resourceManager.loadModelSync(Assets.Models.RAIL).parts[0].rawModel,
+                resourceManager.loadTextureSync(material.texturePath)
             )
         ))
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
@@ -224,8 +228,8 @@ class PrefabsWindow : KoinComponent {
         ledge.transform.scale.set(1f, 1f, 1f)
         ledge.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(Assets.Models.LEDGE, loader),
-                AssetPool.getTexture(material.texturePath)
+                resourceManager.loadModelSync(Assets.Models.LEDGE).parts[0].rawModel,
+                resourceManager.loadTextureSync(material.texturePath)
             )
         ))
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
@@ -240,13 +244,13 @@ class PrefabsWindow : KoinComponent {
         kicker.transform.scale.set(1f, 1f, 1f)
         kicker.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(Assets.Models.KICKER, loader),
-                AssetPool.getTexture(material.texturePath)
+                resourceManager.loadModelSync(Assets.Models.KICKER).parts[0].rawModel,
+                resourceManager.loadTextureSync(material.texturePath)
             )
         ))
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         
-        val kickerRawModel = AssetPool.getRawModel(Assets.Models.KICKER, loader)
+        val kickerRawModel = resourceManager.loadModelSync(Assets.Models.KICKER).parts[0].rawModel
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until kickerRawModel.vertices.size / 3) {
             jmeVertices.add(JmeVector3f(kickerRawModel.vertices[i*3], kickerRawModel.vertices[i*3+1], kickerRawModel.vertices[i*3+2]))
@@ -266,8 +270,8 @@ class PrefabsWindow : KoinComponent {
         go.transform.translation.set(position)
         go.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(Assets.Models.MANUAL_PAD, loader),
-                AssetPool.getTexture(material.texturePath)
+                resourceManager.loadModelSync(Assets.Models.MANUAL_PAD).parts[0].rawModel,
+                resourceManager.loadTextureSync(material.texturePath)
             )
         ))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
@@ -281,13 +285,13 @@ class PrefabsWindow : KoinComponent {
         go.transform.translation.set(position)
         go.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(Assets.Models.BANK, loader),
-                AssetPool.getTexture(material.texturePath)
+                resourceManager.loadModelSync(Assets.Models.BANK).parts[0].rawModel,
+                resourceManager.loadTextureSync(material.texturePath)
             )
         ))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         
-        val rawModel = AssetPool.getRawModel(Assets.Models.BANK, loader)
+        val rawModel = resourceManager.loadModelSync(Assets.Models.BANK).parts[0].rawModel
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
             jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
@@ -304,13 +308,13 @@ class PrefabsWindow : KoinComponent {
         go.transform.translation.set(position)
         go.addComponent(Entity(
             model = TexturedModel(
-                AssetPool.getRawModel(Assets.Models.QUARTER_PIPE, loader),
-                AssetPool.getTexture(material.texturePath)
+                resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).parts[0].rawModel,
+                resourceManager.loadTextureSync(material.texturePath)
             )
         ))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         
-        val rawModel = AssetPool.getRawModel(Assets.Models.QUARTER_PIPE, loader)
+        val rawModel = resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).parts[0].rawModel
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
             jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))

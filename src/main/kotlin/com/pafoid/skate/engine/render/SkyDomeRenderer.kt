@@ -1,22 +1,20 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.assets.AssetPool
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Shader
-import com.pafoid.skate.engine.assets.ShaderConst
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.scenes.Scene
 import org.joml.Matrix4f
-import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13.*
 import org.lwjgl.opengl.GL20.*
 import org.lwjgl.opengl.GL30.*
 import kotlin.math.*
 
-class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
+class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, resourceManager: ResourceManager) {
 
     private val sphere: RawModel
     private val hdriTexture: Texture
@@ -24,7 +22,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
 
     init {
         sphere = generateUVSphere(loader, 50, 50, 500f)
-        hdriTexture = AssetPool.getTexture(Assets.Textures.SKY_HDRI)
+        hdriTexture = resourceManager.loadTextureSync(Assets.Textures.SKY_HDRI)
     }
 
     private fun generateUVSphere(loader: VAOLoader, rings: Int, sectors: Int, radius: Float): RawModel {

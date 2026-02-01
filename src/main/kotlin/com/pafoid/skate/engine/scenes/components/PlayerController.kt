@@ -14,8 +14,8 @@ import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.animation.Skeleton
-import com.pafoid.skate.engine.assets.AssetPool
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_Y
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_TRIGGER
@@ -25,14 +25,16 @@ import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.render.VAOLoader
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.max
 import kotlin.math.roundToLong
 
-class PlayerController : Component() {
+class PlayerController : Component(), KoinComponent {
+    private val resourceManager: ResourceManager by inject()
     var preferredStance = Stance.REGULAR
     var pushForce = 5.0f
     var steerSpeed = 2.0f
@@ -370,8 +372,8 @@ fun updateProceduralLean(dt: Float) {
         val skater = gameObject.children.find { it.name == "Skater" }
         
         val tumbleCube = Prefabs.generateEntityObject(
-            AssetPool.getRawModel(Assets.Models.CUBE, VAOLoader()),
-            AssetPool.getTexture(Assets.Textures.WHITE),
+            resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel,
+            resourceManager.loadTextureSync(Assets.Textures.WHITE),
             "TumbleCube"
         )
         
