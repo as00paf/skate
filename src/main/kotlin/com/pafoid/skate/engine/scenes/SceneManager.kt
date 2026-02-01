@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.engine.utils.JobSystem
@@ -21,6 +22,7 @@ import kotlin.getValue
 class SceneManager : KoinComponent {
 
     private val resourceManager: ResourceManager by inject()
+    private val logger: LoggerService by inject()
 
     // TODO: remove
     companion object {
@@ -47,6 +49,7 @@ class SceneManager : KoinComponent {
     private val fadeDuration = 2f
 
     suspend fun initializeScene(imguiLayer: ImGuiLayer) = withContext(JobSystem.Main) {
+        logger.logEngine("Initializing scene...")
         splashScreenManager.init()
         delay(10)
         engineState.set(EngineState.LOADING)
@@ -59,9 +62,11 @@ class SceneManager : KoinComponent {
 
         changeScene(LevelEditorSceneInitializer(), true)
         Window.show()
+        logger.logEngine("Scene initialization complete.")
     }
 
     private suspend fun initRenderSystem() {
+        logger.logEngine("Initializing render system...")
         splashScreenManager.increaseLoadingProgress("Initializing Render System...")
         val shaders = listOf<suspend ()->Unit>(
             { shader3D = resourceManager.loadShader(Assets.Shaders.SHADER_3D_DEFAULT) },
@@ -73,7 +78,9 @@ class SceneManager : KoinComponent {
             { resourceManager.loadShader(Assets.Shaders.DEBUG) },
         )
 
-        shaders.forEachIndexed { index, function ->
+        shaders.forEachIndexed {
+            index, function ->
+            logger.logEngine("Loading shader ${index + 1}/${shaders.size}")
             function.invoke()
             splashScreenProgress(index, shaders.size)
         }
@@ -82,6 +89,7 @@ class SceneManager : KoinComponent {
 
         renderer = Renderer(shader3D, shader2D, shaderPicking, shaderPicking3D, shaderSkybox, shaderSkyDome)
         renderer.useFbo = true
+        logger.logEngine("Renderer initialized.")
     }
 
     private suspend fun splashScreenProgress(index: Int, total: Int) {
@@ -89,13 +97,18 @@ class SceneManager : KoinComponent {
     }
 
     private suspend fun changeScene(initializer: SceneInitializer, isFirstScene: Boolean = false) {
-        if (!isFirstScene) currentScene?.destroy()
+        if (!isFirstScene) {
+            logger.logEditor("Destroying current scene...")
+            currentScene?.destroy()
+        }
+        logger.logEngine("Changing scene to ${initializer::class.simpleName}...")
         val scene = Scene(initializer)
         currentScene = scene
         // TODO: fix loading of saved scene
         //scene.load()
         scene.init()
         scene.start()
+        logger.logEngine("Scene ${initializer::class.simpleName} loaded and started.")
     }
 
     fun draw(dt: Float, imguiLayer: ImGuiLayer) {
