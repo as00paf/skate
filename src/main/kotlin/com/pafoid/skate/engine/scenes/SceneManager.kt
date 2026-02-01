@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.engine.utils.JobSystem
@@ -21,6 +22,7 @@ import kotlin.getValue
 class SceneManager : KoinComponent {
 
     private val resourceManager: ResourceManager by inject()
+    private val logger: LoggerService by inject()
 
     // TODO: remove
     companion object {
@@ -35,6 +37,12 @@ class SceneManager : KoinComponent {
     private var runtimePlaying = false
     private val engineState = AtomicReference(EngineState.BOOTING)
 
+    private lateinit var shader3D: Shader
+    private lateinit var shader2D: Shader
+    private lateinit var shaderPicking: Shader
+    private lateinit var shaderPicking3D: Shader
+    private lateinit var shaderSkybox: Shader
+    private lateinit var shaderSkyDome: Shader
     private lateinit var renderer: Renderer
 
     private val splashScreenManager = SplashScreenManager()
