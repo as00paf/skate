@@ -37,6 +37,7 @@ class Window(
 
     private val joystickListener: JoystickListener by inject()
     private val keyListener: KeyListener by inject()
+    private val mouseListener: MouseListener by inject()
 
     companion object {
         private var instance: Window? = null
@@ -201,9 +202,9 @@ class Window(
             currentHeight = newHeight
             glViewport(0, 0, newWidth, newHeight)
         }
-        glfwSetCursorPosCallback(glfwWindow, MouseListener::mousePosCallback)
-        glfwSetMouseButtonCallback(glfwWindow, MouseListener::mouseButtonCallback)
-        glfwSetScrollCallback(glfwWindow, MouseListener::mouseScrollCallback)
+        glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
+        glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
+        glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
         glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
     }
 
@@ -220,7 +221,7 @@ class Window(
             // Record high-frequency input
             InputBuffer.push(
                 Time.getTime(),
-                Vector2f(MouseListener.getX(), MouseListener.getY()),
+                Vector2f(mouseListener.getX(), mouseListener.getY()),
                 joystickListener.getAxes(GLFW_JOYSTICK_1)
             )
             
@@ -253,7 +254,7 @@ class Window(
             glfwSwapBuffers(glfwWindow)
 
             keyListener.endFrame()
-            MouseListener.endFrame()
+            mouseListener.endFrame()
 
             endTime = Time.getTime()
             dt = endTime - beginTime

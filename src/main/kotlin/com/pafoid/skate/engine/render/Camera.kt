@@ -33,6 +33,7 @@ class Camera(
 ): KoinComponent {
     private val inputProvider: IInputProvider by inject()
     private val keyListener: KeyListener by inject()
+    private val mouseListener: MouseListener by inject()
 
     var fov = 45f
     var nearPlane = 0.1f
@@ -111,8 +112,8 @@ class Camera(
         
         // Mouse Rotation
         if (inputProvider.isCursorDisabled()) {
-            yaw += MouseListener.getDx() * sensitivity
-            pitch += MouseListener.getDy() * sensitivity
+            yaw += mouseListener.getDx() * sensitivity
+            pitch += mouseListener.getDy() * sensitivity
         }
         
         // RS Rotation (Joystick 1)
@@ -169,8 +170,8 @@ class Camera(
         // Rotation
         if (inputProvider.isCursorDisabled()) {
             val sensitivity = 0.1f
-            yaw += MouseListener.getDx() * sensitivity
-            pitch += MouseListener.getDy() * sensitivity
+            yaw += mouseListener.getDx() * sensitivity
+            pitch += mouseListener.getDy() * sensitivity
             
             // Limit pitch
             if (pitch > 89f) pitch = 89f

@@ -16,6 +16,7 @@ import kotlin.math.abs
 
 class MeasureTool : Component(), KoinComponent {
     private val debugDraw: DebugDraw by inject()
+    private val mouseListener: MouseListener by inject()
 
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
@@ -33,8 +34,8 @@ class MeasureTool : Component(), KoinComponent {
         val mousePos = ImGui.getMousePos() // This might still be unsafe if called outside ImGui frame? 
                                           // Actually getMousePos is usually safe as it reads IO.
                                           // But let's use MouseListener inputs if possible or assume IO is updated.
-        val viewportSize = MouseListener.getGameViewportSize()
-        val viewportPos = MouseListener.getGameViewportPos()
+        val viewportSize = mouseListener.getGameViewportSize()
+        val viewportPos = mouseListener.getGameViewportPos()
 
         val relX = mousePos.x - viewportPos.x
         val relY = mousePos.y - viewportPos.y
@@ -54,7 +55,7 @@ class MeasureTool : Component(), KoinComponent {
                 if (t > 0) {
                     val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
                     
-                    if (MouseListener.mouseButtonBeginPress(0)) {
+                    if (mouseListener.mouseButtonBeginPress(0)) {
                         if (startPoint == null || (startPoint != null && endPoint != null)) {
                             startPoint = Vector3f(hitPoint)
                             endPoint = null

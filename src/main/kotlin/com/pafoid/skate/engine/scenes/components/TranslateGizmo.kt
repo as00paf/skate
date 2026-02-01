@@ -15,6 +15,7 @@ import kotlin.math.roundToInt
 
 class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow), KoinComponent {
     private val debugDraw: DebugDraw by inject()
+    private val mouseListener: MouseListener by inject()
 
     private val arrowLength = 2.0f
     private val coneSize = 0.3f
@@ -96,8 +97,8 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
         val go = activeGameObject ?: return
         val pos = go.transform.translation
         
-        val mouseX = MouseListener.getScreenX()
-        val mouseY = MouseListener.getScreenY()
+        val mouseX = mouseListener.getScreenX()
+        val mouseY = mouseListener.getScreenY()
         val ray = scene.camera.screenToRay(mouseX, mouseY, 1920f, 1080f)
 
         // Reset hover states
@@ -109,7 +110,7 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
         else if (rayToLineDist(ray, pos, Vector3f(0f, 1f, 0f), length) < threshold) yAxisHot = true
         else if (rayToLineDist(ray, pos, Vector3f(0f, 0f, 1f), length) < threshold) zAxisHot = true
 
-        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, true)) {
+        if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, true)) {
             if (!xAxisActive && !yAxisActive && !zAxisActive) {
                 if (xAxisHot) xAxisActive = true
                 else if (yAxisHot) yAxisActive = true
@@ -148,7 +149,7 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
         val s2 = worldToScreen(p2, view, proj, 1920f, 1080f)
         
         val axisScreenDir = s2.sub(s1).normalize()
-        val mouseDelta = org.joml.Vector2f(MouseListener.getScreenDx(), MouseListener.getScreenDy())
+        val mouseDelta = org.joml.Vector2f(mouseListener.getScreenDx(), mouseListener.getScreenDy())
         
         val projection = mouseDelta.dot(axisScreenDir)
         val dist = Vector3f(camera.position).distance(origin)

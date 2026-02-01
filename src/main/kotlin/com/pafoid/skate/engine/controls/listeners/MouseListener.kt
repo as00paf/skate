@@ -7,7 +7,7 @@ import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
-object MouseListener {
+class MouseListener {
     private var scrollX: Double = 0.0
     private var scrollY: Double = 0.0
     private var xPos: Double = 0.0

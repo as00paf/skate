@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.listeners.MouseListener
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Icons
@@ -18,7 +19,9 @@ import kotlin.math.roundToInt
 
 class GameViewWindow : KoinComponent {
 
-    private val logger: com.pafoid.skate.engine.editor.logs.LoggerService by inject()
+    private val logger: LoggerService by inject()
+    private val mouseListener: MouseListener by inject()
+
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
     var imageSizeX = 0f
@@ -98,8 +101,8 @@ class GameViewWindow : KoinComponent {
             gamepadOverlay.imgui(Vector2f(imageScreenPosX, imageScreenPosY), Vector2f(imageSizeX, imageSizeY))
         }
 
-        MouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
-        MouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
+        mouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
+        mouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
 
         // ... (rest of picking logic)
 
@@ -135,7 +138,7 @@ class GameViewWindow : KoinComponent {
                 ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
                 ImGui.textColored(1f, 1f, 1f, 0.5f, "Picked ID: ${hoveredGameObject?.getUid() ?: -1} at ($pickingX, $pickingY)")
 
-                if (MouseListener.mouseButtonBeginPress(0)) {
+                if (mouseListener.mouseButtonBeginPress(0)) {
                     Window.getImGuiLayer().propertiesWindow.setActiveObject(hoveredGameObject)
                 }
             }

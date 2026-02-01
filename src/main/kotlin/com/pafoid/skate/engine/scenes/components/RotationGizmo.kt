@@ -13,6 +13,7 @@ import kotlin.math.abs
 
 class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow), KoinComponent {
     private val debugDraw: DebugDraw by inject()
+    private val mouseListener: MouseListener by inject()
 
     private val radius = 2.0f
     private val hitThreshold = 0.4f
@@ -36,11 +37,11 @@ class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow
         checkInput(dynamicRadius, dynamicThreshold)
 
         if (xAxisActive) {
-            go.transform.rotation.x += MouseListener.getScreenDy()
+            go.transform.rotation.x += mouseListener.getScreenDy()
         } else if (yAxisActive) {
-            go.transform.rotation.y += MouseListener.getScreenDx()
+            go.transform.rotation.y += mouseListener.getScreenDx()
         } else if (zAxisActive) {
-            go.transform.rotation.z += MouseListener.getScreenDy()
+            go.transform.rotation.z += mouseListener.getScreenDy()
         }
 
         // Draw Rings
@@ -58,8 +59,8 @@ class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow
         val go = activeGameObject ?: return
         val pos = go.transform.translation
 
-        val mouseX = MouseListener.getScreenX()
-        val mouseY = MouseListener.getScreenY()
+        val mouseX = mouseListener.getScreenX()
+        val mouseY = mouseListener.getScreenY()
         val ray = scene.camera.screenToRay(mouseX, mouseY, 1920f, 1080f)
 
         // Reset hover states
@@ -71,7 +72,7 @@ class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow
         else if (rayToCircleDist(ray, pos, Vector3f(0f, 1f, 0f), rad) < threshold) yAxisHot = true
         else if (rayToCircleDist(ray, pos, Vector3f(0f, 0f, 1f), rad) < threshold) zAxisHot = true
 
-        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, true)) {
+        if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, true)) {
             if (!xAxisActive && !yAxisActive && !zAxisActive) {
                 if (xAxisHot) xAxisActive = true
                 else if (yAxisHot) yAxisActive = true

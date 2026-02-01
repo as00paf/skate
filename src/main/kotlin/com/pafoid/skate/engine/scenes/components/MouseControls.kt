@@ -12,6 +12,7 @@ import kotlin.math.floor
 
 class MouseControls : Component(), KoinComponent {
     private val keyListener: KeyListener by inject()
+    private val mouseListener: MouseListener by inject()
 
     private var holdingObject: GameObject? = null
     private val debounceTime = 0.2f
@@ -39,7 +40,7 @@ class MouseControls : Component(), KoinComponent {
 
         holdingObject?.let { go ->
             val tile = go.getComponent<ModularTile>()
-            val worldPos = MouseListener.getWorld()
+            val worldPos = mouseListener.getWorld()
             
             val snapX = tile?.size?.x ?: gridWidth
             val snapY = tile?.size?.y ?: gridHeight
@@ -50,7 +51,7 @@ class MouseControls : Component(), KoinComponent {
             go.transform.translation.x = x
             go.transform.translation.y = y
 
-            if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
+            if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
                 place()
                 debounce = debounceTime
             }
@@ -60,9 +61,9 @@ class MouseControls : Component(), KoinComponent {
                 holdingObject = null
             }
         } ?: run {
-            if (!MouseListener.isDragging() && MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
-                val x = MouseListener.getScreenX().toInt()
-                val y = MouseListener.getScreenY().toInt()
+            if (!mouseListener.isDragging() && mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
+                val x = mouseListener.getScreenX().toInt()
+                val y = mouseListener.getScreenY().toInt()
                 
                 val pickedId = SceneManager.get().getPickedId(x, y)
                 val selectedObject = SceneManager.get().getObjectById(pickedId)
