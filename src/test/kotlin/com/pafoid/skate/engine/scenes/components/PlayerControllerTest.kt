@@ -53,7 +53,6 @@ class PlayerControllerTest {
         gameObject.addChild(skater)
         
         controller = PlayerController()
-        controller.inputProvider = inputProvider
         gameObject.addComponent(controller)
 
         every { inputProvider.keyBeginPress(any()) } returns false
