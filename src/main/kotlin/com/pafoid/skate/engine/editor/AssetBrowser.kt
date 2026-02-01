@@ -153,7 +153,7 @@ class AssetBrowser : KoinComponent {
                      }
                  }
                  // Return placeholder
-                 resourceManager.loadTextureSync(Assets.Textures.WHITE).texId
+                              resourceManager.loadTextureSync(Assets.Textures.DEFAULT).texId
              }
         }
 
@@ -288,7 +288,7 @@ class AssetBrowser : KoinComponent {
             val cacheId = "${modelPath}_${material.name}"
             thumbnailCache.getThumbnail(cacheId, model)
         } else {
-            resourceManager.loadTextureSync(Assets.Textures.WHITE).texId
+                         resourceManager.loadTextureSync(Assets.Textures.DEFAULT).texId
         }
 
         // Push ID to avoid collision if names are identical (though we made them unique with variant name)

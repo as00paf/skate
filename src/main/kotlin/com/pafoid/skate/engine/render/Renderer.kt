@@ -254,7 +254,7 @@ class Renderer(
 
             // Base Color
             glActiveTexture(GL_TEXTURE0)
-            material.baseColorTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.WHITE).bind()
+            material.baseColorTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind()
             defaultShader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, 0)
             defaultShader.uploadVec4f(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
 
@@ -262,7 +262,7 @@ class Renderer(
             glActiveTexture(GL_TEXTURE1)
             val hasNormal = material.normalMap != null
             if (hasNormal) material.normalMap?.bind()
-            else resourceManager.loadTextureSync(Assets.Textures.WHITE).bind() // Bind dummy
+            else resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind() // Bind dummy
             defaultShader.uploadInt(Uniforms.NORMAL_MAP, 1)
             defaultShader.uploadBoolean(Uniforms.HAS_NORMAL_MAP, hasNormal)
 
@@ -270,7 +270,7 @@ class Renderer(
             glActiveTexture(GL_TEXTURE2)
             val hasMR = material.metallicRoughnessTexture != null
             if (hasMR) material.metallicRoughnessTexture?.bind()
-            else resourceManager.loadTextureSync(Assets.Textures.WHITE).bind() // Bind dummy
+            else resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind() // Bind dummy
             defaultShader.uploadInt(Uniforms.METALLIC_ROUGHNESS_TEXTURE, 2)
             defaultShader.uploadBoolean(Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, hasMR)
             defaultShader.uploadFloat(Uniforms.METALLIC_FACTOR, material.metallicFactor)
@@ -279,7 +279,7 @@ class Renderer(
             // AO
             glActiveTexture(GL_TEXTURE3)
             val hasAO = material.aoTexture != null
-            material.aoTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.WHITE).bind()
+            material.aoTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind()
             defaultShader.uploadInt(Uniforms.AO_TEXTURE, 3)
             defaultShader.uploadBoolean(Uniforms.HAS_AO_TEXTURE, hasAO)
 
@@ -287,7 +287,7 @@ class Renderer(
             glActiveTexture(GL_TEXTURE4)
             val hasEmissive = material.emissiveTexture != null
             if (hasEmissive) material.emissiveTexture?.bind()
-            else resourceManager.loadTextureSync(Assets.Textures.WHITE).bind() // Bind dummy
+            else resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind() // Bind dummy
             defaultShader.uploadInt(Uniforms.EMISSIVE_TEXTURE, 4)
             defaultShader.uploadBoolean(Uniforms.HAS_EMISSIVE_TEXTURE, hasEmissive)
             defaultShader.uploadVec3f(Uniforms.EMISSIVE_FACTOR, material.emissiveFactor)

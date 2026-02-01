@@ -8,5 +8,5 @@ enum class MaterialType(val displayName: String, val texturePath: String) {
     WOOD_LIGHT("Wood (Light)", Assets.Textures.WOOD_LIGHT),
     WOOD_TAN("Wood (Tan)", Assets.Textures.WOOD_TAN),
     WOOD_DARK("Wood (Dark)", Assets.Textures.WOOD_DARK),
-    METAL("Metal", Assets.Textures.WHITE) // Fallback
+    METAL("Metal", Assets.Textures.DEFAULT) // Fallback
 }

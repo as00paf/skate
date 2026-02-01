@@ -46,9 +46,9 @@ class ResourceManager(
         }
 
         if (data == null) {
-            logger?.logEngine("Texture not found: $path. Loading default WHITE texture.", LogLevel.ERROR)
-            if (path == Assets.Textures.WHITE) throw RuntimeException("Critical Error: Default WHITE texture not found!")
-            return loadTexture(Assets.Textures.WHITE)
+            logger?.logEngine("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
+            if (path == Assets.Textures.DEFAULT) throw RuntimeException("Critical Error: Default texture not found!")
+            return loadTexture(Assets.Textures.DEFAULT)
         }
 
         return withContext(JobSystem.Main) {
@@ -75,9 +75,9 @@ class ResourceManager(
         }
 
         if (data == null) {
-            logger?.logEngine("Texture not found: $path. Loading default WHITE texture.", LogLevel.ERROR)
-            if (path == Assets.Textures.WHITE) throw RuntimeException("Critical Error: Default WHITE texture not found!")
-            return loadTextureSync(Assets.Textures.WHITE)
+            logger?.logEngine("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
+            if (path == Assets.Textures.DEFAULT) throw RuntimeException("Critical Error: Default texture not found!")
+            return loadTextureSync(Assets.Textures.DEFAULT)
         }
 
         val texture = Texture()
@@ -170,7 +170,7 @@ class ResourceManager(
             if (path.lowercase().endsWith(".obj")) {
                 withContext(JobSystem.Main) {
                     val rawModel = objLoader.loadObjModel(path, vaoLoader)
-                    val whiteTex = loadTexture(Assets.Textures.WHITE) 
+                    val whiteTex = loadTexture(Assets.Textures.DEFAULT) 
                     val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = whiteTex), emptyList()))
                     val model = TexturedModel(parts)
                     models[absolutePath] = model
@@ -247,7 +247,7 @@ class ResourceManager(
             // Synchronous loading (blocking)
             if (path.lowercase().endsWith(".obj")) {
                 val rawModel = objLoader.loadObjModel(path, vaoLoader)
-                val whiteTex = loadTextureSync(Assets.Textures.WHITE) 
+                val whiteTex = loadTextureSync(Assets.Textures.DEFAULT) 
                 val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = whiteTex), emptyList()))
                 val model = TexturedModel(parts)
                 models[absolutePath] = model

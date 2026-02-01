@@ -373,7 +373,7 @@ fun updateProceduralLean(dt: Float) {
         
         val tumbleCube = Prefabs.generateEntityObject(
             resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel,
-            resourceManager.loadTextureSync(Assets.Textures.WHITE),
+            resourceManager.loadTextureSync(Assets.Textures.DEFAULT),
             "TumbleCube"
         )
         

@@ -89,7 +89,7 @@ class ThumbnailCache: KoinComponent {
             rawModel.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
             
             glActiveTexture(GL_TEXTURE0)
-            material.baseColorTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.WHITE).bind()
+            material.baseColorTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind()
             shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, 0)
             shader.uploadVec4f(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
             
