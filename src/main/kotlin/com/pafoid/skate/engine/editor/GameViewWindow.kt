@@ -11,11 +11,14 @@ import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class GameViewWindow {
+class GameViewWindow : KoinComponent {
 
+    private val logger: com.pafoid.skate.engine.editor.logs.LoggerService by inject()
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
     var imageSizeX = 0f
@@ -228,92 +231,99 @@ class GameViewWindow {
         if (isPlaying) {
             buttons.add {
                 if (scene?.timeScale == 1.0f) {
-                    if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene.timeScale = 0.0f
-                    }
-                    if (ImGui.isItemHovered()) ImGui.setTooltip("Pause Simulation (Time Scale: 0.0)")
-                } else {
-                    if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene?.timeScale = 1.0f
-                    }
-                    if (ImGui.isItemHovered()) ImGui.setTooltip("Resume Simulation (Time Scale: 1.0)")
-                }
-            }
-            buttons.add {
-                if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    SceneManager.setPlaying(false)
-                    scene?.timeScale = 1.0f // Reset time scale when stopping
-                }
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Stop Simulation")
-            }
-        } else {
-            buttons.add {
-                if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    SceneManager.setPlaying(true)
-                }
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Play Simulation")
-            }
-        }
-
-        // --- All Buttons ---
-        val measureTool = scene?.gameObjects?.find { it.name == "EditorTools" }?.getComponent<com.pafoid.skate.engine.scenes.components.MeasureTool>()
-        buttons.add {
-            val measureActive = measureTool?.isToolActive() ?: false
-            if (measureActive) {
-                ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            }
-            if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                measureTool?.toggle()
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Toggle Measure Tool")
-            if (measureActive) {
-                ImGui.popStyleColor()
-                measureTool.measurementText?.let { text ->
-                    measureTool.measurementPos?.let { pos ->
-                        ImGui.setNextWindowPos(pos.x, pos.y)
-                        ImGui.beginTooltip()
-                        ImGui.text(text)
-                        ImGui.endTooltip()
-                    }
-                }
-            }
-        }
-        buttons.add {
-            if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                // Reset logic
-                scene?.gameObjects?.find { it.name == "Skateboard" }?.let { skate ->
-                    skate.transform.translation.set(0f, 0.5f, 0f)
-                    skate.transform.rotation.set(0f, 0f, 0f)
-                    val rb = skate.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
-                    rb?.linearVelocity = Vector3f(0f, 0f, 0f)
-                    rb?.angularVelocity = Vector3f(0f, 0f, 0f)
-                }
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Reset Scene")
-        }
-        buttons.add {
-            val physicsDebugEnabled = scene?.physics3d?.debugEnabled ?: false
-            if (physicsDebugEnabled) {
-                ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            }
-            if (ImGui.button(Icons.ATOM, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                scene?.physics3d?.debugEnabled = !physicsDebugEnabled
-            }
-            if (physicsDebugEnabled) {
-                ImGui.popStyleColor()
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Toggle Physics Debug Wireframe")
-        }
-        buttons.add {
-            if (ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                val fbo = Window.getFrameBuffer()
-                if (fbo != null) {
-                    com.pafoid.skate.engine.utils.ScreenshotUtils.takeScreenshot(fbo.width, fbo.height, fbo.getFboId())
-                }
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Take Screenshot")
-        }
-        
+                                    if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                                        scene.timeScale = 0.0f
+                                        logger.logEditor("Simulation paused")
+                                    }
+                                    if (ImGui.isItemHovered()) ImGui.setTooltip("Pause Simulation (Time Scale: 0.0)")
+                                } else {
+                                    if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                                        scene?.timeScale = 1.0f
+                                        logger.logEditor("Simulation resumed")
+                                    }
+                                    if (ImGui.isItemHovered()) ImGui.setTooltip("Resume Simulation (Time Scale: 1.0)")
+                                }
+                            }
+                            buttons.add {
+                                if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                                    SceneManager.setPlaying(false)
+                                    scene?.timeScale = 1.0f // Reset time scale when stopping
+                                    logger.logEditor("Simulation stopped")
+                                }
+                                if (ImGui.isItemHovered()) ImGui.setTooltip("Stop Simulation")
+                            }
+                        } else {
+                            buttons.add {
+                                if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                                    SceneManager.setPlaying(true)
+                                    logger.logEditor("Simulation started")
+                                }
+                                if (ImGui.isItemHovered()) ImGui.setTooltip("Play Simulation")
+                            }
+                        }
+                    
+                        // --- All Buttons ---
+                        val measureTool = scene?.gameObjects?.find { it.name == "EditorTools" }?.getComponent<com.pafoid.skate.engine.scenes.components.MeasureTool>()
+                        buttons.add {
+                            val measureActive = measureTool?.isToolActive() ?: false
+                            if (measureActive) {
+                                ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+                            }
+                            if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                                measureTool?.toggle()
+                                logger.logEditor("Measure tool toggled")
+                            }
+                            if (ImGui.isItemHovered()) ImGui.setTooltip("Toggle Measure Tool")
+                            if (measureActive) {
+                                ImGui.popStyleColor()
+                                measureTool.measurementText?.let { text ->
+                                    measureTool.measurementPos?.let { pos ->
+                                        ImGui.setNextWindowPos(pos.x, pos.y)
+                                        ImGui.beginTooltip()
+                                        ImGui.text(text)
+                                        ImGui.endTooltip()
+                                    }
+                                }
+                            }
+                        }
+                        buttons.add {
+                            if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                                // Reset logic
+                                scene?.gameObjects?.find { it.name == "Skateboard" }?.let { skate ->
+                                    skate.transform.translation.set(0f, 0.5f, 0f)
+                                    skate.transform.rotation.set(0f, 0f, 0f)
+                                    val rb = skate.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
+                                    rb?.linearVelocity = Vector3f(0f, 0f, 0f)
+                                    rb?.angularVelocity = Vector3f(0f, 0f, 0f)
+                                    logger.logEditor("Scene reset")
+                                }
+                            }
+                            if (ImGui.isItemHovered()) ImGui.setTooltip("Reset Scene")
+                        }
+                        buttons.add {
+                            val physicsDebugEnabled = scene?.physics3d?.debugEnabled ?: false
+                            if (physicsDebugEnabled) {
+                                ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+                            }
+                            if (ImGui.button(Icons.ATOM, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                                scene?.physics3d?.debugEnabled = !physicsDebugEnabled
+                                logger.logEditor("Physics debug toggled")
+                            }
+                            if (physicsDebugEnabled) {
+                                ImGui.popStyleColor()
+                            }
+                            if (ImGui.isItemHovered()) ImGui.setTooltip("Toggle Physics Debug Wireframe")
+                        }
+                        buttons.add {
+                            if (ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                                val fbo = Window.getFrameBuffer()
+                                if (fbo != null) {
+                                    com.pafoid.skate.engine.utils.ScreenshotUtils.takeScreenshot(fbo.width, fbo.height, fbo.getFboId())
+                                    logger.logEditor("Screenshot taken")
+                                }
+                            }
+                            if (ImGui.isItemHovered()) ImGui.setTooltip("Take Screenshot")
+                        }        
         val totalButtonWidth = (TOOLBAR_BUTTON_HEIGHT * buttons.size) + (TOOLBAR_BUTTON_SPACING * (buttons.size - 1))
         val toolbarPosX = windowPos.x + (windowSize.x / 2f) - (totalButtonWidth / 2f)
         ImGui.setCursorPos(toolbarPosX, toolbarPosY)

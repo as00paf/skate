@@ -63,3 +63,23 @@ Reports
 - [ ] **Fallback Texture**: Implement a "Pink Checkerboard" fallback texture. If a texture is missing, the engine should log a warning but still load the model so you don't get a crash.
 - [ ] **Search Heuristic**: If a texture isn't in the model folder, have the engine check a global `textures/` folder as a secondary search location.
 - [ ] **Y-Axis Flip**: FBX textures often have inverted UVs compared to OpenGL. Add a toggle in the loader to `aiProcess_FlipUVs`. Make sure to add the constant in the right place.
+
+# 📸 Java Pose-to-Bone Tool: TODO
+
+## 📂 Phase 1: Image Processing (BoofCV)
+- [ ] **Image Loading**: Use BoofCV to load the reference image and convert it to a `Planar<GrayF32>` or `InterleavedU8`.
+- [ ] **Pre-processing**: Use BoofCV to normalize brightness and resize the image to a square (e.g., 256x256) so the AI can read it easily.
+
+## 🧠 Phase 2: Landmark Detection (ONNX Runtime Java)
+- [ ] **Load MoveNet Model**: Use the **ONNX Runtime Java API** to load a `.onnx` version of MoveNet (Google’s lightning-fast pose model).
+- [ ] **Inference**: Pass the BoofCV-processed image into the model.
+- [ ] **Coordinate Output**: Extract the 17 key points (joints) provided by the model.
+
+## 🦴 Phase 3: Bone Mapping (Engine Side)
+- [ ] **Line Drawing**: In the "Skate Lab" UI, draw lines between the joints (e.g., Ankle to Knee) over the image to show the "Detected Skeleton."
+- [ ] **Bone Orientation**: Calculate the 3D rotation (Quaternions) between joints (e.g., "Which way is the shin pointing?").
+- [ ] **Skeleton Override**: Apply those rotations to your `Skater` model's bones via your existing `Bone Override` system.
+
+## 🛹 Phase 4: Deck Mapping
+- [ ] **Foot-to-Deck Projection**: Take the "Ankle" and "Toe" joints and find their intersection point on your 3D Skateboard model.
+- [ ] **Save Pose**: Export the resulting configuration as a `.json` file for use in your "Pressure Map" trick system.
