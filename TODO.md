@@ -167,10 +167,10 @@
   - [x] Display **Physics Step Duration** (timing the JBullet `stepSimulation`).
 
 ## 18.3. Unified Asset Browser
-- [ ] **Transform Prefabs Window**: Rename and expand the "Prefabs" window into a multi-tab **Asset Browser**.
-  - [ ] **Models Tab**: List all `.gltf`, `.fbx`, `.dae`, and `.obj` files in resources.
-  - [ ] **Textures Tab**: List all `.png` and `.jpg` files.
-  - [ ] **Prefabs Tab**: List saved `.json` entity templates.
+- [x] **Transform Prefabs Window**: Rename and expand the "Prefabs" window into a multi-tab **Asset Browser**.
+  - [x] **Models Tab**: List all `.gltf`, `.fbx`, `.dae`, and `.obj` files in resources.
+  - [x] **Textures Tab**: List all `.png` and `.jpg` files.
+  - [x] **Prefabs Tab**: List saved `.json` entity templates.
 
 ## 18.4. Game Viewport & Toolbar
 - [ ] **External Toolbar**: Move buttons from inside the viewport to a dedicated toolbar strip in the top of the game viewport with the buttons centered. Don't change the dockspace if you don't need to.
