@@ -173,7 +173,7 @@
   - [ ] **Prefabs Tab**: List saved `.json` entity templates.
 
 ## 18.4. Game Viewport & Toolbar
-- [ ] **External Toolbar**: Move buttons from inside the viewport to a dedicated toolbar strip in the top of the game viewport. Don't change the dockspace if you don't need to.
+- [ ] **External Toolbar**: Move buttons from inside the viewport to a dedicated toolbar strip in the top of the game viewport with the buttons centered. Don't change the dockspace if you don't need to.
 - [ ] **Icon-Only Buttons**:
   - [ ] Replace text labels with icons (using FontAwesome or high-res textures).
   - [ ] Add tooltips for every button (on hover).
@@ -182,7 +182,7 @@
   - [ ] **Pause**: Toggle engine time scale ($0.0$ vs $1.0$).
   - [ ] **Screenshot**: Capture frame buffer to PNG. Save to screenshots folder and show a popup asking the user if he wants to open the screenshot or its containing folder.
   - [ ] **Physics Toggle**: Move the debug wireframe toggle here and make it a toggle button.
-  - [ ] **Maximize Viewport (F12)**: Toggle between "Editor Layout" and "Fullscreen Viewport" mode.
+  - [ ] **Maximize Viewport (F12)**: Toggle between "Editor Layout" and "Fullscreen Viewport" mode. Make sure to use the right method so its not triggered multiple times.
 
 ## 18.5. Interaction & Shortcuts
 - [ ] **Middle-Mouse Pan**: Implement `View Panning` in the editor camera. Pressing **MMB** + Mouse move shifts the camera on its local Up/Right axes.
