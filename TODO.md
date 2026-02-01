@@ -188,7 +188,7 @@
 - [ ] **Middle-Mouse Pan**: Implement `View Panning` in the editor camera. Pressing **MMB** + Mouse move shifts the camera on its local Up/Right axes. Ensure mouse capture works as expected.
 - [ ] **Standard Editor Shortcuts**:
   - [ ] **Ctrl + C / V / X**: Copy, Paste, and Cut selected `GameObject` (handling deep clones).
-  - [ ] **Ctrl + Z / Y**: Implement a basic Undo/Redo stack for Transform changes and object deletions.
+  - [ ] **Ctrl + Z / Y**: Fully implement a Undo/Redo stack for Transform changes and object deletions.
 
 # 🔧 19. Physics Implementation Fixes (Deferred)
 - [ ] **Task 18.1: Friction Propagation**: Fix `RigidBody3D` to ensure the `friction` property is correctly applied to the Bullet `rawBody` during initialization and runtime updates.
