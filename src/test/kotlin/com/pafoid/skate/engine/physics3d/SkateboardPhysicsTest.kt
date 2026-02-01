@@ -8,7 +8,6 @@ import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import org.joml.Vector3f
 import org.junit.jupiter.api.AfterAll

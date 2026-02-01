@@ -8,12 +8,10 @@ import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import org.joml.Vector3f
 import org.junit.jupiter.api.*
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class TrickDetectionTest {
 
