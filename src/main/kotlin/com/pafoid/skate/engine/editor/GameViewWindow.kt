@@ -44,6 +44,8 @@ class GameViewWindow {
         val texId = Window.getFrameBuffer()?.getTextureId() ?: 0
         ImGui.image(texId.toLong(), windowSize.x, windowSize.y, 0f, 1f, 1f, 0f)
 
+        renderToolbar(windowPos, windowSize)
+
         // Drag and Drop Target
         if (ImGui.beginDragDropTarget()) {
             val payloadRail = ImGui.acceptDragDropPayload<String>("PREFAB_RAIL")
@@ -175,59 +177,6 @@ class GameViewWindow {
 
             trickUIWindow.imgui(trickX, trickY, TRICK_OVERLAY_WIDTH, TRICK_OVERLAY_HEIGHT)
         }
-
-        // Controls Overlay (Top Right)
-        val buttonSize = CONTROLS_OVERLAY_BUTTON_SIZE
-        ImGui.setCursorPos(windowPos.x + windowSize.x - (buttonSize * 3f) - (OVERLAY_PADDING * 3), windowPos.y + OVERLAY_PADDING)
-        ImGui.beginChild("Controls_Overlay", buttonSize * 3f + (OVERLAY_PADDING * 2), CONTROLS_OVERLAY_HEIGHT, false, ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration)
-        
-        if (isPlaying) {
-            if (ImGui.button("${Icons.STOP} Stop", buttonSize, 30f)) {
-                SceneManager.setPlaying(false)
-            }
-        } else {
-            if (ImGui.button("${Icons.PLAY} Play", buttonSize, 30f)) {
-                SceneManager.setPlaying(true)
-            }
-        }
-        ImGui.sameLine()
-        
-        val measureTool = scene?.gameObjects?.find { it.name == "EditorTools" }?.getComponent<com.pafoid.skate.engine.scenes.components.MeasureTool>()
-        val measureActive = measureTool?.isToolActive() ?: false
-        if (measureActive) {
-            ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            
-            // Render Measure Tooltip
-            measureTool.measurementText?.let { text ->
-                measureTool.measurementPos?.let { pos ->
-                    ImGui.setNextWindowPos(pos.x, pos.y)
-                    ImGui.beginTooltip()
-                    ImGui.text(text)
-                    ImGui.endTooltip()
-                }
-            }
-        }
-        if (ImGui.button("${Icons.RULER} Measure", buttonSize + 10f, 30f)) {
-            measureTool?.toggle()
-        }
-        if (measureActive) {
-            ImGui.popStyleColor()
-        }
-
-        ImGui.sameLine()
-        if (ImGui.button("${Icons.GEAR} Reset", buttonSize, 30f)) {
-            // Reset logic
-            scene?.gameObjects?.find { it.name == "Skateboard" }?.let { skate ->
-                skate.transform.translation.set(0f, 0.5f, 0f)
-                skate.transform.rotation.set(0f, 0f, 0f)
-                val rb = skate.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
-                // In Editor update, the RB syncs from transform, so we just reset velocities
-                rb?.linearVelocity = Vector3f(0f, 0f, 0f)
-                rb?.angularVelocity = Vector3f(0f, 0f, 0f)
-            }
-        }
-        
-        ImGui.endChild()
     }
 
     fun getHoveredObject(): GameObject? = hoveredGameObject
@@ -264,6 +213,138 @@ class GameViewWindow {
                mousePos.y >= imageScreenPosY && mousePos.y <= (imageScreenPosY + imageSizeY)
     }
 
+    private fun renderToolbar(windowPos: ImVec2, windowSize: ImVec2) {
+        val isPlaying = SceneManager.isPlaying()
+        val scene = SceneManager.getCurrentScene()
+        val toolbarPosY = windowPos.y + OVERLAY_PADDING
+
+        // In Editor mode, only show Play button
+        if (!isPlaying) {
+            val totalButtonWidth = TOOLBAR_BUTTON_HEIGHT
+            val toolbarPosX = windowPos.x + (windowSize.x / 2f) - (totalButtonWidth / 2f)
+            ImGui.setCursorPos(toolbarPosX, toolbarPosY)
+            ImGui.beginChild("GameViewportToolbar", totalButtonWidth, TOOLBAR_HEIGHT, false, ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration)
+            if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                SceneManager.setPlaying(true)
+            }
+            if (ImGui.isItemHovered()) ImGui.setTooltip("Play Simulation")
+            ImGui.endChild()
+        } else {
+            // In Play mode, show Pause/Resume and Stop
+            val totalButtonWidth = (TOOLBAR_BUTTON_HEIGHT * 2f) + TOOLBAR_BUTTON_SPACING
+            val toolbarPosX = windowPos.x + (windowSize.x / 2f) - (totalButtonWidth / 2f)
+            ImGui.setCursorPos(toolbarPosX, toolbarPosY)
+            ImGui.beginChild("GameViewportToolbar", totalButtonWidth, TOOLBAR_HEIGHT, false, ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration)
+
+            if (scene?.timeScale == 1.0f) {
+                if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                    scene.timeScale = 0.0f
+                }
+                if (ImGui.isItemHovered()) ImGui.setTooltip("Pause Simulation (Time Scale: 0.0)")
+            } else {
+                if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                    scene?.timeScale = 1.0f
+                }
+                if (ImGui.isItemHovered()) ImGui.setTooltip("Resume Simulation (Time Scale: 1.0)")
+            }
+
+            ImGui.sameLine(0f, TOOLBAR_BUTTON_SPACING)
+
+            if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                SceneManager.setPlaying(false)
+                scene?.timeScale = 1.0f // Reset time scale when stopping
+            }
+            if (ImGui.isItemHovered()) ImGui.setTooltip("Stop Simulation")
+            
+            ImGui.endChild()
+        }
+
+        
+
+        // --- Right-aligned Buttons ---
+
+        
+
+        // Measure Tool
+
+        val measureTool = scene?.gameObjects?.find { it.name == "EditorTools" }?.getComponent<com.pafoid.skate.engine.scenes.components.MeasureTool>()
+
+        val measureActive = measureTool?.isToolActive() ?: false
+
+        
+
+        val rightButtonsTotalWidth = (TOOLBAR_BUTTON_HEIGHT * 4f) + (TOOLBAR_BUTTON_SPACING * 3f)
+
+        val rightToolbarPosX = windowPos.x + windowSize.x - rightButtonsTotalWidth - OVERLAY_PADDING
+
+
+
+        ImGui.setCursorPos(rightToolbarPosX, toolbarPosY)
+
+        ImGui.beginChild("GameViewportToolbarRight", rightButtonsTotalWidth, TOOLBAR_HEIGHT, false, ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration)
+        if (measureActive) {
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+        }
+        if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+            measureTool?.toggle()
+        }
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Toggle Measure Tool")
+        if (measureActive) {
+            ImGui.popStyleColor()
+            measureTool.measurementText?.let { text ->
+                measureTool.measurementPos?.let { pos ->
+                    ImGui.setNextWindowPos(pos.x, pos.y)
+                    ImGui.beginTooltip()
+                    ImGui.text(text)
+                    ImGui.endTooltip()
+                }
+            }
+        }
+        
+        ImGui.sameLine(0f, TOOLBAR_BUTTON_SPACING)
+
+        // Reset Button
+        if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+            // Reset logic
+            scene?.gameObjects?.find { it.name == "Skateboard" }?.let { skate ->
+                skate.transform.translation.set(0f, 0.5f, 0f)
+                skate.transform.rotation.set(0f, 0f, 0f)
+                val rb = skate.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
+                // In Editor update, the RB syncs from transform, so we just reset velocities
+                rb?.linearVelocity = Vector3f(0f, 0f, 0f)
+                rb?.angularVelocity = Vector3f(0f, 0f, 0f)
+            }
+        }
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Reset Scene")
+
+        ImGui.sameLine(0f, TOOLBAR_BUTTON_SPACING)
+        
+        // Physics Debug Toggle
+        val physicsDebugEnabled = scene?.physics3d?.debugEnabled ?: false
+        if (physicsDebugEnabled) {
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+        }
+        if (ImGui.button(Icons.ATOM, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+            scene?.physics3d?.debugEnabled = !physicsDebugEnabled
+        }
+        if (physicsDebugEnabled) {
+            ImGui.popStyleColor()
+        }
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Toggle Physics Debug Wireframe")
+
+        ImGui.sameLine(0f, TOOLBAR_BUTTON_SPACING)
+
+        // Screenshot Button
+        if (ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+            val fbo = Window.getFrameBuffer()
+            if (fbo != null) {
+                com.pafoid.skate.engine.utils.ScreenshotUtils.takeScreenshot(fbo.width, fbo.height, fbo.getFboId())
+            }
+        }
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Take Screenshot")
+        ImGui.endChild()
+    }
+
     companion object {
         // Overlay Constants
         private const val OVERLAY_PADDING = 10f
@@ -274,6 +355,8 @@ class GameViewWindow {
         private const val TRICK_OVERLAY_WIDTH = 200f // Adjusted width for trick names
         private const val TRICK_OVERLAY_HEIGHT = 30f
         private const val CONTROLS_OVERLAY_BUTTON_SIZE = 60f
-        private const val CONTROLS_OVERLAY_HEIGHT = 40f
+        private const val TOOLBAR_HEIGHT = 40f
+        private const val TOOLBAR_BUTTON_HEIGHT = 30f
+        private const val TOOLBAR_BUTTON_SPACING = 10f
     }
 }

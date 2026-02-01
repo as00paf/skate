@@ -32,6 +32,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f)
     var fogDensity: Float = 0.0f
     var fogGradient: Float = 1.5f
+    var timeScale: Float = 1.0f
     
     var levelPath: String = "level.json"
 
@@ -104,8 +105,9 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
     }
 
     fun update(dt: Float) {
-        camera.update(dt) 
-        physics3d.update(dt)
+        val scaledDt = dt * timeScale
+        camera.update(scaledDt) 
+        physics3d.update(scaledDt)
 
         val iterator = gameObjects.iterator()
         while (iterator.hasNext()) {
@@ -115,7 +117,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
                 iterator.remove()
                 continue
             }
-            go.update(dt)
+            go.update(scaledDt)
         }
 
         pendingObjects.forEach { gameObject ->

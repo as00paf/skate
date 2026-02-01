@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
+import imgui.ImVec2
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiDir
@@ -59,6 +60,7 @@ class ImGuiLayer {
     private val showEnvironment = ImBoolean(true)
     private val showProfiler = ImBoolean(true)
     private val showConsole = ImBoolean(true)
+    private var isViewportMaximized = false
 
     fun init(glfwWindow: Long) {
         this.glfwWindow = glfwWindow
@@ -107,19 +109,39 @@ class ImGuiLayer {
     }
 
     fun update(dt: Float, currentScene: Scene) {
+        if (com.pafoid.skate.engine.controls.input.InputProvider.keyBeginPress(GLFW.GLFW_KEY_F12)) {
+            isViewportMaximized = !isViewportMaximized
+        }
+        
         startFrame()
 
-        setupDockSpace(currentScene)
-        currentScene.imgui()
-        
-        if (showHierarchy.get()) hierarchyWindow.imgui(currentScene)
-        if (showProperties.get()) propertiesWindow.imgui()
-        if (showBoneTree.get()) boneTreeWindow.imgui()
-        if (showGameView.get()) gameViewWindow.imgui()
-        if (showAssetBrowser.get()) assetBrowser.imgui()
-        if (showEnvironment.get()) environmentWindow.imgui(currentScene)
-        if (showProfiler.get()) profilerWindow.imgui()
-        if (showConsole.get()) consoleWindow.imgui(showConsole)
+        if (isViewportMaximized) {
+            ImGui.setNextWindowPos(ImGui.getMainViewport().workPosX, ImGui.getMainViewport().workPosY)
+            ImGui.setNextWindowSize(ImGui.getMainViewport().workSizeX, ImGui.getMainViewport().workSizeY)
+            ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
+            ImGui.begin("Game Viewport Maximized", ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoDecoration)
+            
+            val windowSize = ImVec2()
+            ImGui.getContentRegionAvail(windowSize)
+            
+            val texId = Window.getFrameBuffer()?.getTextureId() ?: 0
+            ImGui.image(texId.toLong(), windowSize.x, windowSize.y, 0f, 1f, 1f, 0f)
+            
+            ImGui.end()
+            ImGui.popStyleVar()
+        } else {
+            setupDockSpace(currentScene)
+            currentScene.imgui()
+            
+            if (showHierarchy.get()) hierarchyWindow.imgui(currentScene)
+            if (showProperties.get()) propertiesWindow.imgui()
+            if (showBoneTree.get()) boneTreeWindow.imgui()
+            if (showGameView.get()) gameViewWindow.imgui()
+            if (showAssetBrowser.get()) assetBrowser.imgui()
+            if (showEnvironment.get()) environmentWindow.imgui(currentScene)
+            if (showProfiler.get()) profilerWindow.imgui()
+            if (showConsole.get()) consoleWindow.imgui(showConsole)
+        }
 
         endFrame()
     }

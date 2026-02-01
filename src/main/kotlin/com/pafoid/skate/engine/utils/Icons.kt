@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.utils
 
 object Icons {
     const val PLAY = "\uf04b"
+    const val PAUSE = "\uf04c"
     const val STOP = "\uf04d"
     const val SAVE = "\uf0c7"
     const val FOLDER_OPEN = "\uf07c"
@@ -24,4 +25,5 @@ object Icons {
     const val ARROW_DOWN = "\uf063"
     const val ARROW_LEFT = "\uf060"
     const val ARROW_RIGHT = "\uf061"
+    const val ATOM = "\uf5d2"
 }
