@@ -28,6 +28,7 @@ import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
 class AssetBrowser : KoinComponent {
     private val thumbnailCache: ThumbnailCache by inject()
     private val resourceManager: ResourceManager by inject()
+    private val sceneManager: SceneManager by inject()
 
     private var searchText = ImString(256)
     
@@ -317,7 +318,7 @@ class AssetBrowser : KoinComponent {
     }
 
     fun spawnSkateboard() {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         
         JobSystem.runAsync {
             val model = resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
@@ -336,7 +337,7 @@ class AssetBrowser : KoinComponent {
     }
 
     fun spawnTile() {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val tile = GameObject("Tile_${scene.gameObjects.size}")
         tile.addComponent(Entity(
             model = TexturedModel(
@@ -351,7 +352,7 @@ class AssetBrowser : KoinComponent {
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType = MaterialType.METAL) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val rail = GameObject("Rail_${scene.gameObjects.size}")
         rail.transform.translation.set(position) 
         rail.transform.scale.set(1f, 1f, 1f)
@@ -367,7 +368,7 @@ class AssetBrowser : KoinComponent {
     }
 
     fun spawnLedge(position: Vector3f = Vector3f(0f, 0.25f, 0f), material: MaterialType = MaterialType.CONCRETE) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val ledge = GameObject("Ledge_${scene.gameObjects.size}")
         ledge.transform.translation.set(position) 
         ledge.transform.scale.set(1f, 1f, 1f)
@@ -383,7 +384,7 @@ class AssetBrowser : KoinComponent {
     }
 
     fun spawnKicker(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType = MaterialType.CONCRETE) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val kicker = GameObject("Kicker_${scene.gameObjects.size}")
         kicker.transform.translation.set(position)
         kicker.transform.scale.set(1f, 1f, 1f)
@@ -410,7 +411,7 @@ class AssetBrowser : KoinComponent {
     }
 
     fun spawnManualPad(position: Vector3f = Vector3f(0f, 0.1f, 0f), material: MaterialType = MaterialType.CONCRETE) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val go = GameObject("ManualPad_${scene.gameObjects.size}")
         go.transform.translation.set(position)
         go.addComponent(Entity(
@@ -425,7 +426,7 @@ class AssetBrowser : KoinComponent {
     }
 
     fun spawnBank(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType = MaterialType.CONCRETE) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val go = GameObject("Bank_${scene.gameObjects.size}")
         go.transform.translation.set(position)
         go.addComponent(Entity(
@@ -448,7 +449,7 @@ class AssetBrowser : KoinComponent {
     }
 
     fun spawnQuarterPipe(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType = MaterialType.CONCRETE) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val go = GameObject("QuarterPipe_${scene.gameObjects.size}")
         go.transform.translation.set(position)
         go.addComponent(Entity(

@@ -15,6 +15,7 @@ import kotlin.math.roundToInt
 
 class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow), KoinComponent {
     private val debugDraw: DebugDraw by inject()
+    private val sceneManager: SceneManager by inject()
 
     private val arrowLength = 2.0f
     private val coneSize = 0.3f
@@ -39,7 +40,7 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
         val go = activeGameObject ?: return
         val pos = go.transform.translation
         
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val dist = Vector3f(scene.camera.position).distance(pos)
         val dynamicArrowLength = arrowLength * (dist * 0.1f)
         val dynamicConeSize = coneSize * (dist * 0.1f)
@@ -92,7 +93,7 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
     }
 
     private fun checkInput(length: Float, threshold: Float) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
         val pos = go.transform.translation
         
@@ -135,7 +136,7 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
     }
 
     private fun calculateDelta(axis: Vector3f): Float {
-        val scene = SceneManager.getCurrentScene() ?: return 0f
+        val scene = sceneManager.currentScene ?: return 0f
         val camera = scene.camera
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()

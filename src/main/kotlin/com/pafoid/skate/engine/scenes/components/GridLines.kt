@@ -11,6 +11,7 @@ import kotlin.math.floor
 
 class GridLines : Component(), KoinComponent {
     private val debugDraw: DebugDraw by inject()
+    private val sceneManager: SceneManager by inject()
 
     private val majorStep = 1.0f
     private val minorStep = 0.1f
@@ -19,7 +20,7 @@ class GridLines : Component(), KoinComponent {
     private val gridSize = 40 // Total lines in each direction around the camera
 
     override fun editorUpdate(dt: Float) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val camPos = scene.camera.position
         
         // Snap the grid center to the nearest major step to keep the lines aligned to the world origin

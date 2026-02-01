@@ -13,6 +13,7 @@ import kotlin.math.abs
 
 class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow), KoinComponent {
     private val debugDraw: DebugDraw by inject()
+    private val sceneManager: SceneManager by inject()
 
     private val radius = 2.0f
     private val hitThreshold = 0.4f
@@ -28,7 +29,7 @@ class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow
         val go = activeGameObject ?: return
         val pos = go.transform.translation
 
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val dist = Vector3f(scene.camera.position).distance(pos)
         val dynamicRadius = radius * (dist * 0.1f)
         val dynamicThreshold = hitThreshold * (dist * 0.1f)
@@ -54,7 +55,7 @@ class RotationGizmo(propertiesWindow: PropertiesWindow) : Gizmo(propertiesWindow
     override fun isHot(): Boolean = xAxisHot || yAxisHot || zAxisHot
 
     private fun checkInput(rad: Float, threshold: Float) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
         val pos = go.transform.translation
 

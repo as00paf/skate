@@ -38,45 +38,43 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
 
     override fun update(dt: Float) {
         rawBody?.let { body ->
-            if (SceneManager.isPlaying()) {
-                val pos = body.getPhysicsLocation(null)
-                val rot = body.getPhysicsRotation(null)
-                
-                gameObject.transform.translation.set(pos.x, pos.y, pos.z)
-                
-                // JME Quaternion to Euler (JOML)
-                val q = Quaternionf(rot.x, rot.y, rot.z, rot.w)
-                val euler = JomlVector3f()
-                q.getEulerAnglesXYZ(euler)
-                gameObject.transform.rotation.set(
-                    Math.toDegrees(euler.x.toDouble()).toFloat(),
-                    Math.toDegrees(euler.y.toDouble()).toFloat(),
-                    Math.toDegrees(euler.z.toDouble()).toFloat()
-                )
-            } else {
-                // In editor, update physics body from transform if it's changed via UI
-                val trans = gameObject.transform.translation
-                val rot = gameObject.transform.rotation
-                val scale = gameObject.transform.scale
-                
-                body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
-                
-                val q = Quaternionf().rotationXYZ(
-                    Math.toRadians(rot.x.toDouble()).toFloat(),
-                    Math.toRadians(rot.y.toDouble()).toFloat(),
-                    Math.toRadians(rot.z.toDouble()).toFloat()
-                )
-                body.setPhysicsRotation(com.jme3.math.Quaternion(q.x, q.y, q.z, q.w))
-                body.collisionShape.setScale(com.jme3.math.Vector3f(scale.x, scale.y, scale.z))
-                
-                body.setLinearVelocity(JmeVector3f.ZERO)
-                body.setAngularVelocity(JmeVector3f.ZERO)
-            }
+            val pos = body.getPhysicsLocation(null)
+            val rot = body.getPhysicsRotation(null)
+
+            gameObject.transform.translation.set(pos.x, pos.y, pos.z)
+
+            // JME Quaternion to Euler (JOML)
+            val q = Quaternionf(rot.x, rot.y, rot.z, rot.w)
+            val euler = JomlVector3f()
+            q.getEulerAnglesXYZ(euler)
+            gameObject.transform.rotation.set(
+                Math.toDegrees(euler.x.toDouble()).toFloat(),
+                Math.toDegrees(euler.y.toDouble()).toFloat(),
+                Math.toDegrees(euler.z.toDouble()).toFloat()
+            )
         }
     }
 
     override fun editorUpdate(dt: Float) {
-        update(dt)
+        rawBody?.let { body ->
+            // In editor, update physics body from transform if it's changed via UI
+            val trans = gameObject.transform.translation
+            val rot = gameObject.transform.rotation
+            val scale = gameObject.transform.scale
+
+            body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
+
+            val q = Quaternionf().rotationXYZ(
+                Math.toRadians(rot.x.toDouble()).toFloat(),
+                Math.toRadians(rot.y.toDouble()).toFloat(),
+                Math.toRadians(rot.z.toDouble()).toFloat()
+            )
+            body.setPhysicsRotation(com.jme3.math.Quaternion(q.x, q.y, q.z, q.w))
+            body.collisionShape.setScale(com.jme3.math.Vector3f(scale.x, scale.y, scale.z))
+
+            body.setLinearVelocity(JmeVector3f.ZERO)
+            body.setAngularVelocity(JmeVector3f.ZERO)
+        }
     }
 
     override fun applyCentralForce(force: JomlVector3f) {

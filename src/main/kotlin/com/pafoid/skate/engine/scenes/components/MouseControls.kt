@@ -5,10 +5,14 @@ import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
 import kotlin.math.floor
 
-class MouseControls : Component() {
+class MouseControls : Component(), KoinComponent {
+    private val sceneManager: SceneManager by inject()
+
     private var holdingObject: GameObject? = null
     private val debounceTime = 0.2f
     private var debounce = debounceTime
@@ -20,11 +24,11 @@ class MouseControls : Component() {
         holdingObject?.destroy()
         holdingObject = go
         holdingObject?.addComponent(NonPickable())
-        SceneManager.getCurrentScene()?.addGameObjectToScene(go)
+        sceneManager.currentScene?.addGameObjectToScene(go)
     }
 
     private fun place() {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val newObj = holdingObject?.copy()
         newObj?.removeComponent(NonPickable::class.java)
         scene.addGameObjectToScene(newObj!!)
@@ -60,18 +64,18 @@ class MouseControls : Component() {
                 val x = MouseListener.getScreenX().toInt()
                 val y = MouseListener.getScreenY().toInt()
                 
-                val pickedId = SceneManager.get().getPickedId(x, y)
-                val selectedObject = SceneManager.get().getObjectById(pickedId)
+                val pickedId = sceneManager.getPickedId(x, y)
+                val selectedObject = sceneManager.getObjectById(pickedId)
 
                 if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
                     Window.getImGuiLayer().propertiesWindow.setActiveObject(selectedObject)
                     Window.getImGuiLayer().boneTreeWindow.setActiveObject(selectedObject) // Also set for bone tree
                 } else {
                     Window.getImGuiLayer().propertiesWindow.setActiveObject(null)
-                    val bone = SceneManager.get().getJointById(pickedId)
+                    val bone = sceneManager.getJointById(pickedId)
                     if (bone != null) {
                         // A bone was selected, find which GO it belongs to
-                        val skater = SceneManager.getCurrentScene()?.gameObjects?.find { it.getComponent<com.pafoid.skate.engine.animation.PoseGizmo>() != null }
+                        val skater = sceneManager.currentScene?.gameObjects?.find { it.getComponent<com.pafoid.skate.engine.animation.PoseGizmo>() != null }
                         Window.getImGuiLayer().boneTreeWindow.setActiveObject(skater)
                         Window.getImGuiLayer().boneTreeWindow.setSelectedBone(bone)
                     } else {

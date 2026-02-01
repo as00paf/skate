@@ -2,15 +2,20 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
+import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Icons
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
 
 class SceneHierarchyWindow(
     private val propertiesWindow: PropertiesWindow,
     private val boneTreeWindow: BoneTreeWindow
-) {
+): KoinComponent {
+
+    private val sceneManager: SceneManager by inject()
 
     fun imgui(scene: Scene) {
         ImGui.begin("Scene Hierarchy")
@@ -49,8 +54,8 @@ class SceneHierarchyWindow(
         val nodeOpen = ImGui.treeNodeEx(obj.name + "##" + index, flags)
 
         if (ImGui.isItemClicked()) {
-            propertiesWindow.setActiveObject(obj)
-            boneTreeWindow.setActiveObject(obj)
+            sceneManager.setSelectedGameObject(obj)
+            sceneManager.setSelectedGameObject(obj)
         }
         
         if (ImGui.beginPopupContextItem()) {

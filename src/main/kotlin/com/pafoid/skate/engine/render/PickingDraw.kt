@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.editor.logs.LoggerService
+import com.pafoid.skate.engine.scenes.Prefabs
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -20,6 +21,7 @@ private const val MAX_VERTICES = 10000
 class PickingDraw: KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val logger: LoggerService by inject()
+    private val sceneManager: SceneManager by inject()
 
     private val meshes = mutableListOf<PickingMesh>()
     private val vertexArray = FloatArray(MAX_VERTICES * 3)
@@ -53,7 +55,7 @@ class PickingDraw: KoinComponent {
 
     fun draw() {
         shader.start()
-        val camera = SceneManager.getCurrentScene()?.camera ?: return
+        val camera = sceneManager.currentScene?.camera ?: return
         shader.uploadMat4f(Uniforms.PROJECTION, camera.createProjectionMatrix())
         shader.uploadMat4f(Uniforms.VIEW, camera.createViewMatrix())
 

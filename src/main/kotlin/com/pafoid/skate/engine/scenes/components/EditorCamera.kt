@@ -11,25 +11,32 @@ import kotlin.math.pow
 import kotlin.math.sign
 
 class EditorCamera(private val camera: Camera) : Component() {
-    private val clickOrigin = Vector2f()
-    private var dragDebounce = 0.032f
+
+
+    private var isPanning = false
     private val dragSensitivity = 30f
     private val scrollSensitivity = 0.1f
     private var lerpTime = 0.0f
     private var reset = false
 
     override fun editorUpdate(dt: Float) {
-        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE) && dragDebounce > 0f) {
-            clickOrigin.set(MouseListener.getWorld())
-            dragDebounce -= dt
-        } else if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
-            val mousePos = MouseListener.getWorld()
-            val mouseDelta = Vector2f(mousePos).sub(clickOrigin)
-            camera.position.sub(mouseDelta.x * dt * dragSensitivity, mouseDelta.y * dt * dragSensitivity, 0f)
-            clickOrigin.lerp(mousePos, dt)
-        } else if (dragDebounce <= 0f) {
-            dragDebounce = 0.032f
+
+        // Panning Logic
+        if (MouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_MIDDLE)) {
+            isPanning = true
+        } else if (!MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
+            isPanning = false
         }
+
+        if (isPanning) {
+            val worldDeltaX = MouseListener.getWorldDx()
+            val worldDeltaY = MouseListener.getWorldDy()
+
+            // Translate camera position by the world delta scaled by sensitivity.
+            camera.position.x -= worldDeltaX * dragSensitivity
+            camera.position.y -= worldDeltaY * dragSensitivity
+        }
+
 
         if (MouseListener.getScrollY() != 0f) {
             val addValue = abs(MouseListener.getScrollY() * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)

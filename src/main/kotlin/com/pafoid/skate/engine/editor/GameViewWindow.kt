@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.listeners.MouseListener
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Icons
@@ -18,7 +19,9 @@ import kotlin.math.roundToInt
 
 class GameViewWindow : KoinComponent {
 
-    private val logger: com.pafoid.skate.engine.editor.logs.LoggerService by inject()
+    private val logger: LoggerService by inject()
+    private val sceneManager: SceneManager by inject()
+
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
     var imageSizeX = 0f
@@ -62,7 +65,7 @@ class GameViewWindow : KoinComponent {
             val payload = payloadRail ?: payloadLedge ?: payloadKicker
             
             if (payload != null) {
-                val scene = SceneManager.getCurrentScene()
+                val scene = sceneManager.currentScene
                 if (scene != null) {
                     val mousePos = ImVec2()
                     ImGui.getMousePos(mousePos)
@@ -116,7 +119,7 @@ class GameViewWindow : KoinComponent {
             
             // Gizmo Safety: Don't select/deselect if we are interacting with a gizmo
             var gizmoInteracting = false
-            SceneManager.getCurrentScene()?.gameObjects?.forEach { go ->
+            sceneManager.currentScene?.gameObjects?.forEach { go ->
                 go.getComponent<com.pafoid.skate.engine.scenes.components.GizmoSystem>()?.let { system ->
                     if (system.isInteracting()) {
                         gizmoInteracting = true
@@ -129,14 +132,14 @@ class GameViewWindow : KoinComponent {
                 val pickingX = ((relativeX / imageSizeX) * 1920f).toInt().coerceIn(0, 1919)
                 val pickingY = ((relativeY / imageSizeY) * 1080f).toInt().coerceIn(0, 1079)
                 
-                hoveredGameObject = SceneManager.get().getPickedObject(pickingX, pickingY)
+                hoveredGameObject = sceneManager.getPickedObject(pickingX, pickingY)
                 
                 // Debug Info Overlay
                 ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
                 ImGui.textColored(1f, 1f, 1f, 0.5f, "Picked ID: ${hoveredGameObject?.getUid() ?: -1} at ($pickingX, $pickingY)")
 
                 if (MouseListener.mouseButtonBeginPress(0)) {
-                    Window.getImGuiLayer().propertiesWindow.setActiveObject(hoveredGameObject)
+                Window.getImGuiLayer().propertiesWindow.setActiveObject(hoveredGameObject)
                 }
             }
         } else {
@@ -147,8 +150,8 @@ class GameViewWindow : KoinComponent {
     }
 
     private fun renderViewportOverlays(windowPos: ImVec2, windowSize: ImVec2) {
-        val isPlaying = SceneManager.isPlaying()
-        val scene = SceneManager.getCurrentScene()
+        val isPlaying = sceneManager.runtimePlaying
+        val scene = sceneManager.currentScene
         
         // FPS Overlay (Top Left)
         ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + OVERLAY_PADDING)
@@ -221,8 +224,8 @@ class GameViewWindow : KoinComponent {
     }
 
     private fun renderToolbar(windowPos: ImVec2, windowSize: ImVec2) {
-        val isPlaying = SceneManager.isPlaying()
-        val scene = SceneManager.getCurrentScene()
+        val isPlaying = sceneManager.runtimePlaying
+        val scene = sceneManager.currentScene
         val toolbarPosY = windowPos.y + OVERLAY_PADDING
 
         val buttons = mutableListOf<() -> Unit>()
@@ -246,7 +249,7 @@ class GameViewWindow : KoinComponent {
                             }
                             buttons.add {
                                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                                    SceneManager.setPlaying(false)
+                                    sceneManager.runtimePlaying = false
                                     scene?.timeScale = 1.0f // Reset time scale when stopping
                                     logger.logEditor("Simulation stopped")
                                 }
@@ -255,7 +258,7 @@ class GameViewWindow : KoinComponent {
                         } else {
                             buttons.add {
                                 if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                                    SceneManager.setPlaying(true)
+                                    sceneManager.runtimePlaying = true
                                     logger.logEditor("Simulation started")
                                 }
                                 if (ImGui.isItemHovered()) ImGui.setTooltip("Play Simulation")

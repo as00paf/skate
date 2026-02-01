@@ -17,9 +17,10 @@ import org.koin.core.component.inject
 object Prefabs : KoinComponent {
 
     private val resourceManager: ResourceManager by inject()
+    private val sceneManager: SceneManager by inject()
 
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
-        val scene = SceneManager.getCurrentScene() ?: throw IllegalStateException("No active scene")
+        val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
         val go = scene.createGameObject(name)
         go.transform.scale.set(sizeX, sizeY, 1f)
 
@@ -31,7 +32,7 @@ object Prefabs : KoinComponent {
     }
 
     fun generateEntityObject(model: RawModel, texture: Texture, name: String = "Entity_Object_Gen"): GameObject {
-        val scene = SceneManager.getCurrentScene() ?: throw IllegalStateException("No active scene")
+        val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
         val go = scene.createGameObject(name)
 
         val texturedModel = TexturedModel(model, texture)
@@ -45,7 +46,7 @@ object Prefabs : KoinComponent {
     }
 
     fun generateTileObject(sizeX: Float, sizeY: Float, texture: Texture, name: String = "Tile_Gen"): GameObject {
-        val scene = SceneManager.getCurrentScene() ?: throw IllegalStateException("No active scene")
+        val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
         val go = scene.createGameObject(name)
 
         val tile = ModularTile()

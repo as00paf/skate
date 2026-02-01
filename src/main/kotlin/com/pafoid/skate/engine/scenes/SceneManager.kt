@@ -6,14 +6,16 @@ import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.engine.utils.JobSystem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
+import org.lwjgl.glfw.GLFW
 import org.koin.core.component.inject
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.collections.forEachIndexed
@@ -23,19 +25,17 @@ class SceneManager : KoinComponent {
 
     private val resourceManager: ResourceManager by inject()
     private val logger: LoggerService by inject()
+    private var selectedGameObject: GameObject? = null
 
-    // TODO: remove
-    companion object {
-        fun get(): SceneManager = (object : KoinComponent {}).get()
-
-        fun getCurrentScene(): Scene? = get().currentScene
-        fun isPlaying(): Boolean = get().runtimePlaying
-        fun setPlaying(playing: Boolean) { get().runtimePlaying = playing }
+    fun setSelectedGameObject(gameObject: GameObject?) {
+        selectedGameObject = gameObject
     }
 
-    private var currentScene: Scene? = null
-    private var runtimePlaying = false
-    private val engineState = AtomicReference(EngineState.BOOTING)
+    fun getSelectedGameObject(): GameObject? = selectedGameObject
+
+    var currentScene: Scene? = null
+    var runtimePlaying = false
+    val engineState = AtomicReference(EngineState.BOOTING)
 
     private lateinit var shader3D: Shader
     private lateinit var shader2D: Shader
@@ -111,6 +111,47 @@ class SceneManager : KoinComponent {
         logger.logEngine("Scene ${initializer::class.simpleName} loaded and started.")
     }
 
+    private fun handleEditorShortcuts(dt: Float, imguiLayer: ImGuiLayer) {
+        val ctrlDown = KeyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || KeyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
+
+        if (ctrlDown) {
+            // Copy
+            if (KeyListener.keyBeginPress(GLFW.GLFW_KEY_C)) {
+                val selected = getSelectedGameObject()
+                if (selected != null) {
+                    ClipboardService.copy(selected)
+                    logger.logEditor("Copied GameObject: ${selected.name}")
+                }
+            }
+            // Cut
+            else if (KeyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
+                val selected = getSelectedGameObject()
+                if (selected != null) {
+                    val destroyedObject = ClipboardService.cut(selected)
+                    destroyedObject.destroy()
+                    setSelectedGameObject(null) // Clear selection after cut
+                    logger.logEditor("Cut GameObject: ${selected.name}")
+                }
+            }
+            // Paste
+            else if (KeyListener.keyBeginPress(GLFW.GLFW_KEY_V)) {
+                val clonedGameObject = ClipboardService.paste()
+                if (clonedGameObject != null) {
+                    // Add to scene at origin for now
+                    val origin = Vector3f(0f, 0f, 0f)
+                    clonedGameObject.transform.translation.set(origin)
+                    
+                    // Set parent to null, as it's being pasted as a root object
+                    clonedGameObject.parent = null 
+                    
+                    currentScene?.addGameObjectToScene(clonedGameObject)
+                    setSelectedGameObject(clonedGameObject) // Make the pasted object selected
+                    logger.logEditor("Pasted GameObject: ${clonedGameObject.name}")
+                }
+            }
+        }
+    }
+
     fun draw(dt: Float, imguiLayer: ImGuiLayer) {
         val state = engineState.get()
 
@@ -129,6 +170,7 @@ class SceneManager : KoinComponent {
                 scene.update(dt)
             } else {
                 scene.editorUpdate(dt)
+                handleEditorShortcuts(dt, imguiLayer)
             }
 
             renderer.render(scene, imguiLayer.propertiesWindow.getActiveObject(), imguiLayer.gameViewWindow.getHoveredObject())

@@ -35,6 +35,8 @@ import kotlin.math.roundToLong
 
 class PlayerController : Component(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
+    private val sceneManager: SceneManager by inject()
+
     var preferredStance = Stance.REGULAR
     var pushForce = 5.0f
     var steerSpeed = 2.0f
@@ -165,7 +167,7 @@ fun updateProceduralLean(dt: Float) {
     }
 
     fun handleWalking(dt: Float) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val camera = scene.camera
         val target = skater ?: return
         
@@ -229,7 +231,7 @@ fun updateProceduralLean(dt: Float) {
     }
 
     fun handleGroundSnapping() {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val target = skater ?: return
         val pos = target.transform.translation
         
@@ -252,7 +254,7 @@ fun updateProceduralLean(dt: Float) {
 
         if (toggle) {
             val s = skater ?: return
-            SceneManager.getCurrentScene() ?: return
+            sceneManager.currentScene ?: return
 
             if (stateManager.currentState == PlayerState.RIDING) {
                 stateManager.transitionToState(PlayerState.WALKING)
@@ -366,7 +368,7 @@ fun updateProceduralLean(dt: Float) {
 
     private fun bail() {
         // Transition to Tumble Cube
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         
         // Find the skater child
         val skater = gameObject.children.find { it.name == "Skater" }

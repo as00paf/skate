@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
+import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.NonPickable
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
@@ -31,6 +32,7 @@ class Renderer(
     private val debugDraw: DebugDraw by inject()
     private val pickingDraw: PickingDraw by inject()
     private val resourceManager: ResourceManager by inject()
+    private val sceneManager: SceneManager by inject()
 
     override var useFbo = false // Default to false for initial feature tests
 
@@ -235,7 +237,7 @@ class Renderer(
 
     private fun renderEntity(go: GameObject, entity: Entity) {
         val texturedModel = entity.model
-        val camera = com.pafoid.skate.engine.scenes.SceneManager.getCurrentScene()?.camera
+        val camera = sceneManager.currentScene?.camera
 
         defaultShader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, go.transform.toWorldMatrix())
         defaultShader.uploadFloat(Uniforms.TEXTURE_SCALE, entity.textureScale)

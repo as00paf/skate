@@ -25,6 +25,7 @@ private const val MAX_TRIANGLES = 1000
 class DebugDraw: KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val logger: LoggerService by inject()
+    private val sceneManager: SceneManager by inject()
 
     private val lines = mutableListOf<Line3D>()
     private val triangles = mutableListOf<Triangle3D>()
@@ -81,7 +82,7 @@ class DebugDraw: KoinComponent {
 
     fun draw() {
         shader.start()
-        val camera = SceneManager.getCurrentScene()?.camera ?: return
+        val camera = sceneManager.currentScene?.camera ?: return
         shader.uploadMat4f("uProjection", camera.createProjectionMatrix())
         shader.uploadMat4f("uView", camera.createViewMatrix())
 

@@ -7,8 +7,13 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 
-class ScaleGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow) {
+class ScaleGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow), KoinComponent {
+
+    private val sceneManager: SceneManager by inject()
 
     override fun editorUpdate(dt: Float) {
         val go = activeGameObject
@@ -26,7 +31,7 @@ class ScaleGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow) {
     }
 
     private fun calculateDelta(axis: Vector3f): Float {
-        val scene = SceneManager.getCurrentScene() ?: return 0f
+        val scene = sceneManager.currentScene ?: return 0f
         val camera = scene.camera
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()

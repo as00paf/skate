@@ -83,3 +83,7 @@ Reports
 ## 🛹 Phase 4: Deck Mapping
 - [ ] **Foot-to-Deck Projection**: Take the "Ankle" and "Toe" joints and find their intersection point on your 3D Skateboard model.
 - [ ] **Save Pose**: Export the resulting configuration as a `.json` file for use in your "Pressure Map" trick system.
+
+## 18.6. Interaction & Gizmos
+- [ ] **Buttons**: Add buttons in the game view window for the gizmos (rotation, translation, scale)
+- [ ] **Display**: Make sure the gizmos dont scale with the movement of the editor camera. 

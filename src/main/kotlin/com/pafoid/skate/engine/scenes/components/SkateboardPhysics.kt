@@ -4,6 +4,9 @@ import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 
 /**
  * Handles the physics simulation for a skateboard, primarily focused on the raycast suspension system.
@@ -17,7 +20,10 @@ import org.joml.Vector3f
  * - [stiffness]: The spring constant (k). Higher values mean stiffer suspension.
  * - [damping]: Resistance to oscillation. Prevents the board from bouncing indefinitely.
  */
-class SkateboardPhysics : Component() {
+class SkateboardPhysics : Component(), KoinComponent {
+
+    private val sceneManager: SceneManager by inject()
+
     // Suspension parameters (Real-world Meters)
     var suspensionRestLength = 0.08f // 8cm total height
     var stiffness = 600.0f          // Slightly stiffer
@@ -43,7 +49,7 @@ class SkateboardPhysics : Component() {
     }
 
     override fun update(dt: Float) {
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val transform = gameObject.transform.toWorldMatrix()
         
         var groundedCount = 0

@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.render.DebugDraw
+import com.pafoid.skate.engine.scenes.Prefabs
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.UnitSystem
@@ -16,6 +17,7 @@ import kotlin.math.abs
 
 class MeasureTool : Component(), KoinComponent {
     private val debugDraw: DebugDraw by inject()
+    private val sceneManager: SceneManager by inject()
 
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
@@ -29,7 +31,7 @@ class MeasureTool : Component(), KoinComponent {
     override fun editorUpdate(dt: Float) {
         if (!isActive) return
 
-        val scene = SceneManager.getCurrentScene() ?: return
+        val scene = sceneManager.currentScene ?: return
         val mousePos = ImGui.getMousePos() // This might still be unsafe if called outside ImGui frame? 
                                           // Actually getMousePos is usually safe as it reads IO.
                                           // But let's use MouseListener inputs if possible or assume IO is updated.
