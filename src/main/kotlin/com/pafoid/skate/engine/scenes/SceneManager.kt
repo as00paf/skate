@@ -26,6 +26,8 @@ class SceneManager : KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val keyListener: KeyListener by inject()
     private val logger: LoggerService by inject()
+    private val clipboardService: ClipboardService by inject()
+
     private var selectedGameObject: GameObject? = null
 
     fun setSelectedGameObject(gameObject: GameObject?) {
@@ -120,7 +122,7 @@ class SceneManager : KoinComponent {
             if (keyListener.keyBeginPress(GLFW.GLFW_KEY_C)) {
                 val selected = getSelectedGameObject()
                 if (selected != null) {
-                    ClipboardService.copy(selected)
+                    clipboardService.copy(selected)
                     logger.logEditor("Copied GameObject: ${selected.name}")
                 }
             }
@@ -128,7 +130,7 @@ class SceneManager : KoinComponent {
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
                 val selected = getSelectedGameObject()
                 if (selected != null) {
-                    val destroyedObject = ClipboardService.cut(selected)
+                    val destroyedObject = clipboardService.cut(selected)
                     destroyedObject.destroy()
                     setSelectedGameObject(null) // Clear selection after cut
                     logger.logEditor("Cut GameObject: ${selected.name}")
@@ -136,7 +138,7 @@ class SceneManager : KoinComponent {
             }
             // Paste
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_V)) {
-                val clonedGameObject = ClipboardService.paste()
+                val clonedGameObject = clipboardService.paste()
                 if (clonedGameObject != null) {
                     // Add to scene at origin for now
                     val origin = Vector3f(0f, 0f, 0f)

@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.editor.ThumbnailCache
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.render.PickingDraw
+import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.koin.dsl.module
 
@@ -34,4 +35,5 @@ val engineModule = module {
 val appModule = module {
     single { SceneManager() }
     single { LoggerService() }
+    single { ClipboardService() }
 }

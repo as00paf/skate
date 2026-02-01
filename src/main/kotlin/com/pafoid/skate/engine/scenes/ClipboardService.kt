@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.scenes.components.Transform
 
-object ClipboardService {
+class ClipboardService {
     private var clipboardGameObject: GameObject? = null
 
     fun copy(gameObject: GameObject) {
