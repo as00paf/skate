@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.render
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_Y
 import com.pafoid.skate.engine.scenes.SceneManager
@@ -15,7 +14,10 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
+import kotlin.getValue
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -28,16 +30,17 @@ class Camera(
     var yaw: Float = 0f,
     var roll: Float = 0f,
     var isOrthographic: Boolean = false
-) {
+): KoinComponent {
+    private val inputProvider: IInputProvider by inject()
+    private val keyListener: KeyListener by inject()
+    private val mouseListener: MouseListener by inject()
+
     var fov = 45f
     var nearPlane = 0.1f
     var farPlane = 1000f
     
     var projectionSize = Vector2f(32f, 18f) // Default 16:9 units
     var zoom = 1.0f
-
-    // Input
-    var inputProvider: IInputProvider = InputProvider
 
     // Third person / Spring arm
     var target: Vector3f? = null
@@ -109,8 +112,8 @@ class Camera(
         
         // Mouse Rotation
         if (inputProvider.isCursorDisabled()) {
-            yaw += MouseListener.getDx() * sensitivity
-            pitch += MouseListener.getDy() * sensitivity
+            yaw += mouseListener.getDx() * sensitivity
+            pitch += mouseListener.getDy() * sensitivity
         }
         
         // RS Rotation (Joystick 1)
@@ -167,8 +170,8 @@ class Camera(
         // Rotation
         if (inputProvider.isCursorDisabled()) {
             val sensitivity = 0.1f
-            yaw += MouseListener.getDx() * sensitivity
-            pitch += MouseListener.getDy() * sensitivity
+            yaw += mouseListener.getDx() * sensitivity
+            pitch += mouseListener.getDy() * sensitivity
             
             // Limit pitch
             if (pitch > 89f) pitch = 89f
@@ -189,22 +192,22 @@ class Camera(
             sin(Math.toRadians(yaw.toDouble())).toFloat()
         ).normalize()
 
-        if (KeyListener.isKeyPressed(GLFW_KEY_W)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_W)) {
             position.add(Vector3f(forward).mul(speed))
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_S)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_S)) {
             position.sub(Vector3f(forward).mul(speed))
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_D)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_D)) {
             position.add(Vector3f(right).mul(speed))
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_A)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_A)) {
             position.sub(Vector3f(right).mul(speed))
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_SPACE)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_SPACE)) {
             position.y += speed
         }
-        if (KeyListener.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
             position.y -= speed
         }
     }

@@ -9,11 +9,11 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.getValue
 
 class ScaleGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow), KoinComponent {
 
     private val sceneManager: SceneManager by inject()
+    private val mouseListener: MouseListener by inject()
 
     override fun editorUpdate(dt: Float) {
         val go = activeGameObject
@@ -44,7 +44,7 @@ class ScaleGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow), K
         val s2 = worldToScreen(p2, view, proj, 1920f, 1080f)
         
         val axisScreenDir = s2.sub(s1).normalize()
-        val mouseDelta = Vector2f(MouseListener.getDx(), -MouseListener.getDy())
+        val mouseDelta = Vector2f(mouseListener.getDx(), -mouseListener.getDy())
         
         val projection = mouseDelta.dot(axisScreenDir)
         

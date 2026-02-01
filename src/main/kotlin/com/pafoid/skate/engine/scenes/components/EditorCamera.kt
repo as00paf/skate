@@ -4,15 +4,20 @@ import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector2f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_HOME
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_MIDDLE
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sign
 
-class EditorCamera(private val camera: Camera) : Component() {
+class EditorCamera(private val camera: Camera) : Component(), KoinComponent {
+    private val keyListener: KeyListener by inject()
+    private val mouseListener: MouseListener by inject()
 
-
+    private val clickOrigin = Vector2f()
+    private var dragDebounce = 0.032f
     private var isPanning = false
     private val dragSensitivity = 30f
     private val scrollSensitivity = 0.1f
@@ -20,6 +25,17 @@ class EditorCamera(private val camera: Camera) : Component() {
     private var reset = false
 
     override fun editorUpdate(dt: Float) {
+        if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE) && dragDebounce > 0f) {
+            clickOrigin.set(mouseListener.getWorld())
+            dragDebounce -= dt
+        } else if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
+            val mousePos = mouseListener.getWorld()
+            val mouseDelta = Vector2f(mousePos).sub(clickOrigin)
+            camera.position.sub(mouseDelta.x * dt * dragSensitivity, mouseDelta.y * dt * dragSensitivity, 0f)
+            clickOrigin.lerp(mousePos, dt)
+        } else if (dragDebounce <= 0f) {
+            dragDebounce = 0.032f
+        }
 
         // Panning Logic
         if (MouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_MIDDLE)) {
@@ -38,12 +54,12 @@ class EditorCamera(private val camera: Camera) : Component() {
         }
 
 
-        if (MouseListener.getScrollY() != 0f) {
-            val addValue = abs(MouseListener.getScrollY() * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
-            camera.addZoom((addValue.toFloat() * -sign(MouseListener.getScrollY())))
+        if (mouseListener.getScrollY() != 0f) {
+            val addValue = abs(mouseListener.getScrollY() * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
+            camera.addZoom((addValue.toFloat() * -sign(mouseListener.getScrollY())))
         }
 
-        if (KeyListener.isKeyPressed(GLFW_KEY_HOME)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_HOME)) {
             reset = true
         }
 

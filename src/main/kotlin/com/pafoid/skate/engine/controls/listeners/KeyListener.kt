@@ -4,9 +4,7 @@ import imgui.ImGui
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
-object KeyListener {
-    fun get(): KeyListener = this
-
+class KeyListener {
     private var keyPressed = BooleanArray(350)
     private var keyBeginPressed = BooleanArray(350)
 

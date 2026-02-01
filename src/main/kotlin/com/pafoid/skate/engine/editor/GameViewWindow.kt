@@ -20,6 +20,7 @@ import kotlin.math.roundToInt
 class GameViewWindow : KoinComponent {
 
     private val logger: LoggerService by inject()
+    private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()
 
     var imageScreenPosX = 0f
@@ -101,8 +102,8 @@ class GameViewWindow : KoinComponent {
             gamepadOverlay.imgui(Vector2f(imageScreenPosX, imageScreenPosY), Vector2f(imageSizeX, imageSizeY))
         }
 
-        MouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
-        MouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
+        mouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
+        mouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
 
         // ... (rest of picking logic)
 
@@ -138,8 +139,8 @@ class GameViewWindow : KoinComponent {
                 ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
                 ImGui.textColored(1f, 1f, 1f, 0.5f, "Picked ID: ${hoveredGameObject?.getUid() ?: -1} at ($pickingX, $pickingY)")
 
-                if (MouseListener.mouseButtonBeginPress(0)) {
-                Window.getImGuiLayer().propertiesWindow.setActiveObject(hoveredGameObject)
+                if (mouseListener.mouseButtonBeginPress(0)) {
+                    Window.getImGuiLayer().propertiesWindow.setActiveObject(hoveredGameObject)
                 }
             }
         } else {

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import kotlin.math.min
 
-object JoystickListener {
+class JoystickListener {
     private val joystickPresent = BooleanArray(GLFW_JOYSTICK_LAST + 1)
     private val lastButtons = Array(GLFW_JOYSTICK_LAST + 1) { BooleanArray(15) { false } }
     private val currentButtons = Array(GLFW_JOYSTICK_LAST + 1) { BooleanArray(15) { false } }

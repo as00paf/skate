@@ -17,6 +17,7 @@ import kotlin.math.min
 
 class GamepadOverlay : KoinComponent {
     private val resourceManager: ResourceManager by inject()
+    private val joystickListener: JoystickListener by inject()
     
     private val controllerTexture: Texture by lazy {
         resourceManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER)
@@ -62,8 +63,8 @@ class GamepadOverlay : KoinComponent {
                 0f, 0f, 1f, 1f,
                 ImGui.getColorU32(1f, 1f, 1f, 0.7f))
 
-            val axes = JoystickListener.getAxes(GLFW_JOYSTICK_1)
-            val buttons = JoystickListener.getButtons(GLFW_JOYSTICK_1)
+            val axes = joystickListener.getAxes(GLFW_JOYSTICK_1)
+            val buttons = joystickListener.getButtons(GLFW_JOYSTICK_1)
 
             // Dynamic Stick Highlights
             val lsPos = ImVec2(windowPos.x + displayWidth * 0.245f, windowPos.y + displayHeight * 0.305f)

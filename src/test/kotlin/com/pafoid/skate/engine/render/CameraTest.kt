@@ -1,13 +1,19 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.controls.input.IInputProvider
+import com.pafoid.skate.engine.controls.input.InputProvider
+import com.pafoid.skate.engine.controls.listeners.KeyListener
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.koin.core.context.GlobalContext.startKoin
+import org.koin.dsl.module
+import org.koin.mp.KoinPlatform.startKoin
 
 class CameraTest {
 
@@ -19,12 +25,20 @@ class CameraTest {
         MockKAnnotations.init(this)
         every { inputProvider.isCursorDisabled() } returns false
         every { inputProvider.getAxes(any()) } returns null
+
+        startKoin {
+            modules(
+                module {
+                    single { KeyListener() }
+                    single<IInputProvider> { InputProvider(mockk(), get()) }
+                }
+            )
+        }
     }
 
     @Test
     fun `test camera preset interpolation`() {
         val camera = Camera()
-        camera.inputProvider = inputProvider
         camera.fov = 45f
         camera.desiredDistance = 5f
         

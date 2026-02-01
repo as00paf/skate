@@ -3,9 +3,13 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.scenes.GameObject
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
 
-class GizmoSystem: Component() {
+class GizmoSystem: Component(), KoinComponent {
+
+    private val keyListener: KeyListener by inject()
 
     private var usingGizmo = TRANSLATE_GIZMO
 
@@ -32,13 +36,13 @@ class GizmoSystem: Component() {
             SCALE_GIZMO -> scaleGizmo.setInUse()
         }
 
-        if (KeyListener.isKeyPressed(GLFW_KEY_W)) {
+        if (keyListener.isKeyPressed(GLFW_KEY_W)) {
             usingGizmo = TRANSLATE_GIZMO
-        } else if (KeyListener.isKeyPressed(GLFW_KEY_E)) {
+        } else if (keyListener.isKeyPressed(GLFW_KEY_E)) {
             usingGizmo = ROTATION_GIZMO
-        } else if (KeyListener.isKeyPressed(GLFW_KEY_R)) {
+        } else if (keyListener.isKeyPressed(GLFW_KEY_R)) {
             usingGizmo = SCALE_GIZMO
-        } else if (KeyListener.isKeyPressed(GLFW_KEY_Q)) {
+        } else if (keyListener.isKeyPressed(GLFW_KEY_Q)) {
             usingGizmo = -1 // Selection mode (no gizmo)
         }
     }
