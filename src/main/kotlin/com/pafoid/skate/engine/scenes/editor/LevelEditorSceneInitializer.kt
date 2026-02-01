@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
 import com.pafoid.skate.engine.scenes.components.*
 import com.pafoid.skate.engine.physics3d.components.*
+import com.pafoid.skate.engine.prefabs.Skateboard
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -20,6 +21,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private var currentScene: Scene? = null
     private lateinit var editorStuff: GameObject
+    private lateinit var editorCamera: EditorCamera
 
     override suspend fun loadResources(scene: Scene) {}
 
@@ -36,27 +38,18 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         scene.camera.yaw = 0f
         
         // Essential Editor Tools
+        editorCamera = EditorCamera(scene.camera)
         editorStuff = scene.createGameObject("EditorTools")
         editorStuff.setNoSerialize()
         editorStuff.addComponent(MouseControls())
         editorStuff.addComponent(GizmoSystem())
-        editorStuff.addComponent(EditorCamera(scene.camera))
+        editorStuff.addComponent(editorCamera)
         editorStuff.addComponent(GridLines())
         editorStuff.addComponent(MeasureTool())
         scene.addGameObjectToScene(editorStuff)
 
         // TODO: Should be a prefab
-        val skateGo = GameObject("Skateboard")
-        skateGo.transform.translation.set(0f, 2f, 0f)
-        skateGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
-        skateGo.addComponent(Entity(
-            model = resourceManager.loadModelSync(Assets.Models.SKATEBOARD_GLB)
-        ))
-        skateGo.addComponent(RigidBody3D(1.8f).apply { friction = 0.1f }) // 1.8kg mass
-        skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f))) // 0.8m x 0.04m x 0.2m
-        skateGo.addComponent(SkateboardPhysics())
-        skateGo.addComponent(PlayerController())
-        skateGo.addComponent(TrickDetector())
+        val skateGo = Skateboard(resourceManager)
         scene.addGameObjectToScene(skateGo)
 
         // TODO: Should be a prefab
@@ -100,6 +93,5 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     }
 
     override fun imgui() {
-        editorStuff.imgui()
     }
 }

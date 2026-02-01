@@ -55,7 +55,6 @@ class SceneHierarchyWindow(
 
         if (ImGui.isItemClicked()) {
             sceneManager.setSelectedGameObject(obj)
-            sceneManager.setSelectedGameObject(obj)
         }
         
         if (ImGui.beginPopupContextItem()) {

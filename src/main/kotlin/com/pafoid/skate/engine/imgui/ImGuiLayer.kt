@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.editor.ConsoleWindow
 import com.pafoid.skate.engine.editor.EnvironmentWindow
 import com.pafoid.skate.engine.editor.GameViewWindow
 import com.pafoid.skate.engine.editor.AssetBrowser
+import com.pafoid.skate.engine.editor.PhysicsTunerWindow
 import com.pafoid.skate.engine.editor.ProfilerWindow
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.editor.SceneHierarchyWindow
@@ -54,6 +55,7 @@ class ImGuiLayer: KoinComponent {
     val gameViewWindow = GameViewWindow()
     val assetBrowser = AssetBrowser()
     val consoleWindow = ConsoleWindow()
+    private val physicsTunerWindow = PhysicsTunerWindow()
     private val environmentWindow = EnvironmentWindow()
     private val profilerWindow = ProfilerWindow()
     private val hierarchyWindow = SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
@@ -67,6 +69,7 @@ class ImGuiLayer: KoinComponent {
     private val showEnvironment = ImBoolean(true)
     private val showProfiler = ImBoolean(true)
     private val showConsole = ImBoolean(true)
+    private val showPhysicsTuner = ImBoolean(true)
     private var isViewportMaximized = false
 
     fun init(glfwWindow: Long) {
@@ -148,6 +151,7 @@ class ImGuiLayer: KoinComponent {
             if (showEnvironment.get()) environmentWindow.imgui(currentScene)
             if (showProfiler.get()) profilerWindow.imgui()
             if (showConsole.get()) consoleWindow.imgui(showConsole)
+            if (showPhysicsTuner.get()) physicsTunerWindow.imgui(currentScene)
         }
 
         endFrame()
@@ -259,6 +263,7 @@ class ImGuiLayer: KoinComponent {
                     ImGui.checkbox("Environment", showEnvironment)
                     ImGui.checkbox("Profiler", showProfiler)
                     ImGui.checkbox("Console", showConsole)
+                    ImGui.checkbox("Physics Tuner", showPhysicsTuner)
                     ImGui.endMenu()
                 }
                 ImGui.endMenu()

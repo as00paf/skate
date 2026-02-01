@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.scenes
 
+import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.DirectionalLight
 import com.pafoid.skate.engine.render.Light
@@ -38,7 +40,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
-    val physics3d: com.pafoid.skate.engine.physics3d.IPhysics3D = com.pafoid.skate.engine.physics3d.Physics3D()
+    val physics3d: IPhysics3D = Physics3D()
 
     private var isRunning = false
 
@@ -78,6 +80,10 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
 
     fun getGameObject(id: Int): GameObject? {
         return gameObjects.firstOrNull { it.getUid() == id }
+    }
+
+    fun getGameObject(name: String): GameObject? {
+        return gameObjects.firstOrNull { it.name == name }
     }
 
     fun editorUpdate(dt: Float) {

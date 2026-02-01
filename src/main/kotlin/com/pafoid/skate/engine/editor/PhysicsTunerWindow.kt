@@ -1,16 +1,26 @@
 package com.pafoid.skate.engine.editor
 
+import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.scenes.components.PlayerController
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.prefabs.Skateboard
+import com.pafoid.skate.engine.scenes.Scene
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.joml.Vector3f
 
 class PhysicsTunerWindow {
     
-    fun imgui(physics: Physics3D, playerController: PlayerController?, skateboardPhysics: SkateboardPhysics?, rb: RigidBody3D?) {
+    fun imgui(currentScene: Scene) {
+        val skate = currentScene.getGameObject("Skateboard") as? Skateboard ?: return
+        val physics: IPhysics3D = currentScene.physics3d
+
+        val playerController = skate.getComponent<PlayerController>()
+        val skateboardPhysics = skate.getComponent<SkateboardPhysics>()
+        val rb= skate.getComponent<RigidBody3D>()
+
         ImGui.begin("Physics Tuner")
         
         // Gravity
