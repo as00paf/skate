@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import io.mockk.every
 import io.mockk.mockk
@@ -36,14 +37,14 @@ class TrickDetectionTest {
     private lateinit var rb: RigidBody3D
     private lateinit var skatePhysics: SkateboardPhysics
     private lateinit var trickDetector: TrickDetector
+    private val sceneManager = mockk<SceneManager>()
 
     @BeforeEach
     fun setup() {
-        mockkObject(SceneManager)
-        every { SceneManager.isPlaying() } returns true
+        every { sceneManager.runtimePlaying } returns true
         
-        val mockScene = mockk<com.pafoid.skate.engine.scenes.Scene>()
-        every { SceneManager.getCurrentScene() } returns mockScene
+        val mockScene = mockk<Scene>()
+        every { sceneManager.currentScene } returns mockScene
         every { mockScene.physics3d } returns physics
 
         skateboard = GameObject("Skateboard")

@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.physics3d
 
+import com.pafoid.skate.engine.physics3d.SkateboardPhysicsTest.Companion.sceneManager
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
@@ -11,10 +12,14 @@ import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import org.joml.Vector3f
 import org.junit.jupiter.api.*
+import org.koin.core.context.startKoin
+import org.koin.dsl.module
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class SkateboardStressTest {
+
+    val sceneManager = mockk<SceneManager>()
 
     companion object {
         private lateinit var physics: Physics3D
@@ -23,6 +28,12 @@ class SkateboardStressTest {
         @JvmStatic
         fun setupAll() {
             physics = Physics3D()
+
+            startKoin {
+                modules(module {
+                    single<SceneManager> { sceneManager }
+                })
+            }
         }
 
         @AfterAll
@@ -34,10 +45,9 @@ class SkateboardStressTest {
 
     @BeforeEach
     fun setup() {
-        mockkObject(SceneManager)
-        every { SceneManager.isPlaying() } returns true
+        every { sceneManager.runtimePlaying } returns true
         val mockScene = mockk<com.pafoid.skate.engine.scenes.Scene>()
-        every { SceneManager.getCurrentScene() } returns mockScene
+        every { sceneManager.currentScene } returns mockScene
         every { mockScene.physics3d } returns physics
     }
 

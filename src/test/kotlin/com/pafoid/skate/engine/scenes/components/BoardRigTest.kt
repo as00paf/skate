@@ -15,6 +15,8 @@ import kotlin.test.assertTrue
 
 class BoardRigTest {
 
+    val sceneManager: SceneManager = mockk()
+
     class FakeInputBuffer : IInputBuffer {
         var flickVelocity = Vector2f(0f, 0f)
         override fun push(timestamp: Float, mousePos: Vector2f, joystickAxes: FloatArray?) {}
@@ -40,9 +42,8 @@ class BoardRigTest {
         
         scene = mockk(relaxed = true)
         physics3d = mockk(relaxed = true)
-        
-        mockkObject(SceneManager)
-        every { SceneManager.getCurrentScene() } returns scene
+
+        every { sceneManager.currentScene } returns scene
         every { scene.physics3d } returns physics3d
         
         skateboard.addComponent(physics)

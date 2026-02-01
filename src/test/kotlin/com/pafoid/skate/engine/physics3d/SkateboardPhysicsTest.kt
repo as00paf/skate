@@ -3,9 +3,11 @@ package com.pafoid.skate.engine.physics3d
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import org.joml.Vector3f
@@ -14,6 +16,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.koin.core.context.startKoin
+import org.koin.dsl.module
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -22,13 +26,21 @@ class SkateboardPhysicsTest {
     companion object {
         private lateinit var physics: Physics3D
 
-        @org.junit.jupiter.api.BeforeAll
+        val sceneManager = mockk<SceneManager>()
+
+        @BeforeAll
         @JvmStatic
         fun setupAll() {
             physics = Physics3D()
+
+            startKoin {
+                modules(module {
+                    single<SceneManager> { sceneManager }
+                })
+            }
         }
 
-        @org.junit.jupiter.api.AfterAll
+        @AfterAll
         @JvmStatic
         fun teardownAll() {
             physics.destroy()
@@ -37,11 +49,10 @@ class SkateboardPhysicsTest {
 
     @BeforeEach
     fun setup() {
-        mockkObject(SceneManager)
-        every { SceneManager.isPlaying() } returns true
+        every { sceneManager.runtimePlaying } returns true
         
-        val mockScene = io.mockk.mockk<com.pafoid.skate.engine.scenes.Scene>()
-        every { SceneManager.getCurrentScene() } returns mockScene
+        val mockScene = mockk<Scene>()
+        every { sceneManager.currentScene } returns mockScene
         every { mockScene.physics3d } returns physics
     }
 

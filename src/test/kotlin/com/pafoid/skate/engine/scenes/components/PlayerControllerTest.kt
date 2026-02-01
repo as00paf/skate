@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.player.PlayerState
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants
@@ -25,6 +26,7 @@ class PlayerControllerTest {
 
     private lateinit var gameObject: GameObject
     private lateinit var controller: PlayerController
+    private val sceneManager = mockk<SceneManager>()
     
     @MockK
     private lateinit var inputProvider: IInputProvider
@@ -36,17 +38,17 @@ class PlayerControllerTest {
     fun setup() {
         startKoin {
             modules(module {
-                single { com.pafoid.skate.engine.assets.ResourceManager() }
+                single { ResourceManager() }
+                single { sceneManager }
             })
         }
         MockKAnnotations.init(this)
-        mockkObject(SceneManager)
         
         val camera = com.pafoid.skate.engine.render.Camera()
         every { scene.camera } returns camera
         every { scene.gameObjects } returns mutableListOf()
         every { scene.physics3d } returns mockk(relaxed = true)
-        every { SceneManager.getCurrentScene() } returns scene
+        every { sceneManager.currentScene } returns scene
         
         gameObject = GameObject("Player")
         val skater = GameObject("Skater")
