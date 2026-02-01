@@ -25,16 +25,112 @@ import org.koin.core.component.inject
 import kotlin.getValue
 import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
 
-class PrefabsWindow : KoinComponent {
+import java.io.File
+
+class AssetBrowser : KoinComponent {
     private val thumbnailCache: ThumbnailCache by inject()
     private val resourceManager: ResourceManager by inject()
 
     private var searchText = ImString("")
 
     fun imgui() {
-        ImGui.begin("Prefabs")
+        ImGui.begin("Asset Browser")
 
-        ImGui.inputTextWithHint("##search", "${Icons.SEARCH} Search...", searchText)
+        if (ImGui.beginTabBar("AssetBrowserTabs")) {
+            if (ImGui.beginTabItem("Models")) {
+                renderModelsTab()
+                ImGui.endTabItem()
+            }
+            if (ImGui.beginTabItem("Textures")) {
+                renderTexturesTab()
+                ImGui.endTabItem()
+            }
+            if (ImGui.beginTabItem("Prefabs")) {
+                renderPrefabsTab()
+                ImGui.endTabItem()
+            }
+            ImGui.endTabBar()
+        }
+
+        ImGui.end()
+    }
+
+    private fun renderModelsTab() {
+        ImGui.inputTextWithHint("##searchModels", "${Icons.SEARCH} Search...", searchText)
+        ImGui.separator()
+        
+        val modelsDir = File("assets")
+        if (modelsDir.exists()) {
+            val files = modelsDir.walkTopDown().filter { 
+                it.isFile && (it.extension == "obj" || it.extension == "gltf" || it.extension == "glb" || it.extension == "fbx" || it.extension == "dae") 
+            }.filter { it.name.contains(searchText.get(), ignoreCase = true) }.toList()
+
+            if (ImGui.beginTable("ModelsTable", 4, ImGuiTableFlags.SizingFixedFit)) {
+                for (file in files) {
+                    ImGui.tableNextColumn()
+                    renderFileItem(file, "MODEL")
+                }
+                ImGui.endTable()
+            }
+        }
+    }
+
+    private fun renderTexturesTab() {
+        ImGui.inputTextWithHint("##searchTextures", "${Icons.SEARCH} Search...", searchText)
+        ImGui.separator()
+
+        val texturesDir = File("assets/textures")
+        if (texturesDir.exists()) {
+            val files = texturesDir.walkTopDown().filter { 
+                it.isFile && (it.extension == "png" || it.extension == "jpg" || it.extension == "jpeg") 
+            }.filter { it.name.contains(searchText.get(), ignoreCase = true) }.toList()
+
+            if (ImGui.beginTable("TexturesTable", 4, ImGuiTableFlags.SizingFixedFit)) {
+                for (file in files) {
+                    ImGui.tableNextColumn()
+                    renderFileItem(file, "TEXTURE")
+                }
+                ImGui.endTable()
+            }
+        }
+    }
+
+    private fun renderFileItem(file: File, type: String) {
+        val size = 80f
+        val padding = 5f
+        
+        ImGui.beginGroup()
+        
+        val texId = if (type == "TEXTURE") {
+             // We can load it since ResourceManager caches it
+             // Warning: Loading many large textures might still be heavy on VRAM
+             resourceManager.loadTextureSync(file.path).texId
+        } else {
+             // For models, we could try to generate a thumbnail if we had a preview system ready for raw files
+             // For now, use White
+             resourceManager.loadTextureSync(Assets.Textures.WHITE).texId
+        }
+
+        ImGui.pushID(file.absolutePath)
+        if (ImGui.imageButton("FileItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
+            // On Click
+        }
+        ImGui.popID()
+        
+        if (ImGui.beginDragDropSource()) {
+            ImGui.setDragDropPayload("ASSET_$type", file.path)
+            ImGui.image(texId.toLong(), 64f, 64f, 0f, 1f, 1f, 0f)
+            ImGui.text(file.name)
+            ImGui.endDragDropSource()
+        }
+
+        ImGui.textWrapped(file.name)
+        ImGui.dummy(0f, padding)
+        ImGui.endGroup()
+    }
+
+    private fun renderPrefabsTab() {
+        ImGui.inputTextWithHint("##searchPrefabs", "${Icons.SEARCH} Search...", searchText)
         ImGui.separator()
 
         if (ImGui.collapsingHeader("${Icons.CUBE} Simulation", ImGuiTreeNodeFlags.DefaultOpen)) {
@@ -48,8 +144,6 @@ class PrefabsWindow : KoinComponent {
         if (ImGui.collapsingHeader("${Icons.GEAR} Obstacles", ImGuiTreeNodeFlags.DefaultOpen)) {
             renderObstaclePrefabs()
         }
-
-        ImGui.end()
     }
 
     private fun renderSimulationPrefabs() {

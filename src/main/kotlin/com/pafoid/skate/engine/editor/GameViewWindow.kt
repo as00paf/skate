@@ -68,7 +68,7 @@ class GameViewWindow {
                         val t = -ray.origin.y / ray.direction.y
                         if (t > 0) {
                             val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
-                            val prefabs = Window.getImGuiLayer().prefabsWindow
+                            val prefabs = Window.getImGuiLayer().assetBrowser
                             
                             when {
                                 payloadRail != null -> prefabs.spawnRail(hitPoint)

@@ -6,7 +6,7 @@ import com.pafoid.skate.engine.editor.BoneTreeWindow
 import com.pafoid.skate.engine.editor.ConsoleWindow
 import com.pafoid.skate.engine.editor.EnvironmentWindow
 import com.pafoid.skate.engine.editor.GameViewWindow
-import com.pafoid.skate.engine.editor.PrefabsWindow
+import com.pafoid.skate.engine.editor.AssetBrowser
 import com.pafoid.skate.engine.editor.ProfilerWindow
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.editor.SceneHierarchyWindow
@@ -44,7 +44,7 @@ class ImGuiLayer {
     val propertiesWindow = PropertiesWindow()
     val boneTreeWindow = BoneTreeWindow()
     val gameViewWindow = GameViewWindow()
-    val prefabsWindow = PrefabsWindow()
+    val assetBrowser = AssetBrowser()
     val consoleWindow = ConsoleWindow()
     private val environmentWindow = EnvironmentWindow()
     private val profilerWindow = ProfilerWindow()
@@ -55,7 +55,7 @@ class ImGuiLayer {
     private val showProperties = ImBoolean(true)
     private val showBoneTree = ImBoolean(true)
     private val showGameView = ImBoolean(true)
-    private val showPrefabs = ImBoolean(true)
+    private val showAssetBrowser = ImBoolean(true)
     private val showEnvironment = ImBoolean(true)
     private val showProfiler = ImBoolean(true)
     private val showConsole = ImBoolean(true)
@@ -97,7 +97,7 @@ class ImGuiLayer {
             dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
 
         dockBuilderDockWindow("Scene Hierarchy", leftId)
-        dockBuilderDockWindow("Prefabs", leftId)
+        dockBuilderDockWindow("Asset Browser", leftId)
         dockBuilderDockWindow("Properties", rightId)
         dockBuilderDockWindow("Objects", bottomId)
         dockBuilderDockWindow("Console", bottomId)
@@ -116,7 +116,7 @@ class ImGuiLayer {
         if (showProperties.get()) propertiesWindow.imgui()
         if (showBoneTree.get()) boneTreeWindow.imgui()
         if (showGameView.get()) gameViewWindow.imgui()
-        if (showPrefabs.get()) prefabsWindow.imgui()
+        if (showAssetBrowser.get()) assetBrowser.imgui()
         if (showEnvironment.get()) environmentWindow.imgui(currentScene)
         if (showProfiler.get()) profilerWindow.imgui()
         if (showConsole.get()) consoleWindow.imgui(showConsole)
@@ -226,7 +226,7 @@ class ImGuiLayer {
                     ImGui.checkbox("Properties", showProperties)
                     ImGui.checkbox("Bone Tree", showBoneTree)
                     ImGui.checkbox("Game Viewport", showGameView)
-                    ImGui.checkbox("Prefabs", showPrefabs)
+                    ImGui.checkbox("Asset Browser", showAssetBrowser)
                     ImGui.checkbox("Environment", showEnvironment)
                     ImGui.checkbox("Profiler", showProfiler)
                     ImGui.checkbox("Console", showConsole)
