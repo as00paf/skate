@@ -3,9 +3,13 @@ package com.pafoid.skate.engine.editor
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.logs.LoggerService
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.components.GizmoSystem
+import com.pafoid.skate.engine.scenes.components.MeasureTool
 import com.pafoid.skate.engine.utils.Icons
+import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
@@ -14,6 +18,7 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_MIDDLE
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -22,6 +27,8 @@ class GameViewWindow : KoinComponent {
     private val logger: LoggerService by inject()
     private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()
+
+    private var isPanning: Boolean = false
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -46,15 +53,7 @@ class GameViewWindow : KoinComponent {
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
 
         // Capture EXACT screen position before drawing image
-        val screenPos = ImVec2()
-        ImGui.getCursorScreenPos(screenPos)
-        imageScreenPosX = screenPos.x
-        imageScreenPosY = screenPos.y
-        imageSizeX = windowSize.x
-        imageSizeY = windowSize.y - TOOLBAR_HEIGHT
-
-        val texId = Window.getFrameBuffer()?.getTextureId() ?: 0
-        ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
+        drawImage(windowSize)
 
         // Drag and Drop Target should be over the image area
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
@@ -98,21 +97,18 @@ class GameViewWindow : KoinComponent {
         renderViewportOverlays(windowPos, windowSize)
 
         // Render Gamepad Overlay
-        if (com.pafoid.skate.engine.utils.SettingsManager.settings.showGamepadOverlay) {
+        if (SettingsManager.settings.showGamepadOverlay) {
             gamepadOverlay.imgui(Vector2f(imageScreenPosX, imageScreenPosY), Vector2f(imageSizeX, imageSizeY))
         }
 
         mouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
         mouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
 
-        // ... (rest of picking logic)
-
         // Handle Object Hover & Picking
         val mousePos = ImVec2()
         ImGui.getMousePos(mousePos)
 
-        val isInside = mousePos.x >= imageScreenPosX && mousePos.x <= (imageScreenPosX + imageSizeX) &&
-                mousePos.y >= imageScreenPosY && mousePos.y <= (imageScreenPosY + imageSizeY)
+        val isInside = mouseListener.isInsideViewport()
 
         if (!isPlaying && isInside) {
             val relativeX = mousePos.x - imageScreenPosX
@@ -121,7 +117,7 @@ class GameViewWindow : KoinComponent {
             // Gizmo Safety: Don't select/deselect if we are interacting with a gizmo
             var gizmoInteracting = false
             sceneManager.currentScene?.gameObjects?.forEach { go ->
-                go.getComponent<com.pafoid.skate.engine.scenes.components.GizmoSystem>()?.let { system ->
+                go.getComponent<GizmoSystem>()?.let { system ->
                     if (system.isInteracting()) {
                         gizmoInteracting = true
                     }
@@ -156,6 +152,18 @@ class GameViewWindow : KoinComponent {
         ImGui.end()
     }
 
+    private fun drawImage(windowSize: ImVec2) {
+        val screenPos = ImVec2()
+        ImGui.getCursorScreenPos(screenPos)
+        imageScreenPosX = screenPos.x
+        imageScreenPosY = screenPos.y
+        imageSizeX = windowSize.x
+        imageSizeY = windowSize.y - TOOLBAR_HEIGHT
+
+        val texId = Window.getFrameBuffer()?.getTextureId() ?: 0
+        ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
+    }
+
     private fun renderViewportOverlays(windowPos: ImVec2, windowSize: ImVec2) {
         val isPlaying = sceneManager.runtimePlaying
         val scene = sceneManager.currentScene
@@ -174,11 +182,11 @@ class GameViewWindow : KoinComponent {
 
         // Speedometer Overlay (Bottom Left)
         val skateGo = scene?.gameObjects?.find { it.name == "Skateboard" }
-        val rb = skateGo?.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
+        val rb = skateGo?.getComponent<RigidBody3D>()
         val velocity = rb?.rawBody?.getLinearVelocity(null)
         if (velocity != null) {
             val speedMS = velocity.length()
-            val settings = com.pafoid.skate.engine.utils.SettingsManager.settings
+            val settings = SettingsManager.settings
             val (speedDisplay, unitLabel) = if (settings.unitSystem == UnitSystem.METRIC) {
                 Pair(speedMS * 3.6f, "km/h")
             } else {
@@ -290,7 +298,7 @@ class GameViewWindow : KoinComponent {
 
         // --- All Buttons ---
         val measureTool = scene?.gameObjects?.find { it.name == "EditorTools" }
-            ?.getComponent<com.pafoid.skate.engine.scenes.components.MeasureTool>()
+            ?.getComponent<MeasureTool>()
         buttons.add {
             val measureActive = measureTool?.isToolActive() ?: false
             if (measureActive) {
@@ -316,13 +324,18 @@ class GameViewWindow : KoinComponent {
         buttons.add {
             if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 // Reset logic
-                scene?.gameObjects?.find { it.name == "Skateboard" }?.let { skate ->
-                    skate.transform.translation.set(0f, 0.5f, 0f)
-                    skate.transform.rotation.set(0f, 0f, 0f)
-                    val rb = skate.getComponent<com.pafoid.skate.engine.physics3d.components.RigidBody3D>()
-                    rb?.linearVelocity = Vector3f(0f, 0f, 0f)
-                    rb?.angularVelocity = Vector3f(0f, 0f, 0f)
-                    logger.logEditor("Scene reset")
+                scene?.let{
+                    scene.gameObjects.find { it.name == "Skateboard" }?.let { skate ->
+                        skate.transform.translation.set(0f, 0.5f, 0f)
+                        skate.transform.rotation.set(0f, 0f, 0f)
+                        val rb = skate.getComponent<RigidBody3D>()
+                        rb?.linearVelocity = Vector3f(0f, 0f, 0f)
+                        rb?.angularVelocity = Vector3f(0f, 0f, 0f)
+                        logger.logEditor("Scene reset")
+                    }
+
+                    scene.camera.position.set(0f, 5f, 20f)
+                    scene.camera.yaw = 0f
                 }
             }
             if (ImGui.isItemHovered()) ImGui.setTooltip("Reset Scene")

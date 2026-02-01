@@ -100,6 +100,6 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     }
 
     override fun imgui() {
-
+        editorStuff.imgui()
     }
 }

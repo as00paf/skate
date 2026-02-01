@@ -2,8 +2,11 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.Camera
+import imgui.ImGui
 import org.joml.Vector2f
+import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_HOME
@@ -16,55 +19,25 @@ class EditorCamera(private val camera: Camera) : Component(), KoinComponent {
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
 
-    private val clickOrigin = Vector2f()
-    private var dragDebounce = 0.032f
-    private var isPanning = false
-    private val dragSensitivity = 30f
     private val scrollSensitivity = 0.1f
     private var lerpTime = 0.0f
     private var reset = false
+    private var isRotating: Boolean = false
+    private val rotationSensitivity = 0.1f
 
     override fun editorUpdate(dt: Float) {
-        if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE) && dragDebounce > 0f) {
-            clickOrigin.set(mouseListener.getWorld())
-            dragDebounce -= dt
-        } else if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
-            val mousePos = mouseListener.getWorld()
-            val mouseDelta = Vector2f(mousePos).sub(clickOrigin)
-            camera.position.sub(mouseDelta.x * dt * dragSensitivity, mouseDelta.y * dt * dragSensitivity, 0f)
-            clickOrigin.lerp(mousePos, dt)
-        } else if (dragDebounce <= 0f) {
-            dragDebounce = 0.032f
-        }
+        handleRotation()
+        handleZoom()
+        handleReset(dt)
+    }
 
-        // Panning Logic
-        if (mouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_MIDDLE)) {
-            isPanning = true
-        } else if (!mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
-            isPanning = false
-        }
-
-        if (isPanning) {
-            val worldDeltaX = mouseListener.getWorldDx()
-            val worldDeltaY = mouseListener.getWorldDy()
-
-            // Translate camera position by the world delta scaled by sensitivity.
-            camera.position.x -= worldDeltaX * dragSensitivity
-            camera.position.y -= worldDeltaY * dragSensitivity
-        }
-
-
-        if (mouseListener.getScrollY() != 0f) {
-            val addValue = abs(mouseListener.getScrollY() * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
-            camera.addZoom((addValue.toFloat() * -sign(mouseListener.getScrollY())))
-        }
-
+    private fun handleReset(dt:Float) {
         if (keyListener.isKeyPressed(GLFW_KEY_HOME)) {
             reset = true
         }
 
         if (reset) {
-            camera.position.lerp(org.joml.Vector3f(0f, 0f, 20f), lerpTime)
+            camera.position.lerp(Vector3f(0f, 0f, 20f), lerpTime)
             camera.zoom += ((1.0f - camera.zoom) * lerpTime)
             lerpTime += 0.1f * dt
             if (abs(camera.position.x) <= 0.1f && abs(camera.position.y) <= 0.1f) {
@@ -73,6 +46,36 @@ class EditorCamera(private val camera: Camera) : Component(), KoinComponent {
                 reset = false
                 lerpTime = 0f
             }
+        }
+    }
+
+    private fun handleRotation() {
+        if (!mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE, true) && isRotating) { // Middle mouse button released
+            isRotating = false
+        } else if (mouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_MIDDLE) && mouseListener.isInsideViewport()) {
+            isRotating = true
+        }
+
+        if (isRotating) {
+            val dx = mouseListener.getDx()
+            val dy = mouseListener.getDy()
+
+            if (abs(dx) > 0.01f || abs(dy) > 0.01f) { // Only update if there's actual mouse movement
+                camera.yaw += dx * rotationSensitivity
+                camera.pitch += dy * rotationSensitivity
+
+                // Clamp pitch to avoid flipping
+                if (camera.pitch > 89f) camera.pitch = 89f
+                if (camera.pitch < -89f) camera.pitch = -89f
+            }
+        }
+    }
+
+    private fun handleZoom() {
+        val scroll = mouseListener.getScrollY()
+        if (scroll != 0f) {
+            val addValue = abs(scroll * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
+            camera.addZoom((addValue.toFloat() * -sign(scroll)))
         }
     }
 }

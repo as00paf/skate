@@ -2,8 +2,10 @@ package com.pafoid.skate.engine.controls.listeners
 
 import com.pafoid.skate.engine.scenes.SceneManager
 import imgui.ImGui
+import imgui.ImVec2
 import org.joml.Vector2f
 import org.joml.Vector4f
+import org.joml.plus
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
@@ -151,7 +153,7 @@ class MouseListener: KoinComponent {
     fun getDx(): Float = (xPos - lastX).toFloat()
     fun getDy(): Float = (yPos - lastY).toFloat()
     fun getScrollX(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()
-    fun getScrollY(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
+    fun getScrollY(): Float = if (!ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
     fun isDragging() = isDragging
     fun isMouseButtonDown(button: Int, ignoreImGui: Boolean = false): Boolean {
         val down = if (button < mouseButtonPressed.size) mouseButtonPressed[button] else false
@@ -160,4 +162,10 @@ class MouseListener: KoinComponent {
 
     fun getGameViewportSize(): Vector2f = gameViewportSize
     fun getGameViewportPos(): Vector2f = gameViewportPos
+
+    fun isInsideViewport():Boolean {
+        return getX() >= getGameViewportPos().x && getX() <= (getGameViewportPos().x + getGameViewportSize().x) &&
+                getY() >= getGameViewportPos().y && getY() <= (getGameViewportPos().y + getGameViewportSize().y)
+
+    }
 }
