@@ -11,7 +11,6 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.BodyType
-import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
@@ -22,16 +21,41 @@ import imgui.type.ImString
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.io.File
 import kotlin.getValue
 import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
-
-import java.io.File
 
 class AssetBrowser : KoinComponent {
     private val thumbnailCache: ThumbnailCache by inject()
     private val resourceManager: ResourceManager by inject()
 
     private var searchText = ImString("")
+    
+    private val modelFiles = mutableListOf<File>()
+    private val textureFiles = mutableListOf<File>()
+    private val loadingSet = HashSet<String>()
+    
+    init {
+        refreshAssets()
+    }
+    
+    private fun refreshAssets() {
+        modelFiles.clear()
+        val modelsDir = File("assets")
+        if (modelsDir.exists()) {
+            modelsDir.walkTopDown().filter { 
+                it.isFile && (it.extension == "obj" || it.extension == "gltf" || it.extension == "glb" || it.extension == "fbx" || it.extension == "dae") 
+            }.forEach { modelFiles.add(it) }
+        }
+        
+        textureFiles.clear()
+        val texturesDir = File("assets/textures")
+        if (texturesDir.exists()) {
+            texturesDir.walkTopDown().filter { 
+                it.isFile && (it.extension == "png" || it.extension == "jpg" || it.extension == "jpeg") 
+            }.forEach { textureFiles.add(it) }
+        }
+    }
 
     fun imgui() {
         ImGui.begin("Asset Browser")
@@ -56,42 +80,42 @@ class AssetBrowser : KoinComponent {
     }
 
     private fun renderModelsTab() {
-        ImGui.inputTextWithHint("##searchModels", "${Icons.SEARCH} Search...", searchText)
+        if (ImGui.inputTextWithHint("##searchModels", "${Icons.SEARCH} Search...", searchText)) {
+            // Optional: debounce refresh if we were reloading files, but filtering is local now
+        }
+        ImGui.sameLine()
+        if (ImGui.button("${Icons.GEAR}")) {
+            refreshAssets()
+        }
         ImGui.separator()
         
-        val modelsDir = File("assets")
-        if (modelsDir.exists()) {
-            val files = modelsDir.walkTopDown().filter { 
-                it.isFile && (it.extension == "obj" || it.extension == "gltf" || it.extension == "glb" || it.extension == "fbx" || it.extension == "dae") 
-            }.filter { it.name.contains(searchText.get(), ignoreCase = true) }.toList()
+        val files = modelFiles.filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
-            if (ImGui.beginTable("ModelsTable", 4, ImGuiTableFlags.SizingFixedFit)) {
-                for (file in files) {
-                    ImGui.tableNextColumn()
-                    renderFileItem(file, "MODEL")
-                }
-                ImGui.endTable()
+        if (ImGui.beginTable("ModelsTable", 4, ImGuiTableFlags.SizingFixedFit)) {
+            for (file in files) {
+                ImGui.tableNextColumn()
+                renderFileItem(file, "MODEL")
             }
+            ImGui.endTable()
         }
     }
 
     private fun renderTexturesTab() {
         ImGui.inputTextWithHint("##searchTextures", "${Icons.SEARCH} Search...", searchText)
+        ImGui.sameLine()
+        if (ImGui.button("${Icons.GEAR}")) {
+            refreshAssets()
+        }
         ImGui.separator()
 
-        val texturesDir = File("assets/textures")
-        if (texturesDir.exists()) {
-            val files = texturesDir.walkTopDown().filter { 
-                it.isFile && (it.extension == "png" || it.extension == "jpg" || it.extension == "jpeg") 
-            }.filter { it.name.contains(searchText.get(), ignoreCase = true) }.toList()
+        val files = textureFiles.filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
-            if (ImGui.beginTable("TexturesTable", 4, ImGuiTableFlags.SizingFixedFit)) {
-                for (file in files) {
-                    ImGui.tableNextColumn()
-                    renderFileItem(file, "TEXTURE")
-                }
-                ImGui.endTable()
+        if (ImGui.beginTable("TexturesTable", 4, ImGuiTableFlags.SizingFixedFit)) {
+            for (file in files) {
+                ImGui.tableNextColumn()
+                renderFileItem(file, "TEXTURE")
             }
+            ImGui.endTable()
         }
     }
 
@@ -101,14 +125,36 @@ class AssetBrowser : KoinComponent {
         
         ImGui.beginGroup()
         
-        val texId = if (type == "TEXTURE") {
+        val texId: Int = if (type == "TEXTURE") {
              // We can load it since ResourceManager caches it
              // Warning: Loading many large textures might still be heavy on VRAM
              resourceManager.loadTextureSync(file.path).texId
         } else {
-             // For models, we could try to generate a thumbnail if we had a preview system ready for raw files
-             // For now, use White
-             resourceManager.loadTextureSync(Assets.Textures.WHITE).texId
+             // Models
+             val model = resourceManager.getModel(file.path)
+             if (model != null) {
+                 // Model is loaded, use/generate thumbnail (ThumbnailCache handles FBO rendering on main thread)
+                 // Note: We need a unique ID for the thumbnail cache
+                 thumbnailCache.getThumbnail(file.absolutePath, model)
+             } else {
+                 // Model not loaded yet
+                 if (!loadingSet.contains(file.path)) {
+                     loadingSet.add(file.path)
+                     JobSystem.runAsync {
+                         try {
+                             resourceManager.loadModel(file.path)
+                         } catch (e: Exception) {
+                             e.printStackTrace()
+                         } finally {
+                             JobSystem.runOnMain {
+                                 loadingSet.remove(file.path)
+                             }
+                         }
+                     }
+                 }
+                 // Return placeholder
+                 resourceManager.loadTextureSync(Assets.Textures.WHITE).texId
+             }
         }
 
         ImGui.pushID(file.absolutePath)
