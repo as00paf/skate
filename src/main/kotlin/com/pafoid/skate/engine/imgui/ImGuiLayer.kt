@@ -2,6 +2,9 @@ package com.pafoid.skate.engine.imgui
 
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.controls.input.IInputProvider
+import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.editor.BoneTreeWindow
 import com.pafoid.skate.engine.editor.ConsoleWindow
 import com.pafoid.skate.engine.editor.EnvironmentWindow
@@ -32,10 +35,14 @@ import imgui.internal.ImGui.dockBuilderSetNodeSize
 import imgui.internal.ImGui.dockBuilderSplitNode
 import imgui.type.ImBoolean
 import imgui.type.ImInt
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.io.File
 import org.lwjgl.glfw.GLFW
+import kotlin.getValue
 
-class ImGuiLayer {
+class ImGuiLayer: KoinComponent {
+    private val inputProvider: IInputProvider by inject()
 
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
@@ -109,7 +116,7 @@ class ImGuiLayer {
     }
 
     fun update(dt: Float, currentScene: Scene) {
-        if (com.pafoid.skate.engine.controls.input.InputProvider.keyBeginPress(GLFW.GLFW_KEY_F12)) {
+        if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_F12)) {
             isViewportMaximized = !isViewportMaximized
         }
         

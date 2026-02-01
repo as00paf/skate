@@ -35,6 +35,8 @@ import kotlin.math.roundToLong
 
 class PlayerController : Component(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
+    private val inputProvider: IInputProvider by inject()
+
     var preferredStance = Stance.REGULAR
     var pushForce = 5.0f
     var steerSpeed = 2.0f
@@ -49,7 +51,6 @@ class PlayerController : Component(), KoinComponent {
     var currentStance = SkateStance.REGULAR
     var isSwitch = false
     var inputBuffer: IInputBuffer = InputBuffer.instance
-    var inputProvider: IInputProvider = InputProvider
     
     private var rb: IPhysicsBody3D? = null
     private var physics: SkateboardPhysics? = null

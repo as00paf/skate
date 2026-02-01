@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render
 
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.controls.input.IInputProvider
@@ -15,7 +16,10 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
+import kotlin.getValue
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -28,16 +32,15 @@ class Camera(
     var yaw: Float = 0f,
     var roll: Float = 0f,
     var isOrthographic: Boolean = false
-) {
+): KoinComponent {
+    private val inputProvider: IInputProvider by inject()
+
     var fov = 45f
     var nearPlane = 0.1f
     var farPlane = 1000f
     
     var projectionSize = Vector2f(32f, 18f) // Default 16:9 units
     var zoom = 1.0f
-
-    // Input
-    var inputProvider: IInputProvider = InputProvider
 
     // Third person / Spring arm
     var target: Vector3f? = null

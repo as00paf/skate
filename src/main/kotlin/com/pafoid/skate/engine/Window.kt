@@ -12,6 +12,8 @@ import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.Time
 import java.nio.ByteBuffer
 import org.joml.Vector2f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -31,7 +33,9 @@ class Window(
     val drawCallback: (dt: Float, imguiLayer: ImGuiLayer) -> Unit,
     val destroyCallback: () -> Unit,
     val title: String
-) {
+): KoinComponent {
+
+    private val joystickListener: JoystickListener by inject()
 
     companion object {
         private var instance: Window? = null
@@ -155,7 +159,7 @@ class Window(
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
 
         installCallbacks()
-        JoystickListener.init()
+        joystickListener.init()
 
         imGuiLayer.init(glfwWindow)
     }
@@ -209,14 +213,14 @@ class Window(
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
-            JoystickListener.update()
+            joystickListener.update()
             JobSystem.update()
             
             // Record high-frequency input
             InputBuffer.push(
                 Time.getTime(),
                 Vector2f(MouseListener.getX(), MouseListener.getY()),
-                JoystickListener.getAxes(GLFW_JOYSTICK_1)
+                joystickListener.getAxes(GLFW_JOYSTICK_1)
             )
             
             // --- Defered Initialization Logic ---
