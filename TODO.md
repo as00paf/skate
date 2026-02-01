@@ -173,7 +173,7 @@
   - [ ] **Prefabs Tab**: List saved `.json` entity templates.
 
 ## 18.4. Game Viewport & Toolbar
-- [ ] **External Toolbar**: Move buttons from inside the viewport to a dedicated toolbar strip above the viewport.
+- [ ] **External Toolbar**: Move buttons from inside the viewport to a dedicated toolbar strip in the top of the game viewport. Don't change the dockspace if you don't need to.
 - [ ] **Icon-Only Buttons**:
   - [ ] Replace text labels with icons (using FontAwesome or high-res textures).
   - [ ] Add tooltips for every button (on hover).
