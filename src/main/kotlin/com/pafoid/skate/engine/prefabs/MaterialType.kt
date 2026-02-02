@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.editor
+package com.pafoid.skate.engine.prefabs
 
 import com.pafoid.skate.engine.assets.Assets
 

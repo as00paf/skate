@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.prefabs.MaterialType
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
@@ -269,10 +270,10 @@ class AssetBrowser : KoinComponent {
     }
 
     private fun renderPrefabItem(
-        name: String, 
-        modelPath: String?, 
+        name: String,
+        modelPath: String?,
         material: MaterialType,
-        dragDropPayload: String? = null, 
+        dragDropPayload: String? = null,
         onSpawn: (MaterialType) -> Unit
     ) {
         val size = 80f
