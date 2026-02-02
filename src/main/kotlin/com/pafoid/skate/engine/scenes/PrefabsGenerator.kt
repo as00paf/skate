@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.prefabs.MaterialType
+import com.pafoid.skate.engine.prefabs.Skateboard
 import com.pafoid.skate.engine.scenes.components.ModularTile
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
@@ -96,23 +97,19 @@ class PrefabsGenerator(
         }
     }
 
-    fun spawnSkateboard() {
-        val scene = sceneManager.currentScene ?: return
+    fun spawnSkateboard():Skateboard? {
+        val scene = sceneManager.currentScene ?: return null
 
+        var skate: Skateboard? = null
         JobSystem.runAsync {
             val model = resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
             JobSystem.runOnMain {
-                val skate = GameObject("Skateboard")
-                skate.transform.translation.set(0f, 2f, 0f)
-                skate.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
-                skate.addComponent(Entity(model = model))
-                skate.addComponent(RigidBody3D(1.8f).apply { friction = 0.1f }) // 1.8kg mass
-                skate.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f))) // 0.8m x 0.04m x 0.2m
-                skate.addComponent(SkateboardPhysics())
-
+                skate = Skateboard(model)
                 scene.addGameObjectToScene(skate)
             }
         }
+
+        return skate
     }
 
     fun spawnTile() {
@@ -124,7 +121,7 @@ class PrefabsGenerator(
                 resourceManager.loadTextureSync(Assets.Textures.WHITE)
             )
         ))
-        tile.addComponent(com.pafoid.skate.engine.scenes.components.ModularTile())
+        tile.addComponent(ModularTile())
         tile.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         tile.addComponent(BoxCollider3D(Vector3f(1f, 1f, 1f)))
         scene.addGameObjectToScene(tile)

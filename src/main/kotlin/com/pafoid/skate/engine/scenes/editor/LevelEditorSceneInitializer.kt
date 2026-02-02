@@ -13,12 +13,15 @@ import com.pafoid.skate.engine.scenes.SceneInitializer
 import com.pafoid.skate.engine.scenes.components.*
 import com.pafoid.skate.engine.physics3d.components.*
 import com.pafoid.skate.engine.prefabs.Skateboard
+import com.pafoid.skate.engine.scenes.PrefabsGenerator
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
+    private val prefabsGenerator: PrefabsGenerator by inject()
+
     private var currentScene: Scene? = null
     private lateinit var editorStuff: GameObject
     private lateinit var editorCamera: EditorCamera
@@ -49,13 +52,12 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         scene.addGameObjectToScene(editorStuff)
 
         // TODO: Should be a prefab
-        val skateGo = Skateboard(resourceManager)
-        scene.addGameObjectToScene(skateGo)
+        val skateGo = prefabsGenerator.spawnSkateboard()
 
         // TODO: Should be a prefab
         val playerGo = GameObject("Skater")
         // Parenting: Skater follows Skateboard
-        skateGo.addChild(playerGo)
+        skateGo?.addChild(playerGo)
         
         // Position relative to board (standing on it)
         playerGo.transform.translation.set(0f, 0.05f, 0f) 
