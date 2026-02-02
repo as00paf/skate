@@ -4,6 +4,7 @@ cleanup
 - jobsystem.runio for file loading
 - FileManager to save and load files, scene.loadFromFile
 - fix max scroll
+- cleanup assimploader, check if objloader is still neede
 
 For the next phase of the project, here is what I would like to do :
 - 

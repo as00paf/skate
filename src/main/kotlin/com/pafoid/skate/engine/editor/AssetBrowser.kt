@@ -35,27 +35,31 @@ class AssetBrowser : KoinComponent {
     
     private val modelFiles = mutableListOf<File>()
     private val textureFiles = mutableListOf<File>()
-    private val loadingSet = HashSet<String>()
-    
+
+    private val texturesTab = AssetBrowserTab(resourceManager, thumbnailCache)
+    private val modelsTab = AssetBrowserTab(resourceManager, thumbnailCache)
+
     init {
         refreshAssets()
     }
     
     private fun refreshAssets() {
-        modelFiles.clear()
-        val modelsDir = File("assets")
-        if (modelsDir.exists()) {
-            modelsDir.walkTopDown().filter { 
-                it.isFile && (it.extension == "obj" || it.extension == "gltf" || it.extension == "glb" || it.extension == "fbx" || it.extension == "dae") 
-            }.forEach { modelFiles.add(it) }
-        }
-        
-        textureFiles.clear()
-        val texturesDir = File("assets/textures")
-        if (texturesDir.exists()) {
-            texturesDir.walkTopDown().filter { 
-                it.isFile && (it.extension == "png" || it.extension == "jpg" || it.extension == "jpeg") 
-            }.forEach { textureFiles.add(it) }
+        JobSystem.runIO {
+            modelFiles.clear()
+            val modelsDir = File("assets")
+            if (modelsDir.exists()) {
+                modelsDir.walkTopDown().filter {
+                    it.isFile && (it.extension == "obj" || it.extension == "gltf" || it.extension == "glb" || it.extension == "fbx" || it.extension == "dae")
+                }.forEach { modelFiles.add(it) }
+            }
+
+            textureFiles.clear()
+            val texturesDir = File("assets/textures")
+            if (texturesDir.exists()) {
+                texturesDir.walkTopDown().filter {
+                    it.isFile && (it.extension == "png" || it.extension == "jpg" || it.extension == "jpeg")
+                }.forEach { textureFiles.add(it) }
+            }
         }
     }
 
@@ -64,11 +68,11 @@ class AssetBrowser : KoinComponent {
 
         if (ImGui.beginTabBar("AssetBrowserTabs")) {
             if (ImGui.beginTabItem("Models")) {
-                renderModelsTab()
+                modelsTab.render("##searchModels", searchText, AssetBrowserTab.Type.MODELS, modelFiles, ::refreshAssets)
                 ImGui.endTabItem()
             }
             if (ImGui.beginTabItem("Textures")) {
-                renderTexturesTab()
+                texturesTab.render("##searchTextures", searchText, AssetBrowserTab.Type.TEXTURES, textureFiles, ::refreshAssets)
                 ImGui.endTabItem()
             }
             if (ImGui.beginTabItem("Prefabs")) {
@@ -79,107 +83,6 @@ class AssetBrowser : KoinComponent {
         }
 
         ImGui.end()
-    }
-
-    private fun renderModelsTab() {
-        if (ImGui.inputTextWithHint("##searchModels", "${Icons.SEARCH} Search...", searchText)) {
-            // Optional: debounce refresh if we were reloading files, but filtering is local now
-        }
-        ImGui.sameLine()
-        if (ImGui.button("${Icons.GEAR}")) {
-            refreshAssets()
-        }
-        ImGui.separator()
-        
-        val files = modelFiles.filter { it.name.contains(searchText.get(), ignoreCase = true) }
-
-        if (ImGui.beginTable("ModelsTable", 4, ImGuiTableFlags.SizingFixedFit)) {
-            for (file in files) {
-                ImGui.tableNextColumn()
-                renderFileItem(file, "MODEL")
-            }
-            ImGui.endTable()
-        }
-    }
-
-    private fun renderTexturesTab() {
-        ImGui.inputTextWithHint("##searchTextures", "${Icons.SEARCH} Search...", searchText)
-        ImGui.sameLine()
-        if (ImGui.button("${Icons.GEAR}")) {
-            refreshAssets()
-        }
-        ImGui.separator()
-
-        val files = textureFiles.filter { it.name.contains(searchText.get(), ignoreCase = true) }
-
-        if (ImGui.beginTable("TexturesTable", 4, ImGuiTableFlags.SizingFixedFit)) {
-            for (file in files) {
-                ImGui.tableNextColumn()
-                renderFileItem(file, "TEXTURE")
-            }
-            ImGui.endTable()
-        }
-    }
-
-    private fun renderFileItem(file: File, type: String) {
-        val size = 80f
-        val padding = 5f
-        
-        ImGui.beginGroup()
-        
-        val texId: Int = if (type == "TEXTURE") {
-             // We can load it since ResourceManager caches it
-             // Warning: Loading many large textures might still be heavy on VRAM
-             resourceManager.loadTextureSync(file.path).texId
-        } else {
-             // Models
-             val model = resourceManager.getModel(file.path)
-             if (model != null) {
-                 // Model is loaded, use/generate thumbnail (ThumbnailCache handles FBO rendering on main thread)
-                 // Note: We need a unique ID for the thumbnail cache
-                 thumbnailCache.getThumbnail(file.absolutePath, model)
-             } else {
-                 // Model not loaded yet
-                 if (!loadingSet.contains(file.path)) {
-                     loadingSet.add(file.path)
-                     JobSystem.runAsync {
-                         try {
-                             resourceManager.loadModel(file.path)
-                         } catch (e: Exception) {
-                             e.printStackTrace()
-                         } finally {
-                             JobSystem.runOnMain {
-                                 loadingSet.remove(file.path)
-                             }
-                         }
-                     }
-                 }
-                 // Return placeholder
-                resourceManager.loadTextureSync(Assets.Textures.DEFAULT).texId
-             }
-        }
-
-        // Flip UVs for direct texture rendering (stb_image loads top-down usually, but OpenGL expects bottom-up)
-        // For FBOs (Models), we usually render them correctly for the quad.
-        val uv0Y = if (type == "TEXTURE") 0f else 1f
-        val uv1Y = if (type == "TEXTURE") 1f else 0f
-
-        ImGui.pushID(file.absolutePath)
-        if (ImGui.imageButton("FileItem", texId.toLong(), size, size, 0f, uv0Y, 1f, uv1Y)) {
-            // On Click
-        }
-        ImGui.popID()
-        
-        if (ImGui.beginDragDropSource()) {
-            ImGui.setDragDropPayload("ASSET_$type", file.path)
-            ImGui.image(texId.toLong(), 64f, 64f, 0f, uv0Y, 1f, uv1Y)
-            ImGui.text(file.name)
-            ImGui.endDragDropSource()
-        }
-
-        ImGui.textWrapped(file.name)
-        ImGui.dummy(0f, padding)
-        ImGui.endGroup()
     }
 
     private fun renderPrefabsTab() {
