@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
-import com.sun.tools.sjavac.Main.go
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -117,8 +116,21 @@ class TranslateGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinCompo
                 if (xAxisHot) xAxisActive = true
                 else if (yAxisHot) yAxisActive = true
                 else if (zAxisHot) zAxisActive = true
+
+                if (xAxisActive || yAxisActive || zAxisActive) {
+                    oldTransform = Transform().apply { copyFrom(go.transform) }
+                }
             }
         } else {
+            if (xAxisActive || yAxisActive || zAxisActive) {
+                // We were dragging and just stopped
+                oldTransform?.let { old ->
+                    if (old != go.transform) {
+                        undoRedoManager.pushCommand(com.pafoid.skate.engine.editor.TransformCommand(go, old, go.transform))
+                    }
+                }
+                oldTransform = null
+            }
             xAxisActive = false
             yAxisActive = false
             zAxisActive = false

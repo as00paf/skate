@@ -1,15 +1,21 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-open class Gizmo(protected val sceneManager: SceneManager) : Component() {
+open class Gizmo(protected val sceneManager: SceneManager) : Component(), KoinComponent {
+
+    protected val undoRedoManager: UndoRedoManager by inject()
 
     protected var xAxisActive = false
     protected var yAxisActive = false
     protected var zAxisActive = false
 
     protected var activeGameObject: GameObject? = null
+    protected var oldTransform: Transform? = null
     private var inUse = false
 
     override fun update(dt: Float) {

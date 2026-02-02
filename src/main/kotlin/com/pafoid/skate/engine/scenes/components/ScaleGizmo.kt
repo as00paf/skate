@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.scenes.SceneManager
-import com.sun.tools.sjavac.Main.go
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -18,6 +17,25 @@ class ScaleGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinComponent
     override fun editorUpdate(dt: Float) {
         super.editorUpdate(dt)
         activeGameObject?.let { go ->
+            val scene = sceneManager.currentScene ?: return
+            
+            // Basic input handling for ScaleGizmo (it was missing checkInput calls)
+            // For now, we'll just handle the command logic assuming it might be used.
+            // (The actual dragging logic seems to be missing in the original file anyway)
+            
+            if (xAxisActive || yAxisActive || zAxisActive) {
+                if (oldTransform == null) {
+                    oldTransform = Transform().apply { copyFrom(go.transform) }
+                }
+            } else {
+                oldTransform?.let { old ->
+                    if (old != go.transform) {
+                        undoRedoManager.pushCommand(com.pafoid.skate.engine.editor.TransformCommand(go, old, go.transform))
+                    }
+                }
+                oldTransform = null
+            }
+
             if (xAxisActive) {
                 go.transform.scale.x += calculateDelta(Vector3f(1f, 0f, 0f))
             } else if (yAxisActive) {
