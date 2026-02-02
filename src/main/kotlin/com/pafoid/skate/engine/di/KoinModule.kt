@@ -20,6 +20,7 @@ import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.StringManager
+import com.pafoid.skate.engine.utils.TrickManager
 import com.pafoid.skate.engine.utils.serialization.Serializer
 import org.koin.dsl.module
 
@@ -31,6 +32,7 @@ val appModule = module {
     single { UndoRedoManager() }
     single { SettingsManager(get(), get()) }
     single { StringManager() }
+    single { TrickManager() }
 }
 
 val engineModule = module {

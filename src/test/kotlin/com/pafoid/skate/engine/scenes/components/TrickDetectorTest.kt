@@ -4,9 +4,14 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import io.mockk.every
 import io.mockk.mockk
+import com.pafoid.skate.engine.utils.TrickManager
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 
 class TrickDetectorTest {
 
@@ -21,6 +26,12 @@ class TrickDetectorTest {
         mockSkateboardPhysics = mockk(relaxed = true)
         mockRigidBody = mockk(relaxed = true)
 
+        startKoin {
+            modules(module {
+                single { TrickManager("/values/test_tricks.properties") }
+            })
+        }
+
         every { mockGameObject.getComponent(SkateboardPhysics::class.java) } returns mockSkateboardPhysics
         every { mockGameObject.getComponent(RigidBody3D::class.java) } returns mockRigidBody
         every { mockGameObject.getComponent(PlayerController::class.java) } returns null
@@ -28,6 +39,11 @@ class TrickDetectorTest {
         trickDetector = TrickDetector()
         trickDetector.gameObject = mockGameObject
         trickDetector.start()
+    }
+
+    @AfterEach
+    fun tearDown() {
+        stopKoin()
     }
 
     //@Test

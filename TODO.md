@@ -211,7 +211,7 @@
 ## 🛠️ Phase 20.2: Code Refactoring (The "Hardcoded Hunt")
 - [x] **Refactor "Skate Lab" UI**: Replace all `ImGui.text("...")` and button labels in `LevelEditorSceneInitializer.kt` with localized lookups.
 - [x] **Refactor Inspector Labels**: Move component field names (e.g., "Mass", "Friction") from `SkateboardPhysics.kt` into the properties file.
-- [ ] **Refactor Trick Analyzer**: Move trick names ("Kickflip", "Ollie") to `tricks.properties` to allow for "Trick Name" variations in the future.
+- [x] **Refactor Trick Analyzer**: Move trick names ("Kickflip", "Ollie") to `tricks.properties` to allow for "Trick Name" variations in the future.
 
 ## 🚀 Phase 20.3: Advanced Features (Android-Inspired)
 - [ ] **String Formatting**: Implement support for placeholders (e.g., `lbl_speed=Speed: %f m/s`) using `String.format()`.
