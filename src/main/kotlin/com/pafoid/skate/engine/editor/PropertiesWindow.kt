@@ -5,17 +5,19 @@ import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class PropertiesWindow: KoinComponent {
     private val sceneManager: SceneManager by inject()
+    private val stringManager: StringManager by inject()
 
     fun imgui() {
         sceneManager.getSelectedGameObject()?.let { go ->
-            ImGui.begin("Properties")
-            ImGui.text("Name: ${go.name}")
+            ImGui.begin(stringManager.getString("window.properties"))
+            ImGui.text("${stringManager.getString("lbl.name")}: ${go.name}")
 
             if (ImGui.beginPopupContextWindow("ComponentAdder")) {
                 if (ImGui.menuItem("Add RigidBody3D")) {

@@ -209,7 +209,7 @@
 - [x] **Koin Integration**: Register the `StringManager` in your Koin module for easy injection into UI components.
 
 ## 🛠️ Phase 20.2: Code Refactoring (The "Hardcoded Hunt")
-- [ ] **Refactor "Skate Lab" UI**: Replace all `ImGui.text("...")` and button labels in `LevelEditorSceneInitializer.kt` with localized lookups.
+- [x] **Refactor "Skate Lab" UI**: Replace all `ImGui.text("...")` and button labels in `LevelEditorSceneInitializer.kt` with localized lookups.
 - [ ] **Refactor Inspector Labels**: Move component field names (e.g., "Mass", "Friction") from `SkateboardPhysics.kt` into the properties file.
 - [ ] **Refactor Trick Analyzer**: Move trick names ("Kickflip", "Ollie") to `tricks.properties` to allow for "Trick Name" variations in the future.
 

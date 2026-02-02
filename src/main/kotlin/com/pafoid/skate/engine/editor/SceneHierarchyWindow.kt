@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Icons
+import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
 import org.koin.core.component.KoinComponent
@@ -13,9 +14,10 @@ import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
 class SceneHierarchyWindow: KoinComponent {
 
     private val sceneManager: SceneManager by inject()
+    private val stringManager: StringManager by inject()
 
     fun imgui(scene: Scene) {
-        ImGui.begin("Scene Hierarchy")
+        ImGui.begin(stringManager.getString("window.hierarchy"))
 
         val gameObjects = scene.gameObjects
 
@@ -53,7 +55,7 @@ class SceneHierarchyWindow: KoinComponent {
         }
         
         if (ImGui.beginPopupContextItem()) {
-            if (ImGui.menuItem("${Icons.TRASH} Delete")) {
+            if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("lbl.delete")}")) {
                 sceneManager.deleteGameObject(obj)
             }
             ImGui.endPopup()

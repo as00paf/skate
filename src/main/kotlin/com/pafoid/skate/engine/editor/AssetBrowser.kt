@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.prefabs.MaterialType
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
@@ -21,6 +22,7 @@ class AssetBrowser : KoinComponent {
     private val thumbnailCache: ThumbnailCache by inject()
     private val resourceManager: ResourceManager by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
+    private val stringManager: StringManager by inject()
 
     private var searchText = ImString(256)
     
@@ -55,7 +57,7 @@ class AssetBrowser : KoinComponent {
     }
 
     fun imgui() {
-        ImGui.begin("Asset Browser")
+        ImGui.begin(stringManager.getString("window.asset_browser"))
 
         if (ImGui.beginTabBar("AssetBrowserTabs")) {
             if (ImGui.beginTabItem("Models")) {

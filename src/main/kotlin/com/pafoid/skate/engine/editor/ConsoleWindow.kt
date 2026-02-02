@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.editor.logs.LogEntry
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.utils.Icons
+import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
@@ -13,10 +14,11 @@ import kotlin.getValue
 
 class ConsoleWindow : KoinComponent {
 
-    private val logger: LoggerService by inject() // Injected via Koin
+    private val logger: LoggerService by inject()
+    private val stringManager: StringManager by inject()
 
     fun imgui(pOpen: ImBoolean) {
-        if (!ImGui.begin("Console", pOpen)) {
+        if (!ImGui.begin(stringManager.getString("window.console"), pOpen)) {
             ImGui.end()
             return
         }

@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.scenes.components.GizmoSystem
 import com.pafoid.skate.engine.scenes.components.MeasureTool
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.SettingsManager
+import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
@@ -29,6 +30,7 @@ class GameViewWindow : KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val settingsManager: SettingsManager by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
+    private val stringManager: StringManager by inject()
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -41,7 +43,7 @@ class GameViewWindow : KoinComponent {
     private val trickUIWindow = TrickUIWindow()
 
     fun imgui() {
-        ImGui.begin("Game Viewport", ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
+        ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
 
         val windowSize = getLargestSizeForViewport()
         val windowPos = getCenteredPositionForViewport(windowSize)

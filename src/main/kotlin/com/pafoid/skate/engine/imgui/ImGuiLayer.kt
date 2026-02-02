@@ -45,6 +45,7 @@ class ImGuiLayer: KoinComponent {
     private val settingsManager: SettingsManager by inject()
     private val sceneManager: com.pafoid.skate.engine.scenes.SceneManager by inject()
     private val clipboardService: com.pafoid.skate.engine.scenes.ClipboardService by inject()
+    private val stringManager: com.pafoid.skate.engine.utils.StringManager by inject()
 
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
@@ -109,12 +110,11 @@ class ImGuiLayer: KoinComponent {
         val bottomId =
             dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
 
-        dockBuilderDockWindow("Scene Hierarchy", leftId)
-        dockBuilderDockWindow("Asset Browser", leftId)
-        dockBuilderDockWindow("Properties", rightId)
-        dockBuilderDockWindow("Objects", bottomId)
-        dockBuilderDockWindow("Console", bottomId)
-        dockBuilderDockWindow("Game Viewport", mainBodyId.get())
+        dockBuilderDockWindow(stringManager.getString("window.hierarchy"), leftId)
+        dockBuilderDockWindow(stringManager.getString("window.asset_browser"), leftId)
+        dockBuilderDockWindow(stringManager.getString("window.properties"), rightId)
+        dockBuilderDockWindow(stringManager.getString("window.console"), bottomId)
+        dockBuilderDockWindow(stringManager.getString("window.game_viewport"), mainBodyId.get())
 
         dockBuilderFinish(dockspaceId)
     }
@@ -130,7 +130,7 @@ class ImGuiLayer: KoinComponent {
             ImGui.setNextWindowPos(ImGui.getMainViewport().workPosX, ImGui.getMainViewport().workPosY)
             ImGui.setNextWindowSize(ImGui.getMainViewport().workSizeX, ImGui.getMainViewport().workSizeY)
             ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
-            ImGui.begin("Game Viewport Maximized", ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoDecoration)
+            ImGui.begin(stringManager.getString("window.game_viewport") + " Maximized", ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoDecoration)
             
             val windowSize = ImVec2()
             ImGui.getContentRegionAvail(windowSize)
@@ -198,43 +198,43 @@ class ImGuiLayer: KoinComponent {
         setupLayout(ImGui.getID("DockSpace"))
 
         if (ImGui.beginMenuBar()) {
-            if (ImGui.beginMenu("File")) {
-                if (ImGui.menuItem("${Icons.SAVE} Save Level", "Ctrl+S")) {
+            if (ImGui.beginMenu(stringManager.getString("menu.file"))) {
+                if (ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
                     currentScene.save()
                 }
-                if (ImGui.menuItem("${Icons.SAVE} Save As...")) {
+                if (ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_as")}")) {
                     currentScene.saveAs()
                 }
-                if (ImGui.menuItem("${Icons.FOLDER_OPEN} Open Level", "Ctrl+O")) {
+                if (ImGui.menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open")}", "Ctrl+O")) {
                     currentScene.open()
                 }
                 ImGui.separator()
-                if (ImGui.menuItem("${Icons.TRASH} Quit")) {
+                if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("menu.file.quit")}")) {
                     GLFW.glfwSetWindowShouldClose(glfwWindow, true)
                 }
                 ImGui.endMenu()
             }
-            if (ImGui.beginMenu("Edit")) {
-                if (ImGui.menuItem("${Icons.UNDO} Undo", "Ctrl+Z")) {
+            if (ImGui.beginMenu(stringManager.getString("menu.edit"))) {
+                if (ImGui.menuItem("${Icons.UNDO} ${stringManager.getString("menu.edit.undo")}", "Ctrl+Z")) {
                     sceneManager.undo()
                 }
-                if (ImGui.menuItem("${Icons.REDO} Redo", "Ctrl+Y")) {
+                if (ImGui.menuItem("${Icons.REDO} ${stringManager.getString("menu.edit.redo")}", "Ctrl+Y")) {
                     sceneManager.redo()
                 }
                 ImGui.separator()
-                if (ImGui.menuItem("${Icons.CUT} Cut", "Ctrl+X")) {
+                if (ImGui.menuItem("${Icons.CUT} ${stringManager.getString("menu.edit.cut")}", "Ctrl+X")) {
                     val selected = sceneManager.getSelectedGameObject()
                     if (selected != null) {
                         clipboardService.copy(selected)
                         sceneManager.deleteGameObject(selected)
                     }
                 }
-                if (ImGui.menuItem("${Icons.COPY} Copy", "Ctrl+C")) {
+                if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("menu.edit.copy")}", "Ctrl+C")) {
                     sceneManager.getSelectedGameObject()?.let {
                         clipboardService.copy(it)
                     }
                 }
-                if (ImGui.menuItem("${Icons.PASTE} Paste", "Ctrl+V")) {
+                if (ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("menu.edit.paste")}", "Ctrl+V")) {
                     val cloned = clipboardService.paste()
                     if (cloned != null) {
                         cloned.transform.translation.set(0f, 0f, 0f)
@@ -244,18 +244,18 @@ class ImGuiLayer: KoinComponent {
                 }
                 ImGui.endMenu()
             }
-            if (ImGui.beginMenu("Settings")) {
+            if (ImGui.beginMenu(stringManager.getString("menu.settings"))) {
                 val settings = settingsManager.settings
 
                 val vsync = ImBoolean(settings.vsync)
-                if (ImGui.checkbox("V-Sync", vsync)) {
+                if (ImGui.checkbox(stringManager.getString("menu.settings.vsync"), vsync)) {
                     settings.vsync = vsync.get()
                     Window.setVSync(settings.vsync)
                     settingsManager.save()
                 }
 
                 val fullscreen = ImBoolean(settings.fullscreen)
-                if (ImGui.checkbox("Fullscreen", fullscreen)) {
+                if (ImGui.checkbox(stringManager.getString("menu.settings.fullscreen"), fullscreen)) {
                     settings.fullscreen = fullscreen.get()
                     Window.setFullscreen(settings.fullscreen)
                     settingsManager.save()
@@ -263,13 +263,13 @@ class ImGuiLayer: KoinComponent {
 
                 ImGui.separator()
                 val overlaySize = floatArrayOf(settings.gamepadOverlaySize)
-                if (ImGui.sliderFloat("Gamepad Overlay Size", overlaySize, 0.05f, 0.5f)) {
+                if (ImGui.sliderFloat(stringManager.getString("menu.settings.gamepad_overlay_size"), overlaySize, 0.05f, 0.5f)) {
                     settings.gamepadOverlaySize = overlaySize[0]
                     settingsManager.save()
                 }
 
                 val showOverlay = ImBoolean(settings.showGamepadOverlay)
-                if (ImGui.checkbox("Show Gamepad Overlay", showOverlay)) {
+                if (ImGui.checkbox(stringManager.getString("menu.settings.show_gamepad_overlay"), showOverlay)) {
                     settings.showGamepadOverlay = showOverlay.get()
                     settingsManager.save()
                 }
@@ -277,24 +277,24 @@ class ImGuiLayer: KoinComponent {
                 ImGui.separator()
                 val unitSystems = UnitSystem.entries.toTypedArray()
                 val currentUnitIdx = ImInt(settings.unitSystem.ordinal)
-                if (ImGui.combo("Unit System", currentUnitIdx, unitSystems.map { it.name }.toTypedArray())) {
+                if (ImGui.combo(stringManager.getString("menu.settings.unit_system"), currentUnitIdx, unitSystems.map { it.name }.toTypedArray())) {
                     settings.unitSystem = unitSystems[currentUnitIdx.get()]
                     settingsManager.save()
                 }
 
                 ImGui.endMenu()
             }
-            if (ImGui.beginMenu("View")) {
-                if (ImGui.beginMenu("Windows")) {
-                    ImGui.checkbox("Scene Hierarchy", showHierarchy)
-                    ImGui.checkbox("Properties", showProperties)
-                    ImGui.checkbox("Bone Tree", showBoneTree)
-                    ImGui.checkbox("Game Viewport", showGameView)
-                    ImGui.checkbox("Asset Browser", showAssetBrowser)
-                    ImGui.checkbox("Environment", showEnvironment)
-                    ImGui.checkbox("Profiler", showProfiler)
-                    ImGui.checkbox("Console", showConsole)
-                    ImGui.checkbox("Physics Tuner", showPhysicsTuner)
+            if (ImGui.beginMenu(stringManager.getString("menu.view"))) {
+                if (ImGui.beginMenu(stringManager.getString("menu.view.windows"))) {
+                    ImGui.checkbox(stringManager.getString("window.hierarchy"), showHierarchy)
+                    ImGui.checkbox(stringManager.getString("window.properties"), showProperties)
+                    ImGui.checkbox(stringManager.getString("window.bonetree"), showBoneTree)
+                    ImGui.checkbox(stringManager.getString("window.game_viewport"), showGameView)
+                    ImGui.checkbox(stringManager.getString("window.asset_browser"), showAssetBrowser)
+                    ImGui.checkbox(stringManager.getString("window.environment"), showEnvironment)
+                    ImGui.checkbox(stringManager.getString("window.profiler"), showProfiler)
+                    ImGui.checkbox(stringManager.getString("window.console"), showConsole)
+                    ImGui.checkbox(stringManager.getString("window.physics_tuner"), showPhysicsTuner)
                     ImGui.endMenu()
                 }
                 ImGui.endMenu()
