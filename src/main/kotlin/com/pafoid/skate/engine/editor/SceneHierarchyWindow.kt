@@ -28,8 +28,7 @@ class SceneHierarchyWindow: KoinComponent {
         // Handle global deletion input
         if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_DELETE)) {
             sceneManager.getSelectedGameObject()?.let {
-                it.destroy()
-                sceneManager.setSelectedGameObject(null)
+                sceneManager.deleteGameObject(it)
             }
         }
 
@@ -55,10 +54,7 @@ class SceneHierarchyWindow: KoinComponent {
         
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.menuItem("${Icons.TRASH} Delete")) {
-                obj.destroy()
-                if (obj == sceneManager.getSelectedGameObject()) {
-                    sceneManager.setSelectedGameObject(null)
-                }
+                sceneManager.deleteGameObject(obj)
             }
             ImGui.endPopup()
         }

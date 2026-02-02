@@ -34,11 +34,12 @@ class BoneOverrideSerializationTest {
         originalOverride.addOverride(boneName2, rotation2)
 
         // When
-        val json = Serializer.json.encodeToString(originalOverride)
+        val serializer = Serializer()
+        val json = serializer.json.encodeToString(originalOverride)
         tempFile.writeText(json)
 
         val loadedJson = tempFile.readText()
-        val deserializedOverride: BoneOverride = Serializer.json.decodeFromString(loadedJson)
+        val deserializedOverride: BoneOverride = serializer.json.decodeFromString(loadedJson)
 
         // Then
         assertNotNull(deserializedOverride)

@@ -43,6 +43,8 @@ import kotlin.getValue
 class ImGuiLayer: KoinComponent {
     private val inputProvider: IInputProvider by inject()
     private val settingsManager: SettingsManager by inject()
+    private val sceneManager: com.pafoid.skate.engine.scenes.SceneManager by inject()
+    private val clipboardService: com.pafoid.skate.engine.scenes.ClipboardService by inject()
 
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
@@ -209,6 +211,36 @@ class ImGuiLayer: KoinComponent {
                 ImGui.separator()
                 if (ImGui.menuItem("${Icons.TRASH} Quit")) {
                     GLFW.glfwSetWindowShouldClose(glfwWindow, true)
+                }
+                ImGui.endMenu()
+            }
+            if (ImGui.beginMenu("Edit")) {
+                if (ImGui.menuItem("${Icons.UNDO} Undo", "Ctrl+Z")) {
+                    sceneManager.undo()
+                }
+                if (ImGui.menuItem("${Icons.REDO} Redo", "Ctrl+Y")) {
+                    sceneManager.redo()
+                }
+                ImGui.separator()
+                if (ImGui.menuItem("${Icons.CUT} Cut", "Ctrl+X")) {
+                    val selected = sceneManager.getSelectedGameObject()
+                    if (selected != null) {
+                        clipboardService.copy(selected)
+                        sceneManager.deleteGameObject(selected)
+                    }
+                }
+                if (ImGui.menuItem("${Icons.COPY} Copy", "Ctrl+C")) {
+                    sceneManager.getSelectedGameObject()?.let {
+                        clipboardService.copy(it)
+                    }
+                }
+                if (ImGui.menuItem("${Icons.PASTE} Paste", "Ctrl+V")) {
+                    val cloned = clipboardService.paste()
+                    if (cloned != null) {
+                        cloned.transform.translation.set(0f, 0f, 0f)
+                        cloned.parent = null
+                        sceneManager.addGameObject(cloned)
+                    }
                 }
                 ImGui.endMenu()
             }

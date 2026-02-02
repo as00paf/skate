@@ -27,4 +27,9 @@ object Icons {
     const val ARROW_RIGHT = "\uf061"
     const val ARROW_ROTATE = "\uf021"
     const val ATOM = "\uf5d2"
+    const val UNDO = "\uf0e2"
+    const val REDO = "\uf01e"
+    const val CUT = "\uf0c4"
+    const val COPY = "\uf0c5"
+    const val PASTE = "\uf0ea"
 }
