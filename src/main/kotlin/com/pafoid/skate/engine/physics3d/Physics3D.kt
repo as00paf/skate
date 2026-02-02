@@ -180,9 +180,10 @@ class Physics3D : IPhysics3D, KoinComponent {
     }
 
     override fun update(dt: Float) {
-        // Bullet's update(dt, maxSteps) is more stable for variable frame rates
+        // External fixed timestep loop provides fixed dt.
+        // We set maxSteps=0 to force exactly one step of size dt.
         val startTime = System.nanoTime()
-        physicsSpace.update(dt, 10)
+        physicsSpace.update(dt, 0)
         val endTime = System.nanoTime()
         com.pafoid.skate.engine.utils.EngineStats.physicsStepTime.set(endTime - startTime)
 

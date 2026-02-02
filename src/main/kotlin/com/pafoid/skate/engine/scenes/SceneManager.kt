@@ -74,6 +74,10 @@ class SceneManager : KoinComponent {
 
     private val splashScreenManager = SplashScreenManager()
     private val fadeDuration = 2f
+    
+    private var physicsAccumulator = 0f
+    private val FIXED_TIME_STEP = 1.0f / 60.0f
+    private val MAX_TIME_STEP = 0.25f
 
     suspend fun initializeScene(imguiLayer: ImGuiLayer) = withContext(JobSystem.Main) {
         logger.logEngine("Initializing scene...")
@@ -203,7 +207,14 @@ class SceneManager : KoinComponent {
         val scene = currentScene
         if (dt >= 0 && scene != null) {
             if (runtimePlaying) {
-                scene.update(dt)
+                // Fixed Timestep Loop
+                physicsAccumulator += dt
+                if (physicsAccumulator > MAX_TIME_STEP) physicsAccumulator = MAX_TIME_STEP
+
+                while (physicsAccumulator >= FIXED_TIME_STEP) {
+                    scene.update(FIXED_TIME_STEP)
+                    physicsAccumulator -= FIXED_TIME_STEP
+                }
             } else {
                 scene.editorUpdate(dt)
                 handleEditorShortcuts(dt, imguiLayer)
