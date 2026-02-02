@@ -199,11 +199,14 @@
 - [x] **Task 19.5: Unit Tests**: Fix and add missing physics unit tests.
 
 # 🌍 20. Localization & String Management System (i18n)
+
+
+
 ## 🏗️ Phase 20.1: Infrastructure Setup
-- [ ] **Define String Schema**: Create a centralized directory `src/main/resources/values/` to hold string data.
-- [ ] **Initial String Resource**: Create `strings.properties` (the "Default" language) to host all current UI labels.
-- [ ] **String Manager Singleton**: Implement `StringManager` (or `R`) class to handle the loading and retrieval of strings via keys (e.g., `R.string("lbl_reset_board")`).
-- [ ] **Koin Integration**: Register the `StringManager` in your Koin module for easy injection into UI components.
+- [x] **Define String Schema**: Create a centralized directory `src/main/resources/values/` to hold string data.
+- [x] **Initial String Resource**: Create `strings.properties` (the "Default" language) to host all current UI labels.
+- [x] **String Manager Singleton**: Implement `StringManager` (or `R`) class to handle the loading and retrieval of strings via keys (e.g., `R.string("lbl_reset_board")`).
+- [x] **Koin Integration**: Register the `StringManager` in your Koin module for easy injection into UI components.
 
 ## 🛠️ Phase 20.2: Code Refactoring (The "Hardcoded Hunt")
 - [ ] **Refactor "Skate Lab" UI**: Replace all `ImGui.text("...")` and button labels in `LevelEditorSceneInitializer.kt` with localized lookups.

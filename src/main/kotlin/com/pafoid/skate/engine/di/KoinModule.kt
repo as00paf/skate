@@ -13,12 +13,13 @@ import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.ThumbnailCache
 import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.editor.logs.LoggerService
-import com.pafoid.skate.engine.render.DebugDraw
-import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
+import com.pafoid.skate.engine.render.DebugDraw
+import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
+import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.serialization.Serializer
 import org.koin.dsl.module
 
@@ -29,6 +30,7 @@ val appModule = module {
     single { ClipboardService(get()) }
     single { UndoRedoManager() }
     single { SettingsManager(get(), get()) }
+    single { StringManager() }
 }
 
 val engineModule = module {
