@@ -73,7 +73,7 @@ class EditorCamera(private val camera: Camera) : Component(), KoinComponent {
 
     private fun handleZoom() {
         val scroll = mouseListener.getScrollY()
-        if (scroll != 0f) {
+        if (scroll != 0f && mouseListener.isInsideViewport()) {
             val addValue = abs(scroll * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
             camera.addZoom((addValue.toFloat() * -sign(scroll)))
         }
