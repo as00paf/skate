@@ -185,8 +185,8 @@
   - [x] **Maximize Viewport (F12)**: Toggle between "Editor Layout" and "Fullscreen Viewport" mode. Make sure to use the right method so its not triggered multiple times.
 
 ## 18.5. Interaction & Shortcuts
-- [ ] **Middle-Mouse Pan**: Implement `View Rotation` in the editor camera. Pressing **MMB** + Mouse move shifts the camera on its local yaw/pitch axes. Ensure mouse capture works as expected.
-- [ ] **Mouse Wheel Zoom**: Implement `Zooming` in the editor camera. Scrolling the mouse wheel zooms in and out.
+- [x] **Middle-Mouse Pan**: Implement `View Rotation` in the editor camera. Pressing **MMB** + Mouse move shifts the camera on its local yaw/pitch axes. Ensure mouse capture works as expected.
+- [x] **Mouse Wheel Zoom**: Implement `Zooming` in the editor camera. Scrolling the mouse wheel zooms in and out.
 - [ ] **Standard Editor Shortcuts**:
   - [ ] **Ctrl + C / V / X**: Copy, Paste, and Cut selected `GameObject` (handling deep clones).
   - [ ] **Ctrl + Z / Y**: Fully implement a Undo/Redo stack for Transform changes and object deletions.
