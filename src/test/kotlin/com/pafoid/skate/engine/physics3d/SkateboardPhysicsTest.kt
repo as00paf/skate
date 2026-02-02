@@ -158,6 +158,7 @@ class SkateboardPhysicsTest {
         val skateGo = GameObject("Skateboard")
         val rb = RigidBody3D(2.0f).apply { 
             friction = 0.5f 
+            linearDamping = 0.1f
         }
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
@@ -168,9 +169,6 @@ class SkateboardPhysicsTest {
         
         skateGo.transform.translation.set(0f, 0.1f, 0f) // Slightly above ground, suspension holds it
         physics.add(skateGo)
-        
-        // Ensure rawBody is created
-        rb.rawBody!!.setDamping(0.1f, 0.0f)
 
         skatePhysics.start()
 

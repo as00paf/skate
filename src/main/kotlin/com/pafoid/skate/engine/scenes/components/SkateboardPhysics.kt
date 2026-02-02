@@ -87,19 +87,21 @@ class SkateboardPhysics : Component(), KoinComponent {
      * @param localDown The local downward vector of the board in world space.
      */
     private fun applySuspensionForce(hit: PhysicsRayTestResult, rayStart: Vector3f, localDown: Vector3f) {
-        val compression = 1.0f - hit.hitFraction
-        val currentLength = suspensionRestLength * hit.hitFraction
+        val compression = (1.0f - hit.hitFraction) * suspensionRestLength
         
         // F = k * x (Spring)
         val springForce = compression * stiffness
         
-        // Damping (approximate using velocity projection)
-        // We'd need the velocity at the specific point for perfect damping
-        // For now, simple damping on the spring force
-        val forceMagnitude = springForce // Add damping logic here later
+        // Damping: F = d * v
+        // We project the point velocity onto the suspension axis (up)
+        val localUp = Vector3f(localDown).negate()
+        val pointVelocity = rb.getVelocityInPoint(rayStart)
+        val vSuspension = pointVelocity.dot(localUp)
+        val dampingForce = vSuspension * damping
+
+        val forceMagnitude = (springForce - dampingForce).coerceAtLeast(0f)
         
-        val forceDir = Vector3f(localDown).negate() // Force pushes up
-        val worldForce = forceDir.mul(forceMagnitude)
+        val worldForce = Vector3f(localUp).mul(forceMagnitude)
         
         // Apply force at the specific corner position
         rb.applyForce(worldForce, rayStart)

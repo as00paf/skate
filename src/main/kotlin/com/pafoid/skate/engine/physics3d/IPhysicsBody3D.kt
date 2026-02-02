@@ -9,4 +9,5 @@ interface IPhysicsBody3D {
     fun applyImpulse(impulse: Vector3f)
     fun applyTorqueImpulse(torque: Vector3f)
     fun applyForce(force: Vector3f, relPos: Vector3f)
+    fun getVelocityInPoint(worldPos: Vector3f): Vector3f
 }

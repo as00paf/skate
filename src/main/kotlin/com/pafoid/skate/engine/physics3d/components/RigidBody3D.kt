@@ -96,6 +96,12 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
         rawBody?.applyForce(JmeVector3f(force.x, force.y, force.z), JmeVector3f(relPos.x, relPos.y, relPos.z))
     }
 
+    override fun getVelocityInPoint(worldPos: JomlVector3f): JomlVector3f {
+        val relPos = JomlVector3f(worldPos).sub(gameObject.transform.translation)
+        val vAtPoint = JomlVector3f(angularVelocity).cross(relPos).add(linearVelocity)
+        return vAtPoint
+    }
+
     override var linearVelocity: JomlVector3f
         get() {
             val v: JmeVector3f = rawBody?.getLinearVelocity(null) ?: JmeVector3f.ZERO
