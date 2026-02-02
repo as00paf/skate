@@ -196,7 +196,7 @@
 - [x] **Task 19.2: Rolling Resistance**: Implement `linearDamping` logic in `RigidBody3D` to satisfy the `rollResistance` test.
 - [x] **Task 19.3: Steering Geometry**: Implement local-space steering forces in `SkateboardPhysics` to translate board lean (roll) into actual turning (yaw).
 - [x] **Task 19.4: Fixed Timestep Integration**: Implement an accumulator-based fixed timestep loop in `Engine` or `Physics3D` to ensure deterministic physics regardless of render framerate.
-- [ ] **Task 19.5: Unit Tests**: Fix and add missing physics unit tests.
+- [x] **Task 19.5: Unit Tests**: Fix and add missing physics unit tests.
 
 # 🌍 20. Localization & String Management System (i18n)
 ## 🏗️ Phase 20.1: Infrastructure Setup

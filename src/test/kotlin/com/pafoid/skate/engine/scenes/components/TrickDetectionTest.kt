@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
@@ -11,24 +12,15 @@ import io.mockk.mockk
 import io.mockk.unmockkAll
 import org.joml.Vector3f
 import org.junit.jupiter.api.*
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import kotlin.test.assertEquals
 
 class TrickDetectionTest {
 
     companion object {
         private lateinit var physics: Physics3D
-
-        @BeforeAll
-        @JvmStatic
-        fun setupAll() {
-            physics = Physics3D()
-        }
-
-        @AfterAll
-        @JvmStatic
-        fun teardownAll() {
-            physics.destroy()
-        }
     }
 
     private lateinit var skateboard: GameObject
@@ -39,6 +31,15 @@ class TrickDetectionTest {
 
     @BeforeEach
     fun setup() {
+        startKoin {
+            modules(module {
+                single { sceneManager }
+                single<IInputProvider> { mockk(relaxed = true) }
+                single { mockk<com.pafoid.skate.engine.assets.ResourceManager>(relaxed = true) }
+            })
+        }
+        physics = Physics3D()
+
         every { sceneManager.runtimePlaying } returns true
         
         val mockScene = mockk<Scene>()
@@ -62,6 +63,8 @@ class TrickDetectionTest {
 
     @AfterEach
     fun teardown() {
+        physics.destroy()
+        stopKoin()
         unmockkAll()
     }
 
@@ -126,7 +129,6 @@ class TrickDetectionTest {
         
         // Pop (simulate jumping)
         // TrickDetector doesn't currently use stance or velocity to identify Fakie vs Nollie
-        // This test is EXPECTED TO FAIL for now.
         
         // Act
         // Simulate a small pop/jump
@@ -141,8 +143,6 @@ class TrickDetectionTest {
         }
 
         // Assert
-        // We expect some way to get the trick name including stance
-        // For now let's assume TrickDetector should provide it or TrickAnalyzer
         val trick = trickDetector.getDetectedTrick() ?: "Ollie"
         // If moving backwards and popped, it's a Fakie Ollie
         assertEquals("Fakie Ollie", trick)

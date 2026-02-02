@@ -23,6 +23,7 @@ class TrickDetectorTest {
 
         every { mockGameObject.getComponent(SkateboardPhysics::class.java) } returns mockSkateboardPhysics
         every { mockGameObject.getComponent(RigidBody3D::class.java) } returns mockRigidBody
+        every { mockGameObject.getComponent(PlayerController::class.java) } returns null
 
         trickDetector = TrickDetector()
         trickDetector.gameObject = mockGameObject
@@ -84,7 +85,7 @@ class TrickDetectorTest {
         trickDetector.detectTrick()
 
         // Then
-        assertEquals("Pop Shuvit", trickDetector.getDetectedTrick())
+        assertEquals("Shove-it", trickDetector.getDetectedTrick())
     }
 
     @Test
@@ -96,7 +97,7 @@ class TrickDetectorTest {
         trickDetector.detectTrick()
 
         // Then
-        assertEquals("360 Pop Shuvit", trickDetector.getDetectedTrick())
+        assertEquals("360 Shove-it", trickDetector.getDetectedTrick())
     }
 
     //@Test

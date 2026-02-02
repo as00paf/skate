@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -33,6 +34,12 @@ class SkateboardPhysicsTest {
                     single<SceneManager> { sceneManager }
                 })
             }
+        }
+
+        @AfterAll
+        @JvmStatic
+        fun teardownAll() {
+            stopKoin()
         }
     }
 

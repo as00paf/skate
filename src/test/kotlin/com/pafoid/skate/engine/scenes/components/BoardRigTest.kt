@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.pafoid.skate.engine.controls.input.IInputBuffer
+import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
@@ -11,6 +12,9 @@ import org.joml.Vector2f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import kotlin.test.assertTrue
 
 class BoardRigTest {
@@ -33,6 +37,14 @@ class BoardRigTest {
 
     @BeforeEach
     fun setup() {
+        startKoin {
+            modules(module {
+                single { sceneManager }
+                single<IInputProvider> { mockk(relaxed = true) }
+                single { mockk<com.pafoid.skate.engine.assets.ResourceManager>(relaxed = true) }
+            })
+        }
+
         MockKAnnotations.init(this)
         
         skateboard = GameObject("Skateboard")
@@ -52,6 +64,7 @@ class BoardRigTest {
 
     @AfterEach
     fun teardown() {
+        stopKoin()
         unmockkAll()
     }
 
