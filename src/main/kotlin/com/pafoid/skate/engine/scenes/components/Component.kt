@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.utils.StringManager
 import imgui.type.ImInt
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
@@ -8,11 +9,15 @@ import kotlinx.serialization.Transient
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.lang.reflect.Modifier
 
 @Serializable
 @Polymorphic
-abstract class Component {
+abstract class Component: KoinComponent {
+
+    private val stringManager: StringManager by inject()
 
     companion object {
         private var ID_COUNTER: Int = 0
@@ -48,41 +53,42 @@ abstract class Component {
                 val type = field.type
                 val value = field.get(this)
                 val name = field.name
+                val localizedName = stringManager.getString("component.${this.javaClass.simpleName}.$name")
                 val isFinal = Modifier.isFinal(modifiers)
 
                 when (type) {
                     Int::class.java -> {
                         if (!isFinal) {
                             val typedValue = value as Int
-                            field.set(this, com.pafoid.skate.engine.utils.MImGui.dragInt(name, typedValue))
+                            field.set(this, com.pafoid.skate.engine.utils.MImGui.dragInt(localizedName, typedValue))
                         }
                     }
                     Float::class.java -> {
                         if (!isFinal) {
                             val typedValue = value as Float
-                            field.set(this, com.pafoid.skate.engine.utils.MImGui.dragFloat(name, typedValue))
+                            field.set(this, com.pafoid.skate.engine.utils.MImGui.dragFloat(localizedName, typedValue))
                         }
                     }
                     Boolean::class.java -> {
                         if (!isFinal) {
                             val typedValue = value as Boolean
-                            if (imgui.ImGui.checkbox("$name", typedValue)) {
+                            if (imgui.ImGui.checkbox("$localizedName", typedValue)) {
                                 field.set(this, !typedValue)
                             }
                         }
                     }
                     Vector2f::class.java -> {
                         val typedValue = value as Vector2f
-                        com.pafoid.skate.engine.utils.MImGui.drawVec2Control(name, typedValue)
+                        com.pafoid.skate.engine.utils.MImGui.drawVec2Control(localizedName, typedValue)
                     }
                     Vector3f::class.java -> {
                         val typedValue = value as Vector3f
-                        com.pafoid.skate.engine.utils.MImGui.drawVec3Control(name, typedValue)
+                        com.pafoid.skate.engine.utils.MImGui.drawVec3Control(localizedName, typedValue)
                     }
                     Vector4f::class.java -> {
                         val typedValue = value as Vector4f
                         val imVec = floatArrayOf(typedValue.x, typedValue.y, typedValue.z, typedValue.w)
-                        if (imgui.ImGui.dragFloat4("$name", imVec)) {
+                        if (imgui.ImGui.dragFloat4("$localizedName", imVec)) {
                             typedValue.set(imVec[0], imVec[1], imVec[2], imVec[3])
                         }
                     }
@@ -91,7 +97,7 @@ abstract class Component {
                             val enumValues = getEnumValues(type as Class<out Enum<*>>)
                             val enumType = (value as Enum<*>).name
                             val index = ImInt(indexOf(enumType, enumValues))
-                            if (imgui.ImGui.combo(field.name, index, enumValues, enumValues.size)) {
+                            if (imgui.ImGui.combo(localizedName, index, enumValues, enumValues.size)) {
                                 field.set(this, type.enumConstants[index.get()])
                             }
                         }
