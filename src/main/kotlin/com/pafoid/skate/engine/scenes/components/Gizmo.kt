@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 

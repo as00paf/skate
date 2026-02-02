@@ -4,6 +4,8 @@ import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraPreset
+import com.pafoid.skate.engine.utils.MImGui
 import imgui.ImGui
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -77,5 +79,9 @@ class EditorCamera(private val camera: Camera) : Component(), KoinComponent {
             val addValue = abs(scroll * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
             camera.addZoom((addValue.toFloat() * -sign(scroll)))
         }
+    }
+
+    override fun imgui() {
+
     }
 }

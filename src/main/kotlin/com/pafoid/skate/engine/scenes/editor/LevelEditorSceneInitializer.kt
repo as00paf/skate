@@ -10,7 +10,7 @@ import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
 import com.pafoid.skate.engine.scenes.components.*
 import com.pafoid.skate.engine.physics3d.components.*
-import com.pafoid.skate.engine.scenes.PrefabsGenerator
+import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -21,8 +21,8 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
     private var currentScene: Scene? = null
     private lateinit var editorStuff: GameObject
-    private lateinit var editorCamera: EditorCamera
 
+    private var editorCamera: GameObject? = null
     private var skateboard: GameObject? = null
     private var skater: GameObject? = null
     private var floor: GameObject? = null
@@ -42,12 +42,15 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         scene.camera.yaw = 0f
         
         // Essential Editor Tools
-        editorCamera = EditorCamera(scene.camera)
-        editorStuff = scene.createGameObject("EditorTools")
+        editorCamera = GameObject("EditorCamera").apply {
+            addComponent(EditorCamera(scene.camera))
+            scene.addGameObjectToScene(this)
+        }
+
+        editorStuff = GameObject("EditorTools")
         editorStuff.setNoSerialize()
         editorStuff.addComponent(MouseControls())
         editorStuff.addComponent(GizmoSystem())
-        editorStuff.addComponent(editorCamera)
         editorStuff.addComponent(GridLines())
         editorStuff.addComponent(MeasureTool())
         scene.addGameObjectToScene(editorStuff)

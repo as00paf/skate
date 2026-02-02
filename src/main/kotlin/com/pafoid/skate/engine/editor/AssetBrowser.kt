@@ -6,7 +6,7 @@ import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.prefabs.MaterialType
-import com.pafoid.skate.engine.scenes.PrefabsGenerator
+import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.scenes.SceneManager
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags

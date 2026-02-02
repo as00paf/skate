@@ -9,7 +9,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import org.joml.Vector3f
 
 class Floor(
-    var texturedModel: TexturedModel,
+    texturedModel: TexturedModel,
     position: Vector3f = Vector3f(0f, -0.5f, 0f),
     size: Float = 100f,
 ): GameObject("Floor") {

@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.scenes
+package com.pafoid.skate.engine.prefabs
 
 import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.pafoid.skate.engine.assets.Assets
@@ -13,11 +13,8 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.prefabs.Floor
-import com.pafoid.skate.engine.prefabs.MaterialType
-import com.pafoid.skate.engine.prefabs.Skateboard
-import com.pafoid.skate.engine.prefabs.Skater
-import com.pafoid.skate.engine.prefabs.Tile
+import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.ModularTile
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
@@ -148,12 +145,14 @@ class PrefabsGenerator(
         rail.transform.translation.set(position)
         rail.transform.scale.set(1f, 1f, 1f)
         val mat = material ?: MaterialType.METAL
-        rail.addComponent(Entity(
-            model = TexturedModel(
-                resourceManager.loadModelSync(Assets.Models.RAIL).parts[0].rawModel,
-                resourceManager.loadTextureSync(mat.texturePath)
+        rail.addComponent(
+            Entity(
+                model = TexturedModel(
+                    resourceManager.loadModelSync(Assets.Models.RAIL).parts[0].rawModel,
+                    resourceManager.loadTextureSync(mat.texturePath)
+                )
             )
-        ))
+        )
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0)) //Should depend on rail type
         scene.addGameObjectToScene(rail)
@@ -165,12 +164,14 @@ class PrefabsGenerator(
         val ledge = GameObject("${mat.displayName}_Ledge_${scene.gameObjects.size}")
         ledge.transform.translation.set(position)
         ledge.transform.scale.set(1f, 1f, 1f)
-        ledge.addComponent(Entity(
-            model = TexturedModel(
-                resourceManager.loadModelSync(Assets.Models.LEDGE).parts[0].rawModel,
-                resourceManager.loadTextureSync(mat.texturePath)
+        ledge.addComponent(
+            Entity(
+                model = TexturedModel(
+                    resourceManager.loadModelSync(Assets.Models.LEDGE).parts[0].rawModel,
+                    resourceManager.loadTextureSync(mat.texturePath)
+                )
             )
-        ))
+        )
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
         scene.addGameObjectToScene(ledge)
@@ -182,18 +183,26 @@ class PrefabsGenerator(
         kicker.transform.translation.set(position)
         kicker.transform.scale.set(1f, 1f, 1f)
         val mat = material ?: MaterialType.CONCRETE
-        kicker.addComponent(Entity(
-            model = TexturedModel(
-                resourceManager.loadModelSync(Assets.Models.KICKER).parts[0].rawModel,
-                resourceManager.loadTextureSync(mat.texturePath)
+        kicker.addComponent(
+            Entity(
+                model = TexturedModel(
+                    resourceManager.loadModelSync(Assets.Models.KICKER).parts[0].rawModel,
+                    resourceManager.loadTextureSync(mat.texturePath)
+                )
             )
-        ))
+        )
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
         val kickerRawModel = resourceManager.loadModelSync(Assets.Models.KICKER).parts[0].rawModel
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until kickerRawModel.vertices.size / 3) {
-            jmeVertices.add(JmeVector3f(kickerRawModel.vertices[i*3], kickerRawModel.vertices[i*3+1], kickerRawModel.vertices[i*3+2]))
+            jmeVertices.add(
+                com.pafoid.skate.engine.utils.JmeVector3f(
+                    kickerRawModel.vertices[i * 3],
+                    kickerRawModel.vertices[i * 3 + 1],
+                    kickerRawModel.vertices[i * 3 + 2]
+                )
+            )
         }
 
         if (jmeVertices.isNotEmpty()) {
@@ -209,12 +218,14 @@ class PrefabsGenerator(
         val go = GameObject("ManualPad_${scene.gameObjects.size}")
         go.transform.translation.set(position)
         val mat = material ?: MaterialType.CONCRETE
-        go.addComponent(Entity(
-            model = TexturedModel(
-                resourceManager.loadModelSync(Assets.Models.MANUAL_PAD).parts[0].rawModel,
-                resourceManager.loadTextureSync(mat.texturePath)
+        go.addComponent(
+            Entity(
+                model = TexturedModel(
+                    resourceManager.loadModelSync(Assets.Models.MANUAL_PAD).parts[0].rawModel,
+                    resourceManager.loadTextureSync(mat.texturePath)
+                )
             )
-        ))
+        )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
         scene.addGameObjectToScene(go)
@@ -226,18 +237,26 @@ class PrefabsGenerator(
         val go = GameObject("Bank_${scene.gameObjects.size}")
         go.transform.translation.set(position)
         val mat = material ?: MaterialType.CONCRETE
-        go.addComponent(Entity(
-            model = TexturedModel(
-                resourceManager.loadModelSync(Assets.Models.BANK).parts[0].rawModel,
-                resourceManager.loadTextureSync(mat.texturePath)
+        go.addComponent(
+            Entity(
+                model = TexturedModel(
+                    resourceManager.loadModelSync(Assets.Models.BANK).parts[0].rawModel,
+                    resourceManager.loadTextureSync(mat.texturePath)
+                )
             )
-        ))
+        )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
         val rawModel = resourceManager.loadModelSync(Assets.Models.BANK).parts[0].rawModel
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
-            jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
+            jmeVertices.add(
+                com.pafoid.skate.engine.utils.JmeVector3f(
+                    rawModel.vertices[i * 3],
+                    rawModel.vertices[i * 3 + 1],
+                    rawModel.vertices[i * 3 + 2]
+                )
+            )
         }
         val shape = HullCollisionShape(jmeVertices)
         go.addComponent(CustomCollider3D(shape))
@@ -251,18 +270,26 @@ class PrefabsGenerator(
         val go = GameObject("QuarterPipe_${scene.gameObjects.size}")
         go.transform.translation.set(position)
         val mat = material ?: MaterialType.CONCRETE
-        go.addComponent(Entity(
-            model = TexturedModel(
-                resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).parts[0].rawModel,
-                resourceManager.loadTextureSync(mat.texturePath)
+        go.addComponent(
+            Entity(
+                model = TexturedModel(
+                    resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).parts[0].rawModel,
+                    resourceManager.loadTextureSync(mat.texturePath)
+                )
             )
-        ))
+        )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
         val rawModel = resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).parts[0].rawModel
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
-            jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
+            jmeVertices.add(
+                com.pafoid.skate.engine.utils.JmeVector3f(
+                    rawModel.vertices[i * 3],
+                    rawModel.vertices[i * 3 + 1],
+                    rawModel.vertices[i * 3 + 2]
+                )
+            )
         }
         val shape = HullCollisionShape(jmeVertices)
         go.addComponent(CustomCollider3D(shape))

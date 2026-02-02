@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.skateboard.Stance
 import kotlin.math.abs
 
 class TrickDetector : Component() {
@@ -68,7 +69,7 @@ class TrickDetector : Component() {
         val controller = gameObject.getComponent(PlayerController::class.java)
         if (controller != null) {
             val stance = controller.currentStance
-            detectedTrick = if (stance == com.pafoid.skate.skateboard.SkateStance.REGULAR) {
+            detectedTrick = if (stance == Stance.REGULAR) {
                 baseTrick
             } else {
                 "${stance.name.lowercase().replaceFirstChar { it.uppercase() }} $baseTrick"

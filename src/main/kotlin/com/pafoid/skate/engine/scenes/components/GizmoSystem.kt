@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager

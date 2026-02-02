@@ -1,12 +1,12 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.scenes.PrefabsGenerator
-import com.pafoid.skate.skateboard.Stance
+import com.pafoid.skate.engine.prefabs.PrefabsGenerator
+import com.pafoid.skate.skateboard.PreferredStance
 import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import org.lwjgl.glfw.GLFW.*
-import com.pafoid.skate.skateboard.SkateStance
+import com.pafoid.skate.skateboard.Stance
 import com.pafoid.skate.engine.player.PlayerState
 import com.pafoid.skate.engine.player.PlayerStateManager
 import com.pafoid.skate.engine.controls.input.IInputProvider
@@ -24,6 +24,7 @@ import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.utils.Interpolation
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -39,7 +40,7 @@ class PlayerController : Component(), KoinComponent {
 
     private val sceneManager: SceneManager by inject()
 
-    var preferredStance = Stance.REGULAR
+    var preferredStance = PreferredStance.REGULAR
     var pushForce = 5.0f
     var steerSpeed = 2.0f
     var jumpImpulse = 10.0f
@@ -50,7 +51,7 @@ class PlayerController : Component(), KoinComponent {
 
     lateinit var stateManager: PlayerStateManager
 
-    var currentStance = SkateStance.REGULAR
+    var currentStance = Stance.REGULAR
     var isSwitch = false
     var inputBuffer: IInputBuffer = InputBuffer.instance
     
@@ -64,7 +65,7 @@ class PlayerController : Component(), KoinComponent {
     private val leanSmoothness = 5f
 
     private val stanceMultiplier: Float
-        get() = if (preferredStance == Stance.REGULAR) 1f else -1f
+        get() = if (preferredStance == PreferredStance.REGULAR) 1f else -1f
 
     override fun start() {
         rb = gameObject.getComponent(RigidBody3D::class.java)
@@ -151,7 +152,7 @@ fun updateProceduralLean(dt: Float) {
 
         // Target lean based on steering
         val targetLean = -steerInput * maxLeanAngle * stanceMultiplier
-        currentLean = com.pafoid.skate.engine.utils.Interpolation.lerp(currentLean, targetLean, leanSmoothness * dt)
+        currentLean = Interpolation.lerp(currentLean, targetLean, leanSmoothness * dt)
 
         // Apply to spine joints
         val spineNames = listOf("mixamorig9_Spine", "mixamorig9_Spine1", "mixamorig9_Spine2")
@@ -216,7 +217,7 @@ fun updateProceduralLean(dt: Float) {
             
             // Face movement direction
             val targetRotationY = Math.toDegrees(atan2(moveDir.x.toDouble(), moveDir.z.toDouble())).toFloat()
-            target.transform.rotation.y = com.pafoid.skate.engine.utils.Interpolation.lerp(target.transform.rotation.y, targetRotationY, 10f * dt)
+            target.transform.rotation.y = Interpolation.lerp(target.transform.rotation.y, targetRotationY, 10f * dt)
             
             animator?.play("walk", 0.2f)
         } else {
@@ -310,11 +311,11 @@ fun updateProceduralLean(dt: Float) {
         val movingForward = dot > 0
 
         currentStance = when {
-            !isSwitch && movingForward -> SkateStance.REGULAR
-            !isSwitch && !movingForward -> SkateStance.FAKIE
-            isSwitch && movingForward -> SkateStance.SWITCH
-            isSwitch && !movingForward -> SkateStance.NOLLIE
-            else -> SkateStance.REGULAR
+            !isSwitch && movingForward -> Stance.REGULAR
+            !isSwitch && !movingForward -> Stance.FAKIE
+            isSwitch && movingForward -> Stance.SWITCH
+            isSwitch && !movingForward -> Stance.NOLLIE
+            else -> Stance.REGULAR
         }
     }
 
@@ -334,7 +335,7 @@ fun updateProceduralLean(dt: Float) {
         }
 
         if (imgui.ImGui.button("Toggle Preferred Stance")) {
-            preferredStance = if (preferredStance == Stance.REGULAR) Stance.GOOFY else Stance.REGULAR
+            preferredStance = if (preferredStance == PreferredStance.REGULAR) PreferredStance.GOOFY else PreferredStance.REGULAR
         }
         
         imgui.ImGui.end()
