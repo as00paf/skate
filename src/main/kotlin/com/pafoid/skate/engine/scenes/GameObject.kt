@@ -126,9 +126,9 @@ open class GameObject(
         components.forEach { it.destroy() }
     }
 
-    fun copy(): GameObject {
-        val objAsJSON = Serializer.json.encodeToString(this)
-        val result = Serializer.json.decodeFromString<GameObject>(objAsJSON)
+    fun copy(serializer: Serializer): GameObject {
+        val objAsJSON = serializer.encode(this)
+        val result = serializer.decode<GameObject>(objAsJSON)
         result.generateUid()
         result.getAllComponents().forEach {
             it.generateId()

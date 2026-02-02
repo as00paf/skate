@@ -4,8 +4,13 @@ import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.utils.SettingsManager
+import com.pafoid.skate.engine.utils.serialization.Serializer
+import com.sun.tools.javac.code.TypeAnnotationPosition.newObj
 import com.sun.tools.sjavac.Main.go
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -16,6 +21,8 @@ class MouseControls : Component(), KoinComponent {
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()
+    private val serializer: Serializer by inject()
+    private val logger: LoggerService by inject()
 
     private var holdingObject: GameObject? = null
     private val debounceTime = 0.2f
@@ -26,9 +33,10 @@ class MouseControls : Component(), KoinComponent {
 
     private fun place() {
         val scene = sceneManager.currentScene ?: return
-        val newObj = holdingObject?.copy()
-        newObj?.removeComponent(NonPickable::class.java)
-        scene.addGameObjectToScene(newObj!!)
+        holdingObject?.copy(serializer)?.let { newObj ->
+            newObj.removeComponent(NonPickable::class.java)
+            scene.addGameObjectToScene(newObj)
+        } ?: run { logger.logEngine("Could not place object", LogLevel.ERROR) }
     }
 
     override fun editorUpdate(dt: Float) {

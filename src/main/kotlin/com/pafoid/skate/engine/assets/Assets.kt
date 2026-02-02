@@ -12,6 +12,7 @@ object Assets {
         const val SKY_DOME = "assets/shaders/skydome.glsl"
     }
     object Textures {
+        const val APP_ICON = "assets/textures/app_icon.png"
         const val SPLASH = "assets/textures/splash_screen.png"
 
         const val XBOX_CONTROLLER = "assets/textures/xbox_controller.png"
@@ -43,7 +44,8 @@ object Assets {
     object Fonts {
         const val fontsFile = "assets/fonts/Font Awesome 7 Free-Solid-900.otf"
     }
-    object INI {
+    object FILES {
         const val IMGUI = "imgui.ini"
+        const val SETTINGS_FILE = "settings.json"
     }
 }

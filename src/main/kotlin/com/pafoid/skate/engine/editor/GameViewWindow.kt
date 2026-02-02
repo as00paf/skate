@@ -26,6 +26,7 @@ class GameViewWindow : KoinComponent {
     private val logger: LoggerService by inject()
     private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()
+    private val settingsManager: SettingsManager by inject()
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -94,7 +95,7 @@ class GameViewWindow : KoinComponent {
         renderViewportOverlays(windowPos, windowSize)
 
         // Render Gamepad Overlay
-        if (SettingsManager.settings.showGamepadOverlay) {
+        if (settingsManager.settings.showGamepadOverlay) {
             gamepadOverlay.imgui(Vector2f(imageScreenPosX, imageScreenPosY), Vector2f(imageSizeX, imageSizeY))
         }
 
@@ -183,7 +184,7 @@ class GameViewWindow : KoinComponent {
         val velocity = rb?.rawBody?.getLinearVelocity(null)
         if (velocity != null) {
             val speedMS = velocity.length()
-            val settings = SettingsManager.settings
+            val settings = settingsManager.settings
             val (speedDisplay, unitLabel) = if (settings.unitSystem == UnitSystem.METRIC) {
                 Pair(speedMS * 3.6f, "km/h")
             } else {

@@ -1,13 +1,14 @@
 package com.pafoid.skate.engine.utils
 
+import com.pafoid.skate.engine.assets.Assets.FILES.SETTINGS_FILE
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.utils.serialization.Serializer
-import kotlinx.serialization.encodeToString
 import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
 
-object SettingsManager {
-    private const val SETTINGS_FILE = "settings.json"
+class SettingsManager(private val serializer: Serializer, private val logger: LoggerService) {
     var settings = SystemSettings()
         private set
 
@@ -16,9 +17,9 @@ object SettingsManager {
         if (Files.exists(path)) {
             try {
                 val json = String(Files.readAllBytes(path))
-                settings = Serializer.json.decodeFromString(json)
+                settings = serializer.decode(json)
             } catch (e: Exception) {
-                println("Error loading settings: ${e.message}")
+                logger.logEngine("Error loading settings: ${e.message}", LogLevel.ERROR)
             }
         }
     }
@@ -26,10 +27,10 @@ object SettingsManager {
     fun save() {
         try {
             val writer = FileWriter(SETTINGS_FILE)
-            writer.write(Serializer.json.encodeToString(settings))
+            writer.write(serializer.encode(settings))
             writer.close()
         } catch (e: Exception) {
-            println("Error saving settings: ${e.message}")
+            logger.logEngine("Error saving settings: ${e.message}", LogLevel.ERROR)
         }
     }
 }

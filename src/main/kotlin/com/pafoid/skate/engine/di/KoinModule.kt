@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.di
 
 import com.pafoid.skate.engine.assets.AssimpLoader
 import com.pafoid.skate.engine.assets.ObjLoader
+import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.ShaderLoader
 import com.pafoid.skate.engine.controls.input.IInputProvider
@@ -15,13 +16,25 @@ import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.utils.SettingsManager
+import com.pafoid.skate.engine.utils.serialization.Serializer
 import org.koin.dsl.module
 
+val appModule = module {
+    single { SceneManager() }
+    single { Serializer() }
+    single { LoggerService() }
+    single { ClipboardService(get()) }
+    single { SettingsManager(get(), get()) }
+}
+
 val engineModule = module {
+    single { PoseSerializer() }
     single { ShaderLoader(false) }
     single { AssimpLoader() }
     single { ObjLoader() }
     single { ResourceManager(get(), get(), get(), get()) }
+
     single { ThumbnailCache() }
     single { DebugDraw() }
     single { PickingDraw() }
@@ -30,10 +43,4 @@ val engineModule = module {
     single { KeyListener() }
     single { MouseListener() }
     single<IInputProvider> { InputProvider(get(), get()) }
-}
-
-val appModule = module {
-    single { SceneManager() }
-    single { LoggerService() }
-    single { ClipboardService() }
 }

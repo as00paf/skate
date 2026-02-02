@@ -19,6 +19,7 @@ class MeasureTool : Component(), KoinComponent {
     private val debugDraw: DebugDraw by inject()
     private val sceneManager: SceneManager by inject()
     private val mouseListener: MouseListener by inject()
+    private val settingsManager: SettingsManager by inject()
 
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
@@ -72,7 +73,7 @@ class MeasureTool : Component(), KoinComponent {
                         debugDraw.addLine3D(start, currentEnd, Vector3f(1f, 1f, 0f))
                         
                         val distance = start.distance(currentEnd)
-                        val settings = SettingsManager.settings
+                        val settings = settingsManager.settings
                         val displayText = if (settings.unitSystem == UnitSystem.METRIC) {
                             String.format("%.2f m", distance)
                         } else {

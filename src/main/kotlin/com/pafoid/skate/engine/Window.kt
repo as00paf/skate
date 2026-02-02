@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine
 
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.listeners.JoystickListener
 import com.pafoid.skate.engine.controls.listeners.KeyListener
@@ -38,6 +39,7 @@ class Window(
     private val joystickListener: JoystickListener by inject()
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
+    private val settingsManager: SettingsManager by inject()
 
     companion object {
         private var instance: Window? = null
@@ -106,8 +108,8 @@ class Window(
     }
 
     private fun init() {
-        SettingsManager.load()
-        val settings = SettingsManager.settings
+        settingsManager.load()
+        val settings = settingsManager.settings
 
         // Error callback
         GLFWErrorCallback.createPrint(System.err).set()
@@ -142,7 +144,7 @@ class Window(
         currentHeight = winHeight
 
         // Set the window icon
-        setWindowIcon("assets/textures/app_icon.png")
+        setWindowIcon(Assets.Textures.APP_ICON)
 
         // Make OpenGL context current
         glfwMakeContextCurrent(glfwWindow)

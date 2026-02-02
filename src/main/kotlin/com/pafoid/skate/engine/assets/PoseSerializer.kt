@@ -1,24 +1,29 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.animation.BoneOverride
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.utils.serialization.Serializer
-import kotlinx.serialization.encodeToString
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.io.File
 
-object PoseSerializer {
+class PoseSerializer: KoinComponent {
+    private val serializer: Serializer by inject()
+    private val logger: LoggerService by inject()
 
     fun savePose(boneOverride: BoneOverride, filePath: String) {
-        val json = Serializer.json.encodeToString(boneOverride)
+        val json = serializer.encode(boneOverride)
         File(filePath).writeText(json)
     }
 
     fun loadPose(filePath: String): BoneOverride? {
         val file = File(filePath)
         if (!file.exists()) {
-            println("Warning: Pose file not found: $filePath")
+            logger.logEngine("Warning: Pose file not found: $filePath", LogLevel.ERROR)
             return null
         }
         val json = file.readText()
-        return Serializer.json.decodeFromString(json)
+        return serializer.decode(json)
     }
 }

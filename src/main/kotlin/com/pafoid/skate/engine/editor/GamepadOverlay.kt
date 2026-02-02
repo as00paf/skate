@@ -18,13 +18,14 @@ import kotlin.math.min
 class GamepadOverlay : KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val joystickListener: JoystickListener by inject()
+    private val settingsManager: SettingsManager by inject()
     
     private val controllerTexture: Texture by lazy {
         resourceManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER)
     }
 
     fun imgui(gameViewPos: Vector2f, gameViewSize: Vector2f) {
-        val settings = SettingsManager.settings
+        val settings = settingsManager.settings
         val windowFlags = ImGuiWindowFlags.NoDecoration or
                          ImGuiWindowFlags.NoInputs or
                          ImGuiWindowFlags.AlwaysAutoResize or

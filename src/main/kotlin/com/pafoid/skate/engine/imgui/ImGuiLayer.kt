@@ -2,9 +2,7 @@ package com.pafoid.skate.engine.imgui
 
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.editor.BoneTreeWindow
 import com.pafoid.skate.engine.editor.ConsoleWindow
 import com.pafoid.skate.engine.editor.EnvironmentWindow
@@ -44,6 +42,7 @@ import kotlin.getValue
 
 class ImGuiLayer: KoinComponent {
     private val inputProvider: IInputProvider by inject()
+    private val settingsManager: SettingsManager by inject()
 
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
@@ -77,7 +76,7 @@ class ImGuiLayer: KoinComponent {
         ImGui.createContext()
 
         with(ImGui.getIO()) {
-            iniFilename = Assets.INI.IMGUI
+            iniFilename = Assets.FILES.IMGUI
             backendPlatformName = "imgui_java_impl_glfw"
             addConfigFlags(ImGuiConfigFlags.DockingEnable or ImGuiConfigFlags.ViewportsEnable)
             loadFonts(Assets.Fonts.fontsFile)
@@ -90,7 +89,7 @@ class ImGuiLayer: KoinComponent {
     }
 
     private fun setupLayout(dockspaceId: Int) {
-        val iniFile = File(Assets.INI.IMGUI)
+        val iniFile = File(Assets.FILES.IMGUI)
         if (iniFile.exists()) return
 
         dockBuilderRemoveNode(dockspaceId)
@@ -214,33 +213,33 @@ class ImGuiLayer: KoinComponent {
                 ImGui.endMenu()
             }
             if (ImGui.beginMenu("Settings")) {
-                val settings = SettingsManager.settings
+                val settings = settingsManager.settings
 
                 val vsync = ImBoolean(settings.vsync)
                 if (ImGui.checkbox("V-Sync", vsync)) {
                     settings.vsync = vsync.get()
-                    Window.Companion.setVSync(settings.vsync)
-                    SettingsManager.save()
+                    Window.setVSync(settings.vsync)
+                    settingsManager.save()
                 }
 
                 val fullscreen = ImBoolean(settings.fullscreen)
                 if (ImGui.checkbox("Fullscreen", fullscreen)) {
                     settings.fullscreen = fullscreen.get()
-                    Window.Companion.setFullscreen(settings.fullscreen)
-                    SettingsManager.save()
+                    Window.setFullscreen(settings.fullscreen)
+                    settingsManager.save()
                 }
 
                 ImGui.separator()
                 val overlaySize = floatArrayOf(settings.gamepadOverlaySize)
                 if (ImGui.sliderFloat("Gamepad Overlay Size", overlaySize, 0.05f, 0.5f)) {
                     settings.gamepadOverlaySize = overlaySize[0]
-                    SettingsManager.save()
+                    settingsManager.save()
                 }
 
                 val showOverlay = ImBoolean(settings.showGamepadOverlay)
                 if (ImGui.checkbox("Show Gamepad Overlay", showOverlay)) {
                     settings.showGamepadOverlay = showOverlay.get()
-                    SettingsManager.save()
+                    settingsManager.save()
                 }
 
                 ImGui.separator()
@@ -248,7 +247,7 @@ class ImGuiLayer: KoinComponent {
                 val currentUnitIdx = ImInt(settings.unitSystem.ordinal)
                 if (ImGui.combo("Unit System", currentUnitIdx, unitSystems.map { it.name }.toTypedArray())) {
                     settings.unitSystem = unitSystems[currentUnitIdx.get()]
-                    SettingsManager.save()
+                    settingsManager.save()
                 }
 
                 ImGui.endMenu()

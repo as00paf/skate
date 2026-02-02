@@ -8,8 +8,6 @@ import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.serialization.Serializer
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
@@ -18,7 +16,7 @@ import org.joml.Vector3f
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 
-class Scene(private val initializer: SceneInitializer, val camera: Camera = Camera()) {
+class Scene(private val initializer: SceneInitializer, val serializer: Serializer, val camera: Camera = Camera()) {
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
     var sun: DirectionalLight = DirectionalLight()
@@ -188,7 +186,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
                 fogDensity = fogDensity,
                 fogGradient = fogGradient
             )
-            writer.write(Serializer.json.encodeToString(data))
+            writer.write(serializer.encode(data))
             writer.close()
         } catch (e: IOException) {
             e.printStackTrace()
@@ -229,7 +227,7 @@ class Scene(private val initializer: SceneInitializer, val camera: Camera = Came
             gameObjects.clear()
             pendingObjects.clear()
             
-            val data: LevelData = Serializer.json.decodeFromString(inFile)
+            val data: LevelData = serializer.decode(inFile)
             
             this.ambientLight.set(data.ambientLight)
             this.useAmbient = data.useAmbient

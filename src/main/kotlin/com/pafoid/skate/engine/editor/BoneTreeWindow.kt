@@ -19,6 +19,7 @@ import kotlin.getValue
 
 class BoneTreeWindow : KoinComponent {
     private val sceneManager: SceneManager by inject()
+    private val poseSerializer: PoseSerializer by inject()
 
     private var selectedBone: Joint? = null
     private val poseFileName = ImString(128)
@@ -38,11 +39,11 @@ class BoneTreeWindow : KoinComponent {
                 ImGui.sameLine()
                 if (ImGui.button("Save Pose")) {
                     val boneOverride = go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
-                    PoseSerializer.savePose(boneOverride, "assets/poses/${poseFileName.get()}.json")
+                    poseSerializer.savePose(boneOverride, "assets/poses/${poseFileName.get()}.json")
                 }
                 ImGui.sameLine()
                 if (ImGui.button("Load Pose")) {
-                    val loadedOverride = PoseSerializer.loadPose("assets/poses/${poseFileName.get()}.json")
+                    val loadedOverride = poseSerializer.loadPose("assets/poses/${poseFileName.get()}.json")
                     loadedOverride?.let { bo ->
                         val existingOverride =
                             go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
