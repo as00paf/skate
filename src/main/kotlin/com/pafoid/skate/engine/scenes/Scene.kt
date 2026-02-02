@@ -76,6 +76,12 @@ class Scene(private val initializer: SceneInitializer, val serializer: Serialize
         }
     }
 
+    fun removeGameObject(gameObject: GameObject) {
+        gameObjects.remove(gameObject)
+        pendingObjects.remove(gameObject)
+        physics3d.remove(gameObject)
+    }
+
     fun getGameObject(id: Int): GameObject? {
         return gameObjects.firstOrNull { it.getUid() == id }
     }

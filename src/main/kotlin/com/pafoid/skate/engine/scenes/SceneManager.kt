@@ -7,6 +7,9 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.controls.listeners.KeyListener
+import com.pafoid.skate.engine.editor.CreateGameObjectCommand
+import com.pafoid.skate.engine.editor.DeleteGameObjectCommand
+import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
@@ -29,6 +32,7 @@ class SceneManager : KoinComponent {
     private val logger: LoggerService by inject()
     private val clipboardService: ClipboardService by inject()
     private val serializer: Serializer by inject()
+    private val undoRedoManager: UndoRedoManager by inject()
 
     private var selectedGameObject: GameObject? = null
 
@@ -37,6 +41,24 @@ class SceneManager : KoinComponent {
     }
 
     fun getSelectedGameObject(): GameObject? = selectedGameObject
+
+    fun deleteGameObject(gameObject: GameObject) {
+        val scene = currentScene ?: return
+        undoRedoManager.executeCommand(DeleteGameObjectCommand(gameObject, scene, this))
+    }
+
+    fun addGameObject(gameObject: GameObject) {
+        val scene = currentScene ?: return
+        undoRedoManager.executeCommand(CreateGameObjectCommand(gameObject, scene, this))
+    }
+
+    fun undo() {
+        undoRedoManager.undo()
+    }
+
+    fun redo() {
+        undoRedoManager.redo()
+    }
 
     var currentScene: Scene? = null
     var runtimePlaying = false
@@ -132,9 +154,9 @@ class SceneManager : KoinComponent {
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
                 val selected = getSelectedGameObject()
                 if (selected != null) {
-                    val destroyedObject = clipboardService.cut(selected)
-                    destroyedObject.destroy()
-                    setSelectedGameObject(null) // Clear selection after cut
+                    val cloned = clipboardService.paste() ?: return // paste here returns the copied object from cut
+                    clipboardService.copy(selected) // Redundant but following old logic
+                    deleteGameObject(selected)
                     logger.logEditor("Cut GameObject: ${selected.name}")
                 }
             }
@@ -149,10 +171,19 @@ class SceneManager : KoinComponent {
                     // Set parent to null, as it's being pasted as a root object
                     clonedGameObject.parent = null 
                     
-                    currentScene?.addGameObjectToScene(clonedGameObject)
-                    setSelectedGameObject(clonedGameObject) // Make the pasted object selected
+                    addGameObject(clonedGameObject)
                     logger.logEditor("Pasted GameObject: ${clonedGameObject.name}")
                 }
+            }
+            // Undo
+            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_Z)) {
+                undo()
+                logger.logEditor("Undo")
+            }
+            // Redo
+            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_Y)) {
+                redo()
+                logger.logEditor("Redo")
             }
         }
     }

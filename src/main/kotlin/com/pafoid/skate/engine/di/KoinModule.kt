@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.controls.listeners.JoystickListener
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.ThumbnailCache
+import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.render.PickingDraw
@@ -26,6 +27,7 @@ val appModule = module {
     single { Serializer() }
     single { LoggerService() }
     single { ClipboardService(get()) }
+    single { UndoRedoManager() }
     single { SettingsManager(get(), get()) }
 }
 
