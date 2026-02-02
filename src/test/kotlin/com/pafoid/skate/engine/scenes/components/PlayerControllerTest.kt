@@ -36,13 +36,15 @@ class PlayerControllerTest {
 
     @BeforeEach
     fun setup() {
+        MockKAnnotations.init(this)
+        
         startKoin {
             modules(module {
-                single { ResourceManager() }
+                single { mockk<ResourceManager>(relaxed = true) }
                 single { sceneManager }
+                single { inputProvider }
             })
         }
-        MockKAnnotations.init(this)
         
         val camera = com.pafoid.skate.engine.render.Camera()
         every { scene.camera } returns camera
