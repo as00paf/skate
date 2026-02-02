@@ -12,8 +12,6 @@ import org.koin.core.component.inject
 class PropertiesWindow: KoinComponent {
     private val sceneManager: SceneManager by inject()
 
-    private var activeGameObject: GameObject? = null
-
     fun imgui() {
         sceneManager.getSelectedGameObject()?.let { go ->
             ImGui.begin("Properties")
@@ -39,10 +37,5 @@ class PropertiesWindow: KoinComponent {
             go.imgui()
             ImGui.end()
         }
-    }
-
-    fun getActiveObject(): GameObject? = activeGameObject
-    fun setActiveObject(go: GameObject?) {
-        activeGameObject = go
     }
 }

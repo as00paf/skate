@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.Window
+import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.scenes.GameObject
@@ -23,13 +24,6 @@ class MouseControls : Component(), KoinComponent {
     private val gridWidth = 0.25f
     private val gridHeight = 0.25f
 
-    fun pickUpObject(go: GameObject) {
-        holdingObject?.destroy()
-        holdingObject = go
-        holdingObject?.addComponent(NonPickable())
-        sceneManager.currentScene?.addGameObjectToScene(go)
-    }
-
     private fun place() {
         val scene = sceneManager.currentScene ?: return
         val newObj = holdingObject?.copy()
@@ -51,18 +45,17 @@ class MouseControls : Component(), KoinComponent {
             val selectedObject = sceneManager.getObjectById(pickedId)
 
             if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
-                Window.getImGuiLayer().propertiesWindow.setActiveObject(selectedObject)
-                Window.getImGuiLayer().boneTreeWindow.setActiveObject(selectedObject) // Also set for bone tree
+                sceneManager.setSelectedGameObject(selectedObject)
             } else {
-                Window.getImGuiLayer().propertiesWindow.setActiveObject(null)
+                sceneManager.setSelectedGameObject(null)
                 val bone = sceneManager.getJointById(pickedId)
                 if (bone != null) {
                     // A bone was selected, find which GO it belongs to
-                    val skater = sceneManager.currentScene?.gameObjects?.find { it.getComponent<com.pafoid.skate.engine.animation.PoseGizmo>() != null }
-                    Window.getImGuiLayer().boneTreeWindow.setActiveObject(skater)
+                    val skater = sceneManager.currentScene?.gameObjects?.find { it.getComponent<PoseGizmo>() != null }
+                    sceneManager.setSelectedGameObject(skater)
                     Window.getImGuiLayer().boneTreeWindow.setSelectedBone(bone)
                 } else {
-                    Window.getImGuiLayer().boneTreeWindow.setActiveObject(null)
+                    sceneManager.setSelectedGameObject(null)
                 }
             }
 

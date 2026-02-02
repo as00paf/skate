@@ -2,8 +2,9 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.SceneManager
 
-open class Gizmo(protected val propertiesWindow: PropertiesWindow) : Component() {
+open class Gizmo(protected val sceneManager: SceneManager) : Component() {
 
     protected var xAxisActive = false
     protected var yAxisActive = false
@@ -18,7 +19,7 @@ open class Gizmo(protected val propertiesWindow: PropertiesWindow) : Component()
 
     override fun editorUpdate(dt: Float) {
         if (!inUse) return
-        activeGameObject = propertiesWindow.getActiveObject()
+        activeGameObject = sceneManager.getSelectedGameObject()
     }
 
     fun setActive() {}

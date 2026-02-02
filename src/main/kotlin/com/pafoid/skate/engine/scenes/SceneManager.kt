@@ -176,7 +176,7 @@ class SceneManager : KoinComponent {
                 handleEditorShortcuts(dt, imguiLayer)
             }
 
-            renderer.render(scene, imguiLayer.propertiesWindow.getActiveObject(), imguiLayer.gameViewWindow.getHoveredObject())
+            renderer.render(scene, getSelectedGameObject(), imguiLayer.gameViewWindow.getHoveredObject())
             imguiLayer.update(dt, scene)
         }
     }
@@ -229,7 +229,7 @@ class SceneManager : KoinComponent {
         return null
     }
 
-    fun getPickedObject(x: Int, y: Int): GameObject? {
+    fun getHoveredObject(x: Int, y: Int): GameObject? {
         if (engineState.get() != EngineState.RUNNING) return null
         val id = renderer.readPixel(x, y)
         return currentScene?.getGameObject(id)

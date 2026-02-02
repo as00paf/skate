@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.animation.Joint
-import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.GameObject
 import imgui.ImGui
@@ -9,66 +8,67 @@ import imgui.flag.ImGuiTreeNodeFlags
 import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.animation.BoneOverride
 import com.pafoid.skate.engine.animation.BoneMirrorUtil
+import com.pafoid.skate.engine.scenes.SceneManager
 import imgui.type.ImString
 import imgui.type.ImBoolean
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.getValue
 
-class BoneTreeWindow {
-    private var activeGameObject: GameObject? = null
+class BoneTreeWindow : KoinComponent {
+    private val sceneManager: SceneManager by inject()
+
     private var selectedBone: Joint? = null
     private val poseFileName = ImString(128)
     private val mirrorPoseEnabled = ImBoolean(false)
-
-    fun setActiveObject(go: GameObject?) {
-        activeGameObject = go
-        if (go == null) {
-            selectedBone = null
-        }
-    }
 
     fun setSelectedBone(joint: Joint?) {
         selectedBone = joint
     }
 
     fun imgui() {
-        val skeleton = activeGameObject?.getComponent<Entity>()?.model?.skeleton
-        if (skeleton != null) {
-            ImGui.begin("Bone Tree")
+        sceneManager.getSelectedGameObject()?.let { go ->
+            val skeleton = go.getComponent<Entity>()?.model?.skeleton
+            if (skeleton != null) {
+                ImGui.begin("Bone Tree")
 
-            ImGui.inputText("Pose File Name", poseFileName)
-            ImGui.sameLine()
-            if (ImGui.button("Save Pose")) {
-                activeGameObject?.let { go ->
+                ImGui.inputText("Pose File Name", poseFileName)
+                ImGui.sameLine()
+                if (ImGui.button("Save Pose")) {
                     val boneOverride = go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
                     PoseSerializer.savePose(boneOverride, "assets/poses/${poseFileName.get()}.json")
                 }
-            }
-            ImGui.sameLine()
-            if (ImGui.button("Load Pose")) {
-                activeGameObject?.let { go ->
+                ImGui.sameLine()
+                if (ImGui.button("Load Pose")) {
                     val loadedOverride = PoseSerializer.loadPose("assets/poses/${poseFileName.get()}.json")
                     loadedOverride?.let { bo ->
-                        val existingOverride = go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
+                        val existingOverride =
+                            go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
                         // Replace existing overrides with loaded ones
                         bo.getOverrides().forEach { (boneName, rotation) ->
                             existingOverride.addOverride(boneName, rotation)
                         }
                     }
                 }
-            }
 
-            ImGui.checkbox("Mirror Pose", mirrorPoseEnabled)
+                ImGui.checkbox("Mirror Pose", mirrorPoseEnabled)
 
-            if (ImGui.treeNodeEx(skeleton.rootJoint.name, ImGuiTreeNodeFlags.DefaultOpen or ImGuiTreeNodeFlags.FramePadding)) {
-                drawJointNode(skeleton.rootJoint)
-                ImGui.treePop()
+                if (ImGui.treeNodeEx(
+                        skeleton.rootJoint.name,
+                        ImGuiTreeNodeFlags.DefaultOpen or ImGuiTreeNodeFlags.FramePadding
+                    )
+                ) {
+                    drawJointNode(go, skeleton.rootJoint)
+                    ImGui.treePop()
+                }
+                ImGui.end()
             }
-            ImGui.end()
         }
     }
 
-    private fun drawJointNode(joint: Joint) {
+    private fun drawJointNode(gameObject: GameObject, joint: Joint) {
         joint.children.forEach { child ->
             var flags = if (child.children.isEmpty()) {
                 ImGuiTreeNodeFlags.Leaf or ImGuiTreeNodeFlags.Bullet
@@ -86,10 +86,10 @@ class BoneTreeWindow {
 
             // Allow applying manual rotation overrides to selected bone
             if (child == selectedBone) {
-                activeGameObject?.getComponent<BoneOverride>()?.let { bo ->
-                    var currentRotation = bo.getOverride(child.name) ?: Quaternionf()
+                gameObject.getComponent<BoneOverride>()?.let { bo ->
+                    val currentRotation = bo.getOverride(child.name) ?: Quaternionf()
                     val eulerAngles = currentRotation.getEulerAnglesXYZ(Vector3f())
-                    
+
                     val rotationXYZ = floatArrayOf(
                         Math.toDegrees(eulerAngles.x.toDouble()).toFloat(),
                         Math.toDegrees(eulerAngles.y.toDouble()).toFloat(),
@@ -122,7 +122,7 @@ class BoneTreeWindow {
             }
 
             if (isNodeOpen) {
-                drawJointNode(child)
+                drawJointNode(gameObject, child)
                 ImGui.treePop()
             }
         }

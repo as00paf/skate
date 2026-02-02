@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.SceneManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
@@ -10,15 +11,16 @@ import org.lwjgl.glfw.GLFW.*
 class GizmoSystem: Component(), KoinComponent {
 
     private val keyListener: KeyListener by inject()
+    private val sceneManager: SceneManager by inject()
 
     private var usingGizmo = TRANSLATE_GIZMO
 
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
 
-        this.gameObject.addComponent(TranslateGizmo(Window.getImGuiLayer().propertiesWindow))
-        this.gameObject.addComponent(RotationGizmo(Window.getImGuiLayer().propertiesWindow))
-        this.gameObject.addComponent(ScaleGizmo(Window.getImGuiLayer().propertiesWindow))
+        this.gameObject.addComponent(TranslateGizmo(sceneManager))
+        this.gameObject.addComponent(RotationGizmo(sceneManager))
+        this.gameObject.addComponent(ScaleGizmo(sceneManager))
     }
 
     override fun editorUpdate(dt: Float) {

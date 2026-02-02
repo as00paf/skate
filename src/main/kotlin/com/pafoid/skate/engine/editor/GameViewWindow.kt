@@ -18,7 +18,6 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_MIDDLE
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -27,8 +26,6 @@ class GameViewWindow : KoinComponent {
     private val logger: LoggerService by inject()
     private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()
-
-    private var isPanning: Boolean = false
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -129,7 +126,7 @@ class GameViewWindow : KoinComponent {
                 val pickingX = ((relativeX / imageSizeX) * 1920f).toInt().coerceIn(0, 1919)
                 val pickingY = ((relativeY / imageSizeY) * 1080f).toInt().coerceIn(0, 1079)
 
-                hoveredGameObject = sceneManager.getPickedObject(pickingX, pickingY)
+                hoveredGameObject = sceneManager.getHoveredObject(pickingX, pickingY)
 
                 // Debug Info Overlay
                 ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
@@ -142,7 +139,7 @@ class GameViewWindow : KoinComponent {
                 )
 
                 if (mouseListener.mouseButtonBeginPress(0)) {
-                    Window.getImGuiLayer().propertiesWindow.setActiveObject(hoveredGameObject)
+                    sceneManager.setSelectedGameObject(hoveredGameObject)
                 }
             }
         } else {

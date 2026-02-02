@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.sun.tools.sjavac.Main.go
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -10,14 +11,13 @@ import org.joml.Vector4f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class ScaleGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow), KoinComponent {
+class ScaleGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinComponent {
 
-    private val sceneManager: SceneManager by inject()
     private val mouseListener: MouseListener by inject()
 
     override fun editorUpdate(dt: Float) {
-        val go = activeGameObject
-        if(go != null) {
+        super.editorUpdate(dt)
+        activeGameObject?.let { go ->
             if (xAxisActive) {
                 go.transform.scale.x += calculateDelta(Vector3f(1f, 0f, 0f))
             } else if (yAxisActive) {
@@ -26,8 +26,6 @@ class ScaleGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow), K
                 go.transform.scale.z += calculateDelta(Vector3f(0f, 0f, 1f))
             }
         }
-
-        super.editorUpdate(dt)
     }
 
     private fun calculateDelta(axis: Vector3f): Float {

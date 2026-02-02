@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.sun.tools.sjavac.Main.go
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -15,10 +16,9 @@ import kotlin.getValue
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow), KoinComponent {
+class TranslateGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinComponent {
     private val debugDraw: DebugDraw by inject()
     private val mouseListener: MouseListener by inject()
-    private val sceneManager: SceneManager by inject()
 
     private val arrowLength = 2.0f
     private val coneSize = 0.3f
@@ -37,36 +37,35 @@ class TranslateGizmo(propertiesWindow: PropertiesWindow): Gizmo(propertiesWindow
     override fun update(dt: Float) {}
 
     override fun editorUpdate(dt: Float) {
-        if (!isInUse()) return
-        
-        activeGameObject = propertiesWindow.getActiveObject()
-        val go = activeGameObject ?: return
-        val pos = go.transform.translation
-        
-        val scene = sceneManager.currentScene ?: return
-        val dist = Vector3f(scene.camera.position).distance(pos)
-        val dynamicArrowLength = arrowLength * (dist * 0.1f)
-        val dynamicConeSize = coneSize * (dist * 0.1f)
-        val dynamicHitThreshold = hitThreshold * (dist * 0.1f)
+        super.editorUpdate(dt)
+        activeGameObject?.let{ go ->
+            val pos = go.transform.translation
 
-        // 1. Logic for dragging
-        checkInput(dynamicArrowLength, dynamicHitThreshold)
-        
-        if (xAxisActive) {
-            go.transform.translation.x += calculateDelta(Vector3f(1f, 0f, 0f))
-            if (go.getComponent<ModularTile>() != null) go.transform.translation.x = (go.transform.translation.x / 2.0f).roundToInt() * 2.0f
-        } else if (yAxisActive) {
-            go.transform.translation.y += calculateDelta(Vector3f(0f, 1f, 0f))
-            if (go.getComponent<ModularTile>() != null) go.transform.translation.y = (go.transform.translation.y / 2.0f).roundToInt() * 2.0f
-        } else if (zAxisActive) {
-            go.transform.translation.z += calculateDelta(Vector3f(0f, 0f, 1f))
-            if (go.getComponent<ModularTile>() != null) go.transform.translation.z = (go.transform.translation.z / 2.0f).roundToInt() * 2.0f
+            val scene = sceneManager.currentScene ?: return
+            val dist = Vector3f(scene.camera.position).distance(pos)
+            val dynamicArrowLength = arrowLength * (dist * 0.1f)
+            val dynamicConeSize = coneSize * (dist * 0.1f)
+            val dynamicHitThreshold = hitThreshold * (dist * 0.1f)
+
+            // 1. Logic for dragging
+            checkInput(dynamicArrowLength, dynamicHitThreshold)
+
+            if (xAxisActive) {
+                go.transform.translation.x += calculateDelta(Vector3f(1f, 0f, 0f))
+                if (go.getComponent<ModularTile>() != null) go.transform.translation.x = (go.transform.translation.x / 2.0f).roundToInt() * 2.0f
+            } else if (yAxisActive) {
+                go.transform.translation.y += calculateDelta(Vector3f(0f, 1f, 0f))
+                if (go.getComponent<ModularTile>() != null) go.transform.translation.y = (go.transform.translation.y / 2.0f).roundToInt() * 2.0f
+            } else if (zAxisActive) {
+                go.transform.translation.z += calculateDelta(Vector3f(0f, 0f, 1f))
+                if (go.getComponent<ModularTile>() != null) go.transform.translation.z = (go.transform.translation.z / 2.0f).roundToInt() * 2.0f
+            }
+
+            // 2. Draw Arrows
+            drawArrow(pos, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f), dynamicArrowLength, dynamicConeSize) // X - Red/Yellow
+            drawArrow(pos, Vector3f(0f, 1f, 0f), if (yAxisActive || yAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 1f, 0f), dynamicArrowLength, dynamicConeSize) // Y - Green/Yellow
+            drawArrow(pos, Vector3f(0f, 0f, 1f), if (zAxisActive || zAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 0f, 1f), dynamicArrowLength, dynamicConeSize) // Z - Blue/Yellow
         }
-
-        // 2. Draw Arrows
-        drawArrow(pos, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f), dynamicArrowLength, dynamicConeSize) // X - Red/Yellow
-        drawArrow(pos, Vector3f(0f, 1f, 0f), if (yAxisActive || yAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 1f, 0f), dynamicArrowLength, dynamicConeSize) // Y - Green/Yellow
-        drawArrow(pos, Vector3f(0f, 0f, 1f), if (zAxisActive || zAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 0f, 1f), dynamicArrowLength, dynamicConeSize) // Z - Blue/Yellow
     }
 
     private fun drawArrow(origin: Vector3f, direction: Vector3f, color: Vector3f, length: Float, cSize: Float) {

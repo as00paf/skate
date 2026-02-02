@@ -58,7 +58,7 @@ class ImGuiLayer: KoinComponent {
     private val physicsTunerWindow = PhysicsTunerWindow()
     private val environmentWindow = EnvironmentWindow()
     private val profilerWindow = ProfilerWindow()
-    private val hierarchyWindow = SceneHierarchyWindow(propertiesWindow, boneTreeWindow)
+    private val hierarchyWindow = SceneHierarchyWindow()
 
     // Window Visibility Flags
     private val showHierarchy = ImBoolean(true)

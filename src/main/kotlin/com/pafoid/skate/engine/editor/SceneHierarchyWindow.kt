@@ -10,10 +10,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
 
-class SceneHierarchyWindow(
-    private val propertiesWindow: PropertiesWindow,
-    private val boneTreeWindow: BoneTreeWindow
-): KoinComponent {
+class SceneHierarchyWindow: KoinComponent {
 
     private val sceneManager: SceneManager by inject()
 
@@ -30,10 +27,9 @@ class SceneHierarchyWindow(
         
         // Handle global deletion input
         if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_DELETE)) {
-            propertiesWindow.getActiveObject()?.let {
+            sceneManager.getSelectedGameObject()?.let {
                 it.destroy()
-                propertiesWindow.setActiveObject(null)
-                boneTreeWindow.setActiveObject(null)
+                sceneManager.setSelectedGameObject(null)
             }
         }
 
@@ -47,7 +43,7 @@ class SceneHierarchyWindow(
         if (obj.children.isEmpty()) {
             flags = flags or ImGuiTreeNodeFlags.Leaf
         }
-        if (obj == propertiesWindow.getActiveObject()) {
+        if (obj == sceneManager.getSelectedGameObject()) {
             flags = flags or ImGuiTreeNodeFlags.Selected
         }
         
@@ -60,9 +56,8 @@ class SceneHierarchyWindow(
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.menuItem("${Icons.TRASH} Delete")) {
                 obj.destroy()
-                if (obj == propertiesWindow.getActiveObject()) {
-                    propertiesWindow.setActiveObject(null)
-                    boneTreeWindow.setActiveObject(null)
+                if (obj == sceneManager.getSelectedGameObject()) {
+                    sceneManager.setSelectedGameObject(null)
                 }
             }
             ImGui.endPopup()
