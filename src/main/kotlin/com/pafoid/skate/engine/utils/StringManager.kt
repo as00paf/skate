@@ -3,7 +3,7 @@ package com.pafoid.skate.engine.utils
 import java.io.InputStream
 import java.util.*
 
-class StringManager(private val resourcePath: String = "/values/strings.properties") {
+class StringManager(private var currentLocale: String = "en") {
 
     private val properties = Properties()
 
@@ -13,15 +13,33 @@ class StringManager(private val resourcePath: String = "/values/strings.properti
 
     private fun loadStrings() {
         try {
+            val resourcePath = "/values/strings_${currentLocale}.properties"
             val inputStream: InputStream? = StringManager::class.java.getResourceAsStream(resourcePath)
-            inputStream?.use {
-                properties.load(it)
-            } ?: run {
-                println("ERROR: Could not find resource file: $resourcePath")
+            if (inputStream != null) {
+                inputStream.use {
+                    properties.load(it)
+                }
+            } else {
+                // Fallback to default English if specific locale not found
+                val defaultPath = "/values/strings.properties"
+                val defaultInputStream: InputStream? = StringManager::class.java.getResourceAsStream(defaultPath)
+                defaultInputStream?.use {
+                    properties.load(it)
+                } ?: run {
+                    println("ERROR: Could not find default resource file: $defaultPath")
+                }
             }
         } catch (e: Exception) {
-            println("ERROR: Failed to load strings from $resourcePath")
+            println("ERROR: Failed to load strings for locale $currentLocale")
             e.printStackTrace()
+        }
+    }
+
+    fun setLocale(locale: String) {
+        if (currentLocale != locale) {
+            currentLocale = locale
+            properties.clear() // Clear existing properties before reloading
+            loadStrings()
         }
     }
 

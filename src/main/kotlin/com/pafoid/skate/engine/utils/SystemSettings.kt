@@ -11,5 +11,6 @@ data class SystemSettings(
     var borderless: Boolean = false,
     var gamepadOverlaySize: Float = 0.225f,
     var showGamepadOverlay: Boolean = true,
-    var unitSystem: UnitSystem = UnitSystem.METRIC
+    var unitSystem: UnitSystem = UnitSystem.METRIC,
+    var language: String = "en"
 )

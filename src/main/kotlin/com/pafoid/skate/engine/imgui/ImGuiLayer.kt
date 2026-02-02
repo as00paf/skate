@@ -282,6 +282,16 @@ class ImGuiLayer: KoinComponent {
                     settingsManager.save()
                 }
 
+                ImGui.separator()
+                val languages = arrayOf("en", "fr") // Add more languages here
+                val currentLangIdx = ImInt(languages.indexOf(settings.language))
+                if (ImGui.combo(stringManager.getString("menu.settings.language"), currentLangIdx, languages, languages.size)) {
+                    val newLang = languages[currentLangIdx.get()]
+                    settings.language = newLang
+                    settingsManager.setLocale(newLang) // This will also reload StringManager
+                    settingsManager.save()
+                }
+
                 ImGui.endMenu()
             }
             if (ImGui.beginMenu(stringManager.getString("menu.view"))) {

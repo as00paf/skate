@@ -30,8 +30,8 @@ val appModule = module {
     single { LoggerService() }
     single { ClipboardService(get()) }
     single { UndoRedoManager() }
-    single { SettingsManager(get(), get()) }
     single { StringManager() }
+    single { SettingsManager(get(), get(), get()) }
     single { TrickManager() }
 }
 

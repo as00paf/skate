@@ -8,7 +8,7 @@ import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
 
-class SettingsManager(private val serializer: Serializer, private val logger: LoggerService) {
+class SettingsManager(private val serializer: Serializer, private val logger: LoggerService, private val stringManager: StringManager) {
     var settings = SystemSettings()
         private set
 
@@ -18,6 +18,7 @@ class SettingsManager(private val serializer: Serializer, private val logger: Lo
             try {
                 val json = String(Files.readAllBytes(path))
                 settings = serializer.decode(json)
+                stringManager.setLocale(settings.language)
             } catch (e: Exception) {
                 logger.logEngine("Error loading settings: ${e.message}", LogLevel.ERROR)
             }
@@ -32,5 +33,11 @@ class SettingsManager(private val serializer: Serializer, private val logger: Lo
         } catch (e: Exception) {
             logger.logEngine("Error saving settings: ${e.message}", LogLevel.ERROR)
         }
+    }
+
+    fun setLocale(locale: String) {
+        settings.language = locale
+        stringManager.setLocale(locale)
+        save()
     }
 }

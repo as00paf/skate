@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.utils
 
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -8,11 +9,37 @@ import java.io.File
 class StringManagerTest {
 
     private lateinit var stringManager: StringManager
-    private val testPropertiesPath = "/values/test_strings.properties"
 
     @BeforeEach
     fun setup() {
-        stringManager = StringManager(testPropertiesPath)
+        // Create dummy properties files in src/test/resources/values/ for StringManager to find
+        val propertiesContent = """
+            test.hello=Hello World
+            test.formatted=Hello, %s! You have %d new messages.
+            test.tricks.one=%d Trick
+            test.tricks.other=%d Tricks
+        """.trimIndent()
+
+        val frPropertiesContent = """
+            test.hello=Bonjour le monde
+            test.formatted=Bonjour, %s! Vous avez %d nouveaux messages.
+            test.tricks.one=%d Tour
+            test.tricks.other=%d Tours
+        """.trimIndent()
+        
+        val resourceDir = File("src/test/resources/values")
+        resourceDir.mkdirs()
+        File(resourceDir, "strings_en.properties").writeText(propertiesContent)
+        File(resourceDir, "strings_fr.properties").writeText(frPropertiesContent)
+
+        stringManager = StringManager("en") // Start with English, which will load strings_en.properties
+    }
+
+    @AfterEach
+    fun teardown() {
+        // Clean up dummy files
+        File("src/test/resources/values/strings_en.properties").delete()
+        File("src/test/resources/values/strings_fr.properties").delete()
     }
 
     @Test
@@ -55,5 +82,22 @@ class StringManagerTest {
     fun `getQuantityString should return plural for quantity 5`() {
         val result = stringManager.getQuantityString("test.tricks", 5)
         assertEquals("5 Tricks", result)
+    }
+
+    @Test
+    fun `setLocale should switch language correctly`() {
+        // Verify initial English
+        assertEquals("Hello World", stringManager.getString("test.hello"))
+
+        // Switch to French
+        stringManager.setLocale("fr")
+        assertEquals("Bonjour le monde", stringManager.getString("test.hello"))
+        assertEquals("Bonjour, User! Vous avez 5 nouveaux messages.", stringManager.getString("test.formatted", "User", 5))
+        assertEquals("1 Tour", stringManager.getQuantityString("test.tricks", 1))
+        assertEquals("5 Tours", stringManager.getQuantityString("test.tricks", 5))
+
+        // Switch back to English
+        stringManager.setLocale("en")
+        assertEquals("Hello World", stringManager.getString("test.hello"))
     }
 }
