@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.scenes.ClipboardService
+import com.pafoid.skate.engine.scenes.PrefabsGenerator
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.serialization.Serializer
@@ -35,9 +36,10 @@ val engineModule = module {
     single { ObjLoader() }
     single { ResourceManager(get(), get(), get(), get()) }
 
-    single { ThumbnailCache() }
     single { DebugDraw() }
     single { PickingDraw() }
+    single { ThumbnailCache() }
+    single { PrefabsGenerator(get(), get()) }
 
     single { JoystickListener() }
     single { KeyListener() }

@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.render.DebugDraw
-import com.pafoid.skate.engine.scenes.Prefabs
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.UnitSystem

@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.scenes.Prefabs
+import com.pafoid.skate.engine.scenes.PrefabsGenerator
 import com.pafoid.skate.skateboard.Stance
 import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.input.IInputBuffer
@@ -10,7 +10,6 @@ import com.pafoid.skate.skateboard.SkateStance
 import com.pafoid.skate.engine.player.PlayerState
 import com.pafoid.skate.engine.player.PlayerStateManager
 import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.animation.Skeleton
@@ -36,6 +35,7 @@ import kotlin.math.roundToLong
 class PlayerController : Component(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val inputProvider: IInputProvider by inject()
+    private val prefabsGenerator: PrefabsGenerator by inject()
 
     private val sceneManager: SceneManager by inject()
 
@@ -374,7 +374,7 @@ fun updateProceduralLean(dt: Float) {
         // Find the skater child
         val skater = gameObject.children.find { it.name == "Skater" }
         
-        val tumbleCube = Prefabs.generateEntityObject(
+        val tumbleCube = prefabsGenerator.generateEntityObject(
             resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel,
             resourceManager.loadTextureSync(Assets.Textures.DEFAULT),
             "TumbleCube"

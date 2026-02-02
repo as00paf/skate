@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.editor.logs.LoggerService
-import com.pafoid.skate.engine.scenes.Prefabs
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject

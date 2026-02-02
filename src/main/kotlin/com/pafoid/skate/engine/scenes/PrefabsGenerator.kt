@@ -1,24 +1,21 @@
 package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Sprite
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.models.TexturedModel
-import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.components.ModularTile
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-object Prefabs : KoinComponent {
-
-    private val resourceManager: ResourceManager by inject()
-    private val sceneManager: SceneManager by inject()
-
+class PrefabsGenerator(
+    private val resourceManager: ResourceManager,
+    private val sceneManager: SceneManager,
+) : KoinComponent {
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
         val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
         val go = scene.createGameObject(name)
