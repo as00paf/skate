@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.animation
 
+import org.joml.Quaternionf
+import org.joml.Vector3f
+
 /**
  * Represents a single animation clip containing multiple channels (TRS tracks).
  */
@@ -14,8 +17,8 @@ class Animation(
      */
     fun update(time: Float, skeleton: Skeleton) {
         val loopTime = time % duration
-        val tempVec3 = org.joml.Vector3f()
-        val tempQuat = org.joml.Quaternionf()
+        val tempVec3 = Vector3f()
+        val tempQuat = Quaternionf()
         
         for (channel in channels) {
             val joint = skeleton.getJointByName(channel.targetNodeName) ?: continue
@@ -44,10 +47,10 @@ class Animation(
      */
     fun updateBlended(time: Float, skeleton: Skeleton, alpha: Float) {
         val loopTime = time % duration
-        val tempVec3 = org.joml.Vector3f()
-        val targetVec3 = org.joml.Vector3f()
-        val tempQuat = org.joml.Quaternionf()
-        val targetQuat = org.joml.Quaternionf()
+        val tempVec3 = Vector3f()
+        val targetVec3 = Vector3f()
+        val tempQuat = Quaternionf()
+        val targetQuat = Quaternionf()
         
         for (channel in channels) {
             val joint = skeleton.getJointByName(channel.targetNodeName) ?: continue

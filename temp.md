@@ -1,3 +1,7 @@
+cleanup
+- cube in pose gizmo
+
+
 For the next phase of the project, here is what I would like to do :
 - 
 
