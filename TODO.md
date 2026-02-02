@@ -219,6 +219,6 @@
 - [x] **Language Switching Logic**: Add a setting in the Editor to toggle between `strings_en.properties` and `strings_fr.properties` (or others) at runtime without restarting the engine.
 
 ## 🧪 Phase 20.4: Validation & Quality
-- [ ] **Missing Key Fallback**: Ensure that if a key is missing, the engine returns the key name (e.g., `!!MISSING_KEY!!`) instead of crashing.
-- [ ] **Unit Test - String Retrieval**: Verify that the `StringManager` correctly pulls values from the resources folder.
-- [ ] **Unit Test - Format Validation**: Verify that string placeholders are filled correctly with float and integer values.
+- [x] **Missing Key Fallback**: Ensure that if a key is missing, the engine returns the key name (e.g., `!!MISSING_KEY!!`) instead of crashing.
+- [x] **Unit Test - String Retrieval**: Verify that the `StringManager` correctly pulls values from the resources folder.
+- [x] **Unit Test - Format Validation**: Verify that string placeholders are filled correctly with float and integer values.
