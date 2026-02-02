@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.prefabs.MaterialType
 import com.pafoid.skate.engine.prefabs.Skateboard
+import com.pafoid.skate.engine.prefabs.Skater
 import com.pafoid.skate.engine.scenes.components.ModularTile
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
@@ -76,27 +77,6 @@ class PrefabsGenerator(
         return go
     }
 
-    fun spawnSkater(skate: GameObject? = null) {
-        val scene = sceneManager.currentScene ?: return
-
-        JobSystem.runAsync {
-            val model = resourceManager.loadModel(Assets.Models.JAMES)
-            JobSystem.runOnMain {
-                val skater = GameObject("Skater")
-                // Parenting: Skater follows Skateboard
-                skate?.addChild(skater)
-
-                skater.transform.translation.set(0f, 0.05f, 0f)
-                skater.transform.rotation.set(0f, 90f, 0f) // Face sideways for skating
-                skater.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
-                skater.addComponent(Entity(model = model))
-                skater.addComponent(Animator())
-                skater.addComponent(PoseGizmo())
-                scene.addGameObjectToScene(skater)
-            }
-        }
-    }
-
     fun spawnSkateboard():Skateboard? {
         val scene = sceneManager.currentScene ?: return null
 
@@ -110,6 +90,20 @@ class PrefabsGenerator(
         }
 
         return skate
+    }
+
+    fun spawnSkater(skate: GameObject? = null): Skater? {
+        val scene = sceneManager.currentScene ?: return null
+        val skater: Skater? = null
+        JobSystem.runAsync {
+            val model = resourceManager.loadModel(Assets.Models.JAMES)
+            JobSystem.runOnMain {
+                val skater = Skater("Skater", model, skate)
+                scene.addGameObjectToScene(skater)
+            }
+        }
+
+        return skater
     }
 
     fun spawnTile() {

@@ -1,31 +1,21 @@
 package com.pafoid.skate.engine.editor
 
-import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.TexturedModel
-import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.prefabs.MaterialType
-import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.PrefabsGenerator
 import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImString
-import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
 import kotlin.getValue
-import com.jme3.math.Vector3f as JmeVector3f // Alias for JME Vector3f
 
 class AssetBrowser : KoinComponent {
     private val thumbnailCache: ThumbnailCache by inject()
@@ -91,8 +81,8 @@ class AssetBrowser : KoinComponent {
         ImGui.inputTextWithHint("##searchPrefabs", "${Icons.SEARCH} Search...", searchText)
         ImGui.separator()
 
-       if (ImGui.collapsingHeader("${Icons.CUBE} Simulation", ImGuiTreeNodeFlags.DefaultOpen)) {
-            renderSimulationPrefabs()
+       if (ImGui.collapsingHeader("${Icons.CUBE} Player", ImGuiTreeNodeFlags.DefaultOpen)) {
+            renderPlayerPrefabs()
         }
 
         /*if (ImGui.collapsingHeader("${Icons.PALETTE} Environment", ImGuiTreeNodeFlags.DefaultOpen)) {
@@ -104,7 +94,7 @@ class AssetBrowser : KoinComponent {
         }
     }
 
-    private fun renderSimulationPrefabs() {
+    private fun renderPlayerPrefabs() {
         val items = listOf(
             PrefabConfig("Skateboard", PrefabType.SKATEBOARD, Assets.Models.SKATEBOARD_GLB, "PREFAB_SKATEBOARD", listOf()),
            //PrefabConfig("Skater", PrefabType.SKATER, Assets.Models.JAMES, "PREFAB_SKATER", listOf(), ::spawnSkater),

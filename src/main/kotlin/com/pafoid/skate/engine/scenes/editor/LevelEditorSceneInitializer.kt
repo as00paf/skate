@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.scenes.editor
 
-import com.pafoid.skate.engine.animation.Animator
-import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.entities.Entity
@@ -12,7 +10,6 @@ import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
 import com.pafoid.skate.engine.scenes.components.*
 import com.pafoid.skate.engine.physics3d.components.*
-import com.pafoid.skate.engine.prefabs.Skateboard
 import com.pafoid.skate.engine.scenes.PrefabsGenerator
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -25,6 +22,9 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private var currentScene: Scene? = null
     private lateinit var editorStuff: GameObject
     private lateinit var editorCamera: EditorCamera
+
+    private var skateboard: GameObject? = null
+    private var skater: GameObject? = null
 
     override suspend fun loadResources(scene: Scene) {}
 
@@ -51,24 +51,8 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         editorStuff.addComponent(MeasureTool())
         scene.addGameObjectToScene(editorStuff)
 
-        // TODO: Should be a prefab
-        val skateGo = prefabsGenerator.spawnSkateboard()
-
-        // TODO: Should be a prefab
-        val playerGo = GameObject("Skater")
-        // Parenting: Skater follows Skateboard
-        skateGo?.addChild(playerGo)
-        
-        // Position relative to board (standing on it)
-        playerGo.transform.translation.set(0f, 0.05f, 0f) 
-        playerGo.transform.rotation.set(0f, 90f, 0f) // Face sideways for skating
-        playerGo.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
-        playerGo.addComponent(Entity(
-            model = resourceManager.loadModelSync(Assets.Models.JAMES)
-        ))
-        playerGo.addComponent(Animator())
-        playerGo.addComponent(PoseGizmo())
-        scene.addGameObjectToScene(playerGo)
+        skateboard = prefabsGenerator.spawnSkateboard()
+        skater = prefabsGenerator.spawnSkater(skateboard)
 
         // TODO: Should be a prefab
         val ground = GameObject("Floor")

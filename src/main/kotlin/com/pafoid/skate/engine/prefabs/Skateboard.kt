@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.prefabs
 
-import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
