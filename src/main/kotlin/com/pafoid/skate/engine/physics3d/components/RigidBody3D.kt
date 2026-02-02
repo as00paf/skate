@@ -72,6 +72,9 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
             body.setPhysicsRotation(com.jme3.math.Quaternion(q.x, q.y, q.z, q.w))
             body.collisionShape.setScale(com.jme3.math.Vector3f(scale.x, scale.y, scale.z))
 
+            body.friction = friction
+            body.setDamping(linearDamping, angularDamping)
+
             body.setLinearVelocity(JmeVector3f.ZERO)
             body.setAngularVelocity(JmeVector3f.ZERO)
         }

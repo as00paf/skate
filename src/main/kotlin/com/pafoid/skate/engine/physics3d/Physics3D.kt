@@ -90,6 +90,8 @@ class Physics3D : IPhysics3D, KoinComponent {
                     
                     rb.rawBody!!.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
                     rb.rawBody!!.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
+                    rb.rawBody!!.friction = rb.friction
+                    rb.rawBody!!.setDamping(rb.linearDamping, rb.angularDamping)
                     
                     val q = Quaternionf().rotationXYZ(
                         Math.toRadians(rot.x.toDouble()).toFloat(),
@@ -132,6 +134,7 @@ class Physics3D : IPhysics3D, KoinComponent {
 
                 val body = PhysicsRigidBody(compound, desiredMass)
                 body.friction = rb.friction
+                body.setDamping(rb.linearDamping, rb.angularDamping)
                 
                 if (rb.bodyType == BodyType.Kinematic) {
                     body.isKinematic = true

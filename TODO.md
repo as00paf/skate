@@ -191,15 +191,14 @@
   - [x] **Ctrl + C / V / X**: Copy, Paste, and Cut selected `GameObject` (handling deep clones).
   - [x] **Ctrl + Z / Y**: Fully implement a Undo/Redo stack for Transform changes and object deletions.
 
-# 🔧 19. Physics Implementation Fixes (Deferred)
-- [ ] **Task 19.1: Friction Propagation**: Fix `RigidBody3D` to ensure the `friction` property is correctly applied to the Bullet `rawBody` during initialization and runtime updates.
+# 🔧 19. Physics Implementation Fixes
+- [x] **Task 19.1: Friction Propagation**: Fix `RigidBody3D` to ensure the `friction` property is correctly applied to the Bullet `rawBody` during initialization and runtime updates.
 - [ ] **Task 19.2: Rolling Resistance**: Implement `linearDamping` logic in `RigidBody3D` to satisfy the `rollResistance` test.
 - [ ] **Task 19.3: Steering Geometry**: Implement local-space steering forces in `SkateboardPhysics` to translate board lean (roll) into actual turning (yaw).
 - [ ] **Task 19.4: Fixed Timestep Integration**: Implement an accumulator-based fixed timestep loop in `Engine` or `Physics3D` to ensure deterministic physics regardless of render framerate.
 - [ ] **Task 19.5: Unit Tests**: Fix and add missing physics unit tests.
 
 # 🌍 20. Localization & String Management System (i18n)
-
 ## 🏗️ Phase 20.1: Infrastructure Setup
 - [ ] **Define String Schema**: Create a centralized directory `src/main/resources/values/` to hold string data.
 - [ ] **Initial String Resource**: Create `strings.properties` (the "Default" language) to host all current UI labels.
