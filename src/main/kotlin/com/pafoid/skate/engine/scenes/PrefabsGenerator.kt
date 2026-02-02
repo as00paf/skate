@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.scenes
 
+import com.jme3.bullet.collision.shapes.HullCollisionShape
+import com.pafoid.skate.engine.animation.Animator
+import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Sprite
@@ -7,10 +10,19 @@ import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.models.TexturedModel
+import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
+import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.prefabs.MaterialType
 import com.pafoid.skate.engine.scenes.components.ModularTile
+import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
+import com.pafoid.skate.engine.utils.JmeVector3f
+import com.pafoid.skate.engine.utils.JobSystem
+import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 class PrefabsGenerator(
     private val resourceManager: ResourceManager,
@@ -51,7 +63,6 @@ class PrefabsGenerator(
         go.addComponent(tile)
 
         // We use a cube as the base model for tiles
-        val loader = resourceManager.getVAOLoader() 
         val cubeModel = resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel
 
         val texturedModel = TexturedModel(cubeModel, texture)
@@ -63,4 +74,188 @@ class PrefabsGenerator(
 
         return go
     }
+
+    fun spawnSkater(skate: GameObject? = null) {
+        val scene = sceneManager.currentScene ?: return
+
+        JobSystem.runAsync {
+            val model = resourceManager.loadModel(Assets.Models.JAMES)
+            JobSystem.runOnMain {
+                val skater = GameObject("Skater")
+                // Parenting: Skater follows Skateboard
+                skate?.addChild(skater)
+
+                skater.transform.translation.set(0f, 0.05f, 0f)
+                skater.transform.rotation.set(0f, 90f, 0f) // Face sideways for skating
+                skater.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
+                skater.addComponent(Entity(model = model))
+                skater.addComponent(Animator())
+                skater.addComponent(PoseGizmo())
+                scene.addGameObjectToScene(skater)
+            }
+        }
+    }
+
+    fun spawnSkateboard() {
+        val scene = sceneManager.currentScene ?: return
+
+        JobSystem.runAsync {
+            val model = resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
+            JobSystem.runOnMain {
+                val skate = GameObject("Skateboard")
+                skate.transform.translation.set(0f, 2f, 0f)
+                skate.transform.scale.set(1.0f, 1.0f, 1.0f) // Now in Meters
+                skate.addComponent(Entity(model = model))
+                skate.addComponent(RigidBody3D(1.8f).apply { friction = 0.1f }) // 1.8kg mass
+                skate.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f))) // 0.8m x 0.04m x 0.2m
+                skate.addComponent(SkateboardPhysics())
+
+                scene.addGameObjectToScene(skate)
+            }
+        }
+    }
+
+    fun spawnTile() {
+        val scene = sceneManager.currentScene ?: return
+        val tile = GameObject("Tile_${scene.gameObjects.size}")
+        tile.addComponent(Entity(
+            model = TexturedModel(
+                resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel,
+                resourceManager.loadTextureSync(Assets.Textures.WHITE)
+            )
+        ))
+        tile.addComponent(com.pafoid.skate.engine.scenes.components.ModularTile())
+        tile.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
+        tile.addComponent(BoxCollider3D(Vector3f(1f, 1f, 1f)))
+        scene.addGameObjectToScene(tile)
+    }
+
+    fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?) {
+        val scene = sceneManager.currentScene ?: return
+        val rail = GameObject("Rail_${scene.gameObjects.size}")
+        rail.transform.translation.set(position)
+        rail.transform.scale.set(1f, 1f, 1f)
+        val mat = material ?: MaterialType.METAL
+        rail.addComponent(Entity(
+            model = TexturedModel(
+                resourceManager.loadModelSync(Assets.Models.RAIL).parts[0].rawModel,
+                resourceManager.loadTextureSync(mat.texturePath)
+            )
+        ))
+        rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
+        rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0)) //Should depend on rail type
+        scene.addGameObjectToScene(rail)
+    }
+
+    fun spawnLedge(position: Vector3f = Vector3f(0f, 0.25f, 0f), material: MaterialType?) {
+        val scene = sceneManager.currentScene ?: return
+        val mat = material ?: MaterialType.CONCRETE
+        val ledge = GameObject("${mat.displayName}_Ledge_${scene.gameObjects.size}")
+        ledge.transform.translation.set(position)
+        ledge.transform.scale.set(1f, 1f, 1f)
+        ledge.addComponent(Entity(
+            model = TexturedModel(
+                resourceManager.loadModelSync(Assets.Models.LEDGE).parts[0].rawModel,
+                resourceManager.loadTextureSync(mat.texturePath)
+            )
+        ))
+        ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
+        ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
+        scene.addGameObjectToScene(ledge)
+    }
+
+    fun spawnKicker(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?) {
+        val scene = sceneManager.currentScene ?: return
+        val kicker = GameObject("Kicker_${scene.gameObjects.size}")
+        kicker.transform.translation.set(position)
+        kicker.transform.scale.set(1f, 1f, 1f)
+        val mat = material ?: MaterialType.CONCRETE
+        kicker.addComponent(Entity(
+            model = TexturedModel(
+                resourceManager.loadModelSync(Assets.Models.KICKER).parts[0].rawModel,
+                resourceManager.loadTextureSync(mat.texturePath)
+            )
+        ))
+        kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
+
+        val kickerRawModel = resourceManager.loadModelSync(Assets.Models.KICKER).parts[0].rawModel
+        val jmeVertices = mutableListOf<JmeVector3f>()
+        for (i in 0 until kickerRawModel.vertices.size / 3) {
+            jmeVertices.add(JmeVector3f(kickerRawModel.vertices[i*3], kickerRawModel.vertices[i*3+1], kickerRawModel.vertices[i*3+2]))
+        }
+
+        if (jmeVertices.isNotEmpty()) {
+            val kickerShape = HullCollisionShape(jmeVertices)
+            kicker.addComponent(CustomCollider3D(kickerShape))
+        }
+
+        scene.addGameObjectToScene(kicker)
+    }
+
+    fun spawnManualPad(position: Vector3f = Vector3f(0f, 0.1f, 0f), material: MaterialType?) {
+        val scene = sceneManager.currentScene ?: return
+        val go = GameObject("ManualPad_${scene.gameObjects.size}")
+        go.transform.translation.set(position)
+        val mat = material ?: MaterialType.CONCRETE
+        go.addComponent(Entity(
+            model = TexturedModel(
+                resourceManager.loadModelSync(Assets.Models.MANUAL_PAD).parts[0].rawModel,
+                resourceManager.loadTextureSync(mat.texturePath)
+            )
+        ))
+        go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
+        go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
+        scene.addGameObjectToScene(go)
+    }
+
+
+    fun spawnBank(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?) {
+        val scene = sceneManager.currentScene ?: return
+        val go = GameObject("Bank_${scene.gameObjects.size}")
+        go.transform.translation.set(position)
+        val mat = material ?: MaterialType.CONCRETE
+        go.addComponent(Entity(
+            model = TexturedModel(
+                resourceManager.loadModelSync(Assets.Models.BANK).parts[0].rawModel,
+                resourceManager.loadTextureSync(mat.texturePath)
+            )
+        ))
+        go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
+
+        val rawModel = resourceManager.loadModelSync(Assets.Models.BANK).parts[0].rawModel
+        val jmeVertices = mutableListOf<JmeVector3f>()
+        for (i in 0 until rawModel.vertices.size / 3) {
+            jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
+        }
+        val shape = HullCollisionShape(jmeVertices)
+        go.addComponent(CustomCollider3D(shape))
+
+        scene.addGameObjectToScene(go)
+    }
+
+
+    fun spawnQuarterPipe(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?) {
+        val scene = sceneManager.currentScene ?: return
+        val go = GameObject("QuarterPipe_${scene.gameObjects.size}")
+        go.transform.translation.set(position)
+        val mat = material ?: MaterialType.CONCRETE
+        go.addComponent(Entity(
+            model = TexturedModel(
+                resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).parts[0].rawModel,
+                resourceManager.loadTextureSync(mat.texturePath)
+            )
+        ))
+        go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
+
+        val rawModel = resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).parts[0].rawModel
+        val jmeVertices = mutableListOf<JmeVector3f>()
+        for (i in 0 until rawModel.vertices.size / 3) {
+            jmeVertices.add(JmeVector3f(rawModel.vertices[i*3], rawModel.vertices[i*3+1], rawModel.vertices[i*3+2]))
+        }
+        val shape = HullCollisionShape(jmeVertices)
+        go.addComponent(CustomCollider3D(shape))
+
+        scene.addGameObjectToScene(go)
+    }
+
 }

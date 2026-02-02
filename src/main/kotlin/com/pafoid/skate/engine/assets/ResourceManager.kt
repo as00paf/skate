@@ -61,18 +61,19 @@ class ResourceManager(
         }
     }
     
-    fun loadTextureSync(path: String): Texture {
-        val file = File(path)
+    fun loadTextureSync(path: String?): Texture {
+        val file = File(path.orEmpty())
         val absolutePath = file.absolutePath
-        
-        textures[absolutePath]?.let { return it }
 
-        val data = try {
-            Texture.loadData(path)
-        } catch (e: Exception) {
-            logger?.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
-            null
-        }
+        val data = if(path != null) {
+            textures[absolutePath]?.let { return it }
+            try {
+                Texture.loadData(path)
+            } catch (e: Exception) {
+                logger?.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
+                null
+            }
+        } else null
 
         if (data == null) {
             logger?.logEngine("Texture not found: $path. Loading default texture.", LogLevel.ERROR)

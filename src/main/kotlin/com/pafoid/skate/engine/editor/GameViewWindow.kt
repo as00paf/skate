@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.PrefabsGenerator
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.GizmoSystem
 import com.pafoid.skate.engine.scenes.components.MeasureTool
@@ -27,6 +28,7 @@ class GameViewWindow : KoinComponent {
     private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()
     private val settingsManager: SettingsManager by inject()
+    private val prefabsGenerator: PrefabsGenerator by inject()
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -56,9 +58,9 @@ class GameViewWindow : KoinComponent {
         // Drag and Drop Target should be over the image area
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
         if (ImGui.beginDragDropTarget()) {
-            val payloadRail = ImGui.acceptDragDropPayload<String>("PREFAB_RAIL")
-            val payloadLedge = ImGui.acceptDragDropPayload<String>("PREFAB_LEDGE")
-            val payloadKicker = ImGui.acceptDragDropPayload<String>("PREFAB_KICKER")
+            val payloadLedge = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_LEDGE")
+            val payloadRail = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_RAIL")
+            val payloadKicker = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_KICKER")
 
             val payload = payloadRail ?: payloadLedge ?: payloadKicker
 
@@ -78,12 +80,11 @@ class GameViewWindow : KoinComponent {
                         val t = -ray.origin.y / ray.direction.y
                         if (t > 0) {
                             val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
-                            val prefabs = Window.getImGuiLayer().assetBrowser
 
                             when {
-                                payloadRail != null -> prefabs.spawnRail(hitPoint)
-                                payloadLedge != null -> prefabs.spawnLedge(hitPoint)
-                                payloadKicker != null -> prefabs.spawnKicker(hitPoint)
+                                payloadRail != null -> prefabsGenerator.spawnRail(hitPoint, payload.material)
+                                payloadLedge != null -> prefabsGenerator.spawnLedge(hitPoint, payload.material)
+                                payloadKicker != null -> prefabsGenerator.spawnKicker(hitPoint, payload.material)
                             }
                         }
                     }

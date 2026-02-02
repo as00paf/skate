@@ -40,7 +40,9 @@ val engineModule = module {
     single { PickingDraw() }
     single { ThumbnailCache() }
     single { PrefabsGenerator(get(), get()) }
+}
 
+val inputModule = module {
     single { JoystickListener() }
     single { KeyListener() }
     single { MouseListener() }
