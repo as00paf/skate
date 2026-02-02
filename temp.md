@@ -97,3 +97,4 @@ Reports
 ## 18.6. Interaction & Gizmos
 - [ ] **Buttons**: Add buttons in the game view window for the gizmos (rotation, translation, scale)
 - [ ] **Display**: Make sure the gizmos dont scale with the movement of the editor camera. 
+- [ ] **Measure Tool**: Ensure the measure tool does not interfere with the gizmos and vice versa 
