@@ -33,4 +33,14 @@ class StringManager(private val resourcePath: String = "/values/strings.properti
         val formatString = properties.getProperty(key, "!!${key}!!")
         return String.format(formatString, *formatArgs)
     }
+
+    fun getQuantityString(key: String, quantity: Int, vararg formatArgs: Any): String {
+        val resourceKey = when (quantity) {
+            1 -> "$key.one"
+            else -> "$key.other"
+        }
+        val formatString = properties.getProperty(resourceKey, "!!${resourceKey}!!")
+        // Prepend the quantity to the format arguments for keys like ".other"
+        return String.format(formatString, quantity, *formatArgs)
+    }
 }

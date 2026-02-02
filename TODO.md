@@ -214,8 +214,8 @@
 - [x] **Refactor Trick Analyzer**: Move trick names ("Kickflip", "Ollie") to `tricks.properties` to allow for "Trick Name" variations in the future.
 
 ## 🚀 Phase 20.3: Advanced Features (Android-Inspired)
-- [ ] **String Formatting**: Implement support for placeholders (e.g., `lbl_speed=Speed: %f m/s`) using `String.format()`.
-- [ ] **Pluralization Support**: Add a logic handler for quantities (e.g., "1 Trick" vs "5 Tricks").
+- [x] **String Formatting**: Implement support for placeholders (e.g., `lbl_speed=Speed: %f m/s`) using `String.format()`.
+- [x] **Pluralization Support**: Add a logic handler for quantities (e.g., "1 Trick" vs "5 Tricks").
 - [ ] **Language Switching Logic**: Add a setting in the Editor to toggle between `strings_en.properties` and `strings_fr.properties` (or others) at runtime without restarting the engine.
 
 ## 🧪 Phase 20.4: Validation & Quality

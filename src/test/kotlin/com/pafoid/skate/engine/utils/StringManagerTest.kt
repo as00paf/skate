@@ -38,4 +38,22 @@ class StringManagerTest {
         val result = stringManager.getString("test.missing.formatted", "Arg1")
         assertEquals("!!test.missing.formatted!!", result)
     }
+
+    @Test
+    fun `getQuantityString should return singular for quantity 1`() {
+        val result = stringManager.getQuantityString("test.tricks", 1)
+        assertEquals("1 Trick", result)
+    }
+
+    @Test
+    fun `getQuantityString should return plural for quantity 0`() {
+        val result = stringManager.getQuantityString("test.tricks", 0)
+        assertEquals("0 Tricks", result)
+    }
+
+    @Test
+    fun `getQuantityString should return plural for quantity 5`() {
+        val result = stringManager.getQuantityString("test.tricks", 5)
+        assertEquals("5 Tricks", result)
+    }
 }
