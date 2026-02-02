@@ -85,10 +85,6 @@ class AssetBrowser : KoinComponent {
             renderPlayerPrefabs()
         }
 
-        /*if (ImGui.collapsingHeader("${Icons.PALETTE} Environment", ImGuiTreeNodeFlags.DefaultOpen)) {
-           renderEnvironmentPrefabs()
-       }*/
-
         if (ImGui.collapsingHeader("${Icons.GEAR} Obstacles", ImGuiTreeNodeFlags.DefaultOpen)) {
             renderObstaclePrefabs()
         }
@@ -109,22 +105,6 @@ class AssetBrowser : KoinComponent {
                 ImGui.endTable()
             }
         }
-    }
-
-    private fun renderEnvironmentPrefabs() {
-        /*val items = listOf(
-            Triple("Tile", Assets.Models.CUBE) { _: MaterialType -> spawnTile() }
-        ).filter { it.first.contains(searchText.get(), ignoreCase = true) }
-
-        if (items.isNotEmpty()) {
-            if (ImGui.beginTable("EnvironmentTable", 2, ImGuiTableFlags.SizingFixedFit)) {
-                for (item in items) {
-                    ImGui.tableNextColumn()
-                    renderPrefabItem(item.first, item.second, MaterialType.CONCRETE, onSpawn = item.third)
-                }
-                ImGui.endTable()
-            }
-        }*/
     }
 
     private fun renderObstaclePrefabs() {

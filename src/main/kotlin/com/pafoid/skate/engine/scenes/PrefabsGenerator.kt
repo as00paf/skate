@@ -1,8 +1,6 @@
 package com.pafoid.skate.engine.scenes
 
 import com.jme3.bullet.collision.shapes.HullCollisionShape
-import com.pafoid.skate.engine.animation.Animator
-import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Sprite
@@ -15,11 +13,12 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.prefabs.Floor
 import com.pafoid.skate.engine.prefabs.MaterialType
 import com.pafoid.skate.engine.prefabs.Skateboard
 import com.pafoid.skate.engine.prefabs.Skater
+import com.pafoid.skate.engine.prefabs.Tile
 import com.pafoid.skate.engine.scenes.components.ModularTile
-import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JobSystem
@@ -106,19 +105,41 @@ class PrefabsGenerator(
         return skater
     }
 
-    fun spawnTile() {
-        val scene = sceneManager.currentScene ?: return
-        val tile = GameObject("Tile_${scene.gameObjects.size}")
-        tile.addComponent(Entity(
-            model = TexturedModel(
-                resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel,
-                resourceManager.loadTextureSync(Assets.Textures.WHITE)
-            )
-        ))
-        tile.addComponent(ModularTile())
-        tile.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
-        tile.addComponent(BoxCollider3D(Vector3f(1f, 1f, 1f)))
-        scene.addGameObjectToScene(tile)
+    fun spawnFloor(): Floor? {
+        val scene = sceneManager.currentScene ?: return null
+        var floor: Floor? = null
+
+        JobSystem.runAsync {
+            val texture = resourceManager.loadTexture(Assets.Textures.ASPHALT)
+            val texturedModel = TexturedModel(resourceManager.loadModel(Assets.Models.CUBE).parts[0].rawModel, texture)
+            texturedModel.parts[0].material.baseColorPath = Assets.Textures.ASPHALT
+
+            JobSystem.runOnMain {
+                floor = Floor(texturedModel)
+                scene.addGameObjectToScene(floor)
+            }
+        }
+
+        return floor
+    }
+
+    fun spawnTile(): Tile? {
+        val scene = sceneManager.currentScene ?: return null
+
+        var tile:Tile? = null
+
+        JobSystem.runAsync {
+            val texture = resourceManager.loadTexture(Assets.Textures.CONCRETE_SIMPLE)
+            val texturedModel = TexturedModel(resourceManager.loadModel(Assets.Models.CUBE).parts[0].rawModel, texture)
+            texturedModel.parts[0].material.baseColorPath = Assets.Textures.CONCRETE_SIMPLE
+
+            JobSystem.runOnMain {
+                tile = Tile("Tile_${scene.gameObjects.size}", texturedModel)
+                scene.addGameObjectToScene(tile)
+            }
+        }
+
+        return tile
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?) {

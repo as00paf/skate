@@ -55,22 +55,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         skater = prefabsGenerator.spawnSkater(skateboard)
 
         // TODO: Should be a prefab
-        val ground = GameObject("Floor")
-        ground.transform.translation.set(0f, -0.5f, 0f)
-        ground.transform.scale.set(100f, 0.5f, 100f)
-        val groundTex = resourceManager.loadTextureSync(Assets.Textures.ASPHALT)
-        val groundModel = TexturedModel(resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel, groundTex)
-        groundModel.parts[0].material.baseColorPath = Assets.Textures.ASPHALT
-        
-        ground.addComponent(Entity(
-            model = groundModel,
-            textureScale = 20.0f
-        ))
-        val groundRb = RigidBody3D(0f)
-        groundRb.bodyType = BodyType.Static
-        ground.addComponent(groundRb)
-        ground.addComponent(BoxCollider3D(Vector3f(100f, 0.5f, 100f)))
-        scene.addGameObjectToScene(ground)
+        val floor = prefabsGenerator.spawnFloor()
 
         // Atmosphere (Spawned last for simple transparency sorting)
         val atmosphere = scene.createGameObject("Atmosphere")

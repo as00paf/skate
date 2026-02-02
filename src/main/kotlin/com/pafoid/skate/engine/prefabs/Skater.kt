@@ -11,13 +11,13 @@ import org.joml.Vector3f
 
 class Skater(
     name: String,
-    var texturedModel: TexturedModel,
+    texturedModel: TexturedModel,
     skate: GameObject? = null,
-    private val position: Vector3f = Vector3f(0f, 0f, 0f),
-    private val rotation: Vector3f = Vector3f(0f, 90f, 0f),
-    private val scale: Vector3f = Vector3f(1f, 1f, 1f),
-    private val mass: Float = 1.8f,// 1.8kg mass
-    private val hitBoxSize: Vector3f = Vector3f(0.4f, 0.02f, 0.1f),
+    position: Vector3f = Vector3f(0f, 1.05f, 0f),
+    rotation: Vector3f = Vector3f(0f, 90f, 0f),
+    scale: Vector3f = Vector3f(1f, 1f, 1f),
+    mass: Float = 1.8f,// 1.8kg mass
+    hitBoxSize: Vector3f = Vector3f(0.4f, 0.02f, 0.1f),
 ): GameObject(name) {
 
     init {
@@ -25,7 +25,7 @@ class Skater(
         // Parenting: Skater follows Skateboard
         skate?.addChild(this)
 
-        transform.translation.set(0f, 0.05f, 0f)
+        transform.translation.set(Vector3f(position.x, position.y + 0.0425f, position.z))
         transform.rotation.set(rotation) // Face sideways for skating
         transform.scale.set(scale) // Now in Meters
         addComponent(Entity(model = texturedModel))
