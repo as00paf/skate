@@ -20,7 +20,6 @@ import kotlin.getValue
 class AssetBrowser : KoinComponent {
     private val thumbnailCache: ThumbnailCache by inject()
     private val resourceManager: ResourceManager by inject()
-    private val sceneManager: SceneManager by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
 
     private var searchText = ImString(256)

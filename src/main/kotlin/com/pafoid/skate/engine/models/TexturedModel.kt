@@ -2,44 +2,11 @@ package com.pafoid.skate.engine.models
 
 import com.pafoid.skate.engine.animation.Animation
 import com.pafoid.skate.engine.animation.Skeleton
-import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.scenes.components.Component
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Matrix4f
-import org.joml.Vector4f
-
-@Serializable
-data class Material(
-    @Transient var baseColorTexture: Texture? = null,
-    @Transient var normalMap: Texture? = null,
-    @Transient var metallicRoughnessTexture: Texture? = null,
-    @Transient var aoTexture: Texture? = null,
-    @Transient var emissiveTexture: Texture? = null,
-
-    // Background loading paths
-    var baseColorPath: String? = null,
-    var normalMapPath: String? = null,
-    var metallicRoughnessPath: String? = null,
-    var aoPath: String? = null,
-    var emissivePath: String? = null,
-
-    @kotlinx.serialization.Contextual var baseColorFactor: Vector4f = Vector4f(1f, 1f, 1f, 1f),
-    var metallicFactor: Float = 0f,
-    var roughnessFactor: Float = 0.5f,
-    @kotlinx.serialization.Contextual var emissiveFactor: org.joml.Vector3f = org.joml.Vector3f(0f, 0f, 0f),
-    var doubleSided: Boolean = false,
-    var alphaMode: String = "OPAQUE",
-    var alphaCutoff: Float = 0.5f
-)
-
-@Serializable
-data class MeshPart(
-    val rawModel: RawModel, 
-    val material: Material,
-    val inverseBindMatrices: List<@kotlinx.serialization.Contextual Matrix4f> = emptyList()
-)
 
 @Serializable
 data class TexturedModel (

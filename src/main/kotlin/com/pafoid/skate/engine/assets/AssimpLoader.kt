@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.animation.AnimationSampler
 import com.pafoid.skate.engine.animation.InterpolationType
 import com.pafoid.skate.engine.animation.Joint
 import com.pafoid.skate.engine.animation.Skeleton
+import com.pafoid.skate.engine.models.Material
 import com.pafoid.skate.engine.render.VAOLoader
 import org.joml.Matrix4f
 import org.lwjgl.assimp.*
@@ -169,7 +170,7 @@ class AssimpLoader {
     }
 
     private fun processMesh(mesh: AIMesh, scene: AIScene, transform: Matrix4f, embeddedTextures: MutableMap<String, ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>): PreLoadedMeshPart {
-        val materialData = com.pafoid.skate.engine.models.Material()
+        val materialData = Material()
         
         val materialIndex = mesh.mMaterialIndex()
         if (materialIndex >= 0) {

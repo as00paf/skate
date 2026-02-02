@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.models.Material
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -172,7 +173,7 @@ class ResourceManager(
                 withContext(JobSystem.Main) {
                     val rawModel = objLoader.loadObjModel(path, vaoLoader)
                     val whiteTex = loadTexture(Assets.Textures.DEFAULT) 
-                    val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = whiteTex), emptyList()))
+                    val parts = listOf(MeshPart(rawModel, Material(baseColorTexture = whiteTex), emptyList()))
                     val model = TexturedModel(parts)
                     models[absolutePath] = model
                     model
@@ -249,7 +250,7 @@ class ResourceManager(
             if (path.lowercase().endsWith(".obj")) {
                 val rawModel = objLoader.loadObjModel(path, vaoLoader)
                 val whiteTex = loadTextureSync(Assets.Textures.DEFAULT) 
-                val parts = listOf(MeshPart(rawModel, com.pafoid.skate.engine.models.Material(baseColorTexture = whiteTex), emptyList()))
+                val parts = listOf(MeshPart(rawModel, Material(baseColorTexture = whiteTex), emptyList()))
                 val model = TexturedModel(parts)
                 models[absolutePath] = model
                 model

@@ -25,6 +25,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
     private var skateboard: GameObject? = null
     private var skater: GameObject? = null
+    private var floor: GameObject? = null
 
     override suspend fun loadResources(scene: Scene) {}
 
@@ -53,14 +54,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
         skateboard = prefabsGenerator.spawnSkateboard()
         skater = prefabsGenerator.spawnSkater(skateboard)
-
-        // TODO: Should be a prefab
-        val floor = prefabsGenerator.spawnFloor()
-
-        // Atmosphere (Spawned last for simple transparency sorting)
-        val atmosphere = scene.createGameObject("Atmosphere")
-        atmosphere.setNoSerialize()
-        scene.addGameObjectToScene(atmosphere)
+        floor = prefabsGenerator.spawnFloor()
     }
 
     override fun imgui() {
