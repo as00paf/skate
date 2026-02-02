@@ -244,13 +244,6 @@ class GameViewWindow : KoinComponent {
         return ImVec2(viewportX + ImGui.getCursorPosX(), viewportY + ImGui.getCursorPosY())
     }
 
-    fun getWantCaptureMouse(): Boolean {
-        val mousePos = ImVec2()
-        ImGui.getMousePos(mousePos)
-        return mousePos.x >= imageScreenPosX && mousePos.x <= (imageScreenPosX + imageSizeX) &&
-                mousePos.y >= imageScreenPosY && mousePos.y <= (imageScreenPosY + imageSizeY)
-    }
-
     private fun renderToolbar(windowPos: ImVec2, windowSize: ImVec2) {
         val isPlaying = sceneManager.runtimePlaying
         val scene = sceneManager.currentScene
