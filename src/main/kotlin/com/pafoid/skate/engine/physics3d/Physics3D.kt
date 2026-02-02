@@ -40,7 +40,12 @@ class Physics3D : IPhysics3D, KoinComponent {
         physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
     }
 
+    companion object {
+        private var isNativeLibraryLoaded = false
+    }
+
     private fun loadNativeLibrary() {
+        if (isNativeLibraryLoaded) return
         val info = LibraryInfo(null, "bulletjme", DirectoryPath.USER_DIR)
         val loader = NativeBinaryLoader(info)
 
@@ -54,6 +59,7 @@ class Physics3D : IPhysics3D, KoinComponent {
         )
         loader.registerNativeLibraries(libraries).initPlatformLibrary()
         loader.loadLibrary(LoadingCriterion.CLEAN_EXTRACTION)
+        isNativeLibraryLoaded = true
     }
 
     override fun getGravity(): JomlVector3f {

@@ -28,6 +28,7 @@ class SkateboardPhysics : Component(), KoinComponent {
     var suspensionRestLength = 0.08f // 8cm total height
     var stiffness = 600.0f          // Slightly stiffer
     var damping = 25.0f
+    var steeringCoefficient = 50.0f
     
     // Corner offsets for 4 raycasts (deck corners/wheels)
     // Real-world Skateboard: ~0.8m length, ~0.2m width
@@ -71,6 +72,37 @@ class SkateboardPhysics : Component(), KoinComponent {
             }
         }
         isGrounded = groundedCount > 0
+
+        if (isGrounded) {
+            applySteering(dt)
+        }
+    }
+
+    private fun applySteering(dt: Float) {
+        // Calculate Roll (Lean) relative to local forward
+        // Local Right Vector in World Space
+        val localRight = Vector3f(0f, 0f, 1f)
+        gameObject.transform.toWorldMatrix().transformDirection(localRight)
+        
+        // Project Local Right onto World Up to get Roll component
+        // Dot product gives the sine of the angle if vectors are normalized
+        val roll = localRight.dot(worldUp) 
+        
+        // Deadzone to prevent jitter steering
+        if (kotlin.math.abs(roll) < 0.05f) return
+
+        // Steering Torque = -Roll * Speed * Coefficient
+        // We steer around the LOCAL Y (Up) axis
+        val speed = rb.linearVelocity.length()
+        if (speed > 0.1f) {
+            val torqueMagnitude = -roll * speed * steeringCoefficient
+            
+            val localUp = Vector3f(0f, 1f, 0f)
+            gameObject.transform.toWorldMatrix().transformDirection(localUp)
+            
+            val torque = Vector3f(localUp).mul(torqueMagnitude)
+            rb.applyTorqueImpulse(torque.mul(dt))
+        }
     }
 
     /**
