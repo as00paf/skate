@@ -17,15 +17,18 @@ class TrickDetector : Component() {
     private var lastGroundedState = true
     private var detectedTrick: String? = null
 
-    private lateinit var rigidBody: RigidBody3D
-    private lateinit var skateboardPhysics: SkateboardPhysics
+    private var rigidBody: RigidBody3D? = null
+    private var skateboardPhysics: SkateboardPhysics? = null
 
     override fun start() {
-        rigidBody = gameObject.getComponent(RigidBody3D::class.java)!!
-        skateboardPhysics = gameObject.getComponent(SkateboardPhysics::class.java)!!
+        rigidBody = gameObject.getComponent<RigidBody3D>()
+        skateboardPhysics = gameObject.getComponent<SkateboardPhysics>()
     }
 
     override fun update(dt: Float) {
+        val rigidBody = rigidBody ?: return
+        val skateboardPhysics = skateboardPhysics ?: return
+
         if (skateboardPhysics.isGrounded) {
             // Grounded, reset trick detection
             accumulatedRotationX = 0f
@@ -50,19 +53,21 @@ class TrickDetector : Component() {
         var baseTrickKey: String? = null
 
         // Kickflip (360 around X, positive)
-        if (abs(accumulatedRotationX) >= 360f && accumulatedRotationX > 0f && abs(accumulatedRotationX) < 720f) {
+        val absRX = abs(accumulatedRotationX)
+        val absRY = abs(accumulatedRotationY)
+        if (absRX >= 360f && accumulatedRotationX > 0f && absRX < 720f) {
             baseTrickKey = "trick.kickflip"
         }
         // Heelflip (360 around X, negative)
-        else if (abs(accumulatedRotationX) >= 360f && accumulatedRotationX < 0f && abs(accumulatedRotationX) < 720f) {
+        else if (absRX >= 360f && accumulatedRotationX < 0f && absRX < 720f) {
             baseTrickKey = "trick.heelflip"
         }
         // 360 Pop Shuvit (360 around Y)
-        else if (abs(accumulatedRotationY) >= 360f && abs(accumulatedRotationY) < 540f) {
+        else if (absRY in 360f..<540f) {
             baseTrickKey = "trick.360shoveit"
         }
         // Pop Shuvit (180 around Y)
-        else if (abs(accumulatedRotationY) >= 180f && abs(accumulatedRotationY) < 360f) {
+        else if (absRY in 180f..<360f) {
             baseTrickKey = "trick.shoveit"
         }
         else {
