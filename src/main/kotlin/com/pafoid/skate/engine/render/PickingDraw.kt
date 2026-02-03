@@ -78,6 +78,7 @@ class PickingDraw: KoinComponent {
         // Transformation is handled on CPU for batching
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, identityMatrix)
         shader.uploadInt("u_HasSkin", 0) // Disable skinning for these CPU-transformed meshes
+        shader.uploadBoolean("uUseBatchId", true)
 
         var index = 0
         for (mesh in meshes) {

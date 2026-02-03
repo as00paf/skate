@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_Y
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_TRIGGER
@@ -33,7 +34,7 @@ import kotlin.math.max
 import kotlin.math.roundToLong
 
 class PlayerController : Component(), KoinComponent {
-    private val inputBuffer: IInputBuffer by inject()
+    private val inputBuffer: InputBuffer by inject()
     private val resourceManager: ResourceManager by inject()
     private val inputProvider: IInputProvider by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()

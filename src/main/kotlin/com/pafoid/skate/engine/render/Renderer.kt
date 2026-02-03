@@ -221,6 +221,7 @@ class Renderer(
 
         pickingShader3D.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, go.transform.toWorldMatrix())
         pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, go.getUid().toFloat() + 1)
+        pickingShader3D.uploadBoolean("uUseBatchId", false)
 
         val skeleton = go.getComponent<Skeleton>() ?: texturedModel.skeleton
         val hasSkin = skeleton != null

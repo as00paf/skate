@@ -10,13 +10,10 @@ import com.pafoid.skate.engine.utils.JomlVector3f
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Quaternionf
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 @Serializable
-open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D, KoinComponent {
-    private val sceneManager: SceneManager by inject()
-
+open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
+    
     var bodyType: BodyType = BodyType.Dynamic
     var useCCD: Boolean = false
     
@@ -61,8 +58,7 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D, Ko
 
     override fun editorUpdate(dt: Float) {
         rawBody?.let { body ->
-            sceneManager.currentScene?.physics3d?.update(gameObject)
-            
+            // Zero out velocity in editor to prevent drifting while editing properties
             body.setLinearVelocity(JmeVector3f.ZERO)
             body.setAngularVelocity(JmeVector3f.ZERO)
         }

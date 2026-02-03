@@ -8,6 +8,8 @@ layout (location=10) in float aEntityId;
 uniform mat4 transformationMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
+uniform float uEntityId;
+uniform bool uUseBatchId;
 
 const int MAX_BONES = 100;
 uniform mat4 u_JointMatrices[MAX_BONES];
@@ -17,7 +19,12 @@ out float fEntityId;
 
 void main()
 {
-    fEntityId = aEntityId;
+    if (uUseBatchId) {
+        fEntityId = aEntityId;
+    } else {
+        fEntityId = uEntityId;
+    }
+    
     mat4 skinMatrix = mat4(1.0);
     if (u_HasSkin) {
         skinMatrix = 

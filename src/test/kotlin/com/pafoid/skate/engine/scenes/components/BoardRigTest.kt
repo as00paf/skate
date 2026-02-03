@@ -43,8 +43,9 @@ class BoardRigTest {
             modules(module {
                 single { sceneManager }
                 single<IInputProvider> { mockk(relaxed = true) }
-                single { mockk<ResourceManager>(relaxed = true) }
+                single { mockk<com.pafoid.skate.engine.assets.ResourceManager>(relaxed = true) }
                 single<IInputBuffer> { FakeInputBuffer() }
+                single { mockk<com.pafoid.skate.engine.prefabs.PrefabsGenerator>(relaxed = true) }
             })
         }
 
