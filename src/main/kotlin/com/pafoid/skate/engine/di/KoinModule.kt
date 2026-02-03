@@ -37,11 +37,12 @@ val appModule = module {
 }
 
 val engineModule = module {
-    single { PoseSerializer() }
     single { ShaderLoader(false) }
+    single { VAOLoader() }
     single { AssimpLoader() }
     single { ObjLoader() }
-    single { ResourceManager(get(), get(), get(), get()) }
+    single { ResourceManager(get(), get(), get(), get(), get()) }
+    single { PoseSerializer() }
 
     single { DebugDraw() }
     single { PickingDraw() }

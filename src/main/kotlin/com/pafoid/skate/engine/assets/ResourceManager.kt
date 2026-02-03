@@ -16,16 +16,14 @@ class ResourceManager(
     private val shaderLoader: ShaderLoader = ShaderLoader(false),
     private val assimpLoader: AssimpLoader = AssimpLoader(),
     private val objLoader: ObjLoader = ObjLoader(),
-    private val logger: LoggerService? = null
+    private val vaoLoader:VAOLoader,
+    private val logger: LoggerService
 ) {
 
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
     private val models = ConcurrentHashMap<String, TexturedModel>()
     private val sounds = ConcurrentHashMap<String, Sound>()
-
-    // Central VAO Loader for models managed by this manager
-    private val vaoLoader = VAOLoader()
     
     // Loaders are now passed via constructor
     
@@ -41,13 +39,13 @@ class ResourceManager(
             try {
                 Texture.loadData(path)
             } catch (e: Exception) {
-                logger?.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
+                logger.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
                 null
             }
         }
 
         if (data == null) {
-            logger?.logEngine("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
+            logger.logEngine("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
             if (path == Assets.Textures.DEFAULT) throw RuntimeException("Critical Error: Default texture not found!")
             return loadTexture(Assets.Textures.DEFAULT)
         }
@@ -71,13 +69,13 @@ class ResourceManager(
             try {
                 Texture.loadData(path)
             } catch (e: Exception) {
-                logger?.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
+                logger.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
                 null
             }
         } else null
 
         if (data == null) {
-            logger?.logEngine("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
+            logger.logEngine("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
             if (path == Assets.Textures.DEFAULT) throw RuntimeException("Critical Error: Default texture not found!")
             return loadTextureSync(Assets.Textures.DEFAULT)
         }
@@ -109,9 +107,9 @@ class ResourceManager(
                 shader
             }
         } catch (e: Exception) {
-            logger?.logEngine("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.logEngine("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Shaders.SHADER_3D_DEFAULT) throw RuntimeException("Critical Error: Default 3D shader not found!")
-            logger?.logEngine("Loading default 3D shader instead of $path", LogLevel.ERROR)
+            logger.logEngine("Loading default 3D shader instead of $path", LogLevel.ERROR)
             loadShader(Assets.Shaders.SHADER_3D_DEFAULT)
         }
     }
@@ -127,9 +125,9 @@ class ResourceManager(
             shaders[absolutePath] = shader
             shader
         } catch (e: Exception) {
-            logger?.logEngine("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.logEngine("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Shaders.SHADER_3D_DEFAULT) throw RuntimeException("Critical Error: Default 3D shader not found!")
-            logger?.logEngine("Loading default 3D shader instead of $path", LogLevel.ERROR)
+            logger.logEngine("Loading default 3D shader instead of $path", LogLevel.ERROR)
             loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
         }
     }
@@ -151,7 +149,7 @@ class ResourceManager(
             sounds[absolutePath] = sound
             sound
         } catch (e: Exception) {
-            logger?.logEngine("Failed to load sound: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.logEngine("Failed to load sound: $path. Error: ${e.message}", LogLevel.ERROR)
             throw e // Sounds might not have a good default fallback yet
         }
     }
@@ -232,9 +230,9 @@ class ResourceManager(
                  }
             }
         } catch (e: Exception) {
-            logger?.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
-            logger?.logEngine("Loading default CUBE model instead of $path", LogLevel.ERROR)
+            logger.logEngine("Loading default CUBE model instead of $path", LogLevel.ERROR)
             loadModel(Assets.Models.CUBE)
         }
     }
@@ -295,9 +293,9 @@ class ResourceManager(
                  texturedModel
             }
         } catch (e: Exception) {
-            logger?.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
-            logger?.logEngine("Loading default CUBE model instead of $path", LogLevel.ERROR)
+            logger.logEngine("Loading default CUBE model instead of $path", LogLevel.ERROR)
             loadModelSync(Assets.Models.CUBE)
         }
     }

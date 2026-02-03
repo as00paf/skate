@@ -27,6 +27,7 @@ class Renderer : IRenderer, KoinComponent {
     private val pickingDraw: PickingDraw by inject()
     private val resourceManager: ResourceManager by inject()
     private val sceneManager: SceneManager by inject()
+    private val vaoLoader: VAOLoader by inject()
     private val logger: LoggerService by inject()
 
     private lateinit var defaultShader: Shader
@@ -63,8 +64,8 @@ class Renderer : IRenderer, KoinComponent {
         }
 
         renderer2D.bindShader(batchShader)
-        skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
-        skyDomeRenderer = SkyDomeRenderer(skyDomeShader, VAOLoader(), resourceManager)
+        skyboxRenderer = SkyboxRenderer(skyboxShader, vaoLoader)
+        skyDomeRenderer = SkyDomeRenderer(skyDomeShader, vaoLoader, resourceManager)
     }
 
     private fun loadProjectionMatrix(camera: Camera) {

@@ -1,22 +1,14 @@
 package com.pafoid.skate.engine.scenes.editor
 
-import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.entities.Entity
-import com.pafoid.skate.engine.models.TexturedModel
-import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
 import com.pafoid.skate.engine.scenes.components.*
-import com.pafoid.skate.engine.physics3d.components.*
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
-import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
-    private val resourceManager: ResourceManager by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
 
     private var currentScene: Scene? = null

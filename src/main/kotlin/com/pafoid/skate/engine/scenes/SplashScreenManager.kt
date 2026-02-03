@@ -31,7 +31,8 @@ import org.koin.core.component.inject
 import kotlin.getValue
 
 class SplashScreenManager: KoinComponent {
-    val resourceManager: ResourceManager by inject()
+    private val resourceManager: ResourceManager by inject()
+    private val vaoLoader: VAOLoader by inject()
 
     val loadingProgress = AtomicReference(0f)
     var loadingText = "Initializing Engine..."
@@ -46,7 +47,7 @@ class SplashScreenManager: KoinComponent {
     suspend fun init() {
         splashShader = resourceManager.loadShader(Assets.Shaders.SPLASH)
         splashTexture = resourceManager.loadTexture(Assets.Textures.SPLASH)
-        splashQuad = VAOLoader().loadToVAO( // TODO: inject loader ?
+        splashQuad = vaoLoader.loadToVAO(
             positions = floatArrayOf(
                 -1f, -1f, 0f,
                 1f, -1f, 0f,
