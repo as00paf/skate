@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.models.Material
 import com.pafoid.skate.engine.render.VAOLoader
 import org.joml.Matrix4f
+import org.joml.Vector3f
 import org.lwjgl.assimp.*
 import org.lwjgl.assimp.Assimp.*
 import org.lwjgl.opengl.GL11
@@ -32,11 +33,12 @@ class AssimpLoader {
         val boneNames = mutableListOf<String>()
         val boneInfoMap = mutableMapOf<String, BoneInfo>()
 
-        // TODO: fix nullability
         for (i in 0 until scene.mNumMeshes()) {
-            val mesh = AIMesh.create(scene.mMeshes()!!.get(i))
+            val meshes = scene.mMeshes() ?: continue
+            val mesh = AIMesh.create(meshes.get(i))
             for (b in 0 until mesh.mNumBones()) {
-                val bone = AIBone.create(mesh.mBones()!!.get(b))
+                val bones = mesh.mBones() ?: continue
+                val bone = AIBone.create(bones.get(b))
                 val name = bone.mName().dataString()
                 if (!boneNames.contains(name)) {
                     boneNames.add(name)
@@ -45,25 +47,25 @@ class AssimpLoader {
             }
         }
 
-        // Task 3.1: Unit Normalization
         var unitScale = 1.0f
         
         if (filePath.contains("skateboard", ignoreCase = true)) {
             unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
         }
 
-        // TODO: fix nullability
         val rootTransform = Matrix4f().scale(unitScale)
-        processNode(scene.mRootNode()!!, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
+        val rootNode = scene.mRootNode() ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
+        processNode(rootNode, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
 
         // Build Skeleton Hierarchy
-        val rootJoint = buildHierarchy(scene.mRootNode()!!, boneInfoMap)
+        val rootJoint = buildHierarchy(rootNode, boneInfoMap)
         val skeleton = if (rootJoint != null) Skeleton(rootJoint, boneNames.size) else null
 
         // Load Animations
         val animations = mutableListOf<Animation>()
         for (i in 0 until scene.mNumAnimations()) {
-            val aiAnim = AIAnimation.create(scene.mAnimations()!!.get(i))
+            val anims = scene.mAnimations() ?: continue
+            val aiAnim = AIAnimation.create(anims.get(i))
             animations.add(processAnimation(aiAnim))
         }
 
@@ -79,7 +81,8 @@ class AssimpLoader {
         boneInfo?.let { joint.inverseBindMatrix.set(it.offsetMatrix) }
 
         for (i in 0 until aiNode.mNumChildren()) {
-            val childAiNode = AINode.create(aiNode.mChildren()!!.get(i))
+            val children = aiNode.mChildren() ?: continue
+            val childAiNode = AINode.create(children.get(i))
             val childJoint = buildHierarchy(childAiNode, boneInfoMap)
             if (childJoint != null) {
                 joint.addChild(childJoint)
@@ -100,7 +103,8 @@ class AssimpLoader {
 
         val channels = mutableListOf<AnimationChannel>()
         for (i in 0 until aiAnim.mNumChannels()) {
-            val aiChannel = AINodeAnim.create(aiAnim.mChannels()!!.get(i))
+            val anims = aiAnim.mChannels() ?: continue
+            val aiChannel = AINodeAnim.create(anims.get(i))
             val nodeName = aiChannel.mNodeName().dataString()
 
             //TODO: extract
@@ -109,7 +113,8 @@ class AssimpLoader {
                 val times = FloatArray(aiChannel.mNumPositionKeys())
                 val values = FloatArray(aiChannel.mNumPositionKeys() * 3)
                 for (k in 0 until aiChannel.mNumPositionKeys()) {
-                    val key = aiChannel.mPositionKeys()!!.get(k)
+                    val keys = aiChannel.mPositionKeys() ?: continue
+                    val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
                     values[k * 3] = key.mValue().x()
                     values[k * 3 + 1] = key.mValue().y()
@@ -124,7 +129,8 @@ class AssimpLoader {
                 val times = FloatArray(aiChannel.mNumRotationKeys())
                 val values = FloatArray(aiChannel.mNumRotationKeys() * 4)
                 for (k in 0 until aiChannel.mNumRotationKeys()) {
-                    val key = aiChannel.mRotationKeys()!!.get(k)
+                    val keys = aiChannel.mRotationKeys() ?: continue
+                    val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
                     values[k * 4] = key.mValue().x()
                     values[k * 4 + 1] = key.mValue().y()
@@ -140,7 +146,8 @@ class AssimpLoader {
                 val times = FloatArray(aiChannel.mNumScalingKeys())
                 val values = FloatArray(aiChannel.mNumScalingKeys() * 3)
                 for (k in 0 until aiChannel.mNumScalingKeys()) {
-                    val key = aiChannel.mScalingKeys()!!.get(k)
+                    val keys = aiChannel.mScalingKeys() ?: continue
+                    val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
                     values[k * 3] = key.mValue().x()
                     values[k * 3 + 1] = key.mValue().y()
@@ -158,13 +165,16 @@ class AssimpLoader {
         val nodeTransform = parentTransform.mul(toJomlMatrix(node.mTransformation()), Matrix4f())
 
         for (i in 0 until node.mNumMeshes()) {
-            val meshIndex = node.mMeshes()!!.get(i)
-            val mesh = AIMesh.create(scene.mMeshes()!!.get(meshIndex))
+            val nodeMeshes = node.mMeshes() ?: continue
+            val meshIndex = nodeMeshes.get(i)
+            val sceneMesh = scene.mMeshes() ?: continue
+            val mesh = AIMesh.create(sceneMesh.get(meshIndex))
             meshParts.add(processMesh(mesh, scene, nodeTransform, embeddedTextures, filePath, boneInfoMap))
         }
 
         for (i in 0 until node.mNumChildren()) {
-            val child = AINode.create(node.mChildren()!!.get(i))
+            val children = node.mChildren() ?: continue
+            val child = AINode.create(children.get(i))
             processNode(child, scene, nodeTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
         }
     }
@@ -174,7 +184,8 @@ class AssimpLoader {
         
         val materialIndex = mesh.mMaterialIndex()
         if (materialIndex >= 0) {
-            val material = AIMaterial.create(scene.mMaterials()!!.get(materialIndex))
+            val materials = scene.mMaterials() ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
+            val material = AIMaterial.create(materials.get(materialIndex))
             
             materialData.baseColorPath = loadMaterialTexture(scene, material, aiTextureType_DIFFUSE, filePath, embeddedTextures) ?: 
                                            loadMaterialTexture(scene, material, aiTextureType_BASE_COLOR, filePath, embeddedTextures)
@@ -223,30 +234,34 @@ class AssimpLoader {
         
         for (v in 0 until numVertices) {
             val vertex = mesh.mVertices().get(v)
-            val vVec = org.joml.Vector3f(vertex.x(), vertex.y(), vertex.z())
+            val vVec = Vector3f(vertex.x(), vertex.y(), vertex.z())
             transform.transformPosition(vVec)
             vertices[v * 3] = vVec.x
             vertices[v * 3 + 1] = vVec.y
             vertices[v * 3 + 2] = vVec.z
 
-            val normal = mesh.mNormals()!!.get(v)
-            val nVec = org.joml.Vector3f(normal.x(), normal.y(), normal.z())
+            val norms = mesh.mNormals() ?: continue
+            val normal = norms.get(v)
+            val nVec = Vector3f(normal.x(), normal.y(), normal.z())
             transform.transformDirection(nVec)
             normals[v * 3] = nVec.x
             normals[v * 3 + 1] = nVec.y
             normals[v * 3 + 2] = nVec.z
 
-            if (mesh.mTangents() != null) {
-                val tangent = mesh.mTangents()!!.get(v)
-                val tVec = org.joml.Vector3f(tangent.x(), tangent.y(), tangent.z())
+            val meshTangents = mesh.mTangents()
+
+            if (meshTangents != null) {
+                val tangent = meshTangents.get(v)
+                val tVec = Vector3f(tangent.x(), tangent.y(), tangent.z())
                 transform.transformDirection(tVec)
                 tangents[v * 3] = tVec.x
                 tangents[v * 3 + 1] = tVec.y
                 tangents[v * 3 + 2] = tVec.z
             }
 
-            if (mesh.mColors(0) != null) {
-                val color = mesh.mColors(0)!!.get(v)
+            val meshColors = mesh.mColors(0)
+            if (meshColors != null) {
+                val color = meshColors.get(v)
                 colors[v * 4] = color.r()
                 colors[v * 4 + 1] = color.g()
                 colors[v * 4 + 2] = color.b()
@@ -255,14 +270,16 @@ class AssimpLoader {
                 colors[v * 4] = 1f; colors[v * 4 + 1] = 1f; colors[v * 4 + 2] = 1f; colors[v * 4 + 3] = 1f
             }
 
-            if (mesh.mTextureCoords(0) != null) {
-                val texCoord = mesh.mTextureCoords(0)!!.get(v)
+            var meshTexCoords = mesh.mTextureCoords(0)
+            if (meshTexCoords != null) {
+                val texCoord = meshTexCoords.get(v)
                 texCoords[v * 2] = texCoord.x()
                 texCoords[v * 2 + 1] = texCoord.y()
             }
 
-            if (mesh.mTextureCoords(1) != null) {
-                val texCoord = mesh.mTextureCoords(1)!!.get(v)
+            meshTexCoords = mesh.mTextureCoords(1)
+            if (meshTexCoords != null) {
+                val texCoord = meshTexCoords.get(v)
                 texCoords1[v * 2] = texCoord.x()
                 texCoords1[v * 2 + 1] = texCoord.y()
             }
@@ -271,7 +288,8 @@ class AssimpLoader {
         // Process Bones for Joints/Weights
         val inverseBindMatrices = mutableListOf<Matrix4f>()
         for (b in 0 until mesh.mNumBones()) {
-            val bone = AIBone.create(mesh.mBones()!!.get(b))
+            val bones = mesh.mBones() ?: continue
+            val bone = AIBone.create(bones.get(b))
             val name = bone.mName().dataString()
             val boneIndex = boneInfoMap[name]?.index ?: b
             
@@ -328,7 +346,8 @@ class AssimpLoader {
         
         return if (p.startsWith("*")) {
             val index = p.substring(1).toInt()
-            val tex = AITexture.create(scene.mTextures()!!.get(index))
+            val texs = scene.mTextures() ?: return null
+            val tex = AITexture.create(texs.get(index))
             val texturePath = "Embedded::$modelPath::$index"
             
             if (!embeddedTextures.containsKey(texturePath)) {

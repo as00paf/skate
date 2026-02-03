@@ -229,11 +229,11 @@
 
 ### E1. Dependency Injection & Static Removal
 - [x] E1.1: Inject `Renderer2D.shader` and `Renderer2D.camera` via Koin.
-- [ ] E1.2: Provide `InputBuffer.instance` via Koin.
+- [x] E1.2: Provide `InputBuffer.instance` via Koin.
 - [x] E1.3: Inject `VAOLoader` into `SplashScreenManager`.
 
 ### E2. Null Safety (`!!` Removal )
-- [ ] E2.1: Remove `!!` in `AssimpLoader` for scene access.
+- [x] E2.1: Remove `!!` in `AssimpLoader` for scene access.
 - [ ] E2.2: Remove `!!` in `RigidBody3D` when getting components.
 - [ ] E2.3: Remove `!!` in `Window.getImGuiLayer()` and `getFrameBuffer()`.
 - [ ] E2.4: Review and remove `!!` in `Animator.update` and `editorUpdate`.
