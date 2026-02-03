@@ -222,3 +222,62 @@
 - [x] **Missing Key Fallback**: Ensure that if a key is missing, the engine returns the key name (e.g., `!!MISSING_KEY!!`) instead of crashing.
 - [x] **Unit Test - String Retrieval**: Verify that the `StringManager` correctly pulls values from the resources folder.
 - [x] **Unit Test - Format Validation**: Verify that string placeholders are filled correctly with float and integer values.
+
+---
+
+## 🔵 Phase E: Code Quality & Refactoring
+
+### E1. Dependency Injection & Static Removal
+- [ ] E1.1: Inject `Renderer2D.shader` and `Renderer2D.camera` via Koin.
+- [ ] E1.2: Provide `InputBuffer.instance` via Koin.
+- [ ] E1.3: Inject `VAOLoader` into `SplashScreenManager`.
+
+### E2. Null Safety (`!!` Removal )
+- [ ] E2.1: Remove `!!` in `AssimpLoader` for scene access.
+- [ ] E2.2: Remove `!!` in `RigidBody3D` when getting components.
+- [ ] E2.3: Remove `!!` in `Window.getImGuiLayer()` and `getFrameBuffer()`.
+- [ ] E2.4: Review and remove `!!` in `Animator.update` and `editorUpdate`.
+- [ ] E2.5: Review and remove `!!` in `TrickDetector.start`.
+
+### E3. Code Duplication Refactoring
+- [ ] E3.1: Refactor `AnimationSampler` `sampleVector3f` and `sampleQuaternionf` initialization logic.
+- [ ] E3.2: Extract `PhysicsRigidBody` property setup into a helper in `Physics3D.add`.
+- [ ] E3.3: Generalize raycast logic from `Camera.handleClipping` and `PlayerController.handleGroundSnapping`.
+- [ ] E3.4: Simplify collider creation in `Physics3D.add` (e.g., using builder/factory pattern).
+
+### E4. Logic Flaws & Bug Fixes
+- [ ] E4.1: Fix `Animator.updateBlended` to correctly manage `previousTime` and `currentTime` updates.
+- [ ] E4.2: Remove redundant `GameObject("Skater")` call in `Skater` constructor.
+- [ ] E4.3: Correct `PlayerController.handleCatch` logic for pitch and roll to apply correct torque.
+- [ ] E4.4: Use consistent mouse position (`mouseListener.getX/Y()`) in `MeasureTool`.
+- [ ] E4.5: Ensure `VAOLoader.cleanUp()` is called for `splashQuad` in `SplashScreenManager.destroy()`.
+
+### E5. Performance & Efficiency
+- [ ] E5.1: Optimize `Animator.visualizeJoint` to minimize object allocation.
+- [ ] E5.2: Optimize `RenderBatch.loadVertexProperties` by reusing `Matrix4f`.
+- [ ] E5.3: Optimize `PickingDraw.draw` by batching picking meshes.
+- [ ] E5.4: Investigate and optimize `ScreenshotUtils.takeScreenshot` for large screenshots.
+- [ ] E5.5: Refactor `Physics3D.add` to separate adding and updating `PhysicsRigidBody` properties.
+
+### E6. Code Structure & Organization
+- [ ] E6.1: Move `Line3D` and `Triangle3D` to their own files.
+- [ ] E6.2: Move `TransformCommand`, `CreateGameObjectCommand`, `DeleteGameObjectCommand` to their own files.
+- [ ] E6.3: Move `Ray` to its own file.
+
+### E7. Import Statements & Code Style
+- [ ] E7.1: Replace all FQNs with top-level import statements for JOML and JBullet classes and use import aliases when pertinent.
+
+### E8. Naming & Constants
+- [ ] E8.1: Improve naming of `AnimationSampler` interpolation variables (`t0`, `t1`, `t`).
+- [ ] E8.2: Rename `DebugDraw` `vertexArray` to `lineVertexData` and `triangleVertexArray` to `triangleVertexData`.
+- [ ] E8.3: Rename `ImGuiLayer` `glslVersion` to `glslVersionString`.
+- [ ] E8.4: Rename `RenderBatch` `sprites` to `spriteRenderers`.
+- [ ] E8.5: Rename `RenderBatch` `texSlots` to `textureSlots`.
+
+### E9. Documentation (KDoc)
+- [ ] E9.1: Add KDoc to `MathExtensions.kt` functions.
+- [ ] E9.2: Add KDoc to `Interpolation.kt` functions.
+- [ ] E9.3: Add KDoc to `MImGui.kt` functions.
+- [ ] E9.4: Add KDoc to private helper methods in `Physics3D.kt`.
+- [ ] E9.5: Add KDoc to `PlayerController.kt` methods.
+- [ ] E9.6: Add KDoc to `TrickDetector.detectTrick()` method.
