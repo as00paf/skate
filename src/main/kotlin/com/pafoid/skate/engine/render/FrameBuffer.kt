@@ -5,10 +5,10 @@ import org.lwjgl.opengl.GL30.*
 
 class FrameBuffer(val width: Int, val height: Int) {
     private var fboId = 0
-    private var texture: Texture
     private var depthTexture: Int = 0
+    private lateinit var texture: Texture
 
-    init {
+    fun initialize() {
         // Generate frame buffer
         fboId = glGenFramebuffers()
         glBindFramebuffer(GL_FRAMEBUFFER, fboId)

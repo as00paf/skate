@@ -1,17 +1,14 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.editor.logs.LoggerService
+import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.serialization.Serializer
-import com.sun.tools.javac.code.TypeAnnotationPosition.newObj
-import com.sun.tools.sjavac.Main.go
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
@@ -22,6 +19,7 @@ class MouseControls : Component(), KoinComponent {
     private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()
     private val serializer: Serializer by inject()
+    private val imguiLayer: ImGuiLayer by inject()
     private val logger: LoggerService by inject()
 
     private var holdingObject: GameObject? = null
@@ -61,7 +59,7 @@ class MouseControls : Component(), KoinComponent {
                     // A bone was selected, find which GO it belongs to
                     val skater = sceneManager.currentScene?.gameObjects?.find { it.getComponent<PoseGizmo>() != null }
                     sceneManager.setSelectedGameObject(skater)
-                    Window.getImGuiLayer().boneTreeWindow.setSelectedBone(bone)
+                    imguiLayer.boneTreeWindow.setSelectedBone(bone)
                 } else {
                     sceneManager.setSelectedGameObject(null)
                 }

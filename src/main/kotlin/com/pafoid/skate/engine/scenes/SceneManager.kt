@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.EngineState
 import com.pafoid.skate.engine.imgui.ImGuiLayer
-import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.editor.CreateGameObjectCommand
 import com.pafoid.skate.engine.editor.DeleteGameObjectCommand
@@ -23,6 +22,7 @@ import kotlin.getValue
 
 class SceneManager : KoinComponent {
 
+    private val renderer: Renderer by inject()
     private val keyListener: KeyListener by inject()
     private val logger: LoggerService by inject()
     private val clipboardService: ClipboardService by inject()
@@ -30,6 +30,9 @@ class SceneManager : KoinComponent {
     private val undoRedoManager: UndoRedoManager by inject()
 
     private var selectedGameObject: GameObject? = null
+
+    var currentWidth = 0
+    var currentHeight = 0
 
     fun setSelectedGameObject(gameObject: GameObject?) {
         selectedGameObject = gameObject
@@ -59,16 +62,12 @@ class SceneManager : KoinComponent {
     var runtimePlaying = false
     val engineState = AtomicReference(EngineState.BOOTING)
 
-    private lateinit var renderer: Renderer
-
     private val splashScreenManager = SplashScreenManager()
     private val fadeDuration = 2f
     
     private var physicsAccumulator = 0f
-    private val FIXED_TIME_STEP = 1.0f / 60.0f
-    private val MAX_TIME_STEP = 0.25f
 
-    suspend fun initializeScene(imguiLayer: ImGuiLayer) = withContext(JobSystem.Main) {
+    suspend fun initializeScene() = withContext(JobSystem.Main) {
         logger.logEngine("Initializing scene...")
         splashScreenManager.init()
         delay(10)
@@ -81,7 +80,6 @@ class SceneManager : KoinComponent {
         engineState.set(EngineState.RUNNING)
 
         changeScene(LevelEditorSceneInitializer(), true)
-        Window.show()
         logger.logEngine("Scene initialization complete.")
     }
 
@@ -89,7 +87,7 @@ class SceneManager : KoinComponent {
         logger.logEngine("Initializing render system...")
         splashScreenManager.increaseLoadingProgress("Initializing Render System...")
 
-        renderer = Renderer()
+        renderer.initFrameBuffer(currentWidth, currentHeight)
         renderer.loadShaders { index, size ->
             splashScreenManager.increaseLoadingProgress("Loading Shaders $index/$size")
         }
@@ -112,7 +110,7 @@ class SceneManager : KoinComponent {
         logger.logEngine("Scene ${initializer::class.simpleName} loaded and started.")
     }
 
-    private fun handleEditorShortcuts(dt: Float, imguiLayer: ImGuiLayer) {
+    private fun handleEditorShortcuts() {
         val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
         if (ctrlDown) {
@@ -187,7 +185,7 @@ class SceneManager : KoinComponent {
                 }
             } else {
                 scene.editorUpdate(dt)
-                handleEditorShortcuts(dt, imguiLayer)
+                handleEditorShortcuts()
             }
 
             renderer.render(scene, getSelectedGameObject(), imguiLayer.gameViewWindow.getHoveredObject())
@@ -240,6 +238,11 @@ class SceneManager : KoinComponent {
         if (engineState.get() != EngineState.RUNNING) return null
         val id = renderer.readPixel(x, y)
         return currentScene?.getGameObject(id)
+    }
+
+    companion object {
+        private const val FIXED_TIME_STEP = 1.0f / 60.0f
+        private const val MAX_TIME_STEP = 0.25f
     }
 
 }

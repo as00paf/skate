@@ -14,10 +14,12 @@ import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.ThumbnailCache
 import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.editor.logs.LoggerService
+import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.render.PickingDraw
+import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
@@ -50,6 +52,9 @@ val engineModule = module {
     single { PickingDraw() }
     single { ThumbnailCache() }
     single { PrefabsGenerator(get(), get()) }
+
+    single { Renderer(get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(),get()) }
 }
 
 val inputModule = module {

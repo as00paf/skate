@@ -1,15 +1,16 @@
 package com.pafoid.skate.engine.editor
 
-import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
+import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.GizmoSystem
 import com.pafoid.skate.engine.scenes.components.MeasureTool
 import com.pafoid.skate.engine.utils.Icons
+import com.pafoid.skate.engine.utils.ScreenshotUtils
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
@@ -31,6 +32,7 @@ class GameViewWindow : KoinComponent {
     private val settingsManager: SettingsManager by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val stringManager: StringManager by inject()
+    private val renderer: Renderer by inject()
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -161,7 +163,7 @@ class GameViewWindow : KoinComponent {
         imageSizeX = windowSize.x
         imageSizeY = windowSize.y - TOOLBAR_HEIGHT
 
-        val texId = Window.getFrameBuffer()?.getTextureId() ?: 0
+        val texId = renderer.frameBuffer.getTextureId()
         ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
     }
 
@@ -275,7 +277,7 @@ class GameViewWindow : KoinComponent {
             buttons.add {
                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                     sceneManager.runtimePlaying = false
-                    scene?.timeScale = 1.0f // Reset time scale when stopping
+                    scene?.timeScale = 1.0f // Reset timescale when stopping
                     logger.logEditor("Simulation stopped")
                 }
                 if (ImGui.isItemHovered()) ImGui.setTooltip("Stop Simulation")
@@ -350,11 +352,9 @@ class GameViewWindow : KoinComponent {
         }
         buttons.add {
             if (ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                val fbo = Window.getFrameBuffer()
-                if (fbo != null) {
-                    com.pafoid.skate.engine.utils.ScreenshotUtils.takeScreenshot(fbo.width, fbo.height, fbo.getFboId())
-                    logger.logEditor("Screenshot taken")
-                }
+                val fbo = renderer.frameBuffer
+                ScreenshotUtils.takeScreenshot(fbo.width, fbo.height, fbo.getFboId())
+                logger.logEditor("Screenshot taken")
             }
             if (ImGui.isItemHovered()) ImGui.setTooltip("Take Screenshot")
         }
@@ -388,7 +388,6 @@ class GameViewWindow : KoinComponent {
         private const val SPEED_OVERLAY_HEIGHT = 30f
         private const val TRICK_OVERLAY_WIDTH = 200f // Adjusted width for trick names
         private const val TRICK_OVERLAY_HEIGHT = 30f
-        private const val CONTROLS_OVERLAY_BUTTON_SIZE = 60f
         private const val TOOLBAR_HEIGHT = 40f
         private const val TOOLBAR_BUTTON_HEIGHT = 30f
         private const val TOOLBAR_BUTTON_SPACING = 10f

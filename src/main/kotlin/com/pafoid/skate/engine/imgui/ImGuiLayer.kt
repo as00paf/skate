@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.imgui
 
-import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.editor.BoneTreeWindow
@@ -12,9 +11,14 @@ import com.pafoid.skate.engine.editor.PhysicsTunerWindow
 import com.pafoid.skate.engine.editor.ProfilerWindow
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.editor.SceneHierarchyWindow
+import com.pafoid.skate.engine.render.FrameBuffer
+import com.pafoid.skate.engine.render.Renderer
+import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.scenes.Scene
+import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.SettingsManager
+import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
@@ -35,17 +39,17 @@ import imgui.internal.ImGui.dockBuilderSplitNode
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.io.File
 import org.lwjgl.glfw.GLFW
-import kotlin.getValue
 
-class ImGuiLayer: KoinComponent {
-    private val inputProvider: IInputProvider by inject()
-    private val settingsManager: SettingsManager by inject()
-    private val sceneManager: com.pafoid.skate.engine.scenes.SceneManager by inject()
-    private val clipboardService: com.pafoid.skate.engine.scenes.ClipboardService by inject()
-    private val stringManager: com.pafoid.skate.engine.utils.StringManager by inject()
+class ImGuiLayer(
+    private val inputProvider: IInputProvider,
+    private val settingsManager: SettingsManager,
+    private val sceneManager: SceneManager,
+    private val clipboardService: ClipboardService,
+    private val stringManager: StringManager,
+    private val renderer: Renderer
+): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
@@ -74,8 +78,14 @@ class ImGuiLayer: KoinComponent {
     private val showPhysicsTuner = ImBoolean(true)
     private var isViewportMaximized = false
 
-    fun init(glfwWindow: Long) {
+    private lateinit var setFullscreen: (Boolean) -> Unit
+    private lateinit var setVSync: (Boolean) -> Unit
+
+    fun init(glfwWindow: Long, fullScreenCallback:(Boolean)->Unit, vSyncCallback:(Boolean)->Unit) {
         this.glfwWindow = glfwWindow
+        this.setFullscreen = fullScreenCallback
+        this.setVSync = vSyncCallback
+
         ImGui.createContext()
 
         with(ImGui.getIO()) {
@@ -135,7 +145,7 @@ class ImGuiLayer: KoinComponent {
             val windowSize = ImVec2()
             ImGui.getContentRegionAvail(windowSize)
             
-            val texId = Window.getFrameBuffer()?.getTextureId() ?: 0
+            val texId = renderer.frameBuffer.getTextureId()
             ImGui.image(texId.toLong(), windowSize.x, windowSize.y, 0f, 1f, 1f, 0f)
             
             ImGui.end()
@@ -250,14 +260,14 @@ class ImGuiLayer: KoinComponent {
                 val vsync = ImBoolean(settings.vsync)
                 if (ImGui.checkbox(stringManager.getString("menu.settings.vsync"), vsync)) {
                     settings.vsync = vsync.get()
-                    Window.setVSync(settings.vsync)
+                    setVSync(settings.vsync)
                     settingsManager.save()
                 }
 
                 val fullscreen = ImBoolean(settings.fullscreen)
                 if (ImGui.checkbox(stringManager.getString("menu.settings.fullscreen"), fullscreen)) {
                     settings.fullscreen = fullscreen.get()
-                    Window.setFullscreen(settings.fullscreen)
+                    setFullscreen(settings.fullscreen)
                     settingsManager.save()
                 }
 

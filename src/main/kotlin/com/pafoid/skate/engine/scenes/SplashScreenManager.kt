@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.EngineState
-import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
@@ -13,7 +12,6 @@ import com.pafoid.skate.engine.render.VAOLoader
 import imgui.ImGui
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiWindowFlags
-import kotlinx.coroutines.delay
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_BLEND
 import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
@@ -63,8 +61,6 @@ class SplashScreenManager: KoinComponent {
             normals = floatArrayOf(0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f),
             indices = intArrayOf(0, 1, 2, 2, 3, 0)
         )
-
-        Window.show()
     }
 
     fun render(dt: Float, imguiLayer: ImGuiLayer, engineState: EngineState) {

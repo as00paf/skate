@@ -15,6 +15,8 @@ import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
 import kotlin.math.min
 
+private const val CONTROLS_OVERLAY_BUTTON_SIZE = 50f
+
 class GamepadOverlay : KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val joystickListener: JoystickListener by inject()
@@ -88,7 +90,7 @@ class GamepadOverlay : KoinComponent {
                 // Adjusting the base for the new larger layout, scaling offsets
                 val buttonBaseX = windowPos.x + displayWidth * 0.7375f
                 val buttonBaseY = windowPos.y + displayHeight * 0.305f
-                val bSize = 50f * scale
+                val bSize = CONTROLS_OVERLAY_BUTTON_SIZE * scale
 
                 val horizontalSpacing = bSize * 2.05f
                 val verticalSpacing = bSize * 2f

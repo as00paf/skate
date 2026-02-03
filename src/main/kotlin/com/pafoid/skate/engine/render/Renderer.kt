@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
@@ -18,17 +17,16 @@ import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import com.pafoid.skate.engine.utils.EngineStats
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.opengl.GL30.*
-import kotlin.getValue
 
-class Renderer : IRenderer, KoinComponent {
-    private val debugDraw: DebugDraw by inject()
-    private val pickingDraw: PickingDraw by inject()
-    private val resourceManager: ResourceManager by inject()
-    private val sceneManager: SceneManager by inject()
-    private val vaoLoader: VAOLoader by inject()
-    private val logger: LoggerService by inject()
+class Renderer(
+    private val debugDraw: DebugDraw,
+    private val pickingDraw: PickingDraw,
+    private val resourceManager: ResourceManager,
+    private val sceneManager: SceneManager,
+    private val vaoLoader: VAOLoader,
+    private val logger: LoggerService,
+) : IRenderer, KoinComponent {
 
     private lateinit var defaultShader: Shader
     private lateinit var debugShader: Shader
@@ -38,6 +36,7 @@ class Renderer : IRenderer, KoinComponent {
     private lateinit var skyboxShader: Shader
     private lateinit var skyDomeShader: Shader
 
+    lateinit var frameBuffer: FrameBuffer
     override var useFbo = false // Default to false for initial feature tests
 
     private val renderer2D = Renderer2D()
@@ -45,6 +44,11 @@ class Renderer : IRenderer, KoinComponent {
 
     private lateinit var skyboxRenderer:SkyboxRenderer
     private lateinit var skyDomeRenderer:SkyDomeRenderer
+
+    fun initFrameBuffer(width: Int, height: Int){
+        frameBuffer = FrameBuffer(width, height)
+        frameBuffer.initialize()
+    }
 
     suspend fun loadShaders(updateProgress:(Int, Int) -> Unit) {
         val shaders = listOf<suspend ()->Unit>(
@@ -105,13 +109,12 @@ class Renderer : IRenderer, KoinComponent {
         pickingTexture.disableWriting()
 
         // 2. Regular Pass
-        val mainFbo = Window.getFrameBuffer()
         if (useFbo) {
-            mainFbo?.bind()
-            glViewport(0, 0, mainFbo?.width ?: 0, mainFbo?.height ?: 0)
+            frameBuffer.bind()
+            glViewport(0, 0, frameBuffer.width, frameBuffer.height)
         } else {
             glBindFramebuffer(GL_FRAMEBUFFER, 0)
-            glViewport(0, 0, Window.currentWidth, Window.currentHeight)
+            glViewport(0, 0, sceneManager.currentWidth, sceneManager.currentHeight)
         }
         
         clearColor(scene.skyColor)
@@ -184,7 +187,7 @@ class Renderer : IRenderer, KoinComponent {
         debugDraw.draw()
         
         if (useFbo) {
-            mainFbo?.unbind()
+            frameBuffer.unbind()
         }
         
         // Final state cleanup
@@ -194,7 +197,7 @@ class Renderer : IRenderer, KoinComponent {
         glBindTexture(GL_TEXTURE_2D, 0)
         
         // Final screen viewport reset
-        glViewport(0, 0, Window.currentWidth, Window.currentHeight)
+        glViewport(0, 0, sceneManager.currentWidth, sceneManager.currentHeight)
     }
 
     private fun render3DPicking(scene: Scene) {

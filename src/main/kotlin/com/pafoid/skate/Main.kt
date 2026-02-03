@@ -4,8 +4,6 @@ import com.pafoid.skate.engine.Window
 import com.pafoid.skate.engine.di.appModule
 import com.pafoid.skate.engine.di.engineModule
 import com.pafoid.skate.engine.di.inputModule
-import com.pafoid.skate.engine.scenes.SceneManager
-import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 
 fun main(args:Array<String>){
@@ -13,14 +11,10 @@ fun main(args:Array<String>){
         modules(appModule, inputModule, engineModule)
     }
 
-    val sceneManager = GlobalContext.get().get<SceneManager>()
     val window = Window(
         width = 512,
         height = 512,
-        title ="PAFSK8",
-        initCallback = sceneManager::initializeScene,
-        drawCallback = sceneManager::draw,
-        destroyCallback = sceneManager::destroy
+        title ="PAFSK8"
     )
     window.run()
 }
