@@ -234,7 +234,7 @@
 
 ### E2. Null Safety (`!!` Removal )
 - [x] E2.1: Remove `!!` in `AssimpLoader` for scene access.
-- [ ] E2.2: Remove `!!` in `RigidBody3D` when getting components.
+- [x] E2.2: Remove `!!` in `RigidBody3D` when getting components.
 - [ ] E2.3: Remove `!!` in `Window.getImGuiLayer()` and `getFrameBuffer()`.
 - [ ] E2.4: Review and remove `!!` in `Animator.update` and `editorUpdate`.
 - [ ] E2.5: Review and remove `!!` in `TrickDetector.start`.
