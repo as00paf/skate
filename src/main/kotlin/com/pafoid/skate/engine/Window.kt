@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine
 
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.listeners.JoystickListener
 import com.pafoid.skate.engine.controls.listeners.KeyListener
@@ -34,7 +35,7 @@ class Window(
     val title: String
 ): KoinComponent {
 
-    private val inputBuffer: InputBuffer by inject()
+    private val inputBuffer: IInputBuffer by inject()
     private val joystickListener: JoystickListener by inject()
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()

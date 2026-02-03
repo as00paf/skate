@@ -270,9 +270,7 @@
 ### E8. Naming & Constants
 - [ ] E8.1: Improve naming of `AnimationSampler` interpolation variables (`t0`, `t1`, `t`).
 - [ ] E8.2: Rename `DebugDraw` `vertexArray` to `lineVertexData` and `triangleVertexArray` to `triangleVertexData`.
-- [ ] E8.3: Rename `ImGuiLayer` `glslVersion` to `glslVersionString`.
-- [ ] E8.4: Rename `RenderBatch` `sprites` to `spriteRenderers`.
-- [ ] E8.5: Rename `RenderBatch` `texSlots` to `textureSlots`.
+- [ ] E8.3: Rename `RenderBatch` `texSlots` to `textureSlots`.
 
 ### E9. Documentation (KDoc)
 - [ ] E9.1: Add KDoc to `MathExtensions.kt` functions.

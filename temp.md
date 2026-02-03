@@ -95,6 +95,6 @@ Reports
 - [ ] **Save Pose**: Export the resulting configuration as a `.json` file for use in your "Pressure Map" trick system.
 
 ## 18.6. Interaction & Gizmos
-- [ ] **Buttons**: Add buttons in the game view window for the gizmos (rotation, translation, scale)
+- [ ] **Buttons**: Add buttons in the game view window toolbar for the gizmos (rotation, translation, scale, select)
 - [ ] **Display**: Make sure the gizmos dont scale with the movement of the editor camera. 
 - [ ] **Measure Tool**: Ensure the measure tool does not interfere with the gizmos and vice versa 

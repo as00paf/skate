@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.ShaderLoader
+import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.input.InputProvider
@@ -40,7 +41,7 @@ val appModule = module {
 }
 
 val engineModule = module {
-    single { InputBuffer() }
+    single<IInputBuffer> { InputBuffer() }
     single { ShaderLoader(false) }
     single { VAOLoader() }
     single { AssimpLoader() }

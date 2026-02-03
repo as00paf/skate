@@ -126,6 +126,8 @@ uniform bool u_HasMetallicRoughnessTexture;
 uniform bool u_HasAOTexture;
 uniform bool u_HasEmissiveTexture;
 
+uniform float uSelected; // 0.0 = None, 1.0 = Selected
+
 out vec4 color;
 
 const float PI = 3.14159265359;
@@ -279,14 +281,40 @@ void main()
     vec3 ambient = uAmbientLight * albedo.rgb * ao;
     vec3 colorOut = ambient + Lo + emissive;
 
-    // 6. HDR Tonemapping & Gamma Correction
-    // Simple Reinhard tonemapping to bring HDR values into [0,1] range.
-    colorOut = colorOut / (colorOut + vec3(1.0));
-    // Linear to sRGB conversion.
-    colorOut = pow(colorOut, vec3(1.0/2.2)); 
+        // 6. HDR Tonemapping & Gamma Correction
 
-    vec4 finalColor = vec4(colorOut, alpha);
+        // Simple Reinhard tonemapping to bring HDR values into [0,1] range.
+
+        colorOut = colorOut / (colorOut + vec3(1.0));
+
+        // Linear to sRGB conversion.
+
+        colorOut = pow(colorOut, vec3(1.0/2.2)); 
+
     
-    // 7. Atmospheric Fog
-    color = mix(vec4(uFogColor, 1.0), finalColor, fVisibility);
-}
+
+        vec4 finalColor = vec4(colorOut, alpha);
+
+        
+
+        // Selection Highlight (Transparent Green Silhouette)
+
+        if (uSelected > 0.5) {
+
+            // Mix with green (R=0, G=1, B=0, A=0.5)
+
+            // If we want it to look like a "hologram" or silhouette, we can override the color mostly.
+
+            finalColor = mix(finalColor, vec4(0.0, 1.0, 0.0, 0.5), 0.6);
+
+        }
+
+        
+
+        // 7. Atmospheric Fog
+
+        color = mix(vec4(uFogColor, 1.0), finalColor, fVisibility);
+
+    }
+
+    

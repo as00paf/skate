@@ -22,6 +22,7 @@ object ShaderConst {
         const val PROGRESS = "uProgress"
         const val ALPHA = "uAlpha"
         const val TEXTURE = "uTexture"
+        const val USE_BATCH = "uUseBatchId"
 
         const val TEXTURES = "uTextures"
         const val TEXTURE_SCALE = "uTextureScale"

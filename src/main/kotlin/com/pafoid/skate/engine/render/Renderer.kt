@@ -164,14 +164,24 @@ class Renderer(
             }
         }
         
-        // Highlight Active Object (Outline effect via wireframe)
+        // Highlight Active Object (Transparent Green Silhouette)
         activeGameObject?.let { go ->
             go.getComponent<Entity>()?.let { entity ->
                 defaultShader.uploadFloat(Uniforms.SELECTED, 1.0f)
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-                glLineWidth(4f)
+                
+                glEnable(GL_BLEND)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                glDepthFunc(GL_LEQUAL) // Draw over existing geometry if closer/equal, or maybe ALWAYS for x-ray?
+                // User said "easy to identify", usually implies seeing it through walls (X-Ray).
+                // Let's try GL_ALWAYS but keep depth write off.
+                glDisable(GL_DEPTH_TEST) 
+                
                 renderEntity(go, entity)
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+                
+                glEnable(GL_DEPTH_TEST)
+                glDepthFunc(GL_LESS)
+                glDisable(GL_BLEND)
+                defaultShader.uploadFloat(Uniforms.SELECTED, 0.0f) // Reset
             }
         }
 
