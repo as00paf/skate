@@ -34,7 +34,7 @@ import kotlin.math.max
 import kotlin.math.roundToLong
 
 class PlayerController : Component(), KoinComponent {
-    private val inputBuffer: InputBuffer by inject()
+    private val inputBuffer: IInputBuffer by inject()
     private val resourceManager: ResourceManager by inject()
     private val inputProvider: IInputProvider by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
