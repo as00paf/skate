@@ -21,6 +21,7 @@ import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.utils.serialization.Serializer
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.editor.GameViewWindow
+import org.koin.core.context.GlobalContext
 import java.lang.reflect.Field
 
 class SceneManagerFixedTimestepTest : KoinTest {
@@ -35,6 +36,7 @@ class SceneManagerFixedTimestepTest : KoinTest {
                 single { mockk<ClipboardService>(relaxed = true) }
                 single { mockk<Serializer>(relaxed = true) }
                 single { mockk<UndoRedoManager>(relaxed = true) }
+                single { mockk<Renderer>(relaxed = true) }
             })
         }
     }
@@ -49,12 +51,7 @@ class SceneManagerFixedTimestepTest : KoinTest {
         val sceneManager = SceneManager()
         val mockScene = mockk<Scene>(relaxed = true)
         val mockImGui = mockk<ImGuiLayer>(relaxed = true)
-        val mockRenderer = mockk<Renderer>(relaxed = true)
-        
-        // Inject mock renderer using reflection because it's private/lateinit and created internally
-        val rendererField: Field = SceneManager::class.java.getDeclaredField("renderer")
-        rendererField.isAccessible = true
-        rendererField.set(sceneManager, mockRenderer)
+        val mockRenderer = GlobalContext.get().get<Renderer>()
 
         sceneManager.currentScene = mockScene
         sceneManager.runtimePlaying = true
@@ -77,12 +74,7 @@ class SceneManagerFixedTimestepTest : KoinTest {
         val sceneManager = SceneManager()
         val mockScene = mockk<Scene>(relaxed = true)
         val mockImGui = mockk<ImGuiLayer>(relaxed = true)
-        val mockRenderer = mockk<Renderer>(relaxed = true)
         
-        val rendererField: Field = SceneManager::class.java.getDeclaredField("renderer")
-        rendererField.isAccessible = true
-        rendererField.set(sceneManager, mockRenderer)
-
         sceneManager.currentScene = mockScene
         sceneManager.runtimePlaying = true
         sceneManager.engineState.set(EngineState.RUNNING)

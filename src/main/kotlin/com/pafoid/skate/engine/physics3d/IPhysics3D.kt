@@ -9,6 +9,7 @@ interface IPhysics3D {
     fun getGravity(): Vector3f
     fun setGravity(gravity: Vector3f)
     fun rayTest(from: Vector3f, to: Vector3f): List<PhysicsRayTestResult>
+    fun raycastClosest(from: Vector3f, to: Vector3f): PhysicsRayTestResult?
     fun add(go: GameObject)
     fun remove(go: GameObject)
     fun update(dt: Float)

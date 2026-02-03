@@ -78,16 +78,9 @@ object Interpolation {
         val h01 = -2 * t3 + 3 * t2
         val h11 = t3 - t2
 
-        // Note: tangents in glTF are already multiplied by the duration of the interval for some exporters,
-        // but the spec says: "The units of the tangent are [units of property] / [units of time]".
-        // However, for Cubic Spline: "the length of the interval is used to scale the tangents"
-        // Actual formula: result = h00*p0 + h10*dt*m0 + h01*p1 + h11*dt*m1
-        
-        dest.set(0f, 0f, 0f)
-        dest.add(Vector3f(p0).mul(h00))
-        dest.add(Vector3f(m0).mul(h10 * deltaTime))
-        dest.add(Vector3f(p1).mul(h01))
-        dest.add(Vector3f(m1).mul(h11 * deltaTime))
+        dest.x = h00 * p0.x + h10 * deltaTime * m0.x + h01 * p1.x + h11 * deltaTime * m1.x
+        dest.y = h00 * p0.y + h10 * deltaTime * m0.y + h01 * p1.y + h11 * deltaTime * m1.y
+        dest.z = h00 * p0.z + h10 * deltaTime * m0.z + h01 * p1.z + h11 * deltaTime * m1.z
         
         return dest
     }

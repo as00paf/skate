@@ -3,10 +3,11 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.utils.TrickManager
 import com.pafoid.skate.skateboard.Stance
+import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.math.abs
 
-class TrickDetector : Component() {
+class TrickDetector : Component(), KoinComponent {
 
     private val trickManager: TrickManager by inject()
 

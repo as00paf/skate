@@ -4,7 +4,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.File
 
 class StringManagerTest {
 
@@ -12,34 +11,12 @@ class StringManagerTest {
 
     @BeforeEach
     fun setup() {
-        // Create dummy properties files in src/test/resources/values/ for StringManager to find
-        val propertiesContent = """
-            test.hello=Hello World
-            test.formatted=Hello, %s! You have %d new messages.
-            test.tricks.one=%d Trick
-            test.tricks.other=%d Tricks
-        """.trimIndent()
-
-        val frPropertiesContent = """
-            test.hello=Bonjour le monde
-            test.formatted=Bonjour, %s! Vous avez %d nouveaux messages.
-            test.tricks.one=%d Tour
-            test.tricks.other=%d Tours
-        """.trimIndent()
-        
-        val resourceDir = File("src/test/resources/values")
-        resourceDir.mkdirs()
-        File(resourceDir, "strings_en.properties").writeText(propertiesContent)
-        File(resourceDir, "strings_fr.properties").writeText(frPropertiesContent)
-
-        stringManager = StringManager("en") // Start with English, which will load strings_en.properties
+        stringManager = StringManager("test_strings", "en") // Start with English
     }
 
     @AfterEach
     fun teardown() {
-        // Clean up dummy files
-        File("src/test/resources/values/strings_en.properties").delete()
-        File("src/test/resources/values/strings_fr.properties").delete()
+        // No cleanup needed
     }
 
     @Test

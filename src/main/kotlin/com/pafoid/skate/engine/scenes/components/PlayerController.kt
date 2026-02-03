@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.skateboard.PreferredStance
-import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import org.lwjgl.glfw.GLFW.*
@@ -34,7 +33,7 @@ import kotlin.math.max
 import kotlin.math.roundToLong
 
 class PlayerController : Component(), KoinComponent {
-    private val inputBuffer: InputBuffer by inject()
+    private val inputBuffer: IInputBuffer by inject()
     private val resourceManager: ResourceManager by inject()
     private val inputProvider: IInputProvider by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
@@ -240,9 +239,8 @@ fun updateProceduralLean(dt: Float) {
         val rayStart = Vector3f(pos.x, pos.y + 1f, pos.z)
         val rayEnd = Vector3f(pos.x, pos.y - 2f, pos.z)
         
-        val results = scene.physics3d.rayTest(rayStart, rayEnd)
-        if (results.isNotEmpty()) {
-            val closest = results.minByOrNull { it.hitFraction }!!
+        val closest = scene.physics3d.raycastClosest(rayStart, rayEnd)
+        if (closest != null) {
             val hitY = rayStart.y + (rayEnd.y - rayStart.y) * closest.hitFraction
             pos.y = hitY
         }

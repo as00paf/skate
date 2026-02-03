@@ -1,12 +1,17 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.prefabs.PrefabsGenerator
+import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.utils.TrickManager
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
@@ -35,7 +40,11 @@ class TrickDetectionTest {
             modules(module {
                 single { sceneManager }
                 single<IInputProvider> { mockk(relaxed = true) }
-                single { mockk<com.pafoid.skate.engine.assets.ResourceManager>(relaxed = true) }
+                single { mockk<ResourceManager>(relaxed = true) }
+                single { mockk<IInputBuffer>(relaxed = true) }
+                single { mockk<PrefabsGenerator>(relaxed = true) }
+                single { mockk<DebugDraw>(relaxed = true) }
+                single { TrickManager("/values/test_tricks.properties") }
             })
         }
         physics = Physics3D()

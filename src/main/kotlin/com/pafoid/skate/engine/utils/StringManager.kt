@@ -3,7 +3,10 @@ package com.pafoid.skate.engine.utils
 import java.io.InputStream
 import java.util.*
 
-class StringManager(private var currentLocale: String = "en") {
+class StringManager(
+    private val baseName: String = "strings",
+    private var currentLocale: String = "en"
+) {
 
     private val properties = Properties()
 
@@ -13,15 +16,15 @@ class StringManager(private var currentLocale: String = "en") {
 
     private fun loadStrings() {
         try {
-            val resourcePath = "/values/strings_${currentLocale}.properties"
+            val resourcePath = "/values/${baseName}_${currentLocale}.properties"
             val inputStream: InputStream? = StringManager::class.java.getResourceAsStream(resourcePath)
             if (inputStream != null) {
                 inputStream.use {
                     properties.load(it)
                 }
             } else {
-                // Fallback to default English if specific locale not found
-                val defaultPath = "/values/strings.properties"
+                // Fallback to default if specific locale not found
+                val defaultPath = "/values/${baseName}.properties"
                 val defaultInputStream: InputStream? = StringManager::class.java.getResourceAsStream(defaultPath)
                 defaultInputStream?.use {
                     properties.load(it)
@@ -30,7 +33,7 @@ class StringManager(private var currentLocale: String = "en") {
                 }
             }
         } catch (e: Exception) {
-            println("ERROR: Failed to load strings for locale $currentLocale")
+            println("ERROR: Failed to load strings for baseName $baseName and locale $currentLocale")
             e.printStackTrace()
         }
     }

@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.jme3.bullet.collision.PhysicsRayTestResult
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
@@ -12,6 +13,7 @@ import org.joml.Vector2f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
@@ -41,7 +43,8 @@ class BoardRigTest {
             modules(module {
                 single { sceneManager }
                 single<IInputProvider> { mockk(relaxed = true) }
-                single { mockk<com.pafoid.skate.engine.assets.ResourceManager>(relaxed = true) }
+                single { mockk<ResourceManager>(relaxed = true) }
+                single<IInputBuffer> { FakeInputBuffer() }
             })
         }
 
@@ -103,9 +106,8 @@ class BoardRigTest {
         board.addComponent(rb3d)
         board.addComponent(physics)
 
-        val fakeBuffer = FakeInputBuffer()
+        val fakeBuffer = GlobalContext.get().get<IInputBuffer>() as FakeInputBuffer
         fakeBuffer.flickVelocity = Vector2f(10f, 0f)
-        controller.inputBuffer = fakeBuffer
 
         controller.start()
         controller.update(0.016f)

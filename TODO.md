@@ -240,10 +240,10 @@
 - [x] E2.5: Review and remove `!!` in `TrickDetector.start`.
 
 ### E3. Code Duplication Refactoring
-- [ ] E3.1: Refactor `AnimationSampler` `sampleVector3f` and `sampleQuaternionf` initialization logic.
-- [ ] E3.2: Extract `PhysicsRigidBody` property setup into a helper in `Physics3D.add`.
-- [ ] E3.3: Generalize raycast logic from `Camera.handleClipping` and `PlayerController.handleGroundSnapping`.
-- [ ] E3.4: Simplify collider creation in `Physics3D.add` (e.g., using builder/factory pattern).
+- [x] E3.1: Refactor `AnimationSampler` `sampleVector3f` and `sampleQuaternionf` initialization logic.
+- [x] E3.2: Extract `PhysicsRigidBody` property setup into a helper in `Physics3D.add`.
+- [x] E3.3: Generalize raycast logic from `Camera.handleClipping` and `PlayerController.handleGroundSnapping`.
+- [x] E3.4: Simplify collider creation in `Physics3D.add` (e.g., using builder/factory pattern).
 
 ### E4. Logic Flaws & Bug Fixes
 - [ ] E4.1: Fix `Animator.updateBlended` to correctly manage `previousTime` and `currentTime` updates.

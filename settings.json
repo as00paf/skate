@@ -6,5 +6,6 @@
     "borderless": false,
     "gamepadOverlaySize": 0.214,
     "showGamepadOverlay": true,
-    "unitSystem": "METRIC"
+    "unitSystem": "METRIC",
+    "language": "en"
 }

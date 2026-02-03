@@ -1,9 +1,12 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.player.PlayerState
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants
+import com.pafoid.skate.engine.prefabs.PrefabsGenerator
+import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
@@ -43,10 +46,12 @@ class PlayerControllerTest {
                 single { mockk<ResourceManager>(relaxed = true) }
                 single { sceneManager }
                 single { inputProvider }
+                single { mockk<IInputBuffer>(relaxed = true) }
+                single { mockk<PrefabsGenerator>(relaxed = true) }
             })
         }
         
-        val camera = com.pafoid.skate.engine.render.Camera()
+        val camera = Camera()
         every { scene.camera } returns camera
         every { scene.gameObjects } returns mutableListOf()
         every { scene.physics3d } returns mockk(relaxed = true)

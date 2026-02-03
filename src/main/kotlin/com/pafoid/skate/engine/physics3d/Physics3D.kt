@@ -10,9 +10,7 @@ import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.jme3.bullet.collision.shapes.MeshCollisionShape
 import com.jme3.math.Quaternion
-import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
-import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
+import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
@@ -77,6 +75,11 @@ class Physics3D : IPhysics3D, KoinComponent {
         return physicsSpace.rayTest(start, end)
     }
 
+    override fun raycastClosest(from: JomlVector3f, to: JomlVector3f): PhysicsRayTestResult? {
+        val results = rayTest(from, to)
+        return if (results.isEmpty()) null else results.minByOrNull { it.hitFraction }
+    }
+
     override fun add(go: GameObject) {
         val rb = go.getComponent<RigidBody3D>()
         if (rb != null) {
@@ -90,57 +93,28 @@ class Physics3D : IPhysics3D, KoinComponent {
                     rb.rawBody = null
                 } else {
                     // Sync transform and scale for existing body (important for Editor)
-                    val trans = go.transform.translation
-                    val rot = go.transform.rotation
-                    val scale = go.transform.scale
-                    
-                    rb.rawBody!!.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
-                    rb.rawBody!!.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
-                    rb.rawBody!!.friction = rb.friction
-                    rb.rawBody!!.setDamping(rb.linearDamping, rb.angularDamping)
-                    
-                    val q = Quaternionf().rotationXYZ(
-                        Math.toRadians(rot.x.toDouble()).toFloat(),
-                        Math.toRadians(rot.y.toDouble()).toFloat(),
-                        Math.toRadians(rot.z.toDouble()).toFloat()
-                    )
-                    rb.rawBody!!.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
+                    syncBodyProperties(rb.rawBody!!, rb, go)
                 }
             }
 
             if (rb.rawBody == null) {
-                val boxColliders = go.components.filterIsInstance<BoxCollider3D>()
-                val cylinderColliders = go.components.filterIsInstance<CylinderCollider3D>()
-                val customColliders = go.components.filterIsInstance<CustomCollider3D>()
-                
+                val colliders = go.components.filterIsInstance<Collider3D>()
                 val compound = CompoundCollisionShape()
                 
-                boxColliders.forEach { c ->
-                    val shape = BoxCollisionShape(JmeVector3f(c.halfExtents.x, c.halfExtents.y, c.halfExtents.z))
-                    shape.setMargin(c.margin)
+                colliders.forEach { c ->
+                    val shape = c.createShape()
                     compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
-                }
-                
-                cylinderColliders.forEach { c ->
-                    val shape = CylinderCollisionShape(c.radius, c.height, c.axis)
-                    shape.margin = c.margin
-                    compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
-                }
-
-                customColliders.forEach { c ->
-                    compound.addChildShape(c.collisionShape, JmeVector3f(0f, 0f, 0f))
                 }
 
                 // If no colliders, provide a default box
-                if (boxColliders.isEmpty() && cylinderColliders.isEmpty() && customColliders.isEmpty()) {
+                if (colliders.isEmpty()) {
                     val shape = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
                     shape.margin = 0.04f
                     compound.addChildShape(shape, JmeVector3f(0f, 0f, 0f))
                 }
 
                 val body = PhysicsRigidBody(compound, desiredMass)
-                body.friction = rb.friction
-                body.setDamping(rb.linearDamping, rb.angularDamping)
+                syncBodyProperties(body, rb, go)
                 
                 if (rb.bodyType == BodyType.Kinematic) {
                     body.isKinematic = true
@@ -151,24 +125,28 @@ class Physics3D : IPhysics3D, KoinComponent {
                     body.setCcdSweptSphereRadius(0.1f)
                 }
                 
-                val trans = go.transform.translation
-                val rot = go.transform.rotation
-                val scale = go.transform.scale
-                body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
-                body.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
-                
-                // Set rotation from euler (JOML -> JME)
-                val q = Quaternionf().rotationXYZ(
-                    Math.toRadians(rot.x.toDouble()).toFloat(),
-                    Math.toRadians(rot.y.toDouble()).toFloat(),
-                    Math.toRadians(rot.z.toDouble()).toFloat()
-                )
-                body.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
-                
                 physicsSpace.add(body)
                 rb.rawBody = body
             }
         }
+    }
+
+    private fun syncBodyProperties(body: PhysicsRigidBody, rb: RigidBody3D, go: GameObject) {
+        val trans = go.transform.translation
+        val rot = go.transform.rotation
+        val scale = go.transform.scale
+
+        body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
+        body.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
+        body.friction = rb.friction
+        body.setDamping(rb.linearDamping, rb.angularDamping)
+
+        val q = Quaternionf().rotationXYZ(
+            Math.toRadians(rot.x.toDouble()).toFloat(),
+            Math.toRadians(rot.y.toDouble()).toFloat(),
+            Math.toRadians(rot.z.toDouble()).toFloat()
+        )
+        body.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
     }
 
     override fun remove(go: GameObject) {
