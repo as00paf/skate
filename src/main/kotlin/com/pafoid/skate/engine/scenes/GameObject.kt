@@ -51,16 +51,6 @@ open class GameObject(
         return components.filterIsInstance<T>().firstOrNull()
     }
 
-    fun <T : Component> getComponent(componentClass: Class<T>): T? {
-        for (c in components) {
-            if (componentClass.isAssignableFrom(c.javaClass)) {
-                @Suppress("UNCHECKED_CAST")
-                return c as T
-            }
-        }
-        return null
-    }
-
     fun <T> removeComponent(componentClass: Class<T>) {
         components.firstOrNull { componentClass.isAssignableFrom(it.javaClass)}?.let {
             components.remove(it)

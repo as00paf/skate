@@ -68,8 +68,8 @@ class PlayerController : Component(), KoinComponent {
         get() = if (preferredStance == PreferredStance.REGULAR) 1f else -1f
 
     override fun start() {
-        rb = gameObject.getComponent(RigidBody3D::class.java)
-        physics = gameObject.getComponent(SkateboardPhysics::class.java)
+        rb = gameObject.getComponent<RigidBody3D>()
+        physics = gameObject.getComponent<SkateboardPhysics>()
         
         // Find animator and skater object
         skater = gameObject.children.find { it.name == "Skater" }

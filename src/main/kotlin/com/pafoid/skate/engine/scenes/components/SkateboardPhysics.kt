@@ -7,6 +7,7 @@ import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.getValue
+import kotlin.jvm.java
 
 /**
  * Handles the physics simulation for a skateboard, primarily focused on the raycast suspension system.
@@ -46,7 +47,7 @@ class SkateboardPhysics : Component(), KoinComponent {
         private set
 
     override fun start() {
-        rb = gameObject.getComponent(RigidBody3D::class.java) ?: throw IllegalStateException("SkateboardPhysics requires RigidBody3D")
+        rb = gameObject.getComponent<RigidBody3D>() ?: throw IllegalStateException("SkateboardPhysics requires RigidBody3D")
     }
 
     override fun update(dt: Float) {

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
+import kotlin.jvm.java
 
 class TrickDetectorTest {
 
@@ -32,9 +33,9 @@ class TrickDetectorTest {
             })
         }
 
-        every { mockGameObject.getComponent(SkateboardPhysics::class.java) } returns mockSkateboardPhysics
-        every { mockGameObject.getComponent(RigidBody3D::class.java) } returns mockRigidBody
-        every { mockGameObject.getComponent(PlayerController::class.java) } returns null
+        every { mockGameObject.getComponent<SkateboardPhysics>() } returns mockSkateboardPhysics
+        every { mockGameObject.getComponent<RigidBody3D>() } returns mockRigidBody
+        every { mockGameObject.getComponent<PlayerController>() } returns null
 
         trickDetector = TrickDetector()
         trickDetector.gameObject = mockGameObject

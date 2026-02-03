@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.utils.TrickManager
 import com.pafoid.skate.skateboard.Stance
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.jvm.java
 import kotlin.math.abs
 
 class TrickDetector : Component(), KoinComponent {
@@ -78,7 +79,7 @@ class TrickDetector : Component(), KoinComponent {
         val baseTrickName = trickManager.getTrickName(baseTrickKey)
 
         // Apply stance prefix
-        val controller = gameObject.getComponent(PlayerController::class.java)
+        val controller = gameObject.getComponent<PlayerController>()
         if (controller != null) {
             val stance = controller.currentStance
             detectedTrick = if (stance == Stance.REGULAR) {

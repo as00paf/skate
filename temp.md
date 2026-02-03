@@ -1,6 +1,5 @@
 cleanup
 - cube vertices in pose gizmo
-- getcomponent in gameobject
 - jobsystem.runio for file loading
 - FileManager to save and load files, scene.loadFromFile
 - fix max scroll
