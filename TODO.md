@@ -253,11 +253,11 @@
 - [x] E4.5: Ensure `VAOLoader.cleanUp()` is called for `splashQuad` in `SplashScreenManager.destroy()`.
 
 ### E5. Performance & Efficiency
-- [ ] E5.1: Optimize `Animator.visualizeJoint` to minimize object allocation.
-- [ ] E5.2: Optimize `RenderBatch.loadVertexProperties` by reusing `Matrix4f`.
-- [ ] E5.3: Optimize `PickingDraw.draw` by batching picking meshes.
-- [ ] E5.4: Investigate and optimize `ScreenshotUtils.takeScreenshot` for large screenshots.
-- [ ] E5.5: Refactor `Physics3D.add` to separate adding and updating `PhysicsRigidBody` properties.
+- [x] E5.1: Optimize `Animator.visualizeJoint` to minimize object allocation.
+- [x] E5.2: Optimize `RenderBatch.loadVertexProperties` by reusing `Matrix4f`.
+- [x] E5.3: Optimize `PickingDraw.draw` by batching picking meshes.
+- [x] E5.4: Investigate and optimize `ScreenshotUtils.takeScreenshot` for large screenshots.
+- [x] E5.5: Refactor `Physics3D.add` to separate adding and updating `PhysicsRigidBody` properties.
 
 ### E6. Code Structure & Organization
 - [ ] E6.1: Move `Line3D` and `Triangle3D` to their own files.

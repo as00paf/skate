@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.utils
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL30.*
@@ -11,6 +14,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 object ScreenshotUtils {
+
+    private val scope = CoroutineScope(Dispatchers.IO)
 
     fun takeScreenshot(width: Int, height: Int, fboId: Int) {
         val screenshotsDir = "screenshots"
@@ -25,20 +30,25 @@ object ScreenshotUtils {
         glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
-        // Flip the image vertically (OpenGL reads from bottom-left)
-        val flippedPixels = BufferUtils.createByteBuffer(width * height * 4)
-        for (y in 0 until height) {
-            val originalRowIndex = y * width * 4
-            val flippedRowIndex = (height - 1 - y) * width * 4
-            for (x in 0 until width * 4) {
-                flippedPixels.put(flippedRowIndex + x, pixels.get(originalRowIndex + x))
+        // Offload the heavy lifting to a background thread
+        scope.launch {
+            // Flip the image vertically (OpenGL reads from bottom-left)
+            val flippedPixels = BufferUtils.createByteBuffer(width * height * 4)
+            for (y in 0 until height) {
+                val originalRowIndex = y * width * 4
+                val flippedRowIndex = (height - 1 - y) * width * 4
+                for (x in 0 until width * 4) {
+                    flippedPixels.put(flippedRowIndex + x, pixels.get(originalRowIndex + x))
+                }
             }
-        }
 
-        if (stbi_write_png(filePath, width, height, 4, flippedPixels, width * 4)) {
-            showScreenshotPopup(filePath)
-        } else {
-            TinyFileDialogs.tinyfd_messageBox("Screenshot Failed", "Failed to save screenshot.", "ok", "error", true)
+            if (stbi_write_png(filePath, width, height, 4, flippedPixels, width * 4)) {
+                // UI interaction must be carefully handled if TinyFileDialogs blocks or needs specific thread
+                // TinyFileDialogs is usually thread-safe and creates its own window.
+                showScreenshotPopup(filePath)
+            } else {
+                TinyFileDialogs.tinyfd_messageBox("Screenshot Failed", "Failed to save screenshot.", "ok", "error", true)
+            }
         }
     }
 

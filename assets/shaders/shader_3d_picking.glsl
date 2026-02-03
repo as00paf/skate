@@ -3,6 +3,7 @@
 layout (location=0) in vec3 aPos;
 layout (location=6) in ivec4 aJoints;
 layout (location=7) in vec4 aWeights;
+layout (location=10) in float aEntityId;
 
 uniform mat4 transformationMatrix;
 uniform mat4 projectionMatrix;
@@ -12,8 +13,11 @@ const int MAX_BONES = 100;
 uniform mat4 u_JointMatrices[MAX_BONES];
 uniform bool u_HasSkin;
 
+out float fEntityId;
+
 void main()
 {
+    fEntityId = aEntityId;
     mat4 skinMatrix = mat4(1.0);
     if (u_HasSkin) {
         skinMatrix = 
@@ -28,11 +32,11 @@ void main()
 #type fragment
 #version 330 core
 
-uniform float uEntityId;
+in float fEntityId;
 
 out vec3 color;
 
 void main()
 {
-    color = vec3(uEntityId, 0.0, 0.0);
+    color = vec3(fEntityId, 0.0, 0.0);
 }

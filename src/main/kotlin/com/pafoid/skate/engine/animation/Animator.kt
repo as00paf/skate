@@ -25,6 +25,12 @@ import kotlin.getValue
 class Animator : Component(), KoinComponent {
     private val debugDraw: DebugDraw by inject()
 
+    // Reusable objects to minimize allocations in hot loops/recursive calls
+    private val tempJointPos = Vector3f()
+    private val tempChildPos = Vector3f()
+    private val tempJointQuat = Quaternionf()
+    private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
+
     var currentTime = 0f
         private set
     var currentAnimation: Animation? = null
@@ -130,25 +136,23 @@ class Animator : Component(), KoinComponent {
     }
 
     private fun visualizeJoint(joint: Joint, modelMatrix: Matrix4f) {
-        val jointPos = Vector3f()
-        joint.worldTransform.getTranslation(jointPos)
-        modelMatrix.transformPosition(jointPos)
+        joint.worldTransform.getTranslation(tempJointPos)
+        modelMatrix.transformPosition(tempJointPos)
         
-        val color = Vector3f(0f, 1f, 1f) // Cyan for bones
+        // Capture joint position for this recursion level
+        val currentJointPos = Vector3f(tempJointPos)
         
         for (child in joint.children) {
-            val childPos = Vector3f()
-            child.worldTransform.getTranslation(childPos)
-            modelMatrix.transformPosition(childPos)
+            child.worldTransform.getTranslation(tempChildPos)
+            modelMatrix.transformPosition(tempChildPos)
             
-            debugDraw.addLine3D(jointPos, childPos, color)
+            debugDraw.addLine3D(currentJointPos, tempChildPos, boneColor)
             visualizeJoint(child, modelMatrix)
         }
         
         // Draw joint point as a tiny box
-        val quat = Quaternionf()
-        joint.worldTransform.getUnnormalizedRotation(quat)
-        debugDraw.addBox3D(jointPos, quat, Vector3f(0.01f), color)
+        joint.worldTransform.getUnnormalizedRotation(tempJointQuat)
+        debugDraw.addBox3D(currentJointPos, tempJointQuat, Vector3f(0.01f), boneColor)
     }
 
     fun stop() {

@@ -11,6 +11,7 @@ interface IPhysics3D {
     fun rayTest(from: Vector3f, to: Vector3f): List<PhysicsRayTestResult>
     fun raycastClosest(from: Vector3f, to: Vector3f): PhysicsRayTestResult?
     fun add(go: GameObject)
+    fun update(go: GameObject)
     fun remove(go: GameObject)
     fun update(dt: Float)
     fun destroy()

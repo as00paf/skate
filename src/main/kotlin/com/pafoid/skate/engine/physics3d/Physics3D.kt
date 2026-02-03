@@ -85,15 +85,15 @@ class Physics3D : IPhysics3D, KoinComponent {
         if (rb != null) {
             val desiredMass = if (rb.bodyType == BodyType.Static) 0f else rb.mass
             
-            // Check if we need to rebuild
+            // Check if we need to rebuild due to mass change
             if (rb.rawBody != null) {
-                val currentMass = rb.rawBody!!.mass
-                if (currentMass != desiredMass) {
+                if (rb.rawBody!!.mass != desiredMass) {
                     physicsSpace.remove(rb.rawBody)
                     rb.rawBody = null
                 } else {
-                    // Sync transform and scale for existing body (important for Editor)
-                    syncBodyProperties(rb.rawBody!!, rb, go)
+                    // Body exists and mass is correct, just sync properties
+                    update(go)
+                    return
                 }
             }
 
@@ -114,7 +114,8 @@ class Physics3D : IPhysics3D, KoinComponent {
                 }
 
                 val body = PhysicsRigidBody(compound, desiredMass)
-                syncBodyProperties(body, rb, go)
+                rb.rawBody = body
+                update(go) // Initial property sync
                 
                 if (rb.bodyType == BodyType.Kinematic) {
                     body.isKinematic = true
@@ -126,9 +127,14 @@ class Physics3D : IPhysics3D, KoinComponent {
                 }
                 
                 physicsSpace.add(body)
-                rb.rawBody = body
             }
         }
+    }
+
+    override fun update(go: GameObject) {
+        val rb = go.getComponent<RigidBody3D>()
+        val body = rb?.rawBody ?: return
+        syncBodyProperties(body, rb, go)
     }
 
     private fun syncBodyProperties(body: PhysicsRigidBody, rb: RigidBody3D, go: GameObject) {

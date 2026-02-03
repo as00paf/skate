@@ -24,6 +24,10 @@ class RenderBatch(
     private var vboId = 0
     private var maxTextureSlots = 8 // Default, should be queried
 
+    // Reusable objects to minimize allocations in hot loop
+    private val transformMatrix = Matrix4f()
+    private val currentPos = Vector4f()
+
     fun start() {
         // Generate and bind a Vertex Array Object
         vaoId = glGenVertexArrays()
@@ -149,26 +153,26 @@ class RenderBatch(
         }
         
         val isRotated = sprite.gameObject.transform.rotation.z != 0f
-        var transformMatrix = Matrix4f().identity()
         if (isRotated) {
+            transformMatrix.identity()
             transformMatrix.translate(sprite.gameObject.transform.translation.x, sprite.gameObject.transform.translation.y, 0f)
             transformMatrix.rotate(Math.toRadians(sprite.gameObject.transform.rotation.z.toDouble()).toFloat(), 0f, 0f, 1f)
             transformMatrix.scale(sprite.gameObject.transform.scale.x, sprite.gameObject.transform.scale.y, 1f)
         }
-
 
         // Add vertices with the appropriate properties
         val xAdd = 1.0f
         val yAdd = 1.0f
         
         for (i in 0..3) {
-            var currentPos = Vector4f(0f, 0f, 0f, 1f)
+            currentPos.set(0f, 0f, 0f, 1f)
             if (i == 1) {
-                currentPos = Vector4f(xAdd, 0f, 0f, 1f)
+                currentPos.x = xAdd
             } else if (i == 2) {
-                currentPos = Vector4f(xAdd, yAdd, 0f, 1f)
+                currentPos.x = xAdd
+                currentPos.y = yAdd
             } else if (i == 3) {
-                currentPos = Vector4f(0f, yAdd, 0f, 1f)
+                currentPos.y = yAdd
             }
             
             if (isRotated) {
