@@ -122,10 +122,9 @@ class SplashScreenManager: KoinComponent {
         }
     }
 
-    suspend fun increaseLoadingProgress(message: String = "...", progress:Float = 0.1f) {
+    fun increaseLoadingProgress(message: String = "...", progress:Float = 0.1f) {
         loadingProgress.set(loadingProgress.get() + progress)
         loadingText = message
-        delay(10)
     }
 
     fun destroy() {

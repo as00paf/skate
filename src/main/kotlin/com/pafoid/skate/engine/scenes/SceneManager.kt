@@ -3,9 +3,6 @@ package com.pafoid.skate.engine.scenes
 import com.pafoid.skate.engine.EngineState
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.Window
-import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.editor.CreateGameObjectCommand
 import com.pafoid.skate.engine.editor.DeleteGameObjectCommand
@@ -22,12 +19,10 @@ import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW
 import org.koin.core.component.inject
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.collections.forEachIndexed
 import kotlin.getValue
 
 class SceneManager : KoinComponent {
 
-    private val resourceManager: ResourceManager by inject()
     private val keyListener: KeyListener by inject()
     private val logger: LoggerService by inject()
     private val clipboardService: ClipboardService by inject()
@@ -64,12 +59,6 @@ class SceneManager : KoinComponent {
     var runtimePlaying = false
     val engineState = AtomicReference(EngineState.BOOTING)
 
-    private lateinit var shader3D: Shader
-    private lateinit var shader2D: Shader
-    private lateinit var shaderPicking: Shader
-    private lateinit var shaderPicking3D: Shader
-    private lateinit var shaderSkybox: Shader
-    private lateinit var shaderSkyDome: Shader
     private lateinit var renderer: Renderer
 
     private val splashScreenManager = SplashScreenManager()
@@ -99,32 +88,13 @@ class SceneManager : KoinComponent {
     private suspend fun initRenderSystem() {
         logger.logEngine("Initializing render system...")
         splashScreenManager.increaseLoadingProgress("Initializing Render System...")
-        val shaders = listOf<suspend ()->Unit>(
-            { shader3D = resourceManager.loadShader(Assets.Shaders.SHADER_3D_DEFAULT) },
-            { shader2D = resourceManager.loadShader(Assets.Shaders.SHADER_2D_BATCH) },
-            { shaderPicking = resourceManager.loadShader(Assets.Shaders.PICKING) },
-            { shaderPicking3D = resourceManager.loadShader(Assets.Shaders.PICKING_3D) },
-            { shaderSkybox = resourceManager.loadShader(Assets.Shaders.SKYBOX) },
-            { shaderSkyDome = resourceManager.loadShader(Assets.Shaders.SKY_DOME) },
-            { resourceManager.loadShader(Assets.Shaders.DEBUG) },
-        )
 
-        shaders.forEachIndexed {
-            index, function ->
-            logger.logEngine("Loading shader ${index + 1}/${shaders.size}")
-            function.invoke()
-            splashScreenProgress(index, shaders.size)
+        renderer = Renderer()
+        renderer.loadShaders { index, size ->
+            splashScreenManager.increaseLoadingProgress("Loading Shaders $index/$size")
         }
-
-        splashScreenManager.increaseLoadingProgress("Initializing Renderer...")
-
-        renderer = Renderer(shader3D, shader2D, shaderPicking, shaderPicking3D, shaderSkybox, shaderSkyDome)
         renderer.useFbo = true
         logger.logEngine("Renderer initialized.")
-    }
-
-    private suspend fun splashScreenProgress(index: Int, total: Int) {
-        splashScreenManager.increaseLoadingProgress("Loading Shaders $index/$total")
     }
 
     private suspend fun changeScene(initializer: SceneInitializer, isFirstScene: Boolean = false) {
@@ -242,13 +212,6 @@ class SceneManager : KoinComponent {
 
     fun destroy() {
         if (engineState.get() != EngineState.RUNNING) return
-
-        shader3D.destroy()
-        shader2D.destroy()
-        shaderPicking.destroy()
-        shaderPicking3D.destroy()
-        shaderSkybox.destroy()
-        shaderSkyDome.destroy()
         renderer.destroy()
     }
 

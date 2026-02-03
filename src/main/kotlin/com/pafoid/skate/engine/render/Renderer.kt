@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.ShaderConst.Attribs
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
@@ -21,28 +22,49 @@ import org.koin.core.component.inject
 import org.lwjgl.opengl.GL30.*
 import kotlin.getValue
 
-class Renderer(
-    private val defaultShader: Shader,
-    private val batchShader: Shader,
-    private val pickingShader: Shader,
-    private val pickingShader3D: Shader,
-    private val skyboxShader: Shader,
-    private val skyDomeShader: Shader
-) : IRenderer, KoinComponent {
+class Renderer : IRenderer, KoinComponent {
     private val debugDraw: DebugDraw by inject()
     private val pickingDraw: PickingDraw by inject()
     private val resourceManager: ResourceManager by inject()
     private val sceneManager: SceneManager by inject()
+    private val logger: LoggerService by inject()
+
+    private lateinit var defaultShader: Shader
+    private lateinit var debugShader: Shader
+    private lateinit var batchShader: Shader
+    private lateinit var pickingShader: Shader
+    private lateinit var pickingShader3D: Shader
+    private lateinit var skyboxShader: Shader
+    private lateinit var skyDomeShader: Shader
 
     override var useFbo = false // Default to false for initial feature tests
 
     private val renderer2D = Renderer2D()
     private val pickingTexture = PickingTexture(1920, 1080)
-    private val skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
-    private val skyDomeRenderer = SkyDomeRenderer(skyDomeShader, VAOLoader(), resourceManager)
 
-    init {
+    private lateinit var skyboxRenderer:SkyboxRenderer
+    private lateinit var skyDomeRenderer:SkyDomeRenderer
+
+    suspend fun loadShaders(updateProgress:(Int, Int) -> Unit) {
+        val shaders = listOf<suspend ()->Unit>(
+            { debugShader = resourceManager.loadShader(Assets.Shaders.DEBUG) },
+            { defaultShader = resourceManager.loadShader(Assets.Shaders.SHADER_3D_DEFAULT) },
+            { batchShader = resourceManager.loadShader(Assets.Shaders.SHADER_2D_BATCH) },
+            { pickingShader = resourceManager.loadShader(Assets.Shaders.PICKING) },
+            { pickingShader3D = resourceManager.loadShader(Assets.Shaders.PICKING_3D) },
+            { skyboxShader = resourceManager.loadShader(Assets.Shaders.SKYBOX) },
+            { skyDomeShader = resourceManager.loadShader(Assets.Shaders.SKY_DOME) },
+        )
+
+        shaders.forEachIndexed { index, function ->
+            logger.logEngine("Loading shader ${index + 1}/${shaders.size}")
+            function.invoke()
+            updateProgress(index, shaders.size)
+        }
+
         renderer2D.bindShader(batchShader)
+        skyboxRenderer = SkyboxRenderer(skyboxShader, VAOLoader())
+        skyDomeRenderer = SkyDomeRenderer(skyDomeShader, VAOLoader(), resourceManager)
     }
 
     private fun loadProjectionMatrix(camera: Camera) {
