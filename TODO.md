@@ -246,11 +246,11 @@
 - [x] E3.4: Simplify collider creation in `Physics3D.add` (e.g., using builder/factory pattern).
 
 ### E4. Logic Flaws & Bug Fixes
-- [ ] E4.1: Fix `Animator.updateBlended` to correctly manage `previousTime` and `currentTime` updates.
-- [ ] E4.2: Remove redundant `GameObject("Skater")` call in `Skater` constructor.
-- [ ] E4.3: Correct `PlayerController.handleCatch` logic for pitch and roll to apply correct torque.
-- [ ] E4.4: Use consistent mouse position (`mouseListener.getX/Y()`) in `MeasureTool`.
-- [ ] E4.5: Ensure `VAOLoader.cleanUp()` is called for `splashQuad` in `SplashScreenManager.destroy()`.
+- [x] E4.1: Fix `Animator.updateBlended` to correctly manage `previousTime` and `currentTime` updates.
+- [x] E4.2: Remove redundant `GameObject("Skater")` call in `Skater` constructor.
+- [x] E4.3: Correct `PlayerController.handleCatch` logic for pitch and roll to apply correct torque.
+- [x] E4.4: Use consistent mouse position (`mouseListener.getX/Y()`) in `MeasureTool`.
+- [x] E4.5: Ensure `VAOLoader.cleanUp()` is called for `splashQuad` in `SplashScreenManager.destroy()`.
 
 ### E5. Performance & Efficiency
 - [ ] E5.1: Optimize `Animator.visualizeJoint` to minimize object allocation.

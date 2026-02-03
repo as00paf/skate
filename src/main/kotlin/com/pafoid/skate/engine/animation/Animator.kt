@@ -82,8 +82,8 @@ class Animator : Component(), KoinComponent {
                 blendTime -= dt
                 val alpha = 1f - (blendTime / blendDuration)
                 previousAnimation?.let { prev ->
-                    prev.update(previousTime, skeleton)
                     previousTime += dt
+                    prev.update(previousTime, skeleton)
                     animation.updateBlended(currentTime, skeleton, alpha)
                 } ?: animation.update(currentTime, skeleton)
             } else {

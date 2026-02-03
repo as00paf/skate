@@ -8,6 +8,8 @@ import com.pafoid.skate.engine.utils.UnitSystem
 import com.pafoid.skate.engine.utils.Units
 import com.pafoid.skate.engine.utils.UnitType
 import imgui.ImGui
+import imgui.flag.ImGuiKey
+import org.joml.Vector2f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -26,21 +28,23 @@ class MeasureTool : Component(), KoinComponent {
 
     var measurementText: String? = null
         private set
-    var measurementPos: org.joml.Vector2f? = null
+    var measurementPos: Vector2f? = null
         private set
 
     override fun editorUpdate(dt: Float) {
         if (!isActive) return
 
         val scene = sceneManager.currentScene ?: return
-        val mousePos = ImGui.getMousePos() // This might still be unsafe if called outside ImGui frame? 
-                                          // Actually getMousePos is usually safe as it reads IO.
-                                          // But let's use MouseListener inputs if possible or assume IO is updated.
+        
         val viewportSize = mouseListener.getGameViewportSize()
         val viewportPos = mouseListener.getGameViewportPos()
 
-        val relX = mousePos.x - viewportPos.x
-        val relY = mousePos.y - viewportPos.y
+        // Use MouseListener for consistent state
+        val mouseX = mouseListener.getX()
+        val mouseY = mouseListener.getY()
+
+        val relX = mouseX - viewportPos.x
+        val relY = mouseY - viewportPos.y
         
         // Clear previous text
         measurementText = null
@@ -82,13 +86,13 @@ class MeasureTool : Component(), KoinComponent {
                         
                         // Store for rendering
                         measurementText = "Distance: $displayText"
-                        measurementPos = org.joml.Vector2f(mousePos.x + 20, mousePos.y + 20)
+                        measurementPos = Vector2f(mouseX + 20, mouseY + 20)
                     }
                 }
             }
         }
 
-        if (ImGui.isKeyPressed(imgui.flag.ImGuiKey.Escape)) {
+        if (ImGui.isKeyPressed(ImGuiKey.Escape)) {
             isActive = false
             startPoint = null
             endPoint = null

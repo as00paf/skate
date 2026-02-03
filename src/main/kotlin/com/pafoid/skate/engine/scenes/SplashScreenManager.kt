@@ -126,6 +126,10 @@ class SplashScreenManager: KoinComponent {
 
     fun destroy() {
         splashShader?.destroy()
+        
+        splashQuad?.let {
+            vaoLoader.deleteVAO(it.vaoId)
+        }
         splashQuad = null
 
         splashTexture?.destroy()

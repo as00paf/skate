@@ -21,7 +21,6 @@ class Skater(
 ): GameObject(name) {
 
     init {
-        GameObject("Skater")
         // Parenting: Skater follows Skateboard
         skate?.addChild(this)
 

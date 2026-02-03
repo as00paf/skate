@@ -422,28 +422,49 @@ fun updateProceduralLean(dt: Float) {
         var yaw = rotation.y % 360f
         if (yaw < 0) yaw += 360f
 
-        // Check for 180 increments
+        // Check for 180 increments (Yaw Snap)
         val target180 = (yaw / 180f).roundToLong() * 180f
         val diff = target180 - yaw
         
         if (abs(diff) < 20f && (physics?.isGrounded == false)) {
-            // Apply "magnetic" impulse to snap to 180 increments
+            // Yaw is usually global Y, so global torque is fine
             rb3d.applyTorqueImpulse(Vector3f(0f, diff * catchStrength * dt, 0f))
         }
         
-        // Pitch/Roll catch
-        val pAngle = rotation.x % 180f
-        val absPAngle = if (pAngle < 0) pAngle + 180f else pAngle
-        if (absPAngle !in 20f..160f) {
-            val pTarget = if (absPAngle < 20f) 0f else 180f
-            rb3d.applyTorqueImpulse(Vector3f((pTarget - absPAngle) * catchStrength * dt, 0f, 0f))
+        // Local Space Corrections
+        // X-Axis = Roll (Kickflip/Heelflip axis)
+        // Z-Axis = Pitch (Manual/Nose Manual axis)
+        
+        var rollTorque = 0f
+        var pitchTorque = 0f
+
+        // Roll (X) Catch
+        val rollAngle = rotation.x % 180f
+        val absRoll = if (rollAngle < 0) rollAngle + 180f else rollAngle
+        // If we are not in the "middle" of a flip (20..160), snap to flat (0) or upside down (180)
+        if (absRoll !in 20f..160f) {
+            val target = if (absRoll < 20f) 0f else 180f
+            // Calculate difference, handling the wrap
+            // Simple diff works because we normalized to 0..180 sort of, but strict diff:
+            rollTorque = (target - absRoll) * catchStrength * dt
         }
 
-        val rAngle = rotation.z % 180f
-        val absRAngle = if (rAngle < 0) rAngle + 180f else rAngle
-        if (absRAngle !in 20f..160f) {
-            val rTarget = if (absRAngle < 20f) 0f else 180f
-            rb3d.applyTorqueImpulse(Vector3f(0f, 0f, (rTarget - absRAngle) * catchStrength * dt))
+        // Pitch (Z) Catch - Usually we want 0 (flat)
+        // We generally don't snap pitch to 180 unless strictly needed
+        val pitchAngle = rotation.z % 360f
+        // Normalize -180..180
+        val normPitch = if (pitchAngle > 180) pitchAngle - 360 else if (pitchAngle < -180) pitchAngle + 360 else pitchAngle
+        
+        if (abs(normPitch) < 30f) {
+            pitchTorque = (0f - normPitch) * catchStrength * dt
+        }
+
+        // Apply Local Torque
+        if (rollTorque != 0f || pitchTorque != 0f) {
+            val localTorque = Vector3f(rollTorque, 0f, pitchTorque)
+            val worldTorque = Vector3f()
+            gameObject.transform.toWorldMatrix().transformDirection(localTorque, worldTorque)
+            rb3d.applyTorqueImpulse(worldTorque)
         }
     }
 
