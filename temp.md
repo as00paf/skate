@@ -21,7 +21,7 @@ Reports
 - UI review to make it up to par with industry standards, compare features of Unity, Unreal, Godot and Stride
 - Feature review to make sure everything is working as intended
 
-# 🛠️ "Pose Master" Animation Authoring Tool: TODO
+# 🛠️ "Pose Master" Animation Authoring Tool
 
 ## 1. Foundation: Pose & Bone Manipulation
 - [ ] **Bone Selection System**: Implement raycast-based bone selection in the 3D viewport to click and select joints directly on the Skater model.
@@ -56,7 +56,7 @@ Reports
 - [ ] **Easing Curves**: Implement Bezier curves for keyframe transitions to allow for "snappy" snaps or "slow-mo" catches.
 - [ ] **Bone Weight Visualizer**: Add a debug overlay to see which vertices are influenced by the currently selected bone.
 
-# 📥 Mixamo Asset Pipeline: TODO
+# 📥 Mixamo Asset Pipeline
 
 - [ ] **Import Validation**: Verify `Assimp` reads the `mNumVertices` and `mWeights` from the FBX to confirm the mesh is correctly bound to the skeleton.
 - [ ] **Bone Mapping (The Strip Utility)**:

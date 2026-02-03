@@ -11,7 +11,7 @@ import org.lwjgl.opengl.GL30.*
 class RenderBatch(
     private val maxBatchSize: Int,
     private val zIndex: Int,
-    private val renderer: Renderer2D // Callback reference for texture slots? Or just pass logic here
+    private val renderer: Renderer2D
 ) : Comparable<RenderBatch> {
 
     private val sprites = arrayOfNulls<SpriteRenderer>(maxBatchSize * 4)
@@ -77,7 +77,7 @@ class RenderBatch(
         }
     }
 
-    fun render(shader: Shader = Renderer2D.shader) {
+    fun render(shader: Shader = renderer.shader) {
         var rebufferData = false
         for (i in 0 until numSprites) {
             val spr = sprites[i]
@@ -96,8 +96,8 @@ class RenderBatch(
         // Use shader
         shader.start()
 
-        val viewMatrix = Renderer2D.camera.createViewMatrix()
-        val projectionMatrix = Renderer2D.camera.createProjectionMatrix()
+        val viewMatrix = renderer.camera.createViewMatrix()
+        val projectionMatrix = renderer.camera.createProjectionMatrix()
         shader.uploadMat4f(Uniforms.PROJECTION, projectionMatrix)
         shader.uploadMat4f(Uniforms.VIEW, viewMatrix)
 

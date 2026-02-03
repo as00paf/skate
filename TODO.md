@@ -228,7 +228,7 @@
 ## 🔵 Phase E: Code Quality & Refactoring
 
 ### E1. Dependency Injection & Static Removal
-- [ ] E1.1: Inject `Renderer2D.shader` and `Renderer2D.camera` via Koin.
+- [x] E1.1: Inject `Renderer2D.shader` and `Renderer2D.camera` via Koin.
 - [ ] E1.2: Provide `InputBuffer.instance` via Koin.
 - [ ] E1.3: Inject `VAOLoader` into `SplashScreenManager`.
 

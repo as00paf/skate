@@ -7,11 +7,9 @@ import java.util.Collections
 
 class Renderer2D {
     private val batches: MutableList<RenderBatch> = ArrayList()
-    
-    companion object {
-        lateinit var shader: Shader
-        lateinit var camera: Camera
-    }
+
+    lateinit var shader: Shader
+    lateinit var camera: Camera
 
     fun add(go: GameObject) {
         val spr = go.getComponent<SpriteRenderer>()
@@ -43,14 +41,14 @@ class Renderer2D {
     }
     
     fun bindShader(shader: Shader) {
-        Renderer2D.shader = shader
+        this.shader = shader
     }
     
     fun bindCamera(camera: Camera) {
-        Renderer2D.camera = camera
+        this.camera = camera
     }
 
-    fun render(shader: Shader = Renderer2D.shader) {
+    fun render() {
         // shader.start() is called inside batch.render() because it sets uniforms
         for (batch in batches) {
             batch.render(shader)
