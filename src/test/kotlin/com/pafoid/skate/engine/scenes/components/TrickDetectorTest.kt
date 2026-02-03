@@ -5,7 +5,9 @@ import com.pafoid.skate.engine.scenes.GameObject
 import io.mockk.every
 import io.mockk.mockk
 import com.pafoid.skate.engine.utils.TrickManager
+import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -23,19 +25,17 @@ class TrickDetectorTest {
 
     @BeforeEach
     fun setUp() {
-        mockGameObject = mockk(relaxed = true)
+        mockGameObject = GameObject("test")
         mockSkateboardPhysics = mockk(relaxed = true)
         mockRigidBody = mockk(relaxed = true)
+        mockGameObject.addComponent(mockSkateboardPhysics)
+        mockGameObject.addComponent(mockRigidBody)
 
         startKoin {
             modules(module {
                 single { TrickManager("/values/test_tricks.properties") }
             })
         }
-
-        every { mockGameObject.getComponent<SkateboardPhysics>() } returns mockSkateboardPhysics
-        every { mockGameObject.getComponent<RigidBody3D>() } returns mockRigidBody
-        every { mockGameObject.getComponent<PlayerController>() } returns null
 
         trickDetector = TrickDetector()
         trickDetector.gameObject = mockGameObject
@@ -47,39 +47,20 @@ class TrickDetectorTest {
         stopKoin()
     }
 
-    //@Test
-    //fun `should detect a 360 flip when in air and rotating on X axis`() {
-    //    // Known issue with mocking com.jme3.bullet classes - VerifyError
-    //    // TODO: Re-enable when mocking issue is resolved or alternative physics mocking is in place.
-    //    // Given
-    //    // every { mockSkateboardPhysics.isGrounded } returns false
-    //    // every { mockRigidBody.angularVelocity } returns Vector3f(Math.toRadians(360.0).toFloat() * 1.5f, 0f, 0f)
-    //
-    //    // When (simulate enough time for 360 rotation)
-    //    // for (i in 0 until 10) {
-    //    //     trickDetector.update(0.016f) // ~60 FPS
-    //    // }
-    //
-    //    // Then
-    //    // assertEquals("360 Flip", trickDetector.getDetectedTrick())
-    //}
+    @Test
+    fun `should detect a kickflip when in air and rotating on X axis`() {
+        // Given
+        every { mockSkateboardPhysics.isGrounded } returns false
+        every { mockRigidBody.angularVelocity } returns Vector3f(Math.toRadians(360.0).toFloat() * 1.5f, 0f, 0f) 
 
-    //@Test
-    //fun `should detect a kickflip when in air and rotating on X axis`() {
-    //    // Known issue with mocking com.jme3.bullet classes - VerifyError
-    //    // TODO: Re-enable when mocking issue is resolved or alternative physics mocking is in place.
-    //    // Given
-    //    every { mockSkateboardPhysics.isGrounded } returns false
-    //    every { mockRigidBody.angularVelocity } returns Vector3f(Math.toRadians(360.0).toFloat() * 1.5f, 0f, 0f) 
-    //
-    //    // When
-    //    for (i in 0 until 10) {
-    //        trickDetector.update(0.016f)
-    //    }
-    //
-    //    // Then
-    //    assertEquals("Kickflip", trickDetector.getDetectedTrick())
-    //}
+        // When
+        for (i in 0 until 50) {
+            trickDetector.update(0.016f)
+        }
+
+        // Then
+        assertEquals("Kickflip", trickDetector.getDetectedTrick())
+    }
 
     @Test
     fun `should detect a heelflip when in air and rotating on negative X axis`() {
@@ -117,39 +98,35 @@ class TrickDetectorTest {
         assertEquals("360 Shove-it", trickDetector.getDetectedTrick())
     }
 
-    //@Test
-    //fun `should not detect a trick when grounded`() {
-    //    // Known issue with mocking com.jme3.bullet classes - VerifyError
-    //    // TODO: Re-enable when mocking issue is resolved or alternative physics mocking is in place.
-    //    // Given
-    //    // every { mockSkateboardPhysics.isGrounded } returns true
-    //    // every { mockRigidBody.angularVelocity } returns Vector3f(Math.toRadians(360.0).toFloat(), 0f, 0f)
-    //
-    //    // When
-    //    // trickDetector.update(1.0f)
-    //
-    //    // Then
-    //    // assertNull(trickDetector.getDetectedTrick())
-    //}
+    @Test
+    fun `should not detect a trick when grounded`() {
+        // Given
+        every { mockSkateboardPhysics.isGrounded } returns true
+        every { mockRigidBody.angularVelocity } returns Vector3f(Math.toRadians(360.0).toFloat(), 0f, 0f)
 
-    //@Test
-    //fun `should reset trick detection when landing`() {
-    //    // Known issue with mocking com.jme3.bullet classes - VerifyError
-    //    // TODO: Re-enable when mocking issue is resolved or alternative physics mocking is in place.
-    //    // Given
-    //    // every { mockSkateboardPhysics.isGrounded } returns false
-    //    // every { mockRigidBody.angularVelocity } returns Vector3f(Math.toRadians(360.0).toFloat() * 2, 0f, 0f)
-    //
-    //    // When (detect trick, then land)
-    //    // for (i in 0 until 10) {
-    //    //     trickDetector.update(0.016f)
-    //    // }
-    //
-    //    // Now, land
-    //    // every { mockSkateboardPhysics.isGrounded } returns true
-    //    // trickDetector.update(0.016f)
-    //
-    //    // Then
-    //    // assertNull(trickDetector.getDetectedTrick())
-    //}
+        // When
+        trickDetector.update(1.0f)
+
+        // Then
+        assertNull(trickDetector.getDetectedTrick())
+    }
+
+    @Test
+    fun `should reset trick detection when landing`() {
+        // Given
+        every { mockSkateboardPhysics.isGrounded } returns false
+        every { mockRigidBody.angularVelocity } returns Vector3f(Math.toRadians(360.0).toFloat() * 2, 0f, 0f)
+
+        // When (detect trick, then land)
+        for (i in 0 until 50) {
+            trickDetector.update(0.016f)
+        }
+
+        // Now, land
+        every { mockSkateboardPhysics.isGrounded } returns true
+        trickDetector.update(0.016f)
+
+        // Then
+        assertNull(trickDetector.getDetectedTrick())
+    }
 }
