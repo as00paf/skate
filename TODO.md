@@ -230,7 +230,7 @@
 ### E1. Dependency Injection & Static Removal
 - [x] E1.1: Inject `Renderer2D.shader` and `Renderer2D.camera` via Koin.
 - [ ] E1.2: Provide `InputBuffer.instance` via Koin.
-- [ ] E1.3: Inject `VAOLoader` into `SplashScreenManager`.
+- [x] E1.3: Inject `VAOLoader` into `SplashScreenManager`.
 
 ### E2. Null Safety (`!!` Removal )
 - [ ] E2.1: Remove `!!` in `AssimpLoader` for scene access.

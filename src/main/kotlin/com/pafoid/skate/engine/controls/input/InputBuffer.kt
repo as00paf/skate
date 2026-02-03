@@ -8,16 +8,9 @@ import org.joml.Vector2f
 import java.util.*
 import kotlin.math.max
 
+private const val MAX_SAMPLES = 60
+
 class InputBuffer : IInputBuffer {
-    companion object {
-        private const val MAX_SAMPLES = 60
-        val instance: IInputBuffer = InputBuffer()
-        
-        fun push(timestamp: Float, mousePos: Vector2f, joystickAxes: FloatArray?) = instance.push(timestamp, mousePos, joystickAxes)
-        fun getFlickVelocity(timeWindow: Float) = instance.getFlickVelocity(timeWindow)
-        fun getJoystickFlickVelocity(jid: Int, timeWindow: Float) = instance.getJoystickFlickVelocity(jid, timeWindow)
-        fun getRightStickFlickVelocity(jid: Int, timeWindow: Float) = instance.getRightStickFlickVelocity(jid, timeWindow)
-    }
 
     private val buffer: Deque<InputState> = ArrayDeque()
 

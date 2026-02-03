@@ -36,6 +36,7 @@ class Window(
     val title: String
 ): KoinComponent {
 
+    private val inputBuffer: InputBuffer by inject()
     private val joystickListener: JoystickListener by inject()
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
@@ -221,7 +222,7 @@ class Window(
             JobSystem.update()
             
             // Record high-frequency input
-            InputBuffer.push(
+            inputBuffer.push(
                 Time.getTime(),
                 Vector2f(mouseListener.getX(), mouseListener.getY()),
                 joystickListener.getAxes(GLFW_JOYSTICK_1)

@@ -34,6 +34,7 @@ import kotlin.math.max
 import kotlin.math.roundToLong
 
 class PlayerController : Component(), KoinComponent {
+    private val inputBuffer: InputBuffer by inject()
     private val resourceManager: ResourceManager by inject()
     private val inputProvider: IInputProvider by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
@@ -53,7 +54,6 @@ class PlayerController : Component(), KoinComponent {
 
     var currentStance = Stance.REGULAR
     var isSwitch = false
-    var inputBuffer: IInputBuffer = InputBuffer.instance
     
     private var rb: IPhysicsBody3D? = null
     private var physics: SkateboardPhysics? = null
