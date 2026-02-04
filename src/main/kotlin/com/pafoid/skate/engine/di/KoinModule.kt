@@ -59,7 +59,7 @@ val engineModule = module {
 }
 
 val inputModule = module {
-    single { JoystickListener() }
+    single { JoystickListener(get()) }
     single { KeyListener() }
     single { MouseListener() }
     single<IInputProvider> { InputProvider(get(), get()) }

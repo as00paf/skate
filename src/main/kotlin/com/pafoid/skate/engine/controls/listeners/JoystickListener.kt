@@ -1,11 +1,12 @@
 package com.pafoid.skate.engine.controls.listeners
 
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import org.lwjgl.glfw.GLFW.*
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import kotlin.math.min
 
-class JoystickListener {
+class JoystickListener(private val logger: LoggerService) {
     private val joystickPresent = BooleanArray(GLFW_JOYSTICK_LAST + 1)
     private val lastButtons = Array(GLFW_JOYSTICK_LAST + 1) { BooleanArray(15) { false } }
     private val currentButtons = Array(GLFW_JOYSTICK_LAST + 1) { BooleanArray(15) { false } }
@@ -18,10 +19,10 @@ class JoystickListener {
         glfwSetJoystickCallback { jid, event ->
             if (event == GLFW_CONNECTED) {
                 joystickPresent[jid] = true
-                println("Joystick $jid connected: ${glfwGetJoystickName(jid)}")
+                logger.logEngine("Joystick $jid connected: ${glfwGetJoystickName(jid)}")
             } else if (event == GLFW_DISCONNECTED) {
                 joystickPresent[jid] = false
-                println("Joystick $jid disconnected")
+                logger.logEngine("Joystick $jid disconnected")
             }
         }
     }

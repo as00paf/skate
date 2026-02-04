@@ -171,7 +171,7 @@ class Camera(
         }
 
         // Movement
-        val speed = 0.1f
+        val speed = 0.025f
         val forward = Vector3f(
             sin(Math.toRadians(yaw.toDouble())).toFloat(),
             -sin(Math.toRadians(pitch.toDouble())).toFloat(),

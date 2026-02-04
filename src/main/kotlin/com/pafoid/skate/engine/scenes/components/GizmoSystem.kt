@@ -14,19 +14,19 @@ class GizmoSystem: Component(), KoinComponent {
 
     private var usingGizmo = TRANSLATE_GIZMO
 
+    private val translateGizmo = TranslateGizmo(sceneManager)
+    private val rotationGizmo = RotationGizmo(sceneManager)
+    private val scaleGizmo = ScaleGizmo(sceneManager)
+
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
 
-        this.gameObject.addComponent(TranslateGizmo(sceneManager))
-        this.gameObject.addComponent(RotationGizmo(sceneManager))
-        this.gameObject.addComponent(ScaleGizmo(sceneManager))
+        this.gameObject.addComponent(translateGizmo)
+        this.gameObject.addComponent(rotationGizmo)
+        this.gameObject.addComponent(scaleGizmo)
     }
 
     override fun editorUpdate(dt: Float) {
-        val translateGizmo = gameObject.getComponent<TranslateGizmo>()!!
-        val rotationGizmo = gameObject.getComponent<RotationGizmo>()!!
-        val scaleGizmo = gameObject.getComponent<ScaleGizmo>()!!
-
         translateGizmo.setNotInUse()
         rotationGizmo.setNotInUse()
         scaleGizmo.setNotInUse()

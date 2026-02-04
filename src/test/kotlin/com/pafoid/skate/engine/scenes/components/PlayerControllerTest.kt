@@ -66,7 +66,7 @@ class PlayerControllerTest {
 
         every { inputProvider.keyBeginPress(any()) } returns false
         every { inputProvider.buttonBeginPress(any(), any()) } returns false
-        every { inputProvider.isKeyPressed(any()) } returns false
+
         val axes = FloatArray(6) { 0f }
         axes[GamepadConstants.AXIS_LEFT_TRIGGER] = -1.0f
         axes[GamepadConstants.AXIS_RIGHT_TRIGGER] = -1.0f
@@ -99,7 +99,6 @@ class PlayerControllerTest {
         controller.stateManager.transitionToState(PlayerState.WALKING)
         
         every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, GamepadConstants.BUTTON_Y) } returns true
-        every { inputProvider.isKeyPressed(any()) } returns false
         
         controller.update(0.016f)
         

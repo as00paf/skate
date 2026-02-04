@@ -105,9 +105,7 @@ class PlayerController : Component(), KoinComponent {
      */
     fun isPushing(): Boolean {
         var multiplier = 0f
-        if (inputProvider.isKeyPressed(GLFW_KEY_W)) {
-            multiplier = 1f
-        }
+
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
             if (axes.size > AXIS_LEFT_Y) {
                 val stickY = -axes[AXIS_LEFT_Y]
@@ -168,8 +166,6 @@ class PlayerController : Component(), KoinComponent {
                 steerInput = axes[AXIS_LEFT_X]
             }
         }
-        if (inputProvider.isKeyPressed(GLFW_KEY_A)) steerInput = -1f
-        if (inputProvider.isKeyPressed(GLFW_KEY_D)) steerInput = 1f
 
         // Target lean based on steering
         val targetLean = -steerInput * maxLeanAngle * stanceMultiplier
@@ -209,13 +205,7 @@ class PlayerController : Component(), KoinComponent {
                 moveX = axes[AXIS_LEFT_X]
             }
         }
-        
-        // Keyboard
-        if (inputProvider.isKeyPressed(GLFW_KEY_W)) moveZ += 1f
-        if (inputProvider.isKeyPressed(GLFW_KEY_S)) moveZ -= 1f
-        if (inputProvider.isKeyPressed(GLFW_KEY_A)) moveX -= 1f
-        if (inputProvider.isKeyPressed(GLFW_KEY_D)) moveX += 1f
-        
+
         val moveInput = Vector3f(moveX, 0f, moveZ)
         if (moveInput.length() > 1f) moveInput.normalize()
         
@@ -547,14 +537,6 @@ class PlayerController : Component(), KoinComponent {
     fun handleSteering(dt: Float) {
         var steer = 0f
         
-        // Keyboard
-        if (inputProvider.isKeyPressed(GLFW_KEY_A)) {
-            steer += steerSpeed * stanceMultiplier
-        }
-        if (inputProvider.isKeyPressed(GLFW_KEY_D)) {
-            steer -= steerSpeed * stanceMultiplier
-        }
-        
         // Controller (Joystick 1 - Left Stick X)
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
             if (axes.size > AXIS_LEFT_X) {
@@ -578,12 +560,7 @@ class PlayerController : Component(), KoinComponent {
      */
     fun handlePushing(dt: Float) {
         var multiplier = 0f
-        
-        // Keyboard
-        if (inputProvider.isKeyPressed(GLFW_KEY_W)) {
-            multiplier = 1f
-        }
-        
+
         // Controller (Left Stick Y for forward movement, or triggers)
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
             if (axes.size > AXIS_LEFT_Y) {
