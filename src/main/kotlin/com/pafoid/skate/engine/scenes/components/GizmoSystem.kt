@@ -12,7 +12,7 @@ class GizmoSystem: Component(), KoinComponent {
     private val keyListener: KeyListener by inject()
     private val sceneManager: SceneManager by inject()
 
-    var usingGizmo = TRANSLATE_GIZMO
+    var usingGizmo = SELECTION_GIZMO
 
     private val translateGizmo = TranslateGizmo(sceneManager)
     private val rotationGizmo = RotationGizmo(sceneManager)

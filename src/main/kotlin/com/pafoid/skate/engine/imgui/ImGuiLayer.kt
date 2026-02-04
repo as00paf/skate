@@ -122,9 +122,15 @@ class ImGuiLayer(
 
         dockBuilderDockWindow(stringManager.getString("window.hierarchy"), leftId)
         dockBuilderDockWindow(stringManager.getString("window.asset_browser"), leftId)
-        dockBuilderDockWindow(stringManager.getString("window.properties"), rightId)
-        dockBuilderDockWindow(stringManager.getString("window.console"), bottomId)
+        dockBuilderDockWindow(stringManager.getString("window.properties"), leftId)
+        dockBuilderDockWindow(stringManager.getString("window.bonetree"), leftId)
+
         dockBuilderDockWindow(stringManager.getString("window.game_viewport"), mainBodyId.get())
+
+        dockBuilderDockWindow(stringManager.getString("window.console"), bottomId)
+        dockBuilderDockWindow(stringManager.getString("window.profiler"), bottomId)
+        dockBuilderDockWindow(stringManager.getString("window.environment"), bottomId)
+        dockBuilderDockWindow(stringManager.getString("window.physics_tuner"), bottomId)
 
         dockBuilderFinish(dockspaceId)
     }
