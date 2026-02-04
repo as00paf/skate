@@ -44,7 +44,6 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         editorStuff.addComponent(MouseControls())
         editorStuff.addComponent(GizmoSystem())
         editorStuff.addComponent(GridLines())
-        editorStuff.addComponent(MeasureTool())
         scene.addGameObjectToScene(editorStuff)
 
         skateboard = prefabsGenerator.spawnSkateboard()

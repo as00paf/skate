@@ -7,10 +7,13 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
 
+import com.pafoid.skate.engine.utils.SettingsManager
+
 class GizmoSystem: Component(), KoinComponent {
 
     private val keyListener: KeyListener by inject()
     private val sceneManager: SceneManager by inject()
+    private val settingsManager: SettingsManager by inject()
 
     var usingGizmo = SELECTION_GIZMO
 
@@ -18,6 +21,7 @@ class GizmoSystem: Component(), KoinComponent {
     private val rotationGizmo = RotationGizmo(sceneManager)
     private val scaleGizmo = ScaleGizmo(sceneManager)
     private val selectionGizmo = SelectionGizmo(sceneManager)
+    private val measureGizmo = MeasureTool(sceneManager)
 
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
@@ -26,6 +30,7 @@ class GizmoSystem: Component(), KoinComponent {
         this.gameObject.addComponent(rotationGizmo)
         this.gameObject.addComponent(scaleGizmo)
         this.gameObject.addComponent(selectionGizmo)
+        this.gameObject.addComponent(measureGizmo)
     }
 
     override fun editorUpdate(dt: Float) {
@@ -33,22 +38,32 @@ class GizmoSystem: Component(), KoinComponent {
         rotationGizmo.setNotInUse()
         scaleGizmo.setNotInUse()
         selectionGizmo.setNotInUse()
+        measureGizmo.setNotInUse()
 
         when (usingGizmo) {
             TRANSLATE_GIZMO -> translateGizmo.setInUse()
             ROTATION_GIZMO -> rotationGizmo.setInUse()
             SCALE_GIZMO -> scaleGizmo.setInUse()
             SELECTION_GIZMO -> selectionGizmo.setInUse()
+            MEASURE_GIZMO -> measureGizmo.setInUse()
         }
 
-        if (keyListener.isKeyPressed(GLFW_KEY_W)) {
+        val bindings = settingsManager.settings.keyBindings
+
+        if (keyListener.isKeyPressed(bindings.gizmoTranslate)) {
             usingGizmo = TRANSLATE_GIZMO
-        } else if (keyListener.isKeyPressed(GLFW_KEY_E)) {
+        } else if (keyListener.isKeyPressed(bindings.gizmoRotate)) {
             usingGizmo = ROTATION_GIZMO
-        } else if (keyListener.isKeyPressed(GLFW_KEY_R)) {
+        } else if (keyListener.isKeyPressed(bindings.gizmoScale)) {
             usingGizmo = SCALE_GIZMO
-        } else if (keyListener.isKeyPressed(GLFW_KEY_Q)) {
+        } else if (keyListener.isKeyPressed(bindings.gizmoSelect)) {
             usingGizmo = SELECTION_GIZMO
+        } else if (keyListener.isKeyPressed(bindings.gizmoMeasure)) {
+            usingGizmo = MEASURE_GIZMO
+        }
+
+        if (keyListener.keyBeginPress(bindings.deselect)) {
+            sceneManager.setSelectedGameObject(null)
         }
     }
 
@@ -67,5 +82,6 @@ class GizmoSystem: Component(), KoinComponent {
         const val ROTATION_GIZMO = 1
         const val SCALE_GIZMO = 2
         const val SELECTION_GIZMO = 3
+        const val MEASURE_GIZMO = 4
     }
 }

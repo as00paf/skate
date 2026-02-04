@@ -76,6 +76,8 @@ class ImGuiLayer(
     private val showProfiler = ImBoolean(true)
     private val showConsole = ImBoolean(true)
     private val showPhysicsTuner = ImBoolean(true)
+    private var showKeyBindings = false
+    private var keyBindingAction: String? = null
     private var isViewportMaximized = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
@@ -169,6 +171,7 @@ class ImGuiLayer(
             if (showProfiler.get()) profilerWindow.imgui()
             if (showConsole.get()) consoleWindow.imgui(showConsole)
             if (showPhysicsTuner.get()) physicsTunerWindow.imgui(currentScene)
+            if (showKeyBindings) renderKeyBindingsWindow()
         }
 
         endFrame()
@@ -308,6 +311,11 @@ class ImGuiLayer(
                     settingsManager.save()
                 }
 
+                ImGui.separator()
+                if (ImGui.menuItem(stringManager.getString("menu.settings.keybindings"))) {
+                    showKeyBindings = true
+                }
+
                 ImGui.endMenu()
             }
             if (ImGui.beginMenu(stringManager.getString("menu.view"))) {
@@ -335,5 +343,83 @@ class ImGuiLayer(
         imGuiGl3.shutdown()
         imGuiGlfw.shutdown()
         ImGui.destroyContext()
+    }
+
+    private fun renderKeyBindingsWindow() {
+        if (ImGui.begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.AlwaysAutoResize)) {
+            val settings = settingsManager.settings.keyBindings
+            
+            // Helper to draw a row
+            fun drawBindRow(label: String, currentKey: Int, bindAction: String) {
+                ImGui.text(label)
+                ImGui.sameLine(200f)
+                
+                val keyName = getKeyName(currentKey)
+                val btnText = if (keyBindingAction == bindAction) "Press any key..." else keyName
+                
+                if (ImGui.button("$btnText##$bindAction", 120f, 0f)) {
+                    keyBindingAction = bindAction
+                }
+            }
+
+            drawBindRow("Translate Tool", settings.gizmoTranslate, "gizmoTranslate")
+            drawBindRow("Rotate Tool", settings.gizmoRotate, "gizmoRotate")
+            drawBindRow("Scale Tool", settings.gizmoScale, "gizmoScale")
+            drawBindRow("Select Tool", settings.gizmoSelect, "gizmoSelect")
+            drawBindRow("Measure Tool", settings.gizmoMeasure, "gizmoMeasure")
+            drawBindRow("Deselect", settings.deselect, "deselect")
+
+            ImGui.separator()
+            if (ImGui.button("Close")) {
+                showKeyBindings = false
+                keyBindingAction = null
+                settingsManager.save()
+            }
+            
+            // Handle Binding
+            if (keyBindingAction != null) {
+                // Check for key press
+                for (i in 0..348) { // GLFW_KEY_LAST is 348
+                    if (ImGui.isKeyPressed(i)) {
+                        // Assign key
+                        when (keyBindingAction) {
+                            "gizmoTranslate" -> settings.gizmoTranslate = i
+                            "gizmoRotate" -> settings.gizmoRotate = i
+                            "gizmoScale" -> settings.gizmoScale = i
+                            "gizmoSelect" -> settings.gizmoSelect = i
+                            "gizmoMeasure" -> settings.gizmoMeasure = i
+                            "deselect" -> settings.deselect = i
+                        }
+                        keyBindingAction = null
+                        settingsManager.save()
+                        break
+                    }
+                }
+            }
+        }
+        ImGui.end()
+    }
+
+    private fun getKeyName(key: Int): String {
+        return when (key) {
+            GLFW.GLFW_KEY_ESCAPE -> "Esc"
+            GLFW.GLFW_KEY_ENTER -> "Enter"
+            GLFW.GLFW_KEY_TAB -> "Tab"
+            GLFW.GLFW_KEY_BACKSPACE -> "Backspace"
+            GLFW.GLFW_KEY_INSERT -> "Insert"
+            GLFW.GLFW_KEY_DELETE -> "Delete"
+            GLFW.GLFW_KEY_RIGHT -> "Right"
+            GLFW.GLFW_KEY_LEFT -> "Left"
+            GLFW.GLFW_KEY_DOWN -> "Down"
+            GLFW.GLFW_KEY_UP -> "Up"
+            GLFW.GLFW_KEY_PAGE_UP -> "PgUp"
+            GLFW.GLFW_KEY_PAGE_DOWN -> "PgDn"
+            GLFW.GLFW_KEY_HOME -> "Home"
+            GLFW.GLFW_KEY_END -> "End"
+            else -> {
+                val name = GLFW.glfwGetKeyName(key, 0)
+                name?.uppercase() ?: "Key $key"
+            }
+        }
     }
 }

@@ -13,18 +13,15 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.getValue
 import kotlin.math.abs
 
-class MeasureTool : Component(), KoinComponent {
+class MeasureTool(sceneManager: SceneManager) : Gizmo(sceneManager), KoinComponent {
     private val debugDraw: DebugDraw by inject()
-    private val sceneManager: SceneManager by inject()
     private val mouseListener: MouseListener by inject()
     private val settingsManager: SettingsManager by inject()
 
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
-    private var isActive = false
 
     var measurementText: String? = null
         private set
@@ -32,7 +29,14 @@ class MeasureTool : Component(), KoinComponent {
         private set
 
     override fun editorUpdate(dt: Float) {
-        if (!isActive) return
+        // Reset if not in use
+        if (!isInUse()) {
+            startPoint = null
+            endPoint = null
+            measurementText = null
+            measurementPos = null
+            return
+        }
 
         val scene = sceneManager.currentScene ?: return
         
@@ -46,7 +50,7 @@ class MeasureTool : Component(), KoinComponent {
         val relX = mouseX - viewportPos.x
         val relY = mouseY - viewportPos.y
         
-        // Clear previous text
+        // Clear previous text (will be set if we have a measurement)
         measurementText = null
         measurementPos = null
 
@@ -93,23 +97,8 @@ class MeasureTool : Component(), KoinComponent {
         }
 
         if (ImGui.isKeyPressed(ImGuiKey.Escape)) {
-            isActive = false
             startPoint = null
             endPoint = null
         }
     }
-
-    fun toggle() {
-        setToolActive(!isActive)
-    }
-    
-    fun setToolActive(active: Boolean) {
-        isActive = active
-        if (!isActive) {
-            startPoint = null
-            endPoint = null
-        }
-    }
-
-    fun isToolActive() = isActive
 }

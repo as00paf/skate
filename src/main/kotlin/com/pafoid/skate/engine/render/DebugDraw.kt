@@ -3,6 +3,8 @@ package com.pafoid.skate.engine.render
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.ShaderConst.Uniforms.PROJECTION
+import com.pafoid.skate.engine.assets.ShaderConst.Uniforms.VIEW
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.scenes.SceneManager
@@ -83,8 +85,8 @@ class DebugDraw: KoinComponent {
     fun draw() {
         shader.start()
         val camera = sceneManager.currentScene?.camera ?: return
-        shader.uploadMat4f("uProjection", camera.createProjectionMatrix())
-        shader.uploadMat4f("uView", camera.createViewMatrix())
+        shader.uploadMat4f(PROJECTION, camera.createProjectionMatrix())
+        shader.uploadMat4f(VIEW, camera.createViewMatrix())
 
         // 1. Draw Triangles
         if (triangles.isNotEmpty()) {

@@ -54,6 +54,7 @@ class TrickDetectionTest {
         val mockScene = mockk<Scene>()
         every { sceneManager.currentScene } returns mockScene
         every { mockScene.physics3d } returns physics
+        every { mockScene.camera } returns mockk(relaxed = true)
 
         skateboard = GameObject("Skateboard")
         rb = RigidBody3D(2.0f)

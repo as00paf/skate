@@ -282,6 +282,30 @@ class GameViewWindow : KoinComponent {
                 if (isActive) ImGui.popStyleColor()
                 if (ImGui.isItemHovered()) ImGui.setTooltip("Scale Tool (R)")
             }
+
+            // Measure Tool
+            buttons.add {
+                val isActive = gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO
+                if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+                if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                    gizmoSystem.usingGizmo = GizmoSystem.MEASURE_GIZMO
+                }
+                if (isActive) {
+                    ImGui.popStyleColor()
+                    // Render measurement tooltip
+                    editorTools.getComponent<MeasureTool>()?.let { tool ->
+                        tool.measurementText?.let { text ->
+                            tool.measurementPos?.let { pos ->
+                                ImGui.setNextWindowPos(pos.x, pos.y)
+                                ImGui.beginTooltip()
+                                ImGui.text(text)
+                                ImGui.endTooltip()
+                            }
+                        }
+                    }
+                }
+                if (ImGui.isItemHovered()) ImGui.setTooltip("Measure Tool (M)")
+            }
         }
 
         // --- Center-aligned Buttons ---
@@ -320,30 +344,6 @@ class GameViewWindow : KoinComponent {
         }
 
         // --- All Buttons ---
-        val measureTool = scene?.gameObjects?.find { it.name == "EditorTools" }
-            ?.getComponent<MeasureTool>()
-        buttons.add {
-            val measureActive = measureTool?.isToolActive() ?: false
-            if (measureActive) {
-                ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            }
-            if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                measureTool?.toggle()
-                logger.logEditor("Measure tool toggled")
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Toggle Measure Tool")
-            if (measureActive) {
-                ImGui.popStyleColor()
-                measureTool.measurementText?.let { text ->
-                    measureTool.measurementPos?.let { pos ->
-                        ImGui.setNextWindowPos(pos.x, pos.y)
-                        ImGui.beginTooltip()
-                        ImGui.text(text)
-                        ImGui.endTooltip()
-                    }
-                }
-            }
-        }
         buttons.add {
             if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 // Reset logic
