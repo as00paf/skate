@@ -244,7 +244,7 @@ class GameViewWindow : KoinComponent {
                 val isActive = gizmoSystem.usingGizmo == GizmoSystem.SELECTION_GIZMO
                 if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
                 if (ImGui.button(Icons.MOUSE_POINTER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.usingGizmo = GizmoSystem.SELECTION_GIZMO
+                    gizmoSystem.toggleGizmo(GizmoSystem.SELECTION_GIZMO)
                 }
                 if (isActive) ImGui.popStyleColor()
                 if (ImGui.isItemHovered()) ImGui.setTooltip("Select Tool (Q)")
@@ -255,7 +255,7 @@ class GameViewWindow : KoinComponent {
                 val isActive = gizmoSystem.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
                 if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
                 if (ImGui.button(Icons.MOVE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.usingGizmo = GizmoSystem.TRANSLATE_GIZMO
+                    gizmoSystem.toggleGizmo(GizmoSystem.TRANSLATE_GIZMO)
                 }
                 if (isActive) ImGui.popStyleColor()
                 if (ImGui.isItemHovered()) ImGui.setTooltip("Translate Tool (W)")
@@ -266,7 +266,7 @@ class GameViewWindow : KoinComponent {
                 val isActive = gizmoSystem.usingGizmo == GizmoSystem.ROTATION_GIZMO
                 if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
                 if (ImGui.button(Icons.ROTATE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.usingGizmo = GizmoSystem.ROTATION_GIZMO
+                    gizmoSystem.toggleGizmo(GizmoSystem.ROTATION_GIZMO)
                 }
                 if (isActive) ImGui.popStyleColor()
                 if (ImGui.isItemHovered()) ImGui.setTooltip("Rotate Tool (E)")
@@ -277,7 +277,7 @@ class GameViewWindow : KoinComponent {
                 val isActive = gizmoSystem.usingGizmo == GizmoSystem.SCALE_GIZMO
                 if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
                 if (ImGui.button(Icons.SCALE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.usingGizmo = GizmoSystem.SCALE_GIZMO
+                    gizmoSystem.toggleGizmo(GizmoSystem.SCALE_GIZMO)
                 }
                 if (isActive) ImGui.popStyleColor()
                 if (ImGui.isItemHovered()) ImGui.setTooltip("Scale Tool (R)")
@@ -288,7 +288,7 @@ class GameViewWindow : KoinComponent {
                 val isActive = gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO
                 if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
                 if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.usingGizmo = GizmoSystem.MEASURE_GIZMO
+                    gizmoSystem.toggleGizmo(GizmoSystem.MEASURE_GIZMO)
                 }
                 if (isActive) {
                     ImGui.popStyleColor()

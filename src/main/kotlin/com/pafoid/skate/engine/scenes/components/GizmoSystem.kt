@@ -15,7 +15,7 @@ class GizmoSystem: Component(), KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val settingsManager: SettingsManager by inject()
 
-    var usingGizmo = SELECTION_GIZMO
+    var usingGizmo = NONE
 
     private val translateGizmo = TranslateGizmo(sceneManager)
     private val rotationGizmo = RotationGizmo(sceneManager)
@@ -77,7 +77,16 @@ class GizmoSystem: Component(), KoinComponent {
                sg?.isHot() == true || sg?.anyAxisActive() == true
     }
 
+    fun toggleGizmo(gizmo:Int) {
+        if(usingGizmo == gizmo) {
+            usingGizmo = NONE
+        } else {
+          usingGizmo = gizmo
+        }
+    }
+
     companion object {
+        const val NONE = -1
         const val TRANSLATE_GIZMO = 0
         const val ROTATION_GIZMO = 1
         const val SCALE_GIZMO = 2
