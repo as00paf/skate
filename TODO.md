@@ -260,12 +260,12 @@
 - [x] E5.5: Refactor `Physics3D.add` to separate adding and updating `PhysicsRigidBody` properties.
 
 ### E6. Code Structure & Organization
-- [ ] E6.1: Move `Line3D` and `Triangle3D` to their own files.
-- [ ] E6.2: Move `TransformCommand`, `CreateGameObjectCommand`, `DeleteGameObjectCommand` to their own files.
-- [ ] E6.3: Move `Ray` to its own file.
+- [x] E6.1: Move `Line3D` and `Triangle3D` to their own files.
+- [x] E6.2: Move `TransformCommand`, `CreateGameObjectCommand`, `DeleteGameObjectCommand` to their own files.
+- [x] E6.3: Move `Ray` to its own file.
 
 ### E7. Import Statements & Code Style
-- [ ] E7.1: Replace all FQNs with top-level import statements for JOML and JBullet classes and use import aliases when pertinent.
+- [x] E7.1: Replace all FQNs with top-level import statements for JOML and JBullet classes and use import aliases when pertinent.
 
 ### E8. Naming & Constants
 - [ ] E8.1: Improve naming of `AnimationSampler` interpolation variables (`t0`, `t1`, `t`).

@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
@@ -263,8 +264,8 @@ class SkateboardPhysicsTest {
         
         // Check for turning (Yaw change)
         val rot = rb.rawBody!!.getPhysicsRotation(null)
-        val q = org.joml.Quaternionf(rot.x, rot.y, rot.z, rot.w)
-        val euler = org.joml.Vector3f()
+        val q = Quaternionf(rot.x, rot.y, rot.z, rot.w)
+        val euler = Vector3f()
         q.getEulerAnglesXYZ(euler)
         val yaw = euler.y
         // println("Turning: Yaw $yaw, Z-Vel ${vel.z}")
@@ -362,8 +363,8 @@ class SkateboardPhysicsTest {
         // Assert
         // Pitch should decrease
         val rot = rb.rawBody!!.getPhysicsRotation(null)
-        val q = org.joml.Quaternionf(rot.x, rot.y, rot.z, rot.w)
-        val euler = org.joml.Vector3f()
+        val q = Quaternionf(rot.x, rot.y, rot.z, rot.w)
+        val euler = Vector3f()
         q.getEulerAnglesXYZ(euler)
         val pitch = Math.toDegrees(euler.z.toDouble()).toFloat()
 

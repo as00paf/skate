@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import kotlin.math.sqrt
+import org.joml.Vector3f
 
 class PhysicsCalibrationTest {
 
@@ -12,7 +13,7 @@ class PhysicsCalibrationTest {
     fun `test freefall timing with standard gravity`() {
         val physics = Physics3D()
         val gravity = 9.81f
-        physics.setGravity(org.joml.Vector3f(0f, -gravity, 0f))
+        physics.setGravity(Vector3f(0f, -gravity, 0f))
 
         val dropHeight = 1.0f
         val cube = GameObject("TestCube")

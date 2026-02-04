@@ -25,6 +25,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.utils.Interpolation
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -158,7 +159,7 @@ fun updateProceduralLean(dt: Float) {
         val spineNames = listOf("mixamorig9_Spine", "mixamorig9_Spine1", "mixamorig9_Spine2")
         val leanPerJoint = currentLean / spineNames.size
         
-        val rotationQuat = org.joml.Quaternionf().rotateZ(Math.toRadians(leanPerJoint.toDouble()).toFloat())
+        val rotationQuat = Quaternionf().rotateZ(Math.toRadians(leanPerJoint.toDouble()).toFloat())
 
         spineNames.forEach { name ->
             // Multiply current local rotation by procedural lean
