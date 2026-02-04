@@ -289,10 +289,9 @@
 - [x] **F1.2 Buttons**: Add toggle buttons in the game view window toolbar for each gizmos (rotation, translation, scale, select)
 - [x] **F1.3 Selection**: Handle object hover & picking only if the selection tool is selected and the simulation is not running.
 - [x] **F1.4 Display**: Make sure the gizmos don't scale with the movement of the editor camera. They must always remain an appropriate size.
-- [ ] **F1.5 Measure Tool**: Refactor the measure tool into a gizmo and add it to the gizmo system
-- [ ] **F1.6 Deselect**: Deselect game object when the user presses Esc
-- [ ] **F1.7 KeyBindings**: Implement a key bindings settings menu.
-- [ ] **F1.8 DragAndDrop**: Improve drag and dropping obstacles from the prefab window to the game viewport so the objects snap to the floor grid.
+- [x] **F1.5 Measure Tool**: Refactor the measure tool into a gizmo and add it to the gizmo system
+- [x] **F1.6 Deselect**: Deselect game object when the user presses Esc
+- [x] **F1.7 KeyBindings**: Implement a key bindings settings menu.
 
 ---
 
