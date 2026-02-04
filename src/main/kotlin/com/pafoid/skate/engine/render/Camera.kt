@@ -29,7 +29,8 @@ class Camera(
     var pitch: Float = 0f,
     var yaw: Float = 0f,
     var roll: Float = 0f,
-    var isOrthographic: Boolean = false
+    var isOrthographic: Boolean = false,
+    var speed:Float = 0.025f
 ): KoinComponent {
     private val inputProvider: IInputProvider by inject()
     private val keyListener: KeyListener by inject()
@@ -171,7 +172,6 @@ class Camera(
         }
 
         // Movement
-        val speed = 0.025f
         val forward = Vector3f(
             sin(Math.toRadians(yaw.toDouble())).toFloat(),
             -sin(Math.toRadians(pitch.toDouble())).toFloat(),

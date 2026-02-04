@@ -34,12 +34,12 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         scene.camera.yaw = 0f
         
         // Essential Editor Tools
-        editorCamera = GameObject("EditorCamera").apply {
+        editorCamera = GameObject(EDITOR_CAMERA).apply {
             addComponent(EditorCamera(scene.camera))
             scene.addGameObjectToScene(this)
         }
 
-        editorStuff = GameObject("EditorTools")
+        editorStuff = GameObject(EDITOR_TOOLS)
         editorStuff.setNoSerialize()
         editorStuff.addComponent(MouseControls())
         editorStuff.addComponent(GizmoSystem())
@@ -53,5 +53,10 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     }
 
     override fun imgui() {
+    }
+
+    companion object {
+        const val EDITOR_CAMERA = "EditorCamera"
+        const val EDITOR_TOOLS = "EditorTools"
     }
 }

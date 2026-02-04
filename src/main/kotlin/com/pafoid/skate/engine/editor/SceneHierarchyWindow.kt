@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.editor
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer.Companion.EDITOR_TOOLS
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
@@ -22,7 +23,7 @@ class SceneHierarchyWindow: KoinComponent {
         val gameObjects = scene.gameObjects
 
         gameObjects.forEachIndexed { index, obj ->
-            if (obj.parent == null) { // Only draw root objects
+            if (obj.parent == null && obj.name != EDITOR_TOOLS) { // Only draw root objects
                 doTreeNode(obj, index)
             }
         }

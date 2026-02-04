@@ -14,7 +14,6 @@ import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_Y
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_TRIGGER
@@ -25,6 +24,8 @@ import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.utils.Interpolation
+import com.pafoid.skate.engine.utils.JmeVector3f
+import imgui.ImGui
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -78,7 +79,7 @@ class PlayerController : Component(), KoinComponent {
             animator = s.getComponent<Animator>()
         }
         stateManager = PlayerStateManager(this)
-        stateManager.transitionToState(PlayerState.RIDING)
+        stateManager.transitionToState(PlayerState.WALKING)
     }
 
     override fun update(dt: Float) {
@@ -394,25 +395,22 @@ class PlayerController : Component(), KoinComponent {
      * Displays a debug window with information about the player's state, stance, and velocity.
      */
     override fun imgui() {
-        imgui.ImGui.begin("Skater Debug")
-        imgui.ImGui.text("State: ${stateManager.currentState::class.simpleName}")
-        imgui.ImGui.text("Preferred Stance: $preferredStance")
-        imgui.ImGui.text("Current Stance: $currentStance")
-        imgui.ImGui.text("Is Switch: $isSwitch")
-        imgui.ImGui.text("Grounded: ${physics?.isGrounded}")
+        ImGui.text("State: ${stateManager.currentState::class.simpleName}")
+        ImGui.text("Preferred Stance: $preferredStance")
+        ImGui.text("Current Stance: $currentStance")
+        ImGui.text("Is Switch: $isSwitch")
+        ImGui.text("Grounded: ${physics?.isGrounded}")
         
         val vel = rb?.linearVelocity ?: Vector3f()
-        imgui.ImGui.text("Velocity: ${String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z)}")
+        ImGui.text("Velocity: ${String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z)}")
         
-        if (imgui.ImGui.button("Toggle Switch")) {
+        if (ImGui.button("Toggle Switch")) {
             isSwitch = !isSwitch
         }
 
-        if (imgui.ImGui.button("Toggle Preferred Stance")) {
+        if (ImGui.button("Toggle Preferred Stance")) {
             preferredStance = if (preferredStance == PreferredStance.REGULAR) PreferredStance.GOOFY else PreferredStance.REGULAR
         }
-        
-        imgui.ImGui.end()
     }
 
     /**
@@ -423,7 +421,7 @@ class PlayerController : Component(), KoinComponent {
         val phys = physics ?: return
         val currentVelocityJOML = rb?.linearVelocity ?: return
         
-        val currentVelocity = com.jme3.math.Vector3f(currentVelocityJOML.x, currentVelocityJOML.y, currentVelocityJOML.z)
+        val currentVelocity = JmeVector3f(currentVelocityJOML.x, currentVelocityJOML.y, currentVelocityJOML.z)
 
         if (phys.isGrounded) {
             val transform = gameObject.transform.toWorldMatrix()
@@ -438,7 +436,7 @@ class PlayerController : Component(), KoinComponent {
             }
 
             // High impact bail (large vertical velocity change)
-            val dv = com.jme3.math.Vector3f(currentVelocity).subtract(lastVelocity)
+            val dv = JmeVector3f(currentVelocity).subtract(lastVelocity)
             if (dv.length() > 20f) { // Arbitrary threshold for "slam"
                 bail()
                 return
