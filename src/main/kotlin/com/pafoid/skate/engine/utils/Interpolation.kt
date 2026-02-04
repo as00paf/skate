@@ -3,31 +3,62 @@ package com.pafoid.skate.engine.utils
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
+/**
+ * A utility object providing static methods for various interpolation techniques
+ * commonly used in animation systems, such as linear, spherical linear (slerp),
+ * and cubic spline interpolation.
+ */
 object Interpolation {
 
     /**
-     * LINEAR interpolation for Vector3f
+     * Performs linear interpolation between two [Vector3f] points.
+     *
+     * @param start The starting vector.
+     * @param end The ending vector.
+     * @param t The interpolation factor, typically in the range [0, 1].
+     * @param dest The destination vector to store the result.
+     * @return The interpolated vector.
      */
     fun linear(start: Vector3f, end: Vector3f, t: Float, dest: Vector3f): Vector3f {
         return start.lerp(end, t, dest)
     }
 
     /**
-     * SLERP interpolation for Quaternionf (Linear in glTF for rotations)
+     * Performs spherical linear interpolation (SLERP) between two [Quaternionf]s.
+     * This is the standard for interpolating rotations to ensure the shortest path on the unit sphere.
+     *
+     * @param start The starting quaternion.
+     * @param end The ending quaternion.
+     * @param t The interpolation factor, typically in the range [0, 1].
+     * @param dest The destination quaternion to store the result.
+     * @return The interpolated quaternion.
      */
     fun slerp(start: Quaternionf, end: Quaternionf, t: Float, dest: Quaternionf): Quaternionf {
         return start.slerp(end, t, dest)
     }
 
     /**
-     * Generic float linear interpolation
+     * Performs linear interpolation between two float values.
+     *
+     * @param start The starting value.
+     * @param end The ending value.
+     * @param t The interpolation factor, typically in the range [0, 1].
+     * @return The interpolated value.
      */
     fun lerp(start: Float, end: Float, t: Float): Float {
         return start + (end - start) * t
     }
 
     /**
-     * Generic float cubic spline interpolation
+     * Performs cubic spline interpolation between two float values using Hermite interpolation.
+     *
+     * @param p0 The starting point value.
+     * @param m0 The out-tangent (slope) at the starting point.
+     * @param p1 The ending point value.
+     * @param m1 The in-tangent (slope) at the ending point.
+     * @param t The interpolation factor, typically in the range [0, 1].
+     * @param deltaTime The time difference between keyframes, used to scale the tangents.
+     * @return The smoothly interpolated value.
      */
     fun cubicSpline(
         p0: Float, m0: Float,
@@ -47,21 +78,44 @@ object Interpolation {
     }
 
     /**
-     * STEP interpolation (returns start if t < 1, else end - but glTF STEP usually returns start for the whole interval)
-     * In glTF: The animated value is set to the value of the keyframe at the beginning of the interval.
+     * Implements STEP interpolation for a [Vector3f]. The value remains constant at the starting value
+     * for the entire interval, as defined by the glTF 2.0 specification.
+     *
+     * @param start The value to hold for the duration of the step.
+     * @param t The interpolation factor (unused in this implementation, but kept for signature consistency).
+     * @param dest The destination vector to store the result.
+     * @return The starting vector.
      */
     fun step(start: Vector3f, t: Float, dest: Vector3f): Vector3f {
         return dest.set(start)
     }
 
+    /**
+     * Implements STEP interpolation for a [Quaternionf]. The value remains constant at the starting value
+     * for the entire interval.
+     *
+     * @param start The quaternion to hold.
+     * @param t The interpolation factor (unused).
+     * @param dest The destination quaternion to store the result.
+     * @return The starting quaternion.
+     */
     fun step(start: Quaternionf, t: Float, dest: Quaternionf): Quaternionf {
         return dest.set(start)
     }
 
     /**
-     * CUBICSPLINE interpolation for Vector3f
+     * Performs cubic spline interpolation for a [Vector3f].
      * Formula: p(t) = (2t³ - 3t² + 1)p₀ + (t³ - 2t² + t)m₀ + (-2t³ + 3t²)p₁ + (t³ - t²)m₁
      * where p₀, p₁ are values, m₀ is out-tangent of start, m₁ is in-tangent of end.
+     *
+     * @param p0 The starting point vector.
+     * @param m0 The out-tangent vector at the starting point.
+     * @param p1 The ending point vector.
+     * @param m1 The in-tangent vector at the ending point.
+     * @param t The interpolation factor.
+     * @param deltaTime The time difference between keyframes.
+     * @param dest The destination vector to store the result.
+     * @return The interpolated vector.
      */
     fun cubicSpline(
         p0: Vector3f, m0: Vector3f,
@@ -86,7 +140,16 @@ object Interpolation {
     }
 
     /**
-     * CUBICSPLINE interpolation for Quaternionf
+     * Performs cubic spline interpolation for a [Quaternionf]. The result is normalized.
+     *
+     * @param p0 The starting point quaternion.
+     * @param m0 The out-tangent quaternion at the starting point.
+     * @param p1 The ending point quaternion.
+     * @param m1 The in-tangent quaternion at the ending point.
+     * @param t The interpolation factor.
+     * @param deltaTime The time difference between keyframes.
+     * @param dest The destination quaternion to store the result.
+     * @return The interpolated and normalized quaternion.
      */
     fun cubicSpline(
         p0: Quaternionf, m0: Quaternionf,

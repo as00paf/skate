@@ -30,8 +30,8 @@ class DebugDraw: KoinComponent {
     private val lines = mutableListOf<Line3D>()
     private val triangles = mutableListOf<Triangle3D>()
     
-    private val vertexArray = FloatArray(MAX_LINES * 6 * 2)
-    private val triangleVertexArray = FloatArray(MAX_TRIANGLES * 6 * 3)
+    private val lineVertexData = FloatArray(MAX_LINES * 6 * 2)
+    private val triangleVertexData = FloatArray(MAX_TRIANGLES * 6 * 3)
     
     private lateinit var shader: Shader
     private var vaoId = -1
@@ -53,7 +53,7 @@ class DebugDraw: KoinComponent {
         glBindVertexArray(vaoId)
         vboId = glGenBuffers()
         glBindBuffer(GL_ARRAY_BUFFER, vboId)
-        glBufferData(GL_ARRAY_BUFFER, vertexArray.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, lineVertexData.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 0)
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES.toLong())
@@ -64,7 +64,7 @@ class DebugDraw: KoinComponent {
         glBindVertexArray(triangleVaoId)
         triangleVboId = glGenBuffers()
         glBindBuffer(GL_ARRAY_BUFFER, triangleVboId)
-        glBufferData(GL_ARRAY_BUFFER, triangleVertexArray.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, triangleVertexData.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 0)
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES.toLong())
@@ -92,16 +92,16 @@ class DebugDraw: KoinComponent {
             for (tri in triangles) {
                 val pts = arrayOf(tri.v1, tri.v2, tri.v3)
                 for (p in pts) {
-                    triangleVertexArray[index++] = p.x
-                    triangleVertexArray[index++] = p.y
-                    triangleVertexArray[index++] = p.z
-                    triangleVertexArray[index++] = tri.color.x
-                    triangleVertexArray[index++] = tri.color.y
-                    triangleVertexArray[index++] = tri.color.z
+                    triangleVertexData[index++] = p.x
+                    triangleVertexData[index++] = p.y
+                    triangleVertexData[index++] = p.z
+                    triangleVertexData[index++] = tri.color.x
+                    triangleVertexData[index++] = tri.color.y
+                    triangleVertexData[index++] = tri.color.z
                 }
             }
             glBindBuffer(GL_ARRAY_BUFFER, triangleVboId)
-            glBufferSubData(GL_ARRAY_BUFFER, 0, triangleVertexArray)
+            glBufferSubData(GL_ARRAY_BUFFER, 0, triangleVertexData)
             glBindVertexArray(triangleVaoId)
             glDrawArrays(GL_TRIANGLES, 0, triangles.size * 3)
         }
@@ -112,16 +112,16 @@ class DebugDraw: KoinComponent {
             for (line in lines) {
                 val pts = arrayOf(line.from, line.to)
                 for (p in pts) {
-                    vertexArray[index++] = p.x
-                    vertexArray[index++] = p.y
-                    vertexArray[index++] = p.z
-                    vertexArray[index++] = line.color.x
-                    vertexArray[index++] = line.color.y
-                    vertexArray[index++] = line.color.z
+                    lineVertexData[index++] = p.x
+                    lineVertexData[index++] = p.y
+                    lineVertexData[index++] = p.z
+                    lineVertexData[index++] = line.color.x
+                    lineVertexData[index++] = line.color.y
+                    lineVertexData[index++] = line.color.z
                 }
             }
             glBindBuffer(GL_ARRAY_BUFFER, vboId)
-            glBufferSubData(GL_ARRAY_BUFFER, 0, vertexArray)
+            glBufferSubData(GL_ARRAY_BUFFER, 0, lineVertexData)
             glBindVertexArray(vaoId)
             glDrawArrays(GL_LINES, 0, lines.size * 2)
         }

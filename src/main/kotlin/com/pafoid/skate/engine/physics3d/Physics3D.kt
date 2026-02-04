@@ -42,6 +42,11 @@ class Physics3D : IPhysics3D, KoinComponent {
         private var isNativeLibraryLoaded = false
     }
 
+    /**
+     * Loads the native Bullet Physics library (`bulletjme`) using a helper library.
+     * This method is called once during initialization to ensure the native binaries are available.
+     * It prevents multiple loading attempts with a static flag.
+     */
     private fun loadNativeLibrary() {
         if (isNativeLibraryLoaded) return
         val info = LibraryInfo(null, "bulletjme", DirectoryPath.USER_DIR)
@@ -137,6 +142,14 @@ class Physics3D : IPhysics3D, KoinComponent {
         syncBodyProperties(body, rb, go)
     }
 
+    /**
+     * Synchronizes properties from our component-based representation ([RigidBody3D], [GameObject] transform)
+     * to the underlying Bullet [PhysicsRigidBody].
+     *
+     * @param body The raw Bullet rigid body to update.
+     * @param rb The component containing the desired physics properties (friction, damping).
+     * @param go The game object providing the transform (position, rotation, scale).
+     */
     private fun syncBodyProperties(body: PhysicsRigidBody, rb: RigidBody3D, go: GameObject) {
         val trans = go.transform.translation
         val rot = go.transform.rotation
@@ -163,13 +176,18 @@ class Physics3D : IPhysics3D, KoinComponent {
         }
     }
 
+    private var accumulator = 0f
+    private val fixedTimestep = 1.0f / 60.0f
+
     override fun update(dt: Float) {
-        // External fixed timestep loop provides fixed dt.
-        // We set maxSteps=0 to force exactly one step of size dt.
-        val startTime = System.nanoTime()
-        physicsSpace.update(dt, 0)
-        val endTime = System.nanoTime()
-        com.pafoid.skate.engine.utils.EngineStats.physicsStepTime.set(endTime - startTime)
+        accumulator += dt
+        while (accumulator >= fixedTimestep) {
+            val startTime = System.nanoTime()
+            physicsSpace.update(fixedTimestep, 0)
+            val endTime = System.nanoTime()
+            com.pafoid.skate.engine.utils.EngineStats.physicsStepTime.set(endTime - startTime)
+            accumulator -= fixedTimestep
+        }
 
         if (debugEnabled) {
             val debugColor = JomlVector3f(0f, 1f, 0f)
@@ -185,6 +203,14 @@ class Physics3D : IPhysics3D, KoinComponent {
         }
     }
     
+    /**
+     * Dispatches the correct debug drawing method based on the [CollisionShape]'s type.
+     *
+     * @param shape The collision shape to draw.
+     * @param pos The world position of the shape.
+     * @param rot The world rotation of the shape.
+     * @param color The color to use for drawing.
+     */
     private fun debugDrawShape(shape: CollisionShape, pos: JomlVector3f, rot: Quaternionf, color: JomlVector3f) {
         when (shape) {
             is BoxCollisionShape -> drawBoxCollisionShape(shape, pos, rot, color)
@@ -194,6 +220,15 @@ class Physics3D : IPhysics3D, KoinComponent {
         }
     }
 
+    /**
+     * Draws a placeholder for complex collision shapes (like meshes or hulls) since rendering them
+     * vertex-by-vertex would be too slow for a simple debug view.
+     *
+     * @param shape The complex collision shape.
+     * @param pos The world position.
+     * @param rot The world rotation.
+     * @param color The drawing color.
+     */
     private fun drawComplexShapes(
         shape: CollisionShape,
         pos: JomlVector3f,
@@ -206,6 +241,14 @@ class Physics3D : IPhysics3D, KoinComponent {
         debugDraw.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
     }
 
+    /**
+     * Recursively draws the child shapes of a [CompoundCollisionShape].
+     *
+     * @param shape The compound shape to draw.
+     * @param pos The world position of the compound shape's parent.
+     * @param rot The world rotation of the compound shape's parent.
+     * @param color The drawing color.
+     */
     private fun drawCompoundCollisionShape(
         shape: CompoundCollisionShape,
         pos: JomlVector3f,
@@ -229,6 +272,14 @@ class Physics3D : IPhysics3D, KoinComponent {
         }
     }
 
+    /**
+     * Draws a wireframe representation of a [CylinderCollisionShape].
+     *
+     * @param shape The cylinder shape.
+     * @param pos The world position.
+     * @param rot The world rotation.
+     * @param color The drawing color.
+     */
     private fun drawCylinderCollisionShape(shape: CylinderCollisionShape, pos: JomlVector3f, rot: Quaternionf, color: JomlVector3f) {
         val axis = shape.axis
         val radius: Float
@@ -259,6 +310,14 @@ class Physics3D : IPhysics3D, KoinComponent {
         debugDraw.addCylinder3D(pos, rot, radius, height, axis, color)
     }
 
+    /**
+     * Draws a wireframe representation of a [BoxCollisionShape].
+     *
+     * @param shape The box shape.
+     * @param pos The world position.
+     * @param rot The world rotation.
+     * @param color The drawing color.
+     */
     private fun drawBoxCollisionShape(shape: BoxCollisionShape, pos: JomlVector3f, rot: Quaternionf, color: JomlVector3f) {
         val halfExtents = shape.getHalfExtents(null)
         debugDraw.addBox3D(pos, rot, JomlVector3f(halfExtents.x, halfExtents.y, halfExtents.z), color)

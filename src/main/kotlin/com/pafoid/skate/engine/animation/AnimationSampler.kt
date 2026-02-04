@@ -60,17 +60,17 @@ class AnimationSampler(
         }
 
         val index = findKeyframeIndex(clampedTime)
-        val t0 = times[index]
-        val t1 = times[index + 1]
-        val t = (clampedTime - t0) / (t1 - t0)
-        block(index, t, t1 - t0)
+        val previousKeyframeTime = times[index]
+        val nextKeyframeTime = times[index + 1]
+        val interpolationFactor = (clampedTime - previousKeyframeTime) / (nextKeyframeTime - previousKeyframeTime)
+        block(index, interpolationFactor, nextKeyframeTime - previousKeyframeTime)
     }
 
     /**
      * Samples the animation at a specific [time] and writes the result into [dest].
      */
     fun sample(time: Float, dest: FloatArray) {
-        withSampleContext(time, componentsPerValue, { index, t, dt ->
+        withSampleContext(time, componentsPerValue, { index, interpolationFactor, deltaTime ->
             when (interpolation) {
                 InterpolationType.STEP -> {
                     for (i in 0 until componentsPerValue) {
@@ -81,7 +81,7 @@ class AnimationSampler(
                     for (i in 0 until componentsPerValue) {
                         val v0 = values[index * componentsPerValue + i]
                         val v1 = values[(index + 1) * componentsPerValue + i]
-                        dest[i] = v0 + (v1 - v0) * t
+                        dest[i] = v0 + (v1 - v0) * interpolationFactor
                     }
                 }
                 InterpolationType.CUBIC_SPLINE -> {
@@ -91,7 +91,7 @@ class AnimationSampler(
                         val m0 = values[index * stride + componentsPerValue * 2 + i]
                         val p1 = values[(index + 1) * stride + componentsPerValue + i]
                         val m1 = values[(index + 1) * stride + i]
-                        dest[i] = Interpolation.cubicSpline(p0, m0, p1, m1, t, dt)
+                        dest[i] = Interpolation.cubicSpline(p0, m0, p1, m1, interpolationFactor, deltaTime)
                     }
                 }
             }
@@ -106,7 +106,7 @@ class AnimationSampler(
      * Specialized sampler for [Vector3f] targets (Translation/Scale).
      */
     fun sampleVector3f(time: Float, dest: Vector3f) {
-        withSampleContext(time, 3, { index, t, dt ->
+        withSampleContext(time, 3, { index, interpolationFactor, deltaTime ->
             when (interpolation) {
                 InterpolationType.STEP -> {
                     dest.set(values[index * 3], values[index * 3 + 1], values[index * 3 + 2])
@@ -114,7 +114,7 @@ class AnimationSampler(
                 InterpolationType.LINEAR -> {
                     val v0x = values[index * 3]; val v0y = values[index * 3 + 1]; val v0z = values[index * 3 + 2]
                     val v1x = values[(index + 1) * 3]; val v1y = values[(index + 1) * 3 + 1]; val v1z = values[(index + 1) * 3 + 2]
-                    dest.set(v0x + (v1x - v0x) * t, v0y + (v1y - v0y) * t, v0z + (v1z - v0z) * t)
+                    dest.set(v0x + (v1x - v0x) * interpolationFactor, v0y + (v1y - v0y) * interpolationFactor, v0z + (v1z - v0z) * interpolationFactor)
                 }
                 InterpolationType.CUBIC_SPLINE -> {
                     val stride = 9
@@ -124,9 +124,9 @@ class AnimationSampler(
                     val p1x = values[(index + 1) * stride + 3]; val p1y = values[(index + 1) * stride + 4]; val p1z = values[(index + 1) * stride + 5]
                     val m1x = values[(index + 1) * stride + 0]; val m1y = values[(index + 1) * stride + 1]; val m1z = values[(index + 1) * stride + 2]
 
-                    dest.x = Interpolation.cubicSpline(p0x, m0x, p1x, m1x, t, dt)
-                    dest.y = Interpolation.cubicSpline(p0y, m0y, p1y, m1y, t, dt)
-                    dest.z = Interpolation.cubicSpline(p0z, m0z, p1z, m1z, t, dt)
+                    dest.x = Interpolation.cubicSpline(p0x, m0x, p1x, m1x, interpolationFactor, deltaTime)
+                    dest.y = Interpolation.cubicSpline(p0y, m0y, p1y, m1y, interpolationFactor, deltaTime)
+                    dest.z = Interpolation.cubicSpline(p0z, m0z, p1z, m1z, interpolationFactor, deltaTime)
                 }
             }
         }, { offset ->
@@ -140,7 +140,7 @@ class AnimationSampler(
      * Note: LINEAR interpolation for rotations in glTF is defined as SLERP.
      */
     fun sampleQuaternionf(time: Float, dest: Quaternionf) {
-        withSampleContext(time, 4, { index, t, dt ->
+        withSampleContext(time, 4, { index, interpolationFactor, deltaTime ->
             when (interpolation) {
                 InterpolationType.STEP -> {
                     dest.set(values[index * 4], values[index * 4 + 1], values[index * 4 + 2], values[index * 4 + 3])
@@ -149,7 +149,7 @@ class AnimationSampler(
                     // glTF says LINEAR for rotations means SLERP
                     val q0 = Quaternionf(values[index * 4], values[index * 4 + 1], values[index * 4 + 2], values[index * 4 + 3])
                     val q1 = Quaternionf(values[(index + 1) * 4], values[(index + 1) * 4 + 1], values[(index + 1) * 4 + 2], values[(index + 1) * 4 + 3])
-                    q0.slerp(q1, t, dest)
+                    q0.slerp(q1, interpolationFactor, dest)
                 }
                 InterpolationType.CUBIC_SPLINE -> {
                     val stride = 12
@@ -159,10 +159,10 @@ class AnimationSampler(
                     val p1x = values[(index + 1) * stride + 4]; val p1y = values[(index + 1) * stride + 5]; val p1z = values[(index + 1) * stride + 6]; val p1w = values[(index + 1) * stride + 7]
                     val m1x = values[(index + 1) * stride + 0]; val m1y = values[(index + 1) * stride + 1]; val m1z = values[(index + 1) * stride + 2]; val m1w = values[(index + 1) * stride + 3]
 
-                    dest.x = Interpolation.cubicSpline(p0x, m0x, p1x, m1x, t, dt)
-                    dest.y = Interpolation.cubicSpline(p0y, m0y, p1y, m1y, t, dt)
-                    dest.z = Interpolation.cubicSpline(p0z, m0z, p1z, m1z, t, dt)
-                    dest.w = Interpolation.cubicSpline(p0w, m0w, p1w, m1w, t, dt)
+                    dest.x = Interpolation.cubicSpline(p0x, m0x, p1x, m1x, interpolationFactor, deltaTime)
+                    dest.y = Interpolation.cubicSpline(p0y, m0y, p1y, m1y, interpolationFactor, deltaTime)
+                    dest.z = Interpolation.cubicSpline(p0z, m0z, p1z, m1z, interpolationFactor, deltaTime)
+                    dest.w = Interpolation.cubicSpline(p0w, m0w, p1w, m1w, interpolationFactor, deltaTime)
                     dest.normalize()
                 }
             }

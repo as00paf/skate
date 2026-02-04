@@ -48,6 +48,12 @@ class TrickDetector : Component(), KoinComponent {
         }
     }
 
+    /**
+     * Analyzes the accumulated rotations around the skateboard's local axes to identify a trick.
+     * It checks for specific rotation thresholds for tricks like Kickflips, Heelflips, and Shove-its.
+     * The identified trick name is then combined with a stance prefix (e.g., "Fakie", "Switch")
+     * based on the PlayerController's current state. The result is stored in the `detectedTrick` property.
+     */
     internal fun detectTrick() {
         // Reset detected trick each frame before re-evaluation
         detectedTrick = null

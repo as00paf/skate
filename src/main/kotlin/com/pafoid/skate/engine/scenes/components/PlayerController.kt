@@ -91,10 +91,18 @@ class PlayerController : Component(), KoinComponent {
         }
     }
 
+    /**
+     * Checks if the skateboard is currently in motion.
+     * @return True if the linear velocity's length is above a small threshold, false otherwise.
+     */
     fun isMoving(): Boolean {
         return (rb?.linearVelocity?.length() ?: 0f) > 0.1f
     }
 
+    /**
+     * Checks if the player is actively providing push input.
+     * @return True if keyboard or controller push inputs are detected, false otherwise.
+     */
     fun isPushing(): Boolean {
         var multiplier = 0f
         if (inputProvider.isKeyPressed(GLFW_KEY_W)) {
@@ -117,6 +125,10 @@ class PlayerController : Component(), KoinComponent {
         return multiplier > 0f
     }
 
+    /**
+     * Enforces the skater model's position and orientation relative to the board,
+     * ensuring it remains snapped to the deck.
+     */
     fun handleStability() {
         val s = skater ?: return
         // Force snap to board top center
@@ -126,6 +138,10 @@ class PlayerController : Component(), KoinComponent {
         s.transform.rotation.set(0f, 90f, 0f)
     }
 
+    /**
+     * Updates the skater's animation to a standard riding pose.
+     * @param dt Delta time for animation blending (currently unused but good practice).
+     */
     fun updateRidingAnimation(dt: Float) {
         val anim = animator ?: return
         
@@ -137,7 +153,11 @@ class PlayerController : Component(), KoinComponent {
         // but for now let's let it play to see what it is.
     }
 
-fun updateProceduralLean(dt: Float) {
+    /**
+     * Procedurally rotates the skater's spine bones based on steering input to create a leaning effect.
+     * @param dt Delta time for smooth interpolation.
+     */
+    fun updateProceduralLean(dt: Float) {
     if (stateManager.currentState !is PlayerState.RIDING) return
     val entity = skater?.getComponent<Entity>() ?: return
     val skeleton = entity.gameObject.getComponent<Skeleton>() ?: entity.model.skeleton ?: return
@@ -169,6 +189,11 @@ fun updateProceduralLean(dt: Float) {
         }
     }
 
+    /**
+     * Handles character movement when in the 'WALKING' state, including input processing,
+     * camera-relative movement, and animation triggering.
+     * @param dt Delta time.
+     */
     fun handleWalking(dt: Float) {
         val scene = sceneManager.currentScene ?: return
         val camera = scene.camera
@@ -233,6 +258,10 @@ fun updateProceduralLean(dt: Float) {
         }
     }
 
+    /**
+     * Raycasts downwards to snap the skater model to the ground while in the 'WALKING' state.
+     * Prevents floating or clipping through terrain.
+     */
     fun handleGroundSnapping() {
         val scene = sceneManager.currentScene ?: return
         val target = skater ?: return
@@ -245,126 +274,6 @@ fun updateProceduralLean(dt: Float) {
         if (closest != null) {
             val hitY = rayStart.y + (rayEnd.y - rayStart.y) * closest.hitFraction
             pos.y = hitY
-        }
-    }
-
-    private fun handleStateToggle() {
-        var toggle = inputProvider.keyBeginPress(GLFW_KEY_Y)
-        if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, BUTTON_Y)) {
-            toggle = true
-        }
-
-        if (toggle) {
-            val s = skater ?: return
-            sceneManager.currentScene ?: return
-
-            if (stateManager.currentState == PlayerState.RIDING) {
-                stateManager.transitionToState(PlayerState.WALKING)
-                physics?.enabled = false
-                
-                // Transition to World Space
-                val worldPos = Vector3f()
-                val worldMatrix = s.transform.toWorldMatrix()
-                worldMatrix.getTranslation(worldPos)
-                
-                // Get world rotation Y
-                val worldRot = gameObject.transform.rotation.y + s.transform.rotation.y
-
-                // Unparent (It remains in scene.gameObjects list)
-                gameObject.removeChild(s)
-                
-                s.transform.translation.set(worldPos)
-                s.transform.rotation.set(0f, worldRot, 0f)
-                
-                // Teleport offset: Move slightly to the right side of the board
-                val right = Vector3f(0f, 0f, 0.4f)
-                val boardWorldMatrix = gameObject.transform.toWorldMatrix()
-                boardWorldMatrix.transformDirection(right)
-                s.transform.translation.add(right)
-                
-            } else {
-                stateManager.transitionToState(PlayerState.RIDING)
-                physics?.enabled = true
-                
-                // Reparent back to board
-                gameObject.addChild(s)
-                
-                // Reset local transform relative to board
-                // Board top is ~0.02 above center. Feet at 0.02.
-                s.transform.translation.set(0f, 0.02f, 0f) 
-                s.transform.rotation.set(0f, 0f, 0f)
-            }
-        }
-    }
-
-    fun updateCurrentStance() {
-        val body = rb ?: return
-        val velocity = body.linearVelocity
-        if (velocity.length() < 0.5f) return 
-
-        val transform = gameObject.transform.toWorldMatrix()
-        // Our board forward is X.
-        val forward = Vector3f(1f, 0f, 0f)
-        transform.transformDirection(forward)
-
-        val dot = forward.dot(velocity)
-        val movingForward = dot > 0
-
-        currentStance = when {
-            !isSwitch && movingForward -> Stance.REGULAR
-            !isSwitch && !movingForward -> Stance.FAKIE
-            isSwitch && movingForward -> Stance.SWITCH
-            isSwitch && !movingForward -> Stance.NOLLIE
-            else -> Stance.REGULAR
-        }
-    }
-
-    override fun imgui() {
-        imgui.ImGui.begin("Skater Debug")
-        imgui.ImGui.text("State: ${stateManager.currentState::class.simpleName}")
-        imgui.ImGui.text("Preferred Stance: $preferredStance")
-        imgui.ImGui.text("Current Stance: $currentStance")
-        imgui.ImGui.text("Is Switch: $isSwitch")
-        imgui.ImGui.text("Grounded: ${physics?.isGrounded}")
-        
-        val vel = rb?.linearVelocity ?: Vector3f()
-        imgui.ImGui.text("Velocity: ${String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z)}")
-        
-        if (imgui.ImGui.button("Toggle Switch")) {
-            isSwitch = !isSwitch
-        }
-
-        if (imgui.ImGui.button("Toggle Preferred Stance")) {
-            preferredStance = if (preferredStance == PreferredStance.REGULAR) PreferredStance.GOOFY else PreferredStance.REGULAR
-        }
-        
-        imgui.ImGui.end()
-    }
-
-    fun checkBail() {
-        val phys = physics ?: return
-        val currentVelocityJOML = rb?.linearVelocity ?: return
-        
-        val currentVelocity = com.jme3.math.Vector3f(currentVelocityJOML.x, currentVelocityJOML.y, currentVelocityJOML.z)
-
-        if (phys.isGrounded) {
-            val transform = gameObject.transform.toWorldMatrix()
-            val localUp = Vector3f(0f, 1f, 0f)
-            val worldUp = Vector3f()
-            transform.transformDirection(localUp, worldUp)
-
-            // Orientation bail
-            if (worldUp.y < 0f) {
-                bail()
-                return
-            }
-
-            // High impact bail (large vertical velocity change)
-            val dv = com.jme3.math.Vector3f(currentVelocity).subtract(lastVelocity)
-            if (dv.length() > 20f) { // Arbitrary threshold for "slam"
-                bail()
-                return
-            }
         }
     }
 
@@ -415,7 +324,143 @@ fun updateProceduralLean(dt: Float) {
         this.enabled = false
         physics?.enabled = false
     }
+    
+    private fun handleStateToggle() {
+        var toggle = inputProvider.keyBeginPress(GLFW_KEY_Y)
+        if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, BUTTON_Y)) {
+            toggle = true
+        }
 
+        if (toggle) {
+            val s = skater ?: return
+            sceneManager.currentScene ?: return
+
+            if (stateManager.currentState == PlayerState.RIDING) {
+                stateManager.transitionToState(PlayerState.WALKING)
+                physics?.enabled = false
+                
+                // Transition to World Space
+                val worldPos = Vector3f()
+                val worldMatrix = s.transform.toWorldMatrix()
+                worldMatrix.getTranslation(worldPos)
+                
+                // Get world rotation Y
+                val worldRot = gameObject.transform.rotation.y + s.transform.rotation.y
+
+                // Unparent (It remains in scene.gameObjects list)
+                gameObject.removeChild(s)
+                
+                s.transform.translation.set(worldPos)
+                s.transform.rotation.set(0f, worldRot, 0f)
+                
+                // Teleport offset: Move slightly to the right side of the board
+                val right = Vector3f(0f, 0f, 0.4f)
+                val boardWorldMatrix = gameObject.transform.toWorldMatrix()
+                boardWorldMatrix.transformDirection(right)
+                s.transform.translation.add(right)
+                
+            } else {
+                stateManager.transitionToState(PlayerState.RIDING)
+                physics?.enabled = true
+                
+                // Reparent back to board
+                gameObject.addChild(s)
+                
+                // Reset local transform relative to board
+                // Board top is ~0.02 above center. Feet at 0.02.
+                s.transform.translation.set(0f, 0.02f, 0f) 
+                s.transform.rotation.set(0f, 0f, 0f)
+            }
+        }
+    }
+
+    /**
+     * Updates the player's current riding stance (Regular, Fakie, Switch, Nollie) based on
+     * movement direction and the `isSwitch` flag.
+     */
+    fun updateCurrentStance() {
+        val body = rb ?: return
+        val velocity = body.linearVelocity
+        if (velocity.length() < 0.5f) return 
+
+        val transform = gameObject.transform.toWorldMatrix()
+        // Our board forward is X.
+        val forward = Vector3f(1f, 0f, 0f)
+        transform.transformDirection(forward)
+
+        val dot = forward.dot(velocity)
+        val movingForward = dot > 0
+
+        currentStance = when {
+            !isSwitch && movingForward -> Stance.REGULAR
+            !isSwitch && !movingForward -> Stance.FAKIE
+            isSwitch && movingForward -> Stance.SWITCH
+            isSwitch && !movingForward -> Stance.NOLLIE
+            else -> Stance.REGULAR
+        }
+    }
+
+    /**
+     * Displays a debug window with information about the player's state, stance, and velocity.
+     */
+    override fun imgui() {
+        imgui.ImGui.begin("Skater Debug")
+        imgui.ImGui.text("State: ${stateManager.currentState::class.simpleName}")
+        imgui.ImGui.text("Preferred Stance: $preferredStance")
+        imgui.ImGui.text("Current Stance: $currentStance")
+        imgui.ImGui.text("Is Switch: $isSwitch")
+        imgui.ImGui.text("Grounded: ${physics?.isGrounded}")
+        
+        val vel = rb?.linearVelocity ?: Vector3f()
+        imgui.ImGui.text("Velocity: ${String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z)}")
+        
+        if (imgui.ImGui.button("Toggle Switch")) {
+            isSwitch = !isSwitch
+        }
+
+        if (imgui.ImGui.button("Toggle Preferred Stance")) {
+            preferredStance = if (preferredStance == PreferredStance.REGULAR) PreferredStance.GOOFY else PreferredStance.REGULAR
+        }
+        
+        imgui.ImGui.end()
+    }
+
+    /**
+     * Checks for conditions that would cause the player to "bail" or fall, such as being upside down
+     * or experiencing a high-impact landing.
+     */
+    fun checkBail() {
+        val phys = physics ?: return
+        val currentVelocityJOML = rb?.linearVelocity ?: return
+        
+        val currentVelocity = com.jme3.math.Vector3f(currentVelocityJOML.x, currentVelocityJOML.y, currentVelocityJOML.z)
+
+        if (phys.isGrounded) {
+            val transform = gameObject.transform.toWorldMatrix()
+            val localUp = Vector3f(0f, 1f, 0f)
+            val worldUp = Vector3f()
+            transform.transformDirection(localUp, worldUp)
+
+            // Orientation bail
+            if (worldUp.y < 0f) {
+                bail()
+                return
+            }
+
+            // High impact bail (large vertical velocity change)
+            val dv = com.jme3.math.Vector3f(currentVelocity).subtract(lastVelocity)
+            if (dv.length() > 20f) { // Arbitrary threshold for "slam"
+                bail()
+                return
+            }
+        }
+    }
+
+    /**
+     * Applies corrective torques to the skateboard to "catch" it and stabilize its rotation
+     * after a trick, snapping it to the nearest 180-degree yaw and flattening its roll and pitch.
+     * @param dt Delta time.
+     */
     fun handleCatch(dt: Float) {
         val rb3d = rb ?: return
         val rotation = gameObject.transform.rotation
@@ -470,6 +515,11 @@ fun updateProceduralLean(dt: Float) {
         }
     }
 
+    /**
+     * Reads the right analog stick for "flick" inputs and applies corresponding
+     * rotational forces to the skateboard for tricks.
+     * @param dt Delta time (currently unused).
+     */
     fun handleFlicks(dt: Float) {
         val flick = inputBuffer.getRightStickFlickVelocity(GLFW_JOYSTICK_1, 0.1f)
         if (flick.length() > 5.0f) {
@@ -489,6 +539,11 @@ fun updateProceduralLean(dt: Float) {
         }
     }
 
+    /**
+     * Handles steering input from the keyboard or left analog stick, applying yaw
+     * torque to the skateboard.
+     * @param dt Delta time (currently unused).
+     */
     fun handleSteering(dt: Float) {
         var steer = 0f
         
@@ -517,6 +572,10 @@ fun updateProceduralLean(dt: Float) {
         }
     }
 
+    /**
+     * Handles pushing input, applying a forward force to the skateboard.
+     * @param dt Delta time (currently unused).
+     */
     fun handlePushing(dt: Float) {
         var multiplier = 0f
         
@@ -552,6 +611,9 @@ fun updateProceduralLean(dt: Float) {
         }
     }
 
+    /**
+     * Handles jump input, applying a vertical impulse for an ollie.
+     */
     fun handleJumping() {
         var jump = inputProvider.keyBeginPress(GLFW_KEY_SPACE)
         

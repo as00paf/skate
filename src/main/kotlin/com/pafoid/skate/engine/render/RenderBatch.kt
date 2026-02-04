@@ -18,7 +18,7 @@ class RenderBatch(
     private var numSprites = 0
     private var hasRoom = true
     private var vertices: FloatArray = FloatArray(maxBatchSize * 4 * VERTEX_SIZE)
-    private val texSlots = mutableListOf<Texture>()
+    private val textureSlots = mutableListOf<Texture>()
 
     private var vaoId = 0
     private var vboId = 0
@@ -68,8 +68,8 @@ class RenderBatch(
         numSprites++
 
         if (spr.getTexture() != null) {
-            if (!texSlots.contains(spr.getTexture())) {
-                texSlots.add(spr.getTexture()!!)
+            if (!textureSlots.contains(spr.getTexture())) {
+                textureSlots.add(spr.getTexture()!!)
             }
         }
 
@@ -105,9 +105,9 @@ class RenderBatch(
         shader.uploadMat4f(Uniforms.PROJECTION, projectionMatrix)
         shader.uploadMat4f(Uniforms.VIEW, viewMatrix)
 
-        for (i in 0 until texSlots.size) {
+        for (i in 0 until textureSlots.size) {
             glActiveTexture(GL_TEXTURE0 + i + 1)
-            texSlots[i].bind()
+            textureSlots[i].bind()
         }
         shader.uploadIntArray(Uniforms.TEXTURES, intArrayOf(0, 1, 2, 3, 4, 5, 6, 7))
 
@@ -127,8 +127,8 @@ class RenderBatch(
         glDisableVertexAttribArray(4)
         glBindVertexArray(0)
 
-        for (i in 0 until texSlots.size) {
-            texSlots[i].unbind()
+        for (i in 0 until textureSlots.size) {
+            textureSlots[i].unbind()
         }
         shader.stop()
     }
@@ -144,8 +144,8 @@ class RenderBatch(
 
         var texId = 0
         if (sprite.getTexture() != null) {
-            for (i in 0 until texSlots.size) {
-                if (texSlots[i] == sprite.getTexture()) {
+            for (i in 0 until textureSlots.size) {
+                if (textureSlots[i] == sprite.getTexture()) {
                     texId = i + 1
                     break
                 }
@@ -236,11 +236,11 @@ class RenderBatch(
     }
 
     fun hasTextureRoom(): Boolean {
-        return texSlots.size < 8
+        return textureSlots.size < 8
     }
 
     fun hasTexture(tex: Texture): Boolean {
-        return texSlots.contains(tex)
+        return textureSlots.contains(tex)
     }
 
     fun zIndex(): Int {
@@ -253,7 +253,7 @@ class RenderBatch(
 
     fun clear() {
         numSprites = 0
-        texSlots.clear()
+        textureSlots.clear()
         hasRoom = true
     }
 }

@@ -139,14 +139,14 @@
 
 ## 🛠️ 16.5: Boundary & Stress Testing
 - [x] **Test T5.1: High-Speed Stability**: Run the simulation at $50 m/s$; verify raycast wheels do not "tunnel" (clip) through the floor. (PASSED)
-- [ ] **Test T5.2: Frame-Rate Independence**: Run the same "Push" test at $30fps$ and $120fps$; verify the final displacement is identical within a 1% margin. (FAILED - See Task 17.4)
+- [x] **Test T5.2: Frame-Rate Independence**: Run the same "Push" test at $30fps$ and $120fps$; verify the final displacement is identical within a 1% margin. (PASSED)
 - [x] **Test T5.3: Access Violation Regression**: Repeatedly instantiate and destroy 100 `PhysicsRigidBody` objects to ensure the `-Xverify:none` flag and JNI bindings are stable. (PASSED)
 
 # 🏗️ Phase 17. Architecture & Infrastructure Optimization
 - [x] **Dependency Migration**: Move all dependency versions from `build.gradle.kts` to `libs.versions.toml` for centralized version management.
 - [x] **Resource Management System**: Implement a centralized system to handle efficient loading, caching, and unloading of engine assets (Textures, Shaders, Models).
 - [x] **Dependency Injection**: Integrate **Koin** to manage component lifecycles, improve testability, and decouple engine systems.
-- [ ] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using kotlinx.serialization) for handling save states, configurations, and object properties.
+- [x] **Standardized Serialization**: Implement a robust, project-wide serialization strategy (e.g., using kotlinx.serialization) for handling save states, configurations, and object properties.
 
 # 🛠️ Phase 18. Editor UX & Workspace Overhaul
 ## 18.1. UI Navigation & Menu Cleanup
@@ -268,14 +268,14 @@
 - [x] E7.1: Replace all FQNs with top-level import statements for JOML and JBullet classes and use import aliases when pertinent.
 
 ### E8. Naming & Constants
-- [ ] E8.1: Improve naming of `AnimationSampler` interpolation variables (`t0`, `t1`, `t`).
-- [ ] E8.2: Rename `DebugDraw` `vertexArray` to `lineVertexData` and `triangleVertexArray` to `triangleVertexData`.
-- [ ] E8.3: Rename `RenderBatch` `texSlots` to `textureSlots`.
+- [x] E8.1: Improve naming of `AnimationSampler` interpolation variables (`t0`, `t1`, `t`).
+- [x] E8.2: Rename `DebugDraw` `vertexArray` to `lineVertexData` and `triangleVertexArray` to `triangleVertexData`.
+- [x] E8.3: Rename `RenderBatch` `texSlots` to `textureSlots`.
 
 ### E9. Documentation (KDoc)
-- [ ] E9.1: Add KDoc to `MathExtensions.kt` functions.
-- [ ] E9.2: Add KDoc to `Interpolation.kt` functions.
-- [ ] E9.3: Add KDoc to `MImGui.kt` functions.
-- [ ] E9.4: Add KDoc to private helper methods in `Physics3D.kt`.
-- [ ] E9.5: Add KDoc to `PlayerController.kt` methods.
-- [ ] E9.6: Add KDoc to `TrickDetector.detectTrick()` method.
+- [x] E9.1: Add KDoc to `MathExtensions.kt` functions.
+- [x] E9.2: Add KDoc to `Interpolation.kt` functions.
+- [x] E9.3: Add KDoc to `MImGui.kt` functions.
+- [x] E9.4: Add KDoc to private helper methods in `Physics3D.kt`.
+- [x] E9.5: Add KDoc to `PlayerController.kt` methods.
+- [x] E9.6: Add KDoc to `TrickDetector.detectTrick()` method.

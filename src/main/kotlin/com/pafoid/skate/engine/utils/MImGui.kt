@@ -7,6 +7,10 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 
+/**
+ * A utility object providing customized ImGui widgets for the editor, such as vector controls and color pickers.
+ * This helps maintain a consistent look and feel across the editor's UI.
+ */
 object MImGui {
 
     private var uniformScaling = true
@@ -16,6 +20,15 @@ object MImGui {
     const val SENSIBILITY_SCALE = 0.005f
     const val SENSIBILITY_ROTATION = 0.1f
 
+    /**
+     * Draws a customized control for editing a [Vector2f].
+     *
+     * @param label The label to display for the control.
+     * @param values The vector to be edited.
+     * @param resetValue The value to set when a component's reset button is clicked.
+     * @param columnWidth The width of the label column.
+     * @param sens The sensitivity of the drag float controls.
+     */
     fun drawVec2Control(label: String, values: Vector2f, resetValue: Float = 0f, columnWidth: Float = DEFAULT_COLUMN_WIDTH, sens: Float = SENSIBILITY) {
         ImGui.pushID(label)
 
@@ -72,6 +85,13 @@ object MImGui {
         ImGui.popID()
     }
 
+    /**
+     * Draws a labeled drag float control.
+     *
+     * @param label The label for the control.
+     * @param value The initial float value.
+     * @return The modified float value.
+     */
     fun dragFloat(label: String, value: Float): Float {
         ImGui.pushID(label)
 
@@ -89,6 +109,13 @@ object MImGui {
         return valArray[0]
     }
 
+    /**
+     * Draws a labeled drag int control.
+     *
+     * @param label The label for the control.
+     * @param value The initial integer value.
+     * @return The modified integer value.
+     */
     fun dragInt(label: String, value: Int): Int {
         ImGui.pushID(label)
 
@@ -106,6 +133,15 @@ object MImGui {
         return valArray[0]
     }
 
+    /**
+     * Draws a customized control for editing a [Vector3f].
+     *
+     * @param label The label to display for the control.
+     * @param values The vector to be edited.
+     * @param resetValue The value to set when a component's reset button is clicked.
+     * @param columnWidth The width of the label column.
+     * @param sens The sensitivity of the drag float controls.
+     */
     fun drawVec3Control(label: String, values: Vector3f, resetValue: Float = 0f, columnWidth: Float = DEFAULT_COLUMN_WIDTH, sens: Float = SENSIBILITY) {
         ImGui.pushID(label)
 
@@ -179,6 +215,15 @@ object MImGui {
         ImGui.popID()
     }
     
+    /**
+     * Draws a customized control for editing a [Vector3f] representing a transform (e.g., scale).
+     * Includes an option for uniform scaling.
+     *
+     * @param label The label for the control.
+     * @param values The vector to be edited.
+     * @param resetValue The value to set when a component's reset button is clicked.
+     * @param sens The sensitivity of the drag float controls.
+     */
     fun drawVec3TransformControl(label: String, values: Vector3f, resetValue: Float = 0f, sens: Float = SENSIBILITY) {
         ImGui.pushID(label)
 
@@ -291,6 +336,13 @@ object MImGui {
         ImGui.popID()
     }
 
+    /**
+     * Draws a color picker for a [Vector4f] (RGBA).
+     *
+     * @param label The label for the color picker.
+     * @param color The color vector to be edited.
+     * @return True if the color was changed, false otherwise.
+     */
     fun colorPicker4(label: String, color: Vector4f): Boolean {
         var res = false
         ImGui.pushID(label)
@@ -311,6 +363,13 @@ object MImGui {
         return res
     }
 
+    /**
+     * Draws a color picker for a [Vector3f] (RGB).
+     *
+     * @param label The label for the color picker.
+     * @param color The color vector to be edited.
+     * @return True if the color was changed, false otherwise.
+     */
     fun colorPicker3(label: String, color: Vector3f): Boolean {
         var res = false
         ImGui.pushID(label)
@@ -332,5 +391,6 @@ object MImGui {
         return res
     }
 }
+
 
     
