@@ -15,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap
 class ResourceManager(
     private val shaderLoader: ShaderLoader = ShaderLoader(false),
     private val assimpLoader: AssimpLoader = AssimpLoader(),
-    private val objLoader: ObjLoader = ObjLoader(),
     private val vaoLoader:VAOLoader,
     private val logger: LoggerService
 ) {
@@ -167,21 +166,11 @@ class ResourceManager(
         models[absolutePath]?.let { return it }
 
         return try {
-            if (path.lowercase().endsWith(".obj")) {
-                withContext(JobSystem.Main) {
-                    val rawModel = objLoader.loadObjModel(path, vaoLoader)
-                    val whiteTex = loadTexture(Assets.Textures.DEFAULT) 
-                    val parts = listOf(MeshPart(rawModel, Material(baseColorTexture = whiteTex), emptyList()))
-                    val model = TexturedModel(parts)
-                    models[absolutePath] = model
-                    model
-                }
-            } else {
-                 val preLoaded = withContext(Dispatchers.IO) {
-                     assimpLoader.preLoadModel(path)
-                 }
+             val preLoaded = withContext(Dispatchers.IO) {
+                 assimpLoader.preLoadModel(path)
+             }
 
-                 val textureDataMap = mutableMapOf<String, TextureData>()
+             val textureDataMap = mutableMapOf<String, TextureData>()
                  withContext(Dispatchers.IO) {
                      preLoaded.parts.forEach { part ->
                          listOfNotNull(part.material.baseColorPath, part.material.normalMapPath, 
@@ -228,7 +217,6 @@ class ResourceManager(
                      models[absolutePath] = texturedModel
                      texturedModel
                  }
-            }
         } catch (e: Exception) {
             logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
@@ -245,18 +233,10 @@ class ResourceManager(
         
         return try {
             // Synchronous loading (blocking)
-            if (path.lowercase().endsWith(".obj")) {
-                val rawModel = objLoader.loadObjModel(path, vaoLoader)
-                val whiteTex = loadTextureSync(Assets.Textures.DEFAULT) 
-                val parts = listOf(MeshPart(rawModel, Material(baseColorTexture = whiteTex), emptyList()))
-                val model = TexturedModel(parts)
-                models[absolutePath] = model
-                model
-            } else {
-                 val preLoaded = assimpLoader.preLoadModel(path)
-                 
-                 // Process immediately
-                 val parts = preLoaded.parts.map { p ->
+             val preLoaded = assimpLoader.preLoadModel(path)
+             
+             // Process immediately
+             val parts = preLoaded.parts.map { p ->
                      val model = vaoLoader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
                      
                      val mat = p.material
@@ -291,7 +271,6 @@ class ResourceManager(
                  val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
                  models[absolutePath] = texturedModel
                  texturedModel
-            }
         } catch (e: Exception) {
             logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")

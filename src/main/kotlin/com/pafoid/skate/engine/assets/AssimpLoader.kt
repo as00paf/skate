@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.animation.Joint
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.models.Material
 import com.pafoid.skate.engine.render.VAOLoader
+import com.pafoid.skate.engine.utils.BoneNameMapper
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.assimp.*
@@ -39,7 +40,7 @@ class AssimpLoader {
             for (b in 0 until mesh.mNumBones()) {
                 val bones = mesh.mBones() ?: continue
                 val bone = AIBone.create(bones.get(b))
-                val name = bone.mName().dataString()
+                val name = BoneNameMapper.map(bone.mName().dataString())
                 if (!boneNames.contains(name)) {
                     boneNames.add(name)
                     boneInfoMap[name] = BoneInfo(boneNames.size - 1, toJomlMatrix(bone.mOffsetMatrix()))
@@ -51,6 +52,8 @@ class AssimpLoader {
         
         if (filePath.contains("skateboard", ignoreCase = true)) {
             unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
+        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
+            unitScale = 0.01f // Convert cm to m for Mixamo FBX
         }
 
         val rootTransform = Matrix4f().scale(unitScale)
@@ -74,7 +77,7 @@ class AssimpLoader {
     }
 
     private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>): Joint? {
-        val name = aiNode.mName().dataString()
+        val name = BoneNameMapper.map(aiNode.mName().dataString())
         val boneInfo = boneInfoMap[name]
         
         val joint = Joint(boneInfo?.index ?: -1, name, toJomlMatrix(aiNode.mTransformation()))
@@ -98,14 +101,14 @@ class AssimpLoader {
     private fun processAnimation(aiAnim: AIAnimation): Animation {
         val name = aiAnim.mName().dataString()
         val duration = aiAnim.mDuration().toFloat()
-        val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 25f
+        val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
         val durationInSeconds = duration / ticksPerSecond
 
         val channels = mutableListOf<AnimationChannel>()
         for (i in 0 until aiAnim.mNumChannels()) {
             val anims = aiAnim.mChannels() ?: continue
             val aiChannel = AINodeAnim.create(anims.get(i))
-            val nodeName = aiChannel.mNodeName().dataString()
+            val nodeName = BoneNameMapper.map(aiChannel.mNodeName().dataString())
 
             //TODO: extract
             // Translation
@@ -290,7 +293,7 @@ class AssimpLoader {
         for (b in 0 until mesh.mNumBones()) {
             val bones = mesh.mBones() ?: continue
             val bone = AIBone.create(bones.get(b))
-            val name = bone.mName().dataString()
+            val name = BoneNameMapper.map(bone.mName().dataString())
             val boneIndex = boneInfoMap[name]?.index ?: b
             
             inverseBindMatrices.add(toJomlMatrix(bone.mOffsetMatrix()))

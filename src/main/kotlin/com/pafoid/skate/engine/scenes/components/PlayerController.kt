@@ -145,8 +145,8 @@ class PlayerController : Component(), KoinComponent {
         val anim = animator ?: return
         
         // Try to find "ride" or "idle" for riding, otherwise use the first available
-        // The james.dae only has one animation: "mixamorig9_Hips"
-        anim.play("mixamorig9_Hips", 0.2f)
+        // The james.dae only has one animation: "mixamorig9_Hips" -> "Hips" after stripping
+        anim.play("Hips", 0.2f)
         
         // If it's a static pose, we might want to pause it at frame 0
         // but for now let's let it play to see what it is.
@@ -173,7 +173,7 @@ class PlayerController : Component(), KoinComponent {
         currentLean = Interpolation.lerp(currentLean, targetLean, leanSmoothness * dt)
 
         // Apply to spine joints
-        val spineNames = listOf("mixamorig9_Spine", "mixamorig9_Spine1", "mixamorig9_Spine2")
+        val spineNames = listOf("Spine", "Spine1", "Spine2")
         val leanPerJoint = currentLean / spineNames.size
         
         val rotationQuat = Quaternionf().rotateZ(Math.toRadians(leanPerJoint.toDouble()).toFloat())

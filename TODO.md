@@ -297,15 +297,15 @@
 
 # 📥 🔵 Phase G: Mixamo Asset Pipeline
 
-- [ ] **ObjLoader**: Confirm ObjLoader is not needed anymore since AssimpLoader should be able to do the job.
-- [ ] **Import Validation**: Verify `Assimp` reads the `mNumVertices` and `mWeights` from the FBX to confirm the mesh is correctly bound to the skeleton.
-- [ ] **Bone Mapping (The Strip Utility)**:
+- [x] **ObjLoader**: Confirm ObjLoader is not needed anymore since AssimpLoader should be able to do the job.
+- [x] **Import Validation**: Verify `Assimp` reads the `mNumVertices` and `mWeights` from the FBX to confirm the mesh is correctly bound to the skeleton.
+- [x] **Bone Mapping (The Strip Utility)**:
   - Create a utility to map `mixamorig:LeftFoot` -> `LeftFoot`.
   - Ensure your `SkateboardPhysics` component can find these renamed bones for its "Foot Placement" logic.
-- [ ] **Coordinate System Fix**:
+- [x] **Coordinate System Fix**:
   - Mixamo uses **Y-Up**, but FBX often exports in **Centimeters**.
   - Apply a `0.01` scale factor during the `aiImportFile` process to bring the 180cm model down to 1.8 units and confirm the scale with the user.
-- [ ] **Animation Sampling**: Ensure the `AnimationComponent` samples the FBX at exactly 60fps to match the JBullet physics step.
+- [x] **Animation Sampling**: Ensure the `AnimationComponent` samples the FBX at exactly 60fps to match the JBullet physics step.
 
 ---
 

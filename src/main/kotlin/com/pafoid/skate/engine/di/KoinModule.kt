@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.di
 
 import com.pafoid.skate.engine.assets.AssimpLoader
-import com.pafoid.skate.engine.assets.ObjLoader
 import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.ShaderLoader
@@ -45,8 +44,7 @@ val engineModule = module {
     single { ShaderLoader(false) }
     single { VAOLoader() }
     single { AssimpLoader() }
-    single { ObjLoader() }
-    single { ResourceManager(get(), get(), get(), get(), get()) }
+    single { ResourceManager(get(), get(), get(), get()) }
     single { PoseSerializer() }
 
     single { DebugDraw() }
