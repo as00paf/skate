@@ -32,4 +32,8 @@ object Icons {
     const val CUT = "\uf0c4"
     const val COPY = "\uf0c5"
     const val PASTE = "\uf0ea"
+    const val MOUSE_POINTER = "\uf245"
+    const val MOVE = "\uf0b2"
+    const val ROTATE = "\uf021"
+    const val SCALE = "\uf31e"
 }

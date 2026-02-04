@@ -24,6 +24,8 @@ import org.koin.core.component.inject
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+import com.pafoid.skate.engine.scenes.components.SelectionGizmo
+
 class GameViewWindow : KoinComponent {
 
     private val logger: LoggerService by inject()
@@ -40,7 +42,6 @@ class GameViewWindow : KoinComponent {
     var imageSizeY = 0f
 
     private var isPlaying = false
-    private var hoveredGameObject: GameObject? = null
     private val gamepadOverlay = GamepadOverlay()
     private val trickUIWindow = TrickUIWindow()
 
@@ -107,49 +108,18 @@ class GameViewWindow : KoinComponent {
         mouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
         mouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
 
-        // Handle Object Hover & Picking
-        val mousePos = ImVec2()
-        ImGui.getMousePos(mousePos)
-
-        val isInside = mouseListener.isInsideViewport()
-
-        if (!isPlaying && isInside) {
-            val relativeX = mousePos.x - imageScreenPosX
-            val relativeY = mousePos.y - imageScreenPosY
-
-            // Gizmo Safety: Don't select/deselect if we are interacting with a gizmo
-            var gizmoInteracting = false
-            sceneManager.currentScene?.gameObjects?.forEach { go ->
-                go.getComponent<GizmoSystem>()?.let { system ->
-                    if (system.isInteracting()) {
-                        gizmoInteracting = true
-                    }
-                }
-            }
-
-            if (!gizmoInteracting) {
-                // Map relative coordinate to 1920x1080 picking texture with high precision
-                val pickingX = ((relativeX / imageSizeX) * 1920f).toInt().coerceIn(0, 1919)
-                val pickingY = ((relativeY / imageSizeY) * 1080f).toInt().coerceIn(0, 1079)
-
-                hoveredGameObject = sceneManager.getHoveredObject(pickingX, pickingY)
-
-                // Debug Info Overlay
-                ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
-                ImGui.textColored(
-                    1f,
-                    1f,
-                    1f,
-                    0.5f,
-                    "Picked ID: ${hoveredGameObject?.getUid() ?: -1} at ($pickingX, $pickingY)"
-                )
-
-                if (mouseListener.mouseButtonBeginPress(0)) {
-                    sceneManager.setSelectedGameObject(hoveredGameObject)
-                }
-            }
-        } else {
-            hoveredGameObject = null
+        // Debug Info Overlay
+        // We now get the hovered object from SelectionGizmo (via getHoveredObject)
+        val hovered = getHoveredObject()
+        if (hovered != null) {
+            ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
+            ImGui.textColored(
+                1f,
+                1f,
+                1f,
+                0.5f,
+                "Picked ID: ${hovered.getUid()}"
+            )
         }
 
         ImGui.end()
@@ -223,7 +193,14 @@ class GameViewWindow : KoinComponent {
         }
     }
 
-    fun getHoveredObject(): GameObject? = hoveredGameObject
+    fun getHoveredObject(): GameObject? {
+        val scene = sceneManager.currentScene ?: return null
+        for (go in scene.gameObjects) {
+            val gizmo = go.getComponent<SelectionGizmo>()
+            if (gizmo != null) return gizmo.hoveredGameObject
+        }
+        return null
+    }
 
     private fun getLargestSizeForViewport(): ImVec2 {
         val windowSize = ImVec2()
@@ -256,6 +233,56 @@ class GameViewWindow : KoinComponent {
         val toolbarPosY = windowPos.y + OVERLAY_PADDING
 
         val buttons = mutableListOf<() -> Unit>()
+
+        // --- Gizmo Controls ---
+        val editorTools = scene?.gameObjects?.find { it.name == "EditorTools" }
+        val gizmoSystem = editorTools?.getComponent<GizmoSystem>()
+
+        if (gizmoSystem != null && !isPlaying) {
+            // Select Tool
+            buttons.add {
+                val isActive = gizmoSystem.usingGizmo == GizmoSystem.SELECTION_GIZMO
+                if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+                if (ImGui.button(Icons.MOUSE_POINTER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                    gizmoSystem.usingGizmo = GizmoSystem.SELECTION_GIZMO
+                }
+                if (isActive) ImGui.popStyleColor()
+                if (ImGui.isItemHovered()) ImGui.setTooltip("Select Tool (Q)")
+            }
+
+            // Translate Tool
+            buttons.add {
+                val isActive = gizmoSystem.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
+                if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+                if (ImGui.button(Icons.MOVE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                    gizmoSystem.usingGizmo = GizmoSystem.TRANSLATE_GIZMO
+                }
+                if (isActive) ImGui.popStyleColor()
+                if (ImGui.isItemHovered()) ImGui.setTooltip("Translate Tool (W)")
+            }
+
+            // Rotate Tool
+            buttons.add {
+                val isActive = gizmoSystem.usingGizmo == GizmoSystem.ROTATION_GIZMO
+                if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+                if (ImGui.button(Icons.ROTATE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                    gizmoSystem.usingGizmo = GizmoSystem.ROTATION_GIZMO
+                }
+                if (isActive) ImGui.popStyleColor()
+                if (ImGui.isItemHovered()) ImGui.setTooltip("Rotate Tool (E)")
+            }
+
+            // Scale Tool
+            buttons.add {
+                val isActive = gizmoSystem.usingGizmo == GizmoSystem.SCALE_GIZMO
+                if (isActive) ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+                if (ImGui.button(Icons.SCALE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
+                    gizmoSystem.usingGizmo = GizmoSystem.SCALE_GIZMO
+                }
+                if (isActive) ImGui.popStyleColor()
+                if (ImGui.isItemHovered()) ImGui.setTooltip("Scale Tool (R)")
+            }
+        }
 
         // --- Center-aligned Buttons ---
         if (isPlaying) {

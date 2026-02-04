@@ -12,11 +12,12 @@ class GizmoSystem: Component(), KoinComponent {
     private val keyListener: KeyListener by inject()
     private val sceneManager: SceneManager by inject()
 
-    private var usingGizmo = TRANSLATE_GIZMO
+    var usingGizmo = TRANSLATE_GIZMO
 
     private val translateGizmo = TranslateGizmo(sceneManager)
     private val rotationGizmo = RotationGizmo(sceneManager)
     private val scaleGizmo = ScaleGizmo(sceneManager)
+    private val selectionGizmo = SelectionGizmo(sceneManager)
 
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
@@ -24,17 +25,20 @@ class GizmoSystem: Component(), KoinComponent {
         this.gameObject.addComponent(translateGizmo)
         this.gameObject.addComponent(rotationGizmo)
         this.gameObject.addComponent(scaleGizmo)
+        this.gameObject.addComponent(selectionGizmo)
     }
 
     override fun editorUpdate(dt: Float) {
         translateGizmo.setNotInUse()
         rotationGizmo.setNotInUse()
         scaleGizmo.setNotInUse()
+        selectionGizmo.setNotInUse()
 
         when (usingGizmo) {
             TRANSLATE_GIZMO -> translateGizmo.setInUse()
             ROTATION_GIZMO -> rotationGizmo.setInUse()
             SCALE_GIZMO -> scaleGizmo.setInUse()
+            SELECTION_GIZMO -> selectionGizmo.setInUse()
         }
 
         if (keyListener.isKeyPressed(GLFW_KEY_W)) {
@@ -44,7 +48,7 @@ class GizmoSystem: Component(), KoinComponent {
         } else if (keyListener.isKeyPressed(GLFW_KEY_R)) {
             usingGizmo = SCALE_GIZMO
         } else if (keyListener.isKeyPressed(GLFW_KEY_Q)) {
-            usingGizmo = -1 // Selection mode (no gizmo)
+            usingGizmo = SELECTION_GIZMO
         }
     }
 
@@ -62,5 +66,6 @@ class GizmoSystem: Component(), KoinComponent {
         const val TRANSLATE_GIZMO = 0
         const val ROTATION_GIZMO = 1
         const val SCALE_GIZMO = 2
+        const val SELECTION_GIZMO = 3
     }
 }

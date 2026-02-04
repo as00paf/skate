@@ -285,12 +285,13 @@
 ## 🔵 Phase F: Polishing 
 
 ## F1. Interaction & Gizmos
-- [ ] **F1.1 Selection Gizmo**: Refactor items hover and picking into a SelectionGizmo in the GizmoSystem
-- [ ] **F1.2 Buttons**: Add toggle buttons in the game view window toolbar for each gizmos (rotation, translation, scale, select)
-- [ ] **F1.3 Selection**: Handle object hover & picking only if the selection tool is selected and the simulation is not running.
+- [x] **F1.1 Selection Gizmo**: Refactor items hover and picking into a SelectionGizmo in the GizmoSystem
+- [x] **F1.2 Buttons**: Add toggle buttons in the game view window toolbar for each gizmos (rotation, translation, scale, select)
+- [x] **F1.3 Selection**: Handle object hover & picking only if the selection tool is selected and the simulation is not running.
 - [ ] **F1.4 Display**: Make sure the gizmos don't scale with the movement of the editor camera. They must always remain an appropriate size.
 - [ ] **F1.5 Measure Tool**: Ensure the measure tool does not interfere with the gizmos and vice versa
 - [ ] **F1.6 KeyBindings**: Implement a key bindings settings menu.
+- [ ] **F1.7 DragAndDrop**: Improve drag and dropping obstacles from the prefab window to the game viewport so the objects snap to the floor grid.
 
 ---
 
@@ -303,7 +304,7 @@
   - Ensure your `SkateboardPhysics` component can find these renamed bones for its "Foot Placement" logic.
 - [ ] **Coordinate System Fix**:
   - Mixamo uses **Y-Up**, but FBX often exports in **Centimeters**.
-  - Apply a `0.01` scale factor during the `aiImportFile` process to bring the 180cm model down to 1.8 units.
+  - Apply a `0.01` scale factor during the `aiImportFile` process to bring the 180cm model down to 1.8 units and confirm the scale with the user.
 - [ ] **Animation Sampling**: Ensure the `AnimationComponent` samples the FBX at exactly 60fps to match the JBullet physics step.
 
 ---
