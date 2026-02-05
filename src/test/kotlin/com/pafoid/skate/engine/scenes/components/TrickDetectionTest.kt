@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.player.PlayerState
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
@@ -132,6 +133,7 @@ class TrickDetectionTest {
         val controller = PlayerController()
         skateboard.addComponent(controller)
         controller.start()
+        controller.stateManager.transitionToState(PlayerState.RIDING)
         
         // Move backwards (X is forward, so -X velocity)
         rb.linearVelocity = Vector3f(-5f, 0f, 0f)

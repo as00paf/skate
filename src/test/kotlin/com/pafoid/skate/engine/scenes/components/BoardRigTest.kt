@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.input.InputProvider
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.player.PlayerState
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
@@ -117,6 +118,7 @@ class BoardRigTest {
         inputBuffer.flickVelocity = Vector2f(10f, 0f)
 
         controller.start()
+        controller.stateManager.transitionToState(PlayerState.RIDING)
         controller.update(0.016f)
 
         // Should apply a torque impulse

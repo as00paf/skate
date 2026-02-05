@@ -59,7 +59,7 @@ class PlayerController : Component(), KoinComponent {
     
     private var rb: IPhysicsBody3D? = null
     private var physics: SkateboardPhysics? = null
-    private var lastVelocity = com.jme3.math.Vector3f()
+    private var lastVelocity = JmeVector3f()
     private var animator: Animator? = null
     private var skater: GameObject? = null
     private var currentLean = 0f
