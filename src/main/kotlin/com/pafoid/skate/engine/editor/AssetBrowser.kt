@@ -41,7 +41,7 @@ class AssetBrowser : KoinComponent {
             modelFiles.clear()
             val modelsDir = File("assets")
             if (modelsDir.exists()) {
-                modelsDir.walkTopDown().filter {
+                modelsDir.walkTopDown().maxDepth(2).filter {
                     it.isFile && (it.extension == "obj" || it.extension == "gltf" || it.extension == "glb" || it.extension == "fbx" || it.extension == "dae")
                 }.forEach { modelFiles.add(it) }
             }
