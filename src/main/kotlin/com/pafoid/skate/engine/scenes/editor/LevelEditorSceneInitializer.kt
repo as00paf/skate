@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.scenes.editor
 
+import com.pafoid.skate.engine.animation.AnimationSystem
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.scenes.GameObject
@@ -49,6 +50,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         editorStuff.addComponent(MouseControls())
         editorStuff.addComponent(GizmoSystem())
         editorStuff.addComponent(GridLines())
+        editorStuff.addComponent(AnimationSystem())
         scene.addGameObjectToScene(editorStuff)
 
         skateboard = prefabsGenerator.spawnSkateboard()

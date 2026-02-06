@@ -1,17 +1,11 @@
 package com.pafoid.skate.engine.animation
 
-import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
-import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
-import org.joml.Matrix4f
-import org.joml.Quaternionf
-import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -26,15 +20,7 @@ import org.koin.core.component.inject
  * - Editor visualization of the bone hierarchy.
  */
 class Animator : Component(), KoinComponent {
-    private val debugDraw: DebugDraw by inject()
     private val resourceManager: ResourceManager by inject()
-    private val logger: LoggerService by inject()
-
-    // Reusable objects to minimize allocations in hot loops/recursive calls
-    private val tempJointPos = Vector3f()
-    private val tempChildPos = Vector3f()
-    private val tempJointQuat = Quaternionf()
-    private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
 
     var currentTime = 0f
     var currentAnimation: Animation? = null
@@ -79,92 +65,7 @@ class Animator : Component(), KoinComponent {
         play(anim, blend)
     }
 
-    override fun update(dt: Float) {
-        val renderComponent = gameObject.getComponent<RenderComponent>()
-        val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
-        val skeleton = skeletonComponent?.skeleton ?: return
-
-        if (isPlaying) {
-            val model = renderComponent?.model
-            val animation = currentAnimation ?: model?.animations?.firstOrNull() ?: return
-
-            currentTime += dt
-
-            if (blendTime > 0f) {
-                blendTime -= dt
-                val alpha = 1f - (blendTime / blendDuration)
-                previousAnimation?.let { prev ->
-                    previousTime += dt
-                    prev.update(previousTime, skeleton)
-                    animation.updateBlended(currentTime, skeleton, alpha)
-                } ?: animation.update(currentTime, skeleton)
-            } else {
-                animation.update(currentTime, skeleton)
-            }
-        }
-
-        // Apply bone overrides if they exist
-        gameObject.getComponent<BoneOverride>()?.let { overrideComponent ->
-            skeleton.getAllJoints().forEach { joint ->
-                overrideComponent.getOverride(joint.name)?.let { overrideRotation ->
-                    // Decompose matrix
-                    val translation = Vector3f()
-                    val rotation = Quaternionf()
-                    val scale = Vector3f()
-                    joint.localTransform.getTranslation(translation)
-                    joint.localTransform.getUnnormalizedRotation(rotation)
-                    joint.localTransform.getScale(scale)
-
-                    // Apply override by multiplying rotations
-                    rotation.mul(overrideRotation)
-
-                    // Recompose matrix
-                    joint.localTransform.translationRotateScale(translation, rotation, scale)
-                }
-            }
-        }
-
-        // Always update skeleton matrices even if animation is paused
-        // This allows procedural logic in other components to take effect
-        skeleton.update()
-    }
-
-    override fun editorUpdate(dt: Float) {
-        // Try the new ECS structure first
-        val renderComponent = gameObject.getComponent<RenderComponent>()
-        val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
-        
-        val skeleton = skeletonComponent?.skeleton ?: return
-
-        // Visualize bones in editor mode
-        val goTransform = gameObject.getComponent<com.pafoid.skate.engine.scenes.components.Transform>()
-        val transformMatrix = goTransform?.toWorldMatrix() ?: org.joml.Matrix4f().identity()
-        visualizeJoint(skeleton.rootJoint, transformMatrix)
-
-        if (isPlaying) {
-            update(dt)
-        }
-    }
-
-    private fun visualizeJoint(joint: Joint, modelMatrix: Matrix4f) {
-        joint.worldTransform.getTranslation(tempJointPos)
-        modelMatrix.transformPosition(tempJointPos)
-        
-        // Capture joint position for this recursion level
-        val currentJointPos = Vector3f(tempJointPos)
-        
-        for (child in joint.children) {
-            child.worldTransform.getTranslation(tempChildPos)
-            modelMatrix.transformPosition(tempChildPos)
-            
-            debugDraw.addLine3D(currentJointPos, tempChildPos, boneColor)
-            visualizeJoint(child, modelMatrix)
-        }
-        
-        // Draw joint point as a tiny box
-        joint.worldTransform.getUnnormalizedRotation(tempJointQuat)
-        debugDraw.addBox3D(currentJointPos, tempJointQuat, Vector3f(0.01f), boneColor)
-    }
+    override fun update(dt: Float) {}
 
     fun stop() {
         isPlaying = false
@@ -175,7 +76,6 @@ class Animator : Component(), KoinComponent {
     }
 
     override fun imgui() {
-        // Try the new ECS structure first
         val renderComponent = gameObject.getComponent<RenderComponent>()
         val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
         
