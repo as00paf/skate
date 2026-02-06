@@ -145,7 +145,6 @@ class PlayerController : Component(), KoinComponent {
         val anim = animator ?: return
         
         // Try to find "ride" or "idle" for riding, otherwise use the first available
-        // The james.dae only has one animation: "mixamorig9_Hips" -> "Hips" after stripping
         anim.play("Hips", 0.2f)
         
         // If it's a static pose, we might want to pause it at frame 0
