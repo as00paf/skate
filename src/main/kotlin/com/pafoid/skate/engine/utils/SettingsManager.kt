@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.utils
 
-import com.pafoid.skate.engine.assets.Assets.FILES.SETTINGS_FILE
+import com.pafoid.skate.engine.assets.Assets.Files.SETTINGS_FILE
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.utils.serialization.Serializer

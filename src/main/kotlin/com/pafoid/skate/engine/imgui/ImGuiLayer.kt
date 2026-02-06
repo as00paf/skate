@@ -6,12 +6,11 @@ import com.pafoid.skate.engine.editor.BoneTreeWindow
 import com.pafoid.skate.engine.editor.ConsoleWindow
 import com.pafoid.skate.engine.editor.EnvironmentWindow
 import com.pafoid.skate.engine.editor.GameViewWindow
-import com.pafoid.skate.engine.editor.AssetBrowser
+import com.pafoid.skate.engine.editor.assetBrowser.AssetBrowser
 import com.pafoid.skate.engine.editor.PhysicsTunerWindow
 import com.pafoid.skate.engine.editor.ProfilerWindow
 import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.editor.SceneHierarchyWindow
-import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.scenes.Scene
@@ -91,7 +90,7 @@ class ImGuiLayer(
         ImGui.createContext()
 
         with(ImGui.getIO()) {
-            iniFilename = Assets.FILES.IMGUI
+            iniFilename = Assets.Files.IMGUI
             backendPlatformName = "imgui_java_impl_glfw"
             addConfigFlags(ImGuiConfigFlags.DockingEnable or ImGuiConfigFlags.ViewportsEnable)
             loadFonts(Assets.Fonts.fontsFile)
@@ -104,7 +103,7 @@ class ImGuiLayer(
     }
 
     private fun setupLayout(dockspaceId: Int) {
-        val iniFile = File(Assets.FILES.IMGUI)
+        val iniFile = File(Assets.Files.IMGUI)
         if (iniFile.exists()) return
 
         dockBuilderRemoveNode(dockspaceId)
