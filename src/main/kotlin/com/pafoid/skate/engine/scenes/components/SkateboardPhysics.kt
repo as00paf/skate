@@ -7,7 +7,6 @@ import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.getValue
-import kotlin.jvm.java
 
 /**
  * Handles the physics simulation for a skateboard, primarily focused on the raycast suspension system.
@@ -52,16 +51,17 @@ class SkateboardPhysics : Component(), KoinComponent {
 
     override fun update(dt: Float) {
         val scene = sceneManager.currentScene ?: return
-        val transform = gameObject.transform.toWorldMatrix()
+        val transform = gameObject.getComponent<Transform>() ?: return
+        val transformMatrix = transform.toWorldMatrix()
         
         var groundedCount = 0
         offsets.forEach { offset ->
             // Calculate ray start and end in world space
-            val rayStart = Vector3f(offset).mulProject(transform)
+            val rayStart = Vector3f(offset).mulProject(transformMatrix)
             
             // Ray direction is board-local down
             val localDown = Vector3f(0f, -1f, 0f)
-            transform.transformDirection(localDown)
+            transformMatrix.transformDirection(localDown)
             
             val rayEnd = Vector3f(localDown).mul(suspensionRestLength).add(rayStart)
             
@@ -83,7 +83,8 @@ class SkateboardPhysics : Component(), KoinComponent {
         // Calculate Roll (Lean) relative to local forward
         // Local Right Vector in World Space
         val localRight = Vector3f(0f, 0f, 1f)
-        gameObject.transform.toWorldMatrix().transformDirection(localRight)
+        val transform = gameObject.getComponent<Transform>() ?: return
+        transform.toWorldMatrix().transformDirection(localRight)
         
         // Project Local Right onto World Up to get Roll component
         // Dot product gives the sine of the angle if vectors are normalized
@@ -99,7 +100,7 @@ class SkateboardPhysics : Component(), KoinComponent {
             val torqueMagnitude = -roll * speed * steeringCoefficient
             
             val localUp = Vector3f(0f, 1f, 0f)
-            gameObject.transform.toWorldMatrix().transformDirection(localUp)
+            transform.toWorldMatrix().transformDirection(localUp)
             
             val torque = Vector3f(localUp).mul(torqueMagnitude)
             rb.applyTorqueImpulse(torque.mul(dt))

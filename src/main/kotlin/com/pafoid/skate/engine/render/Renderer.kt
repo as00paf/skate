@@ -6,14 +6,17 @@ import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.ShaderConst.Attribs
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.editor.logs.LoggerService
-import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.NonPickable
+import com.pafoid.skate.engine.scenes.components.RenderComponent
+import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import com.pafoid.skate.engine.utils.EngineStats
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.lwjgl.opengl.GL30.*
@@ -34,6 +37,8 @@ class Renderer(
     private lateinit var pickingShader3D: Shader
     private lateinit var skyboxShader: Shader
     private lateinit var skyDomeShader: Shader
+    
+    private val modelRenderer: ModelRenderer = ModelRenderer(resourceManager)
 
     lateinit var frameBuffer: FrameBuffer
     override var useFbo = false // Default to false for initial feature tests
@@ -153,19 +158,34 @@ class Renderer(
         defaultShader.uploadFloat(Uniforms.FOG_GRADIENT, scene.fogGradient)
 
         scene.gameObjects.forEach { go ->
-            go.getComponent<Entity>()?.let { entity ->
+            // Handle new ECS system: GameObjects with RenderComponent, Transform, and optionally SkeletonComponent
+            val renderComponent = go.getComponent<RenderComponent>()
+            val transformComponent = go.getComponent<Transform>()
+            if (renderComponent != null && transformComponent != null) {
                 var selectionState = 0.0f
                 if (go == activeGameObject) selectionState = 1.0f
                 else if (go == hoveredGameObject) selectionState = 2.0f
-                
+
                 defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
-                renderEntity(go, entity)
+                
+                // Use the ModelRenderer for the new ECS structure
+                val skeletonComponent = go.getComponent<SkeletonComponent>()
+                val camera = sceneManager.currentScene?.camera
+                val cameraPosition = camera?.position ?: Vector3f(0f, 0f, 0f)
+                
+                modelRenderer.render(
+                    go = go,
+                    renderComponent = renderComponent,
+                    defaultShader = defaultShader,
+                    cameraPosition = cameraPosition,
+                    skeletonComponent = skeletonComponent
+                )
             }
         }
         
         // Highlight Active Object (Transparent Green Silhouette)
         activeGameObject?.let { go ->
-            go.getComponent<Entity>()?.let { entity ->
+            go.getComponent<RenderComponent>()?.let {
                 defaultShader.uploadFloat(Uniforms.SELECTED, 1.0f)
                 
                 glEnable(GL_BLEND)
@@ -175,7 +195,7 @@ class Renderer(
                 // Let's try GL_ALWAYS but keep depth write off.
                 glDisable(GL_DEPTH_TEST) 
                 
-                renderEntity(go, entity)
+                renderEntity(go)
                 
                 glEnable(GL_DEPTH_TEST)
                 glDepthFunc(GL_LESS)
@@ -212,43 +232,45 @@ class Renderer(
     private fun render3DPicking(scene: Scene, activeGameObject: GameObject?) {
         if(activeGameObject != null) return
         val camera = scene.camera
-        
+
         pickingShader3D.start()
         pickingShader3D.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
         pickingShader3D.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
 
         scene.gameObjects.forEach { go ->
-            val entity = go.getComponent<Entity>()
-            if (entity != null && go.getComponent<NonPickable>() == null) {
-                renderEntityPicking(go, entity)
+            // Handle new ECS system: GameObjects with RenderComponent and TransformComponent
+            val renderComponent = go.getComponent<RenderComponent>()
+            val transform = go.getComponent<Transform>()
+            if (renderComponent != null && transform != null && go.getComponent<NonPickable>() == null) {
+                // For picking, we need to render with the picking shader
+                val skeletonComponent = go.getComponent<SkeletonComponent>()
+                
+                // Upload transformation matrix for picking
+                val goTransform = go.getComponent<Transform>()
+                val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
+                pickingShader3D.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformMatrix)
+                pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, go.getUid().toFloat() + 1)
+                pickingShader3D.uploadBoolean(Uniforms.USE_BATCH, false)
+
+                val skeleton = skeletonComponent?.skeleton
+                val hasSkin = skeleton != null
+                pickingShader3D.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
+                if (skeleton != null) {
+                    pickingShader3D.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeleton.getMatrixPalette())
+                }
+
+                for (part in renderComponent.model.mesh) {
+                    val model = part.rawModel
+                    glBindVertexArray(model.vaoId)
+                    model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
+                    glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
+                    EngineStats.drawCalls.incrementAndGet()
+                    model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
+                }
+                glBindVertexArray(0)
             }
         }
         pickingShader3D.stop()
-    }
-    
-    private fun renderEntityPicking(go: GameObject, entity: Entity) {
-        val texturedModel = entity.model
-
-        pickingShader3D.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, go.transform.toWorldMatrix())
-        pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, go.getUid().toFloat() + 1)
-        pickingShader3D.uploadBoolean(Uniforms.USE_BATCH, false)
-
-        val skeleton = texturedModel.skeleton
-        val hasSkin = skeleton != null
-        pickingShader3D.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-        if (skeleton != null) {
-            pickingShader3D.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeleton.getMatrixPalette())
-        }
-
-        for (part in texturedModel.parts) {
-            val model = part.rawModel
-            glBindVertexArray(model.vaoId)
-            model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
-            glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
-            EngineStats.drawCalls.incrementAndGet()
-            model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
-        }
-        glBindVertexArray(0)
     }
 
     private fun render2D(scene: Scene, shader: Shader) {
@@ -272,22 +294,25 @@ class Renderer(
         return pickingTexture.readPixel(safeX, 1079 - safeY)
     }
 
-    private fun renderEntity(go: GameObject, entity: Entity) {
-        val texturedModel = entity.model
+    private fun renderEntity(go: GameObject) {
+        val renderComponent = go.getComponent<RenderComponent>()
+        val texturedModel = renderComponent?.model ?:return
         val camera = sceneManager.currentScene?.camera
 
-        defaultShader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, go.transform.toWorldMatrix())
-        defaultShader.uploadFloat(Uniforms.TEXTURE_SCALE, entity.textureScale)
+        val goTransform = go.getComponent<Transform>()
+        val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
+        defaultShader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformMatrix)
+        defaultShader.uploadFloat(Uniforms.TEXTURE_SCALE, renderComponent.textureScale)
         if (camera != null) {
             defaultShader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
         }
 
-        for (part in texturedModel.parts) {
+        for (part in texturedModel.mesh) {
             val model = part.rawModel
             val material = part.material
-            
+
             glBindVertexArray(model.vaoId)
-            
+
             // Enable only available attributes
             model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
 
@@ -341,7 +366,7 @@ class Renderer(
             defaultShader.uploadInt(Uniforms.ALPHA_MODE, alphaInt)
             defaultShader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
 
-            val skeleton = entity.model.skeleton
+            val skeleton = go.getComponent<SkeletonComponent>()?.skeleton
             val hasSkin = skeleton != null
             defaultShader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
             if (skeleton != null) {
@@ -387,3 +412,4 @@ class Renderer(
     }
 
 }
+

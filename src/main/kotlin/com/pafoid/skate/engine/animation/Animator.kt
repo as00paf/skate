@@ -1,12 +1,11 @@
 package com.pafoid.skate.engine.animation
 
-import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.utils.Time
 import com.pafoid.skate.engine.editor.logs.LoggerService
-import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.scenes.components.Component
+import com.pafoid.skate.engine.scenes.components.RenderComponent
+import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
@@ -15,11 +14,10 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.getValue
 
 /**
  * Component responsible for managing and playing skeletal animations.
- * 
+ *
  * It handles:
  * - Playback state (isPlaying, currentTime).
  * - Cross-fading between animations (Blending).
@@ -39,14 +37,13 @@ class Animator : Component(), KoinComponent {
     private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
 
     var currentTime = 0f
-        private set
     var currentAnimation: Animation? = null
         private set
     var isPlaying = false
-    private var blendTime = 0f
-    private var blendDuration = 0.2f
-    private var previousAnimation: Animation? = null
-    private var previousTime = 0f
+    var blendTime = 0f
+    var blendDuration = 0.2f
+    var previousAnimation: Animation? = null
+    var previousTime = 0f
 
     val normalizedTime: Float
         get() {
@@ -77,20 +74,22 @@ class Animator : Component(), KoinComponent {
     }
 
     fun play(name: String, blend: Float = 0.2f) {
-        val entity = gameObject.getComponent<Entity>() ?: return
-        val anim = entity.model.animations.find { it.name.contains(name, ignoreCase = true) } ?: return
+        val renderComponent = gameObject.getComponent<RenderComponent>() ?: return
+        val anim = renderComponent.model.animations.find { it.name.contains(name, ignoreCase = true) } ?: return
         play(anim, blend)
     }
 
     override fun update(dt: Float) {
-        val entity = gameObject.getComponent<Entity>() ?: return
-        val skeleton = entity.model.skeleton ?: return
-        
+        val renderComponent = gameObject.getComponent<RenderComponent>()
+        val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
+        val skeleton = skeletonComponent?.skeleton ?: return
+
         if (isPlaying) {
-            val animation = currentAnimation ?: entity.model.animations.firstOrNull() ?: return
+            val model = renderComponent?.model
+            val animation = currentAnimation ?: model?.animations?.firstOrNull() ?: return
 
             currentTime += dt
-            
+
             if (blendTime > 0f) {
                 blendTime -= dt
                 val alpha = 1f - (blendTime / blendDuration)
@@ -103,7 +102,7 @@ class Animator : Component(), KoinComponent {
                 animation.update(currentTime, skeleton)
             }
         }
-        
+
         // Apply bone overrides if they exist
         gameObject.getComponent<BoneOverride>()?.let { overrideComponent ->
             skeleton.getAllJoints().forEach { joint ->
@@ -115,28 +114,33 @@ class Animator : Component(), KoinComponent {
                     joint.localTransform.getTranslation(translation)
                     joint.localTransform.getUnnormalizedRotation(rotation)
                     joint.localTransform.getScale(scale)
-                    
+
                     // Apply override by multiplying rotations
                     rotation.mul(overrideRotation)
-                    
+
                     // Recompose matrix
                     joint.localTransform.translationRotateScale(translation, rotation, scale)
                 }
             }
         }
-        
+
         // Always update skeleton matrices even if animation is paused
         // This allows procedural logic in other components to take effect
         skeleton.update()
     }
 
     override fun editorUpdate(dt: Float) {
-        val entity = gameObject.getComponent<Entity>() ?: return
-        val skeleton = entity.model.skeleton ?: return
+        // Try the new ECS structure first
+        val renderComponent = gameObject.getComponent<RenderComponent>()
+        val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
         
+        val skeleton = skeletonComponent?.skeleton ?: return
+
         // Visualize bones in editor mode
-        visualizeJoint(skeleton.rootJoint, gameObject.transform.toWorldMatrix())
-        
+        val goTransform = gameObject.getComponent<com.pafoid.skate.engine.scenes.components.Transform>()
+        val transformMatrix = goTransform?.toWorldMatrix() ?: org.joml.Matrix4f().identity()
+        visualizeJoint(skeleton.rootJoint, transformMatrix)
+
         if (isPlaying) {
             update(dt)
         }
@@ -171,10 +175,14 @@ class Animator : Component(), KoinComponent {
     }
 
     override fun imgui() {
-        val entity = gameObject.getComponent<Entity>()
-        val animations = entity?.model?.animations.orEmpty()
-        if (entity == null) {
-            ImGui.text("No entity found")
+        // Try the new ECS structure first
+        val renderComponent = gameObject.getComponent<RenderComponent>()
+        val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
+        
+        val (animations, model) = Pair(renderComponent?.model?.animations.orEmpty(), renderComponent?.model)
+        
+        if (model == null) {
+            ImGui.text("No render component found")
             return
         }
 
@@ -194,7 +202,7 @@ class Animator : Component(), KoinComponent {
             if (payload != null) {
                 val path = payload
                 val newAnims = resourceManager.loadAnimationsSync(path)
-                entity.model.addAnimations(newAnims)
+                model.addAnimations(newAnims)
             }
             ImGui.endDragDropTarget()
         }
@@ -202,15 +210,15 @@ class Animator : Component(), KoinComponent {
         if (animations.isEmpty()) return
 
         val anim = currentAnimation ?: animations.firstOrNull() ?: return
-        
+
         ImGui.text("Duration: ${String.format("%.2f", anim.duration)}s")
         val timeArr = floatArrayOf(currentTime)
         if (ImGui.sliderFloat("Timeline", timeArr, 0f, anim.duration)) {
             currentTime = timeArr[0]
             isPlaying = false // Scrubbing pauses playback for precision
-            
+
             // Force update skeleton when scrubbing
-            entity.model.skeleton?.let { anim.update(currentTime, it) }
+            skeletonComponent?.skeleton?.let { anim.update(currentTime, it) }
         }
 
         if (ImGui.button(if (isPlaying) "Pause" else "Play")) {
@@ -219,7 +227,7 @@ class Animator : Component(), KoinComponent {
         ImGui.sameLine()
         if (ImGui.button("Reset")) {
             currentTime = 0f
-            entity.model.skeleton?.let { anim.update(currentTime, it) }
+            skeletonComponent?.skeleton?.let { anim.update(currentTime, it) }
         }
     }
 }

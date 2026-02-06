@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.StringManager
@@ -255,7 +256,7 @@ class ImGuiLayer(
                 if (ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("menu.edit.paste")}", "Ctrl+V")) {
                     val cloned = clipboardService.paste()
                     if (cloned != null) {
-                        cloned.transform.translation.set(0f, 0f, 0f)
+                        cloned.getComponent<Transform>()?.translation?.set(0f, 0f, 0f)
                         cloned.parent = null
                         sceneManager.addGameObject(cloned)
                     }

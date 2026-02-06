@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.animation.Joint
-import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.GameObject
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
@@ -31,7 +31,7 @@ class BoneTreeWindow : KoinComponent {
 
     fun imgui() {
         sceneManager.getSelectedGameObject()?.let { go ->
-            val skeleton = go.getComponent<Entity>()?.model?.skeleton
+            val skeleton = go.getComponent<RenderComponent>()?.model?.skeleton
             if (skeleton != null) {
                 ImGui.begin("Bone Tree")
 

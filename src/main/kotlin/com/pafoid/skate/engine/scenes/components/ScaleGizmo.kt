@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.sun.tools.sjavac.Main.go
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -26,9 +27,10 @@ class ScaleGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinComponent
 
     override fun editorUpdate(dt: Float) {
         super.editorUpdate(dt)
-        activeGameObject?.let { go ->
-            val pos = go.transform.translation
-            val scene = sceneManager.currentScene ?: return
+        val scene = sceneManager.currentScene ?: return
+        val go = activeGameObject ?: return
+        go.getComponent<Transform>()?.let { transform ->
+            val pos = transform.translation
 
             val dist = Vector3f(scene.camera.position).distance(pos)
             val dynamicLength = handleLength * (dist * 0.1f)
@@ -40,24 +42,24 @@ class ScaleGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinComponent
             if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, true)) {
                 if (xAxisActive || yAxisActive || zAxisActive) {
                     if (oldTransform == null) {
-                        oldTransform = Transform().apply { copyFrom(go.transform) }
+                        oldTransform = Transform().apply { copyFrom(transform) }
                     }
                 }
             } else {
                 oldTransform?.let { old ->
-                    if (old != go.transform) {
-                        undoRedoManager.pushCommand(com.pafoid.skate.engine.editor.TransformCommand(go, old, go.transform))
+                    if (old != transform) {
+                        undoRedoManager.pushCommand(com.pafoid.skate.engine.editor.TransformCommand(go, old, transform))
                     }
                 }
                 oldTransform = null
             }
 
             if (xAxisActive) {
-                go.transform.scale.x += calculateDelta(Vector3f(1f, 0f, 0f))
+                transform.scale.x += calculateDelta(Vector3f(1f, 0f, 0f))
             } else if (yAxisActive) {
-                go.transform.scale.y += calculateDelta(Vector3f(0f, 1f, 0f))
+                transform.scale.y += calculateDelta(Vector3f(0f, 1f, 0f))
             } else if (zAxisActive) {
-                go.transform.scale.z += calculateDelta(Vector3f(0f, 0f, 1f))
+                transform.scale.z += calculateDelta(Vector3f(0f, 0f, 1f))
             }
 
             // Draw Handles
@@ -72,7 +74,8 @@ class ScaleGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinComponent
     private fun checkInput(length: Float, threshold: Float) {
         val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
-        val pos = go.transform.translation
+        val transform = go.getComponent<Transform>() ?: return
+        val pos = transform.translation
         
         val mouseX = mouseListener.getScreenX()
         val mouseY = mouseListener.getScreenY()
@@ -154,7 +157,8 @@ class ScaleGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinComponent
         val proj = camera.createProjectionMatrix()
         
         val go = activeGameObject ?: return 0f
-        val origin = Vector3f(go.transform.translation)
+        val transform = go.getComponent<Transform>() ?: return 0f
+        val origin = Vector3f(transform.translation)
         val p2 = Vector3f(origin).add(axis)
         
         val s1 = worldToScreen(origin, view, proj, 1920f, 1080f)

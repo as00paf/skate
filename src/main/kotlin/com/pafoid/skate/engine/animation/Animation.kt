@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.animation
 
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -7,13 +9,14 @@ import org.joml.Vector3f
 /**
  * Represents a single animation clip containing multiple channels (TRS tracks).
  */
+@Serializable
 class Animation(
     val name: String,
     val channels: List<AnimationChannel>,
     val duration: Float,
-    val bindPoses: Map<String, Matrix4f> = emptyMap()
+    val bindPoses: Map<String, @Contextual Matrix4f> = emptyMap()
 ) {
-    private val correctionMatrices = mutableMapOf<String, Matrix4f>()
+    private val correctionMatrices = mutableMapOf<String, @Contextual Matrix4f>()
     private var correctionsComputed = false
 
     fun computeCorrections(skeleton: Skeleton) {

@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.utils.Interpolation
+import kotlinx.serialization.Serializable
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
@@ -17,7 +18,8 @@ import org.joml.Vector3f
  * @param interpolation The interpolation algorithm to use.
  * @param componentsPerValue Number of floats per keyframe (3 for Vec3, 4 for Quat).
  */
-class AnimationSampler(
+@Serializable
+data class AnimationSampler(
     val times: FloatArray,
     val values: FloatArray,
     val interpolation: InterpolationType,

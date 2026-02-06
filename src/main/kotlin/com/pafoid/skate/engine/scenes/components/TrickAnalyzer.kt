@@ -16,13 +16,14 @@ class TrickAnalyzer : Component() {
 
     override fun start() {
         physics = gameObject.getComponent<SkateboardPhysics>()
-        lastRotation.set(gameObject.transform.rotation)
+        lastRotation.set(gameObject.getComponent<Transform>()?.rotation)
     }
 
     override fun update(dt: Float) {
         val phys = physics ?: return
-        
-        val currentRot = gameObject.transform.rotation
+
+        val transform = gameObject.getComponent<Transform>() ?: return
+        val currentRot = transform.rotation
         
         // Calculate delta (handling wrap-around if necessary, but Transform.rotation usually just accumulates or wraps)
         // If Transform.rotation wraps at 360, we need to handle it. 

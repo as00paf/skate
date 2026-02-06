@@ -1,10 +1,11 @@
 package com.pafoid.skate.engine.animation
 
-import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.render.PickingMesh
 import com.pafoid.skate.engine.scenes.components.Component
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -18,11 +19,12 @@ class PoseGizmo : Component(), KoinComponent {
     private val jointMap = mutableMapOf<Int, Joint>()
 
     override fun editorUpdate(dt: Float) {
-        val skeleton = gameObject.getComponent<Entity>()?.model?.skeleton ?: return
+        val skeleton = gameObject.getComponent<RenderComponent>()?.model?.skeleton ?: return
         jointMap.clear()
 
         skeleton.getAllJoints().forEach { joint ->
-            val modelMatrix = gameObject.transform.toWorldMatrix()
+            val goTransform = gameObject.getComponent<Transform>()
+        val modelMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
             val jointWorldTransform = Matrix4f(modelMatrix).mul(joint.worldTransform)
             
             // Add a small scale to the joint's transform for visibility

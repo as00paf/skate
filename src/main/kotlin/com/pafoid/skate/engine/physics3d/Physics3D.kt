@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.JomlVector3f
 import com.pafoid.skate.engine.utils.JmeVector3f
 import electrostatic4j.snaploader.LibraryInfo
@@ -25,6 +26,7 @@ import electrostatic4j.snaploader.platform.util.PlatformPredicate
 import org.joml.Quaternionf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import javax.swing.text.StyleConstants.getComponent
 import kotlin.getValue
 
 class Physics3D : IPhysics3D, KoinComponent {
@@ -151,9 +153,10 @@ class Physics3D : IPhysics3D, KoinComponent {
      * @param go The game object providing the transform (position, rotation, scale).
      */
     private fun syncBodyProperties(body: PhysicsRigidBody, rb: RigidBody3D, go: GameObject) {
-        val trans = go.transform.translation
-        val rot = go.transform.rotation
-        val scale = go.transform.scale
+        val transform = go.getComponent<Transform>() ?: return
+        val trans = transform.translation
+        val rot = transform.rotation
+        val scale = transform.scale
 
         body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
         body.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))

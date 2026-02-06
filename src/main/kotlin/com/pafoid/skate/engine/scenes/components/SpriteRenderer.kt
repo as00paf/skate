@@ -14,19 +14,19 @@ class SpriteRenderer(
     private var isDirty = true
 
     override fun start() {
-        this.lastTransform.copyFrom(gameObject.transform)
+        gameObject.getComponent<Transform>()?.let { this.lastTransform.copyFrom(it) }
     }
 
     override fun update(dt: Float) {
-        if (this.lastTransform != this.gameObject.transform) {
-            this.lastTransform.copyFrom(this.gameObject.transform)
+        if (this.lastTransform != this.gameObject.getComponent<Transform>()) {
+            this.gameObject.getComponent<Transform>()?.let { this.lastTransform.copyFrom(it) }
             isDirty = true
         }
     }
 
     override fun editorUpdate(dt: Float) {
-        if (this.lastTransform != this.gameObject.transform) {
-            this.lastTransform.copyFrom(this.gameObject.transform)
+        if (this.lastTransform != this.gameObject.getComponent<Transform>()) {
+            this.gameObject.getComponent<Transform>()?.let { this.lastTransform.copyFrom(it) }
             isDirty = true
         }
     }

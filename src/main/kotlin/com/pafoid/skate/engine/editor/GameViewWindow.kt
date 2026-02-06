@@ -26,6 +26,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 import com.pafoid.skate.engine.scenes.components.SelectionGizmo
+import com.pafoid.skate.engine.scenes.components.Transform
 
 class GameViewWindow : KoinComponent {
 
@@ -350,8 +351,8 @@ class GameViewWindow : KoinComponent {
                 // Reset logic
                 scene?.let{
                     scene.gameObjects.find { it.name == "Skateboard" }?.let { skate ->
-                        skate.transform.translation.set(0f, 0.5f, 0f)
-                        skate.transform.rotation.set(0f, 0f, 0f)
+                        skate.getComponent<Transform>()?.translation?.set(0f, 0.5f, 0f)
+                        skate.getComponent<Transform>()?.rotation?.set(0f, 0f, 0f)
                         val rb = skate.getComponent<RigidBody3D>()
                         rb?.linearVelocity = Vector3f(0f, 0f, 0f)
                         rb?.angularVelocity = Vector3f(0f, 0f, 0f)

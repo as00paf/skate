@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.editor.DeleteGameObjectCommand
 import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.Renderer
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.serialization.Serializer
@@ -138,7 +139,7 @@ class SceneManager : KoinComponent {
                 if (clonedGameObject != null) {
                     // Add to scene at origin for now
                     val origin = Vector3f(0f, 0f, 0f)
-                    clonedGameObject.transform.translation.set(origin)
+                    clonedGameObject.getComponent<Transform>()?.translation?.set(origin)
                     
                     // Set parent to null, as it's being pasted as a root object
                     clonedGameObject.parent = null 

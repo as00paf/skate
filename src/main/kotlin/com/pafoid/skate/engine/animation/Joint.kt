@@ -1,21 +1,27 @@
 package com.pafoid.skate.engine.animation
 
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.joml.Matrix4f
 
+@Serializable
 class Joint(
     val index: Int,
     val name: String,
-    val localTransform: Matrix4f = Matrix4f()
+    @Contextual val localTransform: Matrix4f = Matrix4f()
 ) {
     val children = mutableListOf<Joint>()
     
     // Original Bind Pose Local Transform (Model's Skeleton)
+    @Contextual
     val bindLocalTransform = Matrix4f(localTransform)
 
     // The matrix that goes from Model Space to Joint Local Space in Bind Pose
+    @Contextual
     val inverseBindMatrix = Matrix4f()
 
     // The matrix that goes from Joint Local Space to Model Space in current pose
+    @Contextual
     val worldTransform = Matrix4f()
 
     fun addChild(child: Joint) {

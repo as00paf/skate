@@ -2,8 +2,11 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.PropertiesWindow
+import com.pafoid.skate.engine.editor.TransformCommand
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.utils.Ray
+import com.sun.tools.sjavac.Main.go
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -24,10 +27,10 @@ class RotationGizmo(sceneManager: SceneManager) : Gizmo(sceneManager), KoinCompo
 
     override fun editorUpdate(dt: Float) {
         super.editorUpdate(dt)
-        activeGameObject?.let { go ->
-            val pos = go.transform.translation
+        val scene = sceneManager.currentScene ?: return
+        activeGameObject?.getComponent<Transform>()?.let { transform ->
+            val pos = transform.translation
 
-            val scene = sceneManager.currentScene ?: return
             val dist = Vector3f(scene.camera.position).distance(pos)
             val dynamicRadius = radius * (dist * 0.1f)
             val dynamicThreshold = hitThreshold * (dist * 0.1f)
@@ -35,11 +38,11 @@ class RotationGizmo(sceneManager: SceneManager) : Gizmo(sceneManager), KoinCompo
             checkInput(dynamicRadius, dynamicThreshold)
 
             if (xAxisActive) {
-                go.transform.rotation.x += mouseListener.getScreenDy()
+                transform.rotation.x += mouseListener.getScreenDy()
             } else if (yAxisActive) {
-                go.transform.rotation.y += mouseListener.getScreenDx()
+                transform.rotation.y += mouseListener.getScreenDx()
             } else if (zAxisActive) {
-                go.transform.rotation.z += mouseListener.getScreenDy()
+                transform.rotation.z += mouseListener.getScreenDy()
             }
 
             // Draw Rings
@@ -56,7 +59,8 @@ class RotationGizmo(sceneManager: SceneManager) : Gizmo(sceneManager), KoinCompo
     private fun checkInput(rad: Float, threshold: Float) {
         val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
-        val pos = go.transform.translation
+        val transform = go.getComponent<Transform>() ?: return
+        val pos = transform.translation
 
         val mouseX = mouseListener.getScreenX()
         val mouseY = mouseListener.getScreenY()
@@ -78,15 +82,15 @@ class RotationGizmo(sceneManager: SceneManager) : Gizmo(sceneManager), KoinCompo
                 else if (zAxisHot) zAxisActive = true
 
                 if (xAxisActive || yAxisActive || zAxisActive) {
-                    oldTransform = Transform().apply { copyFrom(go.transform) }
+                    oldTransform = Transform().apply { copyFrom(transform) }
                 }
             }
         } else {
             if (xAxisActive || yAxisActive || zAxisActive) {
                 // We were dragging and just stopped
                 oldTransform?.let { old ->
-                    if (old != go.transform) {
-                        undoRedoManager.pushCommand(com.pafoid.skate.engine.editor.TransformCommand(go, old, go.transform))
+                    if (old != transform) {
+                        undoRedoManager.pushCommand(TransformCommand(go, old, transform))
                     }
                 }
                 oldTransform = null
@@ -97,7 +101,7 @@ class RotationGizmo(sceneManager: SceneManager) : Gizmo(sceneManager), KoinCompo
         }
     }
 
-    private fun rayToCircleDist(ray: com.pafoid.skate.engine.utils.Ray, center: Vector3f, axis: Vector3f, rad: Float): Float {
+    private fun rayToCircleDist(ray: Ray, center: Vector3f, axis: Vector3f, rad: Float): Float {
         // Plane intersection
         val denom = axis.dot(ray.direction)
         if (abs(denom) < 0.0001f) return Float.MAX_VALUE

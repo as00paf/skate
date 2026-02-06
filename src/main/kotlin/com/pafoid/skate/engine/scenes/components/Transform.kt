@@ -59,7 +59,8 @@ fun Transform.toWorldMatrix(): Matrix4f {
     val worldMatrix = toMatrix()
     val parent = gameObject.parent
     if (parent != null) {
-        val parentMatrix = parent.transform.toWorldMatrix()
+        val parentTransform = parent.getComponent<Transform>()
+        val parentMatrix = parentTransform?.toWorldMatrix() ?: Matrix4f().identity() // fallback for backward compatibility
         parentMatrix.mul(worldMatrix, worldMatrix)
     }
     return worldMatrix

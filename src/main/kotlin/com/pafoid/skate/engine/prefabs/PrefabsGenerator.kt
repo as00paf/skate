@@ -5,9 +5,10 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Sprite
 import com.pafoid.skate.engine.assets.Texture
-import com.pafoid.skate.engine.entities.Entity
+import com.pafoid.skate.engine.scenes.components.RenderComponent
+import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.models.RawModel
-import com.pafoid.skate.engine.models.TexturedModel
+import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
@@ -17,6 +18,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.ModularTile
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JobSystem
 import org.joml.Vector3f
@@ -29,7 +31,7 @@ class PrefabsGenerator(
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
         val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
         val go = scene.createGameObject(name)
-        go.transform.scale.set(sizeX, sizeY, 1f)
+        go.getComponent<Transform>()?.scale?.set(sizeX, sizeY, 1f)
 
         val renderer = SpriteRenderer()
         renderer.setSprite(sprite)
@@ -42,12 +44,17 @@ class PrefabsGenerator(
         val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
         val go = scene.createGameObject(name)
 
-        val texturedModel = TexturedModel(model, texture)
-        val entity = Entity(texturedModel)
-        go.addComponent(entity)
+        val characterModel = CharacterModel(model, texture)
+        go.addComponent(RenderComponent(model = characterModel))
 
-        // Link entity transform to game object transform for consistency
-        entity.transform.copyFrom(go.transform)
+        // Add a default Transform component
+        val transformComponent = Transform()
+        go.addComponent(transformComponent)
+
+        // Add skeleton component if the model has a skeleton
+        characterModel.skeleton?.let { skeleton ->
+            go.addComponent(SkeletonComponent(skeleton = skeleton.copy()))
+        }
 
         return go
     }
@@ -61,14 +68,20 @@ class PrefabsGenerator(
         go.addComponent(tile)
 
         // We use a cube as the base model for tiles
-        val cubeModel = resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel
+        val cubeModel = resourceManager.loadModelSync(Assets.Models.CUBE).mesh[0].rawModel
 
-        val texturedModel = TexturedModel(cubeModel, texture)
-        val entity = Entity(texturedModel)
-        go.addComponent(entity)
+        val characterModel = CharacterModel(cubeModel, texture)
+        go.addComponent(RenderComponent(model = characterModel))
+        
+        // Add skeleton component if the model has a skeleton
+        characterModel.skeleton?.let { skeleton ->
+            go.addComponent(SkeletonComponent(skeleton = skeleton.copy()))
+        }
 
-        go.transform.scale.set(sizeX, sizeY, 1f)
-        entity.transform.copyFrom(go.transform)
+        // Add a default Transform component
+        val transformComponent = Transform()
+        transformComponent.scale.set(sizeX, sizeY, 1f)
+        go.addComponent(transformComponent)
 
         return go
     }
@@ -111,11 +124,11 @@ class PrefabsGenerator(
 
         JobSystem.runAsync {
             val texture = resourceManager.loadTexture(Assets.Textures.ASPHALT)
-            val texturedModel = TexturedModel(resourceManager.loadModel(Assets.Models.CUBE).parts[0].rawModel, texture)
-            texturedModel.parts[0].material.baseColorPath = Assets.Textures.ASPHALT
+            val characterModel = CharacterModel(resourceManager.loadModel(Assets.Models.CUBE).mesh[0].rawModel, texture)
+            characterModel.mesh[0].material.baseColorPath = Assets.Textures.ASPHALT
 
             JobSystem.runOnMain {
-                floor = Floor(texturedModel)
+                floor = Floor(characterModel)
                 scene.addGameObjectToScene(floor)
             }
         }
@@ -130,11 +143,11 @@ class PrefabsGenerator(
 
         JobSystem.runAsync {
             val texture = resourceManager.loadTexture(Assets.Textures.CONCRETE_SIMPLE)
-            val texturedModel = TexturedModel(resourceManager.loadModel(Assets.Models.CUBE).parts[0].rawModel, texture)
-            texturedModel.parts[0].material.baseColorPath = Assets.Textures.CONCRETE_SIMPLE
+            val characterModel = CharacterModel(resourceManager.loadModel(Assets.Models.CUBE).mesh[0].rawModel, texture)
+            characterModel.mesh[0].material.baseColorPath = Assets.Textures.CONCRETE_SIMPLE
 
             JobSystem.runOnMain {
-                tile = Tile("Tile_${scene.gameObjects.size}", texturedModel)
+                tile = Tile("Tile_${scene.gameObjects.size}", characterModel)
                 scene.addGameObjectToScene(tile)
             }
         }
@@ -145,17 +158,22 @@ class PrefabsGenerator(
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
         val rail = GameObject("Rail_${scene.gameObjects.size}")
-        rail.transform.translation.set(position)
-        rail.transform.scale.set(1f, 1f, 1f)
+        val transformComponent = Transform()
+        transformComponent.translation.set(position)
+        transformComponent.scale.set(1f, 1f, 1f)
+        rail.addComponent(transformComponent)
         val mat = material ?: MaterialType.METAL
-        rail.addComponent(
-            Entity(
-                model = TexturedModel(
-                    resourceManager.loadModelSync(Assets.Models.RAIL).parts[0].rawModel,
-                    resourceManager.loadTextureSync(mat.texturePath)
-                )
-            )
+        val characterModel = CharacterModel(
+            resourceManager.loadModelSync(Assets.Models.RAIL).mesh[0].rawModel,
+            resourceManager.loadTextureSync(mat.texturePath)
         )
+        rail.addComponent(
+            RenderComponent(model = characterModel)
+        )
+        // Add skeleton component if the model has a skeleton
+        characterModel.skeleton?.let { skeleton ->
+            rail.addComponent(SkeletonComponent(skeleton = skeleton.copy()))
+        }
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0)) //Should depend on rail type
         scene.addGameObjectToScene(rail)
@@ -165,16 +183,21 @@ class PrefabsGenerator(
         val scene = sceneManager.currentScene ?: return
         val mat = material ?: MaterialType.CONCRETE
         val ledge = GameObject("${mat.displayName}_Ledge_${scene.gameObjects.size}")
-        ledge.transform.translation.set(position)
-        ledge.transform.scale.set(1f, 1f, 1f)
-        ledge.addComponent(
-            Entity(
-                model = TexturedModel(
-                    resourceManager.loadModelSync(Assets.Models.LEDGE).parts[0].rawModel,
-                    resourceManager.loadTextureSync(mat.texturePath)
-                )
-            )
+        val transformComponent = Transform()
+        transformComponent.translation.set(position)
+        transformComponent.scale.set(1f, 1f, 1f)
+        ledge.addComponent(transformComponent)
+        val characterModel = CharacterModel(
+            resourceManager.loadModelSync(Assets.Models.LEDGE).mesh[0].rawModel,
+            resourceManager.loadTextureSync(mat.texturePath)
         )
+        ledge.addComponent(
+            RenderComponent(model = characterModel)
+        )
+        // Add skeleton component if the model has a skeleton
+        characterModel.skeleton?.let { skeleton ->
+            ledge.addComponent(SkeletonComponent(skeleton = skeleton.copy()))
+        }
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
         scene.addGameObjectToScene(ledge)
@@ -183,20 +206,25 @@ class PrefabsGenerator(
     fun spawnKicker(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
         val kicker = GameObject("Kicker_${scene.gameObjects.size}")
-        kicker.transform.translation.set(position)
-        kicker.transform.scale.set(1f, 1f, 1f)
+        val transformComponent = Transform()
+        transformComponent.translation.set(position)
+        transformComponent.scale.set(1f, 1f, 1f)
+        kicker.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
-        kicker.addComponent(
-            Entity(
-                model = TexturedModel(
-                    resourceManager.loadModelSync(Assets.Models.KICKER).parts[0].rawModel,
-                    resourceManager.loadTextureSync(mat.texturePath)
-                )
-            )
+        val characterModel = CharacterModel(
+            resourceManager.loadModelSync(Assets.Models.KICKER).mesh[0].rawModel,
+            resourceManager.loadTextureSync(mat.texturePath)
         )
+        kicker.addComponent(
+            RenderComponent(model = characterModel)
+        )
+        // Add skeleton component if the model has a skeleton
+        characterModel.skeleton?.let { skeleton ->
+            kicker.addComponent(SkeletonComponent(skeleton = skeleton.copy()))
+        }
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
-        val kickerRawModel = resourceManager.loadModelSync(Assets.Models.KICKER).parts[0].rawModel
+        val kickerRawModel = resourceManager.loadModelSync(Assets.Models.KICKER).mesh[0].rawModel
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until kickerRawModel.vertices.size / 3) {
             jmeVertices.add(
@@ -219,16 +247,21 @@ class PrefabsGenerator(
     fun spawnManualPad(position: Vector3f = Vector3f(0f, 0.1f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
         val go = GameObject("ManualPad_${scene.gameObjects.size}")
-        go.transform.translation.set(position)
+        val transformComponent = Transform()
+        transformComponent.translation.set(position)
+        go.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
-        go.addComponent(
-            Entity(
-                model = TexturedModel(
-                    resourceManager.loadModelSync(Assets.Models.MANUAL_PAD).parts[0].rawModel,
-                    resourceManager.loadTextureSync(mat.texturePath)
-                )
-            )
+        val characterModel = CharacterModel(
+            resourceManager.loadModelSync(Assets.Models.MANUAL_PAD).mesh[0].rawModel,
+            resourceManager.loadTextureSync(mat.texturePath)
         )
+        go.addComponent(
+            RenderComponent(model = characterModel)
+        )
+        // Add skeleton component if the model has a skeleton
+        characterModel.skeleton?.let { skeleton ->
+            go.addComponent(SkeletonComponent(skeleton = skeleton.copy()))
+        }
         go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
         scene.addGameObjectToScene(go)
@@ -238,19 +271,24 @@ class PrefabsGenerator(
     fun spawnBank(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
         val go = GameObject("Bank_${scene.gameObjects.size}")
-        go.transform.translation.set(position)
+        val transformComponent = Transform()
+        transformComponent.translation.set(position)
+        go.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
-        go.addComponent(
-            Entity(
-                model = TexturedModel(
-                    resourceManager.loadModelSync(Assets.Models.BANK).parts[0].rawModel,
-                    resourceManager.loadTextureSync(mat.texturePath)
-                )
-            )
+        val characterModel = CharacterModel(
+            resourceManager.loadModelSync(Assets.Models.BANK).mesh[0].rawModel,
+            resourceManager.loadTextureSync(mat.texturePath)
         )
+        go.addComponent(
+            RenderComponent(model = characterModel)
+        )
+        // Add skeleton component if the model has a skeleton
+        characterModel.skeleton?.let { skeleton ->
+            go.addComponent(SkeletonComponent(skeleton = skeleton.copy()))
+        }
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
-        val rawModel = resourceManager.loadModelSync(Assets.Models.BANK).parts[0].rawModel
+        val rawModel = resourceManager.loadModelSync(Assets.Models.BANK).mesh[0].rawModel
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
             jmeVertices.add(
@@ -271,19 +309,24 @@ class PrefabsGenerator(
     fun spawnQuarterPipe(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
         val go = GameObject("QuarterPipe_${scene.gameObjects.size}")
-        go.transform.translation.set(position)
+        val transformComponent = Transform()
+        transformComponent.translation.set(position)
+        go.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
-        go.addComponent(
-            Entity(
-                model = TexturedModel(
-                    resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).parts[0].rawModel,
-                    resourceManager.loadTextureSync(mat.texturePath)
-                )
-            )
+        val characterModel = CharacterModel(
+            resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).mesh[0].rawModel,
+            resourceManager.loadTextureSync(mat.texturePath)
         )
+        go.addComponent(
+            RenderComponent(model = characterModel)
+        )
+        // Add skeleton component if the model has a skeleton
+        characterModel.skeleton?.let { skeleton ->
+            go.addComponent(SkeletonComponent(skeleton = skeleton.copy()))
+        }
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
-        val rawModel = resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).parts[0].rawModel
+        val rawModel = resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).mesh[0].rawModel
         val jmeVertices = mutableListOf<JmeVector3f>()
         for (i in 0 until rawModel.vertices.size / 3) {
             jmeVertices.add(

@@ -5,11 +5,14 @@ import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
+import com.sun.tools.sjavac.Main.go
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Quaternionf
+import javax.swing.text.StyleConstants.getComponent
 
 @Serializable
 open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
@@ -39,16 +42,17 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
 
     override fun update(dt: Float) {
         rawBody?.let { body ->
+            val transform = gameObject.getComponent<Transform>() ?: return
             val pos = body.getPhysicsLocation(null)
             val rot = body.getPhysicsRotation(null)
 
-            gameObject.transform.translation.set(pos.x, pos.y, pos.z)
+            transform.translation.set(pos.x, pos.y, pos.z)
 
             // JME Quaternion to Euler (JOML)
             val q = Quaternionf(rot.x, rot.y, rot.z, rot.w)
             val euler = JomlVector3f()
             q.getEulerAnglesXYZ(euler)
-            gameObject.transform.rotation.set(
+            transform.rotation.set(
                 Math.toDegrees(euler.x.toDouble()).toFloat(),
                 Math.toDegrees(euler.y.toDouble()).toFloat(),
                 Math.toDegrees(euler.z.toDouble()).toFloat()
@@ -81,7 +85,8 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
     }
 
     override fun getVelocityInPoint(worldPos: JomlVector3f): JomlVector3f {
-        val relPos = JomlVector3f(worldPos).sub(gameObject.transform.translation)
+        val transform = gameObject.getComponent<Transform>() ?: return JomlVector3f()
+        val relPos = JomlVector3f(worldPos).sub(transform.translation)
         val vAtPoint = JomlVector3f(angularVelocity).cross(relPos).add(linearVelocity)
         return vAtPoint
     }

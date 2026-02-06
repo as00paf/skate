@@ -14,11 +14,11 @@ class TransformCommand(
     private val newT = Transform().apply { copyFrom(newTransform) }
 
     override fun execute() {
-        gameObject.transform.copyFrom(newT)
+        gameObject.getComponent<Transform>()?.copyFrom(newT)
     }
 
     override fun undo() {
-        gameObject.transform.copyFrom(oldT)
+        gameObject.getComponent<Transform>()?.copyFrom(oldT)
     }
 }
 

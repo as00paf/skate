@@ -2,7 +2,9 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.PropertiesWindow
+import com.pafoid.skate.engine.editor.TransformCommand
 import com.pafoid.skate.engine.render.DebugDraw
+import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Matrix4f
 import org.joml.Vector2f
@@ -27,7 +29,7 @@ class TranslateGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinCompo
     private var yAxisHot = false
     private var zAxisHot = false
 
-    override fun init(gameObject: com.pafoid.skate.engine.scenes.GameObject) {
+    override fun init(gameObject: GameObject) {
         this.gameObject = gameObject
     }
 
@@ -37,10 +39,11 @@ class TranslateGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinCompo
 
     override fun editorUpdate(dt: Float) {
         super.editorUpdate(dt)
-        activeGameObject?.let{ go ->
-            val pos = go.transform.translation
+        val scene = sceneManager.currentScene ?: return
+        val go = activeGameObject ?: return
+        go.getComponent<Transform>()?.let{ transform ->
+            val pos = transform.translation
 
-            val scene = sceneManager.currentScene ?: return
             val dist = Vector3f(scene.camera.position).distance(pos)
             val dynamicArrowLength = arrowLength * (dist * 0.1f)
             val dynamicConeSize = coneSize * (dist * 0.1f)
@@ -50,14 +53,14 @@ class TranslateGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinCompo
             checkInput(dynamicArrowLength, dynamicHitThreshold)
 
             if (xAxisActive) {
-                go.transform.translation.x += calculateDelta(Vector3f(1f, 0f, 0f))
-                if (go.getComponent<ModularTile>() != null) go.transform.translation.x = (go.transform.translation.x / 2.0f).roundToInt() * 2.0f
+                transform.translation.x += calculateDelta(Vector3f(1f, 0f, 0f))
+                if (go.getComponent<ModularTile>() != null) transform.translation.x = (transform.translation.x / 2.0f).roundToInt() * 2.0f
             } else if (yAxisActive) {
-                go.transform.translation.y += calculateDelta(Vector3f(0f, 1f, 0f))
-                if (go.getComponent<ModularTile>() != null) go.transform.translation.y = (go.transform.translation.y / 2.0f).roundToInt() * 2.0f
+                transform.translation.y += calculateDelta(Vector3f(0f, 1f, 0f))
+                if (go.getComponent<ModularTile>() != null) transform.translation.y = (transform.translation.y / 2.0f).roundToInt() * 2.0f
             } else if (zAxisActive) {
-                go.transform.translation.z += calculateDelta(Vector3f(0f, 0f, 1f))
-                if (go.getComponent<ModularTile>() != null) go.transform.translation.z = (go.transform.translation.z / 2.0f).roundToInt() * 2.0f
+                transform.translation.z += calculateDelta(Vector3f(0f, 0f, 1f))
+                if (go.getComponent<ModularTile>() != null) transform.translation.z = (transform.translation.z / 2.0f).roundToInt() * 2.0f
             }
 
             // 2. Draw Arrows
@@ -96,7 +99,8 @@ class TranslateGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinCompo
     private fun checkInput(length: Float, threshold: Float) {
         val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
-        val pos = go.transform.translation
+        val transform = go.getComponent<Transform>() ?: return
+        val pos = transform.translation
         
         val mouseX = mouseListener.getScreenX()
         val mouseY = mouseListener.getScreenY()
@@ -118,15 +122,15 @@ class TranslateGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinCompo
                 else if (zAxisHot) zAxisActive = true
 
                 if (xAxisActive || yAxisActive || zAxisActive) {
-                    oldTransform = Transform().apply { copyFrom(go.transform) }
+                    oldTransform = Transform().apply { copyFrom(transform) }
                 }
             }
         } else {
             if (xAxisActive || yAxisActive || zAxisActive) {
                 // We were dragging and just stopped
                 oldTransform?.let { old ->
-                    if (old != go.transform) {
-                        undoRedoManager.pushCommand(com.pafoid.skate.engine.editor.TransformCommand(go, old, go.transform))
+                    if (old != transform) {
+                        undoRedoManager.pushCommand(TransformCommand(go, old, transform))
                     }
                 }
                 oldTransform = null
@@ -156,7 +160,8 @@ class TranslateGizmo(sceneManager: SceneManager): Gizmo(sceneManager), KoinCompo
         val proj = camera.createProjectionMatrix()
         
         val go = activeGameObject ?: return 0f
-        val origin = Vector3f(go.transform.translation)
+        val transform = go.getComponent<Transform>() ?: return 0f
+        val origin = Vector3f(transform.translation)
         val p2 = Vector3f(origin).add(axis)
         
         val s1 = worldToScreen(origin, view, proj, 1920f, 1080f)

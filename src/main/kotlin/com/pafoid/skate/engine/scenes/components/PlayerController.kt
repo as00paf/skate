@@ -11,7 +11,6 @@ import com.pafoid.skate.engine.player.PlayerStateManager
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.animation.Animator
-import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_X
@@ -21,7 +20,6 @@ import com.pafoid.skate.engine.controls.listeners.GamepadConstants.BUTTON_A
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.BUTTON_Y
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.GameObject
-import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.utils.Interpolation
 import com.pafoid.skate.engine.utils.JmeVector3f
@@ -130,11 +128,12 @@ class PlayerController : Component(), KoinComponent {
      */
     fun handleStability() {
         val s = skater ?: return
+        val sTransform = s.getComponent<com.pafoid.skate.engine.scenes.components.Transform>()
         // Force snap to board top center
-        s.transform.translation.set(0f, 0.02f, 0f)
-        
+        sTransform?.translation?.set(0f, 0.02f, 0f)
+
         // Face sideways relative to board (90 degrees)
-        s.transform.rotation.set(0f, 90f, 0f)
+        sTransform?.rotation?.set(0f, 90f, 0f)
     }
 
     /**
@@ -157,8 +156,9 @@ class PlayerController : Component(), KoinComponent {
      */
     fun updateProceduralLean(dt: Float) {
     if (stateManager.currentState !is PlayerState.RIDING) return
-    val entity = skater?.getComponent<Entity>() ?: return
-    val skeleton = entity.model.skeleton ?: return
+    val renderComponent = skater?.getComponent<RenderComponent>() ?: return
+    val skeletonComponent = skater?.getComponent<SkeletonComponent>() ?: return
+    val skeleton = skeletonComponent.skeleton ?: return
 
         var steerInput = 0f
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
@@ -208,37 +208,41 @@ class PlayerController : Component(), KoinComponent {
 
         val moveInput = Vector3f(moveX, 0f, moveZ)
         if (moveInput.length() > 1f) moveInput.normalize()
-        
-        if (moveInput.length() > 0.1f) {
-            // Calculate movement relative to camera
-            val viewInv = camera.getInverseView()
-            val camForward = Vector3f(0f, 0f, -1f)
-            viewInv.transformDirection(camForward)
-            camForward.y = 0f
-            camForward.normalize()
-            
-            val camRight = Vector3f(1f, 0f, 0f)
-            viewInv.transformDirection(camRight)
-            camRight.y = 0f
-            camRight.normalize()
-            
-            val moveDir = Vector3f()
-            camForward.mul(moveInput.z, moveDir)
-            val rightPart = Vector3f(camRight).mul(moveInput.x)
-            moveDir.add(rightPart)
-            
-            // Apply movement to transform
-            val velocity = Vector3f(moveDir).mul(walkSpeed * dt)
-            target.transform.translation.add(velocity)
-            
-            // Face movement direction
-            val targetRotationY = Math.toDegrees(atan2(moveDir.x.toDouble(), moveDir.z.toDouble())).toFloat()
-            target.transform.rotation.y = Interpolation.lerp(target.transform.rotation.y, targetRotationY, 10f * dt)
-            
-            animator?.play("walk", 0.2f)
-        } else {
-            animator?.play("idle", 0.2f)
+
+        target.getComponent<Transform>()?.let{ transform ->
+            if (moveInput.length() > 0.1f) {
+                // Calculate movement relative to camera
+                val viewInv = camera.getInverseView()
+                val camForward = Vector3f(0f, 0f, -1f)
+                viewInv.transformDirection(camForward)
+                camForward.y = 0f
+                camForward.normalize()
+
+                val camRight = Vector3f(1f, 0f, 0f)
+                viewInv.transformDirection(camRight)
+                camRight.y = 0f
+                camRight.normalize()
+
+                val moveDir = Vector3f()
+                camForward.mul(moveInput.z, moveDir)
+                val rightPart = Vector3f(camRight).mul(moveInput.x)
+                moveDir.add(rightPart)
+
+                // Apply movement to transform
+                val velocity = Vector3f(moveDir).mul(walkSpeed * dt)
+                transform.translation.add(velocity)
+
+                // Face movement direction
+                val targetRotationY = Math.toDegrees(atan2(moveDir.x.toDouble(), moveDir.z.toDouble())).toFloat()
+                transform.rotation.y = Interpolation.lerp(transform.rotation.y, targetRotationY, 10f * dt)
+
+                animator?.play("walk", 0.2f)
+            } else {
+                animator?.play("idle", 0.2f)
+            }
         }
+
+
         
         // Jump Button A
         if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, BUTTON_A) || inputProvider.keyBeginPress(GLFW_KEY_SPACE)) {
@@ -255,7 +259,7 @@ class PlayerController : Component(), KoinComponent {
     fun handleGroundSnapping() {
         val scene = sceneManager.currentScene ?: return
         val target = skater ?: return
-        val pos = target.transform.translation
+        val pos = target.getComponent<Transform>()?.translation ?: return
         
         val rayStart = Vector3f(pos.x, pos.y + 1f, pos.z)
         val rayEnd = Vector3f(pos.x, pos.y - 2f, pos.z)
@@ -275,32 +279,41 @@ class PlayerController : Component(), KoinComponent {
         val skater = gameObject.children.find { it.name == "Skater" }
         
         val tumbleCube = prefabsGenerator.generateEntityObject(
-            resourceManager.loadModelSync(Assets.Models.CUBE).parts[0].rawModel,
+            resourceManager.loadModelSync(Assets.Models.CUBE).mesh[0].rawModel,
             resourceManager.loadTextureSync(Assets.Textures.DEFAULT),
             "TumbleCube"
         )
-        
-        tumbleCube.transform.translation.set(gameObject.transform.translation)
-        tumbleCube.transform.rotation.set(gameObject.transform.rotation)
+
+        val tumbleCubeTransform = gameObject.getComponent<Transform>()
+        tumbleCubeTransform?.let { transform ->
+            gameObject.getComponent<Transform>()?.let{
+                transform.translation.set(it.translation)
+                transform.rotation.set(it.rotation)
+            }
+
+        }
+
+
+
         
         val cubeRb = RigidBody3D(mass = 5f)
         tumbleCube.addComponent(cubeRb)
-        
+
         val cubeCollider = BoxCollider3D()
         cubeCollider.halfExtents.set(0.5f, 0.5f, 0.5f)
         tumbleCube.addComponent(cubeCollider)
-        
+
         scene.addGameObjectToScene(tumbleCube)
         // Add to physics immediately so we can set velocity
         scene.physics3d.add(tumbleCube)
 
         // Reparent skater to the tumble cube
-        skater?.let {
-            tumbleCube.addChild(it)
+        skater?.getComponent<Transform>()?.let { transform ->
+            tumbleCube.addChild(skater)
             // Reset local transform relative to cube
-            it.transform.translation.set(0f, 0f, 0f)
-            it.transform.rotation.set(0f, 0f, 0f)
-            it.transform.scale.set(1f, 1f, 1f) // Adjust scale if needed, since cube is 1.0
+            transform.translation.set(0f, 0f, 0f)
+            transform.rotation.set(0f, 0f, 0f)
+            transform.scale.set(1f, 1f, 1f) // Adjust scale if needed, since cube is 1.0
         }
         
         // Inherit velocity
@@ -322,44 +335,45 @@ class PlayerController : Component(), KoinComponent {
         }
 
         if (toggle) {
-            val s = skater ?: return
             sceneManager.currentScene ?: return
+            val character = skater ?:return
+            character.getComponent<Transform>()?.let{ transform ->
+                if (stateManager.currentState == PlayerState.RIDING) {
+                    stateManager.transitionToState(PlayerState.WALKING)
+                    physics?.enabled = false
 
-            if (stateManager.currentState == PlayerState.RIDING) {
-                stateManager.transitionToState(PlayerState.WALKING)
-                physics?.enabled = false
-                
-                // Transition to World Space
-                val worldPos = Vector3f()
-                val worldMatrix = s.transform.toWorldMatrix()
-                worldMatrix.getTranslation(worldPos)
-                
-                // Get world rotation Y
-                val worldRot = gameObject.transform.rotation.y + s.transform.rotation.y
+                    // Transition to World Space
+                    val worldPos = Vector3f()
+                    val worldMatrix = transform.toWorldMatrix()
+                    worldMatrix.getTranslation(worldPos)
 
-                // Unparent (It remains in scene.gameObjects list)
-                gameObject.removeChild(s)
-                
-                s.transform.translation.set(worldPos)
-                s.transform.rotation.set(0f, worldRot, 0f)
-                
-                // Teleport offset: Move slightly to the right side of the board
-                val right = Vector3f(0f, 0f, 0.4f)
-                val boardWorldMatrix = gameObject.transform.toWorldMatrix()
-                boardWorldMatrix.transformDirection(right)
-                s.transform.translation.add(right)
-                
-            } else {
-                stateManager.transitionToState(PlayerState.RIDING)
-                physics?.enabled = true
-                
-                // Reparent back to board
-                gameObject.addChild(s)
-                
-                // Reset local transform relative to board
-                // Board top is ~0.02 above center. Feet at 0.02.
-                s.transform.translation.set(0f, 0.02f, 0f) 
-                s.transform.rotation.set(0f, 0f, 0f)
+                    // Get world rotation Y
+                    val worldRot = (gameObject.getComponent<Transform>()?.rotation?.y ?: 0f) + transform.rotation.y
+
+                    // Unparent (It remains in scene.gameObjects list)
+                    gameObject.removeChild(character)
+
+                    transform.translation.set(worldPos)
+                    transform.rotation.set(0f, worldRot, 0f)
+
+                    // Teleport offset: Move slightly to the right side of the board
+                    val right = Vector3f(0f, 0f, 0.4f)
+                    val boardWorldMatrix = gameObject.getComponent<Transform>()?.toWorldMatrix()
+                    boardWorldMatrix?.transformDirection(right)
+                    transform.translation.add(right)
+
+                } else {
+                    stateManager.transitionToState(PlayerState.RIDING)
+                    physics?.enabled = true
+
+                    // Reparent back to board
+                    gameObject.addChild(character)
+
+                    // Reset local transform relative to board
+                    // Board top is ~0.02 above center. Feet at 0.02.
+                    transform.translation.set(0f, 0.02f, 0f)
+                    transform.rotation.set(0f, 0f, 0f)
+                }
             }
         }
     }
@@ -373,7 +387,7 @@ class PlayerController : Component(), KoinComponent {
         val velocity = body.linearVelocity
         if (velocity.length() < 0.5f) return 
 
-        val transform = gameObject.transform.toWorldMatrix()
+        val transform = gameObject.getComponent<Transform>()?.toWorldMatrix() ?: return
         // Our board forward is X.
         val forward = Vector3f(1f, 0f, 0f)
         transform.transformDirection(forward)
@@ -423,7 +437,7 @@ class PlayerController : Component(), KoinComponent {
         val currentVelocity = JmeVector3f(currentVelocityJOML.x, currentVelocityJOML.y, currentVelocityJOML.z)
 
         if (phys.isGrounded) {
-            val transform = gameObject.transform.toWorldMatrix()
+            val transform = gameObject.getComponent<Transform>()?.toWorldMatrix() ?: return
             val localUp = Vector3f(0f, 1f, 0f)
             val worldUp = Vector3f()
             transform.transformDirection(localUp, worldUp)
@@ -450,7 +464,7 @@ class PlayerController : Component(), KoinComponent {
      */
     fun handleCatch(dt: Float) {
         val rb3d = rb ?: return
-        val rotation = gameObject.transform.rotation
+        val rotation = gameObject.getComponent<Transform>()?.rotation ?: return
         
         // Wrap rotation to 0-360
         var yaw = rotation.y % 360f
@@ -497,7 +511,7 @@ class PlayerController : Component(), KoinComponent {
         if (rollTorque != 0f || pitchTorque != 0f) {
             val localTorque = Vector3f(rollTorque, 0f, pitchTorque)
             val worldTorque = Vector3f()
-            gameObject.transform.toWorldMatrix().transformDirection(localTorque, worldTorque)
+            gameObject.getComponent<Transform>()?.toWorldMatrix()?.transformDirection(localTorque, worldTorque)
             rb3d.applyTorqueImpulse(worldTorque)
         }
     }
@@ -519,8 +533,8 @@ class PlayerController : Component(), KoinComponent {
             val worldTorque = Vector3f()
             
             // Convert local torque to world space
-            val transform = gameObject.transform.toWorldMatrix()
-            transform.transformDirection(localTorque, worldTorque)
+            val transform = gameObject.getComponent<Transform>()?.toWorldMatrix()
+            transform?.transformDirection(localTorque, worldTorque)
             
             rb?.applyTorqueImpulse(Vector3f(worldTorque.x, worldTorque.y, worldTorque.z))
         }
@@ -576,9 +590,9 @@ class PlayerController : Component(), KoinComponent {
         }
 
         if (multiplier > 0f && (physics?.isGrounded == true)) {
-            val transform = gameObject.transform.toWorldMatrix()
+            val transform = gameObject.getComponent<Transform>()?.toWorldMatrix()
             val forward = Vector3f(1f, 0f, 0f) // X is forward for our board
-            transform.transformDirection(forward)
+            transform?.transformDirection(forward)
             forward.mul(pushForce * multiplier)
             
             rb?.applyCentralForce(forward)

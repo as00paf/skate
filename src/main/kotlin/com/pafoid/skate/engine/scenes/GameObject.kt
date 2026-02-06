@@ -6,8 +6,6 @@ import com.pafoid.skate.engine.utils.serialization.Serializer
 import imgui.ImGui
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 
 @Serializable
 open class GameObject(
@@ -28,13 +26,8 @@ open class GameObject(
 
     val components = mutableListOf<Component>()
 
-    @Transient var transform: Transform = Transform()
-    @Transient var parent: GameObject? = null
-    @Transient val children = mutableListOf<GameObject>()
-
-    init {
-        addComponent(transform)
-    }
+    var parent: GameObject? = null
+    val children = mutableListOf<GameObject>()
 
     fun addChild(child: GameObject) {
         child.parent?.removeChild(child)
@@ -51,17 +44,18 @@ open class GameObject(
         return components.filterIsInstance<T>().firstOrNull()
     }
 
-    fun <T> removeComponent(componentClass: Class<T>) {
-        components.firstOrNull { componentClass.isAssignableFrom(it.javaClass)}?.let {
-            components.remove(it)
-        }
+    inline fun <reified T> removeComponent() {
+        components.removeIf { it is T }
     }
 
-    fun addComponent(component: Component): GameObject{
-        if (component is Transform) {
-            // If we already have a transform in components, remove it first
-            components.removeAll { it is Transform }
-            this.transform = component
+    inline fun <reified T> hasComponent(): Boolean {
+        return components.filterIsInstance<T>().isNotEmpty()
+    }
+
+    inline fun <reified T: Component> addComponent(component: T): GameObject{
+        // Replace
+        if (hasComponent<T>()) {
+            removeComponent<T>()
         }
         component.generateId()
         components.add(component)
@@ -126,7 +120,12 @@ open class GameObject(
         }
         
         // Restore transform reference
-        result.transform = result.getComponent<Transform>() ?: Transform()
+        val currentTransform = getComponent<Transform>() ?: return result
+        result.getComponent<Transform>()?.let {
+            it.scale.set(currentTransform.scale)
+            it.rotation.set(currentTransform.rotation)
+            it.translation.set(currentTransform.translation)
+        }
 
         return result
     }

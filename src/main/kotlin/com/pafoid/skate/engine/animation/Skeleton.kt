@@ -1,13 +1,16 @@
 package com.pafoid.skate.engine.animation
 
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.joml.Matrix4f
 
+@Serializable
 class Skeleton(
     val rootJoint: Joint,
     val jointCount: Int
 ) {
     private val joints = arrayOfNulls<Joint>(jointCount)
-    private val matrixPalette = Array(jointCount) { Matrix4f() }
+    private val matrixPalette = Array<@Contextual Matrix4f>(jointCount) { Matrix4f() }
 
     init {
         addJointToMap(rootJoint)

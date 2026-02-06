@@ -1,13 +1,12 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.models.MeshPart
-import com.pafoid.skate.engine.models.TexturedModel
+import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.animation.Animation
-import com.pafoid.skate.engine.models.Material
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -22,7 +21,7 @@ class ResourceManager(
 
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
-    private val models = ConcurrentHashMap<String, TexturedModel>()
+    private val models = ConcurrentHashMap<String, CharacterModel>()
     private val sounds = ConcurrentHashMap<String, Sound>()
     val animations = ConcurrentHashMap<String, MutableMap<String, Animation>>()
     
@@ -161,7 +160,7 @@ class ResourceManager(
 
     // --- Model Loading ---
 
-    suspend fun loadModel(path: String): TexturedModel {
+    suspend fun loadModel(path: String): CharacterModel {
         val file = File(path)
         val absolutePath = file.absolutePath
 
@@ -215,9 +214,9 @@ class ResourceManager(
                      
                      textureDataMap.values.forEach { it.free() }
 
-                     val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
-                     models[absolutePath] = texturedModel
-                     texturedModel
+                     val characterModel = CharacterModel(parts, preLoaded.skeleton, preLoaded.animations)
+                     models[absolutePath] = characterModel
+                     characterModel
                  }
         } catch (e: Exception) {
             logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
@@ -227,7 +226,7 @@ class ResourceManager(
         }
     }
     
-    fun loadModelSync(path: String): TexturedModel {
+    fun loadModelSync(path: String): CharacterModel {
         val file = File(path)
         val absolutePath = file.absolutePath
 
@@ -270,9 +269,9 @@ class ResourceManager(
                      MeshPart(model, mat, p.inverseBindMatrices)
                  }
 
-                 val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations)
-                 models[absolutePath] = texturedModel
-                 texturedModel
+                 val characterModel = CharacterModel(parts, preLoaded.skeleton, preLoaded.animations)
+                 models[absolutePath] = characterModel
+                 characterModel
         } catch (e: Exception) {
             logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
@@ -281,7 +280,7 @@ class ResourceManager(
         }
     }
     
-    fun getModel(path: String): TexturedModel? {
+    fun getModel(path: String): CharacterModel? {
         return models[File(path).absolutePath]
     }
 
@@ -349,7 +348,7 @@ class ResourceManager(
         val absolutePath = File(path).absolutePath
         models.remove(absolutePath)?.let { model ->
              JobSystem.runOnMain {
-                 model.parts.forEach { part ->
+                 model.mesh.forEach { part ->
                      vaoLoader.deleteVAO(part.rawModel.vaoId)
                  }
              }

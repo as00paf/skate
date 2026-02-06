@@ -32,7 +32,7 @@ class MouseControls : Component(), KoinComponent {
     private fun place() {
         val scene = sceneManager.currentScene ?: return
         holdingObject?.copy(serializer)?.let { newObj ->
-            newObj.removeComponent(NonPickable::class.java)
+            newObj.removeComponent<NonPickable>()
             scene.addGameObjectToScene(newObj)
         } ?: run { logger.logEngine("Could not place object", LogLevel.ERROR) }
     }
@@ -79,8 +79,10 @@ class MouseControls : Component(), KoinComponent {
         val x = (floor(worldPos.x / snapX) * snapX) + snapX / 2f
         val y = (floor(worldPos.y / snapY) * snapY) + snapY / 2f
 
-        go.transform.translation.x = x
-        go.transform.translation.y = y
+        go.getComponent<Transform>()?.let{ transform ->
+            transform.translation.x = x
+            transform.translation.y = y
+        }
 
         if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
             place()

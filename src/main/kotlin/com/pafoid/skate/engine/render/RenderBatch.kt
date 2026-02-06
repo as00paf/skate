@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.assets.Texture
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
+import com.pafoid.skate.engine.scenes.components.Transform
 import org.joml.Matrix4f
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL30.*
@@ -151,13 +152,14 @@ class RenderBatch(
                 }
             }
         }
-        
-        val isRotated = sprite.gameObject.transform.rotation.z != 0f
+
+        val transform =sprite.gameObject.getComponent<Transform>() ?: return
+        val isRotated = transform.rotation?.z != 0f
         if (isRotated) {
             transformMatrix.identity()
-            transformMatrix.translate(sprite.gameObject.transform.translation.x, sprite.gameObject.transform.translation.y, 0f)
-            transformMatrix.rotate(Math.toRadians(sprite.gameObject.transform.rotation.z.toDouble()).toFloat(), 0f, 0f, 1f)
-            transformMatrix.scale(sprite.gameObject.transform.scale.x, sprite.gameObject.transform.scale.y, 1f)
+            transformMatrix.translate(transform.translation.x, transform.translation.y, 0f)
+            transformMatrix.rotate(Math.toRadians(transform.rotation.z.toDouble()).toFloat(), 0f, 0f, 1f)
+            transformMatrix.scale(transform.scale.x, transform.scale.y, 1f)
         }
 
         // Add vertices with the appropriate properties
@@ -178,8 +180,8 @@ class RenderBatch(
             if (isRotated) {
                  currentPos.mul(transformMatrix)
             } else {
-                 currentPos.x = currentPos.x * sprite.gameObject.transform.scale.x + sprite.gameObject.transform.translation.x
-                 currentPos.y = currentPos.y * sprite.gameObject.transform.scale.y + sprite.gameObject.transform.translation.y
+                 currentPos.x = currentPos.x * transform.scale.x + transform.translation.x
+                 currentPos.y = currentPos.y * transform.scale.y + transform.translation.y
             }
 
             // Load position
