@@ -24,7 +24,7 @@ class ResourceManager(
     private val shaders = ConcurrentHashMap<String, Shader>()
     private val models = ConcurrentHashMap<String, TexturedModel>()
     private val sounds = ConcurrentHashMap<String, Sound>()
-    private val animations = ConcurrentHashMap<String, MutableMap<String, Animation>>()
+    val animations = ConcurrentHashMap<String, MutableMap<String, Animation>>()
     
     // Loaders are now passed via constructor
     

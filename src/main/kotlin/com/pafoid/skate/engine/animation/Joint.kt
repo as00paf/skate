@@ -9,9 +9,12 @@ class Joint(
 ) {
     val children = mutableListOf<Joint>()
     
+    // Original Bind Pose Local Transform (Model's Skeleton)
+    val bindLocalTransform = Matrix4f(localTransform)
+
     // The matrix that goes from Model Space to Joint Local Space in Bind Pose
     val inverseBindMatrix = Matrix4f()
-    
+
     // The matrix that goes from Joint Local Space to Model Space in current pose
     val worldTransform = Matrix4f()
 
@@ -28,6 +31,7 @@ class Joint(
 
     fun copy(): Joint {
         val copy = Joint(index, name, Matrix4f(localTransform))
+        copy.bindLocalTransform.set(bindLocalTransform)
         copy.inverseBindMatrix.set(inverseBindMatrix)
         for (child in children) {
             copy.addChild(child.copy())

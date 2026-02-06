@@ -42,7 +42,7 @@ class Animator : Component(), KoinComponent {
         private set
     var currentAnimation: Animation? = null
         private set
-    var isPlaying = true
+    var isPlaying = false
     private var blendTime = 0f
     private var blendDuration = 0.2f
     private var previousAnimation: Animation? = null

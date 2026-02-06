@@ -117,7 +117,7 @@ class AssimpLoader {
         return null
     }
 
-    private fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f, rootNodeName: String? = null): Animation {
+    private fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f, rootNodeName: String? = null, bindPoses: Map<String, Matrix4f> = emptyMap()): Animation {
         val name = aiAnim.mName().dataString()
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
@@ -194,7 +194,7 @@ class AssimpLoader {
             */
         }
 
-        return Animation(name, channels, durationInSeconds)
+        return Animation(name, channels, durationInSeconds, bindPoses)
     }
 
     private fun processNode(node: AINode, scene: AIScene, parentTransform: Matrix4f, meshParts: MutableList<PreLoadedMeshPart>, embeddedTextures: MutableMap<String, ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>, unitScale: Float) {
