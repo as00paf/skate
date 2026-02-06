@@ -13,12 +13,23 @@ import java.util.Collections.emptyList
 data class TexturedModel (
     val parts: List<MeshPart>,
     @Transient val skeleton: Skeleton? = null,
-    @Transient val animations: List<Animation> = emptyList()
+    @Transient val initialAnimations: List<Animation> = emptyList()
 ): Component() {
+    @Transient private val _animations = initialAnimations.toMutableList()
+    val animations: List<Animation> get() = _animations
+
     constructor(rawModel: RawModel, texture: Texture) : this(listOf(MeshPart(rawModel, Material(baseColorTexture = texture))))
     constructor(rawModel: RawModel, material: Material) : this(listOf(MeshPart(rawModel, material)))
     constructor(rawModel: RawModel, material: Material, inverseBindMatrices: List<Matrix4f>) : this(listOf(MeshPart(rawModel, material, inverseBindMatrices)))
     
+    fun addAnimations(newAnims: List<Animation>) {
+        newAnims.forEach { newAnim ->
+            if (_animations.none { it.name == newAnim.name }) {
+                _animations.add(newAnim)
+            }
+        }
+    }
+
     // For backward compatibility
     val rawModel: RawModel get() = parts[0].rawModel
     val texture: Texture? get() = parts[0].material.baseColorTexture

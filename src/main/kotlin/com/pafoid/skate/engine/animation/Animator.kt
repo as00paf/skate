@@ -2,9 +2,11 @@ package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.render.DebugDraw
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import imgui.ImGui
+import imgui.flag.ImGuiDragDropFlags
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -24,6 +26,7 @@ import kotlin.getValue
  */
 class Animator : Component(), KoinComponent {
     private val debugDraw: DebugDraw by inject()
+    private val resourceManager: ResourceManager by inject()
 
     // Reusable objects to minimize allocations in hot loops/recursive calls
     private val tempJointPos = Vector3f()
@@ -166,12 +169,13 @@ class Animator : Component(), KoinComponent {
     override fun imgui() {
         val entity = gameObject.getComponent<Entity>()
         val animations = entity?.model?.animations.orEmpty()
-        if (entity == null || animations.isEmpty()) {
-            ImGui.text("No animations found in model")
+        if (entity == null) {
+            ImGui.text("No entity found")
             return
         }
 
-        if (ImGui.beginCombo("Animations", currentAnimation?.name ?: "Select...")) {
+        ImGui.beginGroup()
+        if (ImGui.beginCombo("Animations", currentAnimation?.name ?: if (animations.isEmpty()) "Drop animations here..." else "Select...")) {
             for (anim in animations) {
                 if (ImGui.selectable("${anim.name} (${String.format("%.2f", anim.duration)}s)", currentAnimation == anim)) {
                     play(anim)
@@ -179,6 +183,19 @@ class Animator : Component(), KoinComponent {
             }
             ImGui.endCombo()
         }
+        ImGui.endGroup()
+
+        if (ImGui.beginDragDropTarget()) {
+            val payload = ImGui.acceptDragDropPayload<String>("ANIMATION", ImGuiDragDropFlags.None)
+            if (payload != null) {
+                val path = payload.toString()
+                val newAnims = resourceManager.loadAnimationsSync(path)
+                entity.model.addAnimations(newAnims)
+            }
+            ImGui.endDragDropTarget()
+        }
+
+        if (animations.isEmpty()) return
 
         val anim = currentAnimation ?: animations.firstOrNull() ?: return
         
