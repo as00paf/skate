@@ -58,7 +58,7 @@ class AssimpLoader {
 
         val rootTransform = Matrix4f().scale(unitScale)
         val rootNode = scene.mRootNode() ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
-        processNode(rootNode, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
+        processNode(rootNode, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap, unitScale)
 
         // Build Skeleton Hierarchy
         val rootJoint = buildHierarchy(rootNode, boneInfoMap)
@@ -69,7 +69,7 @@ class AssimpLoader {
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim))
+            animations.add(processAnimation(aiAnim, unitScale))
         }
 
         aiReleaseImport(scene)
@@ -98,7 +98,7 @@ class AssimpLoader {
         return null
     }
 
-    private fun processAnimation(aiAnim: AIAnimation): Animation {
+    private fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f): Animation {
         val name = aiAnim.mName().dataString()
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
@@ -119,9 +119,9 @@ class AssimpLoader {
                     val keys = aiChannel.mPositionKeys() ?: continue
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
-                    values[k * 3] = key.mValue().x()
-                    values[k * 3 + 1] = key.mValue().y()
-                    values[k * 3 + 2] = key.mValue().z()
+                    values[k * 3] = key.mValue().x() * scale
+                    values[k * 3 + 1] = key.mValue().y() * scale
+                    values[k * 3 + 2] = key.mValue().z() * scale
                 }
                 val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 3)
                 channels.add(AnimationChannel(sampler, nodeName, AnimationPath.TRANSLATION))
@@ -164,7 +164,7 @@ class AssimpLoader {
         return Animation(name, channels, durationInSeconds)
     }
 
-    private fun processNode(node: AINode, scene: AIScene, parentTransform: Matrix4f, meshParts: MutableList<PreLoadedMeshPart>, embeddedTextures: MutableMap<String, ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>) {
+    private fun processNode(node: AINode, scene: AIScene, parentTransform: Matrix4f, meshParts: MutableList<PreLoadedMeshPart>, embeddedTextures: MutableMap<String, ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>, unitScale: Float) {
         val nodeTransform = parentTransform.mul(toJomlMatrix(node.mTransformation()), Matrix4f())
 
         for (i in 0 until node.mNumMeshes()) {
@@ -172,17 +172,17 @@ class AssimpLoader {
             val meshIndex = nodeMeshes.get(i)
             val sceneMesh = scene.mMeshes() ?: continue
             val mesh = AIMesh.create(sceneMesh.get(meshIndex))
-            meshParts.add(processMesh(mesh, scene, nodeTransform, embeddedTextures, filePath, boneInfoMap))
+            meshParts.add(processMesh(mesh, scene, nodeTransform, embeddedTextures, filePath, boneInfoMap, unitScale))
         }
 
         for (i in 0 until node.mNumChildren()) {
             val children = node.mChildren() ?: continue
             val child = AINode.create(children.get(i))
-            processNode(child, scene, nodeTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
+            processNode(child, scene, nodeTransform, meshParts, embeddedTextures, filePath, boneInfoMap, unitScale)
         }
     }
 
-    private fun processMesh(mesh: AIMesh, scene: AIScene, transform: Matrix4f, embeddedTextures: MutableMap<String, ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>): PreLoadedMeshPart {
+    private fun processMesh(mesh: AIMesh, scene: AIScene, transform: Matrix4f, embeddedTextures: MutableMap<String, ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>, unitScale: Float): PreLoadedMeshPart {
         val materialData = Material()
         
         val materialIndex = mesh.mMaterialIndex()
@@ -296,7 +296,9 @@ class AssimpLoader {
             val name = BoneNameMapper.map(bone.mName().dataString())
             val boneIndex = boneInfoMap[name]?.index ?: b
             
-            inverseBindMatrices.add(toJomlMatrix(bone.mOffsetMatrix()))
+            val ibm = toJomlMatrix(bone.mOffsetMatrix())
+            ibm.scale(1.0f / unitScale) // Scale input to match scaled vertices
+            inverseBindMatrices.add(ibm)
             
             for (w in 0 until bone.mNumWeights()) {
                 val weight = bone.mWeights().get(w)
@@ -371,11 +373,18 @@ class AssimpLoader {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
 
+        var unitScale = 1.0f
+        if (filePath.contains("skateboard", ignoreCase = true)) {
+            unitScale = 0.0017f 
+        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
+            unitScale = 0.01f 
+        }
+
         val animations = mutableListOf<Animation>()
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim))
+            animations.add(processAnimation(aiAnim, unitScale))
         }
 
         aiReleaseImport(scene)
