@@ -158,7 +158,6 @@ class Renderer(
         defaultShader.uploadFloat(Uniforms.FOG_GRADIENT, scene.fogGradient)
 
         scene.gameObjects.forEach { go ->
-            // Handle new ECS system: GameObjects with RenderComponent, Transform, and optionally SkeletonComponent
             val renderComponent = go.getComponent<RenderComponent>()
             val transformComponent = go.getComponent<Transform>()
             if (renderComponent != null && transformComponent != null) {
@@ -167,8 +166,7 @@ class Renderer(
                 else if (go == hoveredGameObject) selectionState = 2.0f
 
                 defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
-                
-                // Use the ModelRenderer for the new ECS structure
+
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
                 val camera = sceneManager.currentScene?.camera
                 val cameraPosition = camera?.position ?: Vector3f(0f, 0f, 0f)
