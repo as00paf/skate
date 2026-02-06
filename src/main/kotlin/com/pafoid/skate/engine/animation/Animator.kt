@@ -67,14 +67,6 @@ class Animator : Component(), KoinComponent {
 
     override fun update(dt: Float) {}
 
-    fun stop() {
-        isPlaying = false
-    }
-
-    fun resume() {
-        isPlaying = true
-    }
-
     override fun imgui() {
         val renderComponent = gameObject.getComponent<RenderComponent>()
         val skeletonComponent = gameObject.getComponent<SkeletonComponent>()

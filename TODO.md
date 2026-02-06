@@ -314,7 +314,18 @@
 - [x] **H1. Animations**: Add a method to load animation files in AssimpLoader and ResourceManager.
 - [x] **H2. AnimationList**: Finish implementing AnimationsTab.kt so it renders the file items in a list. The items of the list should have readable names.
 - [x] **H3. DragAndDrop**: Allow animation items from the AnimationsTab to be drag and dropped from the AnimationsTab to the Animator imgui panel so animations can be added to an entity's texturedModel animations list.
-
+- [x] **H4. Create TransformComponent**: Strip the `transform` from `GameObject` and `Entity`. Create a standalone component.
+- [x] **H5. Create RenderComponent**: Move `TexturedModel`, `shininess`, `reflectivity`, and `textureScale` into this component.
+- [x] **H6. Create SkeletonComponent**: Extract the `Skeleton` from the `Entity` class. This component will be updated by the `Animator`.
+- [x] **H7. Deprecate the 'Entity' Class**: If `GameObject` already supports components, move the logic there and delete the `Entity` class to avoid having two "base" objects.
+- [x] **H8. Update Serializer**: Ensure `@Serializable` is applied to the new small components so the level can still be saved as JSON.
+- [x] **H9. RendererSystem**: Update the renderer to look for GameObjects that have **BOTH** a `TransformComponent` AND a `RenderComponent`.
+- [x] **H10. AnimationSystem**: Update this to look for GameObjects with a `SkeletonComponent`. It should apply the current frame of animation to the *component's* bones, not the model's bones.
+- [x] **H11. Data Strip-down**: Remove any "heavy" logic (like matrix math) from `AnimatorComponent`. It should only contain variables (`time`, `speed`, `looping`).
+- [x] **H12. System Registration**: Create `AnimationSystem.kt` and register it in your main engine loop or Koin module.
+- [x] **H13. The "Query" Loop**: In `AnimationSystem.update()`, find all objects that have both an `AnimatorComponent` AND a `SkeletonComponent`.
+- [x] **H14. Blending Logic**: Move the "Cross-fade" math from your old `Entity` class into the `AnimationSystem`.
+- [x] **H15. Root Motion (Optional)**: If the animation moves the "Hips" bone, have the `AnimationSystem` apply that delta movement back to the `TransformComponent` so the physics body follows the feet.
 ---
 
 # 🛠️ 🔵 Phase I: "Pose Master" Animation Authoring Tool
