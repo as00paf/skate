@@ -391,11 +391,18 @@ class AssimpLoader {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
 
+        var unitScale = 1.0f
+        if (filePath.contains("skateboard", ignoreCase = true)) {
+            unitScale = 0.0017f 
+        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
+            unitScale = 0.01f 
+        }
+
         val animations = mutableListOf<Animation>()
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim))
+            animations.add(processAnimation(aiAnim, unitScale))
         }
 
         aiReleaseImport(scene)
