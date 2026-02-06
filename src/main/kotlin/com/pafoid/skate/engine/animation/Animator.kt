@@ -3,6 +3,9 @@ package com.pafoid.skate.engine.animation
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.utils.Time
+import com.pafoid.skate.engine.editor.logs.LoggerService
+import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import imgui.ImGui
@@ -27,6 +30,7 @@ import kotlin.getValue
 class Animator : Component(), KoinComponent {
     private val debugDraw: DebugDraw by inject()
     private val resourceManager: ResourceManager by inject()
+    private val logger: LoggerService by inject()
 
     // Reusable objects to minimize allocations in hot loops/recursive calls
     private val tempJointPos = Vector3f()
@@ -84,12 +88,6 @@ class Animator : Component(), KoinComponent {
         
         if (isPlaying) {
             val animation = currentAnimation ?: entity.model.animations.firstOrNull() ?: return
-            
-            // Only log every 60 frames to avoid spam
-            if (System.currentTimeMillis() % 1000 < 20) {
-                val matched = animation.channels.count { skeleton.getJointByName(it.targetNodeName) != null }
-                println("Animator: Playing '${animation.name}', matched $matched/${animation.channels.size} channels")
-            }
 
             currentTime += dt
             

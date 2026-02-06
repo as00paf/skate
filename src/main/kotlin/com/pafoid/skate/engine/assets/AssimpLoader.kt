@@ -130,13 +130,6 @@ class AssimpLoader {
             if (aiChannel.mNumPositionKeys() > 0) {
                 val times = FloatArray(aiChannel.mNumPositionKeys())
                 val values = FloatArray(aiChannel.mNumPositionKeys() * 3)
-                
-                // Debug Log First Key
-                val firstKey = aiChannel.mPositionKeys()?.get(0)
-                if (firstKey != null) {
-                    println("DEBUG: Anim $name Channel $nodeName First Key Raw: ${firstKey.mValue().x()}, ${firstKey.mValue().y()}, ${firstKey.mValue().z()}")
-                }
-
                 for (k in 0 until aiChannel.mNumPositionKeys()) {
                     val keys = aiChannel.mPositionKeys() ?: continue
                     val key = keys.get(k)
@@ -185,7 +178,6 @@ class AssimpLoader {
             */
         }
 
-        println("Loaded Animation: $name with Scale Factor: $scale")
         return Animation(name, channels, durationInSeconds)
     }
 
