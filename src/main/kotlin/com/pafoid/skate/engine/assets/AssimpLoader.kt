@@ -38,8 +38,6 @@ class AssimpLoader {
 
         if (filePath.contains("skateboard", ignoreCase = true)) {
             unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
-        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
-            unitScale = 0.01f // Convert cm to m for Mixamo FBX
         }
 
         for (i in 0 until scene.mNumMeshes()) {
@@ -131,6 +129,13 @@ class AssimpLoader {
             if (aiChannel.mNumPositionKeys() > 0) {
                 val times = FloatArray(aiChannel.mNumPositionKeys())
                 val values = FloatArray(aiChannel.mNumPositionKeys() * 3)
+                
+                // Debug Log First Key
+                val firstKey = aiChannel.mPositionKeys()?.get(0)
+                if (firstKey != null) {
+                    println("DEBUG: Anim $name Channel $nodeName First Key Raw: ${firstKey.mValue().x()}, ${firstKey.mValue().y()}, ${firstKey.mValue().z()}")
+                }
+
                 for (k in 0 until aiChannel.mNumPositionKeys()) {
                     val keys = aiChannel.mPositionKeys() ?: continue
                     val key = keys.get(k)
@@ -160,7 +165,8 @@ class AssimpLoader {
                 channels.add(AnimationChannel(sampler, nodeName, AnimationPath.ROTATION))
             }
 
-            // Scale
+            // Scale (DISABLED FOR SAFETY)
+            /*
             if (aiChannel.mNumScalingKeys() > 0) {
                 val times = FloatArray(aiChannel.mNumScalingKeys())
                 val values = FloatArray(aiChannel.mNumScalingKeys() * 3)
@@ -175,8 +181,10 @@ class AssimpLoader {
                 val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 3)
                 channels.add(AnimationChannel(sampler, nodeName, AnimationPath.SCALE))
             }
+            */
         }
 
+        println("Loaded Animation: $name with Scale Factor: $scale")
         return Animation(name, channels, durationInSeconds)
     }
 
