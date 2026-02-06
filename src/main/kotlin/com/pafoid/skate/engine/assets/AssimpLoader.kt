@@ -326,6 +326,7 @@ class AssimpLoader {
         return PreLoadedMeshPart(vertices, texCoords, texCoords1, normals, tangents, colors, joints, weights, indices, materialData, GL11.GL_TRIANGLES, embeddedTextures, inverseBindMatrices)
     }
 
+    // TODO: Convert to extension method in AssimpExtensions
     private fun toJomlMatrix(aiMatrix: AIMatrix4x4): Matrix4f {
         return Matrix4f(
             aiMatrix.a1(), aiMatrix.b1(), aiMatrix.c1(), aiMatrix.d1(),

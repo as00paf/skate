@@ -164,9 +164,9 @@ class Animator : Component(), KoinComponent {
     }
 
     override fun imgui() {
-        val entity = gameObject.getComponent<Entity>() ?: return
-        val animations = entity.model.animations
-        if (animations.isEmpty()) {
+        val entity = gameObject.getComponent<Entity>()
+        val animations = entity?.model?.animations.orEmpty()
+        if (entity == null || animations.isEmpty()) {
             ImGui.text("No animations found in model")
             return
         }

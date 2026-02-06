@@ -95,6 +95,7 @@ class PrefabsGenerator(
             val model = resourceManager.loadModel(Assets.Models.JAMES)
             JobSystem.runOnMain {
                 val skater = Skater("Skater", model, skate)
+                //skater.getComponent<Entity>()?.model?.animations.addAll()
                 scene.addGameObjectToScene(skater)
             }
         }

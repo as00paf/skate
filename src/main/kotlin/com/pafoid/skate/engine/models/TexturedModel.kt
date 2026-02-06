@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.scenes.components.Component
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Matrix4f
+import java.util.Collections.emptyList
 
 @Serializable
 data class TexturedModel (
