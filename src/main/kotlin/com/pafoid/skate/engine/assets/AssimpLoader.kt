@@ -62,7 +62,13 @@ class AssimpLoader {
 
         // Build Skeleton Hierarchy
         val rootJoint = buildHierarchy(rootNode, boneInfoMap)
-        val skeleton = if (rootJoint != null) Skeleton(rootJoint, boneNames.size) else null
+        val skeleton = if (rootJoint != null) {
+            val rootTransform = Matrix4f()
+            if (unitScale != 1.0f) {
+                rootTransform.scale(unitScale)
+            }
+            Skeleton(rootJoint, boneNames.size, rootTransform)
+        } else null
 
         // Load Animations
         val animations = mutableListOf<Animation>()

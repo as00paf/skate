@@ -4,7 +4,8 @@ import org.joml.Matrix4f
 
 class Skeleton(
     val rootJoint: Joint,
-    val jointCount: Int
+    val jointCount: Int,
+    val rootTransform: Matrix4f = Matrix4f()
 ) {
     private val joints = arrayOfNulls<Joint>(jointCount)
     private val matrixPalette = Array(jointCount) { Matrix4f() }
@@ -23,7 +24,7 @@ class Skeleton(
     }
 
     fun update() {
-        rootJoint.calculateWorldTransforms(Matrix4f())
+        rootJoint.calculateWorldTransforms(rootTransform)
         for (i in 0 until jointCount) {
             val joint = joints[i]
             if (joint != null) {
@@ -46,6 +47,6 @@ class Skeleton(
     }
 
     fun copy(): Skeleton {
-        return Skeleton(rootJoint.copy(), jointCount)
+        return Skeleton(rootJoint.copy(), jointCount, Matrix4f(rootTransform))
     }
 }
