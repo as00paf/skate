@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.models.Material
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.BoneNameMapper
 import org.joml.Matrix4f
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.assimp.*
 import org.lwjgl.assimp.Assimp.*
@@ -53,14 +54,6 @@ class AssimpLoader {
                     boneNames.add(name)
                     println("AssimpLoader: Found Bone '$name' (Original: ${bone.mName().dataString()})")
                     val offsetMatrix = toJomlMatrix(bone.mOffsetMatrix())
-                    if (unitScale != 1.0f) {
-                        // Offset matrix (IBM) is from Model Space -> Bone Space.
-                        // We only scale the translation component to match our meter-scaled world.
-                        val translation = Vector3f()
-                        offsetMatrix.getTranslation(translation)
-                        translation.mul(unitScale)
-                        offsetMatrix.setTranslation(translation)
-                    }
                     boneInfoMap[name] = BoneInfo(boneNames.size - 1, offsetMatrix)
                 }
             }
@@ -72,6 +65,33 @@ class AssimpLoader {
 
         // Build Skeleton Hierarchy
         val rootJoint = buildHierarchy(rootNode, boneInfoMap, unitScale)
+        
+        // Recalculate Inverse Bind Matrices (IBMs) to match our modified hierarchy (Scale/Rotation)
+        // This ensures the skinning equation (BoneWorld * IBM) is Identity at Bind Pose.
+        if (rootJoint != null) {
+            rootJoint.calculateWorldTransforms(Matrix4f())
+            
+            // Helper to find joint by name (since Skeleton class isn't built yet)
+            fun findJoint(node: Joint, name: String): Joint? {
+                if (node.name == name) return node
+                for (child in node.children) {
+                    val res = findJoint(child, name)
+                    if (res != null) return res
+                }
+                return null
+            }
+
+            boneInfoMap.forEach { (name, info) ->
+                val joint = findJoint(rootJoint, name)
+                if (joint != null) {
+                    // IBM = Inverse(BindPoseWorld)
+                    joint.worldTransform.invert(info.offsetMatrix)
+                    // Also update the joint's own storage
+                    joint.inverseBindMatrix.set(info.offsetMatrix)
+                }
+            }
+        }
+
         val skeleton = if (rootJoint != null) Skeleton(rootJoint, boneNames.size) else null
 
         // Load Animations
@@ -117,17 +137,22 @@ class AssimpLoader {
         return null
     }
 
-    private fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f, rootNodeName: String? = null, bindPoses: Map<String, Matrix4f> = emptyMap()): Animation {
+    private fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f, rootNodeName: String? = null): Animation {
         val name = aiAnim.mName().dataString()
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
         val durationInSeconds = duration / ticksPerSecond
+        
+        val q180 = Quaternionf().rotateX(Math.PI.toFloat())
 
         val channels = mutableListOf<AnimationChannel>()
         for (i in 0 until aiAnim.mNumChannels()) {
             val anims = aiAnim.mChannels() ?: continue
             val aiChannel = AINodeAnim.create(anims.get(i))
             val nodeName = BoneNameMapper.map(aiChannel.mNodeName().dataString())
+            val isRoot = (rootNodeName != null && nodeName.equals(rootNodeName, ignoreCase = true)) || nodeName.equals("Hips", ignoreCase = true)
+            
+            // Removed debug print for root animation rotation
 
             //TODO: extract
             // Translation
@@ -145,7 +170,7 @@ class AssimpLoader {
                     var z = key.mValue().z() * scale
                     
                     // Zero out root motion (X, Z) if this is the root bone
-                    if (rootNodeName != null && nodeName == rootNodeName) {
+                    if (isRoot) {
                         x = 0f
                         z = 0f
                     }
@@ -166,10 +191,17 @@ class AssimpLoader {
                     val keys = aiChannel.mRotationKeys() ?: continue
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
-                    values[k * 4] = key.mValue().x()
-                    values[k * 4 + 1] = key.mValue().y()
-                    values[k * 4 + 2] = key.mValue().z()
-                    values[k * 4 + 3] = key.mValue().w()
+                    
+                    val q = Quaternionf(key.mValue().x(), key.mValue().y(), key.mValue().z(), key.mValue().w())
+                    
+                    if (isRoot) {
+                        // Removed 180 rotation to test raw animation orientation
+                    }
+                    
+                    values[k * 4] = q.x
+                    values[k * 4 + 1] = q.y
+                    values[k * 4 + 2] = q.z
+                    values[k * 4 + 3] = q.w
                 }
                 val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 4)
                 channels.add(AnimationChannel(sampler, nodeName, AnimationPath.ROTATION))
@@ -194,7 +226,7 @@ class AssimpLoader {
             */
         }
 
-        return Animation(name, channels, durationInSeconds, bindPoses)
+        return Animation(name, channels, durationInSeconds)
     }
 
     private fun processNode(node: AINode, scene: AIScene, parentTransform: Matrix4f, meshParts: MutableList<PreLoadedMeshPart>, embeddedTextures: MutableMap<String, ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>, unitScale: Float) {
@@ -329,14 +361,7 @@ class AssimpLoader {
             val name = BoneNameMapper.map(bone.mName().dataString())
             val boneIndex = boneInfoMap[name]?.index ?: b
             
-            val ibm = toJomlMatrix(bone.mOffsetMatrix())
-            if (unitScale != 1.0f) {
-                // Scale only translation to convert offsets to Meter-space
-                val translation = Vector3f()
-                ibm.getTranslation(translation)
-                translation.mul(unitScale)
-                ibm.setTranslation(translation)
-            }
+            val ibm = Matrix4f(boneInfoMap[name]?.offsetMatrix ?: Matrix4f()) 
             inverseBindMatrices.add(ibm)
             
             for (w in 0 until bone.mNumWeights()) {
