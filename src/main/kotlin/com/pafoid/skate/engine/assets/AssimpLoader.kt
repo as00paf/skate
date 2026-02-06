@@ -43,7 +43,11 @@ class AssimpLoader {
                 val name = BoneNameMapper.map(bone.mName().dataString())
                 if (!boneNames.contains(name)) {
                     boneNames.add(name)
-                    boneInfoMap[name] = BoneInfo(boneNames.size - 1, toJomlMatrix(bone.mOffsetMatrix()))
+                    val offsetMatrix = toJomlMatrix(bone.mOffsetMatrix())
+                    if (unitScale != 1.0f) {
+                        offsetMatrix.scale(1.0f / unitScale)
+                    }
+                    boneInfoMap[name] = BoneInfo(boneNames.size - 1, offsetMatrix)
                 }
             }
         }
@@ -303,7 +307,9 @@ class AssimpLoader {
             val boneIndex = boneInfoMap[name]?.index ?: b
             
             val ibm = toJomlMatrix(bone.mOffsetMatrix())
-            ibm.scale(1.0f / unitScale) // Scale input to match scaled vertices
+            if (unitScale != 1.0f) {
+                ibm.scale(1.0f / unitScale)
+            }
             inverseBindMatrices.add(ibm)
             
             for (w in 0 until bone.mNumWeights()) {
