@@ -38,6 +38,8 @@ class AssimpLoader {
 
         if (filePath.contains("skateboard", ignoreCase = true)) {
             unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
+        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
+            unitScale = 0.01f // Mixamo FBX uses centimeters
         }
 
         for (i in 0 until scene.mNumMeshes()) {
@@ -52,6 +54,8 @@ class AssimpLoader {
                     println("AssimpLoader: Found Bone '$name' (Original: ${bone.mName().dataString()})")
                     val offsetMatrix = toJomlMatrix(bone.mOffsetMatrix())
                     if (unitScale != 1.0f) {
+                        // Offset matrix (IBM) is from Model Space -> Bone Space.
+                        // We only scale the translation component to match our meter-scaled world.
                         val translation = Vector3f()
                         offsetMatrix.getTranslation(translation)
                         translation.mul(unitScale)
@@ -75,7 +79,7 @@ class AssimpLoader {
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim, unitScale))
+            animations.add(processAnimation(aiAnim, unitScale, rootJoint?.name))
         }
 
         aiReleaseImport(scene)
@@ -113,7 +117,7 @@ class AssimpLoader {
         return null
     }
 
-    private fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f): Animation {
+    private fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f, rootNodeName: String? = null): Animation {
         val name = aiAnim.mName().dataString()
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
@@ -130,13 +134,25 @@ class AssimpLoader {
             if (aiChannel.mNumPositionKeys() > 0) {
                 val times = FloatArray(aiChannel.mNumPositionKeys())
                 val values = FloatArray(aiChannel.mNumPositionKeys() * 3)
+                
                 for (k in 0 until aiChannel.mNumPositionKeys()) {
                     val keys = aiChannel.mPositionKeys() ?: continue
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
-                    values[k * 3] = key.mValue().x() * scale
-                    values[k * 3 + 1] = key.mValue().y() * scale
-                    values[k * 3 + 2] = key.mValue().z() * scale
+                    
+                    var x = key.mValue().x() * scale
+                    var y = key.mValue().y() * scale
+                    var z = key.mValue().z() * scale
+                    
+                    // Zero out root motion (X, Z) if this is the root bone
+                    if (rootNodeName != null && nodeName == rootNodeName) {
+                        x = 0f
+                        z = 0f
+                    }
+                    
+                    values[k * 3] = x
+                    values[k * 3 + 1] = y
+                    values[k * 3 + 2] = z
                 }
                 val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 3)
                 channels.add(AnimationChannel(sampler, nodeName, AnimationPath.TRANSLATION))
@@ -315,7 +331,11 @@ class AssimpLoader {
             
             val ibm = toJomlMatrix(bone.mOffsetMatrix())
             if (unitScale != 1.0f) {
-                ibm.scale(1.0f / unitScale)
+                // Scale only translation to convert offsets to Meter-space
+                val translation = Vector3f()
+                ibm.getTranslation(translation)
+                translation.mul(unitScale)
+                ibm.setTranslation(translation)
             }
             inverseBindMatrices.add(ibm)
             
@@ -396,14 +416,46 @@ class AssimpLoader {
         if (filePath.contains("skateboard", ignoreCase = true)) {
             unitScale = 0.0017f 
         } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
-            unitScale = 0.01f 
+            unitScale = 0.01f
+        }
+
+        // Try to identify root bone for motion zeroing
+        var rootBoneName: String? = null
+        val rootNode = scene.mRootNode()
+        if (rootNode != null && rootNode.mNumChildren() > 0) {
+            val children = rootNode.mChildren()
+            if (children != null) {
+                // Heuristic: First child is usually the Armature/Root. 
+                // We want the actual Hip bone, which might be the first child of the Armature, or the first child itself.
+                // Let's look for "Hips" specifically first.
+                
+                fun findHips(node: AINode): String? {
+                    val name = BoneNameMapper.map(node.mName().dataString())
+                    if (name.equals("Hips", ignoreCase = true)) return name
+                    
+                    for (i in 0 until node.mNumChildren()) {
+                         val child = AINode.create(node.mChildren()!!.get(i))
+                         val res = findHips(child)
+                         if (res != null) return res
+                    }
+                    return null
+                }
+                
+                rootBoneName = findHips(rootNode)
+                
+                // Fallback: Use the first child's name if it's not the scene root itself
+                if (rootBoneName == null) {
+                     val firstChild = AINode.create(children.get(0))
+                     rootBoneName = BoneNameMapper.map(firstChild.mName().dataString())
+                }
+            }
         }
 
         val animations = mutableListOf<Animation>()
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim, unitScale))
+            animations.add(processAnimation(aiAnim, unitScale, rootBoneName))
         }
 
         aiReleaseImport(scene)

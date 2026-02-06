@@ -17,26 +17,32 @@ class Animation(
      */
     fun update(time: Float, skeleton: Skeleton) {
         val loopTime = time % duration
-        val tempVec3 = Vector3f()
-        val tempQuat = Quaternionf()
+        val pos = Vector3f()
+        val rot = Quaternionf()
+        val scale = Vector3f()
         
         for (channel in channels) {
             val joint = skeleton.getJointByName(channel.targetNodeName) ?: continue
             
+            // Read current state
+            joint.localTransform.getTranslation(pos)
+            joint.localTransform.getUnnormalizedRotation(rot)
+            joint.localTransform.getScale(scale)
+            
             when (channel.path) {
                 AnimationPath.TRANSLATION -> {
-                    channel.sampler.sampleVector3f(loopTime, tempVec3)
-                    joint.localTransform.translation(tempVec3)
+                    channel.sampler.sampleVector3f(loopTime, pos)
                 }
                 AnimationPath.ROTATION -> {
-                    channel.sampler.sampleQuaternionf(loopTime, tempQuat)
-                    joint.localTransform.rotation(tempQuat)
+                    channel.sampler.sampleQuaternionf(loopTime, rot)
                 }
                 AnimationPath.SCALE -> {
-                    channel.sampler.sampleVector3f(loopTime, tempVec3)
-                    joint.localTransform.scale(tempVec3)
+                    channel.sampler.sampleVector3f(loopTime, scale)
                 }
             }
+            
+            // Recompose matrix
+            joint.localTransform.translationRotateScale(pos, rot, scale)
         }
     }
 
@@ -47,34 +53,37 @@ class Animation(
      */
     fun updateBlended(time: Float, skeleton: Skeleton, alpha: Float) {
         val loopTime = time % duration
-        val tempVec3 = Vector3f()
+        val pos = Vector3f()
+        val rot = Quaternionf()
+        val scale = Vector3f()
         val targetVec3 = Vector3f()
-        val tempQuat = Quaternionf()
         val targetQuat = Quaternionf()
         
         for (channel in channels) {
             val joint = skeleton.getJointByName(channel.targetNodeName) ?: continue
             
+            // Read current state
+            joint.localTransform.getTranslation(pos)
+            joint.localTransform.getUnnormalizedRotation(rot)
+            joint.localTransform.getScale(scale)
+            
             when (channel.path) {
                 AnimationPath.TRANSLATION -> {
-                    joint.localTransform.getTranslation(tempVec3)
                     channel.sampler.sampleVector3f(loopTime, targetVec3)
-                    tempVec3.lerp(targetVec3, alpha)
-                    joint.localTransform.translation(tempVec3)
+                    pos.lerp(targetVec3, alpha)
                 }
                 AnimationPath.ROTATION -> {
-                    joint.localTransform.getUnnormalizedRotation(tempQuat)
                     channel.sampler.sampleQuaternionf(loopTime, targetQuat)
-                    tempQuat.slerp(targetQuat, alpha)
-                    joint.localTransform.rotation(tempQuat)
+                    rot.slerp(targetQuat, alpha)
                 }
                 AnimationPath.SCALE -> {
-                    joint.localTransform.getScale(tempVec3)
                     channel.sampler.sampleVector3f(loopTime, targetVec3)
-                    tempVec3.lerp(targetVec3, alpha)
-                    joint.localTransform.scale(tempVec3)
+                    scale.lerp(targetVec3, alpha)
                 }
             }
+            
+            // Recompose matrix
+            joint.localTransform.translationRotateScale(pos, rot, scale)
         }
     }
 }
