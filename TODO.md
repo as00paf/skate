@@ -311,9 +311,9 @@
 
 # 📥 🔵 Phase H: Walking Around
 
-- [ ] **Animations**: Add a method to load animation files in AssimpLoader and ResourceManager.
-- [ ] **AnimationList**: Finish implementing AnimationsTab.kt so it renders the file items in a list. The items of the list should have readable names.
-- [ ] **DragAndDrop**: Allow animation items from the AnimationsTab to be drag and dropped from the AnimationsTab to the Animator imgui panel so animations can be added to an entity's texturedModel animations list.
+- [ ] **H1. Animations**: Add a method to load animation files in AssimpLoader and ResourceManager.
+- [ ] **H2. AnimationList**: Finish implementing AnimationsTab.kt so it renders the file items in a list. The items of the list should have readable names.
+- [ ] **H3. DragAndDrop**: Allow animation items from the AnimationsTab to be drag and dropped from the AnimationsTab to the Animator imgui panel so animations can be added to an entity's texturedModel animations list.
 
 ---
 
