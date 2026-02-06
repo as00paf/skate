@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.scenes.editor
 
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
@@ -10,6 +12,7 @@ import org.koin.core.component.inject
 
 class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private val prefabsGenerator: PrefabsGenerator by inject()
+    private val resourceManager: ResourceManager by inject()
 
     private var currentScene: Scene? = null
     private lateinit var editorStuff: GameObject
@@ -19,7 +22,9 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private var skater: GameObject? = null
     private var floor: GameObject? = null
 
-    override suspend fun loadResources(scene: Scene) {}
+    override suspend fun loadResources(scene: Scene) {
+        resourceManager.loadAnimations(Assets.Folders.ANIMATIONS + "/\\walking.fbx")
+    }
 
     override suspend fun init(scene: Scene) {
         this.currentScene = scene

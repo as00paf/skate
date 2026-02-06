@@ -80,7 +80,7 @@ class Animator : Component(), KoinComponent {
 
     override fun update(dt: Float) {
         val entity = gameObject.getComponent<Entity>() ?: return
-        val skeleton = entity.gameObject.getComponent<Skeleton>() ?: entity.model.skeleton ?: return
+        val skeleton = entity.model.skeleton ?: return
         
         if (isPlaying) {
             val animation = currentAnimation ?: entity.model.animations.firstOrNull() ?: return
@@ -188,7 +188,7 @@ class Animator : Component(), KoinComponent {
         if (ImGui.beginDragDropTarget()) {
             val payload = ImGui.acceptDragDropPayload<String>("ANIMATION", ImGuiDragDropFlags.None)
             if (payload != null) {
-                val path = payload.toString()
+                val path = payload
                 val newAnims = resourceManager.loadAnimationsSync(path)
                 entity.model.addAnimations(newAnims)
             }

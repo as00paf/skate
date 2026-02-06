@@ -159,7 +159,7 @@ class PlayerController : Component(), KoinComponent {
     fun updateProceduralLean(dt: Float) {
     if (stateManager.currentState !is PlayerState.RIDING) return
     val entity = skater?.getComponent<Entity>() ?: return
-    val skeleton = entity.gameObject.getComponent<Skeleton>() ?: entity.model.skeleton ?: return
+    val skeleton = entity.model.skeleton ?: return
 
         var steerInput = 0f
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->

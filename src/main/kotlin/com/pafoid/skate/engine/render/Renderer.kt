@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
@@ -103,7 +102,7 @@ class Renderer(
         
         renderer2D.bindCamera(scene.camera)
         render2D(scene, pickingShader)
-        render3DPicking(scene)
+        render3DPicking(scene, activeGameObject)
         pickingDraw.draw()
         
         pickingTexture.disableWriting()
@@ -210,7 +209,8 @@ class Renderer(
         glViewport(0, 0, sceneManager.currentWidth, sceneManager.currentHeight)
     }
 
-    private fun render3DPicking(scene: Scene) {
+    private fun render3DPicking(scene: Scene, activeGameObject: GameObject?) {
+        if(activeGameObject != null) return
         val camera = scene.camera
         
         pickingShader3D.start()
@@ -231,9 +231,9 @@ class Renderer(
 
         pickingShader3D.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, go.transform.toWorldMatrix())
         pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, go.getUid().toFloat() + 1)
-        pickingShader3D.uploadBoolean("uUseBatchId", false)
+        pickingShader3D.uploadBoolean(Uniforms.USE_BATCH, false)
 
-        val skeleton = go.getComponent<Skeleton>() ?: texturedModel.skeleton
+        val skeleton = texturedModel.skeleton
         val hasSkin = skeleton != null
         pickingShader3D.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
         if (skeleton != null) {
@@ -341,7 +341,7 @@ class Renderer(
             defaultShader.uploadInt(Uniforms.ALPHA_MODE, alphaInt)
             defaultShader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
 
-            val skeleton = entity.gameObject.getComponent<Skeleton>() ?: entity.model.skeleton
+            val skeleton = entity.model.skeleton
             val hasSkin = skeleton != null
             defaultShader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
             if (skeleton != null) {

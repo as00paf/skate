@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.prefabs
 
 import com.pafoid.skate.engine.animation.Animator
+import com.pafoid.skate.engine.animation.BoneOverride
 import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.entities.Entity
 import com.pafoid.skate.engine.models.TexturedModel
@@ -31,6 +32,7 @@ class Skater(
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })
         addComponent(BoxCollider3D(hitBoxSize))
         addComponent(Animator())
+        addComponent(BoneOverride())
         addComponent(PoseGizmo())
     }
 
