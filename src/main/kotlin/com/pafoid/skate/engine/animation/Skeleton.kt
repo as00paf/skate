@@ -27,7 +27,6 @@ class Skeleton(
         for (i in 0 until jointCount) {
             val joint = joints[i]
             if (joint != null) {
-                // finalMatrix = worldTransform * inverseBindMatrix
                 joint.worldTransform.mul(joint.inverseBindMatrix, matrixPalette[i])
             } else {
                 matrixPalette[i].identity()
