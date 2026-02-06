@@ -367,6 +367,21 @@ class AssimpLoader {
         }
     }
 
+    fun loadAnimations(filePath: String): List<Animation> {
+        val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights)
+            ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
+
+        val animations = mutableListOf<Animation>()
+        for (i in 0 until scene.mNumAnimations()) {
+            val anims = scene.mAnimations() ?: continue
+            val aiAnim = AIAnimation.create(anims.get(i))
+            animations.add(processAnimation(aiAnim))
+        }
+
+        aiReleaseImport(scene)
+        return animations
+    }
+
     fun loadModel(filePath: String, loader: VAOLoader): List<LoadedMeshPart> {
         val preLoaded = preLoadModel(filePath)
         return preLoaded.parts.map { p ->

@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.animation.Animation
 import com.pafoid.skate.engine.models.Material
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -23,6 +24,7 @@ class ResourceManager(
     private val shaders = ConcurrentHashMap<String, Shader>()
     private val models = ConcurrentHashMap<String, TexturedModel>()
     private val sounds = ConcurrentHashMap<String, Sound>()
+    private val animations = ConcurrentHashMap<String, MutableMap<String, Animation>>()
     
     // Loaders are now passed via constructor
     
@@ -283,6 +285,57 @@ class ResourceManager(
         return models[File(path).absolutePath]
     }
 
+    // --- Animation Loading ---
+
+    suspend fun loadAnimations(path: String): List<Animation> {
+        val file = File(path)
+        val absolutePath = file.absolutePath
+
+        animations[absolutePath]?.values?.toList()?.let { return it }
+
+        return try {
+            val loadedAnimations = withContext(Dispatchers.IO) {
+                assimpLoader.loadAnimations(path)
+            }
+            
+            val animMap = animations.getOrPut(absolutePath) { ConcurrentHashMap() }
+            loadedAnimations.forEach { anim ->
+                animMap[anim.name] = anim
+            }
+            
+            loadedAnimations
+        } catch (e: Exception) {
+            logger.logEngine("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
+            emptyList()
+        }
+    }
+
+    fun getAnimation(filePath: String, animationName: String): Animation? {
+        val absolutePath = File(filePath).absolutePath
+        return animations[absolutePath]?.get(animationName)
+    }
+
+    fun loadAnimationsSync(path: String): List<Animation> {
+        val file = File(path)
+        val absolutePath = file.absolutePath
+
+        animations[absolutePath]?.values?.toList()?.let { return it }
+
+        return try {
+            val loadedAnimations = assimpLoader.loadAnimations(path)
+            
+            val animMap = animations.getOrPut(absolutePath) { ConcurrentHashMap() }
+            loadedAnimations.forEach { anim ->
+                animMap[anim.name] = anim
+            }
+            
+            loadedAnimations
+        } catch (e: Exception) {
+            logger.logEngine("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
+            emptyList()
+        }
+    }
+
     fun unloadTexture(path: String) {
         val absolutePath = File(path).absolutePath
         textures.remove(absolutePath)?.let { 
@@ -322,6 +375,8 @@ class ResourceManager(
         
         val shaderKeys = shaders.keys.toList()
         shaderKeys.forEach { unloadShader(it) }
+
+        animations.clear()
         
         // Sound cleanup
         sounds.values.forEach { 
