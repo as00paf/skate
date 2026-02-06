@@ -49,6 +49,7 @@ class AssimpLoader {
                 val name = BoneNameMapper.map(bone.mName().dataString())
                 if (!boneNames.contains(name)) {
                     boneNames.add(name)
+                    println("AssimpLoader: Found Bone '$name' (Original: ${bone.mName().dataString()})")
                     val offsetMatrix = toJomlMatrix(bone.mOffsetMatrix())
                     if (unitScale != 1.0f) {
                         val translation = Vector3f()

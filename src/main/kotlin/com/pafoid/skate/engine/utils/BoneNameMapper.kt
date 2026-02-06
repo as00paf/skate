@@ -3,15 +3,22 @@ package com.pafoid.skate.engine.utils
 object BoneNameMapper {
     fun map(originalName: String): String {
         var name = originalName
-        if (name.startsWith("mixamorig:")) {
-            name = name.substring("mixamorig:".length)
-        } else if (name.startsWith("mixamorig9_")) {
-            name = name.substring("mixamorig9_".length)
-        } else if (name.startsWith("mixamorig_")) {
-            name = name.substring("mixamorig_".length)
-        } else if (name.startsWith("mixamorig")) { // Fallback if no separator
-             name = name.substring("mixamorig".length)
+        
+        // Remove common Mixamo prefixes and namespaces
+        val prefixes = listOf("mixamorig:", "mixamorig9_", "mixamorig9:", "mixamorig_", "mixamorig", "9:")
+        
+        for (prefix in prefixes) {
+            if (name.startsWith(prefix, ignoreCase = true)) {
+                name = name.substring(prefix.length)
+                break
+            }
         }
+        
+        // If there's still a colon (namespace), take everything after it
+        if (name.contains(":")) {
+            name = name.substringAfter(":")
+        }
+
         return name
     }
 }

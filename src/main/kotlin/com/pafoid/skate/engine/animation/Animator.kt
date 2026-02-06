@@ -84,6 +84,12 @@ class Animator : Component(), KoinComponent {
         
         if (isPlaying) {
             val animation = currentAnimation ?: entity.model.animations.firstOrNull() ?: return
+            
+            // Only log every 60 frames to avoid spam
+            if (System.currentTimeMillis() % 1000 < 20) {
+                val matched = animation.channels.count { skeleton.getJointByName(it.targetNodeName) != null }
+                println("Animator: Playing '${animation.name}', matched $matched/${animation.channels.size} channels")
+            }
 
             currentTime += dt
             
