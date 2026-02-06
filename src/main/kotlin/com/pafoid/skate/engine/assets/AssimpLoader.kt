@@ -69,7 +69,7 @@ class AssimpLoader {
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim, unitScale))
+            animations.add(processAnimation(aiAnim))
         }
 
         aiReleaseImport(scene)
@@ -98,7 +98,7 @@ class AssimpLoader {
         return null
     }
 
-    private fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f): Animation {
+    private fun processAnimation(aiAnim: AIAnimation): Animation {
         val name = aiAnim.mName().dataString()
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
@@ -119,9 +119,9 @@ class AssimpLoader {
                     val keys = aiChannel.mPositionKeys() ?: continue
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
-                    values[k * 3] = key.mValue().x() * scale
-                    values[k * 3 + 1] = key.mValue().y() * scale
-                    values[k * 3 + 2] = key.mValue().z() * scale
+                    values[k * 3] = key.mValue().x()
+                    values[k * 3 + 1] = key.mValue().y()
+                    values[k * 3 + 2] = key.mValue().z()
                 }
                 val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 3)
                 channels.add(AnimationChannel(sampler, nodeName, AnimationPath.TRANSLATION))
@@ -373,18 +373,11 @@ class AssimpLoader {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
 
-        var unitScale = 1.0f
-        if (filePath.contains("skateboard", ignoreCase = true)) {
-            unitScale = 0.0017f 
-        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
-            unitScale = 0.01f 
-        }
-
         val animations = mutableListOf<Animation>()
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim, unitScale))
+            animations.add(processAnimation(aiAnim))
         }
 
         aiReleaseImport(scene)
