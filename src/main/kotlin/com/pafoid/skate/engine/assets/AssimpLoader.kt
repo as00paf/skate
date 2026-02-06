@@ -34,6 +34,14 @@ class AssimpLoader {
         val boneNames = mutableListOf<String>()
         val boneInfoMap = mutableMapOf<String, BoneInfo>()
 
+        var unitScale = 1.0f
+
+        if (filePath.contains("skateboard", ignoreCase = true)) {
+            unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
+        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
+            unitScale = 0.01f // Convert cm to m for Mixamo FBX
+        }
+
         for (i in 0 until scene.mNumMeshes()) {
             val meshes = scene.mMeshes() ?: continue
             val mesh = AIMesh.create(meshes.get(i))
@@ -45,19 +53,14 @@ class AssimpLoader {
                     boneNames.add(name)
                     val offsetMatrix = toJomlMatrix(bone.mOffsetMatrix())
                     if (unitScale != 1.0f) {
-                        offsetMatrix.scale(1.0f / unitScale)
+                        val translation = Vector3f()
+                        offsetMatrix.getTranslation(translation)
+                        translation.mul(unitScale)
+                        offsetMatrix.setTranslation(translation)
                     }
                     boneInfoMap[name] = BoneInfo(boneNames.size - 1, offsetMatrix)
                 }
             }
-        }
-
-        var unitScale = 1.0f
-        
-        if (filePath.contains("skateboard", ignoreCase = true)) {
-            unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
-        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
-            unitScale = 0.01f // Convert cm to m for Mixamo FBX
         }
 
         val rootTransform = Matrix4f().scale(unitScale)
@@ -65,38 +68,41 @@ class AssimpLoader {
         processNode(rootNode, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap, unitScale)
 
         // Build Skeleton Hierarchy
-        val rootJoint = buildHierarchy(rootNode, boneInfoMap)
-        val skeleton = if (rootJoint != null) {
-            val rootTransform = Matrix4f()
-            if (unitScale != 1.0f) {
-                rootTransform.scale(unitScale)
-            }
-            Skeleton(rootJoint, boneNames.size, rootTransform)
-        } else null
+        val rootJoint = buildHierarchy(rootNode, boneInfoMap, unitScale)
+        val skeleton = if (rootJoint != null) Skeleton(rootJoint, boneNames.size) else null
 
         // Load Animations
         val animations = mutableListOf<Animation>()
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim))
+            animations.add(processAnimation(aiAnim, unitScale))
         }
 
         aiReleaseImport(scene)
         return PreLoadedModel(meshParts, skeleton, animations)
     }
 
-    private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>): Joint? {
+    private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>, unitScale: Float): Joint? {
         val name = BoneNameMapper.map(aiNode.mName().dataString())
         val boneInfo = boneInfoMap[name]
         
-        val joint = Joint(boneInfo?.index ?: -1, name, toJomlMatrix(aiNode.mTransformation()))
+        val localTransform = toJomlMatrix(aiNode.mTransformation())
+        if (unitScale != 1.0f) {
+            // Scale translation component to Meters
+            val translation = Vector3f()
+            localTransform.getTranslation(translation)
+            translation.mul(unitScale)
+            localTransform.setTranslation(translation)
+        }
+
+        val joint = Joint(boneInfo?.index ?: -1, name, localTransform)
         boneInfo?.let { joint.inverseBindMatrix.set(it.offsetMatrix) }
 
         for (i in 0 until aiNode.mNumChildren()) {
             val children = aiNode.mChildren() ?: continue
             val childAiNode = AINode.create(children.get(i))
-            val childJoint = buildHierarchy(childAiNode, boneInfoMap)
+            val childJoint = buildHierarchy(childAiNode, boneInfoMap, unitScale)
             if (childJoint != null) {
                 joint.addChild(childJoint)
             }
@@ -108,7 +114,7 @@ class AssimpLoader {
         return null
     }
 
-    private fun processAnimation(aiAnim: AIAnimation): Animation {
+    private fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f): Animation {
         val name = aiAnim.mName().dataString()
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
@@ -129,9 +135,9 @@ class AssimpLoader {
                     val keys = aiChannel.mPositionKeys() ?: continue
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
-                    values[k * 3] = key.mValue().x()
-                    values[k * 3 + 1] = key.mValue().y()
-                    values[k * 3 + 2] = key.mValue().z()
+                    values[k * 3] = key.mValue().x() * scale
+                    values[k * 3 + 1] = key.mValue().y() * scale
+                    values[k * 3 + 2] = key.mValue().z() * scale
                 }
                 val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 3)
                 channels.add(AnimationChannel(sampler, nodeName, AnimationPath.TRANSLATION))
