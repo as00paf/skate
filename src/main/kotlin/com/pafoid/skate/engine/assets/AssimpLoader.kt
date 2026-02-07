@@ -168,9 +168,10 @@ class AssimpLoader {
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
                     
-                    val x = key.mValue().x() * scale
-                    val y = key.mValue().y() * scale
-                    val z = key.mValue().z() * scale
+                    // Zero out translation for in-place animations
+                    val x = 0f 
+                    val y = 0f
+                    val z = 0f 
                     
                     values[k * 3] = x
                     values[k * 3 + 1] = y
