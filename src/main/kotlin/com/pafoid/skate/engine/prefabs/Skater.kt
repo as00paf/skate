@@ -40,7 +40,7 @@ class Skater(
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })
         addComponent(BoxCollider3D(hitBoxSize))
         addComponent(Animator())
-        addComponent(BoneOverride())
+        //addComponent(BoneOverride())
         addComponent(PoseGizmo())
     }
 

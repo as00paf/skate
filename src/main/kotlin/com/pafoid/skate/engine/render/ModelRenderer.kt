@@ -119,6 +119,7 @@ class ModelRenderer(
         val hasSkin = skeleton != null
         shader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
         if (skeleton != null) {
+
             shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeleton.getMatrixPalette())
         }
 
