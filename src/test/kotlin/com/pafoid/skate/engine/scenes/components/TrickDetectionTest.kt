@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.TrickManager
 import io.mockk.every
 import io.mockk.mockk
@@ -83,7 +84,7 @@ class TrickDetectionTest {
     fun `detect360ShoveIt_rotate360OnY_returns360ShoveIt`() {
         // Arrange
         // Move to air
-        skateboard.transform.translation.set(0f, 5f, 0f)
+        skateboard.getComponent<Transform>()!!.translation.set(0f, 5f, 0f)
         rb.update(0f)
         physics.update(1/60f)
         
@@ -108,7 +109,7 @@ class TrickDetectionTest {
     fun `detectKickflip_rotate360OnX_returnsKickflip`() {
         // Arrange
         // Move to air
-        skateboard.transform.translation.set(0f, 5f, 0f)
+        skateboard.getComponent<Transform>()!!.translation.set(0f, 5f, 0f)
         rb.update(0f)
         physics.update(1/60f)
         

@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.components.Transform
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -110,17 +111,18 @@ class PlayerControllerTest {
         controller.stateManager.transitionToState(PlayerState.RIDING)
         val skater = gameObject.children.find { it.name == "Skater" }!!
         
-        skater.transform.translation.set(1f, 1f, 1f)
-        skater.transform.rotation.set(45f, 45f, 45f)
+        val transform = skater.getComponent<Transform>()!!
+        transform.translation.set(1f, 1f, 1f)
+        transform.rotation.set(45f, 45f, 45f)
         
         controller.update(0.016f)
         
-        assertEquals(0f, skater.transform.translation.x)
-        assertEquals(0.02f, skater.transform.translation.y)
-        assertEquals(0f, skater.transform.translation.z)
+        assertEquals(0f, transform.translation.x)
+        assertEquals(0.02f, transform.translation.y)
+        assertEquals(0f, transform.translation.z)
         
-        assertEquals(0f, skater.transform.rotation.x)
-        assertEquals(90f, skater.transform.rotation.y)
-        assertEquals(0f, skater.transform.rotation.z)
+        assertEquals(0f, transform.rotation.x)
+        assertEquals(90f, transform.rotation.y)
+        assertEquals(0f, transform.rotation.z)
     }
 }

@@ -61,11 +61,12 @@ class Animation(
     fun update(time: Float, skeleton: Skeleton) {
         val loopTime = time % duration
 
-        // 1. Reset affected bones to their Bind Pose (Model Space)
+        // 1. Reset affected bones to their Bind Pose (Model Space) - ONCE PER BONE
+        val affectedBones = mutableSetOf<Bone>()
         channels.forEach { channel ->
             val mappedName = BoneNameMapper.map(channel.targetNodeName)
             val bone = skeleton.getBoneByName(mappedName)
-            if (bone != null) {
+            if (bone != null && affectedBones.add(bone)) {
                 bone.localTransform.set(bone.bindLocalTransform)
             }
         }
@@ -91,11 +92,16 @@ class Animation(
             }
 
             bone.localTransform.translationRotateScale(pos, rot, scale)
+        }
 
-            // Apply correction matrix if available to handle bind pose differences
-            val correction = correctionMatrices[mappedName]
-            if (correction != null) {
-                bone.localTransform.mul(correction)
+        // 3. Apply Correction Matrices (if any) - ONCE PER BONE
+        if (correctionMatrices.isNotEmpty()) {
+            affectedBones.forEach { bone ->
+                val mappedName = BoneNameMapper.map(bone.name)
+                val correction = correctionMatrices[mappedName]
+                if (correction != null) {
+                    bone.localTransform.mul(correction)
+                }
             }
         }
     }
@@ -132,11 +138,16 @@ class Animation(
             }
 
             targetMat.translationRotateScale(pos, rot, scale)
+        }
 
-            // Apply correction matrix if available to handle bind pose differences
-            val correction = correctionMatrices[mappedName]
-            if (correction != null) {
-                targetMat.mul(correction)
+        // Apply correction matrix if available to handle bind pose differences
+        if (correctionMatrices.isNotEmpty()) {
+            targetTransforms.forEach { (name, targetMat) ->
+                val mappedName = BoneNameMapper.map(name)
+                val correction = correctionMatrices[mappedName]
+                if (correction != null) {
+                    targetMat.mul(correction)
+                }
             }
         }
 

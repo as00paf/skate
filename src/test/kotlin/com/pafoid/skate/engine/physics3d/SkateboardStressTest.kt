@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
+import com.pafoid.skate.engine.scenes.components.Transform
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
@@ -49,7 +50,7 @@ class SkateboardStressTest {
         val ground = GameObject("Ground")
         ground.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         ground.addComponent(BoxCollider3D(Vector3f(500f, 1f, 500f))) // Large ground
-        ground.transform.translation.set(0f, -1.0f, 0f) // Surface at -0.5
+        ground.getComponent<Transform>()!!.translation.set(0f, -1.0f, 0f) // Surface at -0.5
         physics.add(ground)
 
         val skateGo = GameObject("Skateboard")
@@ -62,7 +63,7 @@ class SkateboardStressTest {
         skateGo.addComponent(skatePhysics)
         
         // Start slightly above ground
-        skateGo.transform.translation.set(0f, 0.1f, 0f)
+        skateGo.getComponent<Transform>()!!.translation.set(0f, 0.1f, 0f)
         physics.add(skateGo)
         skatePhysics.start()
 
@@ -81,14 +82,14 @@ class SkateboardStressTest {
             rb.update(1/60f)
             
             // Check if we fell through (Ground surface at -0.5)
-            val pos = skateGo.transform.translation
+            val pos = skateGo.getComponent<Transform>()!!.translation
             if (pos.y < -2.0f) {
                 fail("Tunneling detected! Board position Y: ${pos.y} is well below ground surface.")
             }
         }
 
         // Assert
-        assertTrue(skateGo.transform.translation.y > -2.0f, "Board should stay above/on ground")
+        assertTrue(skateGo.getComponent<Transform>()!!.translation.y > -2.0f, "Board should stay above/on ground")
     }
 
     @Test
@@ -116,7 +117,7 @@ class SkateboardStressTest {
         val ground = GameObject("Ground")
         ground.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         ground.addComponent(BoxCollider3D(Vector3f(500f, 1f, 500f)))
-        ground.transform.translation.set(offset).add(0f, -1.0f, 0f)
+        ground.getComponent<Transform>()!!.translation.set(offset).add(0f, -1.0f, 0f)
         physics.add(ground)
 
         val skateGo = GameObject("Skateboard")
@@ -129,7 +130,7 @@ class SkateboardStressTest {
         val skatePhysics = SkateboardPhysics()
         skateGo.addComponent(skatePhysics)
         
-        skateGo.transform.translation.set(offset).add(0f, 0.1f, 0f)
+        skateGo.getComponent<Transform>()!!.translation.set(offset).add(0f, 0.1f, 0f)
         physics.add(skateGo)
         skatePhysics.start()
         
@@ -148,7 +149,7 @@ class SkateboardStressTest {
             }
         }
         
-        return Vector3f(skateGo.transform.translation).sub(offset)
+        return Vector3f(skateGo.getComponent<Transform>()!!.translation).sub(offset)
     }
 
     @Test
