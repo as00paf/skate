@@ -3,8 +3,10 @@ package com.pafoid.skate.engine.animation
 import org.joml.Matrix4f
 
 object SkeletonMath {
+    private val IDENTITY_MATRIX = Matrix4f()
+
     fun computeGlobalTransforms(rootBone: Bone, localTransforms: Array<Matrix4f>, globalTransforms: Array<Matrix4f>) {
-        computeGlobalTransformsRecursive(rootBone, Matrix4f(), localTransforms, globalTransforms)
+        computeGlobalTransformsRecursive(rootBone, IDENTITY_MATRIX, localTransforms, globalTransforms)
     }
 
     private fun computeGlobalTransformsRecursive(
@@ -13,19 +15,23 @@ object SkeletonMath {
         localTransforms: Array<Matrix4f>,
         globalTransforms: Array<Matrix4f>
     ) {
-        val boneLocalTransform = if (bone.index >= 0 && bone.index < localTransforms.size) localTransforms[bone.index] else bone.localTransform
-        val boneGlobalTransform = Matrix4f()
-        parentTransform.mul(boneLocalTransform, boneGlobalTransform)
+        val boneLocalTransform = if (bone.index >= 0 && bone.index < localTransforms.size) {
+            localTransforms[bone.index]
+        } else {
+            bone.localTransform
+        }
 
-        // Only update globalTransforms array if the bone has a valid index
+        // Compute world transform directly into bone.worldTransform (reusing object)
+        parentTransform.mul(boneLocalTransform, bone.worldTransform)
+
+        // Update globalTransforms array if the bone has a valid index
         if (bone.index >= 0 && bone.index < globalTransforms.size) {
-            globalTransforms[bone.index].set(boneGlobalTransform)
+            globalTransforms[bone.index].set(bone.worldTransform)
         }
 
         for (child in bone.children) {
-            // Pass the computed boneGlobalTransform as parent for children
-            val childParentTransform = if (bone.index >= 0 && bone.index < globalTransforms.size) globalTransforms[bone.index] else boneGlobalTransform
-            computeGlobalTransformsRecursive(child, childParentTransform, localTransforms, globalTransforms)
+            // Pass the updated bone.worldTransform as parent for children
+            computeGlobalTransformsRecursive(child, bone.worldTransform, localTransforms, globalTransforms)
         }
     }
 

@@ -56,29 +56,25 @@ class AnimationSystem : Component(), KoinComponent {
     private fun visualizeBone(skeletonComponent: SkeletonComponent, modelMatrix: Matrix4f) {
         val pose = skeletonComponent.pose ?: return
         val skeleton = pose.skeleton
-        
-        visualizeBoneRecursive(skeleton.rootBone, pose, modelMatrix)
+
+        visualizeBoneRecursive(skeleton.rootBone, modelMatrix)
     }
 
-    private fun visualizeBoneRecursive(bone: Bone, pose: SkeletonPose, modelMatrix: Matrix4f) {
-        if (bone.index < 0 || bone.index >= pose.globalTransforms.size) return
-        
-        pose.globalTransforms[bone.index].getTranslation(tempBonePos)
+    private fun visualizeBoneRecursive(bone: Bone, modelMatrix: Matrix4f) {
+        bone.worldTransform.getTranslation(tempBonePos)
         modelMatrix.transformPosition(tempBonePos)
 
         val currentBonePos = Vector3f(tempBonePos)
 
         for (child in bone.children) {
-            if (child.index < 0 || child.index >= pose.globalTransforms.size) continue
-            
-            pose.globalTransforms[child.index].getTranslation(tempChildPos)
+            child.worldTransform.getTranslation(tempChildPos)
             modelMatrix.transformPosition(tempChildPos)
 
             debugDraw.addLine3D(currentBonePos, tempChildPos, boneColor)
-            visualizeBoneRecursive(child, pose, modelMatrix)
+            visualizeBoneRecursive(child, modelMatrix)
         }
 
-        pose.globalTransforms[bone.index].getUnnormalizedRotation(tempBoneQuat)
+        bone.worldTransform.getUnnormalizedRotation(tempBoneQuat)
         debugDraw.addBox3D(currentBonePos, tempBoneQuat, Vector3f(0.01f), boneColor)
     }
 
