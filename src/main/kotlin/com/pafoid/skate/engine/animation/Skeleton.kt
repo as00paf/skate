@@ -6,31 +6,33 @@ import org.joml.Matrix4f
 
 @Serializable
 class Skeleton(
-    val rootJoint: Joint,
-    val jointCount: Int
+    val rootBone: Bone,
+    val boneCount: Int,
+    val bindLocalTransforms: Array<@Contextual Matrix4f> = arrayOf(),
+    val inverseBindMatrices: Array<@Contextual Matrix4f> = arrayOf(),
 ) {
-    private val joints = arrayOfNulls<Joint>(jointCount)
-    private val matrixPalette = Array<@Contextual Matrix4f>(jointCount) { Matrix4f() }
+    val bones = arrayOfNulls<Bone>(boneCount)
+    private val matrixPalette = Array<@Contextual Matrix4f>(boneCount) { Matrix4f() }
 
     init {
-        addJointToMap(rootJoint)
+        addBoneToMap(rootBone)
     }
 
-    private fun addJointToMap(joint: Joint) {
-        if (joint.index in 0 until jointCount) {
-            joints[joint.index] = joint
+    private fun addBoneToMap(bone: Bone) {
+        if (bone.index in 0 until boneCount) {
+            bones[bone.index] = bone
         }
-        for (child in joint.children) {
-            addJointToMap(child)
+        for (child in bone.children) {
+            addBoneToMap(child)
         }
     }
 
     fun update() {
-        rootJoint.calculateWorldTransforms(Matrix4f())
-        for (i in 0 until jointCount) {
-            val joint = joints[i]
-            if (joint != null) {
-                joint.worldTransform.mul(joint.inverseBindMatrix, matrixPalette[i])
+        rootBone.calculateWorldTransforms(Matrix4f())
+        for (i in 0 until boneCount) {
+            val bone = bones[i]
+            if (bone != null) {
+                bone.worldTransform.mul(bone.inverseBindMatrix, matrixPalette[i])
             } else {
                 matrixPalette[i].identity()
             }
@@ -38,16 +40,16 @@ class Skeleton(
     }
 
     fun getMatrixPalette(): Array<Matrix4f> = matrixPalette
-    
-    fun getJointByName(name: String): Joint? {
-        return joints.find { it?.name == name }
+
+    fun getBoneByName(name: String): Bone? {
+        return bones.find { it?.name == name }
     }
 
-    fun getAllJoints(): List<Joint> {
-        return joints.filterNotNull()
+    fun getAllBones(): List<Bone> {
+        return bones.filterNotNull()
     }
 
     fun copy(): Skeleton {
-        return Skeleton(rootJoint.copy(), jointCount)
+        return Skeleton(rootBone.copy(), boneCount)
     }
 }

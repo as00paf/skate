@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.models.BaseModel
+import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.models.MeshPart
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.VAOLoader
@@ -21,7 +23,7 @@ class ResourceManager(
 
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
-    private val models = ConcurrentHashMap<String, TexturedModel>()
+    private val models = ConcurrentHashMap<String, BaseModel>()
     private val sounds = ConcurrentHashMap<String, Sound>()
     private val animations = ConcurrentHashMap<String, MutableMap<String, Animation>>()
     
@@ -160,7 +162,7 @@ class ResourceManager(
 
     // --- Model Loading ---
 
-    suspend fun loadModel(path: String): TexturedModel {
+    suspend fun loadModel(path: String): BaseModel {
         val file = File(path)
         val absolutePath = file.absolutePath
 
@@ -214,9 +216,13 @@ class ResourceManager(
                      
                      textureDataMap.values.forEach { it.free() }
 
-                     val texturedModel = TexturedModel(parts, preLoaded.skeleton)
-                     models[absolutePath] = texturedModel
-                     texturedModel
+                     val characterModel = if (preLoaded.skeleton != null) {
+                         CharacterModel(parts, preLoaded.skeleton)
+                     } else {
+                         TexturedModel(parts)
+                     }
+                     models[absolutePath] = characterModel
+                     characterModel
                  }
         } catch (e: Exception) {
             logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
@@ -226,11 +232,11 @@ class ResourceManager(
         }
     }
     
-    fun loadModelSync(path: String): TexturedModel {
+    fun loadModelSync(path: String): BaseModel {
         val file = File(path)
         val absolutePath = file.absolutePath
 
-        models[absolutePath]?.let { return it }
+        models[absolutePath]?.let { return it as BaseModel }
         
         return try {
             // Synchronous loading (blocking)
@@ -269,9 +275,13 @@ class ResourceManager(
                      MeshPart(model, mat, p.inverseBindMatrices)
                  }
 
-                 val texturedModel = TexturedModel(parts, preLoaded.skeleton)
-                 models[absolutePath] = texturedModel
-                 texturedModel
+                 val characterModel = if (preLoaded.skeleton != null) {
+                     CharacterModel(parts, preLoaded.skeleton)
+                 } else {
+                     TexturedModel(parts)
+                 }
+                 models[absolutePath] = characterModel
+                 characterModel
         } catch (e: Exception) {
             logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
@@ -280,7 +290,7 @@ class ResourceManager(
         }
     }
     
-    fun getModel(path: String): TexturedModel? {
+    fun getModel(path: String): BaseModel? {
         return models[File(path).absolutePath]
     }
 

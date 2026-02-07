@@ -20,9 +20,9 @@ class AnimationSystem : Component(), KoinComponent {
     private val debugDraw: DebugDraw by inject()
 
     // Reusable objects to minimize allocations in hot loops/recursive calls
-    private val tempJointPos = Vector3f()
+    private val tempBonePos = Vector3f()
     private val tempChildPos = Vector3f()
-    private val tempJointQuat = Quaternionf()
+    private val tempBoneQuat = Quaternionf()
     private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
 
     override fun update(dt: Float) {
@@ -31,7 +31,7 @@ class AnimationSystem : Component(), KoinComponent {
         for (go in scene.gameObjects) {
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
-            
+
             if (animator != null && skeletonComponent != null) {
                 updateAnimation(go, animator, skeletonComponent, dt)
             }
@@ -49,7 +49,7 @@ class AnimationSystem : Component(), KoinComponent {
             // Visualize bones in editor mode
             val goTransform = go.getComponent<Transform>()
             val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
-            skeletonComponent?.skeleton?.rootJoint?.let { visualizeJoint(it, transformMatrix) }
+            skeletonComponent?.pose?.skeletonAsset?.rootBone?.let { visualizeBone(it, transformMatrix) }
 
             if (animator != null && skeletonComponent != null && animator.isPlaying) {
                 updateAnimation(go, animator, skeletonComponent, dt)
@@ -57,24 +57,24 @@ class AnimationSystem : Component(), KoinComponent {
         }
     }
 
-    private fun visualizeJoint(joint: Joint, modelMatrix: Matrix4f) {
-        joint.worldTransform.getTranslation(tempJointPos)
-        modelMatrix.transformPosition(tempJointPos)
+    private fun visualizeBone(bone: Bone, modelMatrix: Matrix4f) {
+        bone.worldTransform.getTranslation(tempBonePos)
+        modelMatrix.transformPosition(tempBonePos)
 
-        // Capture joint position for this recursion level
-        val currentJointPos = Vector3f(tempJointPos)
+        // Capture bone position for this recursion level
+        val currentBonePos = Vector3f(tempBonePos)
 
-        for (child in joint.children) {
+        for (child in bone.children) {
             child.worldTransform.getTranslation(tempChildPos)
             modelMatrix.transformPosition(tempChildPos)
 
-            debugDraw.addLine3D(currentJointPos, tempChildPos, boneColor)
-            visualizeJoint(child, modelMatrix)
+            debugDraw.addLine3D(currentBonePos, tempChildPos, boneColor)
+            visualizeBone(child, modelMatrix)
         }
 
-        // Draw joint point as a tiny box
-        joint.worldTransform.getUnnormalizedRotation(tempJointQuat)
-        debugDraw.addBox3D(currentJointPos, tempJointQuat, Vector3f(0.01f), boneColor)
+        // Draw bone point as a tiny box
+        bone.worldTransform.getUnnormalizedRotation(tempBoneQuat)
+        debugDraw.addBox3D(currentBonePos, tempBoneQuat, Vector3f(0.01f), boneColor)
     }
 
     private fun updateAnimation(
@@ -83,7 +83,8 @@ class AnimationSystem : Component(), KoinComponent {
         skeletonComponent: SkeletonComponent,
         dt: Float
     ) {
-        val skeleton = skeletonComponent.skeleton ?: return
+        val pose = skeletonComponent.pose ?: return
+        val skeleton = pose.skeletonAsset
 
         if (animator.isPlaying) {
             val animation = animator.currentAnimation ?: animator.animations.firstOrNull() ?: return
@@ -95,29 +96,57 @@ class AnimationSystem : Component(), KoinComponent {
                 val alpha = 1f - (animator.blendTime / animator.blendDuration)
                 animator.previousAnimation?.let { prev ->
                     animator.previousTime += dt
-                    // Apply the animation to the skeleton using the built-in methods
+                    // Apply the animation to the pose's local transforms directly
                     prev.update(animator.previousTime, skeleton)
                     animation.updateBlended(animator.currentTime, skeleton, alpha)
-                } ?: animation.update(animator.currentTime, skeleton)
+                    
+                    // Copy the skeleton's bone transforms to the pose's local transforms
+                    skeleton.getAllBones().forEachIndexed { index, bone ->
+                        if (index < pose.localTransforms.size) {
+                            pose.localTransforms[index].set(bone.localTransform)
+                        }
+                    }
+                } ?: run {
+                    // Apply animation and copy to pose
+                    animation.update(animator.currentTime, skeleton)
+                    skeleton.getAllBones().forEachIndexed { index, bone ->
+                        if (index < pose.localTransforms.size) {
+                            pose.localTransforms[index].set(bone.localTransform)
+                        }
+                    }
+                }
             } else {
+                // Apply animation and copy to pose
                 animation.update(animator.currentTime, skeleton)
+                skeleton.getAllBones().forEachIndexed { index, bone ->
+                    if (index < pose.localTransforms.size) {
+                        pose.localTransforms[index].set(bone.localTransform)
+                    }
+                }
             }
+            
+            // Compute global transforms
+            SkeletonMath.computeGlobalTransforms(skeleton.rootBone, pose.localTransforms, pose.globalTransforms)
+            
+            // Update the matrix palette in the skeleton component
+            SkeletonMath.buildSkinMatrices(pose, skeletonComponent.getMatrixPalette())
         }
 
-        skeleton.getAllJoints().forEach { joint ->
+        // Process bone overrides if needed
+        skeleton.getAllBones().forEach { bone ->
             // Decompose matrix
             val translation = Vector3f()
             val rotation = Quaternionf()
             val scale = Vector3f()
-            joint.localTransform.getTranslation(translation)
-            joint.localTransform.getUnnormalizedRotation(rotation)
-            joint.localTransform.getScale(scale)
+            bone.localTransform.getTranslation(translation)
+            bone.localTransform.getUnnormalizedRotation(rotation)
+            bone.localTransform.getScale(scale)
 
             // Apply override by multiplying rotations
             //rotation.mul(overrideRotation)
 
             // Recompose matrix
-            joint.localTransform.translationRotateScale(translation, rotation, scale)
+            bone.localTransform.translationRotateScale(translation, rotation, scale)
         }
     }
 }

@@ -224,12 +224,12 @@ class SceneManager : KoinComponent {
         return currentScene?.getGameObject(id)
     }
 
-    fun getJointById(id: Int): com.pafoid.skate.engine.animation.Joint? {
+    fun getBoneById(id: Int): com.pafoid.skate.engine.animation.Bone? {
         if (engineState.get() != EngineState.RUNNING) return null
         currentScene?.gameObjects?.forEach { go ->
             go.getComponent<com.pafoid.skate.engine.animation.PoseGizmo>()?.let { pg ->
-                val joint = pg.getJointById(id)
-                if (joint != null) return joint
+                val bone = pg.getBoneById(id)
+                if (bone != null) return bone
             }
         }
         return null

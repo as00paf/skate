@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.animation.AnimationChannel
 import com.pafoid.skate.engine.animation.AnimationPath
 import com.pafoid.skate.engine.animation.AnimationSampler
 import com.pafoid.skate.engine.animation.InterpolationType
-import com.pafoid.skate.engine.animation.Joint
+import com.pafoid.skate.engine.animation.Bone
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.models.Material
 import com.pafoid.skate.engine.render.VAOLoader
@@ -64,49 +64,49 @@ class AssimpLoader {
         processNode(rootNode, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap, unitScale)
 
         // Build Skeleton Hierarchy
-        val rootJoint = buildHierarchy(rootNode, boneInfoMap, unitScale)
-        
+        val rootBone = buildHierarchy(rootNode, boneInfoMap, unitScale)
+
         // Recalculate Inverse Bind Matrices (IBMs) to match our modified hierarchy (Scale/Rotation)
         // This ensures the skinning equation (BoneWorld * IBM) is Identity at Bind Pose.
-        if (rootJoint != null) {
-            rootJoint.calculateWorldTransforms(Matrix4f())
-            
-            // Helper to find joint by name (since Skeleton class isn't built yet)
-            fun findJoint(node: Joint, name: String): Joint? {
+        if (rootBone != null) {
+            rootBone.calculateWorldTransforms(Matrix4f())
+
+            // Helper to find bone by name (since Skeleton class isn't built yet)
+            fun findBone(node: Bone, name: String): Bone? {
                 if (node.name == name) return node
                 for (child in node.children) {
-                    val res = findJoint(child, name)
+                    val res = findBone(child, name)
                     if (res != null) return res
                 }
                 return null
             }
 
             boneInfoMap.forEach { (name, info) ->
-                val joint = findJoint(rootJoint, name)
-                if (joint != null) {
+                val bone = findBone(rootBone, name)
+                if (bone != null) {
                     // IBM = Inverse(BindPoseWorld)
-                    joint.worldTransform.invert(info.offsetMatrix)
-                    // Also update the joint's own storage
-                    joint.inverseBindMatrix.set(info.offsetMatrix)
+                    bone.worldTransform.invert(info.offsetMatrix)
+                    // Also update the bone's own storage
+                    bone.inverseBindMatrix.set(info.offsetMatrix)
                 }
             }
         }
 
-        val skeleton = if (rootJoint != null) Skeleton(rootJoint, boneNames.size) else null
+        val skeleton = if (rootBone != null) Skeleton(rootBone, boneNames.size) else null
 
         // Load Animations
         val animations = mutableListOf<Animation>()
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim, unitScale, rootJoint?.name))
+            animations.add(processAnimation(aiAnim, unitScale, rootBone?.name))
         }
 
         aiReleaseImport(scene)
         return PreLoadedModel(meshParts, skeleton, animations)
     }
 
-    private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>, unitScale: Float): Joint? {
+    private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>, unitScale: Float): Bone? {
         val name = BoneNameMapper.map(aiNode.mName().dataString())
         val boneInfo = boneInfoMap[name]
         
@@ -119,20 +119,20 @@ class AssimpLoader {
             localTransform.setTranslation(translation)
         }
 
-        val joint = Joint(boneInfo?.index ?: -1, name, localTransform)
-        boneInfo?.let { joint.inverseBindMatrix.set(it.offsetMatrix) }
+        val bone = Bone(boneInfo?.index ?: -1, name, localTransform)
+        boneInfo?.let { bone.inverseBindMatrix.set(it.offsetMatrix) }
 
         for (i in 0 until aiNode.mNumChildren()) {
             val children = aiNode.mChildren() ?: continue
             val childAiNode = AINode.create(children.get(i))
-            val childJoint = buildHierarchy(childAiNode, boneInfoMap, unitScale)
-            if (childJoint != null) {
-                joint.addChild(childJoint)
+            val childBone = buildHierarchy(childAiNode, boneInfoMap, unitScale)
+            if (childBone != null) {
+                bone.addChild(childBone)
             }
         }
-        
-        if (joint.index != -1 || joint.children.isNotEmpty()) {
-            return joint
+
+        if (bone.index != -1 || bone.children.isNotEmpty()) {
+            return bone
         }
         return null
     }

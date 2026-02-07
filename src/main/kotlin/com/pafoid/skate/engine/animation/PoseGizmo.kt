@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.animation
 
+import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.scenes.components.RenderComponent
-import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.render.PickingMesh
 import com.pafoid.skate.engine.scenes.components.Component
@@ -16,22 +16,22 @@ import kotlin.getValue
 class PoseGizmo : Component(), KoinComponent {
     private val pickingDraw: PickingDraw by inject()
 
-    private val jointMap = mutableMapOf<Int, Joint>()
+    private val boneMap = mutableMapOf<Int, Bone>()
 
     override fun editorUpdate(dt: Float) {
-        val skeleton = gameObject.getComponent<RenderComponent>()?.model?.skeleton ?: return
-        jointMap.clear()
+        val skeleton = (gameObject.getComponent<RenderComponent>()?.model as? CharacterModel)?.skeleton ?: return
+        boneMap.clear()
 
-        skeleton.getAllJoints().forEach { joint ->
+        skeleton.getAllBones().forEach { bone ->
             val goTransform = gameObject.getComponent<Transform>()
         val modelMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
-            val jointWorldTransform = Matrix4f(modelMatrix).mul(joint.worldTransform)
-            
-            // Add a small scale to the joint's transform for visibility
-            val gizmoTransform = Matrix4f(jointWorldTransform).scale(0.05f)
+            val boneWorldTransform = Matrix4f(modelMatrix).mul(bone.worldTransform)
 
-            val objectId = joint.index + BONE_ID_OFFSET
-            jointMap[objectId] = joint
+            // Add a small scale to the bone's transform for visibility
+            val gizmoTransform = Matrix4f(boneWorldTransform).scale(0.05f)
+
+            val objectId = bone.index + BONE_ID_OFFSET
+            boneMap[objectId] = bone
 
             pickingDraw.addMesh(
                 PickingMesh(
@@ -42,9 +42,9 @@ class PoseGizmo : Component(), KoinComponent {
             )
         }
     }
-    
-    fun getJointById(id: Int): Joint? {
-        return jointMap[id]
+
+    fun getBoneById(id: Int): Bone? {
+        return boneMap[id]
     }
 
     companion object {

@@ -5,26 +5,26 @@ import kotlinx.serialization.Serializable
 import org.joml.Matrix4f
 
 @Serializable
-class Joint(
+class Bone(
     val index: Int,
     val name: String,
     @Contextual val localTransform: Matrix4f = Matrix4f()
 ) {
-    val children = mutableListOf<Joint>()
-    
+    val children = mutableListOf<Bone>()
+
     // Original Bind Pose Local Transform (Model's Skeleton)
     @Contextual
     val bindLocalTransform = Matrix4f(localTransform)
 
-    // The matrix that goes from Model Space to Joint Local Space in Bind Pose
+    // The matrix that goes from Model Space to Bone Local Space in Bind Pose
     @Contextual
     val inverseBindMatrix = Matrix4f()
 
-    // The matrix that goes from Joint Local Space to Model Space in current pose
+    // The matrix that goes from Bone Local Space to Model Space in current pose
     @Contextual
     val worldTransform = Matrix4f()
 
-    fun addChild(child: Joint) {
+    fun addChild(child: Bone) {
         children.add(child)
     }
 
@@ -35,8 +35,8 @@ class Joint(
         }
     }
 
-    fun copy(): Joint {
-        val copy = Joint(index, name, Matrix4f(localTransform))
+    fun copy(): Bone {
+        val copy = Bone(index, name, Matrix4f(localTransform))
         copy.bindLocalTransform.set(bindLocalTransform)
         copy.inverseBindMatrix.set(inverseBindMatrix)
         for (child in children) {

@@ -18,6 +18,9 @@ object BoneNameMapper {
         if (name.contains(":")) {
             name = name.substringAfter(":")
         }
+        if (name.contains("_")) {
+            name = name.substringBefore("_")
+        }
 
         return name
     }

@@ -158,7 +158,7 @@ class PlayerController : Component(), KoinComponent {
     if (stateManager.currentState !is PlayerState.RIDING) return
     val renderComponent = skater?.getComponent<RenderComponent>() ?: return
     val skeletonComponent = skater?.getComponent<SkeletonComponent>() ?: return
-    val skeleton = skeletonComponent.skeleton ?: return
+    val skeleton = skeletonComponent.pose?.skeletonAsset ?: return
 
         var steerInput = 0f
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
@@ -181,7 +181,7 @@ class PlayerController : Component(), KoinComponent {
             // Multiply current local rotation by procedural lean
             // Since james model is facing sideways, lean might need to be on a different axis
             // Based on standard Mixamo: X is usually pitch, Y is yaw, Z is roll (side lean)
-            skeleton.getJointByName(name)?.localTransform?.rotate(rotationQuat)
+            skeleton.getBoneByName(name)?.localTransform?.rotate(rotationQuat)
         }
     }
 
@@ -278,8 +278,9 @@ class PlayerController : Component(), KoinComponent {
         // Find the skater child
         val skater = gameObject.children.find { it.name == "Skater" }
         
+        val baseModel = resourceManager.loadModelSync(Assets.Models.CUBE)
         val tumbleCube = prefabsGenerator.generateEntityObject(
-            resourceManager.loadModelSync(Assets.Models.CUBE).mesh[0].rawModel,
+            baseModel.mesh[0].rawModel,
             resourceManager.loadTextureSync(Assets.Textures.DEFAULT),
             "TumbleCube"
         )

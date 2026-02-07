@@ -16,7 +16,6 @@ import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import com.pafoid.skate.engine.utils.EngineStats
-import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.lwjgl.opengl.GL30.*
@@ -174,6 +173,7 @@ class Renderer(
                 
                 modelRenderer.render(
                     go = go,
+                    transform = transformComponent,
                     renderComponent = renderComponent,
                     defaultShader = defaultShader,
                     cameraPosition = cameraPosition,
@@ -227,11 +227,11 @@ class Renderer(
                 pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, go.getUid().toFloat() + 1)
                 pickingShader3D.uploadBoolean(Uniforms.USE_BATCH, false)
 
-                val skeleton = skeletonComponent?.skeleton
+                val skeleton = skeletonComponent?.pose?.skeletonAsset
                 val hasSkin = skeleton != null
                 pickingShader3D.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-                if (skeleton != null) {
-                    pickingShader3D.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeleton.getMatrixPalette())
+                if (skeletonComponent != null && skeletonComponent.pose != null) {
+                    pickingShader3D.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
                 }
 
                 for (part in renderComponent.model.mesh) {

@@ -25,10 +25,6 @@ class Skateboard(
         transformComponent.scale.set(scale)
         addComponent(transformComponent)
         addComponent(RenderComponent(model = texturedModel))
-        // Add skeleton component if the model has a skeleton
-        texturedModel.skeleton?.let { skeleton ->
-            addComponent(SkeletonComponent(skeleton = skeleton.copy()))
-        }
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })
         addComponent(BoxCollider3D(hitBoxSize))
         addComponent(SkateboardPhysics())

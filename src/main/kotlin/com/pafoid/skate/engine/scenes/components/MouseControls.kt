@@ -54,7 +54,7 @@ class MouseControls : Component(), KoinComponent {
                 sceneManager.setSelectedGameObject(selectedObject)
             } else {
                 sceneManager.setSelectedGameObject(null)
-                val bone = sceneManager.getJointById(pickedId)
+                val bone = sceneManager.getBoneById(pickedId)
                 if (bone != null) {
                     // A bone was selected, find which GO it belongs to
                     val skater = sceneManager.currentScene?.gameObjects?.find { it.getComponent<PoseGizmo>() != null }

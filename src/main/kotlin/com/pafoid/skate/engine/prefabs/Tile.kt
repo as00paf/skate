@@ -19,10 +19,6 @@ class Tile(
 
     init {
         addComponent(RenderComponent(model = texturedModel))
-        // Add skeleton component if the model has a skeleton
-        texturedModel.skeleton?.let { skeleton ->
-            addComponent(SkeletonComponent(skeleton = skeleton.copy()))
-        }
         addComponent(ModularTile())
         addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         addComponent(BoxCollider3D(hitBoxSize))

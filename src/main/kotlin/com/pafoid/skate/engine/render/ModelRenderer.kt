@@ -24,32 +24,32 @@ class ModelRenderer(
     
     fun render(
         go: GameObject,
+        transform: Transform,
         renderComponent: RenderComponent,
         defaultShader: Shader,
         cameraPosition: Vector3f,
         skeletonComponent: SkeletonComponent? = null
     ) {
-        val transformComponent = go.getComponent<Transform>()
-        val transformationMatrix = transformComponent?.toWorldMatrix() ?: Matrix4f().identity()
+        val transformationMatrix = transform.toWorldMatrix()
         val textureScale = renderComponent.textureScale
-        
+
         for (part in renderComponent.model.mesh) {
             renderMeshPart(
                 part,
                 transformationMatrix,
                 textureScale,
-                skeletonComponent?.skeleton,
+                skeletonComponent,
                 defaultShader,
                 cameraPosition
             )
         }
     }
-    
+
     private fun renderMeshPart(
         part: MeshPart,
         transformationMatrix: Matrix4f,
         textureScale: Float,
-        skeleton: Skeleton?,
+        skeletonComponent: SkeletonComponent?,
         shader: Shader,
         cameraPosition: Vector3f
     ) {
@@ -116,11 +116,11 @@ class ModelRenderer(
         shader.uploadInt(Uniforms.ALPHA_MODE, alphaInt)
         shader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
 
-        val hasSkin = skeleton != null
+        val hasSkin = skeletonComponent?.pose != null
         shader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-        if (skeleton != null) {
-
-            shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeleton.getMatrixPalette())
+        if (skeletonComponent != null && skeletonComponent.pose != null) {
+            // Use the skeleton component's matrix palette
+            shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
         }
 
         if (alphaInt == 2) {

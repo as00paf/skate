@@ -116,7 +116,8 @@ class PrefabsTab(
         ImGui.beginGroup()
 
         val texId = if (data.modelPath != null) {
-            val rawModel = resourceManager.loadModelSync(data.modelPath).mesh[0].rawModel
+            val baseModel = resourceManager.loadModelSync(data.modelPath)
+            val rawModel = baseModel.mesh[0].rawModel
             val texture = resourceManager.loadTextureSync(data.material?.texturePath)
             // Create a temporary TexturedModel for the thumbnail generator
             val model = TexturedModel(rawModel, texture)

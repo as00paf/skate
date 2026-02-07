@@ -26,10 +26,6 @@ class Floor(
             model = texturedModel,
             textureScale = 20.0f
         ))
-        // Add skeleton component if the model has a skeleton
-        texturedModel.skeleton?.let { skeleton ->
-            addComponent(SkeletonComponent(skeleton = skeleton.copy()))
-        }
         val groundRb = RigidBody3D(1f)
         groundRb.bodyType = BodyType.Static
         addComponent(groundRb)

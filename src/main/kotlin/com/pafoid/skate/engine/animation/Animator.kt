@@ -1,9 +1,12 @@
 package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
+import com.pafoid.skate.engine.utils.BoneNameMapper
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
 import kotlinx.serialization.Contextual
@@ -23,6 +26,7 @@ import java.util.Collections
  */
 class Animator : Component(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
+    private val logger: LoggerService by inject()
 
     var currentTime = 0f
     var currentAnimation: Animation? = null
@@ -100,7 +104,18 @@ class Animator : Component(), KoinComponent {
 
                 newAnimations.forEach { newAnim ->
                     if (animations.none { it.name == newAnim.name }) {
-                        animations.add(newAnim)
+                        // Check skeleton compatibility before adding the animation
+                        val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
+                        if (skeletonComponent?.pose?.skeletonAsset != null) {
+                            if (validateSkeletonCompatibility(skeletonComponent.pose.skeletonAsset, newAnim)) {
+                                animations.add(newAnim)
+                            } else {
+                                // Log the incompatibility
+                                logger.logEngine("Animation '${newAnim.name}' is incompatible with the current skeleton. Skipping.", LogLevel.ERROR)
+                            }
+                        } else {
+                            animations.add(newAnim)
+                        }
                     }
                 }
             }
@@ -108,7 +123,6 @@ class Animator : Component(), KoinComponent {
         }
 
         if (animations.isEmpty()) return
-
         val anim = currentAnimation ?: animations.firstOrNull() ?: return
 
         ImGui.text("Duration: ${String.format("%.2f", anim.duration)}s")
@@ -118,7 +132,7 @@ class Animator : Component(), KoinComponent {
             isPlaying = false // Scrubbing pauses playback for precision
 
             // Force update skeleton when scrubbing
-            skeletonComponent?.skeleton?.let { anim.update(currentTime, it) }
+            skeletonComponent?.pose?.skeletonAsset?.let { anim.update(currentTime, it) }
         }
 
         if (ImGui.button(if (isPlaying) "Pause" else "Play")) {
@@ -127,7 +141,20 @@ class Animator : Component(), KoinComponent {
         ImGui.sameLine()
         if (ImGui.button("Reset")) {
             currentTime = 0f
-            skeletonComponent?.skeleton?.let { anim.update(currentTime, it) }
+            skeletonComponent?.pose?.skeletonAsset?.let { anim.update(currentTime, it) }
         }
+    }
+
+    fun validateSkeletonCompatibility(skeleton: Skeleton, animation: Animation): Boolean {
+        // Check if all animation channels target bones that exist in the skeleton
+        for (channel in animation.channels) {
+            val boneName = BoneNameMapper.map(channel.targetNodeName)
+            val bone = skeleton.getBoneByName(boneName)
+            if (bone == null) {
+                logger.logEngine("Animation '${animation.name}' targets bone '$boneName' which does not exist in the skeleton.", LogLevel.ERROR)
+                return false
+            }
+        }
+        return true
     }
 }

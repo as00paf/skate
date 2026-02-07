@@ -21,26 +21,26 @@ class Animation(
     private var correctionsComputed = false
 
     @Contextual
-    private val tempJointPos = Vector3f()
+    private val tempBonePos = Vector3f()
     @Contextual
-    private val tempJointScale = Vector3f()
+    private val tempBoneScale = Vector3f()
     @Contextual
-    private val tempJointQuat = Quaternionf()
+    private val tempBoneQuat = Quaternionf()
 
     fun computeCorrections(skeleton: Skeleton) {
         if (correctionsComputed) return
-        
-        skeleton.getAllJoints().forEach { joint ->
-            val animBind = bindPoses[joint.name]
+
+        skeleton.getAllBones().forEach { bone ->
+            val animBind = bindPoses[bone.name]
             if (animBind != null) {
                 // Correction = inverse(ModelBind) * AnimBind
                 // This maps the Animation's bind space to the Model's bind space.
                 val correction = Matrix4f()
                 // inverse(ModelBind)
-                joint.bindLocalTransform.invert(correction)
+                bone.bindLocalTransform.invert(correction)
                 // * AnimBind
                 correction.mul(animBind)
-                correctionMatrices[joint.name] = correction
+                correctionMatrices[bone.name] = correction
             }
         }
         correctionsComputed = true
@@ -51,91 +51,91 @@ class Animation(
      */
     fun update(time: Float, skeleton: Skeleton) {
         if (!correctionsComputed) computeCorrections(skeleton)
-        
+
         val loopTime = time % duration
-        
-        // Track which joints we have modified this frame to avoid resetting them multiple times
+
+        // Track which bones we have modified this frame to avoid resetting them multiple times
         // or to handle the composition correctly.
         // Actually, since channels are linear, we can just process them.
         // BUT to avoid the "compounding correction" issue, we must start from a clean state.
-        // We can't easily reset ALL skeleton joints here efficiently without iterating the whole skeleton.
-        // Optimization: Iterate only channels, identify unique joints.
-        
-        val affectedJoints = mutableSetOf<Joint>()
+        // We can't easily reset ALL skeleton bones here efficiently without iterating the whole skeleton.
+        // Optimization: Iterate only channels, identify unique bones.
+
+        val affectedBones = mutableSetOf<Bone>()
         channels.forEach { channel ->
             val mappedName = BoneNameMapper.map(channel.targetNodeName)
-            skeleton.getJointByName(mappedName)?.let { affectedJoints.add(it) }
+            skeleton.getBoneByName(mappedName)?.let { affectedBones.add(it) }
         }
-        
-        // 1. Reset affected joints to their Bind Pose (Model Space)
+
+        // 1. Reset affected bones to their Bind Pose (Model Space)
         // This ensures we don't accumulate corrections or previous frame's data endlessly
         // and provides the default values for missing channels (e.g. if Anim has Rot but no Trans).
-        affectedJoints.forEach { joint ->
-            joint.localTransform.set(joint.bindLocalTransform)
+        affectedBones.forEach { bone ->
+            bone.localTransform.set(bone.bindLocalTransform)
         }
-        
+
         // 2. Apply Animation Channels (Overwrite Bind Pose values with Animation values)
-        // Note: This temporarily puts `joint.localTransform` into "Animation Space" (mixed with Model defaults if missing)
+        // Note: This temporarily puts `bone.localTransform` into "Animation Space" (mixed with Model defaults if missing)
         val pos = Vector3f()
         val rot = Quaternionf()
         val scale = Vector3f()
-        
+
         for (channel in channels) {
             val mappedName = BoneNameMapper.map(channel.targetNodeName)
-            val joint = skeleton.getJointByName(mappedName) ?: continue
-            
+            val bone = skeleton.getBoneByName(mappedName) ?: continue
+
             // Read current (Bind Pose or partially animated) state
-            joint.localTransform.getTranslation(pos)
-            joint.localTransform.getUnnormalizedRotation(rot)
-            joint.localTransform.getScale(scale)
-            
+            bone.localTransform.getTranslation(pos)
+            bone.localTransform.getUnnormalizedRotation(rot)
+            bone.localTransform.getScale(scale)
+
             when (channel.path) {
                 AnimationPath.TRANSLATION -> channel.sampler.sampleVector3f(loopTime, pos)
                 AnimationPath.ROTATION -> channel.sampler.sampleQuaternionf(loopTime, rot)
                 AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, scale)
             }
-            
-            joint.localTransform.translationRotateScale(pos, rot, scale)
+
+            bone.localTransform.translationRotateScale(pos, rot, scale)
         }
 
-        affectedJoints.forEach { joint ->
-            val animBind = bindPoses[joint.name]
+        affectedBones.forEach { bone ->
+            val animBind = bindPoses[bone.name]
             if (animBind != null) {
-                joint.localTransform.set(animBind)
+                bone.localTransform.set(animBind)
             } else {
-                joint.localTransform.set(joint.bindLocalTransform)
+                bone.localTransform.set(bone.bindLocalTransform)
             }
         }
-        
+
         // REVISED Step 2: Apply Channels (Overwriting Anim Bind Pose)
         for (channel in channels) {
             val mappedName = BoneNameMapper.map(channel.targetNodeName)
-            val joint = skeleton.getJointByName(mappedName) ?: continue
-            
-            joint.localTransform.getTranslation(pos)
-            joint.localTransform.getUnnormalizedRotation(rot)
-            joint.localTransform.getScale(scale)
-            
+            val bone = skeleton.getBoneByName(mappedName) ?: continue
+
+            bone.localTransform.getTranslation(pos)
+            bone.localTransform.getUnnormalizedRotation(rot)
+            bone.localTransform.getScale(scale)
+
             when (channel.path) {
                 AnimationPath.TRANSLATION -> channel.sampler.sampleVector3f(loopTime, pos)
                 AnimationPath.ROTATION -> channel.sampler.sampleQuaternionf(loopTime, rot)
                 AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, scale)
             }
-            joint.localTransform.translationRotateScale(pos, rot, scale)
+            bone.localTransform.translationRotateScale(pos, rot, scale)
         }
 
-        affectedJoints.forEach { joint ->
-            val animBind = bindPoses[joint.name] ?: return@forEach
+        affectedBones.forEach { bone ->
+            val animBind = bindPoses[bone.name] ?: return@forEach
 
             val delta = Matrix4f()
             animBind.invert(delta)
-            delta.mul(joint.localTransform)
-            
+            delta.mul(bone.localTransform)
+
             // Final = M_bind * Delta
-            val finalMat = Matrix4f(joint.bindLocalTransform)
+            val finalMat = Matrix4f(bone.bindLocalTransform)
             finalMat.mul(delta)
-            
-            joint.localTransform.set(finalMat)
+
+            bone.localTransform.set(finalMat)
         }
     }
 
@@ -145,68 +145,68 @@ class Animation(
     fun updateBlended(time: Float, skeleton: Skeleton, alpha: Float) {
         if (!correctionsComputed) computeCorrections(skeleton)
         val loopTime = time % duration
-        
-        val affectedJoints = mutableSetOf<Joint>()
+
+        val affectedBones = mutableSetOf<Bone>()
         channels.forEach { channel ->
             val mappedName = BoneNameMapper.map(channel.targetNodeName)
-            skeleton.getJointByName(mappedName)?.let { affectedJoints.add(it) }
+            skeleton.getBoneByName(mappedName)?.let { affectedBones.add(it) }
         }
-        
+
         // 1. Reset to Anim Bind Pose
-        affectedJoints.forEach { joint ->
-            val animBind = bindPoses[joint.name]
+        affectedBones.forEach { bone ->
+            val animBind = bindPoses[bone.name]
             if (animBind != null) {
-                joint.localTransform.set(animBind)
+                bone.localTransform.set(animBind)
             } else {
-                joint.localTransform.set(joint.bindLocalTransform)
+                bone.localTransform.set(bone.bindLocalTransform)
             }
         }
 
         // Store original transforms for blending
         val originalTransforms = mutableMapOf<String, Matrix4f>()
-        affectedJoints.forEach { joint ->
-            originalTransforms[joint.name] = Matrix4f(joint.localTransform)
+        affectedBones.forEach { bone ->
+            originalTransforms[bone.name] = Matrix4f(bone.localTransform)
         }
 
         // Apply Animation Channels to get Target Animation State
         for (channel in channels) {
             val mappedName = BoneNameMapper.map(channel.targetNodeName)
-            val joint = skeleton.getJointByName(mappedName) ?: continue
+            val bone = skeleton.getBoneByName(mappedName) ?: continue
 
             // Read current (Animation Bind Pose) state
-            joint.localTransform.getTranslation(tempJointPos)
-            joint.localTransform.getUnnormalizedRotation(tempJointQuat)
-            joint.localTransform.getScale(tempJointScale)
+            bone.localTransform.getTranslation(tempBonePos)
+            bone.localTransform.getUnnormalizedRotation(tempBoneQuat)
+            bone.localTransform.getScale(tempBoneScale)
 
             when (channel.path) {
-                AnimationPath.TRANSLATION -> channel.sampler.sampleVector3f(loopTime, tempJointPos)
-                AnimationPath.ROTATION -> channel.sampler.sampleQuaternionf(loopTime, tempJointQuat)
-                AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, tempJointScale)
+                AnimationPath.TRANSLATION -> channel.sampler.sampleVector3f(loopTime, tempBonePos)
+                AnimationPath.ROTATION -> channel.sampler.sampleQuaternionf(loopTime, tempBoneQuat)
+                AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, tempBoneScale)
             }
 
-            joint.localTransform.translationRotateScale(tempJointPos, tempJointQuat, tempJointScale)
+            bone.localTransform.translationRotateScale(tempBonePos, tempBoneQuat, tempBoneScale)
         }
 
         // Apply Corrections to convert to Model Space
-        affectedJoints.forEach { joint ->
-            val animBind = bindPoses[joint.name] ?: return@forEach
-            // Current `joint.localTransform` is A_current (from this animation).
+        affectedBones.forEach { bone ->
+            val animBind = bindPoses[bone.name] ?: return@forEach
+            // Current `bone.localTransform` is A_current (from this animation).
 
             // Delta = inv(A_bind) * A_current
             val delta = Matrix4f()
             animBind.invert(delta)
-            delta.mul(joint.localTransform)  // delta = inv(animBind) * joint.localTransform
+            delta.mul(bone.localTransform)  // delta = inv(animBind) * bone.localTransform
 
             // Final = M_bind * Delta
-            val finalMat = Matrix4f(joint.bindLocalTransform)  // M_bind
+            val finalMat = Matrix4f(bone.bindLocalTransform)  // M_bind
             finalMat.mul(delta)  // finalMat = M_bind * inv(animBind) * A_current
 
-            // Now joint.localTransform contains the corrected animation state
+            // Now bone.localTransform contains the corrected animation state
             val correctedAnimState = Matrix4f(finalMat)
 
             // Blend between original state and corrected animation state
-            val originalState = originalTransforms[joint.name] ?: joint.bindLocalTransform
-            
+            val originalState = originalTransforms[bone.name] ?: bone.bindLocalTransform
+
             // Extract translation, rotation, and scale from both matrices
             val origTranslation = Vector3f()
             val origRotation = Quaternionf()
@@ -214,21 +214,21 @@ class Animation(
             originalState.getTranslation(origTranslation)
             originalState.getUnnormalizedRotation(origRotation)
             originalState.getScale(origScale)
-            
+
             val animTranslation = Vector3f()
             val animRotation = Quaternionf()
             val animScale = Vector3f()
             correctedAnimState.getTranslation(animTranslation)
             correctedAnimState.getUnnormalizedRotation(animRotation)
             correctedAnimState.getScale(animScale)
-            
+
             // Interpolate each component
             val blendedTranslation = Vector3f(origTranslation).lerp(animTranslation, alpha)
             val blendedRotation = Quaternionf(origRotation).slerp(animRotation, alpha)
             val blendedScale = Vector3f(origScale).lerp(animScale, alpha)
-            
+
             // Recompose the matrix
-            joint.localTransform.translationRotateScale(blendedTranslation, blendedRotation, blendedScale)
+            bone.localTransform.translationRotateScale(blendedTranslation, blendedRotation, blendedScale)
         }
 
     }

@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.editor
 
-import com.pafoid.skate.engine.animation.Joint
+import com.pafoid.skate.engine.animation.Bone
+import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.GameObject
 import imgui.ImGui
@@ -21,17 +22,17 @@ class BoneTreeWindow : KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val poseSerializer: PoseSerializer by inject()
 
-    private var selectedBone: Joint? = null
+    private var selectedBone: Bone? = null
     private val poseFileName = ImString(128)
     private val mirrorPoseEnabled = ImBoolean(false)
 
-    fun setSelectedBone(joint: Joint?) {
-        selectedBone = joint
+    fun setSelectedBone(bone: Bone?) {
+        selectedBone = bone
     }
 
     fun imgui() {
         sceneManager.getSelectedGameObject()?.let { go ->
-            val skeleton = go.getComponent<RenderComponent>()?.model?.skeleton
+            val skeleton = (go.getComponent<RenderComponent>()?.model as? CharacterModel)?.skeleton
             if (skeleton != null) {
                 ImGui.begin("Bone Tree")
 
@@ -57,11 +58,11 @@ class BoneTreeWindow : KoinComponent {
                 ImGui.checkbox("Mirror Pose", mirrorPoseEnabled)
 
                 if (ImGui.treeNodeEx(
-                        skeleton.rootJoint.name,
+                        skeleton.rootBone.name,
                         ImGuiTreeNodeFlags.DefaultOpen or ImGuiTreeNodeFlags.FramePadding
                     )
                 ) {
-                    drawJointNode(go, skeleton.rootJoint)
+                    drawBoneNode(go, skeleton.rootBone)
                     ImGui.treePop()
                 }
                 ImGui.end()
@@ -69,8 +70,8 @@ class BoneTreeWindow : KoinComponent {
         }
     }
 
-    private fun drawJointNode(gameObject: GameObject, joint: Joint) {
-        joint.children.forEach { child ->
+    private fun drawBoneNode(gameObject: GameObject, bone: Bone) {
+        bone.children.forEach { child ->
             var flags = if (child.children.isEmpty()) {
                 ImGuiTreeNodeFlags.Leaf or ImGuiTreeNodeFlags.Bullet
             } else {
@@ -123,7 +124,7 @@ class BoneTreeWindow : KoinComponent {
             }
 
             if (isNodeOpen) {
-                drawJointNode(gameObject, child)
+                drawBoneNode(gameObject, child)
                 ImGui.treePop()
             }
         }
