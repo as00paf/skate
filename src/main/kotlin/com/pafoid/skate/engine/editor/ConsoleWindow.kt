@@ -6,6 +6,10 @@ import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
+import imgui.flag.ImGuiInputTextFlags
+import imgui.flag.ImGuiSelectableFlags
+import imgui.flag.ImGuiStyleVar
+import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
@@ -40,6 +44,11 @@ class ConsoleWindow : KoinComponent {
 
     private fun renderLogList(logs: Iterable<LogEntry>) {
         ImGui.beginChild("LogScrollingRegion", 0f, 0f, false, ImGuiWindowFlags.HorizontalScrollbar)
+
+        // Temporarily adjust style to make input fields look like text
+        ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 0f, 0f) // Frame padding X, Y
+        ImGui.pushStyleVar(ImGuiStyleVar.FrameRounding, 0f) // Frame rounding
+        ImGui.pushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f) // Frame border size
         
         logs.forEach { entry ->
             val color = when (entry.level) {
@@ -48,14 +57,31 @@ class ConsoleWindow : KoinComponent {
                 LogLevel.ERROR -> floatArrayOf(1f, 0.2f, 0.2f, 1f)
                 LogLevel.ACTION -> floatArrayOf(0.4f, 0.7f, 1f, 1f)
             }
-            ImGui.textColored(color[0], color[1], color[2], color[3], "[${entry.level}] ${entry.message}")
+            
+            // Push the color for this log entry (text color only)
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.Text, color[0], color[1], color[2], color[3]) // Text color
+            // For the background, we'll use the actual console background color (SLATE)
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.FrameBg, 0.13f, 0.14f, 0.17f, 1.0f) // SLATE background color
+            
+            // Use read-only input text which allows for selection
+            val logText = "[${entry.level}] ${entry.message}"
+            val imString = imgui.type.ImString(logText)
+            ImGui.inputText("##log_${entry.timestamp}_${entry.hashCode()}", 
+                imString, 
+                ImGuiInputTextFlags.ReadOnly or ImGuiInputTextFlags.NoHorizontalScroll)
+            
+            // Pop the colors
+            ImGui.popStyleColor(2)
         }
         
+        // Restore original style
+        ImGui.popStyleVar(3)
+
         // Auto-scroll to bottom
         if (ImGui.getScrollY() >= ImGui.getScrollMaxY()) {
             ImGui.setScrollHereY(1.0f)
         }
-        
+
         ImGui.endChild()
     }
 }
