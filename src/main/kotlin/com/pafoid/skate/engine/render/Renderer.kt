@@ -161,6 +161,7 @@ class Renderer(
             val renderComponent = go.getComponent<RenderComponent>()
             val transformComponent = go.getComponent<Transform>()
             if (renderComponent != null && transformComponent != null) {
+                // Hover & Selected states
                 var selectionState = 0.0f
                 if (go == activeGameObject) selectionState = 1.0f
                 else if (go == hoveredGameObject) selectionState = 2.0f
@@ -178,27 +179,6 @@ class Renderer(
                     cameraPosition = cameraPosition,
                     skeletonComponent = skeletonComponent
                 )
-            }
-        }
-        
-        // Highlight Active Object (Transparent Green Silhouette)
-        activeGameObject?.let { go ->
-            go.getComponent<RenderComponent>()?.let {
-                defaultShader.uploadFloat(Uniforms.SELECTED, 1.0f)
-                
-                glEnable(GL_BLEND)
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-                glDepthFunc(GL_LEQUAL) // Draw over existing geometry if closer/equal, or maybe ALWAYS for x-ray?
-                // User said "easy to identify", usually implies seeing it through walls (X-Ray).
-                // Let's try GL_ALWAYS but keep depth write off.
-                glDisable(GL_DEPTH_TEST) 
-                
-                renderEntity(go)
-                
-                glEnable(GL_DEPTH_TEST)
-                glDepthFunc(GL_LESS)
-                glDisable(GL_BLEND)
-                defaultShader.uploadFloat(Uniforms.SELECTED, 0.0f) // Reset
             }
         }
 
@@ -236,16 +216,13 @@ class Renderer(
         pickingShader3D.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
 
         scene.gameObjects.forEach { go ->
-            // Handle new ECS system: GameObjects with RenderComponent and TransformComponent
             val renderComponent = go.getComponent<RenderComponent>()
             val transform = go.getComponent<Transform>()
             if (renderComponent != null && transform != null && go.getComponent<NonPickable>() == null) {
-                // For picking, we need to render with the picking shader
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
                 
                 // Upload transformation matrix for picking
-                val goTransform = go.getComponent<Transform>()
-                val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
+                val transformMatrix = transform.toWorldMatrix()
                 pickingShader3D.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformMatrix)
                 pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, go.getUid().toFloat() + 1)
                 pickingShader3D.uploadBoolean(Uniforms.USE_BATCH, false)
@@ -290,109 +267,6 @@ class Renderer(
         val safeY = y.coerceIn(0, 1079)
         // Invert Y coordinate (0 at top becomes 1079 at bottom)
         return pickingTexture.readPixel(safeX, 1079 - safeY)
-    }
-
-    private fun renderEntity(go: GameObject) {
-        val renderComponent = go.getComponent<RenderComponent>()
-        val texturedModel = renderComponent?.model ?:return
-        val camera = sceneManager.currentScene?.camera
-
-        val goTransform = go.getComponent<Transform>()
-        val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
-        defaultShader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformMatrix)
-        defaultShader.uploadFloat(Uniforms.TEXTURE_SCALE, renderComponent.textureScale)
-        if (camera != null) {
-            defaultShader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
-        }
-
-        for (part in texturedModel.mesh) {
-            val model = part.rawModel
-            val material = part.material
-
-            glBindVertexArray(model.vaoId)
-
-            // Enable only available attributes
-            model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
-
-            // Base Color
-            glActiveTexture(GL_TEXTURE0)
-            material.baseColorTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind()
-            defaultShader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, 0)
-            defaultShader.uploadVec4f(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
-
-            // Normal Map
-            glActiveTexture(GL_TEXTURE1)
-            val hasNormal = material.normalMap != null
-            if (hasNormal) material.normalMap?.bind()
-            else resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind() // Bind dummy
-            defaultShader.uploadInt(Uniforms.NORMAL_MAP, 1)
-            defaultShader.uploadBoolean(Uniforms.HAS_NORMAL_MAP, hasNormal)
-
-            // Metallic Roughness
-            glActiveTexture(GL_TEXTURE2)
-            val hasMR = material.metallicRoughnessTexture != null
-            if (hasMR) material.metallicRoughnessTexture?.bind()
-            else resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind() // Bind dummy
-            defaultShader.uploadInt(Uniforms.METALLIC_ROUGHNESS_TEXTURE, 2)
-            defaultShader.uploadBoolean(Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, hasMR)
-            defaultShader.uploadFloat(Uniforms.METALLIC_FACTOR, material.metallicFactor)
-            defaultShader.uploadFloat(Uniforms.ROUGHNESS_FACTOR, material.roughnessFactor)
-
-            // AO
-            glActiveTexture(GL_TEXTURE3)
-            val hasAO = material.aoTexture != null
-            material.aoTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind()
-            defaultShader.uploadInt(Uniforms.AO_TEXTURE, 3)
-            defaultShader.uploadBoolean(Uniforms.HAS_AO_TEXTURE, hasAO)
-
-            // Emissive
-            glActiveTexture(GL_TEXTURE4)
-            val hasEmissive = material.emissiveTexture != null
-            if (hasEmissive) material.emissiveTexture?.bind()
-            else resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind() // Bind dummy
-            defaultShader.uploadInt(Uniforms.EMISSIVE_TEXTURE, 4)
-            defaultShader.uploadBoolean(Uniforms.HAS_EMISSIVE_TEXTURE, hasEmissive)
-            defaultShader.uploadVec3f(Uniforms.EMISSIVE_FACTOR, material.emissiveFactor)
-
-            // Alpha
-            val alphaInt = when(material.alphaMode) {
-                "OPAQUE" -> 0
-                "MASK" -> 1
-                "BLEND" -> 2
-                else -> 0
-            }
-            defaultShader.uploadInt(Uniforms.ALPHA_MODE, alphaInt)
-            defaultShader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
-
-            val skeleton = go.getComponent<SkeletonComponent>()?.skeleton
-            val hasSkin = skeleton != null
-            defaultShader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-            if (skeleton != null) {
-                defaultShader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeleton.getMatrixPalette())
-            }
-
-            if (alphaInt == 2) {
-                glEnable(GL_BLEND)
-                glDepthMask(false)
-            } else {
-                glDisable(GL_BLEND)
-                glDepthMask(true)
-            }
-
-            if (material.doubleSided) glDisable(GL_CULL_FACE)
-            else glEnable(GL_CULL_FACE)
-
-            glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
-            EngineStats.drawCalls.incrementAndGet()
-
-            if (alphaInt == 2) {
-                glDisable(GL_BLEND)
-                glDepthMask(true)
-            }
-
-            model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
-        }
-        glBindVertexArray(0)
     }
 
     override fun clearColor(sky: Vector3f) {

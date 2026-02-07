@@ -46,7 +46,7 @@ class AnimationSystem : Component(), KoinComponent {
             val skeletonComponent = go.getComponent<SkeletonComponent>()
 
             // Visualize bones in editor mode
-            val goTransform = gameObject.getComponent<Transform>()
+            val goTransform = go.getComponent<Transform>()
             val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
             skeletonComponent?.skeleton?.rootJoint?.let { visualizeJoint(it, transformMatrix) }
 
@@ -95,6 +95,7 @@ class AnimationSystem : Component(), KoinComponent {
                 val alpha = 1f - (animator.blendTime / animator.blendDuration)
                 animator.previousAnimation?.let { prev ->
                     animator.previousTime += dt
+                    // Apply the animation to the skeleton using the built-in methods
                     prev.update(animator.previousTime, skeleton)
                     animation.updateBlended(animator.currentTime, skeleton, alpha)
                 } ?: animation.update(animator.currentTime, skeleton)
@@ -103,23 +104,34 @@ class AnimationSystem : Component(), KoinComponent {
             }
         }
 
-        // Apply bone overrides if they exist
+        // Apply bone overrides if they exist, but only if not actively animating this joint
+        // This prevents bone overrides from interfering with active animations
         go.getComponent<BoneOverride>()?.let { overrideComponent ->
+            // Only apply overrides for joints that are not being animated in the current animation
+            val animatedJoints = mutableSetOf<String>()
+            animator.currentAnimation?.channels?.forEach { channel ->
+                val mappedName = com.pafoid.skate.engine.utils.BoneNameMapper.map(channel.targetNodeName)
+                animatedJoints.add(mappedName)
+            }
+
             skeleton.getAllJoints().forEach { joint ->
-                overrideComponent.getOverride(joint.name)?.let { overrideRotation ->
-                    // Decompose matrix
-                    val translation = Vector3f()
-                    val rotation = Quaternionf()
-                    val scale = Vector3f()
-                    joint.localTransform.getTranslation(translation)
-                    joint.localTransform.getUnnormalizedRotation(rotation)
-                    joint.localTransform.getScale(scale)
+                // Only apply override if this joint is not currently being animated
+                if (joint.name !in animatedJoints) {
+                    overrideComponent.getOverride(joint.name)?.let { overrideRotation ->
+                        // Decompose matrix
+                        val translation = Vector3f()
+                        val rotation = Quaternionf()
+                        val scale = Vector3f()
+                        joint.localTransform.getTranslation(translation)
+                        joint.localTransform.getUnnormalizedRotation(rotation)
+                        joint.localTransform.getScale(scale)
 
-                    // Apply override by multiplying rotations
-                    rotation.mul(overrideRotation)
+                        // Apply override by multiplying rotations
+                        rotation.mul(overrideRotation)
 
-                    // Recompose matrix
-                    joint.localTransform.translationRotateScale(translation, rotation, scale)
+                        // Recompose matrix
+                        joint.localTransform.translationRotateScale(translation, rotation, scale)
+                    }
                 }
             }
         }

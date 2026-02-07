@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render
 
+import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
@@ -8,7 +9,9 @@ import com.pafoid.skate.engine.models.MeshPart
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13.*
@@ -26,9 +29,8 @@ class ModelRenderer(
         cameraPosition: Vector3f,
         skeletonComponent: SkeletonComponent? = null
     ) {
-        val transformComponent = go.getComponent<com.pafoid.skate.engine.scenes.components.Transform>()
-        val transformationMatrix = transformComponent?.toWorldMatrix() ?: org.joml.Matrix4f().identity()
-        
+        val transformComponent = go.getComponent<Transform>()
+        val transformationMatrix = transformComponent?.toWorldMatrix() ?: Matrix4f().identity()
         val textureScale = renderComponent.textureScale
         
         for (part in renderComponent.model.mesh) {
@@ -45,9 +47,9 @@ class ModelRenderer(
     
     private fun renderMeshPart(
         part: MeshPart,
-        transformationMatrix: org.joml.Matrix4f,
+        transformationMatrix: Matrix4f,
         textureScale: Float,
-        skeleton: com.pafoid.skate.engine.animation.Skeleton?,
+        skeleton: Skeleton?,
         shader: Shader,
         cameraPosition: Vector3f
     ) {
