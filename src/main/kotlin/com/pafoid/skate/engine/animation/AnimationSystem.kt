@@ -4,11 +4,9 @@ import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
-import com.pafoid.skate.engine.utils.BoneNameMapper
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -57,7 +55,7 @@ class AnimationSystem : Component(), KoinComponent {
 
     private fun visualizeBone(skeletonComponent: SkeletonComponent, modelMatrix: Matrix4f) {
         val pose = skeletonComponent.pose ?: return
-        val skeleton = pose.skeletonAsset
+        val skeleton = pose.skeleton
         
         visualizeBoneRecursive(skeleton.rootBone, pose, modelMatrix)
     }
@@ -91,7 +89,7 @@ class AnimationSystem : Component(), KoinComponent {
         dt: Float
     ) {
         val pose = skeletonComponent.pose ?: return
-        val skeleton = pose.skeletonAsset
+        val skeleton = pose.skeleton
         val transform = go.getComponent<Transform>() // Get the transform component to apply root motion
 
         if (animator != null && animator.isPlaying) {

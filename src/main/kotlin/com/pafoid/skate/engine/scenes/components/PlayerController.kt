@@ -1,33 +1,35 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.prefabs.PrefabsGenerator
-import com.pafoid.skate.skateboard.PreferredStance
-import com.pafoid.skate.engine.controls.input.IInputBuffer
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import org.lwjgl.glfw.GLFW.*
-import com.pafoid.skate.skateboard.Stance
-import com.pafoid.skate.engine.player.PlayerState
-import com.pafoid.skate.engine.player.PlayerStateManager
-import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.controls.input.IInputBuffer
+import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_LEFT_Y
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_TRIGGER
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.BUTTON_A
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.BUTTON_Y
-import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.player.PlayerState
+import com.pafoid.skate.engine.player.PlayerStateManager
+import com.pafoid.skate.engine.prefabs.PrefabsGenerator
+import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Interpolation
 import com.pafoid.skate.engine.utils.JmeVector3f
+import com.pafoid.skate.skateboard.PreferredStance
+import com.pafoid.skate.skateboard.Stance
 import imgui.ImGui
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
+import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
+import org.lwjgl.glfw.GLFW.GLFW_KEY_Y
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.max
@@ -158,7 +160,7 @@ class PlayerController : Component(), KoinComponent {
     if (stateManager.currentState !is PlayerState.RIDING) return
     val renderComponent = skater?.getComponent<RenderComponent>() ?: return
     val skeletonComponent = skater?.getComponent<SkeletonComponent>() ?: return
-    val skeleton = skeletonComponent.pose?.skeletonAsset ?: return
+        val skeleton = skeletonComponent.pose?.skeleton ?: return
 
         var steerInput = 0f
         inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->

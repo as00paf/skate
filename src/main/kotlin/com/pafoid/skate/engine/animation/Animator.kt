@@ -9,10 +9,8 @@ import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.utils.BoneNameMapper
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
-import kotlinx.serialization.Contextual
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.util.Collections
 
 /**
  * Component responsible for managing and playing skeletal animations.
@@ -106,8 +104,8 @@ class Animator : Component(), KoinComponent {
                     if (animations.none { it.name == newAnim.name }) {
                         // Check skeleton compatibility before adding the animation
                         val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
-                        if (skeletonComponent?.pose?.skeletonAsset != null) {
-                            if (validateSkeletonCompatibility(skeletonComponent.pose.skeletonAsset, newAnim)) {
+                        if (skeletonComponent?.pose?.skeleton != null) {
+                            if (validateSkeletonCompatibility(skeletonComponent.pose.skeleton, newAnim)) {
                                 animations.add(newAnim)
                             } else {
                                 // Log the incompatibility
@@ -133,7 +131,7 @@ class Animator : Component(), KoinComponent {
 
             // Force update skeleton when scrubbing
             skeletonComponent?.pose?.let { pose ->
-                val skeleton = pose.skeletonAsset
+                val skeleton = pose.skeleton
                 anim.update(currentTime, skeleton)
                 // Copy to pose so AnimationSystem picks it up
                 skeleton.getAllBones().forEach { bone ->
@@ -151,7 +149,7 @@ class Animator : Component(), KoinComponent {
         if (ImGui.button("Reset")) {
             currentTime = 0f
             skeletonComponent?.pose?.let { pose ->
-                val skeleton = pose.skeletonAsset
+                val skeleton = pose.skeleton
                 anim.update(currentTime, skeleton)
                 // Copy to pose so AnimationSystem picks it up
                 skeleton.getAllBones().forEach { bone ->

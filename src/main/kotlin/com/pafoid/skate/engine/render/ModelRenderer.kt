@@ -1,29 +1,50 @@
 package com.pafoid.skate.engine.render
 
+import com.pafoid.skate.engine.animation.Bone
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
 import com.pafoid.skate.engine.models.AlphaMode
+import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.models.MeshPart
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.components.RenderComponent
+import com.pafoid.skate.engine.scenes.components.RenderMode
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import com.pafoid.skate.engine.utils.EngineStats
 import org.joml.Matrix4f
+import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.*
-import org.lwjgl.opengl.GL13.*
-import org.lwjgl.opengl.GL20.*
-import org.lwjgl.opengl.GL30.*
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import org.lwjgl.opengl.GL11.GL_BLEND
+import org.lwjgl.opengl.GL11.GL_CULL_FACE
+import org.lwjgl.opengl.GL11.GL_UNSIGNED_INT
+import org.lwjgl.opengl.GL11.glDepthMask
+import org.lwjgl.opengl.GL11.glDisable
+import org.lwjgl.opengl.GL11.glDrawElements
+import org.lwjgl.opengl.GL11.glEnable
+import org.lwjgl.opengl.GL13.GL_TEXTURE0
+import org.lwjgl.opengl.GL13.GL_TEXTURE1
+import org.lwjgl.opengl.GL13.GL_TEXTURE2
+import org.lwjgl.opengl.GL13.GL_TEXTURE3
+import org.lwjgl.opengl.GL13.GL_TEXTURE4
+import org.lwjgl.opengl.GL13.glActiveTexture
+import org.lwjgl.opengl.GL20.glDisableVertexAttribArray
+import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
+import org.lwjgl.opengl.GL30.glBindVertexArray
 
 class ModelRenderer(
     private val resourceManager: ResourceManager
-) {
-    
+) : KoinComponent {
+    private val debugDraw: DebugDraw by inject()
+
+    private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
+
     fun render(
         go: GameObject,
         transform: Transform,
@@ -46,8 +67,20 @@ class ModelRenderer(
             defaultShader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
         }
 
-        for (part in renderComponent.model.mesh) {
-            renderMeshPart(part, defaultShader)
+        val skeleton = skeletonComponent?.pose?.skeleton
+
+        // Render mesh if requested
+        if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
+            for (part in renderComponent.model.mesh) {
+                renderMeshPart(part, defaultShader)
+            }
+        }
+
+        // Render skeleton if requested
+        if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
+            if (renderComponent.model is CharacterModel && skeleton != null) {
+                renderSkeleton(skeleton, transform)
+            }
         }
     }
 
@@ -136,6 +169,41 @@ class ModelRenderer(
         glBindVertexArray(0)
     }
 
+    private fun renderSkeleton(
+        skeleton: Skeleton,
+        transform: Transform
+    ) {
+        val transformationMatrix = transform.toWorldMatrix()
+
+        // Use the same approach as in AnimationSystem for consistent visualization
+        visualizeBoneRecursive(skeleton.rootBone, skeleton, transformationMatrix)
+    }
+
+    private fun visualizeBoneRecursive(bone: Bone, skeleton: Skeleton, modelMatrix: Matrix4f) {
+        // Get the bone's world position from the skeleton's world transforms
+        val boneWorldPos = Vector3f()
+        bone.worldTransform.getTranslation(boneWorldPos)
+        modelMatrix.transformPosition(boneWorldPos)
+
+        for (child in bone.children) {
+            // Get the child's world position
+            val childWorldPos = Vector3f()
+            child.worldTransform.getTranslation(childWorldPos)
+            modelMatrix.transformPosition(childWorldPos)
+
+            // Draw line from bone to child
+            debugDraw.addLine3D(boneWorldPos, childWorldPos, boneColor)
+
+            // Recursively visualize the child's children
+            visualizeBoneRecursive(child, skeleton, modelMatrix)
+        }
+
+        // Optionally draw a small box at the bone location for better visibility
+        val boneRotation = Quaternionf()
+        bone.worldTransform.getUnnormalizedRotation(boneRotation)
+        debugDraw.addBox3D(boneWorldPos, boneRotation, Vector3f(0.01f), boneColor)
+    }
+
     fun renderSimple(
         go: GameObject,
         transform: Transform,
@@ -148,23 +216,35 @@ class ModelRenderer(
 
         val hasSkin = skeletonComponent?.pose != null
         shader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-        if (skeletonComponent != null && skeletonComponent.pose != null) {
+        if (skeletonComponent?.pose != null) {
             shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
         }
 
-        for (part in renderComponent.model.mesh) {
-            val model = part.rawModel
-            glBindVertexArray(model.vaoId)
-            model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
+        val skeleton = skeletonComponent?.pose?.skeleton
 
-            if (part.material.doubleSided) glDisable(GL_CULL_FACE)
-            else glEnable(GL_CULL_FACE)
+        // Render mesh if requested
+        if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
+            for (part in renderComponent.model.mesh) {
+                val model = part.rawModel
+                glBindVertexArray(model.vaoId)
+                model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
 
-            glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
-            EngineStats.drawCalls.incrementAndGet()
+                if (part.material.doubleSided) glDisable(GL_CULL_FACE)
+                else glEnable(GL_CULL_FACE)
 
-            model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
-            glBindVertexArray(0)
+                glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
+                EngineStats.drawCalls.incrementAndGet()
+
+                model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
+                glBindVertexArray(0)
+            }
+        }
+
+        // Render skeleton if requested
+        if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
+            if (renderComponent.model is CharacterModel && skeleton != null) {
+                renderSkeleton(skeleton, transform)
+            }
         }
     }
 }

@@ -7,5 +7,13 @@
     "gamepadOverlaySize": 0.214,
     "showGamepadOverlay": true,
     "unitSystem": "METRIC",
-    "language": "en"
+  "language": "en",
+  "keyBindings": {
+    "gizmoTranslate": 87,
+    "gizmoRotate": 69,
+    "gizmoScale": 82,
+    "gizmoSelect": 81,
+    "gizmoMeasure": 77,
+    "deselect": 256
+  }
 }

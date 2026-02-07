@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.animation
 
-import com.pafoid.skate.engine.utils.BoneNameMapper
 import org.joml.Matrix4f
 
 object SkeletonMath {
@@ -31,7 +30,7 @@ object SkeletonMath {
     }
 
     fun buildSkinMatrices(pose: SkeletonPose, outPalette: Array<Matrix4f>) {
-        val skeleton = pose.skeletonAsset
+        val skeleton = pose.skeleton
         val boneCount = minOf(skeleton.boneCount, outPalette.size)
 
         // Compute global transforms from local transforms
@@ -50,8 +49,8 @@ object SkeletonMath {
     }
 
     fun resetToBindPose(pose: SkeletonPose) {
-        for (i in 0 until pose.skeletonAsset.boneCount) {
-            val bone = pose.skeletonAsset.bones[i]
+        for (i in 0 until pose.skeleton.boneCount) {
+            val bone = pose.skeleton.bones[i]
             if (bone != null) {
                 pose.localTransforms[i].set(bone.bindLocalTransform)
             }
