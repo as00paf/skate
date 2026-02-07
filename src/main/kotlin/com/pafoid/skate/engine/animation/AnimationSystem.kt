@@ -86,7 +86,7 @@ class AnimationSystem : Component(), KoinComponent {
         val skeleton = skeletonComponent.skeleton ?: return
 
         if (animator.isPlaying) {
-            val animation = animator.currentAnimation ?: renderComponent.model.animations.firstOrNull() ?: return
+            val animation = animator.currentAnimation ?: animator.animations.firstOrNull() ?: return
 
             animator.currentTime += dt
 

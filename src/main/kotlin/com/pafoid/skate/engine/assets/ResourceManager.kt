@@ -214,7 +214,7 @@ class ResourceManager(
                      
                      textureDataMap.values.forEach { it.free() }
 
-                     val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations.toMutableList())
+                     val texturedModel = TexturedModel(parts, preLoaded.skeleton)
                      models[absolutePath] = texturedModel
                      texturedModel
                  }
@@ -269,7 +269,7 @@ class ResourceManager(
                      MeshPart(model, mat, p.inverseBindMatrices)
                  }
 
-                 val texturedModel = TexturedModel(parts, preLoaded.skeleton, preLoaded.animations.toMutableList())
+                 val texturedModel = TexturedModel(parts, preLoaded.skeleton)
                  models[absolutePath] = texturedModel
                  texturedModel
         } catch (e: Exception) {
@@ -384,6 +384,4 @@ class ResourceManager(
         }
         sounds.clear()
     }
-    
-    fun getVAOLoader() = vaoLoader
 }

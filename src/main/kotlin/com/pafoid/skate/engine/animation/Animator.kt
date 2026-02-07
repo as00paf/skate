@@ -6,8 +6,10 @@ import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
+import kotlinx.serialization.Contextual
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.util.Collections
 
 /**
  * Component responsible for managing and playing skeletal animations.
@@ -30,6 +32,9 @@ class Animator : Component(), KoinComponent {
     var blendDuration = 0.2f
     var previousAnimation: Animation? = null
     var previousTime = 0f
+
+
+    val animations: MutableList<Animation> = mutableListOf()
 
     val normalizedTime: Float
         get() {
@@ -60,8 +65,7 @@ class Animator : Component(), KoinComponent {
     }
 
     fun play(name: String, blend: Float = 0.2f) {
-        val renderComponent = gameObject.getComponent<RenderComponent>() ?: return
-        val anim = renderComponent.model.animations.find { it.name.contains(name, ignoreCase = true) } ?: return
+        val anim = animations.find { it.name.contains(name, ignoreCase = true) } ?: return
         play(anim, blend)
     }
 
@@ -70,8 +74,7 @@ class Animator : Component(), KoinComponent {
     override fun imgui() {
         val renderComponent = gameObject.getComponent<RenderComponent>()
         val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
-        
-        val (animations, model) = Pair(renderComponent?.model?.animations.orEmpty(), renderComponent?.model)
+        val model = renderComponent?.model
         
         if (model == null) {
             ImGui.text("No render component found")
@@ -93,8 +96,13 @@ class Animator : Component(), KoinComponent {
             val payload = ImGui.acceptDragDropPayload<String>("ANIMATION", ImGuiDragDropFlags.None)
             if (payload != null) {
                 val path = payload
-                val newAnims = resourceManager.loadAnimationsSync(path)
-                model.addAnimations(newAnims)
+                val newAnimations = resourceManager.loadAnimationsSync(path)
+
+                newAnimations.forEach { newAnim ->
+                    if (animations.none { it.name == newAnim.name }) {
+                        animations.add(newAnim)
+                    }
+                }
             }
             ImGui.endDragDropTarget()
         }
