@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.animation.AnimationSampler
 import com.pafoid.skate.engine.animation.InterpolationType
 import com.pafoid.skate.engine.animation.Bone
 import com.pafoid.skate.engine.animation.Skeleton
+import com.pafoid.skate.engine.models.AlphaMode
 import com.pafoid.skate.engine.models.Material
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.BoneNameMapper
@@ -154,9 +155,11 @@ class AssimpLoader {
             
             // Removed debug print for root animation rotation
 
-            //TODO: extract
             // Translation
-            if (aiChannel.mNumPositionKeys() > 0) {
+            // We only load translation for the Root/Hips. 
+            // For all other bones, we trust the Bind Pose length from the Mesh.
+            // This prevents "collapsing" if the Animation file has different bone lengths or (0,0,0) offsets.
+            if (isRoot && aiChannel.mNumPositionKeys() > 0) {
                 val times = FloatArray(aiChannel.mNumPositionKeys())
                 val values = FloatArray(aiChannel.mNumPositionKeys() * 3)
                 
@@ -165,15 +168,9 @@ class AssimpLoader {
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
                     
-                    var x = key.mValue().x() * scale
-                    var y = key.mValue().y() * scale
-                    var z = key.mValue().z() * scale
-                    
-                    // Zero out root motion (X, Z) if this is the root bone
-                    if (isRoot) {
-                        x = 0f
-                        z = 0f
-                    }
+                    val x = key.mValue().x() * scale
+                    val y = key.mValue().y() * scale
+                    val z = key.mValue().z() * scale
                     
                     values[k * 3] = x
                     values[k * 3 + 1] = y
@@ -195,7 +192,7 @@ class AssimpLoader {
                     val q = Quaternionf(key.mValue().x(), key.mValue().y(), key.mValue().z(), key.mValue().w())
                     
                     if (isRoot) {
-                        // Removed 180 rotation to test raw animation orientation
+                        q180.mul(q, q)
                     }
                     
                     values[k * 4] = q.x
@@ -280,7 +277,11 @@ class AssimpLoader {
 
             val alphaModeString = AIString.calloc()
             if (aiGetMaterialString(material, AI_MATKEY_GLTF_ALPHAMODE, 0, 0, alphaModeString) == aiReturn_SUCCESS) {
-                materialData.alphaMode = alphaModeString.dataString()
+                try {
+                    materialData.alphaMode = AlphaMode.valueOf(alphaModeString.dataString())
+                } catch (e: Exception) {
+                    materialData.alphaMode = AlphaMode.OPAQUE
+                }
             }
             alphaModeString.free()
 

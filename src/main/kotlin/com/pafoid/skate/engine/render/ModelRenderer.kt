@@ -5,12 +5,14 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Shader
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
+import com.pafoid.skate.engine.models.AlphaMode
 import com.pafoid.skate.engine.models.MeshPart
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.components.toWorldMatrix
+import com.pafoid.skate.engine.utils.EngineStats
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.*
@@ -33,33 +35,28 @@ class ModelRenderer(
         val transformationMatrix = transform.toWorldMatrix()
         val textureScale = renderComponent.textureScale
 
+        // Hoist global uniforms for this object
+        defaultShader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
+        defaultShader.uploadFloat(Uniforms.TEXTURE_SCALE, textureScale)
+        defaultShader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
+
+        val hasSkin = skeletonComponent?.pose != null
+        defaultShader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
+        if (skeletonComponent != null && skeletonComponent.pose != null) {
+            defaultShader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
+        }
+
         for (part in renderComponent.model.mesh) {
-            renderMeshPart(
-                part,
-                transformationMatrix,
-                textureScale,
-                skeletonComponent,
-                defaultShader,
-                cameraPosition
-            )
+            renderMeshPart(part, defaultShader)
         }
     }
 
     private fun renderMeshPart(
         part: MeshPart,
-        transformationMatrix: Matrix4f,
-        textureScale: Float,
-        skeletonComponent: SkeletonComponent?,
-        shader: Shader,
-        cameraPosition: Vector3f
+        shader: Shader
     ) {
         val model = part.rawModel
         val material = part.material
-
-        // Upload transformation matrices
-        shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
-        shader.uploadFloat(Uniforms.TEXTURE_SCALE, textureScale)
-        shader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
 
         glBindVertexArray(model.vaoId)
 
@@ -108,20 +105,12 @@ class ModelRenderer(
 
         // Alpha
         val alphaInt = when(material.alphaMode) {
-            "OPAQUE" -> 0
-            "MASK" -> 1
-            "BLEND" -> 2
-            else -> 0
+            AlphaMode.OPAQUE -> 0
+            AlphaMode.MASK -> 1
+            AlphaMode.BLEND -> 2
         }
         shader.uploadInt(Uniforms.ALPHA_MODE, alphaInt)
         shader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
-
-        val hasSkin = skeletonComponent?.pose != null
-        shader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-        if (skeletonComponent != null && skeletonComponent.pose != null) {
-            // Use the skeleton component's matrix palette
-            shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
-        }
 
         if (alphaInt == 2) {
             glEnable(GL_BLEND)
@@ -135,6 +124,7 @@ class ModelRenderer(
         else glEnable(GL_CULL_FACE)
 
         glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
+        EngineStats.drawCalls.incrementAndGet()
 
         if (alphaInt == 2) {
             glDisable(GL_BLEND)
@@ -142,7 +132,39 @@ class ModelRenderer(
         }
 
         model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
-        
+
         glBindVertexArray(0)
+    }
+
+    fun renderSimple(
+        go: GameObject,
+        transform: Transform,
+        renderComponent: RenderComponent,
+        shader: Shader,
+        skeletonComponent: SkeletonComponent? = null
+    ) {
+        val transformationMatrix = transform.toWorldMatrix()
+        shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
+
+        val hasSkin = skeletonComponent?.pose != null
+        shader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
+        if (skeletonComponent != null && skeletonComponent.pose != null) {
+            shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
+        }
+
+        for (part in renderComponent.model.mesh) {
+            val model = part.rawModel
+            glBindVertexArray(model.vaoId)
+            model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
+
+            if (part.material.doubleSided) glDisable(GL_CULL_FACE)
+            else glEnable(GL_CULL_FACE)
+
+            glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
+            EngineStats.drawCalls.incrementAndGet()
+
+            model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
+            glBindVertexArray(0)
+        }
     }
 }

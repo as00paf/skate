@@ -91,8 +91,9 @@ class Renderer(
         pickingDraw.beginFrame()
         
         // 1. Picking Pass
+        pickingTexture.resize(sceneManager.currentWidth, sceneManager.currentHeight)
         pickingTexture.enableWriting()
-        glViewport(0, 0, 1920, 1080)
+        glViewport(0, 0, sceneManager.currentWidth, sceneManager.currentHeight)
         
         // CRITICAL: Reset state that might have been changed by ImGui or previous passes
         glDisable(GL_SCISSOR_TEST)
@@ -221,28 +222,16 @@ class Renderer(
             if (renderComponent != null && transform != null && go.getComponent<NonPickable>() == null) {
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
                 
-                // Upload transformation matrix for picking
-                val transformMatrix = transform.toWorldMatrix()
-                pickingShader3D.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformMatrix)
                 pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, go.getUid().toFloat() + 1)
                 pickingShader3D.uploadBoolean(Uniforms.USE_BATCH, false)
 
-                val skeleton = skeletonComponent?.pose?.skeletonAsset
-                val hasSkin = skeleton != null
-                pickingShader3D.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-                if (skeletonComponent != null && skeletonComponent.pose != null) {
-                    pickingShader3D.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
-                }
-
-                for (part in renderComponent.model.mesh) {
-                    val model = part.rawModel
-                    glBindVertexArray(model.vaoId)
-                    model.enabledAttributes.forEach { glEnableVertexAttribArray(it) }
-                    glDrawElements(model.drawMode, model.vertexCount, GL_UNSIGNED_INT, 0)
-                    EngineStats.drawCalls.incrementAndGet()
-                    model.enabledAttributes.forEach { glDisableVertexAttribArray(it) }
-                }
-                glBindVertexArray(0)
+                modelRenderer.renderSimple(
+                    go = go,
+                    transform = transform,
+                    renderComponent = renderComponent,
+                    shader = pickingShader3D,
+                    skeletonComponent = skeletonComponent
+                )
             }
         }
         pickingShader3D.stop()
@@ -262,11 +251,14 @@ class Renderer(
     }
 
     override fun readPixel(x: Int, y: Int): Int {
-        // Clamp coordinates to picking texture bounds (1920x1080)
-        val safeX = x.coerceIn(0, 1919)
-        val safeY = y.coerceIn(0, 1079)
-        // Invert Y coordinate (0 at top becomes 1079 at bottom)
-        return pickingTexture.readPixel(safeX, 1079 - safeY)
+        val w = sceneManager.currentWidth
+        val h = sceneManager.currentHeight
+        
+        // Clamp coordinates
+        val safeX = x.coerceIn(0, w - 1)
+        val safeY = y.coerceIn(0, h - 1)
+        // Invert Y coordinate
+        return pickingTexture.readPixel(safeX, h - 1 - safeY)
     }
 
     override fun clearColor(sky: Vector3f) {

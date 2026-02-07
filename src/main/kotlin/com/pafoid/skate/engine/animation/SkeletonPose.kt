@@ -14,5 +14,17 @@ data class SkeletonPose(
     init {
         localTransforms = Array(skeletonAsset.boneCount) { Matrix4f() }
         globalTransforms = Array(skeletonAsset.boneCount) { Matrix4f() }
+
+        // Initialize with bind pose
+        populateBindPose(skeletonAsset.rootBone)
+    }
+
+    private fun populateBindPose(bone: Bone) {
+        if (bone.index in 0 until skeletonAsset.boneCount) {
+            localTransforms[bone.index].set(bone.bindLocalTransform)
+        }
+        for (child in bone.children) {
+            populateBindPose(child)
+        }
     }
 }

@@ -27,12 +27,11 @@ class AnimationSystem : Component(), KoinComponent {
 
     override fun update(dt: Float) {
         val scene = sceneManager.currentScene ?: return
-        // Find all GameObjects that have both an Animator and a SkeletonComponent
         for (go in scene.gameObjects) {
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
 
-            if (animator != null && skeletonComponent != null) {
+            if (skeletonComponent != null) {
                 updateAnimation(go, animator, skeletonComponent, dt)
             }
         }
@@ -41,112 +40,87 @@ class AnimationSystem : Component(), KoinComponent {
     override fun editorUpdate(dt: Float) {
         val scene = sceneManager.currentScene ?: return
 
-        // Find all GameObjects that have both an Animator and a SkeletonComponent
         for (go in scene.gameObjects) {
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
 
-            // Visualize bones in editor mode
-            val goTransform = go.getComponent<Transform>()
-            val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
-            skeletonComponent?.pose?.skeletonAsset?.rootBone?.let { visualizeBone(it, transformMatrix) }
-
-            if (animator != null && skeletonComponent != null && animator.isPlaying) {
+            if (skeletonComponent != null) {
                 updateAnimation(go, animator, skeletonComponent, dt)
+                
+                // Visualize bones in editor mode
+                val goTransform = go.getComponent<Transform>()
+                val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
+                visualizeBone(skeletonComponent, transformMatrix)
             }
         }
     }
 
-    private fun visualizeBone(bone: Bone, modelMatrix: Matrix4f) {
-        bone.worldTransform.getTranslation(tempBonePos)
+    private fun visualizeBone(skeletonComponent: SkeletonComponent, modelMatrix: Matrix4f) {
+        val pose = skeletonComponent.pose ?: return
+        val skeleton = pose.skeletonAsset
+        
+        visualizeBoneRecursive(skeleton.rootBone, pose, modelMatrix)
+    }
+
+    private fun visualizeBoneRecursive(bone: Bone, pose: SkeletonPose, modelMatrix: Matrix4f) {
+        if (bone.index < 0 || bone.index >= pose.globalTransforms.size) return
+        
+        pose.globalTransforms[bone.index].getTranslation(tempBonePos)
         modelMatrix.transformPosition(tempBonePos)
 
-        // Capture bone position for this recursion level
         val currentBonePos = Vector3f(tempBonePos)
 
         for (child in bone.children) {
-            child.worldTransform.getTranslation(tempChildPos)
+            if (child.index < 0 || child.index >= pose.globalTransforms.size) continue
+            
+            pose.globalTransforms[child.index].getTranslation(tempChildPos)
             modelMatrix.transformPosition(tempChildPos)
 
             debugDraw.addLine3D(currentBonePos, tempChildPos, boneColor)
-            visualizeBone(child, modelMatrix)
+            visualizeBoneRecursive(child, pose, modelMatrix)
         }
 
-        // Draw bone point as a tiny box
-        bone.worldTransform.getUnnormalizedRotation(tempBoneQuat)
+        pose.globalTransforms[bone.index].getUnnormalizedRotation(tempBoneQuat)
         debugDraw.addBox3D(currentBonePos, tempBoneQuat, Vector3f(0.01f), boneColor)
     }
 
     private fun updateAnimation(
         go: GameObject,
-        animator: Animator,
+        animator: Animator?,
         skeletonComponent: SkeletonComponent,
         dt: Float
     ) {
         val pose = skeletonComponent.pose ?: return
         val skeleton = pose.skeletonAsset
 
-        if (animator.isPlaying) {
-            val animation = animator.currentAnimation ?: animator.animations.firstOrNull() ?: return
+        if (animator != null && animator.isPlaying) {
+            val animation = animator.currentAnimation ?: animator.animations.firstOrNull()
+            if (animation != null) {
+                animator.currentTime += dt
 
-            animator.currentTime += dt
-
-            if (animator.blendTime > 0f) {
-                animator.blendTime -= dt
-                val alpha = 1f - (animator.blendTime / animator.blendDuration)
-                animator.previousAnimation?.let { prev ->
-                    animator.previousTime += dt
-                    // Apply the animation to the pose's local transforms directly
-                    prev.update(animator.previousTime, skeleton)
-                    animation.updateBlended(animator.currentTime, skeleton, alpha)
-                    
-                    // Copy the skeleton's bone transforms to the pose's local transforms
-                    skeleton.getAllBones().forEachIndexed { index, bone ->
-                        if (index < pose.localTransforms.size) {
-                            pose.localTransforms[index].set(bone.localTransform)
-                        }
-                    }
-                } ?: run {
-                    // Apply animation and copy to pose
+                if (animator.blendTime > 0f) {
+                    animator.blendTime -= dt
+                    val alpha = 1f - (animator.blendTime / animator.blendDuration)
+                    animator.previousAnimation?.let { prev ->
+                        animator.previousTime += dt
+                        prev.update(animator.previousTime, skeleton)
+                        animation.updateBlended(animator.currentTime, skeleton, alpha)
+                    } ?: animation.update(animator.currentTime, skeleton)
+                } else {
                     animation.update(animator.currentTime, skeleton)
-                    skeleton.getAllBones().forEachIndexed { index, bone ->
-                        if (index < pose.localTransforms.size) {
-                            pose.localTransforms[index].set(bone.localTransform)
-                        }
-                    }
                 }
-            } else {
-                // Apply animation and copy to pose
-                animation.update(animator.currentTime, skeleton)
-                skeleton.getAllBones().forEachIndexed { index, bone ->
-                    if (index < pose.localTransforms.size) {
-                        pose.localTransforms[index].set(bone.localTransform)
+                
+                // Copy the skeleton's bone transforms to the pose's local transforms
+                skeleton.getAllBones().forEach { bone ->
+                    if (bone.index in 0 until pose.localTransforms.size) {
+                        pose.localTransforms[bone.index].set(bone.localTransform)
                     }
                 }
             }
-            
-            // Compute global transforms
-            SkeletonMath.computeGlobalTransforms(skeleton.rootBone, pose.localTransforms, pose.globalTransforms)
-            
-            // Update the matrix palette in the skeleton component
-            SkeletonMath.buildSkinMatrices(pose, skeletonComponent.getMatrixPalette())
         }
 
-        // Process bone overrides if needed
-        skeleton.getAllBones().forEach { bone ->
-            // Decompose matrix
-            val translation = Vector3f()
-            val rotation = Quaternionf()
-            val scale = Vector3f()
-            bone.localTransform.getTranslation(translation)
-            bone.localTransform.getUnnormalizedRotation(rotation)
-            bone.localTransform.getScale(scale)
-
-            // Apply override by multiplying rotations
-            //rotation.mul(overrideRotation)
-
-            // Recompose matrix
-            bone.localTransform.translationRotateScale(translation, rotation, scale)
-        }
+        // Apply global transforms and skin matrices (ALWAYS, even if not playing)
+        SkeletonMath.computeGlobalTransforms(skeleton.rootBone, pose.localTransforms, pose.globalTransforms)
+        SkeletonMath.buildSkinMatrices(pose, skeletonComponent.getMatrixPalette())
     }
 }

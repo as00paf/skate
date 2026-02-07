@@ -13,6 +13,20 @@ class PickingTexture(private var width: Int, private var height: Int) {
         if (!init()) assert(false) { "Error initializing picking texture" }
     }
 
+    fun resize(width: Int, height: Int) {
+        if (this.width == width && this.height == height) return
+
+        this.width = width
+        this.height = height
+
+        // Cleanup old resources
+        glDeleteFramebuffers(fbo)
+        glDeleteTextures(pickingTextureId)
+        glDeleteTextures(depthTexture)
+
+        init()
+    }
+
     fun init(): Boolean {
         // Generate frame buffer
         fbo = glGenFramebuffers()

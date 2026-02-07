@@ -27,6 +27,6 @@ data class Material(
     var roughnessFactor: Float = 0.5f,
     @Contextual var emissiveFactor: Vector3f = Vector3f(0f, 0f, 0f),
     var doubleSided: Boolean = false,
-    var alphaMode: String = "OPAQUE",
+    var alphaMode: AlphaMode = AlphaMode.OPAQUE,
     var alphaCutoff: Float = 0.5f
 )

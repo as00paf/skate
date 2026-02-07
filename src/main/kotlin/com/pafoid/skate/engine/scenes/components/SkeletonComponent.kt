@@ -10,9 +10,8 @@ class SkeletonComponent(
 ) : Component() {
     private val matrixPalette = pose?.let { Array<Matrix4f>(it.skeletonAsset.boneCount) { Matrix4f() } } ?: emptyArray()
 
-    override fun update(dt: Float) {
-        pose?.skeletonAsset?.update()
-        // Update the matrix palette when pose changes
+    init {
+        // Compute initial pose
         if (pose != null) {
             SkeletonMath.buildSkinMatrices(pose, matrixPalette)
         }

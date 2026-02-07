@@ -132,7 +132,16 @@ class Animator : Component(), KoinComponent {
             isPlaying = false // Scrubbing pauses playback for precision
 
             // Force update skeleton when scrubbing
-            skeletonComponent?.pose?.skeletonAsset?.let { anim.update(currentTime, it) }
+            skeletonComponent?.pose?.let { pose ->
+                val skeleton = pose.skeletonAsset
+                anim.update(currentTime, skeleton)
+                // Copy to pose so AnimationSystem picks it up
+                skeleton.getAllBones().forEach { bone ->
+                    if (bone.index in 0 until pose.localTransforms.size) {
+                        pose.localTransforms[bone.index].set(bone.localTransform)
+                    }
+                }
+            }
         }
 
         if (ImGui.button(if (isPlaying) "Pause" else "Play")) {
@@ -141,7 +150,16 @@ class Animator : Component(), KoinComponent {
         ImGui.sameLine()
         if (ImGui.button("Reset")) {
             currentTime = 0f
-            skeletonComponent?.pose?.skeletonAsset?.let { anim.update(currentTime, it) }
+            skeletonComponent?.pose?.let { pose ->
+                val skeleton = pose.skeletonAsset
+                anim.update(currentTime, skeleton)
+                // Copy to pose so AnimationSystem picks it up
+                skeleton.getAllBones().forEach { bone ->
+                    if (bone.index in 0 until pose.localTransforms.size) {
+                        pose.localTransforms[bone.index].set(bone.localTransform)
+                    }
+                }
+            }
         }
     }
 
