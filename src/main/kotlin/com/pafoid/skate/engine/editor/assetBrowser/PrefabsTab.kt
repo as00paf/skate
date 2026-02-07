@@ -3,7 +3,7 @@ package com.pafoid.skate.engine.editor.assetBrowser
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.editor.ThumbnailCache
-import com.pafoid.skate.engine.models.CharacterModel
+import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.prefabs.MaterialType
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.utils.Icons
@@ -119,7 +119,7 @@ class PrefabsTab(
             val rawModel = resourceManager.loadModelSync(data.modelPath).mesh[0].rawModel
             val texture = resourceManager.loadTextureSync(data.material?.texturePath)
             // Create a temporary TexturedModel for the thumbnail generator
-            val model = CharacterModel(rawModel, texture)
+            val model = TexturedModel(rawModel, texture)
             // Use specific ID per variant so they don't overwrite each other in cache
             val cacheId = "${data.modelPath}_${data.material?.name}"
             thumbnailCache.getThumbnail(cacheId, model)

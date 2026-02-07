@@ -11,10 +11,10 @@ import org.joml.Matrix4f
 import java.util.Collections.emptyList
 
 @Serializable
-data class CharacterModel (
+data class TexturedModel (
     val mesh: List<MeshPart>,
     @Contextual val skeleton: Skeleton? = null,
-    @Contextual val initialAnimations: List<Animation> = emptyList()
+    @Contextual val initialAnimations: MutableList<Animation> = emptyList()
 ): Component() {
     @Transient private val _animations = initialAnimations.toMutableList()
     val animations: List<Animation> get() = _animations

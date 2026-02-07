@@ -1,11 +1,11 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.engine.models.CharacterModel
+import com.pafoid.skate.engine.models.TexturedModel
 import kotlinx.serialization.Serializable
 
 @Serializable
 class RenderComponent(
-    val model: CharacterModel,
+    val model: TexturedModel,
     var shininess: Float = 10f,
     var reflectivity: Float = 1f,
     var textureScale: Float = 1.0f

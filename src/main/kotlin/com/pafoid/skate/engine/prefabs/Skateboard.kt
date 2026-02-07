@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.prefabs
 
 import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
-import com.pafoid.skate.engine.models.CharacterModel
+import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
@@ -12,7 +12,7 @@ import com.pafoid.skate.engine.scenes.components.TrickDetector
 import org.joml.Vector3f
 
 class Skateboard(
-    characterModel: CharacterModel,
+    texturedModel: TexturedModel,
     position: Vector3f = Vector3f(0f, 1f, 0f),
     scale: Vector3f = Vector3f(1f, 1f, 1f),
     mass: Float = 1.8f,// 1.8kg mass
@@ -24,9 +24,9 @@ class Skateboard(
         transformComponent.translation.set(position)
         transformComponent.scale.set(scale)
         addComponent(transformComponent)
-        addComponent(RenderComponent(model = characterModel))
+        addComponent(RenderComponent(model = texturedModel))
         // Add skeleton component if the model has a skeleton
-        characterModel.skeleton?.let { skeleton ->
+        texturedModel.skeleton?.let { skeleton ->
             addComponent(SkeletonComponent(skeleton = skeleton.copy()))
         }
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })

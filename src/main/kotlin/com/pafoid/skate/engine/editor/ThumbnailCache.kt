@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.ShaderConst.Attribs
 import com.pafoid.skate.engine.assets.ShaderConst.Uniforms
-import com.pafoid.skate.engine.models.CharacterModel
+import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.scenes.components.toMatrix
@@ -34,7 +34,7 @@ class ThumbnailCache: KoinComponent {
         camera.lookAt(Vector3f(0f, 0f, 0f))
     }
 
-    fun getThumbnail(id: String, model: CharacterModel): Int {
+    fun getThumbnail(id: String, model: TexturedModel): Int {
         if (thumbnails.containsKey(id)) {
             return thumbnails[id]!!
         }
@@ -44,7 +44,7 @@ class ThumbnailCache: KoinComponent {
         return texId
     }
 
-    private fun renderThumbnail(model: CharacterModel): Int {
+    private fun renderThumbnail(model: TexturedModel): Int {
         if (frameBuffer == null) {
             frameBuffer = FrameBuffer(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
         }

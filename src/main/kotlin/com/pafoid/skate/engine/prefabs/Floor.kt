@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.prefabs
 
 import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
-import com.pafoid.skate.engine.models.CharacterModel
+import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
@@ -11,7 +11,7 @@ import com.pafoid.skate.engine.scenes.components.Transform
 import org.joml.Vector3f
 
 class Floor(
-    characterModel: CharacterModel,
+    texturedModel: TexturedModel,
     position: Vector3f = Vector3f(0f, -1f, 0f),
     size: Float = 100f,
 ): GameObject("Floor") {
@@ -23,11 +23,11 @@ class Floor(
         addComponent(transformComponent)
 
         addComponent(RenderComponent(
-            model = characterModel,
+            model = texturedModel,
             textureScale = 20.0f
         ))
         // Add skeleton component if the model has a skeleton
-        characterModel.skeleton?.let { skeleton ->
+        texturedModel.skeleton?.let { skeleton ->
             addComponent(SkeletonComponent(skeleton = skeleton.copy()))
         }
         val groundRb = RigidBody3D(1f)
