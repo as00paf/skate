@@ -92,10 +92,12 @@ class AnimationSystem : Component(), KoinComponent {
     ) {
         val pose = skeletonComponent.pose ?: return
         val skeleton = pose.skeletonAsset
+        val transform = go.getComponent<Transform>() // Get the transform component to apply root motion
 
         if (animator != null && animator.isPlaying) {
             val animation = animator.currentAnimation ?: animator.animations.firstOrNull()
             if (animation != null) {
+                val previousTime = animator.currentTime
                 animator.currentTime += dt
 
                 if (animator.blendTime > 0f) {
@@ -109,7 +111,7 @@ class AnimationSystem : Component(), KoinComponent {
                 } else {
                     animation.update(animator.currentTime, skeleton)
                 }
-                
+
                 // Copy the skeleton's bone transforms to the pose's local transforms
                 skeleton.getAllBones().forEach { bone ->
                     if (bone.index in 0 until pose.localTransforms.size) {

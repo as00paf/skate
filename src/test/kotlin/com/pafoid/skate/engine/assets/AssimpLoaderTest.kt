@@ -37,6 +37,6 @@ class AssimpLoaderTest {
         assertTrue(hasWeights, "Mesh should have at least some non-zero weights")
         
         // Verify skeleton has bones
-        assertTrue(model.skeleton!!.jointCount > 0, "Skeleton should have joints")
+        assertTrue(model.skeleton!!.boneCount > 0, "Skeleton should have bones")
     }
 }

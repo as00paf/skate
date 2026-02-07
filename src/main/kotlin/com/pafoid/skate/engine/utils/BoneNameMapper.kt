@@ -21,7 +21,7 @@ object BoneNameMapper {
 
         // Remove the Assimp FBX suffix that gets added to distinguish naming conventions
         if (name.endsWith("_\$AssimpFbx\$")) {
-            name = name.substring(0, name.length - "_\$AssimpFbx$".length)
+            name = name.substring(0, name.length - "_\$AssimpFbx\$".length)
         }
 
         // Only remove underscore suffixes if they appear to be extra identifiers

@@ -5,23 +5,23 @@ import org.junit.jupiter.api.Test
 class SkeletonJointTest {
 
     @Test
-    fun `list all joints in james model`() {
+    fun `list all bones in james model`() {
         val loader = AssimpLoader()
         val filePath = "assets/characters/james.dae"
         val preLoaded = loader.preLoadModel(filePath)
-        
+
         assert(preLoaded.skeleton != null)
         val skeleton = preLoaded.skeleton!!
-        
-        println("Joints in ${filePath}:")
-        printJoint(skeleton.rootJoint, 0)
+
+        println("Bones in ${filePath}:")
+        printBone(skeleton.rootBone, 0)
     }
 
-    private fun printJoint(joint: Joint, depth: Int) {
+    private fun printBone(bone: Bone, depth: Int) {
         val indent = "  ".repeat(depth)
-        println("$indent- ${joint.name} (index: ${joint.index})")
-        for (child in joint.children) {
-            printJoint(child, depth + 1)
+        println("$indent- ${bone.name} (index: ${bone.index})")
+        for (child in bone.children) {
+            printBone(child, depth + 1)
         }
     }
 }

@@ -46,7 +46,7 @@ class AssimpModelInspectionTest {
         
         println("Skeleton: ${if (preLoaded.skeleton != null) "Yes" else "No"}")
         preLoaded.skeleton?.let {
-            println("Joint count: ${it.jointCount}")
+            println("Bone count: ${it.boneCount}")
         }
         
         println("Mesh Parts: ${preLoaded.parts.size}")

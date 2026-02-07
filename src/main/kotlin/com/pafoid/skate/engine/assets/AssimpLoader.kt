@@ -156,23 +156,33 @@ class AssimpLoader {
             // Removed debug print for root animation rotation
 
             // Translation
-            // We only load translation for the Root/Hips. 
-            // For all other bones, we trust the Bind Pose length from the Mesh.
-            // This prevents "collapsing" if the Animation file has different bone lengths or (0,0,0) offsets.
-            if (isRoot && aiChannel.mNumPositionKeys() > 0) {
+            // For root bones, we zero out translation to keep animations in place
+            // For non-root bones, we load the original translation from the animation to preserve bone relationships
+            if (aiChannel.mNumPositionKeys() > 0) {
                 val times = FloatArray(aiChannel.mNumPositionKeys())
                 val values = FloatArray(aiChannel.mNumPositionKeys() * 3)
-                
+
                 for (k in 0 until aiChannel.mNumPositionKeys()) {
                     val keys = aiChannel.mPositionKeys() ?: continue
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
-                    
-                    // Zero out translation for in-place animations
-                    val x = 0f 
-                    val y = 0f
-                    val z = 0f 
-                    
+
+                    val x: Float
+                    val y: Float
+                    val z: Float
+
+                    if (isRoot) {
+                        // Zero out translation for root bones to keep animations in place
+                        x = 0f
+                        y = 0f
+                        z = 0f
+                    } else {
+                        // Use original translation values for non-root bones to maintain skeleton hierarchy
+                        x = key.mValue().x()
+                        y = key.mValue().y()
+                        z = key.mValue().z()
+                    }
+
                     values[k * 3] = x
                     values[k * 3 + 1] = y
                     values[k * 3 + 2] = z

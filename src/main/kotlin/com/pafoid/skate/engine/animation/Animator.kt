@@ -165,14 +165,52 @@ class Animator : Component(), KoinComponent {
 
     fun validateSkeletonCompatibility(skeleton: Skeleton, animation: Animation): Boolean {
         // Check if all animation channels target bones that exist in the skeleton
+        val missingBones = mutableListOf<String>()
         for (channel in animation.channels) {
             val boneName = BoneNameMapper.map(channel.targetNodeName)
             val bone = skeleton.getBoneByName(boneName)
             if (bone == null) {
-                logger.logEngine("Animation '${animation.name}' targets bone '$boneName' which does not exist in the skeleton.", LogLevel.ERROR)
-                return false
+                missingBones.add(boneName)
             }
         }
+        
+        if (missingBones.isNotEmpty()) {
+            // Check if the missing bones are critical or just extra detail bones
+            val criticalBones = missingBones.filter { isCriticalBone(it) }
+            val optionalBones = missingBones.filter { !isCriticalBone(it) }
+            
+            if (criticalBones.isNotEmpty()) {
+                logger.logEngine("Animation '${animation.name}' targets critical bones that do not exist in the skeleton: ${criticalBones.joinToString(", ")}.", LogLevel.ERROR)
+                return false
+            } else if (optionalBones.isNotEmpty()) {
+                logger.logEngine("Animation '${animation.name}' targets optional bones that do not exist in the skeleton: ${optionalBones.joinToString(", ")}. Animation may have reduced fidelity.", LogLevel.WARN)
+                // Still return true as these are optional bones
+            }
+        }
+        
+        // Check if the skeleton has significantly more bones than the animation targets
+        val skeletonBoneNames = skeleton.getAllBones().map { it.name }.toSet()
+        val animationBoneNames = animation.channels.map { BoneNameMapper.map(it.targetNodeName) }.toSet()
+        val extraSkeletonBones = skeletonBoneNames - animationBoneNames
+        
+        // Only warn if there are many extra bones (indicating a major topology mismatch)
+        if (extraSkeletonBones.size > skeletonBoneNames.size * 0.5) { // More than 50% of bones unused
+            logger.logEngine("Skeleton has many bones not targeted by animation '${animation.name}'. This may indicate a topology mismatch.", LogLevel.WARN)
+        }
+        
         return true
+    }
+    
+    private fun isCriticalBone(boneName: String): Boolean {
+        // Define critical bones that are essential for basic animation
+        val criticalBonePatterns = listOf(
+            "hip", "hips", "pelvis", "spine", "chest", "neck", "head",
+            "leftupperarm", "rightupperarm", "leftlowerarm", "rightlowerarm", 
+            "lefthand", "righthand", "leftthigh", "rightthigh", 
+            "leftcalf", "rightcalf", "leftfoot", "rightfoot"
+        )
+        
+        val lowerName = boneName.lowercase()
+        return criticalBonePatterns.any { lowerName.contains(it) }
     }
 }

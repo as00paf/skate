@@ -15,7 +15,8 @@ class Animation(
     val name: String,
     val channels: List<AnimationChannel>,
     val duration: Float,
-    val bindPoses: Map<String, @Contextual Matrix4f> = emptyMap()
+    val bindPoses: Map<String, @Contextual Matrix4f> = emptyMap(),
+    val rootMotionEnabled: Boolean = true // Flag to enable/disable root motion for this animation
 ) {
     private val correctionMatrices = mutableMapOf<String, @Contextual Matrix4f>()
     private var correctionsComputed = false
@@ -31,7 +32,15 @@ class Animation(
         if (correctionsComputed) return
 
         skeleton.getAllBones().forEach { bone ->
-            val animBind = bindPoses[bone.name]
+            // Try to find the corresponding bind pose in the animation using mapped bone name
+            val mappedBoneName = BoneNameMapper.map(bone.name)
+            var animBind = bindPoses[mappedBoneName]
+            
+            // If not found with mapped name, try original name
+            if (animBind == null) {
+                animBind = bindPoses[bone.name]
+            }
+            
             if (animBind != null) {
                 // Correction = inverse(ModelBind) * AnimBind
                 // This maps the Animation's bind space to the Model's bind space.
@@ -40,7 +49,7 @@ class Animation(
                 bone.bindLocalTransform.invert(correction)
                 // * AnimBind
                 correction.mul(animBind)
-                correctionMatrices[bone.name] = correction
+                correctionMatrices[mappedBoneName] = correction
             }
         }
         correctionsComputed = true
@@ -82,6 +91,12 @@ class Animation(
             }
 
             bone.localTransform.translationRotateScale(pos, rot, scale)
+
+            // Apply correction matrix if available to handle bind pose differences
+            val correction = correctionMatrices[mappedName]
+            if (correction != null) {
+                bone.localTransform.mul(correction)
+            }
         }
     }
 
@@ -117,15 +132,21 @@ class Animation(
             }
 
             targetMat.translationRotateScale(pos, rot, scale)
+
+            // Apply correction matrix if available to handle bind pose differences
+            val correction = correctionMatrices[mappedName]
+            if (correction != null) {
+                targetMat.mul(correction)
+            }
         }
 
         // Blend current state with target state
         targetTransforms.forEach { (name, targetMat) ->
             val bone = skeleton.getBoneByName(name) ?: return@forEach
-            
+
             // Interpolate
             val currentMat = bone.localTransform
-            
+
             val t1 = Vector3f(); val r1 = Quaternionf(); val s1 = Vector3f()
             currentMat.getTranslation(t1)
             currentMat.getUnnormalizedRotation(r1)
@@ -143,5 +164,6 @@ class Animation(
             bone.localTransform.translationRotateScale(t1, r1, s1)
         }
     }
+
 }
 

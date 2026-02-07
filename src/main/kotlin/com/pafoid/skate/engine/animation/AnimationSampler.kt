@@ -172,4 +172,5 @@ data class AnimationSampler(
             dest.set(values[offset], values[offset + 1], values[offset + 2], values[offset + 3])
         })
     }
+
 }
