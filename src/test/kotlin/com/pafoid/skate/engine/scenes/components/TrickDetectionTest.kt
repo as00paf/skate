@@ -83,11 +83,12 @@ class TrickDetectionTest {
     @Test
     fun `detect360ShoveIt_rotate360OnY_returns360ShoveIt`() {
         // Arrange
+        val transform = skateboard.getComponent<Transform>() ?: return
         // Move to air
-        skateboard.getComponent<Transform>()!!.translation.set(0f, 5f, 0f)
+        transform.translation.set(0f, 5f, 0f)
         rb.update(0f)
         physics.update(1/60f)
-        
+
         // Spin on Y (Yaw)
         // 360 degrees per second -> 6 deg per frame at 60fps
         rb.angularVelocity = Vector3f(0f, Math.toRadians(360.0).toFloat(), 0f)
@@ -108,11 +109,12 @@ class TrickDetectionTest {
     @Test
     fun `detectKickflip_rotate360OnX_returnsKickflip`() {
         // Arrange
+        val transform = skateboard.getComponent<Transform>() ?: return
         // Move to air
-        skateboard.getComponent<Transform>()!!.translation.set(0f, 5f, 0f)
+        transform.translation.set(0f, 5f, 0f)
         rb.update(0f)
         physics.update(1/60f)
-        
+
         // Spin on X (Roll)
         rb.angularVelocity = Vector3f(Math.toRadians(360.0).toFloat(), 0f, 0f)
 

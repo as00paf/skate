@@ -48,12 +48,16 @@ class SkateboardStressTest {
     fun `highSpeedStability_50mps_noTunnelingThroughFloor`() {
         // Arrange
         val ground = GameObject("Ground")
+        val groundTransform = Transform()
+        ground.addComponent(groundTransform)
         ground.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         ground.addComponent(BoxCollider3D(Vector3f(500f, 1f, 500f))) // Large ground
-        ground.getComponent<Transform>()!!.translation.set(0f, -1.0f, 0f) // Surface at -0.5
+        groundTransform.translation.set(0f, -1.0f, 0f) // Surface at -0.5
         physics.add(ground)
 
         val skateGo = GameObject("Skateboard")
+        val skateTransform = Transform()
+        skateGo.addComponent(skateTransform)
         val rb = RigidBody3D(2.0f).apply {
             useCCD = true // Critical for high speed
         }
@@ -61,18 +65,18 @@ class SkateboardStressTest {
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
         val skatePhysics = SkateboardPhysics()
         skateGo.addComponent(skatePhysics)
-        
+
         // Start slightly above ground
-        skateGo.getComponent<Transform>()!!.translation.set(0f, 0.1f, 0f)
+        skateTransform.translation.set(0f, 0.1f, 0f)
         physics.add(skateGo)
         skatePhysics.start()
 
-        // Set high velocity downwards? Or horizontal? 
+        // Set high velocity downwards? Or horizontal?
         // "Verify raycast wheels do not tunnel through the floor" implies suspension test?
         // Let's test horizontal speed over bumps OR vertical drop impact.
         // Task says: "Run the simulation at 50 m/s; verify raycast wheels do not 'tunnel'"
         // Usually refers to CCD checks. Let's do a high speed horizontal move.
-        
+
         rb.linearVelocity = Vector3f(50f, -5f, 0f) // Fast forward and slightly down
 
         // Act
@@ -80,16 +84,16 @@ class SkateboardStressTest {
             skatePhysics.update(1/60f)
             physics.update(1/60f)
             rb.update(1/60f)
-            
+
             // Check if we fell through (Ground surface at -0.5)
-            val pos = skateGo.getComponent<Transform>()!!.translation
+            val pos = skateTransform.translation
             if (pos.y < -2.0f) {
                 fail("Tunneling detected! Board position Y: ${pos.y} is well below ground surface.")
             }
         }
 
         // Assert
-        assertTrue(skateGo.getComponent<Transform>()!!.translation.y > -2.0f, "Board should stay above/on ground")
+        assertTrue(skateTransform.translation.y > -2.0f, "Board should stay above/on ground")
     }
 
     @Test
@@ -113,27 +117,31 @@ class SkateboardStressTest {
     
     private fun runSimulationWithAccumulator(dt: Float, frames: Int): Vector3f {
         val offset = Vector3f(dt * 1000f, 0f, 0f) // Spacing
-        
+
         val ground = GameObject("Ground")
+        val groundTransform = Transform()
+        ground.addComponent(groundTransform)
         ground.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         ground.addComponent(BoxCollider3D(Vector3f(500f, 1f, 500f)))
-        ground.getComponent<Transform>()!!.translation.set(offset).add(0f, -1.0f, 0f)
+        groundTransform.translation.set(offset).add(0f, -1.0f, 0f)
         physics.add(ground)
 
         val skateGo = GameObject("Skateboard")
+        val skateTransform = Transform()
+        skateGo.addComponent(skateTransform)
         val rb = RigidBody3D(2.0f).apply {
-            linearDamping = 0.5f 
+            linearDamping = 0.5f
             friction = 0f
         }
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
         val skatePhysics = SkateboardPhysics()
         skateGo.addComponent(skatePhysics)
-        
-        skateGo.getComponent<Transform>()!!.translation.set(offset).add(0f, 0.1f, 0f)
+
+        skateTransform.translation.set(offset).add(0f, 0.1f, 0f)
         physics.add(skateGo)
         skatePhysics.start()
-        
+
         rb.linearVelocity = Vector3f(10f, 0f, 0f)
 
         var accumulator = 0f
@@ -148,8 +156,8 @@ class SkateboardStressTest {
                 accumulator -= fixedStep
             }
         }
-        
-        return Vector3f(skateGo.getComponent<Transform>()!!.translation).sub(offset)
+
+        return Vector3f(skateTransform.translation).sub(offset)
     }
 
     @Test

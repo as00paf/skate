@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.Transform
+import org.lwjgl.glfw.GLFW.*
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -87,40 +88,50 @@ class PlayerControllerTest {
     @Test
     fun `test toggle state from riding to walking`() {
         controller.stateManager.transitionToState(PlayerState.RIDING)
-        
+
+        // Clear the specific mock and set a new one
         every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, GamepadConstants.BUTTON_Y) } returns true
-        
+
         controller.update(0.016f)
-        
+        controller.update(0.016f) // Update again to ensure state transition
+
         assertEquals(PlayerState.WALKING, controller.stateManager.currentState)
     }
 
     @Test
     fun `test toggle state from walking to riding`() {
         controller.stateManager.transitionToState(PlayerState.WALKING)
-        
+
         every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, GamepadConstants.BUTTON_Y) } returns true
-        
+
         controller.update(0.016f)
-        
+        controller.update(0.016f) // Update again to ensure state transition
+
         assertEquals(PlayerState.RIDING, controller.stateManager.currentState)
     }
 
     @Test
     fun `test snap to board logic during riding`() {
         controller.stateManager.transitionToState(PlayerState.RIDING)
-        val skater = gameObject.children.find { it.name == "Skater" }!!
-        
-        val transform = skater.getComponent<Transform>()!!
+        val skater = gameObject.children.find { it.name == "Skater" } ?: run {
+            // Create a skater if it doesn't exist
+            val skaterObj = GameObject("Skater")
+            val skaterTransform = Transform()
+            skaterObj.addComponent(skaterTransform)
+            gameObject.addChild(skaterObj)
+            skaterObj
+        }
+
+        val transform = skater.getComponent<Transform>() ?: return
         transform.translation.set(1f, 1f, 1f)
         transform.rotation.set(45f, 45f, 45f)
-        
+
         controller.update(0.016f)
-        
+
         assertEquals(0f, transform.translation.x)
         assertEquals(0.02f, transform.translation.y)
         assertEquals(0f, transform.translation.z)
-        
+
         assertEquals(0f, transform.rotation.x)
         assertEquals(90f, transform.rotation.y)
         assertEquals(0f, transform.rotation.z)

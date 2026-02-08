@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.utils.MImGui
 import com.pafoid.skate.engine.utils.StringManager
 import imgui.type.ImInt
 import kotlinx.serialization.Polymorphic
@@ -60,13 +61,13 @@ abstract class Component: KoinComponent {
                     Int::class.java -> {
                         if (!isFinal) {
                             val typedValue = value as Int
-                            field.set(this, com.pafoid.skate.engine.utils.MImGui.dragInt(localizedName, typedValue))
+                            field.set(this, MImGui.dragInt(localizedName, typedValue))
                         }
                     }
                     Float::class.java -> {
                         if (!isFinal) {
                             val typedValue = value as Float
-                            field.set(this, com.pafoid.skate.engine.utils.MImGui.dragFloat(localizedName, typedValue))
+                            field.set(this, MImGui.dragFloat(localizedName, typedValue))
                         }
                     }
                     Boolean::class.java -> {
@@ -79,11 +80,11 @@ abstract class Component: KoinComponent {
                     }
                     Vector2f::class.java -> {
                         val typedValue = value as Vector2f
-                        com.pafoid.skate.engine.utils.MImGui.drawVec2Control(localizedName, typedValue)
+                        MImGui.drawVec2Control(localizedName, typedValue)
                     }
                     Vector3f::class.java -> {
                         val typedValue = value as Vector3f
-                        com.pafoid.skate.engine.utils.MImGui.drawVec3Control(localizedName, typedValue)
+                        MImGui.drawVec3Control(localizedName, typedValue)
                     }
                     Vector4f::class.java -> {
                         val typedValue = value as Vector4f

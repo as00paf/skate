@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.components.PlayerController
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
+import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.components.TrickDetector
 import org.joml.Vector3f
 
@@ -20,7 +21,7 @@ class Skateboard(
     ): GameObject("Skateboard") {
 
     init {
-        val transformComponent = com.pafoid.skate.engine.scenes.components.Transform()
+        val transformComponent = Transform()
         transformComponent.translation.set(position)
         transformComponent.scale.set(scale)
         addComponent(transformComponent)

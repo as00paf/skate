@@ -122,22 +122,25 @@ class SkateboardPhysicsTest {
     fun `staticFriction_tiltedGround_boardRemainsStationary`() {
         // Arrange
         val ground = GameObject("Slope")
-        ground.getComponent<Transform>()!!.rotation.set(15f, 0f, 0f)
+        val groundTransform = Transform()
+        ground.addComponent(groundTransform)
+        groundTransform.rotation.set(15f, 0f, 0f)
         val groundRb = RigidBody3D(0f)
         groundRb.bodyType = BodyType.Static
         ground.addComponent(groundRb)
         ground.addComponent(BoxCollider3D(Vector3f(10f, 0.1f, 10f)))
         physics.add(ground)
-        
+
         val skateGo = GameObject("Skateboard")
-        skateGo.addComponent(RigidBody3D(1.8f).apply { friction = 1.0f })
+        val skateTransform = Transform()
+        skateGo.addComponent(skateTransform)
+        skateTransform.translation.set(0f, 0.5f, 0f)
+        skateTransform.rotation.set(15f, 0f, 0f)
+        val rb = RigidBody3D(1.8f).apply { friction = 1.0f }
+        skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
-        skateGo.getComponent<Transform>()!!.translation.set(0f, 0.5f, 0f)
-        skateGo.getComponent<Transform>()!!.rotation.set(15f, 0f, 0f)
         physics.add(skateGo)
-        
-        val rb = skateGo.getComponent<RigidBody3D>()!!
-        
+
         // Act
         for (i in 0 until 60) {
             physics.update(1/60f)
@@ -153,24 +156,28 @@ class SkateboardPhysicsTest {
     fun `rollResistance_flatGround_velocityDecays`() {
         // Arrange
         val ground = GameObject("Ground")
+        val groundTransform = Transform()
+        ground.addComponent(groundTransform)
         ground.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         ground.addComponent(BoxCollider3D(Vector3f(100f, 1f, 100f)))
-        ground.getComponent<Transform>()!!.translation.set(0f, -1f, 0f)
+        groundTransform.translation.set(0f, -1f, 0f)
         physics.add(ground)
 
         val skateGo = GameObject("Skateboard")
-        val rb = RigidBody3D(2.0f).apply { 
-            friction = 0.5f 
+        val skateTransform = Transform()
+        skateGo.addComponent(skateTransform)
+        val rb = RigidBody3D(2.0f).apply {
+            friction = 0.5f
             linearDamping = 0.1f
         }
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
-        
+
         // Use SkateboardPhysics for suspension (keeps it off the ground physically, but rays touch)
         val skatePhysics = com.pafoid.skate.engine.scenes.components.SkateboardPhysics()
         skateGo.addComponent(skatePhysics)
-        
-        skateGo.getComponent<Transform>()!!.translation.set(0f, 0.1f, 0f) // Slightly above ground, suspension holds it
+
+        skateTransform.translation.set(0f, 0.1f, 0f) // Slightly above ground, suspension holds it
         physics.add(skateGo)
 
         skatePhysics.start()
@@ -197,23 +204,27 @@ class SkateboardPhysicsTest {
     fun `suspension_heavyLoad_compressesAccordingToHookesLaw`() {
         // Arrange: Board in air, put a 'floor' right below it so rays hit
         val ground = GameObject("Ground")
+        val groundTransform = Transform()
+        ground.addComponent(groundTransform)
         ground.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         ground.addComponent(BoxCollider3D(Vector3f(100f, 1f, 100f)))
-        ground.getComponent<Transform>()!!.translation.set(0f, -1.05f, 0f) // Top at -0.05
+        groundTransform.translation.set(0f, -1.05f, 0f) // Top at -0.05
         physics.add(ground)
 
         val skateGo = GameObject("Skateboard")
+        val skateTransform = Transform()
+        skateGo.addComponent(skateTransform)
         val rb = RigidBody3D(1.0f) // Light board
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
         val skatePhysics = com.pafoid.skate.engine.scenes.components.SkateboardPhysics()
         skateGo.addComponent(skatePhysics)
-        
+
         // Place board so rays (length 0.08) are compressed
         // Ray origin ~0, Ray end -0.08. Ground at -0.05.
         // Expected compression ~0.03m.
-        skateGo.getComponent<Transform>()!!.translation.set(0f, 0f, 0f) 
-        
+        skateTransform.translation.set(0f, 0f, 0f)
+
         physics.add(skateGo)
         skatePhysics.start()
 
@@ -221,8 +232,8 @@ class SkateboardPhysicsTest {
         // SkateboardPhysics applies force.
         // Physics update integrates force -> velocity.
         skatePhysics.update(1/60f)
-        physics.update(1/60f) 
-        
+        physics.update(1/60f)
+
         // Assert
         assertTrue(rb.linearVelocity.y > 0, "Suspension should apply upward force resulting in upward velocity")
     }
@@ -231,28 +242,32 @@ class SkateboardPhysicsTest {
     fun `turning_rollTorque_circularPath`() {
         // Arrange
         val ground = GameObject("Ground")
+        val groundTransform = Transform()
+        ground.addComponent(groundTransform)
         ground.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         ground.addComponent(BoxCollider3D(Vector3f(100f, 1f, 100f)))
-        ground.getComponent<Transform>()!!.translation.set(0f, -1f, 0f)
+        groundTransform.translation.set(0f, -1f, 0f)
         physics.add(ground)
 
         val skateGo = GameObject("Skateboard")
+        val skateTransform = Transform()
+        skateGo.addComponent(skateTransform)
         val rb = RigidBody3D(2.0f)
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
         val skatePhysics = com.pafoid.skate.engine.scenes.components.SkateboardPhysics()
         skateGo.addComponent(skatePhysics)
-        
-        skateGo.getComponent<Transform>()!!.translation.set(0f, 0.1f, 0f)
+
+        skateTransform.translation.set(0f, 0.1f, 0f)
         // Force Roll to 15 degrees (approx 0.26 rad) to trigger steering
-        skateGo.getComponent<Transform>()!!.rotation.set(15f, 0f, 0f) 
-        
+        skateTransform.rotation.set(15f, 0f, 0f)
+
         physics.add(skateGo)
         skatePhysics.start()
 
         // Move forward
         rb.linearVelocity = Vector3f(5f, 0f, 0f)
-        
+
         // Act
         for (i in 0 until 60) {
             skatePhysics.update(1/60f)
@@ -262,7 +277,7 @@ class SkateboardPhysicsTest {
 
         // Assert
         val vel = rb.linearVelocity
-        
+
         // Check for turning (Yaw change)
         val rot = rb.rawBody!!.getPhysicsRotation(null)
         val q = Quaternionf(rot.x, rot.y, rot.z, rot.w)
@@ -280,19 +295,21 @@ class SkateboardPhysicsTest {
     fun `tailSnap_downwardTailImpulse_noseMovesUpward`() {
         // Arrange
         val skateGo = GameObject("Skateboard")
+        val skateTransform = Transform()
+        skateGo.addComponent(skateTransform)
         val rb = RigidBody3D(2.0f)
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
         physics.add(skateGo)
-        
+
         // Wait for body to be initialized
         val initialVel = rb.linearVelocity
 
         // Tail is at local X = -0.4 (assuming X is forward, -X is tail)
         // Apply downward impulse at tail
-        val tailPos = Vector3f(-0.4f, 0f, 0f).mulProject(skateGo.getComponent<Transform>()!!.toWorldMatrix())
+        val tailPos = Vector3f(-0.4f, 0f, 0f).mulProject(skateTransform.toWorldMatrix())
         val impulse = Vector3f(0f, -5.0f, 0f)
-        
+
         // Act
         rb.applyForce(impulse, tailPos) // Apply force at tail
         physics.update(1/60f)
@@ -312,21 +329,25 @@ class SkateboardPhysicsTest {
     fun `groundImpact_tailHitsFloor_generatesUpwardBounce`() {
         // Arrange
         val ground = GameObject("Ground")
+        val groundTransform = Transform()
+        ground.addComponent(groundTransform)
         ground.addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
         ground.addComponent(BoxCollider3D(Vector3f(100f, 1f, 100f)))
-        ground.getComponent<Transform>()!!.translation.set(0f, -0.5f, 0f) // Top at 0
+        groundTransform.translation.set(0f, -0.5f, 0f) // Top at 0
         physics.add(ground)
 
         val skateGo = GameObject("Skateboard")
+        val skateTransform = Transform()
+        skateGo.addComponent(skateTransform)
         val rb = RigidBody3D(2.0f)
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
         physics.add(skateGo)
 
         // Position board so tail is about to hit ground
-        skateGo.getComponent<Transform>()!!.translation.set(0f, 0.1f, 0f)
-        skateGo.getComponent<Transform>()!!.rotation.set(0f, 0f, 45f) // Tail down
-        
+        skateTransform.translation.set(0f, 0.1f, 0f)
+        skateTransform.rotation.set(0f, 0f, 45f) // Tail down
+
         // Give it downward angular velocity
         rb.angularVelocity = Vector3f(0f, 0f, -10f)
 
@@ -345,19 +366,21 @@ class SkateboardPhysicsTest {
     fun `leveling_noseDownwardForceInAir_boardPitchReturnsToZero`() {
         // Arrange
         val skateGo = GameObject("Skateboard")
+        val skateTransform = Transform()
+        skateGo.addComponent(skateTransform)
         val rb = RigidBody3D(2.0f)
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
         physics.add(skateGo)
 
         // Board is pitched up (Nose high)
-        skateGo.getComponent<Transform>()!!.rotation.set(0f, 0f, 30f)
-        
+        skateTransform.rotation.set(0f, 0f, 30f)
+
         // Act: Simulate front foot "Slide/Level"
         // Apply downward force at nose (Local X = 0.4)
-        val nosePos = Vector3f(0.4f, 0f, 0f).mulProject(skateGo.getComponent<Transform>()!!.toWorldMatrix())
+        val nosePos = Vector3f(0.4f, 0f, 0f).mulProject(skateTransform.toWorldMatrix())
         rb.applyForce(Vector3f(0f, -10f, 0f), nosePos)
-        
+
         physics.update(1/60f)
         rb.update(1/60f)
 
