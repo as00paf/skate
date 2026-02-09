@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.VAOLoader
 import io.mockk.mockk

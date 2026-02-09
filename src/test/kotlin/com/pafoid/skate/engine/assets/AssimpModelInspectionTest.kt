@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import org.junit.jupiter.api.Test
 import java.io.File
 

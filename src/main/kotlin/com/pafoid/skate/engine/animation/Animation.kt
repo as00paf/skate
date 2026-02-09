@@ -57,8 +57,7 @@ class Animation(
             val scaleFactor = channel.scale
 
             val animatedLocal = Matrix4f()
-            animatedLocal.translationRotateScale(pos.mul(0.01f), rot, scale)// solution is this
-            //animatedLocal.translationRotateScale(pos, rot, scale)
+            animatedLocal.translationRotateScale(pos.mul(0.01f), rot, scale)
 
             bone.localTransform
                 .set(bone.bindLocalTransform)

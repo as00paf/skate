@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.animation
 
-import com.pafoid.skate.engine.assets.AssimpLoader
+import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import org.junit.jupiter.api.Test
 class SkeletonJointTest {
 

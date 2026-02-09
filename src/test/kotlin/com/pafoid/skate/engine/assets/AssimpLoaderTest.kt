@@ -1,6 +1,8 @@
 package com.pafoid.skate.engine.assets
 
-import org.junit.jupiter.api.Assertions.*
+import com.pafoid.skate.engine.assets.loaders.AssimpLoader
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
 

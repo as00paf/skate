@@ -1,5 +1,7 @@
-package com.pafoid.skate.engine.assets
+package com.pafoid.skate.engine.assets.loaders
 
+import com.pafoid.skate.engine.assets.Shader
+import com.pafoid.skate.engine.assets.ShaderConst
 import com.pafoid.skate.engine.assets.ShaderConst.Attribs
 import org.lwjgl.opengl.GL20
 import java.io.IOException

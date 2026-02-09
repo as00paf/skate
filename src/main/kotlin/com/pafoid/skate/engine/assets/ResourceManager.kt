@@ -1,6 +1,8 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.animation.Animation
+import com.pafoid.skate.engine.assets.loaders.AssimpLoader
+import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.models.BaseModel

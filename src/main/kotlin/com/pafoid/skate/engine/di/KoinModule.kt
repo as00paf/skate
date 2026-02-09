@@ -1,9 +1,9 @@
 package com.pafoid.skate.engine.di
 
-import com.pafoid.skate.engine.assets.AssimpLoader
 import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.ShaderLoader
+import com.pafoid.skate.engine.assets.loaders.AssimpLoader
+import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.input.InputBuffer
@@ -15,12 +15,12 @@ import com.pafoid.skate.engine.editor.ThumbnailCache
 import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.imgui.ImGuiLayer
-import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.render.VAOLoader
+import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.StringManager
