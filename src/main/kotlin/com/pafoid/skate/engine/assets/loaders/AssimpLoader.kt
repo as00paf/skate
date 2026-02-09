@@ -88,7 +88,6 @@ class AssimpLoader {
                 val name = BoneNameMapper.map(bone.mName().dataString())
                 if (!boneNames.contains(name)) {
                     boneNames.add(name)
-                    println("AssimpLoader: Found Bone '$name' (Original: ${bone.mName().dataString()})")
                     val offsetMatrix = bone.mOffsetMatrix().toJomlMatrix()
                     boneInfoMap[name] = BoneInfo(boneNames.size - 1, offsetMatrix)
                 }
@@ -101,6 +100,11 @@ class AssimpLoader {
 
         // Build Skeleton Hierarchy
         val rootBone = buildHierarchy(rootNode, boneInfoMap, unitScale)
+
+        val pos = Vector3f()
+        val hipBone = rootBone?.children?.firstOrNull { it.name == "Hips" }
+        hipBone?.bindLocalTransform?.getTranslation(pos)
+        println("Hip bone (${hipBone?.name}) bindLocalTransform translation.y: ${pos.y()}")
 
         // Recalculate Inverse Bind Matrices (IBMs) to match our modified hierarchy (Scale/Rotation)
         // This ensures the skinning equation (BoneWorld * IBM) is Identity at Bind Pose.

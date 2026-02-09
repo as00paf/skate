@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.animation.AnimationPath
 import com.pafoid.skate.engine.animation.AnimationSampler
 import com.pafoid.skate.engine.animation.InterpolationType
 import com.pafoid.skate.engine.utils.BoneNameMapper
-import com.pafoid.skate.engine.utils.printMetadata
 import org.joml.Quaternionf
 import org.lwjgl.assimp.AIAnimation
 import org.lwjgl.assimp.AINode
@@ -27,12 +26,10 @@ class AnimationLoader {
         )
             ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
 
-        scene.printMetadata("Animation Scene")
+        //scene.printMetadata("Animation Scene")
 
         var unitScale = 1.0f
-        if (filePath.contains("skateboard", ignoreCase = true)) {
-            unitScale = 0.0017f
-        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
+        if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
             unitScale = 0.01f
         }
 
@@ -54,10 +51,11 @@ class AnimationLoader {
                     if (name.equals("Hips", ignoreCase = true)) return name
 
                     for (i in 0 until node.mNumChildren()) {
-                        val child = AINode.create(node.mChildren()!!.get(i))
+                        val child = node.mChildren()?.get(i)?.let { AINode.create(it) } ?: continue
                         val res = findHips(child)
                         if (res != null) return res
                     }
+                    println("Could not find Hips bone")
                     return null
                 }
 
@@ -88,7 +86,6 @@ class AnimationLoader {
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
         val durationInSeconds = duration / ticksPerSecond
 
-
         val channels = mutableListOf<AnimationChannel>()
         for (i in 0 until aiAnim.mNumChannels()) {
             val anims = aiAnim.mChannels() ?: continue
@@ -99,7 +96,10 @@ class AnimationLoader {
                 "Hips",
                 ignoreCase = true
             )
-            println("AssimpLoader: Found Node '$nodeName' (Original: ${originalName}) isRoot: $isRoot")
+
+            if (isRoot) {
+                println("Animation first key global position.y: ${aiChannel.mPositionKeys()?.get(0)?.mValue()?.y()}")
+            }
 
             // Translation
             // For root bones, we zero out translation to keep animations in place

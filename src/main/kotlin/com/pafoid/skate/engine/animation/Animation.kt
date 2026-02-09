@@ -29,7 +29,8 @@ class Animation(
                 bone.localTransform.set(bone.bindLocalTransform)
 
                 if (bone.name.equals("Hips", ignoreCase = true)) {
-                    bone.localTransform.identity()
+                    //This was a test, not sure if needed anymore
+                    //bone.localTransform.identity()
                 }
             }
         }
