@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.prefabs.MaterialType
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.utils.Icons
+import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
@@ -131,15 +132,18 @@ class PrefabsTab(
         // Push ID to avoid collision if names are identical (though we made them unique with variant name)
         ImGui.pushID(data.name)
         if (ImGui.imageButton("PrefabItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
-            when(data.type) {
-                PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
-                PrefabType.SKATER -> prefabsGenerator.spawnSkater()
-                PrefabType.LEDGE -> prefabsGenerator.spawnLedge(material = data.material)
-                PrefabType.RAIL -> prefabsGenerator.spawnRail(material = data.material)
-                PrefabType.KICKER -> prefabsGenerator.spawnKicker(material = data.material)
-                PrefabType.MANUAL_PAD -> prefabsGenerator.spawnManualPad(material = data.material)
-                PrefabType.BANK -> prefabsGenerator.spawnBank(material = data.material)
-                PrefabType.QUARTER_PIPE -> prefabsGenerator.spawnQuarterPipe(material = data.material)
+            JobSystem.runOnMain {
+                when (data.type) {
+                    PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
+                    PrefabType.SKATER -> prefabsGenerator.spawnSkater()
+                    PrefabType.LEDGE -> prefabsGenerator.spawnLedge(material = data.material)
+                    PrefabType.RAIL -> prefabsGenerator.spawnRail(material = data.material)
+                    PrefabType.KICKER -> prefabsGenerator.spawnKicker(material = data.material)
+                    PrefabType.MANUAL_PAD -> prefabsGenerator.spawnManualPad(material = data.material)
+                    PrefabType.BANK -> prefabsGenerator.spawnBank(material = data.material)
+                    PrefabType.QUARTER_PIPE -> prefabsGenerator.spawnQuarterPipe(material = data.material)
+                }
+
             }
         }
         ImGui.popID()

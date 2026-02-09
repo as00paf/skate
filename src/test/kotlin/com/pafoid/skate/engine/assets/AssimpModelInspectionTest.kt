@@ -54,10 +54,5 @@ class AssimpModelInspectionTest {
         preLoaded.parts.forEachIndexed { index, part ->
             println("  - Part $index: ${part.vertices.size/3} vertices, Material: ${part.material.baseColorPath ?: "Default"}")
         }
-        
-        println("Animations found: ${preLoaded.animations.size}")
-        preLoaded.animations.forEach { anim ->
-            println("  - Animation: ${anim.name}, Duration: ${anim.duration}s, Channels: ${anim.channels.size}")
-        }
     }
 }

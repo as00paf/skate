@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.render.DebugDraw
-import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
@@ -25,31 +24,32 @@ class AnimationSystem : Component(), KoinComponent {
 
     override fun update(dt: Float) {
         val scene = sceneManager.currentScene ?: return
-        for (go in scene.gameObjects) {
+        scene.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
-
-            if (skeletonComponent != null) {
-                updateAnimation(go, animator, skeletonComponent, dt)
-            }
+            updateAnimation(
+                animator!!,
+                skeletonComponent!!,
+                dt
+            ) // TODO: fix nullability by caching animated gameObjects in scene
         }
     }
 
     override fun editorUpdate(dt: Float) {
         val scene = sceneManager.currentScene ?: return
 
-        for (go in scene.gameObjects) {
+        scene.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
+            updateAnimation(
+                animator!!,
+                skeletonComponent!!,
+                dt
+            ) // TODO: fix nullability by caching animated gameObjects in scene
 
-            if (skeletonComponent != null) {
-                updateAnimation(go, animator, skeletonComponent, dt)
-                
-                // Visualize bones in editor mode
-                val goTransform = go.getComponent<Transform>()
-                val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
-                visualizeBone(skeletonComponent, transformMatrix)
-            }
+            val goTransform = go.getComponent<Transform>()
+            val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
+            visualizeBone(skeletonComponent, transformMatrix)
         }
     }
 
@@ -79,19 +79,16 @@ class AnimationSystem : Component(), KoinComponent {
     }
 
     private fun updateAnimation(
-        go: GameObject,
-        animator: Animator?,
+        animator: Animator,
         skeletonComponent: SkeletonComponent,
         dt: Float
     ) {
         val pose = skeletonComponent.pose ?: return
         val skeleton = pose.skeleton
-        val transform = go.getComponent<Transform>() // Get the transform component to apply root motion
 
-        if (animator != null && animator.isPlaying) {
-            val animation = animator.currentAnimation ?: animator.animations.firstOrNull()
+        if (animator.isPlaying) {
+            val animation = animator.currentAnimation
             if (animation != null) {
-                val previousTime = animator.currentTime
                 animator.currentTime += dt
 
                 if (animator.blendTime > 0f) {

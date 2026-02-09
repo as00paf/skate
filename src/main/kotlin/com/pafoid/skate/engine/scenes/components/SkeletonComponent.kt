@@ -5,15 +5,15 @@ import com.pafoid.skate.engine.animation.SkeletonPose
 import org.joml.Matrix4f
 
 class SkeletonComponent(
-    val pose: SkeletonPose? = null
+    val pose: SkeletonPose
 ) : Component() {
-    private val matrixPalette = pose?.let { Array<Matrix4f>(it.skeleton.boneCount) { Matrix4f() } } ?: emptyArray()
+
+    private val matrixPalette = pose?.let { Array(it.skeleton.boneCount) { Matrix4f() } } ?: emptyArray()
 
     init {
         // Compute initial pose
-        if (pose != null) {
-            SkeletonMath.buildSkinMatrices(pose, matrixPalette)
-        }
+        SkeletonMath.buildSkinMatrices(pose, matrixPalette)
+
     }
 
 

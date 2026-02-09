@@ -23,21 +23,22 @@ class Skater(
     hitBoxSize: Vector3f = Vector3f(0.4f, 0.02f, 0.1f),
 ): GameObject(name) {
 
+    val transformComponent = Transform()
+    val renderComponent = RenderComponent(model = characterModel)
+    val skeletonComponent = SkeletonComponent(SkeletonPose(characterModel.skeleton.copy()))
+    val animator = Animator()
+
     init {
         // Parenting: Skater follows Skateboard
         skate?.addChild(this)
 
-        val transformComponent = Transform()
         transformComponent.translation.set(Vector3f(position.x, position.y + 0.0425f, position.z))
         transformComponent.rotation.set(rotation) // Face sideways for skating
         transformComponent.scale.set(scale) // Now in Meters
         addComponent(transformComponent)
-        addComponent(RenderComponent(model = characterModel))
-        characterModel.skeleton?.let { skeleton ->
-            val pose = SkeletonPose(skeleton.copy())
-            addComponent(SkeletonComponent(pose = pose))
-        }
-        addComponent(Animator())
+        addComponent(renderComponent)
+        addComponent(skeletonComponent)
+        addComponent(animator)
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })
         addComponent(BoxCollider3D(hitBoxSize))
         //addComponent(BoneOverride())

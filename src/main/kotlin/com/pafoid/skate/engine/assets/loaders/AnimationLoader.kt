@@ -5,8 +5,10 @@ import com.pafoid.skate.engine.animation.AnimationChannel
 import com.pafoid.skate.engine.animation.AnimationPath
 import com.pafoid.skate.engine.animation.AnimationSampler
 import com.pafoid.skate.engine.animation.InterpolationType
+import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.utils.BoneNameMapper
 import org.joml.Quaternionf
+import org.joml.Vector3f
 import org.lwjgl.assimp.AIAnimation
 import org.lwjgl.assimp.AINode
 import org.lwjgl.assimp.AINodeAnim
@@ -16,17 +18,17 @@ import org.lwjgl.assimp.Assimp.aiProcess_JoinIdenticalVertices
 import org.lwjgl.assimp.Assimp.aiProcess_LimitBoneWeights
 import org.lwjgl.assimp.Assimp.aiProcess_Triangulate
 import org.lwjgl.assimp.Assimp.aiReleaseImport
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 class AnimationLoader {
 
-    fun loadAnimations(filePath: String): List<Animation> {
+    fun loadAnimations(filePath: String, skeleton: Skeleton): List<Animation> {
         val scene = aiImportFile(
             filePath,
             aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights
         )
             ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
-
-        //scene.printMetadata("Animation Scene")
 
         var unitScale = 1.0f
         if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
@@ -73,14 +75,19 @@ class AnimationLoader {
         for (i in 0 until scene.mNumAnimations()) {
             val anims = scene.mAnimations() ?: continue
             val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(aiAnim, unitScale, rootBoneName))
+            animations.add(processAnimation(skeleton, aiAnim, unitScale, rootBoneName))
         }
 
         aiReleaseImport(scene)
         return animations
     }
 
-    fun processAnimation(aiAnim: AIAnimation, scale: Float = 1.0f, rootNodeName: String? = null): Animation {
+    fun processAnimation(
+        skeleton: Skeleton,
+        aiAnim: AIAnimation,
+        scale: Float = 1.0f,
+        rootNodeName: String? = null
+    ): Animation {
         val name = aiAnim.mName().dataString()
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
@@ -98,7 +105,21 @@ class AnimationLoader {
             )
 
             if (isRoot) {
-                println("Animation first key global position.y: ${aiChannel.mPositionKeys()?.get(0)?.mValue()?.y()}")
+                val firstPosY = aiChannel.mPositionKeys()?.get(0)?.mValue()?.y() ?: 0f
+                println("Animation first key global position.y: $firstPosY")
+
+                val hipBonePos = Vector3f()
+                val hipBone = skeleton.rootBone.children.firstOrNull { it.name == "Hips" }
+                hipBone?.bindLocalTransform?.getTranslation(hipBonePos)
+                println("Hip bone (${hipBone?.name}) bindLocalTransform translation.y: ${hipBonePos.y()}")
+
+                val finalScale = hipBonePos.y() / firstPosY
+                val finaleRoundedScale = BigDecimal(finalScale.toDouble())
+                    .setScale(2, RoundingMode.HALF_EVEN)
+                    .toDouble()
+
+                println("Original scale $scale")
+                println("Final scale $finaleRoundedScale")
             }
 
             // Translation

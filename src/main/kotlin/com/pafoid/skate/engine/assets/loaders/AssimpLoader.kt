@@ -14,7 +14,6 @@ import com.pafoid.skate.engine.utils.BoneNameMapper
 import com.pafoid.skate.engine.utils.toJomlMatrix
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.lwjgl.assimp.AIAnimation
 import org.lwjgl.assimp.AIBone
 import org.lwjgl.assimp.AIColor4D
 import org.lwjgl.assimp.AIMaterial
@@ -101,10 +100,10 @@ class AssimpLoader {
         // Build Skeleton Hierarchy
         val rootBone = buildHierarchy(rootNode, boneInfoMap, unitScale)
 
-        val pos = Vector3f()
+        /*val pos = Vector3f()
         val hipBone = rootBone?.children?.firstOrNull { it.name == "Hips" }
         hipBone?.bindLocalTransform?.getTranslation(pos)
-        println("Hip bone (${hipBone?.name}) bindLocalTransform translation.y: ${pos.y()}")
+        println("Hip bone (${hipBone?.name}) bindLocalTransform translation.y: ${pos.y()}")*/
 
         // Recalculate Inverse Bind Matrices (IBMs) to match our modified hierarchy (Scale/Rotation)
         // This ensures the skinning equation (BoneWorld * IBM) is Identity at Bind Pose.
@@ -134,16 +133,8 @@ class AssimpLoader {
 
         val skeleton = if (rootBone != null) Skeleton(rootBone, boneNames.size) else null
 
-        // Load Animations
-        val animations = mutableListOf<Animation>()
-        for (i in 0 until scene.mNumAnimations()) {
-            val anims = scene.mAnimations() ?: continue
-            val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(animationLoader.processAnimation(aiAnim, unitScale, rootBone?.name))
-        }
-
         aiReleaseImport(scene)
-        return PreLoadedModel(meshParts, skeleton, animations)
+        return PreLoadedModel(meshParts, skeleton)
     }
 
     private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>, unitScale: Float): Bone? {
@@ -383,7 +374,7 @@ class AssimpLoader {
         }
     }
 
-    fun loadAnimations(filePath: String): List<Animation> {
-        return animationLoader.loadAnimations(filePath)
+    fun loadAnimations(filePath: String, skeleton: Skeleton): List<Animation> {
+        return animationLoader.loadAnimations(filePath, skeleton)
     }
 }

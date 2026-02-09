@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.prefabs
 
 import com.jme3.bullet.collision.shapes.HullCollisionShape
-import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Sprite
@@ -22,6 +21,8 @@ import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JobSystem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 
@@ -94,13 +95,16 @@ class PrefabsGenerator(
         return skate
     }
 
-    fun spawnSkater(skate: GameObject? = null): Skater {
+    suspend fun spawnSkater(skate: GameObject? = null): Skater {
         val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
-        val walkingAnimation = resourceManager.getAnimation(Assets.Animations.WALKING)
+
         val skater = Skater("Skater", model, skate)
-        walkingAnimation?.let {
-            skater.getComponent<Animator>()?.animations?.add(it)
+
+        val walkingAnimation = withContext(Dispatchers.IO) {
+            resourceManager.loadAnimation(Assets.Animations.WALKING, skater.skeletonComponent.pose.skeleton)
         }
+
+        skater.animator.addAnimation(walkingAnimation)
 
         JobSystem.runOnMain {
             sceneManager.currentScene?.addGameObjectToScene(skater)

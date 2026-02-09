@@ -26,9 +26,14 @@ class Animator : Component(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val logger: LoggerService by inject()
 
-    var currentTime = 0f
     var currentAnimation: Animation? = null
+        get() {
+            if (field == null) return animations.firstOrNull()
+            return field
+        }
         private set
+
+    var currentTime = 0f
     var isPlaying = false
     var blendTime = 0f
     var blendDuration = 0.2f
@@ -36,7 +41,35 @@ class Animator : Component(), KoinComponent {
     var previousTime = 0f
 
 
-    val animations: MutableList<Animation> = mutableListOf()
+    private val animations: MutableList<Animation> = mutableListOf()
+
+    fun addAnimation(animation: Animation) {
+        val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton
+        val isValid = validateSkeletonCompatibility(skeleton, animation)
+        val alreadyHasAnimation = animations.any { it.name == animation.name }
+
+        when {
+            skeleton == null -> logger.logEngine(
+                "Animation '${animation.name}' cannot be added because ${gameObject.name} does not currently have a skeleton.",
+                LogLevel.ERROR
+            )
+
+            !isValid -> logger.logEngine(
+                "Animation '${animation.name}' is incompatible with the current skeleton. Skipping.",
+                LogLevel.ERROR
+            )
+
+            alreadyHasAnimation -> logger.logEngine(
+                "'${gameObject.name}' already contains '${animation.name}' animation.",
+                LogLevel.ERROR
+            )
+
+            else -> {
+                animations.add(animation)
+                logger.logEngine("Animation '${animation.name}' added successfully!", LogLevel.ACTION)
+            }
+        }
+    }
 
     val normalizedTime: Float
         get() {
@@ -99,29 +132,15 @@ class Animator : Component(), KoinComponent {
             if (payload != null) {
                 val path = payload
                 val newAnim = resourceManager.getAnimation(path)
-
                 newAnim?.let {
-                    if (animations.none { it.name == newAnim.name }) {
-                        // Check skeleton compatibility before adding the animation
-                        val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
-                        if (skeletonComponent?.pose?.skeleton != null) {
-                            if (validateSkeletonCompatibility(skeletonComponent.pose.skeleton, newAnim)) {
-                                animations.add(newAnim)
-                            } else {
-                                // Log the incompatibility
-                                logger.logEngine("Animation '${newAnim.name}' is incompatible with the current skeleton. Skipping.", LogLevel.ERROR)
-                            }
-                        } else {
-                            animations.add(newAnim)
-                        }
-                    }
+                    addAnimation(it)
                 }
             }
             ImGui.endDragDropTarget()
         }
 
         if (animations.isEmpty()) return
-        val anim = currentAnimation ?: animations.firstOrNull() ?: return
+        val anim = currentAnimation ?: return
 
         ImGui.text("Duration: ${String.format("%.2f", anim.duration)}s")
         val timeArr = floatArrayOf(currentTime)
@@ -161,7 +180,8 @@ class Animator : Component(), KoinComponent {
         }
     }
 
-    fun validateSkeletonCompatibility(skeleton: Skeleton, animation: Animation): Boolean {
+    fun validateSkeletonCompatibility(skeleton: Skeleton?, animation: Animation): Boolean {
+        skeleton ?: return false
         // Check if all animation channels target bones that exist in the skeleton
         val missingBones = mutableListOf<String>()
         for (channel in animation.channels) {

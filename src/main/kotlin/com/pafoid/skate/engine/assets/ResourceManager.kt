@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.animation.Animation
+import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.editor.logs.LogLevel
@@ -299,13 +300,13 @@ class ResourceManager(
     // --- Animation Loading ---
 
 
-    suspend fun loadAnimation(path: String): Animation {
+    suspend fun loadAnimation(path: String, skeleton: Skeleton): Animation {
         val file = File(path)
         val absolutePath = file.absolutePath
 
         animations[absolutePath]?.let { return it }
         return try {
-            val loadedAnimation = assimpLoader.loadAnimations(path)[0]
+            val loadedAnimation = assimpLoader.loadAnimations(path, skeleton)[0]
             animations[absolutePath] = loadedAnimation
             loadedAnimation
         } catch (e: Exception) {
@@ -317,22 +318,6 @@ class ResourceManager(
     fun getAnimation(filePath: String): Animation? {
         val absolutePath = File(filePath).absolutePath
         return animations[absolutePath]
-    }
-
-    fun loadAnimationSync(path: String): Animation {
-        val file = File(path)
-        val absolutePath = file.absolutePath
-
-        animations[absolutePath]?.let { return it }
-
-        return try {
-            val loadedAnimation = assimpLoader.loadAnimations(path)[0]
-            animations[absolutePath] = loadedAnimation
-            loadedAnimation
-        } catch (e: Exception) {
-            logger.logEngine("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
-            throw e
-        }
     }
 
     fun unloadTexture(path: String) {
