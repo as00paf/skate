@@ -53,4 +53,7 @@ object Assets {
         const val CHARACTERS = "assets/characters"
         const val TEXTURES = "assets/textures"
     }
+    object Animations {
+        const val WALKING = "assets/characters/animations/walking.fbx"
+    }
 }

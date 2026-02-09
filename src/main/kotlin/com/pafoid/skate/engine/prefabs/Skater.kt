@@ -1,15 +1,14 @@
 package com.pafoid.skate.engine.prefabs
 
 import com.pafoid.skate.engine.animation.Animator
-import com.pafoid.skate.engine.animation.BoneOverride
 import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.animation.SkeletonPose
-import com.pafoid.skate.engine.scenes.components.RenderComponent
-import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.components.RenderComponent
+import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.scenes.components.Transform
 import org.joml.Vector3f
 
@@ -34,14 +33,13 @@ class Skater(
         transformComponent.scale.set(scale) // Now in Meters
         addComponent(transformComponent)
         addComponent(RenderComponent(model = characterModel))
-        // Add skeleton component if the model has a skeleton
         characterModel.skeleton?.let { skeleton ->
             val pose = SkeletonPose(skeleton.copy())
             addComponent(SkeletonComponent(pose = pose))
         }
+        addComponent(Animator())
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })
         addComponent(BoxCollider3D(hitBoxSize))
-        addComponent(Animator())
         //addComponent(BoneOverride())
         addComponent(PoseGizmo())
     }

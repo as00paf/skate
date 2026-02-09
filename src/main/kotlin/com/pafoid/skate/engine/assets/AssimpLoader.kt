@@ -4,8 +4,8 @@ import com.pafoid.skate.engine.animation.Animation
 import com.pafoid.skate.engine.animation.AnimationChannel
 import com.pafoid.skate.engine.animation.AnimationPath
 import com.pafoid.skate.engine.animation.AnimationSampler
-import com.pafoid.skate.engine.animation.InterpolationType
 import com.pafoid.skate.engine.animation.Bone
+import com.pafoid.skate.engine.animation.InterpolationType
 import com.pafoid.skate.engine.animation.Skeleton
 import com.pafoid.skate.engine.models.AlphaMode
 import com.pafoid.skate.engine.models.Material
@@ -14,8 +14,43 @@ import com.pafoid.skate.engine.utils.BoneNameMapper
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.lwjgl.assimp.*
-import org.lwjgl.assimp.Assimp.*
+import org.lwjgl.assimp.AIAnimation
+import org.lwjgl.assimp.AIBone
+import org.lwjgl.assimp.AIColor4D
+import org.lwjgl.assimp.AIMaterial
+import org.lwjgl.assimp.AIMatrix4x4
+import org.lwjgl.assimp.AIMesh
+import org.lwjgl.assimp.AINode
+import org.lwjgl.assimp.AINodeAnim
+import org.lwjgl.assimp.AIScene
+import org.lwjgl.assimp.AIString
+import org.lwjgl.assimp.AITexture
+import org.lwjgl.assimp.Assimp.AI_MATKEY_COLOR_DIFFUSE
+import org.lwjgl.assimp.Assimp.AI_MATKEY_GLTF_ALPHACUTOFF
+import org.lwjgl.assimp.Assimp.AI_MATKEY_GLTF_ALPHAMODE
+import org.lwjgl.assimp.Assimp.AI_MATKEY_TWOSIDED
+import org.lwjgl.assimp.Assimp.aiGetErrorString
+import org.lwjgl.assimp.Assimp.aiGetMaterialColor
+import org.lwjgl.assimp.Assimp.aiGetMaterialFloatArray
+import org.lwjgl.assimp.Assimp.aiGetMaterialIntegerArray
+import org.lwjgl.assimp.Assimp.aiGetMaterialString
+import org.lwjgl.assimp.Assimp.aiGetMaterialTexture
+import org.lwjgl.assimp.Assimp.aiImportFile
+import org.lwjgl.assimp.Assimp.aiProcess_CalcTangentSpace
+import org.lwjgl.assimp.Assimp.aiProcess_FlipUVs
+import org.lwjgl.assimp.Assimp.aiProcess_JoinIdenticalVertices
+import org.lwjgl.assimp.Assimp.aiProcess_LimitBoneWeights
+import org.lwjgl.assimp.Assimp.aiProcess_Triangulate
+import org.lwjgl.assimp.Assimp.aiReleaseImport
+import org.lwjgl.assimp.Assimp.aiReturn_SUCCESS
+import org.lwjgl.assimp.Assimp.aiTextureType_AMBIENT_OCCLUSION
+import org.lwjgl.assimp.Assimp.aiTextureType_BASE_COLOR
+import org.lwjgl.assimp.Assimp.aiTextureType_DIFFUSE
+import org.lwjgl.assimp.Assimp.aiTextureType_EMISSIVE
+import org.lwjgl.assimp.Assimp.aiTextureType_LIGHTMAP
+import org.lwjgl.assimp.Assimp.aiTextureType_METALNESS
+import org.lwjgl.assimp.Assimp.aiTextureType_NORMALS
+import org.lwjgl.assimp.Assimp.aiTextureType_UNKNOWN
 import org.lwjgl.opengl.GL11
 import org.lwjgl.system.MemoryUtil
 import java.io.File
@@ -43,7 +78,7 @@ class AssimpLoader {
         } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
             unitScale = 0.01f // Mixamo FBX uses centimeters
         }
-
+        println("Inspecting Bone Hierarchy for: $filePath")
         for (i in 0 until scene.mNumMeshes()) {
             val meshes = scene.mMeshes() ?: continue
             val mesh = AIMesh.create(meshes.get(i))
@@ -143,52 +178,39 @@ class AssimpLoader {
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
         val durationInSeconds = duration / ticksPerSecond
-        
-        val q180 = Quaternionf().rotateX(Math.PI.toFloat())
 
         val channels = mutableListOf<AnimationChannel>()
         for (i in 0 until aiAnim.mNumChannels()) {
             val anims = aiAnim.mChannels() ?: continue
             val aiChannel = AINodeAnim.create(anims.get(i))
-            val nodeName = BoneNameMapper.map(aiChannel.mNodeName().dataString())
+            val originalName = aiChannel.mNodeName().dataString()
+            val nodeName = BoneNameMapper.map(originalName)
             val isRoot = (rootNodeName != null && nodeName.equals(rootNodeName, ignoreCase = true)) || nodeName.equals("Hips", ignoreCase = true)
-            
-            // Removed debug print for root animation rotation
+            println("AssimpLoader: Found Node '$nodeName' (Original: ${originalName}) isRoot: $isRoot")
 
             // Translation
             // For root bones, we zero out translation to keep animations in place
-            // For non-root bones, we load the original translation from the animation to preserve bone relationships
             if (aiChannel.mNumPositionKeys() > 0) {
                 val times = FloatArray(aiChannel.mNumPositionKeys())
                 val values = FloatArray(aiChannel.mNumPositionKeys() * 3)
 
                 for (k in 0 until aiChannel.mNumPositionKeys()) {
-                    val keys = aiChannel.mPositionKeys() ?: continue
-                    val key = keys.get(k)
+                    val key = aiChannel.mPositionKeys()!!.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
 
-                    val x: Float
-                    val y: Float
-                    val z: Float
-
-                    if (isRoot) {
-                        // Zero out translation for root bones to keep animations in place
-                        x = 0f
-                        y = 0f
-                        z = 0f
-                    } else {
-                        // Use original translation values for non-root bones to maintain skeleton hierarchy
-                        x = key.mValue().x()
-                        y = key.mValue().y()
-                        z = key.mValue().z()
-                    }
-
-                    values[k * 3] = x
-                    values[k * 3 + 1] = y
-                    values[k * 3 + 2] = z
+                    values[k * 3] = if (isRoot) 0f else key.mValue().x() * scale
+                    values[k * 3 + 1] = key.mValue().y() * scale
+                    values[k * 3 + 2] = if (isRoot) 0f else key.mValue().z() * scale
                 }
-                val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 3)
-                channels.add(AnimationChannel(sampler, nodeName, AnimationPath.TRANSLATION))
+
+                channels.add(
+                    AnimationChannel(
+                        AnimationSampler(times, values, InterpolationType.LINEAR, 3),
+                        nodeName,
+                        AnimationPath.TRANSLATION,
+                        scale
+                    )
+                )
             }
 
             // Rotation
@@ -201,10 +223,6 @@ class AssimpLoader {
                     times[k] = key.mTime().toFloat() / ticksPerSecond
                     
                     val q = Quaternionf(key.mValue().x(), key.mValue().y(), key.mValue().z(), key.mValue().w())
-                    
-                    if (isRoot) {
-                        q180.mul(q, q)
-                    }
                     
                     values[k * 4] = q.x
                     values[k * 4 + 1] = q.y
@@ -456,9 +474,12 @@ class AssimpLoader {
             unitScale = 0.01f
         }
 
+        println("Inspecting Bone Hierarchy for: $filePath")
+
         // Try to identify root bone for motion zeroing
         var rootBoneName: String? = null
         val rootNode = scene.mRootNode()
+
         if (rootNode != null && rootNode.mNumChildren() > 0) {
             val children = rootNode.mChildren()
             if (children != null) {

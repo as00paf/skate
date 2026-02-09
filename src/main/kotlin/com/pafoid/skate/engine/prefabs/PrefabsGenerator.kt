@@ -1,12 +1,11 @@
 package com.pafoid.skate.engine.prefabs
 
 import com.jme3.bullet.collision.shapes.HullCollisionShape
+import com.pafoid.skate.engine.animation.Animator
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.Sprite
 import com.pafoid.skate.engine.assets.Texture
-import com.pafoid.skate.engine.scenes.components.RenderComponent
-import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.models.RawModel
 import com.pafoid.skate.engine.models.TexturedModel
@@ -18,6 +17,7 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.ModularTile
+import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.JmeVector3f
@@ -94,18 +94,16 @@ class PrefabsGenerator(
         return skate
     }
 
-    fun spawnSkater(skate: GameObject? = null): Skater? {
-        val scene = sceneManager.currentScene ?: return null
-        val skater: Skater? = null
-        JobSystem.runAsync {
-            val model = resourceManager.loadModel(Assets.Models.JAMES)
-            JobSystem.runOnMain {
-                val skater = Skater("Skater", model as CharacterModel, skate)
-                /*skater.getComponent<Entity>()?.model?.addAnimations(
-                    resourceManager.animations.flatMap { it.value.values }
-                )*/
-                scene.addGameObjectToScene(skater)
-            }
+    fun spawnSkater(skate: GameObject? = null): Skater {
+        val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
+        val walkingAnimation = resourceManager.getAnimation(Assets.Animations.WALKING)
+        val skater = Skater("Skater", model, skate)
+        walkingAnimation?.let {
+            skater.getComponent<Animator>()?.animations?.add(it)
+        }
+
+        JobSystem.runOnMain {
+            sceneManager.currentScene?.addGameObjectToScene(skater)
         }
 
         return skater

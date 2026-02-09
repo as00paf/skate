@@ -3,17 +3,22 @@ package com.pafoid.skate.engine.scenes.editor
 import com.pafoid.skate.engine.animation.AnimationSystem
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.editor.logs.LoggerService
+import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
-import com.pafoid.skate.engine.scenes.components.*
-import com.pafoid.skate.engine.prefabs.PrefabsGenerator
+import com.pafoid.skate.engine.scenes.components.EditorCamera
+import com.pafoid.skate.engine.scenes.components.GizmoSystem
+import com.pafoid.skate.engine.scenes.components.GridLines
+import com.pafoid.skate.engine.scenes.components.MouseControls
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val resourceManager: ResourceManager by inject()
+    private val logger: LoggerService by inject()
 
     private var currentScene: Scene? = null
     private lateinit var editorStuff: GameObject
@@ -24,7 +29,8 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private var floor: GameObject? = null
 
     override suspend fun loadResources(scene: Scene) {
-        resourceManager.loadAnimations(Assets.Folders.ANIMATIONS + "/\\walking.fbx")
+        resourceManager.loadModel(Assets.Models.JAMES)
+        resourceManager.loadAnimation(Assets.Animations.WALKING)
     }
 
     override suspend fun init(scene: Scene) {

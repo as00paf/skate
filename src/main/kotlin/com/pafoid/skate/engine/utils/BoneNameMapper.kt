@@ -15,13 +15,13 @@ object BoneNameMapper {
         }
 
         // If there's still a colon (namespace), take everything after it
-        if (name.contains(":")) {
+        /*if (name.contains(":")) {
             name = name.substringAfter(":")
-        }
+        }*/
 
         // Remove the Assimp FBX suffix that gets added to distinguish naming conventions
-        if (name.endsWith("_\$AssimpFbx\$")) {
-            name = name.substring(0, name.length - "_\$AssimpFbx\$".length)
+        if (name.contains("_\$AssimpFbx\$")) {
+            name = name.substringBefore("_\$AssimpFbx\$")
         }
 
         // Only remove underscore suffixes if they appear to be extra identifiers

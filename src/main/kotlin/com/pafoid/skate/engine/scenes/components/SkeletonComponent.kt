@@ -16,5 +16,6 @@ class SkeletonComponent(
         }
     }
 
+
     fun getMatrixPalette(): Array<Matrix4f> = matrixPalette
 }

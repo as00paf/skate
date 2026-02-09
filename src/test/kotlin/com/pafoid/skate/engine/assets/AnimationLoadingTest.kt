@@ -4,7 +4,8 @@ import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.VAOLoader
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -42,13 +43,12 @@ class AnimationLoadingTest {
             return@runBlocking
         }
 
-        val animations = resourceManager.loadAnimations(path)
-        
-        assertNotNull(animations)
-        assertTrue(animations.isNotEmpty(), "Animations list should not be empty")
-        
-        val retrieved = resourceManager.getAnimation(path, animations[0].name)
-        assertNotNull(retrieved, "Should be able to retrieve loaded animation by name")
+        val animation = resourceManager.loadAnimation(path)
+
+        assertNotNull(animation)
+
+        val retrieved = resourceManager.getAnimation(path)
+        assertNotNull(retrieved, "Should be able to retrieve loaded animation by path")
     }
 
     @Test
@@ -63,12 +63,11 @@ class AnimationLoadingTest {
             return
         }
 
-        val animations = resourceManager.loadAnimationsSync(path)
-        
-        assertNotNull(animations)
-        assertTrue(animations.isNotEmpty(), "Animations list should not be empty")
-        
-        val retrieved = resourceManager.getAnimation(path, animations[0].name)
-        assertNotNull(retrieved, "Should be able to retrieve loaded animation by name")
+        val animation = resourceManager.loadAnimationSync(path)
+
+        assertNotNull(animation)
+
+        val retrieved = resourceManager.getAnimation(path)
+        assertNotNull(retrieved, "Should be able to retrieve loaded animation by path")
     }
 }

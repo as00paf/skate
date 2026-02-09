@@ -1,14 +1,14 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.animation.Animation
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.models.BaseModel
 import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.models.MeshPart
 import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.engine.editor.logs.LoggerService
-import com.pafoid.skate.engine.editor.logs.LogLevel
-import com.pafoid.skate.engine.animation.Animation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -25,7 +25,7 @@ class ResourceManager(
     private val shaders = ConcurrentHashMap<String, Shader>()
     private val models = ConcurrentHashMap<String, BaseModel>()
     private val sounds = ConcurrentHashMap<String, Sound>()
-    private val animations = ConcurrentHashMap<String, MutableMap<String, Animation>>()
+    private val animations = ConcurrentHashMap<String, Animation>()
     
     // Loaders are now passed via constructor
     
@@ -296,52 +296,40 @@ class ResourceManager(
 
     // --- Animation Loading ---
 
-    suspend fun loadAnimations(path: String): List<Animation> {
+
+    suspend fun loadAnimation(path: String): Animation {
         val file = File(path)
         val absolutePath = file.absolutePath
 
-        animations[absolutePath]?.values?.toList()?.let { return it }
-
+        animations[absolutePath]?.let { return it }
         return try {
-            val loadedAnimations = withContext(Dispatchers.IO) {
-                assimpLoader.loadAnimations(path)
-            }
-            
-            val animMap = animations.getOrPut(absolutePath) { ConcurrentHashMap() }
-            loadedAnimations.forEach { anim ->
-                animMap[anim.name] = anim
-            }
-            
-            loadedAnimations
+            val loadedAnimation = assimpLoader.loadAnimations(path)[0]
+            animations[absolutePath] = loadedAnimation
+            loadedAnimation
         } catch (e: Exception) {
             logger.logEngine("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
-            emptyList()
+            throw e
         }
     }
 
-    fun getAnimation(filePath: String, animationName: String): Animation? {
+    fun getAnimation(filePath: String): Animation? {
         val absolutePath = File(filePath).absolutePath
-        return animations[absolutePath]?.get(animationName)
+        return animations[absolutePath]
     }
 
-    fun loadAnimationsSync(path: String): List<Animation> {
+    fun loadAnimationSync(path: String): Animation {
         val file = File(path)
         val absolutePath = file.absolutePath
 
-        animations[absolutePath]?.values?.toList()?.let { return it }
+        animations[absolutePath]?.let { return it }
 
         return try {
-            val loadedAnimations = assimpLoader.loadAnimations(path)
-            
-            val animMap = animations.getOrPut(absolutePath) { ConcurrentHashMap() }
-            loadedAnimations.forEach { anim ->
-                animMap[anim.name] = anim
-            }
-            
-            loadedAnimations
+            val loadedAnimation = assimpLoader.loadAnimations(path)[0]
+            animations[absolutePath] = loadedAnimation
+            loadedAnimation
         } catch (e: Exception) {
             logger.logEngine("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
-            emptyList()
+            throw e
         }
     }
 

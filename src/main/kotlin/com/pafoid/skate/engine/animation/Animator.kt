@@ -98,9 +98,9 @@ class Animator : Component(), KoinComponent {
             val payload = ImGui.acceptDragDropPayload<String>("ANIMATION", ImGuiDragDropFlags.None)
             if (payload != null) {
                 val path = payload
-                val newAnimations = resourceManager.loadAnimationsSync(path)
+                val newAnim = resourceManager.getAnimation(path)
 
-                newAnimations.forEach { newAnim ->
+                newAnim?.let {
                     if (animations.none { it.name == newAnim.name }) {
                         // Check skeleton compatibility before adding the animation
                         val skeletonComponent = gameObject.getComponent<SkeletonComponent>()

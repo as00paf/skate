@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.utils.BoneNameMapper
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -15,46 +14,7 @@ class Animation(
     val name: String,
     val channels: List<AnimationChannel>,
     val duration: Float,
-    val bindPoses: Map<String, @Contextual Matrix4f> = emptyMap(),
-    val rootMotionEnabled: Boolean = true // Flag to enable/disable root motion for this animation
 ) {
-    private val correctionMatrices = mutableMapOf<String, @Contextual Matrix4f>()
-    private var correctionsComputed = false
-
-    @Contextual
-    private val tempBonePos = Vector3f()
-    @Contextual
-    private val tempBoneScale = Vector3f()
-    @Contextual
-    private val tempBoneQuat = Quaternionf()
-
-    fun computeCorrections(skeleton: Skeleton) {
-        if (correctionsComputed) return
-
-        skeleton.getAllBones().forEach { bone ->
-            // Try to find the corresponding bind pose in the animation using mapped bone name
-            val mappedBoneName = BoneNameMapper.map(bone.name)
-            var animBind = bindPoses[mappedBoneName]
-            
-            // If not found with mapped name, try original name
-            if (animBind == null) {
-                animBind = bindPoses[bone.name]
-            }
-            
-            if (animBind != null) {
-                // Correction = inverse(ModelBind) * AnimBind
-                // This maps the Animation's bind space to the Model's bind space.
-                val correction = Matrix4f()
-                // inverse(ModelBind)
-                bone.bindLocalTransform.invert(correction)
-                // * AnimBind
-                correction.mul(animBind)
-                correctionMatrices[mappedBoneName] = correction
-            }
-        }
-        correctionsComputed = true
-    }
-
     /**
      * Updates the [skeleton] based on the specified [time].
      */
@@ -64,10 +24,13 @@ class Animation(
         // 1. Reset affected bones to their Bind Pose (Model Space) - ONCE PER BONE
         val affectedBones = mutableSetOf<Bone>()
         channels.forEach { channel ->
-            val mappedName = BoneNameMapper.map(channel.targetNodeName)
-            val bone = skeleton.getBoneByName(mappedName)
+            val bone = skeleton.getBoneByName(channel.targetNodeName)
             if (bone != null && affectedBones.add(bone)) {
                 bone.localTransform.set(bone.bindLocalTransform)
+
+                if (bone.name.equals("Hips", ignoreCase = true)) {
+                    bone.localTransform.identity()
+                }
             }
         }
 
@@ -77,8 +40,7 @@ class Animation(
         val scale = Vector3f()
 
         for (channel in channels) {
-            val mappedName = BoneNameMapper.map(channel.targetNodeName)
-            val bone = skeleton.getBoneByName(mappedName) ?: continue
+            val bone = skeleton.getBoneByName(channel.targetNodeName) ?: continue
 
             // Read current (Bind Pose or partially animated) state
             bone.localTransform.getTranslation(pos)
@@ -91,18 +53,16 @@ class Animation(
                 AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, scale)
             }
 
-            bone.localTransform.translationRotateScale(pos, rot, scale)
-        }
+            // Apply scaling for translations:
+            val scaleFactor = channel.scale
 
-        // 3. Apply Correction Matrices (if any) - ONCE PER BONE
-        if (correctionMatrices.isNotEmpty()) {
-            affectedBones.forEach { bone ->
-                val mappedName = BoneNameMapper.map(bone.name)
-                val correction = correctionMatrices[mappedName]
-                if (correction != null) {
-                    bone.localTransform.mul(correction)
-                }
-            }
+            val animatedLocal = Matrix4f()
+            animatedLocal.translationRotateScale(pos.mul(0.01f), rot, scale)// solution is this
+            //animatedLocal.translationRotateScale(pos, rot, scale)
+
+            bone.localTransform
+                .set(bone.bindLocalTransform)
+                .mul(animatedLocal)
         }
     }
 
@@ -138,17 +98,6 @@ class Animation(
             }
 
             targetMat.translationRotateScale(pos, rot, scale)
-        }
-
-        // Apply correction matrix if available to handle bind pose differences
-        if (correctionMatrices.isNotEmpty()) {
-            targetTransforms.forEach { (name, targetMat) ->
-                val mappedName = BoneNameMapper.map(name)
-                val correction = correctionMatrices[mappedName]
-                if (correction != null) {
-                    targetMat.mul(correction)
-                }
-            }
         }
 
         // Blend current state with target state
