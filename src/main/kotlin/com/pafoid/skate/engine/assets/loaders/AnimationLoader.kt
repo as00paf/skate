@@ -30,11 +30,6 @@ class AnimationLoader {
         )
             ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
 
-        var unitScale = 1.0f
-        if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
-            unitScale = 0.01f
-        }
-
         println("Inspecting Bone Hierarchy for: $filePath")
 
         // Try to identify root bone for motion zeroing
@@ -72,18 +67,55 @@ class AnimationLoader {
         }
 
         val animations = mutableListOf<Animation>()
+        val sceneAnimations = scene.mAnimations() ?: throw Error("No animation found in animation file")
+
+        // find out unit scale
+        val finalScale = findScale(AIAnimation.create(sceneAnimations.get(0)), rootBoneName.orEmpty(), skeleton)
+
+
         for (i in 0 until scene.mNumAnimations()) {
-            val anims = scene.mAnimations() ?: continue
-            val aiAnim = AIAnimation.create(anims.get(i))
-            animations.add(processAnimation(skeleton, aiAnim, unitScale, rootBoneName))
+            val aiAnim = AIAnimation.create(sceneAnimations.get(i))
+            animations.add(processAnimation(aiAnim, finalScale, rootBoneName))
         }
 
         aiReleaseImport(scene)
         return animations
     }
 
+    private fun findScale(aiAnim: AIAnimation, rootNodeName: String, skeleton: Skeleton): Float {
+        var isRoot = false
+        var i = 0
+        var aiChannel: AINodeAnim? = null
+        while (!isRoot && i < aiAnim.mNumChannels()) {
+            val animationChannels = aiAnim.mChannels() ?: continue
+            aiChannel = AINodeAnim.create(animationChannels.get(1))
+            val originalName = aiChannel.mNodeName().dataString()
+            val nodeName = BoneNameMapper.map(originalName)
+            isRoot = nodeName.equals(rootNodeName, ignoreCase = true) || nodeName.equals("Hips", ignoreCase = true)
+
+            i++
+        }
+
+        if (aiChannel == null || !isRoot) return 1f
+
+        val firstPosY = aiChannel.mPositionKeys()?.get(0)?.mValue()?.y() ?: 0f
+        //println("Animation first key global position.y: $firstPosY")
+
+        val hipBonePos = Vector3f()
+        val hipBone = skeleton.rootBone.children.firstOrNull { it.name == "Hips" }
+        hipBone?.bindLocalTransform?.getTranslation(hipBonePos)
+        //println("Hip bone (${hipBone?.name}) bindLocalTransform translation.y: ${hipBonePos.y()}")
+
+        val finalScale = hipBonePos.y() / firstPosY
+        val finalRoundedScale = BigDecimal(finalScale.toDouble())
+            .setScale(2, RoundingMode.HALF_EVEN)
+            .toFloat()
+
+        //println("Final scale $finalRoundedScale")
+        return finalRoundedScale
+    }
+
     fun processAnimation(
-        skeleton: Skeleton,
         aiAnim: AIAnimation,
         scale: Float = 1.0f,
         rootNodeName: String? = null
@@ -95,32 +127,14 @@ class AnimationLoader {
 
         val channels = mutableListOf<AnimationChannel>()
         for (i in 0 until aiAnim.mNumChannels()) {
-            val anims = aiAnim.mChannels() ?: continue
-            val aiChannel = AINodeAnim.create(anims.get(i))
+            val animationChannels = aiAnim.mChannels() ?: continue
+            val aiChannel = AINodeAnim.create(animationChannels.get(i))
             val originalName = aiChannel.mNodeName().dataString()
             val nodeName = BoneNameMapper.map(originalName)
             val isRoot = (rootNodeName != null && nodeName.equals(rootNodeName, ignoreCase = true)) || nodeName.equals(
                 "Hips",
                 ignoreCase = true
             )
-
-            if (isRoot) {
-                val firstPosY = aiChannel.mPositionKeys()?.get(0)?.mValue()?.y() ?: 0f
-                println("Animation first key global position.y: $firstPosY")
-
-                val hipBonePos = Vector3f()
-                val hipBone = skeleton.rootBone.children.firstOrNull { it.name == "Hips" }
-                hipBone?.bindLocalTransform?.getTranslation(hipBonePos)
-                println("Hip bone (${hipBone?.name}) bindLocalTransform translation.y: ${hipBonePos.y()}")
-
-                val finalScale = hipBonePos.y() / firstPosY
-                val finaleRoundedScale = BigDecimal(finalScale.toDouble())
-                    .setScale(2, RoundingMode.HALF_EVEN)
-                    .toDouble()
-
-                println("Original scale $scale")
-                println("Final scale $finaleRoundedScale")
-            }
 
             // Translation
             // For root bones, we zero out translation to keep animations in place
@@ -164,7 +178,7 @@ class AnimationLoader {
                     values[k * 4 + 3] = q.w
                 }
                 val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 4)
-                channels.add(AnimationChannel(sampler, nodeName, AnimationPath.ROTATION))
+                channels.add(AnimationChannel(sampler, nodeName, AnimationPath.ROTATION, scale))
             }
 
             // Scale (DISABLED FOR SAFETY)
