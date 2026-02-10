@@ -74,9 +74,8 @@ class AssimpLoader {
 
         if (filePath.contains("skateboard", ignoreCase = true)) {
             unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
-        } else if (filePath.contains("characters", ignoreCase = true) && filePath.endsWith(".fbx", ignoreCase = true)) {
-            unitScale = 0.01f // Mixamo FBX uses centimeters
         }
+
         println("Inspecting Bone Hierarchy for: $filePath")
         for (i in 0 until scene.mNumMeshes()) {
             val meshes = scene.mMeshes() ?: continue

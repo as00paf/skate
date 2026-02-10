@@ -111,7 +111,7 @@ class AnimationLoader {
             .setScale(2, RoundingMode.HALF_EVEN)
             .toFloat()
 
-        //println("Final scale $finalRoundedScale")
+        println("Final scale $finalRoundedScale")
         return finalRoundedScale
     }
 
@@ -178,7 +178,12 @@ class AnimationLoader {
                     values[k * 4 + 3] = q.w
                 }
                 val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 4)
-                channels.add(AnimationChannel(sampler, nodeName, AnimationPath.ROTATION, scale))
+                channels.add(
+                    AnimationChannel(
+                        sampler, nodeName, AnimationPath.ROTATION,
+                        scale
+                    )
+                )
             }
 
             // Scale (DISABLED FOR SAFETY)
@@ -187,7 +192,7 @@ class AnimationLoader {
                 val times = FloatArray(aiChannel.mNumScalingKeys())
                 val values = FloatArray(aiChannel.mNumScalingKeys() * 3)
                 for (k in 0 until aiChannel.mNumScalingKeys()) {
-                    val keys = aiChannel.mScalingKeys() ?: continue
+                    val keys = aiChannel.mScalingKeys() ?: continu//e
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
                     values[k * 3] = key.mValue().x()
