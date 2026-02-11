@@ -76,7 +76,6 @@ class AssimpLoader {
             unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
         }
 
-        println("Inspecting Bone Hierarchy for: $filePath")
         for (i in 0 until scene.mNumMeshes()) {
             val meshes = scene.mMeshes() ?: continue
             val mesh = AIMesh.create(meshes.get(i))
