@@ -146,7 +146,7 @@ class PlayerController : Component(), KoinComponent {
         val anim = animator ?: return
         
         // Try to find "ride" or "idle" for riding, otherwise use the first available
-        anim.play("Hips", 0.2f)
+        anim.play("Ride", 0.2f)
         
         // If it's a static pose, we might want to pause it at frame 0
         // but for now let's let it play to see what it is.

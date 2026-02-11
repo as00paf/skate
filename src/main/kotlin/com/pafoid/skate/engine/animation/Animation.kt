@@ -79,29 +79,35 @@ class Animation(
         // Map to store the target animation transforms
         val targetTransforms = mutableMapOf<String, Matrix4f>()
 
-        val pos = Vector3f()
-        val rot = Quaternionf()
-        val scale = Vector3f()
+        // Group channels by bone to process all channels for each bone together
+        val channelsByBone = channels.groupBy { BoneNameMapper.map(it.targetNodeName) }
 
         // Calculate Target State for all affected bones
-        for (channel in channels) {
-            val mappedName = BoneNameMapper.map(channel.targetNodeName)
-            val bone = skeleton.getBoneByName(mappedName) ?: continue
+        for ((boneName, boneChannels) in channelsByBone) {
+            val bone = skeleton.getBoneByName(boneName) ?: continue
+
+            // Start with the bind pose transform
+            val pos = Vector3f()
+            val rot = Quaternionf()
+            val scale = Vector3f(1f, 1f, 1f)  // Default to identity scale
 
             // Start with Bind Pose
             val targetMat = targetTransforms.getOrPut(bone.name) { Matrix4f(bone.bindLocalTransform) }
 
             targetMat.getTranslation(pos)
             targetMat.getUnnormalizedRotation(rot)
-            targetMat.getScale(scale)
+            targetMat.getScale(scale)  // Get the current scale from bind pose
 
-            when (channel.path) {
-                AnimationPath.TRANSLATION -> channel.sampler.sampleVector3f(loopTime, pos)
-                AnimationPath.ROTATION -> channel.sampler.sampleQuaternionf(loopTime, rot)
-                AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, scale)
+            // Process each channel for this bone
+            for (channel in boneChannels) {
+                when (channel.path) {
+                    AnimationPath.TRANSLATION -> channel.sampler.sampleVector3f(loopTime, pos)
+                    AnimationPath.ROTATION -> channel.sampler.sampleQuaternionf(loopTime, rot)
+                    AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, scale)
+                }
             }
 
-            targetMat.translationRotateScale(pos, rot, Vector3f())
+            targetMat.translationRotateScale(pos, rot, scale)
         }
 
         // Blend current state with target state
