@@ -35,7 +35,7 @@ class SelectionGizmo(sceneManager: SceneManager) : Gizmo(sceneManager) {
                 // Note: GizmoSystem ensures only one gizmo is active,
                 // but we should verify if this logic conflicts with anything else.
                 // Since this is the "Selection" tool, clicking should select.
-                sceneManager.setSelectedGameObject(hovered)
+                sceneManager.currentScene?.setSelectedGameObject(hovered)
             }
         } else {
             hoveredGameObjectUid = -1

@@ -30,7 +30,7 @@ class SceneHierarchyWindow: KoinComponent {
         
         // Handle global deletion input
         if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_DELETE)) {
-            sceneManager.getSelectedGameObject()?.let {
+            sceneManager.currentScene?.getSelectedGameObject()?.let {
                 sceneManager.deleteGameObject(it)
             }
         }
@@ -45,14 +45,14 @@ class SceneHierarchyWindow: KoinComponent {
         if (obj.children.isEmpty()) {
             flags = flags or ImGuiTreeNodeFlags.Leaf
         }
-        if (obj == sceneManager.getSelectedGameObject()) {
+        if (obj == sceneManager.currentScene?.getSelectedGameObject()) {
             flags = flags or ImGuiTreeNodeFlags.Selected
         }
         
         val nodeOpen = ImGui.treeNodeEx(obj.name + "##" + index, flags)
 
         if (ImGui.isItemClicked()) {
-            sceneManager.setSelectedGameObject(obj)
+            sceneManager.currentScene?.setSelectedGameObject(obj)
         }
         
         if (ImGui.beginPopupContextItem()) {

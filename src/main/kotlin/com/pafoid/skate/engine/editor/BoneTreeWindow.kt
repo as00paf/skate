@@ -1,23 +1,22 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.animation.Bone
+import com.pafoid.skate.engine.animation.BoneMirrorUtil
+import com.pafoid.skate.engine.animation.BoneOverride
+import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.models.CharacterModel
-import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.components.RenderComponent
+import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
-import com.pafoid.skate.engine.assets.PoseSerializer
-import com.pafoid.skate.engine.animation.BoneOverride
-import com.pafoid.skate.engine.animation.BoneMirrorUtil
-import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.utils.StringManager
-import imgui.type.ImString
 import imgui.type.ImBoolean
+import imgui.type.ImString
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.getValue
 
 class BoneTreeWindow : KoinComponent {
     private val sceneManager: SceneManager by inject()
@@ -33,7 +32,7 @@ class BoneTreeWindow : KoinComponent {
     }
 
     fun imgui() {
-        sceneManager.getSelectedGameObject()?.let { go ->
+        sceneManager.currentScene?.getSelectedGameObject()?.let { go ->
             val skeleton = (go.getComponent<RenderComponent>()?.model as? CharacterModel)?.skeleton
             if (skeleton != null) {
                 ImGui.begin(stringManager.getString("window.bonetree"))

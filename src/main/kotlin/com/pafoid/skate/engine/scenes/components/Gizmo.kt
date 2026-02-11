@@ -24,7 +24,7 @@ open class Gizmo(protected val sceneManager: SceneManager) : Component(), KoinCo
 
     override fun editorUpdate(dt: Float) {
         if (!inUse) return
-        activeGameObject = sceneManager.getSelectedGameObject()
+        activeGameObject = sceneManager.currentScene?.getSelectedGameObject()
     }
 
     fun setActive() {}

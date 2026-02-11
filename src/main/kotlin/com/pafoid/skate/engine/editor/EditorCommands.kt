@@ -29,12 +29,12 @@ class CreateGameObjectCommand(
 ) : Command {
     override fun execute() {
         scene.addGameObjectToScene(gameObject)
-        sceneManager.setSelectedGameObject(gameObject)
+        sceneManager.currentScene?.setSelectedGameObject(gameObject)
     }
 
     override fun undo() {
         scene.removeGameObject(gameObject)
-        sceneManager.setSelectedGameObject(null)
+        sceneManager.currentScene?.setSelectedGameObject(null)
     }
 }
 
@@ -45,11 +45,11 @@ class DeleteGameObjectCommand(
 ) : Command {
     override fun execute() {
         scene.removeGameObject(gameObject)
-        sceneManager.setSelectedGameObject(null)
+        sceneManager.currentScene?.setSelectedGameObject(null)
     }
 
     override fun undo() {
         scene.addGameObjectToScene(gameObject)
-        sceneManager.setSelectedGameObject(gameObject)
+        sceneManager.currentScene?.setSelectedGameObject(gameObject)
     }
 }

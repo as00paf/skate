@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.editor
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
@@ -15,7 +14,7 @@ class PropertiesWindow: KoinComponent {
     private val stringManager: StringManager by inject()
 
     fun imgui() {
-        sceneManager.getSelectedGameObject()?.let { go ->
+        sceneManager.currentScene?.getSelectedGameObject()?.let { go ->
             ImGui.begin(stringManager.getString("window.properties"))
             ImGui.text("${stringManager.getString("lbl.name")}: ${go.name}")
 

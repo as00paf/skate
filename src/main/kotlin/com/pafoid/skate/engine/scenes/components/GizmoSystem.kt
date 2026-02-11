@@ -3,11 +3,9 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.utils.SettingsManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW.*
-
-import com.pafoid.skate.engine.utils.SettingsManager
 
 class GizmoSystem: Component(), KoinComponent {
 
@@ -63,7 +61,7 @@ class GizmoSystem: Component(), KoinComponent {
         }
 
         if (keyListener.keyBeginPress(bindings.deselect)) {
-            sceneManager.setSelectedGameObject(null)
+            sceneManager.currentScene?.setSelectedGameObject(null)
         }
     }
 

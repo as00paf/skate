@@ -11,7 +11,8 @@ import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.serialization.Serializer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE
+import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 import kotlin.math.floor
 
 class MouseControls : Component(), KoinComponent {
@@ -51,17 +52,17 @@ class MouseControls : Component(), KoinComponent {
             val selectedObject = sceneManager.getObjectById(pickedId)
 
             if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
-                sceneManager.setSelectedGameObject(selectedObject)
+                sceneManager.currentScene?.setSelectedGameObject(selectedObject)
             } else {
-                sceneManager.setSelectedGameObject(null)
+                sceneManager.currentScene?.setSelectedGameObject(null)
                 val bone = sceneManager.getBoneById(pickedId)
                 if (bone != null) {
                     // A bone was selected, find which GO it belongs to
                     val skater = sceneManager.currentScene?.gameObjects?.find { it.getComponent<PoseGizmo>() != null }
-                    sceneManager.setSelectedGameObject(skater)
+                    sceneManager.currentScene?.setSelectedGameObject(skater)
                     imguiLayer.boneTreeWindow.setSelectedBone(bone)
                 } else {
-                    sceneManager.setSelectedGameObject(null)
+                    sceneManager.currentScene?.setSelectedGameObject(null)
                 }
             }
 

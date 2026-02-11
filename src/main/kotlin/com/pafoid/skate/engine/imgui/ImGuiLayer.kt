@@ -2,15 +2,8 @@ package com.pafoid.skate.engine.imgui
 
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.editor.BoneTreeWindow
-import com.pafoid.skate.engine.editor.ConsoleWindow
-import com.pafoid.skate.engine.editor.EnvironmentWindow
-import com.pafoid.skate.engine.editor.GameViewWindow
+import com.pafoid.skate.engine.editor.*
 import com.pafoid.skate.engine.editor.assetBrowser.AssetBrowser
-import com.pafoid.skate.engine.editor.PhysicsTunerWindow
-import com.pafoid.skate.engine.editor.ProfilerWindow
-import com.pafoid.skate.engine.editor.PropertiesWindow
-import com.pafoid.skate.engine.editor.SceneHierarchyWindow
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.scenes.Scene
@@ -22,25 +15,15 @@ import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
-import imgui.flag.ImGuiCond
-import imgui.flag.ImGuiConfigFlags
-import imgui.flag.ImGuiDir
-import imgui.flag.ImGuiDockNodeFlags
-import imgui.flag.ImGuiStyleVar
-import imgui.flag.ImGuiWindowFlags
+import imgui.flag.*
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
-import imgui.internal.ImGui.dockBuilderAddNode
-import imgui.internal.ImGui.dockBuilderDockWindow
-import imgui.internal.ImGui.dockBuilderFinish
-import imgui.internal.ImGui.dockBuilderRemoveNode
-import imgui.internal.ImGui.dockBuilderSetNodeSize
-import imgui.internal.ImGui.dockBuilderSplitNode
+import imgui.internal.ImGui.*
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.koin.core.component.KoinComponent
-import java.io.File
 import org.lwjgl.glfw.GLFW
+import java.io.File
 
 class ImGuiLayer(
     private val inputProvider: IInputProvider,
@@ -242,14 +225,14 @@ class ImGuiLayer(
                 }
                 ImGui.separator()
                 if (ImGui.menuItem("${Icons.CUT} ${stringManager.getString("menu.edit.cut")}", "Ctrl+X")) {
-                    val selected = sceneManager.getSelectedGameObject()
+                    val selected = sceneManager.currentScene?.getSelectedGameObject()
                     if (selected != null) {
                         clipboardService.copy(selected)
                         sceneManager.deleteGameObject(selected)
                     }
                 }
                 if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("menu.edit.copy")}", "Ctrl+C")) {
-                    sceneManager.getSelectedGameObject()?.let {
+                    sceneManager.currentScene?.getSelectedGameObject()?.let {
                         clipboardService.copy(it)
                     }
                 }

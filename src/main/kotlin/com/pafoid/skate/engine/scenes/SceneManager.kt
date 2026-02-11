@@ -31,16 +31,17 @@ class SceneManager : KoinComponent {
     private val serializer: Serializer by inject()
     private val undoRedoManager: UndoRedoManager by inject()
 
-    private var selectedGameObject: GameObject? = null
+    var currentScene: Scene? = null
+    var runtimePlaying = false
+    val engineState = AtomicReference(EngineState.BOOTING)
+
+    private val splashScreenManager = SplashScreenManager()
+    private val fadeDuration = 2f
+
+    private var physicsAccumulator = 0f
 
     var currentWidth = 0
     var currentHeight = 0
-
-    fun setSelectedGameObject(gameObject: GameObject?) {
-        selectedGameObject = gameObject
-    }
-
-    fun getSelectedGameObject(): GameObject? = selectedGameObject
 
     fun deleteGameObject(gameObject: GameObject) {
         val scene = currentScene ?: return
@@ -59,15 +60,6 @@ class SceneManager : KoinComponent {
     fun redo() {
         undoRedoManager.redo()
     }
-
-    var currentScene: Scene? = null
-    var runtimePlaying = false
-    val engineState = AtomicReference(EngineState.BOOTING)
-
-    private val splashScreenManager = SplashScreenManager()
-    private val fadeDuration = 2f
-    
-    private var physicsAccumulator = 0f
 
     suspend fun initializeScene() = withContext(JobSystem.Main) {
         logger.logEngine("Initializing scene...")
@@ -118,7 +110,7 @@ class SceneManager : KoinComponent {
         if (ctrlDown) {
             // Copy
             if (keyListener.keyBeginPress(GLFW.GLFW_KEY_C)) {
-                val selected = getSelectedGameObject()
+                val selected = currentScene?.getSelectedGameObject()
                 if (selected != null) {
                     clipboardService.copy(selected)
                     logger.logEditor("Copied GameObject: ${selected.name}")
@@ -126,7 +118,7 @@ class SceneManager : KoinComponent {
             }
             // Cut
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
-                val selected = getSelectedGameObject()
+                val selected = currentScene?.getSelectedGameObject()
                 if (selected != null) {
                     val cloned = clipboardService.paste() ?: return // paste here returns the copied object from cut
                     clipboardService.copy(selected) // Redundant but following old logic
@@ -190,7 +182,7 @@ class SceneManager : KoinComponent {
                 handleEditorShortcuts()
             }
 
-            renderer.render(scene, getSelectedGameObject(), imguiLayer.gameViewWindow.getHoveredObject())
+            renderer.render(scene, currentScene?.getSelectedGameObject(), imguiLayer.gameViewWindow.getHoveredObject())
             imguiLayer.update(dt, scene)
         }
     }

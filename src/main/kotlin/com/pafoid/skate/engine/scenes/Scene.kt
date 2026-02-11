@@ -10,13 +10,13 @@ import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.serialization.Serializer
+import org.joml.Vector3f
+import org.lwjgl.system.MemoryUtil
+import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
-import org.joml.Vector3f
-import org.lwjgl.system.MemoryUtil
-import org.lwjgl.util.tinyfd.TinyFileDialogs
 
 class Scene(
     private val initializer: SceneInitializer,
@@ -46,6 +46,8 @@ class Scene(
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
     val physics3d: IPhysics3D = Physics3D()
+
+    private var selectedGameObject: GameObject? = null
 
     private var isRunning = false
 
@@ -287,4 +289,12 @@ class Scene(
     fun destroy() {
         gameObjects.forEach { it.destroy() }
     }
+
+    // Game Objects stuff, should be in a manager?
+    fun setSelectedGameObject(gameObject: GameObject?) {
+        selectedGameObject = gameObject
+    }
+
+    fun getSelectedGameObject(): GameObject? = selectedGameObject
+
 }
