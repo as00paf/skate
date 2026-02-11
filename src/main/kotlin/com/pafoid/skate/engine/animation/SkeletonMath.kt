@@ -5,10 +5,31 @@ import org.joml.Matrix4f
 object SkeletonMath {
     private val IDENTITY_MATRIX = Matrix4f()
 
+    /**
+     * Entry point for computing global (world-space) transforms for a bone hierarchy.
+     * It starts a recursive traversal from the root bone using an identity matrix as the initial parent transform.
+     *
+     * @param rootBone The root of the skeleton hierarchy.
+     * @param localTransforms An array of local-space matrices for each bone index.
+     * @param globalTransforms An array where the computed world-space matrices will be stored.
+     */
     fun computeGlobalTransforms(rootBone: Bone, localTransforms: Array<Matrix4f>, globalTransforms: Array<Matrix4f>) {
         computeGlobalTransformsRecursive(rootBone, IDENTITY_MATRIX, localTransforms, globalTransforms)
     }
 
+    /**
+     * Recursively computes world-space matrices for a bone and all its children.
+     * The world-space transform of a bone is calculated by multiplying its parent's world-space transform
+     * with its own local-space transform (World = ParentWorld * Local).
+     *
+     * This method also updates the [Bone.worldTransform] property for internal engine use and
+     * populates the [globalTransforms] palette used for skinning.
+     *
+     * @param bone The current bone being processed.
+     * @param parentTransform The computed world-space matrix of the parent bone.
+     * @param localTransforms The source array of local-space transforms (current pose).
+     * @param globalTransforms The target array for computed world-space transforms.
+     */
     private fun computeGlobalTransformsRecursive(
         bone: Bone,
         parentTransform: Matrix4f,
