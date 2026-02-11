@@ -146,4 +146,5 @@ Add missing Strings
 Allow Rendering of RigidBody3D and BoxCollider3D
 Make console text selectable/copyable
 Cache animatable for better lookup performances
+Button to reset to bind pose
 UI Review :
