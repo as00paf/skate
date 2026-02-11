@@ -241,8 +241,6 @@ class PlayerController : Component(), KoinComponent {
                 animator?.play("idle", 0.2f)
             }
         }
-
-
         
         // Jump Button A
         if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, BUTTON_A) || inputProvider.keyBeginPress(GLFW_KEY_SPACE)) {
@@ -271,6 +269,11 @@ class PlayerController : Component(), KoinComponent {
         }
     }
 
+    /**
+     * Transitions the player into a "Ragdoll" state (currently represented by a Tumble Cube).
+     * This disables the main player controller and spawns a physics-driven object
+     * that inherits the player's velocity.
+     */
     private fun bail() {
         // Transition to Tumble Cube
         val scene = sceneManager.currentScene ?: return
@@ -291,10 +294,7 @@ class PlayerController : Component(), KoinComponent {
                 transform.translation.set(it.translation)
                 transform.rotation.set(it.rotation)
             }
-
         }
-
-
 
         
         val cubeRb = RigidBody3D(mass = 5f)
@@ -329,6 +329,10 @@ class PlayerController : Component(), KoinComponent {
         physics?.enabled = false
     }
     
+    /**
+     * Checks for input (Y Button or Key) to toggle between WALKING and RIDING states.
+     * Manages reparenting logic, physics enabling/disabling, and transform adjustments.
+     */
     private fun handleStateToggle() {
         var toggle = inputProvider.keyBeginPress(GLFW_KEY_Y)
         if (inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, BUTTON_Y)) {

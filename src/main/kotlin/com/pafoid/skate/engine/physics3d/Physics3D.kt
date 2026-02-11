@@ -30,6 +30,10 @@ import org.koin.core.component.inject
 class Physics3D : IPhysics3D, KoinComponent {
     private val debugDraw: DebugDraw by inject()
     private val physicsSpace: PhysicsSpace
+
+    /**
+     * Toggles the rendering of debug wireframes for physics colliders.
+     */
     override var debugEnabled = false
 
     init {
@@ -65,26 +69,57 @@ class Physics3D : IPhysics3D, KoinComponent {
         isNativeLibraryLoaded = true
     }
 
+    /**
+     * Gets the current gravity vector of the physics world.
+     *
+     * @return The gravity vector in m/s².
+     */
     override fun getGravity(): JomlVector3f {
         val g = physicsSpace.getGravity(null)
         return JomlVector3f(g.x, g.y, g.z)
     }
 
+    /**
+     * Sets the gravity vector for the physics world.
+     *
+     * @param gravity The new gravity vector in m/s².
+     */
     override fun setGravity(gravity: JomlVector3f) {
         physicsSpace.setGravity(JmeVector3f(gravity.x, gravity.y, gravity.z))
     }
 
+    /**
+     * Performs a ray test (raycast) in the physics world and returns all hits.
+     *
+     * @param from The start point of the ray in world space.
+     * @param to The end point of the ray in world space.
+     * @return A list of [PhysicsRayTestResult] containing hit information.
+     */
     override fun rayTest(from: JomlVector3f, to: JomlVector3f): List<PhysicsRayTestResult> {
         val start = JmeVector3f(from.x, from.y, from.z)
         val end = JmeVector3f(to.x, to.y, to.z)
         return physicsSpace.rayTest(start, end)
     }
 
+    /**
+     * Performs a ray test and returns only the closest hit.
+     *
+     * @param from The start point of the ray.
+     * @param to The end point of the ray.
+     * @return The closest [PhysicsRayTestResult], or null if no hit occurred.
+     */
     override fun raycastClosest(from: JomlVector3f, to: JomlVector3f): PhysicsRayTestResult? {
         val results = rayTest(from, to)
         return if (results.isEmpty()) null else results.minByOrNull { it.hitFraction }
     }
 
+    /**
+     * Adds a GameObject to the physics simulation.
+     * It inspects the GameObject for [RigidBody3D] and [Collider3D] components,
+     * creates the necessary Bullet shapes, and adds them to the [PhysicsSpace].
+     *
+     * @param go The GameObject to add.
+     */
     override fun add(go: GameObject) {
         val rb = go.getComponent<RigidBody3D>()
         if (rb != null) {
@@ -136,6 +171,12 @@ class Physics3D : IPhysics3D, KoinComponent {
         }
     }
 
+    /**
+     * Updates the physics properties of a GameObject's rigid body based on its component state.
+     * This is typically used to sync changes from the editor or game logic to the physics engine.
+     *
+     * @param go The GameObject to update.
+     */
     override fun update(go: GameObject) {
         val rb = go.getComponent<RigidBody3D>()
         val body = rb?.rawBody ?: return
@@ -169,6 +210,12 @@ class Physics3D : IPhysics3D, KoinComponent {
         body.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
     }
 
+    /**
+     * Removes a GameObject from the physics simulation.
+     * It destroys the associated Bullet rigid body.
+     *
+     * @param go The GameObject to remove.
+     */
     override fun remove(go: GameObject) {
         val rb = go.getComponent<RigidBody3D>()
         rb?.rawBody?.let {
@@ -180,6 +227,13 @@ class Physics3D : IPhysics3D, KoinComponent {
     private var accumulator = 0f
     private val fixedTimestep = 1.0f / 60.0f
 
+    /**
+     * Steps the physics simulation forward by the given delta time.
+     * It uses a fixed timestep accumulator to ensure deterministic physics behavior
+     * regardless of the rendering frame rate.
+     *
+     * @param dt The time elapsed since the last frame in seconds.
+     */
     override fun update(dt: Float) {
         accumulator += dt
         while (accumulator >= fixedTimestep) {
