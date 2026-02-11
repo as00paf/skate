@@ -210,7 +210,7 @@ class ImGuiLayer(
 
         ImGui.pushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f)
         ImGui.pushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f)
-        ImGui.begin("DockSpace Demo", ImBoolean(true), windowFlags)
+        ImGui.begin(stringManager.getString("lbl.editor_title"), ImBoolean(true), windowFlags)
         ImGui.popStyleVar(2)
 
         ImGui.dockSpace(ImGui.getID("DockSpace"))
@@ -355,22 +355,22 @@ class ImGuiLayer(
                 ImGui.sameLine(200f)
                 
                 val keyName = getKeyName(currentKey)
-                val btnText = if (keyBindingAction == bindAction) "Press any key..." else keyName
+                val btnText = if (keyBindingAction == bindAction) stringManager.getString("lbl.keybindings.press_key") else keyName
                 
                 if (ImGui.button("$btnText##$bindAction", 120f, 0f)) {
                     keyBindingAction = bindAction
                 }
             }
 
-            drawBindRow("Translate Tool", settings.gizmoTranslate, "gizmoTranslate")
-            drawBindRow("Rotate Tool", settings.gizmoRotate, "gizmoRotate")
-            drawBindRow("Scale Tool", settings.gizmoScale, "gizmoScale")
-            drawBindRow("Select Tool", settings.gizmoSelect, "gizmoSelect")
-            drawBindRow("Measure Tool", settings.gizmoMeasure, "gizmoMeasure")
-            drawBindRow("Deselect", settings.deselect, "deselect")
+            drawBindRow(stringManager.getString("lbl.keybindings.translate"), settings.gizmoTranslate, "gizmoTranslate")
+            drawBindRow(stringManager.getString("lbl.keybindings.rotate"), settings.gizmoRotate, "gizmoRotate")
+            drawBindRow(stringManager.getString("lbl.keybindings.scale"), settings.gizmoScale, "gizmoScale")
+            drawBindRow(stringManager.getString("lbl.keybindings.select"), settings.gizmoSelect, "gizmoSelect")
+            drawBindRow(stringManager.getString("lbl.keybindings.measure"), settings.gizmoMeasure, "gizmoMeasure")
+            drawBindRow(stringManager.getString("lbl.keybindings.deselect"), settings.deselect, "deselect")
 
             ImGui.separator()
-            if (ImGui.button("Close")) {
+            if (ImGui.button(stringManager.getString("btn.close"))) {
                 showKeyBindings = false
                 keyBindingAction = null
                 settingsManager.save()

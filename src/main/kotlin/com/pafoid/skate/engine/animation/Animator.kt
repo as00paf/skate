@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.utils.BoneNameMapper
+import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
 import org.koin.core.component.KoinComponent
@@ -25,6 +26,7 @@ import org.koin.core.component.inject
 class Animator : Component(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val logger: LoggerService by inject()
+    private val stringManager: StringManager by inject()
 
     var currentAnimation: Animation? = null
         get() {
@@ -112,12 +114,12 @@ class Animator : Component(), KoinComponent {
         val model = renderComponent?.model
         
         if (model == null) {
-            ImGui.text("No render component found")
+            ImGui.text(stringManager.getString("lbl.animator.no_render_comp"))
             return
         }
 
         ImGui.beginGroup()
-        if (ImGui.beginCombo("Animations", currentAnimation?.name ?: if (animations.isEmpty()) "Drop animations here..." else "Select...")) {
+        if (ImGui.beginCombo(stringManager.getString("lbl.animator.animations"), currentAnimation?.name ?: if (animations.isEmpty()) stringManager.getString("lbl.animator.drop_animations") else stringManager.getString("lbl.animator.select"))) {
             for (anim in animations) {
                 if (ImGui.selectable("${anim.name} (${String.format("%.2f", anim.duration)}s)", currentAnimation == anim)) {
                     play(anim)
@@ -142,9 +144,9 @@ class Animator : Component(), KoinComponent {
         if (animations.isEmpty()) return
         val anim = currentAnimation ?: return
 
-        ImGui.text("Duration: ${String.format("%.2f", anim.duration)}s")
+        ImGui.text(stringManager.getString("lbl.animator.duration", anim.duration))
         val timeArr = floatArrayOf(currentTime)
-        if (ImGui.sliderFloat("Timeline", timeArr, 0f, anim.duration)) {
+        if (ImGui.sliderFloat(stringManager.getString("lbl.animator.timeline"), timeArr, 0f, anim.duration)) {
             currentTime = timeArr[0]
             isPlaying = false // Scrubbing pauses playback for precision
 
@@ -161,11 +163,11 @@ class Animator : Component(), KoinComponent {
             }
         }
 
-        if (ImGui.button(if (isPlaying) "Pause" else "Play")) {
+        if (ImGui.button(if (isPlaying) stringManager.getString("lbl.animator.pause") else stringManager.getString("lbl.animator.play"))) {
             isPlaying = !isPlaying
         }
         ImGui.sameLine()
-        if (ImGui.button("Reset")) {
+        if (ImGui.button(stringManager.getString("btn.reset"))) {
             currentTime = 0f
             skeletonComponent?.pose?.let { pose ->
                 val skeleton = pose.skeleton

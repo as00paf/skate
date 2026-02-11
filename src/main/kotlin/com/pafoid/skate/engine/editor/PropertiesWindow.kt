@@ -20,17 +20,17 @@ class PropertiesWindow: KoinComponent {
             ImGui.text("${stringManager.getString("lbl.name")}: ${go.name}")
 
             if (ImGui.beginPopupContextWindow("ComponentAdder")) {
-                if (ImGui.menuItem("Add RigidBody3D")) {
+                if (ImGui.menuItem(stringManager.getString("menu.component.add_rigidbody"))) {
                     if (go.getComponent<RigidBody3D>() == null) {
                         go.addComponent(RigidBody3D())
                     }
                 }
                 
-                if (ImGui.menuItem("Add BoxCollider3D")) {
+                if (ImGui.menuItem(stringManager.getString("menu.component.add_box_collider"))) {
                     go.addComponent(BoxCollider3D())
                 }
 
-                if (ImGui.menuItem("Add CylinderCollider3D")) {
+                if (ImGui.menuItem(stringManager.getString("menu.component.add_cylinder_collider"))) {
                     go.addComponent(CylinderCollider3D())
                 }
                 ImGui.endPopup()

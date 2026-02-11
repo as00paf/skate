@@ -1,9 +1,15 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.utils.StringManager
+import com.pafoid.skate.engine.utils.TrickManager
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import kotlin.math.abs
 
-class TrickAnalyzer : Component() {
+class TrickAnalyzer : Component(), KoinComponent {
+    private val stringManager: StringManager by inject()
+    private val trickManager: TrickManager by inject()
     
     private var physics: SkateboardPhysics? = null
     private var isAirborne = false
@@ -25,15 +31,10 @@ class TrickAnalyzer : Component() {
         val transform = gameObject.getComponent<Transform>() ?: return
         val currentRot = transform.rotation
         
-        // Calculate delta (handling wrap-around if necessary, but Transform.rotation usually just accumulates or wraps)
-        // If Transform.rotation wraps at 360, we need to handle it. 
-        // Assuming simple accumulation for now or checking small deltas.
-        
         var dx = currentRot.x - lastRotation.x
         var dy = currentRot.y - lastRotation.y
         var dz = currentRot.z - lastRotation.z
         
-        // Simple wrap correction assuming we don't rotate more than 180 per frame
         if (dx > 180) dx -= 360
         if (dx < -180) dx += 360
         if (dy > 180) dy -= 360
@@ -43,7 +44,6 @@ class TrickAnalyzer : Component() {
         
         if (!phys.isGrounded) {
             if (!isAirborne) {
-                // Takeoff
                 isAirborne = true
                 totalRotation.set(0f, 0f, 0f)
             }
@@ -52,7 +52,6 @@ class TrickAnalyzer : Component() {
             currentAirRotation.set(totalRotation)
         } else {
             if (isAirborne) {
-                // Landing
                 isAirborne = false
                 analyzeTrick()
             }
@@ -69,43 +68,49 @@ class TrickAnalyzer : Component() {
         val trickParts = mutableListOf<String>()
         
         // Yaw (Spins)
-        // 180, 360, 540...
-        // 180 is approx 180. Threshold: +/- 45 deg?
         val absYaw = abs(yaw)
         if (absYaw > 90) {
             val spin = ((absYaw + 90) / 180).toInt() * 180
-            if (yaw > 0) trickParts.add("BS $spin") else trickParts.add("FS $spin")
+            if (yaw > 0) {
+                trickParts.add(String.format(trickManager.getTrickName("trick.bs"), spin))
+            } else {
+                trickParts.add(String.format(trickManager.getTrickName("trick.fs"), spin))
+            }
         }
         
         // Roll (Flip Tricks)
-        // Kickflip (negative roll?), Heelflip (positive roll?)
-        // Standard goofy/regular logic applies but let's simplify.
-        // Left/Right flips.
         val absRoll = abs(roll)
         if (absRoll > 180) { // Full flip
              val flips = ((absRoll + 90) / 360).toInt()
              if (flips > 0) {
-                 if (roll > 0) trickParts.add("Heelflip") else trickParts.add("Kickflip")
+                 if (roll > 0) {
+                     trickParts.add(trickManager.getTrickName("trick.heelflip"))
+                 } else {
+                     trickParts.add(trickManager.getTrickName("trick.kickflip"))
+                 }
                  if (flips > 1) trickParts.add("x$flips")
              }
         }
         
         // Pitch (Backflip/Frontflip)
-        // Usually simpler names like "Backflip"
          val absPitch = abs(pitch)
         if (absPitch > 180) {
-            if (pitch > 0) trickParts.add("Backflip") else trickParts.add("Frontflip")
+            if (pitch > 0) {
+                trickParts.add(trickManager.getTrickName("trick.backflip"))
+            } else {
+                trickParts.add(trickManager.getTrickName("trick.frontflip"))
+            }
         }
         
         if (trickParts.isEmpty()) {
-            lastTrickName = "Ollie"
+            lastTrickName = trickManager.getTrickName("trick.ollie")
         } else {
             lastTrickName = trickParts.joinToString(" + ")
         }
     }
 
     override fun imgui() {
-        imgui.ImGui.text("Current Trick: $lastTrickName")
+        imgui.ImGui.text(stringManager.getString("lbl.trick.current", lastTrickName))
         if (isAirborne) {
             imgui.ImGui.text("Rotation: %.1f, %.1f, %.1f".format(currentAirRotation.x, currentAirRotation.y, currentAirRotation.z))
         }

@@ -1,12 +1,17 @@
 package com.pafoid.skate.engine.utils
 
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.io.InputStream
 import java.util.*
 
 class StringManager(
     private val baseName: String = "strings",
     private var currentLocale: String = "en"
-) {
+) : KoinComponent {
+    private val logger: LoggerService by inject()
 
     private val properties = Properties()
 
@@ -29,11 +34,11 @@ class StringManager(
                 defaultInputStream?.use {
                     properties.load(it)
                 } ?: run {
-                    println("ERROR: Could not find default resource file: $defaultPath")
+                    logger.logEngine("Could not find default resource file: $defaultPath", LogLevel.ERROR)
                 }
             }
         } catch (e: Exception) {
-            println("ERROR: Failed to load strings for baseName $baseName and locale $currentLocale")
+            logger.logEngine("Failed to load strings for baseName $baseName and locale $currentLocale", LogLevel.ERROR)
             e.printStackTrace()
         }
     }

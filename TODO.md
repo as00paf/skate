@@ -332,5 +332,8 @@
   - [x] `computeGlobalTransformsRecursive()` in `SkeletonMath.kt` could use more detailed documentation
   - [x] Animation sampling methods in `AnimationSampler.kt` need enhanced documentation
   - [x] Various interpolation methods in `Interpolation.kt` need more detailed KDoc
-- [ ] **H18. Hardcoded Strings**: PlayerController.kt imgui()` method contains hardcoded strings and TrickManager.kt
-  error messages are hardcoded. Make sure they use the localization system.
+- [ ] **H18. Hardcoded Strings**: Refactor hardcoded strings in UI and error logs to use `StringManager`.
+  - [ ] Refactor `PlayerController.kt` ImGui strings.
+  - [ ] Refactor `TrickManager.kt` error messages.
+  - [ ] Audit and refactor other UI components.
+- [ ] **H18. Hardcoded Strings**: PlayerController.kt imgui()` method contains hardcoded strings and TrickManager.kt error messages are hardcoded. Make sure they use the localization system.

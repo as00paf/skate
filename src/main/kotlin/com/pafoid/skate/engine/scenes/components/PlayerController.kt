@@ -20,6 +20,7 @@ import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Interpolation
 import com.pafoid.skate.engine.utils.JmeVector3f
+import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.skateboard.PreferredStance
 import com.pafoid.skate.skateboard.Stance
 import imgui.ImGui
@@ -41,6 +42,7 @@ class PlayerController : Component(), KoinComponent {
     private val inputProvider: IInputProvider by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val sceneManager: SceneManager by inject()
+    private val stringManager: StringManager by inject()
 
     var preferredStance = PreferredStance.REGULAR
     var pushForce = 5.0f
@@ -413,20 +415,20 @@ class PlayerController : Component(), KoinComponent {
      * Displays a debug window with information about the player's state, stance, and velocity.
      */
     override fun imgui() {
-        ImGui.text("State: ${stateManager.currentState::class.simpleName}")
-        ImGui.text("Preferred Stance: $preferredStance")
-        ImGui.text("Current Stance: $currentStance")
-        ImGui.text("Is Switch: $isSwitch")
-        ImGui.text("Grounded: ${physics?.isGrounded}")
+        ImGui.text(stringManager.getString("lbl.player.state", stateManager.currentState::class.simpleName ?: "N/A"))
+        ImGui.text(stringManager.getString("lbl.player.preferred_stance", preferredStance))
+        ImGui.text(stringManager.getString("lbl.player.current_stance", currentStance))
+        ImGui.text(stringManager.getString("lbl.player.is_switch", isSwitch))
+        ImGui.text(stringManager.getString("lbl.player.grounded", physics?.isGrounded ?: false))
         
         val vel = rb?.linearVelocity ?: Vector3f()
-        ImGui.text("Velocity: ${String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z)}")
+        ImGui.text(stringManager.getString("lbl.player.velocity", String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z)))
         
-        if (ImGui.button("Toggle Switch")) {
+        if (ImGui.button(stringManager.getString("btn.player.toggle_switch"))) {
             isSwitch = !isSwitch
         }
 
-        if (ImGui.button("Toggle Preferred Stance")) {
+        if (ImGui.button(stringManager.getString("btn.player.toggle_preferred_stance"))) {
             preferredStance = if (preferredStance == PreferredStance.REGULAR) PreferredStance.GOOFY else PreferredStance.REGULAR
         }
     }

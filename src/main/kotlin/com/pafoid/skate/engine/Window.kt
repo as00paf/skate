@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.listeners.JoystickListener
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.SceneManager
@@ -43,6 +44,7 @@ class Window(
     private val sceneManager: SceneManager by inject()
     private val renderer: Renderer by inject()
     private val imGuiLayer: ImGuiLayer by inject()
+    private val logger: LoggerService by inject()
 
     private var glfwWindow: Long = -1L
     private var isFirstDraw = true
@@ -126,7 +128,7 @@ class Window(
             STBImage.stbi_set_flip_vertically_on_load(true) // Re-enable for other textures
 
             if (pixels == null) {
-                System.err.println("Failed to load image at path: $iconPath")
+                logger.logEngine("Failed to load image at path: $iconPath", com.pafoid.skate.engine.editor.logs.LogLevel.ERROR)
                 return
             }
 

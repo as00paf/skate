@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.scenes
 
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.render.Camera
@@ -16,7 +18,12 @@ import org.joml.Vector3f
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 
-class Scene(private val initializer: SceneInitializer, val serializer: Serializer, val camera: Camera = Camera()) {
+class Scene(
+    private val initializer: SceneInitializer,
+    val serializer: Serializer,
+    val logger: LoggerService,
+    val camera: Camera = Camera()
+) {
 
     var light: Light = Light(Vector3f(0f, 0f, 20f))
     var sun: DirectionalLight = DirectionalLight()
@@ -224,7 +231,7 @@ class Scene(private val initializer: SceneInitializer, val serializer: Serialize
         try {
             inFile = String(Files.readAllBytes(Paths.get(path)))
         } catch (e: IOException) {
-            println("Error: Could not find $path")
+            logger.logEngine("Could not find $path", LogLevel.ERROR)
         }
 
         if (inFile.isNotBlank()) {

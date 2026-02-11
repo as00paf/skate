@@ -6,93 +6,98 @@ import imgui.ImGui
 import imgui.type.ImBoolean
 import org.joml.Vector3f
 import kotlin.math.*
+import com.pafoid.skate.engine.utils.StringManager
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class EnvironmentWindow {
+class EnvironmentWindow : KoinComponent {
+    private val stringManager: StringManager by inject()
+
     fun imgui(scene: Scene) {
-        ImGui.begin("Environment")
+        ImGui.begin(stringManager.getString("window.environment"))
 
-        if (ImGui.collapsingHeader("${Icons.GEAR} Time of Day")) {
+        if (ImGui.collapsingHeader("${Icons.GEAR} ${stringManager.getString("lbl.environment.time_of_day")}")) {
             val time = floatArrayOf(scene.timeOfDay)
             val hours = time[0].toInt()
             val minutes = ((time[0] - hours) * 60).toInt()
             val timeString = String.format("%02d:%02d", hours, minutes)
             
-            if (ImGui.sliderFloat("Time", time, 0f, 24f, timeString)) {
+            if (ImGui.sliderFloat(stringManager.getString("lbl.environment.time"), time, 0f, 24f, timeString)) {
                 scene.timeOfDay = time[0]
                 updateEnvironment(scene)
             }
         }
 
-        if (ImGui.collapsingHeader("${Icons.PALETTE} Atmosphere")) {
+        if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment.atmosphere")}")) {
             val skyColor = floatArrayOf(scene.skyColor.x, scene.skyColor.y, scene.skyColor.z)
-            if (ImGui.colorEdit3("Sky Color (Clear)", skyColor)) {
+            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.sky_color"), skyColor)) {
                 scene.skyColor.set(skyColor[0], skyColor[1], skyColor[2])
             }
 
             val skyTint = floatArrayOf(scene.skyTint.x, scene.skyTint.y, scene.skyTint.z)
-            if (ImGui.colorEdit3("Sky Tint", skyTint)) {
+            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.sky_tint"), skyTint)) {
                 scene.skyTint.set(skyTint[0], skyTint[1], skyTint[2])
             }
 
             val exposure = floatArrayOf(scene.skyExposure)
-            if (ImGui.dragFloat("Sky Exposure", exposure, 0.01f, 0f, 10f)) {
+            if (ImGui.dragFloat(stringManager.getString("lbl.environment.sky_exposure"), exposure, 0.01f, 0f, 10f)) {
                 scene.skyExposure = exposure[0]
             }
 
             val skyRot = floatArrayOf(scene.skyRotation)
-            if (ImGui.dragFloat("Sky Rotation", skyRot, 0.1f, 0f, 360f)) {
+            if (ImGui.dragFloat(stringManager.getString("lbl.environment.sky_rotation"), skyRot, 0.1f, 0f, 360f)) {
                 scene.skyRotation = skyRot[0]
             }
             
             ImGui.separator()
-            ImGui.text("${Icons.SUN} Sun (Directional Light)")
+            ImGui.text("${Icons.SUN} ${stringManager.getString("lbl.environment.sun")}")
             
             val useSun = ImBoolean(scene.useSun)
-            if (ImGui.checkbox("Use Sun", useSun)) {
+            if (ImGui.checkbox(stringManager.getString("lbl.environment.use_sun"), useSun)) {
                 scene.useSun = useSun.get()
             }
             
             val sunDir = floatArrayOf(scene.sun.direction.x, scene.sun.direction.y, scene.sun.direction.z)
-            if (ImGui.dragFloat3("Sun Direction", sunDir, 0.01f, -1f, 1f)) {
+            if (ImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f, -1f, 1f)) {
                 scene.sun.direction.set(sunDir[0], sunDir[1], sunDir[2]).normalize()
             }
             
             val sunColor = floatArrayOf(scene.sun.color.x, scene.sun.color.y, scene.sun.color.z)
-            if (ImGui.colorEdit3("Sun Color", sunColor)) {
+            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.sun_color"), sunColor)) {
                 scene.sun.color.set(sunColor[0], sunColor[1], sunColor[2])
             }
             
             val sunIntensity = floatArrayOf(scene.sun.intensity)
-            if (ImGui.dragFloat("Sun Intensity", sunIntensity, 0.1f, 0f, 10f)) {
+            if (ImGui.dragFloat(stringManager.getString("lbl.environment.sun_intensity"), sunIntensity, 0.1f, 0f, 10f)) {
                 scene.sun.intensity = sunIntensity[0]
             }
         }
 
-        if (ImGui.collapsingHeader("${Icons.CLOUD} Fog")) {
+        if (ImGui.collapsingHeader("${Icons.CLOUD} ${stringManager.getString("lbl.environment.fog")}")) {
             val fogColor = floatArrayOf(scene.fogColor.x, scene.fogColor.y, scene.fogColor.z)
-            if (ImGui.colorEdit3("Fog Color", fogColor)) {
+            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.fog_color"), fogColor)) {
                 scene.fogColor.set(fogColor[0], fogColor[1], fogColor[2])
             }
 
             val fogDensity = floatArrayOf(scene.fogDensity)
-            if (ImGui.dragFloat("Fog Density", fogDensity, 0.0001f, 0f, 0.1f, "%.4f")) {
+            if (ImGui.dragFloat(stringManager.getString("lbl.environment.fog_density"), fogDensity, 0.0001f, 0f, 0.1f, "%.4f")) {
                 scene.fogDensity = fogDensity[0]
             }
 
             val fogGradient = floatArrayOf(scene.fogGradient)
-            if (ImGui.dragFloat("Fog Gradient", fogGradient, 0.1f, 0.1f, 10f)) {
+            if (ImGui.dragFloat(stringManager.getString("lbl.environment.fog_gradient"), fogGradient, 0.1f, 0.1f, 10f)) {
                 scene.fogGradient = fogGradient[0]
             }
         }
 
-        if (ImGui.collapsingHeader("${Icons.PALETTE} Lighting")) {
+        if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment.lighting")}")) {
             val useAmbient = ImBoolean(scene.useAmbient)
-            if (ImGui.checkbox("Use Ambient", useAmbient)) {
+            if (ImGui.checkbox(stringManager.getString("lbl.environment.use_ambient"), useAmbient)) {
                 scene.useAmbient = useAmbient.get()
             }
 
             val ambient = floatArrayOf(scene.ambientLight.x, scene.ambientLight.y, scene.ambientLight.z)
-            if (ImGui.colorEdit3("Ambient Light", ambient)) {
+            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
                 scene.ambientLight.set(ambient[0], ambient[1], ambient[2])
             }
         }

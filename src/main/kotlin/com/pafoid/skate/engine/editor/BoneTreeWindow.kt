@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.animation.BoneOverride
 import com.pafoid.skate.engine.animation.BoneMirrorUtil
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.utils.StringManager
 import imgui.type.ImString
 import imgui.type.ImBoolean
 import org.joml.Quaternionf
@@ -21,6 +22,7 @@ import kotlin.getValue
 class BoneTreeWindow : KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val poseSerializer: PoseSerializer by inject()
+    private val stringManager: StringManager by inject()
 
     private var selectedBone: Bone? = null
     private val poseFileName = ImString(128)
@@ -34,16 +36,16 @@ class BoneTreeWindow : KoinComponent {
         sceneManager.getSelectedGameObject()?.let { go ->
             val skeleton = (go.getComponent<RenderComponent>()?.model as? CharacterModel)?.skeleton
             if (skeleton != null) {
-                ImGui.begin("Bone Tree")
+                ImGui.begin(stringManager.getString("window.bonetree"))
 
-                ImGui.inputText("Pose File Name", poseFileName)
+                ImGui.inputText(stringManager.getString("lbl.bone_tree.pose_file_name"), poseFileName)
                 ImGui.sameLine()
-                if (ImGui.button("Save Pose")) {
+                if (ImGui.button(stringManager.getString("btn.save_pose"))) {
                     val boneOverride = go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
                     poseSerializer.savePose(boneOverride, "assets/poses/${poseFileName.get()}.json")
                 }
                 ImGui.sameLine()
-                if (ImGui.button("Load Pose")) {
+                if (ImGui.button(stringManager.getString("btn.load_pose"))) {
                     val loadedOverride = poseSerializer.loadPose("assets/poses/${poseFileName.get()}.json")
                     loadedOverride?.let { bo ->
                         val existingOverride =
@@ -55,7 +57,7 @@ class BoneTreeWindow : KoinComponent {
                     }
                 }
 
-                ImGui.checkbox("Mirror Pose", mirrorPoseEnabled)
+                ImGui.checkbox(stringManager.getString("lbl.bone_tree.mirror_pose"), mirrorPoseEnabled)
 
                 if (ImGui.treeNodeEx(
                         skeleton.rootBone.name,
@@ -98,7 +100,7 @@ class BoneTreeWindow : KoinComponent {
                         Math.toDegrees(eulerAngles.z.toDouble()).toFloat()
                     )
 
-                    if (ImGui.dragFloat3("Rotation (Euler)", rotationXYZ, 1f, -180f, 180f)) {
+                    if (ImGui.dragFloat3(stringManager.getString("lbl.bone_tree.rotation_euler"), rotationXYZ, 1f, -180f, 180f)) {
                         val newRotation = Quaternionf().rotationXYZ(
                             Math.toRadians(rotationXYZ[0].toDouble()).toFloat(),
                             Math.toRadians(rotationXYZ[1].toDouble()).toFloat(),

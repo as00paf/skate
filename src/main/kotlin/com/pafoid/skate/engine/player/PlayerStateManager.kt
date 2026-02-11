@@ -1,8 +1,13 @@
 package com.pafoid.skate.engine.player
 
+import com.pafoid.skate.engine.editor.logs.LogLevel
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.scenes.components.PlayerController
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class PlayerStateManager(private val playerController: PlayerController) {
+class PlayerStateManager(private val playerController: PlayerController) : KoinComponent {
+    private val logger: LoggerService by inject()
 
     var currentState: PlayerState = PlayerState.IDLE
         private set
@@ -54,7 +59,7 @@ class PlayerStateManager(private val playerController: PlayerController) {
     fun transitionToState(newState: PlayerState) {
         if (currentState == newState) return
 
-        println("Transitioning from ${currentState::class.simpleName} to ${newState::class.simpleName}")
+        logger.logEngine("Transitioning from ${currentState::class.simpleName} to ${newState::class.simpleName}", LogLevel.ACTION)
         currentState = newState
     }
 }

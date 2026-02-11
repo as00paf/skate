@@ -102,7 +102,7 @@ class SceneManager : KoinComponent {
             currentScene?.destroy()
         }
         logger.logEngine("Changing scene to ${initializer::class.simpleName}...")
-        val scene = Scene(initializer, serializer)
+        val scene = Scene(initializer, serializer, logger)
         currentScene = scene
         // TODO: fix loading of saved scene
         //scene.load()

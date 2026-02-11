@@ -1,11 +1,15 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.utils.EngineStats
+import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadMXBean
 
-class ProfilerWindow {
+class ProfilerWindow : KoinComponent {
+    private val stringManager: StringManager by inject()
     private val threadBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
     private val threadIds = mutableMapOf<String, Long>()
     private val threadCpuUsage = mutableMapOf<String, Float>()
@@ -22,26 +26,26 @@ class ProfilerWindow {
 
     fun imgui(pOpen: imgui.type.ImBoolean? = null) {
         if (pOpen != null) {
-            if (!ImGui.begin("Profiler", pOpen)) {
+            if (!ImGui.begin(stringManager.getString("window.profiler"), pOpen)) {
                 ImGui.end()
                 return
             }
         } else {
-            ImGui.begin("Profiler")
+            ImGui.begin(stringManager.getString("window.profiler"))
         }
 
         val io = ImGui.getIO()
-        ImGui.text("Application average %.3f ms/frame (%.1f FPS)".format(1000.0f / io.framerate, io.framerate))
+        ImGui.text(stringManager.getString("lbl.profiler.avg_ms", 1000.0f / io.framerate, io.framerate))
 
         val runtime = Runtime.getRuntime()
         val usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
         val totalMemory = runtime.totalMemory() / 1024 / 1024
-        ImGui.text("Draw Calls: %d".format(EngineStats.drawCalls.get()))
-        ImGui.text("Physics Step: %.3f ms".format(EngineStats.physicsStepTime.get().toFloat() / 1_000_000f))
-        ImGui.text("RAM Usage: %d MB / %d MB".format(usedMemory, totalMemory))
+        ImGui.text(stringManager.getString("lbl.profiler.draw_calls", EngineStats.drawCalls.get()))
+        ImGui.text(stringManager.getString("lbl.profiler.physics_step", EngineStats.physicsStepTime.get().toFloat() / 1_000_000f))
+        ImGui.text(stringManager.getString("lbl.profiler.ram_usage", usedMemory, totalMemory))
 
         ImGui.separator()
-        ImGui.checkbox("Show Memory Stats", showMemoryStats)
+        ImGui.checkbox(stringManager.getString("lbl.profiler.show_mem_stats"), showMemoryStats)
         if (showMemoryStats.get()) {
             ImGui.progressBar(usedMemory.toFloat() / totalMemory.toFloat(), -1f, 0f, "%d%%".format((usedMemory.toFloat() / totalMemory.toFloat() * 100).toInt()))
         }
@@ -49,7 +53,7 @@ class ProfilerWindow {
         ImGui.separator()
 
         if (!threadBean.isThreadCpuTimeSupported) {
-            ImGui.text("Thread CPU time not supported on this JVM")
+            ImGui.text(stringManager.getString("lbl.profiler.thread_cpu_unsupported"))
             ImGui.end()
             return
         }
@@ -63,11 +67,11 @@ class ProfilerWindow {
         }
 
         ImGui.columns(3, "ThreadColumns")
-        ImGui.text("Thread Name")
+        ImGui.text(stringManager.getString("lbl.profiler.thread_name"))
         ImGui.nextColumn()
-        ImGui.text("CPU Usage")
+        ImGui.text(stringManager.getString("lbl.profiler.cpu_usage"))
         ImGui.nextColumn()
-        ImGui.text("State")
+        ImGui.text(stringManager.getString("lbl.profiler.state"))
         ImGui.nextColumn()
         ImGui.separator()
 
@@ -82,7 +86,7 @@ class ProfilerWindow {
                 val info = threadBean.getThreadInfo(id)
                 ImGui.text(info?.threadState?.toString() ?: "UNKNOWN")
             } else {
-                ImGui.text("N/A")
+                ImGui.text(stringManager.getString("lbl.na"))
             }
             ImGui.nextColumn()
         }
