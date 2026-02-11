@@ -327,8 +327,8 @@
 - [x] **H14. Blending Logic**: Move the "Cross-fade" math from your old `Entity` class into the `AnimationSystem`.
 - [x] **H15. Root Motion (Optional)**: If the animation moves the "Hips" bone, have the `AnimationSystem` apply that delta movement back to the `TransformComponent` so the physics body follows the feet.
 - [x] **H16. CharacterModel**: Create a class for character models. The difference between a CharacterModel and a Textured Model is that the Character Model has Skeleton, and the TexturedModel does not.
-- [ ] **H17. KDoc**: Add and fix KDoc :
+- [x] **H17. KDoc**: Add and fix KDoc :
   - [x] Add missing kdoc in Physics3D.kt, RigidBody3D.kt
   - [x] `computeGlobalTransformsRecursive()` in `SkeletonMath.kt` could use more detailed documentation
-  - [ ] Animation sampling methods in `AnimationSampler.kt` need enhanced documentation
-  - [ ] Various interpolation methods in `Interpolation.kt` need more detailed KDoc
+  - [x] Animation sampling methods in `AnimationSampler.kt` need enhanced documentation
+  - [x] Various interpolation methods in `Interpolation.kt` need more detailed KDoc
