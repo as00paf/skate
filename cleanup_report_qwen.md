@@ -10,38 +10,7 @@ concerns.
 
 ### Failing Tests
 
-- `PlayerControllerTest.test toggle state from riding to walking()` - FAILED
-- `PlayerControllerTest.test toggle state from walking to riding()` - FAILED
 - `TrickDetectionTest.detectFakieOllie_movingBackwardsAndPopping_identifiesAsFakieOllie()` - FAILED
-
-### Test Coverage Gaps
-
-- More comprehensive edge case testing needed for player state transitions
-- Additional trick detection validation tests required
-
-## 2. Missing KDoc for Math and Physics Methods
-
-### Identified Missing Documentation
-
-- Several methods in `Physics3D.kt` lack KDoc
-- `computeGlobalTransformsRecursive()` in `SkeletonMath.kt` could use more detailed documentation
-- Animation sampling methods in `AnimationSampler.kt` need enhanced documentation
-- Various interpolation methods in `Interpolation.kt` need more detailed KDoc
-
-## 3. Dead or Unused Code
-
-### Potentially Unused Code
-
-- Commented-out println statements in `AnimationLoader.kt`
-- Unused imports in various files
-- Some commented-out debugging code in `AssimpExtensions.kt`
-
-## 4. Missing Import Statements
-
-### Found Issues
-
-- Import statements are generally well-organized, but some files have unused imports that should be cleaned up
-- Some files use fully qualified names instead of imports (violates AI_INSTRUCTIONS.md)
 
 ## 5. Mishandling of Nullability
 

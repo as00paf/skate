@@ -16,16 +16,6 @@ The following key components lack sufficient unit test coverage:
     * `src/main/kotlin/com/pafoid/skate/engine/utils/Ray.kt`: Ray casting logic.
     * `src/main/kotlin/com/pafoid/skate/engine/utils/MathExtensions.kt`: Extension methods.
 
-## 2. Missing KDoc
-
-Documentation is missing for critical math and physics methods:
-
-* **`com.pafoid.skate.engine.physics3d`**:
-    * `Physics3D.kt`: `add`, `update`, `remove` methods.
-    * `RigidBody3D.kt`: Entire class is missing KDoc.
-* **`com.pafoid.skate.engine.scenes.components`**:
-    * `PlayerController.kt`: Some methods have KDoc, but `update`, `start`, `bail` do not.
-
 ## 3. Code Quality & Safety
 
 ### 3.1 Null Safety Violations (`!!` Operator)
@@ -75,7 +65,6 @@ Direct usage of `println` or `System.err` bypasses the `LoggerService`.
 
 * **`PlayerController.kt`**: `imgui()` method contains hardcoded strings:
     * `"State: "`, `"Preferred Stance: "`, `"Velocity: "`, `"Toggle Switch"`.
-    * *Violation*: `AI_INSTRUCTIONS.md` (Localization).
 * **`TrickManager.kt`**: Error messages are hardcoded.
 
 ### 4.4 Code Reuse & Extension Methods
