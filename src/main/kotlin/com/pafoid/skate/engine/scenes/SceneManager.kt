@@ -1,12 +1,14 @@
 package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.EngineState
-import com.pafoid.skate.engine.imgui.ImGuiLayer
+import com.pafoid.skate.engine.animation.Bone
+import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.editor.CreateGameObjectCommand
 import com.pafoid.skate.engine.editor.DeleteGameObjectCommand
 import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.editor.logs.LoggerService
+import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
@@ -16,10 +18,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
-import org.lwjgl.glfw.GLFW
 import org.koin.core.component.inject
+import org.lwjgl.glfw.GLFW
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.getValue
 
 class SceneManager : KoinComponent {
 
@@ -224,10 +225,10 @@ class SceneManager : KoinComponent {
         return currentScene?.getGameObject(id)
     }
 
-    fun getBoneById(id: Int): com.pafoid.skate.engine.animation.Bone? {
+    fun getBoneById(id: Int): Bone? {
         if (engineState.get() != EngineState.RUNNING) return null
         currentScene?.gameObjects?.forEach { go ->
-            go.getComponent<com.pafoid.skate.engine.animation.PoseGizmo>()?.let { pg ->
+            go.getComponent<PoseGizmo>()?.let { pg ->
                 val bone = pg.getBoneById(id)
                 if (bone != null) return bone
             }

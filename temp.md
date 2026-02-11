@@ -116,35 +116,31 @@ Reports
 Analyze the project and create a report to help me clean up the code that will include but not necessarily limited to :
 
 - Missing and failing unit tests
-- Missing kdoc for math and physics methods
 - Dead or unused code (methods, variables, constants, etc)
-- Missing import statements
-- Mishandling of nullability
 - Methods that are too long and should be divided into multiple methods
 - Previous logs or println() that should be removed or use the LoggerService instead
 - Code that should be reused
 - Breach of (AI_INSTRUCTIONS.md) protocol and architecture principles
 - Methods that should be extension methods
-- Hardcoded strings
-- Hardcoded values that should be constants
 - TODOs and FIXMEs that need to be addressed
   Output the report to cleanup_report_gemini.md
 
-Reports for cleanup
+Responsibility & layer report
+
 Improve loading to include all character animations and the character model.
-Skeleton seems to be always rendered, actually render mode selection does not seem to work anymore
-Move BoneTreeWindow to Skeleton component
+Make sure JobSystem is properly used across the project where it makes sense
+
 Key bindings for editor camera movement
 Change default binding for tools to 1,2,3,4 ...
-Add option for debug render with lines for models
+
 Make PlayerStateManager a component ? Should be able to pair animation with state
 Verify animation blending
-Fix dockspace
-Make sure JobSystem is properly used accross the project
-EditorCamera ImGui, presets
-Add missing Strings
 Allow Rendering of RigidBody3D and BoxCollider3D
-Make console text selectable/copyable
-Cache animatable for better lookup performances
-Button to reset to bind pose
+
 UI Review :
+Move BoneTreeWindow to Skeleton component
+Add option for debug render with lines for models
+Fix dockspace
+EditorCamera ImGui, presets
+Make console text selectable/copyable
+Button to reset to bind pose

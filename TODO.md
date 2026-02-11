@@ -343,4 +343,4 @@
   - [x] `Physics3D.kt`
   - [x] `ThumbnailCache.kt`
   - [x] `AnimationSystem.kt`
-- [ ] **H20. **: 
+- [ ] **H20. Animatable Cache **: Cache animatable game objects for better lookup performances
