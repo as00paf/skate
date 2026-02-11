@@ -1,6 +1,9 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.listeners.KeyListener
+import com.pafoid.skate.engine.controls.listeners.MouseListener
+import com.pafoid.skate.engine.editor.UndoRedoManager
+import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
@@ -10,16 +13,19 @@ import org.koin.core.component.inject
 class GizmoSystem: Component(), KoinComponent {
 
     private val keyListener: KeyListener by inject()
+    private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()
     private val settingsManager: SettingsManager by inject()
+    private val undoRedoManager: UndoRedoManager by inject()
+    private val debugDraw: DebugDraw by inject()
 
     var usingGizmo = NONE
 
-    private val translateGizmo = TranslateGizmo(sceneManager)
-    private val rotationGizmo = RotationGizmo(sceneManager)
-    private val scaleGizmo = ScaleGizmo(sceneManager)
-    private val selectionGizmo = SelectionGizmo(sceneManager)
-    private val measureGizmo = MeasureTool(sceneManager)
+    private val translateGizmo = TranslateGizmo(sceneManager, mouseListener, undoRedoManager, debugDraw)
+    private val rotationGizmo = RotationGizmo(sceneManager, mouseListener, undoRedoManager, debugDraw)
+    private val scaleGizmo = ScaleGizmo(sceneManager, mouseListener, undoRedoManager, debugDraw)
+    private val selectionGizmo = SelectionGizmo(sceneManager, mouseListener, undoRedoManager)
+    private val measureGizmo = MeasureTool(sceneManager, mouseListener, undoRedoManager, debugDraw, settingsManager)
 
     override fun init(gameObject: GameObject) {
         super.init(gameObject)

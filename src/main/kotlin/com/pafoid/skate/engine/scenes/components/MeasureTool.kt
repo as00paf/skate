@@ -1,25 +1,27 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.listeners.MouseListener
+import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.UnitSystem
-import com.pafoid.skate.engine.utils.Units
 import com.pafoid.skate.engine.utils.UnitType
+import com.pafoid.skate.engine.utils.Units
 import imgui.ImGui
 import imgui.flag.ImGuiKey
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import kotlin.math.abs
 
-class MeasureTool(sceneManager: SceneManager) : Gizmo(sceneManager), KoinComponent {
-    private val debugDraw: DebugDraw by inject()
-    private val mouseListener: MouseListener by inject()
-    private val settingsManager: SettingsManager by inject()
-
+class MeasureTool(
+    sceneManager: SceneManager,
+    mouseListener: MouseListener,
+    undoRedoManager: UndoRedoManager,
+    private val debugDraw: DebugDraw,
+    private val settingsManager: SettingsManager,
+) : Gizmo(sceneManager, mouseListener, undoRedoManager), KoinComponent {
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
 

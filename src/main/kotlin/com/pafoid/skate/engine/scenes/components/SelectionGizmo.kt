@@ -1,17 +1,20 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.listeners.MouseListener
+import com.pafoid.skate.engine.editor.UndoRedoManager
+import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
-import org.koin.core.component.inject
 
-class SelectionGizmo(sceneManager: SceneManager) : Gizmo(sceneManager) {
-
-    private val mouseListener: MouseListener by inject()
+class SelectionGizmo(
+    sceneManager: SceneManager,
+    mouseListener: MouseListener,
+    undoRedoManager: UndoRedoManager,
+) : Gizmo(sceneManager, mouseListener, undoRedoManager) {
 
     var hoveredGameObjectUid: Int = -1
         private set
 
-    var hoveredGameObject: com.pafoid.skate.engine.scenes.GameObject? = null
+    var hoveredGameObject: GameObject? = null
         private set
 
     override fun editorUpdate(dt: Float) {

@@ -1,23 +1,22 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.controls.listeners.MouseListener
-import com.pafoid.skate.engine.editor.PropertiesWindow
 import com.pafoid.skate.engine.editor.TransformCommand
+import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.Ray
-import com.sun.tools.sjavac.Main.go
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
-import kotlin.getValue
 import kotlin.math.abs
 
-class RotationGizmo(sceneManager: SceneManager) : Gizmo(sceneManager), KoinComponent {
-    private val debugDraw: DebugDraw by inject()
-    private val mouseListener: MouseListener by inject()
-
+class RotationGizmo(
+    sceneManager: SceneManager,
+    mouseListener: MouseListener,
+    undoRedoManager: UndoRedoManager,
+    private val debugDraw: DebugDraw,
+) : Gizmo(sceneManager, mouseListener, undoRedoManager), KoinComponent {
     private val radius = 2.0f
     private val hitThreshold = 0.4f
     
