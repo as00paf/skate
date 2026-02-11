@@ -219,10 +219,10 @@ class ImGuiLayer(
             }
             if (ImGui.beginMenu(stringManager.getString("menu.edit"))) {
                 if (ImGui.menuItem("${Icons.UNDO} ${stringManager.getString("menu.edit.undo")}", "Ctrl+Z")) {
-                    sceneManager.undo()
+                    undoRedoManager.undo()
                 }
                 if (ImGui.menuItem("${Icons.REDO} ${stringManager.getString("menu.edit.redo")}", "Ctrl+Y")) {
-                    sceneManager.redo()
+                    undoRedoManager.redo()
                 }
                 ImGui.separator()
                 if (ImGui.menuItem("${Icons.CUT} ${stringManager.getString("menu.edit.cut")}", "Ctrl+X")) {

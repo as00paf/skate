@@ -43,14 +43,6 @@ class SceneManager : KoinComponent {
     var currentWidth = 0
     var currentHeight = 0
 
-    fun undo() {
-        undoRedoManager.undo()
-    }
-
-    fun redo() {
-        undoRedoManager.redo()
-    }
-
     suspend fun initializeScene() = withContext(JobSystem.Main) {
         logger.logEngine("Initializing scene...")
         splashScreenManager.init()
@@ -135,12 +127,12 @@ class SceneManager : KoinComponent {
             }
             // Undo
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_Z)) {
-                undo()
+                undoRedoManager.undo()
                 logger.logEditor("Undo")
             }
             // Redo
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_Y)) {
-                redo()
+                undoRedoManager.redo()
                 logger.logEditor("Redo")
             }
         }
