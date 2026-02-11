@@ -67,9 +67,11 @@ class SkateboardPhysics : Component(), KoinComponent {
             
             val results = scene.physics3d.rayTest(rayStart, rayEnd)
             if (results.isNotEmpty()) {
-                val closest = results.minByOrNull { it.hitFraction }!!
-                applySuspensionForce(closest, rayStart, localDown)
-                groundedCount++
+                val closest = results.minByOrNull { it.hitFraction }
+                if (closest != null) {
+                    applySuspensionForce(closest, rayStart, localDown)
+                    groundedCount++
+                }
             }
         }
         isGrounded = groundedCount > 0

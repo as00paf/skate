@@ -27,11 +27,10 @@ class AnimationSystem : Component(), KoinComponent {
         scene.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
-            updateAnimation(
-                animator!!,
-                skeletonComponent!!,
-                dt
-            ) // TODO: fix nullability by caching animated gameObjects in scene
+            
+            if (animator != null && skeletonComponent != null) {
+                updateAnimation(animator, skeletonComponent, dt)
+            }
         }
     }
 
@@ -41,15 +40,16 @@ class AnimationSystem : Component(), KoinComponent {
         scene.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
-            updateAnimation(
-                animator!!,
-                skeletonComponent!!,
-                dt
-            ) // TODO: fix nullability by caching animated gameObjects in scene
+            
+            if (animator != null && skeletonComponent != null) {
+                updateAnimation(animator, skeletonComponent, dt)
+            }
 
             val goTransform = go.getComponent<Transform>()
             val transformMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
-            visualizeBone(skeletonComponent, transformMatrix)
+            if (skeletonComponent != null) {
+                visualizeBone(skeletonComponent, transformMatrix)
+            }
         }
     }
 

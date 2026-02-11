@@ -336,6 +336,13 @@
   - [x] Refactor `PlayerController.kt` ImGui strings.
   - [x] Refactor `TrickManager.kt` error messages.
   - [x] Audit and refactor other UI components.
+- [ ] **H19. Nullability**: Remove `!!` operators and replace with safe calls or Elvis operators.
+  - [ ] `SkateboardPhysics.kt`
+  - [ ] `RenderBatch.kt`
+  - [ ] `Camera.kt`
+  - [ ] `Physics3D.kt`
+  - [ ] `ThumbnailCache.kt`
+  - [ ] `AnimationSystem.kt`
 - [ ] **H19. Nullability**: We should not be using the !! operator. Handle nullability better in these files one file at
   the time and one user confirmed commit for each file : AnimationSystem, RenderBatch, Camera, Physics3D,
-  ThumbnailCache, SkateboardPhysics,
+  ThumbnailCache, SkateboardPhysics

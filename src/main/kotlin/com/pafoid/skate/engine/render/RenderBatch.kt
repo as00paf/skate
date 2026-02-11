@@ -68,9 +68,10 @@ class RenderBatch(
         sprites[index] = spr
         numSprites++
 
-        if (spr.getTexture() != null) {
-            if (!textureSlots.contains(spr.getTexture())) {
-                textureSlots.add(spr.getTexture()!!)
+        val texture = spr.getTexture()
+        if (texture != null) {
+            if (!textureSlots.contains(texture)) {
+                textureSlots.add(texture)
             }
         }
 

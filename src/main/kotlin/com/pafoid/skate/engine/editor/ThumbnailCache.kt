@@ -36,7 +36,7 @@ class ThumbnailCache: KoinComponent {
 
     fun getThumbnail(id: String, model: TexturedModel): Int {
         if (thumbnails.containsKey(id)) {
-            return thumbnails[id]!!
+            return thumbnails[id] ?: 0
         }
 
         val texId = renderThumbnail(model)
@@ -54,7 +54,7 @@ class ThumbnailCache: KoinComponent {
         val lastViewport = IntArray(4)
         glGetIntegerv(GL_VIEWPORT, lastViewport)
 
-        val fbo = frameBuffer!!
+        val fbo = frameBuffer ?: throw IllegalStateException("FrameBuffer failed to initialize")
         fbo.bind()
         
         glViewport(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE)

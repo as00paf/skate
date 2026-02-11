@@ -105,7 +105,7 @@ class Camera(
     }
 
     private fun updateThirdPerson(dt: Float) {
-        val rawTarget = target!!
+        val rawTarget = target ?: return
         val targetPos = Vector3f(rawTarget).add(targetOffset)
         
         // Input Handling

@@ -127,7 +127,7 @@ class Physics3D : IPhysics3D, KoinComponent {
             
             // Check if we need to rebuild due to mass change
             if (rb.rawBody != null) {
-                if (rb.rawBody!!.mass != desiredMass) {
+                if (rb.rawBody?.mass != desiredMass) {
                     physicsSpace.remove(rb.rawBody)
                     rb.rawBody = null
                 } else {
