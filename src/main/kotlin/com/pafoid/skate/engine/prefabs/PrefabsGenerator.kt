@@ -104,6 +104,11 @@ class PrefabsGenerator(
             resourceManager.loadAnimation(Assets.Animations.WALKING, skater.skeletonComponent.pose.skeleton)
         }
 
+        val idleAnimation = withContext(Dispatchers.IO) {
+            resourceManager.loadAnimation(Assets.Animations.IDLE, skater.skeletonComponent.pose.skeleton)
+        }
+
+        skater.animator.addAnimation(idleAnimation)
         skater.animator.addAnimation(walkingAnimation)
 
         JobSystem.runOnMain {

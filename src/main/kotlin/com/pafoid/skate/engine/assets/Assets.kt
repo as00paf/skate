@@ -54,6 +54,7 @@ object Assets {
         const val TEXTURES = "assets/textures"
     }
     object Animations {
+        const val IDLE = "assets/characters/animations/idle.fbx"
         const val WALKING = "assets/characters/animations/walking.fbx"
     }
 }

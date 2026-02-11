@@ -29,7 +29,7 @@ class AnimationLoader {
         )
             ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
 
-        println("Inspecting Bone Hierarchy for: $filePath")
+        //println("Inspecting Bone Hierarchy for: $filePath")
 
         val animations = mutableListOf<Animation>()
         val sceneAnimations = scene.mAnimations() ?: throw Error("No animation found in animation file")
@@ -41,7 +41,7 @@ class AnimationLoader {
 
         for (i in 0 until scene.mNumAnimations()) {
             val aiAnim = AIAnimation.create(sceneAnimations.get(i))
-            animations.add(processAnimation(aiAnim, finalScale, skeleton.rootBone.children.first().name))
+            animations.add(processAnimation(filePath, aiAnim, finalScale, skeleton.rootBone.children.first().name))
         }
 
         aiReleaseImport(scene)
@@ -82,11 +82,12 @@ class AnimationLoader {
     }
 
     fun processAnimation(
+        path: String,
         aiAnim: AIAnimation,
         scale: Float = 1.0f,
         rootNodeName: String
     ): Animation {
-        val name = aiAnim.mName().dataString()
+        val name = path.substringBefore(".fbx").replaceBeforeLast("/", "").replace("/", "").capitalize()
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
         val durationInSeconds = duration / ticksPerSecond

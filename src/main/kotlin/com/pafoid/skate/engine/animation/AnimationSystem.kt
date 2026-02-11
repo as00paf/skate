@@ -103,6 +103,8 @@ class AnimationSystem : Component(), KoinComponent {
                     animation.update(animator.currentTime, skeleton)
                 }
 
+                animation.update(animator.currentTime, skeleton)
+
                 // Copy the skeleton's bone transforms to the pose's local transforms
                 skeleton.getAllBones().forEach { bone ->
                     if (bone.index in 0 until pose.localTransforms.size) {

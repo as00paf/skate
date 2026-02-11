@@ -101,7 +101,7 @@ class Animation(
                 AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, scale)
             }
 
-            targetMat.translationRotateScale(pos, rot, scale)
+            targetMat.translationRotateScale(pos, rot, Vector3f())
         }
 
         // Blend current state with target state
