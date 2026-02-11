@@ -5,19 +5,26 @@ import org.joml.Vector3f
 
 /**
  * A utility object providing static methods for various interpolation techniques
- * commonly used in animation systems, such as linear, spherical linear (slerp),
- * and cubic spline interpolation.
+ * commonly used in animation systems.
+ * 
+ * Supports:
+ * - Linear Interpolation (LERP)
+ * - Spherical Linear Interpolation (SLERP) for Quaternions
+ * - Cubic Spline Interpolation (Hermite Spline)
+ * - Step Interpolation
  */
 object Interpolation {
 
     /**
      * Performs linear interpolation between two [Vector3f] points.
+     * Uses JOML's internal implementation.
+     * Formula: result = start + (end - start) * t
      *
      * @param start The starting vector.
      * @param end The ending vector.
      * @param t The interpolation factor, typically in the range [0, 1].
      * @param dest The destination vector to store the result.
-     * @return The interpolated vector.
+     * @return The interpolated vector (same as dest).
      */
     fun linear(start: Vector3f, end: Vector3f, t: Float, dest: Vector3f): Vector3f {
         return start.lerp(end, t, dest)
@@ -25,13 +32,14 @@ object Interpolation {
 
     /**
      * Performs spherical linear interpolation (SLERP) between two [Quaternionf]s.
-     * This is the standard for interpolating rotations to ensure the shortest path on the unit sphere.
+     * This ensures the shortest path on the unit sphere and constant angular velocity.
+     * Vital for smooth character rotations.
      *
      * @param start The starting quaternion.
      * @param end The ending quaternion.
      * @param t The interpolation factor, typically in the range [0, 1].
      * @param dest The destination quaternion to store the result.
-     * @return The interpolated quaternion.
+     * @return The interpolated quaternion (same as dest).
      */
     fun slerp(start: Quaternionf, end: Quaternionf, t: Float, dest: Quaternionf): Quaternionf {
         return start.slerp(end, t, dest)
@@ -39,6 +47,7 @@ object Interpolation {
 
     /**
      * Performs linear interpolation between two float values.
+     * Formula: result = start + (end - start) * t
      *
      * @param start The starting value.
      * @param end The ending value.
@@ -51,13 +60,24 @@ object Interpolation {
 
     /**
      * Performs cubic spline interpolation between two float values using Hermite interpolation.
+     * This implementation follows the glTF 2.0 specification for CUBIC_SPLINE interpolation.
+     *
+     * Formula:
+     * p(t) = (2t³ - 3t² + 1)p₀ + (t³ - 2t² + t)m₀ + (-2t³ + 3t²)p₁ + (t³ - t²)m₁
+     *
+     * Where:
+     * - p₀: Starting point value
+     * - p₁: Ending point value
+     * - m₀: Out-tangent at start * deltaTime
+     * - m₁: In-tangent at end * deltaTime
+     * - t: Normalized time factor [0, 1]
      *
      * @param p0 The starting point value.
      * @param m0 The out-tangent (slope) at the starting point.
      * @param p1 The ending point value.
      * @param m1 The in-tangent (slope) at the ending point.
      * @param t The interpolation factor, typically in the range [0, 1].
-     * @param deltaTime The time difference between keyframes, used to scale the tangents.
+     * @param deltaTime The time difference between keyframes, used to scale the tangents (m0, m1).
      * @return The smoothly interpolated value.
      */
     fun cubicSpline(
