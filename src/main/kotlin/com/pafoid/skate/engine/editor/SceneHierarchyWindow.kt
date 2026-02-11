@@ -16,6 +16,7 @@ class SceneHierarchyWindow: KoinComponent {
 
     private val sceneManager: SceneManager by inject()
     private val stringManager: StringManager by inject()
+    private val undoRedoManager: UndoRedoManager by inject()
 
     fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.hierarchy"))
@@ -30,8 +31,10 @@ class SceneHierarchyWindow: KoinComponent {
         
         // Handle global deletion input
         if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_DELETE)) {
-            sceneManager.currentScene?.getSelectedGameObject()?.let {
-                sceneManager.deleteGameObject(it)
+            sceneManager.currentScene?.let { scene ->
+                scene.getSelectedGameObject()?.let { go ->
+                    undoRedoManager.executeCommand(DeleteGameObjectCommand(go, scene))
+                }
             }
         }
 
@@ -57,7 +60,9 @@ class SceneHierarchyWindow: KoinComponent {
         
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("lbl.delete")}")) {
-                sceneManager.deleteGameObject(obj)
+                sceneManager.currentScene?.let { scene ->
+                    undoRedoManager.executeCommand(DeleteGameObjectCommand(obj, scene))
+                }
             }
             ImGui.endPopup()
         }

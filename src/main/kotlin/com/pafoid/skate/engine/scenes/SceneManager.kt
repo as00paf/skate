@@ -43,16 +43,6 @@ class SceneManager : KoinComponent {
     var currentWidth = 0
     var currentHeight = 0
 
-    fun deleteGameObject(gameObject: GameObject) {
-        val scene = currentScene ?: return
-        undoRedoManager.executeCommand(DeleteGameObjectCommand(gameObject, scene))
-    }
-
-    fun addGameObject(gameObject: GameObject) {
-        val scene = currentScene ?: return
-        undoRedoManager.executeCommand(CreateGameObjectCommand(gameObject, scene))
-    }
-
     fun undo() {
         undoRedoManager.undo()
     }
@@ -95,7 +85,7 @@ class SceneManager : KoinComponent {
             currentScene?.destroy()
         }
         logger.logEngine("Changing scene to ${initializer::class.simpleName}...")
-        val scene = Scene(initializer, serializer, logger)
+        val scene = Scene(initializer, serializer, undoRedoManager, logger)
         currentScene = scene
         // TODO: fix loading of saved scene
         //scene.load()
@@ -118,16 +108,18 @@ class SceneManager : KoinComponent {
             }
             // Cut
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
-                val selected = currentScene?.getSelectedGameObject()
+                val scene = currentScene
+                val selected = scene?.getSelectedGameObject()
                 if (selected != null) {
                     val cloned = clipboardService.paste() ?: return // paste here returns the copied object from cut
                     clipboardService.copy(selected) // Redundant but following old logic
-                    deleteGameObject(selected)
+                    undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene))
                     logger.logEditor("Cut GameObject: ${selected.name}")
                 }
             }
             // Paste
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_V)) {
+                val scene = currentScene
                 val clonedGameObject = clipboardService.paste()
                 if (clonedGameObject != null) {
                     // Add to scene at origin for now
@@ -135,9 +127,9 @@ class SceneManager : KoinComponent {
                     clonedGameObject.getComponent<Transform>()?.translation?.set(origin)
                     
                     // Set parent to null, as it's being pasted as a root object
-                    clonedGameObject.parent = null 
-                    
-                    addGameObject(clonedGameObject)
+                    clonedGameObject.parent = null
+
+                    scene?.let { undoRedoManager.executeCommand(CreateGameObjectCommand(clonedGameObject, it)) }
                     logger.logEditor("Pasted GameObject: ${clonedGameObject.name}")
                 }
             }

@@ -53,7 +53,7 @@ val engineModule = module {
     single { PrefabsGenerator(get(), get()) }
 
     single { Renderer(get(), get(), get(), get(), get(), get()) }
-    single { ImGuiLayer(get(), get(), get(), get(), get(),get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get()) }
 }
 
 val inputModule = module {

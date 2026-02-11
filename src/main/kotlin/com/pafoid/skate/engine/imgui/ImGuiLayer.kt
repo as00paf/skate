@@ -31,6 +31,7 @@ class ImGuiLayer(
     private val sceneManager: SceneManager,
     private val clipboardService: ClipboardService,
     private val stringManager: StringManager,
+    private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer
 ): KoinComponent {
 
@@ -225,10 +226,11 @@ class ImGuiLayer(
                 }
                 ImGui.separator()
                 if (ImGui.menuItem("${Icons.CUT} ${stringManager.getString("menu.edit.cut")}", "Ctrl+X")) {
-                    val selected = sceneManager.currentScene?.getSelectedGameObject()
+                    val scene = sceneManager.currentScene
+                    val selected = scene?.getSelectedGameObject()
                     if (selected != null) {
                         clipboardService.copy(selected)
-                        sceneManager.deleteGameObject(selected)
+                        undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene))
                     }
                 }
                 if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("menu.edit.copy")}", "Ctrl+C")) {
@@ -238,10 +240,11 @@ class ImGuiLayer(
                 }
                 if (ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("menu.edit.paste")}", "Ctrl+V")) {
                     val cloned = clipboardService.paste()
+                    val scene = sceneManager.currentScene
                     if (cloned != null) {
                         cloned.getComponent<Transform>()?.translation?.set(0f, 0f, 0f)
                         cloned.parent = null
-                        sceneManager.addGameObject(cloned)
+                        scene?.let { undoRedoManager.executeCommand(CreateGameObjectCommand(cloned, it)) }
                     }
                 }
                 ImGui.endMenu()
