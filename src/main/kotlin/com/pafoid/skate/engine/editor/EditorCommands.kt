@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
-import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.Transform
 
 class TransformCommand(
@@ -25,31 +24,29 @@ class TransformCommand(
 class CreateGameObjectCommand(
     private val gameObject: GameObject,
     private val scene: Scene,
-    private val sceneManager: SceneManager
 ) : Command {
     override fun execute() {
         scene.addGameObjectToScene(gameObject)
-        sceneManager.currentScene?.setSelectedGameObject(gameObject)
+        scene.setSelectedGameObject(gameObject)
     }
 
     override fun undo() {
         scene.removeGameObject(gameObject)
-        sceneManager.currentScene?.setSelectedGameObject(null)
+        scene.setSelectedGameObject(null)
     }
 }
 
 class DeleteGameObjectCommand(
     private val gameObject: GameObject,
     private val scene: Scene,
-    private val sceneManager: SceneManager
 ) : Command {
     override fun execute() {
         scene.removeGameObject(gameObject)
-        sceneManager.currentScene?.setSelectedGameObject(null)
+        scene.setSelectedGameObject(null)
     }
 
     override fun undo() {
         scene.addGameObjectToScene(gameObject)
-        sceneManager.currentScene?.setSelectedGameObject(gameObject)
+        scene.setSelectedGameObject(gameObject)
     }
 }

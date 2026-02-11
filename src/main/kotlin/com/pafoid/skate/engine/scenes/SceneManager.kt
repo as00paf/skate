@@ -45,12 +45,12 @@ class SceneManager : KoinComponent {
 
     fun deleteGameObject(gameObject: GameObject) {
         val scene = currentScene ?: return
-        undoRedoManager.executeCommand(DeleteGameObjectCommand(gameObject, scene, this))
+        undoRedoManager.executeCommand(DeleteGameObjectCommand(gameObject, scene))
     }
 
     fun addGameObject(gameObject: GameObject) {
         val scene = currentScene ?: return
-        undoRedoManager.executeCommand(CreateGameObjectCommand(gameObject, scene, this))
+        undoRedoManager.executeCommand(CreateGameObjectCommand(gameObject, scene))
     }
 
     fun undo() {
