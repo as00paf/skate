@@ -36,30 +36,33 @@ class Animation(
         }
 
         // 2. Apply Animation Channels
-        val pos = Vector3f()
-        val rot = Quaternionf()
-        val scale = Vector3f()
+        // Group channels by bone to process all channels for each bone together
+        val channelsByBone = channels.groupBy { it.targetNodeName }
 
-        for (channel in channels) {
-            val bone = skeleton.getBoneByName(channel.targetNodeName) ?: continue
+        for ((boneName, boneChannels) in channelsByBone) {
+            val bone = skeleton.getBoneByName(boneName) ?: continue
 
-            // Read current (Bind Pose or partially animated) state
+            // Start with the bind pose transform
+            val pos = Vector3f()
+            val rot = Quaternionf()
+            val scale = Vector3f()  // Default to identity scale
+
+            // Read current state (though it will be overwritten by bindLocalTransform)
             bone.localTransform.getTranslation(pos)
             bone.localTransform.getUnnormalizedRotation(rot)
-            bone.localTransform.getScale(scale)
+            bone.localTransform.getScale(scale)  // Get the current scale from bind pose
 
-            when (channel.path) {
-                AnimationPath.TRANSLATION -> channel.sampler.sampleVector3f(loopTime, pos)
-                AnimationPath.ROTATION -> channel.sampler.sampleQuaternionf(loopTime, rot)
-                AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, scale)
+            // Process each channel for this bone
+            for (channel in boneChannels) {
+                when (channel.path) {
+                    AnimationPath.TRANSLATION -> channel.sampler.sampleVector3f(loopTime, pos)
+                    AnimationPath.ROTATION -> channel.sampler.sampleQuaternionf(loopTime, rot)
+                    AnimationPath.SCALE -> channel.sampler.sampleVector3f(loopTime, scale)
+                }
             }
 
-            // Apply scaling for translations:
-            //val scaleFactor = channel.scale
-            //println("Will be applying scale factor: $scaleFactor")
-
             val animatedLocal = Matrix4f()
-            animatedLocal.translationRotateScale(pos.mul(channel.scale), rot, scale)
+            animatedLocal.translationRotateScale(pos, rot, scale)
 
             bone.localTransform
                 .set(bone.bindLocalTransform)

@@ -54,7 +54,7 @@ class AnimationSystem : Component(), KoinComponent {
     }
 
     private fun visualizeBone(skeletonComponent: SkeletonComponent, modelMatrix: Matrix4f) {
-        val pose = skeletonComponent.pose ?: return
+        val pose = skeletonComponent.pose
         val skeleton = pose.skeleton
 
         visualizeBoneRecursive(skeleton.rootBone, modelMatrix)

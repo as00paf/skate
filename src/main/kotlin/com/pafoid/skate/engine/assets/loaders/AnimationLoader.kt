@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.utils.BoneNameMapper
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.assimp.AIAnimation
-import org.lwjgl.assimp.AINode
 import org.lwjgl.assimp.AINodeAnim
 import org.lwjgl.assimp.Assimp.aiGetErrorString
 import org.lwjgl.assimp.Assimp.aiImportFile
@@ -32,50 +31,17 @@ class AnimationLoader {
 
         println("Inspecting Bone Hierarchy for: $filePath")
 
-        // Try to identify root bone for motion zeroing
-        var rootBoneName: String? = null
-        val rootNode = scene.mRootNode()
-
-        if (rootNode != null && rootNode.mNumChildren() > 0) {
-            val children = rootNode.mChildren()
-            if (children != null) {
-                // Heuristic: First child is usually the Armature/Root.
-                // We want the actual Hip bone, which might be the first child of the Armature, or the first child itself.
-                // Let's look for "Hips" specifically first.
-
-                fun findHips(node: AINode): String? {
-                    val name = BoneNameMapper.map(node.mName().dataString())
-                    if (name.equals("Hips", ignoreCase = true)) return name
-
-                    for (i in 0 until node.mNumChildren()) {
-                        val child = node.mChildren()?.get(i)?.let { AINode.create(it) } ?: continue
-                        val res = findHips(child)
-                        if (res != null) return res
-                    }
-                    println("Could not find Hips bone")
-                    return null
-                }
-
-                rootBoneName = findHips(rootNode)
-
-                // Fallback: Use the first child's name if it's not the scene root itself
-                if (rootBoneName == null) {
-                    val firstChild = AINode.create(children.get(0))
-                    rootBoneName = BoneNameMapper.map(firstChild.mName().dataString())
-                }
-            }
-        }
-
         val animations = mutableListOf<Animation>()
         val sceneAnimations = scene.mAnimations() ?: throw Error("No animation found in animation file")
 
         // find out unit scale
-        val finalScale = findScale(AIAnimation.create(sceneAnimations.get(0)), rootBoneName.orEmpty(), skeleton)
+        val finalScale =
+            findScale(AIAnimation.create(sceneAnimations.get(0)), skeleton.rootBone.children.first().name, skeleton)
 
 
         for (i in 0 until scene.mNumAnimations()) {
             val aiAnim = AIAnimation.create(sceneAnimations.get(i))
-            animations.add(processAnimation(aiAnim, finalScale, rootBoneName))
+            animations.add(processAnimation(aiAnim, finalScale, skeleton.rootBone.children.first().name))
         }
 
         aiReleaseImport(scene)
@@ -118,7 +84,7 @@ class AnimationLoader {
     fun processAnimation(
         aiAnim: AIAnimation,
         scale: Float = 1.0f,
-        rootNodeName: String? = null
+        rootNodeName: String
     ): Animation {
         val name = aiAnim.mName().dataString()
         val duration = aiAnim.mDuration().toFloat()
@@ -131,10 +97,7 @@ class AnimationLoader {
             val aiChannel = AINodeAnim.create(animationChannels.get(i))
             val originalName = aiChannel.mNodeName().dataString()
             val nodeName = BoneNameMapper.map(originalName)
-            val isRoot = (rootNodeName != null && nodeName.equals(rootNodeName, ignoreCase = true)) || nodeName.equals(
-                "Hips",
-                ignoreCase = true
-            )
+            val isRoot = nodeName.equals(rootNodeName, ignoreCase = true)
 
             // Translation
             // For root bones, we zero out translation to keep animations in place
@@ -147,7 +110,7 @@ class AnimationLoader {
                     times[k] = key.mTime().toFloat() / ticksPerSecond
 
                     values[k * 3] = if (isRoot) 0f else key.mValue().x() * scale
-                    values[k * 3 + 1] = key.mValue().y() * scale
+                    values[k * 3 + 1] = 0f
                     values[k * 3 + 2] = if (isRoot) 0f else key.mValue().z() * scale
                 }
 
@@ -155,8 +118,7 @@ class AnimationLoader {
                     AnimationChannel(
                         AnimationSampler(times, values, InterpolationType.LINEAR, 3),
                         nodeName,
-                        AnimationPath.TRANSLATION,
-                        scale
+                        AnimationPath.TRANSLATION
                     )
                 )
             }
@@ -181,18 +143,16 @@ class AnimationLoader {
                 channels.add(
                     AnimationChannel(
                         sampler, nodeName, AnimationPath.ROTATION,
-                        scale
                     )
                 )
             }
 
-            // Scale (DISABLED FOR SAFETY)
-            /*
+            // Scale
             if (aiChannel.mNumScalingKeys() > 0) {
                 val times = FloatArray(aiChannel.mNumScalingKeys())
                 val values = FloatArray(aiChannel.mNumScalingKeys() * 3)
                 for (k in 0 until aiChannel.mNumScalingKeys()) {
-                    val keys = aiChannel.mScalingKeys() ?: continu//e
+                    val keys = aiChannel.mScalingKeys() ?: continue
                     val key = keys.get(k)
                     times[k] = key.mTime().toFloat() / ticksPerSecond
                     values[k * 3] = key.mValue().x()
@@ -202,7 +162,6 @@ class AnimationLoader {
                 val sampler = AnimationSampler(times, values, InterpolationType.LINEAR, 3)
                 channels.add(AnimationChannel(sampler, nodeName, AnimationPath.SCALE))
             }
-            */
         }
 
         return Animation(name, channels, durationInSeconds)
