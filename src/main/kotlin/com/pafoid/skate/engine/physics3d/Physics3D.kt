@@ -3,20 +3,20 @@ package com.pafoid.skate.engine.physics3d
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
+import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.collision.shapes.CylinderCollisionShape
-import com.jme3.bullet.objects.PhysicsRigidBody
-import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.jme3.bullet.collision.shapes.MeshCollisionShape
+import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.components.Transform
-import com.pafoid.skate.engine.utils.JomlVector3f
 import com.pafoid.skate.engine.utils.JmeVector3f
+import com.pafoid.skate.engine.utils.JomlVector3f
 import electrostatic4j.snaploader.LibraryInfo
 import electrostatic4j.snaploader.LoadingCriterion
 import electrostatic4j.snaploader.NativeBinaryLoader
@@ -26,8 +26,6 @@ import electrostatic4j.snaploader.platform.util.PlatformPredicate
 import org.joml.Quaternionf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import javax.swing.text.StyleConstants.getComponent
-import kotlin.getValue
 
 class Physics3D : IPhysics3D, KoinComponent {
     private val debugDraw: DebugDraw by inject()

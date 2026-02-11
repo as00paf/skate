@@ -30,7 +30,6 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
     override suspend fun loadResources(scene: Scene) {
         resourceManager.loadModel(Assets.Models.JAMES)
-        //resourceManager.loadAnimation(Assets.Animations.WALKING)
     }
 
     override suspend fun init(scene: Scene) {

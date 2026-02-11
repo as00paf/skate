@@ -29,15 +29,11 @@ class AnimationLoader {
         )
             ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
 
-        //println("Inspecting Bone Hierarchy for: $filePath")
-
         val animations = mutableListOf<Animation>()
         val sceneAnimations = scene.mAnimations() ?: throw Error("No animation found in animation file")
 
-        // find out unit scale
         val finalScale =
             findScale(AIAnimation.create(sceneAnimations.get(0)), skeleton.rootBone.children.first().name, skeleton)
-
 
         for (i in 0 until scene.mNumAnimations()) {
             val aiAnim = AIAnimation.create(sceneAnimations.get(i))
@@ -65,19 +61,16 @@ class AnimationLoader {
         if (aiChannel == null || !isRoot) return 1f
 
         val firstPosY = aiChannel.mPositionKeys()?.get(0)?.mValue()?.y() ?: 0f
-        //println("Animation first key global position.y: $firstPosY")
 
         val hipBonePos = Vector3f()
         val hipBone = skeleton.rootBone.children.firstOrNull { it.name == "Hips" }
         hipBone?.bindLocalTransform?.getTranslation(hipBonePos)
-        //println("Hip bone (${hipBone?.name}) bindLocalTransform translation.y: ${hipBonePos.y()}")
 
         val finalScale = hipBonePos.y() / firstPosY
         val finalRoundedScale = BigDecimal(finalScale.toDouble())
             .setScale(2, RoundingMode.HALF_EVEN)
             .toFloat()
 
-        println("Final scale $finalRoundedScale")
         return finalRoundedScale
     }
 

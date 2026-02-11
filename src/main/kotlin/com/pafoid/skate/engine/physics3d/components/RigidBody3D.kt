@@ -1,18 +1,15 @@
 package com.pafoid.skate.engine.physics3d.components
 
 import com.jme3.bullet.objects.PhysicsRigidBody
-import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
-import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
-import com.sun.tools.sjavac.Main.go
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Quaternionf
-import javax.swing.text.StyleConstants.getComponent
 
 @Serializable
 open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {

@@ -40,7 +40,6 @@ class PlayerController : Component(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val inputProvider: IInputProvider by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
-
     private val sceneManager: SceneManager by inject()
 
     var preferredStance = PreferredStance.REGULAR
@@ -79,7 +78,6 @@ class PlayerController : Component(), KoinComponent {
             animator = s.getComponent<Animator>()
         }
         stateManager = PlayerStateManager(this)
-        stateManager.transitionToState(PlayerState.WALKING)
     }
 
     override fun update(dt: Float) {
