@@ -12,18 +12,6 @@ concerns.
 
 - `TrickDetectionTest.detectFakieOllie_movingBackwardsAndPopping_identifiesAsFakieOllie()` - FAILED
 
-## 5. Mishandling of Nullability
-
-### Unsafe Calls Found
-
-- `AnimationSystem.kt:31-32` - `animator!!` and `skeletonComponent!!`
-- `AnimationSystem.kt:45-46` - `animator!!` and `skeletonComponent!!`
-- `SkateboardPhysics.kt:70` - `results.minByOrNull { it.hitFraction }!!`
-- `RenderBatch.kt:73` - `spr.getTexture()!!`
-- `Camera.kt:108` - `target!!`
-- `ThumbnailCache.kt:39` - `thumbnails[id]!!`
-- `ThumbnailCache.kt:57` - `frameBuffer!!`
-- `Physics3D.kt:97` - `rb.rawBody!!`
 
 ## 6. Methods That Are Too Long
 

@@ -332,8 +332,10 @@
   - [x] `computeGlobalTransformsRecursive()` in `SkeletonMath.kt` could use more detailed documentation
   - [x] Animation sampling methods in `AnimationSampler.kt` need enhanced documentation
   - [x] Various interpolation methods in `Interpolation.kt` need more detailed KDoc
-- [ ] **H18. Hardcoded Strings**: Refactor hardcoded strings in UI and error logs to use `StringManager`.
-  - [ ] Refactor `PlayerController.kt` ImGui strings.
-  - [ ] Refactor `TrickManager.kt` error messages.
-  - [ ] Audit and refactor other UI components.
-- [ ] **H18. Hardcoded Strings**: PlayerController.kt imgui()` method contains hardcoded strings and TrickManager.kt error messages are hardcoded. Make sure they use the localization system.
+- [x] **H18. Hardcoded Strings**: Refactor hardcoded strings in UI and error logs to use `StringManager`.
+  - [x] Refactor `PlayerController.kt` ImGui strings.
+  - [x] Refactor `TrickManager.kt` error messages.
+  - [x] Audit and refactor other UI components.
+- [ ] **H19. Nullability**: We should not be using the !! operator. Handle nullability better in these files one file at
+  the time and one user confirmed commit for each file : AnimationSystem, RenderBatch, Camera, Physics3D,
+  ThumbnailCache, SkateboardPhysics,

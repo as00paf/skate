@@ -16,21 +16,6 @@ The following key components lack sufficient unit test coverage:
     * `src/main/kotlin/com/pafoid/skate/engine/utils/Ray.kt`: Ray casting logic.
     * `src/main/kotlin/com/pafoid/skate/engine/utils/MathExtensions.kt`: Extension methods.
 
-## 3. Code Quality & Safety
-
-### 3.1 Null Safety Violations (`!!` Operator)
-
-The `!!` operator creates potential runtime crashes and violates the "Zero-Assertion Policy".
-
-* `StringManager.kt`: `properties.getProperty(key, "!!${key}!!")` (Safe usage, but looks like a violation pattern in
-  grep)
-* `SkateboardPhysics.kt`: `val closest = results.minByOrNull { it.hitFraction }!!`
-* `RenderBatch.kt`: `textureSlots.add(spr.getTexture()!!)`
-* `Camera.kt`: `val rawTarget = target!!`
-* `Physics3D.kt`: `if (rb.rawBody!!.mass != desiredMass)`
-* `ThumbnailCache.kt`: `return thumbnails[id]!!`
-* `AnimationSystem.kt`: `animator!!`, `skeletonComponent!!`
-
 ### 3.2 Logging Violations (`println` / `System.err`)
 
 Direct usage of `println` or `System.err` bypasses the `LoggerService`.
@@ -60,12 +45,6 @@ Direct usage of `println` or `System.err` bypasses the `LoggerService`.
     * *Recommendation*: Extract `WalkController`, `RideController`, `StanceManager` into separate components or
       delegates.
     * *Recommendation*: Move `bail()` logic to a `BailSystem` or `RagdollManager`.
-
-### 4.2 Hardcoded Strings (Localization)
-
-* **`PlayerController.kt`**: `imgui()` method contains hardcoded strings:
-    * `"State: "`, `"Preferred Stance: "`, `"Velocity: "`, `"Toggle Switch"`.
-* **`TrickManager.kt`**: Error messages are hardcoded.
 
 ### 4.4 Code Reuse & Extension Methods
 
