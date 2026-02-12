@@ -5,15 +5,15 @@ import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class InterpolationTest {
+class InterpolatorTest {
 
     @Test
     fun `test linear interpolation`() {
         val start = Vector3f(0f, 0f, 0f)
         val end = Vector3f(10f, 10f, 10f)
         val dest = Vector3f()
-        
-        Interpolation.linear(start, end, 0.5f, dest)
+
+        Interpolator.linear(start, end, 0.5f, dest)
         assertEquals(5f, dest.x)
         assertEquals(5f, dest.y)
         assertEquals(5f, dest.z)
@@ -23,11 +23,11 @@ class InterpolationTest {
     fun `test step interpolation`() {
         val start = Vector3f(0f, 0f, 0f)
         val dest = Vector3f()
-        
-        Interpolation.step(start, 0.5f, dest)
+
+        Interpolator.step(start, 0.5f, dest)
         assertEquals(0f, dest.x)
-        
-        Interpolation.step(start, 0.99f, dest)
+
+        Interpolator.step(start, 0.99f, dest)
         assertEquals(0f, dest.x)
     }
 
@@ -36,8 +36,8 @@ class InterpolationTest {
         val start = Quaternionf().rotationXYZ(0f, 0f, 0f)
         val end = Quaternionf().rotationXYZ(Math.toRadians(90.0).toFloat(), 0f, 0f)
         val dest = Quaternionf()
-        
-        Interpolation.slerp(start, end, 0.5f, dest)
+
+        Interpolator.slerp(start, end, 0.5f, dest)
         
         val expected = Quaternionf().rotationXYZ(Math.toRadians(45.0).toFloat(), 0f, 0f)
         assertEquals(expected.x, dest.x, 1e-6f)
@@ -55,15 +55,15 @@ class InterpolationTest {
         val dest = Vector3f()
         
         // With t=0, should be p0
-        Interpolation.cubicSpline(p0, m0, p1, m1, 0f, 1f, dest)
+        Interpolator.cubicSpline(p0, m0, p1, m1, 0f, 1f, dest)
         assertEquals(0f, dest.x)
         
         // With t=1, should be p1
-        Interpolation.cubicSpline(p0, m0, p1, m1, 1f, 1f, dest)
+        Interpolator.cubicSpline(p0, m0, p1, m1, 1f, 1f, dest)
         assertEquals(1f, dest.x)
         
         // With t=0.5 and constant velocity (tangents match distance), should be 0.5
-        Interpolation.cubicSpline(p0, m0, p1, m1, 0.5f, 1f, dest)
+        Interpolator.cubicSpline(p0, m0, p1, m1, 0.5f, 1f, dest)
         assertEquals(0.5f, dest.x, 1e-6f)
     }
 }

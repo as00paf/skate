@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.assets.data.models.animations
 
-import com.pafoid.skate.engine.utils.Interpolation
+import com.pafoid.skate.engine.utils.Interpolator
 import kotlinx.serialization.Serializable
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -134,7 +134,7 @@ data class AnimationSampler(
                         val m0 = values[index * stride + componentsPerValue * 2 + i]
                         val p1 = values[(index + 1) * stride + componentsPerValue + i]
                         val m1 = values[(index + 1) * stride + i]
-                        dest[i] = Interpolation.cubicSpline(p0, m0, p1, m1, interpolationFactor, deltaTime)
+                        dest[i] = Interpolator.cubicSpline(p0, m0, p1, m1, interpolationFactor, deltaTime)
                     }
                 }
             }
@@ -171,9 +171,9 @@ data class AnimationSampler(
                     val p1x = values[(index + 1) * stride + 3]; val p1y = values[(index + 1) * stride + 4]; val p1z = values[(index + 1) * stride + 5]
                     val m1x = values[(index + 1) * stride + 0]; val m1y = values[(index + 1) * stride + 1]; val m1z = values[(index + 1) * stride + 2]
 
-                    dest.x = Interpolation.cubicSpline(p0x, m0x, p1x, m1x, interpolationFactor, deltaTime)
-                    dest.y = Interpolation.cubicSpline(p0y, m0y, p1y, m1y, interpolationFactor, deltaTime)
-                    dest.z = Interpolation.cubicSpline(p0z, m0z, p1z, m1z, interpolationFactor, deltaTime)
+                    dest.x = Interpolator.cubicSpline(p0x, m0x, p1x, m1x, interpolationFactor, deltaTime)
+                    dest.y = Interpolator.cubicSpline(p0y, m0y, p1y, m1y, interpolationFactor, deltaTime)
+                    dest.z = Interpolator.cubicSpline(p0z, m0z, p1z, m1z, interpolationFactor, deltaTime)
                 }
             }
         }, { offset ->
@@ -210,10 +210,10 @@ data class AnimationSampler(
                     val p1x = values[(index + 1) * stride + 4]; val p1y = values[(index + 1) * stride + 5]; val p1z = values[(index + 1) * stride + 6]; val p1w = values[(index + 1) * stride + 7]
                     val m1x = values[(index + 1) * stride + 0]; val m1y = values[(index + 1) * stride + 1]; val m1z = values[(index + 1) * stride + 2]; val m1w = values[(index + 1) * stride + 3]
 
-                    dest.x = Interpolation.cubicSpline(p0x, m0x, p1x, m1x, interpolationFactor, deltaTime)
-                    dest.y = Interpolation.cubicSpline(p0y, m0y, p1y, m1y, interpolationFactor, deltaTime)
-                    dest.z = Interpolation.cubicSpline(p0z, m0z, p1z, m1z, interpolationFactor, deltaTime)
-                    dest.w = Interpolation.cubicSpline(p0w, m0w, p1w, m1w, interpolationFactor, deltaTime)
+                    dest.x = Interpolator.cubicSpline(p0x, m0x, p1x, m1x, interpolationFactor, deltaTime)
+                    dest.y = Interpolator.cubicSpline(p0y, m0y, p1y, m1y, interpolationFactor, deltaTime)
+                    dest.z = Interpolator.cubicSpline(p0z, m0z, p1z, m1z, interpolationFactor, deltaTime)
+                    dest.w = Interpolator.cubicSpline(p0w, m0w, p1w, m1w, interpolationFactor, deltaTime)
                     dest.normalize()
                 }
             }

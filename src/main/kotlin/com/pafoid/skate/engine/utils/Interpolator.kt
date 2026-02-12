@@ -13,7 +13,7 @@ import org.joml.Vector3f
  * - Cubic Spline Interpolation (Hermite Spline)
  * - Step Interpolation
  */
-object Interpolation {
+object Interpolator {
 
     /**
      * Performs linear interpolation between two [Vector3f] points.

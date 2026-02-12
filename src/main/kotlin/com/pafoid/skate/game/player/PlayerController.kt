@@ -19,7 +19,7 @@ import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.utils.Interpolation
+import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.game.skateboard.PreferredStance
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
@@ -169,7 +169,7 @@ class PlayerController : Component(), KoinComponent {
 
         // Target lean based on steering
         val targetLean = -steerInput * maxLeanAngle * stanceMultiplier
-        currentLean = Interpolation.lerp(currentLean, targetLean, leanSmoothness * dt)
+        currentLean = Interpolator.lerp(currentLean, targetLean, leanSmoothness * dt)
 
         // Apply to spine joints
         val spineNames = listOf("Spine", "Spine1", "Spine2")
@@ -234,7 +234,7 @@ class PlayerController : Component(), KoinComponent {
 
                 // Face movement direction
                 val targetRotationY = Math.toDegrees(atan2(moveDir.x.toDouble(), moveDir.z.toDouble())).toFloat()
-                transform.rotation.y = Interpolation.lerp(transform.rotation.y, targetRotationY, 10f * dt)
+                transform.rotation.y = Interpolator.lerp(transform.rotation.y, targetRotationY, 10f * dt)
 
                 animator?.play("walk", 0.2f)
             } else {

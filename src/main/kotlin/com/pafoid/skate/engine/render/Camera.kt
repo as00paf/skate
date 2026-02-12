@@ -7,7 +7,7 @@ import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_Y
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.data.CameraPreset
-import com.pafoid.skate.engine.utils.Interpolation
+import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.engine.utils.Ray
 import com.pafoid.skate.engine.utils.toDegrees
 import com.pafoid.skate.engine.utils.toRadians
@@ -100,9 +100,9 @@ class Camera(
         val target = targetPreset ?: return
         lerpTime += dt
         val t = (lerpTime / lerpDuration).coerceIn(0f, 1f)
-        
-        fov = Interpolation.lerp(startFov, target.fov, t)
-        desiredDistance = Interpolation.lerp(startDistance, target.distance, t)
+
+        fov = Interpolator.lerp(startFov, target.fov, t)
+        desiredDistance = Interpolator.lerp(startDistance, target.distance, t)
         targetOffset.lerp(target.offset, t)
         
         if (t >= 1f) {
