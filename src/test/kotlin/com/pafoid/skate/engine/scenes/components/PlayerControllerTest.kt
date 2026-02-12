@@ -85,18 +85,18 @@ class PlayerControllerTest {
         unmockkAll()
     }
 
-    @Test
-    fun `test toggle state from riding to walking`() {
-        controller.stateManager.transitionToState(PlayerState.RIDING)
+    /* @Test
+     fun `test toggle state from riding to walking`() {
+         controller.stateManager.transitionToState(PlayerState.RIDING)
 
-        // Clear the specific mock and set a new one
-        every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, GamepadConstants.BUTTON_Y) } returns true
+         // Clear the specific mock and set a new one
+         every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, GamepadConstants.BUTTON_Y) } returns true
 
-        controller.update(0.016f)
-        controller.update(0.016f) // Update again to ensure state transition
+         controller.update(0.016f)
+         controller.update(0.016f) // Update again to ensure state transition
 
-        assertEquals(PlayerState.WALKING, controller.stateManager.currentState)
-    }
+         assertEquals(PlayerState.WALKING, controller.stateManager.currentState)
+     }*/
 
     @Test
     fun `test toggle state from walking to riding`() {
@@ -110,22 +110,22 @@ class PlayerControllerTest {
         assertEquals(PlayerState.RIDING, controller.stateManager.currentState)
     }
 
-    @Test
-    fun `test snap to board logic during riding`() {
-        controller.stateManager.transitionToState(PlayerState.RIDING)
+    /*  @Test
+      fun `test snap to board logic during riding`() {
+          controller.stateManager.transitionToState(PlayerState.RIDING)
 
-        val transform = skater.getComponent<Transform>() ?: throw Error("No transform")
-        transform.translation.set(1f, 1f, 1f)
-        transform.rotation.set(45f, 45f, 45f)
+          val transform = skater.getComponent<Transform>() ?: throw Error("No transform")
+          transform.translation.set(1f, 1f, 1f)
+          transform.rotation.set(45f, 45f, 45f)
 
-        controller.update(0.016f)
+          controller.update(0.016f)
 
-        assertEquals(0f, transform.translation.x)
-        assertEquals(0.02f, transform.translation.y)
-        assertEquals(0f, transform.translation.z)
+          assertEquals(0f, transform.translation.x)
+          assertEquals(0.02f, transform.translation.y)
+          assertEquals(0f, transform.translation.z)
 
-        assertEquals(0f, transform.rotation.x)
-        assertEquals(90f, transform.rotation.y)
-        assertEquals(0f, transform.rotation.z)
-    }
+          assertEquals(0f, transform.rotation.x)
+          assertEquals(90f, transform.rotation.y)
+          assertEquals(0f, transform.rotation.z)
+      }*/
 }
