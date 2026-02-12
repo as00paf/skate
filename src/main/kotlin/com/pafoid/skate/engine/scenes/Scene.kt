@@ -1,13 +1,11 @@
 package com.pafoid.skate.engine.scenes
 
-import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.render.Camera
 
 class Scene(
     private val initializer: SceneInitializer,
-    private val logger: LoggerService,
     val camera: Camera = Camera()
 ) {
 

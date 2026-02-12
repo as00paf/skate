@@ -1,8 +1,6 @@
 package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.EngineState
-import com.pafoid.skate.engine.animation.Bone
-import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.editor.CreateGameObjectCommand
 import com.pafoid.skate.engine.editor.DeleteGameObjectCommand
@@ -75,7 +73,7 @@ class SceneManager : KoinComponent {
             currentScene?.destroy()
         }
         logger.logEngine("Changing scene to ${initializer::class.simpleName}...")
-        val scene = Scene(initializer, logger)
+        val scene = Scene(initializer)
         currentScene = scene
         // TODO: fix loading of saved scene
         //scene.load()
