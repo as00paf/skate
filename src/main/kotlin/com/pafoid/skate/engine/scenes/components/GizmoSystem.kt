@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.render.DebugDraw
+import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.setSelectedGameObject
@@ -19,13 +20,14 @@ class GizmoSystem: Component(), KoinComponent {
     private val settingsManager: SettingsManager by inject()
     private val undoRedoManager: UndoRedoManager by inject()
     private val debugDraw: DebugDraw by inject()
+    private val renderer: Renderer by inject()
 
     var usingGizmo = NONE
 
     private val translateGizmo = TranslateGizmo(sceneManager, mouseListener, undoRedoManager, debugDraw)
     private val rotationGizmo = RotationGizmo(sceneManager, mouseListener, undoRedoManager, debugDraw)
     private val scaleGizmo = ScaleGizmo(sceneManager, mouseListener, undoRedoManager, debugDraw)
-    private val selectionGizmo = SelectionGizmo(sceneManager, mouseListener, undoRedoManager)
+    private val selectionGizmo = SelectionGizmo(sceneManager,  mouseListener, undoRedoManager, renderer)
     private val measureGizmo = MeasureTool(sceneManager, mouseListener, undoRedoManager, debugDraw, settingsManager)
 
     override fun init(gameObject: GameObject) {

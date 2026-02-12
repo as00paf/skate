@@ -191,33 +191,6 @@ class SceneManager : KoinComponent {
         renderer.destroy()
     }
 
-    fun getPickedId(x: Int, y: Int): Int {
-        if (engineState.get() != EngineState.RUNNING) return -1
-        return renderer.readPixel(x, y)
-    }
-
-    fun getObjectById(id: Int): GameObject? {
-        if (engineState.get() != EngineState.RUNNING) return null
-        return currentScene?.getGameObject(id)
-    }
-
-    fun getBoneById(id: Int): Bone? {
-        if (engineState.get() != EngineState.RUNNING) return null
-        currentScene?.gameObjectManager?.gameObjects?.forEach { go ->
-            go.getComponent<PoseGizmo>()?.let { pg ->
-                val bone = pg.getBoneById(id)
-                if (bone != null) return bone
-            }
-        }
-        return null
-    }
-
-    fun getHoveredObject(x: Int, y: Int): GameObject? {
-        if (engineState.get() != EngineState.RUNNING) return null
-        val id = renderer.readPixel(x, y)
-        return currentScene?.getGameObject(id)
-    }
-
     companion object {
         private const val FIXED_TIME_STEP = 1.0f / 60.0f
         private const val MAX_TIME_STEP = 0.25f

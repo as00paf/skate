@@ -1,14 +1,17 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.EngineState
 import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.imgui.ImGuiLayer
+import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.addGameObjectToScene
+import com.pafoid.skate.engine.scenes.getGameObject
 import com.pafoid.skate.engine.scenes.setSelectedGameObject
 import com.pafoid.skate.engine.utils.serialization.Serializer
 import org.koin.core.component.KoinComponent
@@ -24,6 +27,7 @@ class MouseControls : Component(), KoinComponent {
     private val serializer: Serializer by inject()
     private val imguiLayer: ImGuiLayer by inject()
     private val logger: LoggerService by inject()
+    private val renderer: Renderer by inject()
 
     private var holdingObject: GameObject? = null
     private val debounceTime = 0.2f
@@ -50,14 +54,14 @@ class MouseControls : Component(), KoinComponent {
             val x = mouseListener.getScreenX().toInt()
             val y = mouseListener.getScreenY().toInt()
 
-            val pickedId = sceneManager.getPickedId(x, y)
-            val selectedObject = sceneManager.getObjectById(pickedId)
+            val pickedId = getPickedId(x, y)
+            val selectedObject = getObjectById(pickedId)
 
             if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
                 sceneManager.currentScene?.setSelectedGameObject(selectedObject)
             } else {
                 sceneManager.currentScene?.setSelectedGameObject(null)
-                val bone = sceneManager.getBoneById(pickedId)
+                val bone = getBoneById(pickedId)
                 if (bone != null) {
                     // A bone was selected, find which GO it belongs to
                     val skater = sceneManager.currentScene?.gameObjectManager?.gameObjects?.find { it.getComponent<PoseGizmo>() != null }
@@ -96,5 +100,26 @@ class MouseControls : Component(), KoinComponent {
             go.destroy()
             holdingObject = null
         }
+    }
+
+    private fun getPickedId(x: Int, y: Int): Int {
+        if (sceneManager.engineState.get() != EngineState.RUNNING) return -1
+        return renderer.readPixel(x, y)
+    }
+
+    private fun getObjectById(id: Int): GameObject? {
+        if (sceneManager.engineState.get() != EngineState.RUNNING) return null
+        return sceneManager.currentScene?.getGameObject(id)
+    }
+
+    private fun getBoneById(id: Int): com.pafoid.skate.engine.animation.Bone? {
+        if (sceneManager.engineState.get() != EngineState.RUNNING) return null
+        sceneManager.currentScene?.gameObjectManager?.gameObjects?.forEach { go ->
+            go.getComponent<PoseGizmo>()?.let { pg ->
+                val bone = pg.getBoneById(id)
+                if (bone != null) return bone
+            }
+        }
+        return null
     }
 }
