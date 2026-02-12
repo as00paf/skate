@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.EngineState
-import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.editor.EditorInputHandler
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.imgui.ImGuiLayer
@@ -12,13 +11,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW
 import java.util.concurrent.atomic.AtomicReference
 
 class SceneManager : KoinComponent {
 
     private val renderer: Renderer by inject()
-    private val keyListener: KeyListener by inject()
     private val logger: LoggerService by inject()
     private val editorInputHandler: EditorInputHandler by inject()
 
