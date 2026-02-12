@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.Engine
 import com.pafoid.skate.engine.EngineState
 import com.pafoid.skate.engine.animation.PoseGizmo
 import com.pafoid.skate.engine.controls.listeners.KeyListener
@@ -28,6 +29,7 @@ class MouseControls : Component(), KoinComponent {
     private val imguiLayer: ImGuiLayer by inject()
     private val logger: LoggerService by inject()
     private val renderer: Renderer by inject()
+    private val engine: Engine by inject()
 
     private var holdingObject: GameObject? = null
     private val debounceTime = 0.2f
@@ -103,17 +105,17 @@ class MouseControls : Component(), KoinComponent {
     }
 
     private fun getPickedId(x: Int, y: Int): Int {
-        if (sceneManager.engineState.get() != EngineState.RUNNING) return -1
+        if (engine.engineState.get() != EngineState.RUNNING) return -1
         return renderer.readPixel(x, y)
     }
 
     private fun getObjectById(id: Int): GameObject? {
-        if (sceneManager.engineState.get() != EngineState.RUNNING) return null
+        if (engine.engineState.get() != EngineState.RUNNING) return null
         return sceneManager.currentScene?.getGameObject(id)
     }
 
     private fun getBoneById(id: Int): com.pafoid.skate.engine.animation.Bone? {
-        if (sceneManager.engineState.get() != EngineState.RUNNING) return null
+        if (engine.engineState.get() != EngineState.RUNNING) return null
         sceneManager.currentScene?.gameObjectManager?.gameObjects?.forEach { go ->
             go.getComponent<PoseGizmo>()?.let { pg ->
                 val bone = pg.getBoneById(id)

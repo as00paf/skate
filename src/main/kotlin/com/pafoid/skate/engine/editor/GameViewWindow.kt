@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.editor
 
+import com.pafoid.skate.engine.Engine
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.assetBrowser.PrefabData
 import com.pafoid.skate.engine.editor.logs.LoggerService
@@ -12,7 +13,11 @@ import com.pafoid.skate.engine.scenes.components.GizmoSystem
 import com.pafoid.skate.engine.scenes.components.MeasureTool
 import com.pafoid.skate.engine.scenes.components.SelectionGizmo
 import com.pafoid.skate.engine.scenes.components.Transform
-import com.pafoid.skate.engine.utils.*
+import com.pafoid.skate.engine.utils.Icons
+import com.pafoid.skate.engine.utils.ScreenshotUtils
+import com.pafoid.skate.engine.utils.SettingsManager
+import com.pafoid.skate.engine.utils.StringManager
+import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -32,6 +37,7 @@ class GameViewWindow : KoinComponent {
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val stringManager: StringManager by inject()
     private val renderer: Renderer by inject()
+    private val engine: Engine by inject()
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -135,7 +141,7 @@ class GameViewWindow : KoinComponent {
     }
 
     private fun renderViewportOverlays(windowPos: ImVec2, windowSize: ImVec2) {
-        val isPlaying = sceneManager.runtimePlaying
+        val isPlaying = engine.runtimePlaying
         val scene = sceneManager.currentScene
 
         // FPS Overlay (Top Left)
@@ -225,7 +231,7 @@ class GameViewWindow : KoinComponent {
     }
 
     private fun renderToolbar(windowPos: ImVec2, windowSize: ImVec2) {
-        val isPlaying = sceneManager.runtimePlaying
+        val isPlaying = engine.runtimePlaying
         val scene = sceneManager.currentScene
         val toolbarPosY = windowPos.y + OVERLAY_PADDING
 
@@ -324,7 +330,7 @@ class GameViewWindow : KoinComponent {
             }
             buttons.add {
                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    sceneManager.runtimePlaying = false
+                    engine.runtimePlaying = false
                     scene?.sceneData?.timeScale = 1.0f // Reset timescale when stopping
                     logger.logEditor("Simulation stopped")
                 }
@@ -333,7 +339,7 @@ class GameViewWindow : KoinComponent {
         } else {
             buttons.add {
                 if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    sceneManager.runtimePlaying = true
+                    engine.runtimePlaying = true
                     logger.logEditor("Simulation started")
                 }
                 if (ImGui.isItemHovered()) ImGui.setTooltip("Play Simulation")

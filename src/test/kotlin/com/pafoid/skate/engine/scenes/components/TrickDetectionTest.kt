@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.engine.Engine
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.controls.input.IInputProvider
@@ -38,11 +39,13 @@ class TrickDetectionTest {
     private lateinit var skatePhysics: SkateboardPhysics
     private lateinit var trickDetector: TrickDetector
     private val sceneManager = mockk<SceneManager>()
+    private val engine = mockk<Engine>()
 
     @BeforeEach
     fun setup() {
         startKoin {
             modules(module {
+                single<Engine> { engine }
                 single { sceneManager }
                 single<IInputProvider> { mockk(relaxed = true) }
                 single { mockk<ResourceManager>(relaxed = true) }
@@ -56,7 +59,7 @@ class TrickDetectionTest {
         }
         physics = Physics3D()
 
-        every { sceneManager.runtimePlaying } returns true
+        every { engine.runtimePlaying } returns true
         
         val mockScene = mockk<Scene>()
         every { sceneManager.currentScene } returns mockScene

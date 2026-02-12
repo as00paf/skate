@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.physics3d
 
+import com.pafoid.skate.engine.Engine
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
@@ -21,6 +22,7 @@ import kotlin.test.fail
 
 class SkateboardStressTest {
 
+    private val engine = mockk<Engine>()
     private val sceneManager = mockk<SceneManager>()
     private lateinit var physics: Physics3D
 
@@ -28,12 +30,13 @@ class SkateboardStressTest {
     fun setup() {
         startKoin {
             modules(module {
+                single<Engine> { engine }
                 single<SceneManager> { sceneManager }
             })
         }
         physics = Physics3D()
-        
-        every { sceneManager.runtimePlaying } returns true
+
+        every { engine.runtimePlaying } returns true
         val mockScene = mockk<com.pafoid.skate.engine.scenes.Scene>()
         every { sceneManager.currentScene } returns mockScene
         every { mockScene.physics3d } returns physics

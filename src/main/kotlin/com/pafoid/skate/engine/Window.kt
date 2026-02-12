@@ -2,33 +2,71 @@ package com.pafoid.skate.engine
 
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.controls.input.IInputBuffer
-import com.pafoid.skate.engine.controls.input.InputBuffer
 import com.pafoid.skate.engine.controls.listeners.JoystickListener
 import com.pafoid.skate.engine.controls.listeners.KeyListener
 import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.render.Renderer
-import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.JobSystem.runOnMain
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.Time
-import java.nio.ByteBuffer
 import org.joml.Vector2f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
-import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR
+import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR
+import org.lwjgl.glfw.GLFW.GLFW_DECORATED
+import org.lwjgl.glfw.GLFW.GLFW_DONT_CARE
+import org.lwjgl.glfw.GLFW.GLFW_FALSE
+import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
+import org.lwjgl.glfw.GLFW.GLFW_MAXIMIZED
+import org.lwjgl.glfw.GLFW.GLFW_OPENGL_DEBUG_CONTEXT
+import org.lwjgl.glfw.GLFW.GLFW_RESIZABLE
+import org.lwjgl.glfw.GLFW.GLFW_TRUE
+import org.lwjgl.glfw.GLFW.GLFW_VISIBLE
+import org.lwjgl.glfw.GLFW.glfwCreateWindow
+import org.lwjgl.glfw.GLFW.glfwDefaultWindowHints
+import org.lwjgl.glfw.GLFW.glfwDestroyWindow
+import org.lwjgl.glfw.GLFW.glfwFocusWindow
+import org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor
+import org.lwjgl.glfw.GLFW.glfwGetVideoMode
+import org.lwjgl.glfw.GLFW.glfwInit
+import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
+import org.lwjgl.glfw.GLFW.glfwPollEvents
+import org.lwjgl.glfw.GLFW.glfwRequestWindowAttention
+import org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback
+import org.lwjgl.glfw.GLFW.glfwSetErrorCallback
+import org.lwjgl.glfw.GLFW.glfwSetKeyCallback
+import org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback
+import org.lwjgl.glfw.GLFW.glfwSetScrollCallback
+import org.lwjgl.glfw.GLFW.glfwSetWindowIcon
+import org.lwjgl.glfw.GLFW.glfwSetWindowMonitor
+import org.lwjgl.glfw.GLFW.glfwSetWindowPos
+import org.lwjgl.glfw.GLFW.glfwSetWindowSizeCallback
+import org.lwjgl.glfw.GLFW.glfwShowWindow
+import org.lwjgl.glfw.GLFW.glfwSwapBuffers
+import org.lwjgl.glfw.GLFW.glfwSwapInterval
+import org.lwjgl.glfw.GLFW.glfwTerminate
+import org.lwjgl.glfw.GLFW.glfwWindowHint
+import org.lwjgl.glfw.GLFW.glfwWindowShouldClose
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWImage
 import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL11.GL_BLEND
+import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
+import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
+import org.lwjgl.opengl.GL11.glBlendFunc
+import org.lwjgl.opengl.GL11.glEnable
+import org.lwjgl.opengl.GL11.glViewport
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GLUtil
 import org.lwjgl.stb.STBImage
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
+import java.nio.ByteBuffer
 
 class Window(
     val width: Int = 1920,
@@ -41,7 +79,6 @@ class Window(
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
     private val settingsManager: SettingsManager by inject()
-    private val sceneManager: SceneManager by inject()
     private val engine: Engine by inject()
     private val renderer: Renderer by inject()
     private val imGuiLayer: ImGuiLayer by inject()
@@ -89,9 +126,9 @@ class Window(
         
         // Center/Position at 0,0
         glfwSetWindowPos(glfwWindow, 0, 0) // Corrected yPos to integer 0
-        
-        sceneManager.currentWidth = winWidth
-        sceneManager.currentHeight = winHeight
+
+        renderer.currentWidth = winWidth
+        renderer.currentHeight = winHeight
 
         // Set the window icon
         setWindowIcon(Assets.Textures.APP_ICON)
@@ -149,8 +186,8 @@ class Window(
 
     private fun installCallbacks() {
         glfwSetWindowSizeCallback(glfwWindow) { w: Long, newWidth: Int, newHeight: Int ->
-            sceneManager.currentWidth = newWidth
-            sceneManager.currentHeight = newHeight
+            renderer.currentWidth = newWidth
+            renderer.currentHeight = newHeight
             glViewport(0, 0, newWidth, newHeight)
         }
         glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
@@ -178,7 +215,7 @@ class Window(
 
             if (isFirstDraw) {
                 // Set viewport if not already initialized
-                glViewport(0, 0, sceneManager.currentWidth, sceneManager.currentHeight)
+                glViewport(0, 0, renderer.currentWidth, renderer.currentHeight)
                 runOnMain {
                     show()
                     engine.start()

@@ -14,11 +14,30 @@ import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SkeletonComponent
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.scenes.components.Transform
-import com.pafoid.skate.engine.scenes.components.toWorldMatrix
 import com.pafoid.skate.engine.utils.EngineStats
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
-import org.lwjgl.opengl.GL30.*
+import org.lwjgl.opengl.GL30.GL_COLOR_BUFFER_BIT
+import org.lwjgl.opengl.GL30.GL_CULL_FACE
+import org.lwjgl.opengl.GL30.GL_DEPTH_BUFFER_BIT
+import org.lwjgl.opengl.GL30.GL_DEPTH_TEST
+import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
+import org.lwjgl.opengl.GL30.GL_LESS
+import org.lwjgl.opengl.GL30.GL_SCISSOR_TEST
+import org.lwjgl.opengl.GL30.GL_TEXTURE0
+import org.lwjgl.opengl.GL30.GL_TEXTURE_2D
+import org.lwjgl.opengl.GL30.glActiveTexture
+import org.lwjgl.opengl.GL30.glBindFramebuffer
+import org.lwjgl.opengl.GL30.glBindTexture
+import org.lwjgl.opengl.GL30.glBindVertexArray
+import org.lwjgl.opengl.GL30.glClear
+import org.lwjgl.opengl.GL30.glClearColor
+import org.lwjgl.opengl.GL30.glDepthFunc
+import org.lwjgl.opengl.GL30.glDepthMask
+import org.lwjgl.opengl.GL30.glDisable
+import org.lwjgl.opengl.GL30.glEnable
+import org.lwjgl.opengl.GL30.glUseProgram
+import org.lwjgl.opengl.GL30.glViewport
 
 class Renderer(
     private val debugDraw: DebugDraw,
@@ -43,13 +62,18 @@ class Renderer(
     override var useFbo = false // Default to false for initial feature tests
 
     private val renderer2D = Renderer2D()
-    private val pickingTexture = PickingTexture(1920, 1080)
+    private lateinit var pickingTexture: PickingTexture
 
     private lateinit var skyboxRenderer:SkyboxRenderer
     private lateinit var skyDomeRenderer:SkyDomeRenderer
 
-    fun initFrameBuffer(width: Int, height: Int){
-        frameBuffer = FrameBuffer(width, height)
+    // Window dimensions (To be moved to Renderer later)
+    var currentWidth = 0
+    var currentHeight = 0
+
+    fun initFrameBuffer() {
+        pickingTexture = PickingTexture(1920, 1080)
+        frameBuffer = FrameBuffer(currentWidth, currentHeight) //width and height must be set before
         frameBuffer.initialize()
     }
 
@@ -91,9 +115,9 @@ class Renderer(
         pickingDraw.beginFrame()
         
         // 1. Picking Pass
-        pickingTexture.resize(sceneManager.currentWidth, sceneManager.currentHeight)
+        pickingTexture.resize(currentWidth, currentHeight)
         pickingTexture.enableWriting()
-        glViewport(0, 0, sceneManager.currentWidth, sceneManager.currentHeight)
+        glViewport(0, 0, currentWidth, currentHeight)
         
         // CRITICAL: Reset state that might have been changed by ImGui or previous passes
         glDisable(GL_SCISSOR_TEST)
@@ -118,7 +142,7 @@ class Renderer(
             glViewport(0, 0, frameBuffer.width, frameBuffer.height)
         } else {
             glBindFramebuffer(GL_FRAMEBUFFER, 0)
-            glViewport(0, 0, sceneManager.currentWidth, sceneManager.currentHeight)
+            glViewport(0, 0, currentWidth, currentHeight)
         }
         
         clearColor(scene.sceneData.skyColor)
@@ -205,7 +229,7 @@ class Renderer(
         glBindTexture(GL_TEXTURE_2D, 0)
         
         // Final screen viewport reset
-        glViewport(0, 0, sceneManager.currentWidth, sceneManager.currentHeight)
+        glViewport(0, 0, currentWidth, currentHeight)
     }
 
     private fun render3DPicking(scene: Scene, activeGameObject: GameObject?) {
@@ -251,8 +275,8 @@ class Renderer(
     }
 
     override fun readPixel(x: Int, y: Int): Int {
-        val w = sceneManager.currentWidth
-        val h = sceneManager.currentHeight
+        val w = currentWidth
+        val h = currentHeight
         
         // Clamp coordinates
         val safeX = x.coerceIn(0, w - 1)

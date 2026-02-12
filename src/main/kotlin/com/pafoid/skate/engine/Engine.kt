@@ -63,9 +63,7 @@ class Engine : KoinComponent {
         logger.logEngine("Initializing render system...")
         splashScreenManager.increaseLoadingProgress("Initializing Render System...")
 
-        // Assume renderer initialization handles FBO/Shader loading
-        // For now, mirroring SceneManager logic:
-        renderer.initFrameBuffer(sceneManager.currentWidth, sceneManager.currentHeight)
+        renderer.initFrameBuffer()
         renderer.loadShaders { index, size ->
             splashScreenManager.increaseLoadingProgress("Loading Shaders $index/$size")
         }
