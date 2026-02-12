@@ -9,7 +9,7 @@ import org.joml.Vector4f
 
 @Serializable
 data class Material(
-    @Transient var baseColorTexture: Texture? = null,
+    var baseColorTexture: Texture? = null,
     @Transient var normalMap: Texture? = null,
     @Transient var metallicRoughnessTexture: Texture? = null,
     @Transient var aoTexture: Texture? = null,
