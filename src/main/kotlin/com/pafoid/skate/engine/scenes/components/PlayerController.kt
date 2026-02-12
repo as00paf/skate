@@ -29,9 +29,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
-import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
-import org.lwjgl.glfw.GLFW.GLFW_KEY_Y
+import org.lwjgl.glfw.GLFW.*
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.max
@@ -264,8 +262,8 @@ class PlayerController : Component(), KoinComponent {
         
         val rayStart = Vector3f(pos.x, pos.y + 1f, pos.z)
         val rayEnd = Vector3f(pos.x, pos.y - 2f, pos.z)
-        
-        val closest = scene.sceneData.physics3d.raycastClosest(rayStart, rayEnd)
+
+        val closest = scene.physics3d.raycastClosest(rayStart, rayEnd)
         if (closest != null) {
             val hitY = rayStart.y + (rayEnd.y - rayStart.y) * closest.hitFraction
             pos.y = hitY
@@ -309,7 +307,7 @@ class PlayerController : Component(), KoinComponent {
 
         scene.addGameObjectToScene(tumbleCube)
         // Add to physics immediately so we can set velocity
-        scene.sceneData.physics3d.add(tumbleCube)
+        scene.physics3d.add(tumbleCube)
 
         // Reparent skater to the tumble cube
         skater?.getComponent<Transform>()?.let { transform ->

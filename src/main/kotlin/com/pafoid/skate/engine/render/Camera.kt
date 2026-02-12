@@ -1,15 +1,15 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.controls.listeners.KeyListener
-import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.controls.input.IInputProvider
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_X
 import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_Y
+import com.pafoid.skate.engine.controls.listeners.KeyListener
+import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.utils.toRadians
-import com.pafoid.skate.engine.utils.toDegrees
 import com.pafoid.skate.engine.utils.Interpolation
 import com.pafoid.skate.engine.utils.Ray
+import com.pafoid.skate.engine.utils.toDegrees
+import com.pafoid.skate.engine.utils.toRadians
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -17,12 +17,7 @@ import org.joml.Vector4f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
-import kotlin.getValue
-import kotlin.math.abs
-import kotlin.math.asin
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
+import kotlin.math.*
 
 class Camera(
     val position: Vector3f = Vector3f(),
@@ -149,7 +144,7 @@ class Camera(
     private fun handleClipping(from: Vector3f, to: Vector3f): Vector3f {
         val scene = sceneManager.currentScene
         if (scene != null) {
-            val closest = scene.sceneData.physics3d.raycastClosest(from, to)
+            val closest = scene.physics3d.raycastClosest(from, to)
             if (closest != null && closest.hitFraction < 1.0f) {
                 // Move slightly away from the hit point to avoid near-plane clipping
                 val clippedPos = Vector3f(from).lerp(to, closest.hitFraction * 0.9f)
