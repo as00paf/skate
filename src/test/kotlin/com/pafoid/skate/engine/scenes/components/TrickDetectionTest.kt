@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.controls.input.IInputProvider
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
@@ -12,13 +13,15 @@ import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.scenes.components.Transform
+import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.TrickManager
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import org.joml.Vector3f
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
@@ -47,6 +50,8 @@ class TrickDetectionTest {
                 single { mockk<PrefabsGenerator>(relaxed = true) }
                 single { mockk<DebugDraw>(relaxed = true) }
                 single { TrickManager("/values/test_tricks.properties") }
+                single { mockk<StringManager>(relaxed = true) }
+                single { mockk<LoggerService>(relaxed = true) }
             })
         }
         physics = Physics3D()
@@ -64,6 +69,7 @@ class TrickDetectionTest {
         trickDetector = TrickDetector()
 
         skateboard.addComponent(rb)
+        skateboard.addComponent(Transform())
         skateboard.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
         skateboard.addComponent(skatePhysics)
         skateboard.addComponent(trickDetector)
@@ -158,7 +164,7 @@ class TrickDetectionTest {
         }
 
         // Assert
-        val trick = trickDetector.getDetectedTrick() ?: "Ollie"
+        val trick = trickDetector.getDetectedTrick().orEmpty()
         // If moving backwards and popped, it's a Fakie Ollie
         assertEquals("Fakie Ollie", trick)
     }

@@ -4,24 +4,28 @@ import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.controls.input.IInputBuffer
 import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.controls.input.InputBuffer
-import com.pafoid.skate.engine.controls.input.InputProvider
+import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.player.PlayerState
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
+import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
-import io.mockk.*
-import net.bytebuddy.matcher.ElementMatchers.any
+import com.pafoid.skate.engine.utils.StringManager
+import com.pafoid.skate.engine.utils.TrickManager
+import io.mockk.MockKAnnotations
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.unmockkAll
+import io.mockk.verify
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
@@ -52,10 +56,14 @@ class BoardRigTest {
         startKoin {
             modules(module {
                 single { sceneManager }
-                single<IInputProvider> { mockk<InputProvider>(relaxed = true) }
+                single<IInputProvider> { mockk(relaxed = true) }
                 single { mockk<ResourceManager>(relaxed = true) }
                 single<IInputBuffer> { inputBuffer }
                 single { mockk<PrefabsGenerator>(relaxed = true) }
+                single { mockk<DebugDraw>(relaxed = true) }
+                single { TrickManager("/values/test_tricks.properties") }
+                single { mockk<StringManager>(relaxed = true) }
+                single { mockk<LoggerService>(relaxed = true) }
             })
         }
 
