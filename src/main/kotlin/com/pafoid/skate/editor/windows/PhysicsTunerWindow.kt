@@ -1,10 +1,10 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.skateboard.SkateboardPhysics

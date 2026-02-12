@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.joml.Matrix4f

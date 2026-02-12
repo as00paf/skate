@@ -2,11 +2,11 @@ package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
-import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
 import org.koin.core.component.KoinComponent

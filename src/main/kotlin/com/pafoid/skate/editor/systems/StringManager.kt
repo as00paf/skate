@@ -1,7 +1,5 @@
-package com.pafoid.skate.engine.utils
+package com.pafoid.skate.editor.systems
 
-import com.pafoid.skate.editor.systems.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.InputStream

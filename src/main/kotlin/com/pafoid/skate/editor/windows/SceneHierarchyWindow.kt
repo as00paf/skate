@@ -3,13 +3,13 @@ package com.pafoid.skate.editor.windows
 import com.pafoid.skate.editor.LevelEditorSceneInitializer.Companion.EDITOR_TOOLS
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.SceneManager
-import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
 import org.koin.core.component.KoinComponent

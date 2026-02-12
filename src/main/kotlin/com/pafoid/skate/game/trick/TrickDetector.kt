@@ -2,7 +2,6 @@ package com.pafoid.skate.game.trick
 
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.utils.TrickManager
 import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.skateboard.Stance

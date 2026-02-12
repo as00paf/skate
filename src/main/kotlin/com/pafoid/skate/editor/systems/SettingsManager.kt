@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.systems
 import com.pafoid.skate.editor.data.SystemSettings
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.serialization.Serializer
-import com.pafoid.skate.engine.utils.StringManager
 import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths

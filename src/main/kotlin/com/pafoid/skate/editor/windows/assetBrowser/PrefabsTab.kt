@@ -4,12 +4,12 @@ import com.pafoid.skate.editor.data.PrefabConfig
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.PrefabsGenerator
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.game.prefabs.MaterialType
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags

@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.utils
+package com.pafoid.skate.game.trick
 
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService

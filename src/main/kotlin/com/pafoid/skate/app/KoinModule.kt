@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.ResourceManager
@@ -27,9 +28,8 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.engine.utils.StringManager
-import com.pafoid.skate.engine.utils.TrickManager
 import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
 val appModule = module {

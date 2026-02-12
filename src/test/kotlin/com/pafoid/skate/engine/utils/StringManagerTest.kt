@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.utils
 
+import com.pafoid.skate.editor.systems.StringManager
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach

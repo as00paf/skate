@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -16,7 +17,6 @@ import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.ScreenshotUtils
-import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2

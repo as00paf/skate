@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.type.ImString

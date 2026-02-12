@@ -4,7 +4,7 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LogEntry
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.engine.utils.StringManager
+import com.pafoid.skate.editor.systems.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiInputTextFlags

@@ -2,9 +2,9 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.utils.TrickManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.trick.TrickDetector
+import com.pafoid.skate.game.trick.TrickManager
 import io.mockk.every
 import io.mockk.mockk
 import org.joml.Vector3f

@@ -2,6 +2,7 @@ package com.pafoid.skate.game.player
 
 import com.jme3.math.Vector3f
 import com.pafoid.skate.editor.systems.PrefabsGenerator
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.GameObject
@@ -20,7 +21,6 @@ import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.utils.Interpolator
-import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.game.skateboard.PreferredStance
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.skateboard.Stance

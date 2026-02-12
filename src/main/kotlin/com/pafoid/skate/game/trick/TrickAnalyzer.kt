@@ -1,9 +1,8 @@
 package com.pafoid.skate.game.trick
 
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.utils.StringManager
-import com.pafoid.skate.engine.utils.TrickManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import imgui.ImGui
 import org.joml.Vector3f

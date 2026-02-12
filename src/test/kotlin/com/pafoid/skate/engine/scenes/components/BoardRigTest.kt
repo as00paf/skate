@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.scenes.components
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -14,11 +15,10 @@ import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import com.pafoid.skate.engine.utils.StringManager
-import com.pafoid.skate.engine.utils.TrickManager
 import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.player.PlayerState
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
+import com.pafoid.skate.game.trick.TrickManager
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.mockk

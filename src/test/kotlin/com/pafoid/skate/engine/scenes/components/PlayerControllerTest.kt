@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -11,7 +12,6 @@ import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.player.PlayerState
 import com.pafoid.skate.game.prefabs.Skateboard

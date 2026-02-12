@@ -1,10 +1,10 @@
 package com.pafoid.skate.editor.windows.assetBrowser
 
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import java.io.File
 

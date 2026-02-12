@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.BoneMirrorUtil
@@ -9,7 +10,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.SceneManager
-import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImBoolean

@@ -1,12 +1,12 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.systems.PrefabsGenerator
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.windows.assetBrowser.AnimationsTab
 import com.pafoid.skate.editor.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.windows.assetBrowser.TexturesTab
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent

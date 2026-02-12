@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.CreateGameObjectCommand
 import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.windows.BoneTreeWindow
@@ -22,7 +23,6 @@ import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import com.pafoid.skate.game.level.LevelManager
 import imgui.ImVec2
