@@ -2,18 +2,14 @@ package com.pafoid.skate.engine.scenes
 
 import com.pafoid.skate.engine.EngineState
 import com.pafoid.skate.engine.controls.listeners.KeyListener
-import com.pafoid.skate.engine.editor.CreateGameObjectCommand
-import com.pafoid.skate.engine.editor.DeleteGameObjectCommand
-import com.pafoid.skate.engine.editor.UndoRedoManager
+import com.pafoid.skate.engine.editor.EditorInputHandler
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.render.Renderer
-import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.engine.utils.JobSystem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
@@ -24,8 +20,7 @@ class SceneManager : KoinComponent {
     private val renderer: Renderer by inject()
     private val keyListener: KeyListener by inject()
     private val logger: LoggerService by inject()
-    private val clipboardService: ClipboardService by inject()
-    private val undoRedoManager: UndoRedoManager by inject()
+    private val editorInputHandler: EditorInputHandler by inject()
 
     var currentScene: Scene? = null
     var runtimePlaying = false
@@ -82,58 +77,6 @@ class SceneManager : KoinComponent {
         logger.logEngine("Scene ${initializer::class.simpleName} loaded and started.")
     }
 
-    private fun handleEditorShortcuts() {
-        val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
-
-        if (ctrlDown) {
-            // Copy
-            if (keyListener.keyBeginPress(GLFW.GLFW_KEY_C)) {
-                val selected = currentScene?.getSelectedGameObject()
-                if (selected != null) {
-                    clipboardService.copy(selected)
-                    logger.logEditor("Copied GameObject: ${selected.name}")
-                }
-            }
-            // Cut
-            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
-                val scene = currentScene
-                val selected = scene?.getSelectedGameObject()
-                if (selected != null) {
-                    val cloned = clipboardService.paste() ?: return // paste here returns the copied object from cut
-                    clipboardService.copy(selected) // Redundant but following old logic
-                    undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene))
-                    logger.logEditor("Cut GameObject: ${selected.name}")
-                }
-            }
-            // Paste
-            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_V)) {
-                val scene = currentScene
-                val clonedGameObject = clipboardService.paste()
-                if (clonedGameObject != null) {
-                    // Add to scene at origin for now
-                    val origin = Vector3f(0f, 0f, 0f)
-                    clonedGameObject.getComponent<Transform>()?.translation?.set(origin)
-                    
-                    // Set parent to null, as it's being pasted as a root object
-                    clonedGameObject.parent = null
-
-                    scene?.let { undoRedoManager.executeCommand(CreateGameObjectCommand(clonedGameObject, it)) }
-                    logger.logEditor("Pasted GameObject: ${clonedGameObject.name}")
-                }
-            }
-            // Undo
-            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_Z)) {
-                undoRedoManager.undo()
-                logger.logEditor("Undo")
-            }
-            // Redo
-            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_Y)) {
-                undoRedoManager.redo()
-                logger.logEditor("Redo")
-            }
-        }
-    }
-
     fun draw(dt: Float, imguiLayer: ImGuiLayer) {
         val state = engineState.get()
 
@@ -159,7 +102,7 @@ class SceneManager : KoinComponent {
                 }
             } else {
                 scene.editorUpdate(dt)
-                handleEditorShortcuts()
+                editorInputHandler.update(currentScene)
             }
 
             renderer.render(scene, currentScene?.getSelectedGameObject(), imguiLayer.gameViewWindow.getHoveredObject())
