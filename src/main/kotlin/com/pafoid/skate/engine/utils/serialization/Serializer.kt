@@ -1,9 +1,17 @@
 package com.pafoid.skate.engine.utils.serialization
 
 import com.pafoid.skate.engine.assets.Texture
+import com.pafoid.skate.engine.models.BaseModel
+import com.pafoid.skate.engine.models.CharacterModel
 import com.pafoid.skate.engine.models.TexturedModel
-import com.pafoid.skate.engine.physics3d.components.*
-import com.pafoid.skate.engine.scenes.components.*
+import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
+import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.scenes.components.Component
+import com.pafoid.skate.engine.scenes.components.ModularTile
+import com.pafoid.skate.engine.scenes.components.RenderComponent
+import com.pafoid.skate.engine.scenes.components.Transform
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -28,6 +36,12 @@ class Serializer {
             subclass(CustomCollider3D::class)
             subclass(RigidBody3D::class)
             subclass(Texture::class)
+            subclass(RenderComponent::class)
+        }
+
+        polymorphic(BaseModel::class) {
+            subclass(TexturedModel::class)
+            subclass(CharacterModel::class)
         }
     }
 
