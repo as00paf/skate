@@ -1,12 +1,13 @@
 package com.pafoid.skate.engine.physics3d
 
-import com.pafoid.skate.engine.Engine
+import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.scenes.GameObject
-import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
-import com.pafoid.skate.engine.scenes.components.Transform
+import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
@@ -37,7 +38,7 @@ class SkateboardStressTest {
         physics = Physics3D()
 
         every { engine.runtimePlaying } returns true
-        val mockScene = mockk<com.pafoid.skate.engine.scenes.Scene>()
+        val mockScene = mockk<Scene>()
         every { sceneManager.currentScene } returns mockScene
         every { mockScene.physics3d } returns physics
     }

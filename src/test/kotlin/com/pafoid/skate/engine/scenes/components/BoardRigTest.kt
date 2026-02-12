@@ -1,22 +1,29 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.jme3.bullet.collision.PhysicsRayTestResult
+import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.controls.input.IInputBuffer
-import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.editor.logs.LoggerService
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.input.IInputBuffer
+import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.player.PlayerState
-import com.pafoid.skate.engine.prefabs.PrefabsGenerator
-import com.pafoid.skate.engine.render.DebugDraw
-import com.pafoid.skate.engine.scenes.GameObject
-import com.pafoid.skate.engine.scenes.Scene
-import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.TrickManager
-import io.mockk.*
+import com.pafoid.skate.game.player.PlayerController
+import com.pafoid.skate.game.player.PlayerState
+import com.pafoid.skate.game.skateboard.SkateboardPhysics
+import io.mockk.MockKAnnotations
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.unmockkAll
+import io.mockk.verify
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
@@ -56,7 +63,7 @@ class BoardRigTest {
                 single { mockk<ResourceManager>(relaxed = true) }
                 single<IInputBuffer> { inputBuffer }
                 single { mockk<PrefabsGenerator>(relaxed = true) }
-                single { mockk<DebugDraw>(relaxed = true) }
+                single { mockk<DebugRenderer>(relaxed = true) }
                 single { TrickManager("/values/test_tricks.properties") }
                 single { mockk<StringManager>(relaxed = true) }
                 single { mockk<LoggerService>(relaxed = true) }

@@ -1,15 +1,16 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.controls.input.InputProvider
-import com.pafoid.skate.engine.controls.listeners.KeyListener
+import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.InputProvider
+import com.pafoid.skate.engine.input.listeners.KeyListener
+import com.pafoid.skate.engine.render.data.CameraPreset
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import org.joml.Vector3f
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.koin.core.context.GlobalContext.startKoin

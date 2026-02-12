@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.physics3d
 
 import com.jme3.bullet.collision.PhysicsRayTestResult
-import com.pafoid.skate.engine.scenes.GameObject
+import com.pafoid.skate.engine.ecs.GameObject
 import org.joml.Vector3f
 
 interface IPhysics3D {

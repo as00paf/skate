@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine
 
-import com.pafoid.skate.engine.scenes.components.Transform
-import com.pafoid.skate.engine.scenes.components.toMatrix
+import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.toMatrix
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals

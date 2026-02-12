@@ -1,8 +1,22 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.models.RawModel
+import com.pafoid.skate.engine.assets.data.models.RawModel
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL30.*
+import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
+import org.lwjgl.opengl.GL30.GL_ELEMENT_ARRAY_BUFFER
+import org.lwjgl.opengl.GL30.GL_FLOAT
+import org.lwjgl.opengl.GL30.GL_INT
+import org.lwjgl.opengl.GL30.GL_STATIC_DRAW
+import org.lwjgl.opengl.GL30.GL_TRIANGLES
+import org.lwjgl.opengl.GL30.glBindBuffer
+import org.lwjgl.opengl.GL30.glBindVertexArray
+import org.lwjgl.opengl.GL30.glBufferData
+import org.lwjgl.opengl.GL30.glDeleteBuffers
+import org.lwjgl.opengl.GL30.glDeleteVertexArrays
+import org.lwjgl.opengl.GL30.glGenBuffers
+import org.lwjgl.opengl.GL30.glGenVertexArrays
+import org.lwjgl.opengl.GL30.glVertexAttribIPointer
+import org.lwjgl.opengl.GL30.glVertexAttribPointer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 

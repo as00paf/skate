@@ -1,11 +1,12 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_X
-import com.pafoid.skate.engine.controls.listeners.GamepadConstants.AXIS_RIGHT_Y
-import com.pafoid.skate.engine.controls.listeners.KeyListener
-import com.pafoid.skate.engine.controls.listeners.MouseListener
-import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_X
+import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_Y
+import com.pafoid.skate.engine.input.listeners.KeyListener
+import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.render.data.CameraPreset
 import com.pafoid.skate.engine.utils.Interpolation
 import com.pafoid.skate.engine.utils.Ray
 import com.pafoid.skate.engine.utils.toDegrees
@@ -16,8 +17,18 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW.*
-import kotlin.math.*
+import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
+import org.lwjgl.glfw.GLFW.GLFW_KEY_A
+import org.lwjgl.glfw.GLFW.GLFW_KEY_D
+import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT
+import org.lwjgl.glfw.GLFW.GLFW_KEY_S
+import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
+import org.lwjgl.glfw.GLFW.GLFW_KEY_W
+import kotlin.math.abs
+import kotlin.math.asin
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 
 class Camera(
     val position: Vector3f = Vector3f(),

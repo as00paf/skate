@@ -1,17 +1,16 @@
 package com.pafoid.skate.engine.assets.loaders
 
-import com.pafoid.skate.engine.animation.Animation
-import com.pafoid.skate.engine.animation.Bone
-import com.pafoid.skate.engine.animation.Skeleton
-import com.pafoid.skate.engine.assets.BoneInfo
-import com.pafoid.skate.engine.assets.LoadedMeshPart
-import com.pafoid.skate.engine.assets.PreLoadedMeshPart
-import com.pafoid.skate.engine.assets.PreLoadedModel
-import com.pafoid.skate.engine.models.AlphaMode
-import com.pafoid.skate.engine.models.Material
+import com.pafoid.skate.engine.assets.BoneNameMapper
+import com.pafoid.skate.engine.assets.data.BoneInfo
+import com.pafoid.skate.engine.assets.data.models.AlphaMode
+import com.pafoid.skate.engine.assets.data.models.LoadedMeshPart
+import com.pafoid.skate.engine.assets.data.models.Material
+import com.pafoid.skate.engine.assets.data.models.PreLoadedMeshPart
+import com.pafoid.skate.engine.assets.data.models.PreLoadedModel
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
+import com.pafoid.skate.engine.assets.data.models.animations.Bone
+import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.render.VAOLoader
-import com.pafoid.skate.engine.utils.BoneNameMapper
-import com.pafoid.skate.engine.utils.toJomlMatrix
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.assimp.AIBone

@@ -1,12 +1,12 @@
 package com.pafoid.skate.engine.physics3d
 
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.scenes.GameObject
-import com.pafoid.skate.engine.scenes.components.Transform
+import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import kotlin.math.sqrt
-import org.joml.Vector3f
 
 class PhysicsCalibrationTest {
 

@@ -1,12 +1,14 @@
 package com.pafoid.skate.engine.animation
 
 
-import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.utils.serialization.Serializer
+import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import kotlinx.serialization.encodeToString
 import org.joml.Quaternionf
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import java.io.File
 

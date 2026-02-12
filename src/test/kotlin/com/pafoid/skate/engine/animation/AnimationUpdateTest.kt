@@ -1,5 +1,12 @@
 package com.pafoid.skate.engine.animation
 
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
+import com.pafoid.skate.engine.assets.data.models.animations.AnimationChannel
+import com.pafoid.skate.engine.assets.data.models.animations.AnimationPath
+import com.pafoid.skate.engine.assets.data.models.animations.AnimationSampler
+import com.pafoid.skate.engine.assets.data.models.animations.Bone
+import com.pafoid.skate.engine.assets.data.models.animations.InterpolationType
+import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f

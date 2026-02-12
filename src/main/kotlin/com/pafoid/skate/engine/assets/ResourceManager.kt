@@ -1,15 +1,19 @@
 package com.pafoid.skate.engine.assets
 
-import com.pafoid.skate.engine.animation.Animation
-import com.pafoid.skate.engine.animation.Skeleton
+import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.assets.data.Sound
+import com.pafoid.skate.engine.assets.data.Texture
+import com.pafoid.skate.engine.assets.data.TextureData
+import com.pafoid.skate.engine.assets.data.models.BaseModel
+import com.pafoid.skate.engine.assets.data.models.CharacterModel
+import com.pafoid.skate.engine.assets.data.models.MeshPart
+import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
+import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
-import com.pafoid.skate.engine.editor.logs.LogLevel
-import com.pafoid.skate.engine.editor.logs.LoggerService
-import com.pafoid.skate.engine.models.BaseModel
-import com.pafoid.skate.engine.models.CharacterModel
-import com.pafoid.skate.engine.models.MeshPart
-import com.pafoid.skate.engine.models.TexturedModel
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.JobSystem
 import kotlinx.coroutines.Dispatchers

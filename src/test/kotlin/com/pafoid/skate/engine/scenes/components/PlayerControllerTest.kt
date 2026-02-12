@@ -1,20 +1,21 @@
 package com.pafoid.skate.engine.scenes.components
 
+import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.controls.input.IInputBuffer
-import com.pafoid.skate.engine.controls.input.IInputProvider
-import com.pafoid.skate.engine.controls.listeners.GamepadConstants
-import com.pafoid.skate.engine.editor.logs.LoggerService
-import com.pafoid.skate.engine.player.PlayerState
-import com.pafoid.skate.engine.prefabs.PrefabsGenerator
-import com.pafoid.skate.engine.prefabs.Skateboard
-import com.pafoid.skate.engine.prefabs.Skater
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.input.IInputBuffer
+import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.render.Camera
-import com.pafoid.skate.engine.render.DebugDraw
-import com.pafoid.skate.engine.scenes.GameObject
-import com.pafoid.skate.engine.scenes.Scene
-import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.StringManager
+import com.pafoid.skate.game.player.PlayerController
+import com.pafoid.skate.game.player.PlayerState
+import com.pafoid.skate.game.prefabs.Skateboard
+import com.pafoid.skate.game.prefabs.Skater
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -53,7 +54,7 @@ class PlayerControllerTest {
                 single<IInputProvider> { inputProvider }
                 single { mockk<IInputBuffer>(relaxed = true) }
                 single { mockk<PrefabsGenerator>(relaxed = true) }
-                single { mockk<DebugDraw>(relaxed = true) }
+                single { mockk<DebugRenderer>(relaxed = true) }
                 single { mockk<StringManager>(relaxed = true) }
                 single { mockk<LoggerService>(relaxed = true) }
             })

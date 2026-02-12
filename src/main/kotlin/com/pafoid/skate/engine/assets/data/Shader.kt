@@ -1,0 +1,123 @@
+package com.pafoid.skate.engine.assets.data
+
+import org.joml.Matrix3f
+import org.joml.Matrix4f
+import org.joml.Vector2f
+import org.joml.Vector3f
+import org.joml.Vector4f
+import org.lwjgl.BufferUtils
+import org.lwjgl.opengl.GL20.glDeleteProgram
+import org.lwjgl.opengl.GL20.glDeleteShader
+import org.lwjgl.opengl.GL20.glGetUniformLocation
+import org.lwjgl.opengl.GL20.glUniform1f
+import org.lwjgl.opengl.GL20.glUniform1i
+import org.lwjgl.opengl.GL20.glUniform1iv
+import org.lwjgl.opengl.GL20.glUniform2f
+import org.lwjgl.opengl.GL20.glUniform3f
+import org.lwjgl.opengl.GL20.glUniform4f
+import org.lwjgl.opengl.GL20.glUniformMatrix4fv
+import org.lwjgl.opengl.GL20.glUseProgram
+
+class Shader(
+    private val shaderProgId: Int = -1,
+    private val vertexShaderId: Int = -1,
+    private val fragmentShaderId: Int = -1
+) {
+    private var isUsed = false
+
+    fun start() {
+        if (!isUsed) {
+            glUseProgram(shaderProgId)
+            isUsed = true
+        }
+    }
+
+    fun stop() {
+        glUseProgram(0)
+        isUsed = false
+    }
+
+    fun uploadMat4f(varName: String, mat4f: Matrix4f) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        val matBuffer = BufferUtils.createFloatBuffer(16)
+        mat4f.get(matBuffer)
+        glUniformMatrix4fv(varLocation, false, matBuffer)
+    }
+
+    fun uploadMat3f(varName: String, mat3f: Matrix3f) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        val matBuffer = BufferUtils.createFloatBuffer(9)
+        mat3f.get(matBuffer)
+        glUniformMatrix4fv(varLocation, false, matBuffer)
+    }
+
+    fun uploadVec2f(varName: String, vec: Vector2f) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        glUniform2f(varLocation, vec.x, vec.y)
+    }
+
+    fun uploadVec3f(varName: String, vec: Vector3f) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        glUniform3f(varLocation, vec.x, vec.y, vec.z)
+    }
+
+    fun uploadVec4f(varName: String, vec: Vector4f) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        glUniform4f(varLocation, vec.x, vec.y, vec.z, vec.w)
+    }
+
+    fun uploadFloat(varName: String, value: Float) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        glUniform1f(varLocation, value)
+    }
+
+    fun uploadInt(varName: String, value: Int) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        glUniform1i(varLocation, value)
+    }
+
+    fun uploadIntArray(varName: String, array: IntArray) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        glUniform1iv(varLocation, array)
+    }
+
+    fun uploadTexture(varName: String, slot: Int) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        glUniform1i(varLocation, slot)
+    }
+
+    fun uploadBoolean(varName: String, value: Boolean) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        val boolValue = if (value) 1 else 0
+        glUniform1i(varLocation, boolValue)
+    }
+
+    fun uploadMat4fArray(varName: String, matrices: Array<Matrix4f>) {
+        val varLocation = glGetUniformLocation(shaderProgId, varName)
+        start()
+        val matBuffer = BufferUtils.createFloatBuffer(matrices.size * 16)
+        for (mat in matrices) {
+            mat.get(matBuffer)
+            matBuffer.position(matBuffer.position() + 16)
+        }
+        matBuffer.flip()
+        glUniformMatrix4fv(varLocation, false, matBuffer)
+    }
+
+    fun destroy() {
+        stop()
+        glDeleteShader(vertexShaderId)
+        glDeleteShader(fragmentShaderId)
+        glDeleteProgram(shaderProgId)
+    }
+}

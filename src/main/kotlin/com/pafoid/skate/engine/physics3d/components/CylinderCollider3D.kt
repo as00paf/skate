@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.physics3d.components
 
 import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CylinderCollisionShape
-import com.pafoid.skate.engine.scenes.components.Component
+import com.pafoid.skate.engine.ecs.components.Component
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f

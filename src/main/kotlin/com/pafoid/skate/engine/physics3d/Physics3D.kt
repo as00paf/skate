@@ -10,11 +10,12 @@ import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.jme3.bullet.collision.shapes.MeshCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.render.DebugDraw
-import com.pafoid.skate.engine.scenes.GameObject
-import com.pafoid.skate.engine.scenes.components.Transform
+import com.pafoid.skate.engine.render.EngineStats
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
 import electrostatic4j.snaploader.LibraryInfo
@@ -28,7 +29,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class Physics3D : IPhysics3D, KoinComponent {
-    private val debugDraw: DebugDraw by inject()
+    private val debugRenderer: DebugRenderer by inject()
     private val physicsSpace: PhysicsSpace
 
     /**
@@ -240,7 +241,7 @@ class Physics3D : IPhysics3D, KoinComponent {
             val startTime = System.nanoTime()
             physicsSpace.update(fixedTimestep, 0)
             val endTime = System.nanoTime()
-            com.pafoid.skate.engine.utils.EngineStats.physicsStepTime.set(endTime - startTime)
+            EngineStats.physicsStepTime.set(endTime - startTime)
             accumulator -= fixedTimestep
         }
 
@@ -291,9 +292,9 @@ class Physics3D : IPhysics3D, KoinComponent {
         color: JomlVector3f
     ) {
         // Complex shapes - just draw a small cross for now to indicate position
-        debugDraw.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
-        debugDraw.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
-        debugDraw.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
+        debugRenderer.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
+        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
+        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
     }
 
     /**
@@ -362,7 +363,7 @@ class Physics3D : IPhysics3D, KoinComponent {
                 height = halfExtents.y * 2f
             }
         }
-        debugDraw.addCylinder3D(pos, rot, radius, height, axis, color)
+        debugRenderer.addCylinder3D(pos, rot, radius, height, axis, color)
     }
 
     /**
@@ -375,7 +376,7 @@ class Physics3D : IPhysics3D, KoinComponent {
      */
     private fun drawBoxCollisionShape(shape: BoxCollisionShape, pos: JomlVector3f, rot: Quaternionf, color: JomlVector3f) {
         val halfExtents = shape.getHalfExtents(null)
-        debugDraw.addBox3D(pos, rot, JomlVector3f(halfExtents.x, halfExtents.y, halfExtents.z), color)
+        debugRenderer.addBox3D(pos, rot, JomlVector3f(halfExtents.x, halfExtents.y, halfExtents.z), color)
     }
 
     override fun destroy() {

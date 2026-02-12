@@ -1,7 +1,25 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.assets.Texture
-import org.lwjgl.opengl.GL30.*
+import com.pafoid.skate.engine.assets.data.Texture
+import org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0
+import org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT
+import org.lwjgl.opengl.GL30.GL_DEPTH_COMPONENT
+import org.lwjgl.opengl.GL30.GL_DEPTH_COMPONENT32
+import org.lwjgl.opengl.GL30.GL_FLOAT
+import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
+import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_COMPLETE
+import org.lwjgl.opengl.GL30.GL_NEAREST
+import org.lwjgl.opengl.GL30.GL_TEXTURE_2D
+import org.lwjgl.opengl.GL30.GL_TEXTURE_MAG_FILTER
+import org.lwjgl.opengl.GL30.GL_TEXTURE_MIN_FILTER
+import org.lwjgl.opengl.GL30.glBindFramebuffer
+import org.lwjgl.opengl.GL30.glBindTexture
+import org.lwjgl.opengl.GL30.glCheckFramebufferStatus
+import org.lwjgl.opengl.GL30.glFramebufferTexture2D
+import org.lwjgl.opengl.GL30.glGenFramebuffers
+import org.lwjgl.opengl.GL30.glGenTextures
+import org.lwjgl.opengl.GL30.glTexImage2D
+import org.lwjgl.opengl.GL30.glTexParameteri
 
 class FrameBuffer(val width: Int, val height: Int) {
     private var fboId = 0

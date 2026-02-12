@@ -1,14 +1,16 @@
 package com.pafoid.skate.engine
 
-import com.pafoid.skate.engine.editor.EditorInputHandler
-import com.pafoid.skate.engine.editor.logs.LoggerService
-import com.pafoid.skate.engine.imgui.ImGuiLayer
-import com.pafoid.skate.engine.render.Renderer
-import com.pafoid.skate.engine.scenes.Scene
-import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
-import com.pafoid.skate.engine.scenes.getSelectedGameObject
-import com.pafoid.skate.engine.scenes.getGameObject
+import com.pafoid.skate.app.SplashScreen
+import com.pafoid.skate.editor.imgui.ImGuiLayer
+import com.pafoid.skate.editor.systems.EditorInputHandler
+import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.windows.GameViewWindow
+import com.pafoid.skate.engine.core.BootManager
+import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EngineState
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.render.renderer.Renderer
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -19,8 +21,6 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.koin.test.KoinTest
-import com.pafoid.skate.engine.editor.GameViewWindow
-import com.pafoid.skate.engine.scenes.SplashScreenManager
 
 class EngineFixedTimestepTest : KoinTest {
 
@@ -30,7 +30,7 @@ class EngineFixedTimestepTest : KoinTest {
     private lateinit var mockLogger: LoggerService
     private lateinit var mockEditorInputHandler: EditorInputHandler
     private lateinit var mockBootManager: BootManager
-    private lateinit var mockSplashScreenManager: SplashScreenManager
+    private lateinit var mockSplashScreen: SplashScreen
 
     @BeforeEach
     fun setup() {
@@ -39,7 +39,7 @@ class EngineFixedTimestepTest : KoinTest {
         mockLogger = mockk(relaxed = true)
         mockEditorInputHandler = mockk(relaxed = true)
         mockBootManager = mockk(relaxed = true)
-        mockSplashScreenManager = mockk(relaxed = true)
+        mockSplashScreen = mockk(relaxed = true)
 
         startKoin {
             modules(module {
@@ -48,7 +48,7 @@ class EngineFixedTimestepTest : KoinTest {
                 single { mockLogger }
                 single { mockEditorInputHandler }
                 single { mockBootManager }
-                single { mockSplashScreenManager }
+                single { mockSplashScreen }
             })
         }
         

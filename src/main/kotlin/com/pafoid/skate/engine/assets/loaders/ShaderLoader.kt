@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.assets.loaders
 
-import com.pafoid.skate.engine.assets.Shader
-import com.pafoid.skate.engine.assets.ShaderConst
-import com.pafoid.skate.engine.assets.ShaderConst.Attribs
+import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.utils.ShaderConst
+import com.pafoid.skate.engine.utils.ShaderConst.Attribs
 import org.lwjgl.opengl.GL20
 import java.io.IOException
 import java.nio.file.Files

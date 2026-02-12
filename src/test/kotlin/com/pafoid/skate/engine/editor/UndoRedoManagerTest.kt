@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.editor
 
+import com.pafoid.skate.editor.systems.Command
+import com.pafoid.skate.editor.systems.UndoRedoManager
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

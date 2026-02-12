@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.animation
 
-import org.junit.jupiter.api.Assertions.*
+import com.pafoid.skate.engine.assets.data.models.animations.BoneMirrorUtil
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class BoneMirrorUtilTest {

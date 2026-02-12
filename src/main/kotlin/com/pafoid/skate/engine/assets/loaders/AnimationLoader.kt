@@ -1,12 +1,12 @@
 package com.pafoid.skate.engine.assets.loaders
 
-import com.pafoid.skate.engine.animation.Animation
-import com.pafoid.skate.engine.animation.AnimationChannel
-import com.pafoid.skate.engine.animation.AnimationPath
-import com.pafoid.skate.engine.animation.AnimationSampler
-import com.pafoid.skate.engine.animation.InterpolationType
-import com.pafoid.skate.engine.animation.Skeleton
-import com.pafoid.skate.engine.utils.BoneNameMapper
+import com.pafoid.skate.engine.assets.BoneNameMapper
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
+import com.pafoid.skate.engine.assets.data.models.animations.AnimationChannel
+import com.pafoid.skate.engine.assets.data.models.animations.AnimationPath
+import com.pafoid.skate.engine.assets.data.models.animations.AnimationSampler
+import com.pafoid.skate.engine.assets.data.models.animations.InterpolationType
+import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.assimp.AIAnimation

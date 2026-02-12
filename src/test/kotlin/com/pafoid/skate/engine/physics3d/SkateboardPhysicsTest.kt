@@ -1,13 +1,14 @@
 package com.pafoid.skate.engine.physics3d
 
-import com.pafoid.skate.engine.Engine
+import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.toWorldMatrix
+import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.scenes.GameObject
-import com.pafoid.skate.engine.scenes.Scene
-import com.pafoid.skate.engine.scenes.SceneManager
-import com.pafoid.skate.engine.scenes.components.Transform
-import com.pafoid.skate.engine.scenes.components.toWorldMatrix
+import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
@@ -177,7 +178,7 @@ class SkateboardPhysicsTest {
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
 
         // Use SkateboardPhysics for suspension (keeps it off the ground physically, but rays touch)
-        val skatePhysics = com.pafoid.skate.engine.scenes.components.SkateboardPhysics()
+        val skatePhysics = SkateboardPhysics()
         skateGo.addComponent(skatePhysics)
 
         skateTransform.translation.set(0f, 0.1f, 0f) // Slightly above ground, suspension holds it
@@ -220,7 +221,7 @@ class SkateboardPhysicsTest {
         val rb = RigidBody3D(1.0f) // Light board
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
-        val skatePhysics = com.pafoid.skate.engine.scenes.components.SkateboardPhysics()
+        val skatePhysics = SkateboardPhysics()
         skateGo.addComponent(skatePhysics)
 
         // Place board so rays (length 0.08) are compressed
@@ -258,7 +259,7 @@ class SkateboardPhysicsTest {
         val rb = RigidBody3D(2.0f)
         skateGo.addComponent(rb)
         skateGo.addComponent(BoxCollider3D(Vector3f(0.4f, 0.02f, 0.1f)))
-        val skatePhysics = com.pafoid.skate.engine.scenes.components.SkateboardPhysics()
+        val skatePhysics = SkateboardPhysics()
         skateGo.addComponent(skatePhysics)
 
         skateTransform.translation.set(0f, 0.1f, 0f)
