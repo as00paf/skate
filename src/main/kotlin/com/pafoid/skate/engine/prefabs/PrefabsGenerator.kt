@@ -83,45 +83,45 @@ class PrefabsGenerator(
     }
 
     fun spawnSkateboard():Skateboard? {
-        val scene = sceneManager.currentScene ?: return null
-
         var skate: Skateboard? = null
         JobSystem.runAsync {
             val model = resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
             JobSystem.runOnMain {
                 skate = Skateboard(model as TexturedModel)
-                scene.addGameObjectToScene(skate)
+                sceneManager.currentScene?.addGameObjectToScene(skate)
             }
         }
 
         return skate
     }
 
-    suspend fun spawnSkater(skate: GameObject? = null): Skater {
-        val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
+    fun spawnSkater(skate: GameObject? = null): Skater? {
+        var skater: Skater? = null
 
-        val skater = Skater("Skater", model, skate)
+        JobSystem.runAsync {
+            val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
+            skater = Skater("Skater", model, skate)
 
-        val walkingAnimation = withContext(Dispatchers.IO) {
-            resourceManager.loadAnimation(Assets.Animations.WALKING, skater.skeletonComponent.pose.skeleton)
-        }
+            val walkingAnimation =
+                resourceManager.loadAnimation(Assets.Animations.WALKING, skater.skeletonComponent.pose.skeleton)
 
-        val idleAnimation = withContext(Dispatchers.IO) {
-            resourceManager.loadAnimation(Assets.Animations.IDLE, skater.skeletonComponent.pose.skeleton)
-        }
 
-        skater.animator.addAnimation(idleAnimation)
-        skater.animator.addAnimation(walkingAnimation)
+            val idleAnimation =
+                resourceManager.loadAnimation(Assets.Animations.IDLE, skater.skeletonComponent.pose.skeleton)
 
-        JobSystem.runOnMain {
-            sceneManager.currentScene?.addGameObjectToScene(skater)
+
+            skater.animator.addAnimation(idleAnimation)
+            skater.animator.addAnimation(walkingAnimation)
+
+            JobSystem.runOnMain {
+                sceneManager.currentScene?.addGameObjectToScene(skater)
+            }
         }
 
         return skater
     }
 
     fun spawnFloor(): Floor? {
-        val scene = sceneManager.currentScene ?: return null
         var floor: Floor? = null
 
         JobSystem.runAsync {
@@ -132,7 +132,7 @@ class PrefabsGenerator(
 
             JobSystem.runOnMain {
                 floor = Floor(texturedModel)
-                scene.addGameObjectToScene(floor)
+                sceneManager.currentScene?.addGameObjectToScene(floor)
             }
         }
 
@@ -140,8 +140,6 @@ class PrefabsGenerator(
     }
 
     fun spawnTile(): Tile? {
-        val scene = sceneManager.currentScene ?: return null
-
         var tile:Tile? = null
 
         JobSystem.runAsync {
@@ -151,8 +149,8 @@ class PrefabsGenerator(
             texturedModel.mesh[0].material.baseColorPath = Assets.Textures.CONCRETE_SIMPLE
 
             JobSystem.runOnMain {
-                tile = Tile("Tile_${scene.gameObjectManager.gameObjects.size}", texturedModel)
-                scene.addGameObjectToScene(tile)
+                tile = Tile("Tile_${sceneManager.currentScene?.gameObjectManager?.gameObjects?.size}", texturedModel)
+                sceneManager.currentScene?.addGameObjectToScene(tile)
             }
         }
 

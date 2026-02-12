@@ -2,6 +2,7 @@ package com.pafoid.skate.engine
 
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.render.Renderer
+import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.SplashScreenManager
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
@@ -36,7 +37,15 @@ class BootManager(
         engineState.set(EngineState.RUNNING)
         
         // Load Initial Scene
-        sceneManager.changeScene(LevelEditorSceneInitializer(), true)
+        val initializer = LevelEditorSceneInitializer()
+        initializer.onProgress = { progress, message ->
+             splashScreenManager.increaseLoadingProgress(message, progress)
+        }
+        
+        val scene = Scene("LevelEditorScene", initializer)
+        scene.init()
+        sceneManager.changeScene(scene, true)
+        
         logger.logEngine("Engine initialization complete.")
     }
 

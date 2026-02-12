@@ -30,12 +30,15 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private var floor: GameObject? = null
 
     override suspend fun loadResources(scene: Scene) {
+        reportProgress(0.1f, "Loading Character Model...")
         resourceManager.loadModel(Assets.Models.JAMES)
+        reportProgress(0.2f, "Resources Loaded.")
     }
 
     override suspend fun init(scene: Scene) {
         this.currentScene = scene
 
+        reportProgress(0.3f, "Initializing Scene Data...")
         scene.sceneData.skyColor.set(0.6f, 0.7f, 0.9f)
         scene.sceneData.fogColor.set(0.6f, 0.7f, 0.9f) // Match sky for infinite horizon
         scene.sceneData.fogDensity = 0.0008f
@@ -45,6 +48,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         scene.camera.position.set(0f, 5f, 20f)
         scene.camera.yaw = 0f
         
+        reportProgress(0.5f, "Setting up Editor Tools...")
         // Essential Editor Tools
         editorCamera = GameObject(EDITOR_CAMERA).apply {
             addComponent(EditorCamera(scene.camera))
@@ -59,9 +63,12 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         editorStuff.addComponent(AnimationSystem())
         scene.addGameObjectToScene(editorStuff)
 
+        reportProgress(0.7f, "Spawning Prefabs...")
         skateboard = prefabsGenerator.spawnSkateboard()
         skater = prefabsGenerator.spawnSkater(skateboard)
         floor = prefabsGenerator.spawnFloor()
+        
+        reportProgress(1.0f, "Ready.")
     }
 
     override fun imgui() {

@@ -5,7 +5,8 @@ import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.render.Camera
 
 class Scene(
-    private val initializer: SceneInitializer,
+    val name: String = "Scene",
+    val initializer: SceneInitializer,
     val camera: Camera = Camera()
 ) {
 
