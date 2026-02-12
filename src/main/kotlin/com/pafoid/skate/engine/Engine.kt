@@ -6,11 +6,7 @@ import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.SplashScreenManager
-import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.engine.scenes.getSelectedGameObject
-import com.pafoid.skate.engine.utils.JobSystem
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.atomic.AtomicReference
@@ -21,7 +17,6 @@ class Engine : KoinComponent {
     private val renderer: Renderer by inject()
     private val logger: LoggerService by inject()
     private val editorInputHandler: EditorInputHandler by inject()
-    private val bootManager: BootManager by inject()
     private val splashScreenManager: SplashScreenManager by inject()
     
     // Engine State
@@ -34,10 +29,6 @@ class Engine : KoinComponent {
     companion object {
         private const val FIXED_TIME_STEP = 1.0f / 60.0f
         private const val MAX_TIME_STEP = 0.25f
-    }
-
-    suspend fun start() {
-        bootManager.boot(engineState)
     }
 
     fun update(dt: Float, imguiLayer: ImGuiLayer) {

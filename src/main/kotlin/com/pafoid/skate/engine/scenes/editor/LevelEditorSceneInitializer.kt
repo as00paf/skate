@@ -32,6 +32,8 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     override suspend fun loadResources(scene: Scene) {
         reportProgress(0.1f, "Loading Character Model...")
         resourceManager.loadModel(Assets.Models.JAMES)
+        reportProgress(0.1f, "Loading Skateboard Model...")
+        resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
         reportProgress(0.2f, "Resources Loaded.")
     }
 

@@ -74,6 +74,7 @@ class Window(
     val title: String
 ): KoinComponent {
 
+    private val bootManager: BootManager by inject()
     private val inputBuffer: IInputBuffer by inject()
     private val joystickListener: JoystickListener by inject()
     private val keyListener: KeyListener by inject()
@@ -218,7 +219,7 @@ class Window(
                 glViewport(0, 0, renderer.currentWidth, renderer.currentHeight)
                 runOnMain {
                     show()
-                    engine.start()
+                    bootManager.boot(engine.engineState)
                 }
                 isFirstDraw = false
             }
@@ -255,10 +256,6 @@ class Window(
 
     fun setVSync(enabled: Boolean) {
         glfwSwapInterval(if (enabled) 1 else 0)
-        // Corrected call to use instance and ensure initCallback runs on main thread
-        runOnMain {
-            engine.start()
-        }
     }
 
     private fun destroy() {
