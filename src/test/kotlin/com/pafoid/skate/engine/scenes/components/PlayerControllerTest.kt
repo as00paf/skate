@@ -62,7 +62,7 @@ class PlayerControllerTest {
         val camera = Camera()
         every { scene.camera } returns camera
         every { scene.gameObjectManager.gameObjects } returns mutableListOf()
-        every { scene.physics3d } returns mockk(relaxed = true)
+        every { scene.sceneData.physics3d } returns mockk(relaxed = true)
         every { sceneManager.currentScene } returns scene
 
         every { inputProvider.keyBeginPress(any()) } returns false

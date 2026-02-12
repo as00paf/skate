@@ -34,7 +34,7 @@ class SkateboardStressTest {
         every { sceneManager.runtimePlaying } returns true
         val mockScene = mockk<com.pafoid.skate.engine.scenes.Scene>()
         every { sceneManager.currentScene } returns mockScene
-        every { mockScene.physics3d } returns physics
+        every { mockScene.sceneData.physics3d } returns physics
     }
 
     @AfterEach

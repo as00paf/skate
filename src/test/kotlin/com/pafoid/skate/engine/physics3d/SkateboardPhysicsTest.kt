@@ -54,7 +54,7 @@ class SkateboardPhysicsTest {
         
         val mockScene = mockk<Scene>()
         every { sceneManager.currentScene } returns mockScene
-        every { mockScene.physics3d } returns physics
+        every { mockScene.sceneData.physics3d } returns physics
     }
 
     @AfterEach

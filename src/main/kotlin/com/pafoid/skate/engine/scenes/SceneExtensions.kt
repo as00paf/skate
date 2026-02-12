@@ -22,7 +22,7 @@ fun Scene.createGameObject(name: String): GameObject {
 }
 
 fun Scene.addGameObjectToScene(gameObject: GameObject) {
-    gameObjectManager.addGameObject(gameObject, this.isRunning)
+    gameObjectManager.addGameObject(gameObject, this.sceneData.isRunning)
 }
 
 fun Scene.removeGameObject(gameObject: GameObject) {

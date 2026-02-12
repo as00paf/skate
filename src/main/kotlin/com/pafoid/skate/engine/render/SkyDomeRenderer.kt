@@ -77,19 +77,19 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, resourceMan
         // Center on camera
         modelMatrix.identity().translation(camera.position)
         // Match rotation to sun direction + manual offset
-        val angle = (scene.timeOfDay / 24.0f - 0.5f) * 2.0f * PI.toFloat()
-        modelMatrix.rotateY(-angle + Math.toRadians(scene.skyRotation.toDouble()).toFloat())
+        val angle = (scene.sceneData.timeOfDay / 24.0f - 0.5f) * 2.0f * PI.toFloat()
+        modelMatrix.rotateY(-angle + Math.toRadians(scene.sceneData.skyRotation.toDouble()).toFloat())
 
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, modelMatrix)
         shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
         shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
-        shader.uploadVec3f(Uniforms.SUN_COLOR, scene.sun.color)
-        shader.uploadVec3f(Uniforms.SKY_TINT, scene.skyTint)
-        shader.uploadFloat(Uniforms.SKY_EXPOSURE, scene.skyExposure)
+        shader.uploadVec3f(Uniforms.SUN_COLOR, scene.sceneData.sun.color)
+        shader.uploadVec3f(Uniforms.SKY_TINT, scene.sceneData.skyTint)
+        shader.uploadFloat(Uniforms.SKY_EXPOSURE, scene.sceneData.skyExposure)
         
-        shader.uploadVec3f(Uniforms.FOG_COLOR, scene.fogColor)
-        shader.uploadFloat(Uniforms.FOG_DENSITY, scene.fogDensity)
-        shader.uploadFloat(Uniforms.FOG_GRADIENT, scene.fogGradient)
+        shader.uploadVec3f(Uniforms.FOG_COLOR, scene.sceneData.fogColor)
+        shader.uploadFloat(Uniforms.FOG_DENSITY, scene.sceneData.fogDensity)
+        shader.uploadFloat(Uniforms.FOG_GRADIENT, scene.sceneData.fogGradient)
         shader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
 
         glActiveTexture(GL_TEXTURE0)

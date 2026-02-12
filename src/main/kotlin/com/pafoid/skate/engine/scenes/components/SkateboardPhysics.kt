@@ -65,7 +65,7 @@ class SkateboardPhysics : Component(), KoinComponent {
             
             val rayEnd = Vector3f(localDown).mul(suspensionRestLength).add(rayStart)
             
-            val results = scene.physics3d.rayTest(rayStart, rayEnd)
+            val results = scene.sceneData.physics3d.rayTest(rayStart, rayEnd)
             if (results.isNotEmpty()) {
                 val closest = results.minByOrNull { it.hitFraction }
                 if (closest != null) {

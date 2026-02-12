@@ -265,7 +265,7 @@ class PlayerController : Component(), KoinComponent {
         val rayStart = Vector3f(pos.x, pos.y + 1f, pos.z)
         val rayEnd = Vector3f(pos.x, pos.y - 2f, pos.z)
         
-        val closest = scene.physics3d.raycastClosest(rayStart, rayEnd)
+        val closest = scene.sceneData.physics3d.raycastClosest(rayStart, rayEnd)
         if (closest != null) {
             val hitY = rayStart.y + (rayEnd.y - rayStart.y) * closest.hitFraction
             pos.y = hitY
@@ -309,7 +309,7 @@ class PlayerController : Component(), KoinComponent {
 
         scene.addGameObjectToScene(tumbleCube)
         // Add to physics immediately so we can set velocity
-        scene.physics3d.add(tumbleCube)
+        scene.sceneData.physics3d.add(tumbleCube)
 
         // Reparent skater to the tumble cube
         skater?.getComponent<Transform>()?.let { transform ->

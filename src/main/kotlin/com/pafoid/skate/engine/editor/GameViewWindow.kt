@@ -313,15 +313,15 @@ class GameViewWindow : KoinComponent {
         // --- Center-aligned Buttons ---
         if (isPlaying) {
             buttons.add {
-                if (scene?.timeScale == 1.0f) {
+                if (scene?.sceneData?.timeScale == 1.0f) {
                     if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene.timeScale = 0.0f
+                        scene.sceneData.timeScale = 0.0f
                         logger.logEditor("Simulation paused")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip("Pause Simulation (Time Scale: 0.0)")
                 } else {
                     if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene?.timeScale = 1.0f
+                        scene?.sceneData?.timeScale = 1.0f
                         logger.logEditor("Simulation resumed")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip("Resume Simulation (Time Scale: 1.0)")
@@ -330,7 +330,7 @@ class GameViewWindow : KoinComponent {
             buttons.add {
                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                     sceneManager.runtimePlaying = false
-                    scene?.timeScale = 1.0f // Reset timescale when stopping
+                    scene?.sceneData?.timeScale = 1.0f // Reset timescale when stopping
                     logger.logEditor("Simulation stopped")
                 }
                 if (ImGui.isItemHovered()) ImGui.setTooltip("Stop Simulation")
@@ -366,12 +366,12 @@ class GameViewWindow : KoinComponent {
             if (ImGui.isItemHovered()) ImGui.setTooltip("Reset Scene")
         }
         buttons.add {
-            val physicsDebugEnabled = scene?.physics3d?.debugEnabled ?: false
+            val physicsDebugEnabled = scene?.sceneData?.physics3d?.debugEnabled ?: false
             if (physicsDebugEnabled) {
                 ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             }
             if (ImGui.button(Icons.ATOM, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                scene?.physics3d?.debugEnabled = !physicsDebugEnabled
+                scene?.sceneData?.physics3d?.debugEnabled = !physicsDebugEnabled
                 logger.logEditor("Physics debug toggled")
             }
             if (physicsDebugEnabled) {

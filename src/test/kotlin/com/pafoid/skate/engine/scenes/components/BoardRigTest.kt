@@ -82,7 +82,7 @@ class BoardRigTest {
         physics3d = mockk(relaxed = true)
 
         every { sceneManager.currentScene } returns scene
-        every { scene.physics3d } returns physics3d
+        every { scene.sceneData.physics3d } returns physics3d
         
         skateboard.addComponent(physics)
         skateboard.addComponent(rb3d)
