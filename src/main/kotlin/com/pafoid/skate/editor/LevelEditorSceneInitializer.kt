@@ -21,9 +21,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private val logger: LoggerService by inject()
 
     private var currentScene: Scene? = null
-    private lateinit var editorStuff: GameObject
 
-    private var editorCamera: GameObject? = null
     private var skateboard: GameObject? = null
     private var skater: GameObject? = null
     private var floor: GameObject? = null
@@ -50,19 +48,13 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         scene.camera.yaw = 0f
 
         reportProgress(0.5f, "Setting up Editor Tools...")
-        // Essential Editor Tools
-        editorCamera = GameObject(EDITOR_CAMERA).apply {
-            addComponent(EditorCamera(scene.camera))
-            scene.addGameObjectToScene(this)
-        }
 
-        editorStuff = GameObject(EDITOR_TOOLS)
-        editorStuff.setNoSerialize()
-        editorStuff.addComponent(MouseControls())
-        editorStuff.addComponent(GizmoSystem())
-        editorStuff.addComponent(GridLines())
-        editorStuff.addComponent(AnimationSystem())
-        scene.addGameObjectToScene(editorStuff)
+        // Essential Editor Tools as Systems
+        scene.addSystem(EditorCamera(scene.camera))
+        scene.addSystem(MouseControls())
+        scene.addSystem(GizmoSystem())
+        scene.addSystem(GridLines())
+        scene.addSystem(AnimationSystem())
 
         reportProgress(0.7f, "Spawning Prefabs...")
         skateboard = prefabsGenerator.spawnSkateboard()
