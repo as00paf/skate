@@ -21,6 +21,7 @@ import com.pafoid.skate.engine.render.PickingDraw
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.ClipboardService
+import com.pafoid.skate.engine.scenes.LevelManager
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.StringManager
@@ -32,6 +33,7 @@ val appModule = module {
     single { SceneManager() }
     single { Serializer() }
     single { LoggerService() }
+    single { LevelManager(get(), get()) }
     single { ClipboardService(get()) }
     single { UndoRedoManager() }
     single { StringManager() }
@@ -53,7 +55,7 @@ val engineModule = module {
     single { PrefabsGenerator(get(), get()) }
 
     single { Renderer(get(), get(), get(), get(), get(), get()) }
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get()) }
 }
 
 val inputModule = module {

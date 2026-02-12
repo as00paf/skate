@@ -13,7 +13,6 @@ import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.scenes.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.engine.utils.serialization.Serializer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.joml.Vector3f
@@ -28,7 +27,6 @@ class SceneManager : KoinComponent {
     private val keyListener: KeyListener by inject()
     private val logger: LoggerService by inject()
     private val clipboardService: ClipboardService by inject()
-    private val serializer: Serializer by inject()
     private val undoRedoManager: UndoRedoManager by inject()
 
     var currentScene: Scene? = null
@@ -77,7 +75,7 @@ class SceneManager : KoinComponent {
             currentScene?.destroy()
         }
         logger.logEngine("Changing scene to ${initializer::class.simpleName}...")
-        val scene = Scene(initializer, serializer, logger)
+        val scene = Scene(initializer, logger)
         currentScene = scene
         // TODO: fix loading of saved scene
         //scene.load()

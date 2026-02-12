@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.editor.*
 import com.pafoid.skate.engine.editor.assetBrowser.AssetBrowser
 import com.pafoid.skate.engine.render.Renderer
 import com.pafoid.skate.engine.scenes.ClipboardService
+import com.pafoid.skate.engine.scenes.LevelManager
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.Transform
@@ -33,7 +34,8 @@ class ImGuiLayer(
     private val clipboardService: ClipboardService,
     private val stringManager: StringManager,
     private val undoRedoManager: UndoRedoManager,
-    private val renderer: Renderer
+    private val renderer: Renderer,
+    private val levelManager: LevelManager
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -204,13 +206,13 @@ class ImGuiLayer(
         if (ImGui.beginMenuBar()) {
             if (ImGui.beginMenu(stringManager.getString("menu.file"))) {
                 if (ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
-                    currentScene.save()
+                    levelManager.save(currentScene)
                 }
                 if (ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_as")}")) {
-                    currentScene.saveAs()
+                    levelManager.saveAs(currentScene)
                 }
                 if (ImGui.menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open")}", "Ctrl+O")) {
-                    currentScene.open()
+                    levelManager.open(currentScene)
                 }
                 ImGui.separator()
                 if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("menu.file.quit")}")) {

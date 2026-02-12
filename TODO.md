@@ -263,6 +263,7 @@
 - [x] E6.1: Move `Line3D` and `Triangle3D` to their own files.
 - [x] E6.2: Move `TransformCommand`, `CreateGameObjectCommand`, `DeleteGameObjectCommand` to their own files.
 - [x] E6.3: Move `Ray` to its own file.
+- [x] E6.4: Extract Level Saving/Loading Logic to LevelManager.
 
 ### E7. Import Statements & Code Style
 - [x] E7.1: Replace all FQNs with top-level import statements for JOML and JBullet classes and use import aliases when pertinent.
