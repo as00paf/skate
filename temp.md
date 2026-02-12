@@ -115,22 +115,6 @@ Reports
 
 Analyze the project and create a report to help me clean up the code that will include but not necessarily limited to :
 
-- Missing and failing unit tests
-- Dead or unused code (methods, variables, constants, etc)
-- Methods that are too long and should be divided into multiple methods
-- Previous logs or println() that should be removed or use the LoggerService instead
-- Code that should be reused
-- Breach of (AI_INSTRUCTIONS.md) protocol and architecture principles
-- Methods that should be extension methods
-- TODOs and FIXMEs that need to be addressed
-  Output the report to cleanup_report_gemini.md
-
-Responsibility & layer report
-
-Improve loading to include all character animations and the character model.
-Make sure JobSystem is properly used across the project where it makes sense
-SceneData data class
-
 Key bindings for editor camera movement
 Change default binding for tools to 1,2,3,4 ...
 
