@@ -41,6 +41,7 @@ class SplashScreenManager: KoinComponent {
     private var splashShader: Shader? = null
     private var splashTexture: Texture? = null
     private var splashQuad: RawModel? = null
+    private val fadeDuration = 2f
 
     suspend fun init() {
         splashShader = resourceManager.loadShader(Assets.Shaders.SPLASH)
@@ -61,6 +62,17 @@ class SplashScreenManager: KoinComponent {
             normals = floatArrayOf(0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f),
             indices = intArrayOf(0, 1, 2, 2, 3, 0)
         )
+    }
+
+    fun update(dt: Float, engineState: EngineState) {
+        if (splashAlpha > 0f) {
+            if (engineState == EngineState.RUNNING) {
+                splashAlpha -= dt / fadeDuration
+            }
+            if (splashAlpha < 0f) splashAlpha = 0f
+        } else if (!isDestroyed) {
+            destroy()
+        }
     }
 
     fun render(dt: Float, imguiLayer: ImGuiLayer, engineState: EngineState) {

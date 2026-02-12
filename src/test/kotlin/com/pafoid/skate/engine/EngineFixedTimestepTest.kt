@@ -20,6 +20,7 @@ import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import com.pafoid.skate.engine.editor.GameViewWindow
+import com.pafoid.skate.engine.scenes.SplashScreenManager
 
 class EngineFixedTimestepTest : KoinTest {
 
@@ -28,6 +29,8 @@ class EngineFixedTimestepTest : KoinTest {
     private lateinit var mockRenderer: Renderer
     private lateinit var mockLogger: LoggerService
     private lateinit var mockEditorInputHandler: EditorInputHandler
+    private lateinit var mockBootManager: BootManager
+    private lateinit var mockSplashScreenManager: SplashScreenManager
 
     @BeforeEach
     fun setup() {
@@ -35,6 +38,8 @@ class EngineFixedTimestepTest : KoinTest {
         mockRenderer = mockk(relaxed = true)
         mockLogger = mockk(relaxed = true)
         mockEditorInputHandler = mockk(relaxed = true)
+        mockBootManager = mockk(relaxed = true)
+        mockSplashScreenManager = mockk(relaxed = true)
 
         startKoin {
             modules(module {
@@ -42,6 +47,8 @@ class EngineFixedTimestepTest : KoinTest {
                 single { mockRenderer }
                 single { mockLogger }
                 single { mockEditorInputHandler }
+                single { mockBootManager }
+                single { mockSplashScreenManager }
             })
         }
         

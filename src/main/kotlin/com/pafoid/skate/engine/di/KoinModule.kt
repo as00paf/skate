@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.di
 
+import com.pafoid.skate.engine.BootManager
 import com.pafoid.skate.engine.Engine
 import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.assets.ResourceManager
@@ -25,6 +26,7 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.scenes.LevelManager
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.SplashScreenManager
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.TrickManager
@@ -43,6 +45,7 @@ val appModule = module {
     single { StringManager() }
     single { SettingsManager(get(), get(), get()) }
     single { TrickManager() }
+    single { BootManager(get(), get(), get(), get()) }
 }
 
 val engineModule = module {
@@ -57,6 +60,7 @@ val engineModule = module {
     single { PickingDraw() }
     single { ThumbnailCache() }
     single { PrefabsGenerator(get(), get()) }
+    single { SplashScreenManager() }
 
     single { Renderer(get(), get(), get(), get(), get(), get()) }
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get()) }

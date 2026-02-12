@@ -21,6 +21,8 @@ class Engine : KoinComponent {
     private val renderer: Renderer by inject()
     private val logger: LoggerService by inject()
     private val editorInputHandler: EditorInputHandler by inject()
+    private val bootManager: BootManager by inject()
+    private val splashScreenManager: SplashScreenManager by inject()
     
     // Engine State
     val engineState = AtomicReference(EngineState.BOOTING)
@@ -29,46 +31,13 @@ class Engine : KoinComponent {
     // Physics Loop State
     private var physicsAccumulator = 0f
     
-    // Internal Components
-    private val splashScreenManager = SplashScreenManager()
-    private val fadeDuration = 2f
-    
     companion object {
         private const val FIXED_TIME_STEP = 1.0f / 60.0f
         private const val MAX_TIME_STEP = 0.25f
     }
 
-    suspend fun start() = withContext(JobSystem.Main) {
-        logger.logEngine("Initializing Engine...")
-        splashScreenManager.init()
-        delay(10)
-        
-        engineState.set(EngineState.LOADING)
-        delay(10)
-        
-        initRenderSystem()
-        delay(10)
-        
-        splashScreenManager.loadingProgress.set(1.0f)
-        delay(10)
-        
-        engineState.set(EngineState.RUNNING)
-        
-        // Load Initial Scene
-        sceneManager.changeScene(LevelEditorSceneInitializer(), true)
-        logger.logEngine("Engine initialization complete.")
-    }
-
-    private suspend fun initRenderSystem() {
-        logger.logEngine("Initializing render system...")
-        splashScreenManager.increaseLoadingProgress("Initializing Render System...")
-
-        renderer.initFrameBuffer()
-        renderer.loadShaders { index, size ->
-            splashScreenManager.increaseLoadingProgress("Loading Shaders $index/$size")
-        }
-        renderer.useFbo = true
-        logger.logEngine("Renderer initialized.")
+    suspend fun start() {
+        bootManager.boot(engineState)
     }
 
     fun update(dt: Float, imguiLayer: ImGuiLayer) {
@@ -78,9 +47,9 @@ class Engine : KoinComponent {
             updateRunningState(dt, imguiLayer)
         }
         
-        val isSplashing = state != EngineState.RUNNING || splashScreenManager.splashAlpha > 0f
-        if (isSplashing) {
-            splash(dt, imguiLayer, state)
+        splashScreenManager.update(dt, state)
+        if (!splashScreenManager.isDestroyed) {
+             splashScreenManager.render(dt, imguiLayer, state)
         }
     }
 
@@ -106,22 +75,6 @@ class Engine : KoinComponent {
             
             // Update ImGui Layer
             imguiLayer.update(dt, scene)
-        }
-    }
-
-    private fun splash(dt: Float, imguiLayer: ImGuiLayer, state: EngineState) {
-        val isSplashing = splashScreenManager.splashAlpha > 0f
-        val shouldDie = !splashScreenManager.isDestroyed && !isSplashing
-        
-        if (isSplashing) {
-            if (state == EngineState.RUNNING) {
-                splashScreenManager.splashAlpha -= dt / fadeDuration
-            }
-
-            if (splashScreenManager.splashAlpha < 0f) splashScreenManager.splashAlpha = 0f
-            splashScreenManager.render(dt, imguiLayer, engineState.get())
-        } else if (shouldDie) {
-            splashScreenManager.destroy()
         }
     }
 
