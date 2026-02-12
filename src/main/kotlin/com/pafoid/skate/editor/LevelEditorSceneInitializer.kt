@@ -9,7 +9,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.MouseControls
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
-import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
+import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import org.koin.core.component.KoinComponent

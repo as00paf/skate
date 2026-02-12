@@ -13,16 +13,16 @@ import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
-import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 import kotlin.math.floor
 
-class MouseControls : Component(), KoinComponent {
+class MouseControls : System() {
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()

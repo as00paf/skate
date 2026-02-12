@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.gizmos
 import com.pafoid.skate.editor.systems.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
@@ -13,11 +12,10 @@ import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 import kotlin.math.abs
 
 class RotationGizmo(
-    sceneManager: SceneManager,
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
-) : Gizmo(sceneManager, mouseListener, undoRedoManager), KoinComponent {
+) : Gizmo(mouseListener, undoRedoManager), KoinComponent {
     private val radius = 2.0f
     private val hitThreshold = 0.4f
     
@@ -27,7 +25,6 @@ class RotationGizmo(
 
     override fun editorUpdate(dt: Float) {
         super.editorUpdate(dt)
-        val scene = sceneManager.currentScene ?: return
         activeGameObject?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
 
@@ -57,7 +54,6 @@ class RotationGizmo(
     override fun isHot(): Boolean = xAxisHot || yAxisHot || zAxisHot
 
     private fun checkInput(rad: Float, threshold: Float) {
-        val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation

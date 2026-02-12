@@ -239,8 +239,7 @@ class GameViewWindow : KoinComponent {
         val buttons = mutableListOf<() -> Unit>()
 
         // --- Gizmo Controls ---
-        val editorTools = scene?.gameObjectManager?.gameObjects?.find { it.name == "EditorTools" }
-        val gizmoSystem = editorTools?.getComponent<GizmoSystem>()
+        val gizmoSystem = scene?.systemManager?.getSystem<GizmoSystem>()
 
         if (gizmoSystem != null && !isPlaying) {
             // Select Tool
@@ -297,7 +296,7 @@ class GameViewWindow : KoinComponent {
                 if (isActive) {
                     ImGui.popStyleColor()
                     // Render measurement tooltip
-                    editorTools.getComponent<MeasureTool>()?.let { tool ->
+                    scene.systemManager.getSystem<MeasureTool>()?.let { tool ->
                         tool.measurementText?.let { text ->
                             tool.measurementPos?.let { pos ->
                                 ImGui.setNextWindowPos(pos.x, pos.y)

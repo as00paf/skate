@@ -2,7 +2,6 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.UnitSystem
@@ -16,12 +15,11 @@ import org.koin.core.component.KoinComponent
 import kotlin.math.abs
 
 class MeasureTool(
-    sceneManager: SceneManager,
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
     private val settingsManager: SettingsManager,
-) : Gizmo(sceneManager, mouseListener, undoRedoManager), KoinComponent {
+) : Gizmo(mouseListener, undoRedoManager), KoinComponent {
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
 
@@ -39,8 +37,6 @@ class MeasureTool(
             measurementPos = null
             return
         }
-
-        val scene = sceneManager.currentScene ?: return
 
         val viewportSize = mouseListener.getGameViewportSize()
         val viewportPos = mouseListener.getGameViewportPos()

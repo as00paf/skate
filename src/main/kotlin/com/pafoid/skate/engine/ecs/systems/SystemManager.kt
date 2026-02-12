@@ -1,21 +1,19 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.components.Component
-
 /**
- * Manages the lifecycle and operations of Components that act as Systems within a scene.
+ * Manages the lifecycle and operations of Systems within a scene.
  * This class centralizes all System management responsibilities to reduce
  * the burden on the Scene class and improve separation of concerns.
  */
 class SystemManager {
-    val systems = mutableListOf<Component>()
-    val pendingSystems = mutableListOf<Component>()
+    val systems = mutableListOf<System>()
+    val pendingSystems = mutableListOf<System>()
 
     /**
-     * Adds a Component to the scene as a system. If the scene is running, adds it to pending systems
+     * Adds a System to the scene. If the scene is running, adds it to pending systems
      * to be processed in the next update cycle.
      */
-    fun addSystem(system: Component, isRunning: Boolean = false) {
+    fun addSystem(system: System, isRunning: Boolean = false) {
         if (!isRunning) {
             systems.add(system)
         } else {
@@ -24,17 +22,17 @@ class SystemManager {
     }
 
     /**
-     * Removes a Component from the scene.
+     * Removes a System from the scene.
      */
-    fun removeSystem(system: Component) {
+    fun removeSystem(system: System) {
         systems.remove(system)
         pendingSystems.remove(system)
     }
 
     /**
-     * Gets a Component by its class type.
+     * Gets a System by its class type.
      */
-    inline fun <reified T : Component> getSystem(): T? {
+    inline fun <reified T : System> getSystem(): T? {
         return systems.firstOrNull { it is T } as T?
     }
 
@@ -43,7 +41,9 @@ class SystemManager {
      */
     fun editorUpdate(dt: Float) {
         systems.forEach { system ->
-            system.editorUpdate(dt)
+            if (system.enabled) {
+                system.editorUpdate(dt)
+            }
         }
 
         processPendingSystems()
@@ -54,7 +54,9 @@ class SystemManager {
      */
     fun update(dt: Float) {
         systems.forEach { system ->
-            system.update(dt)
+            if (system.enabled) {
+                system.update(dt)
+            }
         }
 
         processPendingSystems()
@@ -66,8 +68,7 @@ class SystemManager {
     private fun processPendingSystems() {
         pendingSystems.forEach { system ->
             systems.add(system)
-            // Note: We don't call start() on systems as they are components attached to game objects
-            // and their lifecycle is managed differently than game objects
+            system.start()
         }
 
         pendingSystems.clear()
@@ -77,6 +78,7 @@ class SystemManager {
      * Destroys all systems managed by this manager.
      */
     fun destroy() {
+        systems.forEach { it.destroy() }
         systems.clear()
         pendingSystems.clear()
     }

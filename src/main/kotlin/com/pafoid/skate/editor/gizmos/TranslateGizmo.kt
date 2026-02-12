@@ -2,10 +2,8 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.systems.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.ModularTile
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
@@ -19,11 +17,10 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class TranslateGizmo(
-    sceneManager: SceneManager,
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
-) : Gizmo(sceneManager, mouseListener, undoRedoManager), KoinComponent {
+) : Gizmo(mouseListener, undoRedoManager), KoinComponent {
     private val arrowLength = 2.0f
     private val coneSize = 0.3f
     private val hitThreshold = 0.3f
@@ -32,21 +29,15 @@ class TranslateGizmo(
     private var yAxisHot = false
     private var zAxisHot = false
 
-    override fun init(gameObject: GameObject) {
-        this.gameObject = gameObject
-    }
-
     override fun start() {}
 
     override fun update(dt: Float) {}
 
     override fun editorUpdate(dt: Float) {
         super.editorUpdate(dt)
-        val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
         go.getComponent<Transform>()?.let{ transform ->
             val pos = transform.translation
-
             val dist = Vector3f(scene.camera.position).distance(pos)
             val dynamicArrowLength = arrowLength * (dist * 0.1f)
             val dynamicConeSize = coneSize * (dist * 0.1f)
@@ -100,7 +91,6 @@ class TranslateGizmo(
     }
 
     private fun checkInput(length: Float, threshold: Float) {
-        val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
@@ -157,7 +147,6 @@ class TranslateGizmo(
     }
 
     private fun calculateDelta(axis: Vector3f): Float {
-        val scene = sceneManager.currentScene ?: return 0f
         val camera = scene.camera
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()

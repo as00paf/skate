@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs
 
-import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
@@ -21,21 +20,6 @@ class Scene(
     val systemManager: SystemManager = SystemManager()
 
     var isRunning: Boolean = false
-
-    /**
-     * Adds a Component as a system to the scene. If the scene is running, adds it to pending systems
-     * to be processed in the next update cycle.
-     */
-    fun addSystem(system: Component) {
-        systemManager.addSystem(system, isRunning)
-    }
-
-    /**
-     * Removes a Component from the scene.
-     */
-    fun removeSystem(system: Component) {
-        systemManager.removeSystem(system)
-    }
 
     suspend fun init() {
         initializer.loadResources(this)
@@ -60,6 +44,12 @@ class Scene(
                 go.start()
                 physics3d.add(go)
             }
+        }
+
+        // Initialize and start systems
+        systemManager.systems.forEach { system ->
+            system.init(this)
+            system.start()
         }
     }
 

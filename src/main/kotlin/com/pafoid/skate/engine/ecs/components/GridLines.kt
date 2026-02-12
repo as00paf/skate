@@ -1,14 +1,14 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.math.abs
 import kotlin.math.floor
 
-class GridLines : Component(), KoinComponent {
+class GridLines : System() {
     private val debugRenderer: DebugRenderer by inject()
     private val sceneManager: SceneManager by inject()
 

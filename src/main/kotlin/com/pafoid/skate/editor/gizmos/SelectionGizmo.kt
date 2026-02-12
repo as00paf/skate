@@ -6,22 +6,20 @@ import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.scene.getGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
 
 class SelectionGizmo(
-    sceneManager: SceneManager,
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
     private val engine: Engine,
-) : Gizmo(sceneManager, mouseListener, undoRedoManager) {
+) : Gizmo(mouseListener, undoRedoManager) {
 
     fun getHoveredObject(x: Int, y: Int): GameObject? {
         if (engine.engineState.get() != EngineState.RUNNING) return null
         val id = renderer.readPixel(x, y)
-        return sceneManager.currentScene?.getGameObject(id)
+        return scene.getGameObject(id)
     }
 
     var hoveredGameObjectUid: Int = -1
@@ -46,12 +44,7 @@ class SelectionGizmo(
             hoveredGameObjectUid = hovered?.getUid() ?: -1
 
             if (mouseListener.mouseButtonBeginPress(0)) {
-                // If we are in Selection Mode (which implies this gizmo is active),
-                // we handle selection.
-                // Note: GizmoSystem ensures only one gizmo is active,
-                // but we should verify if this logic conflicts with anything else.
-                // Since this is the "Selection" tool, clicking should select.
-                sceneManager.currentScene?.setSelectedGameObject(hovered)
+                scene.setSelectedGameObject(hovered)
             }
         } else {
             hoveredGameObjectUid = -1
