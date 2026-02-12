@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.scenes
 
-import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.editor.logs.LogLevel
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.physics3d.IPhysics3D
@@ -22,7 +21,6 @@ import java.nio.file.Paths
 class Scene(
     private val initializer: SceneInitializer,
     private val serializer: Serializer,
-    private val undoRedoManager: UndoRedoManager,
     private val logger: LoggerService,
     val camera: Camera = Camera()
 ) {

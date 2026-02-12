@@ -129,6 +129,7 @@ Responsibility & layer report
 
 Improve loading to include all character animations and the character model.
 Make sure JobSystem is properly used across the project where it makes sense
+SceneData data class
 
 Key bindings for editor camera movement
 Change default binding for tools to 1,2,3,4 ...
