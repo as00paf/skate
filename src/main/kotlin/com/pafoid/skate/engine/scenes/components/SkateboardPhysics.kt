@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.scenes.SceneManager
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.getValue
 
 /**
  * Handles the physics simulation for a skateboard, primarily focused on the raycast suspension system.
@@ -64,8 +63,8 @@ class SkateboardPhysics : Component(), KoinComponent {
             transformMatrix.transformDirection(localDown)
             
             val rayEnd = Vector3f(localDown).mul(suspensionRestLength).add(rayStart)
-            
-            val results = scene.sceneData.physics3d.rayTest(rayStart, rayEnd)
+
+            val results = scene.physics3d.rayTest(rayStart, rayEnd)
             if (results.isNotEmpty()) {
                 val closest = results.minByOrNull { it.hitFraction }
                 if (closest != null) {

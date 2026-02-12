@@ -1,8 +1,5 @@
 package com.pafoid.skate.engine.scenes
 
-import com.pafoid.skate.engine.physics3d.IPhysics3D
-import com.pafoid.skate.engine.physics3d.Physics3D
-import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.DirectionalLight
 import com.pafoid.skate.engine.render.Light
 import org.joml.Vector3f
@@ -24,6 +21,5 @@ data class SceneData(
     var fogGradient: Float = 1.5f,
     var timeScale: Float = 1.0f,
     var levelPath: String = "level.json",
-    val physics3d: IPhysics3D = Physics3D(),
     var isRunning: Boolean = false
 )

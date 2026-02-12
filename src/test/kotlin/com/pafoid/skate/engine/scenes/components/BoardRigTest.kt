@@ -16,11 +16,7 @@ import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.utils.StringManager
 import com.pafoid.skate.engine.utils.TrickManager
-import io.mockk.MockKAnnotations
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.unmockkAll
-import io.mockk.verify
+import io.mockk.*
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
@@ -82,7 +78,7 @@ class BoardRigTest {
         physics3d = mockk(relaxed = true)
 
         every { sceneManager.currentScene } returns scene
-        every { scene.sceneData.physics3d } returns physics3d
+        every { scene.physics3d } returns physics3d
         
         skateboard.addComponent(physics)
         skateboard.addComponent(rb3d)

@@ -10,7 +10,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import org.joml.Vector3f
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
@@ -34,7 +36,7 @@ class SkateboardStressTest {
         every { sceneManager.runtimePlaying } returns true
         val mockScene = mockk<com.pafoid.skate.engine.scenes.Scene>()
         every { sceneManager.currentScene } returns mockScene
-        every { mockScene.sceneData.physics3d } returns physics
+        every { mockScene.physics3d } returns physics
     }
 
     @AfterEach

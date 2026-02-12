@@ -4,17 +4,15 @@ import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.assetBrowser.PrefabData
 import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.render.Renderer
+import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.GizmoSystem
 import com.pafoid.skate.engine.scenes.components.MeasureTool
-import com.pafoid.skate.engine.utils.Icons
-import com.pafoid.skate.engine.utils.ScreenshotUtils
-import com.pafoid.skate.engine.utils.SettingsManager
-import com.pafoid.skate.engine.utils.StringManager
-import com.pafoid.skate.engine.utils.UnitSystem
+import com.pafoid.skate.engine.scenes.components.SelectionGizmo
+import com.pafoid.skate.engine.scenes.components.Transform
+import com.pafoid.skate.engine.utils.*
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -24,9 +22,6 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.math.abs
 import kotlin.math.roundToInt
-
-import com.pafoid.skate.engine.scenes.components.SelectionGizmo
-import com.pafoid.skate.engine.scenes.components.Transform
 
 class GameViewWindow : KoinComponent {
 
@@ -366,12 +361,12 @@ class GameViewWindow : KoinComponent {
             if (ImGui.isItemHovered()) ImGui.setTooltip("Reset Scene")
         }
         buttons.add {
-            val physicsDebugEnabled = scene?.sceneData?.physics3d?.debugEnabled ?: false
+            val physicsDebugEnabled = scene?.physics3d?.debugEnabled ?: false
             if (physicsDebugEnabled) {
                 ImGui.pushStyleColor(imgui.flag.ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             }
             if (ImGui.button(Icons.ATOM, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                scene?.sceneData?.physics3d?.debugEnabled = !physicsDebugEnabled
+                scene?.physics3d?.debugEnabled = !physicsDebugEnabled
                 logger.logEditor("Physics debug toggled")
             }
             if (physicsDebugEnabled) {

@@ -5,11 +5,8 @@ import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.render.Camera
-import com.pafoid.skate.engine.render.DirectionalLight
-import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.scenes.components.Component
 import com.pafoid.skate.engine.utils.serialization.Serializer
-import org.joml.Vector3f
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.FileWriter
@@ -25,7 +22,8 @@ class Scene(
 ) {
     
     val sceneData: SceneData = SceneData()
-    val gameObjectManager: GameObjectManager = GameObjectManager(sceneData.physics3d)
+    val physics3d: IPhysics3D = Physics3D()
+    val gameObjectManager: GameObjectManager = GameObjectManager(physics3d)
 
     suspend fun init() {
         initializer.loadResources(this)
@@ -36,7 +34,7 @@ class Scene(
         sceneData.isRunning = true
         gameObjectManager.gameObjects.forEach { go ->
             go.start()
-            sceneData.physics3d.add(go)
+            physics3d.add(go)
         }
 
         // Flush any objects added during startup
@@ -48,7 +46,7 @@ class Scene(
             toAdd.forEach { go ->
                 gameObjectManager.gameObjects.add(go)
                 go.start()
-                sceneData.physics3d.add(go)
+                physics3d.add(go)
             }
         }
     }
@@ -61,7 +59,7 @@ class Scene(
     fun update(dt: Float) {
         val scaledDt = dt * sceneData.timeScale
         camera.update(scaledDt)
-        sceneData.physics3d.update(scaledDt)
+        physics3d.update(scaledDt)
         gameObjectManager.update(scaledDt)
     }
 
@@ -107,7 +105,7 @@ class Scene(
                 moonDirection = sceneData.moon.direction,
                 moonColor = sceneData.moon.color,
                 lightPosition = sceneData.light.position,
-                gravity = sceneData.physics3d.getGravity(),
+                gravity = physics3d.getGravity(),
                 fogColor = sceneData.fogColor,
                 fogDensity = sceneData.fogDensity,
                 fogGradient = sceneData.fogGradient
@@ -168,7 +166,6 @@ class Scene(
             this.sceneData.moon.direction.set(data.moonDirection)
             this.sceneData.moon.color.set(data.moonColor)
             this.sceneData.light.position.set(data.lightPosition)
-            this.sceneData.physics3d.setGravity(data.gravity)
             this.sceneData.fogColor.set(data.fogColor)
             this.sceneData.fogDensity = data.fogDensity
             this.sceneData.fogGradient = data.fogGradient

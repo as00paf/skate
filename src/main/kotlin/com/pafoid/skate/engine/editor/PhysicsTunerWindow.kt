@@ -19,7 +19,7 @@ class PhysicsTunerWindow : KoinComponent {
     
     fun imgui(currentScene: Scene) {
         val skate = currentScene.getGameObject("Skateboard") as? Skateboard ?: return
-        val physics: IPhysics3D = currentScene.sceneData.physics3d
+        val physics: IPhysics3D = currentScene.physics3d
 
         val playerController = skate.getComponent<PlayerController>()
         val skateboardPhysics = skate.getComponent<SkateboardPhysics>()

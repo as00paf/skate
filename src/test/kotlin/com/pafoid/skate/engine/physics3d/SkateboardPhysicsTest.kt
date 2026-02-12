@@ -12,11 +12,7 @@ import io.mockk.mockk
 import io.mockk.unmockkAll
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.*
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
@@ -54,7 +50,7 @@ class SkateboardPhysicsTest {
         
         val mockScene = mockk<Scene>()
         every { sceneManager.currentScene } returns mockScene
-        every { mockScene.sceneData.physics3d } returns physics
+        every { mockScene.physics3d } returns physics
     }
 
     @AfterEach
