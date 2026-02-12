@@ -20,10 +20,12 @@ class Scene(
     private val logger: LoggerService,
     val camera: Camera = Camera()
 ) {
-    
-    val sceneData: SceneData = SceneData()
+
+    var sceneData: SceneData = SceneData()
     val physics3d: IPhysics3D = Physics3D()
     val gameObjectManager: GameObjectManager = GameObjectManager(physics3d)
+
+    var isRunning: Boolean = false
 
     suspend fun init() {
         initializer.loadResources(this)
@@ -31,7 +33,7 @@ class Scene(
     }
 
     fun start() {
-        sceneData.isRunning = true
+        isRunning = true
         gameObjectManager.gameObjects.forEach { go ->
             go.start()
             physics3d.add(go)
@@ -92,23 +94,8 @@ class Scene(
             val writer = FileWriter(path)
             val data = LevelData(
                 gameObjects = gameObjectManager.gameObjects.filter { it.doSerialization() },
-                ambientLight = sceneData.ambientLight,
-                useAmbient = sceneData.useAmbient,
-                useSun = sceneData.useSun,
-                timeOfDay = sceneData.timeOfDay,
-                skyColor = sceneData.skyColor,
-                skyTint = sceneData.skyTint,
-                skyExposure = sceneData.skyExposure,
-                skyRotation = sceneData.skyRotation,
-                sunDirection = sceneData.sun.direction,
-                sunColor = sceneData.sun.color,
-                moonDirection = sceneData.moon.direction,
-                moonColor = sceneData.moon.color,
-                lightPosition = sceneData.light.position,
+                sceneData = sceneData,
                 gravity = physics3d.getGravity(),
-                fogColor = sceneData.fogColor,
-                fogDensity = sceneData.fogDensity,
-                fogGradient = sceneData.fogGradient
             )
             writer.write(serializer.encode(data))
             writer.close()
@@ -153,22 +140,9 @@ class Scene(
 
             val data: LevelData = serializer.decode(inFile)
 
-            this.sceneData.ambientLight.set(data.ambientLight)
-            this.sceneData.useAmbient = data.useAmbient
-            this.sceneData.useSun = data.useSun
-            this.sceneData.timeOfDay = data.timeOfDay
-            this.sceneData.skyColor.set(data.skyColor)
-            this.sceneData.skyTint.set(data.skyTint)
-            this.sceneData.skyExposure = data.skyExposure
-            this.sceneData.skyRotation = data.skyRotation
-            this.sceneData.sun.direction.set(data.sunDirection)
-            this.sceneData.sun.color.set(data.sunColor)
-            this.sceneData.moon.direction.set(data.moonDirection)
-            this.sceneData.moon.color.set(data.moonColor)
-            this.sceneData.light.position.set(data.lightPosition)
-            this.sceneData.fogColor.set(data.fogColor)
-            this.sceneData.fogDensity = data.fogDensity
-            this.sceneData.fogGradient = data.fogGradient
+            this.sceneData = data.sceneData
+            this.gameObjectManager.gameObjects.addAll(data.gameObjects)
+            this.physics3d.setGravity(data.gravity)
 
             var maxGoId = -1
             var maxCompId = -1
