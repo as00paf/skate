@@ -2,7 +2,10 @@ package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
+import com.pafoid.skate.engine.scenes.addGameObjectToScene
 import com.pafoid.skate.engine.scenes.components.Transform
+import com.pafoid.skate.engine.scenes.removeGameObject
+import com.pafoid.skate.engine.scenes.setSelectedGameObject
 
 class TransformCommand(
     private val gameObject: GameObject,

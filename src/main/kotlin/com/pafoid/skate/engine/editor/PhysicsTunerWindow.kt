@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.prefabs.Skateboard
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.components.PlayerController
 import com.pafoid.skate.engine.scenes.components.SkateboardPhysics
+import com.pafoid.skate.engine.scenes.getGameObject
 import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import imgui.type.ImBoolean

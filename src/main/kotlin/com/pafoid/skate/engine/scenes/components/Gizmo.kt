@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.controls.listeners.MouseListener
 import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.getSelectedGameObject
 import org.koin.core.component.KoinComponent
 
 open class Gizmo(

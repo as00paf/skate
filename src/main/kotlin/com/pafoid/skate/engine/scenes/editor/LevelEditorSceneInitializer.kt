@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneInitializer
+import com.pafoid.skate.engine.scenes.addGameObjectToScene
 import com.pafoid.skate.engine.scenes.components.EditorCamera
 import com.pafoid.skate.engine.scenes.components.GizmoSystem
 import com.pafoid.skate.engine.scenes.components.GridLines

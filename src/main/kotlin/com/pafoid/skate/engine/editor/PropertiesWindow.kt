@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.getSelectedGameObject
 import com.pafoid.skate.engine.utils.StringManager
 import imgui.ImGui
 import org.koin.core.component.KoinComponent

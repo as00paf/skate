@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.scenes.ClipboardService
 import com.pafoid.skate.engine.scenes.Scene
 import com.pafoid.skate.engine.scenes.SceneManager
 import com.pafoid.skate.engine.scenes.components.Transform
+import com.pafoid.skate.engine.scenes.getSelectedGameObject
 import com.pafoid.skate.engine.utils.Icons
 import com.pafoid.skate.engine.utils.SettingsManager
 import com.pafoid.skate.engine.utils.StringManager

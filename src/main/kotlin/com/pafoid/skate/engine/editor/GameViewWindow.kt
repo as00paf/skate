@@ -156,7 +156,7 @@ class GameViewWindow : KoinComponent {
         ImGui.endChild()
 
         // Speedometer Overlay (Bottom Left)
-        val skateGo = scene?.gameObjects?.find { it.name == "Skateboard" }
+        val skateGo = scene?.gameObjectManager?.gameObjects?.find { it.name == "Skateboard" }
         val rb = skateGo?.getComponent<RigidBody3D>()
         val velocity = rb?.rawBody?.getLinearVelocity(null)
         if (velocity != null) {
@@ -197,7 +197,7 @@ class GameViewWindow : KoinComponent {
 
     fun getHoveredObject(): GameObject? {
         val scene = sceneManager.currentScene ?: return null
-        for (go in scene.gameObjects) {
+        for (go in scene.gameObjectManager.gameObjects) {
             val gizmo = go.getComponent<SelectionGizmo>()
             if (gizmo != null) return gizmo.hoveredGameObject
         }
@@ -237,7 +237,7 @@ class GameViewWindow : KoinComponent {
         val buttons = mutableListOf<() -> Unit>()
 
         // --- Gizmo Controls ---
-        val editorTools = scene?.gameObjects?.find { it.name == "EditorTools" }
+        val editorTools = scene?.gameObjectManager?.gameObjects?.find { it.name == "EditorTools" }
         val gizmoSystem = editorTools?.getComponent<GizmoSystem>()
 
         if (gizmoSystem != null && !isPlaying) {
@@ -350,7 +350,7 @@ class GameViewWindow : KoinComponent {
             if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 // Reset logic
                 scene?.let{
-                    scene.gameObjects.find { it.name == "Skateboard" }?.let { skate ->
+                    scene.gameObjectManager.gameObjects.find { it.name == "Skateboard" }?.let { skate ->
                         skate.getComponent<Transform>()?.translation?.set(0f, 0.5f, 0f)
                         skate.getComponent<Transform>()?.rotation?.set(0f, 0f, 0f)
                         val rb = skate.getComponent<RigidBody3D>()

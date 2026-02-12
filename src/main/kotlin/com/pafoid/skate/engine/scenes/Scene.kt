@@ -8,7 +8,6 @@ import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.DirectionalLight
 import com.pafoid.skate.engine.render.Light
 import com.pafoid.skate.engine.scenes.components.Component
-import com.pafoid.skate.engine.scenes.components.Transform
 import com.pafoid.skate.engine.utils.serialization.Serializer
 import org.joml.Vector3f
 import org.lwjgl.system.MemoryUtil
@@ -40,16 +39,13 @@ class Scene(
     var fogDensity: Float = 0.0f
     var fogGradient: Float = 1.5f
     var timeScale: Float = 1.0f
-    
+
     var levelPath: String = "level.json"
 
-    val gameObjects = mutableListOf<GameObject>()
-    val pendingObjects = mutableListOf<GameObject>()
     val physics3d: IPhysics3D = Physics3D()
+    val gameObjectManager: GameObjectManager = GameObjectManager(physics3d)
 
-    private var selectedGameObject: GameObject? = null
-
-    private var isRunning = false
+    var isRunning = false
 
     suspend fun init() {
         initializer.loadResources(this)
@@ -58,104 +54,39 @@ class Scene(
 
     fun start() {
         isRunning = true
-        gameObjects.forEach { go ->
+        gameObjectManager.gameObjects.forEach { go ->
             go.start()
             physics3d.add(go)
         }
-        
+
         // Flush any objects added during startup
-        while (pendingObjects.isNotEmpty()) {
+        while (gameObjectManager.pendingObjects.isNotEmpty()) {
             val toAdd = mutableListOf<GameObject>()
-            toAdd.addAll(pendingObjects)
-            pendingObjects.clear()
-            
+            toAdd.addAll(gameObjectManager.pendingObjects)
+            gameObjectManager.pendingObjects.clear()
+
             toAdd.forEach { go ->
-                gameObjects.add(go)
+                gameObjectManager.gameObjects.add(go)
                 go.start()
                 physics3d.add(go)
             }
         }
     }
 
-    fun addGameObjectToScene(gameObject: GameObject) {
-        if (!isRunning) {
-            gameObjects.add(gameObject)
-        } else {
-            pendingObjects.add(gameObject)
-        }
-    }
-
-    fun removeGameObject(gameObject: GameObject) {
-        gameObjects.remove(gameObject)
-        pendingObjects.remove(gameObject)
-        physics3d.remove(gameObject)
-    }
-
-    fun getGameObject(id: Int): GameObject? {
-        return gameObjects.firstOrNull { it.getUid() == id }
-    }
-
-    fun getGameObject(name: String): GameObject? {
-        return gameObjects.firstOrNull { it.name == name }
-    }
-
     fun editorUpdate(dt: Float) {
         camera.update(dt)
-
-        val iterator = gameObjects.iterator()
-        while (iterator.hasNext()) {
-            val go = iterator.next()
-            if (go.isDead()) {
-                physics3d.remove(go)
-                iterator.remove()
-                continue
-            }
-            go.editorUpdate(dt)
-            physics3d.add(go)
-        }
-
-        pendingObjects.forEach { gameObject ->
-            gameObjects.add(gameObject)
-            gameObject.start()
-            physics3d.add(gameObject)
-        }
-
-        pendingObjects.clear()
+        gameObjectManager.editorUpdate(dt)
     }
 
     fun update(dt: Float) {
         val scaledDt = dt * timeScale
-        camera.update(scaledDt) 
+        camera.update(scaledDt)
         physics3d.update(scaledDt)
-
-        val iterator = gameObjects.iterator()
-        while (iterator.hasNext()) {
-            val go = iterator.next()
-            if (go.isDead()) {
-                physics3d.remove(go)
-                iterator.remove()
-                continue
-            }
-            go.update(scaledDt)
-        }
-
-        pendingObjects.forEach { gameObject ->
-            gameObjects.add(gameObject)
-            gameObject.start()
-            physics3d.add(gameObject)
-        }
-
-        pendingObjects.clear()
+        gameObjectManager.update(scaledDt)
     }
 
     fun imgui() {
         initializer.imgui()
-    }
-
-    fun createGameObject(name: String): GameObject {
-        val go = GameObject(name)
-        go.addComponent(Transform())
-        return go
     }
 
     fun save() {
@@ -166,9 +97,9 @@ class Scene(
         val filter = MemoryUtil.memUTF8("*.json")
         val filters = MemoryUtil.memAllocPointer(1)
         filters.put(0, filter)
-        
+
         val path = TinyFileDialogs.tinyfd_saveFileDialog("Save Level", levelPath, filters, "JSON Files")
-        
+
         MemoryUtil.memFree(filters)
         MemoryUtil.memFree(filter)
 
@@ -182,7 +113,7 @@ class Scene(
         try {
             val writer = FileWriter(path)
             val data = LevelData(
-                gameObjects = gameObjects.filter { it.doSerialization() },
+                gameObjects = gameObjectManager.gameObjects.filter { it.doSerialization() },
                 ambientLight = ambientLight,
                 useAmbient = useAmbient,
                 useSun = useSun,
@@ -216,9 +147,9 @@ class Scene(
         val filter = MemoryUtil.memUTF8("*.json")
         val filters = MemoryUtil.memAllocPointer(1)
         filters.put(0, filter)
-        
+
         val path = TinyFileDialogs.tinyfd_openFileDialog("Open Level", levelPath, filters, "JSON Files", false)
-        
+
         MemoryUtil.memFree(filters)
         MemoryUtil.memFree(filter)
 
@@ -238,12 +169,12 @@ class Scene(
 
         if (inFile.isNotBlank()) {
             // Clear current scene first if loading a new one
-            gameObjects.forEach { it.destroy() }
-            gameObjects.clear()
-            pendingObjects.clear()
-            
+            gameObjectManager.gameObjects.forEach { it.destroy() }
+            gameObjectManager.gameObjects.clear()
+            gameObjectManager.pendingObjects.clear()
+
             val data: LevelData = serializer.decode(inFile)
-            
+
             this.ambientLight.set(data.ambientLight)
             this.useAmbient = data.useAmbient
             this.useSun = data.useSun
@@ -261,10 +192,10 @@ class Scene(
             this.fogColor.set(data.fogColor)
             this.fogDensity = data.fogDensity
             this.fogGradient = data.fogGradient
-            
+
             var maxGoId = -1
             var maxCompId = -1
-            
+
             data.gameObjects.forEach { obj ->
                 addGameObjectToScene(obj)
 
@@ -287,14 +218,7 @@ class Scene(
     }
 
     fun destroy() {
-        gameObjects.forEach { it.destroy() }
+        gameObjectManager.destroy()
     }
-
-    // Game Objects stuff, should be in a manager?
-    fun setSelectedGameObject(gameObject: GameObject?) {
-        selectedGameObject = gameObject
-    }
-
-    fun getSelectedGameObject(): GameObject? = selectedGameObject
 
 }

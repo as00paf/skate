@@ -8,6 +8,8 @@ import com.pafoid.skate.engine.editor.logs.LoggerService
 import com.pafoid.skate.engine.imgui.ImGuiLayer
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.addGameObjectToScene
+import com.pafoid.skate.engine.scenes.setSelectedGameObject
 import com.pafoid.skate.engine.utils.serialization.Serializer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -58,7 +60,7 @@ class MouseControls : Component(), KoinComponent {
                 val bone = sceneManager.getBoneById(pickedId)
                 if (bone != null) {
                     // A bone was selected, find which GO it belongs to
-                    val skater = sceneManager.currentScene?.gameObjects?.find { it.getComponent<PoseGizmo>() != null }
+                    val skater = sceneManager.currentScene?.gameObjectManager?.gameObjects?.find { it.getComponent<PoseGizmo>() != null }
                     sceneManager.currentScene?.setSelectedGameObject(skater)
                     imguiLayer.boneTreeWindow.setSelectedBone(bone)
                 } else {

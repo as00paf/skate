@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.editor.UndoRedoManager
 import com.pafoid.skate.engine.render.DebugDraw
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.setSelectedGameObject
 import com.pafoid.skate.engine.utils.SettingsManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject

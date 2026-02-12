@@ -157,7 +157,7 @@ class Renderer(
         defaultShader.uploadFloat(Uniforms.FOG_DENSITY, scene.fogDensity)
         defaultShader.uploadFloat(Uniforms.FOG_GRADIENT, scene.fogGradient)
 
-        scene.gameObjects.forEach { go ->
+        scene.gameObjectManager.gameObjects.forEach { go ->
             val renderComponent = go.getComponent<RenderComponent>()
             val transformComponent = go.getComponent<Transform>()
             if (renderComponent != null && transformComponent != null) {
@@ -216,7 +216,7 @@ class Renderer(
         pickingShader3D.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
         pickingShader3D.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
 
-        scene.gameObjects.forEach { go ->
+        scene.gameObjectManager.gameObjects.forEach { go ->
             val renderComponent = go.getComponent<RenderComponent>()
             val transform = go.getComponent<Transform>()
             if (renderComponent != null && transform != null && go.getComponent<NonPickable>() == null) {
@@ -241,7 +241,7 @@ class Renderer(
         renderer2D.bindShader(shader)
         renderer2D.bindCamera(scene.camera)
 
-        scene.gameObjects.forEach { go ->
+        scene.gameObjectManager.gameObjects.forEach { go ->
             go.getComponent<SpriteRenderer>()?.let { sprite ->
                 renderer2D.add(go)
             }

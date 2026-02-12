@@ -11,10 +11,10 @@ class AnimationSystem : Component(), KoinComponent {
 
     override fun update(dt: Float) {
         val scene = sceneManager.currentScene ?: return
-        scene.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
+        scene.gameObjectManager.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
-            
+
             if (animator != null && skeletonComponent != null) {
                 updateAnimation(animator, skeletonComponent, dt)
             }
@@ -24,10 +24,10 @@ class AnimationSystem : Component(), KoinComponent {
     override fun editorUpdate(dt: Float) {
         val scene = sceneManager.currentScene ?: return
 
-        scene.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
+        scene.gameObjectManager.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
-            
+
             if (animator != null && skeletonComponent != null) {
                 updateAnimation(animator, skeletonComponent, dt)
             }

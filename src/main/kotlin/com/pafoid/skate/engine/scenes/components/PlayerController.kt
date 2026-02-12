@@ -18,6 +18,7 @@ import com.pafoid.skate.engine.player.PlayerStateManager
 import com.pafoid.skate.engine.prefabs.PrefabsGenerator
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.addGameObjectToScene
 import com.pafoid.skate.engine.utils.Interpolation
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.StringManager

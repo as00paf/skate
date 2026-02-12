@@ -203,7 +203,7 @@ class SceneManager : KoinComponent {
 
     fun getBoneById(id: Int): Bone? {
         if (engineState.get() != EngineState.RUNNING) return null
-        currentScene?.gameObjects?.forEach { go ->
+        currentScene?.gameObjectManager?.gameObjects?.forEach { go ->
             go.getComponent<PoseGizmo>()?.let { pg ->
                 val bone = pg.getBoneById(id)
                 if (bone != null) return bone

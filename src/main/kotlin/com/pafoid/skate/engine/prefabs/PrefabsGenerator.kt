@@ -15,10 +15,12 @@ import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.scenes.GameObject
 import com.pafoid.skate.engine.scenes.SceneManager
+import com.pafoid.skate.engine.scenes.addGameObjectToScene
 import com.pafoid.skate.engine.scenes.components.ModularTile
 import com.pafoid.skate.engine.scenes.components.RenderComponent
 import com.pafoid.skate.engine.scenes.components.SpriteRenderer
 import com.pafoid.skate.engine.scenes.components.Transform
+import com.pafoid.skate.engine.scenes.createGameObject
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JobSystem
 import kotlinx.coroutines.Dispatchers
@@ -149,7 +151,7 @@ class PrefabsGenerator(
             texturedModel.mesh[0].material.baseColorPath = Assets.Textures.CONCRETE_SIMPLE
 
             JobSystem.runOnMain {
-                tile = Tile("Tile_${scene.gameObjects.size}", texturedModel)
+                tile = Tile("Tile_${scene.gameObjectManager.gameObjects.size}", texturedModel)
                 scene.addGameObjectToScene(tile)
             }
         }
@@ -159,7 +161,7 @@ class PrefabsGenerator(
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
-        val rail = GameObject("Rail_${scene.gameObjects.size}")
+        val rail = GameObject("Rail_${scene.gameObjectManager.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         transformComponent.scale.set(1f, 1f, 1f)
@@ -181,7 +183,7 @@ class PrefabsGenerator(
     fun spawnLedge(position: Vector3f = Vector3f(0f, 0.25f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
         val mat = material ?: MaterialType.CONCRETE
-        val ledge = GameObject("${mat.displayName}_Ledge_${scene.gameObjects.size}")
+        val ledge = GameObject("${mat.displayName}_Ledge_${scene.gameObjectManager.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         transformComponent.scale.set(1f, 1f, 1f)
@@ -201,7 +203,7 @@ class PrefabsGenerator(
 
     fun spawnKicker(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
-        val kicker = GameObject("Kicker_${scene.gameObjects.size}")
+        val kicker = GameObject("Kicker_${scene.gameObjectManager.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         transformComponent.scale.set(1f, 1f, 1f)
@@ -239,7 +241,7 @@ class PrefabsGenerator(
 
     fun spawnManualPad(position: Vector3f = Vector3f(0f, 0.1f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
-        val go = GameObject("ManualPad_${scene.gameObjects.size}")
+        val go = GameObject("ManualPad_${scene.gameObjectManager.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         go.addComponent(transformComponent)
@@ -260,7 +262,7 @@ class PrefabsGenerator(
 
     fun spawnBank(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
-        val go = GameObject("Bank_${scene.gameObjects.size}")
+        val go = GameObject("Bank_${scene.gameObjectManager.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         go.addComponent(transformComponent)
@@ -295,7 +297,7 @@ class PrefabsGenerator(
 
     fun spawnQuarterPipe(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?) {
         val scene = sceneManager.currentScene ?: return
-        val go = GameObject("QuarterPipe_${scene.gameObjects.size}")
+        val go = GameObject("QuarterPipe_${scene.gameObjectManager.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         go.addComponent(transformComponent)
