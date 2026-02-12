@@ -58,7 +58,7 @@ class PlayerController : Component(), KoinComponent {
 
     private var rb: IPhysicsBody3D? = null
     private var physics: SkateboardPhysics? = null
-    private var lastVelocity = JmeVector3f()
+    private var lastVelocity = Vector3f()
     private var animator: Animator? = null
     private var skater: GameObject? = null
     private var currentLean = 0f
@@ -445,7 +445,7 @@ class PlayerController : Component(), KoinComponent {
         val phys = physics ?: return
         val currentVelocityJOML = rb?.linearVelocity ?: return
 
-        val currentVelocity = JmeVector3f(currentVelocityJOML.x, currentVelocityJOML.y, currentVelocityJOML.z)
+        val currentVelocity = Vector3f(currentVelocityJOML.x, currentVelocityJOML.y, currentVelocityJOML.z)
 
         if (phys.isGrounded) {
             val transform = gameObject.getComponent<Transform>()?.toWorldMatrix() ?: return
@@ -460,7 +460,7 @@ class PlayerController : Component(), KoinComponent {
             }
 
             // High impact bail (large vertical velocity change)
-            val dv = JmeVector3f(currentVelocity).subtract(lastVelocity)
+            val dv = Vector3f(currentVelocity).subtract(lastVelocity)
             if (dv.length() > 20f) { // Arbitrary threshold for "slam"
                 bail()
                 return
