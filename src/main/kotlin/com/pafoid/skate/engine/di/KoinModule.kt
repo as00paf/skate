@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.di
 
+import com.pafoid.skate.engine.Engine
 import com.pafoid.skate.engine.assets.PoseSerializer
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
@@ -31,6 +32,7 @@ import com.pafoid.skate.engine.utils.serialization.Serializer
 import org.koin.dsl.module
 
 val appModule = module {
+    single { Engine() }
     single { SceneManager() }
     single { Serializer() }
     single { LoggerService() }

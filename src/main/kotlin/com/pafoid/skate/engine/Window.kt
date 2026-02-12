@@ -42,6 +42,7 @@ class Window(
     private val mouseListener: MouseListener by inject()
     private val settingsManager: SettingsManager by inject()
     private val sceneManager: SceneManager by inject()
+    private val engine: Engine by inject()
     private val renderer: Renderer by inject()
     private val imGuiLayer: ImGuiLayer by inject()
     private val logger: LoggerService by inject()
@@ -180,12 +181,12 @@ class Window(
                 glViewport(0, 0, sceneManager.currentWidth, sceneManager.currentHeight)
                 runOnMain {
                     show()
-                    sceneManager.initializeScene()
+                    engine.start()
                 }
                 isFirstDraw = false
             }
 
-            sceneManager.draw(dt, imGuiLayer)
+            engine.update(dt, imGuiLayer)
             glfwSwapBuffers(glfwWindow)
 
             keyListener.endFrame()
@@ -219,13 +220,13 @@ class Window(
         glfwSwapInterval(if (enabled) 1 else 0)
         // Corrected call to use instance and ensure initCallback runs on main thread
         runOnMain {
-            sceneManager.initializeScene()
+            engine.start()
         }
     }
 
     private fun destroy() {
         imGuiLayer.destroy()
-        sceneManager.destroy()
+        engine.destroy()
 
         // Free memory
         glfwFreeCallbacks(glfwWindow)
