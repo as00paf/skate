@@ -198,12 +198,7 @@ class GameViewWindow : KoinComponent {
     }
 
     fun getHoveredObject(): GameObject? {
-        val scene = sceneManager.currentScene ?: return null
-        for (go in scene.gameObjectManager.gameObjects) {
-            val gizmo = go.getComponent<SelectionGizmo>()
-            if (gizmo != null) return gizmo.hoveredGameObject
-        }
-        return null
+        return sceneManager.currentScene?.systemManager?.getSystem<SelectionGizmo>()?.hoveredGameObject
     }
 
     private fun getLargestSizeForViewport(): ImVec2 {
