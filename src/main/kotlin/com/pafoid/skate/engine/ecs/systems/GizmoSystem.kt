@@ -1,24 +1,19 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.gizmos.MeasureTool
-import com.pafoid.skate.editor.gizmos.RotationGizmo
-import com.pafoid.skate.editor.gizmos.ScaleGizmo
-import com.pafoid.skate.editor.gizmos.SelectionGizmo
-import com.pafoid.skate.editor.gizmos.TranslateGizmo
+import com.pafoid.skate.editor.gizmos.*
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
-import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class GizmoSystem: Component(), KoinComponent {
+class GizmoSystem : System() {
 
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
@@ -31,20 +26,18 @@ class GizmoSystem: Component(), KoinComponent {
 
     var usingGizmo = NONE
 
-    private val translateGizmo = TranslateGizmo(sceneManager, mouseListener, undoRedoManager, debugRenderer)
-    private val rotationGizmo = RotationGizmo(sceneManager, mouseListener, undoRedoManager, debugRenderer)
-    private val scaleGizmo = ScaleGizmo(sceneManager, mouseListener, undoRedoManager, debugRenderer)
-    private val selectionGizmo = SelectionGizmo(sceneManager, mouseListener, undoRedoManager, renderer, engine)
-    private val measureGizmo = MeasureTool(sceneManager, mouseListener, undoRedoManager, debugRenderer, settingsManager)
+    private val translateGizmo = TranslateGizmo(mouseListener, undoRedoManager, debugRenderer)
+    private val rotationGizmo = RotationGizmo(mouseListener, undoRedoManager, debugRenderer)
+    private val scaleGizmo = ScaleGizmo(mouseListener, undoRedoManager, debugRenderer)
+    private val selectionGizmo = SelectionGizmo(mouseListener, undoRedoManager, renderer, engine)
+    private val measureGizmo = MeasureTool(mouseListener, undoRedoManager, debugRenderer, settingsManager)
 
-    override fun init(gameObject: GameObject) {
-        super.init(gameObject)
-
-        this.gameObject.addComponent(translateGizmo)
-        this.gameObject.addComponent(rotationGizmo)
-        this.gameObject.addComponent(scaleGizmo)
-        this.gameObject.addComponent(selectionGizmo)
-        this.gameObject.addComponent(measureGizmo)
+    override fun init(scene: Scene) {
+        super.init(scene)
+        listOf(translateGizmo, rotationGizmo, scaleGizmo, selectionGizmo, measureGizmo).forEach { gizmo ->
+            scene.addSystem(gizmo)
+            gizmo.init(scene)
+        }
     }
 
     override fun editorUpdate(dt: Float) {
@@ -82,13 +75,10 @@ class GizmoSystem: Component(), KoinComponent {
     }
 
     fun isInteracting(): Boolean {
-        val tg = gameObject.getComponent<TranslateGizmo>()
-        val rg = gameObject.getComponent<RotationGizmo>()
-        val sg = gameObject.getComponent<ScaleGizmo>()
-
-        return tg?.isHot() == true || tg?.anyAxisActive() == true ||
-               rg?.isHot() == true || rg?.anyAxisActive() == true ||
-               sg?.isHot() == true || sg?.anyAxisActive() == true
+        // Check the individual gizmos directly since they're now owned by this system
+        return translateGizmo.isHot() == true || translateGizmo.anyAxisActive() == true ||
+                rotationGizmo.isHot() == true || rotationGizmo.anyAxisActive() == true ||
+                scaleGizmo.isHot() == true || scaleGizmo.anyAxisActive() == true
     }
 
     fun toggleGizmo(gizmo:Int) {

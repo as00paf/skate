@@ -1,18 +1,17 @@
 package com.pafoid.skate.editor
 
-import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sign
 
-class EditorCamera(private val camera: Camera) : Component(), KoinComponent {
+class EditorCamera(private val camera: Camera) : System() {
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
 

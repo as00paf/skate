@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.gizmos
 import com.pafoid.skate.editor.systems.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
@@ -15,11 +14,10 @@ import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 
 class ScaleGizmo(
-    sceneManager: SceneManager,
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
-) : Gizmo(sceneManager, mouseListener, undoRedoManager), KoinComponent {
+) : Gizmo(mouseListener, undoRedoManager), KoinComponent {
     private val handleLength = 2.0f
     private val boxSize = 0.3f
     private val hitThreshold = 0.3f
@@ -30,7 +28,6 @@ class ScaleGizmo(
 
     override fun editorUpdate(dt: Float) {
         super.editorUpdate(dt)
-        val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
         go.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
@@ -75,7 +72,6 @@ class ScaleGizmo(
     override fun isHot(): Boolean = xAxisHot || yAxisHot || zAxisHot
 
     private fun checkInput(length: Float, threshold: Float) {
-        val scene = sceneManager.currentScene ?: return
         val go = activeGameObject ?: return
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
@@ -154,7 +150,6 @@ class ScaleGizmo(
     }
 
     private fun calculateDelta(axis: Vector3f): Float {
-        val scene = sceneManager.currentScene ?: return 0f
         val camera = scene.camera
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()

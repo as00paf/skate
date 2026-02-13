@@ -1,13 +1,11 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.components.Animator
-import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.utils.SkeletonMath
-import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class AnimationSystem : Component(), KoinComponent {
+class AnimationSystem : System() {
     private val sceneManager: SceneManager by inject()
 
     override fun update(dt: Float) {

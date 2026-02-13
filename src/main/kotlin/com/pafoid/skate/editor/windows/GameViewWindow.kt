@@ -198,12 +198,7 @@ class GameViewWindow : KoinComponent {
     }
 
     fun getHoveredObject(): GameObject? {
-        val scene = sceneManager.currentScene ?: return null
-        for (go in scene.gameObjectManager.gameObjects) {
-            val gizmo = go.getComponent<SelectionGizmo>()
-            if (gizmo != null) return gizmo.hoveredGameObject
-        }
-        return null
+        return sceneManager.currentScene?.systemManager?.getSystem<SelectionGizmo>()?.hoveredGameObject
     }
 
     private fun getLargestSizeForViewport(): ImVec2 {
@@ -239,8 +234,7 @@ class GameViewWindow : KoinComponent {
         val buttons = mutableListOf<() -> Unit>()
 
         // --- Gizmo Controls ---
-        val editorTools = scene?.gameObjectManager?.gameObjects?.find { it.name == "EditorTools" }
-        val gizmoSystem = editorTools?.getComponent<GizmoSystem>()
+        val gizmoSystem = scene?.systemManager?.getSystem<GizmoSystem>()
 
         if (gizmoSystem != null && !isPlaying) {
             // Select Tool
@@ -297,7 +291,7 @@ class GameViewWindow : KoinComponent {
                 if (isActive) {
                     ImGui.popStyleColor()
                     // Render measurement tooltip
-                    editorTools.getComponent<MeasureTool>()?.let { tool ->
+                    scene.systemManager.getSystem<MeasureTool>()?.let { tool ->
                         tool.measurementText?.let { text ->
                             tool.measurementPos?.let { pos ->
                                 ImGui.setNextWindowPos(pos.x, pos.y)
