@@ -37,40 +37,43 @@ class PlayerController : Component(), KoinComponent {
     }
 
     override fun update(dt: Float) {
-        val scene = sceneManager.currentScene ?: return
-        val camera = scene.camera
+        val currentState = stateManager?.currentState ?: return
+        if (currentState == PlayerState.WALKING || currentState == PlayerState.IDLE) {
+            val scene = sceneManager.currentScene ?: return
+            val camera = scene.camera
 
-        // Detect Input direction
-        val moveInput = inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1)
+            // Detect Input direction
+            val moveInput = inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1)
 
-        // Move if input is above threshold
-        val threshold = 0.5f
-        if (moveInput.length() > threshold) {
-            // Calculate movement relative to camera
-            val viewInv = camera.getInverseView()
-            val camForward = Vector3f(0f, 0f, -1f)
-            viewInv.transformDirection(camForward)
-            camForward.y = 0f
-            camForward.normalize()
+            // Move if input is above threshold
+            val threshold = 0.5f
+            if (moveInput.length() > threshold) {
+                // Calculate movement relative to camera
+                val viewInv = camera.getInverseView()
+                val camForward = Vector3f(0f, 0f, -1f)
+                viewInv.transformDirection(camForward)
+                camForward.y = 0f
+                camForward.normalize()
 
-            val camRight = Vector3f(1f, 0f, 0f)
-            viewInv.transformDirection(camRight)
-            camRight.y = 0f
-            camRight.normalize()
+                val camRight = Vector3f(1f, 0f, 0f)
+                viewInv.transformDirection(camRight)
+                camRight.y = 0f
+                camRight.normalize()
 
-            desiredMoveDirection = Vector3f()
-            camForward.mul(moveInput.z, desiredMoveDirection)
-            val rightPart = Vector3f(camRight).mul(moveInput.x)
-            desiredMoveDirection.add(rightPart)
+                desiredMoveDirection.zero()
+                camForward.mul(moveInput.z, desiredMoveDirection)
+                val rightPart = Vector3f(camRight).mul(moveInput.x)
+                desiredMoveDirection.add(rightPart)
 
-            // Apply movement to rigid body
-            val velocity = desiredMoveDirection.mul(walkSpeed)
-            rb?.applyImpulse(velocity)
-        }
+                // Apply movement to rigid body
+                val force = desiredMoveDirection.mul(walkSpeed)
+                rb?.applyImpulse(force)
+            }
 
-        val vel = rb?.linearVelocity
-        if (vel != null) {
-            lastVelocity.set(vel.x, vel.y, vel.z)
+            val vel = rb?.linearVelocity
+            if (vel != null) {
+                lastVelocity.set(vel.x, vel.y, vel.z)
+            }
         }
     }
 

@@ -45,16 +45,19 @@ class PlayerStateManager : Component() {
 
     }
 
-    private val threshold = 0.1f
+    private val threshold = 0f
 
     private fun handleOffBoardControls(dt: Float) {
         val speed = gameObject.getComponent<RigidBody3D>()?.linearVelocity?.length() ?: 0.0f
-        val hasIntent = (gameObject.getComponent<PlayerController>()?.desiredMoveDirection?.length() ?: 0f) > threshold
+        val intent = (gameObject.getComponent<PlayerController>()?.desiredMoveDirection?.length() ?: 0f)
+        val hasIntent = intent > threshold
         val newState =
             if (speed > 0.2f && hasIntent)
                 PlayerState.WALKING
-            else
+            else {
+                //logger.logEngine("Staying idle, intent : $intent, speed: $speed")
                 PlayerState.IDLE
+            }
 
         transitionToState(newState)
     }

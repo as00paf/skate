@@ -46,8 +46,8 @@ class Skater(
         addComponent(BoxCollider3D(hitBoxSize))
         addComponent(BoneOverride())
         addComponent(PoseGizmo())
-        addComponent(PlayerStateManager())
         addComponent(PlayerController())
+        addComponent(PlayerStateManager())
     }
 
 }
