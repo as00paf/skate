@@ -2,6 +2,7 @@ package com.pafoid.skate.game.prefabs
 
 import com.pafoid.skate.editor.gizmos.PoseGizmo
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
+import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -41,7 +42,7 @@ class Skater(
         addComponent(animator)
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })
         addComponent(BoxCollider3D(hitBoxSize))
-        //addComponent(BoneOverride())
+        addComponent(BoneOverride())
         addComponent(PoseGizmo())
     }
 
