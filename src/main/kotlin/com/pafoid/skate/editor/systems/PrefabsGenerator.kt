@@ -23,11 +23,7 @@ import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.game.prefabs.Floor
-import com.pafoid.skate.game.prefabs.MaterialType
-import com.pafoid.skate.game.prefabs.Skateboard
-import com.pafoid.skate.game.prefabs.Skater
-import com.pafoid.skate.game.prefabs.Tile
+import com.pafoid.skate.game.prefabs.*
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 
@@ -105,16 +101,10 @@ class PrefabsGenerator(
             val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
             skater = Skater("Skater", model, skate)
 
-            val walkingAnimation =
-                resourceManager.loadAnimation(Assets.Animations.WALKING, skater.skeletonComponent.pose.skeleton)
-
-
-            val idleAnimation =
-                resourceManager.loadAnimation(Assets.Animations.IDLE, skater.skeletonComponent.pose.skeleton)
-
-
-            skater.animator.addAnimation(idleAnimation)
-            skater.animator.addAnimation(walkingAnimation)
+            animations.forEach { path ->
+                val animation = resourceManager.loadAnimation(path, skater.skeletonComponent.pose.skeleton)
+                skater.animator.addAnimation(animation)
+            }
 
             JobSystem.runOnMain {
                 sceneManager.currentScene?.addGameObjectToScene(skater)
@@ -330,4 +320,18 @@ class PrefabsGenerator(
         scene.addGameObjectToScene(go)
     }
 
+    private val animations = listOf(
+        Assets.Animations.IDLE,
+        Assets.Animations.JUMP,
+        Assets.Animations.WALKING,
+        Assets.Animations.RUNNING,
+        Assets.Animations.LEFT_TURN,
+        Assets.Animations.LEFT_TURN_90,
+        Assets.Animations.LEFT_STRAFE,
+        Assets.Animations.LEFT_STRAFE_WALKING,
+        Assets.Animations.RIGHT_TURN,
+        Assets.Animations.RIGHT_TURN_90,
+        Assets.Animations.RIGHT_STRAFE,
+        Assets.Animations.RIGHT_STRAFE_WALKING,
+    )
 }

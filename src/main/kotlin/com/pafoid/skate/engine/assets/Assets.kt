@@ -55,6 +55,18 @@ object Assets {
     }
     object Animations {
         const val IDLE = "assets/characters/animations/idle.fbx"
+        const val JUMP = "assets/characters/animations/jump.fbx"
         const val WALKING = "assets/characters/animations/walking.fbx"
+        const val RUNNING = "assets/characters/animations/running.fbx"
+
+        const val LEFT_TURN = "assets/characters/animations/left turn.fbx"
+        const val LEFT_TURN_90 = "assets/characters/animations/left turn 90.fbx"
+        const val LEFT_STRAFE = "assets/characters/animations/left strafe.fbx"
+        const val LEFT_STRAFE_WALKING = "assets/characters/animations/left strafe walking.fbx"
+
+        const val RIGHT_TURN = "assets/characters/animations/right turn.fbx"
+        const val RIGHT_TURN_90 = "assets/characters/animations/right turn 90.fbx"
+        const val RIGHT_STRAFE = "assets/characters/animations/right strafe.fbx"
+        const val RIGHT_STRAFE_WALKING = "assets/characters/animations/right strafe walking.fbx"
     }
 }
