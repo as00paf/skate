@@ -45,7 +45,7 @@ class PhysicsCalibrationTest {
 
     @Test
     fun `test freefall timing with standard gravity`() {
-        val physics = Physics3D()
+        val physics = BulletPhysics3D()
         val gravity = 9.81f
         physics.setGravity(Vector3f(0f, -gravity, 0f))
 

@@ -23,7 +23,7 @@ import org.joml.Quaternionf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class Physics3D : IPhysics3D, KoinComponent {
+class BulletPhysics3D : IPhysics3D, KoinComponent {
     private val debugRenderer: DebugRenderer by inject()
     private val nativeLibraryLoader: NativeLibraryLoader = NativeLibraryLoader()
     private val physicsSpace: PhysicsSpace
@@ -59,28 +59,28 @@ class Physics3D : IPhysics3D, KoinComponent {
     }
 
     /**
+     * Performs a ray test and returns only the closest hit.
+     *
+     * @param from The start point of the ray.
+     * @param to The end point of the ray.
+     * @return The closest [RayTestResult], or null if no hit occurred.
+     */
+    override fun raycastClosest(from: JomlVector3f, to: JomlVector3f): RayTestResult? {
+        val results = rayTest(from, to)
+        return if (results.isEmpty()) null else results.minByOrNull { it.hitFraction }?.toRayTestResult()
+    }
+
+    /**
      * Performs a ray test (raycast) in the physics world and returns all hits.
      *
      * @param from The start point of the ray in world space.
      * @param to The end point of the ray in world space.
      * @return A list of [PhysicsRayTestResult] containing hit information.
      */
-    override fun rayTest(from: JomlVector3f, to: JomlVector3f): List<PhysicsRayTestResult> {
+    private fun rayTest(from: JomlVector3f, to: JomlVector3f): List<PhysicsRayTestResult> {
         val start = JmeVector3f(from.x, from.y, from.z)
         val end = JmeVector3f(to.x, to.y, to.z)
         return physicsSpace.rayTest(start, end)
-    }
-
-    /**
-     * Performs a ray test and returns only the closest hit.
-     *
-     * @param from The start point of the ray.
-     * @param to The end point of the ray.
-     * @return The closest [PhysicsRayTestResult], or null if no hit occurred.
-     */
-    override fun raycastClosest(from: JomlVector3f, to: JomlVector3f): PhysicsRayTestResult? {
-        val results = rayTest(from, to)
-        return if (results.isEmpty()) null else results.minByOrNull { it.hitFraction }
     }
 
     /**

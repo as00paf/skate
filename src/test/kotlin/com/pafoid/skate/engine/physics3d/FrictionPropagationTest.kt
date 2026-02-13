@@ -18,7 +18,7 @@ import org.koin.dsl.module
 class FrictionPropagationTest {
 
     companion object {
-        private lateinit var physics: Physics3D
+        private lateinit var physics: BulletPhysics3D
 
         @JvmStatic
         @BeforeAll
@@ -28,7 +28,7 @@ class FrictionPropagationTest {
                     single { mockk<DebugRenderer>(relaxed = true) }
                 })
             }
-            physics = Physics3D()
+            physics = BulletPhysics3D()
         }
 
         @JvmStatic

@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.StringManager
@@ -12,6 +11,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.RayTestResult
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -103,10 +103,10 @@ class BoardRigTest {
         every { scene.gameObjectManager.gameObjects } returns mutableListOf(skateboard)
         
         // Mock a hit result for the raycasts
-        val hit = mockk<PhysicsRayTestResult>()
+        val hit = mockk<RayTestResult>()
         every { hit.hitFraction } returns 0.5f // Halfway hit
 
-        every { physics3d.rayTest(any(), any()) } returns listOf(hit)
+        every { physics3d.raycastClosest(any(), any()) } returns hit
 
         // Mock the applyForce method to track calls
         every { rb3d.applyForce(any(), any()) } returns Unit
@@ -121,7 +121,7 @@ class BoardRigTest {
 
     @Test
     fun `test no suspension force when in air`() {
-        every { physics3d.rayTest(any(), any()) } returns emptyList()
+        every { physics3d.raycastClosest(any(), any()) } returns null
         
         physics.start()
         physics.update(0.016f)

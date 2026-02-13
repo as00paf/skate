@@ -1,11 +1,11 @@
 package com.pafoid.skate.game.skateboard
 
-import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
+import com.pafoid.skate.engine.physics3d.RayTestResult
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -68,16 +68,13 @@ class SkateboardPhysics : Component(), KoinComponent {
             transformMatrix.transformDirection(localDown)
 
             val rayEnd = Vector3f(localDown).mul(suspensionRestLength).add(rayStart)
-
-            val results = scene.physics3d.rayTest(rayStart, rayEnd)
-            if (results.isNotEmpty()) {
-                val closest = results.minByOrNull { it.hitFraction }
-                if (closest != null) {
-                    applySuspensionForce(closest, rayStart, localDown)
-                    groundedCount++
-                }
+            val closest = scene.physics3d.raycastClosest(rayStart, rayEnd)
+            if (closest != null) {
+                applySuspensionForce(closest, rayStart, localDown)
+                groundedCount++
             }
         }
+
         isGrounded = groundedCount > 0
 
         if (isGrounded) {
@@ -126,7 +123,7 @@ class SkateboardPhysics : Component(), KoinComponent {
      * @param rayStart The origin of the ray in world space, where the force is applied.
      * @param localDown The local downward vector of the board in world space.
      */
-    private fun applySuspensionForce(hit: PhysicsRayTestResult, rayStart: Vector3f, localDown: Vector3f) {
+    private fun applySuspensionForce(hit: RayTestResult, rayStart: Vector3f, localDown: Vector3f) {
         val compression = (1.0f - hit.hitFraction) * suspensionRestLength
 
         // F = k * x (Spring)

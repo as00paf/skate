@@ -52,11 +52,11 @@ class SkateboardPhysicsTest {
         }
     }
 
-    private lateinit var physics: Physics3D
+    private lateinit var physics: BulletPhysics3D
 
     @BeforeEach
     fun setup() {
-        physics = Physics3D()
+        physics = BulletPhysics3D()
         every { engine.runtimePlaying } returns true
         
         val mockScene = mockk<Scene>()

@@ -11,7 +11,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
-import com.pafoid.skate.engine.physics3d.Physics3D
+import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -35,7 +35,7 @@ import kotlin.test.assertEquals
 class TrickDetectionTest {
 
     companion object {
-        private lateinit var physics: Physics3D
+        private lateinit var physics: BulletPhysics3D
     }
 
     private lateinit var skateboard: GameObject
@@ -61,7 +61,7 @@ class TrickDetectionTest {
                 single { mockk<LoggerService>(relaxed = true) }
             })
         }
-        physics = Physics3D()
+        physics = BulletPhysics3D()
 
         every { engine.runtimePlaying } returns true
         

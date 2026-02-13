@@ -27,7 +27,7 @@ class SkateboardStressTest {
     private val engine = mockk<Engine>()
     private val sceneManager = mockk<SceneManager>()
     private val debugRenderer = mockk<DebugRenderer>()
-    private lateinit var physics: Physics3D
+    private lateinit var physics: BulletPhysics3D
 
     @BeforeEach
     fun setup() {
@@ -38,7 +38,7 @@ class SkateboardStressTest {
                 single<DebugRenderer> { debugRenderer }
             })
         }
-        physics = Physics3D()
+        physics = BulletPhysics3D()
 
         every { engine.runtimePlaying } returns true
         val mockScene = mockk<Scene>()

@@ -4,8 +4,8 @@ import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysics3D
-import com.pafoid.skate.engine.physics3d.Physics3D
 import com.pafoid.skate.engine.render.Camera
 
 class Scene(
@@ -15,7 +15,7 @@ class Scene(
 ) {
 
     var sceneData: SceneData = SceneData()
-    val physics3d: IPhysics3D = Physics3D()
+    val physics3d: IPhysics3D = BulletPhysics3D()
     val gameObjectManager: GameObjectManager = GameObjectManager(physics3d)
     val systemManager: SystemManager = SystemManager()
 
