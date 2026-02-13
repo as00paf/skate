@@ -57,8 +57,8 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         scene.addSystem(AnimationSystem())
 
         reportProgress(0.7f, "Spawning Prefabs...")
-        skateboard = prefabsGenerator.spawnSkateboard()
-        skater = prefabsGenerator.spawnSkater(skateboard)
+        //skateboard = prefabsGenerator.spawnSkateboard()
+        skater = prefabsGenerator.spawnSkater(null)
         floor = prefabsGenerator.spawnFloor()
 
         reportProgress(1.0f, "Ready.")

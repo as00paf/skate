@@ -1,11 +1,11 @@
 package com.pafoid.skate.game.player
 
 import com.jme3.math.Vector3f
+import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.Component
@@ -22,9 +22,7 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.game.skateboard.PreferredStance
-import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.skateboard.Stance
-import imgui.ImGui
 import org.joml.Quaternionf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -40,7 +38,7 @@ class PlayerController : Component(), KoinComponent {
     private val inputProvider: IInputProvider by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val sceneManager: SceneManager by inject()
-    private val stringManager: StringManager by inject()
+    private val logger: LoggerService by inject()
 
     var preferredStance = PreferredStance.REGULAR
     var pushForce = 5.0f
@@ -51,16 +49,14 @@ class PlayerController : Component(), KoinComponent {
 
     var walkSpeed = 3.0f
 
-    lateinit var stateManager: PlayerStateManager
+    private var stateManager: PlayerStateManager? = null
+    private var rb: IPhysicsBody3D? = null
 
     var currentStance = Stance.REGULAR
     var isSwitch = false
 
-    private var rb: IPhysicsBody3D? = null
-    private var physics: SkateboardPhysics? = null
     private var lastVelocity = Vector3f()
     private var animator: Animator? = null
-    private var skater: GameObject? = null
     private var currentLean = 0f
     private val maxLeanAngle = 20f
     private val leanSmoothness = 5f
@@ -70,19 +66,12 @@ class PlayerController : Component(), KoinComponent {
 
     override fun start() {
         rb = gameObject.getComponent<RigidBody3D>()
-        physics = gameObject.getComponent<SkateboardPhysics>()
-
-        // Find animator and skater object
-        skater = gameObject.children.find { it.name == "Skater" }
-        skater?.let { s: GameObject ->
-            animator = s.getComponent<Animator>()
-        }
-        stateManager = PlayerStateManager(this)
+        rb ?: run { logger.logEngine("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }
+        stateManager = gameObject.getComponent<PlayerStateManager>()
     }
 
     override fun update(dt: Float) {
         handleStateToggle()
-        stateManager.update(dt)
 
         val vel = rb?.linearVelocity
         if (vel != null) {
@@ -91,7 +80,7 @@ class PlayerController : Component(), KoinComponent {
     }
 
     /**
-     * Checks if the skateboard is currently in motion.
+     * Checks if the player is currently in motion.
      * @return True if the linear velocity's length is above a small threshold, false otherwise.
      */
     fun isMoving(): Boolean {
@@ -127,8 +116,7 @@ class PlayerController : Component(), KoinComponent {
      * ensuring it remains snapped to the deck.
      */
     fun handleStability() {
-        val s = skater ?: return
-        val sTransform = s.getComponent<Transform>()
+        val sTransform = gameObject.getComponent<Transform>()
         // Force snap to board top center
         sTransform?.translation?.set(0f, 0.02f, 0f)
 
@@ -155,10 +143,10 @@ class PlayerController : Component(), KoinComponent {
      * @param dt Delta time for smooth interpolation.
      */
     fun updateProceduralLean(dt: Float) {
-    if (stateManager.currentState !is PlayerState.RIDING) return
-    val renderComponent = skater?.getComponent<RenderComponent>() ?: return
-    val skeletonComponent = skater?.getComponent<SkeletonComponent>() ?: return
-        val skeleton = skeletonComponent.pose?.skeleton ?: return
+        if (stateManager?.currentState !is PlayerState.RIDING) return
+        val renderComponent = gameObject.getComponent<RenderComponent>() ?: return
+        val skeletonComponent = gameObject.getComponent<SkeletonComponent>() ?: return
+        val skeleton = skeletonComponent.pose.skeleton
 
         var steerInput = 0f
         inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1)?.let { axes ->
@@ -193,7 +181,7 @@ class PlayerController : Component(), KoinComponent {
     fun handleWalking(dt: Float) {
         val scene = sceneManager.currentScene ?: return
         val camera = scene.camera
-        val target = skater ?: return
+        val target = gameObject
 
         var moveX = 0f
         var moveZ = 0f
@@ -262,7 +250,7 @@ class PlayerController : Component(), KoinComponent {
      */
     fun handleGroundSnapping() {
         val scene = sceneManager.currentScene ?: return
-        val target = skater ?: return
+        val target = gameObject
         val pos = target.getComponent<Transform>()?.translation ?: return
 
         val rayStart = org.joml.Vector3f(pos.x, pos.y + 1f, pos.z)
@@ -332,7 +320,7 @@ class PlayerController : Component(), KoinComponent {
 
         // Disable this controller
         this.enabled = false
-        physics?.enabled = false
+        //Bail state should disable skateboard physics component too
     }
 
     /**
@@ -347,11 +335,10 @@ class PlayerController : Component(), KoinComponent {
 
         if (toggle) {
             sceneManager.currentScene ?: return
-            val character = skater ?:return
+            val character = gameObject
             character.getComponent<Transform>()?.let{ transform ->
-                if (stateManager.currentState == PlayerState.RIDING) {
-                    stateManager.transitionToState(PlayerState.WALKING)
-                    physics?.enabled = false
+                if (stateManager?.currentState == PlayerState.RIDING) {
+                    stateManager?.transitionToState(PlayerState.WALKING)
 
                     // Transition to World Space
                     val worldPos = org.joml.Vector3f()
@@ -374,8 +361,7 @@ class PlayerController : Component(), KoinComponent {
                     transform.translation.add(right)
 
                 } else {
-                    stateManager.transitionToState(PlayerState.RIDING)
-                    physics?.enabled = true
+                    stateManager?.transitionToState(PlayerState.RIDING)
 
                     // Reparent back to board
                     gameObject.addChild(character)
@@ -419,35 +405,19 @@ class PlayerController : Component(), KoinComponent {
      * Displays a debug window with information about the player's state, stance, and velocity.
      */
     override fun imgui() {
-        ImGui.text(stringManager.getString("lbl.player.state", stateManager.currentState::class.simpleName ?: "N/A"))
-        ImGui.text(stringManager.getString("lbl.player.preferred_stance", preferredStance))
-        ImGui.text(stringManager.getString("lbl.player.current_stance", currentStance))
-        ImGui.text(stringManager.getString("lbl.player.is_switch", isSwitch))
-        ImGui.text(stringManager.getString("lbl.player.grounded", physics?.isGrounded ?: false))
 
-        val vel = rb?.linearVelocity ?: org.joml.Vector3f()
-        ImGui.text(stringManager.getString("lbl.player.velocity", String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z)))
-
-        if (ImGui.button(stringManager.getString("btn.player.toggle_switch"))) {
-            isSwitch = !isSwitch
-        }
-
-        if (ImGui.button(stringManager.getString("btn.player.toggle_preferred_stance"))) {
-            preferredStance = if (preferredStance == PreferredStance.REGULAR) PreferredStance.GOOFY else PreferredStance.REGULAR
-        }
     }
 
     /**
      * Checks for conditions that would cause the player to "bail" or fall, such as being upside down
      * or experiencing a high-impact landing.
      */
-    fun checkBail() {
-        val phys = physics ?: return
+    fun checkBail(isGrounded: Boolean) {
         val currentVelocityJOML = rb?.linearVelocity ?: return
 
         val currentVelocity = Vector3f(currentVelocityJOML.x, currentVelocityJOML.y, currentVelocityJOML.z)
 
-        if (phys.isGrounded) {
+        if (isGrounded) {
             val transform = gameObject.getComponent<Transform>()?.toWorldMatrix() ?: return
             val localUp = org.joml.Vector3f(0f, 1f, 0f)
             val worldUp = org.joml.Vector3f()
@@ -473,7 +443,7 @@ class PlayerController : Component(), KoinComponent {
      * after a trick, snapping it to the nearest 180-degree yaw and flattening its roll and pitch.
      * @param dt Delta time.
      */
-    fun handleCatch(dt: Float) {
+    fun handleCatch(dt: Float, isGrounded: Boolean) {
         val rb3d = rb ?: return
         val rotation = gameObject.getComponent<Transform>()?.rotation ?: return
 
@@ -485,7 +455,7 @@ class PlayerController : Component(), KoinComponent {
         val target180 = (yaw / 180f).roundToLong() * 180f
         val diff = target180 - yaw
 
-        if (abs(diff) < 20f && (physics?.isGrounded == false)) {
+        if (abs(diff) < 20f && !isGrounded) {
             // Yaw is usually global Y, so global torque is fine
             rb3d.applyTorqueImpulse(org.joml.Vector3f(0f, diff * catchStrength * dt, 0f))
         }
@@ -557,7 +527,7 @@ class PlayerController : Component(), KoinComponent {
      * torque to the skateboard.
      * @param dt Delta time (currently unused).
      */
-    fun handleSteering(dt: Float) {
+    fun handleSteering(dt: Float, isGrounded: Boolean) {
         var steer = 0f
 
         // Controller (Joystick 1 - Left Stick X)
@@ -570,7 +540,7 @@ class PlayerController : Component(), KoinComponent {
             }
         }
 
-        if (steer != 0f && (physics?.isGrounded == true)) {
+        if (steer != 0f && (isGrounded == true)) {
             val angVel = rb?.angularVelocity ?: return
             angVel.y = steer
             rb?.angularVelocity = angVel
@@ -581,7 +551,7 @@ class PlayerController : Component(), KoinComponent {
      * Handles pushing input, applying a forward force to the skateboard.
      * @param dt Delta time (currently unused).
      */
-    fun handlePushing(dt: Float) {
+    fun handlePushing(dt: Float, isGrounded: Boolean) {
         var multiplier = 0f
 
         // Controller (Left Stick Y for forward movement, or triggers)
@@ -601,7 +571,7 @@ class PlayerController : Component(), KoinComponent {
             }
         }
 
-        if (multiplier > 0f && (physics?.isGrounded == true)) {
+        if (multiplier > 0f && isGrounded) {
             val transform = gameObject.getComponent<Transform>()?.toWorldMatrix()
             val forward = org.joml.Vector3f(1f, 0f, 0f) // X is forward for our board
             transform?.transformDirection(forward)
@@ -614,7 +584,7 @@ class PlayerController : Component(), KoinComponent {
     /**
      * Handles jump input, applying a vertical impulse for an ollie.
      */
-    fun handleJumping() {
+    fun handleJumping(isGrounded: Boolean) {
         var jump = inputProvider.keyBeginPress(GLFW.GLFW_KEY_SPACE)
 
         // Controller (Button A/Cross)
@@ -624,7 +594,7 @@ class PlayerController : Component(), KoinComponent {
             }
         }
 
-        if (jump && (physics?.isGrounded == true)) {
+        if (jump && isGrounded) {
             rb?.applyImpulse(org.joml.Vector3f(0f, jumpImpulse, 0f))
         }
     }

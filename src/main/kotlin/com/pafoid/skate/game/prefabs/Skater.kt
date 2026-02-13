@@ -11,6 +11,8 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.game.player.PlayerController
+import com.pafoid.skate.game.player.PlayerStateManager
 import org.joml.Vector3f
 
 class Skater(
@@ -31,7 +33,7 @@ class Skater(
 
     init {
         // Parenting: Skater follows Skateboard
-        skate?.addChild(this)
+        //skate?.addChild(this)
 
         transformComponent.translation.set(Vector3f(position.x, position.y + 0.0425f, position.z))
         transformComponent.rotation.set(rotation) // Face sideways for skating
@@ -44,6 +46,8 @@ class Skater(
         addComponent(BoxCollider3D(hitBoxSize))
         addComponent(BoneOverride())
         addComponent(PoseGizmo())
+        addComponent(PlayerStateManager())
+        addComponent(PlayerController())
     }
 
 }

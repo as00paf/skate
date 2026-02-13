@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.trick.TrickDetector
 import org.joml.Vector3f
@@ -28,7 +27,6 @@ class Skateboard(
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })
         addComponent(BoxCollider3D(hitBoxSize))
         addComponent(SkateboardPhysics())
-        addComponent(PlayerController())
         addComponent(TrickDetector())
     }
 }

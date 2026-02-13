@@ -54,6 +54,13 @@ class SkateboardPhysics : Component(), KoinComponent {
     }
 
     override fun update(dt: Float) {
+        checkIfGrounded()
+        if (isGrounded) {
+            applySteering(dt)
+        }
+    }
+
+    private fun checkIfGrounded() {
         val scene = sceneManager.currentScene ?: return
         val transform = gameObject.getComponent<Transform>() ?: return
         val transformMatrix = transform.toWorldMatrix()
@@ -76,10 +83,6 @@ class SkateboardPhysics : Component(), KoinComponent {
         }
 
         isGrounded = groundedCount > 0
-
-        if (isGrounded) {
-            applySteering(dt)
-        }
     }
 
     private fun applySteering(dt: Float) {
