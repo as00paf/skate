@@ -23,14 +23,6 @@ class Engine : KoinComponent {
     val engineState = AtomicReference(EngineState.BOOTING)
     var runtimePlaying = false
 
-    // Physics Loop State
-    private var physicsAccumulator = 0f
-
-    companion object {
-        private const val FIXED_TIME_STEP = 1.0f / 60.0f
-        private const val MAX_TIME_STEP = 0.25f
-    }
-
     fun update(dt: Float, imguiLayer: ImGuiLayer) {
         val state = engineState.get()
 
@@ -48,14 +40,8 @@ class Engine : KoinComponent {
         val scene = sceneManager.currentScene
         if (dt >= 0 && scene != null) {
             if (runtimePlaying) {
-                // Fixed Timestep Loop for Physics
-                physicsAccumulator += dt
-                if (physicsAccumulator > MAX_TIME_STEP) physicsAccumulator = MAX_TIME_STEP
-
-                while (physicsAccumulator >= FIXED_TIME_STEP) {
-                    scene.update(FIXED_TIME_STEP)
-                    physicsAccumulator -= FIXED_TIME_STEP
-                }
+                // Update scene with the actual delta time
+                scene.update(dt)
             } else {
                 scene.editorUpdate(dt)
                 editorInputHandler.update(scene)

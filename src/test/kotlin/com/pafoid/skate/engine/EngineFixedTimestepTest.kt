@@ -51,7 +51,7 @@ class EngineFixedTimestepTest : KoinTest {
                 single { mockSplashScreen }
             })
         }
-        
+
         engine = Engine()
     }
 
@@ -61,45 +61,45 @@ class EngineFixedTimestepTest : KoinTest {
     }
 
     @Test
-    fun `update should call scene update with fixed timestep`() {
+    fun `update should call scene update with actual delta time`() {
         val mockScene = mockk<Scene>(relaxed = true)
         val mockImGui = mockk<ImGuiLayer>(relaxed = true)
-        
+
         every { mockSceneManager.currentScene } returns mockScene
         every { mockImGui.gameViewWindow } returns mockk<GameViewWindow>(relaxed = true)
 
         engine.engineState.set(EngineState.RUNNING)
         engine.runtimePlaying = true
 
-        // Simulate 1 second of frame time in one big chunk (should result in 15 updates due to clamping)
-        // FIXED_TIME_STEP is 1/60 (~0.0166667)
-        // Max time step is 0.25.
-        // 0.25 / (1/60) = 15 updates.
-        engine.update(1.0f, mockImGui)
+        val deltaTime = 0.016f // ~60fps
 
-        verify(exactly = 15) { mockScene.update(1.0f / 60.0f) }
+        // Engine now passes the actual delta time to the scene
+        // Physics stepping is handled internally by the scene's physics system
+        engine.update(deltaTime, mockImGui)
+
+        verify(exactly = 1) { mockScene.update(deltaTime) }
     }
 
     @Test
-    fun `update should accumulate small deltas and trigger update`() {
+    fun `update should pass accumulated time to scene`() {
         val mockScene = mockk<Scene>(relaxed = true)
         val mockImGui = mockk<ImGuiLayer>(relaxed = true)
-        
+
         every { mockSceneManager.currentScene } returns mockScene
         every { mockImGui.gameViewWindow } returns mockk<GameViewWindow>(relaxed = true)
 
         engine.engineState.set(EngineState.RUNNING)
         engine.runtimePlaying = true
 
-        val step = 1.0f / 60.0f
-        val halfStep = step / 2.0f
+        val deltaTime1 = 0.016f
+        val deltaTime2 = 0.032f
 
-        // 1. Pass half step -> Accumulator = 0.5 step. No update.
-        engine.update(halfStep, mockImGui)
-        verify(exactly = 0) { mockScene.update(any()) }
+        // First update
+        engine.update(deltaTime1, mockImGui)
+        verify(exactly = 1) { mockScene.update(deltaTime1) }
 
-        // 2. Pass another half step -> Accumulator = 1.0 step. 1 update.
-        engine.update(halfStep, mockImGui)
-        verify(exactly = 1) { mockScene.update(step) }
+        // Second update with different delta time
+        engine.update(deltaTime2, mockImGui)
+        verify(exactly = 1) { mockScene.update(deltaTime2) }
     }
 }

@@ -1,14 +1,47 @@
 package com.pafoid.skate.engine.physics3d
 
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
+import io.mockk.mockk
 import org.joml.Vector3f
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import kotlin.math.sqrt
 
 class PhysicsCalibrationTest {
+
+    companion object {
+        val engine = mockk<Engine>()
+        val sceneManager = mockk<SceneManager>()
+        val debugRenderer = mockk<DebugRenderer>()
+
+        @BeforeAll
+        @JvmStatic
+        fun setupAll() {
+            startKoin {
+                modules(module {
+                    single<Engine> { engine }
+                    single<SceneManager> { sceneManager }
+                    single<DebugRenderer> { debugRenderer }
+                })
+            }
+        }
+
+        @AfterAll
+        @JvmStatic
+        fun teardownAll() {
+            stopKoin()
+        }
+    }
 
     @Test
     fun `test freefall timing with standard gravity`() {

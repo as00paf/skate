@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.debug.PhysicsDebugger
 import com.pafoid.skate.engine.physics3d.space.PhysicsSpaceManager
+import com.pafoid.skate.engine.physics3d.stepper.PhysicsStepper
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
@@ -28,9 +29,7 @@ class Physics3D : IPhysics3D, KoinComponent {
     private val physicsDebugger: PhysicsDebugger = PhysicsDebugger(debugRenderer)
 
     private val physicsSpaceManager: PhysicsSpaceManager
-
-    private var accumulator = 0f
-    private val fixedTimestep = 1.0f / 60.0f
+    private val physicsStepper: PhysicsStepper
 
     /**
      * Toggles the rendering of debug wireframes for physics colliders.
@@ -42,6 +41,7 @@ class Physics3D : IPhysics3D, KoinComponent {
         val physicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
         physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
         this.physicsSpaceManager = PhysicsSpaceManager(physicsSpace)
+        this.physicsStepper = PhysicsStepper(physicsSpace)
     }
 
     /**
@@ -204,14 +204,7 @@ class Physics3D : IPhysics3D, KoinComponent {
      * @param dt The time elapsed since the last frame in seconds.
      */
     override fun update(dt: Float) {
-        accumulator += dt
-        while (accumulator >= fixedTimestep) {
-            val startTime = System.nanoTime()
-            physicsSpaceManager.update(fixedTimestep) // This will internally step the physics
-            val endTime = System.nanoTime()
-            EngineStats.physicsStepTime.set(endTime - startTime)
-            accumulator -= fixedTimestep
-        }
+        physicsStepper.stepPhysics(dt)
 
         if (debugEnabled) {
             physicsDebugger.drawDebugWireframes(physicsSpaceManager.getPhysicsSpace())

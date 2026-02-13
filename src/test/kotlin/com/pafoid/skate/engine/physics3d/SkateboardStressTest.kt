@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import io.mockk.every
 import io.mockk.mockk
@@ -25,6 +26,7 @@ class SkateboardStressTest {
 
     private val engine = mockk<Engine>()
     private val sceneManager = mockk<SceneManager>()
+    private val debugRenderer = mockk<DebugRenderer>()
     private lateinit var physics: Physics3D
 
     @BeforeEach
@@ -33,6 +35,7 @@ class SkateboardStressTest {
             modules(module {
                 single<Engine> { engine }
                 single<SceneManager> { sceneManager }
+                single<DebugRenderer> { debugRenderer }
             })
         }
         physics = Physics3D()
