@@ -1,6 +1,8 @@
 package com.pafoid.skate.engine.physics3d.adapter
 
 import com.jme3.bullet.PhysicsSpace
+import com.jme3.bullet.collision.shapes.BoxCollisionShape
+import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.ecs.GameObject
@@ -16,7 +18,7 @@ import org.joml.Quaternionf
  * This class handles the integration between GameObjects and the physics space,
  * including adding, removing, and updating physics representations of GameObjects.
  */
-class GameObjectPhysicsAdapter(private val physicsObjectCreator: IPhysicsObjectCreator = DefaultPhysicsObjectCreator()) {
+class GameObjectPhysicsAdapter {
 
     /**
      * Adds a GameObject to the physics simulation.
@@ -45,7 +47,7 @@ class GameObjectPhysicsAdapter(private val physicsObjectCreator: IPhysicsObjectC
 
             if (rb.rawBody == null) {
                 val colliders = go.components.filterIsInstance<Collider3D>()
-                val compound = physicsObjectCreator.createCompoundCollisionShape()
+                val compound = CompoundCollisionShape()
 
                 colliders.forEach { c ->
                     val shape = c.createShape()
@@ -54,12 +56,12 @@ class GameObjectPhysicsAdapter(private val physicsObjectCreator: IPhysicsObjectC
 
                 // If no colliders, provide a default box
                 if (colliders.isEmpty()) {
-                    val shape = physicsObjectCreator.createBoxCollisionShape(JmeVector3f(1f, 1f, 1f))
+                    val shape = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
                     shape.margin = 0.04f
                     compound.addChildShape(shape, JmeVector3f(0f, 0f, 0f))
                 }
 
-                val body = physicsObjectCreator.createRigidBody(compound, desiredMass)
+                val body = PhysicsRigidBody(compound, desiredMass)
                 rb.rawBody = body
                 update(go, physicsSpace) // Initial property sync
 
