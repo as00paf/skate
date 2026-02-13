@@ -64,15 +64,6 @@ class MouseControls : System() {
                 sceneManager.currentScene?.setSelectedGameObject(selectedObject)
             } else {
                 sceneManager.currentScene?.setSelectedGameObject(null)
-                val bone = getBoneById(pickedId)
-                if (bone != null) {
-                    // A bone was selected, find which GO it belongs to
-                    val skater = sceneManager.currentScene?.gameObjectManager?.gameObjects?.find { it.getComponent<PoseGizmo>() != null }
-                    sceneManager.currentScene?.setSelectedGameObject(skater)
-                    imguiLayer.boneTreeWindow.setSelectedBone(bone)
-                } else {
-                    sceneManager.currentScene?.setSelectedGameObject(null)
-                }
             }
 
             debounce = debounceTime

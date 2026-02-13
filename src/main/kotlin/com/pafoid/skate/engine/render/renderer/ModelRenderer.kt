@@ -51,7 +51,7 @@ class ModelRenderer(
 
         val hasSkin = skeletonComponent?.pose != null
         defaultShader.uploadBoolean(ShaderConst.Uniforms.HAS_SKIN, hasSkin)
-        if (skeletonComponent != null && skeletonComponent.pose != null) {
+        if (skeletonComponent != null) {
             defaultShader.uploadMat4fArray(ShaderConst.Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
         }
 

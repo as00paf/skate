@@ -8,7 +8,6 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.windows.AssetBrowserWindow
-import com.pafoid.skate.editor.windows.BoneTreeWindow
 import com.pafoid.skate.editor.windows.ConsoleWindow
 import com.pafoid.skate.editor.windows.EnvironmentWindow
 import com.pafoid.skate.editor.windows.GameViewWindow
@@ -96,7 +95,6 @@ class ImGuiLayer(
     private var glfwWindow: Long = 0
 
     val propertiesWindow = PropertiesWindow()
-    val boneTreeWindow = BoneTreeWindow()
     val gameViewWindow = GameViewWindow()
     val assetBrowser = AssetBrowserWindow()
     val consoleWindow = ConsoleWindow()
@@ -108,7 +106,6 @@ class ImGuiLayer(
     // Window Visibility Flags
     private val showHierarchy = ImBoolean(true)
     private val showProperties = ImBoolean(true)
-    private val showBoneTree = ImBoolean(true)
     private val showGameView = ImBoolean(true)
     private val showAssetBrowser = ImBoolean(true)
     private val showEnvironment = ImBoolean(true)
@@ -164,7 +161,6 @@ class ImGuiLayer(
         dockBuilderDockWindow(stringManager.getString("window.hierarchy"), leftId)
         dockBuilderDockWindow(stringManager.getString("window.asset_browser"), leftId)
         dockBuilderDockWindow(stringManager.getString("window.properties"), leftId)
-        dockBuilderDockWindow(stringManager.getString("window.bonetree"), leftId)
 
         dockBuilderDockWindow(stringManager.getString("window.game_viewport"), mainBodyId.get())
 
@@ -206,7 +202,6 @@ class ImGuiLayer(
             
             if (showHierarchy.get()) hierarchyWindow.imgui(currentScene)
             if (showProperties.get()) propertiesWindow.imgui()
-            if (showBoneTree.get()) boneTreeWindow.imgui()
             if (showGameView.get()) gameViewWindow.imgui()
             if (showAssetBrowser.get()) assetBrowser.imgui()
             if (showEnvironment.get()) environmentWindow.imgui(currentScene)
@@ -383,7 +378,6 @@ class ImGuiLayer(
                 if (beginMenu(stringManager.getString("menu.view.windows"))) {
                     checkbox(stringManager.getString("window.hierarchy"), showHierarchy)
                     checkbox(stringManager.getString("window.properties"), showProperties)
-                    checkbox(stringManager.getString("window.bonetree"), showBoneTree)
                     checkbox(stringManager.getString("window.game_viewport"), showGameView)
                     checkbox(stringManager.getString("window.asset_browser"), showAssetBrowser)
                     checkbox(stringManager.getString("window.environment"), showEnvironment)
