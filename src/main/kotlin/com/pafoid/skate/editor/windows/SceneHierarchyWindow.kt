@@ -7,9 +7,9 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
 import org.koin.core.component.KoinComponent

@@ -4,8 +4,8 @@ import com.pafoid.skate.app.SplashScreen
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject

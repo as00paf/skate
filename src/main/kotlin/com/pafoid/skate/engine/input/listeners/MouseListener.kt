@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.input.listeners
 
-import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.ecs.SceneManager
 import imgui.ImGui
 import org.joml.Vector2f
 import org.joml.Vector4f

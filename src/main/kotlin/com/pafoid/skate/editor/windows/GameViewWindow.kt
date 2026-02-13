@@ -10,9 +10,9 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.Renderer

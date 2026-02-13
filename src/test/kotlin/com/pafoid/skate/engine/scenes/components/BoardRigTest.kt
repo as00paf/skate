@@ -7,8 +7,8 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.physics3d.IPhysics3D

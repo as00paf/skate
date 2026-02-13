@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -13,7 +14,6 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadConstants

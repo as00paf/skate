@@ -5,7 +5,7 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.PROJECTION
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.VIEW
 import org.joml.Quaternionf

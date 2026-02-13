@@ -1,7 +1,6 @@
-package com.pafoid.skate.engine.ecs.systems
+package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.engine.ecs.Scene
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 

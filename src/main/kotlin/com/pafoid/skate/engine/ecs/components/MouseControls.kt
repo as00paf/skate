@@ -9,10 +9,10 @@ import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener

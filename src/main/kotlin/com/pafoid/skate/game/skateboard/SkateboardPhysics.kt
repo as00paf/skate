@@ -1,10 +1,10 @@
 package com.pafoid.skate.game.skateboard
 
 import com.jme3.bullet.collision.PhysicsRayTestResult
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import org.joml.Vector3f

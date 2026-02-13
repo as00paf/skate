@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D

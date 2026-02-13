@@ -10,7 +10,7 @@ import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer

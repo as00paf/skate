@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import org.joml.Vector3f

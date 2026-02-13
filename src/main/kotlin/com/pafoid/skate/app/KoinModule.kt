@@ -16,7 +16,7 @@ import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBuffer

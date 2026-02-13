@@ -4,7 +4,7 @@ import com.pafoid.skate.app.SplashScreen
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.JobSystem
 import kotlinx.coroutines.CoroutineDispatcher

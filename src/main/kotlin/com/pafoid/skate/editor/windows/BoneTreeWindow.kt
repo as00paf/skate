@@ -7,9 +7,9 @@ import com.pafoid.skate.engine.assets.data.models.animations.BoneMirrorUtil
 import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImBoolean

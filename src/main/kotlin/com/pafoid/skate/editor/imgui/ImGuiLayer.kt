@@ -18,9 +18,9 @@ import com.pafoid.skate.editor.windows.PropertiesWindow
 import com.pafoid.skate.editor.windows.SceneHierarchyWindow
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.UnitSystem

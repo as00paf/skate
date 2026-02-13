@@ -9,13 +9,13 @@ import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.RawModel
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.ModularTile
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.createGameObject
-import com.pafoid.skate.engine.ecs.systems.SceneManager
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D

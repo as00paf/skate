@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.utils.SkeletonMath

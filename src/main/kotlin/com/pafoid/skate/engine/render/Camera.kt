@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.ecs.systems.SceneManager
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_X
 import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_Y
