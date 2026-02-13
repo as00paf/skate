@@ -18,18 +18,15 @@ import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
-import electrostatic4j.snaploader.LibraryInfo
-import electrostatic4j.snaploader.LoadingCriterion
-import electrostatic4j.snaploader.NativeBinaryLoader
-import electrostatic4j.snaploader.filesystem.DirectoryPath
-import electrostatic4j.snaploader.platform.NativeDynamicLibrary
-import electrostatic4j.snaploader.platform.util.PlatformPredicate
+import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import org.joml.Quaternionf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.core.component.get
 
 class Physics3D : IPhysics3D, KoinComponent {
     private val debugRenderer: DebugRenderer by inject()
+    private val nativeLibraryLoader: NativeLibraryLoader
     private val physicsSpace: PhysicsSpace
 
     /**
@@ -38,36 +35,16 @@ class Physics3D : IPhysics3D, KoinComponent {
     override var debugEnabled = false
 
     init {
-        loadNativeLibrary()
-        physicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
-        physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
-    }
-
-    companion object {
-        private var isNativeLibraryLoaded = false
-    }
-
-    /**
-     * Loads the native Bullet Physics library (`bulletjme`) using a helper library.
-     * This method is called once during initialization to ensure the native binaries are available.
-     * It prevents multiple loading attempts with a static flag.
-     */
-    private fun loadNativeLibrary() {
-        if (isNativeLibraryLoaded) return
-        val info = LibraryInfo(null, "bulletjme", DirectoryPath.USER_DIR)
-        val loader = NativeBinaryLoader(info)
-
-        val libraries: Array<NativeDynamicLibrary?> = arrayOf(
-            NativeDynamicLibrary("native/linux/arm64", PlatformPredicate.LINUX_ARM_64),
-            NativeDynamicLibrary("native/linux/arm32", PlatformPredicate.LINUX_ARM_32),
-            NativeDynamicLibrary("native/linux/x86_64", PlatformPredicate.LINUX_X86_64),
-            NativeDynamicLibrary("native/osx/arm64", PlatformPredicate.MACOS_ARM_64),
-            NativeDynamicLibrary("native/osx/x86_64", PlatformPredicate.MACOS_X86_64),
-            NativeDynamicLibrary("native/windows/x86_64", PlatformPredicate.WIN_X86_64)
-        )
-        loader.registerNativeLibraries(libraries).initPlatformLibrary()
-        loader.loadLibrary(LoadingCriterion.CLEAN_EXTRACTION)
-        isNativeLibraryLoaded = true
+        // Attempt to get the NativeLibraryLoader from Koin, otherwise create a new one
+        this.nativeLibraryLoader = try {
+            get()
+        } catch (e: Exception) {
+            // For cases where Koin isn't properly set up (e.g., in tests)
+            NativeLibraryLoader()
+        }
+        this.nativeLibraryLoader.loadNativeLibrary()
+        this.physicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
+        this.physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
     }
 
     /**
