@@ -22,7 +22,7 @@ class Skater(
     position: Vector3f = Vector3f(0f, 1.05f, 0f),
     rotation: Vector3f = Vector3f(0f, 90f, 0f),
     scale: Vector3f = Vector3f(1f, 1f, 1f),
-    mass: Float = 1.8f,// 1.8kg mass
+    mass: Float = 100f,// 100kg mass
     hitBoxSize: Vector3f = Vector3f(0.4f, 0.02f, 0.1f),
 ): GameObject(name) {
 

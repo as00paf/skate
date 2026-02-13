@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.game.skateboard.Stance
 import imgui.ImGui
 import org.joml.Vector3f
@@ -22,44 +23,40 @@ class PlayerStateManager : Component() {
 
     var currentState: PlayerState = PlayerState.IDLE
         private set
-
-    var currentStance = Stance.REGULAR
     var isSwitch = false
     var isGrounded = false
         private set
+    var isOnBoard = false
+        private set
+
+    var currentStance = Stance.REGULAR
 
     override fun update(dt: Float) {
-        when (currentState) {
-            is PlayerState.IDLE -> handleIdleState(dt)
-            is PlayerState.RIDING -> handleRidingState(dt)
-            is PlayerState.PUSHING -> handlePushingState(dt)
-            is PlayerState.WALKING -> handleWalkingState(dt)
+        checkIfGrounded()
+
+        if (isOnBoard) {
+            handleOnBoardControls(dt)
+        } else {
+            handleOffBoardControls(dt)
         }
     }
 
-    private fun handleIdleState(dt: Float) {
-        // In IDLE, if we start moving, we are WALKING
-        if (playerController?.isMoving() == true) {
-            transitionToState(PlayerState.WALKING)
-        }
+    private fun handleOnBoardControls(dt: Float) {
+
     }
 
-    private fun handleRidingState(dt: Float) {
-        playerController?.apply {
-            checkIfGrounded()
-            updateCurrentStance()
-            handleSteering(dt, isGrounded)
-            handleJumping(isGrounded)
-            handleFlicks(dt)
-            handleStability()
-            handleCatch(dt, isGrounded)
-            updateRidingAnimation(dt)
-            updateProceduralLean(dt)
-            checkBail(isGrounded)
-            if (isPushing()) {
-                transitionToState(PlayerState.PUSHING)
-            }
-        }
+    private val threshold = 0.1f
+
+    private fun handleOffBoardControls(dt: Float) {
+        val speed = gameObject.getComponent<RigidBody3D>()?.linearVelocity?.length() ?: 0.0f
+        val hasIntent = (gameObject.getComponent<PlayerController>()?.desiredMoveDirection?.length() ?: 0f) > threshold
+        val newState =
+            if (speed > 0.2f && hasIntent)
+                PlayerState.WALKING
+            else
+                PlayerState.IDLE
+
+        transitionToState(newState)
     }
 
     private fun checkIfGrounded() {
@@ -79,23 +76,6 @@ class PlayerStateManager : Component() {
         isGrounded = scene.physics3d.raycastClosest(rayStart, rayEnd) != null
     }
 
-    private fun handlePushingState(dt: Float) {
-        playerController?.handlePushing(dt, isGrounded)
-        // After pushing, we go back to riding
-        if (playerController?.isPushing() == false) {
-            transitionToState(PlayerState.RIDING)
-        }
-    }
-
-    private fun handleWalkingState(dt: Float) {
-        playerController?.handleWalking(dt)
-        playerController?.handleGroundSnapping()
-
-        if (playerController?.isMoving() == false) {
-            transitionToState(PlayerState.IDLE)
-        }
-    }
-
     fun transitionToState(newState: PlayerState) {
         if (currentState == newState) return
 
@@ -104,9 +84,8 @@ class PlayerStateManager : Component() {
     }
 
     override fun imgui() {
-        val currentStateText = if (currentState != null) {
-            currentState::class.simpleName ?: "N/A"
-        } else "N/A"
+        val currentStateText = currentState::class.simpleName.orEmpty()
+
         ImGui.text(stringManager.getString("lbl.player.state", currentStateText))
         //ImGui.text(stringManager.getString("lbl.player.preferred_stance", preferredStance))
         ImGui.text(stringManager.getString("lbl.player.current_stance", currentStance))

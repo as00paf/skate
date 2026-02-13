@@ -7,6 +7,8 @@ import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
+import com.pafoid.skate.game.player.PlayerState
+import com.pafoid.skate.game.player.PlayerStateManager
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
 import org.koin.core.component.KoinComponent
@@ -105,7 +107,13 @@ class Animator : Component(), KoinComponent {
         play(anim, blend)
     }
 
-    override fun update(dt: Float) {}
+    override fun update(dt: Float) {
+        val stateManager = gameObject.getComponent<PlayerStateManager>() ?: return
+        when (stateManager.currentState) {
+            PlayerState.WALKING -> play("walk")
+            else -> play("idle")
+        }
+    }
 
     override fun imgui() {
         val renderComponent = gameObject.getComponent<RenderComponent>()

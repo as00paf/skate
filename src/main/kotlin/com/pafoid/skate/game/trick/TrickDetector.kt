@@ -2,7 +2,7 @@ package com.pafoid.skate.game.trick
 
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.game.player.PlayerController
+import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.skateboard.Stance
 import org.koin.core.component.KoinComponent
@@ -86,9 +86,9 @@ class TrickDetector : Component(), KoinComponent {
         val baseTrickName = trickManager.getTrickName(baseTrickKey)
 
         // Apply stance prefix
-        val controller = gameObject.getComponent<PlayerController>()
-        if (controller != null) {
-            val stance = controller.currentStance
+        val stateManager = gameObject.getComponent<PlayerStateManager>()
+        if (stateManager != null) {
+            val stance = stateManager.currentStance
             detectedTrick = if (stance == Stance.REGULAR) {
                 baseTrickName
             } else {
