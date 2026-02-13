@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.physics3d.space.PhysicsSpaceManager
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
@@ -26,8 +27,11 @@ import org.koin.core.component.get
 
 class Physics3D : IPhysics3D, KoinComponent {
     private val debugRenderer: DebugRenderer by inject()
-    private val nativeLibraryLoader: NativeLibraryLoader
-    private val physicsSpace: PhysicsSpace
+    private val nativeLibraryLoader: NativeLibraryLoader = NativeLibraryLoader()
+    private val physicsSpaceManager: PhysicsSpaceManager
+
+    private var accumulator = 0f
+    private val fixedTimestep = 1.0f / 60.0f
 
     /**
      * Toggles the rendering of debug wireframes for physics colliders.
@@ -35,16 +39,10 @@ class Physics3D : IPhysics3D, KoinComponent {
     override var debugEnabled = false
 
     init {
-        // Attempt to get the NativeLibraryLoader from Koin, otherwise create a new one
-        this.nativeLibraryLoader = try {
-            get()
-        } catch (e: Exception) {
-            // For cases where Koin isn't properly set up (e.g., in tests)
-            NativeLibraryLoader()
-        }
         this.nativeLibraryLoader.loadNativeLibrary()
-        this.physicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
-        this.physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
+        val physicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
+        physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
+        this.physicsSpaceManager = PhysicsSpaceManager(physicsSpace)
     }
 
     /**
@@ -53,8 +51,7 @@ class Physics3D : IPhysics3D, KoinComponent {
      * @return The gravity vector in m/s².
      */
     override fun getGravity(): JomlVector3f {
-        val g = physicsSpace.getGravity(null)
-        return JomlVector3f(g.x, g.y, g.z)
+        return physicsSpaceManager.getGravity()
     }
 
     /**
@@ -63,7 +60,7 @@ class Physics3D : IPhysics3D, KoinComponent {
      * @param gravity The new gravity vector in m/s².
      */
     override fun setGravity(gravity: JomlVector3f) {
-        physicsSpace.setGravity(JmeVector3f(gravity.x, gravity.y, gravity.z))
+        physicsSpaceManager.setGravity(gravity)
     }
 
     /**
@@ -74,9 +71,7 @@ class Physics3D : IPhysics3D, KoinComponent {
      * @return A list of [PhysicsRayTestResult] containing hit information.
      */
     override fun rayTest(from: JomlVector3f, to: JomlVector3f): List<PhysicsRayTestResult> {
-        val start = JmeVector3f(from.x, from.y, from.z)
-        val end = JmeVector3f(to.x, to.y, to.z)
-        return physicsSpace.rayTest(start, end)
+        return physicsSpaceManager.rayTest(from, to)
     }
 
     /**
@@ -102,11 +97,11 @@ class Physics3D : IPhysics3D, KoinComponent {
         val rb = go.getComponent<RigidBody3D>()
         if (rb != null) {
             val desiredMass = if (rb.bodyType == BodyType.Static) 0f else rb.mass
-            
+
             // Check if we need to rebuild due to mass change
             if (rb.rawBody != null) {
                 if (rb.rawBody?.mass != desiredMass) {
-                    physicsSpace.remove(rb.rawBody)
+                    physicsSpaceManager.remove(go)
                     rb.rawBody = null
                 } else {
                     // Body exists and mass is correct, just sync properties
@@ -118,7 +113,7 @@ class Physics3D : IPhysics3D, KoinComponent {
             if (rb.rawBody == null) {
                 val colliders = go.components.filterIsInstance<Collider3D>()
                 val compound = CompoundCollisionShape()
-                
+
                 colliders.forEach { c ->
                     val shape = c.createShape()
                     compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
@@ -134,7 +129,7 @@ class Physics3D : IPhysics3D, KoinComponent {
                 val body = PhysicsRigidBody(compound, desiredMass)
                 rb.rawBody = body
                 update(go) // Initial property sync
-                
+
                 if (rb.bodyType == BodyType.Kinematic) {
                     body.isKinematic = true
                 }
@@ -143,8 +138,8 @@ class Physics3D : IPhysics3D, KoinComponent {
                     body.setCcdMotionThreshold(0.1f)
                     body.setCcdSweptSphereRadius(0.1f)
                 }
-                
-                physicsSpace.add(body)
+
+                physicsSpaceManager.add(go)
             }
         }
     }
@@ -197,13 +192,10 @@ class Physics3D : IPhysics3D, KoinComponent {
     override fun remove(go: GameObject) {
         val rb = go.getComponent<RigidBody3D>()
         rb?.rawBody?.let {
-            physicsSpace.remove(it)
+            physicsSpaceManager.remove(go)
             rb.rawBody = null
         }
     }
-
-    private var accumulator = 0f
-    private val fixedTimestep = 1.0f / 60.0f
 
     /**
      * Steps the physics simulation forward by the given delta time.
@@ -216,7 +208,7 @@ class Physics3D : IPhysics3D, KoinComponent {
         accumulator += dt
         while (accumulator >= fixedTimestep) {
             val startTime = System.nanoTime()
-            physicsSpace.update(fixedTimestep, 0)
+            physicsSpaceManager.update(fixedTimestep) // This will internally step the physics
             val endTime = System.nanoTime()
             EngineStats.physicsStepTime.set(endTime - startTime)
             accumulator -= fixedTimestep
@@ -224,10 +216,10 @@ class Physics3D : IPhysics3D, KoinComponent {
 
         if (debugEnabled) {
             val debugColor = JomlVector3f(0f, 1f, 0f)
-            physicsSpace.rigidBodyList.forEach { body ->
+            physicsSpaceManager.getRigidBodyList().forEach { body ->
                 val location = body.getPhysicsLocation(null)
                 val rotation = body.getPhysicsRotation(null)
-                
+
                 val pos = JomlVector3f(location.x, location.y, location.z)
                 val rot = Quaternionf(rotation.getX(), rotation.getY(), rotation.getZ(), rotation.getW())
 
@@ -357,6 +349,6 @@ class Physics3D : IPhysics3D, KoinComponent {
     }
 
     override fun destroy() {
-        physicsSpace.destroy()
+        physicsSpaceManager.destroy()
     }
 }

@@ -24,7 +24,6 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.JoystickListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
@@ -55,7 +54,6 @@ val engineModule = module {
     single { AssimpLoader() }
     single { ResourceManager(get(), get(), get(), get()) }
     single { PoseSerializer() }
-    single { NativeLibraryLoader() }
 
     single { DebugRenderer() }
     single { PickingRenderer() }
