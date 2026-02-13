@@ -38,8 +38,8 @@ class Engine : KoinComponent {
             updateRunningState(dt, imguiLayer)
         }
 
-        splashScreen.update(dt, state)
         if (!splashScreen.isDestroyed) {
+            splashScreen.update(dt, state)
             splashScreen.render(dt, imguiLayer, state)
         }
     }
