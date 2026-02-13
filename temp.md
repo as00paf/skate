@@ -121,10 +121,9 @@ Change default binding for tools to 1,2,3,4 ...
 Make PlayerStateManager a component ? Should be able to pair animation with state
 Verify animation blending
 Verify physics and debug
-Allow Rendering of RigidBody3D and BoxCollider3D
 
 UI Review :
-Add option for debug render with lines for models
+Allow Rendering of RigidBody3D and BoxCollider3D
 Fix dockspace
 EditorCamera ImGui, presets
 Make console text selectable/copyable

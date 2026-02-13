@@ -1,9 +1,8 @@
 package com.pafoid.skate.engine.physics3d.adapter
 
 import com.jme3.bullet.PhysicsSpace
-import com.jme3.bullet.collision.shapes.BoxCollisionShape
-import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.BodyType
@@ -17,8 +16,8 @@ import org.joml.Quaternionf
  * This class handles the integration between GameObjects and the physics space,
  * including adding, removing, and updating physics representations of GameObjects.
  */
-class GameObjectPhysicsAdapter {
-    
+class GameObjectPhysicsAdapter(private val physicsObjectCreator: IPhysicsObjectCreator = DefaultPhysicsObjectCreator()) {
+
     /**
      * Adds a GameObject to the physics simulation.
      * It inspects the GameObject for [RigidBody3D] and [Collider3D] components,
@@ -46,7 +45,7 @@ class GameObjectPhysicsAdapter {
 
             if (rb.rawBody == null) {
                 val colliders = go.components.filterIsInstance<Collider3D>()
-                val compound = CompoundCollisionShape()
+                val compound = physicsObjectCreator.createCompoundCollisionShape()
 
                 colliders.forEach { c ->
                     val shape = c.createShape()
@@ -55,12 +54,12 @@ class GameObjectPhysicsAdapter {
 
                 // If no colliders, provide a default box
                 if (colliders.isEmpty()) {
-                    val shape = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
+                    val shape = physicsObjectCreator.createBoxCollisionShape(JmeVector3f(1f, 1f, 1f))
                     shape.margin = 0.04f
                     compound.addChildShape(shape, JmeVector3f(0f, 0f, 0f))
                 }
 
-                val body = PhysicsRigidBody(compound, desiredMass)
+                val body = physicsObjectCreator.createRigidBody(compound, desiredMass)
                 rb.rawBody = body
                 update(go, physicsSpace) // Initial property sync
 
@@ -115,7 +114,7 @@ class GameObjectPhysicsAdapter {
             Math.toRadians(rot.y.toDouble()).toFloat(),
             Math.toRadians(rot.z.toDouble()).toFloat()
         )
-        body.setPhysicsRotation(com.jme3.math.Quaternion(q.x, q.y, q.z, q.w))
+        body.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
     }
 
     /**
