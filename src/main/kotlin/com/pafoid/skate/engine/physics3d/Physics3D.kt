@@ -3,17 +3,14 @@ package com.pafoid.skate.engine.physics3d
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
-import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
-import com.jme3.bullet.collision.shapes.CylinderCollisionShape
-import com.jme3.bullet.collision.shapes.HullCollisionShape
-import com.jme3.bullet.collision.shapes.MeshCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.physics3d.debug.PhysicsDebugger
 import com.pafoid.skate.engine.physics3d.space.PhysicsSpaceManager
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -23,11 +20,13 @@ import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import org.joml.Quaternionf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.koin.core.component.get
 
 class Physics3D : IPhysics3D, KoinComponent {
-    private val debugRenderer: DebugRenderer by inject()
     private val nativeLibraryLoader: NativeLibraryLoader = NativeLibraryLoader()
+
+    private val debugRenderer: DebugRenderer by inject()
+    private val physicsDebugger: PhysicsDebugger = PhysicsDebugger(debugRenderer)
+
     private val physicsSpaceManager: PhysicsSpaceManager
 
     private var accumulator = 0f
@@ -36,7 +35,7 @@ class Physics3D : IPhysics3D, KoinComponent {
     /**
      * Toggles the rendering of debug wireframes for physics colliders.
      */
-    override var debugEnabled = false
+    override var debugEnabled: Boolean = false
 
     init {
         this.nativeLibraryLoader.loadNativeLibrary()
@@ -215,138 +214,10 @@ class Physics3D : IPhysics3D, KoinComponent {
         }
 
         if (debugEnabled) {
-            val debugColor = JomlVector3f(0f, 1f, 0f)
-            physicsSpaceManager.getRigidBodyList().forEach { body ->
-                val location = body.getPhysicsLocation(null)
-                val rotation = body.getPhysicsRotation(null)
-
-                val pos = JomlVector3f(location.x, location.y, location.z)
-                val rot = Quaternionf(rotation.getX(), rotation.getY(), rotation.getZ(), rotation.getW())
-
-                debugDrawShape(body.collisionShape, pos, rot, debugColor)
-            }
+            physicsDebugger.drawDebugWireframes(physicsSpaceManager.getPhysicsSpace())
         }
     }
     
-    /**
-     * Dispatches the correct debug drawing method based on the [CollisionShape]'s type.
-     *
-     * @param shape The collision shape to draw.
-     * @param pos The world position of the shape.
-     * @param rot The world rotation of the shape.
-     * @param color The color to use for drawing.
-     */
-    private fun debugDrawShape(shape: CollisionShape, pos: JomlVector3f, rot: Quaternionf, color: JomlVector3f) {
-        when (shape) {
-            is BoxCollisionShape -> drawBoxCollisionShape(shape, pos, rot, color)
-            is CylinderCollisionShape -> drawCylinderCollisionShape(shape, pos, rot, color)
-            is CompoundCollisionShape -> drawCompoundCollisionShape(shape, pos, rot, color)
-            is HullCollisionShape, is MeshCollisionShape -> drawComplexShapes(shape, pos, rot, color)
-        }
-    }
-
-    /**
-     * Draws a placeholder for complex collision shapes (like meshes or hulls) since rendering them
-     * vertex-by-vertex would be too slow for a simple debug view.
-     *
-     * @param shape The complex collision shape.
-     * @param pos The world position.
-     * @param rot The world rotation.
-     * @param color The drawing color.
-     */
-    private fun drawComplexShapes(
-        shape: CollisionShape,
-        pos: JomlVector3f,
-        rot: Quaternionf,
-        color: JomlVector3f
-    ) {
-        // Complex shapes - just draw a small cross for now to indicate position
-        debugRenderer.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
-        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
-        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
-    }
-
-    /**
-     * Recursively draws the child shapes of a [CompoundCollisionShape].
-     *
-     * @param shape The compound shape to draw.
-     * @param pos The world position of the compound shape's parent.
-     * @param rot The world rotation of the compound shape's parent.
-     * @param color The drawing color.
-     */
-    private fun drawCompoundCollisionShape(
-        shape: CompoundCollisionShape,
-        pos: JomlVector3f,
-        rot: Quaternionf,
-        color: JomlVector3f
-    ) {
-        shape.listChildren().forEach { child ->
-            val childShape = child.shape
-            val childOffset = child.copyOffset(null)
-            val childRot = child.copyRotation(null)
-
-            // Child's local to world: WorldPos + WorldRot * (ChildOffset + ChildRot * LocalPoint)
-            // We can combine them into a single transform
-            val combinedRot =
-                Quaternionf(rot).mul(Quaternionf(childRot.getX(), childRot.getY(), childRot.getZ(), childRot.getW()))
-            val combinedPos = JomlVector3f(childOffset.x, childOffset.y, childOffset.z)
-            rot.transform(combinedPos)
-            combinedPos.add(pos)
-
-            debugDrawShape(childShape, combinedPos, combinedRot, color)
-        }
-    }
-
-    /**
-     * Draws a wireframe representation of a [CylinderCollisionShape].
-     *
-     * @param shape The cylinder shape.
-     * @param pos The world position.
-     * @param rot The world rotation.
-     * @param color The drawing color.
-     */
-    private fun drawCylinderCollisionShape(shape: CylinderCollisionShape, pos: JomlVector3f, rot: Quaternionf, color: JomlVector3f) {
-        val axis = shape.axis
-        val radius: Float
-        val height: Float
-        val halfExtents = shape.getHalfExtents(null)
-
-        when (axis) {
-            0 -> { // X-axis is height
-                radius = halfExtents.y
-                height = halfExtents.x * 2f
-            }
-
-            1 -> { // Y-axis is height
-                radius = halfExtents.x
-                height = halfExtents.y * 2f
-            }
-
-            2 -> { // Z-axis is height
-                radius = halfExtents.x
-                height = halfExtents.z * 2f
-            }
-
-            else -> {
-                radius = halfExtents.x
-                height = halfExtents.y * 2f
-            }
-        }
-        debugRenderer.addCylinder3D(pos, rot, radius, height, axis, color)
-    }
-
-    /**
-     * Draws a wireframe representation of a [BoxCollisionShape].
-     *
-     * @param shape The box shape.
-     * @param pos The world position.
-     * @param rot The world rotation.
-     * @param color The drawing color.
-     */
-    private fun drawBoxCollisionShape(shape: BoxCollisionShape, pos: JomlVector3f, rot: Quaternionf, color: JomlVector3f) {
-        val halfExtents = shape.getHalfExtents(null)
-        debugRenderer.addBox3D(pos, rot, JomlVector3f(halfExtents.x, halfExtents.y, halfExtents.z), color)
-    }
 
     override fun destroy() {
         physicsSpaceManager.destroy()
