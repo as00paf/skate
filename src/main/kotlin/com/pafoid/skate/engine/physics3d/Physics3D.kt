@@ -2,23 +2,20 @@ package com.pafoid.skate.engine.physics3d
 
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.collision.PhysicsRayTestResult
-import com.jme3.bullet.collision.shapes.BoxCollisionShape
-import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.physics3d.adapter.GameObjectPhysicsAdapter
 import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.debug.PhysicsDebugger
 import com.pafoid.skate.engine.physics3d.space.PhysicsSpaceManager
 import com.pafoid.skate.engine.physics3d.stepper.PhysicsStepper
-import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
-import org.joml.Quaternionf
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -30,6 +27,7 @@ class Physics3D : IPhysics3D, KoinComponent {
 
     private val physicsSpaceManager: PhysicsSpaceManager
     private val physicsStepper: PhysicsStepper
+    private val gameObjectPhysicsAdapter: GameObjectPhysicsAdapter
 
     /**
      * Toggles the rendering of debug wireframes for physics colliders.
@@ -42,6 +40,22 @@ class Physics3D : IPhysics3D, KoinComponent {
         physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
         this.physicsSpaceManager = PhysicsSpaceManager(physicsSpace)
         this.physicsStepper = PhysicsStepper(physicsSpace)
+        this.gameObjectPhysicsAdapter = GameObjectPhysicsAdapter()
+    }
+
+    /**
+     * Steps the physics simulation forward by the given delta time.
+     * It uses a fixed timestep accumulator to ensure deterministic physics behavior
+     * regardless of the rendering frame rate.
+     *
+     * @param dt The time elapsed since the last frame in seconds.
+     */
+    override fun update(dt: Float) {
+        physicsStepper.stepPhysics(dt)
+
+        if (debugEnabled) {
+            physicsDebugger.drawDebugWireframes(physicsSpaceManager.getPhysicsSpace())
+        }
     }
 
     /**
@@ -93,54 +107,7 @@ class Physics3D : IPhysics3D, KoinComponent {
      * @param go The GameObject to add.
      */
     override fun add(go: GameObject) {
-        val rb = go.getComponent<RigidBody3D>()
-        if (rb != null) {
-            val desiredMass = if (rb.bodyType == BodyType.Static) 0f else rb.mass
-
-            // Check if we need to rebuild due to mass change
-            if (rb.rawBody != null) {
-                if (rb.rawBody?.mass != desiredMass) {
-                    physicsSpaceManager.remove(go)
-                    rb.rawBody = null
-                } else {
-                    // Body exists and mass is correct, just sync properties
-                    update(go)
-                    return
-                }
-            }
-
-            if (rb.rawBody == null) {
-                val colliders = go.components.filterIsInstance<Collider3D>()
-                val compound = CompoundCollisionShape()
-
-                colliders.forEach { c ->
-                    val shape = c.createShape()
-                    compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
-                }
-
-                // If no colliders, provide a default box
-                if (colliders.isEmpty()) {
-                    val shape = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
-                    shape.margin = 0.04f
-                    compound.addChildShape(shape, JmeVector3f(0f, 0f, 0f))
-                }
-
-                val body = PhysicsRigidBody(compound, desiredMass)
-                rb.rawBody = body
-                update(go) // Initial property sync
-
-                if (rb.bodyType == BodyType.Kinematic) {
-                    body.isKinematic = true
-                }
-
-                if (rb.useCCD) {
-                    body.setCcdMotionThreshold(0.1f)
-                    body.setCcdSweptSphereRadius(0.1f)
-                }
-
-                physicsSpaceManager.add(go)
-            }
-        }
+        gameObjectPhysicsAdapter.add(go, physicsSpaceManager.getPhysicsSpace())
     }
 
     /**
@@ -150,36 +117,7 @@ class Physics3D : IPhysics3D, KoinComponent {
      * @param go The GameObject to update.
      */
     override fun update(go: GameObject) {
-        val rb = go.getComponent<RigidBody3D>()
-        val body = rb?.rawBody ?: return
-        syncBodyProperties(body, rb, go)
-    }
-
-    /**
-     * Synchronizes properties from our component-based representation ([RigidBody3D], [GameObject] transform)
-     * to the underlying Bullet [PhysicsRigidBody].
-     *
-     * @param body The raw Bullet rigid body to update.
-     * @param rb The component containing the desired physics properties (friction, damping).
-     * @param go The game object providing the transform (position, rotation, scale).
-     */
-    private fun syncBodyProperties(body: PhysicsRigidBody, rb: RigidBody3D, go: GameObject) {
-        val transform = go.getComponent<Transform>() ?: return
-        val trans = transform.translation
-        val rot = transform.rotation
-        val scale = transform.scale
-
-        body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
-        body.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
-        body.friction = rb.friction
-        body.setDamping(rb.linearDamping, rb.angularDamping)
-
-        val q = Quaternionf().rotationXYZ(
-            Math.toRadians(rot.x.toDouble()).toFloat(),
-            Math.toRadians(rot.y.toDouble()).toFloat(),
-            Math.toRadians(rot.z.toDouble()).toFloat()
-        )
-        body.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
+        gameObjectPhysicsAdapter.update(go, physicsSpaceManager.getPhysicsSpace())
     }
 
     /**
@@ -189,28 +127,8 @@ class Physics3D : IPhysics3D, KoinComponent {
      * @param go The GameObject to remove.
      */
     override fun remove(go: GameObject) {
-        val rb = go.getComponent<RigidBody3D>()
-        rb?.rawBody?.let {
-            physicsSpaceManager.remove(go)
-            rb.rawBody = null
-        }
+        gameObjectPhysicsAdapter.remove(go, physicsSpaceManager.getPhysicsSpace())
     }
-
-    /**
-     * Steps the physics simulation forward by the given delta time.
-     * It uses a fixed timestep accumulator to ensure deterministic physics behavior
-     * regardless of the rendering frame rate.
-     *
-     * @param dt The time elapsed since the last frame in seconds.
-     */
-    override fun update(dt: Float) {
-        physicsStepper.stepPhysics(dt)
-
-        if (debugEnabled) {
-            physicsDebugger.drawDebugWireframes(physicsSpaceManager.getPhysicsSpace())
-        }
-    }
-    
 
     override fun destroy() {
         physicsSpaceManager.destroy()
