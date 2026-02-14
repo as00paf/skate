@@ -11,4 +11,6 @@ data class MotionData(
     val speed: Float,
     val targetYaw: Float,
     val rotationSpeed: Float,
+    val isGrounded: Boolean,
+    val wasGrounded: Boolean,
 )

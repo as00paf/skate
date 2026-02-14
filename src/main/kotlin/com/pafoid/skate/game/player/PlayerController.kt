@@ -32,8 +32,11 @@ class PlayerController : Component(), KoinComponent {
     var rotationSpeed = 10f
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
+    private val transform: Transform? by lazy { gameObject.getComponent<Transform>() }
     private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
+
     private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
+    private val physics3d: IPhysics3D? by lazy { sceneManager.currentScene?.physics3d }
 
     private var lastVelocity = Vector3f()
     private var wasGrounded = false
@@ -54,6 +57,8 @@ class PlayerController : Component(), KoinComponent {
     override fun update(dt: Float) {
         val body = rb ?: return
         val camera = camera ?: return
+        val physics3d = physics3d ?: return
+        val transform = transform ?: return
 
         // Detect Input direction
         rawInput.set(inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1))
@@ -63,14 +68,20 @@ class PlayerController : Component(), KoinComponent {
 
         // Move if input is above threshold
         if (smoothedInput.length() > threshold) {
+            val isGrounded = checkIfGrounded(physics3d, transform)
+
             val motionData = MotionData(
                 direction = getDesiredMoveDirection(camera.getForwardAndRight(), smoothedInput),
                 speed = walkSpeed,
                 targetYaw = atan2(desiredMoveDirection.x, desiredMoveDirection.z),
-                rotationSpeed = dt * rotationSpeed
+                rotationSpeed = dt * rotationSpeed,
+                isGrounded = isGrounded,
+                wasGrounded = wasGrounded
             )
 
             applyMotion(motionData, body)
+
+            wasGrounded = isGrounded
         }
     }
 
@@ -127,14 +138,8 @@ class PlayerController : Component(), KoinComponent {
      * Handles jump input, applying a vertical impulse for an ollie.
      */
     fun handleJumping(isGrounded: Boolean) {
-        var jump = inputProvider.keyBeginPress(GLFW.GLFW_KEY_SPACE)
-
         // Controller (Button A/Cross)
-        inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)?.let { buttons ->
-            if (buttons.size > GamepadConstants.BUTTON_A && buttons[GamepadConstants.BUTTON_A]) {
-                jump = true
-            }
-        }
+        val jump = inputProvider.buttonPressed(GLFW.GLFW_JOYSTICK_1, GamepadConstants.BUTTON_A)
 
         if (jump && isGrounded) {
             rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
