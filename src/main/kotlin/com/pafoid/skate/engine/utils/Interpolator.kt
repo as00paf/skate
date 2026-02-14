@@ -199,4 +199,13 @@ object Interpolator {
         
         return dest
     }
+
+    fun lerpAngle(current: Float, target: Float, t: Float): Float {
+        var delta = target - current
+
+        while (delta > Math.PI) delta -= (2 * Math.PI).toFloat()
+        while (delta < -Math.PI) delta += (2 * Math.PI).toFloat()
+
+        return current + delta * t
+    }
 }

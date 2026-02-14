@@ -1,15 +1,20 @@
 package com.pafoid.skate.engine.physics3d.components
 
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
+import com.pafoid.skate.engine.physics3d.toQuaternion
+import com.pafoid.skate.engine.physics3d.toQuaternionf
+import com.pafoid.skate.engine.physics3d.toVector3f
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Quaternionf
+import org.joml.Vector3f
 
 /**
  * Represents a physics rigid body component that can be attached to a GameObject.
@@ -60,6 +65,10 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
             field = value
             rawBody?.setDamping(linearDamping, value)
         }
+
+    override fun start() {
+        rawBody?.setAngularFactor(JmeVector3f(0f, 1f, 0f))
+    }
 
     /**
      * The raw JBullet PhysicsRigidBody instance.
@@ -165,4 +174,24 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
         set(value) {
             rawBody?.setAngularVelocity(JmeVector3f(value.x, value.y, value.z))
         }
+
+    @Transient
+    private val rotation: Quaternion = Quaternion()
+
+    override fun getRotation(): Quaternionf {
+        rawBody?.getPhysicsRotation(rotation)
+        return rotation.toQuaternionf()
+    }
+
+    override fun setRotation(rotation: Quaternionf) {
+        rawBody?.setPhysicsRotation(rotation.toQuaternion())
+    }
+
+    @Transient
+    private val position: JmeVector3f = JmeVector3f()
+
+    override fun getWorldPosition(): Vector3f {
+        rawBody?.getPhysicsLocation(position)
+        return position.toVector3f()
+    }
 }

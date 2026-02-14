@@ -111,7 +111,7 @@ class Animator : Component(), KoinComponent {
         val stateManager = gameObject.getComponent<PlayerStateManager>() ?: return
         when (stateManager.currentState) {
             PlayerState.WALKING -> play("walk")
-            else -> play("idle")
+            else -> play("idle", 0.4f)
         }
     }
 

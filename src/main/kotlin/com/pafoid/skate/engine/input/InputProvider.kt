@@ -17,7 +17,7 @@ class InputProvider(
     override fun isJoystickPresent(jid: Int): Boolean = joystickListener.isJoystickPresent(jid)
     override fun getAxes(jid: Int): FloatArray? = joystickListener.getAxes(jid)
     override fun getMovementVector(jid: Int): Vector3f {
-        val threshold = 0.25f
+        val threshold = 0.15f
         var moveX = 0f
         var moveZ = 0f
 
@@ -29,11 +29,19 @@ class InputProvider(
         }
 
         val moveInput = Vector3f(moveX, 0f, moveZ)
-        if (moveInput.length() > 1f) moveInput.normalize()
+        val magnitude = moveInput.length()
 
-        val result = if (moveInput.length() > threshold) moveInput else Vector3f()
+        if (magnitude < threshold) {
+            return Vector3f()
+        }
 
-        return result
+        // Normalize direction
+        val direction = Vector3f(moveInput).normalize()
+
+        // Re-scale magnitude so it smoothly maps from [threshold → 1] to [0 → 1]
+        val scaledMagnitude = (magnitude - threshold) / (1f - threshold)
+
+        return direction.mul(scaledMagnitude)
     }
     override fun getButtons(jid: Int): BooleanArray? = joystickListener.getButtons(jid)
     override fun buttonPressed(jid: Int, button: Int): Boolean = joystickListener.buttonPressed(jid, button)

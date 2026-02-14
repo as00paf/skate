@@ -35,7 +35,7 @@ class Skater(
         // Parenting: Skater follows Skateboard
         //skate?.addChild(this)
 
-        transformComponent.translation.set(Vector3f(position.x, position.y + 0.0425f, position.z))
+        transformComponent.translation.set(position)
         transformComponent.rotation.set(rotation) // Face sideways for skating
         transformComponent.scale.set(scale) // Now in Meters
         addComponent(transformComponent)
@@ -44,15 +44,15 @@ class Skater(
         addComponent(animator)
         addComponent(RigidBody3D(mass).apply {
             useCCD = true
-            friction = 1.2f
+            friction = 2f
             linearDamping = 0.2f
             angularDamping = 0.3f
         })
         addComponent(BoxCollider3D(hitBoxSize))
-        addComponent(BoneOverride())
-        addComponent(PoseGizmo())
         addComponent(PlayerController())
         addComponent(PlayerStateManager())
+        addComponent(BoneOverride())
+        addComponent(PoseGizmo())
     }
 
 }

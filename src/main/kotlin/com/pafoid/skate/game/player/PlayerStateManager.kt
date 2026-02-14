@@ -20,6 +20,7 @@ class PlayerStateManager : Component() {
     private val sceneManager: SceneManager by inject()
 
     private val playerController: PlayerController? by lazy { gameObject.getComponent<PlayerController>() }
+    private val rigidBody3D: RigidBody3D? by lazy { gameObject.getComponent<RigidBody3D>() }
 
     var currentState: PlayerState = PlayerState.IDLE
         private set
@@ -45,12 +46,10 @@ class PlayerStateManager : Component() {
 
     }
 
-    private val threshold = 0f
-
     private fun handleOffBoardControls(dt: Float) {
-        val speed = gameObject.getComponent<RigidBody3D>()?.linearVelocity?.length() ?: 0.0f
-        val intent = (gameObject.getComponent<PlayerController>()?.desiredMoveDirection?.length() ?: 0f)
-        val hasIntent = intent > threshold
+        val speed = rigidBody3D?.linearVelocity?.length() ?: 0.0f
+        val intent = playerController?.desiredMoveDirection?.length() ?: 0f
+        val hasIntent = intent > 0.1f
         val newState =
             if (speed > 0.2f && hasIntent)
                 PlayerState.WALKING
@@ -60,6 +59,16 @@ class PlayerStateManager : Component() {
             }
 
         transitionToState(newState)
+    }
+
+    fun transitionToState(newState: PlayerState) {
+        if (currentState == newState) return
+
+        logger.logEngine(
+            "Transitioning from ${currentState::class.simpleName} to ${newState::class.simpleName}",
+            LogLevel.ACTION
+        )
+        currentState = newState
     }
 
     private fun checkIfGrounded() {
@@ -77,13 +86,6 @@ class PlayerStateManager : Component() {
         // 1.00f is one meter
         val rayEnd = Vector3f(localDown).mul(1.00f).add(rayStart)
         isGrounded = scene.physics3d.raycastClosest(rayStart, rayEnd) != null
-    }
-
-    fun transitionToState(newState: PlayerState) {
-        if (currentState == newState) return
-
-        logger.logEngine("Transitioning from ${currentState::class.simpleName} to ${newState::class.simpleName}", LogLevel.ACTION)
-        currentState = newState
     }
 
     override fun imgui() {

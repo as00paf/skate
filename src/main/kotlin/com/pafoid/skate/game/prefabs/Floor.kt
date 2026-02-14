@@ -23,7 +23,7 @@ class Floor(
 
         addComponent(RenderComponent(
             model = texturedModel,
-            textureScale = 20.0f
+            textureScale = 100.0f
         ))
         val groundRb = RigidBody3D(1f)
         groundRb.bodyType = BodyType.Static

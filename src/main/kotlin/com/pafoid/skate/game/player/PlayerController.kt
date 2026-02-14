@@ -8,10 +8,15 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
+import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.utils.Interpolator.lerpAngle
+import org.joml.Matrix4f
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
+import kotlin.math.atan2
 
 class PlayerController : Component(), KoinComponent {
     private val inputProvider: IInputProvider by inject()
@@ -26,6 +31,7 @@ class PlayerController : Component(), KoinComponent {
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
     private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
+    private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
 
     private var lastVelocity = Vector3f()
 
@@ -36,18 +42,22 @@ class PlayerController : Component(), KoinComponent {
         stateManager ?: run { logger.logEngine("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
     }
 
-    override fun update(dt: Float) {
-        val scene = sceneManager.currentScene ?: return
-        val camera = scene.camera
+    private val smoothedInput = Vector3f()
+    private val rawInput = Vector3f()
 
+    override fun update(dt: Float) {
         // Detect Input direction
-        val moveInput = inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1)
+        rawInput.set(inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1))
+
+        // Exponential smoothing
+        val smoothing = 12f
+        smoothedInput.lerp(rawInput, dt * smoothing)
 
         // Move if input is above threshold
-        val threshold = 0.5f
-        if (moveInput.length() > threshold) {
-            // Calculate movement relative to camera
-            val viewInv = camera.getInverseView()
+        val threshold = 0.15f
+        if (smoothedInput.length() > threshold) {
+            // Calculate movement relative to camera (should be moved out of here and vectors should be reused)
+            val viewInv = camera?.getInverseView() ?: Matrix4f()
             val camForward = Vector3f(0f, 0f, -1f)
             viewInv.transformDirection(camForward)
             camForward.y = 0f
@@ -59,8 +69,8 @@ class PlayerController : Component(), KoinComponent {
             camRight.normalize()
 
             desiredMoveDirection.zero()
-            camForward.mul(moveInput.z, desiredMoveDirection)
-            val rightPart = Vector3f(camRight).mul(moveInput.x)
+            camForward.mul(smoothedInput.z, desiredMoveDirection)
+            val rightPart = Vector3f(camRight).mul(smoothedInput.x)
             desiredMoveDirection.add(rightPart)
 
             desiredMoveDirection.normalize()
@@ -68,12 +78,24 @@ class PlayerController : Component(), KoinComponent {
             val body = rb ?: return
             val velocity = body.linearVelocity
 
-            val targetSpeed = walkSpeed
-            velocity.x = desiredMoveDirection.x * targetSpeed
-            velocity.z = desiredMoveDirection.z * targetSpeed
+            velocity.x = desiredMoveDirection.x * walkSpeed
+            velocity.z = desiredMoveDirection.z * walkSpeed
 
             body.linearVelocity = velocity
             lastVelocity.set(velocity)
+
+            // --- Rotation ---
+            val targetYaw = atan2(desiredMoveDirection.x, desiredMoveDirection.z)
+            val rotation = body.getRotation()
+            val currentYaw = atan2(
+                2f * (rotation.w * rotation.y + rotation.x * rotation.z),
+                1f - 2f * (rotation.y * rotation.y + rotation.z * rotation.z)
+            )
+            val rotationSpeed = 10f
+            val newYaw = lerpAngle(currentYaw, targetYaw, dt * rotationSpeed)
+
+            val newRotation = Quaternionf().rotateY(newYaw)
+            body.setRotation(newRotation)
         }
     }
 
