@@ -22,7 +22,7 @@ class PlayerController : Component(), KoinComponent {
     var flickSensitivity = 5.0f
     var catchStrength = 0.5f
 
-    val walkSpeed = 3f
+    val walkSpeed = 2f
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
     private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }

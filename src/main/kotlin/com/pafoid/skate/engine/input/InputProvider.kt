@@ -4,10 +4,7 @@ import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.input.listeners.JoystickListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import org.joml.Vector3f
-import org.lwjgl.glfw.GLFW.GLFW_CURSOR
-import org.lwjgl.glfw.GLFW.GLFW_CURSOR_DISABLED
-import org.lwjgl.glfw.GLFW.glfwGetCurrentContext
-import org.lwjgl.glfw.GLFW.glfwGetInputMode
+import org.lwjgl.glfw.GLFW.*
 
 class InputProvider(
     private val joystickListener: JoystickListener,
@@ -17,7 +14,7 @@ class InputProvider(
     override fun isJoystickPresent(jid: Int): Boolean = joystickListener.isJoystickPresent(jid)
     override fun getAxes(jid: Int): FloatArray? = joystickListener.getAxes(jid)
     override fun getMovementVector(jid: Int): Vector3f {
-        val threshold = 0.5f
+        val threshold = 0.4f
         var moveX = 0f
         var moveZ = 0f
 
