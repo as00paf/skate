@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.engine.utils.Interpolator.lerpAngle
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -28,7 +29,8 @@ class PlayerController : Component(), KoinComponent {
     var flickSensitivity = 5.0f
     var catchStrength = 0.5f
 
-    var walkSpeed = 2f
+    var walkSpeed = 3f
+    var runSpeed = 8.5f
     var rotationSpeed = 10f
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
@@ -38,7 +40,7 @@ class PlayerController : Component(), KoinComponent {
     private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
     private val physics3d: IPhysics3D? by lazy { sceneManager.currentScene?.physics3d }
 
-    private var lastVelocity = Vector3f()
+    private var lastSpeed = 1f
     private var wasGrounded = false
 
     val desiredMoveDirection = Vector3f()
@@ -62,17 +64,18 @@ class PlayerController : Component(), KoinComponent {
 
         // Detect Input direction
         rawInput.set(inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1))
+        smoothedInput.lerp(rawInput, dt * smoothing) // Exponential smoothing
 
-        // Exponential smoothing
-        smoothedInput.lerp(rawInput, dt * smoothing)
+        val isGrounded = checkIfGrounded(physics3d, transform)
+
+        val isSprintPressed = inputProvider.buttonPressed(GLFW.GLFW_JOYSTICK_1, GamepadConstants.BUTTON_RB)
 
         // Move if input is above threshold
         if (smoothedInput.length() > threshold) {
-            val isGrounded = checkIfGrounded(physics3d, transform)
-
+            val speed = getDesiredSpeed(isSprintPressed, dt)
             val motionData = MotionData(
                 direction = getDesiredMoveDirection(camera.getForwardAndRight(), smoothedInput),
-                speed = walkSpeed,
+                speed = speed,
                 targetYaw = atan2(desiredMoveDirection.x, desiredMoveDirection.z),
                 rotationSpeed = dt * rotationSpeed,
                 isGrounded = isGrounded,
@@ -80,8 +83,16 @@ class PlayerController : Component(), KoinComponent {
             )
 
             applyMotion(motionData, body)
+        }
 
-            wasGrounded = isGrounded
+        wasGrounded = isGrounded
+    }
+
+    private fun getDesiredSpeed(isSprintPressed: Boolean, dt: Float): Float {
+        return if (isSprintPressed) {
+            Interpolator.lerp(lastSpeed, runSpeed, dt * walkSpeed / 2)
+        } else {
+            Interpolator.lerp(lastSpeed, walkSpeed, dt * walkSpeed)
         }
     }
 
@@ -101,7 +112,7 @@ class PlayerController : Component(), KoinComponent {
         velocity.z = data.direction.z * data.speed
 
         body.linearVelocity = velocity
-        lastVelocity.set(velocity)
+        lastSpeed = data.speed
 
         val rotation = body.getRotation()
         val currentYaw = atan2(

@@ -102,7 +102,7 @@ class Animator : Component(), KoinComponent {
         isPlaying = true
     }
 
-    fun play(name: String, blend: Float = 0.2f) {
+    fun play(name: String, blend: Float = 1f) {
         val anim = animations.find { it.name.contains(name, ignoreCase = true) } ?: return
         play(anim, blend)
     }
@@ -111,7 +111,8 @@ class Animator : Component(), KoinComponent {
         val stateManager = gameObject.getComponent<PlayerStateManager>() ?: return
         when (stateManager.currentState) {
             PlayerState.WALKING -> play("walk")
-            else -> play("idle", 0.4f)
+            PlayerState.RUNNING -> play("run", 4f)
+            else -> play("idle")
         }
     }
 

@@ -51,9 +51,13 @@ class PlayerStateManager : Component() {
         val intent = playerController?.desiredMoveDirection?.length() ?: 0f
         val hasIntent = intent > 0.1f
         val newState =
-            if (speed > 0.2f && hasIntent)
-                PlayerState.WALKING
-            else {
+            if (speed > 0.2f && hasIntent) {
+                if (speed > 5f) {
+                    PlayerState.RUNNING
+                } else {
+                    PlayerState.WALKING
+                }
+            } else {
                 //logger.logEngine("Staying idle, intent : $intent, speed: $speed")
                 PlayerState.IDLE
             }

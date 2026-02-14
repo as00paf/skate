@@ -53,7 +53,7 @@ FALLING_IDLE,
 
 ---
 
-# STEP 2 — Derive Movement Data From Bullet
+# STEP 2 — Derive Movement Data From Bullet (KIND OF DONE)
 
 Inside PlayerController update:
 
@@ -93,7 +93,7 @@ isGrounded = isGrounded
 
 ---
 
-# STEP 3 — Running Logic
+# STEP 3 — Running Logic (DONE)
 
 val isRunning = input.sprintPressed (Left Trigger)
 
