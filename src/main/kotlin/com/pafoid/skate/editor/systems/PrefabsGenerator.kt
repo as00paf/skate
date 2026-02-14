@@ -23,7 +23,11 @@ import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.game.prefabs.*
+import com.pafoid.skate.game.prefabs.Floor
+import com.pafoid.skate.game.prefabs.MaterialType
+import com.pafoid.skate.game.prefabs.Skateboard
+import com.pafoid.skate.game.prefabs.Skater
+import com.pafoid.skate.game.prefabs.Tile
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 
@@ -321,7 +325,8 @@ class PrefabsGenerator(
     }
 
     private val animations = listOf(
-        Assets.Animations.IDLE,
+        Assets.Animations.IDLE_0,
+        Assets.Animations.IDLE_1,
         Assets.Animations.JUMP,
         Assets.Animations.WALKING,
         Assets.Animations.RUNNING,

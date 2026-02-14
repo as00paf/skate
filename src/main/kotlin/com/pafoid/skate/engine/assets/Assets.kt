@@ -54,8 +54,14 @@ object Assets {
         const val TEXTURES = "assets/textures"
     }
     object Animations {
-        const val IDLE = "assets/characters/animations/idle.fbx"
+        const val IDLE_0 = "assets/characters/animations/idle_0.fbx"
+        const val IDLE_1 = "assets/characters/animations/idle_1.fbx"
+        const val IDLE_PHONE = "assets/characters/animations/idle phone.fbx"
+
         const val JUMP = "assets/characters/animations/jump.fbx"
+        const val FALLING = "assets/characters/animations/falling to roll.fbx"
+        const val FALLING_IDLE = "assets/characters/animations/falling idle.fbx"
+        const val LANDING = "assets/characters/animations/hard landing.fbx"
         const val WALKING = "assets/characters/animations/walking.fbx"
         const val RUNNING = "assets/characters/animations/running.fbx"
 
@@ -68,5 +74,7 @@ object Assets {
         const val RIGHT_TURN_90 = "assets/characters/animations/right turn 90.fbx"
         const val RIGHT_STRAFE = "assets/characters/animations/right strafe.fbx"
         const val RIGHT_STRAFE_WALKING = "assets/characters/animations/right strafe walking.fbx"
+
+
     }
 }
