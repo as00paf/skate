@@ -128,3 +128,5 @@ Fix dockspace
 EditorCamera ImGui, presets
 Make console text selectable/copyable
 Fix button to reset to bind pose
+
+CHECK RENDERER DUPLICATION
