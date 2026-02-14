@@ -29,6 +29,7 @@ class PlayerController : Component(), KoinComponent {
     var catchStrength = 0.5f
 
     var walkSpeed = 2f
+    var rotationSpeed = 10f
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
     private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
@@ -37,7 +38,8 @@ class PlayerController : Component(), KoinComponent {
     private var lastVelocity = Vector3f()
     private var wasGrounded = false
 
-    var desiredMoveDirection = Vector3f()
+    val desiredMoveDirection = Vector3f()
+    private val desiredRotation = Quaternionf()
 
     override fun start() {
         rb ?: run { logger.logEngine("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }
@@ -61,26 +63,14 @@ class PlayerController : Component(), KoinComponent {
 
         // Move if input is above threshold
         if (smoothedInput.length() > threshold) {
-
             val motionData = MotionData(
                 direction = getDesiredMoveDirection(camera.getForwardAndRight(), smoothedInput),
-                speed = walkSpeed
+                speed = walkSpeed,
+                targetYaw = atan2(desiredMoveDirection.x, desiredMoveDirection.z),
+                rotationSpeed = dt * rotationSpeed
             )
 
             applyMotion(motionData, body)
-
-            // --- Rotation ---
-            val targetYaw = atan2(desiredMoveDirection.x, desiredMoveDirection.z)
-            val rotation = body.getRotation()
-            val currentYaw = atan2(
-                2f * (rotation.w * rotation.y + rotation.x * rotation.z),
-                1f - 2f * (rotation.y * rotation.y + rotation.z * rotation.z)
-            )
-            val rotationSpeed = 10f
-            val newYaw = lerpAngle(currentYaw, targetYaw, dt * rotationSpeed)
-
-            val newRotation = Quaternionf().rotateY(newYaw)
-            body.setRotation(newRotation)
         }
     }
 
@@ -101,6 +91,17 @@ class PlayerController : Component(), KoinComponent {
 
         body.linearVelocity = velocity
         lastVelocity.set(velocity)
+
+        val rotation = body.getRotation()
+        val currentYaw = atan2(
+            2f * (rotation.w * rotation.y + rotation.x * rotation.z),
+            1f - 2f * (rotation.y * rotation.y + rotation.z * rotation.z)
+        )
+
+        val newYaw = lerpAngle(currentYaw, data.targetYaw, data.rotationSpeed)
+
+        desiredRotation.set(Quaternionf().rotateY(newYaw))
+        body.setRotation(desiredRotation)
     }
 
     /**
