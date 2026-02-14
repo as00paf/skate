@@ -33,7 +33,7 @@ Physics drives movement. Animations reflect state only.
 
 ---
 
-# STEP 1 — Extend Player State Model
+# STEP 1 — Extend Player State Model (DONE)
 
 Update PlayerState class with the new states and rename it to LocomotionState:
 
@@ -41,7 +41,7 @@ IDLE,
 WALK,
 RUN,
 STRAFE,
-JUMP_START,
+JUMP,
 FALLING,
 LANDING,
 TURN_90_L,

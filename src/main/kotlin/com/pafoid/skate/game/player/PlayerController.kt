@@ -5,12 +5,13 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
+import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.Interpolator.lerpAngle
-import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -34,6 +35,7 @@ class PlayerController : Component(), KoinComponent {
     private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
 
     private var lastVelocity = Vector3f()
+    private var wasGrounded = false
 
     var desiredMoveDirection = Vector3f()
 
@@ -44,45 +46,28 @@ class PlayerController : Component(), KoinComponent {
 
     private val smoothedInput = Vector3f()
     private val rawInput = Vector3f()
+    private val smoothing = 12f
+    private val threshold = 0.15f
 
     override fun update(dt: Float) {
+        val body = rb ?: return
+        val camera = camera ?: return
+
         // Detect Input direction
         rawInput.set(inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1))
 
         // Exponential smoothing
-        val smoothing = 12f
         smoothedInput.lerp(rawInput, dt * smoothing)
 
         // Move if input is above threshold
-        val threshold = 0.15f
         if (smoothedInput.length() > threshold) {
-            // Calculate movement relative to camera (should be moved out of here and vectors should be reused)
-            val viewInv = camera?.getInverseView() ?: Matrix4f()
-            val camForward = Vector3f(0f, 0f, -1f)
-            viewInv.transformDirection(camForward)
-            camForward.y = 0f
-            camForward.normalize()
 
-            val camRight = Vector3f(1f, 0f, 0f)
-            viewInv.transformDirection(camRight)
-            camRight.y = 0f
-            camRight.normalize()
+            val motionData = MotionData(
+                direction = getDesiredMoveDirection(camera.getForwardAndRight(), smoothedInput),
+                speed = walkSpeed
+            )
 
-            desiredMoveDirection.zero()
-            camForward.mul(smoothedInput.z, desiredMoveDirection)
-            val rightPart = Vector3f(camRight).mul(smoothedInput.x)
-            desiredMoveDirection.add(rightPart)
-
-            desiredMoveDirection.normalize()
-
-            val body = rb ?: return
-            val velocity = body.linearVelocity
-
-            velocity.x = desiredMoveDirection.x * walkSpeed
-            velocity.z = desiredMoveDirection.z * walkSpeed
-
-            body.linearVelocity = velocity
-            lastVelocity.set(velocity)
+            applyMotion(motionData, body)
 
             // --- Rotation ---
             val targetYaw = atan2(desiredMoveDirection.x, desiredMoveDirection.z)
@@ -97,6 +82,25 @@ class PlayerController : Component(), KoinComponent {
             val newRotation = Quaternionf().rotateY(newYaw)
             body.setRotation(newRotation)
         }
+    }
+
+    private fun getDesiredMoveDirection(camForwardAndRight: Pair<Vector3f, Vector3f>, input: Vector3f): Vector3f {
+        desiredMoveDirection.zero()
+        camForwardAndRight.first.mul(input.z, desiredMoveDirection)
+        val rightPart = Vector3f(camForwardAndRight.second).mul(input.x)
+        desiredMoveDirection.add(rightPart)
+
+        return desiredMoveDirection.normalize()
+    }
+
+    private fun applyMotion(data: MotionData, body: IPhysicsBody3D) {
+        val velocity = body.linearVelocity
+
+        velocity.x = data.direction.x * data.speed
+        velocity.z = data.direction.z * data.speed
+
+        body.linearVelocity = velocity
+        lastVelocity.set(velocity)
     }
 
     /**
@@ -134,6 +138,21 @@ class PlayerController : Component(), KoinComponent {
         if (jump && isGrounded) {
             rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
         }
+    }
+
+    private fun checkIfGrounded(physics3d: IPhysics3D, transform: Transform): Boolean {
+        val transformMatrix = transform.toWorldMatrix()
+
+        // Calculate ray start and end in world space
+        val rayStart = Vector3f().mulProject(transformMatrix)
+
+        // Ray direction is player-local down
+        val localDown = Vector3f(0f, -1f, 0f)
+        transformMatrix.transformDirection(localDown)
+
+        // 1.00f is one meter
+        val rayEnd = Vector3f(localDown).mul(1.00f).add(rayStart)
+        return physics3d.raycastClosest(rayStart, rayEnd) != null
     }
 
 

@@ -17,18 +17,8 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
-import org.lwjgl.glfw.GLFW.GLFW_KEY_A
-import org.lwjgl.glfw.GLFW.GLFW_KEY_D
-import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT
-import org.lwjgl.glfw.GLFW.GLFW_KEY_S
-import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
-import org.lwjgl.glfw.GLFW.GLFW_KEY_W
-import kotlin.math.abs
-import kotlin.math.asin
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
+import org.lwjgl.glfw.GLFW.*
+import kotlin.math.*
 
 class Camera(
     val position: Vector3f = Vector3f(),
@@ -281,4 +271,21 @@ class Camera(
         return Ray(rayOrigin, rayDirection)
     }
 
+    private val camForward = Vector3f(0f, 0f, -1f)
+    private val camRight = Vector3f(1f, 0f, 0f)
+
+    fun getForwardAndRight(): Pair<Vector3f, Vector3f> {
+        camForward.set(Vector3f(0f, 0f, -1f))
+        val viewInv = getInverseView()
+        viewInv.transformDirection(camForward)
+        camForward.y = 0f
+        camForward.normalize()
+
+        camRight.set(Vector3f(1f, 0f, 0f))
+        viewInv.transformDirection(camRight)
+        camRight.y = 0f
+        camRight.normalize()
+
+        return camForward to camRight
+    }
 }
