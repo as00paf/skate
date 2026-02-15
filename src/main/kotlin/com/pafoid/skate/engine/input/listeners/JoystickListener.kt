@@ -77,4 +77,9 @@ class JoystickListener(private val logger: LoggerService) {
         if (!joystickPresent[jid] || button >= 15) return false
         return currentButtons[jid][button] && !lastButtons[jid][button]
     }
+
+    fun buttonWasPressed(jid: Int, button: Int): Boolean {
+        if (!joystickPresent[jid] || button >= 15) return false
+        return (!currentButtons[jid][button] && lastButtons[jid][button]) || (currentButtons[jid][button] && !lastButtons[jid][button])
+    }
 }

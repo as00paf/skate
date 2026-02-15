@@ -12,7 +12,6 @@ import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.Interpolator
-import com.pafoid.skate.engine.utils.Interpolator.lerpAngle
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -25,13 +24,15 @@ class PlayerController : Component(), KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val logger: LoggerService by inject()
 
-    var jumpImpulse = 10.0f
+    var jumpImpulse = 450.0f
     var flickSensitivity = 5.0f
     var catchStrength = 0.5f
 
-    var walkSpeed = 3f
-    var runSpeed = 8.5f
+    var walkSpeed = 2.5f
+    var runSpeed = 7.5f
     var rotationSpeed = 10f
+    val takeOffTime = 0.4f
+    var jumpTimer = takeOffTime
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
     private val transform: Transform? by lazy { gameObject.getComponent<Transform>() }
@@ -40,8 +41,9 @@ class PlayerController : Component(), KoinComponent {
     private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
     private val physics3d: IPhysics3D? by lazy { sceneManager.currentScene?.physics3d }
 
-    private var lastSpeed = 1f
-    private var wasGrounded = false
+    var lastSpeed = 1f
+    var isGrounded = false
+    var wasGrounded = false
 
     val desiredMoveDirection = Vector3f()
     private val desiredRotation = Quaternionf()
@@ -66,13 +68,13 @@ class PlayerController : Component(), KoinComponent {
         rawInput.set(inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1))
         smoothedInput.lerp(rawInput, dt * smoothing) // Exponential smoothing
 
-        val isGrounded = checkIfGrounded(physics3d, transform)
+        isGrounded = checkIfGrounded(physics3d, transform)
 
-        val isSprintPressed = inputProvider.buttonPressed(GLFW.GLFW_JOYSTICK_1, GamepadConstants.BUTTON_RB)
+        val isSprinting = rawInput.length() > 0.65f
 
         // Move if input is above threshold
         if (smoothedInput.length() > threshold) {
-            val speed = getDesiredSpeed(isSprintPressed, dt)
+            val speed = getDesiredSpeed(isSprinting, dt)
             val motionData = MotionData(
                 direction = getDesiredMoveDirection(camera.getForwardAndRight(), smoothedInput),
                 speed = speed,
@@ -85,6 +87,8 @@ class PlayerController : Component(), KoinComponent {
             applyMotion(motionData, body)
         }
 
+        handleJumping(isGrounded, dt)
+
         wasGrounded = isGrounded
     }
 
@@ -92,7 +96,7 @@ class PlayerController : Component(), KoinComponent {
         return if (isSprintPressed) {
             Interpolator.lerp(lastSpeed, runSpeed, dt * walkSpeed / 2)
         } else {
-            Interpolator.lerp(lastSpeed, walkSpeed, dt * walkSpeed)
+            Interpolator.lerp(lastSpeed, walkSpeed, dt * runSpeed)
         }
     }
 
@@ -120,7 +124,7 @@ class PlayerController : Component(), KoinComponent {
             1f - 2f * (rotation.y * rotation.y + rotation.z * rotation.z)
         )
 
-        val newYaw = lerpAngle(currentYaw, data.targetYaw, data.rotationSpeed)
+        val newYaw = Interpolator.lerpAngle(currentYaw, data.targetYaw, data.rotationSpeed)
 
         desiredRotation.set(Quaternionf().rotateY(newYaw))
         body.setRotation(desiredRotation)
@@ -146,15 +150,14 @@ class PlayerController : Component(), KoinComponent {
     }
 
     /**
-     * Handles jump input, applying a vertical impulse for an ollie.
+     * Handles jump input, applying a vertical impulse.
      */
-    fun handleJumping(isGrounded: Boolean) {
+    var isJumping = false
+    fun handleJumping(isGrounded: Boolean, dt: Float) {
         // Controller (Button A/Cross)
-        val jump = inputProvider.buttonPressed(GLFW.GLFW_JOYSTICK_1, GamepadConstants.BUTTON_A)
-
-        if (jump && isGrounded) {
-            rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
-        }
+        val jumpPressed = inputProvider.buttonPressed(GLFW.GLFW_JOYSTICK_1, GamepadConstants.BUTTON_A)
+        isJumping = jumpPressed
+        if (isJumping) rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
     }
 
     private fun checkIfGrounded(physics3d: IPhysics3D, transform: Transform): Boolean {
@@ -169,7 +172,7 @@ class PlayerController : Component(), KoinComponent {
 
         // 1.00f is one meter
         val rayEnd = Vector3f(localDown).mul(1.00f).add(rayStart)
-        return physics3d.raycastClosest(rayStart, rayEnd) != null
+        return physics3d.raycastClosest(rayStart, rayEnd) == null
     }
 
 

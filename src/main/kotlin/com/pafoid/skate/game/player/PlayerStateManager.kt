@@ -5,12 +5,9 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
-import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.game.skateboard.Stance
 import imgui.ImGui
-import org.joml.Vector3f
 import org.koin.core.component.inject
 
 class PlayerStateManager : Component() {
@@ -25,16 +22,12 @@ class PlayerStateManager : Component() {
     var currentState: PlayerState = PlayerState.IDLE
         private set
     var isSwitch = false
-    var isGrounded = false
-        private set
     var isOnBoard = false
         private set
 
     var currentStance = Stance.REGULAR
 
     override fun update(dt: Float) {
-        checkIfGrounded()
-
         if (isOnBoard) {
             handleOnBoardControls(dt)
         } else {
@@ -47,18 +40,29 @@ class PlayerStateManager : Component() {
     }
 
     private fun handleOffBoardControls(dt: Float) {
-        val speed = rigidBody3D?.linearVelocity?.length() ?: 0.0f
-        val intent = playerController?.desiredMoveDirection?.length() ?: 0f
+        val controller = playerController ?: return
+        val rb = rigidBody3D ?: return
+
+        val intent = controller.desiredMoveDirection.length()
         val hasIntent = intent > 0.1f
+
+        val linearVelocity = rb.linearVelocity
+        val speed = linearVelocity.length()
+        val verticalSpeed = linearVelocity.y
+
+        val isGrounded = controller.isGrounded
+        val wasGrounded = controller.wasGrounded
+
         val newState =
-            if (speed > 0.2f && hasIntent) {
+            if (controller.isJumping) {
+                PlayerState.JUMPING
+            } else if (speed > 0.2f && hasIntent) {
                 if (speed > 5f) {
                     PlayerState.RUNNING
                 } else {
                     PlayerState.WALKING
                 }
             } else {
-                //logger.logEngine("Staying idle, intent : $intent, speed: $speed")
                 PlayerState.IDLE
             }
 
@@ -73,23 +77,6 @@ class PlayerStateManager : Component() {
             LogLevel.ACTION
         )
         currentState = newState
-    }
-
-    private fun checkIfGrounded() {
-        val scene = sceneManager.currentScene ?: return
-        val transform = gameObject.getComponent<Transform>() ?: return
-        val transformMatrix = transform.toWorldMatrix()
-
-        // Calculate ray start and end in world space
-        val rayStart = Vector3f().mulProject(transformMatrix)
-
-        // Ray direction is player-local down
-        val localDown = Vector3f(0f, -1f, 0f)
-        transformMatrix.transformDirection(localDown)
-
-        // 1.00f is one meter
-        val rayEnd = Vector3f(localDown).mul(1.00f).add(rayStart)
-        isGrounded = scene.physics3d.raycastClosest(rayStart, rayEnd) != null
     }
 
     override fun imgui() {

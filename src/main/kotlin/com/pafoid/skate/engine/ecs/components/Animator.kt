@@ -112,6 +112,9 @@ class Animator : Component(), KoinComponent {
         when (stateManager.currentState) {
             PlayerState.WALKING -> play("walk")
             PlayerState.RUNNING -> play("run", 4f)
+            PlayerState.JUMPING -> play("jump", 0.2f)
+            PlayerState.FALLING -> play("falling idle", 0.2f)
+            PlayerState.LANDING -> play("falling to roll", 0.2f)
             else -> play("idle")
         }
     }

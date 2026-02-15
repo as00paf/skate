@@ -45,6 +45,7 @@ class InputProvider(
     }
     override fun getButtons(jid: Int): BooleanArray? = joystickListener.getButtons(jid)
     override fun buttonPressed(jid: Int, button: Int): Boolean = joystickListener.buttonPressed(jid, button)
+    override fun buttonWasPressed(jid: Int, button: Int): Boolean = joystickListener.buttonWasPressed(jid, button)
     override fun buttonBeginPress(jid: Int, button: Int): Boolean = joystickListener.buttonBeginPress(jid, button)
     override fun isCursorDisabled(): Boolean {
         val window = glfwGetCurrentContext()

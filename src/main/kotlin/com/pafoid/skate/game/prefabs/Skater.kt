@@ -23,7 +23,7 @@ class Skater(
     rotation: Vector3f = Vector3f(0f, 90f, 0f),
     scale: Vector3f = Vector3f(1f, 1f, 1f),
     mass: Float = 100f,// 100kg mass
-    hitBoxSize: Vector3f = Vector3f(0.4f, 0.02f, 0.1f),
+    hitBoxSize: Vector3f = Vector3f(0.2f, 0.9f, 0.1f),
 ): GameObject(name) {
 
     val transformComponent = Transform()
@@ -48,7 +48,10 @@ class Skater(
             linearDamping = 0.2f
             angularDamping = 0.3f
         })
-        addComponent(BoxCollider3D(hitBoxSize))
+        addComponent(BoxCollider3D(hitBoxSize).apply {
+            offset.set(transformComponent.translation.add(Vector3f(0f, -0.15f, 0f)))
+            margin = 1f
+        })
         addComponent(PlayerController())
         addComponent(PlayerStateManager())
         addComponent(BoneOverride())

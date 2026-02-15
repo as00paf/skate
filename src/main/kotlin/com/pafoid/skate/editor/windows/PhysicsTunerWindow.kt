@@ -4,9 +4,7 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
 import com.pafoid.skate.engine.physics3d.IPhysics3D
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.game.player.PlayerController
-import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import imgui.ImGui
 import imgui.type.ImBoolean
@@ -18,12 +16,9 @@ class PhysicsTunerWindow : KoinComponent {
     private val stringManager: StringManager by inject()
     
     fun imgui(currentScene: Scene) {
-        val skate = currentScene.getGameObject("Skateboard") as? Skateboard ?: return
         val physics: IPhysics3D = currentScene.physics3d
 
-        val playerController = skate.getComponent<PlayerController>()
-        val skateboardPhysics = skate.getComponent<SkateboardPhysics>()
-        val rb= skate.getComponent<RigidBody3D>()
+
 
         ImGui.begin(stringManager.getString("window.physics_tuner"))
         
@@ -40,7 +35,13 @@ class PhysicsTunerWindow : KoinComponent {
                 physics.setGravity(Vector3f(gVal[0], gVal[1], gVal[2]))
             }
         }
-        
+
+        val skater = currentScene.getGameObject("Skater") ?: run {
+            ImGui.end()
+            return
+        }
+        val playerController = skater.getComponent<PlayerController>()
+
         if (playerController != null && ImGui.collapsingHeader(stringManager.getString("lbl.physics_tuner.player_controller"))) {
             val jumpImpulse = floatArrayOf(playerController.jumpImpulse)
             if (ImGui.dragFloat(stringManager.getString("lbl.physics_tuner.pop_force"), jumpImpulse, 0.1f)) {
@@ -57,6 +58,12 @@ class PhysicsTunerWindow : KoinComponent {
                 playerController.flickSensitivity = flickSensitivity[0]
             }
         }
+
+        val skate = currentScene.getGameObject("Skate") ?: run {
+            ImGui.end()
+            return
+        }
+        val skateboardPhysics = skate.getComponent<SkateboardPhysics>()
         
         if (skateboardPhysics != null && ImGui.collapsingHeader(stringManager.getString("lbl.physics_tuner.suspension"))) {
             val stiffness = floatArrayOf(skateboardPhysics.stiffness)
@@ -71,20 +78,6 @@ class PhysicsTunerWindow : KoinComponent {
              val restLength = floatArrayOf(skateboardPhysics.suspensionRestLength)
             if (ImGui.dragFloat(stringManager.getString("lbl.physics_tuner.rest_length"), restLength, 0.01f)) {
                 skateboardPhysics.suspensionRestLength = restLength[0]
-            }
-        }
-        
-        if (rb != null && ImGui.collapsingHeader(stringManager.getString("lbl.physics_tuner.board_rigidbody"))) {
-            val friction = floatArrayOf(rb.friction)
-            if (ImGui.dragFloat(stringManager.getString("lbl.physics_tuner.friction"), friction, 0.01f, 0f, 1f)) {
-                rb.friction = friction[0]
-                rb.rawBody?.setFriction(friction[0])
-            }
-            
-            val mass = floatArrayOf(rb.mass)
-            if (ImGui.dragFloat(stringManager.getString("lbl.physics_tuner.mass"), mass, 0.1f)) {
-                rb.mass = mass[0]
-                rb.rawBody?.setMass(mass[0])
             }
         }
 
