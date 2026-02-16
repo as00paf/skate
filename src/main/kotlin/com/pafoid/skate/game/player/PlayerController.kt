@@ -5,11 +5,11 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.Interpolator
 import org.joml.Quaternionf
@@ -62,13 +62,12 @@ class PlayerController : Component(), KoinComponent {
         val body = rb ?: return
         val camera = camera ?: return
         val physics3d = physics3d ?: return
-        val transform = transform ?: return
 
         // Detect Input direction
         rawInput.set(inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1))
         smoothedInput.lerp(rawInput, dt * smoothing) // Exponential smoothing
 
-        isGrounded = checkIfGrounded(physics3d, transform)
+        isGrounded = checkIfGrounded(physics3d)
 
         val isSprinting = rawInput.length() > 0.65f
 
@@ -154,25 +153,38 @@ class PlayerController : Component(), KoinComponent {
      */
     var isJumping = false
     fun handleJumping(isGrounded: Boolean, dt: Float) {
+        if (jumpTimer > 0) {
+            jumpTimer -= dt
+        }
+
         // Controller (Button A/Cross)
-        val jumpPressed = inputProvider.buttonPressed(GLFW.GLFW_JOYSTICK_1, GamepadConstants.BUTTON_A)
-        isJumping = jumpPressed
-        if (isJumping) rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
+        val jumpPressed = inputProvider.buttonBeginPress(GLFW.GLFW_JOYSTICK_1, GamepadConstants.BUTTON_A)
+
+        if (isGrounded && jumpPressed && !isJumping) {
+            rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
+            isJumping = true
+            jumpTimer = takeOffTime
+        }
+
+        // Land detection: If we are jumping, timer has expired, and we hit the ground
+        if (isJumping && jumpTimer <= 0f && isGrounded) {
+            isJumping = false
+        }
     }
 
-    private fun checkIfGrounded(physics3d: IPhysics3D, transform: Transform): Boolean {
-        val transformMatrix = transform.toWorldMatrix()
+    private fun checkIfGrounded(physics3d: IPhysics3D): Boolean {
+        val body = rb as? RigidBody3D ?: return false
+        val originPosition = body.getWorldPosition()
 
-        // Calculate ray start and end in world space
-        val rayStart = Vector3f().mulProject(transformMatrix)
+        // Start the ray from the player's feet (below the collider)
+        val feetY = originPosition.y + 0.15f
+        val rayStart = Vector3f(originPosition.x, feetY, originPosition.z)
 
-        // Ray direction is player-local down
-        val localDown = Vector3f(0f, -1f, 0f)
-        transformMatrix.transformDirection(localDown)
+        // Ray goes down a small distance to detect ground
+        val rayEnd = Vector3f(rayStart.x, rayStart.y - 0.3f, rayStart.z)
 
-        // 1.00f is one meter
-        val rayEnd = Vector3f(localDown).mul(1.00f).add(rayStart)
-        return physics3d.raycastClosest(rayStart, rayEnd) == null
+        // Exclude the player's own physics body from the raycast
+        return physics3d.raycastClosest(rayStart, rayEnd, body) != null
     }
 
 

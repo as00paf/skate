@@ -2,14 +2,10 @@ package com.pafoid.skate.engine.physics3d
 
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.collision.PhysicsRayTestResult
-import com.jme3.bullet.collision.shapes.BoxCollisionShape
-import com.jme3.bullet.collision.shapes.CollisionShape
-import com.jme3.bullet.collision.shapes.CompoundCollisionShape
-import com.jme3.bullet.collision.shapes.CylinderCollisionShape
-import com.jme3.bullet.collision.shapes.HullCollisionShape
-import com.jme3.bullet.collision.shapes.MeshCollisionShape
+import com.jme3.bullet.collision.shapes.*
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.Collider3D
@@ -24,6 +20,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class BulletPhysics3D : IPhysics3D, KoinComponent {
+    private val logger: LoggerService by inject()
     private val debugRenderer: DebugRenderer by inject()
     private val nativeLibraryLoader: NativeLibraryLoader = NativeLibraryLoader()
     private val physicsSpace: PhysicsSpace
@@ -63,10 +60,11 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
      *
      * @param from The start point of the ray.
      * @param to The end point of the ray.
+     * @param excludeBody Optional body to exclude from the raycast (e.g., the player's own body).
      * @return The closest [RayTestResult], or null if no hit occurred.
      */
-    override fun raycastClosest(from: JomlVector3f, to: JomlVector3f): RayTestResult? {
-        val results = rayTest(from, to)
+    override fun raycastClosest(from: JomlVector3f, to: JomlVector3f, excludeBody: IPhysicsBody3D?): RayTestResult? {
+        val results = rayTest(from, to, excludeBody)
         return if (results.isEmpty()) null else results.minByOrNull { it.hitFraction }?.toRayTestResult()
     }
 
@@ -75,12 +73,33 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
      *
      * @param from The start point of the ray in world space.
      * @param to The end point of the ray in world space.
+     * @param excludeBody Optional body to exclude from results.
      * @return A list of [PhysicsRayTestResult] containing hit information.
      */
-    private fun rayTest(from: JomlVector3f, to: JomlVector3f): List<PhysicsRayTestResult> {
+    private fun rayTest(from: JomlVector3f, to: JomlVector3f, excludeBody: Any? = null): List<PhysicsRayTestResult> {
         val start = JmeVector3f(from.x, from.y, from.z)
         val end = JmeVector3f(to.x, to.y, to.z)
-        return physicsSpace.rayTest(start, end)
+
+        // Draw debug line when debug is enabled
+        if (debugEnabled) {
+            debugRenderer.addLine3D(from, to, JomlVector3f(1f, 0f, 1f), 1)
+        }
+
+        val results = physicsSpace.rayTest(start, end)
+
+        // Debug logging
+        logger.logEngine("Raycast from (${from.x}, ${from.y}, ${from.z}) to (${to.x}, ${to.y}, ${to.z})")
+        logger.logEngine("  Total hits: ${results.size}")
+        results.forEachIndexed { i, hit ->
+            logger.logEngine("  Hit $i: fraction=${hit.hitFraction}, object=${hit.collisionObject.userObject}")
+        }
+        if (excludeBody != null) {
+            val filtered = results.filter { it.collisionObject != excludeBody }
+            logger.logEngine("  After filter: ${filtered.size} hits (excluded: ${results.size - filtered.size})")
+            return filtered
+        }
+
+        return results
     }
 
     /**
@@ -135,7 +154,7 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
                     body.setCcdMotionThreshold(0.1f)
                     body.setCcdSweptSphereRadius(0.1f)
                 }
-                
+                body.userObject = go
                 physicsSpace.add(body)
             }
         }

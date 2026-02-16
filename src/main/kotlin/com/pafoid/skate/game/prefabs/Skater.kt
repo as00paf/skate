@@ -50,7 +50,7 @@ class Skater(
         })
         addComponent(BoxCollider3D(hitBoxSize).apply {
             offset.set(transformComponent.translation.add(Vector3f(0f, -0.15f, 0f)))
-            margin = 1f
+            margin = 0.01f
         })
         addComponent(PlayerController())
         addComponent(PlayerStateManager())

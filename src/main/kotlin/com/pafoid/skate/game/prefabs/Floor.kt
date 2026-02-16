@@ -12,7 +12,7 @@ import org.joml.Vector3f
 class Floor(
     texturedModel: TexturedModel,
     position: Vector3f = Vector3f(0f, -1f, 0f),
-    size: Float = 100f,
+    size: Float = 1f,
 ): GameObject("Floor") {
 
     init {
