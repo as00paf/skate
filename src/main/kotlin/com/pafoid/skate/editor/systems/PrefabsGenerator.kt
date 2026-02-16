@@ -4,13 +4,10 @@ import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Sprite
-import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
-import com.pafoid.skate.engine.assets.data.models.RawModel
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.ModularTile
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -23,7 +20,6 @@ import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.game.prefabs.Floor
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
@@ -43,44 +39,6 @@ class PrefabsGenerator(
         val renderer = SpriteRenderer()
         renderer.setSprite(sprite)
         go.addComponent(renderer)
-
-        return go
-    }
-
-    fun generateEntityObject(model: RawModel, texture: Texture, name: String = "Entity_Object_Gen"): GameObject {
-        val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
-        val go = scene.createGameObject(name)
-
-        val texturedModel = TexturedModel(model, texture)
-        go.addComponent(RenderComponent(model = texturedModel))
-
-        // Add a default Transform component
-        val transformComponent = Transform()
-        go.addComponent(transformComponent)
-
-        return go
-    }
-
-    fun generateTileObject(sizeX: Float, sizeY: Float, texture: Texture, name: String = "Tile_Gen"): GameObject {
-        val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
-        val go = scene.createGameObject(name)
-
-        val tile = ModularTile()
-        tile.size.set(sizeX, sizeY, 1f)
-        go.addComponent(tile)
-
-        // We use a cube as the base model for tiles
-        val cubeBaseModel = resourceManager.loadModelSync(Assets.Models.CUBE)
-        val cubeModel = cubeBaseModel.mesh[0].rawModel
-
-        val texturedModel = TexturedModel(cubeModel, texture)
-        go.addComponent(RenderComponent(model = texturedModel))
-
-
-        // Add a default Transform component
-        val transformComponent = Transform()
-        transformComponent.scale.set(sizeX, sizeY, 1f)
-        go.addComponent(transformComponent)
 
         return go
     }
@@ -118,8 +76,8 @@ class PrefabsGenerator(
         return skater
     }
 
-    fun spawnFloor(): Floor? {
-        var floor: Floor? = null
+    fun spawnFloor(): List<Tile?> {
+        var tile: Tile? = null
 
         JobSystem.runAsync {
             val texture = resourceManager.loadTexture(Assets.Textures.ASPHALT)
@@ -128,30 +86,12 @@ class PrefabsGenerator(
             texturedModel.mesh[0].material.baseColorPath = Assets.Textures.ASPHALT
 
             JobSystem.runOnMain {
-                floor = Floor(texturedModel)
-                sceneManager.currentScene?.addGameObjectToScene(floor)
-            }
-        }
-
-        return floor
-    }
-
-    fun spawnTile(): Tile? {
-        var tile: Tile? = null
-
-        JobSystem.runAsync {
-            val texture = resourceManager.loadTexture(Assets.Textures.CONCRETE_SIMPLE)
-            val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
-            val texturedModel = TexturedModel(baseModel.mesh[0].rawModel, texture)
-            texturedModel.mesh[0].material.baseColorPath = Assets.Textures.CONCRETE_SIMPLE
-
-            JobSystem.runOnMain {
-                tile = Tile("Tile_${sceneManager.currentScene?.gameObjectManager?.gameObjects?.size}", texturedModel)
+                tile = Tile("Tile", texturedModel)
                 sceneManager.currentScene?.addGameObjectToScene(tile)
             }
         }
 
-        return tile
+        return listOf(tile)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?) {
