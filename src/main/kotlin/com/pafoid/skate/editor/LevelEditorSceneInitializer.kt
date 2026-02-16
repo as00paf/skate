@@ -24,7 +24,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
     private var skateboard: GameObject? = null
     private var skater: GameObject? = null
-    private var floor: GameObject? = null
+    private var floor: List<GameObject?>? = null
 
     override suspend fun loadResources(scene: Scene) {
         reportProgress(0.1f, "Loading Character Model...")

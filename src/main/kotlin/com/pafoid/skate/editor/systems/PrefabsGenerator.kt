@@ -23,7 +23,6 @@ import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.game.prefabs.Floor
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
@@ -118,8 +117,8 @@ class PrefabsGenerator(
         return skater
     }
 
-    fun spawnFloor(): Floor? {
-        var floor: Floor? = null
+    fun spawnFloor(): List<Tile?> {
+        var tile: Tile? = null
 
         JobSystem.runAsync {
             val texture = resourceManager.loadTexture(Assets.Textures.ASPHALT)
@@ -128,30 +127,12 @@ class PrefabsGenerator(
             texturedModel.mesh[0].material.baseColorPath = Assets.Textures.ASPHALT
 
             JobSystem.runOnMain {
-                floor = Floor(texturedModel)
-                sceneManager.currentScene?.addGameObjectToScene(floor)
-            }
-        }
-
-        return floor
-    }
-
-    fun spawnTile(): Tile? {
-        var tile: Tile? = null
-
-        JobSystem.runAsync {
-            val texture = resourceManager.loadTexture(Assets.Textures.CONCRETE_SIMPLE)
-            val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
-            val texturedModel = TexturedModel(baseModel.mesh[0].rawModel, texture)
-            texturedModel.mesh[0].material.baseColorPath = Assets.Textures.CONCRETE_SIMPLE
-
-            JobSystem.runOnMain {
-                tile = Tile("Tile_${sceneManager.currentScene?.gameObjectManager?.gameObjects?.size}", texturedModel)
+                tile = Tile("Tile", texturedModel)
                 sceneManager.currentScene?.addGameObjectToScene(tile)
             }
         }
 
-        return tile
+        return listOf(tile)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?) {
