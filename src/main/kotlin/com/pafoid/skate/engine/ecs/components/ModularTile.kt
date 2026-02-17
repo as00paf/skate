@@ -5,7 +5,9 @@ import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
 @Serializable
-class ModularTile : Component() {
+class ModularTile(
+    var tileSize: Int = 1
+) : Component() {
     @Contextual
-    var size = Vector3f(1f, 1f, 1f)
+    var size = Vector3f(tileSize * 1f, 1f, tileSize * 1f)
 }
