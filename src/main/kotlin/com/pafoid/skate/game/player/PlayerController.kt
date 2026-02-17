@@ -31,11 +31,10 @@ class PlayerController : Component(), KoinComponent {
     var walkSpeed = 2.5f
     var runSpeed = 7.5f
     var rotationSpeed = 10f
-    val takeOffTime = 0.4f
+    val takeOffTime = 1f
     var jumpTimer = takeOffTime
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
-    private val transform: Transform? by lazy { gameObject.getComponent<Transform>() }
     private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
 
     private val camera: Camera? by lazy { sceneManager.currentScene?.camera }

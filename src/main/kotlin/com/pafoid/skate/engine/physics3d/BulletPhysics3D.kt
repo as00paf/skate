@@ -76,7 +76,11 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
      * @param excludeBody Optional body to exclude from results.
      * @return A list of [PhysicsRayTestResult] containing hit information.
      */
-    private fun rayTest(from: JomlVector3f, to: JomlVector3f, excludeBody: Any? = null): List<PhysicsRayTestResult> {
+    private fun rayTest(
+        from: JomlVector3f,
+        to: JomlVector3f,
+        excludeBody: IPhysicsBody3D? = null
+    ): List<PhysicsRayTestResult> {
         val start = JmeVector3f(from.x, from.y, from.z)
         val end = JmeVector3f(to.x, to.y, to.z)
 
@@ -87,15 +91,8 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
 
         val results = physicsSpace.rayTest(start, end)
 
-        // Debug logging
-        logger.logEngine("Raycast from (${from.x}, ${from.y}, ${from.z}) to (${to.x}, ${to.y}, ${to.z})")
-        logger.logEngine("  Total hits: ${results.size}")
-        results.forEachIndexed { i, hit ->
-            logger.logEngine("  Hit $i: fraction=${hit.hitFraction}, object=${hit.collisionObject.userObject}")
-        }
         if (excludeBody != null) {
             val filtered = results.filter { it.collisionObject != excludeBody }
-            logger.logEngine("  After filter: ${filtered.size} hits (excluded: ${results.size - filtered.size})")
             return filtered
         }
 
