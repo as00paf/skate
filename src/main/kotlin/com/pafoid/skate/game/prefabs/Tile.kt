@@ -15,15 +15,16 @@ class Tile(
     texturedModel: TexturedModel,
     position: Vector3f = Vector3f(0f, 0f, 0f),
     tileCount: Int = 1,
-    hitBoxSize: Vector3f = Vector3f(1f, 1f, 1f),
+    size: Int = 10,
 ): GameObject(name) {
 
     init {
-        addComponent(Transform(position, Vector3f(1f, 0.1f, 1f)))
-        addComponent(RenderComponent(model = texturedModel, textureScale = 3f))
+        val transform = Transform(position, Vector3f(1f * size, 0.1f, 1f * size))
+        addComponent(transform)
+        addComponent(RenderComponent(model = texturedModel, textureScale = 3f * size))
         addComponent(ModularTile(tileCount))
-        addComponent(RigidBody3D(1f).apply { bodyType = BodyType.Static })
-        addComponent(BoxCollider3D(hitBoxSize))
+        addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
+        addComponent(BoxCollider3D(transform.scale))
     }
 
 }
