@@ -49,14 +49,9 @@ class PlayerStateManager : Component() {
         val linearVelocity = rb.linearVelocity
         val speed = linearVelocity.length()
 
-        val isGrounded = controller.isGrounded
-        logger.logEngine("isGrounded: $isGrounded")
-
         val newState =
             if (controller.isJumping) {
                 PlayerState.JUMPING
-            } else if (!isGrounded) {
-                PlayerState.FALLING
             } else if (speed > 0.2f && hasIntent) {
                 if (speed > 5f) {
                     PlayerState.RUNNING

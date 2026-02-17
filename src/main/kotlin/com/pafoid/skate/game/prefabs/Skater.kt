@@ -44,7 +44,7 @@ class Skater(
         addComponent(animator)
         addComponent(RigidBody3D(mass).apply {
             useCCD = true
-            friction = 2f
+            friction = 1f
             linearDamping = 0.2f
             angularDamping = 0.3f
         })

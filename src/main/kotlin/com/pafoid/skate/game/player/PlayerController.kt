@@ -31,8 +31,8 @@ class PlayerController : Component(), KoinComponent {
     var walkSpeed = 2.5f
     var runSpeed = 7.5f
     var rotationSpeed = 10f
-    val takeOffTime = 1f
-    var jumpTimer = takeOffTime
+    val takeOffTime = 0.4f
+    var jumpTimer = 0f
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
     private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
@@ -159,15 +159,22 @@ class PlayerController : Component(), KoinComponent {
         // Controller (Button A/Cross)
         val jumpPressed = inputProvider.buttonBeginPress(GLFW.GLFW_JOYSTICK_1, GamepadConstants.BUTTON_A)
 
-        if (isGrounded && jumpPressed && !isJumping) {
-            rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
-            isJumping = true
-            jumpTimer = takeOffTime
+        if (isJumping && !wasGrounded && isGrounded) { //Land
+            isJumping = false
+            //logger.logEngine("LANDED!")
         }
 
-        // Land detection: If we are jumping, timer has expired, and we hit the ground
-        if (isJumping && jumpTimer <= 0f && isGrounded) {
-            isJumping = false
+        if (!isJumping && isGrounded && jumpPressed) { // Crouch
+            isJumping = true
+            jumpTimer = takeOffTime
+
+            //logger.logEngine("JUMP TIMER STARTED!")
+        }
+
+        if (isJumping && isGrounded && jumpTimer <= 0f) { // Jump
+            //logger.logEngine("JUMP TIMER FINISHED!")
+            rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
+            jumpTimer = takeOffTime
         }
     }
 
@@ -176,7 +183,7 @@ class PlayerController : Component(), KoinComponent {
         val originPosition = body.getWorldPosition()
 
         // Start the ray from the player's feet (below the collider)
-        val feetY = originPosition.y + 0.15f
+        val feetY = originPosition.y
         val rayStart = Vector3f(originPosition.x, feetY, originPosition.z)
 
         // Ray goes down a small distance to detect ground
