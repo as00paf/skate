@@ -2,12 +2,18 @@ package com.pafoid.skate.engine.physics3d
 
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.collision.PhysicsRayTestResult
-import com.jme3.bullet.collision.shapes.*
+import com.jme3.bullet.collision.shapes.BoxCollisionShape
+import com.jme3.bullet.collision.shapes.CollisionShape
+import com.jme3.bullet.collision.shapes.CompoundCollisionShape
+import com.jme3.bullet.collision.shapes.CylinderCollisionShape
+import com.jme3.bullet.collision.shapes.HullCollisionShape
+import com.jme3.bullet.collision.shapes.MeshCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
@@ -194,6 +200,9 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
             Math.toRadians(rot.z.toDouble()).toFloat()
         )
         body.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
+
+        val collider = go.getComponent<BoxCollider3D>() ?: return
+        body.collisionShape.margin = collider.margin
     }
 
     /**

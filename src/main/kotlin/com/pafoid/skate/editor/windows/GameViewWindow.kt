@@ -45,7 +45,6 @@ class GameViewWindow : KoinComponent {
     var imageSizeX = 0f
     var imageSizeY = 0f
 
-    private var isPlaying = false
     private val gamepadOverlay = GamepadOverlay()
     private val trickUIWindow = TrickUIWindow()
 
@@ -142,7 +141,6 @@ class GameViewWindow : KoinComponent {
     }
 
     private fun renderViewportOverlays(windowPos: ImVec2, windowSize: ImVec2) {
-        val isPlaying = engine.runtimePlaying
         val scene = sceneManager.currentScene
 
         // FPS Overlay (Top Left)

@@ -54,7 +54,9 @@ class Scene(
     }
 
     fun editorUpdate(dt: Float) {
+        val scaledDt = dt * sceneData.timeScale
         camera.update(dt)
+        physics3d.update(scaledDt)
         gameObjectManager.editorUpdate(dt)
         systemManager.editorUpdate(dt)
     }

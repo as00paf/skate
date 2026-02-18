@@ -65,7 +65,7 @@ class GameObjectManager(
                 continue
             }
             go.editorUpdate(dt)
-            physics3d.add(go)
+            physics3d.update(go)
         }
 
         processPendingObjects()
