@@ -5,8 +5,6 @@ import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import org.joml.Matrix4f
 
 object SkeletonMath {
-    private val IDENTITY_MATRIX = Matrix4f()
-
     /**
      * Entry point for computing global (world-space) transforms for a bone hierarchy.
      * It starts a recursive traversal from the root bone using an identity matrix as the initial parent transform.
@@ -16,7 +14,7 @@ object SkeletonMath {
      * @param globalTransforms An array where the computed world-space matrices will be stored.
      */
     fun computeGlobalTransforms(rootBone: Bone, localTransforms: Array<Matrix4f>, globalTransforms: Array<Matrix4f>) {
-        computeGlobalTransformsRecursive(rootBone, IDENTITY_MATRIX, localTransforms, globalTransforms)
+        computeGlobalTransformsRecursive(rootBone, Matrix4f(), localTransforms, globalTransforms)
     }
 
     /**

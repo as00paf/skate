@@ -32,19 +32,20 @@ class AnimationLoader {
         val animations = mutableListOf<Animation>()
         val sceneAnimations = scene.mAnimations() ?: throw Error("No animation found in animation file")
 
-        val finalScale =
-            findScale(AIAnimation.create(sceneAnimations.get(0)), skeleton.rootBone.children.first().name, skeleton)
+        val aiAnimInfo =
+            getAnimInfo(AIAnimation.create(sceneAnimations.get(0)), skeleton)
 
         for (i in 0 until scene.mNumAnimations()) {
             val aiAnim = AIAnimation.create(sceneAnimations.get(i))
-            animations.add(processAnimation(filePath, aiAnim, finalScale, skeleton.rootBone.children.first().name))
+            animations.add(processAnimation(filePath, aiAnim, aiAnimInfo))
         }
 
         aiReleaseImport(scene)
         return animations
     }
 
-    private fun findScale(aiAnim: AIAnimation, rootNodeName: String, skeleton: Skeleton): Float {
+    private fun getAnimInfo(aiAnim: AIAnimation, skeleton: Skeleton): AiAnimationInfo {
+        val rootNodeName = skeleton.rootBone.children.first().name
         var isRoot = false
         var i = 0
         var aiChannel: AINodeAnim? = null
@@ -58,7 +59,7 @@ class AnimationLoader {
             i++
         }
 
-        if (aiChannel == null || !isRoot) return 1f
+        if (aiChannel == null || !isRoot) throw Error("Could not get anim info")
 
         val firstPosY = aiChannel.mPositionKeys()?.get(0)?.mValue()?.y() ?: 0f
 
@@ -71,14 +72,23 @@ class AnimationLoader {
             .setScale(2, RoundingMode.HALF_EVEN)
             .toFloat()
 
-        return finalRoundedScale
+        return AiAnimationInfo(
+            finalRoundedScale,
+            firstPosY - hipBonePos.y(),
+            rootNodeName,
+        )
     }
+
+    data class AiAnimationInfo(
+        val scale: Float = 1.0f,
+        val hipsOffset: Float = 0f,
+        val rootNodeName: String = "Hips"
+    )
 
     fun processAnimation(
         path: String,
         aiAnim: AIAnimation,
-        scale: Float = 1.0f,
-        rootNodeName: String
+        info: AiAnimationInfo,
     ): Animation {
         val name = path.substringBefore(".fbx").replaceBeforeLast("/", "").replace("/", "").capitalize()
         val duration = aiAnim.mDuration().toFloat()
@@ -91,7 +101,7 @@ class AnimationLoader {
             val aiChannel = AINodeAnim.create(animationChannels.get(i))
             val originalName = aiChannel.mNodeName().dataString()
             val nodeName = BoneNameMapper.map(originalName)
-            val isRoot = nodeName.equals(rootNodeName, ignoreCase = true)
+            val isRoot = nodeName.equals(info.rootNodeName, ignoreCase = true)
 
             // Translation
             // For root bones, we zero out translation to keep animations in place
@@ -103,9 +113,10 @@ class AnimationLoader {
                     val key = aiChannel.mPositionKeys()?.get(k) ?: continue
                     times[k] = key.mTime().toFloat() / ticksPerSecond
 
-                    values[k * 3] = if (isRoot) 0f else key.mValue().x() * scale
-                    values[k * 3 + 1] = 0f
-                    values[k * 3 + 2] = if (isRoot) 0f else key.mValue().z() * scale
+                    values[k * 3] = if (isRoot) 0f else key.mValue().x() * info.scale
+                    values[k * 3 + 1] =
+                        if (isRoot) key.mValue().y() * info.scale - (info.hipsOffset * info.scale) else 0f
+                    values[k * 3 + 2] = if (isRoot) 0f else key.mValue().z() * info.scale
                 }
 
                 channels.add(

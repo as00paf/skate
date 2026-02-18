@@ -21,21 +21,6 @@ class Animation(
     fun update(time: Float, skeleton: Skeleton) {
         val loopTime = time % duration
 
-        // 1. Reset affected bones to their Bind Pose (Model Space) - ONCE PER BONE
-        val affectedBones = mutableSetOf<Bone>()
-        channels.forEach { channel ->
-            val bone = skeleton.getBoneByName(channel.targetNodeName)
-            if (bone != null && affectedBones.add(bone)) {
-                bone.localTransform.set(bone.bindLocalTransform)
-
-                if (bone.name.equals("Hips", ignoreCase = true)) {
-                    //This was a test, not sure if needed anymore
-                    //bone.localTransform.identity()
-                }
-            }
-        }
-
-        // 2. Apply Animation Channels
         // Group channels by bone to process all channels for each bone together
         val channelsByBone = channels.groupBy { it.targetNodeName }
 
@@ -67,6 +52,7 @@ class Animation(
             bone.localTransform
                 .set(bone.bindLocalTransform)
                 .mul(animatedLocal)
+
         }
     }
 
