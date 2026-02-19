@@ -23,7 +23,7 @@ class Skater(
     rotation: Vector3f = Vector3f(0f, 90f, 0f),
     scale: Vector3f = Vector3f(1f, 1f, 1f),
     mass: Float = 100f,// 100kg mass
-    hitBoxSize: Vector3f = Vector3f(0.2f, 0.95f, 0.1f),
+    hitBoxSize: Vector3f = Vector3f(0.2f, 0.95f, 0.2f),
 ): GameObject(name) {
 
     val transformComponent = Transform()
