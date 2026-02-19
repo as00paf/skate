@@ -21,10 +21,10 @@ class Tile(
     init {
         val transform = Transform(position, Vector3f(1f * size, 0.1f, 1f * size))
         addComponent(transform)
-        addComponent(RenderComponent(model = texturedModel, textureScale = 3f * size))
+        addComponent(RenderComponent(model = texturedModel, textureScale = 3f * size / 2))
         addComponent(ModularTile(tileCount))
         addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
-        addComponent(BoxCollider3D(transform.scale))
+        addComponent(BoxCollider3D(Vector3f(1f, 1f, 1f)))
     }
 
 }

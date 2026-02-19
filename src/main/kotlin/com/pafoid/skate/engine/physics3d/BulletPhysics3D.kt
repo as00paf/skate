@@ -335,26 +335,34 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
         val radius: Float
         val height: Float
         val halfExtents = shape.getHalfExtents(null)
+        val scale = shape.getScale(null)
+
+        // Apply scale to half-extents for correct debug visualization
+        val scaledHalfExtents = JmeVector3f(
+            halfExtents.x * scale.x,
+            halfExtents.y * scale.y,
+            halfExtents.z * scale.z
+        )
 
         when (axis) {
             0 -> { // X-axis is height
-                radius = halfExtents.y
-                height = halfExtents.x * 2f
+                radius = scaledHalfExtents.y
+                height = scaledHalfExtents.x * 2f
             }
 
             1 -> { // Y-axis is height
-                radius = halfExtents.x
-                height = halfExtents.y * 2f
+                radius = scaledHalfExtents.x
+                height = scaledHalfExtents.y * 2f
             }
 
             2 -> { // Z-axis is height
-                radius = halfExtents.x
-                height = halfExtents.z * 2f
+                radius = scaledHalfExtents.x
+                height = scaledHalfExtents.z * 2f
             }
 
             else -> {
-                radius = halfExtents.x
-                height = halfExtents.y * 2f
+                radius = scaledHalfExtents.x
+                height = scaledHalfExtents.y * 2f
             }
         }
         debugRenderer.addCylinder3D(pos, rot, radius, height, axis, color)
@@ -370,7 +378,16 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
      */
     private fun drawBoxCollisionShape(shape: BoxCollisionShape, pos: JomlVector3f, rot: Quaternionf, color: JomlVector3f) {
         val halfExtents = shape.getHalfExtents(null)
-        debugRenderer.addBox3D(pos, rot, JomlVector3f(halfExtents.x, halfExtents.y, halfExtents.z), color)
+        val scale = shape.getScale(null)
+
+        // Apply scale to half-extents for correct debug visualization
+        val scaledHalfExtents = JomlVector3f(
+            halfExtents.x * scale.x,
+            halfExtents.y * scale.y,
+            halfExtents.z * scale.z
+        )
+
+        debugRenderer.addBox3D(pos, rot, scaledHalfExtents, color)
     }
 
     override fun destroy() {
