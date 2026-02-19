@@ -24,14 +24,14 @@ class PlayerController : Component(), KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val logger: LoggerService by inject()
 
-    var jumpImpulse = 450.0f
+    var jumpImpulse = 300.0f
     var flickSensitivity = 5.0f
     var catchStrength = 0.5f
 
     var walkSpeed = 2.5f
     var runSpeed = 7.5f
     var rotationSpeed = 10f
-    val takeOffTime = 0.4f
+    val takeOffTime = 0.9f
     var jumpTimer = 0f
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
@@ -187,7 +187,8 @@ class PlayerController : Component(), KoinComponent {
         val rayStart = Vector3f(originPosition.x, feetY, originPosition.z)
 
         // Ray goes down a small distance to detect ground
-        val rayEnd = Vector3f(rayStart.x, rayStart.y - 0.3f, rayStart.z)
+        val rayLength = 0.05f
+        val rayEnd = Vector3f(rayStart.x, rayStart.y - rayLength, rayStart.z)
 
         // Exclude the player's own physics body from the raycast
         return physics3d.raycastClosest(rayStart, rayEnd, body) != null

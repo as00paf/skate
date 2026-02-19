@@ -44,12 +44,12 @@ class Skater(
         addComponent(animator)
         addComponent(RigidBody3D(mass).apply {
             useCCD = true
-            friction = 1f
+            friction = 1.2f
             linearDamping = 0.2f
             angularDamping = 0.3f
         })
         addComponent(BoxCollider3D(hitBoxSize).apply {
-            offset.set(transformComponent.translation.add(Vector3f(0f, -0.225f, 0f)))
+            offset.set(transformComponent.translation.add(Vector3f(0f, -0.115f, 0f)))
             margin = 0.01f
         })
         addComponent(PlayerController())

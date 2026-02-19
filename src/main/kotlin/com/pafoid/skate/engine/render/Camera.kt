@@ -17,8 +17,18 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW.*
-import kotlin.math.*
+import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
+import org.lwjgl.glfw.GLFW.GLFW_KEY_A
+import org.lwjgl.glfw.GLFW.GLFW_KEY_D
+import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT
+import org.lwjgl.glfw.GLFW.GLFW_KEY_S
+import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
+import org.lwjgl.glfw.GLFW.GLFW_KEY_W
+import kotlin.math.abs
+import kotlin.math.asin
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 
 class Camera(
     val position: Vector3f = Vector3f(),
@@ -26,7 +36,7 @@ class Camera(
     var yaw: Float = 0f,
     var roll: Float = 0f,
     var isOrthographic: Boolean = false,
-    var speed:Float = 0.025f
+    var speed: Float = 0.01f
 ): KoinComponent {
     private val inputProvider: IInputProvider by inject()
     private val keyListener: KeyListener by inject()

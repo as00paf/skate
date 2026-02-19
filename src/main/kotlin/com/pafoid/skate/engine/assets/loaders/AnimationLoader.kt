@@ -115,7 +115,7 @@ class AnimationLoader {
 
                     values[k * 3] = if (isRoot) 0f else key.mValue().x() * info.scale
                     values[k * 3 + 1] =
-                        if (isRoot) key.mValue().y() * info.scale - (info.hipsOffset * info.scale) else 0f
+                        if (isRoot) (key.mValue().y() * info.scale) - (info.hipsOffset * info.scale) else 0f
                     values[k * 3 + 2] = if (isRoot) 0f else key.mValue().z() * info.scale
                 }
 
