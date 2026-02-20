@@ -143,7 +143,7 @@ initialization order.
 
 ### A12.2: Create RenderResourcesFactory
 
-- [ ] **A12.2.1: Create `RenderResourcesFactory.kt`** - Factory for all render resources:
+- [x] **A12.2.1: Create `RenderResourcesFactory.kt`** - Factory for all render resources:
   - `suspend fun create(width: Int, height: Int): RenderResources`
   - Handles shader loading via ResourceManager
   - Creates FrameBuffer and PickingTexture

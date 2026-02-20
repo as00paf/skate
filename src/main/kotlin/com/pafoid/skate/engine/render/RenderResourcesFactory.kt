@@ -1,0 +1,216 @@
+package com.pafoid.skate.engine.render
+
+import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.render.renderer.DebugPass
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
+import com.pafoid.skate.engine.render.renderer.GeometryPass
+import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
+import com.pafoid.skate.engine.render.renderer.ModelRenderer
+import com.pafoid.skate.engine.render.renderer.PickingPass
+import com.pafoid.skate.engine.render.renderer.PickingRenderer
+import com.pafoid.skate.engine.render.renderer.Renderer2D
+import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
+import com.pafoid.skate.engine.render.renderer.SkyboxRenderer
+import com.pafoid.skate.engine.render.utils.GLStateTracker
+
+/**
+ * Factory for creating all rendering resources.
+ *
+ * This factory centralizes the initialization logic for the entire rendering pipeline,
+ * ensuring proper initialization order and dependency injection.
+ *
+ * @param resourceManager Loads and manages shader and texture assets
+ * @param sceneManager Provides access to the current scene
+ * @param logger Logs initialization progress and errors
+ */
+class RenderResourcesFactory(
+    private val resourceManager: ResourceManager,
+    private val sceneManager: SceneManager,
+    private val logger: LoggerService
+) {
+    /**
+     * Creates all rendering resources.
+     *
+     * This method performs the following initialization in order:
+     * 1. Initializes OpenGL state tracker
+     * 2. Creates framebuffer and picking texture
+     * 3. Loads all shaders
+     * 4. Creates all renderer instances
+     * 5. Creates all render passes
+     *
+     * @param width Initial viewport width
+     * @param height Initial viewport height
+     * @return Fully initialized RenderResources container
+     */
+    suspend fun create(width: Int, height: Int): RenderResources {
+        logger.logEngine("Initializing OpenGL state tracker...")
+        GLStateTracker.initialize()
+
+        logger.logEngine("Creating framebuffer and picking texture...")
+        val frameBuffer = FrameBuffer(width, height)
+        frameBuffer.initialize()
+
+        val pickingTexture = PickingTexture(width, height)
+
+        logger.logEngine("Loading shaders...")
+        val shaders = loadShaders()
+
+        logger.logEngine("Creating renderer instances...")
+        val renderers = createRenderers(shaders, resourceManager)
+
+        logger.logEngine("Creating render passes...")
+        val renderPasses = createRenderPasses(
+            shaders = shaders,
+            renderers = renderers,
+            frameBuffer = frameBuffer,
+            pickingTexture = pickingTexture,
+            width = width,
+            height = height
+        )
+
+        logger.logEngine("Render resources initialization complete.")
+
+        return RenderResources(
+            shaders = shaders,
+            frameBuffer = frameBuffer,
+            pickingTexture = pickingTexture,
+            renderers = renderers,
+            renderPasses = renderPasses
+        )
+    }
+
+    /**
+     * Loads all shader programs.
+     */
+    private suspend fun loadShaders(): Shaders {
+        val shaders = listOf<suspend () -> Shader>(
+            { resourceManager.loadShader(Assets.Shaders.DEBUG) },
+            { resourceManager.loadShader(Assets.Shaders.SHADER_3D_DEFAULT) },
+            { resourceManager.loadShader(Assets.Shaders.SHADER_2D_BATCH) },
+            { resourceManager.loadShader(Assets.Shaders.PICKING) },
+            { resourceManager.loadShader(Assets.Shaders.PICKING_3D) },
+            { resourceManager.loadShader(Assets.Shaders.SKYBOX) },
+            { resourceManager.loadShader(Assets.Shaders.SKY_DOME) },
+        )
+
+        logger.logEngine("Loading shader 1/7: Debug")
+        val debugShader = shaders[0].invoke()
+
+        logger.logEngine("Loading shader 2/7: Default 3D")
+        val defaultShader = shaders[1].invoke()
+
+        logger.logEngine("Loading shader 3/7: 2D Batch")
+        val batchShader = shaders[2].invoke()
+
+        logger.logEngine("Loading shader 4/7: Picking")
+        val pickingShader = shaders[3].invoke()
+
+        logger.logEngine("Loading shader 5/7: Picking 3D")
+        val picking3DShader = shaders[4].invoke()
+
+        logger.logEngine("Loading shader 6/7: Skybox")
+        val skyboxShader = shaders[5].invoke()
+
+        logger.logEngine("Loading shader 7/7: Sky Dome")
+        val skyDomeShader = shaders[6].invoke()
+
+        return Shaders(
+            default = defaultShader,
+            debug = debugShader,
+            batch = batchShader,
+            picking = pickingShader,
+            picking3D = picking3DShader,
+            skybox = skyboxShader,
+            skyDome = skyDomeShader
+        )
+    }
+
+    /**
+     * Creates all renderer instances.
+     */
+    private fun createRenderers(
+        shaders: Shaders,
+        resourceManager: ResourceManager
+    ): Renderers {
+        // Note: VAOLoader would need to be passed in or created here
+        // For now, we'll need to get it from somewhere
+        // This is a limitation - we may need to pass VAOLoader to the factory
+        val vaoLoader = createVaoLoader()
+
+        val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
+        val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, resourceManager)
+        val modelRenderer = ModelRenderer(resourceManager)
+
+        return Renderers(
+            skybox = skyboxRenderer,
+            skyDome = skyDomeRenderer,
+            model = modelRenderer
+        )
+    }
+
+    /**
+     * Creates all render passes with their dependencies.
+     */
+    private fun createRenderPasses(
+        shaders: Shaders,
+        renderers: Renderers,
+        frameBuffer: FrameBuffer,
+        pickingTexture: PickingTexture,
+        width: Int,
+        height: Int
+    ): RenderPasses {
+        val renderer2D = Renderer2D()
+        val pickingRenderer = PickingRenderer()
+        val debugRenderer = DebugRenderer()
+        val lightingUniformsLoader = LightingUniformsLoader()
+
+        // Bind initial shader and camera for renderer2D
+        // (will be rebound each frame)
+        renderer2D.bindShader(shaders.batch)
+
+        val pickingPass = PickingPass(
+            pickingTexture = pickingTexture,
+            pickingShader3D = shaders.picking3D,
+            pickingRenderer = pickingRenderer,
+            renderer2D = renderer2D,
+            pickingShader = shaders.picking,
+            modelRenderer = renderers.model,
+            getWindowWidth = { width },
+            getWindowHeight = { height }
+        )
+
+        val geometryPass = GeometryPass(
+            defaultShader = shaders.default,
+            batchShader = shaders.batch,
+            modelRenderer = renderers.model,
+            renderer2D = renderer2D,
+            skyDomeRenderer = renderers.skyDome,
+            frameBuffer = frameBuffer,
+            lightingUniformsLoader = lightingUniformsLoader,
+            getUseFbo = { true }, // Default to FBO, can be made configurable
+            sceneManager = sceneManager,
+            getWindowWidth = { width },
+            getWindowHeight = { height }
+        )
+
+        val debugPass = DebugPass(debugRenderer)
+
+        return RenderPasses(
+            picking = pickingPass,
+            geometry = geometryPass,
+            debug = debugPass
+        )
+    }
+
+    /**
+     * Creates a VAOLoader instance.
+     * Note: This may need to be injected or passed to the factory.
+     */
+    private fun createVaoLoader(): VAOLoader {
+        return VAOLoader()
+    }
+}
