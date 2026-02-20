@@ -24,4 +24,67 @@
   - Move `RenderBatch` constants to companion object
   - Evaluate if `Renderer2D` and `RenderBatch` should be merged (kept separate - clear responsibilities)
   - Extract vertex property loading into a dedicated method with better naming
-- [x] **A10.6: Extract Render Consts** - Extract Render constants to their own file
+
+---
+
+## 🔴 Phase A11: Rendering Performance Fixes (Pipeline Review Findings)
+
+### Critical Performance Issues
+
+- [x] **A11.1: Cache Shader Uniform Locations** - `Shader.kt`:
+  - Add `private val uniformCache = mutableMapOf<String, Int>()` to Shader class
+  - Create `getLocation(varName)` helper that caches `glGetUniformLocation` results
+  - Update all `upload*()` methods to use cached locations
+  - **Impact**: Severe - glGetUniformLocation is extremely expensive in hot paths
+
+- [ ] **A11.2: Reuse Buffer Objects** - `Shader.kt`:
+  - Create reusable buffers as class properties (matrixBuffer, vec3Buffer, etc.)
+  - Call `buffer.clear()` before each use instead of allocating new buffers
+  - **Impact**: High - Reduces GC pressure and frame stutter
+
+- [ ] **A11.3: Query Hardware Texture Limits** - `RenderBatch.kt`:
+  - Replace hardcoded `maxTextureSlots = 8` with OpenGL query
+  - Use `GL11.glGetInteger(GL13.GL_MAX_TEXTURE_IMAGE_UNITS)`
+  - **Impact**: Medium - Hardware compatibility
+
+- [ ] **A11.4: Implement Proper State Tracking** - New `GLStateTracker.kt`:
+  - Track current OpenGL state (blend, depth mask, cull face, etc.)
+  - Only call gl functions when state actually changes
+  - **Impact**: High - Reduces redundant OpenGL calls
+
+### Architecture Improvements
+
+- [ ] **A11.5: Extract RenderPass Interface**:
+  - Create `interface RenderPass { fun execute(scene: Scene, camera: Camera) }`
+  - Extract PickingPass, GeometryPass, DebugPass implementations
+  - Update Renderer to orchestrate passes instead of implementing them
+  - **Impact**: Medium - Better separation of concerns, easier testing
+
+- [ ] **A11.6: Implement Proper Z-Index for 2D Sprites** - `Renderer2D.kt`:
+  - Remove hardcoded `zIndex == 0` check
+  - Add `zIndex` property to SpriteRenderer
+  - Group batches by z-index and render in order
+  - **Impact**: Medium - Proper 2D layering
+
+- [ ] **A11.7: Define Texture Slot Constants** - New `TextureSlots.kt`:
+  - Extract magic numbers (0, 1, 2, 3, 4) to named constants
+  - BASE_COLOR, NORMAL, METALLIC_ROUGHNESS, AO, EMISSIVE
+  - **Impact**: Low - Code clarity
+
+### Code Quality
+
+- [ ] **A11.8: Fix Aspect Ratio Handling** - `Camera.kt`:
+  - Remove hardcoded `1920f / 1080f` aspect ratio
+  - Add `viewportWidth` and `viewportHeight` properties
+  - Update dynamically on window resize
+  - **Impact**: Medium - Correct rendering on all aspect ratios
+
+- [ ] **A11.9: Implement Resource Cleanup** - `RenderBatch.kt`, `Renderer2D.kt`:
+  - Implement `RenderBatch.destroy()` to delete VAO/VBO
+  - Implement `Renderer2D.destroy()` to clean up all batches
+  - **Impact**: Low - Memory leak prevention
+
+- [ ] **A11.10: Centralize Entity ID Encoding** - New `EntityIdEncoder.kt`:
+  - Extract +1/-1 encoding logic to single location
+  - Document why 0 is reserved
+  - **Impact**: Low - Code clarity
