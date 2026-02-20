@@ -34,6 +34,23 @@ class RenderBatch(
     private val renderer: Renderer2D
 ) : Comparable<RenderBatch> {
 
+    companion object {
+        private const val POS_SIZE = 2
+        private const val COLOR_SIZE = 4
+        private const val TEX_COORDS_SIZE = 2
+        private const val TEX_ID_SIZE = 1
+        private const val ENTITY_ID_SIZE = 1
+
+        private const val POS_OFFSET = 0
+        private const val COLOR_OFFSET = POS_OFFSET + POS_SIZE * Float.SIZE_BYTES
+        private const val TEX_COORDS_OFFSET = COLOR_OFFSET + COLOR_SIZE * Float.SIZE_BYTES
+        private const val TEX_ID_OFFSET = TEX_COORDS_OFFSET + TEX_COORDS_SIZE * Float.SIZE_BYTES
+        private const val ENTITY_ID_OFFSET = TEX_ID_OFFSET + TEX_ID_SIZE * Float.SIZE_BYTES
+
+        const val VERTEX_SIZE = 10
+        private const val VERTEX_SIZE_BYTES = VERTEX_SIZE * Float.SIZE_BYTES
+    }
+
     private val sprites = arrayOfNulls<SpriteRenderer>(maxBatchSize * 4)
     private var numSprites = 0
     private var hasRoom = true
@@ -154,26 +171,75 @@ class RenderBatch(
         shader.stop()
     }
 
+    /**
+     * Finds the texture slot ID for a given texture.
+     * Returns 0 if no texture, or slot index + 1 if found.
+     */
+    private fun findTextureId(texture: Texture?): Int {
+        if (texture == null) return 0
+        for (i in textureSlots.indices) {
+            if (textureSlots[i] == texture) {
+                return i + 1
+            }
+        }
+        return 0
+    }
+
+    /**
+     * Loads a single vertex's properties into the vertices array.
+     * 
+     * @param offset The starting offset in the vertices array
+     * @param position The vertex position (already transformed)
+     * @param color The vertex color
+     * @param texCoord The texture coordinate
+     * @param texId The texture slot ID
+     * @param entityId The entity ID
+     */
+    private fun loadVertex(
+        offset: Int,
+        position: Vector4f,
+        color: Vector4f,
+        texCoord: org.joml.Vector2f,
+        texId: Int,
+        entityId: Float
+    ) {
+        // Position
+        vertices[offset] = position.x
+        vertices[offset + 1] = position.y
+
+        // Color
+        vertices[offset + 2] = color.x
+        vertices[offset + 3] = color.y
+        vertices[offset + 4] = color.z
+        vertices[offset + 5] = color.w
+
+        // Texture coordinates
+        vertices[offset + 6] = texCoord.x
+        vertices[offset + 7] = texCoord.y
+
+        // Texture ID
+        vertices[offset + 8] = texId.toFloat()
+
+        // Entity ID
+        vertices[offset + 9] = entityId
+    }
+
+    /**
+     * Loads vertex properties for a sprite into the vertices array.
+     * Handles both rotated and non-rotated sprites.
+     */
     private fun loadVertexProperties(index: Int) {
         val sprite = sprites[index] ?: return
+        val transform = sprite.gameObject.getComponent<Transform>() ?: return
 
         // Find offset within array (4 vertices per sprite)
         var offset = index * 4 * VERTEX_SIZE
 
         val color = sprite.getColor()
         val texCoords = sprite.getTexCoords()
+        val texId = findTextureId(sprite.getTexture())
+        val entityId = sprite.gameObject.getUid().toFloat() + 1 // +1 because 0 is reserved for "nothing"
 
-        var texId = 0
-        if (sprite.getTexture() != null) {
-            for (i in 0 until textureSlots.size) {
-                if (textureSlots[i] == sprite.getTexture()) {
-                    texId = i + 1
-                    break
-                }
-            }
-        }
-
-        val transform =sprite.gameObject.getComponent<Transform>() ?: return
         val isRotated = transform.rotation?.z != 0f
         if (isRotated) {
             transformMatrix.identity()
@@ -182,48 +248,28 @@ class RenderBatch(
             transformMatrix.scale(transform.scale.x, transform.scale.y, 1f)
         }
 
-        // Add vertices with the appropriate properties
-        val xAdd = 1.0f
-        val yAdd = 1.0f
-        
+        // Load 4 vertices per sprite (quad corners)
         for (i in 0..3) {
             currentPos.set(0f, 0f, 0f, 1f)
-            if (i == 1) {
-                currentPos.x = xAdd
-            } else if (i == 2) {
-                currentPos.x = xAdd
-                currentPos.y = yAdd
-            } else if (i == 3) {
-                currentPos.y = yAdd
+            when (i) {
+                1 -> currentPos.x = 1f
+                2 -> {
+                    currentPos.x = 1f
+                    currentPos.y = 1f
+                }
+
+                3 -> currentPos.y = 1f
             }
-            
+
+            // Transform position
             if (isRotated) {
-                 currentPos.mul(transformMatrix)
+                currentPos.mul(transformMatrix)
             } else {
-                 currentPos.x = currentPos.x * transform.scale.x + transform.translation.x
-                 currentPos.y = currentPos.y * transform.scale.y + transform.translation.y
+                currentPos.x = currentPos.x * transform.scale.x + transform.translation.x
+                currentPos.y = currentPos.y * transform.scale.y + transform.translation.y
             }
 
-            // Load position
-            vertices[offset] = currentPos.x
-            vertices[offset + 1] = currentPos.y
-
-            // Load color
-            vertices[offset + 2] = color.x
-            vertices[offset + 3] = color.y
-            vertices[offset + 4] = color.z
-            vertices[offset + 5] = color.w
-
-            // Load texture coordinates
-            vertices[offset + 6] = texCoords[i].x
-            vertices[offset + 7] = texCoords[i].y
-
-            // Load texture id
-            vertices[offset + 8] = texId.toFloat()
-            
-            // Load entity id
-            vertices[offset + 9] = sprite.gameObject.getUid().toFloat() + 1 // +1 because 0 is reserved for "nothing"
-
+            loadVertex(offset, currentPos, color, texCoords[i], texId, entityId)
             offset += VERTEX_SIZE
         }
     }
@@ -279,17 +325,3 @@ class RenderBatch(
         hasRoom = true
     }
 }
-
-private const val POS_SIZE = 2
-private const val COLOR_SIZE = 4
-private const val TEX_COORDS_SIZE = 2
-private const val TEX_ID_SIZE = 1
-private const val ENTITY_ID_SIZE = 1
-
-private const val POS_OFFSET = 0
-private const val COLOR_OFFSET = POS_OFFSET + POS_SIZE * Float.SIZE_BYTES
-private const val TEX_COORDS_OFFSET = COLOR_OFFSET + COLOR_SIZE * Float.SIZE_BYTES
-private const val TEX_ID_OFFSET = TEX_COORDS_OFFSET + TEX_COORDS_SIZE * Float.SIZE_BYTES
-private const val ENTITY_ID_OFFSET = TEX_ID_OFFSET + TEX_ID_SIZE * Float.SIZE_BYTES
-private const val VERTEX_SIZE = 10
-private const val VERTEX_SIZE_BYTES = VERTEX_SIZE * Float.SIZE_BYTES

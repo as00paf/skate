@@ -20,7 +20,7 @@
   - Extension function `unbindVAO(vaoId, attributes)` for cleanup
   - Extension function `bindTexture(slot, texture, fallback)` for texture binding pattern
   - Extension function `withDepthFunc(func, block)` for depth function scoping
-- [ ] **A10.5: Renderer2D Reorganization** - Improve separation of concerns:
-  - Move `RenderBatch` constants to companion object or shared location
-  - Evaluate if `Renderer2D` and `RenderBatch` should be merged
+- [x] **A10.5: Renderer2D Reorganization** - Improve separation of concerns:
+  - Move `RenderBatch` constants to companion object
+  - Evaluate if `Renderer2D` and `RenderBatch` should be merged (kept separate - clear responsibilities)
   - Extract vertex property loading into a dedicated method with better naming   
