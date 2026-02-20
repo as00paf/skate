@@ -23,4 +23,5 @@
 - [x] **A10.5: Renderer2D Reorganization** - Improve separation of concerns:
   - Move `RenderBatch` constants to companion object
   - Evaluate if `Renderer2D` and `RenderBatch` should be merged (kept separate - clear responsibilities)
-  - Extract vertex property loading into a dedicated method with better naming   
+  - Extract vertex property loading into a dedicated method with better naming
+- [x] **A10.6: Extract Render Consts** - Extract Render constants to their own file

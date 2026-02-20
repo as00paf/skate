@@ -5,6 +5,18 @@ import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.render.renderer.Renderer2D
+import com.pafoid.skate.engine.utils.RenderConsts.COLOR_OFFSET
+import com.pafoid.skate.engine.utils.RenderConsts.COLOR_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts.ENTITY_ID_OFFSET
+import com.pafoid.skate.engine.utils.RenderConsts.ENTITY_ID_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts.POS_OFFSET
+import com.pafoid.skate.engine.utils.RenderConsts.POS_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts.TEX_COORDS_OFFSET
+import com.pafoid.skate.engine.utils.RenderConsts.TEX_COORDS_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts.TEX_ID_OFFSET
+import com.pafoid.skate.engine.utils.RenderConsts.TEX_ID_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts.VERTEX_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts.VERTEX_SIZE_BYTES
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
 import org.joml.Vector4f
@@ -33,23 +45,6 @@ class RenderBatch(
     private val zIndex: Int,
     private val renderer: Renderer2D
 ) : Comparable<RenderBatch> {
-
-    companion object {
-        private const val POS_SIZE = 2
-        private const val COLOR_SIZE = 4
-        private const val TEX_COORDS_SIZE = 2
-        private const val TEX_ID_SIZE = 1
-        private const val ENTITY_ID_SIZE = 1
-
-        private const val POS_OFFSET = 0
-        private const val COLOR_OFFSET = POS_OFFSET + POS_SIZE * Float.SIZE_BYTES
-        private const val TEX_COORDS_OFFSET = COLOR_OFFSET + COLOR_SIZE * Float.SIZE_BYTES
-        private const val TEX_ID_OFFSET = TEX_COORDS_OFFSET + TEX_COORDS_SIZE * Float.SIZE_BYTES
-        private const val ENTITY_ID_OFFSET = TEX_ID_OFFSET + TEX_ID_SIZE * Float.SIZE_BYTES
-
-        const val VERTEX_SIZE = 10
-        private const val VERTEX_SIZE_BYTES = VERTEX_SIZE * Float.SIZE_BYTES
-    }
 
     private val sprites = arrayOfNulls<SpriteRenderer>(maxBatchSize * 4)
     private var numSprites = 0
@@ -325,3 +320,4 @@ class RenderBatch(
         hasRoom = true
     }
 }
+
