@@ -57,8 +57,9 @@
 
 ### Architecture Improvements
 
-- [ ] **A11.5: Extract RenderPass Interface**:
-  - Create `interface RenderPass { fun execute(scene: Scene, camera: Camera) }`
+- [x] **A11.5: Extract RenderPass Interface**:
+  - Create
+    `interface RenderPass { fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) }`
   - Extract PickingPass, GeometryPass, DebugPass implementations
   - Update Renderer to orchestrate passes instead of implementing them
   - **Impact**: Medium - Better separation of concerns, easier testing
