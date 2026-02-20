@@ -112,7 +112,7 @@ initialization order.
 
 ### A12.1: Create RenderResources Data Classes
 
-- [ ] **A12.1.1: Create `RenderResources.kt`** - New file with data classes:
+- [x] **A12.1.1: Create `RenderResources.kt`** - New file with data classes:
   ```kotlin
   data class Shaders(
       val default: Shader, val debug: Shader, val batch: Shader,
