@@ -76,10 +76,6 @@ class GeometryPass(
         // 2D Rendering Setup
         renderer2D.bindCamera(camera)
 
-        // Update camera viewport dimensions for correct aspect ratio
-        camera.viewportWidth = frameBuffer.width
-        camera.viewportHeight = frameBuffer.height
-
         // 3D Rendering Setup - Upload projection and view matrices
         defaultShader.start()
         defaultShader.uploadMat4f(Attribs.PROJECTION_MATRIX, camera.createProjectionMatrix())

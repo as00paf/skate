@@ -22,19 +22,18 @@
 
 ### Performance Optimizations
 
-- [ ] **A15.3: Consolidate Camera Viewport Updates** - `PickingPass.kt`, `GeometryPass.kt`:
-    - Camera viewport is set twice per frame (once in each pass)
-    - Move viewport update to `Renderer.render()` before executing any passes:
-      ```kotlin
-      // In Renderer.render(), before pass execution:
-      scene.camera.viewportWidth = width
-      scene.camera.viewportHeight = height
-      ```
-    - Remove redundant assignments from individual passes
-    - **Impact**: Low - Minor performance improvement, cleaner code
+- [x] **A15.3: Consolidate Camera Viewport Updates** - `PickingPass.kt`, `GeometryPass.kt`:
+  - **Problem**: Camera viewport was set twice per frame (once in each pass)
+  - **Solution**: Move viewport update to `Renderer.render()` before executing any passes
+  - **Changes**:
+    - Added camera viewport update at start of `Renderer.render()`
+    - Removed redundant `scene.camera.viewportWidth/Height` assignments from `PickingPass.execute()`
+    - Removed redundant `camera.viewportWidth/Height` assignments from `GeometryPass.execute()`
+  - **Impact**: Low - Minor performance improvement, cleaner code, single source of truth
     - Locations:
-        - `src/main/kotlin/com/pafoid/skate/engine/render/renderer/passes/PickingPass.kt:83`
-        - `src/main/kotlin/com/pafoid/skate/engine/render/renderer/passes/GeometryPass.kt:97`
+      - `src/main/kotlin/com/pafoid/skate/engine/render/renderer/Renderer.kt:67-70`
+      - `src/main/kotlin/com/pafoid/skate/engine/render/renderer/passes/PickingPass.kt`
+      - `src/main/kotlin/com/pafoid/skate/engine/render/renderer/passes/GeometryPass.kt`
 
 ### Documentation
 

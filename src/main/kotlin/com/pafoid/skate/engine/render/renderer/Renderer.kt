@@ -65,6 +65,12 @@ class Renderer(
      * @param hoveredGameObject The currently hovered game object (if any)
      */
     override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+        // Update camera viewport dimensions once for all passes (correct aspect ratio)
+        val width = renderResources.frameBuffer.width
+        val height = renderResources.frameBuffer.height
+        scene.camera.viewportWidth = width
+        scene.camera.viewportHeight = height
+
         // Begin frame for debug and picking systems
         renderResources.renderPasses.debug.beginFrame()
         renderResources.renderPasses.picking.beginFrame()

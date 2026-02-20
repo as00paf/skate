@@ -74,14 +74,6 @@ class PickingPass(
         // This is intentional: when selected, hover detection is not needed
         if (activeGameObject != null) return
 
-        // Read current dimensions from picking texture (updated on resize)
-        val width = pickingTexture.width
-        val height = pickingTexture.height
-
-        // Update camera viewport dimensions for correct aspect ratio
-        scene.camera.viewportWidth = width
-        scene.camera.viewportHeight = height
-
         // Render 2D and 3D objects for picking
         renderer2D.bindCamera(scene.camera)
         render2D(scene, pickingShader)
