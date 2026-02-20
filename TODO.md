@@ -48,9 +48,11 @@
   - Use `GL11.glGetInteger(GL20.GL_MAX_TEXTURE_IMAGE_UNITS)`
   - **Impact**: Medium - Hardware compatibility
 
-- [ ] **A11.4: Implement Proper State Tracking** - New `GLStateTracker.kt`:
-  - Track current OpenGL state (blend, depth mask, cull face, etc.)
+- [x] **A11.4: Implement Proper State Tracking** - New `GLStateTracker.kt`:
+  - Track current OpenGL state (blend, depth mask, cull face, depth func)
   - Only call gl functions when state actually changes
+  - Update GLState helpers to use GLStateTracker
+  - Add `GLStateTracker.initialize()` call in Renderer.initFrameBuffer()
   - **Impact**: High - Reduces redundant OpenGL calls
 
 ### Architecture Improvements

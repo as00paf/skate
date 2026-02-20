@@ -16,16 +16,15 @@ import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.PickingTexture
 import com.pafoid.skate.engine.render.VAOLoader
+import com.pafoid.skate.engine.render.utils.GLStateTracker
 import com.pafoid.skate.engine.utils.ShaderConst.Attribs
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.lwjgl.opengl.GL30.GL_COLOR_BUFFER_BIT
-import org.lwjgl.opengl.GL30.GL_CULL_FACE
 import org.lwjgl.opengl.GL30.GL_DEPTH_BUFFER_BIT
 import org.lwjgl.opengl.GL30.GL_DEPTH_TEST
 import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
-import org.lwjgl.opengl.GL30.GL_LESS
 import org.lwjgl.opengl.GL30.GL_SCISSOR_TEST
 import org.lwjgl.opengl.GL30.GL_TEXTURE0
 import org.lwjgl.opengl.GL30.GL_TEXTURE_2D
@@ -35,8 +34,6 @@ import org.lwjgl.opengl.GL30.glBindTexture
 import org.lwjgl.opengl.GL30.glBindVertexArray
 import org.lwjgl.opengl.GL30.glClear
 import org.lwjgl.opengl.GL30.glClearColor
-import org.lwjgl.opengl.GL30.glDepthFunc
-import org.lwjgl.opengl.GL30.glDepthMask
 import org.lwjgl.opengl.GL30.glDisable
 import org.lwjgl.opengl.GL30.glEnable
 import org.lwjgl.opengl.GL30.glUseProgram
@@ -79,6 +76,9 @@ class Renderer(
         pickingTexture = PickingTexture(1920, 1080)
         frameBuffer = FrameBuffer(currentWidth, currentHeight) //width and height must be set before
         frameBuffer.initialize()
+
+        // Initialize OpenGL state tracker after GL context is ready
+        GLStateTracker.initialize()
     }
 
     suspend fun loadShaders(updateProgress:(Int, Int) -> Unit) {
@@ -112,13 +112,10 @@ class Renderer(
         pickingTexture.resize(currentWidth, currentHeight)
         pickingTexture.enableWriting()
         glViewport(0, 0, currentWidth, currentHeight)
-        
+
         // CRITICAL: Reset state that might have been changed by ImGui or previous passes
         glDisable(GL_SCISSOR_TEST)
-        glDepthMask(true)
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
-        glDisable(GL_CULL_FACE)
+        GLStateTracker.resetToDefaults()
         
         glClearColor(0f, 0f, 0f, 0f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)

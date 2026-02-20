@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.render.utils
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Texture
-import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
@@ -48,12 +47,12 @@ fun bindTexture(
  * @param block The code block to execute with the modified depth function
  */
 inline fun withDepthFunc(func: Int, block: () -> Unit) {
-    val previousDepthFunc = GL11.glGetInteger(GL30.GL_DEPTH_FUNC)
+    val previousDepthFunc = GLStateTracker.getDepthFunc()
     try {
-        GL30.glDepthFunc(func)
+        GLStateTracker.setDepthFunc(func)
         block()
     } finally {
-        GL30.glDepthFunc(previousDepthFunc)
+        GLStateTracker.setDepthFunc(previousDepthFunc)
     }
 }
 
@@ -65,20 +64,12 @@ inline fun withDepthFunc(func: Int, block: () -> Unit) {
  * @param block The code block to execute with the modified blend state
  */
 inline fun withBlendState(enabled: Boolean, block: () -> Unit) {
-    val previousBlendEnabled = GL11.glIsEnabled(GL11.GL_BLEND)
+    val previousBlendEnabled = GLStateTracker.isBlendEnabled()
     try {
-        if (enabled) {
-            GL11.glEnable(GL11.GL_BLEND)
-        } else {
-            GL11.glDisable(GL11.GL_BLEND)
-        }
+        GLStateTracker.setBlendEnabled(enabled)
         block()
     } finally {
-        if (previousBlendEnabled) {
-            GL11.glEnable(GL11.GL_BLEND)
-        } else {
-            GL11.glDisable(GL11.GL_BLEND)
-        }
+        GLStateTracker.setBlendEnabled(previousBlendEnabled)
     }
 }
 
@@ -90,12 +81,12 @@ inline fun withBlendState(enabled: Boolean, block: () -> Unit) {
  * @param block The code block to execute with the modified depth mask
  */
 inline fun withDepthMask(mask: Boolean, block: () -> Unit) {
-    val previousMask = GL11.glGetBoolean(GL30.GL_DEPTH_WRITEMASK)
+    val previousMask = GLStateTracker.isDepthMaskEnabled()
     try {
-        GL30.glDepthMask(mask)
+        GLStateTracker.setDepthMask(mask)
         block()
     } finally {
-        GL30.glDepthMask(previousMask)
+        GLStateTracker.setDepthMask(previousMask)
     }
 }
 
@@ -107,19 +98,11 @@ inline fun withDepthMask(mask: Boolean, block: () -> Unit) {
  * @param block The code block to execute with the modified cull state
  */
 inline fun withCullFace(enabled: Boolean, block: () -> Unit) {
-    val previousCullEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE)
+    val previousCullEnabled = GLStateTracker.isCullFaceEnabled()
     try {
-        if (enabled) {
-            GL11.glEnable(GL11.GL_CULL_FACE)
-        } else {
-            GL11.glDisable(GL11.GL_CULL_FACE)
-        }
+        GLStateTracker.setCullFaceEnabled(enabled)
         block()
     } finally {
-        if (previousCullEnabled) {
-            GL11.glEnable(GL11.GL_CULL_FACE)
-        } else {
-            GL11.glDisable(GL11.GL_CULL_FACE)
-        }
+        GLStateTracker.setCullFaceEnabled(previousCullEnabled)
     }
 }
