@@ -221,5 +221,4 @@ initialization order.
 
 - [ ] **A12.7.1: Build and run** to verify no regressions
 - [ ] **A12.7.2: Run tests** to ensure all pass
-- [ ] **A12.7.3: Remove any remaining `lateinit` usage` in renderer package
-- [ ] **A12.7.4: Update documentation** if needed
+- [ ] **A12.7.3: Update documentation** if needed
