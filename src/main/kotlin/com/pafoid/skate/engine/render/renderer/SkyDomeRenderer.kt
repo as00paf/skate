@@ -140,7 +140,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, resourceMan
         if (sphere.vaoId != 0) {
             glDeleteVertexArrays(sphere.vaoId)
         }
-        // Note: VBO and IBO are managed by VAOLoader and will be cleaned up with VAO
+        // VBO and IBO are managed by VAOLoader and cleaned up with VAO
         hdriTexture.destroy()
     }
 }

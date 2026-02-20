@@ -65,7 +65,7 @@ val engineModule = module {
     single { SplashScreen() }
 
     // Render resources factory - created lazily when Renderer is requested
-    single { RenderResourcesFactory(get(), get(), get()) }
+    single { RenderResourcesFactory(get(), get(), get(), get()) }
 
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }

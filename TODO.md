@@ -195,7 +195,7 @@ initialization order.
   - Updated `Renderer.resize()` to call both methods
   - Location: `src/main/kotlin/com/pafoid/skate/engine/render/FrameBuffer.kt`
 
-- [ ] **Pass `VAOLoader` to `RenderResourcesFactory`** - `RenderResourcesFactory.kt`:
+- [x] **Pass `VAOLoader` to `RenderResourcesFactory`** - `RenderResourcesFactory.kt`:
   - Currently factory creates `VAOLoader` internally via `createVaoLoader()`
   - Should be injected via constructor for better DI, it is already declared as a singleton in KoinModule.kt
   - Location: `src/main/kotlin/com/pafoid/skate/engine/render/RenderResourcesFactory.kt:139`

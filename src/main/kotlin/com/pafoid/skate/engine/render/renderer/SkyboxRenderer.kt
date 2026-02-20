@@ -44,7 +44,7 @@ class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
         if (cube.vaoId != 0) {
             glDeleteVertexArrays(cube.vaoId)
         }
-        // Note: VBO is managed by VAOLoader and will be cleaned up with VAO
+        // VBO is managed by VAOLoader and cleaned up with VAO
     }
 }
 

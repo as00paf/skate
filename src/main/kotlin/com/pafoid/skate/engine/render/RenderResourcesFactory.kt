@@ -26,11 +26,13 @@ import com.pafoid.skate.engine.render.utils.GLStateTracker
  * @param resourceManager Loads and manages shader and texture assets
  * @param sceneManager Provides access to the current scene
  * @param logger Logs initialization progress and errors
+ * @param vaoLoader Loads vertex array objects for GPU rendering
  */
 class RenderResourcesFactory(
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
-    private val logger: LoggerService
+    private val logger: LoggerService,
+    private val vaoLoader: VAOLoader
 ) {
     /**
      * Creates all rendering resources.
@@ -136,11 +138,6 @@ class RenderResourcesFactory(
         shaders: Shaders,
         resourceManager: ResourceManager
     ): Renderers {
-        // Note: VAOLoader would need to be passed in or created here
-        // For now, we'll need to get it from somewhere
-        // This is a limitation - we may need to pass VAOLoader to the factory
-        val vaoLoader = createVaoLoader()
-
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
         val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, resourceManager)
         val modelRenderer = ModelRenderer(resourceManager)
@@ -204,13 +201,5 @@ class RenderResourcesFactory(
             geometry = geometryPass,
             debug = debugPass
         )
-    }
-
-    /**
-     * Creates a VAOLoader instance.
-     * Note: This may need to be injected or passed to the factory.
-     */
-    private fun createVaoLoader(): VAOLoader {
-        return VAOLoader()
     }
 }
