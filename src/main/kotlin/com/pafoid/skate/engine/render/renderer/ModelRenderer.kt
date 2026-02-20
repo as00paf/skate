@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.render.renderer
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.MeshPart
@@ -33,6 +34,118 @@ class ModelRenderer(
 
     private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
 
+    /**
+     * Binds a texture to the specified slot, using the fallback texture if null.
+     * Also uploads the texture unit index to the shader.
+     */
+    private fun bindTexture(
+        slot: Int,
+        texture: Texture?,
+        shader: Shader,
+        uniformName: String
+    ) {
+        GL13.glActiveTexture(GL13.GL_TEXTURE0 + slot)
+        (texture ?: resourceManager.loadTextureSync(Assets.Textures.DEFAULT)).bind()
+        shader.uploadInt(uniformName, slot)
+    }
+
+    /**
+     * Renders a mesh part with full PBR material support.
+     */
+    private fun renderMeshPart(
+        part: MeshPart,
+        shader: Shader
+    ) {
+        val model = part.rawModel
+        val material = part.material
+
+        GL30.glBindVertexArray(model.vaoId)
+        model.enabledAttributes.forEach { GL20.glEnableVertexAttribArray(it) }
+
+        // Bind all PBR texture maps
+        bindTexture(0, material.baseColorTexture, shader, ShaderConst.Uniforms.BASE_COLOR_TEXTURE)
+        shader.uploadVec4f(ShaderConst.Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
+
+        val hasNormal = material.normalMap != null
+        bindTexture(1, material.normalMap, shader, ShaderConst.Uniforms.NORMAL_MAP)
+        shader.uploadBoolean(ShaderConst.Uniforms.HAS_NORMAL_MAP, hasNormal)
+
+        val hasMR = material.metallicRoughnessTexture != null
+        bindTexture(2, material.metallicRoughnessTexture, shader, ShaderConst.Uniforms.METALLIC_ROUGHNESS_TEXTURE)
+        shader.uploadBoolean(ShaderConst.Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, hasMR)
+        shader.uploadFloat(ShaderConst.Uniforms.METALLIC_FACTOR, material.metallicFactor)
+        shader.uploadFloat(ShaderConst.Uniforms.ROUGHNESS_FACTOR, material.roughnessFactor)
+
+        val hasAO = material.aoTexture != null
+        bindTexture(3, material.aoTexture, shader, ShaderConst.Uniforms.AO_TEXTURE)
+        shader.uploadBoolean(ShaderConst.Uniforms.HAS_AO_TEXTURE, hasAO)
+
+        val hasEmissive = material.emissiveTexture != null
+        bindTexture(4, material.emissiveTexture, shader, ShaderConst.Uniforms.EMISSIVE_TEXTURE)
+        shader.uploadBoolean(ShaderConst.Uniforms.HAS_EMISSIVE_TEXTURE, hasEmissive)
+        shader.uploadVec3f(ShaderConst.Uniforms.EMISSIVE_FACTOR, material.emissiveFactor)
+
+        // Alpha mode
+        val alphaInt = when (material.alphaMode) {
+            AlphaMode.OPAQUE -> 0
+            AlphaMode.MASK -> 1
+            AlphaMode.BLEND -> 2
+        }
+        shader.uploadInt(ShaderConst.Uniforms.ALPHA_MODE, alphaInt)
+        shader.uploadFloat(ShaderConst.Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
+
+        // Configure blending and depth mask
+        if (alphaInt == 2) {
+            GL11.glEnable(GL11.GL_BLEND)
+            GL11.glDepthMask(false)
+        } else {
+            GL11.glDisable(GL11.GL_BLEND)
+            GL11.glDepthMask(true)
+        }
+
+        // Configure face culling
+        if (material.doubleSided) GL11.glDisable(GL11.GL_CULL_FACE)
+        else GL11.glEnable(GL11.GL_CULL_FACE)
+
+        GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
+        EngineStats.drawCalls.incrementAndGet()
+
+        // Restore state after blending
+        if (alphaInt == 2) {
+            GL11.glDisable(GL11.GL_BLEND)
+            GL11.glDepthMask(true)
+        }
+
+        model.enabledAttributes.forEach { GL20.glDisableVertexAttribArray(it) }
+        GL30.glBindVertexArray(0)
+    }
+
+    /**
+     * Renders a mesh part with minimal state (no textures, no PBR).
+     * Used for simple rendering scenarios like shadow passes or debug rendering.
+     */
+    private fun renderMeshPartSimple(
+        part: MeshPart,
+        shader: Shader
+    ) {
+        val model = part.rawModel
+
+        GL30.glBindVertexArray(model.vaoId)
+        model.enabledAttributes.forEach { GL20.glEnableVertexAttribArray(it) }
+
+        if (part.material.doubleSided) GL11.glDisable(GL11.GL_CULL_FACE)
+        else GL11.glEnable(GL11.GL_CULL_FACE)
+
+        GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
+        EngineStats.drawCalls.incrementAndGet()
+
+        model.enabledAttributes.forEach { GL20.glDisableVertexAttribArray(it) }
+        GL30.glBindVertexArray(0)
+    }
+
+    /**
+     * Renders a game object with full PBR shading and optional skeleton visualization.
+     */
     fun render(
         go: GameObject,
         transform: Transform,
@@ -44,7 +157,7 @@ class ModelRenderer(
         val transformationMatrix = transform.toWorldMatrix()
         val textureScale = renderComponent.textureScale
 
-        // Hoist global uniforms for this object
+        // Upload global uniforms for this object
         defaultShader.uploadMat4f(ShaderConst.Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
         defaultShader.uploadFloat(ShaderConst.Uniforms.TEXTURE_SCALE, textureScale)
         defaultShader.uploadVec3f(ShaderConst.Uniforms.CAMERA_POSITION, cameraPosition)
@@ -72,89 +185,41 @@ class ModelRenderer(
         }
     }
 
-    private fun renderMeshPart(
-        part: MeshPart,
-        shader: Shader
+    /**
+     * Renders a game object with minimal shading (no textures, no PBR).
+     * Used for shadow passes, debug rendering, or other simplified scenarios.
+     */
+    fun renderSimple(
+        go: GameObject,
+        transform: Transform,
+        renderComponent: RenderComponent,
+        shader: Shader,
+        skeletonComponent: SkeletonComponent? = null
     ) {
-        val model = part.rawModel
-        val material = part.material
+        val transformationMatrix = transform.toWorldMatrix()
+        shader.uploadMat4f(ShaderConst.Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
 
-        GL30.glBindVertexArray(model.vaoId)
-
-        // Enable only available attributes
-        model.enabledAttributes.forEach { GL20.glEnableVertexAttribArray(it) }
-
-        // Base Color
-        GL13.glActiveTexture(GL13.GL_TEXTURE0)
-        material.baseColorTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind()
-        shader.uploadInt(ShaderConst.Uniforms.BASE_COLOR_TEXTURE, 0)
-        shader.uploadVec4f(ShaderConst.Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
-
-        // Normal Map
-        GL13.glActiveTexture(GL13.GL_TEXTURE1)
-        val hasNormal = material.normalMap != null
-        if (hasNormal) material.normalMap?.bind()
-        else resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind() // Bind dummy
-        shader.uploadInt(ShaderConst.Uniforms.NORMAL_MAP, 1)
-        shader.uploadBoolean(ShaderConst.Uniforms.HAS_NORMAL_MAP, hasNormal)
-
-        // Metallic Roughness
-        GL13.glActiveTexture(GL13.GL_TEXTURE2)
-        val hasMR = material.metallicRoughnessTexture != null
-        if (hasMR) material.metallicRoughnessTexture?.bind()
-        else resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind() // Bind dummy
-        shader.uploadInt(ShaderConst.Uniforms.METALLIC_ROUGHNESS_TEXTURE, 2)
-        shader.uploadBoolean(ShaderConst.Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, hasMR)
-        shader.uploadFloat(ShaderConst.Uniforms.METALLIC_FACTOR, material.metallicFactor)
-        shader.uploadFloat(ShaderConst.Uniforms.ROUGHNESS_FACTOR, material.roughnessFactor)
-
-        // AO
-        GL13.glActiveTexture(GL13.GL_TEXTURE3)
-        val hasAO = material.aoTexture != null
-        material.aoTexture?.bind() ?: resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind()
-        shader.uploadInt(ShaderConst.Uniforms.AO_TEXTURE, 3)
-        shader.uploadBoolean(ShaderConst.Uniforms.HAS_AO_TEXTURE, hasAO)
-
-        // Emissive
-        GL13.glActiveTexture(GL13.GL_TEXTURE4)
-        val hasEmissive = material.emissiveTexture != null
-        if (hasEmissive) material.emissiveTexture?.bind()
-        else resourceManager.loadTextureSync(Assets.Textures.DEFAULT).bind() // Bind dummy
-        shader.uploadInt(ShaderConst.Uniforms.EMISSIVE_TEXTURE, 4)
-        shader.uploadBoolean(ShaderConst.Uniforms.HAS_EMISSIVE_TEXTURE, hasEmissive)
-        shader.uploadVec3f(ShaderConst.Uniforms.EMISSIVE_FACTOR, material.emissiveFactor)
-
-        // Alpha
-        val alphaInt = when(material.alphaMode) {
-            AlphaMode.OPAQUE -> 0
-            AlphaMode.MASK -> 1
-            AlphaMode.BLEND -> 2
-        }
-        shader.uploadInt(ShaderConst.Uniforms.ALPHA_MODE, alphaInt)
-        shader.uploadFloat(ShaderConst.Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
-
-        if (alphaInt == 2) {
-            GL11.glEnable(GL11.GL_BLEND)
-            GL11.glDepthMask(false)
-        } else {
-            GL11.glDisable(GL11.GL_BLEND)
-            GL11.glDepthMask(true)
+        val hasSkin = skeletonComponent?.pose != null
+        shader.uploadBoolean(ShaderConst.Uniforms.HAS_SKIN, hasSkin)
+        if (skeletonComponent?.pose != null) {
+            shader.uploadMat4fArray(ShaderConst.Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
         }
 
-        if (material.doubleSided) GL11.glDisable(GL11.GL_CULL_FACE)
-        else GL11.glEnable(GL11.GL_CULL_FACE)
+        val skeleton = skeletonComponent?.pose?.skeleton
 
-        GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
-        EngineStats.drawCalls.incrementAndGet()
-
-        if (alphaInt == 2) {
-            GL11.glDisable(GL11.GL_BLEND)
-            GL11.glDepthMask(true)
+        // Render mesh if requested
+        if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
+            for (part in renderComponent.model.mesh) {
+                renderMeshPartSimple(part, shader)
+            }
         }
 
-        model.enabledAttributes.forEach { GL20.glDisableVertexAttribArray(it) }
-
-        GL30.glBindVertexArray(0)
+        // Render skeleton if requested
+        if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
+            if (renderComponent.model is CharacterModel && skeleton != null) {
+                renderSkeleton(skeleton, transform)
+            }
+        }
     }
 
     private fun renderSkeleton(
@@ -190,49 +255,5 @@ class ModelRenderer(
         val boneRotation = Quaternionf()
         bone.worldTransform.getUnnormalizedRotation(boneRotation)
         debugRenderer.addBox3D(boneWorldPos, boneRotation, Vector3f(0.01f), boneColor)
-    }
-
-    fun renderSimple(
-        go: GameObject,
-        transform: Transform,
-        renderComponent: RenderComponent,
-        shader: Shader,
-        skeletonComponent: SkeletonComponent? = null
-    ) {
-        val transformationMatrix = transform.toWorldMatrix()
-        shader.uploadMat4f(ShaderConst.Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
-
-        val hasSkin = skeletonComponent?.pose != null
-        shader.uploadBoolean(ShaderConst.Uniforms.HAS_SKIN, hasSkin)
-        if (skeletonComponent?.pose != null) {
-            shader.uploadMat4fArray(ShaderConst.Uniforms.JOINT_MATRICES, skeletonComponent.getMatrixPalette())
-        }
-
-        val skeleton = skeletonComponent?.pose?.skeleton
-
-        // Render mesh if requested
-        if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
-            for (part in renderComponent.model.mesh) {
-                val model = part.rawModel
-                GL30.glBindVertexArray(model.vaoId)
-                model.enabledAttributes.forEach { GL20.glEnableVertexAttribArray(it) }
-
-                if (part.material.doubleSided) GL11.glDisable(GL11.GL_CULL_FACE)
-                else GL11.glEnable(GL11.GL_CULL_FACE)
-
-                GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
-                EngineStats.drawCalls.incrementAndGet()
-
-                model.enabledAttributes.forEach { GL20.glDisableVertexAttribArray(it) }
-                GL30.glBindVertexArray(0)
-            }
-        }
-
-        // Render skeleton if requested
-        if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
-            if (renderComponent.model is CharacterModel && skeleton != null) {
-                renderSkeleton(skeleton, transform)
-            }
-        }
     }
 }
