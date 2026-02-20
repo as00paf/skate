@@ -34,6 +34,33 @@ class Shader(
     /**
      * Reusable buffers to minimize garbage collection pressure in hot paths.
      * These are cleared and reused on each call.
+     *
+     * ## Thread Safety
+     *
+     * **These buffers are NOT thread-safe.** The `Shader` class is designed for single-threaded
+     * rendering where all OpenGL calls occur on the main render thread.
+     *
+     * If multiple threads call upload methods (e.g., `uploadMat4f`, `uploadVec3f`) concurrently,
+     * they will corrupt each other's buffer data, causing incorrect uniform values to be uploaded.
+     *
+     * ### Current Usage
+     *
+     * - All shader uploads occur during render passes on the main render thread
+     * - Asset loading (which may happen on background threads) only loads shader programs,
+     *   not uniform values
+     *
+     * ### Future Multi-threaded Rendering
+     *
+     * If multi-threaded rendering is ever needed, consider:
+     * - Using `ThreadLocal<FloatBuffer>` to give each thread its own buffers
+     * - Synchronizing all upload methods (performance cost)
+     * - Passing pre-filled buffers from worker threads to the render thread
+     *
+     * @see uploadMat4f
+     * @see uploadMat3f
+     * @see uploadVec2f
+     * @see uploadVec3f
+     * @see uploadVec4f
      */
     private val matrixBuffer = BufferUtils.createFloatBuffer(16)
     private val vec2Buffer = BufferUtils.createFloatBuffer(2)

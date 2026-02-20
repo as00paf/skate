@@ -60,12 +60,19 @@
 
 ### Code Quality
 
-- [ ] **A15.6: Review Shader Buffer Thread Safety** - `Shader.kt`:
-    - Reusable buffers (`matrixBuffer`, `vec2Buffer`, etc.) are not thread-safe
-    - Add KDoc noting single-threaded rendering assumption
-    - **Future**: Consider `ThreadLocal` buffers if multi-threaded rendering is needed
-    - **Impact**: Low - Documentation for future maintainers
-    - Location: `src/main/kotlin/com/pafoid/skate/engine/assets/data/Shader.kt:37-41`
+- [x] **A15.6: Review Shader Buffer Thread Safety** - `Shader.kt`:
+  - **Changes**:
+    - Added "## Thread Safety" section to buffer KDoc
+    - Clearly states buffers are NOT thread-safe
+    - Explains corruption risk if multiple threads call upload methods concurrently
+    - Documented current single-threaded usage pattern
+    - Added "### Future Multi-threaded Rendering" section with migration options:
+      - ThreadLocal<FloatBuffer> approach
+      - Synchronization approach (with performance note)
+      - Worker thread to render thread buffer passing
+    - Added @see references to all upload methods
+  - **Impact**: Low - Documentation for future maintainers considering multi-threaded rendering
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/assets/data/Shader.kt:35-65`
 
 ---
 
@@ -101,5 +108,11 @@ Constructor Injection for rendering components.
 ## Notes
 
 - All tasks from phases A10-A14 are complete - see CHANGELOG.md for details
+- **v0.15 Complete**: All 6 rendering pipeline fixes implemented:
+  - A15.1: Fixed lambda capture bug (severe - picking broken after resize)
+  - A15.2: Added resize propagation to PickingPass
+  - A15.3: Consolidated camera viewport updates (single source of truth)
+  - A15.4: Documented picking skip behavior optimization
+  - A15.5: Added OpenGL context requirement documentation
+  - A15.6: Documented shader buffer thread safety assumptions
 - Use the template above for new phase tasks
-- v0.15 focuses on fixing issues found during rendering pipeline review
