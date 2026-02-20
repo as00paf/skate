@@ -206,7 +206,7 @@ initialization order.
 
 ### Documentation
 
-- [ ] **A13.1: Add KDoc to VAOLoader** - `VAOLoader.kt`:
+- [x] **A13.1: Add KDoc to VAOLoader** - `VAOLoader.kt`:
   - Document all public methods (`loadToVAO`, etc.)
   - Explain vertex attribute layout and enabled attributes bitmask
   - Document memory management (VAO/VBO/IBO lifecycle)
