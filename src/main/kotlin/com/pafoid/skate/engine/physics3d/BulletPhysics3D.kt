@@ -244,7 +244,7 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
             physicsSpace.rigidBodyList.forEach { body ->
                 val location = body.getPhysicsLocation(null)
                 val rotation = body.getPhysicsRotation(null)
-                
+
                 val pos = JomlVector3f(location.x, location.y, location.z)
                 val rot = Quaternionf(rotation.getX(), rotation.getY(), rotation.getZ(), rotation.getW())
 

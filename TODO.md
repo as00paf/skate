@@ -221,11 +221,14 @@ initialization order.
   - **Impact**: High - Reduces GC pressure (matrices created every frame for each shader)
   - Location: `src/main/kotlin/com/pafoid/skate/engine/render/Camera.kt`
 
-- [ ] **A13.3: Object Pool for DebugRenderer** - `DebugRenderer.kt`:
+- [x] **A13.3: Object Pool for DebugRenderer** - `DebugRenderer.kt`:
   - Implement object pool for `Line3D` and `Triangle3D` objects
   - Reuse objects instead of allocating new ones each frame
   - **Impact**: Medium - Reduces GC pressure from debug visualization
   - Location: `src/main/kotlin/com/pafoid/skate/engine/render/renderer/DebugRenderer.kt`
+  - **Bug Fix**: Fixed physics debug rendering - `DebugRenderer` singleton is now properly
+    shared between `BulletPhysics3D` (adds debug lines) and `DebugPass` (renders them).
+    The A12 refactoring accidentally created separate instances, breaking debug visualization.
 
 ### Code Quality
 

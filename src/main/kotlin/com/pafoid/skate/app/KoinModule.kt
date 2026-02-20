@@ -56,7 +56,6 @@ val engineModule = module {
     single { ResourceManager(get(), get(), get(), get()) }
     single { PoseSerializer() }
 
-    // Renderers that are used outside the render pipeline
     single { DebugRenderer() }
     single { PickingRenderer() }
 
@@ -65,7 +64,7 @@ val engineModule = module {
     single { SplashScreen() }
 
     // Render resources factory - created lazily when Renderer is requested
-    single { RenderResourcesFactory(get(), get(), get(), get()) }
+    single { RenderResourcesFactory(get(), get(), get(), get(), get()) }
 
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }

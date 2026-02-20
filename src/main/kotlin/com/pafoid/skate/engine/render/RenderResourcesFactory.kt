@@ -27,12 +27,14 @@ import com.pafoid.skate.engine.render.utils.GLStateTracker
  * @param sceneManager Provides access to the current scene
  * @param logger Logs initialization progress and errors
  * @param vaoLoader Loads vertex array objects for GPU rendering
+ * @param debugRenderer Shared debug renderer for physics and other debug visualization
  */
 class RenderResourcesFactory(
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
     private val logger: LoggerService,
-    private val vaoLoader: VAOLoader
+    private val vaoLoader: VAOLoader,
+    private val debugRenderer: DebugRenderer
 ) {
     /**
      * Creates all rendering resources.
@@ -162,7 +164,6 @@ class RenderResourcesFactory(
     ): RenderPasses {
         val renderer2D = Renderer2D()
         val pickingRenderer = PickingRenderer()
-        val debugRenderer = DebugRenderer()
         val lightingUniformsLoader = LightingUniformsLoader()
 
         // Bind initial shader and camera for renderer2D

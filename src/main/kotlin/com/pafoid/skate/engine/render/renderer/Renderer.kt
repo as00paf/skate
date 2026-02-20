@@ -77,11 +77,13 @@ class Renderer(
 
         // 2. Geometry Pass - Render full scene with PBR shading
         renderResources.renderPasses.geometry.execute(scene, activeGameObject, hoveredGameObject)
+
+        // 3. Debug Pass - Render debug visualization on top (still in FBO)
+        renderResources.renderPasses.debug.execute(scene, activeGameObject, hoveredGameObject)
+
+        // Now unbind and cleanup geometry pass
         renderResources.renderPasses.geometry.unbind()
         renderResources.renderPasses.geometry.cleanup()
-
-        // 3. Debug Pass - Render debug visualization on top
-        renderResources.renderPasses.debug.execute(scene, activeGameObject, hoveredGameObject)
 
         // Final screen viewport reset
         glViewport(0, 0, renderResources.frameBuffer.width, renderResources.frameBuffer.height)
