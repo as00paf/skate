@@ -34,7 +34,6 @@ import org.lwjgl.opengl.GL30.glGenFramebuffers
 import org.lwjgl.opengl.GL30.glGenTextures
 import org.lwjgl.opengl.GL30.glPixelStorei
 import org.lwjgl.opengl.GL30.glReadBuffer
-import org.lwjgl.opengl.GL30.glReadPixels
 import org.lwjgl.opengl.GL30.glTexImage2D
 import org.lwjgl.opengl.GL30.glTexParameteri
 
@@ -94,7 +93,7 @@ import org.lwjgl.opengl.GL30.glTexParameteri
  * @param width Initial texture width (typically matches viewport width)
  * @param height Initial texture height (typically matches viewport height)
  */
-class PickingTexture(private var width: Int, private var height: Int) {
+class PickingTexture(var width: Int, var height: Int) {
 
     private var pickingTextureId: Int = 0
     private var fbo: Int = 0

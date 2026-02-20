@@ -67,10 +67,7 @@ class Renderer(
     override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
         // Begin frame for debug and picking systems
         renderResources.renderPasses.debug.beginFrame()
-        renderResources.renderPasses.picking.beginFrame(
-            renderResources.frameBuffer.width,
-            renderResources.frameBuffer.height
-        )
+        renderResources.renderPasses.picking.beginFrame()
 
         // 1. Picking Pass - Render object IDs for mouse selection
         renderResources.renderPasses.picking.execute(scene, activeGameObject, hoveredGameObject)
@@ -162,5 +159,6 @@ class Renderer(
     fun resize(width: Int, height: Int) {
         renderResources.frameBuffer.resize(width, height)
         renderResources.pickingTexture.resize(width, height)
+        renderResources.renderPasses.picking.resize(width, height)
     }
 }

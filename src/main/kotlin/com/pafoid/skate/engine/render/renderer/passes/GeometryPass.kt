@@ -31,21 +31,19 @@ import org.lwjgl.opengl.GL30.glViewport
 
 /**
  * Main geometry rendering pass.
- * 
+ *
  * Renders all 3D objects with full PBR shading, 2D sprites, and the sky dome.
  * This is the primary visual rendering pass that produces the final image.
- * 
+ *
  * @param defaultShader The main 3D shader for PBR rendering
  * @param batchShader The 2D sprite batch shader
  * @param modelRenderer The 3D model renderer
  * @param renderer2D The 2D sprite renderer
  * @param skyDomeRenderer The sky dome renderer
- * @param frameBuffer The framebuffer for FBO rendering (optional)
+ * @param frameBuffer The framebuffer for FBO rendering (provides width/height)
  * @param lightingUniformsLoader Helper for uploading lighting uniforms
  * @param sceneManager The scene manager for accessing current scene
  * @param getUseFbo Lambda to get current FBO usage setting at render time
- * @param getWindowWidth Lambda to get current window width at render time
- * @param getWindowHeight Lambda to get current window height at render time
  */
 class GeometryPass(
     private val defaultShader: Shader,
@@ -56,22 +54,18 @@ class GeometryPass(
     private val frameBuffer: FrameBuffer,
     private val lightingUniformsLoader: LightingUniformsLoader,
     private val getUseFbo: () -> Boolean,
-    private val sceneManager: SceneManager,
-    private val getWindowWidth: () -> Int,
-    private val getWindowHeight: () -> Int
+    private val sceneManager: SceneManager
 ) : RenderPass {
 
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
         // Setup framebuffer
-        val width = getWindowWidth()
-        val height = getWindowHeight()
         val useFbo = getUseFbo()
         if (useFbo) {
             frameBuffer.bind()
             glViewport(0, 0, frameBuffer.width, frameBuffer.height)
         } else {
             glBindFramebuffer(GL_FRAMEBUFFER, 0)
-            glViewport(0, 0, width, height)
+            glViewport(0, 0, frameBuffer.width, frameBuffer.height)
         }
 
         // Clear with sky color
@@ -83,8 +77,8 @@ class GeometryPass(
         renderer2D.bindCamera(camera)
 
         // Update camera viewport dimensions for correct aspect ratio
-        camera.viewportWidth = width
-        camera.viewportHeight = height
+        camera.viewportWidth = frameBuffer.width
+        camera.viewportHeight = frameBuffer.height
 
         // 3D Rendering Setup - Upload projection and view matrices
         defaultShader.start()

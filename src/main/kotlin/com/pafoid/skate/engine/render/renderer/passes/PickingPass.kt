@@ -25,12 +25,16 @@ import org.lwjgl.opengl.GL30.glViewport
 
 /**
  * Render pass for object picking (selection/hover detection).
- * 
+ *
  * Renders all pickable objects to a special texture where pixel color
  * encodes the entity ID. This allows CPU-side identification of which
  * object the mouse is over.
- * 
- * @param pickingTexture The texture to render picking IDs to
+ *
+ * Note: Picking is skipped when an object is already selected (activeGameObject != null).
+ * This is intentional for performance - when an object is selected, hover detection
+ * is not needed.
+ *
+ * @param pickingTexture The texture to render picking IDs to (provides width/height)
  * @param pickingShader3D The shader used for 3D picking rendering
  * @param pickingRenderer The renderer for executing picking draw calls
  * @param renderer2D The 2D renderer for sprite picking
@@ -43,17 +47,17 @@ class PickingPass(
     private val pickingRenderer: PickingRenderer,
     private val renderer2D: Renderer2D,
     private val pickingShader: Shader,
-    private val modelRenderer: ModelRenderer,
-    private val getWindowWidth: () -> Int,
-    private val getWindowHeight: () -> Int
+    private val modelRenderer: ModelRenderer
 ) : RenderPass {
 
     fun resize(width: Int, height: Int) {
         pickingTexture.resize(width, height)
     }
 
-    fun beginFrame(width: Int, height: Int) {
-        pickingTexture.resize(width, height)
+    fun beginFrame() {
+        val width = pickingTexture.width
+        val height = pickingTexture.height
+        
         pickingTexture.enableWriting()
         glViewport(0, 0, width, height)
 
@@ -67,10 +71,12 @@ class PickingPass(
 
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
         // Skip picking pass if an object is already selected
+        // This is intentional: when selected, hover detection is not needed
         if (activeGameObject != null) return
 
-        val width = getWindowWidth()
-        val height = getWindowHeight()
+        // Read current dimensions from picking texture (updated on resize)
+        val width = pickingTexture.width
+        val height = pickingTexture.height
 
         // Update camera viewport dimensions for correct aspect ratio
         scene.camera.viewportWidth = width

@@ -176,9 +176,7 @@ class RenderResourcesFactory(
             pickingRenderer = pickingRenderer,
             renderer2D = renderer2D,
             pickingShader = shaders.picking,
-            modelRenderer = renderers.model,
-            getWindowWidth = { width },
-            getWindowHeight = { height }
+            modelRenderer = renderers.model
         )
 
         val geometryPass = GeometryPass(
@@ -190,9 +188,7 @@ class RenderResourcesFactory(
             frameBuffer = frameBuffer,
             lightingUniformsLoader = lightingUniformsLoader,
             getUseFbo = { true }, // Default to FBO, can be made configurable
-            sceneManager = sceneManager,
-            getWindowWidth = { width },
-            getWindowHeight = { height }
+            sceneManager = sceneManager
         )
 
         val debugPass = DebugPass(debugRenderer)

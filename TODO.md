@@ -4,28 +4,20 @@
 
 ### Critical Issues
 
-- [ ] **A15.1: Fix Lambda Capture for Window Dimensions** - `RenderResourcesFactory.kt`:
-    - Current lambdas `{ width }` and `{ height }` capture initial values at factory creation time
-    - After window resize, PickingPass and GeometryPass use stale dimensions
-    - **Solution Options**:
-        1. Pass references to `Window` object and read dimensions directly in passes
-        2. Create shared mutable state object that gets updated on resize
-        3. Pass `Renderer` reference and read from `frameBuffer.width/height`
-    - **Impact**: Severe - Picking and rendering broken after any window resize
+- [x] **A15.1: Fix Lambda Capture for Window Dimensions** - `RenderResourcesFactory.kt`:
+  - **Problem**: Lambdas `{ width }` and `{ height }` captured initial values at factory creation time
+  - **Solution**: Pass `FrameBuffer` and `PickingTexture` directly; passes read `width`/`height` properties
+  - **Changes**:
+    - Removed `getWindowWidth`/`getWindowHeight` lambdas from `PickingPass` and `GeometryPass`
+    - Made `PickingTexture.width/height` public (was private)
+    - Passes now read dimensions from `frameBuffer.width/height` and `pickingTexture.width/height`
+  - **Impact**: Severe - Fixed picking and rendering broken after window resize
     - Location: `src/main/kotlin/com/pafoid/skate/engine/render/RenderResourcesFactory.kt:167-180`
 
-- [ ] **A15.2: Add Resize Propagation to RenderPasses** - `Renderer.kt`:
-    - `PickingPass.resize()` exists but is never called
-    - `GeometryPass` may need resize handling for proper viewport management
-    - Update `Renderer.resize()` to propagate to all passes:
-      ```kotlin
-      fun resize(width: Int, height: Int) {
-          renderResources.frameBuffer.resize(width, height)
-          renderResources.pickingTexture.resize(width, height)
-          renderResources.renderPasses.picking.resize(width, height)
-      }
-      ```
-    - **Impact**: High - Passes don't know about new dimensions after resize
+- [x] **A15.2: Add Resize Propagation to RenderPasses** - `Renderer.kt`:
+  - Updated `Renderer.resize()` to call `renderResources.renderPasses.picking.resize(width, height)`
+  - Ensures PickingPass is notified of dimension changes
+  - **Impact**: High - Passes now correctly updated after resize
     - Location: `src/main/kotlin/com/pafoid/skate/engine/render/renderer/Renderer.kt:157`
 
 ### Performance Optimizations
