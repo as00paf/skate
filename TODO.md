@@ -37,14 +37,15 @@
   - Update all `upload*()` methods to use cached locations
   - **Impact**: Severe - glGetUniformLocation is extremely expensive in hot paths
 
-- [ ] **A11.2: Reuse Buffer Objects** - `Shader.kt`:
+- [x] **A11.2: Reuse Buffer Objects** - `Shader.kt`:
   - Create reusable buffers as class properties (matrixBuffer, vec3Buffer, etc.)
   - Call `buffer.clear()` before each use instead of allocating new buffers
   - **Impact**: High - Reduces GC pressure and frame stutter
+  - **Note**: Completed as part of A11.1; other BufferUtils calls are in asset loading (not hot paths)
 
-- [ ] **A11.3: Query Hardware Texture Limits** - `RenderBatch.kt`:
+- [x] **A11.3: Query Hardware Texture Limits** - `RenderBatch.kt`:
   - Replace hardcoded `maxTextureSlots = 8` with OpenGL query
-  - Use `GL11.glGetInteger(GL13.GL_MAX_TEXTURE_IMAGE_UNITS)`
+  - Use `GL11.glGetInteger(GL20.GL_MAX_TEXTURE_IMAGE_UNITS)`
   - **Impact**: Medium - Hardware compatibility
 
 - [ ] **A11.4: Implement Proper State Tracking** - New `GLStateTracker.kt`:

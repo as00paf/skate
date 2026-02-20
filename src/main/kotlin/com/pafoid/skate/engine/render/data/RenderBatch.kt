@@ -20,6 +20,8 @@ import com.pafoid.skate.engine.utils.RenderConsts.VERTEX_SIZE_BYTES
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
 import org.joml.Vector4f
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
 import org.lwjgl.opengl.GL30.GL_DYNAMIC_DRAW
 import org.lwjgl.opengl.GL30.GL_ELEMENT_ARRAY_BUFFER
@@ -54,7 +56,7 @@ class RenderBatch(
 
     private var vaoId = 0
     private var vboId = 0
-    private var maxTextureSlots = 8 // Default, should be queried
+    private val maxTextureSlots = GL11.glGetInteger(GL20.GL_MAX_TEXTURE_IMAGE_UNITS)
 
     // Reusable objects to minimize allocations in hot loop
     private val transformMatrix = Matrix4f()
@@ -299,7 +301,7 @@ class RenderBatch(
     }
 
     fun hasTextureRoom(): Boolean {
-        return textureSlots.size < 8
+        return textureSlots.size < maxTextureSlots
     }
 
     fun hasTexture(tex: Texture): Boolean {
