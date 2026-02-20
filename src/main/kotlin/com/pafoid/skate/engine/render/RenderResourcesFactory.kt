@@ -39,16 +39,27 @@ class RenderResourcesFactory(
     /**
      * Creates all rendering resources.
      *
+     * **Important**: This method requires an active OpenGL context to be current on the
+     * calling thread. It will crash if called before the OpenGL context is created.
+     *
+     * ## Initialization Order
+     *
      * This method performs the following initialization in order:
-     * 1. Initializes OpenGL state tracker
-     * 2. Creates framebuffer and picking texture
-     * 3. Loads all shaders
+     * 1. Initializes OpenGL state tracker (queries GL state - requires context)
+     * 2. Creates framebuffer and picking texture (allocates GL resources)
+     * 3. Loads all shaders (compiles GLSL programs)
      * 4. Creates all renderer instances
      * 5. Creates all render passes
+     *
+     * ## Usage
+     *
+     * Call this method during engine initialization, after the window and OpenGL context
+     * have been created. Typically called by [Renderer.initialize()] during boot sequence.
      *
      * @param width Initial viewport width
      * @param height Initial viewport height
      * @return Fully initialized RenderResources container
+     * @throws IllegalStateException if called without an active OpenGL context
      */
     suspend fun create(width: Int, height: Int): RenderResources {
         logger.logEngine("Initializing OpenGL state tracker...")

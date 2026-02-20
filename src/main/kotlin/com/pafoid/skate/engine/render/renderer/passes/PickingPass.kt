@@ -30,9 +30,24 @@ import org.lwjgl.opengl.GL30.glViewport
  * encodes the entity ID. This allows CPU-side identification of which
  * object the mouse is over.
  *
- * Note: Picking is skipped when an object is already selected (activeGameObject != null).
- * This is intentional for performance - when an object is selected, hover detection
- * is not needed.
+ * ## Picking Optimization
+ *
+ * **Important**: This pass is skipped when an object is already selected
+ * (`activeGameObject != null`). This is an intentional performance optimization:
+ *
+ * - When no object is selected: Picking runs every frame to detect hover state
+ * - When an object is selected: Picking is disabled because:
+ *   - Hover detection is not needed (user is interacting with selected object)
+ *   - Saves GPU draw calls and CPU iteration over game objects
+ *   - Prevents accidental selection changes during manipulation
+ *
+ * To re-enable picking, deselect the object (e.g., press Escape or click empty space).
+ *
+ * ## Technical Details
+ *
+ * - Objects are rendered with their entity ID encoded as a color value
+ * - The CPU reads the pixel under the mouse to determine which object is hovered
+ * - Objects marked with [NonPickable] component are excluded from picking
  *
  * @param pickingTexture The texture to render picking IDs to (provides width/height)
  * @param pickingShader3D The shader used for 3D picking rendering
@@ -70,8 +85,10 @@ class PickingPass(
     }
 
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
-        // Skip picking pass if an object is already selected
-        // This is intentional: when selected, hover detection is not needed
+        // PERFORMANCE: Skip entire picking pass when object is selected.
+        // Hover detection is unnecessary while manipulating a selected object,
+        // and this saves GPU draw calls + CPU iteration.
+        // User must deselect (ESC or click empty space) to re-enable picking.
         if (activeGameObject != null) return
 
         // Render 2D and 3D objects for picking

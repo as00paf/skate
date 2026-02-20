@@ -37,18 +37,26 @@
 
 ### Documentation
 
-- [ ] **A15.4: Document Picking Skip Behavior** - `PickingPass.kt`:
-    - Add KDoc explaining that picking is skipped when object is selected
-    - Document this is intentional for performance optimization
-    - Note that hover detection is disabled while object is selected
-    - **Impact**: Low - Code clarity
-    - Location: `src/main/kotlin/com/pafoid/skate/engine/render/renderer/passes/PickingPass.kt:74`
+- [x] **A15.4: Document Picking Skip Behavior** - `PickingPass.kt`:
+  - **Changes**:
+    - Added comprehensive KDoc with "## Picking Optimization" section
+    - Documented when picking runs vs. when it's skipped
+    - Explained benefits: GPU draw call savings, CPU iteration savings, prevents accidental selection
+    - Documented how to re-enable picking (deselect with ESC or click empty space)
+    - Added "## Technical Details" section explaining the encoding mechanism
+    - Enhanced inline comment in `execute()` method
+  - **Impact**: Low - Code clarity for future maintainers
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/renderer/passes/PickingPass.kt`
 
-- [ ] **A15.5: Add OpenGL Context Requirement KDoc** - `RenderResourcesFactory.kt`:
-    - Document that `GLStateTracker.initialize()` requires active OpenGL context
-    - Add precondition that `create()` must be called after context creation
-    - **Impact**: Low - Prevents initialization order bugs
-    - Location: `src/main/kotlin/com/pafoid/skate/engine/render/RenderResourcesFactory.kt:54`
+- [x] **A15.5: Add OpenGL Context Requirement KDoc** - `RenderResourcesFactory.kt`:
+  - **Changes**:
+    - Added "**Important**" warning that method requires active OpenGL context
+    - Documented that it will crash if called before context creation
+    - Added "## Initialization Order" section with detailed steps and notes
+    - Added "## Usage" section explaining when/where to call
+    - Added `@throws IllegalStateException` documentation
+  - **Impact**: Low - Prevents initialization order bugs during engine modifications
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/RenderResourcesFactory.kt:39-63`
 
 ### Code Quality
 
