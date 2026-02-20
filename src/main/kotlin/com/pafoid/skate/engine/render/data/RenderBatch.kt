@@ -321,5 +321,16 @@ class RenderBatch(
         textureSlots.clear()
         hasRoom = true
     }
+
+    fun destroy() {
+        if (vaoId != 0) {
+            org.lwjgl.opengl.GL30.glDeleteVertexArrays(vaoId)
+            vaoId = 0
+        }
+        if (vboId != 0) {
+            org.lwjgl.opengl.GL30.glDeleteBuffers(vboId)
+            vboId = 0
+        }
+    }
 }
 

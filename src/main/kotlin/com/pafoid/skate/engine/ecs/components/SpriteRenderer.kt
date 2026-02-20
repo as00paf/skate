@@ -7,7 +7,8 @@ import org.joml.Vector4f
 
 class SpriteRenderer(
     private val color: Vector4f = Vector4f(1f, 1f, 1f, 1f),
-    private var sprite: Sprite = Sprite()
+    private var sprite: Sprite = Sprite(),
+    val zIndex: Int = 0
 ): Component() {
 
     private var lastTransform: Transform = Transform()

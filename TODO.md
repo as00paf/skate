@@ -64,10 +64,11 @@
   - Update Renderer to orchestrate passes instead of implementing them
   - **Impact**: Medium - Better separation of concerns, easier testing
 
-- [ ] **A11.6: Implement Proper Z-Index for 2D Sprites** - `Renderer2D.kt`:
+- [x] **A11.6: Implement Proper Z-Index for 2D Sprites** - `Renderer2D.kt`:
+  - Add `zIndex` property to SpriteRenderer component
   - Remove hardcoded `zIndex == 0` check
-  - Add `zIndex` property to SpriteRenderer
-  - Group batches by z-index and render in order
+  - Group batches by z-index using `Map<Int, List<RenderBatch>>`
+  - Render batches in z-index order (lowest to highest)
   - **Impact**: Medium - Proper 2D layering
 
 - [ ] **A11.7: Define Texture Slot Constants** - New `TextureSlots.kt`:

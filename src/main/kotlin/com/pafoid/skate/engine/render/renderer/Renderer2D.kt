@@ -7,7 +7,8 @@ import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.data.RenderBatch
 
 class Renderer2D {
-    private val batches: MutableList<RenderBatch> = ArrayList()
+    // Batches grouped by z-index for proper layering
+    private val batchesByZIndex = mutableMapOf<Int, MutableList<RenderBatch>>()
 
     lateinit var shader: Shader
     lateinit var camera: Camera
@@ -20,9 +21,12 @@ class Renderer2D {
     }
 
     private fun add(spr: SpriteRenderer) {
+        val zIndex = spr.zIndex
+        val batches = batchesByZIndex.getOrPut(zIndex) { mutableListOf() }
+
         var added = false
         for (batch in batches) {
-            if (batch.hasRoom() && batch.zIndex() == 0) { // TODO: Handle z-index properly
+            if (batch.hasRoom()) {
                 val texture = spr.getTexture()
                 if (texture == null || (batch.hasTexture(texture) || batch.hasTextureRoom())) {
                     batch.addSprite(spr)
@@ -33,36 +37,40 @@ class Renderer2D {
         }
 
         if (!added) {
-            val newBatch = RenderBatch(1000, 0, this)
+            val newBatch = RenderBatch(1000, zIndex, this)
             newBatch.start()
             batches.add(newBatch)
             newBatch.addSprite(spr)
-            batches.sort()
         }
     }
-    
+
     fun bindShader(shader: Shader) {
         this.shader = shader
     }
-    
+
     fun bindCamera(camera: Camera) {
         this.camera = camera
     }
 
     fun render() {
-        // shader.start() is called inside batch.render() because it sets uniforms
-        for (batch in batches) {
-            batch.render(shader)
+        // Render batches in z-index order (lowest to highest)
+        val sortedZIndices = batchesByZIndex.keys.sorted()
+        for (zIndex in sortedZIndices) {
+            batchesByZIndex[zIndex]?.forEach { batch ->
+                batch.render(shader)
+            }
         }
     }
-    
+
     fun destroy() {
-        // destroy batches
+        // Destroy batches
+        batchesByZIndex.values.flatten().forEach { it.destroy() }
+        batchesByZIndex.clear()
     }
 
     fun clear() {
-        for (batch in batches) {
-            batch.clear()
+        batchesByZIndex.values.forEach { batches ->
+            batches.forEach { it.clear() }
         }
     }
 }
