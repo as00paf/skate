@@ -163,11 +163,22 @@ class Renderer(
     }
 
     override fun destroy() {
+        // Destroy shaders
         defaultShader.destroy()
         batchShader.destroy()
         skyboxShader.destroy()
         pickingShader.destroy()
         pickingShader3D.destroy()
+        debugShader.destroy()
+        skyDomeShader.destroy()
+
+        // Destroy renderers
+        skyboxRenderer.destroy()
+        skyDomeRenderer.destroy()
+        renderer2D.destroy()
+
+        // Destroy framebuffer (includes texture and depth buffer)
+        frameBuffer.destroy()
     }
 }
 

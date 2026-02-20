@@ -31,6 +31,7 @@ import org.lwjgl.opengl.GL13.glActiveTexture
 import org.lwjgl.opengl.GL20.glDisableVertexAttribArray
 import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
 import org.lwjgl.opengl.GL30.glBindVertexArray
+import org.lwjgl.opengl.GL30.glDeleteVertexArrays
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -133,5 +134,13 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, resourceMan
         glDepthMask(true)
         glDepthFunc(GL_LESS)
         glEnable(GL_CULL_FACE)
+    }
+
+    fun destroy() {
+        if (sphere.vaoId != 0) {
+            glDeleteVertexArrays(sphere.vaoId)
+        }
+        // Note: VBO and IBO are managed by VAOLoader and will be cleaned up with VAO
+        hdriTexture.destroy()
     }
 }

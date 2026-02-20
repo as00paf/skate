@@ -60,4 +60,13 @@ class FrameBuffer(val width: Int, val height: Int) {
     fun getTextureId() = texture.texId
     fun getDepthTextureId() = depthTexture
     fun getFboId() = fboId
+
+    fun destroy() {
+        if (fboId != 0) {
+            org.lwjgl.opengl.GL30.glDeleteFramebuffers(fboId)
+        }
+        if (depthTexture != 0) {
+            org.lwjgl.opengl.GL30.glDeleteTextures(depthTexture)
+        }
+    }
 }

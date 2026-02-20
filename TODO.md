@@ -86,9 +86,12 @@
   - Update GeometryPass and PickingPass to set camera viewport dimensions
   - **Impact**: Medium - Correct rendering on all aspect ratios
 
-- [ ] **A11.9: Implement Resource Cleanup** - `RenderBatch.kt`, `Renderer2D.kt`:
+- [x] **A11.9: Implement Resource Cleanup** - `RenderBatch.kt`, `Renderer2D.kt`:
   - Implement `RenderBatch.destroy()` to delete VAO/VBO
   - Implement `Renderer2D.destroy()` to clean up all batches
+  - Add `SkyboxRenderer.destroy()` and `SkyDomeRenderer.destroy()`
+  - Add `FrameBuffer.destroy()` and `PickingTexture.destroy()`
+  - Update `Renderer.destroy()` to call all cleanup methods
   - **Impact**: Low - Memory leak prevention
 
 - [ ] **A11.10: Centralize Entity ID Encoding** - New `EntityIdEncoder.kt`:
