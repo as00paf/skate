@@ -8,7 +8,7 @@
   - Extract common mesh rendering logic into a private helper method
   - Create unified render method with parameters for shader type and uniform uploads
   - Extract texture binding pattern into a reusable helper function
-- [ ] **A10.2: Extract Lighting Uniforms Loader** - Create dedicated class for shader uniform uploads:
+- [x] **A10.2: Extract Lighting Uniforms Loader** - Create dedicated class for shader uniform uploads:
   - Move all lighting uniform uploads from `Renderer.render()` to `LightingUniformsLoader`
   - Include sun, moon, ambient, fog, and camera position uniforms
 - [ ] **A10.3: Remove Helper Methods** - Inline or relocate simple wrappers:

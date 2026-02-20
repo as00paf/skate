@@ -51,7 +51,6 @@ class PlayerStateManager : Component() {
         val linearVelocity = rb.linearVelocity
         val speed = max(linearVelocity.x, linearVelocity.z)
         val absSpeed = abs(speed)
-        logger.logEngine("absSpeed : $absSpeed")
 
         val newState =
             if (controller.isJumping) {

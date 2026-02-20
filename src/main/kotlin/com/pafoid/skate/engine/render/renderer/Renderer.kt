@@ -61,6 +61,7 @@ class Renderer(
     private lateinit var skyDomeShader: Shader
     
     private val modelRenderer: ModelRenderer = ModelRenderer(resourceManager)
+    private val lightingUniformsLoader: LightingUniformsLoader = LightingUniformsLoader()
 
     lateinit var frameBuffer: FrameBuffer
     override var useFbo = false // Default to false for initial feature tests
@@ -150,40 +151,20 @@ class Renderer(
         }
         
         clearColor(scene.sceneData.skyColor)
-        
+
         val camera = scene.camera
         val light = scene.sceneData.light
-        // Offset light from camera slightly so we get some shading but plenty of light
-        light.position.set(camera.position).add(5f, 5f, 10f)
 
         // 2D Rendering Setup
         renderer2D.bindCamera(camera)
-        
+
         // 3D Rendering Setup
         loadProjectionMatrix(camera)
         loadViewMatrix(camera)
 
+        // Upload lighting uniforms
         defaultShader.start()
-        defaultShader.uploadVec3f(Uniforms.LIGHT_POSITION, light.position)
-        defaultShader.uploadVec3f(Uniforms.LIGHT_COLOR, Vector3f(1.5f, 1.5f, 1.5f)) // Brighter light
-        
-        val ambient = if (scene.sceneData.useAmbient) scene.sceneData.ambientLight else Vector3f(0f, 0f, 0f)
-        defaultShader.uploadVec3f(Uniforms.AMBIENT_LIGHT, ambient)
-
-        // Sun
-        defaultShader.uploadVec3f(Uniforms.SUN_DIRECTION, scene.sceneData.sun.direction)
-        val finalSunColor = if (scene.sceneData.useSun) Vector3f(scene.sceneData.sun.color).mul(scene.sceneData.sun.intensity) else Vector3f(0f, 0f, 0f)
-        defaultShader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
-
-        // Moon
-        defaultShader.uploadVec3f(Uniforms.MOON_DIRECTION, scene.sceneData.moon.direction)
-        val finalMoonColor = Vector3f(scene.sceneData.moon.color).mul(scene.sceneData.moon.intensity)
-        defaultShader.uploadVec3f(Uniforms.MOON_COLOR, finalMoonColor)
-
-        // Fog
-        defaultShader.uploadVec3f(Uniforms.FOG_COLOR, scene.sceneData.fogColor)
-        defaultShader.uploadFloat(Uniforms.FOG_DENSITY, scene.sceneData.fogDensity)
-        defaultShader.uploadFloat(Uniforms.FOG_GRADIENT, scene.sceneData.fogGradient)
+        lightingUniformsLoader.loadLightingUniforms(defaultShader, camera, scene.sceneData)
 
         scene.gameObjectManager.gameObjects.forEach { go ->
             val renderComponent = go.getComponent<RenderComponent>()
