@@ -99,3 +99,127 @@
   - Document why 0 is reserved
   - Use Float throughout to match GPU uniform types (no casting/rounding)
   - **Impact**: Low - Code clarity and consistency
+
+---
+
+## 🔴 Phase A12: Renderer Architecture Refactoring (SRP & lateinit elimination)
+
+### Problem Statement
+
+The `Renderer` class has too many responsibilities (shader loading, framebuffer creation, renderer instantiation, render
+pass orchestration) and uses 10+ `lateinit` vars, violating the Single Responsibility Principle and creating unclear
+initialization order.
+
+### A12.1: Create RenderResources Data Classes
+
+- [ ] **A12.1.1: Create `RenderResources.kt`** - New file with data classes:
+  ```kotlin
+  data class Shaders(
+      val default: Shader, val debug: Shader, val batch: Shader,
+      val picking: Shader, val picking3D: Shader,
+      val skybox: Shader, val skyDome: Shader
+  )
+  
+  data class Renderers(
+      val skybox: SkyboxRenderer,
+      val skyDome: SkyDomeRenderer,
+      val model: ModelRenderer
+  )
+  
+  data class RenderPasses(
+      val picking: PickingPass,
+      val geometry: GeometryPass,
+      val debug: DebugPass
+  )
+  
+  data class RenderResources(
+      val shaders: Shaders,
+      val frameBuffer: FrameBuffer,
+      val pickingTexture: PickingTexture,
+      val renderers: Renderers,
+      val renderPasses: RenderPasses
+  )
+  ```
+
+### A12.2: Create RenderResourcesFactory
+
+- [ ] **A12.2.1: Create `RenderResourcesFactory.kt`** - Factory for all render resources:
+  - `suspend fun create(width: Int, height: Int): RenderResources`
+  - Handles shader loading via ResourceManager
+  - Creates FrameBuffer and PickingTexture
+  - Instantiates all renderer classes
+  - Creates all render passes with proper dependencies
+  - **Impact**: High - Centralized initialization logic
+
+### A12.3: Refactor Renderer to Orchestrator Only
+
+- [ ] **A12.3.1: Remove all `lateinit` vars** from Renderer:
+  - Remove 7 shader vars → use `renderResources.shaders`
+  - Remove 2 renderer vars → use `renderResources.renderers`
+  - Remove `frameBuffer` and `pickingTexture` → use `renderResources`
+
+- [ ] **A12.3.2: Remove initialization methods** from Renderer:
+  - Remove `initFrameBuffer()` → move to factory
+  - Remove `loadShaders()` → move to factory
+  - Remove `initializeRenderPasses()` → move to factory
+
+- [ ] **A12.3.3: Simplify constructor** to accept only `RenderResources`:
+  ```kotlin
+  class Renderer(
+      private val renderResources: RenderResources,
+      private val sceneManager: SceneManager
+  ) : IRenderer
+  ```
+
+- [ ] **A12.3.4: Simplify `render()` method** to only orchestrate passes:
+  ```kotlin
+  override fun render(scene, active, hovered) {
+      renderResources.renderPasses.picking.execute(scene, active, hovered)
+      renderResources.renderPasses.geometry.execute(scene, active, hovered)
+      renderResources.renderPasses.debug.execute(scene, active, hovered)
+  }
+  ```
+
+- [ ] **A12.3.5: Add `resize()` method** for proper window dimension handling:
+  ```kotlin
+  fun resize(width: Int, height: Int) {
+      renderResources.frameBuffer.resize(width, height)
+      renderResources.pickingTexture.resize(width, height)
+  }
+  ```
+
+- [ ] **A12.3.6: Update `destroy()` method** to handle nullable resources safely
+
+- [ ] **A12.3.7: Add KDoc** to public API documenting:
+  - When `render()` should be called
+  - Thread safety considerations
+  - Expected OpenGL state before/after calls
+
+### A12.4: Update Koin DI Module
+
+- [ ] **A12.4.1: Update `KoinModule.kt`**:
+  - Add `RenderResourcesFactory` as a singleton
+  - Update `Renderer` constructor dependencies
+  - Remove direct `DebugRenderer` and `PickingRenderer` singletons (created by factory)
+
+### A12.5: Update Engine Initialization
+
+- [ ] **A12.5.1: Update `Engine.kt`** or bootstrap code:
+  - Call `RenderResourcesFactory.create()` during initialization
+  - Pass initialized `RenderResources` to Renderer
+  - Handle initialization errors gracefully
+
+### A12.6: Update Tests
+
+- [ ] **A12.6.1: Update test files** that create Renderer:
+  - `SkateboardStressTest.kt`
+  - `SkateboardPhysicsTest.kt`
+  - `PhysicsCalibrationTest.kt`
+  - Create mock `RenderResources` for testing
+
+### A12.7: Verify and Cleanup
+
+- [ ] **A12.7.1: Build and run** to verify no regressions
+- [ ] **A12.7.2: Run tests** to ensure all pass
+- [ ] **A12.7.3: Remove any remaining `lateinit` usage` in renderer package
+- [ ] **A12.7.4: Update documentation** if needed
