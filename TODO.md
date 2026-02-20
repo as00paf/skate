@@ -70,6 +70,35 @@
 
 ---
 
+## 🟡 Phase A16: Dependency Injection Consistency (Rendering Pipeline)
+
+### Problem Statement
+
+The rendering pipeline components currently use a mix of Constructor Injection and Field Injection (`by inject()`). To
+improve testability and strictly adhere to the Dependency Inversion Principle, we should standardize on explicit
+Constructor Injection for rendering components.
+
+- [ ] **A16.1: Standardize Constructor Injection in Renderers** - Remove `by inject()` from renderers:
+  - Update `ModelRenderer.kt` to accept `DebugRenderer` in its constructor.
+  - Update `PickingRenderer.kt` to accept `ResourceManager`, `LoggerService`, and `SceneManager` in its constructor.
+  - Update `DebugRenderer.kt` to accept `ResourceManager`, `LoggerService`, and `SceneManager` in its constructor.
+  - Update `Camera.kt` to accept `IInputProvider`, `KeyListener`, `MouseListener`, and `SceneManager` in its
+    constructor.
+  - Remove `: KoinComponent` from these classes where applicable.
+  - **Impact**: Medium - Improves testability and explicitly declares class dependencies.
+
+- [ ] **A16.2: Update RenderResourcesFactory** - Inject explicit dependencies:
+  - Pass the required dependencies to `PickingRenderer` when it is instantiated.
+  - Pass the required dependencies to `ModelRenderer` when it is instantiated.
+  - **Impact**: Medium - Factory takes full responsibility for wiring dependencies.
+
+- [ ] **A16.3: Update Koin Module** - `KoinModule.kt`:
+  - Update the definitions for `Camera` and `DebugRenderer` (if they are declared in Koin) to pass constructor
+    parameters using `get()`.
+  - **Impact**: Low - Alignment with new constructor signatures.
+
+---
+
 ## Notes
 
 - All tasks from phases A10-A14 are complete - see CHANGELOG.md for details
