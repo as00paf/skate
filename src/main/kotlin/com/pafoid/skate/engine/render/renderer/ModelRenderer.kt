@@ -16,6 +16,12 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.data.RenderMode
+import com.pafoid.skate.engine.render.utils.bindTexture
+import com.pafoid.skate.engine.render.utils.bindVAO
+import com.pafoid.skate.engine.render.utils.unbindVAO
+import com.pafoid.skate.engine.render.utils.withBlendState
+import com.pafoid.skate.engine.render.utils.withCullFace
+import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.utils.ShaderConst
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -24,8 +30,6 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
-import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
 
 class ModelRenderer(
     private val resourceManager: ResourceManager
@@ -59,29 +63,33 @@ class ModelRenderer(
         val model = part.rawModel
         val material = part.material
 
-        GL30.glBindVertexArray(model.vaoId)
-        model.enabledAttributes.forEach { GL20.glEnableVertexAttribArray(it) }
+        model.vaoId.bindVAO(model.enabledAttributes)
 
-        // Bind all PBR texture maps
-        bindTexture(0, material.baseColorTexture, shader, ShaderConst.Uniforms.BASE_COLOR_TEXTURE)
+        // Bind all PBR texture maps and upload uniforms
+        bindTexture(0, material.baseColorTexture, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.BASE_COLOR_TEXTURE, 0)
         shader.uploadVec4f(ShaderConst.Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
 
         val hasNormal = material.normalMap != null
-        bindTexture(1, material.normalMap, shader, ShaderConst.Uniforms.NORMAL_MAP)
+        bindTexture(1, material.normalMap, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.NORMAL_MAP, 1)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_NORMAL_MAP, hasNormal)
 
         val hasMR = material.metallicRoughnessTexture != null
-        bindTexture(2, material.metallicRoughnessTexture, shader, ShaderConst.Uniforms.METALLIC_ROUGHNESS_TEXTURE)
+        bindTexture(2, material.metallicRoughnessTexture, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.METALLIC_ROUGHNESS_TEXTURE, 2)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, hasMR)
         shader.uploadFloat(ShaderConst.Uniforms.METALLIC_FACTOR, material.metallicFactor)
         shader.uploadFloat(ShaderConst.Uniforms.ROUGHNESS_FACTOR, material.roughnessFactor)
 
         val hasAO = material.aoTexture != null
-        bindTexture(3, material.aoTexture, shader, ShaderConst.Uniforms.AO_TEXTURE)
+        bindTexture(3, material.aoTexture, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.AO_TEXTURE, 3)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_AO_TEXTURE, hasAO)
 
         val hasEmissive = material.emissiveTexture != null
-        bindTexture(4, material.emissiveTexture, shader, ShaderConst.Uniforms.EMISSIVE_TEXTURE)
+        bindTexture(4, material.emissiveTexture, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.EMISSIVE_TEXTURE, 4)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_EMISSIVE_TEXTURE, hasEmissive)
         shader.uploadVec3f(ShaderConst.Uniforms.EMISSIVE_FACTOR, material.emissiveFactor)
 
@@ -94,30 +102,17 @@ class ModelRenderer(
         shader.uploadInt(ShaderConst.Uniforms.ALPHA_MODE, alphaInt)
         shader.uploadFloat(ShaderConst.Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
 
-        // Configure blending and depth mask
-        if (alphaInt == 2) {
-            GL11.glEnable(GL11.GL_BLEND)
-            GL11.glDepthMask(false)
-        } else {
-            GL11.glDisable(GL11.GL_BLEND)
-            GL11.glDepthMask(true)
+        // Configure render state
+        withBlendState(alphaInt == 2) {
+            withDepthMask(alphaInt != 2) {
+                withCullFace(!material.doubleSided) {
+                    GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
+                    EngineStats.drawCalls.incrementAndGet()
+                }
+            }
         }
 
-        // Configure face culling
-        if (material.doubleSided) GL11.glDisable(GL11.GL_CULL_FACE)
-        else GL11.glEnable(GL11.GL_CULL_FACE)
-
-        GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
-        EngineStats.drawCalls.incrementAndGet()
-
-        // Restore state after blending
-        if (alphaInt == 2) {
-            GL11.glDisable(GL11.GL_BLEND)
-            GL11.glDepthMask(true)
-        }
-
-        model.enabledAttributes.forEach { GL20.glDisableVertexAttribArray(it) }
-        GL30.glBindVertexArray(0)
+        model.vaoId.unbindVAO(model.enabledAttributes)
     }
 
     /**
@@ -130,17 +125,14 @@ class ModelRenderer(
     ) {
         val model = part.rawModel
 
-        GL30.glBindVertexArray(model.vaoId)
-        model.enabledAttributes.forEach { GL20.glEnableVertexAttribArray(it) }
+        model.vaoId.bindVAO(model.enabledAttributes)
 
-        if (part.material.doubleSided) GL11.glDisable(GL11.GL_CULL_FACE)
-        else GL11.glEnable(GL11.GL_CULL_FACE)
+        withCullFace(!part.material.doubleSided) {
+            GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
+            EngineStats.drawCalls.incrementAndGet()
+        }
 
-        GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
-        EngineStats.drawCalls.incrementAndGet()
-
-        model.enabledAttributes.forEach { GL20.glDisableVertexAttribArray(it) }
-        GL30.glBindVertexArray(0)
+        model.vaoId.unbindVAO(model.enabledAttributes)
     }
 
     /**

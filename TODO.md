@@ -11,10 +11,10 @@
 - [x] **A10.2: Extract Lighting Uniforms Loader** - Create dedicated class for shader uniform uploads:
   - Move all lighting uniform uploads from `Renderer.render()` to `LightingUniformsLoader`
   - Include sun, moon, ambient, fog, and camera position uniforms
-- [ ] **A10.3: Remove Helper Methods** - Inline or relocate simple wrappers:
+- [x] **A10.3: Remove Helper Methods** - Inline or relocate simple wrappers:
   - Remove `loadProjectionMatrix()` and `loadViewMatrix()` from `Renderer.kt`
   - Consider creating Camera extension functions for matrix creation
-- [ ] **A10.4: Create OpenGL State Helpers** - New file
+- [x] **A10.4: Create OpenGL State Helpers** - New file
   `src/main/kotlin/com/pafoid/skate/engine/render/utils/GLState.kt`:
   - Extension function `bindVAO(vaoId, attributes)` for consistent VAO binding
   - Extension function `unbindVAO(vaoId, attributes)` for cleanup
