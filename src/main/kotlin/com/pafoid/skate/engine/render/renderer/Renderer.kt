@@ -12,7 +12,6 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.PickingTexture
@@ -104,16 +103,6 @@ class Renderer(
         skyDomeRenderer = SkyDomeRenderer(skyDomeShader, vaoLoader, resourceManager)
     }
 
-    private fun loadProjectionMatrix(camera: Camera) {
-        defaultShader.start()
-        defaultShader.uploadMat4f(Attribs.PROJECTION_MATRIX, camera.createProjectionMatrix())
-    }
-
-    private fun loadViewMatrix(camera: Camera) {
-        defaultShader.start()
-        defaultShader.uploadMat4f(Attribs.VIEW_MATRIX, camera.createViewMatrix())
-    }
-
     override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
         EngineStats.resetDrawCalls()
         debugRenderer.beginFrame()
@@ -158,12 +147,12 @@ class Renderer(
         // 2D Rendering Setup
         renderer2D.bindCamera(camera)
 
-        // 3D Rendering Setup
-        loadProjectionMatrix(camera)
-        loadViewMatrix(camera)
+        // 3D Rendering Setup - Upload projection and view matrices
+        defaultShader.start()
+        defaultShader.uploadMat4f(Attribs.PROJECTION_MATRIX, camera.createProjectionMatrix())
+        defaultShader.uploadMat4f(Attribs.VIEW_MATRIX, camera.createViewMatrix())
 
         // Upload lighting uniforms
-        defaultShader.start()
         lightingUniformsLoader.loadLightingUniforms(defaultShader, camera, scene.sceneData)
 
         scene.gameObjectManager.gameObjects.forEach { go ->
