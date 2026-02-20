@@ -214,7 +214,7 @@ initialization order.
 
 ### Performance Optimizations
 
-- [ ] **A13.2: Cache Camera Matrices** - `Camera.kt`:
+- [x] **A13.2: Cache Camera Matrices** - `Camera.kt`:
   - Reuse `Matrix4f` instances instead of allocating new ones each frame
   - Add `private val projectionMatrix = Matrix4f()` and `private val viewMatrix = Matrix4f()`
   - Update `createProjectionMatrix()` and `createViewMatrix()` to reuse instances

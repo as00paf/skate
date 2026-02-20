@@ -68,6 +68,10 @@ class Camera(
     private var startDistance = 0f
     private val startOffset = Vector3f()
 
+    // Cached matrices to reduce GC pressure
+    private val projectionMatrix = Matrix4f()
+    private val viewMatrix = Matrix4f()
+
     fun addZoom(value: Float) {
         zoom += value
         if (zoom <= 0.1f) {
@@ -215,7 +219,6 @@ class Camera(
     }
 
     fun createProjectionMatrix(): Matrix4f {
-        val projectionMatrix = Matrix4f()
         projectionMatrix.identity()
 
         // Calculate aspect ratio from current viewport dimensions
@@ -239,12 +242,12 @@ class Camera(
     }
 
     fun createViewMatrix(): Matrix4f {
-        val viewMatrix = Matrix4f().identity()
+        viewMatrix.identity()
 
         viewMatrix.rotate(pitch.toRadians(), Vector3f(1f, 0f, 0f))
         viewMatrix.rotate(yaw.toRadians(), Vector3f(0f, 1f, 0f))
         viewMatrix.rotate(roll.toRadians(), Vector3f(0f, 0f, 1f))
-        
+
         val negativeCameraPos = Vector3f(position).negate()
         viewMatrix.translate(negativeCameraPos)
 
