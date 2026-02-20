@@ -199,3 +199,53 @@ initialization order.
   - Currently factory creates `VAOLoader` internally via `createVaoLoader()`
   - Should be injected via constructor for better DI, it is already declared as a singleton in KoinModule.kt
   - Location: `src/main/kotlin/com/pafoid/skate/engine/render/RenderResourcesFactory.kt:139`
+
+---
+
+## 🔴 Phase A13: Render Pipeline Review Follow-up
+
+### Documentation
+
+- [ ] **A13.1: Add KDoc to VAOLoader** - `VAOLoader.kt`:
+  - Document all public methods (`loadToVAO`, etc.)
+  - Explain vertex attribute layout and enabled attributes bitmask
+  - Document memory management (VAO/VBO/IBO lifecycle)
+  - **Impact**: Medium - Code clarity for asset loading pipeline
+
+### Performance Optimizations
+
+- [ ] **A13.2: Cache Camera Matrices** - `Camera.kt`:
+  - Reuse `Matrix4f` instances instead of allocating new ones each frame
+  - Add `private val projectionMatrix = Matrix4f()` and `private val viewMatrix = Matrix4f()`
+  - Update `createProjectionMatrix()` and `createViewMatrix()` to reuse instances
+  - **Impact**: High - Reduces GC pressure (matrices created every frame for each shader)
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/Camera.kt`
+
+- [ ] **A13.3: Object Pool for DebugRenderer** - `DebugRenderer.kt`:
+  - Implement object pool for `Line3D` and `Triangle3D` objects
+  - Reuse objects instead of allocating new ones each frame
+  - **Impact**: Medium - Reduces GC pressure from debug visualization
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/renderer/DebugRenderer.kt`
+
+### Code Quality
+
+- [ ] **A13.4: Document Coordinate Systems** - `Renderer.kt`, `PickingTexture.kt`:
+  - Add KDoc explaining screen space vs texture space coordinate systems
+  - Document Y-coordinate inversion logic for picking
+  - Consider adding `isInverted` parameter to `PickingTexture.readPixel()`
+  - **Impact**: Low - Code clarity for coordinate transformations
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/Renderer.kt:95`
+
+- [ ] **A13.5: Improve Renderer2D Batch Search** - `Renderer2D.kt`:
+  - Consider using `PriorityQueue` or maintaining sorted batch list
+  - Current O(n) batch search could be optimized
+  - **Impact**: Low - Performance for large sprite counts
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/renderer/Renderer2D.kt:26`
+
+### Testing
+
+- [ ] **A13.6: Add Unit Tests for Render Pipeline**:
+  - Test `EntityIdEncoder.encode/decode` round-trip
+  - Test `Camera.createProjectionMatrix()` with various aspect ratios
+  - Test `GLStateTracker` state change detection
+  - **Impact**: Medium - Prevent regressions in core rendering logic
