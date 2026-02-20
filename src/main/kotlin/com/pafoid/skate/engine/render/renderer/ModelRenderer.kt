@@ -23,6 +23,7 @@ import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.utils.ShaderConst
+import com.pafoid.skate.engine.utils.TextureSlots
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -66,30 +67,30 @@ class ModelRenderer(
         model.vaoId.bindVAO(model.enabledAttributes)
 
         // Bind all PBR texture maps and upload uniforms
-        bindTexture(0, material.baseColorTexture, resourceManager)
-        shader.uploadInt(ShaderConst.Uniforms.BASE_COLOR_TEXTURE, 0)
+        bindTexture(TextureSlots.BASE_COLOR, material.baseColorTexture, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
         shader.uploadVec4f(ShaderConst.Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
 
         val hasNormal = material.normalMap != null
-        bindTexture(1, material.normalMap, resourceManager)
-        shader.uploadInt(ShaderConst.Uniforms.NORMAL_MAP, 1)
+        bindTexture(TextureSlots.NORMAL, material.normalMap, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.NORMAL_MAP, TextureSlots.NORMAL)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_NORMAL_MAP, hasNormal)
 
         val hasMR = material.metallicRoughnessTexture != null
-        bindTexture(2, material.metallicRoughnessTexture, resourceManager)
-        shader.uploadInt(ShaderConst.Uniforms.METALLIC_ROUGHNESS_TEXTURE, 2)
+        bindTexture(TextureSlots.METALLIC_ROUGHNESS, material.metallicRoughnessTexture, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.METALLIC_ROUGHNESS_TEXTURE, TextureSlots.METALLIC_ROUGHNESS)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, hasMR)
         shader.uploadFloat(ShaderConst.Uniforms.METALLIC_FACTOR, material.metallicFactor)
         shader.uploadFloat(ShaderConst.Uniforms.ROUGHNESS_FACTOR, material.roughnessFactor)
 
         val hasAO = material.aoTexture != null
-        bindTexture(3, material.aoTexture, resourceManager)
-        shader.uploadInt(ShaderConst.Uniforms.AO_TEXTURE, 3)
+        bindTexture(TextureSlots.AO, material.aoTexture, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.AO_TEXTURE, TextureSlots.AO)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_AO_TEXTURE, hasAO)
 
         val hasEmissive = material.emissiveTexture != null
-        bindTexture(4, material.emissiveTexture, resourceManager)
-        shader.uploadInt(ShaderConst.Uniforms.EMISSIVE_TEXTURE, 4)
+        bindTexture(TextureSlots.EMISSIVE, material.emissiveTexture, resourceManager)
+        shader.uploadInt(ShaderConst.Uniforms.EMISSIVE_TEXTURE, TextureSlots.EMISSIVE)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_EMISSIVE_TEXTURE, hasEmissive)
         shader.uploadVec3f(ShaderConst.Uniforms.EMISSIVE_FACTOR, material.emissiveFactor)
 

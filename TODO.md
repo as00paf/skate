@@ -71,9 +71,10 @@
   - Render batches in z-index order (lowest to highest)
   - **Impact**: Medium - Proper 2D layering
 
-- [ ] **A11.7: Define Texture Slot Constants** - New `TextureSlots.kt`:
+- [x] **A11.7: Define Texture Slot Constants** - New `TextureSlots.kt`:
   - Extract magic numbers (0, 1, 2, 3, 4) to named constants
   - BASE_COLOR, NORMAL, METALLIC_ROUGHNESS, AO, EMISSIVE
+  - Update ModelRenderer to use constants instead of magic numbers
   - **Impact**: Low - Code clarity
 
 ### Code Quality
