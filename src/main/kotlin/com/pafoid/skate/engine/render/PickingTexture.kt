@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.utils.EntityIdEncoder
+import org.lwjgl.opengl.GL11.glReadPixels
 import org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0
 import org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT
 import org.lwjgl.opengl.GL30.GL_DEPTH_COMPONENT
@@ -37,6 +38,62 @@ import org.lwjgl.opengl.GL30.glReadPixels
 import org.lwjgl.opengl.GL30.glTexImage2D
 import org.lwjgl.opengl.GL30.glTexParameteri
 
+/**
+ * Picking texture for object selection via GPU rendering.
+ *
+ * This class implements a render-to-texture technique for object picking (selection/hover
+ * detection). Objects are rendered to this texture with their entity ID encoded as color
+ * values, allowing CPU-side identification of which object is under the mouse cursor.
+ *
+ * ## Coordinate Systems
+ *
+ * Understanding the coordinate systems is crucial for correct usage:
+ *
+ * ### Screen Space (Input Coordinates)
+ * - Origin: Top-left corner
+ * - X: 0 to width-1 (left to right)
+ * - Y: 0 to height-1 (top to bottom)
+ * - Used by: Mouse input, windowing systems
+ *
+ * ### OpenGL Texture Space
+ * - Origin: Bottom-left corner
+ * - X: 0 to width-1 (left to right)
+ * - Y: 0 to height-1 (bottom to top)
+ * - Used by: OpenGL texture sampling, [glReadPixels]
+ *
+ * ### Y-Axis Inversion
+ *
+ * When reading picking data, you must convert from screen space to texture space:
+ * ```kotlin
+ * val textureY = screenHeight - 1 - screenY
+ * val entityId = pickingTexture.readPixel(mouseX, textureY)
+ * ```
+ *
+ * This inversion is necessary because:
+ * 1. Screen coordinates have Y=0 at the top (windowing convention)
+ * 2. OpenGL texture coordinates have Y=0 at the bottom (OpenGL convention)
+ * 3. [glReadPixels] expects texture-space coordinates
+ *
+ * ## Usage Example
+ *
+ * ```kotlin
+ * val pickingTexture = PickingTexture(1920, 1080)
+ *
+ * // During render pass:
+ * pickingTexture.enableWriting()
+ * // ... render objects with encoded IDs ...
+ * pickingTexture.disableWriting()
+ *
+ * // Reading picked object:
+ * val screenX = mouseX
+ * val screenY = mouseY
+ * val textureY = windowHeight - 1 - screenY
+ * val entityId = pickingTexture.readPixel(screenX, textureY)
+ * ```
+ *
+ * @param width Initial texture width (typically matches viewport width)
+ * @param height Initial texture height (typically matches viewport height)
+ */
 class PickingTexture(private var width: Int, private var height: Int) {
 
     private var pickingTextureId: Int = 0
@@ -115,6 +172,30 @@ class PickingTexture(private var width: Int, private var height: Int) {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
     }
 
+    /**
+     * Reads a pixel value from the picking texture at the specified coordinates.
+     *
+     * **Important**: Coordinates must be in OpenGL texture space (Y=0 at bottom),
+     * NOT screen space (Y=0 at top). If you have screen-space coordinates (e.g., from
+     * mouse input), you must invert the Y coordinate:
+     *
+     * ```kotlin
+     * // Screen-space mouse coordinates
+     * val screenX = mouseX
+     * val screenY = mouseY
+     *
+     * // Convert to texture-space for readPixel
+     * val textureY = textureHeight - 1 - screenY
+     * val entityId = pickingTexture.readPixel(screenX, textureY)
+     * ```
+     *
+     * @param x The X coordinate in **texture space** (0 to width-1, left to right).
+     * @param y The Y coordinate in **texture space** (0 to height-1, bottom to top).
+     *          NOT screen space! Invert screen Y using: `textureY = height - 1 - screenY`.
+     * @return The encoded entity ID at the specified pixel, or -1 if no entity.
+     *
+     * @see EntityIdEncoder for ID encoding/decoding details
+     */
     fun readPixel(x: Int, y: Int): Int {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo)
         glReadBuffer(GL_COLOR_ATTACHMENT0)

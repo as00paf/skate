@@ -232,12 +232,14 @@ initialization order.
 
 ### Code Quality
 
-- [ ] **A13.4: Document Coordinate Systems** - `Renderer.kt`, `PickingTexture.kt`:
+- [x] **A13.4: Document Coordinate Systems** - `PickingTexture.kt`, `Renderer.kt`:
   - Add KDoc explaining screen space vs texture space coordinate systems
   - Document Y-coordinate inversion logic for picking
   - Consider adding `isInverted` parameter to `PickingTexture.readPixel()`
   - **Impact**: Low - Code clarity for coordinate transformations
-  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/Renderer.kt:95`
+  - **Done**: Added comprehensive KDoc to `PickingTexture` class and `readPixel()` methods
+    in both `PickingTexture` and `Renderer`. Documentation includes coordinate system
+    diagrams, usage examples, and clear explanation of Y-axis inversion requirement.
 
 - [ ] **A13.5: Improve Renderer2D Batch Search** - `Renderer2D.kt`:
   - Consider using `PriorityQueue` or maintaining sorted batch list

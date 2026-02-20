@@ -90,11 +90,15 @@ class Renderer(
     }
 
     /**
-     * Reads a pixel value from the picking texture at the specified coordinates.
+     * Reads a pixel value from the picking texture at the specified screen coordinates.
      *
-     * @param x The x coordinate (0 to width-1)
-     * @param y The y coordinate (0 to height-1, inverted from screen space)
-     * @return The entity ID at the specified pixel, or -1 if no entity
+     * This method handles the coordinate space conversion automatically. It takes
+     * screen-space coordinates (Y=0 at top, from mouse input) and converts them to
+     * texture-space coordinates (Y=0 at bottom, for OpenGL reading).
+     *
+     * @param x The X coordinate in **screen space** (0 to width-1, left to right).
+     * @param y The Y coordinate in **screen space** (0 to height-1, top to bottom).
+     * @return The encoded entity ID at the specified pixel, or -1 if no entity.
      */
     override fun readPixel(x: Int, y: Int): Int {
         val w = renderResources.frameBuffer.width
