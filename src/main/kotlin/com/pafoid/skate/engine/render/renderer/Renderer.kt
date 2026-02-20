@@ -154,7 +154,7 @@ class Renderer(
      * @param height The new viewport height
      */
     fun resize(width: Int, height: Int) {
-        // Note: FrameBuffer and PickingTexture would need resize methods
-        // For now, this is a placeholder for future implementation
+        renderResources.frameBuffer.resize(width, height)
+        renderResources.pickingTexture.resize(width, height)
     }
 }

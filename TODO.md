@@ -189,10 +189,11 @@ initialization order.
 
 ### Rendering
 
-- [ ] **Implement `FrameBuffer.resize()` and `PickingTexture.resize()`** - `Renderer.kt`:
-  - Current `resize()` method is a placeholder
-  - Need to recreate framebuffer textures when window resizes
-  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/Renderer.kt:157`
+- [x] **Implement `FrameBuffer.resize()` and `PickingTexture.resize()`** - `Renderer.kt`:
+  - Implemented `FrameBuffer.resize()` to recreate framebuffer textures when window resizes
+  - `PickingTexture.resize()` was already implemented
+  - Updated `Renderer.resize()` to call both methods
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/FrameBuffer.kt`
 
 - [ ] **Pass `VAOLoader` to `RenderResourcesFactory`** - `RenderResourcesFactory.kt`:
   - Currently factory creates `VAOLoader` internally via `createVaoLoader()`
