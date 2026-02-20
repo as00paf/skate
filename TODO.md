@@ -183,8 +183,18 @@ initialization order.
   - Call `renderer.resize()` on window resize
   - Remove direct access to renderer dimensions
 
-### A12.7: Verify and Cleanup
+---
 
-- [ ] **A12.7.1: Build and run** to verify no regressions
-- [ ] **A12.7.2: Run tests** to ensure all pass
-- [ ] **A12.7.3: Update documentation** if needed
+## 📝 Technical Debt & Follow-up Tasks
+
+### Rendering
+
+- [ ] **Implement `FrameBuffer.resize()` and `PickingTexture.resize()`** - `Renderer.kt`:
+  - Current `resize()` method is a placeholder
+  - Need to recreate framebuffer textures when window resizes
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/Renderer.kt:157`
+
+- [ ] **Pass `VAOLoader` to `RenderResourcesFactory`** - `RenderResourcesFactory.kt`:
+  - Currently factory creates `VAOLoader` internally via `createVaoLoader()`
+  - Should be injected via constructor for better DI, it is already declared as a singleton in KoinModule.kt
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/RenderResourcesFactory.kt:139`
