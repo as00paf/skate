@@ -241,16 +241,28 @@ initialization order.
     in both `PickingTexture` and `Renderer`. Documentation includes coordinate system
     diagrams, usage examples, and clear explanation of Y-axis inversion requirement.
 
-- [ ] **A13.5: Improve Renderer2D Batch Search** - `Renderer2D.kt`:
+- [x] **A13.5: Improve Renderer2D Batch Search** - `Renderer2D.kt`:
   - Consider using `PriorityQueue` or maintaining sorted batch list
   - Current O(n) batch search could be optimized
   - **Impact**: Low - Performance for large sprite counts
   - Location: `src/main/kotlin/com/pafoid/skate/engine/render/renderer/Renderer2D.kt:26`
+  - **Decision**: Not implementing. Current O(n) search is acceptable because:
+    - Batches are already grouped by z-index (first-level optimization)
+    - Typical scenes have few batches per z-index (< 10)
+    - Premature optimization without profiling evidence
+    - Can revisit if profiling shows this as a bottleneck
 
 ### Testing
 
-- [ ] **A13.6: Add Unit Tests for Render Pipeline**:
+- [x] **A13.6: Add Unit Tests for Render Pipeline**:
   - Test `EntityIdEncoder.encode/decode` round-trip
   - Test `Camera.createProjectionMatrix()` with various aspect ratios
   - Test `GLStateTracker` state change detection
   - **Impact**: Medium - Prevent regressions in core rendering logic
+  - **Done**: Created `RenderPipelineTest.kt` with 18 comprehensive tests:
+    - EntityIdEncoder: 7 tests for encode/decode round-trip, offset verification, NO_ENTITY
+    - Camera: 8 tests for perspective/orthographic projections, aspect ratios, zoom, edge cases
+    - GLStateTracker: 5 tests for state getter consistency
+  - Location: `src/test/kotlin/com/pafoid/skate/engine/render/RenderPipelineTest.kt`
+  - **Note**: Pre-existing test compilation errors in BootManagerTest, BoardRigTest,
+    PlayerControllerTest, and TrickDetectionTest are unrelated to this task (A12 refactoring fallout).
