@@ -48,13 +48,7 @@ class PickingPass(
         pickingTexture.resize(width, height)
     }
 
-    override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
-        // Skip picking pass if an object is already selected
-        if (activeGameObject != null) return
-
-        // Setup picking framebuffer
-        val width = getWindowWidth()
-        val height = getWindowHeight()
+    fun beginFrame(width: Int, height: Int) {
         pickingTexture.resize(width, height)
         pickingTexture.enableWriting()
         glViewport(0, 0, width, height)
@@ -65,14 +59,21 @@ class PickingPass(
 
         glClearColor(0f, 0f, 0f, 0f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+    }
 
-        // Render 2D and 3D objects for picking
-        renderer2D.bindCamera(scene.camera)
+    override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+        // Skip picking pass if an object is already selected
+        if (activeGameObject != null) return
+
+        val width = getWindowWidth()
+        val height = getWindowHeight()
 
         // Update camera viewport dimensions for correct aspect ratio
         scene.camera.viewportWidth = width
         scene.camera.viewportHeight = height
 
+        // Render 2D and 3D objects for picking
+        renderer2D.bindCamera(scene.camera)
         render2D(scene, pickingShader)
         render3DPicking(scene)
         pickingRenderer.draw()

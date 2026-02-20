@@ -88,6 +88,8 @@ class Window(
 
     private var glfwWindow: Long = -1L
     private var isFirstDraw = true
+    private var windowWidth: Int = 1920
+    private var windowHeight: Int = 1080
 
     private val openGLDebug = GLFW_FALSE
 
@@ -122,15 +124,16 @@ class Window(
         val winWidth = videoMode?.width() ?: width
         val winHeight = videoMode?.height() ?: height
 
+        // Store window dimensions
+        windowWidth = winWidth
+        windowHeight = winHeight
+
         // Create the window (passing NULL for monitor makes it windowed)
         glfwWindow = glfwCreateWindow(winWidth, winHeight, title, NULL, NULL)
         if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
-        
+
         // Center/Position at 0,0
         glfwSetWindowPos(glfwWindow, 0, 0) // Corrected yPos to integer 0
-
-        renderer.currentWidth = winWidth
-        renderer.currentHeight = winHeight
 
         // Set the window icon
         setWindowIcon(Assets.Textures.APP_ICON)
@@ -188,9 +191,10 @@ class Window(
 
     private fun installCallbacks() {
         glfwSetWindowSizeCallback(glfwWindow) { w: Long, newWidth: Int, newHeight: Int ->
-            renderer.currentWidth = newWidth
-            renderer.currentHeight = newHeight
+            windowWidth = newWidth
+            windowHeight = newHeight
             glViewport(0, 0, newWidth, newHeight)
+            renderer.resize(newWidth, newHeight)
         }
         glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
         glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
@@ -207,7 +211,7 @@ class Window(
             glfwPollEvents()
             joystickListener.update()
             JobSystem.update()
-            
+
             // Record high-frequency input
             inputBuffer.push(
                 Time.getTime(),
@@ -217,7 +221,7 @@ class Window(
 
             if (isFirstDraw) {
                 // Set viewport if not already initialized
-                glViewport(0, 0, renderer.currentWidth, renderer.currentHeight)
+                glViewport(0, 0, windowWidth, windowHeight)
                 runOnMain {
                     show()
                     bootManager.boot(engine.engineState)

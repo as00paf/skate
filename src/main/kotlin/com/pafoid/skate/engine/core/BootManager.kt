@@ -22,10 +22,12 @@ class BootManager(
     suspend fun boot(engineState: AtomicReference<EngineState>) = withContext(mainDispatcher) {
         logger.logEngine("Initializing Engine...")
         splashScreen.init()
-        
+
         engineState.set(EngineState.LOADING)
-        
+
+        // Initialize render resources via the renderer
         initRenderSystem()
+
         val scene = initScene()
 
         engineState.set(EngineState.RUNNING)
@@ -33,6 +35,16 @@ class BootManager(
         logger.logEngine("Engine initialization complete.")
 
         sceneManager.changeScene(scene, true)
+    }
+
+    private suspend fun initRenderSystem() {
+        logger.logEngine("Initializing render system...")
+        splashScreen.increaseLoadingProgress("Initializing Render System...", 0f)
+
+        renderer.initialize()
+        renderer.useFbo = true
+
+        logger.logEngine("Renderer initialized.")
     }
 
     private suspend fun initScene(): Scene {
@@ -43,17 +55,5 @@ class BootManager(
         val scene = Scene("LevelEditorScene", initializer)
         scene.init()
         return scene
-    }
-
-    private suspend fun initRenderSystem() {
-        logger.logEngine("Initializing render system...")
-        splashScreen.increaseLoadingProgress("Initializing Render System...", 0f)
-
-        renderer.initFrameBuffer()
-        renderer.loadShaders { index, size ->
-            splashScreen.increaseLoadingProgress("Loading Shaders $index/$size", index / size / 10f)
-        }
-        renderer.useFbo = true
-        logger.logEngine("Renderer initialized.")
     }
 }

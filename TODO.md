@@ -153,69 +153,35 @@ initialization order.
 
 ### A12.3: Refactor Renderer to Orchestrator Only
 
-- [ ] **A12.3.1: Remove all `lateinit` vars** from Renderer:
-  - Remove 7 shader vars → use `renderResources.shaders`
-  - Remove 2 renderer vars → use `renderResources.renderers`
-  - Remove `frameBuffer` and `pickingTexture` → use `renderResources`
-
-- [ ] **A12.3.2: Remove initialization methods** from Renderer:
-  - Remove `initFrameBuffer()` → move to factory
-  - Remove `loadShaders()` → move to factory
-  - Remove `initializeRenderPasses()` → move to factory
-
-- [ ] **A12.3.3: Simplify constructor** to accept only `RenderResources`:
-  ```kotlin
-  class Renderer(
-      private val renderResources: RenderResources,
-      private val sceneManager: SceneManager
-  ) : IRenderer
-  ```
-
-- [ ] **A12.3.4: Simplify `render()` method** to only orchestrate passes:
-  ```kotlin
-  override fun render(scene, active, hovered) {
-      renderResources.renderPasses.picking.execute(scene, active, hovered)
-      renderResources.renderPasses.geometry.execute(scene, active, hovered)
-      renderResources.renderPasses.debug.execute(scene, active, hovered)
-  }
-  ```
-
-- [ ] **A12.3.5: Add `resize()` method** for proper window dimension handling:
-  ```kotlin
-  fun resize(width: Int, height: Int) {
-      renderResources.frameBuffer.resize(width, height)
-      renderResources.pickingTexture.resize(width, height)
-  }
-  ```
-
-- [ ] **A12.3.6: Update `destroy()` method** to handle nullable resources safely
-
-- [ ] **A12.3.7: Add KDoc** to public API documenting:
-  - When `render()` should be called
-  - Thread safety considerations
-  - Expected OpenGL state before/after calls
+- [x] **A12.3.1-A12.3.6: Complete Renderer Refactoring**:
+  - Remove all `lateinit` vars → use `renderResources`
+  - Remove initialization methods (`initFrameBuffer`, `loadShaders`, `initializeRenderPasses`)
+  - Simplify constructor to accept only `RenderResourcesFactory`
+  - Add `suspend fun initialize()` for lazy initialization
+  - Simplify `render()` method to only orchestrate passes
+  - Add `resize()` method for window dimension handling
+  - Update `destroy()` to use `renderResources`
+  - Add `frameBuffer` property for editor integration
 
 ### A12.4: Update Koin DI Module
 
-- [ ] **A12.4.1: Update `KoinModule.kt`**:
+- [x] **A12.4.1: Update `KoinModule.kt`**:
   - Add `RenderResourcesFactory` as a singleton
-  - Update `Renderer` constructor dependencies
+  - Update `Renderer` constructor to use factory
   - Remove direct `DebugRenderer` and `PickingRenderer` singletons (created by factory)
 
 ### A12.5: Update Engine Initialization
 
-- [ ] **A12.5.1: Update `Engine.kt`** or bootstrap code:
-  - Call `RenderResourcesFactory.create()` during initialization
-  - Pass initialized `RenderResources` to Renderer
+- [x] **A12.5.1: Update `BootManager.kt`**:
+  - Call `renderer.initialize()` during initialization
   - Handle initialization errors gracefully
 
-### A12.6: Update Tests
+### A12.6: Update Window Management
 
-- [ ] **A12.6.1: Update test files** that create Renderer:
-  - `SkateboardStressTest.kt`
-  - `SkateboardPhysicsTest.kt`
-  - `PhysicsCalibrationTest.kt`
-  - Create mock `RenderResources` for testing
+- [x] **A12.6.1: Update `Window.kt`**:
+  - Track window dimensions locally (`windowWidth`, `windowHeight`)
+  - Call `renderer.resize()` on window resize
+  - Remove direct access to renderer dimensions
 
 ### A12.7: Verify and Cleanup
 

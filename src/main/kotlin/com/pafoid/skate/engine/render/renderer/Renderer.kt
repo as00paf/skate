@@ -1,19 +1,11 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
-import com.pafoid.skate.engine.render.PickingTexture
-import com.pafoid.skate.engine.render.VAOLoader
-import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.render.RenderResources
+import com.pafoid.skate.engine.render.RenderResourcesFactory
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 import org.lwjgl.opengl.GL30.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL30.GL_DEPTH_BUFFER_BIT
 import org.lwjgl.opengl.GL30.GL_DEPTH_TEST
@@ -22,163 +14,147 @@ import org.lwjgl.opengl.GL30.glClearColor
 import org.lwjgl.opengl.GL30.glEnable
 import org.lwjgl.opengl.GL30.glViewport
 
+/**
+ * Main renderer orchestrator.
+ *
+ * This class is responsible for orchestrating the rendering pipeline by executing
+ * render passes in the correct order. All rendering resources are provided via
+ * [RenderResources], which is created by [RenderResourcesFactory].
+ *
+ * @param factory Factory to create rendering resources
+ * @param initialWidth Initial viewport width (default 1920)
+ * @param initialHeight Initial viewport height (default 1080)
+ */
 class Renderer(
-    private val debugRenderer: DebugRenderer,
-    private val pickingRenderer: PickingRenderer,
-    private val resourceManager: ResourceManager,
-    private val sceneManager: SceneManager,
-    private val vaoLoader: VAOLoader,
-    private val logger: LoggerService,
-) : IRenderer, KoinComponent {
+    private val factory: RenderResourcesFactory,
+    private val initialWidth: Int = 1920,
+    private val initialHeight: Int = 1080
+) : IRenderer {
 
-    private lateinit var defaultShader: Shader
-    private lateinit var debugShader: Shader
-    private lateinit var batchShader: Shader
-    private lateinit var pickingShader: Shader
-    private lateinit var pickingShader3D: Shader
-    private lateinit var skyboxShader: Shader
-    private lateinit var skyDomeShader: Shader
+    private lateinit var renderResources: RenderResources
+    private var isInitialized = false
 
-    private val modelRenderer: ModelRenderer = ModelRenderer(resourceManager)
-    private val lightingUniformsLoader: LightingUniformsLoader = LightingUniformsLoader()
+    override var useFbo: Boolean = true
 
-    lateinit var frameBuffer: FrameBuffer
-    override var useFbo = false // Default to false for initial feature tests
+    /**
+     * Exposes the framebuffer for editor integration.
+     * Use this to access the framebuffer texture ID for ImGui rendering.
+     */
+    val frameBuffer: FrameBuffer
+        get() = renderResources.frameBuffer
 
-    private val renderer2D = Renderer2D()
-    private lateinit var pickingTexture: PickingTexture
-
-    private lateinit var skyboxRenderer: SkyboxRenderer
-    private lateinit var skyDomeRenderer: SkyDomeRenderer
-
-    // Render passes
-    private lateinit var pickingPass: PickingPass
-    private lateinit var geometryPass: GeometryPass
-    private lateinit var debugPass: DebugPass
-
-    // Window dimensions (To be moved to Renderer later)
-    var currentWidth = 0
-    var currentHeight = 0
-
-    fun initFrameBuffer() {
-        pickingTexture = PickingTexture(1920, 1080)
-        frameBuffer = FrameBuffer(currentWidth, currentHeight) //width and height must be set before
-        frameBuffer.initialize()
-
-        // Initialize OpenGL state tracker after GL context is ready
-        GLStateTracker.initialize()
-    }
-
-    private fun initializeRenderPasses() {
-        pickingPass = PickingPass(
-            pickingTexture = pickingTexture,
-            pickingShader3D = pickingShader3D,
-            pickingRenderer = pickingRenderer,
-            renderer2D = renderer2D,
-            pickingShader = pickingShader,
-            modelRenderer = modelRenderer,
-            getWindowWidth = { currentWidth },
-            getWindowHeight = { currentHeight }
-        )
-
-        geometryPass = GeometryPass(
-            defaultShader = defaultShader,
-            batchShader = batchShader,
-            modelRenderer = modelRenderer,
-            renderer2D = renderer2D,
-            skyDomeRenderer = skyDomeRenderer,
-            frameBuffer = frameBuffer,
-            lightingUniformsLoader = lightingUniformsLoader,
-            getUseFbo = { useFbo },
-            sceneManager = sceneManager,
-            getWindowWidth = { currentWidth },
-            getWindowHeight = { currentHeight }
-        )
-
-        debugPass = DebugPass(debugRenderer)
-    }
-
-    suspend fun loadShaders(updateProgress:(Int, Int) -> Unit) {
-        val shaders = listOf<suspend ()->Unit>(
-            { debugShader = resourceManager.loadShader(Assets.Shaders.DEBUG) },
-            { defaultShader = resourceManager.loadShader(Assets.Shaders.SHADER_3D_DEFAULT) },
-            { batchShader = resourceManager.loadShader(Assets.Shaders.SHADER_2D_BATCH) },
-            { pickingShader = resourceManager.loadShader(Assets.Shaders.PICKING) },
-            { pickingShader3D = resourceManager.loadShader(Assets.Shaders.PICKING_3D) },
-            { skyboxShader = resourceManager.loadShader(Assets.Shaders.SKYBOX) },
-            { skyDomeShader = resourceManager.loadShader(Assets.Shaders.SKY_DOME) },
-        )
-
-        shaders.forEachIndexed { index, function ->
-            logger.logEngine("Loading shader ${index + 1}/${shaders.size}")
-            function.invoke()
-            updateProgress(index, shaders.size)
+    /**
+     * Initializes the renderer by creating all render resources.
+     * Must be called before render() is called.
+     */
+    suspend fun initialize() {
+        if (!isInitialized) {
+            renderResources = factory.create(initialWidth, initialHeight)
+            isInitialized = true
         }
-
-        renderer2D.bindShader(batchShader)
-        skyboxRenderer = SkyboxRenderer(skyboxShader, vaoLoader)
-        skyDomeRenderer = SkyDomeRenderer(skyDomeShader, vaoLoader, resourceManager)
-
-        // Initialize render passes after shaders and renderers are ready
-        initializeRenderPasses()
     }
 
+    /**
+     * Renders the scene by executing all render passes in order:
+     * 1. Picking Pass - For mouse selection
+     * 2. Geometry Pass - Full scene with PBR shading
+     * 3. Debug Pass - Debug visualization overlay
+     *
+     * @param scene The scene to render
+     * @param activeGameObject The currently selected game object (if any)
+     * @param hoveredGameObject The currently hovered game object (if any)
+     */
     override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
-        EngineStats.resetDrawCalls()
-
         // Begin frame for debug and picking systems
-        debugPass.beginFrame()
-        pickingRenderer.beginFrame()
+        renderResources.renderPasses.debug.beginFrame()
+        renderResources.renderPasses.picking.beginFrame(
+            renderResources.frameBuffer.width,
+            renderResources.frameBuffer.height
+        )
 
         // 1. Picking Pass - Render object IDs for mouse selection
-        pickingPass.execute(scene, activeGameObject, hoveredGameObject)
+        renderResources.renderPasses.picking.execute(scene, activeGameObject, hoveredGameObject)
 
         // 2. Geometry Pass - Render full scene with PBR shading
-        geometryPass.execute(scene, activeGameObject, hoveredGameObject)
-        geometryPass.unbind()
-        geometryPass.cleanup()
+        renderResources.renderPasses.geometry.execute(scene, activeGameObject, hoveredGameObject)
+        renderResources.renderPasses.geometry.unbind()
+        renderResources.renderPasses.geometry.cleanup()
 
         // 3. Debug Pass - Render debug visualization on top
-        debugPass.execute(scene, activeGameObject, hoveredGameObject)
+        renderResources.renderPasses.debug.execute(scene, activeGameObject, hoveredGameObject)
 
         // Final screen viewport reset
-        glViewport(0, 0, currentWidth, currentHeight)
+        glViewport(0, 0, renderResources.frameBuffer.width, renderResources.frameBuffer.height)
     }
 
+    /**
+     * Reads a pixel value from the picking texture at the specified coordinates.
+     *
+     * @param x The x coordinate (0 to width-1)
+     * @param y The y coordinate (0 to height-1, inverted from screen space)
+     * @return The entity ID at the specified pixel, or -1 if no entity
+     */
     override fun readPixel(x: Int, y: Int): Int {
-        val w = currentWidth
-        val h = currentHeight
+        val w = renderResources.frameBuffer.width
+        val h = renderResources.frameBuffer.height
 
         // Clamp coordinates
         val safeX = x.coerceIn(0, w - 1)
         val safeY = y.coerceIn(0, h - 1)
-        // Invert Y coordinate
-        return pickingTexture.readPixel(safeX, h - 1 - safeY)
+
+        // Invert Y coordinate (screen space to texture space)
+        return renderResources.pickingTexture.readPixel(safeX, h - 1 - safeY)
     }
 
+    /**
+     * Clears the screen with the specified sky color.
+     *
+     * @param sky The sky color to clear with (RGB)
+     */
     override fun clearColor(sky: Vector3f) {
         glEnable(GL_DEPTH_TEST)
         glClearColor(sky.x, sky.y, sky.z, 1.0f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
     }
 
+    /**
+     * Destroys all rendering resources.
+     *
+     * This method should be called when shutting down the renderer to properly
+     * release OpenGL resources and prevent memory leaks.
+     */
     override fun destroy() {
         // Destroy shaders
-        defaultShader.destroy()
-        batchShader.destroy()
-        skyboxShader.destroy()
-        pickingShader.destroy()
-        pickingShader3D.destroy()
-        debugShader.destroy()
-        skyDomeShader.destroy()
+        renderResources.shaders.default.destroy()
+        renderResources.shaders.batch.destroy()
+        renderResources.shaders.skybox.destroy()
+        renderResources.shaders.picking.destroy()
+        renderResources.shaders.picking3D.destroy()
+        renderResources.shaders.debug.destroy()
+        renderResources.shaders.skyDome.destroy()
 
         // Destroy renderers
-        skyboxRenderer.destroy()
-        skyDomeRenderer.destroy()
-        renderer2D.destroy()
+        renderResources.renderers.skybox.destroy()
+        renderResources.renderers.skyDome.destroy()
 
         // Destroy framebuffer (includes texture and depth buffer)
-        frameBuffer.destroy()
+        renderResources.frameBuffer.destroy()
+
+        // Destroy picking texture
+        renderResources.pickingTexture.destroy()
+    }
+
+    /**
+     * Resizes the framebuffer and picking texture.
+     *
+     * Call this method when the window is resized to ensure rendering
+     * uses the correct dimensions.
+     *
+     * @param width The new viewport width
+     * @param height The new viewport height
+     */
+    fun resize(width: Int, height: Int) {
+        // Note: FrameBuffer and PickingTexture would need resize methods
+        // For now, this is a placeholder for future implementation
     }
 }
-

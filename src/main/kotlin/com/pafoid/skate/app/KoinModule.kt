@@ -24,6 +24,7 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.JoystickListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
@@ -55,13 +56,20 @@ val engineModule = module {
     single { ResourceManager(get(), get(), get(), get()) }
     single { PoseSerializer() }
 
+    // Renderers that are used outside the render pipeline
     single { DebugRenderer() }
     single { PickingRenderer() }
+
     single { ThumbnailCache() }
     single { PrefabsGenerator(get(), get()) }
     single { SplashScreen() }
 
-    single { Renderer(get(), get(), get(), get(), get(), get()) }
+    // Render resources factory - created lazily when Renderer is requested
+    single { RenderResourcesFactory(get(), get(), get()) }
+
+    // Renderer is created with the factory, initialization happens in BootManager
+    single { Renderer(get()) }
+
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get()) }
 }
 
