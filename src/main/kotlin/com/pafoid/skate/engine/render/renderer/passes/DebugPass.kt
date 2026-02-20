@@ -1,7 +1,8 @@
-package com.pafoid.skate.engine.render.renderer
+package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
 
 /**
  * Debug visualization render pass.

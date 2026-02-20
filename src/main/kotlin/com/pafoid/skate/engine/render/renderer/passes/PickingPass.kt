@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.render.renderer
+package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.GameObject
@@ -6,8 +6,12 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
+import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.render.PickingTexture
+import com.pafoid.skate.engine.render.renderer.ModelRenderer
+import com.pafoid.skate.engine.render.renderer.PickingRenderer
+import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.utils.GLStateTracker
 import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -115,7 +119,7 @@ class PickingPass(
         renderer2D.bindCamera(scene.camera)
 
         scene.gameObjectManager.gameObjects.forEach { go ->
-            go.getComponent<com.pafoid.skate.engine.ecs.components.SpriteRenderer>()?.let { sprite ->
+            go.getComponent<SpriteRenderer>()?.let { sprite ->
                 renderer2D.add(go)
             }
         }

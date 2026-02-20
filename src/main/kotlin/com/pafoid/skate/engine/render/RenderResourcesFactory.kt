@@ -5,16 +5,16 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.render.renderer.DebugPass
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import com.pafoid.skate.engine.render.renderer.GeometryPass
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
-import com.pafoid.skate.engine.render.renderer.PickingPass
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.renderer.SkyboxRenderer
+import com.pafoid.skate.engine.render.renderer.passes.DebugPass
+import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
+import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.utils.GLStateTracker
 
 /**
