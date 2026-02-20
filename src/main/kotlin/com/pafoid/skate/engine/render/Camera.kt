@@ -46,9 +46,13 @@ class Camera(
     var fov = 45f
     var nearPlane = 0.1f
     var farPlane = 1000f
-    
+
     var projectionSize = Vector2f(32f, 18f) // Default 16:9 units
     var zoom = 1.0f
+
+    // Viewport dimensions for aspect ratio calculation
+    var viewportWidth: Int = 1920
+    var viewportHeight: Int = 1080
 
     // Third person / Spring arm
     var target: Vector3f? = null
@@ -213,10 +217,13 @@ class Camera(
     fun createProjectionMatrix(): Matrix4f {
         val projectionMatrix = Matrix4f()
         projectionMatrix.identity()
-        
-        // We'll use a standard aspect ratio if none is provided, 
-        // but ideally this should come from the window
-        val aspectRatio = 1920f / 1080f 
+
+        // Calculate aspect ratio from current viewport dimensions
+        val aspectRatio = if (viewportHeight > 0) {
+            viewportWidth.toFloat() / viewportHeight.toFloat()
+        } else {
+            16f / 9f // Fallback to 16:9 if height is 0
+        }
 
         if (isOrthographic) {
             val left = -projectionSize.x * zoom / 2f

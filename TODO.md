@@ -79,10 +79,11 @@
 
 ### Code Quality
 
-- [ ] **A11.8: Fix Aspect Ratio Handling** - `Camera.kt`:
+- [x] **A11.8: Fix Aspect Ratio Handling** - `Camera.kt`:
+  - Add `viewportWidth` and `viewportHeight` properties to Camera
   - Remove hardcoded `1920f / 1080f` aspect ratio
-  - Add `viewportWidth` and `viewportHeight` properties
-  - Update dynamically on window resize
+  - Calculate aspect ratio dynamically from viewport dimensions
+  - Update GeometryPass and PickingPass to set camera viewport dimensions
   - **Impact**: Medium - Correct rendering on all aspect ratios
 
 - [ ] **A11.9: Implement Resource Cleanup** - `RenderBatch.kt`, `Renderer2D.kt`:

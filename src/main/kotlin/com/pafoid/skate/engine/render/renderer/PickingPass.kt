@@ -67,6 +67,11 @@ class PickingPass(
 
         // Render 2D and 3D objects for picking
         renderer2D.bindCamera(scene.camera)
+
+        // Update camera viewport dimensions for correct aspect ratio
+        scene.camera.viewportWidth = width
+        scene.camera.viewportHeight = height
+
         render2D(scene, pickingShader)
         render3DPicking(scene)
         pickingRenderer.draw()
