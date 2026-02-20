@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render
 
+import com.pafoid.skate.engine.utils.EntityIdEncoder
 import org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0
 import org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT
 import org.lwjgl.opengl.GL30.GL_DEPTH_COMPONENT
@@ -35,7 +36,6 @@ import org.lwjgl.opengl.GL30.glReadBuffer
 import org.lwjgl.opengl.GL30.glReadPixels
 import org.lwjgl.opengl.GL30.glTexImage2D
 import org.lwjgl.opengl.GL30.glTexParameteri
-import kotlin.math.roundToInt
 
 class PickingTexture(private var width: Int, private var height: Int) {
 
@@ -124,7 +124,7 @@ class PickingTexture(private var width: Int, private var height: Int) {
         val pixels = FloatArray(3)
         glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, pixels)
 
-        return pixels[0].roundToInt() - 1
+        return EntityIdEncoder.decode(pixels[0])
     }
 
     fun destroy() {

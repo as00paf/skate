@@ -94,7 +94,8 @@
   - Update `Renderer.destroy()` to call all cleanup methods
   - **Impact**: Low - Memory leak prevention
 
-- [ ] **A11.10: Centralize Entity ID Encoding** - New `EntityIdEncoder.kt`:
+- [x] **A11.10: Centralize Entity ID Encoding** - New `EntityIdEncoder.kt`:
   - Extract +1/-1 encoding logic to single location
   - Document why 0 is reserved
-  - **Impact**: Low - Code clarity
+  - Use Float throughout to match GPU uniform types (no casting/rounding)
+  - **Impact**: Low - Code clarity and consistency

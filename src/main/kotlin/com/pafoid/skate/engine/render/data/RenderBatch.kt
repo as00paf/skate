@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.render.renderer.Renderer2D
+import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.RenderConsts.COLOR_OFFSET
 import com.pafoid.skate.engine.utils.RenderConsts.COLOR_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts.ENTITY_ID_OFFSET
@@ -235,7 +236,7 @@ class RenderBatch(
         val color = sprite.getColor()
         val texCoords = sprite.getTexCoords()
         val texId = findTextureId(sprite.getTexture())
-        val entityId = sprite.gameObject.getUid().toFloat() + 1 // +1 because 0 is reserved for "nothing"
+        val entityId = EntityIdEncoder.encode(sprite.gameObject.getUid())
 
         val isRotated = transform.rotation?.z != 0f
         if (isRotated) {

@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.render.PickingTexture
 import com.pafoid.skate.engine.render.utils.GLStateTracker
+import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.lwjgl.opengl.GL30.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL30.GL_DEPTH_BUFFER_BIT
@@ -92,7 +93,7 @@ class PickingPass(
             if (renderComponent != null && transform != null && go.getComponent<NonPickable>() == null) {
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
 
-                pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, go.getUid().toFloat() + 1)
+                pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, EntityIdEncoder.encode(go.getUid()))
                 pickingShader3D.uploadBoolean(Uniforms.USE_BATCH, false)
 
                 // Use ModelRenderer's simple render (no textures/PBR)
