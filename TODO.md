@@ -66,15 +66,21 @@ Gameplay Layer (game/player/)
   - **Impact**: High - Clean separation between input and gameplay logic
   - **Status**: Created and compiles successfully
 
-- [ ] **A20.3: Create InputSystem** - New `ecs/systems/InputSystem.kt`:
-  - Create `InputSystem : System(priority = EARLY)`
-  - Inject `IInputProvider`
-  - In `update()`:
-    - Poll `IInputProvider` for raw inputs
-    - Apply deadzone handling for analog sticks
-    - Implement jump state machine (pressed → held → released)
-    - Write gameplay state to `InputStateComponent` on player entities
-  - **Impact**: High - Centralized input processing, consistent behavior
+- [x] **A20.3: Create InputSystem** - New `ecs/systems/InputSystem.kt`:
+  - **Created**: `InputSystem : System(priority = EARLY)` that converts raw inputs to gameplay state
+  - **Features**:
+    - Polls `IInputProvider` for gamepad and keyboard inputs
+    - Applies deadzone handling for analog sticks (configurable thresholds)
+    - Implements jump state machine (pressed → held → released)
+    - Writes gameplay state to `InputStateComponent` on player entities
+    - Keyboard input overrides gamepad for movement
+  - **Input Mapping**:
+    - Move: Left Stick / WASD
+    - Jump: A Button / Space
+    - Sprint: Left Trigger / Left Shift
+    - Camera Look: Right Stick (mouse TODO)
+  - **Impact**: High - Centralized input processing, clean ECS separation
+  - **Status**: Created and compiles successfully
 
 - [ ] **A20.4: Update PlayerController** - `game/player/PlayerController.kt`:
   - Remove `IInputProvider` dependency
