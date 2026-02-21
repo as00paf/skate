@@ -137,23 +137,23 @@ Constructor Injection for rendering components.
 
 ### Problem Statement
 
-`Camera.kt` contains editor-specific free-fly movement code mixed with core camera functionality (projection/view
-matrices, third-person gameplay camera). This violates separation of concerns between engine and editor components.
+`Camera.kt` contains gameplay-specific third-person camera logic (gamepad input, physics clipping) mixed with core
+camera functionality. This violates separation of concerns between engine, game, and editor components.
 
-### Current Issues
+### Current Architecture Issues
 
-**Camera.kt** (Engine Component) contains:
+**Camera.kt** (Should be Engine Component) contains:
 
-- `move()` method with WASD controls - Editor-only free-fly movement
-- Mouse rotation when cursor disabled - Editor-only input handling
-- `update()` conditional logic that branches between editor and gameplay modes
-- Input dependencies (`IInputProvider`, `KeyListener`, `MouseListener`) primarily for editor usage
+- Gamepad input handling (RS rotation for third-person)
+- Mouse rotation when cursor disabled (gameplay mode)
+- Physics clipping (raycast against scene)
+- Dependencies on `IInputProvider` and `SceneManager`
 
-**EditorCamera.kt** (Editor System) should contain:
+**What we want:**
 
-- All editor viewport navigation controls
-- Free-fly WASD movement
-- MMB rotation, scroll zoom, Home reset (already has these ✅)
+- **Camera**: Pure engine component with NO input dependencies
+- **GameCamera**: Gameplay third-person controller with gamepad support
+- **EditorCamera**: Editor free-fly navigation (already correct ✅)
 
 ### Tasks
 
@@ -171,19 +171,30 @@ matrices, third-person gameplay camera). This violates separation of concerns be
     - `src/main/kotlin/com/pafoid/skate/engine/render/Camera.kt:100-106`
     - `src/main/kotlin/com/pafoid/skate/editor/EditorCamera.kt:44-95`
 
-- [ ] **A17.2: Remove Input Dependencies from Camera** - `Camera.kt`:
-  - Remove `IInputProvider`, `KeyListener`, `MouseListener` constructor parameters
-  - Remove `SceneManager` dependency (only used for clipping in third-person)
+- [ ] **A17.2: Create GameCamera Class** - New `GameCamera.kt`:
+  - Create `com.pafoid.skate.game.camera.GameCamera` package
+  - Move `updateThirdPerson()` from Camera to GameCamera
+  - Move `handleClipping()` (physics raycast) from Camera to GameCamera
+  - Move gamepad input handling (RS rotation) from Camera to GameCamera
+  - GameCamera wraps/composes a base Camera instance
+  - GameCamera takes `IInputProvider`, `SceneManager`, and `Camera` as dependencies
+  - **Impact**: High - Gameplay logic separated from engine component
+
+- [ ] **A17.3: Remove Input Dependencies from Camera** - `Camera.kt`:
+  - Remove `IInputProvider`, `SceneManager` constructor parameters
+  - Remove `speed` property (editor/game specific)
+  - Remove remaining input-related imports
   - Camera becomes a pure data/orientation component
-  - **Impact**: High - Camera can be used in headless/server contexts
+  - **Impact**: High - Camera usable in headless/server/thumbnail contexts
 
-- [ ] **A17.3: Update EditorCamera to Own Camera State** - `EditorCamera.kt`:
-  - EditorCamera directly manipulates camera position/orientation
-  - Add speed controls for editor free-fly movement
-  - Handle all input in editorUpdate() instead of delegating to Camera.update()
-  - **Impact**: Medium - EditorCamera becomes single source of truth for editor controls
+- [ ] **A17.4: Update Usage Sites** - All files creating Camera instances:
+  - Update `Scene.kt` to use GameCamera (wraps Camera)
+  - Update `ThumbnailCache.kt` to use base Camera directly (no gamepad needed)
+  - Update `BootManager.kt` dependencies
+  - Update Koin module to provide GameCamera
+  - **Impact**: Medium - Proper dependency injection for camera types
 
-- [ ] **A17.4: Update Camera Constructor Usage** - All files creating Camera instances:
+- [ ] **A17.5: Update Camera Constructor Usage** - All files creating Camera instances:
   - Update `Scene.kt` constructor (no longer passes input dependencies)
   - Update `ThumbnailCache.kt` constructor (no longer passes input dependencies)
   - Update `BootManager.kt` (no longer passes input dependencies to Scene)
