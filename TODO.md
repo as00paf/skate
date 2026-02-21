@@ -157,12 +157,19 @@ matrices, third-person gameplay camera). This violates separation of concerns be
 
 ### Tasks
 
-- [ ] **A17.1: Extract Free-Fly Movement to EditorCamera** - `Camera.kt`, `EditorCamera.kt`:
-  - Move `move()` method from Camera to EditorCamera
-  - Move mouse rotation logic from Camera.move() to EditorCamera
-  - Remove `update()` conditional branch (`else { move() }`)
-  - Simplify Camera.update() to only handle third-person camera when `target != null`
-  - **Impact**: High - Cleaner separation between engine and editor
+- [x] **A17.1: Extract Free-Fly Movement to EditorCamera** - `Camera.kt`, `EditorCamera.kt`:
+  - **Changes**:
+    - Moved `move()` method from Camera to EditorCamera as `handleFreeFlyMovement()`
+    - Moved mouse rotation logic from Camera.move() to EditorCamera.handleFreeFlyMovement()
+    - Removed `update()` conditional branch (`else { move() }`) from Camera
+    - Simplified Camera.update() to only handle third-person camera when `target != null`
+    - Added RMB (right mouse button) rotation for free-fly mode in EditorCamera
+    - Added WASD + Space/Shift movement in EditorCamera
+    - Removed unused GLFW key imports from Camera.kt
+  - **Impact**: High - Cleaner separation between engine (Camera) and editor (EditorCamera)
+  - Locations:
+    - `src/main/kotlin/com/pafoid/skate/engine/render/Camera.kt:100-106`
+    - `src/main/kotlin/com/pafoid/skate/editor/EditorCamera.kt:44-95`
 
 - [ ] **A17.2: Remove Input Dependencies from Camera** - `Camera.kt`:
   - Remove `IInputProvider`, `KeyListener`, `MouseListener` constructor parameters

@@ -7,27 +7,100 @@ import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
+import org.lwjgl.glfw.GLFW.GLFW_KEY_A
+import org.lwjgl.glfw.GLFW.GLFW_KEY_D
+import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT
+import org.lwjgl.glfw.GLFW.GLFW_KEY_S
+import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
+import org.lwjgl.glfw.GLFW.GLFW_KEY_W
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sign
+import kotlin.math.sin
 
 class EditorCamera(private val camera: Camera) : System() {
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
 
     private val scrollSensitivity = 0.1f
+    private val rotationSensitivity = 0.1f
+    private val moveSpeed = 0.1f
     private var lerpTime = 0.0f
     private var reset = false
     private var isRotating: Boolean = false
-    private val rotationSensitivity = 0.1f
 
-    override fun editorUpdate(dt: Float) {
+    override fun update(dt: Float) {
+        handleFreeFlyMovement()
         handleRotation()
         handleZoom()
         handleReset(dt)
     }
 
-    private fun handleReset(dt:Float) {
+    override fun editorUpdate(dt: Float) {
+        handleFreeFlyMovement()
+        handleRotation()
+        handleZoom()
+        handleReset(dt)
+    }
+
+    /**
+     * Handles free-fly camera movement (WASD + mouse look).
+     * This is the editor's primary navigation mode when not using third-person camera.
+     */
+    private fun handleFreeFlyMovement() {
+        // Mouse rotation (when cursor is disabled)
+        if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && mouseListener.isInsideViewport()) {
+            val sensitivity = 0.1f
+            val dx = mouseListener.getDx()
+            val dy = mouseListener.getDy()
+
+            if (abs(dx) > 0.01f || abs(dy) > 0.01f) {
+                camera.yaw += dx * sensitivity
+                camera.pitch += dy * sensitivity
+
+                // Clamp pitch to avoid flipping
+                if (camera.pitch > 89f) camera.pitch = 89f
+                if (camera.pitch < -89f) camera.pitch = -89f
+            }
+        }
+
+        // Calculate forward and right vectors based on yaw (horizontal movement only)
+        val forward = Vector3f(
+            sin(Math.toRadians(camera.yaw.toDouble())).toFloat(),
+            0f,
+            -cos(Math.toRadians(camera.yaw.toDouble())).toFloat()
+        ).normalize()
+
+        val right = Vector3f(
+            cos(Math.toRadians(camera.yaw.toDouble())).toFloat(),
+            0f,
+            sin(Math.toRadians(camera.yaw.toDouble())).toFloat()
+        ).normalize()
+
+        // WASD movement
+        if (keyListener.isKeyPressed(GLFW_KEY_W)) {
+            camera.position.add(Vector3f(forward).mul(moveSpeed))
+        }
+        if (keyListener.isKeyPressed(GLFW_KEY_S)) {
+            camera.position.sub(Vector3f(forward).mul(moveSpeed))
+        }
+        if (keyListener.isKeyPressed(GLFW_KEY_D)) {
+            camera.position.add(Vector3f(right).mul(moveSpeed))
+        }
+        if (keyListener.isKeyPressed(GLFW_KEY_A)) {
+            camera.position.sub(Vector3f(right).mul(moveSpeed))
+        }
+        // Vertical movement
+        if (keyListener.isKeyPressed(GLFW_KEY_SPACE)) {
+            camera.position.y += moveSpeed
+        }
+        if (keyListener.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
+            camera.position.y -= moveSpeed
+        }
+    }
+
+    private fun handleReset(dt: Float) {
         if (keyListener.isKeyPressed(GLFW.GLFW_KEY_HOME)) {
             reset = true
         }

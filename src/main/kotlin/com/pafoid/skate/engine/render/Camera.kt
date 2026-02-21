@@ -16,12 +16,6 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
-import org.lwjgl.glfw.GLFW.GLFW_KEY_A
-import org.lwjgl.glfw.GLFW.GLFW_KEY_D
-import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT
-import org.lwjgl.glfw.GLFW.GLFW_KEY_S
-import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
-import org.lwjgl.glfw.GLFW.GLFW_KEY_W
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -99,10 +93,10 @@ class Camera(
 
     fun update(dt: Float) {
         handleLerp(dt)
+        // Only update third-person camera when target is set
+        // Free-fly movement is handled by EditorCamera
         if (target != null) {
             updateThirdPerson(dt)
-        } else {
-            move()
         }
     }
 
@@ -173,51 +167,6 @@ class Camera(
             }
         }
         return to
-    }
-
-    fun move() {
-        // Rotation
-        if (inputProvider.isCursorDisabled()) {
-            val sensitivity = 0.1f
-            yaw += mouseListener.getDx() * sensitivity
-            pitch += mouseListener.getDy() * sensitivity
-            
-            // Limit pitch
-            if (pitch > 89f) pitch = 89f
-            if (pitch < -89f) pitch = -89f
-        }
-
-        // Movement
-        val forward = Vector3f(
-            sin(Math.toRadians(yaw.toDouble())).toFloat(),
-            -sin(Math.toRadians(pitch.toDouble())).toFloat(),
-            -cos(Math.toRadians(yaw.toDouble())).toFloat()
-        ).normalize()
-        
-        val right = Vector3f(
-            cos(Math.toRadians(yaw.toDouble())).toFloat(),
-            0f,
-            sin(Math.toRadians(yaw.toDouble())).toFloat()
-        ).normalize()
-
-        if (keyListener.isKeyPressed(GLFW_KEY_W)) {
-            position.add(Vector3f(forward).mul(speed))
-        }
-        if (keyListener.isKeyPressed(GLFW_KEY_S)) {
-            position.sub(Vector3f(forward).mul(speed))
-        }
-        if (keyListener.isKeyPressed(GLFW_KEY_D)) {
-            position.add(Vector3f(right).mul(speed))
-        }
-        if (keyListener.isKeyPressed(GLFW_KEY_A)) {
-            position.sub(Vector3f(right).mul(speed))
-        }
-        if (keyListener.isKeyPressed(GLFW_KEY_SPACE)) {
-            position.y += speed
-        }
-        if (keyListener.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
-            position.y -= speed
-        }
     }
 
     fun createProjectionMatrix(): Matrix4f {
