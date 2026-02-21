@@ -5,6 +5,9 @@ import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.listeners.KeyListener
+import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.JobSystem
 import kotlinx.coroutines.CoroutineDispatcher
@@ -16,6 +19,9 @@ class BootManager(
     private val renderer: Renderer,
     private val logger: LoggerService,
     private val splashScreen: SplashScreen,
+    private val inputProvider: IInputProvider,
+    private val keyListener: KeyListener,
+    private val mouseListener: MouseListener,
     private val mainDispatcher: CoroutineDispatcher = JobSystem.Main
 ) {
 
@@ -52,7 +58,7 @@ class BootManager(
         initializer.onProgress = { progress, message ->
             splashScreen.increaseLoadingProgress(message, progress)
         }
-        val scene = Scene("LevelEditorScene", initializer)
+        val scene = Scene("LevelEditorScene", initializer, inputProvider, keyListener, mouseListener, sceneManager)
         scene.init()
         return scene
     }

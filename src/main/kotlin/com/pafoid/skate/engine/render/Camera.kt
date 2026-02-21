@@ -15,8 +15,6 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
 import org.lwjgl.glfw.GLFW.GLFW_KEY_A
 import org.lwjgl.glfw.GLFW.GLFW_KEY_D
@@ -36,12 +34,16 @@ class Camera(
     var yaw: Float = 0f,
     var roll: Float = 0f,
     var isOrthographic: Boolean = false,
-    var speed: Float = 0.01f
-): KoinComponent {
-    private val inputProvider: IInputProvider by inject()
-    private val keyListener: KeyListener by inject()
-    private val mouseListener: MouseListener by inject()
-    private val sceneManager: SceneManager by inject()
+    var speed: Float = 0.01f,
+    inputProvider: IInputProvider,
+    keyListener: KeyListener,
+    mouseListener: MouseListener,
+    sceneManager: SceneManager
+) {
+    private val inputProvider: IInputProvider = inputProvider
+    private val keyListener: KeyListener = keyListener
+    private val mouseListener: MouseListener = mouseListener
+    private val sceneManager: SceneManager = sceneManager
 
     var fov = 45f
     var nearPlane = 0.1f

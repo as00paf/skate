@@ -10,8 +10,6 @@ import com.pafoid.skate.engine.render.data.PickingMesh
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
 import org.joml.Vector4f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.opengl.GL11.GL_FLOAT
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL11.glDrawArrays
@@ -29,10 +27,11 @@ import org.lwjgl.opengl.GL30.glGenVertexArrays
 private const val MAX_VERTICES = 50000
 private const val VERTEX_SIZE = 4 // x, y, z, id
 
-class PickingRenderer : KoinComponent {
-    private val resourceManager: ResourceManager by inject()
-    private val logger: LoggerService by inject()
-    private val sceneManager: SceneManager by inject()
+class PickingRenderer(
+    private val resourceManager: ResourceManager,
+    private val logger: LoggerService,
+    private val sceneManager: SceneManager
+) {
 
     private val meshes = mutableListOf<PickingMesh>()
     private val vertexArray = FloatArray(MAX_VERTICES * VERTEX_SIZE)

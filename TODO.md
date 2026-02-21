@@ -84,24 +84,37 @@ The rendering pipeline components currently use a mix of Constructor Injection a
 improve testability and strictly adhere to the Dependency Inversion Principle, we should standardize on explicit
 Constructor Injection for rendering components.
 
-- [ ] **A16.1: Standardize Constructor Injection in Renderers** - Remove `by inject()` from renderers:
-  - Update `ModelRenderer.kt` to accept `DebugRenderer` in its constructor.
-  - Update `PickingRenderer.kt` to accept `ResourceManager`, `LoggerService`, and `SceneManager` in its constructor.
-  - Update `DebugRenderer.kt` to accept `ResourceManager`, `LoggerService`, and `SceneManager` in its constructor.
-  - Update `Camera.kt` to accept `IInputProvider`, `KeyListener`, `MouseListener`, and `SceneManager` in its
-    constructor.
-  - Remove `: KoinComponent` from these classes where applicable.
-  - **Impact**: Medium - Improves testability and explicitly declares class dependencies.
+- [x] **A16.1: Standardize Constructor Injection in Renderers** - Remove `by inject()` from renderers:
+  - **Changes**:
+    - `ModelRenderer`: Removed `: KoinComponent`, added `debugRenderer` to constructor
+    - `DebugRenderer`: Removed `: KoinComponent`, added `resourceManager`, `logger`, `sceneManager` to constructor
+    - `PickingRenderer`: Removed `: KoinComponent`, added `resourceManager`, `logger`, `sceneManager` to constructor
+    - `Camera`: Removed `: KoinComponent`, added `inputProvider`, `keyListener`, `mouseListener`, `sceneManager` to
+      constructor
+    - Removed unused `org.koin.core.component` imports
+  - **Impact**: Medium - Improves testability and explicitly declares class dependencies
 
-- [ ] **A16.2: Update RenderResourcesFactory** - Inject explicit dependencies:
-  - Pass the required dependencies to `PickingRenderer` when it is instantiated.
-  - Pass the required dependencies to `ModelRenderer` when it is instantiated.
-  - **Impact**: Medium - Factory takes full responsibility for wiring dependencies.
+- [x] **A16.2: Update RenderResourcesFactory** - Inject explicit dependencies:
+  - **Changes**:
+    - `ModelRenderer` now receives `debugRenderer` parameter
+    - `PickingRenderer` now receives `resourceManager`, `logger`, `sceneManager` parameters
+  - **Impact**: Medium - Factory takes full responsibility for wiring dependencies
 
-- [ ] **A16.3: Update Koin Module** - `KoinModule.kt`:
-  - Update the definitions for `Camera` and `DebugRenderer` (if they are declared in Koin) to pass constructor
-    parameters using `get()`.
-  - **Impact**: Low - Alignment with new constructor signatures.
+- [x] **A16.3: Update Koin Module** - `KoinModule.kt`:
+  - **Changes**:
+    - Updated `DebugRenderer` definition: `single { DebugRenderer(get(), get(), get()) }`
+    - Updated `PickingRenderer` definition: `single { PickingRenderer(get(), get(), get()) }`
+    - Updated `ThumbnailCache` definition: `single { ThumbnailCache(get(), get(), get(), get(), get()) }`
+    - Updated `BootManager` definition: added `inputProvider`, `keyListener`, `mouseListener` parameters
+    - Reordered modules: `inputModule` now defined before `engineModule` for proper dependency order
+    - Removed duplicate `BootManager` definition from `appModule`
+  - **Impact**: Low - Alignment with new constructor signatures
+
+### Related Changes
+
+- **Scene.kt**: Updated constructor to accept and forward input dependencies to `Camera`
+- **BootManager.kt**: Updated to accept and forward input dependencies to `Scene`
+- **ThumbnailCache.kt**: Removed `KoinComponent`, now uses constructor injection for `Camera` dependencies
 
 ---
 

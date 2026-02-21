@@ -11,8 +11,6 @@ import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.VIEW
 import org.joml.Quaternionf
 import org.joml.Vector2f
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.opengl.GL11.GL_FLOAT
 import org.lwjgl.opengl.GL11.GL_LINES
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
@@ -35,10 +33,11 @@ import kotlin.math.sin
 private const val MAX_LINES = 3000
 private const val MAX_TRIANGLES = 1000
 
-class DebugRenderer : KoinComponent {
-    private val resourceManager: ResourceManager by inject()
-    private val logger: LoggerService by inject()
-    private val sceneManager: SceneManager by inject()
+class DebugRenderer(
+    private val resourceManager: ResourceManager,
+    private val logger: LoggerService,
+    private val sceneManager: SceneManager
+) {
 
     private val lines = mutableListOf<Line3D>()
     private val triangles = mutableListOf<Triangle3D>()

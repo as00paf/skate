@@ -153,7 +153,7 @@ class RenderResourcesFactory(
     ): Renderers {
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
         val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, resourceManager)
-        val modelRenderer = ModelRenderer(resourceManager)
+        val modelRenderer = ModelRenderer(resourceManager, debugRenderer)
 
         return Renderers(
             skybox = skyboxRenderer,
@@ -174,7 +174,7 @@ class RenderResourcesFactory(
         height: Int
     ): RenderPasses {
         val renderer2D = Renderer2D()
-        val pickingRenderer = PickingRenderer()
+        val pickingRenderer = PickingRenderer(resourceManager, logger, sceneManager)
         val lightingUniformsLoader = LightingUniformsLoader()
 
         // Bind initial shader and camera for renderer2D

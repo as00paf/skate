@@ -45,7 +45,13 @@ val appModule = module {
     single { StringManager() }
     single { SettingsManager(get(), get(), get()) }
     single { TrickManager() }
-    single { BootManager(get(), get(), get(), get()) }
+}
+
+val inputModule = module {
+    single { JoystickListener(get()) }
+    single { KeyListener() }
+    single { MouseListener() }
+    single<IInputProvider> { InputProvider(get(), get()) }
 }
 
 val engineModule = module {
@@ -56,10 +62,10 @@ val engineModule = module {
     single { ResourceManager(get(), get(), get(), get()) }
     single { PoseSerializer() }
 
-    single { DebugRenderer() }
-    single { PickingRenderer() }
+    single { DebugRenderer(get(), get(), get()) }
+    single { PickingRenderer(get(), get(), get()) }
 
-    single { ThumbnailCache() }
+    single { ThumbnailCache(get(), get(), get(), get(), get()) }
     single { PrefabsGenerator(get(), get()) }
     single { SplashScreen() }
 
@@ -70,11 +76,5 @@ val engineModule = module {
     single { Renderer(get()) }
 
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get()) }
-}
-
-val inputModule = module {
-    single { JoystickListener(get()) }
-    single { KeyListener() }
-    single { MouseListener() }
-    single<IInputProvider> { InputProvider(get(), get()) }
+    single { BootManager(get(), get(), get(), get(), get(), get(), get()) }
 }

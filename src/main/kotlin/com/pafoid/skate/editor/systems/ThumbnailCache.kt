@@ -3,16 +3,18 @@ package com.pafoid.skate.editor.systems
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toMatrix
+import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.listeners.KeyListener
+import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.utils.ShaderConst.Attribs
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT
 import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
@@ -55,13 +57,23 @@ import java.nio.ByteBuffer
 
 private const val THUMBNAIL_SIZE = 256
 
-class ThumbnailCache: KoinComponent {
-    private val resourceManager: ResourceManager by inject()
-
+class ThumbnailCache(
+    private val resourceManager: ResourceManager,
+    inputProvider: IInputProvider,
+    keyListener: KeyListener,
+    mouseListener: MouseListener,
+    sceneManager: SceneManager
+) {
     private val thumbnails = mutableMapOf<String, Int>()
     private var frameBuffer: FrameBuffer? = null
 
-    private val camera = Camera(Vector3f(2.5f, 2.5f, 2.5f))
+    private val camera = Camera(
+        position = Vector3f(2.5f, 2.5f, 2.5f),
+        inputProvider = inputProvider,
+        keyListener = keyListener,
+        mouseListener = mouseListener,
+        sceneManager = sceneManager
+    )
     private val transform = Transform()
     
     init {

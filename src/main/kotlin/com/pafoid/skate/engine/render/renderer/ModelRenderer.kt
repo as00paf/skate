@@ -27,15 +27,13 @@ import com.pafoid.skate.engine.utils.TextureSlots
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 
 class ModelRenderer(
-    private val resourceManager: ResourceManager
-) : KoinComponent {
-    private val debugRenderer: DebugRenderer by inject()
+    private val resourceManager: ResourceManager,
+    private val debugRenderer: DebugRenderer
+) {
 
     private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
 
