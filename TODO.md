@@ -43,23 +43,28 @@ Gameplay Layer (game/player/)
 
 ### Tasks
 
-- [x] **A20.1: Rename JoystickListener to GamepadListener** - `engine/input/listeners/`:
+- [ ] **A20.1: Rename JoystickListener to GamepadListener** - `engine/input/listeners/`:
   - Rename file: `JoystickListener.kt` → `GamepadListener.kt`
   - Update class name inside file
   - Update all imports and references
   - Update Koin module registration
   - **Impact**: Low - Better naming clarity
 
-- [ ] **A20.2: Create InputStateComponent** - New `ecs/components/InputStateComponent.kt`:
-  - Create `InputStateComponent : Component`
-  - Add gameplay input properties:
+- [x] **A20.2: Create InputStateComponent** - New `ecs/components/InputStateComponent.kt`:
+  - **Created**: `InputStateComponent : Component` with gameplay input properties
+  - **Properties**:
     - `moveDirection: Vector2f` - Normalized movement direction
-    - `jumpPressed: Boolean` - Jump button pressed this frame
+    - `jumpPressed: Boolean` - Jump button pressed this frame (one-frame pulse)
     - `jumpHeld: Boolean` - Jump button currently held
-    - `sprintPressed: Boolean` - Sprint button pressed
+    - `sprintPressed: Boolean` - Sprint modifier active
     - `cameraLook: Vector2f` - Right stick / mouse look delta
     - `isGrounded: Boolean` - Grounded state (synced from physics)
+  - **Features**:
+    - `reset()` method to clear input state each frame
+    - `@Contextual` annotations for Vector2f serialization
+    - Comprehensive KDoc with usage examples
   - **Impact**: High - Clean separation between input and gameplay logic
+  - **Status**: Created and compiles successfully
 
 - [ ] **A20.3: Create InputSystem** - New `ecs/systems/InputSystem.kt`:
   - Create `InputSystem : System(priority = EARLY)`
