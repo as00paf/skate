@@ -26,27 +26,28 @@ addressed for better maintainability and performance.
   - **Impact**: Critical - Animation blending now works correctly without skeleton corruption
   - **Status**: Fixed and compiles successfully
 
-- [ ] **A19.3: Refactor GizmoSystem Architecture** - `GizmoSystem.kt`:
-  - **Problem**: GizmoSystem registers gizmo systems with Scene but also manages them internally
-    - All gizmo systems run every frame even when not active
-    - Uses `setInUse()` / `setNotInUse()` instead of `enabled` flag
+- [x] **A19.3: Refactor GizmoSystem Architecture** - `GizmoSystem.kt`:
+  - **Problem**: GizmoSystem registered gizmo systems with Scene but also managed them internally
+    - All gizmo systems ran every frame even when not active (wasted computation)
+    - Used `setInUse()` / `setNotInUse()` instead of proper enable/disable pattern
     - Unclear ownership and lifecycle
   - **Fix**:
-    - GizmoSystem should own gizmos directly (not register as separate systems)
-    - Call gizmo update methods directly based on `usingGizmo` state
-    - Remove `scene.addSystem()` calls for individual gizmos
-    - Use `enabled` flag consistently
-  - **Impact**: High - Cleaner architecture, better performance, clearer ownership
+    - GizmoSystem now owns gizmos directly (not registered as separate systems)
+    - Only the active gizmo is updated each frame (based on `usingGizmo` state)
+    - Removed `scene.addSystem()` calls for individual gizmos
+    - Added KDoc explaining the ownership model
+  - **Impact**: High - Cleaner architecture, better performance (only 1 gizmo updated per frame), clearer ownership
+  - **Status**: Fixed and compiles successfully
 
 ### Medium Priority Issues
 
-- [ ] **A19.3: Remove AnimationSystem Redundant Methods** - `AnimationSystem.kt`:
+- [ ] **A19.4: Remove AnimationSystem Redundant Methods** - `AnimationSystem.kt`:
   - **Problem**: `update()` and `editorUpdate()` have identical logic
   - **Fix**: Have one call the other, or extract common method
   - **Impact**: Medium - Code duplication, maintenance burden
   - **Location**: `src/main/kotlin/com/pafoid/skate/engine/ecs/systems/AnimationSystem.kt:14-29`
 
-- [ ] **A19.4: Optimize System Query Pattern** - `AnimationSystem.kt`:
+- [ ] A19.5: Optimize System Query Pattern - `AnimationSystem.kt`:
   - **Problem**: Every frame, iterates ALL GameObjects and filters by component type (O(n) per frame)
   - **Fix**: Cache list of eligible GameObjects, update when components are added/removed
   - **Impact**: Medium - Performance improvement for scenes with many GameObjects
@@ -54,7 +55,7 @@ addressed for better maintainability and performance.
 
 ### Low Priority Issues
 
-- [ ] **A19.5: Add System Execution Order** - `SystemManager.kt`, `System.kt`:
+- [ ] **A19.6: Add System Execution Order** - `SystemManager.kt`, `System.kt`:
   - **Problem**: Systems run in arbitrary list order, no way to specify dependencies
   - **Fix**: Add `priority` field to System, sort before execution
   - **Impact**: Low - Deterministic execution order for systems with dependencies

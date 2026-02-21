@@ -10,7 +10,6 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
@@ -18,6 +17,12 @@ import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import org.koin.core.component.inject
 
+/**
+ * System responsible for managing and updating editor gizmos.
+ *
+ * Owns all gizmo instances directly and updates only the active gizmo each frame.
+ * This is more efficient than registering each gizmo as a separate system.
+ */
 class GizmoSystem : System() {
 
     private val keyListener: KeyListener by inject()
@@ -31,6 +36,7 @@ class GizmoSystem : System() {
 
     var usingGizmo = NONE
 
+    // Gizmos are owned directly by this system, not registered as separate systems
     private val translateGizmo = TranslateGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val rotationGizmo = RotationGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val scaleGizmo = ScaleGizmo(mouseListener, undoRedoManager, debugRenderer)
@@ -39,19 +45,21 @@ class GizmoSystem : System() {
 
     override fun init(scene: Scene) {
         super.init(scene)
+        // Initialize gizmos with the scene, but don't register them as separate systems
         listOf(translateGizmo, rotationGizmo, scaleGizmo, selectionGizmo, measureGizmo).forEach { gizmo ->
-            scene.addSystem(gizmo)
             gizmo.init(scene)
         }
     }
 
     override fun editorUpdate(dt: Float) {
+        // Reset all gizmos to inactive state
         translateGizmo.setNotInUse()
         rotationGizmo.setNotInUse()
         scaleGizmo.setNotInUse()
         selectionGizmo.setNotInUse()
         measureGizmo.setNotInUse()
 
+        // Activate the selected gizmo
         when (usingGizmo) {
             TRANSLATE_GIZMO -> translateGizmo.setInUse()
             ROTATION_GIZMO -> rotationGizmo.setInUse()
@@ -60,6 +68,7 @@ class GizmoSystem : System() {
             MEASURE_GIZMO -> measureGizmo.setInUse()
         }
 
+        // Handle gizmo selection key bindings
         val bindings = settingsManager.settings.keyBindings
 
         if (keyListener.isKeyPressed(bindings.gizmoTranslate)) {
@@ -77,20 +86,28 @@ class GizmoSystem : System() {
         if (keyListener.keyBeginPress(bindings.deselect)) {
             sceneManager.currentScene?.setSelectedGameObject(null)
         }
+
+        // Update only the active gizmo
+        when (usingGizmo) {
+            TRANSLATE_GIZMO -> translateGizmo.editorUpdate(dt)
+            ROTATION_GIZMO -> rotationGizmo.editorUpdate(dt)
+            SCALE_GIZMO -> scaleGizmo.editorUpdate(dt)
+            SELECTION_GIZMO -> selectionGizmo.editorUpdate(dt)
+            MEASURE_GIZMO -> measureGizmo.editorUpdate(dt)
+        }
     }
 
     fun isInteracting(): Boolean {
-        // Check the individual gizmos directly since they're now owned by this system
-        return translateGizmo.isHot() == true || translateGizmo.anyAxisActive() == true ||
-                rotationGizmo.isHot() == true || rotationGizmo.anyAxisActive() == true ||
-                scaleGizmo.isHot() == true || scaleGizmo.anyAxisActive() == true
+        return translateGizmo.isHot() || translateGizmo.anyAxisActive() ||
+                rotationGizmo.isHot() || rotationGizmo.anyAxisActive() ||
+                scaleGizmo.isHot() || scaleGizmo.anyAxisActive()
     }
 
-    fun toggleGizmo(gizmo:Int) {
-        if(usingGizmo == gizmo) {
+    fun toggleGizmo(gizmo: Int) {
+        if (usingGizmo == gizmo) {
             usingGizmo = NONE
         } else {
-          usingGizmo = gizmo
+            usingGizmo = gizmo
         }
     }
 
