@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.ecs.components
+package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.gizmos.PoseGizmo
 import com.pafoid.skate.editor.systems.LogLevel
@@ -8,11 +8,12 @@ import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.ModularTile
+import com.pafoid.skate.engine.ecs.components.NonPickable
+import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
-import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
@@ -21,16 +22,13 @@ import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 import kotlin.math.floor
 
 class MouseControls(
-    keyListener: KeyListener,
-    mouseListener: MouseListener,
+    private val keyListener: KeyListener,
+    private val mouseListener: MouseListener,
     private val serializer: Serializer,
     private val logger: LoggerService,
     private val renderer: Renderer,
     private val engine: Engine
 ) : System(priority = ExecutionPriority.EARLY) {  // Early system - runs first for input
-
-    private val keyListener: KeyListener = keyListener
-    private val mouseListener: MouseListener = mouseListener
 
     private var holdingObject: GameObject? = null
     private val debounceTime = 0.2f
