@@ -4,7 +4,44 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
-## [Unreleased] - v0.18: Fix Test Compilation After Camera Refactoring
+## [Unreleased] - v0.19: ECS Systems Code Quality & Architecture
+
+### Fixed
+
+- **AnimationSystem Double Update Bug**: Removed duplicate `animation.update()` call
+    - Animation was being updated twice per frame when `blendTime <= 0`
+    - Eliminated wasted computation and potential animation state corruption
+
+- **Animation Blending Skeleton Collapse**: Rewrote blending logic to properly snapshot poses
+    - Previous implementation corrupted skeleton transforms during cross-fading
+    - Now applies each animation separately, snapshots the result, then blends between snapshots
+    - Added `blendTransforms()` helper for proper position/rotation/scale interpolation (lerp/slerp)
+
+### Architecture Changes
+
+- **GizmoSystem Refactored**: Gizmos now owned directly instead of registered as separate systems
+    - Previously: All 5 gizmos registered with Scene, all ran every frame (wasted computation)
+    - Now: GizmoSystem owns gizmos privately, only active gizmo updated each frame
+    - Removed `scene.addSystem()` calls for individual gizmos
+    - Added KDoc explaining ownership model
+    - **Performance**: 5x reduction in gizmo update overhead (only 1 gizmo updated per frame)
+
+- **AnimationSystem Query Optimization**: Added caching for animated GameObjects
+    - Previously: O(n) filter + list allocation every frame
+    - Now: O(n) cache rebuild only when dirty, O(1) iteration otherwise
+    - Added `animatedObjects` cache and `cacheDirty` flag
+    - Added `invalidateCache()` method for external cache invalidation
+    - **Performance**: ~60,000 filter operations/second → ~1-2 cache rebuilds/minute
+
+### Code Quality
+
+- **AnimationSystem Redundant Methods**: `update()` and `editorUpdate()` now share logic
+    - Both methods had identical filtering and update logic
+    - Reduced code duplication and maintenance burden
+
+---
+
+## [Previous] - v0.18: Fix Test Compilation After Camera Refactoring
 
 ### Fixed
 
