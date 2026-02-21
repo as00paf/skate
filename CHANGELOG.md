@@ -4,7 +4,40 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
-## [Unreleased] - v0.17: Camera Architecture Refactoring
+## [Unreleased] - v0.18: Fix Test Compilation After Camera Refactoring
+
+### Fixed
+
+- **CameraTest**: Updated test to match refactored Camera API
+  - Removed unused Koin/MockK setup (Camera no longer has dependencies)
+  - Changed `desiredDistance` to `zoom` property
+  - Updated CameraPreset constructor to use `zoom` parameter
+  - Test simplified from 73 lines to 37 lines
+
+- **BootManagerTest**: Updated test to match refactored Renderer API
+  - Changed `renderer.initFrameBuffer()` to `renderer.initialize()`
+  - Removed `renderer.loadShaders()` verification (method removed in A12)
+  - Removed unused mocks: `mouseListener`, `debugRenderer`
+  - Removed unused imports: `MouseListener`, `DebugRenderer`
+
+- **BoardRigTest**: Fixed private property access
+  - Added `PlayerStateManager` component to test GameObject
+  - Changed direct property access to proper component retrieval
+  - Added import for `PlayerStateManager`
+
+- **PlayerControllerTest**: Updated for PlayerController location change
+  - Changed controller retrieval from skateboard to Skater GameObject
+  - Updated `stateManager` access to use component retrieval
+  - Added comment explaining PlayerController is now on Skater
+
+- **TrickDetectionTest**: Fixed private property access
+  - Added `PlayerStateManager` import
+  - Added `PlayerStateManager` component to test GameObject
+  - Changed direct property access to proper component retrieval
+
+---
+
+## [Previous] - v0.17: Camera Architecture Refactoring
 
 ### New Features
 
