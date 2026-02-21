@@ -1,11 +1,5 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.input.IInputProvider
-import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_X
-import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_Y
-import com.pafoid.skate.engine.input.listeners.KeyListener
-import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.data.CameraPreset
 import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.engine.utils.Ray
@@ -15,29 +9,30 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
-import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
-import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
 
+/**
+ * Core camera component for the rendering engine.
+ *
+ * This is a pure engine component with NO input dependencies.
+ * It provides:
+ * - Projection and view matrix creation
+ * - Camera state (position, pitch, yaw, roll, fov, etc.)
+ * - Preset interpolation (lerp)
+ * - Ray casting from screen coordinates
+ * - Forward/right vector calculation
+ *
+ * For gameplay third-person camera, use [com.pafoid.skate.game.camera.GameCamera]
+ * For editor navigation, use [com.pafoid.skate.editor.EditorCamera]
+ */
 class Camera(
     val position: Vector3f = Vector3f(),
     var pitch: Float = 0f,
     var yaw: Float = 0f,
     var roll: Float = 0f,
-    var isOrthographic: Boolean = false,
-    var speed: Float = 0.01f,
-    inputProvider: IInputProvider,
-    keyListener: KeyListener,
-    mouseListener: MouseListener,
-    sceneManager: SceneManager
+    var isOrthographic: Boolean = false
 ) {
-    private val inputProvider: IInputProvider = inputProvider
-    private val keyListener: KeyListener = keyListener
-    private val mouseListener: MouseListener = mouseListener
-    private val sceneManager: SceneManager = sceneManager
 
     var fov = 45f
     var nearPlane = 0.1f
@@ -49,12 +44,6 @@ class Camera(
     // Viewport dimensions for aspect ratio calculation
     var viewportWidth: Int = 1920
     var viewportHeight: Int = 1080
-
-    // Third person / Spring arm
-    var target: Vector3f? = null
-    var desiredDistance = 10.0f
-    var targetOffset = Vector3f(0f, 0.5f, 0f)
-    private var currentDistance = 10.0f
 
     // Interpolation
     private var targetPreset: CameraPreset? = null
@@ -76,28 +65,21 @@ class Camera(
     }
 
     fun applyPreset(preset: CameraPreset) {
-        this.fov = preset.fov
-        this.desiredDistance = preset.distance
-        this.targetOffset.set(preset.offset)
-        this.targetPreset = null
+        targetPreset = null
+        fov = preset.fov
+        zoom = 1.0f
     }
 
     fun lerpToPreset(preset: CameraPreset, duration: Float) {
-        this.targetPreset = preset
-        this.lerpDuration = duration
-        this.lerpTime = 0f
-        this.startFov = fov
-        this.startDistance = desiredDistance
-        this.startOffset.set(targetOffset)
+        targetPreset = preset
+        lerpDuration = duration
+        lerpTime = 0f
+        startFov = fov
+        startDistance = zoom
     }
 
     fun update(dt: Float) {
         handleLerp(dt)
-        // Only update third-person camera when target is set
-        // Free-fly movement is handled by EditorCamera
-        if (target != null) {
-            updateThirdPerson(dt)
-        }
     }
 
     private fun handleLerp(dt: Float) {
@@ -106,67 +88,11 @@ class Camera(
         val t = (lerpTime / lerpDuration).coerceIn(0f, 1f)
 
         fov = Interpolator.lerp(startFov, target.fov, t)
-        desiredDistance = Interpolator.lerp(startDistance, target.distance, t)
-        targetOffset.lerp(target.offset, t)
-        
+        zoom = Interpolator.lerp(startDistance, target.zoom, t)
+
         if (t >= 1f) {
             targetPreset = null
         }
-    }
-
-    private fun updateThirdPerson(dt: Float) {
-        val rawTarget = target ?: return
-        val targetPos = Vector3f(rawTarget).add(targetOffset)
-        
-        // Input Handling
-        val sensitivity = 0.1f
-        val controllerSensitivity = 2.0f
-        
-        // Mouse Rotation
-        if (inputProvider.isCursorDisabled()) {
-            yaw += mouseListener.getDx() * sensitivity
-            pitch += mouseListener.getDy() * sensitivity
-        }
-        
-        // RS Rotation (Joystick 1)
-        inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > AXIS_RIGHT_Y) {
-                val rsX = axes[AXIS_RIGHT_X]
-                val rsY = axes[AXIS_RIGHT_Y]
-                
-                if (abs(rsX) > 0.1f) yaw += rsX * controllerSensitivity
-                if (abs(rsY) > 0.1f) pitch += rsY * controllerSensitivity
-            }
-        }
-
-        if (pitch > 89f) pitch = 89f
-        if (pitch < -89f) pitch = -89f
-
-        // Calculate offset
-        val horizontalDist = desiredDistance * cos(Math.toRadians(pitch.toDouble())).toFloat()
-        val verticalDist = desiredDistance * sin(Math.toRadians(pitch.toDouble())).toFloat()
-        
-        val offsetX = horizontalDist * sin(Math.toRadians(yaw.toDouble())).toFloat()
-        val offsetZ = horizontalDist * cos(Math.toRadians(yaw.toDouble())).toFloat()
-        
-        val desiredPos = Vector3f(targetPos.x - offsetX, targetPos.y + verticalDist, targetPos.z + offsetZ)
-        
-        // Clipping
-        val finalPos = handleClipping(targetPos, desiredPos)
-        position.set(finalPos)
-    }
-
-    private fun handleClipping(from: Vector3f, to: Vector3f): Vector3f {
-        val scene = sceneManager.currentScene
-        if (scene != null) {
-            val closest = scene.physics3d.raycastClosest(from, to)
-            if (closest != null && closest.hitFraction < 1.0f) {
-                // Move slightly away from the hit point to avoid near-plane clipping
-                val clippedPos = Vector3f(from).lerp(to, closest.hitFraction * 0.9f)
-                return clippedPos
-            }
-        }
-        return to
     }
 
     fun createProjectionMatrix(): Matrix4f {

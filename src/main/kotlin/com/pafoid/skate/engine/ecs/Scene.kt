@@ -4,27 +4,15 @@ import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.input.IInputProvider
-import com.pafoid.skate.engine.input.listeners.KeyListener
-import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.render.Camera
 
 class Scene(
     val name: String = "Scene",
-    val initializer: SceneInitializer,
-    inputProvider: IInputProvider,
-    keyListener: KeyListener,
-    mouseListener: MouseListener,
-    sceneManager: SceneManager
+    val initializer: SceneInitializer
 ) {
-    val camera: Camera = Camera(
-        inputProvider = inputProvider,
-        keyListener = keyListener,
-        mouseListener = mouseListener,
-        sceneManager = sceneManager
-    )
+    val camera: Camera = Camera()
 
     var sceneData: SceneData = SceneData()
     val physics3d: IPhysics3D = BulletPhysics3D()

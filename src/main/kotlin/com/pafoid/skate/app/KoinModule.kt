@@ -65,7 +65,7 @@ val engineModule = module {
     single { DebugRenderer(get(), get(), get()) }
     single { PickingRenderer(get(), get(), get()) }
 
-    single { ThumbnailCache(get(), get(), get(), get(), get()) }
+    single { ThumbnailCache(get()) }
     single { PrefabsGenerator(get(), get()) }
     single { SplashScreen() }
 
@@ -76,5 +76,5 @@ val engineModule = module {
     single { Renderer(get()) }
 
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { BootManager(get(), get(), get(), get(), get(), get(), get()) }
+    single { BootManager(get(), get(), get(), get()) }
 }

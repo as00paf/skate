@@ -171,31 +171,52 @@ camera functionality. This violates separation of concerns between engine, game,
     - `src/main/kotlin/com/pafoid/skate/engine/render/Camera.kt:100-106`
     - `src/main/kotlin/com/pafoid/skate/editor/EditorCamera.kt:44-95`
 
-- [ ] **A17.2: Create GameCamera Class** - New `GameCamera.kt`:
-  - Create `com.pafoid.skate.game.camera.GameCamera` package
-  - Move `updateThirdPerson()` from Camera to GameCamera
-  - Move `handleClipping()` (physics raycast) from Camera to GameCamera
-  - Move gamepad input handling (RS rotation) from Camera to GameCamera
-  - GameCamera wraps/composes a base Camera instance
-  - GameCamera takes `IInputProvider`, `SceneManager`, and `Camera` as dependencies
+- [x] **A17.2: Create GameCamera Class** - New `GameCamera.kt`:
+  - **Changes**:
+    - Created `com.pafoid.skate.game.camera.GameCamera` class
+    - Moved `updateThirdPerson()` from Camera to GameCamera
+    - Moved `handleClipping()` (physics raycast) from Camera to GameCamera
+    - Moved gamepad input handling (RS rotation) from Camera to GameCamera
+    - GameCamera wraps/composes a base Camera instance
+    - GameCamera takes `IInputProvider`, `SceneManager`, and `Camera` as dependencies
   - **Impact**: High - Gameplay logic separated from engine component
+  - Location: `src/main/kotlin/com/pafoid/skate/game/camera/GameCamera.kt`
 
-- [ ] **A17.3: Remove Input Dependencies from Camera** - `Camera.kt`:
-  - Remove `IInputProvider`, `SceneManager` constructor parameters
-  - Remove `speed` property (editor/game specific)
-  - Remove remaining input-related imports
-  - Camera becomes a pure data/orientation component
+- [x] **A17.3: Remove Input Dependencies from Camera** - `Camera.kt`:
+  - **Changes**:
+    - Removed `IInputProvider`, `KeyListener`, `MouseListener`, `SceneManager` constructor parameters
+    - Removed `speed` property (editor/game specific)
+    - Removed `target`, `desiredDistance`, `targetOffset` (gameplay third-person)
+    - Removed `updateThirdPerson()` and `handleClipping()` methods
+    - Simplified `update()` to only handle preset interpolation
+    - Removed all input-related imports
+    - Added KDoc explaining Camera is a pure engine component
+    - Updated `CameraPreset` to use `zoom` instead of `distance`
   - **Impact**: High - Camera usable in headless/server/thumbnail contexts
+  - Location: `src/main/kotlin/com/pafoid/skate/engine/render/Camera.kt`
 
-- [ ] **A17.4: Update Usage Sites** - All files creating Camera instances:
-  - Update `Scene.kt` to use GameCamera (wraps Camera)
-  - Update `ThumbnailCache.kt` to use base Camera directly (no gamepad needed)
-  - Update `BootManager.kt` dependencies
-  - Update Koin module to provide GameCamera
+- [x] **A17.4: Update Usage Sites** - All files creating Camera instances:
+  - **Changes**:
+    - `Scene.kt`: Simplified to `Camera()` with no parameters
+    - `ThumbnailCache.kt`: Removed input dependencies, uses `Camera(position = ...)`
+    - `BootManager.kt`: Removed input dependencies from constructor and Scene creation
+    - `KoinModule.kt`: Updated `ThumbnailCache` and `BootManager` definitions with fewer parameters
   - **Impact**: Medium - Proper dependency injection for camera types
+  - Locations:
+    - `src/main/kotlin/com/pafoid/skate/engine/ecs/Scene.kt`
+    - `src/main/kotlin/com/pafoid/skate/editor/systems/ThumbnailCache.kt`
+    - `src/main/kotlin/com/pafoid/skate/engine/core/BootManager.kt`
+    - `src/main/kotlin/com/pafoid/skate/app/KoinModule.kt`
 
-- [ ] **A17.5: Update Camera Constructor Usage** - All files creating Camera instances:
-  - Update `Scene.kt` constructor (no longer passes input dependencies)
-  - Update `ThumbnailCache.kt` constructor (no longer passes input dependencies)
-  - Update `BootManager.kt` (no longer passes input dependencies to Scene)
-  - **Impact**: Medium - Simplified Camera construction across codebase
+---
+
+## Notes
+
+- All tasks from phases A10-A14 are complete - see CHANGELOG.md for details
+- **v0.15 Complete**: All 6 rendering pipeline fixes implemented
+- **v0.16 Complete**: Constructor injection standardized across rendering pipeline
+- **v0.17 Complete**: Camera architecture refactored into three-tier design:
+  - Camera: Pure engine component (no input dependencies)
+  - GameCamera: Gameplay third-person controller (gamepad support, physics clipping)
+  - EditorCamera: Editor free-fly navigation (WASD, MMB orbit, zoom)
+- Use the template above for new phase tasks
