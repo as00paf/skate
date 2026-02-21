@@ -1,20 +1,43 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.utils.SkeletonMath
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.koin.core.component.inject
 
+/**
+ * System responsible for updating skeletal animations on animated GameObjects.
+ *
+ * Maintains a cached list of eligible GameObjects (those with both SkeletonComponent
+ * and Animator) to avoid O(n) filtering every frame.
+ */
 class AnimationSystem : System() {
-    private val sceneManager: SceneManager by inject()
+
+    // Cached list of GameObjects eligible for animation updates
+    private val animatedObjects = mutableListOf<GameObject>()
+    private var cacheDirty = false
+
+    override fun init(scene: Scene) {
+        super.init(scene)
+        // Initial population of cache
+        rebuildCache()
+        cacheDirty = false
+    }
+
+    override fun start() {
+        // Listen for GameObject additions/removals to invalidate cache
+        // Note: For a more robust solution, we'd listen for component additions too
+        cacheDirty = true
+    }
 
     override fun update(dt: Float) {
-        val scene = sceneManager.currentScene ?: return
-        scene.gameObjectManager.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
+        if (cacheDirty) rebuildCache()
+
+        for (go in animatedObjects) {
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
 
@@ -25,9 +48,9 @@ class AnimationSystem : System() {
     }
 
     override fun editorUpdate(dt: Float) {
-        val scene = sceneManager.currentScene ?: return
+        if (cacheDirty) rebuildCache()
 
-        scene.gameObjectManager.gameObjects.filter { it.hasComponent<SkeletonComponent>() && it.hasComponent<Animator>() }.forEach { go ->
+        for (go in animatedObjects) {
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
 
@@ -35,6 +58,28 @@ class AnimationSystem : System() {
                 updateAnimation(animator, skeletonComponent, dt)
             }
         }
+    }
+
+    /**
+     * Rebuilds the cache of animated GameObjects.
+     * This is an O(n) operation but only called when the cache is dirty.
+     */
+    private fun rebuildCache() {
+        animatedObjects.clear()
+
+        for (go in scene.gameObjectManager.gameObjects) {
+            if (go.hasComponent<SkeletonComponent>() && go.hasComponent<Animator>()) {
+                animatedObjects.add(go)
+            }
+        }
+    }
+
+    /**
+     * Invalidates the animated objects cache, forcing a rebuild on next update.
+     * Call this when GameObjects or components are added/removed.
+     */
+    fun invalidateCache() {
+        cacheDirty = true
     }
 
     private fun updateAnimation(

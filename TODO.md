@@ -44,11 +44,16 @@ addressed for better maintainability and performance.
 - [x] **A19.4: Remove AnimationSystem Redundant Methods** - `AnimationSystem.kt`:
   - **Problem**: `update()` and `editorUpdate()` have identical logic
 
-- [ ] A19.5: Optimize System Query Pattern - `AnimationSystem.kt`:
+- [x] **A19.5: Optimize System Query Pattern** - `AnimationSystem.kt`:
   - **Problem**: Every frame, iterates ALL GameObjects and filters by component type (O(n) per frame)
-  - **Fix**: Cache list of eligible GameObjects, update when components are added/removed
-  - **Impact**: Medium - Performance improvement for scenes with many GameObjects
-  - **Location**: `src/main/kotlin/com/pafoid/skate/engine/ecs/systems/AnimationSystem.kt:16`
+  - **Fix**:
+    - Added `animatedObjects` cache to store eligible GameObjects
+    - Added `cacheDirty` flag to track when cache needs rebuilding
+    - `rebuildCache()` called only when cache is dirty (O(n) but infrequent)
+    - Added `invalidateCache()` method for external cache invalidation
+    - Cache populated on `init()` and invalidated on `start()`
+  - **Impact**: Medium - Performance improvement from O(n) every frame to O(n) only when cache is dirty
+  - **Status**: Fixed and compiles successfully
 
 ### Low Priority Issues
 

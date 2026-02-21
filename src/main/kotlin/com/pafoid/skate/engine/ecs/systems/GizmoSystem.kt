@@ -9,7 +9,6 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
@@ -27,7 +26,6 @@ class GizmoSystem : System() {
 
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
-    private val sceneManager: SceneManager by inject()
     private val settingsManager: SettingsManager by inject()
     private val undoRedoManager: UndoRedoManager by inject()
     private val debugRenderer: DebugRenderer by inject()
@@ -84,7 +82,7 @@ class GizmoSystem : System() {
         }
 
         if (keyListener.keyBeginPress(bindings.deselect)) {
-            sceneManager.currentScene?.setSelectedGameObject(null)
+            scene.setSelectedGameObject(null)
         }
 
         // Update only the active gizmo

@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.editor.gizmos.PoseGizmo
-import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
@@ -9,7 +8,6 @@ import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
@@ -25,9 +23,7 @@ import kotlin.math.floor
 class MouseControls : System() {
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
-    private val sceneManager: SceneManager by inject()
     private val serializer: Serializer by inject()
-    private val imguiLayer: ImGuiLayer by inject()
     private val logger: LoggerService by inject()
     private val renderer: Renderer by inject()
     private val engine: Engine by inject()
@@ -40,7 +36,6 @@ class MouseControls : System() {
     private val gridHeight = 0.25f
 
     private fun place() {
-        val scene = sceneManager.currentScene ?: return
         holdingObject?.copy(serializer)?.let { newObj ->
             newObj.removeComponent<NonPickable>()
             scene.addGameObjectToScene(newObj)
@@ -61,9 +56,9 @@ class MouseControls : System() {
             val selectedObject = getObjectById(pickedId)
 
             if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
-                sceneManager.currentScene?.setSelectedGameObject(selectedObject)
+                scene.setSelectedGameObject(selectedObject)
             } else {
-                sceneManager.currentScene?.setSelectedGameObject(null)
+                scene.setSelectedGameObject(null)
             }
 
             debounce = debounceTime
@@ -103,12 +98,12 @@ class MouseControls : System() {
 
     private fun getObjectById(id: Int): GameObject? {
         if (engine.engineState.get() != EngineState.RUNNING) return null
-        return sceneManager.currentScene?.getGameObject(id)
+        return scene.getGameObject(id)
     }
 
     private fun getBoneById(id: Int): Bone? {
         if (engine.engineState.get() != EngineState.RUNNING) return null
-        sceneManager.currentScene?.gameObjectManager?.gameObjects?.forEach { go ->
+        scene.gameObjectManager.gameObjects.forEach { go ->
             go.getComponent<PoseGizmo>()?.let { pg ->
                 val bone = pg.getBoneById(id)
                 if (bone != null) return bone
