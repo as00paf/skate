@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.player.PlayerState
+import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import io.mockk.MockKAnnotations
@@ -46,7 +47,7 @@ class PlayerControllerTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        
+
         startKoin {
             modules(module {
                 single { mockk<ResourceManager>(relaxed = true) }
@@ -59,7 +60,7 @@ class PlayerControllerTest {
                 single { mockk<LoggerService>(relaxed = true) }
             })
         }
-        
+
         val camera = Camera()
         every { scene.camera } returns camera
         every { scene.gameObjectManager.gameObjects } returns mutableListOf()
@@ -76,7 +77,8 @@ class PlayerControllerTest {
         every { inputProvider.getButtons(any()) } returns BooleanArray(15) { false }
         every { inputProvider.isCursorDisabled() } returns false
 
-        controller = skateboard.getComponent<PlayerController>()!!
+        // PlayerController is now on the Skater, not the skateboard
+        controller = skater.getComponent<PlayerController>()!!
         controller.start()
     }
 
@@ -101,14 +103,15 @@ class PlayerControllerTest {
 
     @Test
     fun `test toggle state from walking to riding`() {
-        controller.stateManager.transitionToState(PlayerState.WALKING)
+        val stateManager = skater.getComponent<PlayerStateManager>()!!
+        stateManager.transitionToState(PlayerState.WALKING)
 
         every { inputProvider.buttonBeginPress(GLFW_JOYSTICK_1, GamepadConstants.BUTTON_Y) } returns true
 
         controller.update(0.016f)
         controller.update(0.016f) // Update again to ensure state transition
 
-        assertEquals(PlayerState.RIDING, controller.stateManager.currentState)
+        assertEquals(PlayerState.RIDING, stateManager.currentState)
     }
 
     /*  @Test

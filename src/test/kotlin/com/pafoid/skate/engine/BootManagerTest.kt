@@ -11,8 +11,6 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -40,16 +38,13 @@ class BootManagerTest : KoinTest {
     private val logger = mockk<LoggerService>(relaxed = true)
     private val splashScreen = mockk<SplashScreen>(relaxed = true)
     private val resourceManager = mockk<ResourceManager>(relaxed = true)
-    private val mouseListener = mockk<MouseListener>(relaxed = true)
     private val undoRedoManager = mockk<UndoRedoManager>(relaxed = true)
-    private val debugRenderer = mockk<DebugRenderer>(relaxed = true)
     private val engine = mockk<Engine>(relaxed = true)
     private val settingsManager = mockk<SettingsManager>(relaxed = true)
     private val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
 
     // Use Unconfined dispatcher for testing to avoid JobSystem dependency
     private val bootManager = BootManager(sceneManager, renderer, logger, splashScreen, Dispatchers.Unconfined)
-
 
     @BeforeEach
     fun setup() {
@@ -59,11 +54,9 @@ class BootManagerTest : KoinTest {
                 single { bootManager }
                 single { renderer }
                 single { resourceManager }
-                single { mouseListener }
                 single { sceneManager }
                 single { splashScreen }
                 single { undoRedoManager }
-                single { debugRenderer }
                 single { engine }
                 single { settingsManager }
                 single { prefabsGenerator }
@@ -80,21 +73,20 @@ class BootManagerTest : KoinTest {
     @Test
     fun `boot sequence initializes systems and transitions to RUNNING`() = runBlocking {
         val engineState = AtomicReference(EngineState.BOOTING)
-        
+
         // Mock behaviors
         coEvery { splashScreen.init() } just Runs
-        coEvery { renderer.initFrameBuffer() } just Runs
+        coEvery { renderer.initialize() } just Runs
 
         bootManager.boot(engineState)
 
         // Verifications
         coVerify {
             splashScreen.init()
-            renderer.initFrameBuffer()
-            renderer.loadShaders(any())
+            renderer.initialize()
             sceneManager.changeScene(any<Scene>(), true)
         }
-        
+
         assertEquals(EngineState.RUNNING, engineState.get())
         verify { splashScreen.loadingProgress.set(1.0f) }
     }

@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.player.PlayerState
+import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.trick.TrickDetector
 import com.pafoid.skate.game.trick.TrickManager
@@ -147,21 +148,23 @@ class TrickDetectionTest {
     fun `detectFakieOllie_movingBackwardsAndPopping_identifiesAsFakieOllie`() {
         // Arrange
         val controller = PlayerController()
+        val stateManager = PlayerStateManager()
         skateboard.addComponent(controller)
+        skateboard.addComponent(stateManager)
         controller.start()
-        controller.stateManager.transitionToState(PlayerState.RIDING)
-        
+        stateManager.transitionToState(PlayerState.RIDING)
+
         // Move backwards (X is forward, so -X velocity)
         rb.linearVelocity = Vector3f(-5f, 0f, 0f)
         controller.update(0f)
-        
+
         // Pop (simulate jumping)
         // TrickDetector doesn't currently use stance or velocity to identify Fakie vs Nollie
-        
+
         // Act
         // Simulate a small pop/jump
         rb.applyImpulse(Vector3f(0f, 10f, 0f))
-        
+
         for (i in 0 until 10) {
             skatePhysics.update(1/60f)
             physics.update(1/60f)

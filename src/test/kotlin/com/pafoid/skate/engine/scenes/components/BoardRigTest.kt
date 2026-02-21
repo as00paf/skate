@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.player.PlayerState
+import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.trick.TrickManager
 import io.mockk.MockKAnnotations
@@ -134,14 +135,16 @@ class BoardRigTest {
     fun `test flick applies torque impulse`() {
         val board = GameObject("Board")
         val controller = PlayerController()
+        val stateManager = PlayerStateManager()
         board.addComponent(controller)
+        board.addComponent(stateManager)
         board.addComponent(rb3d)
         board.addComponent(physics)
 
         inputBuffer.flickVelocity = Vector2f(10f, 0f)
 
         controller.start()
-        controller.stateManager.transitionToState(PlayerState.RIDING)
+        stateManager.transitionToState(PlayerState.RIDING)
         controller.update(0.016f)
 
         // Should apply a torque impulse
