@@ -78,10 +78,11 @@ class SystemManager {
     /**
      * Sorts systems by priority if needed.
      * Called before each update cycle when systems have been added/removed.
+     * Priority order: EARLY → DEFAULT → LATE
      */
     private fun sortSystemsIfNeeded() {
         if (systemsNeedSort) {
-            _systems.sortBy { it.priority }
+            _systems.sortBy { it.priority.ordinal }
             systemsNeedSort = false
         }
     }

@@ -29,7 +29,7 @@ class GizmoSystem(
     debugRenderer: DebugRenderer,
     renderer: Renderer,
     engine: Engine
-) : System(priority = 100) {  // Late system - runs after input/physics
+) : System(priority = ExecutionPriority.LATE) {  // Late system - runs after input/physics
 
     private val keyListener: KeyListener = keyListener
     private val mouseListener: MouseListener = mouseListener

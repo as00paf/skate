@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor
 
+import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
@@ -22,7 +23,7 @@ class EditorCamera(
     private val camera: Camera,
     keyListener: KeyListener,
     mouseListener: MouseListener
-) : System(priority = -50) {  // Early system - input processing
+) : System(priority = ExecutionPriority.EARLY) {  // Early system - input processing
 
     private val keyListener: KeyListener = keyListener
     private val mouseListener: MouseListener = mouseListener

@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
+import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
@@ -26,7 +27,7 @@ class MouseControls(
     private val logger: LoggerService,
     private val renderer: Renderer,
     private val engine: Engine
-) : System(priority = -100) {  // Early system - runs first for input
+) : System(priority = ExecutionPriority.EARLY) {  // Early system - runs first for input
 
     private val keyListener: KeyListener = keyListener
     private val mouseListener: MouseListener = mouseListener

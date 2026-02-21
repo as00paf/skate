@@ -3,20 +3,27 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.Scene
 
 /**
+ * Execution priority for ECS systems.
+ * Systems are updated in priority order (EARLY first, LATE last).
+ */
+enum class ExecutionPriority {
+    EARLY,      // Input, timing systems
+    DEFAULT,    // Physics, animation systems
+    LATE        // Rendering, UI systems
+}
+
+/**
  * Abstract base class for systems in the ECS architecture.
  * Systems are global entities that operate on collections of GameObjects/components
  * rather than being attached to individual GameObjects like Components.
  *
- * Systems are updated in priority order (lowest priority first).
+ * Systems are updated in priority order (EARLY first, LATE last).
  * Use priority values to ensure systems with dependencies execute in the correct order.
  *
- * @param priority Execution priority (lower values execute first). Default is 0.
- *   - Negative values: Early systems (input, timing)
- *   - 0: Default systems (physics, animation)
- *   - Positive values: Late systems (rendering, UI)
+ * @param priority Execution priority. Default is DEFAULT.
  */
 abstract class System(
-    val priority: Int = 0
+    val priority: ExecutionPriority = ExecutionPriority.DEFAULT
 ) {
     var enabled = true
     protected lateinit var scene: Scene

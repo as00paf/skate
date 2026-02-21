@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import org.joml.Vector3f
@@ -10,7 +11,7 @@ import kotlin.math.floor
 class GridLines(
     debugRenderer: DebugRenderer,
     sceneManager: SceneManager
-) : System(priority = 50) {  // Mid-priority system - rendering
+) : System(priority = ExecutionPriority.LATE) {  // Late system - rendering
 
     private val debugRenderer: DebugRenderer = debugRenderer
     private val sceneManager: SceneManager = sceneManager
