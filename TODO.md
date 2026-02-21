@@ -9,13 +9,24 @@ addressed for better maintainability and performance.
 
 ### High Priority Issues
 
-- [ ] **A19.1: Fix AnimationSystem Double Update Bug** - `AnimationSystem.kt`:
-  - **Problem**: `animation.update()` is called twice when `blendTime <= 0`
-  - **Location**: Line 48 - duplicate call after the if/else block
-  - **Fix**: Remove the second `animation.update(animator.currentTime, skeleton)` call
-  - **Impact**: High - Wasted computation, potential animation state corruption
+- [x] **A19.1: Fix AnimationSystem Double Update Bug** - `AnimationSystem.kt`:
+  - **Problem**: `animation.update()` was called twice when `blendTime <= 0`
+  - **Fix**: Removed duplicate call on line 62 (after the if/else block)
+  - **Impact**: High - Eliminated wasted computation and potential animation state corruption
+  - **Status**: Fixed and compiles successfully
 
-- [ ] **A19.2: Refactor GizmoSystem Architecture** - `GizmoSystem.kt`:
+- [x] **A19.2: Fix Animation Blending Skeleton Collapse** - `AnimationSystem.kt`:
+  - **Problem**: During animation blending, skeleton transforms were corrupted causing mesh to collapse
+  - **Root Cause**: `prev.update()` modified skeleton bones, then `updateBlended()` read corrupted state
+  - **Fix**:
+    - Apply previous animation and snapshot its pose
+    - Apply new animation and snapshot its pose
+    - Blend between the two snapshots using proper transform interpolation
+    - Added `blendTransforms()` helper for clean position/rotation/scale interpolation
+  - **Impact**: Critical - Animation blending now works correctly without skeleton corruption
+  - **Status**: Fixed and compiles successfully
+
+- [ ] **A19.3: Refactor GizmoSystem Architecture** - `GizmoSystem.kt`:
   - **Problem**: GizmoSystem registers gizmo systems with Scene but also manages them internally
     - All gizmo systems run every frame even when not active
     - Uses `setInUse()` / `setNotInUse()` instead of `enabled` flag
