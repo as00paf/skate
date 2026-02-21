@@ -31,10 +31,7 @@ class EditorCamera(private val camera: Camera) : System() {
     private var isRotating: Boolean = false
 
     override fun update(dt: Float) {
-        handleFreeFlyMovement()
-        handleRotation()
-        handleZoom()
-        handleReset(dt)
+        editorUpdate(dt)
     }
 
     override fun editorUpdate(dt: Float) {
