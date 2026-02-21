@@ -4,7 +4,128 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
-## [Unreleased] - v0.14: Render Pipeline Review & Code Quality
+## [Unreleased] - v0.17: Camera Architecture Refactoring
+
+### New Features
+
+- **GameCamera Class**: New gameplay third-person camera controller
+  - Gamepad right stick rotation for third-person view
+  - Mouse rotation when cursor disabled (gameplay mode)
+  - Physics-based clipping to prevent camera from going through walls
+  - Spring arm with configurable distance and offset
+  - Wraps/composes base Camera instance
+  - Location: `src/main/kotlin/com/pafoid/skate/game/camera/GameCamera.kt`
+
+### Architecture Changes
+
+- **Three-Tier Camera Architecture**: Separated camera concerns into distinct components
+  - **Camera**: Pure engine component with NO input dependencies
+    - Projection/view matrix creation
+    - Camera state (position, pitch, yaw, roll, fov, zoom)
+    - Preset interpolation
+    - Ray casting from screen coordinates
+    - Forward/right vector calculation
+  - **GameCamera**: Gameplay third-person controller
+    - Gamepad and mouse input handling
+    - Physics clipping (raycast against scene)
+    - Spring arm mechanics
+  - **EditorCamera**: Editor free-fly navigation (already existed, now properly separated)
+    - WASD + Space/Shift movement
+    - RMB rotation for FPS-style look
+    - MMB orbit, scroll zoom, Home reset
+
+- **Camera Class Refactored**: Stripped to pure engine component
+  - Removed all input dependencies (`IInputProvider`, `KeyListener`, `MouseListener`, `SceneManager`)
+  - Removed gameplay-specific properties (`speed`, `target`, `desiredDistance`, `targetOffset`)
+  - Removed `updateThirdPerson()` and `handleClipping()` methods
+  - Simplified `update()` to only handle preset interpolation
+  - Added comprehensive KDoc explaining proper usage
+
+- **CameraPreset Updated**: Changed `distance` parameter to `zoom` for consistency
+
+### Usage Updates
+
+- **Scene.kt**: Simplified to `Camera()` with no parameters
+- **ThumbnailCache.kt**: Removed input dependencies, uses `Camera(position = ...)`
+- **BootManager.kt**: Removed input dependencies from constructor and Scene creation
+- **KoinModule.kt**: Updated `ThumbnailCache` and `BootManager` definitions with fewer parameters
+
+---
+
+## [Previous] - v0.16: Dependency Injection Consistency (Rendering Pipeline)
+
+### Changed
+
+- **Constructor Injection Standardization**: Removed field injection (`by inject()`) from rendering components
+  - `ModelRenderer`: Removed `: KoinComponent`, added `debugRenderer` to constructor
+  - `DebugRenderer`: Removed `: KoinComponent`, added `resourceManager`, `logger`, `sceneManager` to constructor
+  - `PickingRenderer`: Removed `: KoinComponent`, added `resourceManager`, `logger`, `sceneManager` to constructor
+  - `Camera`: Removed `: KoinComponent`, added input dependencies to constructor (later refactored in v0.17)
+  - Removed unused `org.koin.core.component` imports
+
+- **RenderResourcesFactory**: Updated to inject explicit dependencies
+  - `ModelRenderer` now receives `debugRenderer` parameter
+  - `PickingRenderer` now receives `resourceManager`, `logger`, `sceneManager` parameters
+
+- **Koin Module**: Updated definitions for new constructor signatures
+  - `DebugRenderer`: `single { DebugRenderer(get(), get(), get()) }`
+  - `PickingRenderer`: `single { PickingRenderer(get(), get(), get()) }`
+  - `ThumbnailCache`: Updated with proper dependencies
+  - `BootManager`: Updated with proper dependencies
+  - Reordered modules: `inputModule` now defined before `engineModule` for proper dependency order
+
+### Related Changes
+
+- **Scene.kt**: Updated constructor to accept and forward input dependencies to `Camera`
+- **BootManager.kt**: Updated to accept and forward input dependencies to `Scene`
+- **ThumbnailCache.kt**: Removed `KoinComponent`, now uses constructor injection
+
+---
+
+## [Previous] - v0.15: Rendering Pipeline Fixes
+
+### Fixed
+
+- **Lambda Capture for Window Dimensions** (Severe):
+  - Lambdas `{ width }` and `{ height }` captured initial values at factory creation time
+  - After window resize, PickingPass and GeometryPass used stale dimensions
+  - Removed `getWindowWidth`/`getWindowHeight` lambdas from `PickingPass` and `GeometryPass`
+  - Made `PickingTexture.width/height` public (was private)
+  - Passes now read dimensions directly from `frameBuffer.width/height` and `pickingTexture.width/height`
+
+- **Resize Propagation to RenderPasses** (High):
+  - `PickingPass.resize()` existed but was never called
+  - Updated `Renderer.resize()` to propagate to `renderResources.renderPasses.picking.resize()`
+
+### Performance Optimizations
+
+- **Consolidated Camera Viewport Updates**:
+  - Camera viewport was set twice per frame (once in each pass)
+  - Moved viewport update to `Renderer.render()` before executing any passes
+  - Removed redundant assignments from `PickingPass.execute()` and `GeometryPass.execute()`
+
+### Documentation
+
+- **Picking Skip Behavior**: Added comprehensive KDoc explaining intentional optimization
+  - Documented when picking runs vs. when it's skipped
+  - Explained benefits: GPU draw call savings, CPU iteration savings, prevents accidental selection
+  - Added "## Technical Details" section explaining the encoding mechanism
+
+- **OpenGL Context Requirement**: Added KDoc to `RenderResourcesFactory.create()`
+  - Warning that method requires active OpenGL context
+  - "## Initialization Order" section with detailed steps
+  - "## Usage" section explaining when/where to call
+  - `@throws IllegalStateException` documentation
+
+- **Shader Buffer Thread Safety**: Added "## Thread Safety" section to Shader.kt buffer KDoc
+  - Clearly states buffers are NOT thread-safe
+  - Explains corruption risk if multiple threads call upload methods concurrently
+  - Documented current single-threaded usage pattern
+  - Added migration options for future multi-threaded rendering
+
+---
+
+## [Previous] - v0.14: Render Pipeline Review & Code Quality
 
 ### Documentation
 
