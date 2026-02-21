@@ -128,4 +128,56 @@ Constructor Injection for rendering components.
   - A15.4: Documented picking skip behavior optimization
   - A15.5: Added OpenGL context requirement documentation
   - A15.6: Documented shader buffer thread safety assumptions
+- **v0.16 Complete**: Constructor injection standardized across rendering pipeline
 - Use the template above for new phase tasks
+
+---
+
+## 🔴 v0.17: Camera Architecture Refactoring
+
+### Problem Statement
+
+`Camera.kt` contains editor-specific free-fly movement code mixed with core camera functionality (projection/view
+matrices, third-person gameplay camera). This violates separation of concerns between engine and editor components.
+
+### Current Issues
+
+**Camera.kt** (Engine Component) contains:
+
+- `move()` method with WASD controls - Editor-only free-fly movement
+- Mouse rotation when cursor disabled - Editor-only input handling
+- `update()` conditional logic that branches between editor and gameplay modes
+- Input dependencies (`IInputProvider`, `KeyListener`, `MouseListener`) primarily for editor usage
+
+**EditorCamera.kt** (Editor System) should contain:
+
+- All editor viewport navigation controls
+- Free-fly WASD movement
+- MMB rotation, scroll zoom, Home reset (already has these ✅)
+
+### Tasks
+
+- [ ] **A17.1: Extract Free-Fly Movement to EditorCamera** - `Camera.kt`, `EditorCamera.kt`:
+  - Move `move()` method from Camera to EditorCamera
+  - Move mouse rotation logic from Camera.move() to EditorCamera
+  - Remove `update()` conditional branch (`else { move() }`)
+  - Simplify Camera.update() to only handle third-person camera when `target != null`
+  - **Impact**: High - Cleaner separation between engine and editor
+
+- [ ] **A17.2: Remove Input Dependencies from Camera** - `Camera.kt`:
+  - Remove `IInputProvider`, `KeyListener`, `MouseListener` constructor parameters
+  - Remove `SceneManager` dependency (only used for clipping in third-person)
+  - Camera becomes a pure data/orientation component
+  - **Impact**: High - Camera can be used in headless/server contexts
+
+- [ ] **A17.3: Update EditorCamera to Own Camera State** - `EditorCamera.kt`:
+  - EditorCamera directly manipulates camera position/orientation
+  - Add speed controls for editor free-fly movement
+  - Handle all input in editorUpdate() instead of delegating to Camera.update()
+  - **Impact**: Medium - EditorCamera becomes single source of truth for editor controls
+
+- [ ] **A17.4: Update Camera Constructor Usage** - All files creating Camera instances:
+  - Update `Scene.kt` constructor (no longer passes input dependencies)
+  - Update `ThumbnailCache.kt` constructor (no longer passes input dependencies)
+  - Update `BootManager.kt` (no longer passes input dependencies to Scene)
+  - **Impact**: Medium - Simplified Camera construction across codebase
