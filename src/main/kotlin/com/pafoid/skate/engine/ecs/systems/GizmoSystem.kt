@@ -14,7 +14,6 @@ import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
-import org.koin.core.component.inject
 
 /**
  * System responsible for managing and updating editor gizmos.
@@ -22,15 +21,20 @@ import org.koin.core.component.inject
  * Owns all gizmo instances directly and updates only the active gizmo each frame.
  * This is more efficient than registering each gizmo as a separate system.
  */
-class GizmoSystem : System() {
+class GizmoSystem(
+    keyListener: KeyListener,
+    mouseListener: MouseListener,
+    private val settingsManager: SettingsManager,
+    private val undoRedoManager: UndoRedoManager,
+    debugRenderer: DebugRenderer,
+    renderer: Renderer,
+    engine: Engine
+) : System(priority = 100) {  // Late system - runs after input/physics
 
-    private val keyListener: KeyListener by inject()
-    private val mouseListener: MouseListener by inject()
-    private val settingsManager: SettingsManager by inject()
-    private val undoRedoManager: UndoRedoManager by inject()
-    private val debugRenderer: DebugRenderer by inject()
-    private val renderer: Renderer by inject()
-    private val engine: Engine by inject()
+    private val keyListener: KeyListener = keyListener
+    private val mouseListener: MouseListener = mouseListener
+    private val renderer: Renderer = renderer
+    private val engine: Engine = engine
 
     var usingGizmo = NONE
 

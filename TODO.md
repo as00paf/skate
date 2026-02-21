@@ -7,24 +7,34 @@
 The ECS systems implementation has several code quality issues and architectural inconsistencies that should be
 addressed for better maintainability and performance.
 
-### Remaining Issues
+### Completed Items
 
-- [ ] **A19.6: Add System Execution Order** - `SystemManager.kt`, `System.kt`:
-  - **Problem**: Systems run in arbitrary list order, no way to specify dependencies
-  - **Fix**: Add `priority` field to System, sort before execution
+- [x] **A19.6: Add System Execution Order** - `SystemManager.kt`, `System.kt`:
+  - **Changes**:
+    - Added `priority` parameter to `System` constructor (default 0)
+    - Lower priority values execute first (negative = early, positive = late)
+    - `SystemManager` sorts systems by priority before each update cycle
+    - Uses lazy sorting (only sorts when systems are added/removed)
+    - Changed `systems` list to private with public read-only view
+    - Changed `getSystem()` from inline reified to regular function with Class parameter
   - **Impact**: Low - Deterministic execution order for systems with dependencies
-  - **Locations**:
-    - `src/main/kotlin/com/pafoid/skate/engine/ecs/systems/System.kt`
-    - `src/main/kotlin/com/pafoid/skate/engine/ecs/systems/SystemManager.kt`
+  - **Status**: Fixed and compiles successfully
 
-- [ ] **A19.7: Remove Koin Field Injection from GizmoSystem** - `GizmoSystem.kt`:
-  - **Problem**: GizmoSystem uses `by inject()` for all dependencies (KeyListener, MouseListener, etc.)
-  - **Fix**:
-    - Pass dependencies via constructor parameters
-    - Remove `: KoinComponent` from GizmoSystem
-    - Update Koin module to pass dependencies with `get()`
+- [x] **A19.7: Remove Koin Field Injection from GizmoSystem** - `GizmoSystem.kt` and related:
+  - **Changes**:
+    - Converted `GizmoSystem`, `MouseControls`, `EditorCamera`, `GridLines` to constructor injection
+    - Removed `: KoinComponent` from all System subclasses
+    - Removed `by inject()` property delegates
+    - Updated `LevelEditorSceneInitializer` to inject dependencies and pass to system constructors
+    - Updated Koin module to register systems with constructor parameters
+    - Assigned appropriate priorities:
+      - MouseControls: -100 (early - input processing)
+      - EditorCamera: -50 (early - input processing)
+      - AnimationSystem: 0 (default - physics/animation)
+      - GridLines: 50 (mid - rendering)
+      - GizmoSystem: 100 (late - UI/tools)
   - **Impact**: Low - Consistent with v0.16 constructor injection pattern, clearer dependencies
-  - **Location**: `src/main/kotlin/com/pafoid/skate/engine/ecs/systems/GizmoSystem.kt`
+  - **Status**: Fixed and compiles successfully
 
 ---
 

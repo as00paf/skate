@@ -2,16 +2,25 @@ package com.pafoid.skate.editor
 
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
+import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.MouseControls
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
+import com.pafoid.skate.engine.input.listeners.KeyListener
+import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
+import com.pafoid.skate.engine.render.renderer.Renderer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -19,6 +28,17 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val resourceManager: ResourceManager by inject()
     private val logger: LoggerService by inject()
+    private val sceneManager: SceneManager by inject()
+
+    // Inject dependencies for systems
+    private val keyListener: KeyListener by inject()
+    private val mouseListener: MouseListener by inject()
+    private val serializer: Serializer by inject()
+    private val settingsManager: SettingsManager by inject()
+    private val undoRedoManager: UndoRedoManager by inject()
+    private val debugRenderer: DebugRenderer by inject()
+    private val renderer: Renderer by inject()
+    private val engine: Engine by inject()
 
     private var currentScene: Scene? = null
 
@@ -50,10 +70,20 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         reportProgress(0.5f, "Setting up Editor Tools...")
 
         // Essential Editor Tools as Systems
-        scene.addSystem(EditorCamera(scene.camera))
-        scene.addSystem(MouseControls())
-        scene.addSystem(GizmoSystem())
-        scene.addSystem(GridLines())
+        scene.addSystem(EditorCamera(scene.camera, keyListener, mouseListener))
+        scene.addSystem(MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine))
+        scene.addSystem(
+            GizmoSystem(
+                keyListener,
+                mouseListener,
+                settingsManager,
+                undoRedoManager,
+                debugRenderer,
+                renderer,
+                engine
+            )
+        )
+        scene.addSystem(GridLines(debugRenderer, sceneManager))
         scene.addSystem(AnimationSystem())
 
         reportProgress(0.7f, "Spawning Prefabs...")

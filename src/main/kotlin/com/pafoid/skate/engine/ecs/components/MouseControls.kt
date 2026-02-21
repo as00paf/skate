@@ -15,18 +15,21 @@ import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 import kotlin.math.floor
 
-class MouseControls : System() {
-    private val keyListener: KeyListener by inject()
-    private val mouseListener: MouseListener by inject()
-    private val serializer: Serializer by inject()
-    private val logger: LoggerService by inject()
-    private val renderer: Renderer by inject()
-    private val engine: Engine by inject()
+class MouseControls(
+    keyListener: KeyListener,
+    mouseListener: MouseListener,
+    private val serializer: Serializer,
+    private val logger: LoggerService,
+    private val renderer: Renderer,
+    private val engine: Engine
+) : System(priority = -100) {  // Early system - runs first for input
+
+    private val keyListener: KeyListener = keyListener
+    private val mouseListener: MouseListener = mouseListener
 
     private var holdingObject: GameObject? = null
     private val debounceTime = 0.2f

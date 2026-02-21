@@ -1,14 +1,23 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.Scene
-import org.koin.core.component.KoinComponent
 
 /**
  * Abstract base class for systems in the ECS architecture.
  * Systems are global entities that operate on collections of GameObjects/components
  * rather than being attached to individual GameObjects like Components.
+ *
+ * Systems are updated in priority order (lowest priority first).
+ * Use priority values to ensure systems with dependencies execute in the correct order.
+ *
+ * @param priority Execution priority (lower values execute first). Default is 0.
+ *   - Negative values: Early systems (input, timing)
+ *   - 0: Default systems (physics, animation)
+ *   - Positive values: Late systems (rendering, UI)
  */
-abstract class System : KoinComponent {
+abstract class System(
+    val priority: Int = 0
+) {
     var enabled = true
     protected lateinit var scene: Scene
 

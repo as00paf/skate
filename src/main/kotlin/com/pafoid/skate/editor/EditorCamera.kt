@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.GLFW_KEY_A
 import org.lwjgl.glfw.GLFW.GLFW_KEY_D
@@ -19,9 +18,14 @@ import kotlin.math.pow
 import kotlin.math.sign
 import kotlin.math.sin
 
-class EditorCamera(private val camera: Camera) : System() {
-    private val keyListener: KeyListener by inject()
-    private val mouseListener: MouseListener by inject()
+class EditorCamera(
+    private val camera: Camera,
+    keyListener: KeyListener,
+    mouseListener: MouseListener
+) : System(priority = -50) {  // Early system - input processing
+
+    private val keyListener: KeyListener = keyListener
+    private val mouseListener: MouseListener = mouseListener
 
     private val scrollSensitivity = 0.1f
     private val rotationSensitivity = 0.1f

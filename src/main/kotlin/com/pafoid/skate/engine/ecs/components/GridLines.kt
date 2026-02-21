@@ -4,13 +4,16 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import org.joml.Vector3f
-import org.koin.core.component.inject
 import kotlin.math.abs
 import kotlin.math.floor
 
-class GridLines : System() {
-    private val debugRenderer: DebugRenderer by inject()
-    private val sceneManager: SceneManager by inject()
+class GridLines(
+    debugRenderer: DebugRenderer,
+    sceneManager: SceneManager
+) : System(priority = 50) {  // Mid-priority system - rendering
+
+    private val debugRenderer: DebugRenderer = debugRenderer
+    private val sceneManager: SceneManager = sceneManager
 
     private val majorStep = 1.0f
     private val minorStep = 0.1f
