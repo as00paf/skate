@@ -11,12 +11,12 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.GridLines
-import com.pafoid.skate.engine.ecs.components.MouseControls
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
+import com.pafoid.skate.engine.ecs.systems.GridLines
+import com.pafoid.skate.engine.ecs.systems.MouseControls
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer

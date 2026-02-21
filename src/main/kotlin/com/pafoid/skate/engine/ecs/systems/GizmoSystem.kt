@@ -22,19 +22,14 @@ import com.pafoid.skate.engine.render.renderer.Renderer
  * This is more efficient than registering each gizmo as a separate system.
  */
 class GizmoSystem(
-    keyListener: KeyListener,
-    mouseListener: MouseListener,
+    private val keyListener: KeyListener,
+    private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
-    debugRenderer: DebugRenderer,
-    renderer: Renderer,
-    engine: Engine
+    private val renderer: Renderer,
+    private val engine: Engine,
+    debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.LATE) {  // Late system - runs after input/physics
-
-    private val keyListener: KeyListener = keyListener
-    private val mouseListener: MouseListener = mouseListener
-    private val renderer: Renderer = renderer
-    private val engine: Engine = engine
 
     var usingGizmo = NONE
 

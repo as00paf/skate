@@ -1,20 +1,15 @@
-package com.pafoid.skate.engine.ecs.components
+package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
-import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import org.joml.Vector3f
 import kotlin.math.abs
 import kotlin.math.floor
 
 class GridLines(
-    debugRenderer: DebugRenderer,
-    sceneManager: SceneManager
+    private val debugRenderer: DebugRenderer,
+    private val sceneManager: SceneManager
 ) : System(priority = ExecutionPriority.LATE) {  // Late system - rendering
-
-    private val debugRenderer: DebugRenderer = debugRenderer
-    private val sceneManager: SceneManager = sceneManager
 
     private val majorStep = 1.0f
     private val minorStep = 0.1f
