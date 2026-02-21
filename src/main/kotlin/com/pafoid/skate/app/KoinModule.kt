@@ -23,7 +23,7 @@ import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBuffer
 import com.pafoid.skate.engine.input.InputProvider
-import com.pafoid.skate.engine.input.listeners.JoystickListener
+import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.RenderResourcesFactory
@@ -50,7 +50,7 @@ val appModule = module {
 }
 
 val inputModule = module {
-    single { JoystickListener(get()) }
+    single { GamepadListener(get()) }
     single { KeyListener() }
     single { MouseListener() }
     single<IInputProvider> { InputProvider(get(), get()) }

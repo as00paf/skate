@@ -39,6 +39,27 @@ This document tracks the development history and major milestones of the SkateSi
     - Both methods had identical filtering and update logic
     - Reduced code duplication and maintenance burden
 
+- **System Execution Order**: Added `ExecutionPriority` enum to `System` base class
+  - Three priority levels: `EARLY`, `DEFAULT`, `LATE`
+  - `SystemManager` sorts systems by priority before each update cycle
+  - Uses lazy sorting (only sorts when systems are added/removed)
+  - Changed `getSystem()` from inline reified to regular function with Class parameter
+  - **Impact**: Deterministic execution order for systems with dependencies
+
+- **Koin Field Injection Removed from Systems**: Converted all Systems to constructor injection
+  - Affected: `GizmoSystem`, `MouseControls`, `EditorCamera`, `GridLines`
+  - Removed `: KoinComponent` from all System subclasses
+  - Removed `by inject()` property delegates
+  - Updated `LevelEditorSceneInitializer` to inject and pass dependencies
+  - Updated Koin module to register systems with constructor parameters
+  - Assigned priorities:
+    - `MouseControls`: EARLY (input processing)
+    - `EditorCamera`: EARLY (input processing)
+    - `AnimationSystem`: DEFAULT (physics/animation)
+    - `GridLines`: LATE (rendering)
+    - `GizmoSystem`: LATE (UI/tools)
+  - **Impact**: Consistent with v0.16 pattern, clearer dependencies, better testability
+
 ---
 
 ## [Previous] - v0.18: Fix Test Compilation After Camera Refactoring

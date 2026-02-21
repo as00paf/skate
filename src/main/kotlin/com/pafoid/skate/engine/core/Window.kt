@@ -6,7 +6,7 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.input.IInputBuffer
-import com.pafoid.skate.engine.input.listeners.JoystickListener
+import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
@@ -77,7 +77,7 @@ class Window(
 
     private val bootManager: BootManager by inject()
     private val inputBuffer: IInputBuffer by inject()
-    private val joystickListener: JoystickListener by inject()
+    private val joystickListener: GamepadListener by inject()
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
     private val settingsManager: SettingsManager by inject()

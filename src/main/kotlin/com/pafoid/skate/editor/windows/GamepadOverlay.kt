@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
-import com.pafoid.skate.engine.input.listeners.JoystickListener
+import com.pafoid.skate.engine.input.listeners.GamepadListener
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -19,7 +19,7 @@ private const val CONTROLS_OVERLAY_BUTTON_SIZE = 50f
 
 class GamepadOverlay : KoinComponent {
     private val resourceManager: ResourceManager by inject()
-    private val joystickListener: JoystickListener by inject()
+    private val joystickListener: GamepadListener by inject()
     private val settingsManager: SettingsManager by inject()
     
     private val controllerTexture: Texture by lazy {
