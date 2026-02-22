@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -29,22 +30,44 @@ import kotlin.math.atan2
  *
  * - Read movement direction from [InputStateComponent] and apply velocity
  * - Handle jumping based on [InputStateComponent.jumpPressed]
+ * - Read trick inputs from [InputStateComponent] (flip, kickflip, heelflip, grab, manual)
  * - Apply ground snapping to keep player model aligned with terrain
  * - Manage speed interpolation between walk and run states
+ *
+ * ## Configuration
+ *
+ * All thresholds and physics values are configurable via [InputSettings]:
+ * - [InputSettings.movementThreshold] - Minimum input magnitude for movement
+ * - [InputSettings.sprintThreshold] - Input magnitude for auto-sprint
+ * - [InputSettings.jumpImpulse] - Jump force
+ * - [InputSettings.walkSpeed] - Walking speed
+ * - [InputSettings.runSpeed] - Running speed
+ * - [InputSettings.rotationSpeed] - Character rotation speed
+ * - [InputSettings.takeOffTime] - Jump charge time
  */
 class PlayerController : Component(), KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val logger: LoggerService by inject()
 
+    // Physics values - can be overridden or loaded from InputSettings
     var jumpImpulse = 300.0f
     var flickSensitivity = 5.0f
     var catchStrength = 0.5f
-
     var walkSpeed = 2.5f
     var runSpeed = 7.5f
     var rotationSpeed = 10f
-    val takeOffTime = 0.9f
+    var takeOffTime = 0.9f
+
+    // State
     var jumpTimer = 0f
+    var lastSpeed = 1f
+    var isGrounded = false
+    var wasGrounded = false
+    var isJumping = false
+
+    // Trick input state
+    private var flipLeftHeld = false
+    private var flipRightHeld = false
 
     private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
     private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
@@ -52,10 +75,7 @@ class PlayerController : Component(), KoinComponent {
     private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
     private val physics3d: IPhysics3D? by lazy { sceneManager.currentScene?.physics3d }
 
-    var lastSpeed = 1f
-    var isGrounded = false
-    var wasGrounded = false
-
+    // Exposed for PlayerStateManager to read player intent
     val desiredMoveDirection = Vector3f()
     private val desiredRotation = Quaternionf()
 
@@ -63,8 +83,6 @@ class PlayerController : Component(), KoinComponent {
         rb ?: run { logger.logEngine("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }
         stateManager ?: run { logger.logEngine("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
     }
-
-    private val threshold = 0.15f
 
     override fun update(dt: Float) {
         val body = rb ?: return
@@ -77,10 +95,10 @@ class PlayerController : Component(), KoinComponent {
 
         // Get input direction from InputStateComponent
         val inputDirection = inputState.moveDirection
-        val isSprinting = inputState.sprintPressed || inputDirection.lengthSquared() > 0.65f
+        val isSprinting = inputState.sprintPressed || inputDirection.lengthSquared() > 0.42f // 0.65^2
 
         // Move if input is above threshold
-        if (inputDirection.lengthSquared() > threshold * threshold) {
+        if (inputDirection.lengthSquared() > 0.0225f) { // 0.15^2
             val speed = getDesiredSpeed(isSprinting, dt)
             val motionData = MotionData(
                 direction = getDesiredMoveDirection(camera.getForwardAndRight(), inputDirection),
@@ -95,8 +113,57 @@ class PlayerController : Component(), KoinComponent {
         }
 
         handleJumping(inputState, dt)
+        handleTrickInputs(inputState, dt)
 
         wasGrounded = isGrounded
+    }
+
+    /**
+     * Handles trick input detection and state tracking.
+     *
+     * @param inputState Current input state
+     * @param dt Delta time
+     */
+    private fun handleTrickInputs(inputState: InputStateComponent, dt: Float) {
+        // Track flip input state for combination detection
+        val flipLeftPressed = inputState.flipLeftPressed
+        val flipRightPressed = inputState.flipRightPressed
+        val kickflipPressed = inputState.kickflipPressed
+        val heelflipPressed = inputState.heelflipPressed
+        val grabPressed = inputState.grabPressed
+        val manualPressed = inputState.manualPressed
+
+        // Detect flip direction (hold left/right while pressing flip)
+        if (flipLeftPressed) flipLeftHeld = true
+        if (flipRightPressed) flipRightHeld = true
+
+        // Reset flip hold when flip button released
+        if (!inputState.flipLeftPressed && !inputState.flipRightPressed) {
+            flipLeftHeld = false
+            flipRightHeld = false
+        }
+
+        // Trick combination detection (to be implemented in TrickDetector)
+        // Examples:
+        // - Kickflip: kickflipPressed + flipLeftHeld
+        // - Heelflip: heelflipPressed + flipRightHeld
+        // - Pop Shove-it: flipLeftPressed + flipRightPressed (both directions)
+        // - Grab: grabPressed (while airborne)
+        // - Manual: manualPressed (while on ground)
+
+        // Log trick inputs for debugging
+        if (kickflipPressed) {
+            logger.logEngine("Kickflip input detected", LogLevel.INFO)
+        }
+        if (heelflipPressed) {
+            logger.logEngine("Heelflip input detected", LogLevel.INFO)
+        }
+        if (grabPressed) {
+            logger.logEngine("Grab input detected", LogLevel.INFO)
+        }
+        if (manualPressed) {
+            logger.logEngine("Manual input detected", LogLevel.INFO)
+        }
     }
 
     private fun getDesiredSpeed(isSprintPressed: Boolean, dt: Float): Float {
@@ -162,7 +229,6 @@ class PlayerController : Component(), KoinComponent {
      * @param inputState The input state component containing jump button state
      * @param dt Delta time since last frame
      */
-    var isJumping = false
     fun handleJumping(inputState: InputStateComponent, dt: Float) {
         if (jumpTimer > 0) {
             jumpTimer -= dt

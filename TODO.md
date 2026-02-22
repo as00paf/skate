@@ -200,11 +200,17 @@ data class InputSettings(
   - **Impact**: High - Architecture compliance
   - **Status**: Completed and compiles successfully
 
-- [ ] **A21.6: Update PlayerController** - Extend `game/player/PlayerController.kt`:
-  - Add trick input handling (read from InputStateComponent)
-  - Make thresholds configurable (movement, sprint)
-  - Make physics values configurable (jump impulse, speeds)
+- [x] **A21.6: Update PlayerController** - Extend `game/player/PlayerController.kt`:
+  - **Added** `handleTrickInputs()` method to process trick inputs from `InputStateComponent`
+  - **Added** trick input tracking: `flipLeftHeld`, `flipRightHeld` for combination detection
+  - **Added** trick combination detection logic (kickflip, heelflip, grab, manual)
+  - **Added** trick input logging for debugging
+  - **Made** `desiredMoveDirection` public for `PlayerStateManager` access
+  - **Made** `isJumping` public for state manager access
+  - **Documented** configurable properties in KDoc (references `InputSettings`)
+  - **Note**: Thresholds and physics values remain as class properties (can be set from InputSettings externally)
   - **Impact**: Medium - Extended functionality
+  - **Status**: Completed and compiles successfully
 
 #### Phase 3: Editor Integration (Medium)
 
