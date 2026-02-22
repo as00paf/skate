@@ -41,8 +41,8 @@ class SystemManager {
     /**
      * Gets a System by its class type.
      */
-    fun <T : System> getSystem(klass: Class<T>): T? {
-        return _systems.firstOrNull { klass.isInstance(it) } as T?
+    inline fun <reified T : System> getSystem(): T? {
+        return systems.filterIsInstance<T>().firstOrNull()
     }
 
     /**

@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
@@ -73,7 +74,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
         // Essential Editor Tools as Systems
         scene.addSystem(inputSystem)
-        scene.addSystem(EditorCamera(scene.camera, keyListener, mouseListener))
+        scene.addSystem(EditorCamera(scene.camera, EditorInputStateComponent()))
         scene.addSystem(MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine))
         scene.addSystem(
             GizmoSystem(
@@ -98,10 +99,5 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     }
 
     override fun imgui() {
-    }
-
-    companion object {
-        const val EDITOR_CAMERA = "EditorCamera"
-        const val EDITOR_TOOLS = "EditorTools"
     }
 }

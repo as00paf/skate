@@ -1,8 +1,10 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
@@ -84,23 +86,48 @@ class InputSystem(
     }
 
     override fun update(dt: Float) {
-        // Get current settings
-        val inputSettings = settings
+        // Determine if cursor is enabled (editor mode) or disabled (game mode)
+        val isCursorEnabled = !inputProvider.isCursorDisabled()
 
-        // Find all entities with InputStateComponent
+        // Always process editor input when cursor is enabled (even during simulation)
+        if (isCursorEnabled) {
+            val editorInput = scene.systemManager.getSystem<EditorCamera>()?.editorInput ?: return
+
+            // Reset editor input state for new frame
+            editorInput.reset()
+
+            // Poll and process editor inputs (keyboard + mouse)
+            pollEditorKeyboardInput(editorInput)
+            pollEditorMouseInput(editorInput)
+        }
+
         scene.gameObjectManager.gameObjects.forEach { go ->
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
 
-            // Reset input state for new frame
             inputState.reset()
-
-            // Poll and process inputs
+            val inputSettings = settings
             pollGamepadInput(inputState, inputSettings)
-            pollKeyboardInput(inputState)
-            pollMouseInput(inputState, inputSettings)
-
-            // Update jump state machine
             updateJumpState(inputState)
+        }
+    }
+
+    override fun editorUpdate(dt: Float) {
+        val editorInput = scene.systemManager.getSystem<EditorCamera>()?.editorInput ?: return
+
+        editorInput.reset()
+
+        pollEditorKeyboardInput(editorInput)
+        pollEditorMouseInput(editorInput)
+    }
+
+    override fun start() {
+        val editorInputEntity = scene.gameObjectManager.gameObjects.find {
+            it.name == "EditorInput" && it.getComponent<EditorInputStateComponent>() != null
+        }
+        if (editorInputEntity != null) {
+            println("[InputSystem] Found EditorInput entity: $editorInputEntity")
+        } else {
+            println("[InputSystem] WARNING: No EditorInput entity found!")
         }
     }
 
@@ -368,5 +395,94 @@ class InputSystem(
         }
 
         return false
+    }
+
+    // =========================================================================
+    // EDITOR INPUT POLLING
+    // =========================================================================
+
+    /**
+     * Polls editor keyboard input and writes to [editorInput].
+     *
+     * Editor controls:
+     * - WASD: Horizontal camera movement
+     * - Space/Shift: Vertical camera movement
+     * - Home: Reset camera position
+     *
+     * @param editorInput Editor input state to write to
+     */
+    private fun pollEditorKeyboardInput(editorInput: EditorInputStateComponent) {
+        val moveInput = Vector2f()
+
+        // WASD movement
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_W)) moveInput.y += 1f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_S)) moveInput.y -= 1f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_A)) moveInput.x -= 1f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_D)) moveInput.x += 1f
+
+        // Normalize if diagonal
+        if (moveInput.lengthSquared() > 1f) {
+            moveInput.normalize()
+        }
+
+        editorInput.moveDirection.set(moveInput)
+
+        // Vertical movement (Space/Shift)
+        var verticalInput = 0f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_SPACE)) verticalInput += 1f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) verticalInput -= 1f
+
+        editorInput.verticalMovement = verticalInput
+
+        // Reset (Home key)
+        if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_HOME)) {
+            editorInput.resetPressed = true
+        }
+    }
+
+    /**
+     * Polls editor mouse input and writes to [editorInput].
+     *
+     * Editor mouse controls:
+     * - RMB + Move: Camera look rotation
+     * - MMB + Move: Orbit rotation
+     * - Scroll: Camera zoom
+     *
+     * @param editorInput Editor input state to write to
+     */
+    private fun pollEditorMouseInput(editorInput: EditorInputStateComponent) {
+        // Check if mouse is inside viewport
+        editorInput.isInsideViewport = mouseListener.isInsideViewport()
+
+        // Get mouse delta
+        val dx = mouseListener.getDx()
+        val dy = mouseListener.getDy()
+
+        // Mouse look (RMB)
+        if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && editorInput.isInsideViewport) {
+            editorInput.mouseLook.set(dx, dy)
+        }
+        // Orbit mouse look (MMB) - also capture mouse delta for orbit rotation
+        else if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE, true) && editorInput.isInsideViewport) {
+            editorInput.mouseLook.set(dx, dy)
+        }
+        // No mouse button pressed - clear mouse look
+        else {
+            editorInput.mouseLook.set(0f, 0f)
+        }
+
+        // Orbit (MMB)
+        val orbitPressed =
+            mouseListener.mouseButtonBeginPress(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && editorInput.isInsideViewport
+        val orbitHeld =
+            mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE, true) && editorInput.isInsideViewport
+
+        editorInput.orbitPressed = orbitPressed
+        editorInput.orbitHeld = orbitHeld
+
+        // Scroll (zoom)
+        if (editorInput.isInsideViewport) {
+            editorInput.mouseScroll = mouseListener.getScrollY()
+        }
     }
 }

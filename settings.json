@@ -8,6 +8,179 @@
     "showGamepadOverlay": true,
     "unitSystem": "METRIC",
     "language": "en",
+    "inputMappings": {
+        "moveUp": {
+            "keyboardKey": 87,
+            "gamepadButton": -1,
+            "gamepadAxis": 1,
+            "inverted": false
+        },
+        "moveDown": {
+            "keyboardKey": 83,
+            "gamepadButton": -1,
+            "gamepadAxis": 1,
+            "inverted": false
+        },
+        "moveLeft": {
+            "keyboardKey": 65,
+            "gamepadButton": -1,
+            "gamepadAxis": 0,
+            "inverted": false
+        },
+        "moveRight": {
+            "keyboardKey": 68,
+            "gamepadButton": -1,
+            "gamepadAxis": 0,
+            "inverted": false
+        },
+        "sprint": {
+            "keyboardKey": 340,
+            "gamepadButton": -1,
+            "gamepadAxis": 4,
+            "inverted": false
+        },
+        "crouch": {
+            "keyboardKey": 341,
+            "gamepadButton": 4,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "jump": {
+            "keyboardKey": 32,
+            "gamepadButton": 0,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "flipLeft": {
+            "keyboardKey": 81,
+            "gamepadButton": 4,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "flipRight": {
+            "keyboardKey": 69,
+            "gamepadButton": 5,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "kickflip": {
+            "keyboardKey": 87,
+            "gamepadButton": 2,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "heelflip": {
+            "keyboardKey": 83,
+            "gamepadButton": 3,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "grab": {
+            "keyboardKey": 32,
+            "gamepadButton": 0,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "manual": {
+            "keyboardKey": 342,
+            "gamepadButton": 6,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "cameraLookX": {
+            "keyboardKey": -1,
+            "gamepadButton": -1,
+            "gamepadAxis": 2,
+            "inverted": false
+        },
+        "cameraLookY": {
+            "keyboardKey": -1,
+            "gamepadButton": -1,
+            "gamepadAxis": 3,
+            "inverted": false
+        },
+        "cameraReset": {
+            "keyboardKey": 82,
+            "gamepadButton": 9,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "pause": {
+            "keyboardKey": 256,
+            "gamepadButton": 7,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "reset": {
+            "keyboardKey": 261,
+            "gamepadButton": 6,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "stanceChange": {
+            "keyboardKey": 263,
+            "gamepadButton": 13,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "stanceChangeRight": {
+            "keyboardKey": 262,
+            "gamepadButton": 11,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "editorGizmoTranslate": {
+            "keyboardKey": 87,
+            "gamepadButton": -1,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "editorGizmoRotate": {
+            "keyboardKey": 69,
+            "gamepadButton": -1,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "editorGizmoScale": {
+            "keyboardKey": 82,
+            "gamepadButton": -1,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "editorGizmoSelect": {
+            "keyboardKey": 81,
+            "gamepadButton": -1,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "editorMeasure": {
+            "keyboardKey": 77,
+            "gamepadButton": -1,
+            "gamepadAxis": -1,
+            "inverted": false
+        },
+        "editorDeselect": {
+            "keyboardKey": 256,
+            "gamepadButton": -1,
+            "gamepadAxis": -1,
+            "inverted": false
+        }
+    },
+    "inputSettings": {
+        "leftStickDeadzone": 0.15,
+        "rightStickDeadzone": 0.1,
+        "triggerThreshold": 0.5,
+        "mouseSensitivity": 0.1,
+        "controllerSensitivity": 2.0,
+        "movementThreshold": 0.15,
+        "sprintThreshold": 0.65,
+        "jumpImpulse": 300.0,
+        "walkSpeed": 2.5,
+        "runSpeed": 7.5,
+        "rotationSpeed": 10.0,
+        "takeOffTime": 0.9,
+        "inputSmoothing": 12.0
+    },
     "keyBindings": {
         "gizmoTranslate": 87,
         "gizmoRotate": 69,

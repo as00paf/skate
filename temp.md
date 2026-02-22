@@ -115,18 +115,5 @@ Reports
 
 Analyze the project and create a report to help me clean up the code that will include but not necessarily limited to :
 
-Key bindings for editor camera movement
-Change default binding for tools to 1,2,3,4 ...
-
-Make PlayerStateManager a component ? Should be able to pair animation with state
-Verify animation blending
-Verify physics debug
-
 UI Review :
-Allow Rendering of RigidBody3D and BoxCollider3D
-Fix dockspace
-EditorCamera ImGui, presets
-Make console text selectable/copyable
 Fix button to reset to bind pose
-
-CHECK RENDERER DUPLICATION

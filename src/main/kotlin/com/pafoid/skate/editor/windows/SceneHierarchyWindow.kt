@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.windows
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer.Companion.EDITOR_TOOLS
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.StringManager
@@ -28,7 +27,7 @@ class SceneHierarchyWindow: KoinComponent {
         val gameObjects = scene.gameObjectManager.gameObjects
 
         gameObjects.forEachIndexed { index, obj ->
-            if (obj.parent == null && obj.name != EDITOR_TOOLS) { // Only draw root objects
+            if (obj.parent == null) { // Only draw root objects
                 doTreeNode(obj, index)
             }
         }

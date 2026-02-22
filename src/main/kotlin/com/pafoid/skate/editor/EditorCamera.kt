@@ -1,32 +1,43 @@
 package com.pafoid.skate.editor
 
+import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
-import com.pafoid.skate.engine.input.listeners.KeyListener
-import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
-import org.lwjgl.glfw.GLFW
-import org.lwjgl.glfw.GLFW.GLFW_KEY_A
-import org.lwjgl.glfw.GLFW.GLFW_KEY_D
-import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT
-import org.lwjgl.glfw.GLFW.GLFW_KEY_S
-import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
-import org.lwjgl.glfw.GLFW.GLFW_KEY_W
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sign
 import kotlin.math.sin
 
+/**
+ * Editor free-fly camera system.
+ *
+ * This system provides editor camera navigation with 6DOF movement:
+ * - WASD: Horizontal movement (forward/back/strafe)
+ * - Space/Shift: Vertical movement (up/down)
+ * - RMB + Mouse: Camera look rotation
+ * - MMB: Orbit rotation
+ * - Scroll: Camera zoom
+ * - Home: Reset camera position
+ *
+ * This system reads input from [EditorInputStateComponent] which is populated by
+ * [com.pafoid.skate.engine.ecs.systems.InputSystem]. It does NOT poll hardware directly.
+ *
+ * ## Usage
+ *
+ * ```kotlin
+ * // In LevelEditorSceneInitializer
+ * val editorInput = EditorInputStateComponent()
+ * scene.cameraEntity.addComponent(editorInput)
+ * scene.addSystem(EditorCamera(scene.camera, editorInput))
+ * ```
+ */
 class EditorCamera(
     private val camera: Camera,
-    keyListener: KeyListener,
-    mouseListener: MouseListener
-) : System(priority = ExecutionPriority.EARLY) {  // Early system - input processing
-
-    private val keyListener: KeyListener = keyListener
-    private val mouseListener: MouseListener = mouseListener
+    val editorInput: EditorInputStateComponent
+) : System(priority = ExecutionPriority.EARLY) {
 
     private val scrollSensitivity = 0.1f
     private val rotationSensitivity = 0.1f
@@ -47,15 +58,15 @@ class EditorCamera(
     }
 
     /**
-     * Handles free-fly camera movement (WASD + mouse look).
-     * This is the editor's primary navigation mode when not using third-person camera.
+     * Handles free-fly camera movement (WASD + Space/Shift).
+     * This is the editor's primary navigation mode.
      */
     private fun handleFreeFlyMovement() {
-        // Mouse rotation (when cursor is disabled)
-        if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && mouseListener.isInsideViewport()) {
+        // Mouse look (RMB) - only when inside viewport
+        if (editorInput.mouseLook.lengthSquared() > 0f && editorInput.isInsideViewport) {
             val sensitivity = 0.1f
-            val dx = mouseListener.getDx()
-            val dy = mouseListener.getDy()
+            val dx = editorInput.mouseLook.x
+            val dy = editorInput.mouseLook.y
 
             if (abs(dx) > 0.01f || abs(dy) > 0.01f) {
                 camera.yaw += dx * sensitivity
@@ -80,30 +91,35 @@ class EditorCamera(
             sin(Math.toRadians(camera.yaw.toDouble())).toFloat()
         ).normalize()
 
-        // WASD movement
-        if (keyListener.isKeyPressed(GLFW_KEY_W)) {
+        // WASD horizontal movement
+        val moveDir = editorInput.moveDirection
+        if (moveDir.y > 0f) { // Forward (W)
             camera.position.add(Vector3f(forward).mul(moveSpeed))
         }
-        if (keyListener.isKeyPressed(GLFW_KEY_S)) {
+        if (moveDir.y < 0f) { // Backward (S)
             camera.position.sub(Vector3f(forward).mul(moveSpeed))
         }
-        if (keyListener.isKeyPressed(GLFW_KEY_D)) {
+        if (moveDir.x > 0f) { // Right (D)
             camera.position.add(Vector3f(right).mul(moveSpeed))
         }
-        if (keyListener.isKeyPressed(GLFW_KEY_A)) {
+        if (moveDir.x < 0f) { // Left (A)
             camera.position.sub(Vector3f(right).mul(moveSpeed))
         }
-        // Vertical movement
-        if (keyListener.isKeyPressed(GLFW_KEY_SPACE)) {
+
+        // Vertical movement (Space/Shift)
+        val verticalInput = editorInput.verticalMovement
+        if (verticalInput > 0f) { // Up (Space)
             camera.position.y += moveSpeed
         }
-        if (keyListener.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
+        if (verticalInput < 0f) { // Down (Shift)
             camera.position.y -= moveSpeed
         }
     }
 
     private fun handleReset(dt: Float) {
-        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_HOME)) {
+        // Reset is triggered via EditorInputStateComponent.resetPressed
+        // This method handles the actual reset animation
+        if (editorInput.resetPressed) {
             reset = true
         }
 
@@ -120,22 +136,26 @@ class EditorCamera(
         }
     }
 
+    /**
+     * Handles orbit rotation (MMB).
+     */
     private fun handleRotation() {
-        if (!mouseListener.isMouseButtonDown(
-                GLFW.GLFW_MOUSE_BUTTON_MIDDLE,
-                true
-            ) && isRotating
-        ) { // Middle mouse button released
-            isRotating = false
-        } else if (mouseListener.mouseButtonBeginPress(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && mouseListener.isInsideViewport()) {
+        // Start orbit on MMB press
+        if (editorInput.orbitPressed && editorInput.isInsideViewport) {
             isRotating = true
         }
 
-        if (isRotating) {
-            val dx = mouseListener.getDx()
-            val dy = mouseListener.getDy()
+        // Stop orbit on MMB release
+        if (!editorInput.orbitHeld && isRotating) {
+            isRotating = false
+        }
 
-            if (abs(dx) > 0.01f || abs(dy) > 0.01f) { // Only update if there's actual mouse movement
+        // Apply rotation while orbiting
+        if (isRotating && editorInput.mouseLook.lengthSquared() > 0f) {
+            val dx = editorInput.mouseLook.x
+            val dy = editorInput.mouseLook.y
+
+            if (abs(dx) > 0.01f || abs(dy) > 0.01f) {
                 camera.yaw += dx * rotationSensitivity
                 camera.pitch += dy * rotationSensitivity
 
@@ -146,9 +166,12 @@ class EditorCamera(
         }
     }
 
+    /**
+     * Handles camera zoom via scroll wheel.
+     */
     private fun handleZoom() {
-        val scroll = mouseListener.getScrollY()
-        if (scroll != 0f && mouseListener.isInsideViewport()) {
+        val scroll = editorInput.mouseScroll
+        if (scroll != 0f && editorInput.isInsideViewport) {
             val addValue = abs(scroll * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
             camera.addZoom((addValue.toFloat() * -sign(scroll)))
         }

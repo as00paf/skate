@@ -214,11 +214,19 @@ data class InputSettings(
 
 #### Phase 3: Editor Integration (Medium)
 
-- [ ] **A21.8: Fix EditorCamera** - Update `editor/EditorCamera.kt`:
-  - Remove direct KeyListener/MouseListener polling
-  - Use input mappings from SettingsManager
-  - Add editor camera bindings to KeyBindings
+- [x] **A21.8: Fix EditorCamera** - Update `editor/EditorCamera.kt`:
+  - **Created** `EditorInputStateComponent` for editor-specific inputs:
+    - Movement: `moveDirection` (WASD), `verticalMovement` (Space/Shift)
+    - Mouse: `mouseLook` (RMB), `mouseScroll` (zoom), `orbitPressed/Held` (MMB)
+    - State: `resetPressed` (Home), `isInsideViewport`
+  - **Removed** direct `KeyListener` and `MouseListener` dependencies
+  - **Updated** `InputSystem` to populate `EditorInputStateComponent`:
+    - Added `pollEditorKeyboardInput()` for WASD + Space/Shift + Home
+    - Added `pollEditorMouseInput()` for RMB look + MMB orbit + scroll
+  - **Refactored** `EditorCamera` to read from `EditorInputStateComponent`
+  - **Updated** `LevelEditorSceneInitializer` to create editor input entity
   - **Impact**: Medium - Architecture compliance
+  - **Status**: Completed and compiles successfully
 
 - [ ] **A21.9: Update GizmoSystem** - Refactor to use input mappings:
   - Already uses SettingsManager.keyBindings (good)
