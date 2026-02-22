@@ -4,7 +4,83 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
-## [Unreleased] - v0.19: ECS Systems Code Quality & Architecture
+## [Unreleased] - v0.20: Input Layer Refactoring
+
+### Added
+
+- **InputStateComponent**: New ECS component for gameplay input state (`engine/ecs/components/InputStateComponent.kt`)
+  - Stores normalized movement direction (`moveDirection: Vector2f`)
+  - Jump state tracking (`jumpPressed`, `jumpHeld`)
+  - Sprint modifier (`sprintPressed`)
+  - Camera look input (`cameraLook: Vector2f`)
+  - Grounded state synced from physics (`isGrounded`)
+  - `reset()` method for frame-by-frame state clearing
+  - Serialization support with `@Contextual` annotations for Vector2f
+  - Comprehensive KDoc with usage examples
+
+- **InputSystem**: New ECS system for raw input → gameplay state conversion (`engine/ecs/systems/InputSystem.kt`)
+  - Runs at `ExecutionPriority.EARLY` to ensure input readiness
+  - Polls `IInputProvider` for gamepad and keyboard inputs
+  - Deadzone handling for analog sticks (configurable thresholds)
+  - Jump state machine (pressed → held → released)
+  - Writes gameplay state to `InputStateComponent` on player entities
+  - Keyboard input overrides gamepad for movement
+  - Input mapping:
+    - Move: Left Stick / WASD
+    - Jump: A Button / Space
+    - Sprint: Left Trigger / Left Shift
+    - Camera Look: Right Stick (gamepad only, mouse TODO)
+
+### Changed
+
+- **PlayerController Refactored**: Separated input polling from physics logic
+  - Removed `IInputProvider` dependency injection
+  - Now reads gameplay input from `InputStateComponent` instead of polling hardware
+  - Updated `update()` method to use `inputState.moveDirection` and `inputState.sprintPressed`
+  - Updated `handleJumping()` to use `inputState.jumpPressed` (one-frame pulse)
+  - Cleaned up unused smoothing variables (`smoothedInput`, `rawInput`, `smoothing`)
+  - Fixed `getDesiredMoveDirection()` to accept `Vector2f` instead of `Vector3f`
+  - Added comprehensive KDoc explaining responsibilities
+  - **Impact**: PlayerController now focuses on physics, not input polling
+
+- **KoinModule Updated**: Added `InputSystem` to dependency injection
+  - Registered `InputSystem` as singleton in `engineModule`
+  - Proper constructor injection with `IInputProvider`
+  - Note: `GamepadListener` naming was already correct (no rename needed)
+
+- **LevelEditorSceneInitializer Updated**: Integrated `InputSystem` into scene
+  - Added `InputSystem` injection and registration to scene systems
+  - Runs first due to `EARLY` priority, before `PlayerController`
+  - Ensures input state is ready before gameplay systems execute
+
+### Architecture
+
+- **Input Layer Separation**: Clean ECS architecture for input handling
+  - Raw Input Layer: `GamepadListener`, `KeyListener`, `MouseListener` → `InputProvider`
+  - Input Mapping Layer: `InputSystem` converts raw inputs to gameplay state
+  - Gameplay State Layer: `InputStateComponent` stores gameplay inputs
+  - Gameplay Logic Layer: `PlayerController` reads `InputStateComponent`, applies physics
+
+- **Execution Order**:
+  1. `InputSystem` (EARLY) - Poll hardware, write `InputStateComponent`
+  2. `PlayerController` (DEFAULT) - Read `InputStateComponent`, apply physics
+  3. `PlayerStateManager` (DEFAULT) - Read physics state, update animation state
+  4. `Animator` (DEFAULT) - Read `PlayerStateManager`, select animation
+  5. `AnimationSystem` (DEFAULT) - Apply animation to skeleton
+
+### Known Issues (Moved to v0.21)
+
+- Mouse look not implemented in `InputSystem.pollMouseInput()` (has TODO comment)
+- Key bindings hardcoded in `InputSystem` (WASD, Space, Shift instead of using settings)
+- `EditorCamera` directly polls `KeyListener`/`MouseListener` (bypasses `InputSystem`)
+- `GameCamera` creates its own `MouseListener` and polls `IInputProvider` directly
+- `InputStateComponent` limited to move/jump/sprint (no trick inputs, pause, reset, etc.)
+- No configurable input mappings, deadzones, or sensitivities
+- `SettingsManager.keyBindings` only covers editor gizmo controls
+
+---
+
+## [Previous] - v0.19: ECS Systems Code Quality & Architecture
 
 ### Fixed
 
