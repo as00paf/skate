@@ -132,18 +132,37 @@ data class InputSettings(
 
 #### Phase 1: Foundation (Critical)
 
-- [ ] **A21.1: Extend InputStateComponent** - Add missing gameplay inputs:
-  - Trick inputs (flipLeft, flipRight, kickflip, heelflip, grab, manual)
-  - Game state inputs (pausePressed, resetPressed, cameraResetPressed)
-  - Crouch/manual input
-  - Stance change input
+- [x] **A21.1: Extend InputStateComponent** - `engine/ecs/components/InputStateComponent.kt`:
+  - **Added** trick inputs: `flipLeftPressed`, `flipRightPressed`, `kickflipPressed`, `heelflipPressed`, `grabPressed`,
+    `manualPressed`
+  - **Added** game state inputs: `pausePressed`, `resetPressed`, `cameraResetPressed`, `stanceChangePressed`
+  - **Added** `crouchPressed` for crouching/manual setup
+  - **Organized** properties into logical sections (Movement, Jump, Tricks, Camera, Game State, Physics)
+  - **Updated** `reset()` method to handle all new properties
+  - **Enhanced** KDoc with comprehensive documentation and usage examples
   - **Impact**: High - Required for full skateboarding controls
+  - **Status**: Completed and compiles successfully
 
-- [ ] **A21.2: Create InputMapping Data Structures** - New `engine/input/InputMapping.kt`:
-  - `InputBinding` data class (keyboardKey, gamepadButton, gamepadAxis)
-  - `InputMappings` data class with all action mappings
-  - Serialization support for saving/loading
+- [x] **A21.2: Create InputMapping Data Structures** - New `engine/input/InputMapping.kt`:
+  - **Created** `InputBinding` data class with `keyboardKey`, `gamepadButton`, `gamepadAxis`, `inverted` properties
+  - **Created** `InputMappings` data class with 26 bindings for all gameplay actions:
+    - Movement (6): moveUp/Down/Left/Right, sprint, crouch
+    - Jump (1): jump
+    - Tricks (6): flipLeft/Right, kickflip, heelflip, grab, manual
+    - Camera (3): cameraLookX/Y, cameraReset
+    - Game State (4): pause, reset, stanceChange/Right
+    - Editor (6): gizmo modes, measure, deselect
+  - **Added** helper methods: `getAllBindings()`, `resetToDefaults()`, `getDescription()`
+  - **Created** `InputSettings` data class in `SystemSettings.kt`:
+    - Deadzone configuration (leftStick, rightStick, trigger)
+    - Sensitivity configuration (mouse, controller)
+    - Movement thresholds (movement, sprint)
+    - Physics configuration (jumpImpulse, walkSpeed, runSpeed, rotationSpeed, etc.)
+    - `validate()` method for range clamping
+  - **Updated** `SystemSettings` with `inputMappings` and `inputSettings` properties
+  - **Deprecated** legacy `KeyBindings` (kept for backwards compatibility)
   - **Impact**: High - Foundation for rebindable controls
+  - **Status**: Completed and compiles successfully
 
 - [ ] **A21.3: Update InputSystem to Use Mappings** - Refactor `InputSystem`:
   - Inject SettingsManager to access key bindings
