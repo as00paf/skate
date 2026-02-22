@@ -4,23 +4,35 @@ import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.input.IInputProvider
-import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.Interpolator
 import org.joml.Quaternionf
+import org.joml.Vector2f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW
 import kotlin.math.atan2
 
+/**
+ * Component responsible for applying gameplay physics to the player entity.
+ *
+ * This component reads gameplay input state from [InputStateComponent] and applies
+ * appropriate physics forces (movement, jumping, ground snapping). It does not poll
+ * raw hardware inputs directly - that is the responsibility of [com.pafoid.skate.engine.ecs.systems.InputSystem].
+ *
+ * ## Responsibilities
+ *
+ * - Read movement direction from [InputStateComponent] and apply velocity
+ * - Handle jumping based on [InputStateComponent.jumpPressed]
+ * - Apply ground snapping to keep player model aligned with terrain
+ * - Manage speed interpolation between walk and run states
+ */
 class PlayerController : Component(), KoinComponent {
-    private val inputProvider: IInputProvider by inject()
     private val sceneManager: SceneManager by inject()
     private val logger: LoggerService by inject()
 
@@ -52,29 +64,26 @@ class PlayerController : Component(), KoinComponent {
         stateManager ?: run { logger.logEngine("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
     }
 
-    private val smoothedInput = Vector3f()
-    private val rawInput = Vector3f()
-    private val smoothing = 12f
     private val threshold = 0.15f
 
     override fun update(dt: Float) {
         val body = rb ?: return
         val camera = camera ?: return
         val physics3d = physics3d ?: return
-
-        // Detect Input direction
-        rawInput.set(inputProvider.getMovementVector(GLFW.GLFW_JOYSTICK_1))
-        smoothedInput.lerp(rawInput, dt * smoothing) // Exponential smoothing
+        val inputState = gameObject.getComponent<InputStateComponent>() ?: return
 
         isGrounded = checkIfGrounded(physics3d)
+        inputState.isGrounded = isGrounded
 
-        val isSprinting = rawInput.length() > 0.65f
+        // Get input direction from InputStateComponent
+        val inputDirection = inputState.moveDirection
+        val isSprinting = inputState.sprintPressed || inputDirection.lengthSquared() > 0.65f
 
         // Move if input is above threshold
-        if (smoothedInput.length() > threshold) {
+        if (inputDirection.lengthSquared() > threshold * threshold) {
             val speed = getDesiredSpeed(isSprinting, dt)
             val motionData = MotionData(
-                direction = getDesiredMoveDirection(camera.getForwardAndRight(), smoothedInput),
+                direction = getDesiredMoveDirection(camera.getForwardAndRight(), inputDirection),
                 speed = speed,
                 targetYaw = atan2(desiredMoveDirection.x, desiredMoveDirection.z),
                 rotationSpeed = dt * rotationSpeed,
@@ -85,7 +94,7 @@ class PlayerController : Component(), KoinComponent {
             applyMotion(motionData, body)
         }
 
-        handleJumping(isGrounded, dt)
+        handleJumping(inputState, dt)
 
         wasGrounded = isGrounded
     }
@@ -98,9 +107,9 @@ class PlayerController : Component(), KoinComponent {
         }
     }
 
-    private fun getDesiredMoveDirection(camForwardAndRight: Pair<Vector3f, Vector3f>, input: Vector3f): Vector3f {
+    private fun getDesiredMoveDirection(camForwardAndRight: Pair<Vector3f, Vector3f>, input: Vector2f): Vector3f {
         desiredMoveDirection.zero()
-        camForwardAndRight.first.mul(input.z, desiredMoveDirection)
+        camForwardAndRight.first.mul(input.y, desiredMoveDirection)
         val rightPart = Vector3f(camForwardAndRight.second).mul(input.x)
         desiredMoveDirection.add(rightPart)
 
@@ -149,17 +158,20 @@ class PlayerController : Component(), KoinComponent {
 
     /**
      * Handles jump input, applying a vertical impulse.
+     *
+     * @param inputState The input state component containing jump button state
+     * @param dt Delta time since last frame
      */
     var isJumping = false
-    fun handleJumping(isGrounded: Boolean, dt: Float) {
+    fun handleJumping(inputState: InputStateComponent, dt: Float) {
         if (jumpTimer > 0) {
             jumpTimer -= dt
         }
 
-        // Controller (Button A/Cross)
-        val jumpPressed = inputProvider.buttonBeginPress(GLFW.GLFW_JOYSTICK_1, GamepadConstants.BUTTON_A)
+        // Use jumpPressed from InputStateComponent (one-frame pulse)
+        val jumpPressed = inputState.jumpPressed
 
-        if (isJumping && !wasGrounded && isGrounded) { //Land
+        if (isJumping && !wasGrounded && isGrounded) { // Land
             isJumping = false
             //logger.logEngine("LANDED!")
         }

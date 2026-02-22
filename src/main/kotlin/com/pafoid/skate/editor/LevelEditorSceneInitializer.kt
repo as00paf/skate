@@ -16,7 +16,9 @@ import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
+import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.MouseControls
+import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -31,6 +33,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private val sceneManager: SceneManager by inject()
 
     // Inject dependencies for systems
+    private val inputProvider: IInputProvider by inject()
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
     private val serializer: Serializer by inject()
@@ -70,6 +73,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         reportProgress(0.5f, "Setting up Editor Tools...")
 
         // Essential Editor Tools as Systems
+        scene.addSystem(InputSystem(inputProvider))
         scene.addSystem(EditorCamera(scene.camera, keyListener, mouseListener))
         scene.addSystem(MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine))
         scene.addSystem(

@@ -82,23 +82,26 @@ Gameplay Layer (game/player/)
   - **Impact**: High - Centralized input processing, clean ECS separation
   - **Status**: Created and compiles successfully
 
-- [ ] **A20.4: Update PlayerController** - `game/player/PlayerController.kt`:
-  - Remove `IInputProvider` dependency
-  - Remove direct `getMovementVector()`, `buttonBeginPress()` calls
-  - Read from `InputStateComponent` instead
-  - Keep physics logic (applyMotion, handleJumping, handleGroundSnapping)
+- [x] **A20.4: Update PlayerController** - `game/player/PlayerController.kt`:
+  - **Removed** `IInputProvider` dependency and direct input polling
+  - **Now reads** from `InputStateComponent` for gameplay input state
+  - **Updated** `update()` method to use `inputState.moveDirection` and `inputState.sprintPressed`
+  - **Updated** `handleJumping()` to use `inputState.jumpPressed` (one-frame pulse)
+  - **Cleaned up** unused smoothing variables and imports
   - **Impact**: High - PlayerController focuses on physics, not input polling
+  - **Status**: Completed and compiles successfully
 
-- [ ] **A20.5: Update KoinModule** - `app/KoinModule.kt`:
-  - Rename `JoystickListener` → `GamepadListener` in DI
-  - Add `InputSystem` singleton with EARLY priority
-  - Update `InputProvider` constructor if needed
+- [x] **A20.5: Update KoinModule** - `app/KoinModule.kt`:
+  - **Note**: `GamepadListener` naming already correct (no rename needed)
+  - **Added** `InputSystem` singleton to `engineModule`
   - **Impact**: Medium - Wire up new input architecture
+  - **Status**: Completed and compiles successfully
 
-- [ ] **A20.6: Update LevelEditorSceneInitializer** - `editor/LevelEditorSceneInitializer.kt`:
-  - Add `InputSystem` to scene systems
-  - Ensure it runs before PlayerController (EARLY priority)
+- [x] **A20.6: Update LevelEditorSceneInitializer** - `editor/LevelEditorSceneInitializer.kt`:
+  - **Added** `InputSystem` injection and registration to scene systems
+  - **Runs first** due to EARLY priority, before PlayerController
   - **Impact**: Medium - Integrate InputSystem into scene
+  - **Status**: Completed and compiles successfully
 
 ### Execution Order After Refactor
 
