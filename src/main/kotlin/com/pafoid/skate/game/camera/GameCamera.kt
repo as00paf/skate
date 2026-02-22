@@ -1,14 +1,10 @@
 package com.pafoid.skate.game.camera
 
+import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.input.IInputProvider
-import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_X
-import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_Y
-import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
-import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
-import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -16,45 +12,50 @@ import kotlin.math.sin
  * Third-person gameplay camera controller.
  *
  * Wraps a base [Camera] instance and handles gameplay-specific camera behavior:
- * - Gamepad right stick rotation for third-person view
- * - Mouse rotation when cursor is disabled (gameplay mode)
+ * - Camera rotation from [InputStateComponent.cameraLook] (gamepad right stick + mouse)
  * - Physics-based clipping to prevent camera from going through walls
  * - Spring arm with configurable distance and offset
  *
- * This class is responsible for updating the wrapped camera's position and orientation
- * based on player input and scene geometry.
+ * This class reads input from [InputStateComponent] which is populated by [InputSystem],
+ * following the ECS input architecture. It does NOT poll hardware directly.
+ *
+ * ## Usage
+ *
+ * ```kotlin
+ * // In PlayerController or similar component
+ * val gameCamera = GameCamera(camera, sceneManager, inputStateComponent, inputSettings)
+ *
+ * // Each frame
+ * gameCamera.update(dt, inputStateComponent)
+ * ```
  *
  * @param camera The base camera to control
- * @param inputProvider Input provider for gamepad and mouse
  * @param sceneManager Scene manager for physics raycasting
+ * @param inputSettings Input settings for sensitivity configuration
  */
 class GameCamera(
     private val camera: Camera,
-    private val inputProvider: IInputProvider,
-    private val sceneManager: SceneManager
+    private val sceneManager: SceneManager,
+    private val inputSettings: InputSettings
 ) {
-    private val mouseListener: MouseListener = MouseListener()
 
     // Third person / Spring arm
     var target: Vector3f? = null
     var desiredDistance = 10.0f
     var targetOffset = Vector3f(0f, 0.5f, 0f)
 
-    // Camera rotation
-    private var sensitivity = 0.1f
-    private var controllerSensitivity = 2.0f
-
     /**
      * Updates the camera based on input and third-person logic.
      * Call this every frame during game update.
      *
      * @param dt Delta time in seconds
+     * @param inputState Input state component containing camera look input
      */
-    fun update(dt: Float) {
+    fun update(dt: Float, inputState: InputStateComponent) {
         val rawTarget = target ?: return
         val targetPos = Vector3f(rawTarget).add(targetOffset)
 
-        handleInput()
+        handleInput(inputState, dt)
         clampPitch()
 
         // Calculate camera position
@@ -72,24 +73,20 @@ class GameCamera(
     }
 
     /**
-     * Handles gamepad and mouse input for camera rotation.
+     * Handles camera input from [InputStateComponent].
+     * Combines gamepad right stick and mouse look input.
+     *
+     * @param inputState Input state containing camera look values
+     * @param dt Delta time for smoothing
      */
-    private fun handleInput() {
-        // Mouse Rotation (when cursor is disabled - gameplay mode)
-        if (inputProvider.isCursorDisabled()) {
-            camera.yaw += mouseListener.getDx() * sensitivity
-            camera.pitch += mouseListener.getDy() * sensitivity
-        }
+    private fun handleInput(inputState: InputStateComponent, dt: Float) {
+        val cameraLook = inputState.cameraLook
 
-        // Right Stick Rotation (Gamepad)
-        inputProvider.getAxes(GLFW_JOYSTICK_1)?.let { axes ->
-            if (axes.size > AXIS_RIGHT_Y) {
-                val rsX = axes[AXIS_RIGHT_X]
-                val rsY = axes[AXIS_RIGHT_Y]
-
-                if (abs(rsX) > 0.1f) camera.yaw += rsX * controllerSensitivity
-                if (abs(rsY) > 0.1f) camera.pitch += rsY * controllerSensitivity
-            }
+        // Apply camera look from InputStateComponent (combines gamepad + mouse)
+        // Mouse look is added to cameraLook by InputSystem when cursor is disabled
+        if (cameraLook.lengthSquared() > 0f) {
+            camera.yaw += cameraLook.x * inputSettings.controllerSensitivity * dt * 60f
+            camera.pitch += cameraLook.y * inputSettings.controllerSensitivity * dt * 60f
         }
     }
 

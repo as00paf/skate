@@ -164,40 +164,47 @@ data class InputSettings(
   - **Impact**: High - Foundation for rebindable controls
   - **Status**: Completed and compiles successfully
 
-- [ ] **A21.3: Update InputSystem to Use Mappings** - Refactor `InputSystem`:
-  - Inject SettingsManager to access key bindings
-  - Replace hardcoded keys with configurable mappings
-  - Implement mouse look integration (fix TODO)
-  - Make deadzones and thresholds configurable
+- [x] **A21.3: Update InputSystem to Use Mappings** - Refactor `InputSystem`:
+  - **Injected** `SettingsManager` and `MouseListener` via constructor
+  - **Replaced** all hardcoded keys with configurable `InputMappings`
+  - **Implemented** mouse look integration (TODO fixed) - reads `MouseListener.getDx()/getDy()`
+  - **Made** deadzones and thresholds configurable from `InputSettings`
+  - **Added** helper methods: `getAxisFromBinding()`, `checkButtonBindingActive()`, `checkBindingActive()`
+  - **Updated** `KoinModule` to register `InputSystem` with new dependencies
+  - **Updated** `LevelEditorSceneInitializer` to inject `InputSystem` from Koin
+  - **Fixed** gamepad axis inversion (Y-axis auto-inverted for GLFW coordinate system)
   - **Impact**: Critical - Centralizes all input configuration
+  - **Status**: Completed and compiles successfully
 
-- [ ] **A21.4: Extend SettingsManager/KeyBindings** - Update `editor/data/SystemSettings.kt`:
-  - Add all gameplay input bindings
-  - Add camera sensitivity settings
-  - Add deadzone/threshold configuration
-  - Add gamepad button mappings
+- [x] **A21.4: Extend SettingsManager/KeyBindings** - `editor/data/SystemSettings.kt`:
+  - **Created** `InputSettings` data class with comprehensive configuration:
+    - Deadzone settings: `leftStickDeadzone`, `rightStickDeadzone`, `triggerThreshold`
+    - Sensitivity settings: `mouseSensitivity`, `controllerSensitivity`
+    - Movement thresholds: `movementThreshold`, `sprintThreshold`
+    - Physics settings: `jumpImpulse`, `walkSpeed`, `runSpeed`, `rotationSpeed`, `takeOffTime`, `inputSmoothing`
+    - `validate()` method for range clamping
+  - **Updated** `SystemSettings` with `inputMappings` and `inputSettings` properties
+  - **Deprecated** legacy `KeyBindings` (kept for backwards compatibility)
   - **Impact**: High - Single source of truth for input config
+  - **Status**: Completed in A21.2 (created alongside InputMappings)
 
 #### Phase 2: Gameplay Integration (High)
 
-- [ ] **A21.5: Fix GameCamera** - Update `game/camera/GameCamera.kt`:
-  - Remove direct MouseListener instantiation (use DI)
-  - Read camera look from InputStateComponent.cameraLook
-  - Remove direct IInputProvider polling
-  - Make sensitivity configurable from settings
+- [x] **A21.5: Fix GameCamera** - Update `game/camera/GameCamera.kt`:
+  - **Removed** direct `MouseListener` instantiation (was: `MouseListener()`)
+  - **Removed** direct `IInputProvider` polling
+  - **Now reads** camera look from `InputStateComponent.cameraLook` (combines gamepad + mouse)
+  - **Made** sensitivity configurable from `InputSettings.controllerSensitivity`
+  - **Updated** `update()` signature to accept `InputStateComponent` parameter
+  - **Added** time-based movement (`dt * 60f`) for frame-rate independence
   - **Impact**: High - Architecture compliance
+  - **Status**: Completed and compiles successfully
 
 - [ ] **A21.6: Update PlayerController** - Extend `game/player/PlayerController.kt`:
   - Add trick input handling (read from InputStateComponent)
   - Make thresholds configurable (movement, sprint)
   - Make physics values configurable (jump impulse, speeds)
   - **Impact**: Medium - Extended functionality
-
-- [ ] **A21.7: Create TrickInputHandler** - New system for trick detection:
-  - Read trick inputs from InputStateComponent
-  - Detect trick combinations
-  - Integrate with TrickDetector
-  - **Impact**: High - Required for skateboarding gameplay
 
 #### Phase 3: Editor Integration (Medium)
 
