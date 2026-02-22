@@ -193,7 +193,7 @@ data class InputSettings(
   - Ensure consistency with new structure
   - **Impact**: Low - Verification only
 
-#### Phase 4: UI & Configuration (Nice to Have)
+#### Phase 4: UI & Configuration
 
 - [ ] **A21.10: Extend Key Binding UI** - Update `editor/imgui/ImGuiLayer.kt`:
   - Extend renderKeyBindingsWindow() for gameplay inputs
@@ -211,7 +211,6 @@ data class InputSettings(
 - [ ] **A21.12: Create Settings UI** - Extended settings window:
   - Sensitivity sliders (mouse, controller)
   - Deadzone configuration
-  - Physics configuration (jump impulse, speeds)
   - **Impact**: Medium - User-facing configuration
 
 ### Execution Order After Refactor
