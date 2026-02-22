@@ -187,11 +187,11 @@ class InputMappings {
     /**
      * Move up (forward) input binding.
      * Default: W key / Left Stick Up (axis)
+     * Note: GLFW Y axis is negative when stick is pushed up, so we invert for positive movement.
      */
     var moveUp: InputBinding = InputBinding(
         keyboardKey = GLFW.GLFW_KEY_W,
-        gamepadAxis = 1,  // AXIS_LEFT_Y (negative = up)
-        inverted = true
+        gamepadAxis = 1  // AXIS_LEFT_Y (negative = up, inverted in getAxisFromBinding)
     )
 
     /**
@@ -206,11 +206,11 @@ class InputMappings {
     /**
      * Move left input binding.
      * Default: A key / Left Stick Left (axis)
+     * Note: GLFW X axis is negative when stick is pushed left, which is correct for left movement.
      */
     var moveLeft: InputBinding = InputBinding(
         keyboardKey = GLFW.GLFW_KEY_A,
-        gamepadAxis = 0,  // AXIS_LEFT_X (negative = left)
-        inverted = true
+        gamepadAxis = 0  // AXIS_LEFT_X (negative = left)
     )
 
     /**
@@ -331,11 +331,10 @@ class InputMappings {
 
     /**
      * Camera look vertical input binding (right stick Y axis).
-     * Default: Right Stick Y axis (inverted for natural feel)
+     * Default: Right Stick Y axis (inverted automatically for natural feel)
      */
     var cameraLookY: InputBinding = InputBinding(
-        gamepadAxis = 3,  // AXIS_RIGHT_Y
-        inverted = true
+        gamepadAxis = 3  // AXIS_RIGHT_Y (inverted automatically in getAxisFromBinding)
     )
 
     /**
