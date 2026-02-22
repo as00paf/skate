@@ -20,6 +20,27 @@ import com.pafoid.skate.engine.render.renderer.Renderer
  *
  * Owns all gizmo instances directly and updates only the active gizmo each frame.
  * This is more efficient than registering each gizmo as a separate system.
+ *
+ * ## Input Handling
+ *
+ * Gizmo selection uses editor-specific key bindings from [SettingsManager.settings.keyBindings]:
+ * - **Translate**: W key (default)
+ * - **Rotate**: E key (default)
+ * - **Scale**: R key (default)
+ * - **Select**: Q key (default)
+ * - **Measure**: M key (default)
+ * - **Deselect**: Escape key (default)
+ *
+ * Note: These are editor-only bindings and are separate from gameplay input mappings.
+ * The deprecated [com.pafoid.skate.editor.data.KeyBindings] class is retained for
+ * backwards compatibility with existing settings files.
+ *
+ * ## Execution Order
+ *
+ * This system runs at [ExecutionPriority.LATE] to ensure:
+ * - Input systems have processed all input
+ * - Physics systems have updated all objects
+ * - Gizmos can respond to the final state of the scene
  */
 class GizmoSystem(
     private val keyListener: KeyListener,

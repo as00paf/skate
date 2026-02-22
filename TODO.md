@@ -228,10 +228,15 @@ data class InputSettings(
   - **Impact**: Medium - Architecture compliance
   - **Status**: Completed and compiles successfully
 
-- [ ] **A21.9: Update GizmoSystem** - Refactor to use input mappings:
-  - Already uses SettingsManager.keyBindings (good)
-  - Ensure consistency with new structure
-  - **Impact**: Low - Verification only
+- [x] **A21.9: Update GizmoSystem** - Refactor to use input mappings:
+  - **Verified**: Already uses `SettingsManager.settings.keyBindings` correctly
+  - **Note**: Editor gizmo bindings remain in deprecated `KeyBindings` class for backwards compatibility
+  - **Added** comprehensive KDoc explaining:
+    - Input handling with default key bindings
+    - Separation from gameplay input mappings
+    - Execution order (LATE priority)
+  - **Impact**: Low - Verification and documentation only
+  - **Status**: Completed and compiles successfully (with expected deprecation warning)
 
 #### Phase 4: UI & Configuration
 
