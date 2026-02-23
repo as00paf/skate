@@ -73,7 +73,8 @@ class InputMappings {
      */
     var moveUp: InputBinding = InputBinding(
         keyboardKey = GLFW.GLFW_KEY_W,
-        gamepadAxis = 1  // AXIS_LEFT_Y
+        gamepadAxis = 1,  // AXIS_LEFT_Y
+        inverted = true   // Invert negative GLFW Y to positive movement
     )
 
     /**
@@ -219,7 +220,8 @@ class InputMappings {
      * Note: Y-axis is inverted in getAxisFromBinding() for natural camera control.
      */
     var cameraLookY: InputBinding = InputBinding(
-        gamepadAxis = 3  // AXIS_RIGHT_Y
+        gamepadAxis = 3,  // AXIS_RIGHT_Y
+        inverted = true   // Invert for natural camera control (push up = look up)
     )
 
     /**

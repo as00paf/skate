@@ -4,16 +4,80 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
-## [Unreleased] - v0.23: Input System Code Quality
+## [v0.23] - 2026-02-22: Input System Code Quality
 
-### Planned
+### Summary
 
-- Technical debt cleanup for input system architecture
-- See TODO.md for detailed task list
+Completed technical debt cleanup for the input system architecture, improving consistency, maintainability, and
+configurability.
+
+### Added
+
+- **EditorInputMappings**: Dedicated configuration for editor bindings (`engine/input/EditorInputMappings.kt`)
+  - Separate from gameplay `InputMappings` for clear separation of concerns
+  - Configurable bindings for gizmo tools (translate, rotate, scale, select)
+  - Configurable bindings for editor tools (measure, deselect)
+  - `getAllBindings()` method for UI display
+  - `resetToDefaults()` method for resetting to default key bindings
+  - Integrated into `SystemSettings` as `editorInputMappings` property
+
+- **Editor Input State**: Extended `EditorInputStateComponent` with gizmo tool inputs
+  - `gizmoTranslatePressed`, `gizmoRotatePressed`, `gizmoScalePressed`, `gizmoSelectPressed`
+  - `measureToolPressed`, `deselectAllPressed`
+  - All properties reset in `reset()` method
+  - Configurable via `EditorInputMappings`
+
+### Changed
+
+- **checkButtonBindingBeginPress() Fixed**: Proper rising edge detection (`engine/ecs/systems/InputSystem.kt`)
+  - Added `previousButtons` field to track previous frame button states
+  - Updated `init()` to initialize `previousButtons` to null
+  - Updated `update()` to store button states at end of each frame
+  - Function now compares current vs previous state for true "begin press" detection
+  - **Impact**: High - Trick inputs and one-frame actions now work correctly
+
+- **Consistent inverted Flag**: Primary declarations match `resetToDefaults()` (`engine/input/InputMapping.kt`)
+  - `moveUp` primary declaration now includes `inverted = true`
+  - `cameraLookY` primary declaration now includes `inverted = true`
+  - Ensures consistent behavior regardless of config load order
+  - **Impact**: Medium - Saved configs now have consistent inversion behavior
+
+- **getAxisFromBinding() Refactored**: Uses `InputBinding.inverted` flag
+  - Removed hardcoded `if (axisIndex == 1 || axisIndex == 3)` check
+  - Now respects `positiveBinding.inverted` property
+  - Updated KDoc to explain inversion behavior
+  - **Impact**: Low - Configuration-driven inversion instead of hardcoded logic
+
+- **InputSystem Updated**: Uses `EditorInputMappings` for editor inputs
+  - Added `editorMappings` property getter from settings
+  - `pollEditorKeyboardInput()` now reads gizmo bindings from `editorMappings`
+  - Camera movement (WASD) remains hardcoded (not rebindable)
+  - **Impact**: Low - Editor bindings now configurable via UI (future feature)
+
+### Removed
+
+- **InputProvider.getMovementVector()**: Removed unused function
+  - Function had hardcoded deadzone (0.15f) that bypassed `InputSettings`
+  - Never called anywhere in the codebase
+  - **Migration**: Use `InputSystem` with `InputStateComponent` instead
+  - **Impact**: None - Function was unused
+
+### Architecture
+
+- **Editor Input Separation**: Clear separation between gameplay and editor inputs
+  - `InputMappings` for gameplay actions (movement, tricks, camera, game state)
+  - `EditorInputMappings` for editor actions (gizmos, tools)
+  - Both stored in `SystemSettings` for unified save/load
+  - Enables independent configuration and UI for each category
+
+- **Button State Tracking**: Previous frame state for edge detection
+  - `InputSystem.previousButtons` stores previous frame gamepad state
+  - Enables proper "begin press" detection for all gamepad buttons
+  - Pattern consistent with `GamepadListener` internal state tracking
 
 ---
 
-## [v0.21] - 2026-02-22: Input Mapping & Configuration System
+## [Previous] - v0.21: Input Mapping & Configuration System
 
 ### Summary
 

@@ -116,6 +116,46 @@ class EditorInputStateComponent : Component() {
      */
     var isInsideViewport = false
 
+    // =========================================================================
+    // GIZMO TOOL INPUTS
+    // =========================================================================
+
+    /**
+     * True for one frame when gizmo translate input is pressed.
+     * Default: W key (configurable via EditorInputMappings)
+     */
+    var gizmoTranslatePressed = false
+
+    /**
+     * True for one frame when gizmo rotate input is pressed.
+     * Default: E key (configurable via EditorInputMappings)
+     */
+    var gizmoRotatePressed = false
+
+    /**
+     * True for one frame when gizmo scale input is pressed.
+     * Default: R key (configurable via EditorInputMappings)
+     */
+    var gizmoScalePressed = false
+
+    /**
+     * True for one frame when gizmo select input is pressed.
+     * Default: Q key (configurable via EditorInputMappings)
+     */
+    var gizmoSelectPressed = false
+
+    /**
+     * True for one frame when measure tool input is pressed.
+     * Default: M key (configurable via EditorInputMappings)
+     */
+    var measureToolPressed = false
+
+    /**
+     * True for one frame when deselect all input is pressed.
+     * Default: Escape key (configurable via EditorInputMappings)
+     */
+    var deselectAllPressed = false
+
     /**
      * Resets all input state to default values.
      * Called by [com.pafoid.skate.engine.ecs.systems.InputSystem] at the start
@@ -134,6 +174,14 @@ class EditorInputStateComponent : Component() {
 
         // Reset
         resetPressed = false
+
+        // Gizmo Tools
+        gizmoTranslatePressed = false
+        gizmoRotatePressed = false
+        gizmoScalePressed = false
+        gizmoSelectPressed = false
+        measureToolPressed = false
+        deselectAllPressed = false
 
         // Viewport state (not reset - updated by InputSystem)
         // isInsideViewport is set based on mouse position

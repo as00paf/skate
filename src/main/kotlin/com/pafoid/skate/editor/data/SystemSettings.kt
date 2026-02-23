@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.data
 
+import com.pafoid.skate.engine.input.EditorInputMappings
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.utils.UnitSystem
 import kotlinx.serialization.Serializable
@@ -34,6 +35,7 @@ data class SystemSettings(
 
     // Input Configuration (new structure)
     var inputMappings: InputMappings = InputMappings(),
+    var editorInputMappings: EditorInputMappings = EditorInputMappings(),
     var inputSettings: InputSettings = InputSettings(),
 
     // Legacy key bindings (kept for backwards compatibility, deprecated)

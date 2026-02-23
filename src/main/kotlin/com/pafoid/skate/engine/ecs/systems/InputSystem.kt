@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
+import com.pafoid.skate.engine.input.EditorInputMappings
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
@@ -70,6 +71,10 @@ class InputSystem(
     private val mappings: InputMappings
         get() = settingsManager.settings.inputMappings
 
+    // Editor input mappings (from settings)
+    private val editorMappings: EditorInputMappings
+        get() = settingsManager.settings.editorInputMappings
+
     // Input settings (from settings)
     private val settings: InputSettings
         get() = settingsManager.settings.inputSettings
@@ -77,12 +82,16 @@ class InputSystem(
     // Jump state tracking
     private var jumpButtonWasPressed = false
 
+    // Previous frame button states for begin press detection
+    private var previousButtons: BooleanArray? = null
+
     // Keyboard state (reused to reduce allocations)
     private val moveInput = Vector2f()
 
     override fun init(scene: Scene) {
         super.init(scene)
         jumpButtonWasPressed = false
+        previousButtons = null
     }
 
     override fun update(dt: Float) {
@@ -108,6 +117,11 @@ class InputSystem(
             val inputSettings = settings
             pollGamepadInput(inputState, inputSettings)
             updateJumpState(inputState)
+        }
+
+        // Store button states for next frame begin press detection
+        if (inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) {
+            previousButtons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)?.clone()
         }
     }
 
@@ -295,11 +309,10 @@ class InputSystem(
      * Gets axis value from a pair of bindings (positive/negative directions).
      * Applies deadzone and returns value in range [-1, 1].
      *
-     * For Y-axis (axis 1 = left stick Y, axis 3 = right stick Y), invert the value
-     * because GLFW returns negative values when stick is pushed up.
-     *
-     * For X-axis (axis 0 = left stick X, axis 2 = right stick X): Values are used as-is
-     * (negative = left, positive = right).
+     * Uses the [InputBinding.inverted] flag to determine if axis should be inverted.
+     * For moveUp: inverted=true because GLFW Y-axis is negative when stick is pushed up.
+     * For cameraLookY: inverted=true for natural camera control (push up = look up).
+     * For moveLeft/moveRight: inverted=false (GLFW X-axis negative = left, which is correct).
      *
      * Deadzone handling: Values below the deadzone threshold return 0.
      * Values above deadzone are returned as-is (no rescaling).
@@ -329,9 +342,9 @@ class InputSystem(
 
         var value = axes[axisIndex]
 
-        // For Y-axis (axis 1 = left stick Y, axis 3 = right stick Y), invert the value
-        // because GLFW returns negative values when stick is pushed up
-        if (axisIndex == 1 || axisIndex == 3) {
+        // Apply inversion flag from the positive binding
+        // For moveUp/cameraLookY: GLFW returns negative when stick is pushed up, invert to positive
+        if (positiveBinding.inverted) {
             value = -value
         }
 
@@ -356,16 +369,17 @@ class InputSystem(
 
     /**
      * Checks if a button binding was just pressed (begin press).
+     * Detects rising edge by comparing current state to previous frame state.
      *
      * @param binding The input binding to check
      * @param buttons Current gamepad button states
-     * @return true if button was just pressed, false otherwise
+     * @return true if button was just pressed this frame, false otherwise
      */
     private fun checkButtonBindingBeginPress(binding: InputBinding, buttons: BooleanArray?): Boolean {
         if (buttons == null || binding.gamepadButton < 0) return false
         val current = buttons.getOrNull(binding.gamepadButton) ?: false
-        // For begin press, we'd need to track previous state - simplified for now
-        return current
+        val previous = previousButtons?.getOrNull(binding.gamepadButton) ?: false
+        return current && !previous
     }
 
     /**
@@ -409,13 +423,14 @@ class InputSystem(
      * - WASD: Horizontal camera movement
      * - Space/Shift: Vertical camera movement
      * - Home: Reset camera position
+     * - Gizmo tools: Configurable via EditorInputMappings
      *
      * @param editorInput Editor input state to write to
      */
     private fun pollEditorKeyboardInput(editorInput: EditorInputStateComponent) {
         val moveInput = Vector2f()
 
-        // WASD movement
+        // WASD movement (hardcoded - not rebindable in editor)
         if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_W)) moveInput.y += 1f
         if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_S)) moveInput.y -= 1f
         if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_A)) moveInput.x -= 1f
@@ -428,16 +443,36 @@ class InputSystem(
 
         editorInput.moveDirection.set(moveInput)
 
-        // Vertical movement (Space/Shift)
+        // Vertical movement (Space/Shift - hardcoded)
         var verticalInput = 0f
         if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_SPACE)) verticalInput += 1f
         if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) verticalInput -= 1f
 
         editorInput.verticalMovement = verticalInput
 
-        // Reset (Home key)
+        // Reset (Home key - hardcoded)
         if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_HOME)) {
             editorInput.resetPressed = true
+        }
+
+        // Gizmo mode inputs (configurable via EditorInputMappings)
+        if (inputProvider.keyBeginPress(editorMappings.gizmoTranslate.keyboardKey)) {
+            editorInput.gizmoTranslatePressed = true
+        }
+        if (inputProvider.keyBeginPress(editorMappings.gizmoRotate.keyboardKey)) {
+            editorInput.gizmoRotatePressed = true
+        }
+        if (inputProvider.keyBeginPress(editorMappings.gizmoScale.keyboardKey)) {
+            editorInput.gizmoScalePressed = true
+        }
+        if (inputProvider.keyBeginPress(editorMappings.gizmoSelect.keyboardKey)) {
+            editorInput.gizmoSelectPressed = true
+        }
+        if (inputProvider.keyBeginPress(editorMappings.measureTool.keyboardKey)) {
+            editorInput.measureToolPressed = true
+        }
+        if (inputProvider.keyBeginPress(editorMappings.deselectAll.keyboardKey)) {
+            editorInput.deselectAllPressed = true
         }
     }
 
