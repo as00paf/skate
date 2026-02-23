@@ -16,16 +16,8 @@
 - [x] **A24.3: Remove hardcoded camera-offset point light** from LightingUniformsLoader
 - [x] **A24.4: Delete lighting hacks** that ensure objects are always lit
 - [x] **A24.5: Refactor to single directional light** (remove separate Sun/Moon lights)
-- [ ] **A24.6: Create DirectionalLightComponent**
-  - `direction: Vector3f`
-  - `color: Vector3f`
-  - `intensity: Float`
-  - `lightSpaceMatrix: Matrix4f`
-
-- [ ] **A24.7: Create DirectionalLightSystem**
-  - Reads DayNightCycleComponent for sun direction/color/intensity
-  - Computes lightSpaceMatrix for shadow mapping
-  - Uploads light uniforms to shader
+- [x] **A24.6: Create DirectionalLightComponent**
+- [x] **A24.7: Create DirectionalLightSystem**
 
 ### Phase 2 — Implement Basic Directional Shadow Mapping
 

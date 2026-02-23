@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
@@ -82,7 +83,10 @@ class GeometryPass(
         defaultShader.uploadMat4f(Attribs.VIEW_MATRIX, camera.createViewMatrix())
 
         // Upload lighting uniforms
-        lightingUniformsLoader.loadLightingUniforms(defaultShader, camera, scene.sceneData)
+        val directionalLight = scene.gameObjectManager.gameObjects.find {
+            it.getComponent<DirectionalLightComponent>() != null
+        }?.getComponent<DirectionalLightComponent>()
+        lightingUniformsLoader.loadLightingUniforms(defaultShader, camera, scene.sceneData, directionalLight)
 
         // Render all 3D game objects
         scene.gameObjectManager.gameObjects.forEach { go ->

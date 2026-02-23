@@ -93,9 +93,12 @@ class DayNightCycleSystem(
      * - Angle ±180° at midnight (sun below)
      */
     private fun updateSunDirection(dayNight: DayNightCycleComponent) {
+        // Convert cycle time to angle (0-24 hours → 0-360 degrees)
+        // Offset by 6 hours so noon = 0° (sun at zenith)
         val hoursFromNoon = dayNight.cycleTime - 12f
         val angleRadians = Math.toRadians(((hoursFromNoon / 24f) * 360f - 90f).toDouble())
 
+        // Sun direction: Y component is sin (height), X component is cos (horizontal)
         dayNight.sunDirection.set(
             cos(angleRadians).toFloat(),
             sin(angleRadians).toFloat(),

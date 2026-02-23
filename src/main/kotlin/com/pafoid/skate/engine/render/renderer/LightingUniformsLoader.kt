@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -16,17 +17,26 @@ class LightingUniformsLoader {
      *
      * @param shader The shader to upload uniforms to
      * @param camera The camera for position and view matrix
-     * @param sceneData The scene data containing lighting configuration
+     * @param sceneData The scene data containing ambient light and fog
+     * @param directionalLight The directional light component
      */
     fun loadLightingUniforms(
         shader: Shader,
         camera: Camera,
-        sceneData: SceneData
+        sceneData: SceneData,
+        directionalLight: DirectionalLightComponent?
     ) {
         // Directional light (sun)
-        shader.uploadVec3f(Uniforms.SUN_DIRECTION, sceneData.sun.direction)
-        val finalSunColor = Vector3f(sceneData.sun.color).mul(sceneData.sun.intensity)
-        shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
+        if (directionalLight != null) {
+            shader.uploadVec3f(Uniforms.SUN_DIRECTION, directionalLight.direction)
+            val finalSunColor = Vector3f(directionalLight.color).mul(directionalLight.intensity)
+            shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
+        } else {
+            // Fallback to sceneData.sun for backwards compatibility
+            shader.uploadVec3f(Uniforms.SUN_DIRECTION, sceneData.sun.direction)
+            val finalSunColor = Vector3f(sceneData.sun.color).mul(sceneData.sun.intensity)
+            shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
+        }
 
         // Ambient light
         val ambient = if (sceneData.useAmbient) sceneData.ambientLight else Vector3f(0f, 0f, 0f)
