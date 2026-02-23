@@ -24,15 +24,10 @@
 - [x] **A24.8: Create ShadowMap class**
 - [x] **A24.9: Create ShadowRenderer**
 - [x] **A24.10: Configure orthographic projection** for directional light
-- [ ] **A24.11: Compute lightSpaceMatrix** (`lightProjection * lightView`)
-
-- [ ] **A24.12: Pass lightSpaceMatrix** to shadow pass shader and main PBR shader
-
-- [ ] **A24.13: Implement shadow depth-only shader**
-  - Vertex: apply skinning
-  - Fragment: empty (depth only)
-
-- [ ] **A24.14: Ensure skinned meshes run animation** in shadow pass
+- [x] **A24.11: Compute lightSpaceMatrix** (`lightProjection * lightView`)
+- [x] **A24.12: Pass lightSpaceMatrix** to shadow pass shader and main PBR shader
+- [x] **A24.13: Implement shadow depth-only shader**
+- [x] **A24.14: Ensure skinned meshes run animation** in shadow pass
 
 ### Phase 3 — Modify PBR Shader for Shadows
 

@@ -19,18 +19,23 @@ class LightingUniformsLoader {
      * @param camera The camera for position and view matrix
      * @param sceneData The scene data containing ambient light and fog
      * @param directionalLight The directional light component
+     * @param shadowMapTextureId The shadow map depth texture ID (optional)
      */
     fun loadLightingUniforms(
         shader: Shader,
         camera: Camera,
         sceneData: SceneData,
-        directionalLight: DirectionalLightComponent?
+        directionalLight: DirectionalLightComponent?,
+        shadowMapTextureId: Int = 0
     ) {
         // Directional light (sun)
         if (directionalLight != null) {
             shader.uploadVec3f(Uniforms.SUN_DIRECTION, directionalLight.direction)
             val finalSunColor = Vector3f(directionalLight.color).mul(directionalLight.intensity)
             shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
+
+            // Upload light space matrix for shadow mapping
+            shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, directionalLight.lightSpaceMatrix)
         } else {
             // Fallback to sceneData.sun for backwards compatibility
             shader.uploadVec3f(Uniforms.SUN_DIRECTION, sceneData.sun.direction)
@@ -41,6 +46,11 @@ class LightingUniformsLoader {
         // Ambient light
         val ambient = if (sceneData.useAmbient) sceneData.ambientLight else Vector3f(0f, 0f, 0f)
         shader.uploadVec3f(Uniforms.AMBIENT_LIGHT, ambient)
+
+        // Shadow map texture (if available)
+        if (shadowMapTextureId != 0) {
+            shader.uploadInt(Uniforms.SHADOW_MAP, 4) // Use texture unit 4
+        }
 
         // Fog
         shader.uploadVec3f(Uniforms.FOG_COLOR, sceneData.fogColor)

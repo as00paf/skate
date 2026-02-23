@@ -78,13 +78,16 @@ class RenderResourcesFactory(
         val renderers = createRenderers(shaders, resourceManager)
 
         logger.logEngine("Creating render passes...")
+        val shadowMap = ShadowMap()
+        shadowMap.initialize()
         val renderPasses = createRenderPasses(
             shaders = shaders,
             renderers = renderers,
             frameBuffer = frameBuffer,
             pickingTexture = pickingTexture,
             width = width,
-            height = height
+            height = height,
+            shadowMap = shadowMap
         )
 
         logger.logEngine("Render resources initialization complete.")
@@ -94,7 +97,8 @@ class RenderResourcesFactory(
             frameBuffer = frameBuffer,
             pickingTexture = pickingTexture,
             renderers = renderers,
-            renderPasses = renderPasses
+            renderPasses = renderPasses,
+            shadowMap = shadowMap
         )
     }
 
@@ -171,7 +175,8 @@ class RenderResourcesFactory(
         frameBuffer: FrameBuffer,
         pickingTexture: PickingTexture,
         width: Int,
-        height: Int
+        height: Int,
+        shadowMap: ShadowMap? = null
     ): RenderPasses {
         val renderer2D = Renderer2D()
         val pickingRenderer = PickingRenderer(resourceManager, logger, sceneManager)
@@ -190,6 +195,7 @@ class RenderResourcesFactory(
             modelRenderer = renderers.model
         )
 
+        val shadowMapTextureId = shadowMap?.getDepthTextureId() ?: 0
         val geometryPass = GeometryPass(
             defaultShader = shaders.default,
             batchShader = shaders.batch,
@@ -199,7 +205,8 @@ class RenderResourcesFactory(
             frameBuffer = frameBuffer,
             lightingUniformsLoader = lightingUniformsLoader,
             getUseFbo = { true }, // Default to FBO, can be made configurable
-            sceneManager = sceneManager
+            sceneManager = sceneManager,
+            shadowMapTextureId = shadowMapTextureId
         )
 
         val debugPass = DebugPass(debugRenderer)

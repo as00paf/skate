@@ -64,17 +64,20 @@ data class RenderPasses(
  * - PickingTexture: Render target for object picking
  * - Renderers: Renderer instances for different object types
  * - RenderPasses: Organized render passes for the pipeline
+ * - ShadowMap: Depth texture for shadow mapping
  *
  * @param shaders All shader programs
  * @param frameBuffer The framebuffer for FBO rendering
  * @param pickingTexture The picking render target
  * @param renderers All renderer instances
  * @param renderPasses All render passes
+ * @param shadowMap Optional shadow map for shadow mapping
  */
 data class RenderResources(
     val shaders: Shaders,
     val frameBuffer: FrameBuffer,
     val pickingTexture: PickingTexture,
     val renderers: Renderers,
-    val renderPasses: RenderPasses
+    val renderPasses: RenderPasses,
+    val shadowMap: ShadowMap? = null
 )

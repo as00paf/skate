@@ -83,5 +83,6 @@ object ShaderConst {
 
         const val LIGHT_SPACE_MATRIX = "uLightSpaceMatrix"
         const val MODEL_MATRIX = "uModelMatrix"
+        const val SHADOW_MAP = "uShadowMap"
     }
 }

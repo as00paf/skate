@@ -45,6 +45,7 @@ import org.lwjgl.opengl.GL30.glViewport
  * @param lightingUniformsLoader Helper for uploading lighting uniforms
  * @param sceneManager The scene manager for accessing current scene
  * @param getUseFbo Lambda to get current FBO usage setting at render time
+ * @param shadowMapTextureId Optional shadow map texture ID for shadow mapping
  */
 class GeometryPass(
     private val defaultShader: Shader,
@@ -55,7 +56,8 @@ class GeometryPass(
     private val frameBuffer: FrameBuffer,
     private val lightingUniformsLoader: LightingUniformsLoader,
     private val getUseFbo: () -> Boolean,
-    private val sceneManager: SceneManager
+    private val sceneManager: SceneManager,
+    private val shadowMapTextureId: Int = 0
 ) : RenderPass {
 
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
@@ -86,7 +88,13 @@ class GeometryPass(
         val directionalLight = scene.gameObjectManager.gameObjects.find {
             it.getComponent<DirectionalLightComponent>() != null
         }?.getComponent<DirectionalLightComponent>()
-        lightingUniformsLoader.loadLightingUniforms(defaultShader, camera, scene.sceneData, directionalLight)
+        lightingUniformsLoader.loadLightingUniforms(
+            defaultShader,
+            camera,
+            scene.sceneData,
+            directionalLight,
+            shadowMapTextureId
+        )
 
         // Render all 3D game objects
         scene.gameObjectManager.gameObjects.forEach { go ->
