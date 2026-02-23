@@ -7,8 +7,7 @@ import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 
 /**
- * Responsible for uploading lighting-related uniforms to shaders.
- * Encapsulates all lighting uniform uploads including sun, moon, ambient, fog, and camera position.
+ * Responsible for uploading lighting uniforms to shaders.
  */
 class LightingUniformsLoader {
 
@@ -24,20 +23,7 @@ class LightingUniformsLoader {
         camera: Camera,
         sceneData: SceneData
     ) {
-        val light = sceneData.light
-
-        // Offset light from camera slightly so we get some shading but plenty of light
-        light.position.set(camera.position).add(5f, 5f, 10f)
-
-        // Point light
-        shader.uploadVec3f(Uniforms.LIGHT_POSITION, light.position)
-        shader.uploadVec3f(Uniforms.LIGHT_COLOR, Vector3f(1.5f, 1.5f, 1.5f)) // Brighter light
-
-        // Ambient light
-        val ambient = if (sceneData.useAmbient) sceneData.ambientLight else Vector3f(0f, 0f, 0f)
-        shader.uploadVec3f(Uniforms.AMBIENT_LIGHT, ambient)
-
-        // Sun
+        // Directional light (sun)
         shader.uploadVec3f(Uniforms.SUN_DIRECTION, sceneData.sun.direction)
         val finalSunColor = if (sceneData.useSun) {
             Vector3f(sceneData.sun.color).mul(sceneData.sun.intensity)
@@ -46,10 +32,9 @@ class LightingUniformsLoader {
         }
         shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
 
-        // Moon
-        shader.uploadVec3f(Uniforms.MOON_DIRECTION, sceneData.moon.direction)
-        val finalMoonColor = Vector3f(sceneData.moon.color).mul(sceneData.moon.intensity)
-        shader.uploadVec3f(Uniforms.MOON_COLOR, finalMoonColor)
+        // Ambient light
+        val ambient = if (sceneData.useAmbient) sceneData.ambientLight else Vector3f(0f, 0f, 0f)
+        shader.uploadVec3f(Uniforms.AMBIENT_LIGHT, ambient)
 
         // Fog
         shader.uploadVec3f(Uniforms.FOG_COLOR, sceneData.fogColor)

@@ -11,24 +11,10 @@
 
 ### Phase 1 — Remove Architectural Problems
 
-- [ ] **A24.1: Create DayNightCycleComponent**
-  - `cycleTime: Float` (0-24 hours or normalized 0-1)
-  - `dayDuration: Float` (real-time seconds per game day)
-  - `sunDirection: Vector3f` (computed)
-  - `sunColor: Vector3f` (computed, warm→cool interpolation)
-  - `ambientColor: Vector3f` (computed)
-  - `shadowIntensity: Float` (computed, lower at night)
-
-- [ ] **A24.2: Create DayNightCycleSystem**
-  - Updates cycleTime based on delta time
-  - Computes sun direction from cycle time (trigonometric)
-  - Interpolates colors (daylight warm → dusk orange → night cool)
-  - Writes computed values to DayNightCycleComponent
-
-- [ ] **A24.3: Remove hardcoded camera-offset point light** from LightingUniformsLoader
-
-- [ ] **A24.4: Delete lighting hacks** that ensure objects are always lit
-
+- [x] **A24.1: Create DayNightCycleComponent**
+- [x] **A24.2: Create DayNightCycleSystem**
+- [x] **A24.3: Remove hardcoded camera-offset point light** from LightingUniformsLoader
+- [x] **A24.4: Delete lighting hacks** that ensure objects are always lit
 - [ ] **A24.5: Refactor to single directional light** (remove separate Sun/Moon lights)
 
 - [ ] **A24.6: Create DirectionalLightComponent**
