@@ -15,8 +15,7 @@
 - [x] **A24.2: Create DayNightCycleSystem**
 - [x] **A24.3: Remove hardcoded camera-offset point light** from LightingUniformsLoader
 - [x] **A24.4: Delete lighting hacks** that ensure objects are always lit
-- [ ] **A24.5: Refactor to single directional light** (remove separate Sun/Moon lights)
-
+- [x] **A24.5: Refactor to single directional light** (remove separate Sun/Moon lights)
 - [ ] **A24.6: Create DirectionalLightComponent**
   - `direction: Vector3f`
   - `color: Vector3f`

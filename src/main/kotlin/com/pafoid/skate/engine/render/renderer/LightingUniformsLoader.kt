@@ -25,11 +25,7 @@ class LightingUniformsLoader {
     ) {
         // Directional light (sun)
         shader.uploadVec3f(Uniforms.SUN_DIRECTION, sceneData.sun.direction)
-        val finalSunColor = if (sceneData.useSun) {
-            Vector3f(sceneData.sun.color).mul(sceneData.sun.intensity)
-        } else {
-            Vector3f(0f, 0f, 0f)
-        }
+        val finalSunColor = Vector3f(sceneData.sun.color).mul(sceneData.sun.intensity)
         shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
 
         // Ambient light

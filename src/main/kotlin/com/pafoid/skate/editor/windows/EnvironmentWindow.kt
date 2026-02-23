@@ -54,11 +54,6 @@ class EnvironmentWindow : KoinComponent {
             ImGui.separator()
             ImGui.text("${Icons.SUN} ${stringManager.getString("lbl.environment.sun")}")
 
-            val useSun = ImBoolean(scene.sceneData.useSun)
-            if (ImGui.checkbox(stringManager.getString("lbl.environment.use_sun"), useSun)) {
-                scene.sceneData.useSun = useSun.get()
-            }
-
             val sunDir = floatArrayOf(scene.sceneData.sun.direction.x, scene.sceneData.sun.direction.y, scene.sceneData.sun.direction.z)
             if (ImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f, -1f, 1f)) {
                 scene.sceneData.sun.direction.set(sunDir[0], sunDir[1], sunDir[2]).normalize()
@@ -108,48 +103,30 @@ class EnvironmentWindow : KoinComponent {
     }
 
     private fun updateEnvironment(scene: Scene) {
-        val t = scene.sceneData.timeOfDay / 24.0f // Map to 0..1
-        
-        // 1. Sun & Moon Direction
-        // The dome rotates by -angle + skyRotation
+        val t = scene.sceneData.timeOfDay / 24.0f
+
         val angle = (t - 0.5f) * 2.0f * PI.toFloat()
         val totalRotation = -angle + Math.toRadians(scene.sceneData.skyRotation.toDouble()).toFloat()
-        
-        // Sun position (starts at -Z in local texture space usually, but let's assume it matches the dome rotation)
-        // We'll calculate it so it matches the SkyDomeRenderer's modelMatrix rotation
-        scene.sceneData.sun.direction.set(0f, 0f, -1f) // Base direction (forward)
-        // Rotate it to match the dome
-        val rotMatrix = Matrix4f().rotateY(totalRotation).rotateX(Math.toRadians(15.0).toFloat()) // Slight incline
+
+        scene.sceneData.sun.direction.set(0f, 0f, -1f)
+        val rotMatrix = Matrix4f().rotateY(totalRotation).rotateX(Math.toRadians(15.0).toFloat())
         val dir4 = Vector4f(scene.sceneData.sun.direction, 0f)
         rotMatrix.transform(dir4)
         scene.sceneData.sun.direction.set(dir4.x, dir4.y, dir4.z).normalize()
-        
-        // Moon position (opposite to sun)
-        scene.sceneData.moon.direction.set(scene.sceneData.sun.direction).negate()
 
-        // 2. Intensities
         val sunCos = -scene.sceneData.sun.direction.y
-        
         val sunIntensity = sunCos.coerceIn(0f, 1f)
-        val moonIntensity = (-sunCos).coerceIn(0f, 1f)
-        
         scene.sceneData.sun.intensity = sunIntensity * 1.5f
-        scene.sceneData.moon.intensity = moonIntensity * 0.5f // Moon is dimmer
 
-        // 3. Colors
         val dayColor = Vector3f(1f, 1f, 0.9f)
         val sunsetColor = Vector3f(1f, 0.4f, 0.2f)
-        val nightMoonColor = Vector3f(0.4f, 0.5f, 0.8f) // Bluish moon light
-        
         scene.sceneData.sun.color.set(dayColor).lerp(sunsetColor, 1f - sunIntensity)
-        scene.sceneData.moon.color.set(nightMoonColor)
 
-        // 4. Sky Color
         val noonSky = Vector3f(0.5f, 0.7f, 1.0f)
         val sunsetSky = Vector3f(1.0f, 0.4f, 0.2f)
-        val twilightSky = Vector3f(0.1f, 0.15f, 0.35f) // Deep twilight blue
+        val twilightSky = Vector3f(0.1f, 0.15f, 0.35f)
         val nightSky = Vector3f(0.02f, 0.02f, 0.05f)
-        
+
         if (sunCos > 0.2f) {
             val factor = ((sunCos - 0.2f) / 0.8f).coerceIn(0f, 1f)
             scene.sceneData.skyColor.set(sunsetSky).lerp(noonSky, factor)
@@ -163,12 +140,10 @@ class EnvironmentWindow : KoinComponent {
             scene.sceneData.skyColor.set(nightSky)
         }
 
-        // 5. Fog
         scene.sceneData.fogColor.set(scene.sceneData.skyColor)
         scene.sceneData.fogDensity = 0.0005f + (1f - sunIntensity.coerceAtLeast(0.5f)) * 0.0006f
         scene.sceneData.fogGradient = 0.8f
 
-        // 6. Dynamic Ambient
         val baseAmbient = Vector3f(0.05f, 0.05f, 0.1f)
         val dayAmbient = Vector3f(0.2f, 0.2f, 0.2f)
         scene.sceneData.ambientLight.set(baseAmbient).lerp(dayAmbient, sunIntensity)

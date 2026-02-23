@@ -10,11 +10,9 @@ import org.joml.Vector3f
 data class SceneData(
     @Contextual var light: Light = Light(Vector3f(0f, 0f, 20f)),
     var sun: DirectionalLight = DirectionalLight(),
-    var moon: DirectionalLight = DirectionalLight(),
-    var useSun: Boolean = true,
     var useAmbient: Boolean = true,
-    var timeOfDay: Float = 12.0f, // 0.0 to 24.0, 12.0 is noon
-    @Contextual var ambientLight: Vector3f = Vector3f(0.3f, 0.3f, 0.35f), // Brighter ambient light
+    var timeOfDay: Float = 12.0f,
+    @Contextual var ambientLight: Vector3f = Vector3f(0.3f, 0.3f, 0.35f),
     @Contextual var skyColor: Vector3f = Vector3f(0.6f, 0.7f, 0.9f),
     @Contextual var skyTint: Vector3f = Vector3f(1.0f, 1.0f, 1.0f),
     var skyExposure: Float = 1.0f,
