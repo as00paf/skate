@@ -27,6 +27,8 @@ out vec3 fNormal;      // World Space Normal
 out vec4 fColor;
 out mat3 fTBN;         // Tangent-Bitangent-Normal matrix for Normal Mapping
 out float fVisibility;
+out vec3 fFragPosLightSpace;// Position in light space for shadow mapping (xyz)
+out float fFragPosLightSpaceW;// w component for perspective divide
 
 uniform mat4 transformationMatrix; // Model-to-World Matrix
 uniform mat4 projectionMatrix;     // View-to-Clip Matrix
@@ -35,6 +37,9 @@ uniform mat4 viewMatrix;           // World-to-View (Camera) Matrix
 uniform float uTextureScale;
 uniform float uFogDensity;
 uniform float uFogGradient;
+
+// --- Shadow Mapping Uniforms ---
+uniform mat4 uLightSpaceMatrix;// Light's view-projection matrix
 
 const int MAX_BONES = 100;
 uniform mat4 u_JointMatrices[MAX_BONES];
@@ -57,11 +62,16 @@ void main()
     // 1. World Space: Apply skinning then model-to-world transformation
     vec4 worldPos = transformationMatrix * skinMatrix * vec4(aPos, 1.0);
     fWorldPos = worldPos.xyz;
-    
-    // 2. View Space: Transform world coordinates relative to the camera
+
+    // 2. Light Space: Transform to light's view space for shadow mapping
+    vec4 fragPosLightSpace = uLightSpaceMatrix * worldPos;
+    fFragPosLightSpace = fragPosLightSpace.xyz;
+    fFragPosLightSpaceW = fragPosLightSpace.w;
+
+    // 3. View Space: Transform world coordinates relative to the camera
     vec4 posRelativeToCamera = viewMatrix * worldPos;
-    
-    // 3. Clip Space: Final transformation for rasterization
+
+    // 4. Clip Space: Final transformation for rasterization
     gl_Position = projectionMatrix * posRelativeToCamera;
     
     fTexCoords = aTexCoords * uTextureScale;
@@ -95,6 +105,8 @@ in vec3 fNormal;
 in vec4 fColor;
 in mat3 fTBN;
 in float fVisibility;
+in vec3 fFragPosLightSpace;
+in float fFragPosLightSpaceW;
 
 // --- PBR Textures (glTF 2.0 Standard) ---
 uniform sampler2D u_BaseColorTexture;
@@ -120,6 +132,9 @@ uniform vec3 uMoonColor;
 uniform vec3 uAmbientLight;
 uniform vec3 uFogColor;
 
+// --- Shadow Mapping ---
+uniform sampler2D uShadowMap;// Shadow map depth texture
+
 // --- Feature Toggles ---
 uniform bool u_HasNormalMap;
 uniform bool u_HasMetallicRoughnessTexture;
@@ -133,6 +148,30 @@ out vec4 color;
 const float PI = 3.14159265359;
 
 // --- PBR Math Functions (Cook-Torrance Microfacet Model) ---
+
+// Shadow Mapping Functions
+
+// Calculate shadow factor using depth comparison
+float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW)
+{
+    // Perform perspective divide to get NDC coordinates
+    vec3 projCoords = fragPosLightSpace / fragPosLightSpaceW;
+
+    // Transform from [-1,1] to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+
+    // Get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+
+    // Sample closest depth from shadow map
+    float closestDepth = texture(uShadowMap, projCoords.xy).r;
+
+    // Simple depth comparison with bias
+    float bias = 0.005;
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
 
 // Normal Distribution Function (NDF) - GGX/Trowbridge-Reitz
 // Describes the alignment of microfacets.
@@ -239,20 +278,23 @@ void main()
         float radianceScale = 1.0;
         vec3 radiance = uSunColor * radianceScale;
 
-        float NDF = DistributionGGX(N, H, roughness);   
-        float G   = GeometrySmith(N, V, L, roughness);    
-        vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);        
-        
+        float NDF = DistributionGGX(N, H, roughness);
+        float G   = GeometrySmith(N, V, L, roughness);
+        vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
         vec3 nominator    = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001; 
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
         vec3 specular = nominator / denominator;
-        
+
         vec3 kS = F;
         vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;	  
+        kD *= 1.0 - metallic;
 
         float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL;
+
+        // Apply shadow factor to sun light
+        float shadow = calculateShadow(fFragPosLightSpace, fFragPosLightSpaceW);
+        Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL * (1.0 - shadow);
     }
 
     // --- Moon Light Pass ---

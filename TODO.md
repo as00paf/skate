@@ -31,21 +31,11 @@
 
 ### Phase 3 — Modify PBR Shader for Shadows
 
-- [ ] **A24.15: Add shadow uniforms**
-  - `uniform sampler2D uShadowMap`
-  - `uniform mat4 uLightSpaceMatrix`
-
-- [ ] **A24.16: Calculate FragPosLightSpace** in vertex shader
-
-- [ ] **A24.17: Implement shadow comparison** in fragment shader
-  - Project coordinates to 0..1
-  - Sample depth from shadow map
-  - Compare `currentDepth > closestDepth + bias`
-
-- [ ] **A24.18: Add normal-based shadow bias**
-  - `bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005)`
-
-- [ ] **A24.19: Apply shadow factor** to directional light contribution
+- [x] **A24.15: Add shadow uniforms**
+- [x] **A24.16: Calculate FragPosLightSpace** in vertex shader
+- [x] **A24.17: Implement shadow comparison** in fragment shader
+- [x] **A24.18: Add normal-based shadow bias**
+- [x] **A24.19: Apply shadow factor** to directional light contribution
 
 ### Phase 4 — Add PCF (Soft Shadows)
 
