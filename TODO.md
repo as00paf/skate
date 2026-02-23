@@ -240,20 +240,13 @@ data class InputSettings(
 
 #### Phase 4: UI & Configuration
 
-- [ ] **A21.10: Extend Key Binding UI** - Update `editor/imgui/ImGuiLayer.kt`:
-  - Extend renderKeyBindingsWindow() for gameplay inputs
-  - Add tabs: Editor, Gameplay, Camera, Gamepad
-  - Support rebinding all inputs
-  - Add reset to default functionality
-  - **Impact**: Medium - User-facing configuration
-
-- [ ] **A21.11: Create Input Testing UI** - New debug window:
+- [ ] **A21.10: Create Input Testing UI** - New debug window:
   - Show current input state (buttons, axes)
   - Visualize deadzones and thresholds
   - Test bindings in real-time
   - **Impact**: Low - Development tool
 
-- [ ] **A21.12: Create Settings UI** - Extended settings window:
+- [ ] **A21.11: Create Settings UI** - Extended settings window:
   - Sensitivity sliders (mouse, controller)
   - Deadzone configuration
   - **Impact**: Medium - User-facing configuration
