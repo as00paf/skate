@@ -1,5 +1,3 @@
-# 🛹 SkateSim MVP - Master TODO
-
 ## ✅ v0.21: Input Mapping & Configuration System - COMPLETED
 
 ### Summary
@@ -29,17 +27,7 @@ rebindable controls, configurable sensitivities/deadzones, and proper architectu
 #### Phase 4: UI & Configuration
 
 - [x] **A21.10: Create Input Testing UI** - Debug window for visualizing input state, deadzones, and bindings
-
----
-
-## 🔴 v0.22: UI & Configuration (In Progress)
-
-### Tasks
-
-- [ ] **A21.11: Create Settings UI** - Extended settings window:
-  - Sensitivity sliders (mouse, controller)
-  - Deadzone configuration
-  - **Impact**: Medium - User-facing configuration
+- [x] **A21.11: Create Settings UI** - User-facing settings window with sliders for all input/physics configuration
 
 ---
 
@@ -47,5 +35,4 @@ rebindable controls, configurable sensitivities/deadzones, and proper architectu
 
 - See `input_architecture_review.md` for detailed architecture analysis
 - See CHANGELOG.md for completed v0.15 through v0.20 items
-- v0.21 tasks (A21.1-A21.10) completed - full input mapping and configuration system in place including debug UI
-- v0.22 will complete the user-facing settings UI for input configuration
+- v0.21 tasks (A21.1-A21.11) COMPLETED - full input mapping and configuration system with complete UI

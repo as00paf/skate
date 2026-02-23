@@ -17,6 +17,7 @@ import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
 import com.pafoid.skate.editor.windows.PropertiesWindow
 import com.pafoid.skate.editor.windows.SceneHierarchyWindow
+import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -102,6 +103,7 @@ class ImGuiLayer(
     private val hierarchyWindow = SceneHierarchyWindow()
     val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
     private val inputTestingWindow = InputTestingWindow(inputProvider, settingsManager, stringManager)
+    private val settingsWindow = SettingsWindow(settingsManager, stringManager)
 
     // Window Visibility Flags
     private val showHierarchy = ImBoolean(true)
@@ -208,6 +210,7 @@ class ImGuiLayer(
             if (showConsole.get()) consoleWindow.imgui(showConsole)
             if (showPhysicsTuner.get()) physicsTunerWindow.imgui(currentScene)
             if (showInputTesting.get()) inputTestingWindow.imgui(currentScene)
+            settingsWindow.render()
             keyBindingsWindow.render()
         }
 
@@ -370,6 +373,9 @@ class ImGuiLayer(
                 separator()
                 if (menuItem(stringManager.getString("menu.settings.keybindings"))) {
                     keyBindingsWindow.isOpen = true
+                }
+                if (menuItem(stringManager.getString("menu.settings.settings"))) {
+                    settingsWindow.isOpen = true
                 }
 
                 endMenu()

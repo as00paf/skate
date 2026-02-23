@@ -3,7 +3,7 @@
     "height": 1080,
     "vsync": false,
     "fullscreen": true,
-    "borderless": false,
+    "borderless": true,
     "gamepadOverlaySize": 0.214,
     "showGamepadOverlay": true,
     "unitSystem": "METRIC",
@@ -130,31 +130,31 @@
             "inverted": false
         },
         "editorGizmoTranslate": {
-          "keyboardKey": 49,
+            "keyboardKey": 49,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
         },
         "editorGizmoRotate": {
-          "keyboardKey": 50,
+            "keyboardKey": 50,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
         },
         "editorGizmoScale": {
-          "keyboardKey": 51,
+            "keyboardKey": 51,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
         },
         "editorGizmoSelect": {
-          "keyboardKey": 52,
+            "keyboardKey": 52,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
         },
         "editorMeasure": {
-          "keyboardKey": 53,
+            "keyboardKey": 53,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
