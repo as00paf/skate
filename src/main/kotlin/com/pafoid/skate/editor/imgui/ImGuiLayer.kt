@@ -11,6 +11,7 @@ import com.pafoid.skate.editor.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.windows.ConsoleWindow
 import com.pafoid.skate.editor.windows.EnvironmentWindow
 import com.pafoid.skate.editor.windows.GameViewWindow
+import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
 import com.pafoid.skate.editor.windows.PropertiesWindow
@@ -36,7 +37,6 @@ import imgui.glfw.ImGuiImplGlfw
 import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.beginMenuBar
-import imgui.internal.ImGui.button
 import imgui.internal.ImGui.checkbox
 import imgui.internal.ImGui.combo
 import imgui.internal.ImGui.createContext
@@ -57,20 +57,17 @@ import imgui.internal.ImGui.getID
 import imgui.internal.ImGui.getIO
 import imgui.internal.ImGui.getMainViewport
 import imgui.internal.ImGui.image
-import imgui.internal.ImGui.isKeyPressed
 import imgui.internal.ImGui.menuItem
 import imgui.internal.ImGui.newFrame
 import imgui.internal.ImGui.popStyleVar
 import imgui.internal.ImGui.pushStyleVar
 import imgui.internal.ImGui.render
 import imgui.internal.ImGui.renderPlatformWindowsDefault
-import imgui.internal.ImGui.sameLine
 import imgui.internal.ImGui.separator
 import imgui.internal.ImGui.setNextWindowPos
 import imgui.internal.ImGui.setNextWindowSize
 import imgui.internal.ImGui.setNextWindowViewport
 import imgui.internal.ImGui.sliderFloat
-import imgui.internal.ImGui.text
 import imgui.internal.ImGui.updatePlatformWindows
 import imgui.type.ImBoolean
 import imgui.type.ImInt
@@ -102,6 +99,7 @@ class ImGuiLayer(
     private val environmentWindow = EnvironmentWindow()
     private val profilerWindow = ProfilerWindow()
     private val hierarchyWindow = SceneHierarchyWindow()
+    val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
 
     // Window Visibility Flags
     private val showHierarchy = ImBoolean(true)
@@ -112,8 +110,6 @@ class ImGuiLayer(
     private val showProfiler = ImBoolean(true)
     private val showConsole = ImBoolean(true)
     private val showPhysicsTuner = ImBoolean(true)
-    private var showKeyBindings = false
-    private var keyBindingAction: String? = null
     private var isViewportMaximized = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
@@ -208,7 +204,7 @@ class ImGuiLayer(
             if (showProfiler.get()) profilerWindow.imgui()
             if (showConsole.get()) consoleWindow.imgui(showConsole)
             if (showPhysicsTuner.get()) physicsTunerWindow.imgui(currentScene)
-            if (showKeyBindings) renderKeyBindingsWindow()
+            keyBindingsWindow.render()
         }
 
         endFrame()
@@ -369,7 +365,7 @@ class ImGuiLayer(
 
                 separator()
                 if (menuItem(stringManager.getString("menu.settings.keybindings"))) {
-                    showKeyBindings = true
+                    keyBindingsWindow.isOpen = true
                 }
 
                 endMenu()
@@ -398,83 +394,5 @@ class ImGuiLayer(
         imGuiGl3.shutdown()
         imGuiGlfw.shutdown()
         destroyContext()
-    }
-
-    private fun renderKeyBindingsWindow() {
-        if (begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.AlwaysAutoResize)) {
-            val settings = settingsManager.settings.keyBindings
-            
-            // Helper to draw a row
-            fun drawBindRow(label: String, currentKey: Int, bindAction: String) {
-                text(label)
-                sameLine(200f)
-                
-                val keyName = getKeyName(currentKey)
-                val btnText = if (keyBindingAction == bindAction) stringManager.getString("lbl.keybindings.press_key") else keyName
-
-                if (button("$btnText##$bindAction", 120f, 0f)) {
-                    keyBindingAction = bindAction
-                }
-            }
-
-            drawBindRow(stringManager.getString("lbl.keybindings.translate"), settings.gizmoTranslate, "gizmoTranslate")
-            drawBindRow(stringManager.getString("lbl.keybindings.rotate"), settings.gizmoRotate, "gizmoRotate")
-            drawBindRow(stringManager.getString("lbl.keybindings.scale"), settings.gizmoScale, "gizmoScale")
-            drawBindRow(stringManager.getString("lbl.keybindings.select"), settings.gizmoSelect, "gizmoSelect")
-            drawBindRow(stringManager.getString("lbl.keybindings.measure"), settings.gizmoMeasure, "gizmoMeasure")
-            drawBindRow(stringManager.getString("lbl.keybindings.deselect"), settings.deselect, "deselect")
-
-            separator()
-            if (button(stringManager.getString("btn.close"))) {
-                showKeyBindings = false
-                keyBindingAction = null
-                settingsManager.save()
-            }
-            
-            // Handle Binding
-            if (keyBindingAction != null) {
-                // Check for key press
-                for (i in 0..348) { // GLFW_KEY_LAST is 348
-                    if (isKeyPressed(i)) {
-                        // Assign key
-                        when (keyBindingAction) {
-                            "gizmoTranslate" -> settings.gizmoTranslate = i
-                            "gizmoRotate" -> settings.gizmoRotate = i
-                            "gizmoScale" -> settings.gizmoScale = i
-                            "gizmoSelect" -> settings.gizmoSelect = i
-                            "gizmoMeasure" -> settings.gizmoMeasure = i
-                            "deselect" -> settings.deselect = i
-                        }
-                        keyBindingAction = null
-                        settingsManager.save()
-                        break
-                    }
-                }
-            }
-        }
-        end()
-    }
-
-    private fun getKeyName(key: Int): String {
-        return when (key) {
-            GLFW.GLFW_KEY_ESCAPE -> "Esc"
-            GLFW.GLFW_KEY_ENTER -> "Enter"
-            GLFW.GLFW_KEY_TAB -> "Tab"
-            GLFW.GLFW_KEY_BACKSPACE -> "Backspace"
-            GLFW.GLFW_KEY_INSERT -> "Insert"
-            GLFW.GLFW_KEY_DELETE -> "Delete"
-            GLFW.GLFW_KEY_RIGHT -> "Right"
-            GLFW.GLFW_KEY_LEFT -> "Left"
-            GLFW.GLFW_KEY_DOWN -> "Down"
-            GLFW.GLFW_KEY_UP -> "Up"
-            GLFW.GLFW_KEY_PAGE_UP -> "PgUp"
-            GLFW.GLFW_KEY_PAGE_DOWN -> "PgDn"
-            GLFW.GLFW_KEY_HOME -> "Home"
-            GLFW.GLFW_KEY_END -> "End"
-            else -> {
-                val name = GLFW.glfwGetKeyName(key, 0)
-                name?.uppercase() ?: "Key $key"
-            }
-        }
     }
 }

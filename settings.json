@@ -130,31 +130,31 @@
             "inverted": false
         },
         "editorGizmoTranslate": {
-            "keyboardKey": 87,
+          "keyboardKey": 49,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
         },
         "editorGizmoRotate": {
-            "keyboardKey": 69,
+          "keyboardKey": 50,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
         },
         "editorGizmoScale": {
-            "keyboardKey": 82,
+          "keyboardKey": 51,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
         },
         "editorGizmoSelect": {
-            "keyboardKey": 81,
+          "keyboardKey": 52,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
         },
         "editorMeasure": {
-            "keyboardKey": 77,
+          "keyboardKey": 53,
             "gamepadButton": -1,
             "gamepadAxis": -1,
             "inverted": false
