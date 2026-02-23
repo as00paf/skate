@@ -21,12 +21,7 @@
 
 ### Phase 2 — Implement Basic Directional Shadow Mapping
 
-- [ ] **A24.8: Create ShadowMap class**
-  - FBO with depth texture (2048x2048)
-  - Configure GL_DEPTH_COMPONENT
-  - Set texture wrapping to CLAMP_TO_BORDER
-  - Set border color = vec4(1.0)
-
+- [x] **A24.8: Create ShadowMap class**
 - [ ] **A24.9: Create ShadowRenderSystem**
   - Bind shadow FBO
   - Set viewport to shadow resolution
