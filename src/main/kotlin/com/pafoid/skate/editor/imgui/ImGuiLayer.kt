@@ -11,6 +11,7 @@ import com.pafoid.skate.editor.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.windows.ConsoleWindow
 import com.pafoid.skate.editor.windows.EnvironmentWindow
 import com.pafoid.skate.editor.windows.GameViewWindow
+import com.pafoid.skate.editor.windows.InputTestingWindow
 import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
@@ -100,6 +101,7 @@ class ImGuiLayer(
     private val profilerWindow = ProfilerWindow()
     private val hierarchyWindow = SceneHierarchyWindow()
     val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
+    private val inputTestingWindow = InputTestingWindow(inputProvider, settingsManager, stringManager)
 
     // Window Visibility Flags
     private val showHierarchy = ImBoolean(true)
@@ -110,6 +112,7 @@ class ImGuiLayer(
     private val showProfiler = ImBoolean(true)
     private val showConsole = ImBoolean(true)
     private val showPhysicsTuner = ImBoolean(true)
+    private val showInputTesting = ImBoolean(false)
     private var isViewportMaximized = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
@@ -204,6 +207,7 @@ class ImGuiLayer(
             if (showProfiler.get()) profilerWindow.imgui()
             if (showConsole.get()) consoleWindow.imgui(showConsole)
             if (showPhysicsTuner.get()) physicsTunerWindow.imgui(currentScene)
+            if (showInputTesting.get()) inputTestingWindow.imgui(currentScene)
             keyBindingsWindow.render()
         }
 
@@ -380,6 +384,7 @@ class ImGuiLayer(
                     checkbox(stringManager.getString("window.profiler"), showProfiler)
                     checkbox(stringManager.getString("window.console"), showConsole)
                     checkbox(stringManager.getString("window.physics_tuner"), showPhysicsTuner)
+                    checkbox(stringManager.getString("window.input_testing"), showInputTesting)
                     endMenu()
                 }
                 endMenu()

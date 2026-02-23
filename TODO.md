@@ -26,22 +26,15 @@ rebindable controls, configurable sensitivities/deadzones, and proper architectu
 - [x] **A21.8: Fix EditorCamera** - Created EditorInputStateComponent, removed direct polling
 - [x] **A21.9: Update GizmoSystem** - Verified and documented input handling
 
-**Remaining Tasks:** (Moved to v0.22)
+#### Phase 4: UI & Configuration
 
-- [ ] **A21.10: Create Input Testing UI** - Debug window for visualizing input state
-- [ ] **A21.11: Create Settings UI** - Extended settings window with sensitivity sliders and deadzone configuration
+- [x] **A21.10: Create Input Testing UI** - Debug window for visualizing input state, deadzones, and bindings
 
 ---
 
 ## 🔴 v0.22: UI & Configuration (In Progress)
 
-### Remaining Tasks from v0.21
-
-- [ ] **A21.10: Create Input Testing UI** - New debug window:
-  - Show current input state (buttons, axes)
-  - Visualize deadzones and thresholds
-  - Test bindings in real-time
-  - **Impact**: Low - Development tool
+### Tasks
 
 - [ ] **A21.11: Create Settings UI** - Extended settings window:
   - Sensitivity sliders (mouse, controller)
@@ -54,5 +47,5 @@ rebindable controls, configurable sensitivities/deadzones, and proper architectu
 
 - See `input_architecture_review.md` for detailed architecture analysis
 - See CHANGELOG.md for completed v0.15 through v0.20 items
-- v0.21 tasks (A21.1-A21.9) completed - full input mapping and configuration system in place
-- v0.22 will complete the UI for input testing and settings configuration
+- v0.21 tasks (A21.1-A21.10) completed - full input mapping and configuration system in place including debug UI
+- v0.22 will complete the user-facing settings UI for input configuration
