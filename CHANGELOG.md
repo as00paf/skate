@@ -4,7 +4,31 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
-## [Unreleased] - v0.20: Input Layer Refactoring
+## [Unreleased] - v0.21: Input Mapping & Configuration System
+
+### Summary
+
+Building on v0.20's input layer foundation, v0.21 completes the input mapping and configuration system with fully
+rebindable controls, configurable sensitivities/deadzones, and proper architecture compliance across all camera systems.
+
+**Key Achievements:**
+
+- Extended `InputStateComponent` with trick inputs, game state inputs, and camera controls
+- Created `InputMappings` data class with 26 configurable bindings for keyboard and gamepad
+- Created `InputSettings` data class with comprehensive configuration (deadzones, sensitivities, thresholds, physics)
+- Refactored `InputSystem` to use configurable mappings with mouse look integration
+- Fixed `GameCamera` to read from `InputStateComponent` instead of direct hardware polling
+- Fixed `EditorCamera` to use `EditorInputStateComponent` instead of direct polling
+- Updated `PlayerController` with trick input handling and combination detection
+
+---
+
+## [v0.20] - 2026-02-22: Input Layer Refactoring
+
+### Summary
+
+Successfully refactored the input layer to separate raw hardware polling from gameplay logic, establishing a clean ECS
+architecture for input handling.
 
 ### Added
 
@@ -68,7 +92,7 @@ This document tracks the development history and major milestones of the SkateSi
   4. `Animator` (DEFAULT) - Read `PlayerStateManager`, select animation
   5. `AnimationSystem` (DEFAULT) - Apply animation to skeleton
 
-### Known Issues (Moved to v0.21)
+### Known Issues (Addressed in v0.21)
 
 - Mouse look not implemented in `InputSystem.pollMouseInput()` (has TODO comment)
 - Key bindings hardcoded in `InputSystem` (WASD, Space, Shift instead of using settings)
