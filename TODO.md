@@ -11,95 +11,136 @@
 
 ### Phase 1 — Remove Architectural Problems
 
-- [ ] Remove hardcoded camera-offset point light from LightingUniformsLoader
-- [ ] Delete any lighting "hack" that ensures objects are always lit
-- [ ] Refactor Directional Light to a single active light (remove separate Sun/Moon lights)
-- [ ] Create DirectionalLightComponent:
+- [ ] **A24.1: Create DayNightCycleComponent**
+  - `cycleTime: Float` (0-24 hours or normalized 0-1)
+  - `dayDuration: Float` (real-time seconds per game day)
+  - `sunDirection: Vector3f` (computed)
+  - `sunColor: Vector3f` (computed, warm→cool interpolation)
+  - `ambientColor: Vector3f` (computed)
+  - `shadowIntensity: Float` (computed, lower at night)
+
+- [ ] **A24.2: Create DayNightCycleSystem**
+  - Updates cycleTime based on delta time
+  - Computes sun direction from cycle time (trigonometric)
+  - Interpolates colors (daylight warm → dusk orange → night cool)
+  - Writes computed values to DayNightCycleComponent
+
+- [ ] **A24.3: Remove hardcoded camera-offset point light** from LightingUniformsLoader
+
+- [ ] **A24.4: Delete lighting hacks** that ensure objects are always lit
+
+- [ ] **A24.5: Refactor to single directional light** (remove separate Sun/Moon lights)
+
+- [ ] **A24.6: Create DirectionalLightComponent**
   - `direction: Vector3f`
   - `color: Vector3f`
   - `intensity: Float`
   - `lightSpaceMatrix: Matrix4f`
-- [ ] Create DirectionalLightSystem:
-  - Updates direction based on dayCycleTime
-  - Computes lightSpaceMatrix
+
+- [ ] **A24.7: Create DirectionalLightSystem**
+  - Reads DayNightCycleComponent for sun direction/color/intensity
+  - Computes lightSpaceMatrix for shadow mapping
   - Uploads light uniforms to shader
 
 ### Phase 2 — Implement Basic Directional Shadow Mapping
 
-- [ ] Create ShadowMap class:
+- [ ] **A24.8: Create ShadowMap class**
   - FBO with depth texture (2048x2048)
   - Configure GL_DEPTH_COMPONENT
   - Set texture wrapping to CLAMP_TO_BORDER
   - Set border color = vec4(1.0)
-- [ ] Create ShadowRenderSystem:
+
+- [ ] **A24.9: Create ShadowRenderSystem**
   - Bind shadow FBO
   - Set viewport to shadow resolution
   - Clear depth buffer
   - Render all entities with RenderComponent.castShadow == true
-- [ ] Use orthographic projection for directional light:
+
+- [ ] **A24.10: Configure orthographic projection** for directional light
   - left/right/top/bottom bounds configurable
   - near/far tuned for skate level size
-- [ ] Compute lightSpaceMatrix: `lightProjection * lightView`
-- [ ] Pass lightSpaceMatrix to shadow pass shader and main PBR shader
-- [ ] Implement shadow depth-only shader:
+
+- [ ] **A24.11: Compute lightSpaceMatrix** (`lightProjection * lightView`)
+
+- [ ] **A24.12: Pass lightSpaceMatrix** to shadow pass shader and main PBR shader
+
+- [ ] **A24.13: Implement shadow depth-only shader**
   - Vertex: apply skinning
   - Fragment: empty (depth only)
-- [ ] Ensure skinned meshes run animation in shadow pass
+
+- [ ] **A24.14: Ensure skinned meshes run animation** in shadow pass
 
 ### Phase 3 — Modify PBR Shader for Shadows
 
-- [ ] Add uniforms:
+- [ ] **A24.15: Add shadow uniforms**
   - `uniform sampler2D uShadowMap`
   - `uniform mat4 uLightSpaceMatrix`
-- [ ] In vertex shader: calculate FragPosLightSpace
-- [ ] In fragment shader:
+
+- [ ] **A24.16: Calculate FragPosLightSpace** in vertex shader
+
+- [ ] **A24.17: Implement shadow comparison** in fragment shader
   - Project coordinates to 0..1
   - Sample depth from shadow map
   - Compare `currentDepth > closestDepth + bias`
-- [ ] Add normal-based shadow bias:
+
+- [ ] **A24.18: Add normal-based shadow bias**
   - `bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005)`
-- [ ] Multiply directional light contribution by `(1.0 - shadowFactor)`
+
+- [ ] **A24.19: Apply shadow factor** to directional light contribution
 
 ### Phase 4 — Add PCF (Soft Shadows)
 
-- [ ] Replace single depth compare with 3x3 PCF sampling
-- [ ] Average 9 samples around projected coord
-- [ ] Make PCF kernel size configurable
+- [ ] **A24.20: Implement 3x3 PCF sampling**
+
+- [ ] **A24.21: Average 9 samples** around projected coord
+
+- [ ] **A24.22: Make PCF kernel size** configurable
 
 ### Phase 5 — Clean Day/Night Cycle
 
-- [ ] Replace dual Sun/Moon lights with single blended directional light
-- [ ] Interpolate:
+- [ ] **A24.23: Replace dual Sun/Moon lights** with single blended directional light
+
+- [ ] **A24.24: Interpolate light properties**
   - direction
   - color (warm daylight → cool moonlight)
   - intensity
-- [ ] Interpolate ambient color with sky color
-- [ ] Lower shadow intensity at night
+
+- [ ] **A24.25: Interpolate ambient color** with sky color
+
+- [ ] **A24.26: Lower shadow intensity** at night
 
 ### Phase 6 — Lighting Refactor (Forward Cleanup)
 
-- [ ] Remove moon-specific logic from shader
-- [ ] Replace uSunColor / uMoonColor with `uniform DirectionalLight uDirectionalLight`
-- [ ] Optional: Add small array support for 4 point lights
+- [ ] **A24.27: Remove moon-specific logic** from shader
+
+- [ ] **A24.28: Replace uSunColor / uMoonColor** with `uniform DirectionalLight uDirectionalLight`
+
+- [ ] **A24.29: Optional: Add point light array** support (4 lights)
 
 ### Phase 7 — Quality Improvements
 
-- [ ] Increase shadow map resolution to 4096 if GPU allows
-- [ ] Add configurable shadow distance
-- [ ] Add depth clamp or stabilize light projection to reduce shimmering
-- [ ] Ensure RenderComponent has:
-  - `castShadow: Boolean` flag
-  - `receiveShadow: Boolean` flag
+- [ ] **A24.30: Increase shadow map resolution** to 4096 if GPU allows
+
+- [ ] **A24.31: Add configurable shadow distance**
+
+- [ ] **A24.32: Add depth clamp** or stabilize light projection to reduce shimmering
+
+- [ ] **A24.33: Add RenderComponent flags**
+  - `castShadow: Boolean`
+  - `receiveShadow: Boolean`
 
 ### Phase 8 — Next-Level Features (Later)
 
-- [ ] Implement Cascaded Shadow Maps (CSM)
-- [ ] Add Image Based Lighting (IBL):
+- [ ] **A24.34: Implement Cascaded Shadow Maps (CSM)**
+
+- [ ] **A24.35: Add Image Based Lighting (IBL)**
   - Irradiance map
   - Prefiltered environment map
   - BRDF LUT
-- [ ] Add Bloom post-processing
-- [ ] Add Reflection Probes or SSR
+
+- [ ] **A24.36: Add Bloom post-processing**
+
+- [ ] **A24.37: Add Reflection Probes or SSR**
 
 ### Validation Checklist
 
