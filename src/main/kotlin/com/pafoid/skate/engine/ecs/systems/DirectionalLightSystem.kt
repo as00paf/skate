@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.render.Camera
 import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -88,10 +89,11 @@ class DirectionalLightSystem : System(priority = ExecutionPriority.EARLY) {
 
         // Compute light space matrix for shadow mapping
         if (light.castShadows) {
+            val camera = scene.camera
             if (autoAdjustBounds) {
                 adjustOrthoBoundsForCamera(light, scene)
             }
-            updateLightSpaceMatrix(light)
+            updateLightSpaceMatrix(light, camera)
         }
     }
 
@@ -101,26 +103,44 @@ class DirectionalLightSystem : System(priority = ExecutionPriority.EARLY) {
      * The light space matrix transforms world positions into light clip space,
      * where depth comparison against the shadow map is performed.
      */
-    private fun updateLightSpaceMatrix(light: DirectionalLightComponent) {
+    private fun updateLightSpaceMatrix(light: DirectionalLightComponent, camera: Camera? = null) {
         // Calculate light position (directional light at infinity)
         // We use a point far away in the opposite direction of the light
         lightPosition.set(light.direction).mul(-100f)
 
-        // Target is the origin (or could be camera position for cascaded shadows)
-        lightTarget.set(0f, 0f, 0f)
+        // Target is the origin (or camera position for cascaded shadows)
+        if (camera != null && light.autoCalculateBounds) {
+            lightTarget.set(camera.position)
+        } else {
+            lightTarget.set(0f, 0f, 0f)
+        }
 
         // Create view matrix (light looking at scene)
         lightView.setLookAt(lightPosition, lightTarget, lightUp)
 
-        // Create orthographic projection for directional light
-        lightProjection.setOrtho(
-            light.orthoLeft * boundsScale,
-            light.orthoRight * boundsScale,
-            light.orthoBottom * boundsScale,
-            light.orthoTop * boundsScale,
-            light.orthoNear,
-            light.orthoFar
-        )
+        // Calculate orthographic bounds
+        if (light.autoCalculateBounds) {
+            // Auto-calculate from shadow distance
+            val halfDistance = light.shadowDistance * 0.5f
+            lightProjection.setOrtho(
+                -halfDistance * boundsScale,
+                halfDistance * boundsScale,
+                -halfDistance * boundsScale,
+                halfDistance * boundsScale,
+                light.orthoNear,
+                light.orthoFar
+            )
+        } else {
+            // Use manual bounds
+            lightProjection.setOrtho(
+                light.orthoLeft * boundsScale,
+                light.orthoRight * boundsScale,
+                light.orthoBottom * boundsScale,
+                light.orthoTop * boundsScale,
+                light.orthoNear,
+                light.orthoFar
+            )
+        }
 
         // Combine projection and view
         light.lightSpaceMatrix.set(lightProjection).mul(lightView)
@@ -174,40 +194,46 @@ class DirectionalLightSystem : System(priority = ExecutionPriority.EARLY) {
             }
 
             ImGui.separator()
-            ImGui.text("Orthographic Bounds")
+            ImGui.text("Shadow Distance")
 
-            val orthoLeft = floatArrayOf(light.orthoLeft)
-            if (ImGui.dragFloat("Left", orthoLeft, 0.1f, -100f, 0f)) {
-                light.orthoLeft = orthoLeft[0]
+            val shadowDistanceArr = floatArrayOf(light.shadowDistance)
+            if (ImGui.dragFloat("Shadow Distance (m)", shadowDistanceArr, 0.1f, 10f, 200f)) {
+                light.shadowDistance = shadowDistanceArr[0]
             }
 
-            val orthoRight = floatArrayOf(light.orthoRight)
-            if (ImGui.dragFloat("Right", orthoRight, 0.1f, 0f, 100f)) {
-                light.orthoRight = orthoRight[0]
+            val autoCalcBounds = light.autoCalculateBounds
+            if (ImGui.checkbox("Auto Calculate Bounds", autoCalcBounds)) {
+                light.autoCalculateBounds = !autoCalcBounds
             }
 
-            val orthoBottom = floatArrayOf(light.orthoBottom)
-            if (ImGui.dragFloat("Bottom", orthoBottom, 0.1f, -100f, 0f)) {
-                light.orthoBottom = orthoBottom[0]
-            }
+            if (!light.autoCalculateBounds) {
+                ImGui.separator()
+                ImGui.text("Orthographic Bounds (Manual)")
 
-            val orthoTop = floatArrayOf(light.orthoTop)
-            if (ImGui.dragFloat("Top", orthoTop, 0.1f, 0f, 100f)) {
-                light.orthoTop = orthoTop[0]
-            }
+                val orthoLeft = floatArrayOf(light.orthoLeft)
+                if (ImGui.dragFloat("Left", orthoLeft, 0.1f, -100f, 0f)) {
+                    light.orthoLeft = orthoLeft[0]
+                }
 
-            val orthoNear = floatArrayOf(light.orthoNear)
-            if (ImGui.dragFloat("Near", orthoNear, 0.01f, 0.01f, 10f)) {
-                light.orthoNear = orthoNear[0]
-            }
+                val orthoRight = floatArrayOf(light.orthoRight)
+                if (ImGui.dragFloat("Right", orthoRight, 0.1f, 0f, 100f)) {
+                    light.orthoRight = orthoRight[0]
+                }
 
-            val orthoFar = floatArrayOf(light.orthoFar)
-            if (ImGui.dragFloat("Far", orthoFar, 0.1f, 10f, 500f)) {
-                light.orthoFar = orthoFar[0]
+                val orthoBottom = floatArrayOf(light.orthoBottom)
+                if (ImGui.dragFloat("Bottom", orthoBottom, 0.1f, -100f, 0f)) {
+                    light.orthoBottom = orthoBottom[0]
+                }
+
+                val orthoTop = floatArrayOf(light.orthoTop)
+                if (ImGui.dragFloat("Top", orthoTop, 0.1f, 0f, 100f)) {
+                    light.orthoTop = orthoTop[0]
+                }
             }
 
             ImGui.separator()
             ImGui.text("Current Scale: %.2f".format(boundsScale))
+            ImGui.text("Effective Shadow Coverage: %.1fm".format(light.shadowDistance * boundsScale))
         }
     }
 }

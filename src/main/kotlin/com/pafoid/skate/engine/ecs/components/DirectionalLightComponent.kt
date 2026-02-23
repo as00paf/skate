@@ -75,6 +75,7 @@ class DirectionalLightComponent : Component() {
     /**
      * Orthographic projection bounds for shadow mapping.
      * Defines the view volume captured in the shadow map.
+     * These are auto-calculated from shadowDistance if autoCalculateBounds is true.
      */
     var orthoLeft: Float = -20f
     var orthoRight: Float = 20f
@@ -82,6 +83,21 @@ class DirectionalLightComponent : Component() {
     var orthoTop: Float = 20f
     var orthoNear: Float = 0.1f
     var orthoFar: Float = 100f
+
+    /**
+     * Maximum distance from camera that shadows are rendered.
+     * Controls the size of the orthographic projection for shadow mapping.
+     * Larger values = larger shadow coverage but lower resolution.
+     * Default: 50 meters
+     */
+    var shadowDistance: Float = 50f
+
+    /**
+     * If true, orthographic bounds are automatically calculated from shadowDistance.
+     * If false, manual orthoLeft/Right/Top/Bottom values are used.
+     * Default: true
+     */
+    var autoCalculateBounds: Boolean = true
 
     /**
      * True if this light casts shadows.
@@ -103,6 +119,8 @@ class DirectionalLightComponent : Component() {
         orthoTop = 20f
         orthoNear = 0.1f
         orthoFar = 100f
+        shadowDistance = 50f
+        autoCalculateBounds = true
         castShadows = true
     }
 
