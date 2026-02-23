@@ -293,12 +293,16 @@ class InputSystem(
 
     /**
      * Gets axis value from a pair of bindings (positive/negative directions).
-     * Applies deadzone and returns normalized value in range [-1, 1].
+     * Applies deadzone and returns value in range [-1, 1].
      *
-     * For Y-axis (moveUp/moveDown): GLFW returns negative values when stick is pushed up,
-     * so we invert the result to get positive movement for "up".
+     * For Y-axis (axis 1 = left stick Y, axis 3 = right stick Y), invert the value
+     * because GLFW returns negative values when stick is pushed up.
      *
-     * For X-axis (moveLeft/moveRight): Values are used as-is (negative = left, positive = right).
+     * For X-axis (axis 0 = left stick X, axis 2 = right stick X): Values are used as-is
+     * (negative = left, positive = right).
+     *
+     * Deadzone handling: Values below the deadzone threshold return 0.
+     * Values above deadzone are returned as-is (no rescaling).
      *
      * @param positiveBinding Binding for positive direction
      * @param negativeBinding Binding for negative direction (null if single-axis)
@@ -326,19 +330,16 @@ class InputSystem(
         var value = axes[axisIndex]
 
         // For Y-axis (axis 1 = left stick Y, axis 3 = right stick Y), invert the value
-        // because GLFW returns negative values when stick is pushed up/left
+        // because GLFW returns negative values when stick is pushed up
         if (axisIndex == 1 || axisIndex == 3) {
             value = -value
         }
 
-        // Apply deadzone
+        // Apply deadzone - return 0 if within deadzone
         if (abs(value) < deadzone) return 0f
 
-        // Normalize and rescale to [0, 1] range, preserving sign
-        val scaledValue = (abs(value) - deadzone) / (1f - deadzone)
-        val clampedValue = scaledValue.coerceIn(0f, 1f)
-
-        return (if (value > 0) 1f else -1f) * clampedValue
+        // Return value as-is (no rescaling needed)
+        return value
     }
 
     /**

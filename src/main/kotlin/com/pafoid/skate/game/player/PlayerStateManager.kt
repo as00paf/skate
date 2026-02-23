@@ -8,8 +8,6 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.game.skateboard.Stance
 import imgui.ImGui
 import org.koin.core.component.inject
-import kotlin.math.abs
-import kotlin.math.max
 
 class PlayerStateManager : Component() {
 
@@ -46,15 +44,15 @@ class PlayerStateManager : Component() {
         val intent = controller.desiredMoveDirection.length()
         val hasIntent = intent > 0.15f
 
+        // Calculate horizontal speed magnitude (handles both positive and negative velocities)
         val linearVelocity = rb.linearVelocity
-        val speed = max(linearVelocity.x, linearVelocity.z)
-        val absSpeed = abs(speed)
+        val speed = kotlin.math.sqrt(linearVelocity.x * linearVelocity.x + linearVelocity.z * linearVelocity.z)
 
         val newState =
             if (controller.isJumping) {
                 PlayerState.JUMPING
-            } else if (absSpeed > 0.1f && hasIntent) {
-                if (absSpeed > 5f) {
+            } else if (speed > 0.1f && hasIntent) {
+                if (speed > 5f) {
                     PlayerState.RUNNING
                 } else {
                     PlayerState.WALKING
