@@ -41,17 +41,9 @@ This phase connects all the new systems to make them actually work in the game.
 
 ### Phase 2 — Environment Window Integration
 
-- [ ] **A25.4: Update EnvironmentWindow to read from DirectionalLightComponent**
-    - Replace `scene.sceneData.sun` with light component data
-    - Sync UI controls with component properties
-
-- [ ] **A25.5: Integrate DayNightCycleSystem with EnvironmentWindow time controls**
-    - Time slider should update DayNightCycleSystem.cycleTime
-    - Remove duplicate `updateEnvironment()` logic
-
-- [ ] **A25.6: Connect fog settings to EnvironmentWindow**
-    - Ensure fog density/color updates are applied
-    - Sync with day/night cycle if desired
+- [x] **A25.4: Update EnvironmentWindow to read from DirectionalLightComponent**
+- [x] **A25.5: Integrate DayNightCycleSystem with EnvironmentWindow time controls**
+- [x] **A25.6: Connect fog settings to EnvironmentWindow**
 
 ### Phase 3 — Skater Integration
 

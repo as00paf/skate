@@ -53,6 +53,28 @@ class DayNightCycleSystem(
     // Temporary vectors for interpolation
     private val tempColor = Vector3f()
 
+    /**
+     * Gets the current cycle time in hours (0-24).
+     * @return Current time of day in hours
+     */
+    fun getCycleTime(): Float {
+        val dayNightEntity = scene.gameObjectManager.gameObjects.find {
+            it.getComponent<DayNightCycleComponent>() != null
+        }
+        return dayNightEntity?.getComponent<DayNightCycleComponent>()?.cycleTime ?: 12f
+    }
+
+    /**
+     * Sets the cycle time in hours (0-24).
+     * @param time Time of day in hours
+     */
+    fun setCycleTime(time: Float) {
+        val dayNightEntity = scene.gameObjectManager.gameObjects.find {
+            it.getComponent<DayNightCycleComponent>() != null
+        }
+        dayNightEntity?.getComponent<DayNightCycleComponent>()?.cycleTime = time
+    }
+
     override fun update(dt: Float) {
         // Find or create day/night cycle entity
         val dayNightEntity = scene.gameObjectManager.gameObjects.find {
