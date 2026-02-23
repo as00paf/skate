@@ -80,5 +80,8 @@ object ShaderConst {
 
         const val NORMAL_MAP = "u_NormalMap"
         const val HAS_NORMAL_MAP = "u_HasNormalMap"
+
+        const val LIGHT_SPACE_MATRIX = "uLightSpaceMatrix"
+        const val MODEL_MATRIX = "uModelMatrix"
     }
 }
