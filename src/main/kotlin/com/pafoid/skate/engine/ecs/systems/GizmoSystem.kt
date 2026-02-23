@@ -23,17 +23,13 @@ import com.pafoid.skate.engine.render.renderer.Renderer
  *
  * ## Input Handling
  *
- * Gizmo selection uses editor-specific key bindings from [SettingsManager.settings.keyBindings]:
+ * Gizmo selection uses editor-specific key bindings from [SettingsManager.settings.editorInputMappings]:
  * - **Translate**: W key (default)
  * - **Rotate**: E key (default)
  * - **Scale**: R key (default)
  * - **Select**: Q key (default)
  * - **Measure**: M key (default)
  * - **Deselect**: Escape key (default)
- *
- * Note: These are editor-only bindings and are separate from gameplay input mappings.
- * The deprecated [com.pafoid.skate.editor.data.KeyBindings] class is retained for
- * backwards compatibility with existing settings files.
  *
  * ## Execution Order
  *
@@ -87,21 +83,21 @@ class GizmoSystem(
         }
 
         // Handle gizmo selection key bindings
-        val bindings = settingsManager.settings.keyBindings
+        val bindings = settingsManager.settings.editorInputMappings
 
-        if (keyListener.isKeyPressed(bindings.gizmoTranslate)) {
+        if (keyListener.isKeyPressed(bindings.gizmoTranslate.keyboardKey)) {
             usingGizmo = TRANSLATE_GIZMO
-        } else if (keyListener.isKeyPressed(bindings.gizmoRotate)) {
+        } else if (keyListener.isKeyPressed(bindings.gizmoRotate.keyboardKey)) {
             usingGizmo = ROTATION_GIZMO
-        } else if (keyListener.isKeyPressed(bindings.gizmoScale)) {
+        } else if (keyListener.isKeyPressed(bindings.gizmoScale.keyboardKey)) {
             usingGizmo = SCALE_GIZMO
-        } else if (keyListener.isKeyPressed(bindings.gizmoSelect)) {
+        } else if (keyListener.isKeyPressed(bindings.gizmoSelect.keyboardKey)) {
             usingGizmo = SELECTION_GIZMO
-        } else if (keyListener.isKeyPressed(bindings.gizmoMeasure)) {
+        } else if (keyListener.isKeyPressed(bindings.measureTool.keyboardKey)) {
             usingGizmo = MEASURE_GIZMO
         }
 
-        if (keyListener.keyBeginPress(bindings.deselect)) {
+        if (keyListener.keyBeginPress(bindings.deselectAll.keyboardKey)) {
             scene.setSelectedGameObject(null)
         }
 

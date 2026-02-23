@@ -36,11 +36,7 @@ data class SystemSettings(
     // Input Configuration (new structure)
     var inputMappings: InputMappings = InputMappings(),
     var editorInputMappings: EditorInputMappings = EditorInputMappings(),
-    var inputSettings: InputSettings = InputSettings(),
-
-    // Legacy key bindings (kept for backwards compatibility, deprecated)
-    @Deprecated("Use inputMappings instead", replaceWith = ReplaceWith("inputMappings"))
-    var keyBindings: KeyBindings = KeyBindings()
+    var inputSettings: InputSettings = InputSettings()
 )
 
 /**
@@ -207,20 +203,3 @@ data class InputSettings(
         inputSmoothing = inputSmoothing.coerceIn(1f, 20f)
     }
 }
-
-/**
- * Legacy key bindings data class.
- *
- * @deprecated Use [InputMappings] instead for comprehensive input binding support.
- * This class is kept for backwards compatibility with existing save files.
- */
-@Serializable
-@Deprecated("Use InputMappings instead")
-data class KeyBindings(
-    var gizmoTranslate: Int = 87, // W
-    var gizmoRotate: Int = 69,    // E
-    var gizmoScale: Int = 82,     // R
-    var gizmoSelect: Int = 81,    // Q
-    var gizmoMeasure: Int = 77,   // M
-    var deselect: Int = 256       // Escape
-)
