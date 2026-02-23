@@ -45,23 +45,15 @@
 
 ### Phase 5 — Clean Day/Night Cycle
 
-- [ ] **A24.23: Replace dual Sun/Moon lights** with single blended directional light
-
-- [ ] **A24.24: Interpolate light properties**
-  - direction
-  - color (warm daylight → cool moonlight)
-  - intensity
-
-- [ ] **A24.25: Interpolate ambient color** with sky color
-
-- [ ] **A24.26: Lower shadow intensity** at night
+- [x] **A24.23: Replace dual Sun/Moon lights** with single blended directional light
+- [x] **A24.24: Interpolate light properties**
+- [x] **A24.25: Interpolate ambient color** with sky color
+- [x] **A24.26: Lower shadow intensity** at night
 
 ### Phase 6 — Lighting Refactor (Forward Cleanup)
 
-- [ ] **A24.27: Remove moon-specific logic** from shader
-
-- [ ] **A24.28: Replace uSunColor / uMoonColor** with `uniform DirectionalLight uDirectionalLight`
-
+- [x] **A24.27: Remove moon-specific logic** from shader
+- [x] **A24.28: Replace uSunColor / uMoonColor** with single directional light
 - [ ] **A24.29: Optional: Add point light array** support (4 lights)
 
 ### Phase 7 — Quality Improvements

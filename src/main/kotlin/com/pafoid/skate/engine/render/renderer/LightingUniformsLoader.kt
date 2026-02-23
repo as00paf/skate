@@ -28,7 +28,7 @@ class LightingUniformsLoader {
         directionalLight: DirectionalLightComponent?,
         shadowMapTextureId: Int = 0
     ) {
-        // Directional light (sun)
+        // Directional light (sun) - single unified light source
         if (directionalLight != null) {
             shader.uploadVec3f(Uniforms.SUN_DIRECTION, directionalLight.direction)
             val finalSunColor = Vector3f(directionalLight.color).mul(directionalLight.intensity)

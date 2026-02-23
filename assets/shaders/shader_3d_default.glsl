@@ -127,8 +127,6 @@ uniform float u_AlphaCutoff;
 uniform vec3 uCameraPos;
 uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
-uniform vec3 uMoonDirection;
-uniform vec3 uMoonColor;
 uniform vec3 uAmbientLight;
 uniform vec3 uFogColor;
 
@@ -305,66 +303,27 @@ void main()
         Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL * (1.0 - shadow);
     }
 
-    // --- Moon Light Pass ---
-    {
-        vec3 L = normalize(-uMoonDirection);
-        vec3 H = normalize(V + L);
-        vec3 radiance = uMoonColor;
-
-        float NDF = DistributionGGX(N, H, roughness);   
-        float G   = GeometrySmith(N, V, L, roughness);    
-        vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);        
-        
-        vec3 nominator    = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001; 
-        vec3 specular = nominator / denominator;
-        
-        vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;	  
-
-        float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL;
-    }
-
     // 5. Ambient & Final Composition
     vec3 ambient = uAmbientLight * albedo.rgb * ao;
     vec3 colorOut = ambient + Lo + emissive;
 
-        // 6. HDR Tonemapping & Gamma Correction
+    // 6. HDR Tonemapping & Gamma Correction
+    // Simple Reinhard tonemapping to bring HDR values into [0,1] range.
+    colorOut = colorOut / (colorOut + vec3(1.0));
 
-        // Simple Reinhard tonemapping to bring HDR values into [0,1] range.
+    // Linear to sRGB conversion.
+    colorOut = pow(colorOut, vec3(1.0/2.2));
 
-        colorOut = colorOut / (colorOut + vec3(1.0));
+    vec4 finalColor = vec4(colorOut, alpha);
 
-        // Linear to sRGB conversion.
-
-        colorOut = pow(colorOut, vec3(1.0/2.2)); 
-
-    
-
-        vec4 finalColor = vec4(colorOut, alpha);
-
-        
-
-        // Selection Highlight (Transparent Green Silhouette)
-
-        if (uSelected > 0.5) {
-
-            // Mix with green (R=0, G=1, B=0, A=0.5)
-
-            // If we want it to look like a "hologram" or silhouette, we can override the color mostly.
-
-            finalColor = mix(finalColor, vec4(0.0, 1.0, 0.0, 0.5), 0.6);
-
-        }
-
-        
-
-        // 7. Atmospheric Fog
-
-        color = mix(vec4(uFogColor, 1.0), finalColor, fVisibility);
-
+    // Selection Highlight (Transparent Green Silhouette)
+    if (uSelected > 0.5) {
+        // Mix with green (R=0, G=1, B=0, A=0.5)
+        finalColor = mix(finalColor, vec4(0.0, 1.0, 0.0, 0.5), 0.6);
     }
+
+    // 7. Atmospheric Fog
+    color = mix(vec4(uFogColor, 1.0), finalColor, fVisibility);
+}
 
     

@@ -43,10 +43,12 @@ class DayNightCycleSystem(
 ) : System(priority = ExecutionPriority.EARLY) {
 
     // Color constants for interpolation
-    private val noonColor = Vector3f(1.0f, 0.95f, 0.8f)
-    private val duskColor = Vector3f(1.0f, 0.6f, 0.3f)
-    private val nightColor = Vector3f(0.3f, 0.4f, 0.6f)
-    private val dawnColor = Vector3f(1.0f, 0.7f, 0.5f)
+    private val noonColor = Vector3f(1.0f, 0.95f, 0.8f)  // Warm sunlight
+    private val duskColor = Vector3f(1.0f, 0.6f, 0.3f)   // Orange sunset
+    private val nightColor = Vector3f(0.3f, 0.4f, 0.6f)  // Cool moonlight
+    private val dawnColor = Vector3f(1.0f, 0.7f, 0.5f)   // Pink/orange dawn
+    private val nightAmbient = Vector3f(0.05f, 0.05f, 0.1f)
+    private val dayAmbient = Vector3f(0.3f, 0.3f, 0.35f)
 
     // Temporary vectors for interpolation
     private val tempColor = Vector3f()
@@ -156,8 +158,8 @@ class DayNightCycleSystem(
             }
         }
 
-        // Compute ambient color (darker than sun color)
-        dayNight.ambientColor.set(dayNight.sunColor).mul(0.3f + dayNight.sunIntensity * 0.5f)
+        // Compute ambient color (interpolates between night and day ambient)
+        dayNight.ambientColor.set(nightAmbient).lerp(dayAmbient, dayNight.sunIntensity)
     }
 
     /**
