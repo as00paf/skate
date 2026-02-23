@@ -11,7 +11,8 @@ class RenderComponent(
     var reflectivity: Float = 1f,
     var textureScale: Float = 1.0f,
     var renderMode: RenderMode = RenderMode.MESH,
-    var castShadow: Boolean = true
+    var castShadow: Boolean = true,
+    var receiveShadow: Boolean = true
 ) : Component() {
 
 }

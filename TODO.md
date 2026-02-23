@@ -60,9 +60,7 @@
 - [x] **A24.30: Increase shadow map resolution** to 4096 if GPU allows
 - [x] **A24.31: Add configurable shadow distance**
 - [x] **A24.32: Add depth clamp** or stabilize light projection to reduce shimmering
-- [ ] **A24.33: Add RenderComponent flags**
-  - `castShadow: Boolean`
-  - `receiveShadow: Boolean`
+- [x] **A24.33: Add RenderComponent flags**
 
 ### Validation Checklist
 
