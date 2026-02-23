@@ -4,26 +4,162 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
-## [Unreleased] - v0.21: Input Mapping & Configuration System
+## [Unreleased] - v0.23: Input System Code Quality
+
+### Planned
+
+- Technical debt cleanup for input system architecture
+- See TODO.md for detailed task list
+
+---
+
+## [v0.21] - 2026-02-22: Input Mapping & Configuration System
 
 ### Summary
 
 Building on v0.20's input layer foundation, v0.21 completes the input mapping and configuration system with fully
 rebindable controls, configurable sensitivities/deadzones, and proper architecture compliance across all camera systems.
 
-**Key Achievements:**
+### Added
 
-- Extended `InputStateComponent` with trick inputs, game state inputs, and camera controls
-- Created `InputMappings` data class with 26 configurable bindings for keyboard and gamepad
-- Created `InputSettings` data class with comprehensive configuration (deadzones, sensitivities, thresholds, physics)
-- Refactored `InputSystem` to use configurable mappings with mouse look integration
-- Fixed `GameCamera` to read from `InputStateComponent` instead of direct hardware polling
-- Fixed `EditorCamera` to use `EditorInputStateComponent` instead of direct polling
-- Updated `PlayerController` with trick input handling and combination detection
+- **Extended InputStateComponent**: Added comprehensive input state support (
+  `engine/ecs/components/InputStateComponent.kt`)
+    - Trick inputs: `flipLeftPressed`, `flipRightPressed`, `kickflipPressed`, `heelflipPressed`, `grabPressed`,
+      `manualPressed`
+    - Game state inputs: `pausePressed`, `resetPressed`, `cameraResetPressed`, `stanceChangePressed`
+    - Crouch input: `crouchPressed` for manual setup and low-speed balance
+    - Properties organized into logical sections (Movement, Jump, Tricks, Camera, Game State, Physics)
+    - Comprehensive KDoc with usage examples
+
+- **InputMappings Data Structure**: Complete input binding configuration (`engine/input/InputMapping.kt`)
+    - `InputBinding` data class with `keyboardKey`, `gamepadButton`, `gamepadAxis`, `inverted` properties
+    - 26 configurable bindings for all gameplay actions:
+        - Movement (6): moveUp/Down/Left/Right, sprint, crouch
+        - Jump (1): jump
+        - Tricks (6): flipLeft/Right, kickflip, heelflip, grab, manual
+        - Camera (3): cameraLookX/Y, cameraReset
+        - Game State (4): pause, reset, stanceChange/Right
+        - Editor (6): gizmo modes, measure, deselect
+    - Helper methods: `getAllBindings()`, `resetToDefaults()`, `getDescription()`
+    - Companion object factory methods: `keyboard()`, `gamepadButton()`, `gamepadAxis()`
+
+- **InputSettings Data Structure**: Comprehensive input configuration (`editor/data/SystemSettings.kt`)
+    - Deadzone configuration: leftStick, rightStick, trigger thresholds
+    - Sensitivity configuration: mouse, controller
+    - Movement thresholds: movement, sprint
+    - Physics configuration: jumpImpulse, walkSpeed, runSpeed, rotationSpeed, takeOffTime, inputSmoothing
+    - `validate()` method for range clamping
+
+- **Input Testing Window**: Debug tool for visualizing input state (`editor/windows/InputTestingWindow.kt`)
+    - Raw gamepad axis values with deadzone visualization
+    - Interactive deadzone indicator showing stick position
+    - Button state grid with color indicators
+    - Processed InputStateComponent values display
+    - Adjustable input settings with immediate feedback
+    - Input bindings reference display
+    - Access: View → Windows → Input Testing
+
+- **Settings Window**: User-facing configuration UI (`editor/windows/SettingsWindow.kt`)
+    - Tabbed interface (Input, Physics, Display)
+    - Input tab: Deadzones, sensitivities, thresholds with sliders
+    - Physics tab: Jump impulse, movement speeds, rotation, input smoothing
+    - Display tab: Fullscreen, V-Sync, borderless window options
+    - Save/Reset to Defaults functionality
+    - Unsaved changes indicator
+    - Access: Settings → Settings...
+
+### Changed
+
+- **InputSystem Refactored**: Full integration of configurable input mappings (`engine/ecs/systems/InputSystem.kt`)
+    - Injected `SettingsManager` and `MouseListener` via constructor
+    - Replaced all hardcoded keys with configurable `InputMappings`
+    - Implemented mouse look integration for gameplay camera control
+    - Made deadzones and thresholds configurable from `InputSettings`
+    - Added helper methods: `getAxisFromBinding()`, `checkButtonBindingActive()`, `checkBindingActive()`
+    - Gamepad axis inversion for Y-axis (GLFW coordinate system)
+    - Editor input separated into dedicated `EditorInputStateComponent`
+
+- **GameCamera Fixed**: Architecture compliance (`game/camera/GameCamera.kt`)
+    - Removed direct `MouseListener` instantiation
+    - Removed direct `IInputProvider` polling
+    - Reads camera look from `InputStateComponent.cameraLook` (combines gamepad + mouse)
+    - Made sensitivity configurable from `InputSettings.controllerSensitivity`
+    - Updated `update()` signature to accept `InputStateComponent` parameter
+    - Added time-based movement (`dt * 60f`) for frame-rate independence
+
+- **PlayerController Extended**: Trick input handling (`game/player/PlayerController.kt`)
+    - Added `handleTrickInputs()` method for processing trick inputs from `InputStateComponent`
+    - Added trick input tracking: `flipLeftHeld`, `flipRightHeld` for combination detection
+    - Added trick combination detection logic (kickflip, heelflip, grab, manual)
+    - Added trick input logging for debugging
+    - Made `desiredMoveDirection` public for `PlayerStateManager` access
+    - Made `isJumping` public for state manager access
+
+- **EditorCamera Fixed**: Proper input architecture (`editor/EditorCamera.kt`)
+    - Created `EditorInputStateComponent` for editor-specific inputs
+    - Removed direct `KeyListener` and `MouseListener` dependencies
+    - InputSystem populates `EditorInputStateComponent` with keyboard and mouse data
+    - Editor camera reads from component instead of polling hardware directly
+
+- **KoinModule Updated**: Dependency injection for new systems
+    - Registered `InputSystem` with `SettingsManager` and `MouseListener` dependencies
+    - Updated `ThumbnailCache` and `BootManager` with proper dependencies
+
+- **LevelEditorSceneInitializer Updated**: Scene integration
+    - Added `InputSystem` injection and registration to scene systems
+    - Creates editor input entity with `EditorInputStateComponent`
+    - InputSystem runs first due to `EARLY` priority
+
+### Fixed
+
+- **PlayerStateManager Speed Calculation**: Proper velocity magnitude handling (`game/player/PlayerStateManager.kt`)
+    - Changed from `max(linearVelocity.x, linearVelocity.z)` to vector magnitude calculation
+    - Fixed animation triggering for left/up movement directions
+    - Character now correctly transitions to WALKING/RUNNING state in all directions
+
+- **Gamepad Deadzone Handling**: Removed rescaling logic (`engine/ecs/systems/InputSystem.kt`)
+    - Values above deadzone now returned as-is (no normalization)
+    - Fixed animation threshold detection for small stick movements
+    - Fixed stick overshoot on release (no backward movement)
+
+### Architecture
+
+- **Input Layer Separation**: Clean ECS architecture for input handling
+    - Raw Input Layer: `GamepadListener`, `KeyListener`, `MouseListener` → `IInputProvider`
+    - Input Mapping Layer: `InputSystem` converts raw inputs to gameplay state using `InputMappings`
+    - Gameplay State Layer: `InputStateComponent` stores gameplay inputs
+    - Gameplay Logic Layer: `PlayerController`, `GameCamera` read `InputStateComponent`
+
+- **Editor Input Separation**: Dedicated component for editor inputs
+    - `EditorInputStateComponent` for editor-specific state (WASD, mouse look, orbit, scroll)
+    - Separate from gameplay `InputStateComponent`
+    - Allows independent configuration and processing
+
+- **Execution Order**:
+    1. `InputSystem` (EARLY) - Poll hardware, write `InputStateComponent` / `EditorInputStateComponent`
+    2. `PlayerController` (DEFAULT) - Read `InputStateComponent`, apply physics
+    3. `PlayerStateManager` (DEFAULT) - Read physics state, update animation state
+    4. `Animator` (DEFAULT) - Read `PlayerStateManager`, select animation
+    5. `AnimationSystem` (DEFAULT) - Apply animation to skeleton
+    6. `EditorCamera` (DEFAULT) - Read `EditorInputStateComponent`, update camera
+
+- **Configuration Flow**:
+    1. `SettingsWindow` / `SettingsManager` → `InputSettings` / `InputMappings`
+    2. `InputSystem` reads settings and applies deadzones/thresholds
+    3. `InputStateComponent` receives processed input values
+    4. Gameplay systems read component state
+
+### Known Issues (Tracked for v0.23)
+
+- `checkButtonBindingBeginPress()` returns "held" instead of "begin press" - needs previous state tracking
+- `inverted` flag inconsistency between primary declarations and `resetToDefaults()`
+- `getAxisFromBinding()` uses hardcoded axis inversion instead of `inverted` flag
+- `InputProvider.getMovementVector()` has duplicate deadzone logic with hardcoded threshold
+- Editor camera uses hardcoded keys instead of dedicated mappings
 
 ---
 
-## [v0.20] - 2026-02-22: Input Layer Refactoring
+## [Previous] - v0.20: Input Layer Refactoring
 
 ### Summary
 
