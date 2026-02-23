@@ -22,7 +22,7 @@
 ### Phase 2 — Implement Basic Directional Shadow Mapping
 
 - [x] **A24.8: Create ShadowMap class**
-- [ ] **A24.9: Create ShadowRenderSystem**
+- [ ] **A24.9: Create ShadowRenderer**
   - Bind shadow FBO
   - Set viewport to shadow resolution
   - Clear depth buffer
