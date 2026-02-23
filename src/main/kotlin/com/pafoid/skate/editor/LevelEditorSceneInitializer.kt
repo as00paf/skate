@@ -11,10 +11,13 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
+import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
+import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
@@ -90,7 +93,28 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         scene.addSystem(GridLines(debugRenderer, sceneManager))
         scene.addSystem(AnimationSystem())
 
-        reportProgress(0.7f, "Spawning Prefabs...")
+        reportProgress(0.7f, "Setting up Lighting Systems...")
+
+        // Lighting Systems (must run after input systems)
+        scene.addSystem(DayNightCycleSystem())
+        scene.addSystem(DirectionalLightSystem())
+
+        // Create DirectionalLightComponent entity
+        val directionalLight = GameObject("DirectionalLight")
+        val lightComponent = DirectionalLightComponent()
+        lightComponent.direction.set(0f, -1f, 0f)  // Noon position (straight down)
+        lightComponent.color.set(1f, 0.95f, 0.8f)  // Warm sunlight
+        lightComponent.intensity = 1f
+        lightComponent.shadowDistance = 50f
+        lightComponent.autoCalculateBounds = true
+        lightComponent.stabilizeProjection = true
+        lightComponent.depthBias = 0.005f
+        lightComponent.slopeScaledBias = 0.01f
+        lightComponent.castShadows = true
+        directionalLight.addComponent(lightComponent)
+        scene.gameObjectManager.addGameObject(directionalLight)
+
+        reportProgress(0.8f, "Spawning Prefabs...")
         //skateboard = prefabsGenerator.spawnSkateboard()
         skater = prefabsGenerator.spawnSkater(null)
         floor = prefabsGenerator.spawnFloor()

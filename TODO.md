@@ -35,17 +35,9 @@ This phase connects all the new systems to make them actually work in the game.
 
 ### Phase 1 — Scene Initialization Integration
 
-- [ ] **A25.1: Add DayNightCycleSystem to LevelEditorSceneInitializer**
-    - Register system in `init()` method
-    - Ensure it runs before DirectionalLightSystem
-
-- [ ] **A25.2: Add DirectionalLightSystem to LevelEditorSceneInitializer**
-    - Register system in `init()` method
-    - Create initial DirectionalLightComponent entity
-
-- [ ] **A25.3: Create DirectionalLightComponent entity in LevelEditorSceneInitializer**
-    - Initialize with default shadow settings
-    - Link to DayNightCycleSystem for automatic updates
+- [x] **A25.1: Add DayNightCycleSystem to LevelEditorSceneInitializer**
+- [x] **A25.2: Add DirectionalLightSystem to LevelEditorSceneInitializer**
+- [x] **A25.3: Create DirectionalLightComponent entity in LevelEditorSceneInitializer**
 
 ### Phase 2 — Environment Window Integration
 
