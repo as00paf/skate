@@ -85,5 +85,7 @@ object ShaderConst {
         const val MODEL_MATRIX = "uModelMatrix"
         const val SHADOW_MAP = "uShadowMap"
         const val SHADOW_MAP_TEXEL_SIZE = "uShadowMapTexelSize"
+        const val SHADOW_DEPTH_BIAS = "uShadowDepthBias"
+        const val SHADOW_SLOPE_SCALED_BIAS = "uShadowSlopeScaledBias"
     }
 }

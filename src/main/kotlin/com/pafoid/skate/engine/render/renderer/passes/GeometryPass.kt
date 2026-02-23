@@ -101,6 +101,14 @@ class GeometryPass(
         // Upload shadow map texel size for PCF
         if (shadowMapTextureId != 0) {
             defaultShader.uploadFloat(Uniforms.SHADOW_MAP_TEXEL_SIZE, 1.0f / shadowMapResolution)
+            // Upload shadow bias uniforms
+            if (directionalLight != null) {
+                defaultShader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, directionalLight.depthBias)
+                defaultShader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, directionalLight.slopeScaledBias)
+            } else {
+                defaultShader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, 0.005f)
+                defaultShader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, 0.01f)
+            }
         }
 
         // Render all 3D game objects

@@ -134,6 +134,8 @@ uniform vec3 uFogColor;
 uniform mat4 uLightSpaceMatrix;// Light's view-projection matrix
 uniform sampler2D uShadowMap;// Shadow map depth texture
 uniform float uShadowMapTexelSize;// 1.0 / shadowMapResolution for PCF
+uniform float uShadowDepthBias;// Depth bias to prevent shadow acne
+uniform float uShadowSlopeScaledBias;// Slope-scaled bias multiplier
 
 // --- Feature Toggles ---
 uniform bool u_HasNormalMap;
@@ -152,7 +154,7 @@ const float PI = 3.14159265359;
 // Shadow Mapping Functions
 
 // Calculate shadow factor using 3x3 PCF (Percentage-Closer Filtering)
-float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW)
+float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW, vec3 normal, vec3 lightDir)
 {
     // Perform perspective divide to get NDC coordinates
     vec3 projCoords = fragPosLightSpace / fragPosLightSpaceW;
@@ -163,9 +165,14 @@ float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW)
     // Get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
 
+    // Calculate slope-scaled bias
+    // Surfaces at steep angles to light need more bias to prevent shadow acne
+    float NdotL = max(dot(normal, -lightDir), 0.0);
+    float slopeScale = 1.0 - NdotL;
+    float bias = uShadowDepthBias + (uShadowSlopeScaledBias * slopeScale);
+
     // 3x3 PCF sampling using uniform texel size
     float shadow = 0.0;
-    float bias = 0.005;
 
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
@@ -298,7 +305,7 @@ void main()
         float NdotL = max(dot(N, L), 0.0);
 
         // Apply shadow factor to sun light
-        float shadow = calculateShadow(fFragPosLightSpace, fFragPosLightSpaceW);
+        float shadow = calculateShadow(fFragPosLightSpace, fFragPosLightSpaceW, N, L);
         Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL * (1.0 - shadow);
     }
 

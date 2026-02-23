@@ -119,28 +119,54 @@ class DirectionalLightSystem : System(priority = ExecutionPriority.EARLY) {
         lightView.setLookAt(lightPosition, lightTarget, lightUp)
 
         // Calculate orthographic bounds
+        var left: Float
+        var right: Float
+        var bottom: Float
+        var top: Float
+
         if (light.autoCalculateBounds) {
             // Auto-calculate from shadow distance
             val halfDistance = light.shadowDistance * 0.5f
-            lightProjection.setOrtho(
-                -halfDistance * boundsScale,
-                halfDistance * boundsScale,
-                -halfDistance * boundsScale,
-                halfDistance * boundsScale,
-                light.orthoNear,
-                light.orthoFar
-            )
+            left = -halfDistance * boundsScale
+            right = halfDistance * boundsScale
+            bottom = -halfDistance * boundsScale
+            top = halfDistance * boundsScale
         } else {
             // Use manual bounds
-            lightProjection.setOrtho(
-                light.orthoLeft * boundsScale,
-                light.orthoRight * boundsScale,
-                light.orthoBottom * boundsScale,
-                light.orthoTop * boundsScale,
-                light.orthoNear,
-                light.orthoFar
-            )
+            left = light.orthoLeft * boundsScale
+            right = light.orthoRight * boundsScale
+            bottom = light.orthoBottom * boundsScale
+            top = light.orthoTop * boundsScale
         }
+
+        // Stabilize projection to reduce shimmering (texel snapping)
+        if (light.stabilizeProjection && camera != null) {
+            // Snap orthographic bounds to texel-sized increments
+            // This prevents the shadow map from shimmering as the camera moves
+            val shadowMapSize = 4096f // Assuming 4096x4096 shadow map
+            val texelSize = (right - left) / shadowMapSize
+
+            // Snap camera position to texel grid in light space
+            val lightViewPos = lightView.transform(org.joml.Vector4f(camera.position, 1.0f), org.joml.Vector4f())
+            lightViewPos.x = Math.round(lightViewPos.x / texelSize) * texelSize
+            lightViewPos.y = Math.round(lightViewPos.y / texelSize) * texelSize
+
+            // Recalculate view matrix with snapped position
+            val snappedLightPos = lightView.invert().transform(lightViewPos, org.joml.Vector4f())
+            lightPosition.set(snappedLightPos.x, snappedLightPos.y, snappedLightPos.z)
+                .add(org.joml.Vector3f(light.direction).mul(-100f))
+            lightView.setLookAt(lightPosition, lightTarget, lightUp)
+        }
+
+        // Create orthographic projection for directional light
+        lightProjection.setOrtho(
+            left,
+            right,
+            bottom,
+            top,
+            light.orthoNear,
+            light.orthoFar
+        )
 
         // Combine projection and view
         light.lightSpaceMatrix.set(lightProjection).mul(lightView)
@@ -234,6 +260,24 @@ class DirectionalLightSystem : System(priority = ExecutionPriority.EARLY) {
             ImGui.separator()
             ImGui.text("Current Scale: %.2f".format(boundsScale))
             ImGui.text("Effective Shadow Coverage: %.1fm".format(light.shadowDistance * boundsScale))
+
+            ImGui.separator()
+            ImGui.text("Shadow Quality")
+
+            val stabilizeProj = light.stabilizeProjection
+            if (ImGui.checkbox("Stabilize Projection (Reduce Shimmering)", stabilizeProj)) {
+                light.stabilizeProjection = !stabilizeProj
+            }
+
+            val depthBiasArr = floatArrayOf(light.depthBias)
+            if (ImGui.dragFloat("Depth Bias", depthBiasArr, 0.0001f, 0.0f, 0.1f, "%.4f")) {
+                light.depthBias = depthBiasArr[0]
+            }
+
+            val slopeBiasArr = floatArrayOf(light.slopeScaledBias)
+            if (ImGui.dragFloat("Slope-Scaled Bias", slopeBiasArr, 0.001f, 0.0f, 0.1f, "%.3f")) {
+                light.slopeScaledBias = slopeBiasArr[0]
+            }
         }
     }
 }

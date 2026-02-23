@@ -100,6 +100,27 @@ class DirectionalLightComponent : Component() {
     var autoCalculateBounds: Boolean = true
 
     /**
+     * If true, stabilizes the shadow map projection to reduce shimmering.
+     * Snaps the light's orthographic projection to texel boundaries.
+     * Default: true
+     */
+    var stabilizeProjection: Boolean = true
+
+    /**
+     * Depth bias for shadow comparison to prevent shadow acne.
+     * Added to sampled depth before comparison.
+     * Default: 0.005
+     */
+    var depthBias: Float = 0.005f
+
+    /**
+     * Slope-scaled depth bias multiplier.
+     * Increases bias for surfaces at steep angles to the light.
+     * Default: 0.01
+     */
+    var slopeScaledBias: Float = 0.01f
+
+    /**
      * True if this light casts shadows.
      * When false, shadow mapping is skipped for this light.
      */
@@ -121,6 +142,9 @@ class DirectionalLightComponent : Component() {
         orthoFar = 100f
         shadowDistance = 50f
         autoCalculateBounds = true
+        stabilizeProjection = true
+        depthBias = 0.005f
+        slopeScaledBias = 0.01f
         castShadows = true
     }
 
