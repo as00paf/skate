@@ -10,6 +10,7 @@ object Assets {
         const val SKYBOX = "assets/shaders/skybox.glsl"
         const val DEBUG = "assets/shaders/debugLine2D.glsl"
         const val SKY_DOME = "assets/shaders/skydome.glsl"
+        const val SHADOW = "assets/shaders/shadow.glsl"
     }
     object Textures {
         const val APP_ICON = "assets/textures/app_icon.png"

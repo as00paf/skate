@@ -10,7 +10,8 @@ class RenderComponent(
     var shininess: Float = 10f,
     var reflectivity: Float = 1f,
     var textureScale: Float = 1.0f,
-    var renderMode: RenderMode = RenderMode.MESH
+    var renderMode: RenderMode = RenderMode.MESH,
+    var castShadow: Boolean = true
 ) : Component() {
 
 }

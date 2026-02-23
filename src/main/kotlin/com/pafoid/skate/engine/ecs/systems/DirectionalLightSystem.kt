@@ -1,7 +1,9 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Vector3f
 
@@ -16,7 +18,7 @@ import org.joml.Vector3f
  * - Reads sun direction, color, and intensity from [DayNightCycleComponent]
  * - Updates [DirectionalLightComponent] with current sun data
  * - Computes light space matrix for shadow mapping
- * - Uploads light uniforms to shaders via [LightingUniformsLoader]
+ * - Supports dynamic orthographic bounds adjustment based on camera view
  *
  * ## Shadow Mapping
  *
@@ -28,6 +30,15 @@ import org.joml.Vector3f
  * Where:
  * - `lightView` = lookAt matrix from light position to target
  * - `lightProjection` = orthographic projection for directional light shadows
+ *
+ * ## Orthographic Bounds
+ *
+ * Default bounds are tuned for skate level size:
+ * - left/right: -20 to 20 (40m width)
+ * - bottom/top: -20 to 20 (40m height)
+ * - near/far: 0.1 to 100 (depth range)
+ *
+ * These can be adjusted via ImGui or programmatically for different scene scales.
  *
  * ## Usage
  *
@@ -44,6 +55,10 @@ class DirectionalLightSystem : System(priority = ExecutionPriority.EARLY) {
     private val lightTarget = Vector3f()
     private val lightUp = Vector3f(0f, 1f, 0f)
     private val lightPosition = Vector3f()
+
+    // Dynamic bounds adjustment
+    private var autoAdjustBounds = false
+    private var boundsScale = 1.0f
 
     override fun update(dt: Float) {
         // Find day/night cycle component
@@ -73,6 +88,9 @@ class DirectionalLightSystem : System(priority = ExecutionPriority.EARLY) {
 
         // Compute light space matrix for shadow mapping
         if (light.castShadows) {
+            if (autoAdjustBounds) {
+                adjustOrthoBoundsForCamera(light, scene)
+            }
             updateLightSpaceMatrix(light)
         }
     }
@@ -96,16 +114,39 @@ class DirectionalLightSystem : System(priority = ExecutionPriority.EARLY) {
 
         // Create orthographic projection for directional light
         lightProjection.setOrtho(
-            light.orthoLeft,
-            light.orthoRight,
-            light.orthoBottom,
-            light.orthoTop,
+            light.orthoLeft * boundsScale,
+            light.orthoRight * boundsScale,
+            light.orthoBottom * boundsScale,
+            light.orthoTop * boundsScale,
             light.orthoNear,
             light.orthoFar
         )
 
         // Combine projection and view
         light.lightSpaceMatrix.set(lightProjection).mul(lightView)
+    }
+
+    /**
+     * Adjusts orthographic bounds based on camera view frustum.
+     *
+     * This ensures the shadow map covers the visible area efficiently,
+     * reducing wasted shadow map resolution on areas outside the camera view.
+     */
+    private fun adjustOrthoBoundsForCamera(light: DirectionalLightComponent, scene: Scene) {
+        val camera = scene.camera ?: return
+
+        // Calculate frustum size at far plane
+        val fovRad = Math.toRadians(camera.fov.toDouble()).toFloat()
+        val farHeight = (camera.farPlane * Math.tan(fovRad / 2.0).toFloat() * 2.0f)
+        val aspectRatio = camera.viewportWidth.toFloat() / camera.viewportHeight.toFloat().coerceAtLeast(0.001f)
+        val farWidth = farHeight * aspectRatio
+
+        // Adjust bounds to cover frustum from light's perspective
+        // Use a conservative estimate based on light direction
+        val lightDirLength = Math.abs(light.direction.y.toDouble()).toFloat().coerceAtLeast(0.1f)
+        val scale = (farWidth / lightDirLength).coerceAtMost(50f)
+
+        boundsScale = scale.coerceIn(0.5f, 3.0f)
     }
 
     /**
@@ -116,5 +157,57 @@ class DirectionalLightSystem : System(priority = ExecutionPriority.EARLY) {
         val light = DirectionalLightComponent()
         entity.addComponent(light)
         return light
+    }
+
+    /**
+     * Renders ImGui interface for debugging and tuning.
+     */
+    override fun imgui() {
+        if (ImGui.collapsingHeader("Directional Light")) {
+            val lightEntity = scene.gameObjectManager.gameObjects.find {
+                it.getComponent<DirectionalLightComponent>() != null
+            }
+            val light = lightEntity?.getComponent<DirectionalLightComponent>() ?: return
+
+            if (ImGui.checkbox("Auto Adjust Bounds", autoAdjustBounds)) {
+                autoAdjustBounds = !autoAdjustBounds
+            }
+
+            ImGui.separator()
+            ImGui.text("Orthographic Bounds")
+
+            val orthoLeft = floatArrayOf(light.orthoLeft)
+            if (ImGui.dragFloat("Left", orthoLeft, 0.1f, -100f, 0f)) {
+                light.orthoLeft = orthoLeft[0]
+            }
+
+            val orthoRight = floatArrayOf(light.orthoRight)
+            if (ImGui.dragFloat("Right", orthoRight, 0.1f, 0f, 100f)) {
+                light.orthoRight = orthoRight[0]
+            }
+
+            val orthoBottom = floatArrayOf(light.orthoBottom)
+            if (ImGui.dragFloat("Bottom", orthoBottom, 0.1f, -100f, 0f)) {
+                light.orthoBottom = orthoBottom[0]
+            }
+
+            val orthoTop = floatArrayOf(light.orthoTop)
+            if (ImGui.dragFloat("Top", orthoTop, 0.1f, 0f, 100f)) {
+                light.orthoTop = orthoTop[0]
+            }
+
+            val orthoNear = floatArrayOf(light.orthoNear)
+            if (ImGui.dragFloat("Near", orthoNear, 0.01f, 0.01f, 10f)) {
+                light.orthoNear = orthoNear[0]
+            }
+
+            val orthoFar = floatArrayOf(light.orthoFar)
+            if (ImGui.dragFloat("Far", orthoFar, 0.1f, 10f, 500f)) {
+                light.orthoFar = orthoFar[0]
+            }
+
+            ImGui.separator()
+            ImGui.text("Current Scale: %.2f".format(boundsScale))
+        }
     }
 }

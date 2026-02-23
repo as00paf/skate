@@ -22,16 +22,8 @@
 ### Phase 2 — Implement Basic Directional Shadow Mapping
 
 - [x] **A24.8: Create ShadowMap class**
-- [ ] **A24.9: Create ShadowRenderer**
-  - Bind shadow FBO
-  - Set viewport to shadow resolution
-  - Clear depth buffer
-  - Render all entities with RenderComponent.castShadow == true
-
-- [ ] **A24.10: Configure orthographic projection** for directional light
-  - left/right/top/bottom bounds configurable
-  - near/far tuned for skate level size
-
+- [x] **A24.9: Create ShadowRenderer**
+- [x] **A24.10: Configure orthographic projection** for directional light
 - [ ] **A24.11: Compute lightSpaceMatrix** (`lightProjection * lightView`)
 
 - [ ] **A24.12: Pass lightSpaceMatrix** to shadow pass shader and main PBR shader
