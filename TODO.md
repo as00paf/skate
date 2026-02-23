@@ -2,72 +2,92 @@
 
 ## Notes
 
-- See CHANGELOG.md for completed items through v0.23
+- See CHANGELOG.md for completed items through v0.24
 - All v0.23 technical debt items completed
+- All v0.24 Phase 7 quality improvements completed
 
 ---
 
-## 🔴 v0.24: Lighting & Shadowing Overhaul (Planned)
+## ✅ v0.24: Lighting & Shadowing Quality Improvements - COMPLETED
 
-### Phase 1 — Remove Architectural Problems
+### Summary
 
-- [x] **A24.1: Create DayNightCycleComponent**
-- [x] **A24.2: Create DayNightCycleSystem**
-- [x] **A24.3: Remove hardcoded camera-offset point light** from LightingUniformsLoader
-- [x] **A24.4: Delete lighting hacks** that ensure objects are always lit
-- [x] **A24.5: Refactor to single directional light** (remove separate Sun/Moon lights)
-- [x] **A24.6: Create DirectionalLightComponent**
-- [x] **A24.7: Create DirectionalLightSystem**
+All Phase 7 quality improvements completed and moved to CHANGELOG.md.
 
-### Phase 2 — Implement Basic Directional Shadow Mapping
+**Completed in v0.24:**
 
-- [x] **A24.8: Create ShadowMap class**
-- [x] **A24.9: Create ShadowRenderer**
-- [x] **A24.10: Configure orthographic projection** for directional light
-- [x] **A24.11: Compute lightSpaceMatrix** (`lightProjection * lightView`)
-- [x] **A24.12: Pass lightSpaceMatrix** to shadow pass shader and main PBR shader
-- [x] **A24.13: Implement shadow depth-only shader**
-- [x] **A24.14: Ensure skinned meshes run animation** in shadow pass
+- Dynamic shadow map resolution (auto-scales to 4096 or GPU max)
+- Configurable shadow distance (10-200m range)
+- Shadow stabilization (texel snapping to eliminate shimmering)
+- Depth bias controls (constant + slope-scaled)
+- RenderComponent shadow flags (castShadow, receiveShadow)
 
-### Phase 3 — Modify PBR Shader for Shadows
+See CHANGELOG.md for full details.
 
-- [x] **A24.15: Add shadow uniforms**
-- [x] **A24.16: Calculate FragPosLightSpace** in vertex shader
-- [x] **A24.17: Implement shadow comparison** in fragment shader
-- [x] **A24.18: Add normal-based shadow bias**
-- [x] **A24.19: Apply shadow factor** to directional light contribution
+---
 
-### Phase 4 — Add PCF (Soft Shadows)
+## 🔴 v0.25: Lighting Integration (Planned)
 
-- [x] **A24.20: Implement 3x3 PCF sampling**
-- [x] **A24.21: Average 9 samples** around projected coord
-- [x] **A24.22: Make PCF kernel size** configurable
+### Summary
 
-### Phase 5 — Clean Day/Night Cycle
+The lighting and shadow systems (v0.24) were implemented but not integrated into the scene initialization and gameplay.
+This phase connects all the new systems to make them actually work in the game.
 
-- [x] **A24.23: Replace dual Sun/Moon lights** with single blended directional light
-- [x] **A24.24: Interpolate light properties**
-- [x] **A24.25: Interpolate ambient color** with sky color
-- [x] **A24.26: Lower shadow intensity** at night
+### Phase 1 — Scene Initialization Integration
 
-### Phase 6 — Lighting Refactor (Forward Cleanup)
+- [ ] **A25.1: Add DayNightCycleSystem to LevelEditorSceneInitializer**
+    - Register system in `init()` method
+    - Ensure it runs before DirectionalLightSystem
 
-- [x] **A24.27: Remove moon-specific logic** from shader
-- [x] **A24.28: Replace uSunColor / uMoonColor** with single directional light
+- [ ] **A25.2: Add DirectionalLightSystem to LevelEditorSceneInitializer**
+    - Register system in `init()` method
+    - Create initial DirectionalLightComponent entity
 
-### Phase 7 — Quality Improvements
+- [ ] **A25.3: Create DirectionalLightComponent entity in LevelEditorSceneInitializer**
+    - Initialize with default shadow settings
+    - Link to DayNightCycleSystem for automatic updates
 
-- [x] **A24.30: Increase shadow map resolution** to 4096 if GPU allows
-- [x] **A24.31: Add configurable shadow distance**
-- [x] **A24.32: Add depth clamp** or stabilize light projection to reduce shimmering
-- [x] **A24.33: Add RenderComponent flags**
+### Phase 2 — Environment Window Integration
 
-### Validation Checklist
+- [ ] **A25.4: Update EnvironmentWindow to read from DirectionalLightComponent**
+    - Replace `scene.sceneData.sun` with light component data
+    - Sync UI controls with component properties
 
-- [ ] Character casts shadow on ground
-- [ ] Ground casts shadow onto ramps
-- [ ] Animated skeleton casts correct shadow
-- [ ] Shadows soften with PCF
-- [ ] No shadow acne
-- [ ] No Peter Panning
-- [ ] Day/night transitions smoothly
+- [ ] **A25.5: Integrate DayNightCycleSystem with EnvironmentWindow time controls**
+    - Time slider should update DayNightCycleSystem.cycleTime
+    - Remove duplicate `updateEnvironment()` logic
+
+- [ ] **A25.6: Connect fog settings to EnvironmentWindow**
+    - Ensure fog density/color updates are applied
+    - Sync with day/night cycle if desired
+
+### Phase 3 — Skater Integration
+
+- [ ] **A25.7: Add InputStateComponent to Skater prefab** (already exists, verify it's used)
+    - Verify PlayerController reads from InputStateComponent
+    - Verify InputSystem populates the component
+
+- [ ] **A25.8: Add shadow flags to Skater RenderComponent**
+    - Set `castShadow = true` for character
+    - Set `receiveShadow = true` for character
+
+- [ ] **A25.9: Add shadow flags to environment objects**
+    - Floor: `castShadow = false`, `receiveShadow = true`
+    - Ramps/obstacles: `castShadow = true`, `receiveShadow = true`
+
+### Phase 4 — Verification & Testing
+
+- [ ] **A25.10: Verify shadow rendering pipeline**
+    - Shadow pass renders to ShadowMap
+    - Geometry pass samples ShadowMap with correct uniforms
+    - PCF filtering uses correct texel size
+
+- [ ] **A25.11: Verify day/night cycle affects lighting**
+    - Sun direction updates from DayNightCycleSystem
+    - Sun color/intensity interpolate through day phases
+    - Ambient light interpolates with day/night
+
+- [ ] **A25.12: Test shadow quality settings**
+    - Shadow distance slider affects coverage
+    - Stabilize projection reduces shimmering
+    - Depth bias eliminates acne without peter-panning

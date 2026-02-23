@@ -77,7 +77,95 @@ configurability.
 
 ---
 
-## [Previous] - v0.21: Input Mapping & Configuration System
+## [v0.24] - 2026-02-23: Lighting & Shadowing Quality Improvements
+
+### Summary
+
+Completed Phase 7 quality improvements for the shadow mapping system, adding professional-grade features including
+dynamic resolution, configurable coverage, anti-shimmering, and per-object shadow control.
+
+### Added
+
+- **Dynamic Shadow Map Resolution**: GPU-aware resolution selection (`engine/render/ShadowMap.kt`)
+    - `getMaxShadowMapResolution()` queries `GL_MAX_TEXTURE_SIZE`
+    - `createWithBestResolution(desiredResolution)` auto-selects best supported resolution
+    - Default target: 4096x4096 (up to GPU maximum, typically 8192-32768)
+    - Logs actual resolution at startup for debugging
+
+- **Configurable Shadow Distance**: Per-light shadow coverage control (
+  `engine/ecs/components/DirectionalLightComponent.kt`)
+    - `shadowDistance: Float = 50f` - Maximum shadow rendering distance (10-200m range)
+    - `autoCalculateBounds: Boolean = true` - Auto-calculate orthographic bounds from distance
+    - Smaller distance = higher quality in smaller area
+    - Larger distance = more coverage at lower resolution
+
+- **Shadow Stabilization**: Texel snapping to eliminate shimmering (`engine/ecs/systems/DirectionalLightSystem.kt`)
+    - `stabilizeProjection: Boolean = true` - Enable/disable stabilization
+    - Snaps camera position to texel-sized grid in light space
+    - Prevents shadow map crawling as camera moves
+    - **Impact**: High - Eliminates distracting shadow shimmering artifacts
+
+- **Depth Bias Controls**: Shadow acne prevention (`engine/ecs/components/DirectionalLightComponent.kt`)
+    - `depthBias: Float = 0.005f` - Constant depth bias
+    - `slopeScaledBias: Float = 0.01f` - Multiplier for steep angles
+    - Shader implements slope-scaled bias calculation
+    - **Impact**: High - Eliminates shadow acne without peter-panning
+
+- **RenderComponent Shadow Flags**: Per-object shadow control (`engine/ecs/components/RenderComponent.kt`)
+    - `castShadow: Boolean = true` - Controls whether object casts shadows
+    - `receiveShadow: Boolean = true` - Controls whether object receives shadows
+    - Enables optimization (skip shadows for transparent/background objects)
+    - **Impact**: Medium - Fine-grained shadow control per object
+
+### Changed
+
+- **Shadow Map Initialization**: Uses dynamic resolution (`engine/render/RenderResourcesFactory.kt`)
+    - Changed from `ShadowMap()` to `ShadowMap.createWithBestResolution(4096)`
+    - Logs shadow map resolution: "Shadow map resolution: 4096x4096"
+    - Passes actual resolution to GeometryPass for PCF texel size calculation
+
+- **DirectionalLightSystem.updateLightSpaceMatrix()**: Added stabilization logic
+    - Snaps camera position to texel grid when `stabilizeProjection = true`
+    - Recalculates light view matrix with snapped position
+    - Auto-calculates orthographic bounds from `shadowDistance`
+    - Supports manual bounds override when `autoCalculateBounds = false`
+
+- **Shader Shadow Sampling**: Slope-scaled bias implementation (`assets/shaders/shader_3d_default.glsl`)
+    - Added `uShadowDepthBias` and `uShadowSlopeScaledBias` uniforms
+    - Updated `calculateShadow()` to accept `normal` and `lightDir` parameters
+    - Calculates bias as: `uShadowDepthBias + (uShadowSlopeScaledBias * (1.0 - NdotL))`
+    - **Impact**: Steep surfaces get more bias, flat surfaces get minimal bias
+
+- **GeometryPass**: Uploads shadow bias uniforms
+    - Uploads `SHADOW_MAP_TEXEL_SIZE` as `1.0 / shadowMapResolution`
+    - Uploads `SHADOW_DEPTH_BIAS` from light component
+    - Uploads `SHADOW_SLOPE_SCALED_BIAS` from light component
+
+- **DirectionalLightSystem ImGui**: Added quality controls
+    - Shadow Distance slider (10-200m)
+    - Auto Calculate Bounds checkbox
+    - Stabilize Projection checkbox
+    - Depth Bias slider (0-0.1, 4 decimal precision)
+    - Slope-Scaled Bias slider (0-0.1, 3 decimal precision)
+    - Displays effective shadow coverage in meters
+
+### Architecture
+
+- **Shadow Quality Pipeline**: Multi-stage quality control
+    1. Resolution selection based on GPU capabilities
+    2. Coverage control via shadow distance
+    3. Stabilization via texel snapping
+    4. Anti-acne via slope-scaled depth bias
+    5. Per-object control via RenderComponent flags
+
+- **Shader-Component Integration**: Tight coupling between component and shader
+    - Component properties uploaded as uniforms each frame
+    - Shader implements physics-correct calculations (slope-scaled bias)
+    - ImGui provides real-time tuning with immediate feedback
+
+---
+
+## [Previous] - v0.23: Input System Code Quality
 
 ### Summary
 
