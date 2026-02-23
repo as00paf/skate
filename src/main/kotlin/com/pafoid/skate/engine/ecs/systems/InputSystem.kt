@@ -178,7 +178,9 @@ class InputSystem(
 
         var value = axes[axisIndex]
 
-        if (positiveBinding.inverted) {
+        // Invert Y-axis (axis 1 = left stick Y, axis 3 = right stick Y)
+        // because GLFW returns negative values when stick is pushed up
+        if (axisIndex == 1 || axisIndex == 3) {
             value = -value
         }
 
@@ -211,7 +213,6 @@ class InputSystem(
 
         if (binding.gamepadAxis >= 0 && axes != null && binding.gamepadAxis < axes.size) {
             var value = axes[binding.gamepadAxis]
-            if (binding.inverted) value = -value
             if (value > triggerThreshold) return true
         }
 
