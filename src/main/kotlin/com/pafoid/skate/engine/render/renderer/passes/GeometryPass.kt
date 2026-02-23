@@ -46,6 +46,7 @@ import org.lwjgl.opengl.GL30.glViewport
  * @param sceneManager The scene manager for accessing current scene
  * @param getUseFbo Lambda to get current FBO usage setting at render time
  * @param shadowMapTextureId Optional shadow map texture ID for shadow mapping
+ * @param shadowMapResolution Shadow map resolution for PCF texel size calculation
  */
 class GeometryPass(
     private val defaultShader: Shader,
@@ -57,7 +58,8 @@ class GeometryPass(
     private val lightingUniformsLoader: LightingUniformsLoader,
     private val getUseFbo: () -> Boolean,
     private val sceneManager: SceneManager,
-    private val shadowMapTextureId: Int = 0
+    private val shadowMapTextureId: Int = 0,
+    private val shadowMapResolution: Float = 2048f
 ) : RenderPass {
 
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
@@ -95,6 +97,11 @@ class GeometryPass(
             directionalLight,
             shadowMapTextureId
         )
+
+        // Upload shadow map texel size for PCF
+        if (shadowMapTextureId != 0) {
+            defaultShader.uploadFloat(Uniforms.SHADOW_MAP_TEXEL_SIZE, 1.0f / shadowMapResolution)
+        }
 
         // Render all 3D game objects
         scene.gameObjectManager.gameObjects.forEach { go ->

@@ -54,32 +54,15 @@
 
 - [x] **A24.27: Remove moon-specific logic** from shader
 - [x] **A24.28: Replace uSunColor / uMoonColor** with single directional light
-- [ ] **A24.29: Optional: Add point light array** support (4 lights)
 
 ### Phase 7 — Quality Improvements
 
-- [ ] **A24.30: Increase shadow map resolution** to 4096 if GPU allows
-
+- [x] **A24.30: Increase shadow map resolution** to 4096 if GPU allows
 - [ ] **A24.31: Add configurable shadow distance**
-
 - [ ] **A24.32: Add depth clamp** or stabilize light projection to reduce shimmering
-
 - [ ] **A24.33: Add RenderComponent flags**
   - `castShadow: Boolean`
   - `receiveShadow: Boolean`
-
-### Phase 8 — Next-Level Features (Later)
-
-- [ ] **A24.34: Implement Cascaded Shadow Maps (CSM)**
-
-- [ ] **A24.35: Add Image Based Lighting (IBL)**
-  - Irradiance map
-  - Prefiltered environment map
-  - BRDF LUT
-
-- [ ] **A24.36: Add Bloom post-processing**
-
-- [ ] **A24.37: Add Reflection Probes or SSR**
 
 ### Validation Checklist
 

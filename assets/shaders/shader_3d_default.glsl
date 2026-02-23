@@ -130,8 +130,10 @@ uniform vec3 uSunColor;
 uniform vec3 uAmbientLight;
 uniform vec3 uFogColor;
 
-// --- Shadow Mapping ---
+// --- Shadow Mapping Uniforms ---
+uniform mat4 uLightSpaceMatrix;// Light's view-projection matrix
 uniform sampler2D uShadowMap;// Shadow map depth texture
+uniform float uShadowMapTexelSize;// 1.0 / shadowMapResolution for PCF
 
 // --- Feature Toggles ---
 uniform bool u_HasNormalMap;
@@ -161,16 +163,13 @@ float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW)
     // Get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
 
-    // Shadow map texel size (assuming 2048x2048 shadow map)
-    float texelSize = 1.0 / 2048.0;
-
-    // 3x3 PCF sampling
+    // 3x3 PCF sampling using uniform texel size
     float shadow = 0.0;
     float bias = 0.005;
 
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(uShadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            float pcfDepth = texture(uShadowMap, projCoords.xy + vec2(x, y) * uShadowMapTexelSize).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }

@@ -9,6 +9,7 @@ import org.lwjgl.opengl.GL30.GL_FLOAT
 import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
 import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_COMPLETE
 import org.lwjgl.opengl.GL30.GL_LINEAR
+import org.lwjgl.opengl.GL30.GL_MAX_TEXTURE_SIZE
 import org.lwjgl.opengl.GL30.GL_NONE
 import org.lwjgl.opengl.GL30.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL30.GL_TEXTURE_BORDER_COLOR
@@ -26,6 +27,7 @@ import org.lwjgl.opengl.GL30.glDrawBuffers
 import org.lwjgl.opengl.GL30.glFramebufferTexture2D
 import org.lwjgl.opengl.GL30.glGenFramebuffers
 import org.lwjgl.opengl.GL30.glGenTextures
+import org.lwjgl.opengl.GL30.glGetInteger
 import org.lwjgl.opengl.GL30.glTexImage2D
 import org.lwjgl.opengl.GL30.glTexParameterfv
 import org.lwjgl.opengl.GL30.glViewport
@@ -39,7 +41,7 @@ import org.lwjgl.opengl.GL32.glTexParameteri
  *
  * ## Configuration
  *
- * - **Resolution**: 2048x2048 (configurable)
+ * - **Resolution**: Configurable (default: 2048x2048, max: GPU-dependent)
  * - **Depth Format**: GL_DEPTH_COMPONENT32F (32-bit float depth)
  * - **Filtering**: GL_LINEAR for PCF sampling
  * - **Wrapping**: GL_CLAMP_TO_BORDER with border color (1,1,1,1) for shadow bias handling
@@ -47,17 +49,15 @@ import org.lwjgl.opengl.GL32.glTexParameteri
  * ## Usage
  *
  * ```kotlin
- * // Create shadow map
- * val shadowMap = ShadowMap(2048, 2048)
- * shadowMap.initialize()
+ * // Create shadow map with default resolution
+ * val shadowMap = ShadowMap()
  *
- * // Render shadow pass
- * shadowMap.bind()
- * // ... render scene from light perspective
- * shadowMap.unbind()
+ * // Create shadow map with custom resolution
+ * val highResShadowMap = ShadowMap(4096, 4096)
  *
- * // Access depth texture for sampling in shader
- * val depthTextureId = shadowMap.depthTextureId
+ * // Get maximum supported resolution
+ * val maxResolution = ShadowMap.getMaxShadowMapResolution()
+ * val bestShadowMap = ShadowMap(maxResolution, maxResolution)
  * ```
  *
  * @param width Shadow map width in pixels (default: 2048)
@@ -67,6 +67,29 @@ class ShadowMap(
     val width: Int = 2048,
     val height: Int = 2048
 ) {
+    companion object {
+        /**
+         * Queries the GPU for the maximum supported 2D texture size.
+         * This can be used to determine the maximum shadow map resolution.
+         *
+         * @return Maximum texture size in pixels (typically 8192, 16384, or 32768)
+         */
+        fun getMaxShadowMapResolution(): Int {
+            return glGetInteger(GL_MAX_TEXTURE_SIZE)
+        }
+
+        /**
+         * Creates a ShadowMap with the highest supported resolution up to the specified maximum.
+         *
+         * @param desiredResolution Desired resolution (default: 4096)
+         * @return ShadowMap with the best supported resolution
+         */
+        fun createWithBestResolution(desiredResolution: Int = 4096): ShadowMap {
+            val maxSupported = getMaxShadowMapResolution()
+            val resolution = minOf(desiredResolution, maxSupported)
+            return ShadowMap(resolution, resolution)
+        }
+    }
     private var fboId = 0
     private var depthTextureId = 0
     private var initialized = false

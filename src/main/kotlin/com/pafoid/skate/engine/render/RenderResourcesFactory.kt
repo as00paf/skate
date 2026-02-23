@@ -78,7 +78,9 @@ class RenderResourcesFactory(
         val renderers = createRenderers(shaders, resourceManager)
 
         logger.logEngine("Creating render passes...")
-        val shadowMap = ShadowMap()
+        // Create shadow map with highest supported resolution up to 4096x4096
+        val shadowMap = ShadowMap.createWithBestResolution(4096)
+        logger.logEngine("Shadow map resolution: ${shadowMap.width}x${shadowMap.height}")
         shadowMap.initialize()
         val renderPasses = createRenderPasses(
             shaders = shaders,
@@ -196,6 +198,7 @@ class RenderResourcesFactory(
         )
 
         val shadowMapTextureId = shadowMap?.getDepthTextureId() ?: 0
+        val shadowMapRes = shadowMap?.width?.toFloat() ?: 2048f
         val geometryPass = GeometryPass(
             defaultShader = shaders.default,
             batchShader = shaders.batch,
@@ -206,7 +209,8 @@ class RenderResourcesFactory(
             lightingUniformsLoader = lightingUniformsLoader,
             getUseFbo = { true }, // Default to FBO, can be made configurable
             sceneManager = sceneManager,
-            shadowMapTextureId = shadowMapTextureId
+            shadowMapTextureId = shadowMapTextureId,
+            shadowMapResolution = shadowMapRes
         )
 
         val debugPass = DebugPass(debugRenderer)
