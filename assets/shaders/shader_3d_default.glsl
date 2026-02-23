@@ -151,7 +151,7 @@ const float PI = 3.14159265359;
 
 // Shadow Mapping Functions
 
-// Calculate shadow factor using depth comparison
+// Calculate shadow factor using 3x3 PCF (Percentage-Closer Filtering)
 float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW)
 {
     // Perform perspective divide to get NDC coordinates
@@ -163,12 +163,20 @@ float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW)
     // Get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
 
-    // Sample closest depth from shadow map
-    float closestDepth = texture(uShadowMap, projCoords.xy).r;
+    // Shadow map texel size (assuming 2048x2048 shadow map)
+    float texelSize = 1.0 / 2048.0;
 
-    // Simple depth comparison with bias
+    // 3x3 PCF sampling
+    float shadow = 0.0;
     float bias = 0.005;
-    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(uShadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
 
     return shadow;
 }

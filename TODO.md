@@ -39,11 +39,9 @@
 
 ### Phase 4 — Add PCF (Soft Shadows)
 
-- [ ] **A24.20: Implement 3x3 PCF sampling**
-
-- [ ] **A24.21: Average 9 samples** around projected coord
-
-- [ ] **A24.22: Make PCF kernel size** configurable
+- [x] **A24.20: Implement 3x3 PCF sampling**
+- [x] **A24.21: Average 9 samples** around projected coord
+- [x] **A24.22: Make PCF kernel size** configurable
 
 ### Phase 5 — Clean Day/Night Cycle
 
