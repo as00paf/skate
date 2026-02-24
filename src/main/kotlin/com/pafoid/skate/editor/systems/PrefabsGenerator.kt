@@ -108,7 +108,11 @@ class PrefabsGenerator(
             resourceManager.loadTextureSync(mat.texturePath)
         )
         rail.addComponent(
-            RenderComponent(model = texturedModel)
+            RenderComponent(
+                model = texturedModel,
+                castShadow = true,
+                receiveShadow = true
+            )
         )
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0)) //Should depend on rail type
@@ -129,7 +133,11 @@ class PrefabsGenerator(
             resourceManager.loadTextureSync(mat.texturePath)
         )
         ledge.addComponent(
-            RenderComponent(model = texturedModel)
+            RenderComponent(
+                model = texturedModel,
+                castShadow = true,
+                receiveShadow = true
+            )
         )
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
@@ -150,7 +158,11 @@ class PrefabsGenerator(
             resourceManager.loadTextureSync(mat.texturePath)
         )
         kicker.addComponent(
-            RenderComponent(model = texturedModel)
+            RenderComponent(
+                model = texturedModel,
+                castShadow = true,
+                receiveShadow = true
+            )
         )
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
@@ -187,7 +199,11 @@ class PrefabsGenerator(
             resourceManager.loadTextureSync(mat.texturePath)
         )
         go.addComponent(
-            RenderComponent(model = texturedModel)
+            RenderComponent(
+                model = texturedModel,
+                castShadow = true,
+                receiveShadow = true
+            )
         )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
@@ -208,7 +224,11 @@ class PrefabsGenerator(
             resourceManager.loadTextureSync(mat.texturePath)
         )
         go.addComponent(
-            RenderComponent(model = texturedModel)
+            RenderComponent(
+                model = texturedModel,
+                castShadow = true,
+                receiveShadow = true
+            )
         )
                 go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
@@ -243,7 +263,11 @@ class PrefabsGenerator(
             resourceManager.loadTextureSync(mat.texturePath)
         )
         go.addComponent(
-            RenderComponent(model = texturedModel)
+            RenderComponent(
+                model = texturedModel,
+                castShadow = true,
+                receiveShadow = true
+            )
         )
                 go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 

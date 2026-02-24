@@ -28,7 +28,11 @@ class Skater(
 ): GameObject(name) {
 
     val transformComponent = Transform()
-    val renderComponent = RenderComponent(model = characterModel)
+    val renderComponent = RenderComponent(
+        model = characterModel,
+        castShadow = true,
+        receiveShadow = true
+    )
     val skeletonComponent = SkeletonComponent(SkeletonPose(characterModel.skeleton.copy()))
     val animator = Animator()
 

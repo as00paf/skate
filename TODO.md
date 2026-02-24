@@ -47,17 +47,9 @@ This phase connects all the new systems to make them actually work in the game.
 
 ### Phase 3 — Skater Integration
 
-- [ ] **A25.7: Add InputStateComponent to Skater prefab** (already exists, verify it's used)
-    - Verify PlayerController reads from InputStateComponent
-    - Verify InputSystem populates the component
-
-- [ ] **A25.8: Add shadow flags to Skater RenderComponent**
-    - Set `castShadow = true` for character
-    - Set `receiveShadow = true` for character
-
-- [ ] **A25.9: Add shadow flags to environment objects**
-    - Floor: `castShadow = false`, `receiveShadow = true`
-    - Ramps/obstacles: `castShadow = true`, `receiveShadow = true`
+- [x] **A25.7: Verify InputStateComponent integration with Skater**
+- [x] **A25.8: Add shadow flags to Skater RenderComponent**
+- [x] **A25.9: Add shadow flags to environment objects**
 
 ### Phase 4 — Verification & Testing
 
