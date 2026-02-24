@@ -91,6 +91,10 @@ class PickingPass(
         // User must deselect (ESC or click empty space) to re-enable picking.
         if (activeGameObject != null) return
 
+        // CRITICAL: Rebind picking FBO - may have been unbound by previous passes (e.g., shadow pass)
+        pickingTexture.enableWriting()
+        glViewport(0, 0, pickingTexture.width, pickingTexture.height)
+
         // Render 2D and 3D objects for picking
         renderer2D.bindCamera(scene.camera)
         render2D(scene, pickingShader)

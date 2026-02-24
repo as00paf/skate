@@ -109,6 +109,18 @@ This task covers adding the shadow pass to the renderer and verifying end-to-end
   - [x] Update `Renderer.destroy()` to cleanup shadow renderer
   - [x] Create dedicated `ShadowPass`
 
+### Bug Fixes
+
+- [x] **A27.0.1: Fix shadow map texture binding in GeometryPass**
+  - Shadow map texture is set to texture unit 4 in shader but never bound
+  - Add `glActiveTexture(GL_TEXTURE4)` and `glBindTexture(GL_TEXTURE_2D, shadowMapTextureId)` before rendering geometry
+  - Location: `GeometryPass.kt` after `loadLightingUniforms()` call
+
+- [x] **A27.0.2: Fix PickingPass FBO binding after ShadowPass**
+  - ShadowPass unbinds to default FBO 0, breaking PickingPass which expects its FBO to be bound
+  - Add FBO rebind in `PickingPass.execute()` before rendering
+  - Location: `PickingPass.kt` at start of `execute()` method
+
 ### Tasks
 
 - [ ] **A27.1: Verify shadow rendering pipeline**

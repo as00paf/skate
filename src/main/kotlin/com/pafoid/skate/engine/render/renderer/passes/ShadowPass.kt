@@ -6,8 +6,6 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.render.ShadowMap
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
-import org.lwjgl.opengl.GL30.GL_DEPTH_BUFFER_BIT
-import org.lwjgl.opengl.GL30.glClear
 
 /**
  * Shadow mapping render pass.
@@ -47,7 +45,7 @@ class ShadowPass(
         shadowMap.bind()
 
         // Clear depth buffer
-        glClear(GL_DEPTH_BUFFER_BIT)
+        shadowMap.clear()
 
         // Get light space matrix from directional light config
         val lightSpaceMatrix = lightSystem.config.lightSpaceMatrix

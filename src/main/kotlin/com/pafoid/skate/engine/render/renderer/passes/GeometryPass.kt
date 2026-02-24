@@ -108,6 +108,10 @@ class GeometryPass(
                 defaultShader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, 0.005f)
                 defaultShader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, 0.01f)
             }
+
+            // Bind shadow map texture to texture unit 4
+            glActiveTexture(GL_TEXTURE0 + 4)
+            glBindTexture(GL_TEXTURE_2D, shadowMapTextureId)
         }
 
         // Render all 3D game objects
