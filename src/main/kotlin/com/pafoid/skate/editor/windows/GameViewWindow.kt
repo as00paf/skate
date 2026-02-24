@@ -2,7 +2,6 @@ package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.gizmos.MeasureTool
-import com.pafoid.skate.editor.gizmos.SelectionGizmo
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
@@ -196,7 +195,7 @@ class GameViewWindow : KoinComponent {
     }
 
     fun getHoveredObject(): GameObject? {
-        return sceneManager.currentScene?.systemManager?.getSystem<SelectionGizmo>()?.hoveredGameObject
+        return sceneManager.currentScene?.systemManager?.getSystem<GizmoSystem>()?.getHoveredGameObject()
     }
 
     private fun getLargestSizeForViewport(): ImVec2 {
