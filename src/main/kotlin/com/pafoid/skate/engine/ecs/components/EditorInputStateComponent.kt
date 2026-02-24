@@ -28,30 +28,6 @@ import org.joml.Vector2f
  * - [orbitHeld]: True while orbit input is held
  * - [resetPressed]: True for one frame when reset input is pressed (Home)
  * - [isInsideViewport]: True when mouse is inside the editor viewport
- *
- * ## Usage
- *
- * ```kotlin
- * // In EditorCamera or similar editor system
- * val editorInput = gameObject.getComponent<EditorInputStateComponent>() ?: return
- *
- * // Mouse look
- * if (editorInput.mouseLook.lengthSquared() > 0f) {
- *     camera.yaw += editorInput.mouseLook.x * sensitivity
- *     camera.pitch += editorInput.mouseLook.y * sensitivity
- * }
- *
- * // WASD movement
- * val moveDir = editorInput.moveDirection
- * if (moveDir.lengthSquared() > 0f) {
- *     // Apply movement
- * }
- *
- * // Vertical movement
- * if (editorInput.verticalMovement != 0f) {
- *     camera.position.y += editorInput.verticalMovement * speed
- * }
- * ```
  */
 @Serializable
 class EditorInputStateComponent : Component() {

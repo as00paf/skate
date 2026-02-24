@@ -19,16 +19,6 @@ import kotlin.math.sin
  * This class reads input from [InputStateComponent] which is populated by [InputSystem],
  * following the ECS input architecture. It does NOT poll hardware directly.
  *
- * ## Usage
- *
- * ```kotlin
- * // In PlayerController or similar component
- * val gameCamera = GameCamera(camera, sceneManager, inputStateComponent, inputSettings)
- *
- * // Each frame
- * gameCamera.update(dt, inputStateComponent)
- * ```
- *
  * @param camera The base camera to control
  * @param sceneManager Scene manager for physics raycasting
  * @param inputSettings Input settings for sensitivity configuration

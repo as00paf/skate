@@ -6,11 +6,9 @@ import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER
 import org.lwjgl.opengl.GL20.glVertexAttribPointer
 import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL30.GL_ELEMENT_ARRAY_BUFFER
 import org.lwjgl.opengl.GL30.GL_FLOAT
 import org.lwjgl.opengl.GL30.GL_INT
 import org.lwjgl.opengl.GL30.GL_STATIC_DRAW
-import org.lwjgl.opengl.GL30.GL_TRIANGLES
 import org.lwjgl.opengl.GL30.glBindBuffer
 import org.lwjgl.opengl.GL30.glBindVertexArray
 import org.lwjgl.opengl.GL30.glBufferData
@@ -19,7 +17,6 @@ import org.lwjgl.opengl.GL30.glDeleteVertexArrays
 import org.lwjgl.opengl.GL30.glGenBuffers
 import org.lwjgl.opengl.GL30.glGenVertexArrays
 import org.lwjgl.opengl.GL30.glVertexAttribIPointer
-import org.lwjgl.opengl.GL30.glVertexAttribPointer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
@@ -52,24 +49,6 @@ import java.nio.IntBuffer
  *
  * Call [cleanUp()] to delete all tracked resources, or [deleteVAO()] to remove a specific VAO
  * and its associated VBOs. Failure to call these methods will result in OpenGL resource leaks.
- *
- * ## Usage Example
- *
- * ```kotlin
- * val loader = VAOLoader()
- * val model = loader.loadToVAO(
- *     positions = floatArrayOf(...),
- *     textureCoords = floatArrayOf(...),
- *     normals = floatArrayOf(...),
- *     indices = intArrayOf(...)
- * )
- *
- * // Later, when done with the model:
- * loader.deleteVAO(model.vaoId)
- *
- * // Or cleanup all resources:
- * loader.cleanUp()
- * ```
  */
 class VAOLoader {
 
@@ -332,14 +311,6 @@ class VAOLoader {
      * internal tracking lists to prevent double-deletion.
      *
      * @param vaoId The VAO ID to delete, typically from [RawModel.vaoId].
-     *
-     * ## Usage
-     * ```kotlin
-     * val model = loader.loadToVAO(...)
-     * // ... use model for rendering ...
-     * loader.deleteVAO(model.vaoId)
-     * ```
-     *
      * **Note**: If the [vaoId] is not found in the tracked list, this method does nothing.
      */
     fun deleteVAO(vaoId: Int) {

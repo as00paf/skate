@@ -43,20 +43,6 @@ import org.lwjgl.glfw.GLFW
  * - Pause: Escape / Start Button
  * - Reset: Delete / Back + Start
  * - Stance Change: Left/Right Arrow / D-Pad Left/Right
- *
- * ## Usage
- *
- * ```kotlin
- * // Access default mappings
- * val mappings = InputMappings()
- *
- * // Check if jump button is pressed
- * val jumpKey = mappings.jump.keyboardKey  // GLFW_KEY_SPACE
- * val jumpButton = mappings.jump.gamepadButton  // BUTTON_A (0)
- *
- * // Modify binding (for rebinding UI)
- * mappings.jump = InputBinding.keyboard(GLFW.GLFW_KEY_X)
- * ```
  */
 @Serializable
 class InputMappings {

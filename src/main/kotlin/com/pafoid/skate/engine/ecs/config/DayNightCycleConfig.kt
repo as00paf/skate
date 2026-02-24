@@ -23,19 +23,6 @@ import org.joml.Vector3f
  * - [sunIntensity]: Sun intensity (0 at night, 1 at noon)
  * - [shadowIntensity]: Shadow intensity (lower at night)
  * - [isDaytime]: True when sun is above horizon
- *
- * ## Usage
- *
- * ```kotlin
- * val system = DayNightCycleSystem()
- *
- * // Set time of day
- * system.config.cycleTime = 14f  // 2 PM
- *
- * // Read computed values
- * val sunDir = system.config.sunDirection
- * val sunColor = system.config.sunColor
- * ```
  */
 @Serializable
 data class DayNightCycleConfig(

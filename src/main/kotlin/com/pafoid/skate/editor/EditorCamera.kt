@@ -24,15 +24,6 @@ import kotlin.math.sin
  *
  * This system reads input from [EditorInputStateComponent] which is populated by
  * [com.pafoid.skate.engine.ecs.systems.InputSystem]. It does NOT poll hardware directly.
- *
- * ## Usage
- *
- * ```kotlin
- * // In LevelEditorSceneInitializer
- * val editorInput = EditorInputStateComponent()
- * scene.cameraEntity.addComponent(editorInput)
- * scene.addSystem(EditorCamera(scene.camera, editorInput))
- * ```
  */
 class EditorCamera(
     private val camera: Camera,

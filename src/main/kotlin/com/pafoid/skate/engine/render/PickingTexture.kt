@@ -73,23 +73,6 @@ import org.lwjgl.opengl.GL30.glTexParameteri
  * 2. OpenGL texture coordinates have Y=0 at the bottom (OpenGL convention)
  * 3. [glReadPixels] expects texture-space coordinates
  *
- * ## Usage Example
- *
- * ```kotlin
- * val pickingTexture = PickingTexture(1920, 1080)
- *
- * // During render pass:
- * pickingTexture.enableWriting()
- * // ... render objects with encoded IDs ...
- * pickingTexture.disableWriting()
- *
- * // Reading picked object:
- * val screenX = mouseX
- * val screenY = mouseY
- * val textureY = windowHeight - 1 - screenY
- * val entityId = pickingTexture.readPixel(screenX, textureY)
- * ```
- *
  * @param width Initial texture width (typically matches viewport width)
  * @param height Initial texture height (typically matches viewport height)
  */

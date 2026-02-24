@@ -39,18 +39,6 @@ import org.joml.Vector3f
  * - near/far: 0.1 to 100 (depth range)
  *
  * These can be adjusted via ImGui or programmatically for different scene scales.
- *
- * ## Usage
- *
- * ```kotlin
- * // System automatically updates directional light each frame
- * val system = DirectionalLightSystem()
- * scene.addSystem(system)
- *
- * // Access configuration
- * system.config.direction.set(0f, -1f, 0f)
- * system.config.shadowDistance = 50f
- * ```
  */
 class DirectionalLightSystem(
     initialConfig: DirectionalLightConfig = DirectionalLightConfig(),

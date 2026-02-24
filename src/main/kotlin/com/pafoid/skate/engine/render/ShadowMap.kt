@@ -46,20 +46,6 @@ import org.lwjgl.opengl.GL32.glTexParameteri
  * - **Filtering**: GL_LINEAR for PCF sampling
  * - **Wrapping**: GL_CLAMP_TO_BORDER with border color (1,1,1,1) for shadow bias handling
  *
- * ## Usage
- *
- * ```kotlin
- * // Create shadow map with default resolution
- * val shadowMap = ShadowMap()
- *
- * // Create shadow map with custom resolution
- * val highResShadowMap = ShadowMap(4096, 4096)
- *
- * // Get maximum supported resolution
- * val maxResolution = ShadowMap.getMaxShadowMapResolution()
- * val bestShadowMap = ShadowMap(maxResolution, maxResolution)
- * ```
- *
  * @param width Shadow map width in pixels (default: 2048)
  * @param height Shadow map height in pixels (default: 2048)
  */

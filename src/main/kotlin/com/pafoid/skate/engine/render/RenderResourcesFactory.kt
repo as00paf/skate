@@ -51,11 +51,6 @@ class RenderResourcesFactory(
      * 4. Creates all renderer instances
      * 5. Creates all render passes
      *
-     * ## Usage
-     *
-     * Call this method during engine initialization, after the window and OpenGL context
-     * have been created. Typically called by [Renderer.initialize()] during boot sequence.
-     *
      * @param width Initial viewport width
      * @param height Initial viewport height
      * @return Fully initialized RenderResources container

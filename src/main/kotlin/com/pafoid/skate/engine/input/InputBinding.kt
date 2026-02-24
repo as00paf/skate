@@ -9,21 +9,6 @@ import org.lwjgl.glfw.GLFW
  * An input binding can have multiple sources (e.g., both keyboard key AND gamepad button).
  * When any source is activated, the binding is considered active.
  *
- * ## Usage
- *
- * ```kotlin
- * // Create a binding for jump action (Space key OR A button on gamepad)
- * val jumpBinding = InputBinding(
- *     keyboardKey = GLFW.GLFW_KEY_SPACE,
- *     gamepadButton = 0  // BUTTON_A
- * )
- *
- * // Create a binding for axis input (left stick Y axis)
- * val moveYBinding = InputBinding(
- *     gamepadAxis = 1  // AXIS_LEFT_Y
- * )
- * ```
- *
  * @property keyboardKey GLFW key code for keyboard binding. Default: -1 (no keyboard binding)
  * @property gamepadButton Gamepad button index for gamepad binding. Default: -1 (no gamepad button binding)
  * @property gamepadAxis Gamepad axis index for analog input. Default: -1 (no gamepad axis binding)

@@ -93,11 +93,21 @@ See CHANGELOG.md for full details.
 
 ---
 
-## 🔴 v0.27: Shadow Pipeline Verification (Planned)
+## 🔴 v0.27: Shadow Pipeline Integration (Planned)
 
 ### Summary
 
-Verify that the complete shadow rendering pipeline works correctly end-to-end.
+The `ShadowRenderer` class exists but is **not integrated** into the rendering pipeline.
+This task covers adding the shadow pass to the renderer and verifying end-to-end functionality.
+
+### Critical Missing Integration
+
+- [ ] **A27.0: Integrate ShadowRenderer into the rendering pipeline**
+  - [ ] Add `ShadowRenderer` to `Renderers` data class in `RenderResources.kt`
+  - [ ] Instantiate `ShadowRenderer` in `RenderResourcesFactory.createRenderers()`
+  - [ ] Add shadow pass to `Renderer.render()` method (must execute BEFORE geometry pass)
+  - [ ] Update `Renderer.destroy()` to cleanup shadow renderer
+  - [ ] Pass `ShadowRenderer` to `GeometryPass` or create dedicated `ShadowPass`
 
 ### Tasks
 

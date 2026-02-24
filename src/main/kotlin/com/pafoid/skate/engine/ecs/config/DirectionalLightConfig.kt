@@ -32,22 +32,7 @@ import org.joml.Vector3f
  * - [slopeScaledBias]: Slope-scaled bias multiplier
  *
  * ## Flags
- *
  * - [castShadows]: Whether this light casts shadows
- *
- * ## Usage
- *
- * ```kotlin
- * val system = DirectionalLightSystem()
- *
- * // Configure light
- * system.config.direction.set(0f, -1f, 0f)
- * system.config.color.set(1f, 0.95f, 0.8f)
- *
- * // Configure shadows
- * system.config.shadowDistance = 50f
- * system.config.stabilizeProjection = true
- * ```
  */
 @Serializable
 data class DirectionalLightConfig(
