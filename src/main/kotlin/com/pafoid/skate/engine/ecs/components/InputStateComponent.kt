@@ -20,29 +20,6 @@ import org.joml.Vector2f
  * - **Camera**: [cameraLook], [cameraResetPressed]
  * - **Game State**: [pausePressed], [resetPressed], [stanceChangePressed]
  * - **Physics**: [isGrounded] (synced from physics system)
- *
- * ## Usage
- *
- * ```kotlin
- * // In PlayerController or similar gameplay component
- * val inputState = gameObject.getComponent<InputStateComponent>() ?: return
- *
- * // Jump detection
- * if (inputState.jumpPressed) {
- *     applyJump()
- * }
- *
- * // Movement
- * val moveDir = inputState.moveDirection
- * if (moveDir.lengthSquared() > 0f) {
- *     applyMovement(moveDir)
- * }
- *
- * // Trick input
- * if (inputState.flipLeftPressed && inputState.isGrounded) {
- *     performFlipTrick(FlipDirection.LEFT)
- * }
- * ```
  */
 @Serializable
 class InputStateComponent : Component() {

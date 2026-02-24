@@ -23,19 +23,6 @@ import org.lwjgl.glfw.GLFW
  * ### Editor Tools
  * - Measure: M key
  * - Deselect: Escape key
- *
- * ## Usage
- *
- * ```kotlin
- * // Access default mappings
- * val mappings = EditorInputMappings()
- *
- * // Check translate key binding
- * val translateKey = mappings.gizmoTranslate.keyboardKey  // GLFW_KEY_W
- *
- * // Modify binding (for rebinding UI)
- * mappings.gizmoTranslate = InputBinding.keyboard(GLFW.GLFW_KEY_T)
- * ```
  */
 @Serializable
 class EditorInputMappings {

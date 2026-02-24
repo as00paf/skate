@@ -27,19 +27,6 @@ import org.lwjgl.opengl.GL30.glDrawArrays
  * - Supports skinned meshes with GPU bone transforms
  * - Depth-only rendering (no color buffer writes)
  *
- * ## Usage
- *
- * ```kotlin
- * // Create shadow renderer
- * val shadowRenderer = ShadowRenderer(resourceManager)
- *
- * // In shadow pass:
- * shadowMap.bind()
- * shadowMap.clear()
- * shadowRenderer.render(scene, directionalLight, shadowMap)
- * shadowMap.unbind()
- * ```
- *
  * @param resourceManager Resource manager for loading shaders and textures
  */
 class ShadowRenderer(
