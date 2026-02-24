@@ -2,11 +2,13 @@ package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
+import com.pafoid.skate.engine.render.renderer.ShadowRenderer
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.renderer.SkyboxRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
+import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 
 /**
  * Container for all shader resources used by the rendering pipeline.
@@ -18,6 +20,7 @@ import com.pafoid.skate.engine.render.renderer.passes.PickingPass
  * @param picking3D The 3D picking shader for mesh selection
  * @param skybox The cube map skybox shader
  * @param skyDome The HDRI sky dome shader
+ * @param shadow The shadow mapping shader for depth-only rendering
  */
 data class Shaders(
     val default: Shader,
@@ -26,7 +29,8 @@ data class Shaders(
     val picking: Shader,
     val picking3D: Shader,
     val skybox: Shader,
-    val skyDome: Shader
+    val skyDome: Shader,
+    val shadow: Shader
 )
 
 /**
@@ -35,11 +39,13 @@ data class Shaders(
  * @param skybox Renders the cube map skybox
  * @param skyDome Renders the HDRI sky dome
  * @param model Renders 3D meshes with PBR materials
+ * @param shadow Renders shadow-casting objects to shadow map
  */
 data class Renderers(
     val skybox: SkyboxRenderer,
     val skyDome: SkyDomeRenderer,
-    val model: ModelRenderer
+    val model: ModelRenderer,
+    val shadow: ShadowRenderer
 )
 
 /**
@@ -48,11 +54,13 @@ data class Renderers(
  * @param picking Renders object IDs for mouse selection
  * @param geometry Renders the full scene with PBR shading
  * @param debug Renders debug visualization on top
+ * @param shadow Renders depth-only shadow map pass
  */
 data class RenderPasses(
     val picking: PickingPass,
     val geometry: GeometryPass,
-    val debug: DebugPass
+    val debug: DebugPass,
+    val shadow: RenderPass
 )
 
 /**

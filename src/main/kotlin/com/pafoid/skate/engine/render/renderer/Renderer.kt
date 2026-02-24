@@ -56,9 +56,10 @@ class Renderer(
 
     /**
      * Renders the scene by executing all render passes in order:
-     * 1. Picking Pass - For mouse selection
-     * 2. Geometry Pass - Full scene with PBR shading
-     * 3. Debug Pass - Debug visualization overlay
+     * 1. Shadow Pass - Render depth to shadow map
+     * 2. Picking Pass - For mouse selection
+     * 3. Geometry Pass - Full scene with PBR shading
+     * 4. Debug Pass - Debug visualization overlay
      *
      * @param scene The scene to render
      * @param activeGameObject The currently selected game object (if any)
@@ -75,13 +76,16 @@ class Renderer(
         renderResources.renderPasses.debug.beginFrame()
         renderResources.renderPasses.picking.beginFrame()
 
-        // 1. Picking Pass - Render object IDs for mouse selection
+        // 1. Shadow Pass - Render depth to shadow map (must be before geometry pass)
+        renderResources.renderPasses.shadow.execute(scene, activeGameObject, hoveredGameObject)
+
+        // 2. Picking Pass - Render object IDs for mouse selection
         renderResources.renderPasses.picking.execute(scene, activeGameObject, hoveredGameObject)
 
-        // 2. Geometry Pass - Render full scene with PBR shading
+        // 3. Geometry Pass - Render full scene with PBR shading
         renderResources.renderPasses.geometry.execute(scene, activeGameObject, hoveredGameObject)
 
-        // 3. Debug Pass - Render debug visualization on top (still in FBO)
+        // 4. Debug Pass - Render debug visualization on top (still in FBO)
         renderResources.renderPasses.debug.execute(scene, activeGameObject, hoveredGameObject)
 
         // Now unbind and cleanup geometry pass
@@ -141,16 +145,21 @@ class Renderer(
         renderResources.shaders.picking3D.destroy()
         renderResources.shaders.debug.destroy()
         renderResources.shaders.skyDome.destroy()
+        renderResources.shaders.shadow.destroy()
 
         // Destroy renderers
         renderResources.renderers.skybox.destroy()
         renderResources.renderers.skyDome.destroy()
+        renderResources.renderers.shadow.destroy()
 
         // Destroy framebuffer (includes texture and depth buffer)
         renderResources.frameBuffer.destroy()
 
         // Destroy picking texture
         renderResources.pickingTexture.destroy()
+
+        // Destroy shadow map
+        renderResources.shadowMap?.destroy()
     }
 
     /**

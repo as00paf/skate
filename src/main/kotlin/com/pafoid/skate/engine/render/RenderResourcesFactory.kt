@@ -4,17 +4,22 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
+import com.pafoid.skate.engine.render.renderer.ShadowRenderer
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.renderer.SkyboxRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
+import com.pafoid.skate.engine.render.renderer.passes.RenderPass
+import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.utils.GLStateTracker
 
 /**
@@ -111,28 +116,32 @@ class RenderResourcesFactory(
             { resourceManager.loadShader(Assets.Shaders.PICKING_3D) },
             { resourceManager.loadShader(Assets.Shaders.SKYBOX) },
             { resourceManager.loadShader(Assets.Shaders.SKY_DOME) },
+            { resourceManager.loadShader(Assets.Shaders.SHADOW) },
         )
 
-        logger.logEngine("Loading shader 1/7: Debug")
+        logger.logEngine("Loading shader 1/8: Debug")
         val debugShader = shaders[0].invoke()
 
-        logger.logEngine("Loading shader 2/7: Default 3D")
+        logger.logEngine("Loading shader 2/8: Default 3D")
         val defaultShader = shaders[1].invoke()
 
-        logger.logEngine("Loading shader 3/7: 2D Batch")
+        logger.logEngine("Loading shader 3/8: 2D Batch")
         val batchShader = shaders[2].invoke()
 
-        logger.logEngine("Loading shader 4/7: Picking")
+        logger.logEngine("Loading shader 4/8: Picking")
         val pickingShader = shaders[3].invoke()
 
-        logger.logEngine("Loading shader 5/7: Picking 3D")
+        logger.logEngine("Loading shader 5/8: Picking 3D")
         val picking3DShader = shaders[4].invoke()
 
-        logger.logEngine("Loading shader 6/7: Skybox")
+        logger.logEngine("Loading shader 6/8: Skybox")
         val skyboxShader = shaders[5].invoke()
 
-        logger.logEngine("Loading shader 7/7: Sky Dome")
+        logger.logEngine("Loading shader 7/8: Sky Dome")
         val skyDomeShader = shaders[6].invoke()
+
+        logger.logEngine("Loading shader 8/8: Shadow")
+        val shadowShader = shaders[7].invoke()
 
         return Shaders(
             default = defaultShader,
@@ -141,7 +150,8 @@ class RenderResourcesFactory(
             picking = pickingShader,
             picking3D = picking3DShader,
             skybox = skyboxShader,
-            skyDome = skyDomeShader
+            skyDome = skyDomeShader,
+            shadow = shadowShader
         )
     }
 
@@ -155,11 +165,13 @@ class RenderResourcesFactory(
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
         val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, resourceManager)
         val modelRenderer = ModelRenderer(resourceManager, debugRenderer)
+        val shadowRenderer = ShadowRenderer(resourceManager)
 
         return Renderers(
             skybox = skyboxRenderer,
             skyDome = skyDomeRenderer,
-            model = modelRenderer
+            model = modelRenderer,
+            shadow = shadowRenderer
         )
     }
 
@@ -210,10 +222,27 @@ class RenderResourcesFactory(
 
         val debugPass = DebugPass(debugRenderer)
 
+        // Create shadow pass (requires shadow map)
+        val shadowPass = if (shadowMap != null) {
+            ShadowPass(
+                shadowRenderer = renderers.shadow,
+                shadowMap = shadowMap,
+                sceneManager = sceneManager
+            )
+        } else {
+            // Fallback pass that does nothing if no shadow map
+            object : RenderPass {
+                override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+                    // No-op
+                }
+            }
+        }
+
         return RenderPasses(
             picking = pickingPass,
             geometry = geometryPass,
-            debug = debugPass
+            debug = debugPass,
+            shadow = shadowPass
         )
     }
 }

@@ -102,12 +102,12 @@ This task covers adding the shadow pass to the renderer and verifying end-to-end
 
 ### Critical Missing Integration
 
-- [ ] **A27.0: Integrate ShadowRenderer into the rendering pipeline**
-  - [ ] Add `ShadowRenderer` to `Renderers` data class in `RenderResources.kt`
-  - [ ] Instantiate `ShadowRenderer` in `RenderResourcesFactory.createRenderers()`
-  - [ ] Add shadow pass to `Renderer.render()` method (must execute BEFORE geometry pass)
-  - [ ] Update `Renderer.destroy()` to cleanup shadow renderer
-  - [ ] Create dedicated `ShadowPass`
+- [x] **A27.0: Integrate ShadowRenderer into the rendering pipeline**
+  - [x] Add `ShadowRenderer` to `Renderers` data class in `RenderResources.kt`
+  - [x] Instantiate `ShadowRenderer` in `RenderResourcesFactory.createRenderers()`
+  - [x] Add shadow pass to `Renderer.render()` method (must execute BEFORE geometry pass)
+  - [x] Update `Renderer.destroy()` to cleanup shadow renderer
+  - [x] Create dedicated `ShadowPass`
 
 ### Tasks
 

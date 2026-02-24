@@ -1,0 +1,65 @@
+package com.pafoid.skate.engine.render.renderer.passes
+
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.render.ShadowMap
+import com.pafoid.skate.engine.render.renderer.ShadowRenderer
+import org.lwjgl.opengl.GL30.GL_DEPTH_BUFFER_BIT
+import org.lwjgl.opengl.GL30.glClear
+
+/**
+ * Shadow mapping render pass.
+ *
+ * Renders all shadow-casting objects into the shadow map depth texture.
+ * This pass must be executed before the geometry pass so that shadows
+ * can be sampled during main scene rendering.
+ *
+ * ## Render Pipeline
+ *
+ * 1. Bind shadow map framebuffer
+ * 2. Clear depth buffer
+ * 3. Set viewport to shadow map resolution
+ * 4. Render all objects with castShadow enabled
+ * 5. Unbind shadow map
+ *
+ * @param shadowRenderer The shadow renderer for drawing objects
+ * @param shadowMap The shadow map depth texture
+ * @param sceneManager The scene manager for accessing directional light system
+ */
+class ShadowPass(
+    private val shadowRenderer: ShadowRenderer,
+    private val shadowMap: ShadowMap,
+    private val sceneManager: SceneManager
+) : RenderPass {
+
+    override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+        // Get directional light system from scene
+        val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
+
+        // Skip if shadows are disabled or no light system
+        if (lightSystem == null || !lightSystem.config.castShadows) {
+            return
+        }
+
+        // Bind shadow map framebuffer
+        shadowMap.bind()
+
+        // Clear depth buffer
+        glClear(GL_DEPTH_BUFFER_BIT)
+
+        // Get light space matrix from directional light config
+        val lightSpaceMatrix = lightSystem.config.lightSpaceMatrix
+
+        // Render all shadow casters
+        shadowRenderer.render(
+            gameObjects = scene.gameObjectManager.gameObjects,
+            lightSpaceMatrix = lightSpaceMatrix,
+            shadowMap = shadowMap
+        )
+
+        // Unbind shadow map
+        shadowMap.unbind()
+    }
+}
