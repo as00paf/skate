@@ -114,7 +114,7 @@ class GameViewWindow : KoinComponent {
         // We now get the hovered object from SelectionGizmo (via getHoveredObject)
         val hovered = getHoveredObject()
         if (hovered != null) {
-            ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 10f)
+            ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 20f)
             ImGui.textColored(
                 1f,
                 1f,
