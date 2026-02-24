@@ -3,8 +3,8 @@ package com.pafoid.skate.editor.windows
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
+import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
@@ -16,12 +16,9 @@ class EnvironmentWindow : KoinComponent {
     fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.environment"))
 
-        // Find DayNightCycleSystem and DirectionalLightComponent
+        // Get systems
         val dayNightSystem = scene.systemManager.getSystem<DayNightCycleSystem>()
-        val lightEntity = scene.gameObjectManager.gameObjects.find {
-            it.getComponent<DirectionalLightComponent>() != null
-        }
-        val light = lightEntity?.getComponent<DirectionalLightComponent>()
+        val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
 
         if (ImGui.collapsingHeader("${Icons.GEAR} ${stringManager.getString("lbl.environment.time_of_day")}")) {
             // Sync with DayNightCycleSystem if available
@@ -59,56 +56,58 @@ class EnvironmentWindow : KoinComponent {
             }
         }
 
-        if (light != null && ImGui.collapsingHeader("${Icons.SUN} ${stringManager.getString("lbl.environment.sun")}")) {
+        if (lightSystem != null && ImGui.collapsingHeader("${Icons.SUN} ${stringManager.getString("lbl.environment.sun")}")) {
+            val config = lightSystem.config
+
             // Light direction
-            val sunDir = floatArrayOf(light.direction.x, light.direction.y, light.direction.z)
+            val sunDir = floatArrayOf(config.direction.x, config.direction.y, config.direction.z)
             if (ImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f, -1f, 1f)) {
-                light.direction.set(sunDir[0], sunDir[1], sunDir[2]).normalize()
+                config.direction.set(sunDir[0], sunDir[1], sunDir[2]).normalize()
             }
 
             // Light color
-            val sunColor = floatArrayOf(light.color.x, light.color.y, light.color.z)
+            val sunColor = floatArrayOf(config.color.x, config.color.y, config.color.z)
             if (ImGui.colorEdit3(stringManager.getString("lbl.environment.sun_color"), sunColor)) {
-                light.color.set(sunColor[0], sunColor[1], sunColor[2])
+                config.color.set(sunColor[0], sunColor[1], sunColor[2])
             }
 
             // Light intensity
-            val sunIntensity = floatArrayOf(light.intensity)
+            val sunIntensity = floatArrayOf(config.intensity)
             if (ImGui.dragFloat(stringManager.getString("lbl.environment.sun_intensity"), sunIntensity, 0.1f, 0f, 10f)) {
-                light.intensity = sunIntensity[0]
+                config.intensity = sunIntensity[0]
             }
 
             ImGui.separator()
             ImGui.text("Shadow Settings")
 
             // Shadow distance
-            val shadowDistance = floatArrayOf(light.shadowDistance)
+            val shadowDistance = floatArrayOf(config.shadowDistance)
             if (ImGui.dragFloat("Shadow Distance (m)", shadowDistance, 1f, 10f, 200f)) {
-                light.shadowDistance = shadowDistance[0]
+                config.shadowDistance = shadowDistance[0]
             }
 
             // Auto calculate bounds
-            val autoBounds = ImBoolean(light.autoCalculateBounds)
+            val autoBounds = ImBoolean(config.autoCalculateBounds)
             if (ImGui.checkbox("Auto Calculate Bounds", autoBounds)) {
-                light.autoCalculateBounds = autoBounds.get()
+                config.autoCalculateBounds = autoBounds.get()
             }
 
             // Stabilize projection
-            val stabilize = ImBoolean(light.stabilizeProjection)
+            val stabilize = ImBoolean(config.stabilizeProjection)
             if (ImGui.checkbox("Stabilize Projection", stabilize)) {
-                light.stabilizeProjection = stabilize.get()
+                config.stabilizeProjection = stabilize.get()
             }
 
             // Depth bias
-            val depthBias = floatArrayOf(light.depthBias)
+            val depthBias = floatArrayOf(config.depthBias)
             if (ImGui.dragFloat("Depth Bias", depthBias, 0.0001f, 0f, 0.1f, "%.4f")) {
-                light.depthBias = depthBias[0]
+                config.depthBias = depthBias[0]
             }
 
             // Slope-scaled bias
-            val slopeBias = floatArrayOf(light.slopeScaledBias)
+            val slopeBias = floatArrayOf(config.slopeScaledBias)
             if (ImGui.dragFloat("Slope-Scaled Bias", slopeBias, 0.001f, 0f, 0.1f, "%.3f")) {
-                light.slopeScaledBias = slopeBias[0]
+                config.slopeScaledBias = slopeBias[0]
             }
         }
 

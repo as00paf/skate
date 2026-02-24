@@ -165,6 +165,96 @@ dynamic resolution, configurable coverage, anti-shimmering, and per-object shado
 
 ---
 
+## [v0.25] - 2026-02-23: Lighting Integration
+
+### Summary
+
+Integrated the lighting and shadow systems (v0.24) into scene initialization, environment UI, and gameplay prefabs.
+All lighting systems now properly initialized and configurable through the Environment window.
+
+### Added
+
+- **DayNightCycleSystem Integration**: Automatic day/night cycle in scene (`editor/LevelEditorSceneInitializer.kt`)
+  - System registered in scene initialization pipeline
+  - `DayNightCycleComponent` entity created with synced initial time
+  - Day duration set to 300 seconds (5 minutes per full cycle)
+  - Runs at EARLY priority before lighting calculations
+
+- **DirectionalLightSystem Integration**: Automatic light updates (`editor/LevelEditorSceneInitializer.kt`)
+  - System registered in scene initialization pipeline
+  - `DirectionalLightComponent` entity created with shadow settings
+  - Configured with default shadow distance (50m) and quality settings
+  - Reads from DayNightCycleSystem for sun direction/color
+
+- **Environment Window Light Controls**: Full lighting configuration (`editor/windows/EnvironmentWindow.kt`)
+  - Time of day slider synced with DayNightCycleSystem
+  - Sun direction/color/intensity controls (reads from DirectionalLightComponent)
+  - Shadow settings section with all quality controls:
+    - Shadow Distance (10-200m range)
+    - Auto Calculate Bounds toggle
+    - Stabilize Projection toggle (reduces shimmering)
+    - Depth Bias (0-0.1, 4 decimal precision)
+    - Slope-Scaled Bias (0-0.1, 3 decimal precision)
+  - Removed duplicate `updateEnvironment()` logic (now handled by systems)
+
+- **DayNightCycleSystem API**: Public time control methods (`engine/ecs/systems/DayNightCycleSystem.kt`)
+  - `getCycleTime(): Float` - Get current time in hours (0-24)
+  - `setCycleTime(time: Float)` - Set time of day
+  - Enables UI and external systems to control day/night cycle
+
+- **Shadow Flags on Prefabs**: Per-object shadow control (`game/prefabs/`, `editor/systems/PrefabsGenerator.kt`)
+  - Skater: `castShadow = true`, `receiveShadow = true`
+  - Rails, Ledges, Kickers, Banks, Quarter Pipes: Full shadow participation
+  - Floor tiles: `castShadow = false`, `receiveShadow = true` (optimization)
+
+### Changed
+
+- **LevelEditorSceneInitializer**: Lighting system initialization
+  - Added DayNightCycleSystem and DirectionalLightSystem registration
+  - Created DayNightCycleComponent entity synced with `scene.sceneData.timeOfDay`
+  - Created DirectionalLightComponent entity with default shadow configuration
+  - Fixed light consistency issue (before vs after first play)
+
+- **EnvironmentWindow**: Refactored to use system data
+  - Time slider reads from `DayNightCycleSystem.getCycleTime()`
+  - Time slider writes to both `scene.sceneData.timeOfDay` AND system
+  - Sun controls read/write from `DirectionalLightComponent`
+  - Removed ~60 lines of duplicate day/night interpolation code
+  - Cleaner separation: systems handle logic, UI handles display
+
+- **PrefabsGenerator**: Shadow flags on all spawned objects
+  - Rail, Ledge, Kicker, ManualPad, Bank, QuarterPipe
+  - All configured with `castShadow = true`, `receiveShadow = true`
+  - Consistent shadow behavior across all environment objects
+
+- **Tile**: Optimized shadow configuration
+  - Floor tiles set to receive-only shadows
+  - Large surfaces don't need to cast (performance optimization)
+  - Still receives shadows from characters and objects
+
+### Architecture
+
+- **System-Component Pattern**: Lighting systems follow ECS pattern
+  - Systems own the logic and computation
+  - Components store configuration and computed state
+  - UI reads/writes through component properties
+  - Clean separation of concerns
+
+- **Day/Night Flow**: Clear data flow through systems
+  1. EnvironmentWindow sets time via slider
+  2. DayNightCycleSystem advances time and computes sun state
+  3. DirectionalLightSystem reads sun state and updates light
+  4. LightingUniformsLoader uploads to shader
+  5. Shader applies lighting and shadows to scene
+
+- **Shadow Configuration Hierarchy**: Centralized shadow settings
+  - DirectionalLightComponent stores all shadow parameters
+  - EnvironmentWindow provides UI for tuning
+  - DirectionalLightSystem applies settings to light space matrix
+  - GeometryPass uploads uniforms to shader
+
+---
+
 ## [Previous] - v0.23: Input System Code Quality
 
 ### Summary

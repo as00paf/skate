@@ -2,9 +2,11 @@
 
 ## Notes
 
-- See CHANGELOG.md for completed items through v0.24
+- See CHANGELOG.md for completed items through v0.26
 - All v0.23 technical debt items completed
 - All v0.24 Phase 7 quality improvements completed
+- All v0.25 Phases 1-3 integration items completed
+- v0.26 lighting architecture refactoring completed - systems now own configuration directly
 
 ---
 
@@ -26,32 +28,26 @@ See CHANGELOG.md for full details.
 
 ---
 
-## 🔴 v0.25: Lighting Integration (Planned)
+## ✅ v0.25: Lighting Integration - COMPLETED
 
 ### Summary
 
-The lighting and shadow systems (v0.24) were implemented but not integrated into the scene initialization and gameplay.
-This phase connects all the new systems to make them actually work in the game.
+All Phase 1-3 integration tasks completed and moved to CHANGELOG.md.
 
-### Phase 1 — Scene Initialization Integration
+**Completed in v0.25:**
 
-- [x] **A25.1: Add DayNightCycleSystem to LevelEditorSceneInitializer**
-- [x] **A25.2: Add DirectionalLightSystem to LevelEditorSceneInitializer**
-- [x] **A25.3: Create DirectionalLightComponent entity in LevelEditorSceneInitializer**
+- DayNightCycleSystem and DirectionalLightSystem integration
+- Environment Window light controls and time synchronization
+- Shadow flags on Skater and all environment prefabs
+- Fixed light consistency issue (before vs after first play)
 
-### Phase 2 — Environment Window Integration
+See CHANGELOG.md for full details.
 
-- [x] **A25.4: Update EnvironmentWindow to read from DirectionalLightComponent**
-- [x] **A25.5: Integrate DayNightCycleSystem with EnvironmentWindow time controls**
-- [x] **A25.6: Connect fog settings to EnvironmentWindow**
+**Remaining:**
 
-### Phase 3 — Skater Integration
+- Phase 4 verification tasks (shadow pipeline, day/night cycle, quality settings)
 
-- [x] **A25.7: Verify InputStateComponent integration with Skater**
-- [x] **A25.8: Add shadow flags to Skater RenderComponent**
-- [x] **A25.9: Add shadow flags to environment objects**
-
-### Phase 4 — Verification & Testing
+### Phase 4 — Verification & Testing (Remaining)
 
 - [ ] **A25.10: Verify shadow rendering pipeline**
     - Shadow pass renders to ShadowMap
@@ -67,3 +63,55 @@ This phase connects all the new systems to make them actually work in the game.
     - Shadow distance slider affects coverage
     - Stabilize projection reduces shimmering
     - Depth bias eliminates acne without peter-panning
+
+---
+
+## ✅ v0.26: Lighting Architecture Refactor - COMPLETED
+
+### Summary
+
+Refactored lighting systems to own their configuration directly, eliminating artificial GameObjects and improving
+architecture.
+
+**Completed in v0.26:**
+
+- Created `DayNightCycleConfig` and `DirectionalLightConfig` data classes
+- Updated systems to own configuration directly
+- Removed `DayNightCycleComponent` and `DirectionalLightComponent`
+- Updated `LevelEditorSceneInitializer` to initialize configs directly
+- Updated `EnvironmentWindow` to read/write from system configs
+- Updated `LightingUniformsLoader` and `GeometryPass` to use configs
+
+**Architecture improvements:**
+
+- No artificial GameObjects ("DayNightCycle", "DirectionalLight") in scene hierarchy
+- Direct property access instead of entity lookup every frame
+- Cleaner separation of concerns - systems own logic, configs own data
+- Configuration still `@Serializable` for save/load support
+
+See CHANGELOG.md for full details.
+
+---
+
+## 🔴 v0.27: Shadow Pipeline Verification (Planned)
+
+### Summary
+
+Verify that the complete shadow rendering pipeline works correctly end-to-end.
+
+### Tasks
+
+- [ ] **A27.1: Verify shadow rendering pipeline**
+  - Shadow pass renders to ShadowMap
+  - Geometry pass samples ShadowMap with correct uniforms
+  - PCF filtering uses correct texel size
+
+- [ ] **A27.2: Verify day/night cycle affects lighting**
+  - Sun direction updates from DayNightCycleSystem
+  - Sun color/intensity interpolate through day phases
+  - Ambient light interpolates with day/night
+
+- [ ] **A27.3: Test shadow quality settings**
+  - Shadow distance slider affects coverage
+  - Stabilize projection reduces shimmering
+  - Depth bias eliminates acne without peter-panning

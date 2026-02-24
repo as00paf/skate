@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.ecs.config.DayNightCycleConfig
 import org.joml.Vector3f
 import kotlin.math.cos
 import kotlin.math.sin
@@ -9,11 +9,11 @@ import kotlin.math.sin
  * System responsible for updating the day/night cycle.
  *
  * This system runs at [ExecutionPriority.EARLY] to ensure day/night state
- * is ready before lighting and shadow systems read from [DayNightCycleComponent].
+ * is ready before lighting and shadow systems read from [config].
  *
  * ## Responsibilities
  *
- * - Advances [DayNightCycleComponent.cycleTime] based on delta time
+ * - Advances [DayNightCycleConfig.cycleTime] based on delta time
  * - Computes sun direction from cycle time using trigonometry
  * - Interpolates sun color through day phases (daylight → dusk → night → dawn)
  * - Computes ambient color and shadow intensity
@@ -39,8 +39,12 @@ import kotlin.math.sin
  * @param dayDurationOverride Optional override for day duration in seconds
  */
 class DayNightCycleSystem(
-    private val dayDurationOverride: Float? = null
+    initialConfig: DayNightCycleConfig = DayNightCycleConfig(),
+    private val dayDurationOverride: Float? = null,
 ) : System(priority = ExecutionPriority.EARLY) {
+
+    // System-owned configuration
+    val config = initialConfig
 
     // Color constants for interpolation
     private val noonColor = Vector3f(1.0f, 0.95f, 0.8f)  // Warm sunlight
@@ -57,54 +61,33 @@ class DayNightCycleSystem(
      * Gets the current cycle time in hours (0-24).
      * @return Current time of day in hours
      */
-    fun getCycleTime(): Float {
-        val dayNightEntity = scene.gameObjectManager.gameObjects.find {
-            it.getComponent<DayNightCycleComponent>() != null
-        }
-        return dayNightEntity?.getComponent<DayNightCycleComponent>()?.cycleTime ?: 12f
-    }
+    fun getCycleTime(): Float = config.cycleTime
 
     /**
      * Sets the cycle time in hours (0-24).
      * @param time Time of day in hours
      */
     fun setCycleTime(time: Float) {
-        val dayNightEntity = scene.gameObjectManager.gameObjects.find {
-            it.getComponent<DayNightCycleComponent>() != null
-        }
-        dayNightEntity?.getComponent<DayNightCycleComponent>()?.cycleTime = time
+        config.cycleTime = time
     }
 
     override fun update(dt: Float) {
-        // Find or create day/night cycle entity
-        val dayNightEntity = scene.gameObjectManager.gameObjects.find {
-            it.getComponent<DayNightCycleComponent>() != null
-        }
-
-        if (dayNightEntity == null) {
-            // No day/night cycle entity exists - create one
-            createDayNightCycleEntity()
-            return
-        }
-
-        val dayNight = dayNightEntity.getComponent<DayNightCycleComponent>() ?: return
-
         // Get day duration (use override if provided)
-        val dayDuration = dayDurationOverride ?: dayNight.dayDuration
+        val dayDuration = dayDurationOverride ?: config.dayDuration
 
         // Advance cycle time (convert dt to hours)
         val hoursPerSecond = 24f / dayDuration
-        dayNight.cycleTime = (dayNight.cycleTime + dt * hoursPerSecond) % 24f
+        config.cycleTime = (config.cycleTime + dt * hoursPerSecond) % 24f
 
         // Compute sun direction from cycle time
-        updateSunDirection(dayNight)
+        updateSunDirection()
 
         // Interpolate sun color based on time of day
-        updateSunColor(dayNight)
+        updateSunColor()
 
         // Update derived values
-        dayNight.isDaytime = dayNight.cycleTime in 6f..18f
-        dayNight.shadowIntensity = if (dayNight.isDaytime) 1f else 0.3f
+        config.isDaytime = config.cycleTime in 6f..18f
+        config.shadowIntensity = if (config.isDaytime) 1f else 0.3f
     }
 
     /**
@@ -116,14 +99,14 @@ class DayNightCycleSystem(
      * - Angle +90° at dusk (sun sets in west)
      * - Angle ±180° at midnight (sun below)
      */
-    private fun updateSunDirection(dayNight: DayNightCycleComponent) {
+    private fun updateSunDirection() {
         // Convert cycle time to angle (0-24 hours → 0-360 degrees)
         // Offset by 6 hours so noon = 0° (sun at zenith)
-        val hoursFromNoon = dayNight.cycleTime - 12f
+        val hoursFromNoon = config.cycleTime - 12f
         val angleRadians = Math.toRadians(((hoursFromNoon / 24f) * 360f - 90f).toDouble())
 
         // Sun direction: Y component is sin (height), X component is cos (horizontal)
-        dayNight.sunDirection.set(
+        config.sunDirection.set(
             cos(angleRadians).toFloat(),
             sin(angleRadians).toFloat(),
             0f
@@ -136,8 +119,8 @@ class DayNightCycleSystem(
      * Blends between dawn, noon, dusk, and night colors
      * to create smooth transitions through day phases.
      */
-    private fun updateSunColor(dayNight: DayNightCycleComponent) {
-        val time = dayNight.cycleTime
+    private fun updateSunColor() {
+        val time = config.cycleTime
 
         // Determine current phase and interpolation factor
         when {
@@ -146,18 +129,18 @@ class DayNightCycleSystem(
                 val t = ((time - 5f) / 2f).coerceIn(0f, 1f)
                 if (time < 6f) {
                     // Night to dawn
-                    lerpColor(nightColor, dawnColor, t, dayNight.sunColor)
+                    lerpColor(nightColor, dawnColor, t, config.sunColor)
                 } else {
                     // Dawn to noon
-                    lerpColor(dawnColor, noonColor, t, dayNight.sunColor)
+                    lerpColor(dawnColor, noonColor, t, config.sunColor)
                 }
-                dayNight.sunIntensity = t
+                config.sunIntensity = t
             }
 
             // Day: 7-17 hours (full brightness)
             time < 17f -> {
-                dayNight.sunColor.set(noonColor)
-                dayNight.sunIntensity = 1f
+                config.sunColor.set(noonColor)
+                config.sunIntensity = 1f
             }
 
             // Dusk: 17-19 hours (blend noon → dusk → night)
@@ -165,23 +148,23 @@ class DayNightCycleSystem(
                 val t = ((time - 17f) / 2f).coerceIn(0f, 1f)
                 if (time < 18f) {
                     // Noon to dusk
-                    lerpColor(noonColor, duskColor, t, dayNight.sunColor)
+                    lerpColor(noonColor, duskColor, t, config.sunColor)
                 } else {
                     // Dusk to night
-                    lerpColor(duskColor, nightColor, t, dayNight.sunColor)
+                    lerpColor(duskColor, nightColor, t, config.sunColor)
                 }
-                dayNight.sunIntensity = 1f - t
+                config.sunIntensity = 1f - t
             }
 
             // Night: 19-5 hours (dark)
             else -> {
-                dayNight.sunColor.set(nightColor)
-                dayNight.sunIntensity = 0f
+                config.sunColor.set(nightColor)
+                config.sunIntensity = 0f
             }
         }
 
         // Compute ambient color (interpolates between night and day ambient)
-        dayNight.ambientColor.set(nightAmbient).lerp(dayAmbient, dayNight.sunIntensity)
+        config.ambientColor.set(nightAmbient).lerp(dayAmbient, config.sunIntensity)
     }
 
     /**
@@ -193,14 +176,5 @@ class DayNightCycleSystem(
             from.y + (to.y - from.y) * t,
             from.z + (to.z - from.z) * t
         )
-    }
-
-    /**
-     * Creates a new entity with DayNightCycleComponent.
-     * Called when no day/night cycle entity exists in the scene.
-     */
-    private fun createDayNightCycleEntity() {
-        val entity = scene.gameObjectManager.createGameObject("DayNightCycle")
-        entity.addComponent(DayNightCycleComponent())
     }
 }

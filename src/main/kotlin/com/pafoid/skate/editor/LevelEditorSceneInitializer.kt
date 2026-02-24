@@ -11,8 +11,9 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
+import com.pafoid.skate.engine.ecs.config.DayNightCycleConfig
+import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
@@ -96,23 +97,24 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         reportProgress(0.7f, "Setting up Lighting Systems...")
 
         // Lighting Systems (must run after input systems)
-        scene.addSystem(DayNightCycleSystem())
-        scene.addSystem(DirectionalLightSystem())
+        val dayNightCycleSystem = DayNightCycleSystem(DayNightCycleConfig().apply {
+            cycleTime = scene.sceneData.timeOfDay
+            dayDuration = 300f  // 5 minutes per day
+        })
+        scene.addSystem(dayNightCycleSystem)
 
-        // Create DirectionalLightComponent entity
-        val directionalLight = GameObject("DirectionalLight")
-        val lightComponent = DirectionalLightComponent()
-        lightComponent.direction.set(0f, -1f, 0f)  // Noon position (straight down)
-        lightComponent.color.set(1f, 0.95f, 0.8f)  // Warm sunlight
-        lightComponent.intensity = 1f
-        lightComponent.shadowDistance = 50f
-        lightComponent.autoCalculateBounds = true
-        lightComponent.stabilizeProjection = true
-        lightComponent.depthBias = 0.005f
-        lightComponent.slopeScaledBias = 0.01f
-        lightComponent.castShadows = true
-        directionalLight.addComponent(lightComponent)
-        scene.gameObjectManager.addGameObject(directionalLight)
+        val directionalLightSystem = DirectionalLightSystem(DirectionalLightConfig().apply {
+            direction.set(0f, -1f, 0f)  // Noon position
+            color.set(1f, 0.95f, 0.8f)  // Warm sunlight
+            intensity = 1f
+            shadowDistance = 50f
+            autoCalculateBounds = true
+            stabilizeProjection = true
+            depthBias = 0.005f
+            slopeScaledBias = 0.01f
+            castShadows = true
+        })
+        scene.addSystem(directionalLightSystem)
 
         reportProgress(0.8f, "Spawning Prefabs...")
         //skateboard = prefabsGenerator.spawnSkateboard()

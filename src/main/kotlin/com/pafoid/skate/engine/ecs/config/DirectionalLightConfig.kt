@@ -1,38 +1,56 @@
-package com.pafoid.skate.engine.ecs.components
+package com.pafoid.skate.engine.ecs.config
 
-import com.pafoid.skate.engine.ecs.GameObject
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Matrix4f
 import org.joml.Vector3f
 
 /**
- * Component that stores directional light data.
+ * Configuration and state for the directional light system.
  *
- * This component is updated by [DirectionalLightSystem] and read by:
- * - [LightingUniformsLoader] for uploading light uniforms to shaders
- * - Shadow mapping systems for light space matrix calculation
+ * This data class is owned by [DirectionalLightSystem] and stores both
+ * configuration parameters and computed state values.
+ *
+ * ## Light Properties
+ *
+ * - [direction]: Direction the light is pointing
+ * - [color]: Light color
+ * - [intensity]: Light brightness
+ *
+ * ## Shadow Mapping Properties
+ *
+ * - [lightSpaceMatrix]: Light's view-projection matrix (computed)
+ * - [orthoLeft/Right/Bottom/Top]: Orthographic projection bounds
+ * - [orthoNear/Far]: Depth range
+ * - [shadowDistance]: Maximum shadow rendering distance
+ * - [autoCalculateBounds]: Auto-calculate bounds from shadowDistance
+ * - [stabilizeProjection]: Enable texel snapping to reduce shimmering
+ *
+ * ## Quality Settings
+ *
+ * - [depthBias]: Constant depth bias to prevent shadow acne
+ * - [slopeScaledBias]: Slope-scaled bias multiplier
+ *
+ * ## Flags
+ *
+ * - [castShadows]: Whether this light casts shadows
  *
  * ## Usage
  *
  * ```kotlin
- * // In DirectionalLightSystem or lighting code
- * val light = gameObject.getComponent<DirectionalLightComponent>() ?: return
+ * val system = DirectionalLightSystem()
  *
- * // Get light direction for calculations
- * val direction = light.direction
+ * // Configure light
+ * system.config.direction.set(0f, -1f, 0f)
+ * system.config.color.set(1f, 0.95f, 0.8f)
  *
- * // Get light color and intensity for shading
- * val color = light.color
- * val intensity = light.intensity
- *
- * // Get light space matrix for shadow mapping
- * val lightSpace = light.lightSpaceMatrix
+ * // Configure shadows
+ * system.config.shadowDistance = 50f
+ * system.config.stabilizeProjection = true
  * ```
  */
 @Serializable
-class DirectionalLightComponent : Component() {
-
+data class DirectionalLightConfig(
     // =========================================================================
     // LIGHT PROPERTIES
     // =========================================================================
@@ -41,9 +59,10 @@ class DirectionalLightComponent : Component() {
      * Direction the light is pointing (normalized vector).
      * Points FROM the light TO the scene.
      * Example: (0, -1, 0) = light shining straight down from above.
+     * Default: (0, -1, 0)
      */
     @Contextual
-    var direction = Vector3f(0f, -1f, 0f)
+    var direction: Vector3f = Vector3f(0f, -1f, 0f),
 
     /**
      * Color of the light.
@@ -51,14 +70,14 @@ class DirectionalLightComponent : Component() {
      * Range: typically 0.0 - 1.0 per channel, but can exceed 1.0 for HDR.
      */
     @Contextual
-    var color = Vector3f(1f, 0.95f, 0.8f)
+    var color: Vector3f = Vector3f(1f, 0.95f, 0.8f),
 
     /**
      * Intensity (brightness) of the light.
      * Default: 1.0
      * Range: 0.0 (off) to 10.0+ (very bright for HDR).
      */
-    var intensity: Float = 1f
+    var intensity: Float = 1f,
 
     // =========================================================================
     // SHADOW MAPPING
@@ -70,19 +89,25 @@ class DirectionalLightComponent : Component() {
      * Updated each frame by DirectionalLightSystem.
      */
     @Contextual
-    var lightSpaceMatrix = Matrix4f()
+    var lightSpaceMatrix: Matrix4f = Matrix4f(),
 
     /**
      * Orthographic projection bounds for shadow mapping.
      * Defines the view volume captured in the shadow map.
      * These are auto-calculated from shadowDistance if autoCalculateBounds is true.
+     * Default: -20 to 20 (40m coverage)
      */
-    var orthoLeft: Float = -20f
-    var orthoRight: Float = 20f
-    var orthoBottom: Float = -20f
-    var orthoTop: Float = 20f
-    var orthoNear: Float = 0.1f
-    var orthoFar: Float = 100f
+    var orthoLeft: Float = -20f,
+    var orthoRight: Float = 20f,
+    var orthoBottom: Float = -20f,
+    var orthoTop: Float = 20f,
+
+    /**
+     * Near and far planes for orthographic projection.
+     * Default: 0.1 to 100
+     */
+    var orthoNear: Float = 0.1f,
+    var orthoFar: Float = 100f,
 
     /**
      * Maximum distance from camera that shadows are rendered.
@@ -90,42 +115,43 @@ class DirectionalLightComponent : Component() {
      * Larger values = larger shadow coverage but lower resolution.
      * Default: 50 meters
      */
-    var shadowDistance: Float = 50f
+    var shadowDistance: Float = 50f,
 
     /**
      * If true, orthographic bounds are automatically calculated from shadowDistance.
      * If false, manual orthoLeft/Right/Top/Bottom values are used.
      * Default: true
      */
-    var autoCalculateBounds: Boolean = true
+    var autoCalculateBounds: Boolean = true,
 
     /**
      * If true, stabilizes the shadow map projection to reduce shimmering.
      * Snaps the light's orthographic projection to texel boundaries.
      * Default: true
      */
-    var stabilizeProjection: Boolean = true
+    var stabilizeProjection: Boolean = true,
 
     /**
      * Depth bias for shadow comparison to prevent shadow acne.
      * Added to sampled depth before comparison.
      * Default: 0.005
      */
-    var depthBias: Float = 0.005f
+    var depthBias: Float = 0.005f,
 
     /**
      * Slope-scaled depth bias multiplier.
      * Increases bias for surfaces at steep angles to the light.
      * Default: 0.01
      */
-    var slopeScaledBias: Float = 0.01f
+    var slopeScaledBias: Float = 0.01f,
 
     /**
      * True if this light casts shadows.
      * When false, shadow mapping is skipped for this light.
+     * Default: true
      */
     var castShadows: Boolean = true
-
+) {
     /**
      * Resets all properties to defaults.
      */
@@ -146,10 +172,5 @@ class DirectionalLightComponent : Component() {
         depthBias = 0.005f
         slopeScaledBias = 0.01f
         castShadows = true
-    }
-
-    override fun init(gameObject: GameObject) {
-        super.init(gameObject)
-        reset()
     }
 }

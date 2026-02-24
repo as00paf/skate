@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -18,14 +18,14 @@ class LightingUniformsLoader {
      * @param shader The shader to upload uniforms to
      * @param camera The camera for position and view matrix
      * @param sceneData The scene data containing ambient light and fog
-     * @param directionalLight The directional light component
+     * @param directionalLight The directional light config
      * @param shadowMapTextureId The shadow map depth texture ID (optional)
      */
     fun loadLightingUniforms(
         shader: Shader,
         camera: Camera,
         sceneData: SceneData,
-        directionalLight: DirectionalLightComponent?,
+        directionalLight: DirectionalLightConfig?,
         shadowMapTextureId: Int = 0
     ) {
         // Directional light (sun) - single unified light source
