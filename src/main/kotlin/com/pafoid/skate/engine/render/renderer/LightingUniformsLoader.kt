@@ -49,7 +49,7 @@ class LightingUniformsLoader {
 
         // Shadow map texture (if available)
         if (shadowMapTextureId != 0) {
-            shader.uploadInt(Uniforms.SHADOW_MAP, 4) // Use texture unit 4
+            shader.uploadInt(Uniforms.SHADOW_MAP, Uniforms.SHADOW_TEXTURE_UNIT)
             // Upload texel size for PCF (assuming square shadow map)
             // This will be set by the caller based on actual shadow map resolution
         }

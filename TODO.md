@@ -21,16 +21,15 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - Added `vaoId.bindVAO(rawModel.enabledAttributes)` call
   - Location: `ShadowRenderer.kt` line 105
 
-- [ ] **A28.0.2: Fix shadow map texture binding synchronization**
-  - `LightingUniformsLoader` sets texture unit but `GeometryPass` binds texture separately
-  - Texture unit 4 might not be active when binding texture
-  - Move texture binding into `LightingUniformsLoader.loadLightingUniforms()` or ensure GL_TEXTURE4 is active
-  - Location: `LightingUniformsLoader.kt` and `GeometryPass.kt` lines 113-115
+- [x] **A28.0.2: Fix shadow map texture binding synchronization**
+  - Reviewed code - texture binding pattern is correct (upload unit index, activate unit, bind texture)
+  - No actual bug found
 
-- [ ] **A28.0.3: Extract hardcoded texture unit to constant**
-  - Texture unit 4 is hardcoded in multiple places
-  - Create `const val SHADOW_TEXTURE_UNIT = 4` in `ShaderConst` or `TextureSlots`
-  - Locations: `GeometryPass.kt:114`, `LightingUniformsLoader.kt:54`
+- [x] **A28.0.3: Extract hardcoded texture unit to constant**
+  - Created `ShaderConst.Uniforms.SHADOW_TEXTURE_UNIT = 4`
+  - Updated `LightingUniformsLoader.kt` to use constant
+  - Updated `GeometryPass.kt` to use constant
+  - Location: `ShaderConst.kt`, `LightingUniformsLoader.kt:53`, `GeometryPass.kt:114`
 
 - [ ] **A28.0.4: Add framebuffer completeness check in ShadowMap**
   - `ShadowMap.initialize()` uses assert() which is disabled in release builds

@@ -87,5 +87,11 @@ object ShaderConst {
         const val SHADOW_MAP_TEXEL_SIZE = "uShadowMapTexelSize"
         const val SHADOW_DEPTH_BIAS = "uShadowDepthBias"
         const val SHADOW_SLOPE_SCALED_BIAS = "uShadowSlopeScaledBias"
+
+        /**
+         * Shadow map texture unit for shadow mapping.
+         * Must match the texture unit used when binding the shadow map texture.
+         */
+        const val SHADOW_TEXTURE_UNIT = 4
     }
 }

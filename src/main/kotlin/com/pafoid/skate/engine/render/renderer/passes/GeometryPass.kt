@@ -109,8 +109,8 @@ class GeometryPass(
                 defaultShader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, 0.01f)
             }
 
-            // Bind shadow map texture to texture unit 4
-            glActiveTexture(GL_TEXTURE0 + 4)
+            // Bind shadow map texture to texture unit
+            glActiveTexture(GL_TEXTURE0 + Uniforms.SHADOW_TEXTURE_UNIT)
             glBindTexture(GL_TEXTURE_2D, shadowMapTextureId)
         }
 
