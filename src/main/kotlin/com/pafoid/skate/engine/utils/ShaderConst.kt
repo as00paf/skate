@@ -94,6 +94,6 @@ object ShaderConst {
          * Shadow map texture unit for shadow mapping.
          * Must match the texture unit used when binding the shadow map texture.
          */
-        const val SHADOW_TEXTURE_UNIT = 4
+        const val SHADOW_TEXTURE_UNIT = 5
     }
 }
