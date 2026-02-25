@@ -159,6 +159,14 @@ float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW, vec3 nor
     // Perform perspective divide to get NDC coordinates
     vec3 projCoords = fragPosLightSpace / fragPosLightSpaceW;
 
+    // Early exit for out-of-bounds fragments (beyond shadow map coverage)
+    // Returns 0.0 (no shadow) instead of sampling border color
+    if (projCoords.x < -1.0 || projCoords.x > 1.0 ||
+    projCoords.y < -1.0 || projCoords.y > 1.0 ||
+    projCoords.z < 0.0 || projCoords.z > 1.0) {
+        return 0.0;
+    }
+
     // Transform from [-1,1] to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
 

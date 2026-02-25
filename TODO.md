@@ -43,17 +43,18 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - Format: `[ShadowPass] Skipped: lightSystem=true/false, castShadows=true/false`
   - Location: `ShadowPass.kt` line 44, `RenderResourcesFactory.kt` line 229
 
-- [ ] **A28.0.6: Fix inconsistent shadow bias defaults**
-  - Default bias values in `GeometryPass` (0.005, 0.01) differ from `DirectionalLightConfig` defaults
-  - Should use config values consistently
-  - Location: `GeometryPass.kt` lines 108-111, `DirectionalLightConfig.kt`
+- [x] **A28.0.6: Fix inconsistent shadow bias defaults**
+  - Reviewed code - fallback values (0.005, 0.01) match DirectionalLightConfig defaults exactly
+  - Fallback is a safety measure for edge cases where shadow map exists but light system is null
+  - No actual bug found
 
-- [ ] **A28.0.8: Fix Out-of-Bounds Shadow Artifacts**
-  - Objects beyond shadow distance (`projCoords.z > 1.0`) are rendered black because they sample border color
-  - Add early exit in `calculateShadow()` to return 0.0 shadow for out-of-bounds fragments
-  - Location: `assets/shaders/shader_3d_default.glsl`
+- [x] **A28.0.7: Fix Out-of-Bounds Shadow Artifacts**
+  - Added early exit in `calculateShadow()` for fragments outside shadow map
+  - Returns 0.0 (no shadow) instead of sampling border color
+  - Checks: `projCoords` outside [-1, 1] range for x, y, z
+  - Location: `assets/shaders/shader_3d_default.glsl` line 162
 
-- [ ] **A28.0.9: Support Alpha Masking in Shadow Pass**
+- [ ] **A28.0.8: Support Alpha Masking in Shadow Pass**
   - Transparent/masked objects cast solid rectangular shadows because `shadow.glsl` ignores alpha
   - Update `shadow.glsl` to sample base color and `discard` if alpha < cutoff
   - Update `ShadowRenderer.kt` to bind textures and upload alpha uniforms during shadow pass
