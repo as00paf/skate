@@ -69,7 +69,7 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
   - Location: `editor/gizmos/TranslateGizmo.kt`
 
-- [ ] **A28.0.10: Fix RotationGizmo hardcoded resolution**
+- [x] **A28.0.10: Fix RotationGizmo hardcoded resolution**
   - Line 63: `screenToRay(mouseX, mouseY, 1920f, 1080f)` → use `viewportSize.x, viewportSize.y`
   - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
   - Location: `editor/gizmos/RotationGizmo.kt`
