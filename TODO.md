@@ -115,10 +115,40 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - ✅ Stabilize projection reduces shimmering (texel snapping in DirectionalLightSystem.updateLightSpaceMatrix())
   - ✅ Depth bias eliminates acne without peter-panning (depthBias + slopeScaledBias uploaded to shader, used in
     calculateShadow())
-  - ✅ Slope-scaled bias increases bias for surfaces at steep angles to light (NdotL calculation in shader)
-  - ✅ Auto Calculate Bounds toggle (DirectionalLightConfig.autoCalculateBounds)
-  - ✅ Manual ortho bounds override (orthoLeft/Right/Bottom/Top in DirectionalLightConfig)
-  - ✅ ImGui controls in DirectionalLightSystem.imgui() for all quality settings
+
+---
+
+## 🔴 v0.29: Shadow Quality Improvements (Planned)
+
+### Summary
+
+Shadow rendering works but has quality issues that need addressing.
+
+### Bug Fixes
+
+- [ ] **A29.0.1: Fix Camera-Dependent Shadow Disappearance**
+  - Shadow disappears when camera moves because orthographic bounds don't track the camera
+  - `DirectionalLightSystem.autoAdjustBounds` is `false` by default
+  - `adjustOrthoBoundsForCamera()` exists but is never enabled/called
+  - **Fix:** Add `setAutoAdjustBounds(enabled: Boolean)` method to DirectionalLightSystem
+  - **Fix:** Enable auto-adjust bounds in LevelEditorSceneInitializer
+  - **Alternative:** Increase `shadowDistance` from 50m to 100m for larger coverage
+  - Location: `DirectionalLightSystem.kt`, `LevelEditorSceneInitializer.kt`
+
+- [ ] **A29.0.2: Increase Shadow Intensity**
+  - Shadows are too weak and get washed out by ambient light
+  - Shadow factor from 3x3 PCF needs amplification
+  - **Fix:** Multiply shadow factor in shader: `float shadow = calculateShadow(...) * 0.7`
+  - **Alternative:** Reduce ambient light intensity or make it configurable
+  - Location: `assets/shaders/shader_3d_default.glsl` line 317
+
+- [ ] **A29.0.3: Make Ambient Light Configurable via Environment Window**
+  - Ambient light intensity is currently hardcoded in DayNightCycleSystem
+  - Should be adjustable via ImGui slider in Environment Window
+  - **Fix:** Add `ambientIntensity` property to DayNightCycleConfig (default: 0.3)
+  - **Fix:** Add ImGui slider in EnvironmentWindow to adjust ambient intensity
+  - **Fix:** Upload ambient intensity to shader or multiply in DayNightCycleSystem
+  - Location: `DayNightCycleConfig.kt`, `DayNightCycleSystem.kt`, `EnvironmentWindow.kt`
 
 ### Summary
 
