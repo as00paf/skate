@@ -56,10 +56,13 @@ class ScaleGizmo(
 
             if (xAxisActive) {
                 transform.scale.x += calculateDelta(Vector3f(1f, 0f, 0f))
+                transform.scale.x = transform.scale.x.coerceAtLeast(0.01f)
             } else if (yAxisActive) {
                 transform.scale.y += calculateDelta(Vector3f(0f, 1f, 0f))
+                transform.scale.y = transform.scale.y.coerceAtLeast(0.01f)
             } else if (zAxisActive) {
                 transform.scale.z += calculateDelta(Vector3f(0f, 0f, 1f))
+                transform.scale.z = transform.scale.z.coerceAtLeast(0.01f)
             }
 
             // Draw Handles
@@ -75,10 +78,11 @@ class ScaleGizmo(
         val go = activeGameObject ?: return
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
-        
+
         val mouseX = mouseListener.getScreenX()
         val mouseY = mouseListener.getScreenY()
-        val ray = scene.camera.screenToRay(mouseX, mouseY, 1920f, 1080f)
+        val viewportSize = mouseListener.getGameViewportSize()
+        val ray = scene.camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
 
         // Reset hover states
         xAxisHot = false
@@ -153,23 +157,27 @@ class ScaleGizmo(
         val camera = scene.camera
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()
-        
+        val viewportSize = mouseListener.getGameViewportSize()
+
         val go = activeGameObject ?: return 0f
         val transform = go.getComponent<Transform>() ?: return 0f
         val origin = Vector3f(transform.translation)
         val p2 = Vector3f(origin).add(axis)
-        
-        val s1 = worldToScreen(origin, view, proj, 1920f, 1080f)
-        val s2 = worldToScreen(p2, view, proj, 1920f, 1080f)
-        
-        val axisScreenDir = s2.sub(s1).normalize()
-        val mouseDelta = Vector2f(mouseListener.getDx(), -mouseListener.getDy())
-        
+
+        val s1 = worldToScreen(origin, view, proj, viewportSize.x, viewportSize.y)
+        val s2 = worldToScreen(p2, view, proj, viewportSize.x, viewportSize.y)
+
+        val axisScreen = s2.sub(s1)
+        // Guard against NaN: axis is perpendicular to camera or object scale is zero
+        if (axisScreen.lengthSquared() < 0.0001f) return 0f
+
+        val axisScreenDir = axisScreen.normalize()
+        val mouseDelta = Vector2f(mouseListener.getScreenDx(), mouseListener.getScreenDy())
+
         val projection = mouseDelta.dot(axisScreenDir)
-        
         val dist = Vector3f(camera.position).distance(origin)
-        val sensitivity = 0.001f * dist 
-        
+        val sensitivity = 0.001f * dist
+
         return projection * sensitivity
     }
     

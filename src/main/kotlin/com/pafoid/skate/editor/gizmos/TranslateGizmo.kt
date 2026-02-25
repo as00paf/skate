@@ -160,14 +160,18 @@ class TranslateGizmo(
 
         val s1 = worldToScreen(origin, view, proj, viewportSize.x, viewportSize.y)
         val s2 = worldToScreen(p2, view, proj, viewportSize.x, viewportSize.y)
-        
-        val axisScreenDir = s2.sub(s1).normalize()
+
+        val axisScreen = s2.sub(s1)
+        // Guard against NaN: axis is perpendicular to camera or object scale is zero
+        if (axisScreen.lengthSquared() < 0.0001f) return 0f
+
+        val axisScreenDir = axisScreen.normalize()
         val mouseDelta = Vector2f(mouseListener.getScreenDx(), mouseListener.getScreenDy())
-        
+
         val projection = mouseDelta.dot(axisScreenDir)
         val dist = Vector3f(camera.position).distance(origin)
         val sensitivity = 0.01f * dist
-        
+
         return projection * sensitivity
     }
     
