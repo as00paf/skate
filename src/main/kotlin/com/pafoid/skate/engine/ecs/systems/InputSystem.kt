@@ -83,17 +83,6 @@ class InputSystem(
         pollEditorMouseInput(editorInput)
     }
 
-    override fun start() {
-        val editorInputEntity = scene.gameObjectManager.gameObjects.find {
-            it.name == "EditorInput" && it.getComponent<EditorInputStateComponent>() != null
-        }
-        if (editorInputEntity != null) {
-            println("[InputSystem] Found EditorInput entity: $editorInputEntity")
-        } else {
-            println("[InputSystem] WARNING: No EditorInput entity found!")
-        }
-    }
-
     private fun pollGamepadInput(inputState: InputStateComponent, inputSettings: InputSettings) {
         if (!inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) return
 
