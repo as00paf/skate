@@ -3,15 +3,18 @@ package com.pafoid.skate.engine.render.renderer
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.render.ShadowMap
+import com.pafoid.skate.engine.render.utils.bindTexture
 import com.pafoid.skate.engine.render.utils.bindVAO
 import com.pafoid.skate.engine.utils.ShaderConst
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
+import com.pafoid.skate.engine.utils.TextureSlots
 import org.lwjgl.opengl.GL30.GL_TRIANGLES
 import org.lwjgl.opengl.GL30.glBindVertexArray
 import org.lwjgl.opengl.GL30.glDrawArrays
@@ -98,18 +101,35 @@ class ShadowRenderer(
         // Render each mesh part
         model.mesh.forEach { part ->
             val rawModel = part.rawModel
+            val material = part.material
             val vaoId = rawModel.vaoId
             if (vaoId == 0) return@forEach
 
             // Bind VAO with proper attribute enabling (critical for skinned meshes)
             vaoId.bindVAO(rawModel.enabledAttributes)
 
+            // Upload alpha masking uniforms
+            val alphaModeInt = when (material.alphaMode) {
+                AlphaMode.OPAQUE -> 0
+                AlphaMode.MASK -> 1
+                AlphaMode.BLEND -> 2
+            }
+            shader.uploadInt(Uniforms.ALPHA_MODE, alphaModeInt)
+            shader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
+            shader.uploadBoolean(Uniforms.HAS_BASE_COLOR_TEXTURE, material.baseColorTexture != null)
+
+            // Bind base color texture for alpha masking (if available)
+            if (material.alphaMode == AlphaMode.MASK && material.baseColorTexture != null) {
+                bindTexture(TextureSlots.BASE_COLOR, material.baseColorTexture, resourceManager)
+                shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
+            }
+
             if (skeleton != null) {
                 // Skinned mesh: upload bone matrices and enable skinning
                 val boneMatrices = skeleton.getMatrixPalette()
                 shader.uploadMat4f(Uniforms.MODEL_MATRIX, worldMatrix)
-                shader.uploadMat4fArray(ShaderConst.Uniforms.JOINT_MATRICES, boneMatrices)
-                shader.uploadBoolean(ShaderConst.Uniforms.HAS_SKIN, true)
+                shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, boneMatrices)
+                shader.uploadBoolean(Uniforms.HAS_SKIN, true)
 
                 // Render with skinning
                 glDrawArrays(GL_TRIANGLES, 0, rawModel.vertexCount)

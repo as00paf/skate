@@ -54,11 +54,14 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - Checks: `projCoords` outside [-1, 1] range for x, y, z
   - Location: `assets/shaders/shader_3d_default.glsl` line 162
 
-- [ ] **A28.0.8: Support Alpha Masking in Shadow Pass**
-  - Transparent/masked objects cast solid rectangular shadows because `shadow.glsl` ignores alpha
-  - Update `shadow.glsl` to sample base color and `discard` if alpha < cutoff
-  - Update `ShadowRenderer.kt` to bind textures and upload alpha uniforms during shadow pass
-  - Locations: `assets/shaders/shadow.glsl`, `ShadowRenderer.kt`
+- [x] **A28.0.8: Support Alpha Masking in Shadow Pass**
+  - Updated `shadow.glsl` to sample base color texture and discard fragments with alpha < cutoff
+  - Added vertex shader texture coordinate passthrough
+  - Added fragment shader uniforms: `uBaseColorTexture`, `uAlphaMode`, `uAlphaCutoff`, `uHasBaseColorTexture`
+  - Added `Uniforms.HAS_BASE_COLOR_TEXTURE` constant to `ShaderConst.kt`
+  - Updated `ShadowRenderer` to bind base color texture and upload alpha uniforms for MASK mode materials
+  - OPAQUE and BLEND modes render all fragments (depth-only)
+  - Locations: `assets/shaders/shadow.glsl`, `ShadowRenderer.kt`, `ShaderConst.kt`
 
 ### Tasks
 

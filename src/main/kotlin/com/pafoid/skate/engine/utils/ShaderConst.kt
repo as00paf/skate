@@ -48,6 +48,8 @@ object ShaderConst {
         const val BASE_COLOR_TEXTURE = "u_BaseColorTexture"
         const val BASE_COLOR_FACTOR = "u_BaseColorFactor"
 
+        const val HAS_BASE_COLOR_TEXTURE = "uHasBaseColorTexture"
+
         const val METALLIC_ROUGHNESS_TEXTURE = "u_MetallicRoughnessTexture"
         const val HAS_METALLIC_ROUGHNESS_TEXTURE = "u_HasMetallicRoughnessTexture"
         const val METALLIC_FACTOR = "u_MetallicFactor"
