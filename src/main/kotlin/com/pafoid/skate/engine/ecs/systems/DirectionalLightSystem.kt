@@ -57,6 +57,20 @@ class DirectionalLightSystem(
     private var autoAdjustBounds = false
     private var boundsScale = 1.0f
 
+    /**
+     * Enables or disables automatic orthographic bounds adjustment.
+     * When enabled, the shadow map bounds are adjusted based on the camera view frustum
+     * to ensure optimal shadow coverage and resolution.
+     */
+    fun setAutoAdjustBounds(enabled: Boolean) {
+        autoAdjustBounds = enabled
+    }
+
+    /**
+     * Returns whether auto-adjust bounds is enabled.
+     */
+    fun isAutoAdjustBoundsEnabled(): Boolean = autoAdjustBounds
+
     override fun update(dt: Float) {
         // Find day/night cycle system
         val dayNightSystem = scene.systemManager.getSystem<DayNightCycleSystem>()

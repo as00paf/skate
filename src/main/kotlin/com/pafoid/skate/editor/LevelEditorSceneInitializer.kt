@@ -114,6 +114,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
             slopeScaledBias = 0.01f
             castShadows = true
         })
+        directionalLightSystem.setAutoAdjustBounds(true)  // Enable camera-based bounds adjustment
         scene.addSystem(directionalLightSystem)
 
         reportProgress(0.8f, "Spawning Prefabs...")

@@ -126,12 +126,12 @@ Shadow rendering works but has quality issues that need addressing.
 
 ### Bug Fixes
 
-- [ ] **A29.0.1: Fix Camera-Dependent Shadow Disappearance**
+- [x] **A29.0.1: Fix Camera-Dependent Shadow Disappearance**
   - Shadow disappears when camera moves because orthographic bounds don't track the camera
   - `DirectionalLightSystem.autoAdjustBounds` is `false` by default
   - `adjustOrthoBoundsForCamera()` exists but is never enabled/called
-  - **Fix:** Add `setAutoAdjustBounds(enabled: Boolean)` method to DirectionalLightSystem
-  - **Fix:** Enable auto-adjust bounds in LevelEditorSceneInitializer
+  - **Fix:** Added `setAutoAdjustBounds(enabled: Boolean)` method to DirectionalLightSystem
+  - **Fix:** Enabled auto-adjust bounds in LevelEditorSceneInitializer
   - **Alternative:** Increase `shadowDistance` from 50m to 100m for larger coverage
   - Location: `DirectionalLightSystem.kt`, `LevelEditorSceneInitializer.kt`
 

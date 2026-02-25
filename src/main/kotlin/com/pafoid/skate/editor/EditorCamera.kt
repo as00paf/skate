@@ -32,7 +32,7 @@ class EditorCamera(
 
     private val scrollSensitivity = 0.1f
     private val rotationSensitivity = 0.1f
-    private val moveSpeed = 0.1f
+    private val moveSpeed = 0.01f
     private var lerpTime = 0.0f
     private var reset = false
     private var isRotating: Boolean = false
