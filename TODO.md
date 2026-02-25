@@ -126,31 +126,32 @@ Shadow rendering works but has quality issues that need addressing.
 
 ### Bug Fixes
 
-- [x] **A29.0.1: Fix Camera-Dependent Shadow Disappearance**
-  - Shadow disappears when camera moves because orthographic bounds don't track the camera
-  - `DirectionalLightSystem.autoAdjustBounds` is `false` by default
-  - `adjustOrthoBoundsForCamera()` exists but is never enabled/called
-  - **Fix:** Added `setAutoAdjustBounds(enabled: Boolean)` method to DirectionalLightSystem
-  - **Fix:** Enabled auto-adjust bounds in LevelEditorSceneInitializer
-  - **Alternative:** Increase `shadowDistance` from 50m to 100m for larger coverage
-  - Location: `DirectionalLightSystem.kt`, `LevelEditorSceneInitializer.kt`
+- [ ] **A29.0.4: Implement Robust Shadow Frustum Fitting (Bounding Spheres)**
+    - Current shadow map bounding box is fixed (50x50) and centered on camera position, causing clipping when character
+      moves away or camera rotates.
+    - Implement bounding sphere calculation for camera frustum:
+        1. Calculate the 8 corners of the camera's view frustum (limited by `shadowDistance`).
+        2. Compute the bounding sphere (center and radius) of these corners.
+        3. Use the bounding sphere center as the `lightTarget`.
+        4. Set orthographic bounds based on the sphere's radius (guarantees coverage regardless of camera rotation).
+    - Increase `zNear` and `zFar` planes significantly (e.g., -500 to 500) to prevent vertical clipping when camera
+      pedestals up/down.
+    - Location: `DirectionalLightSystem.kt`
 
-- [x] **A29.0.2: Increase Shadow Intensity**
-  - Shadows are too weak and get washed out by ambient light
-  - Shadow factor from 3x3 PCF needs amplification
-  - **Fix:** Multiply shadow factor by 0.85 in shader for stronger, more visible shadows
-  - **Alternative:** Reduce ambient light intensity or make it configurable (see A29.0.3)
-  - Location: `assets/shaders/shader_3d_default.glsl` line 316
+- [ ] **A29.0.5: Fix Shadow Stabilization Logic**
+    - Current stabilization is broken as it snaps against a moving light view matrix.
+    - Implement stable snapping:
+        1. Create a "fixed" light view matrix looking at (0,0,0) from the light direction.
+        2. Project the dynamic `lightTarget` into this fixed space.
+        3. Snap the coordinate to a texel grid based on shadow map resolution and bounds radius.
+        4. Un-project the snapped coordinate back to world space for the final `lightTarget`.
+    - This ensures the shadow map stays locked to world texels while moving smoothly.
+    - Location: `DirectionalLightSystem.kt`
 
-- [x] **A29.0.3: Make Ambient Light Configurable via Environment Window**
-  - Ambient light intensity is currently hardcoded in DayNightCycleSystem
-  - Should be adjustable via ImGui slider in Environment Window
-  - **Fix:** Added `autoAmbient` toggle to DayNightCycleConfig
-  - **Fix:** When autoAmbient=true: DayNightCycleSystem computes ambient from day/night cycle and writes to sceneData
-  - **Fix:** When autoAmbient=false: User has manual control via color picker
-  - **Fix:** Added `ambientIntensity` slider (0.0-2.0) that multiplies final ambient value
-  - **Fix:** Environment Window shows "Auto Ambient" checkbox and read-only ambient display when enabled
-  - Location: `DayNightCycleConfig.kt`, `DayNightCycleSystem.kt`, `EnvironmentWindow.kt`
+- [ ] **A29.0.6: Fix High-Noon Light Up-Vector Failure**
+    - Current `setLookAt` uses a hardcoded Up vector (0, 1, 0), which fails when the sun is perfectly overhead.
+    - Dynamically switch Up vector to (0, 0, 1) when light direction is near vertical.
+    - Location: `DirectionalLightSystem.kt`
 
 ### Summary
 

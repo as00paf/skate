@@ -178,7 +178,7 @@ class DirectionalLightSystem(
             // Important: Snap the target to keep the EXACT same light angle, preventing wobbling
             lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)
             lightPosition.set(config.direction).mul(-distance).add(lightTarget)
-            
+
             lightView.setLookAt(lightPosition, lightTarget, lightUp)
         }
 
