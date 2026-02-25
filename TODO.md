@@ -3,7 +3,7 @@
 ## Notes
 
 - See CHANGELOG.md for all completed items through v0.27
-- This file contains only remaining planned work
+- This file contains remaining v0.28 work (bug fixes + verification)
 
 ---
 
@@ -62,6 +62,23 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - Updated `ShadowRenderer` to bind base color texture and upload alpha uniforms for MASK mode materials
   - OPAQUE and BLEND modes render all fragments (depth-only)
   - Locations: `assets/shaders/shadow.glsl`, `ShadowRenderer.kt`, `ShaderConst.kt`
+
+- [ ] **A28.0.9: Fix TranslateGizmo hardcoded resolution**
+  - Line 100: `screenToRay(mouseX, mouseY, 1920f, 1080f)` → use `viewportSize.x, viewportSize.y`
+  - Lines 159-160: `worldToScreen(..., 1920f, 1080f)` → use `viewportSize.x, viewportSize.y` (x2)
+  - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
+  - Location: `editor/gizmos/TranslateGizmo.kt`
+
+- [ ] **A28.0.10: Fix RotationGizmo hardcoded resolution**
+  - Line 63: `screenToRay(mouseX, mouseY, 1920f, 1080f)` → use `viewportSize.x, viewportSize.y`
+  - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
+  - Location: `editor/gizmos/RotationGizmo.kt`
+
+- [ ] **A28.0.11: Fix ScaleGizmo hardcoded resolution**
+  - Line 81: `screenToRay(mouseX, mouseY, 1920f, 1080f)` → use `viewportSize.x, viewportSize.y`
+  - Lines 162-163: `worldToScreen(..., 1920f, 1080f)` → use `viewportSize.x, viewportSize.y` (x2)
+  - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
+  - Location: `editor/gizmos/ScaleGizmo.kt`
 
 ### Tasks
 
