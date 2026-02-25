@@ -90,6 +90,11 @@ class DayNightCycleSystem(
         config.shadowIntensity = if (config.isDaytime) 1f else 0.3f
     }
 
+    override fun editorUpdate(dt: Float) {
+        // Update day/night cycle in editor mode too (use small dt to avoid rapid cycling)
+        update(0f)  // Don't advance time, just compute sun direction/color from current cycleTime
+    }
+
     /**
      * Computes sun direction vector from cycle time.
      *
