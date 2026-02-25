@@ -53,6 +53,17 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - Should use config values consistently
   - Location: `GeometryPass.kt` lines 108-111, `DirectionalLightConfig.kt`
 
+- [ ] **A28.0.8: Fix Out-of-Bounds Shadow Artifacts**
+  - Objects beyond shadow distance (`projCoords.z > 1.0`) are rendered black because they sample border color
+  - Add early exit in `calculateShadow()` to return 0.0 shadow for out-of-bounds fragments
+  - Location: `assets/shaders/shader_3d_default.glsl`
+
+- [ ] **A28.0.9: Support Alpha Masking in Shadow Pass**
+  - Transparent/masked objects cast solid rectangular shadows because `shadow.glsl` ignores alpha
+  - Update `shadow.glsl` to sample base color and `discard` if alpha < cutoff
+  - Update `ShadowRenderer.kt` to bind textures and upload alpha uniforms during shadow pass
+  - Locations: `assets/shaders/shadow.glsl`, `ShadowRenderer.kt`
+
 ### Tasks
 
 - [ ] **A28.1: Verify shadow rendering pipeline**
