@@ -37,11 +37,11 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - Works in both debug and release builds
   - Location: `ShadowMap.kt` line 161
 
-- [ ] **A28.0.5: Add logging when shadow pass is skipped**
-  - `ShadowPass.execute()` returns silently when light is null or shadows disabled
-  - Makes debugging difficult
-  - Add debug log: `println("[ShadowPass] Skipped: castShadows=${lightSystem.config.castShadows}")`
-  - Location: `ShadowPass.kt` line 39
+- [x] **A28.0.5: Add logging when shadow pass is skipped**
+  - Uses `LoggerService.logEngine()` instead of println
+  - Logs when light system is null or castShadows is false
+  - Format: `[ShadowPass] Skipped: lightSystem=true/false, castShadows=true/false`
+  - Location: `ShadowPass.kt` line 44, `RenderResourcesFactory.kt` line 229
 
 - [ ] **A28.0.6: Fix inconsistent shadow bias defaults**
   - Default bias values in `GeometryPass` (0.005, 0.01) differ from `DirectionalLightConfig` defaults

@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.render.ShadowMap
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
@@ -25,11 +25,12 @@ import com.pafoid.skate.engine.render.renderer.ShadowRenderer
  * @param shadowRenderer The shadow renderer for drawing objects
  * @param shadowMap The shadow map depth texture
  * @param sceneManager The scene manager for accessing directional light system
+ * @param logger Logger for debug output
  */
 class ShadowPass(
     private val shadowRenderer: ShadowRenderer,
     private val shadowMap: ShadowMap,
-    private val sceneManager: SceneManager
+    private val logger: LoggerService
 ) : RenderPass {
 
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
@@ -38,6 +39,7 @@ class ShadowPass(
 
         // Skip if shadows are disabled or no light system
         if (lightSystem == null || !lightSystem.config.castShadows) {
+            logger.logEngine("[ShadowPass] Skipped: lightSystem=${lightSystem != null}, castShadows=${lightSystem?.config?.castShadows}")
             return
         }
 

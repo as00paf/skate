@@ -227,7 +227,7 @@ class RenderResourcesFactory(
             ShadowPass(
                 shadowRenderer = renderers.shadow,
                 shadowMap = shadowMap,
-                sceneManager = sceneManager
+                logger = logger
             )
         } else {
             // Fallback pass that does nothing if no shadow map
