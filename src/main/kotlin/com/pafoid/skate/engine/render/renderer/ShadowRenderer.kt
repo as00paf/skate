@@ -10,14 +10,12 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.render.utils.bindTexture
 import com.pafoid.skate.engine.render.utils.bindVAO
-import com.pafoid.skate.engine.utils.ShaderConst
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import com.pafoid.skate.engine.utils.TextureSlots
+import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL30.GL_DEPTH_TEST
-import org.lwjgl.opengl.GL30.GL_TRIANGLES
 import org.lwjgl.opengl.GL30.glBindVertexArray
 import org.lwjgl.opengl.GL30.glDepthMask
-import org.lwjgl.opengl.GL30.glDrawArrays
 import org.lwjgl.opengl.GL30.glEnable
 
 /**
@@ -124,14 +122,14 @@ class ShadowRenderer(
                 shader.uploadBoolean(Uniforms.HAS_SKIN, true)
 
                 // Render with skinning
-                glDrawArrays(GL_TRIANGLES, 0, rawModel.vertexCount)
+                GL11.glDrawElements(rawModel.drawMode, rawModel.vertexCount, GL11.GL_UNSIGNED_INT, 0)
             } else {
                 // Static mesh: no skinning
                 shader.uploadMat4f(Uniforms.MODEL_MATRIX, worldMatrix)
-                shader.uploadBoolean(ShaderConst.Uniforms.HAS_SKIN, false)
+                shader.uploadBoolean(Uniforms.HAS_SKIN, false)
 
                 // Render without skinning
-                glDrawArrays(GL_TRIANGLES, 0, rawModel.vertexCount)
+                GL11.glDrawElements(rawModel.drawMode, rawModel.vertexCount, GL11.GL_UNSIGNED_INT, 0)
             }
 
             // Just unbind VAO without disabling attributes (preserves attribute state)
