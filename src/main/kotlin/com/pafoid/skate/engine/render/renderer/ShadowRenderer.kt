@@ -15,9 +15,12 @@ import com.pafoid.skate.engine.render.utils.bindVAO
 import com.pafoid.skate.engine.utils.ShaderConst
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import com.pafoid.skate.engine.utils.TextureSlots
+import org.lwjgl.opengl.GL30.GL_DEPTH_TEST
 import org.lwjgl.opengl.GL30.GL_TRIANGLES
 import org.lwjgl.opengl.GL30.glBindVertexArray
+import org.lwjgl.opengl.GL30.glDepthMask
 import org.lwjgl.opengl.GL30.glDrawArrays
+import org.lwjgl.opengl.GL30.glEnable
 
 /**
  * Renderer for shadow pass.
@@ -63,6 +66,10 @@ class ShadowRenderer(
     ) {
         val shader = getShadowShader()
         shader.start()
+
+        // Enable depth testing and writing for shadow map
+        glEnable(GL_DEPTH_TEST)
+        glDepthMask(true)
 
         // Upload light space matrix for shadow mapping
         shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, lightSpaceMatrix)

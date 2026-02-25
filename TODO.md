@@ -98,13 +98,15 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - ✅ LightingUniformsLoader uploads sun direction, color, intensity to shader
   - ✅ Environment Window time slider syncs with DayNightCycleSystem.getCycleTime()/setCycleTime()
 
-- [x] **A28.0.12: Fix Skater Shadow (Uniform Name Mismatch)**
+- [x] **A28.0.12: Fix Skater Shadow (Uniform Name Mismatch + Depth Testing)**
   - Skater doesn't cast a visible shadow.
-  - **Root Cause:** `shadow.glsl` declares `uniform bool uHasSkin;` but `ShaderConst.HAS_SKIN = "u_HasSkin"` (with
+  - **Root Cause 1:** `shadow.glsl` declares `uniform bool uHasSkin;` but `ShaderConst.HAS_SKIN = "u_HasSkin"` (with
     underscore). Uniform upload fails, skinning never applied in shadow pass.
-  - **Fix:** Change `shadow.glsl` to use `uniform bool u_HasSkin;` to match ShaderConst
+  - **Fix 1:** Changed `shadow.glsl` to use `uniform bool u_HasSkin;` to match ShaderConst
+  - **Root Cause 2:** `ShadowRenderer` didn't enable depth testing/writing, so shadow map never received depth values
+  - **Fix 2:** Added `glEnable(GL_DEPTH_TEST)` and `glDepthMask(true)` in `ShadowRenderer.render()`
   - **Secondary:** Add `uTextureScale` uniform if alpha masking UVs still wrong after primary fix
-  - Location: `assets/shaders/shadow.glsl`
+  - Location: `assets/shaders/shadow.glsl`, `ShadowRenderer.kt`
 
 ### Tasks
 
