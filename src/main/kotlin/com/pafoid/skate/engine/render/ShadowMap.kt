@@ -158,8 +158,9 @@ class ShadowMap(
         glDrawBuffers(drawBuffers)
 
         // Verify framebuffer is complete
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            assert(false) { "Error: Shadow map framebuffer is not complete" }
+        val status = glCheckFramebufferStatus(GL_FRAMEBUFFER)
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            throw IllegalStateException("Shadow map framebuffer is not complete. Status: $status")
         }
 
         // Unbind

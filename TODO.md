@@ -31,10 +31,11 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - Updated `GeometryPass.kt` to use constant
   - Location: `ShaderConst.kt`, `LightingUniformsLoader.kt:53`, `GeometryPass.kt:114`
 
-- [ ] **A28.0.4: Add framebuffer completeness check in ShadowMap**
-  - `ShadowMap.initialize()` uses assert() which is disabled in release builds
-  - Should throw exception or log error if framebuffer is incomplete
-  - Location: `ShadowMap.kt` line 125
+- [x] **A28.0.4: Add framebuffer completeness check in ShadowMap**
+  - Replaced `assert()` with `IllegalStateException`
+  - Throws exception with status code if framebuffer is incomplete
+  - Works in both debug and release builds
+  - Location: `ShadowMap.kt` line 161
 
 - [ ] **A28.0.5: Add logging when shadow pass is skipped**
   - `ShadowPass.execute()` returns silently when light is null or shadows disabled
