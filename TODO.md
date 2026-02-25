@@ -135,19 +135,21 @@ Shadow rendering works but has quality issues that need addressing.
   - **Alternative:** Increase `shadowDistance` from 50m to 100m for larger coverage
   - Location: `DirectionalLightSystem.kt`, `LevelEditorSceneInitializer.kt`
 
-- [ ] **A29.0.2: Increase Shadow Intensity**
+- [x] **A29.0.2: Increase Shadow Intensity**
   - Shadows are too weak and get washed out by ambient light
   - Shadow factor from 3x3 PCF needs amplification
-  - **Fix:** Multiply shadow factor in shader: `float shadow = calculateShadow(...) * 0.7`
-  - **Alternative:** Reduce ambient light intensity or make it configurable
-  - Location: `assets/shaders/shader_3d_default.glsl` line 317
+  - **Fix:** Multiply shadow factor by 0.85 in shader for stronger, more visible shadows
+  - **Alternative:** Reduce ambient light intensity or make it configurable (see A29.0.3)
+  - Location: `assets/shaders/shader_3d_default.glsl` line 316
 
-- [ ] **A29.0.3: Make Ambient Light Configurable via Environment Window**
+- [x] **A29.0.3: Make Ambient Light Configurable via Environment Window**
   - Ambient light intensity is currently hardcoded in DayNightCycleSystem
   - Should be adjustable via ImGui slider in Environment Window
-  - **Fix:** Add `ambientIntensity` property to DayNightCycleConfig (default: 0.3)
-  - **Fix:** Add ImGui slider in EnvironmentWindow to adjust ambient intensity
-  - **Fix:** Upload ambient intensity to shader or multiply in DayNightCycleSystem
+  - **Fix:** Added `autoAmbient` toggle to DayNightCycleConfig
+  - **Fix:** When autoAmbient=true: DayNightCycleSystem computes ambient from day/night cycle and writes to sceneData
+  - **Fix:** When autoAmbient=false: User has manual control via color picker
+  - **Fix:** Added `ambientIntensity` slider (0.0-2.0) that multiplies final ambient value
+  - **Fix:** Environment Window shows "Auto Ambient" checkbox and read-only ambient display when enabled
   - Location: `DayNightCycleConfig.kt`, `DayNightCycleSystem.kt`, `EnvironmentWindow.kt`
 
 ### Summary

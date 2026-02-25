@@ -88,11 +88,24 @@ class DayNightCycleSystem(
         // Update derived values
         config.isDaytime = config.cycleTime in 6f..18f
         config.shadowIntensity = if (config.isDaytime) 1f else 0.3f
+
+        // Update scene ambient light if auto mode is enabled
+        if (config.autoAmbient) {
+            updateSceneAmbient()
+        }
     }
 
     override fun editorUpdate(dt: Float) {
         // Update day/night cycle in editor mode too (use small dt to avoid rapid cycling)
         update(0f)  // Don't advance time, just compute sun direction/color from current cycleTime
+    }
+
+    /**
+     * Updates sceneData.ambientLight with computed ambient color and intensity.
+     * Only called when autoAmbient is enabled.
+     */
+    private fun updateSceneAmbient() {
+        scene.sceneData.ambientLight.set(config.ambientColor).mul(config.ambientIntensity)
     }
 
     /**
@@ -169,6 +182,7 @@ class DayNightCycleSystem(
         }
 
         // Compute ambient color (interpolates between night and day ambient)
+        // Intensity multiplier is applied in updateSceneAmbient() so slider updates work
         config.ambientColor.set(nightAmbient).lerp(dayAmbient, config.sunIntensity)
     }
 

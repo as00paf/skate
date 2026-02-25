@@ -134,9 +134,44 @@ class EnvironmentWindow : KoinComponent {
                 scene.sceneData.useAmbient = useAmbient.get()
             }
 
-            val ambient = floatArrayOf(scene.sceneData.ambientLight.x, scene.sceneData.ambientLight.y, scene.sceneData.ambientLight.z)
-            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
-                scene.sceneData.ambientLight.set(ambient[0], ambient[1], ambient[2])
+            // Auto Ambient toggle (only when DayNightCycleSystem exists)
+            dayNightSystem?.let { system ->
+                val autoAmbient = ImBoolean(system.config.autoAmbient)
+                if (ImGui.checkbox("Auto Ambient (Day/Night Cycle)", autoAmbient)) {
+                    system.config.autoAmbient = autoAmbient.get()
+                }
+            }
+
+            // Ambient color picker - disabled when auto ambient is enabled
+            val autoAmbientEnabled = dayNightSystem?.config?.autoAmbient ?: true
+            if (autoAmbientEnabled) {
+                // Show computed ambient (read-only display)
+                val computedAmbient = dayNightSystem?.config?.ambientColor ?: scene.sceneData.ambientLight
+                ImGui.text(
+                    "Ambient (Auto): (%.2f, %.2f, %.2f)".format(
+                        computedAmbient.x,
+                        computedAmbient.y,
+                        computedAmbient.z
+                    )
+                )
+            } else {
+                // Manual control enabled
+                val ambient = floatArrayOf(
+                    scene.sceneData.ambientLight.x,
+                    scene.sceneData.ambientLight.y,
+                    scene.sceneData.ambientLight.z
+                )
+                if (ImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
+                    scene.sceneData.ambientLight.set(ambient[0], ambient[1], ambient[2])
+                }
+            }
+
+            // Ambient intensity slider
+            dayNightSystem?.let { system ->
+                val ambientIntensityArr = floatArrayOf(system.config.ambientIntensity)
+                if (ImGui.sliderFloat("Ambient Intensity", ambientIntensityArr, 0.0f, 2.0f)) {
+                    system.config.ambientIntensity = ambientIntensityArr[0].coerceIn(0.0f, 2.0f)
+                }
             }
         }
 

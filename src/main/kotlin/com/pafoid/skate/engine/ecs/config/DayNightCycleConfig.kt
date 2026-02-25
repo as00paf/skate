@@ -92,7 +92,25 @@ data class DayNightCycleConfig(
      * True if the sun is above the horizon (cycleTime between 6 and 18).
      * Updated each frame.
      */
-    var isDaytime: Boolean = true
+    var isDaytime: Boolean = true,
+
+    // =========================================================================
+    // AMBIENT LIGHT CONFIGURATION
+    // =========================================================================
+
+    /**
+     * Base ambient light intensity multiplier.
+     * Controls overall brightness of ambient lighting.
+     * Range: 0.0 - 2.0 (default: 1.0)
+     */
+    var ambientIntensity: Float = 1.0f,
+
+    /**
+     * When true, ambient light is automatically computed from day/night cycle.
+     * When false, ambient light is controlled manually via Environment Window.
+     * Default: true (automatic)
+     */
+    var autoAmbient: Boolean = true
 ) {
     /**
      * Resets all computed values to defaults.
@@ -106,6 +124,7 @@ data class DayNightCycleConfig(
         sunIntensity = 1f
         shadowIntensity = 1f
         isDaytime = true
+        ambientIntensity = 1.0f
     }
 
     /**
