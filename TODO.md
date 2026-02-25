@@ -2,143 +2,70 @@
 
 ## Notes
 
-- See CHANGELOG.md for completed items through v0.26
-- All v0.23 technical debt items completed
-- All v0.24 Phase 7 quality improvements completed
-- All v0.25 Phases 1-3 integration items completed
-- v0.26 lighting architecture refactoring completed - systems now own configuration directly
+- See CHANGELOG.md for all completed items through v0.27
+- This file contains only remaining planned work
 
 ---
 
-## ✅ v0.24: Lighting & Shadowing Quality Improvements - COMPLETED
+## 🔴 v0.28: Shadow Quality & Robustness (Planned)
 
 ### Summary
 
-All Phase 7 quality improvements completed and moved to CHANGELOG.md.
-
-**Completed in v0.24:**
-
-- Dynamic shadow map resolution (auto-scales to 4096 or GPU max)
-- Configurable shadow distance (10-200m range)
-- Shadow stabilization (texel snapping to eliminate shimmering)
-- Depth bias controls (constant + slope-scaled)
-- RenderComponent shadow flags (castShadow, receiveShadow)
-
-See CHANGELOG.md for full details.
-
----
-
-## ✅ v0.25: Lighting Integration - COMPLETED
-
-### Summary
-
-All Phase 1-3 integration tasks completed and moved to CHANGELOG.md.
-
-**Completed in v0.25:**
-
-- DayNightCycleSystem and DirectionalLightSystem integration
-- Environment Window light controls and time synchronization
-- Shadow flags on Skater and all environment prefabs
-- Fixed light consistency issue (before vs after first play)
-
-See CHANGELOG.md for full details.
-
-**Remaining:**
-
-- Phase 4 verification tasks (shadow pipeline, day/night cycle, quality settings)
-
-### Phase 4 — Verification & Testing (Remaining)
-
-- [ ] **A25.10: Verify shadow rendering pipeline**
-    - Shadow pass renders to ShadowMap
-    - Geometry pass samples ShadowMap with correct uniforms
-    - PCF filtering uses correct texel size
-
-- [ ] **A25.11: Verify day/night cycle affects lighting**
-    - Sun direction updates from DayNightCycleSystem
-    - Sun color/intensity interpolate through day phases
-    - Ambient light interpolates with day/night
-
-- [ ] **A25.12: Test shadow quality settings**
-    - Shadow distance slider affects coverage
-    - Stabilize projection reduces shimmering
-    - Depth bias eliminates acne without peter-panning
-
----
-
-## ✅ v0.26: Lighting Architecture Refactor - COMPLETED
-
-### Summary
-
-Refactored lighting systems to own their configuration directly, eliminating artificial GameObjects and improving
-architecture.
-
-**Completed in v0.26:**
-
-- Created `DayNightCycleConfig` and `DirectionalLightConfig` data classes
-- Updated systems to own configuration directly
-- Removed `DayNightCycleComponent` and `DirectionalLightComponent`
-- Updated `LevelEditorSceneInitializer` to initialize configs directly
-- Updated `EnvironmentWindow` to read/write from system configs
-- Updated `LightingUniformsLoader` and `GeometryPass` to use configs
-
-**Architecture improvements:**
-
-- No artificial GameObjects ("DayNightCycle", "DirectionalLight") in scene hierarchy
-- Direct property access instead of entity lookup every frame
-- Cleaner separation of concerns - systems own logic, configs own data
-- Configuration still `@Serializable` for save/load support
-
-See CHANGELOG.md for full details.
-
----
-
-## 🔴 v0.27: Shadow Pipeline Integration (Planned)
-
-### Summary
-
-The `ShadowRenderer` class exists but is **not integrated** into the rendering pipeline.
-This task covers adding the shadow pass to the renderer and verifying end-to-end functionality.
-
-### Critical Missing Integration
-
-- [x] **A27.0: Integrate ShadowRenderer into the rendering pipeline**
-  - [x] Add `ShadowRenderer` to `Renderers` data class in `RenderResources.kt`
-  - [x] Instantiate `ShadowRenderer` in `RenderResourcesFactory.createRenderers()`
-  - [x] Add shadow pass to `Renderer.render()` method (must execute BEFORE geometry pass)
-  - [x] Update `Renderer.destroy()` to cleanup shadow renderer
-  - [x] Create dedicated `ShadowPass`
+Remaining shadow pipeline improvements for production-quality shadows.
 
 ### Bug Fixes
 
-- [x] **A27.0.1: Fix shadow map texture binding in GeometryPass**
-  - Shadow map texture is set to texture unit 4 in shader but never bound
-  - Add `glActiveTexture(GL_TEXTURE4)` and `glBindTexture(GL_TEXTURE_2D, shadowMapTextureId)` before rendering geometry
-  - Location: `GeometryPass.kt` after `loadLightingUniforms()` call
+- [ ] **A28.0.1: Fix ShadowRenderer uniform name mismatch**
+  - `ShadowRenderer.kt` uploads `Uniforms.MODEL_MATRIX` but `shadow.glsl` expects `uModelMatrix`
+  - Change to `shader.uploadMat4f("uModelMatrix", worldMatrix)` or update `ShaderConst.Uniforms.MODEL_MATRIX` value
+  - Location: `ShadowRenderer.kt` lines 107, 115
 
-- [x] **A27.0.2: Fix PickingPass FBO binding after ShadowPass**
-  - ShadowPass unbinds to default FBO 0, breaking PickingPass which expects its FBO to be bound
-  - Add FBO rebind in `PickingPass.execute()` before rendering
-  - Location: `PickingPass.kt` at start of `execute()` method
+- [ ] **A28.0.2: Fix ShadowRenderer VAO attribute binding**
+  - `ShadowRenderer.renderShadowCaster()` binds VAO but doesn't enable attributes 6,7 (joints/weights)
+  - Skinned meshes won't render correctly to shadow map
+  - Add `model.vaoId.bindVAO(model.enabledAttributes)` call
+  - Location: `ShadowRenderer.kt` line 95
 
-- [x] **A27.0.3: Fix PickingPass early return skipping hover detection**
-  - Picking pass was skipped entirely when `activeGameObject != null`, preventing hover texture updates
-  - Removed early return optimization that broke hover highlighting when object was selected
-  - Location: `PickingPass.kt` in `execute()` method
+- [ ] **A28.0.3: Fix shadow map texture binding synchronization**
+  - `LightingUniformsLoader` sets texture unit but `GeometryPass` binds texture separately
+  - Texture unit 4 might not be active when binding texture
+  - Move texture binding into `LightingUniformsLoader.loadLightingUniforms()` or ensure GL_TEXTURE4 is active
+  - Location: `LightingUniformsLoader.kt` and `GeometryPass.kt` lines 113-115
+
+- [ ] **A28.0.4: Extract hardcoded texture unit to constant**
+  - Texture unit 4 is hardcoded in multiple places
+  - Create `const val SHADOW_TEXTURE_UNIT = 4` in `ShaderConst` or `TextureSlots`
+  - Locations: `GeometryPass.kt:114`, `LightingUniformsLoader.kt:54`
+
+- [ ] **A28.0.5: Add framebuffer completeness check in ShadowMap**
+  - `ShadowMap.initialize()` uses assert() which is disabled in release builds
+  - Should throw exception or log error if framebuffer is incomplete
+  - Location: `ShadowMap.kt` line 125
+
+- [ ] **A28.0.6: Add logging when shadow pass is skipped**
+  - `ShadowPass.execute()` returns silently when light is null or shadows disabled
+  - Makes debugging difficult
+  - Add debug log: `println("[ShadowPass] Skipped: castShadows=${lightSystem.config.castShadows}")`
+  - Location: `ShadowPass.kt` line 39
+
+- [ ] **A28.0.7: Fix inconsistent shadow bias defaults**
+  - Default bias values in `GeometryPass` (0.005, 0.01) differ from `DirectionalLightConfig` defaults
+  - Should use config values consistently
+  - Location: `GeometryPass.kt` lines 108-111, `DirectionalLightConfig.kt`
 
 ### Tasks
 
-- [ ] **A27.1: Verify shadow rendering pipeline**
+- [ ] **A28.1: Verify shadow rendering pipeline**
   - Shadow pass renders to ShadowMap
   - Geometry pass samples ShadowMap with correct uniforms
   - PCF filtering uses correct texel size
 
-- [ ] **A27.2: Verify day/night cycle affects lighting**
+- [ ] **A28.2: Verify day/night cycle affects lighting**
   - Sun direction updates from DayNightCycleSystem
   - Sun color/intensity interpolate through day phases
   - Ambient light interpolates with day/night
 
-- [ ] **A27.3: Test shadow quality settings**
+- [ ] **A28.3: Test shadow quality settings**
   - Shadow distance slider affects coverage
   - Stabilize projection reduces shimmering
   - Depth bias eliminates acne without peter-panning

@@ -165,6 +165,126 @@ dynamic resolution, configurable coverage, anti-shimmering, and per-object shado
 
 ---
 
+## [v0.27] - 2026-02-24: Shadow Pipeline Integration & Hover Highlighting Fix
+
+### Summary
+
+Integrated the shadow rendering system into the render pipeline and fixed critical hover highlighting issues.
+The shadow pass now renders before the geometry pass, and hover detection works correctly for skinned characters.
+
+### Added
+
+- **ShadowPass Integration**: Dedicated render pass for shadow mapping (`engine/render/renderer/passes/ShadowPass.kt`)
+  - Executes before geometry pass in render pipeline
+  - Retrieves directional light from scene system
+  - Respects `castShadows` configuration flag
+  - Proper framebuffer bind/clear/unbind lifecycle
+
+- **ShadowRenderer in RenderResources**: Shadow renderer instantiated and managed (`engine/render/RenderResources.kt`)
+  - Added to `Renderers` data class
+  - Created in `RenderResourcesFactory.createRenderers()`
+  - Properly cleaned up in `Renderer.destroy()`
+
+- **Render Pipeline Order**: Correct pass execution sequence (`engine/render/renderer/Renderer.kt`)
+  -
+    1. Shadow Pass - renders depth to shadow map
+  -
+    2. Picking Pass - renders object IDs for mouse selection
+  -
+    3. Geometry Pass - renders full scene with PBR shading
+  -
+    4. Debug Pass - renders debug visualization
+
+### Fixed
+
+- **Shadow Map Texture Binding**: GeometryPass now binds shadow map texture (
+  `engine/render/renderer/passes/GeometryPass.kt`)
+  - `glActiveTexture(GL_TEXTURE0 + 4)` before binding
+  - `glBindTexture(GL_TEXTURE_2D, shadowMapTextureId)` to bind texture
+  - Uploads texel size, depth bias, and slope-scaled bias uniforms
+  - Shadows now correctly sampled in fragment shader
+
+- **PickingPass FBO Binding**: Rebinds picking FBO after ShadowPass (`engine/render/renderer/passes/PickingPass.kt`)
+  - ShadowPass unbinds to default FBO 0
+  - PickingPass now explicitly rebinds its FBO before rendering
+  - Prevents picking texture writes to wrong framebuffer
+
+- **PickingPass Early Return**: Removed optimization that broke hover detection (
+  `engine/render/renderer/passes/PickingPass.kt`)
+  - Previously skipped when `activeGameObject != null`
+  - Caused stale picking texture data when object was selected
+  - Hover highlighting now works correctly during selection
+
+- **VAO Attribute Binding in renderMeshPartSimple()**: Fixed skinning for picking pass (
+  `engine/render/renderer/ModelRenderer.kt`)
+  - `unbindVAO()` was disabling vertex attributes 6 and 7 (joints/weights)
+  - Subsequent draws had disabled skinning attributes
+  - Skater mesh rendered at wrong positions in picking texture
+  - Changed to `glBindVertexArray(0)` to preserve attribute state
+  - **Impact**: Critical - hover highlighting now works correctly for skinned characters
+
+### Changed
+
+- **GizmoSystem.getHoveredGameObject()**: Added accessor for SelectionGizmo (`engine/ecs/systems/GizmoSystem.kt`)
+  - SelectionGizmo is inside GizmoSystem, not registered as separate system
+  - `GameViewWindow` now calls `GizmoSystem.getHoveredGameObject()`
+  - Cleaner encapsulation of gizmo subsystem
+
+- **GameViewWindow.getHoveredObject()**: Updated to use GizmoSystem (`editor/windows/GameViewWindow.kt`)
+  - Removed direct `SelectionGizmo` system lookup
+  - Calls `GizmoSystem.getHoveredGameObject()` instead
+  - Proper dependency injection pattern
+
+### Architecture
+
+- **Render Pass Separation**: ShadowPass extracted as dedicated class
+  - Owns shadow map framebuffer lifecycle
+  - Encapsulates directional light system access
+  - Clean separation from geometry rendering
+
+- **VAO State Management**: Attributes preserved between draws
+  - `bindVAO()` enables attributes
+  - Unbind with `glBindVertexArray(0)` only (don't disable)
+  - Pattern applied to `renderMeshPartSimple()` and `renderMeshPart()`
+
+---
+
+## [v0.26] - 2026-02-24: Lighting Architecture Refactor
+
+### Summary
+
+Refactored lighting systems to own their configuration directly, eliminating artificial GameObjects and improving
+architecture.
+
+### Changed
+
+- **DayNightCycleSystem**: Now owns configuration directly
+  - Removed `DayNightCycleComponent`
+  - System stores `DayNightCycleConfig` internally
+  - Direct property access instead of entity lookup
+
+- **DirectionalLightSystem**: Now owns configuration directly
+  - Removed `DirectionalLightComponent`
+  - System stores `DirectionalLightConfig` internally
+  - Cleaner separation of concerns
+
+- **LevelEditorSceneInitializer**: Updated initialization
+  - Creates systems with config directly
+  - No artificial GameObjects in scene hierarchy
+
+- **EnvironmentWindow**: Updated to use system configs
+  - Reads/writes from `DayNightCycleSystem.config`
+  - Reads/writes from `DirectionalLightSystem.config`
+
+### Architecture
+
+- **Config Data Classes**: `DayNightCycleConfig` and `DirectionalLightConfig`
+  - `@Serializable` for save/load support
+  - All lighting parameters in one place
+  - Systems own logic, configs own data
+
+---
+
 ## [v0.25] - 2026-02-23: Lighting Integration
 
 ### Summary
