@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.render.ShadowMap
+import com.pafoid.skate.engine.render.utils.bindVAO
 import com.pafoid.skate.engine.utils.ShaderConst
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.lwjgl.opengl.GL30.GL_TRIANGLES
@@ -100,7 +101,8 @@ class ShadowRenderer(
             val vaoId = rawModel.vaoId
             if (vaoId == 0) return@forEach
 
-            glBindVertexArray(vaoId)
+            // Bind VAO with proper attribute enabling (critical for skinned meshes)
+            vaoId.bindVAO(rawModel.enabledAttributes)
 
             if (skeleton != null) {
                 // Skinned mesh: upload bone matrices and enable skinning
@@ -120,6 +122,7 @@ class ShadowRenderer(
                 glDrawArrays(GL_TRIANGLES, 0, rawModel.vertexCount)
             }
 
+            // Just unbind VAO without disabling attributes (preserves attribute state)
             glBindVertexArray(0)
         }
     }
