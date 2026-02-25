@@ -165,7 +165,7 @@ class RenderResourcesFactory(
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
         val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, resourceManager)
         val modelRenderer = ModelRenderer(resourceManager, debugRenderer)
-        val shadowRenderer = ShadowRenderer(resourceManager)
+        val shadowRenderer = ShadowRenderer(shaders.shadow, resourceManager)
 
         return Renderers(
             skybox = skyboxRenderer,

@@ -24,7 +24,6 @@ import com.pafoid.skate.engine.render.renderer.ShadowRenderer
  *
  * @param shadowRenderer The shadow renderer for drawing objects
  * @param shadowMap The shadow map depth texture
- * @param sceneManager The scene manager for accessing directional light system
  * @param logger Logger for debug output
  */
 class ShadowPass(

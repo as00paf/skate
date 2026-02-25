@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
@@ -33,23 +32,13 @@ import org.lwjgl.opengl.GL30.glEnable
  * - Supports skinned meshes with GPU bone transforms
  * - Depth-only rendering (no color buffer writes)
  *
- * @param resourceManager Resource manager for loading shaders and textures
+ * @param shadowShader The shadow shader to use
+ * @param resourceManager Resource manager for loading textures
  */
 class ShadowRenderer(
+    private val shadowShader: Shader,
     private val resourceManager: ResourceManager
 ) {
-    private var shadowShader: Shader? = null
-
-    /**
-     * Gets or creates the shadow shader.
-     * Lazy loading to avoid loading shaders before OpenGL context is ready.
-     */
-    private fun getShadowShader(): Shader {
-        if (shadowShader == null) {
-            shadowShader = resourceManager.loadShaderSync(Assets.Shaders.SHADOW)
-        }
-        return shadowShader!!
-    }
 
     /**
      * Renders all shadow-casting entities to the shadow map.
@@ -59,17 +48,16 @@ class ShadowRenderer(
      */
     fun render(
         gameObjects: List<GameObject>,
-        lightSpaceMatrix: org.joml.Matrix4f,
+        lightSpaceMatrix: org.joml.Matrix4f
     ) {
-        val shader = getShadowShader()
-        shader.start()
+        shadowShader.start()
 
         // Enable depth testing and writing for shadow map
         glEnable(GL_DEPTH_TEST)
         glDepthMask(true)
 
         // Upload light space matrix for shadow mapping
-        shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, lightSpaceMatrix)
+        shadowShader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, lightSpaceMatrix)
 
         // Render all objects that cast shadows
         gameObjects.forEach { go ->
@@ -78,11 +66,11 @@ class ShadowRenderer(
 
             if (renderComponent != null && transform != null && renderComponent.castShadow) {
                 val skeleton = go.getComponent<SkeletonComponent>()
-                renderShadowCaster(renderComponent, transform, skeleton, shader)
+                renderShadowCaster(renderComponent, transform, skeleton, shadowShader)
             }
         }
 
-        shader.stop()
+        shadowShader.stop()
     }
 
     /**
@@ -155,6 +143,6 @@ class ShadowRenderer(
      * Destroys the shadow renderer and frees resources.
      */
     fun destroy() {
-        shadowShader = null
+        shadowShader.destroy()
     }
 }
