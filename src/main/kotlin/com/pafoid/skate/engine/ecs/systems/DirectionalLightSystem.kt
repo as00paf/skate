@@ -105,16 +105,33 @@ class DirectionalLightSystem(
      * where depth comparison against the shadow map is performed.
      */
     private fun updateLightSpaceMatrix(camera: Camera? = null) {
-        // Calculate light position (directional light at infinity)
-        // We use a point far away in the opposite direction of the light
-        lightPosition.set(config.direction).mul(-100f)
+        // Choose up vector based on light direction to prevent lookAt failure
+        if (Math.abs(config.direction.y) > 0.99f) {
+            lightUp.set(0f, 0f, 1f)
+        } else {
+            lightUp.set(0f, 1f, 0f)
+        }
 
-        // Target is the origin (or camera position for cascaded shadows)
+        // The distance to place the light from the target. We place it halfway through the orthoFar plane
+        // to ensure objects up to half the far plane distance behind the camera are still rendered into the shadow map.
+        val distance = config.orthoFar * 0.5f
+
+        // Target is the origin (or in front of camera for cascaded shadows)
         if (camera != null && config.autoCalculateBounds) {
-            lightTarget.set(camera.position)
+            val viewInv = camera.getInverseView()
+            val forward = org.joml.Vector3f(0f, 0f, -1f)
+            viewInv.transformDirection(forward)
+
+            // Start at camera position, then move forward by half the shadow distance
+            // so the shadow bounds cover the view frustum instead of wasting space behind the camera
+            lightTarget.set(camera.position).add(forward.mul(config.shadowDistance * 0.5f))
         } else {
             lightTarget.set(0f, 0f, 0f)
         }
+
+        // Calculate light position (directional light at infinity)
+        // We use a point far away in the opposite direction of the light, centered on the target
+        lightPosition.set(config.direction).mul(-distance).add(lightTarget)
 
         // Create view matrix (light looking at scene)
         lightView.setLookAt(lightPosition, lightTarget, lightUp)
@@ -141,21 +158,27 @@ class DirectionalLightSystem(
         }
 
         // Stabilize projection to reduce shimmering (texel snapping)
-        if (config.stabilizeProjection && camera != null) {
-            // Snap orthographic bounds to texel-sized increments
-            // This prevents the shadow map from shimmering as the camera moves
+        if (config.stabilizeProjection && camera != null && config.autoCalculateBounds) {
+            // Create a fixed view matrix looking at the origin to define a stable texel grid
+            val fixedEye = org.joml.Vector3f(config.direction).mul(-1f)
+            val fixedView = Matrix4f().setLookAt(fixedEye, org.joml.Vector3f(0f, 0f, 0f), lightUp)
+
+            // Transform continuous target to fixed light space
+            val targetInLightSpace = fixedView.transform(org.joml.Vector4f(lightTarget, 1.0f), org.joml.Vector4f())
+
+            // Snap to texel grid
             val shadowMapSize = 4096f // Assuming 4096x4096 shadow map
             val texelSize = (right - left) / shadowMapSize
+            targetInLightSpace.x = Math.round(targetInLightSpace.x / texelSize) * texelSize
+            targetInLightSpace.y = Math.round(targetInLightSpace.y / texelSize) * texelSize
 
-            // Snap camera position to texel grid in light space
-            val lightViewPos = lightView.transform(org.joml.Vector4f(camera.position, 1.0f), org.joml.Vector4f())
-            lightViewPos.x = Math.round(lightViewPos.x / texelSize) * texelSize
-            lightViewPos.y = Math.round(lightViewPos.y / texelSize) * texelSize
+            // Transform back to world space
+            val snappedTarget = fixedView.invert().transform(targetInLightSpace, org.joml.Vector4f())
 
-            // Recalculate view matrix with snapped position
-            val snappedLightPos = lightView.invert().transform(lightViewPos, org.joml.Vector4f())
-            lightPosition.set(snappedLightPos.x, snappedLightPos.y, snappedLightPos.z)
-                .add(org.joml.Vector3f(config.direction).mul(-100f))
+            // Important: Snap the target to keep the EXACT same light angle, preventing wobbling
+            lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)
+            lightPosition.set(config.direction).mul(-distance).add(lightTarget)
+            
             lightView.setLookAt(lightPosition, lightTarget, lightUp)
         }
 
