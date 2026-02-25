@@ -94,10 +94,11 @@ class TranslateGizmo(
         val go = activeGameObject ?: return
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
-        
+
         val mouseX = mouseListener.getScreenX()
         val mouseY = mouseListener.getScreenY()
-        val ray = scene.camera.screenToRay(mouseX, mouseY, 1920f, 1080f)
+        val viewportSize = mouseListener.getGameViewportSize()
+        val ray = scene.camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
 
         // Reset hover states
         xAxisHot = false
@@ -150,14 +151,15 @@ class TranslateGizmo(
         val camera = scene.camera
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()
-        
+        val viewportSize = mouseListener.getGameViewportSize()
+
         val go = activeGameObject ?: return 0f
         val transform = go.getComponent<Transform>() ?: return 0f
         val origin = Vector3f(transform.translation)
         val p2 = Vector3f(origin).add(axis)
-        
-        val s1 = worldToScreen(origin, view, proj, 1920f, 1080f)
-        val s2 = worldToScreen(p2, view, proj, 1920f, 1080f)
+
+        val s1 = worldToScreen(origin, view, proj, viewportSize.x, viewportSize.y)
+        val s2 = worldToScreen(p2, view, proj, viewportSize.x, viewportSize.y)
         
         val axisScreenDir = s2.sub(s1).normalize()
         val mouseDelta = Vector2f(mouseListener.getScreenDx(), mouseListener.getScreenDy())

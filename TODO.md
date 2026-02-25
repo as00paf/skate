@@ -63,7 +63,7 @@ Remaining shadow pipeline improvements for production-quality shadows.
   - OPAQUE and BLEND modes render all fragments (depth-only)
   - Locations: `assets/shaders/shadow.glsl`, `ShadowRenderer.kt`, `ShaderConst.kt`
 
-- [ ] **A28.0.9: Fix TranslateGizmo hardcoded resolution**
+- [x] **A28.0.9: Fix TranslateGizmo hardcoded resolution**
   - Line 100: `screenToRay(mouseX, mouseY, 1920f, 1080f)` → use `viewportSize.x, viewportSize.y`
   - Lines 159-160: `worldToScreen(..., 1920f, 1080f)` → use `viewportSize.x, viewportSize.y` (x2)
   - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
