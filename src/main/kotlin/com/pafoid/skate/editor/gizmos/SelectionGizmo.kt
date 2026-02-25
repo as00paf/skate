@@ -16,7 +16,7 @@ class SelectionGizmo(
     private val engine: Engine,
 ) : Gizmo(mouseListener, undoRedoManager) {
 
-    fun getHoveredObject(x: Int, y: Int): GameObject? {
+    fun getHoveredObject(x: Float, y: Float): GameObject? {
         if (engine.engineState.get() != EngineState.RUNNING) return null
         val id = renderer.readPixel(x, y)
         return scene.getGameObject(id)
@@ -36,8 +36,8 @@ class SelectionGizmo(
         }
 
         if (mouseListener.isInsideViewport()) {
-            val pickingX = mouseListener.getScreenX().toInt()
-            val pickingY = mouseListener.getScreenY().toInt()
+            val pickingX = mouseListener.getNormalizedX()
+            val pickingY = mouseListener.getNormalizedY()
 
             val hovered = getHoveredObject(pickingX, pickingY)
             hoveredGameObject = hovered

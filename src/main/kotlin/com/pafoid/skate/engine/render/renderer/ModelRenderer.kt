@@ -29,6 +29,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
+import org.lwjgl.opengl.GL30
 
 class ModelRenderer(
     private val resourceManager: ResourceManager,
@@ -123,15 +124,37 @@ class ModelRenderer(
         shader: Shader
     ) {
         val model = part.rawModel
+        val material = part.material
 
         model.vaoId.bindVAO(model.enabledAttributes)
+
+        val hasBaseColor = material.baseColorTexture != null
+        if (hasBaseColor) {
+            bindTexture(
+                TextureSlots.BASE_COLOR,
+                material.baseColorTexture,
+                shader,
+                ShaderConst.Uniforms.BASE_COLOR_TEXTURE
+            )
+        }
+        shader.uploadBoolean("u_HasBaseColorTexture", hasBaseColor)
+
+        // Alpha mode
+        val alphaInt = when (material.alphaMode) {
+            AlphaMode.OPAQUE -> 0
+            AlphaMode.MASK -> 1
+            AlphaMode.BLEND -> 2
+        }
+        shader.uploadInt(ShaderConst.Uniforms.ALPHA_MODE, alphaInt)
+        shader.uploadFloat(ShaderConst.Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
 
         withCullFace(!part.material.doubleSided) {
             GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
             EngineStats.drawCalls.incrementAndGet()
         }
 
-        model.vaoId.unbindVAO(model.enabledAttributes)
+        // Just unbind VAO without disabling attributes (disabling breaks skinning)
+        GL30.glBindVertexArray(0)
     }
 
     /**
@@ -189,6 +212,7 @@ class ModelRenderer(
     ) {
         val transformationMatrix = transform.toWorldMatrix()
         shader.uploadMat4f(ShaderConst.Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
+        shader.uploadFloat(ShaderConst.Uniforms.TEXTURE_SCALE, renderComponent.textureScale)
 
         val hasSkin = skeletonComponent?.pose != null
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_SKIN, hasSkin)

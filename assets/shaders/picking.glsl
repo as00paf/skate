@@ -12,7 +12,7 @@ uniform mat4 uView;
 out vec4 fColor;
 out vec2 fTexCoords;
 out float fTexId;
-out float fEntityId;
+flat out float fEntityId;
 
 void main()
 {
@@ -30,7 +30,7 @@ void main()
 in vec4 fColor;
 in vec2 fTexCoords;
 in float fTexId;
-in float fEntityId;
+flat in float fEntityId;
 
 uniform sampler2D uTextures[8];
 

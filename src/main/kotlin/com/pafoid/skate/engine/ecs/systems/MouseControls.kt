@@ -51,8 +51,8 @@ class MouseControls(
         if(go != null){
             handleGameObject(go)
         } else if (!mouseListener.isDragging() && mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
-            val x = mouseListener.getScreenX().toInt()
-            val y = mouseListener.getScreenY().toInt()
+            val x = mouseListener.getNormalizedX()
+            val y = mouseListener.getNormalizedY()
 
             val pickedId = getPickedId(x, y)
             val selectedObject = getObjectById(pickedId)
@@ -93,7 +93,7 @@ class MouseControls(
         }
     }
 
-    private fun getPickedId(x: Int, y: Int): Int {
+    private fun getPickedId(x: Float, y: Float): Int {
         if (engine.engineState.get() != EngineState.RUNNING) return -1
         return renderer.readPixel(x, y)
     }

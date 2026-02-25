@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.utils
 
+import kotlin.math.round
+
 /**
  * Utility object for encoding and decoding entity IDs for picking/rendering.
  * 
@@ -31,11 +33,12 @@ object EntityIdEncoder {
     /**
      * Decodes an entity ID read from GPU picking.
      * Subtracts the offset to recover the original ID.
+     * Uses roundToInt() to prevent floating point interpolation/truncation errors.
      *
      * @param encodedId The ID read from the picking texture (already a float from GPU)
      * @return The original entity ID
      */
-    fun decode(encodedId: Float): Int = (encodedId - OFFSET).toInt()
+    fun decode(encodedId: Float): Int = round((encodedId - OFFSET)).toInt()
 
     /**
      * Represents "no entity" or "nothing hit" in the picking system.

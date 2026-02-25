@@ -121,6 +121,11 @@ This task covers adding the shadow pass to the renderer and verifying end-to-end
   - Add FBO rebind in `PickingPass.execute()` before rendering
   - Location: `PickingPass.kt` at start of `execute()` method
 
+- [x] **A27.0.3: Fix PickingPass early return skipping hover detection**
+  - Picking pass was skipped entirely when `activeGameObject != null`, preventing hover texture updates
+  - Removed early return optimization that broke hover highlighting when object was selected
+  - Location: `PickingPass.kt` in `execute()` method
+
 ### Tasks
 
 - [ ] **A27.1: Verify shadow rendering pipeline**

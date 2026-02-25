@@ -129,23 +129,33 @@ class MouseListener: KoinComponent {
     fun getScreenX(): Float {
         val mousePos = ImGui.getMousePos()
         val relativeX = mousePos.x - gameViewportPos.x
-        val pickingX = ((relativeX / gameViewportSize.x) * 1920f).toInt().coerceIn(0, 1919)
-        return pickingX.toFloat()
+        return relativeX.coerceIn(0f, gameViewportSize.x)
     }
 
     fun getScreenY(): Float {
         val mousePos = ImGui.getMousePos()
         val relativeY = mousePos.y - gameViewportPos.y
-        val pickingY = ((relativeY / gameViewportSize.y) * 1080f).toInt().coerceIn(0, 1079)
-        return pickingY.toFloat()
+        return relativeY.coerceIn(0f, gameViewportSize.y)
+    }
+
+    fun getNormalizedX(): Float {
+        val mousePos = ImGui.getMousePos()
+        val relativeX = mousePos.x - gameViewportPos.x
+        return (relativeX / gameViewportSize.x).coerceIn(0f, 1f)
+    }
+
+    fun getNormalizedY(): Float {
+        val mousePos = ImGui.getMousePos()
+        val relativeY = mousePos.y - gameViewportPos.y
+        return (relativeY / gameViewportSize.y).coerceIn(0f, 1f)
     }
 
     fun getScreenDx(): Float {
-        return (getDx() / gameViewportSize.x) * 1920f
+        return getDx()
     }
 
     fun getScreenDy(): Float {
-        return (getDy() / gameViewportSize.y) * 1080f
+        return getDy()
     }
 
     fun getDx(): Float = (xPos - lastX).toFloat()
