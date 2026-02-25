@@ -8,7 +8,7 @@ layout (location=7) in vec4 aWeights;
 
 uniform mat4 uModelMatrix;
 uniform mat4 uLightSpaceMatrix;
-uniform bool uHasSkin;
+uniform bool u_HasSkin;
 
 const int MAX_BONES = 100;
 uniform mat4 u_JointMatrices[MAX_BONES];
@@ -18,7 +18,7 @@ out vec2 fTexCoords;
 void main()
 {
     mat4 skinMatrix = mat4(1.0);
-    if (uHasSkin) {
+    if (u_HasSkin) {
         skinMatrix =
         aWeights.x * u_JointMatrices[aJoints.x] +
         aWeights.y * u_JointMatrices[aJoints.y] +
