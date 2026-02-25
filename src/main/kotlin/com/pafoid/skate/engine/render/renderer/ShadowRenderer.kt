@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
-import com.pafoid.skate.engine.render.ShadowMap
 import com.pafoid.skate.engine.render.utils.bindTexture
 import com.pafoid.skate.engine.render.utils.bindVAO
 import com.pafoid.skate.engine.utils.ShaderConst
@@ -57,12 +56,10 @@ class ShadowRenderer(
      *
      * @param gameObjects List of all game objects in the scene
      * @param lightSpaceMatrix The light's view-projection matrix
-     * @param shadowMap The shadow map to render into
      */
     fun render(
         gameObjects: List<GameObject>,
         lightSpaceMatrix: org.joml.Matrix4f,
-        shadowMap: ShadowMap
     ) {
         val shader = getShadowShader()
         shader.start()

@@ -56,7 +56,6 @@ class ShadowPass(
         shadowRenderer.render(
             gameObjects = scene.gameObjectManager.gameObjects,
             lightSpaceMatrix = lightSpaceMatrix,
-            shadowMap = shadowMap
         )
 
         // Unbind shadow map
