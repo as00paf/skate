@@ -4,8 +4,6 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.config.DayNightCycleConfig
 import imgui.ImGui
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -41,13 +39,13 @@ import kotlin.math.sin
  * - Midnight (0:00): sun below (0, -1, 0)
  *
  * @param dayDurationOverride Optional override for day duration in seconds
+ * @param stringManager String manager for localized UI strings
  */
 class DayNightCycleSystem(
     initialConfig: DayNightCycleConfig = DayNightCycleConfig(),
     private val dayDurationOverride: Float? = null,
-) : System(priority = ExecutionPriority.EARLY), KoinComponent {
-
-    private val stringManager: StringManager by inject()
+    private val stringManager: StringManager
+) : System(priority = ExecutionPriority.EARLY) {
 
     // System-owned configuration
     val config = initialConfig

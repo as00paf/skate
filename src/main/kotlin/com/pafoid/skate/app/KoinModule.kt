@@ -82,7 +82,7 @@ val engineModule = module {
     single { BootManager(get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection
-    single { InputSystem(get(), get(), get()) }
+    single { InputSystem(get(), get(), get(), get()) }
     single { MouseControls(get(), get(), get(), get(), get(), get()) }
     single { GizmoSystem(get(), get(), get(), get(), get(), get(), get()) }
 }

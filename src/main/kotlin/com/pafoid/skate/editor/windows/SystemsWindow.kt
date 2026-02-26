@@ -2,7 +2,6 @@ package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import imgui.ImGui
@@ -56,14 +55,7 @@ class SystemsWindow : KoinComponent {
             ImGui.separator()
 
             systems.forEach { system ->
-                // Build header label with system name and priority
-                val systemName = system.displayName
-                val priorityLabel = when (system.priority) {
-                    ExecutionPriority.EARLY -> "[EARLY]"
-                    ExecutionPriority.DEFAULT -> "[DEFAULT]"
-                    ExecutionPriority.LATE -> "[LATE]"
-                }
-                val headerLabel = "$systemName $priorityLabel"
+                val headerLabel = system.displayName
 
                 // Color code based on enabled status
                 if (!system.enabled) {
@@ -88,7 +80,7 @@ class SystemsWindow : KoinComponent {
                 }
 
                 // Context menu for enabling/disabling system
-                if (ImGui.beginPopupContextItem("${systemName}_context")) {
+                if (ImGui.beginPopupContextItem("${system.displayName}_context")) {
                     val contextEnabled = ImBoolean(system.enabled)
                     if (ImGui.checkbox(stringManager.getString("lbl.systems.toggle_enabled"), contextEnabled)) {
                         system.enabled = contextEnabled.get()

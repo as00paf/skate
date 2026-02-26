@@ -83,11 +83,14 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
 
 - [x] **A31.0.7: Replace hardcoded strings with StringManager**
   - Location: All system imgui() implementations
-  - DayNightCycleSystem: Added KoinComponent, injected StringManager, replaced all hardcoded strings
-  - InputSystem: Added KoinComponent, injected StringManager, replaced all hardcoded strings
-  - AnimationSystem: Added KoinComponent, injected StringManager, replaced all hardcoded strings
-  - Added 60+ new string keys to strings.properties and strings_fr.properties
-  - All UI text now properly localized
+  - DayNightCycleSystem: Constructor injection for StringManager, replaced all hardcoded strings
+  - InputSystem: Constructor injection for StringManager, replaced all hardcoded strings
+  - AnimationSystem: Constructor injection for StringManager, replaced all hardcoded strings
+  - DirectionalLightSystem: Constructor injection for StringManager, replaced all hardcoded strings
+  - Added 70+ new string keys to strings.properties and strings_fr.properties
+  - Updated LevelEditorSceneInitializer to pass StringManager to system constructors
+  - Updated KoinModule.kt for InputSystem constructor injection
+  - All UI text now properly localized without KoinComponent usage
 
 - [ ] **A31.0.8: Refactor EnvironmentWindow**
   - Location: `editor/windows/EnvironmentWindow.kt`

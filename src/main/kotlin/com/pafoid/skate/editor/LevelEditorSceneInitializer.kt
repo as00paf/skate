@@ -3,6 +3,7 @@ package com.pafoid.skate.editor
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
@@ -41,11 +42,12 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private val mouseListener: MouseListener by inject()
     private val serializer: Serializer by inject()
     private val settingsManager: SettingsManager by inject()
+    private val stringManager: StringManager by inject()
     private val undoRedoManager: UndoRedoManager by inject()
     private val debugRenderer: DebugRenderer by inject()
     private val renderer: Renderer by inject()
     private val engine: Engine by inject()
-    private val inputSystem: InputSystem by inject()
+    private val inputProvider: com.pafoid.skate.engine.input.IInputProvider by inject()
 
     private var currentScene: Scene? = null
 
@@ -76,7 +78,8 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
         reportProgress(0.5f, "Setting up Editor Tools...")
 
-        // Essential Editor Tools as Systems
+        // Essential Editor Tools as Systems (create with constructor injection)
+        val inputSystem = InputSystem(inputProvider, mouseListener, settingsManager, stringManager)
         scene.addSystem(inputSystem)
         scene.addSystem(EditorCamera(scene.camera, EditorInputStateComponent()))
         scene.addSystem(MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine))
@@ -92,28 +95,34 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
             )
         )
         scene.addSystem(GridLines(debugRenderer, sceneManager))
-        scene.addSystem(AnimationSystem())
+        scene.addSystem(AnimationSystem(stringManager))
 
         reportProgress(0.7f, "Setting up Lighting Systems...")
 
         // Lighting Systems (must run after input systems)
-        val dayNightCycleSystem = DayNightCycleSystem(DayNightCycleConfig().apply {
-            cycleTime = scene.sceneData.timeOfDay
-            dayDuration = 300f  // 5 minutes per day
-        })
+        val dayNightCycleSystem = DayNightCycleSystem(
+            DayNightCycleConfig().apply {
+                cycleTime = scene.sceneData.timeOfDay
+                dayDuration = 300f  // 5 minutes per day
+            },
+            stringManager = stringManager
+        )
         scene.addSystem(dayNightCycleSystem)
 
-        val directionalLightSystem = DirectionalLightSystem(DirectionalLightConfig().apply {
-            direction.set(0f, -1f, 0f)  // Noon position
-            color.set(1f, 0.95f, 0.8f)  // Warm sunlight
-            intensity = 1f
-            shadowDistance = 50f
-            autoCalculateBounds = true
-            stabilizeProjection = true
-            depthBias = 0.0f
-            slopeScaledBias = 0.0f
-            castShadows = true
-        })
+        val directionalLightSystem = DirectionalLightSystem(
+            DirectionalLightConfig().apply {
+                direction.set(0f, -1f, 0f)  // Noon position
+                color.set(1f, 0.95f, 0.8f)  // Warm sunlight
+                intensity = 1f
+                shadowDistance = 50f
+                autoCalculateBounds = true
+                stabilizeProjection = true
+                depthBias = 0.0f
+                slopeScaledBias = 0.0f
+                castShadows = true
+            },
+            stringManager = stringManager
+        )
         directionalLightSystem.setAutoAdjustBounds(true)  // Enable camera-based bounds adjustment
         scene.addSystem(directionalLightSystem)
 

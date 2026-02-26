@@ -10,18 +10,18 @@ import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * System responsible for updating skeletal animations on animated GameObjects.
  *
  * Maintains a cached list of eligible GameObjects (those with both SkeletonComponent
  * and Animator) to avoid O(n) filtering every frame.
+ *
+ * @param stringManager String manager for localized UI strings
  */
-class AnimationSystem : System(), KoinComponent {
-
-    private val stringManager: StringManager by inject()
+class AnimationSystem(
+    private val stringManager: StringManager
+) : System() {
 
     // Cached list of GameObjects eligible for animation updates
     private val animatedObjects = mutableListOf<GameObject>()

@@ -7,20 +7,19 @@ import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector4f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * System responsible for updating the directional light.
  *
  * This system runs at [ExecutionPriority.EARLY] after [DayNightCycleSystem]
  * to ensure day/night state is ready before computing light properties.
+ *
+ * @param stringManager String manager for localized UI strings
  */
 class DirectionalLightSystem(
     initialConfig: DirectionalLightConfig = DirectionalLightConfig(),
-) : System(priority = ExecutionPriority.EARLY), KoinComponent {
-
-    private val stringManager: StringManager by inject()
+    private val stringManager: StringManager
+) : System(priority = ExecutionPriority.EARLY) {
 
     // System-owned configuration
     val config = initialConfig

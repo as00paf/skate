@@ -14,8 +14,6 @@ import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import imgui.ImGui
 import org.joml.Vector2f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 
@@ -28,14 +26,14 @@ import kotlin.math.abs
  * @param inputProvider Provider for raw hardware inputs
  * @param mouseListener Mouse listener for camera control
  * @param settingsManager Settings manager for input mappings and configuration
+ * @param stringManager String manager for localized UI strings
  */
 class InputSystem(
     private val inputProvider: IInputProvider,
     private val mouseListener: MouseListener,
-    private val settingsManager: SettingsManager
-) : System(priority = ExecutionPriority.EARLY), KoinComponent {
-
-    private val stringManager: StringManager by inject()
+    private val settingsManager: SettingsManager,
+    private val stringManager: StringManager
+) : System(priority = ExecutionPriority.EARLY) {
 
     private val mappings: InputMappings
         get() = settingsManager.settings.inputMappings
