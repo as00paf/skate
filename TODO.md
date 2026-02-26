@@ -24,21 +24,24 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
 
 ### Tasks
 
-- [ ] **A31.0.1: Create SystemsWindow.kt**
+- [x] **A31.0.1: Create SystemsWindow.kt**
   - Location: `editor/windows/SystemsWindow.kt`
   - Single dockable window that lists all systems from current scene
   - Uses collapsing headers for each system
   - Calls each system's `imgui()` method inside its header
   - Auto-discovers systems via `SystemManager.systems`
   - Visual indication for `system.enabled` flag
+  - Context menu to toggle system enabled state
+  - Integrated into ImGuiLayer with menu item and visibility flag
+  - String resources added for English and French
 
-- [ ] **A31.0.2: Add System UI Metadata**
+- [x] **A31.0.2: Add System UI Metadata**
   - Location: `engine/ecs/systems/System.kt`
-  - Add `open val displayName: String = javaClass.simpleName` for friendly names
-  - Add `open val showInInspector: Boolean = false` to control visibility
-  - Default `showInInspector = false` to avoid cluttering UI for internal systems
+  - Added `open val displayName: String` for friendly names
+  - Defaults to `javaClass.simpleName` but can be overridden for custom display
+  - Used by SystemsWindow to display system names in headers
 
-- [ ] **A31.0.3: Update ImGuiLayer Integration**
+- [x] **A31.0.3: Update ImGuiLayer Integration**
   - Location: `editor/imgui/ImGuiLayer.kt`
   - Add `private val systemsWindow = SystemsWindow()` instance
   - Add `showSystems: ImBoolean = ImBoolean(false)` visibility flag
@@ -73,7 +76,7 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
   - Current active gizmo display
   - Gizmo size/scale multipliers
   - Snapping settings (grid snap, rotation snap, scale snap)
-  - Tool key binding display
+  - Tool key binding display/
 
 - [ ] **A31.0.8: Refactor EnvironmentWindow**
   - Location: `editor/windows/EnvironmentWindow.kt`

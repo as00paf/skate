@@ -26,6 +26,13 @@ abstract class System(
     val priority: ExecutionPriority = ExecutionPriority.DEFAULT
 ) {
     var enabled = true
+
+    /**
+     * Display name for this system, used in UI (e.g., SystemsWindow).
+     * Defaults to the simple class name but can be overridden for custom display.
+     */
+    open val displayName: String get() = javaClass.simpleName
+    
     protected lateinit var scene: Scene
 
     /**
