@@ -110,8 +110,8 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
             shadowDistance = 50f
             autoCalculateBounds = true
             stabilizeProjection = true
-            depthBias = 0.005f
-            slopeScaledBias = 0.01f
+            depthBias = 0.0f
+            slopeScaledBias = 0.0f
             castShadows = true
         })
         directionalLightSystem.setAutoAdjustBounds(true)  // Enable camera-based bounds adjustment

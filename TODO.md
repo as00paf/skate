@@ -156,8 +156,13 @@ Finalizing the shadow pipeline and preparing for release.
 
 ### Tasks
 
-- [ ] **A30.0.1: Verify shadow stability with moving character**
-- [ ] **A30.0.2: Implement Shadow Cascades (CSM) if performance allows**
+- [x] **A30.0.1: Fix shadow peter-panning**
+  - ✅ Lowered default depthBias from 0.005 to 0.001
+  - ✅ Lowered default slopeScaledBias from 0.01 to 0.002
+  - ✅ Addressed detachment artifact while preserving acne prevention
+  - Locations: `DirectionalLightConfig.kt`, `GeometryPass.kt`
+- [ ] **A30.0.2: Verify shadow stability with moving character**
+- [ ] **A30.0.3: Implement Shadow Cascades (CSM) if performance allows**
 
 ### Summary
 

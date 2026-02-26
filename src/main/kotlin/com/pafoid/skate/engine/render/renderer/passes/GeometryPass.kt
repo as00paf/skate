@@ -105,8 +105,8 @@ class GeometryPass(
                 defaultShader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, directionalLight.depthBias)
                 defaultShader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, directionalLight.slopeScaledBias)
             } else {
-                defaultShader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, 0.005f)
-                defaultShader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, 0.01f)
+                defaultShader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, 0.001f)
+                defaultShader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, 0.002f)
             }
 
             // Bind shadow map texture to texture unit

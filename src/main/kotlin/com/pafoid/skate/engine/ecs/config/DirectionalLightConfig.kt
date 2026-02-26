@@ -119,16 +119,16 @@ data class DirectionalLightConfig(
     /**
      * Depth bias for shadow comparison to prevent shadow acne.
      * Added to sampled depth before comparison.
-     * Default: 0.005
+     * Default: 0.001
      */
-    var depthBias: Float = 0.005f,
+    var depthBias: Float = 0.001f,
 
     /**
      * Slope-scaled depth bias multiplier.
      * Increases bias for surfaces at steep angles to the light.
-     * Default: 0.01
+     * Default: 0.002
      */
-    var slopeScaledBias: Float = 0.01f,
+    var slopeScaledBias: Float = 0.002f,
 
     /**
      * True if this light casts shadows.
@@ -154,8 +154,8 @@ data class DirectionalLightConfig(
         shadowDistance = 50f
         autoCalculateBounds = true
         stabilizeProjection = true
-        depthBias = 0.005f
-        slopeScaledBias = 0.01f
+        depthBias = 0.001f
+        slopeScaledBias = 0.002f
         castShadows = true
     }
 }
