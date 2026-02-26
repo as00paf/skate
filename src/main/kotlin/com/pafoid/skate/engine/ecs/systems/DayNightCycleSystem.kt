@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.config.DayNightCycleConfig
+import imgui.ImGui
 import org.joml.Vector3f
 import kotlin.math.cos
 import kotlin.math.sin
@@ -196,4 +197,91 @@ class DayNightCycleSystem(
             from.z + (to.z - from.z) * t
         )
     }
+
+    /**
+     * Gets the current day phase name based on cycle time.
+     * @return Phase name (Night, Dawn, Day, or Dusk)
+     */
+    private fun getCurrentPhase(): String {
+        return when (config.cycleTime) {
+            in 0f..5f -> "Night"
+            in 5f..7f -> "Dawn"
+            in 7f..17f -> "Day"
+            in 17f..19f -> "Dusk"
+            else -> "Night"
+        }
+    }
+
+    /**
+     * Renders ImGui interface for debugging and tuning the day/night cycle.
+     *
+     * ## Controls
+     *
+     * - Time of day slider (0-24 hours)
+     * - Day duration slider (60-600 seconds)
+     * - Auto-ambient toggle
+     * - Current phase display
+     * - Sun direction, color, and intensity (read-only)
+     */
+    override fun imgui() {
+        // Current phase display
+        val currentPhase = getCurrentPhase()
+        ImGui.text("Current Phase: $currentPhase")
+        ImGui.text("Time: %.2f hours".format(config.cycleTime))
+
+        ImGui.separator()
+
+        // Time of day slider
+        val cycleTimeArr = floatArrayOf(config.cycleTime)
+        if (ImGui.dragFloat("Time of Day (hours)", cycleTimeArr, 0.1f, 0f, 24f, "%.2f")) {
+            config.cycleTime = cycleTimeArr[0].coerceIn(0f, 24f)
+        }
+
+        // Day duration slider
+        val dayDurationArr = floatArrayOf(config.dayDuration)
+        if (ImGui.dragFloat("Day Duration (seconds)", dayDurationArr, 1f, 60f, 600f, "%.0f")) {
+            config.dayDuration = dayDurationArr[0].coerceIn(60f, 600f)
+        }
+
+        ImGui.separator()
+
+        // Auto-ambient toggle
+        val autoAmbient = config.autoAmbient
+        if (ImGui.checkbox("Auto Ambient", autoAmbient)) {
+            config.autoAmbient = !autoAmbient
+        }
+
+        ImGui.separator()
+
+        // Read-only sun properties
+        ImGui.text("Sun Direction:")
+        ImGui.text(
+            "  X: %.3f, Y: %.3f, Z: %.3f".format(
+                config.sunDirection.x,
+                config.sunDirection.y,
+                config.sunDirection.z
+            )
+        )
+
+        ImGui.text("Sun Color:")
+        ImGui.text("  R: %.3f, G: %.3f, B: %.3f".format(config.sunColor.x, config.sunColor.y, config.sunColor.z))
+
+        ImGui.text("Sun Intensity: %.2f".format(config.sunIntensity))
+
+        ImGui.text("Ambient Color:")
+        ImGui.text(
+            "  R: %.3f, G: %.3f, B: %.3f".format(
+                config.ambientColor.x,
+                config.ambientColor.y,
+                config.ambientColor.z
+            )
+        )
+
+        ImGui.text("Ambient Intensity: %.2f".format(config.ambientIntensity))
+
+        ImGui.text("Shadow Intensity: %.2f".format(config.shadowIntensity))
+
+        ImGui.text("Is Daytime: ${config.isDaytime}")
+    }
+
 }

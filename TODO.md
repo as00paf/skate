@@ -49,14 +49,16 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
   - Call `systemsWindow.imgui(currentScene)` in update loop
   - Consider removing hardcoded system window calls where applicable
 
-- [ ] **A31.0.4: Implement DayNightCycleSystem.imgui()**
+- [x] **A31.0.4: Implement DayNightCycleSystem.imgui()**
   - Location: `engine/ecs/systems/DayNightCycleSystem.kt`
   - Time of day slider (0-24 hours)
-  - Day duration slider
+  - Day duration slider (60-600 seconds)
   - Auto-ambient toggle
   - Current phase display (Night/Dawn/Day/Dusk)
   - Sun direction vector display (read-only)
   - Sun color/intensity display (read-only)
+  - Ambient color/intensity display (read-only)
+  - Shadow intensity display (read-only)
 
 - [ ] **A31.0.5: Implement InputSystem.imgui()**
   - Location: `engine/ecs/systems/InputSystem.kt`
