@@ -229,91 +229,88 @@ class DayNightCycleSystem(
      * - Sun direction, color, and intensity (read-only)
      */
     override fun imgui() {
-        if (ImGui.collapsingHeader(stringManager.getString("lbl.day_night_cycle.header"))) {
-            // Current phase display
-            val currentPhase = getCurrentPhase()
-            ImGui.text(stringManager.getString("lbl.day_night_cycle.current_phase", currentPhase))
-            ImGui.text(stringManager.getString("lbl.day_night_cycle.time", config.cycleTime))
+        // Current phase display
+        val currentPhase = getCurrentPhase()
+        ImGui.text(stringManager.getString("lbl.day_night_cycle.current_phase", currentPhase))
+        ImGui.text(stringManager.getString("lbl.day_night_cycle.time", config.cycleTime))
 
-            ImGui.separator()
+        ImGui.separator()
 
-            // Time of day slider
-            val cycleTimeArr = floatArrayOf(config.cycleTime)
-            if (ImGui.dragFloat(
-                    stringManager.getString("lbl.day_night_cycle.time_of_day"),
-                    cycleTimeArr,
-                    0.1f,
-                    0f,
-                    24f,
-                    "%.2f"
-                )
-            ) {
-                config.cycleTime = cycleTimeArr[0].coerceIn(0f, 24f)
-            }
-
-            // Day duration slider
-            val dayDurationArr = floatArrayOf(config.dayDuration)
-            if (ImGui.dragFloat(
-                    stringManager.getString("lbl.day_night_cycle.day_duration"),
-                    dayDurationArr,
-                    1f,
-                    60f,
-                    600f,
-                    "%.0f"
-                )
-            ) {
-                config.dayDuration = dayDurationArr[0].coerceIn(60f, 600f)
-            }
-
-            ImGui.separator()
-
-            // Auto-ambient toggle
-            val autoAmbient = config.autoAmbient
-            if (ImGui.checkbox(stringManager.getString("lbl.day_night_cycle.auto_ambient"), autoAmbient)) {
-                config.autoAmbient = !autoAmbient
-            }
-
-            ImGui.separator()
-
-            // Read-only sun properties
-            ImGui.text(stringManager.getString("lbl.day_night_cycle.sun_direction"))
-            ImGui.text(
-                stringManager.getString(
-                    "lbl.day_night_cycle.sun_direction_xyz",
-                    config.sunDirection.x,
-                    config.sunDirection.y,
-                    config.sunDirection.z
-                )
+        // Time of day slider
+        val cycleTimeArr = floatArrayOf(config.cycleTime)
+        if (ImGui.dragFloat(
+                stringManager.getString("lbl.day_night_cycle.time_of_day"),
+                cycleTimeArr,
+                0.1f,
+                0f,
+                24f,
+                "%.2f"
             )
-
-            ImGui.text(stringManager.getString("lbl.day_night_cycle.sun_color"))
-            ImGui.text(
-                stringManager.getString(
-                    "lbl.day_night_cycle.sun_color_rgb",
-                    config.sunColor.x,
-                    config.sunColor.y,
-                    config.sunColor.z
-                )
-            )
-
-            ImGui.text(stringManager.getString("lbl.day_night_cycle.sun_intensity", config.sunIntensity))
-
-            ImGui.text(stringManager.getString("lbl.day_night_cycle.ambient_color"))
-            ImGui.text(
-                stringManager.getString(
-                    "lbl.day_night_cycle.ambient_color_rgb",
-                    config.ambientColor.x,
-                    config.ambientColor.y,
-                    config.ambientColor.z
-                )
-            )
-
-            ImGui.text(stringManager.getString("lbl.day_night_cycle.ambient_intensity", config.ambientIntensity))
-
-            ImGui.text(stringManager.getString("lbl.day_night_cycle.shadow_intensity", config.shadowIntensity))
-
-            ImGui.text(stringManager.getString("lbl.day_night_cycle.is_daytime", config.isDaytime))
+        ) {
+            config.cycleTime = cycleTimeArr[0].coerceIn(0f, 24f)
         }
-    }
 
+        // Day duration slider
+        val dayDurationArr = floatArrayOf(config.dayDuration)
+        if (ImGui.dragFloat(
+                stringManager.getString("lbl.day_night_cycle.day_duration"),
+                dayDurationArr,
+                1f,
+                60f,
+                600f,
+                "%.0f"
+            )
+        ) {
+            config.dayDuration = dayDurationArr[0].coerceIn(60f, 600f)
+        }
+
+        ImGui.separator()
+
+        // Auto-ambient toggle
+        val autoAmbient = config.autoAmbient
+        if (ImGui.checkbox(stringManager.getString("lbl.day_night_cycle.auto_ambient"), autoAmbient)) {
+            config.autoAmbient = !autoAmbient
+        }
+
+        ImGui.separator()
+
+        // Read-only sun properties
+        ImGui.text(stringManager.getString("lbl.day_night_cycle.sun_direction"))
+        ImGui.text(
+            stringManager.getString(
+                "lbl.day_night_cycle.sun_direction_xyz",
+                config.sunDirection.x,
+                config.sunDirection.y,
+                config.sunDirection.z
+            )
+        )
+
+        ImGui.text(stringManager.getString("lbl.day_night_cycle.sun_color"))
+        ImGui.text(
+            stringManager.getString(
+                "lbl.day_night_cycle.sun_color_rgb",
+                config.sunColor.x,
+                config.sunColor.y,
+                config.sunColor.z
+            )
+        )
+
+        ImGui.text(stringManager.getString("lbl.day_night_cycle.sun_intensity", config.sunIntensity))
+
+        ImGui.text(stringManager.getString("lbl.day_night_cycle.ambient_color"))
+        ImGui.text(
+            stringManager.getString(
+                "lbl.day_night_cycle.ambient_color_rgb",
+                config.ambientColor.x,
+                config.ambientColor.y,
+                config.ambientColor.z
+            )
+        )
+
+        ImGui.text(stringManager.getString("lbl.day_night_cycle.ambient_intensity", config.ambientIntensity))
+
+        ImGui.text(stringManager.getString("lbl.day_night_cycle.shadow_intensity", config.shadowIntensity))
+
+        ImGui.text(stringManager.getString("lbl.day_night_cycle.is_daytime", config.isDaytime))
+    }
 }

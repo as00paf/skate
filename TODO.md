@@ -89,14 +89,7 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
   - Added 60+ new string keys to strings.properties and strings_fr.properties
   - All UI text now properly localized
 
-- [ ] **A31.0.8: Implement GizmoSystem.imgui()**
-  - Location: `engine/ecs/systems/GizmoSystem.kt`
-  - Current active gizmo display
-  - Gizmo size/scale multipliers
-  - Snapping settings (grid snap, rotation snap, scale snap)
-  - Tool key binding display/
-
-- [ ] **A31.0.9: Refactor EnvironmentWindow**
+- [ ] **A31.0.8: Refactor EnvironmentWindow**
   - Location: `editor/windows/EnvironmentWindow.kt`
   - Remove day/night cycle controls (moved to DayNightCycleSystem.imgui)
   - Remove directional light controls (moved to DirectionalLightSystem.imgui)

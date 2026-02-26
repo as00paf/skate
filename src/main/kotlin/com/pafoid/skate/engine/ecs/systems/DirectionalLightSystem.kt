@@ -209,63 +209,60 @@ class DirectionalLightSystem(
      * Renders ImGui interface for debugging and tuning.
      */
     override fun imgui() {
-        if (ImGui.collapsingHeader("Directional Light")) {
+        ImGui.separator()
+        ImGui.text("Shadow Distance")
 
+        val shadowDistanceArr = floatArrayOf(config.shadowDistance)
+        if (ImGui.dragFloat("Shadow Distance (m)", shadowDistanceArr, 0.1f, 10f, 200f)) {
+            config.shadowDistance = shadowDistanceArr[0]
+        }
+
+        val autoCalcBounds = config.autoCalculateBounds
+        if (ImGui.checkbox("Auto Calculate Bounds (Frustum)", autoCalcBounds)) {
+            config.autoCalculateBounds = !autoCalcBounds
+        }
+
+        if (!config.autoCalculateBounds) {
             ImGui.separator()
-            ImGui.text("Shadow Distance")
+            ImGui.text("Orthographic Bounds (Manual)")
 
-            val shadowDistanceArr = floatArrayOf(config.shadowDistance)
-            if (ImGui.dragFloat("Shadow Distance (m)", shadowDistanceArr, 0.1f, 10f, 200f)) {
-                config.shadowDistance = shadowDistanceArr[0]
+            val orthoLeft = floatArrayOf(config.orthoLeft)
+            if (ImGui.dragFloat("Left", orthoLeft, 0.1f, -100f, 0f)) {
+                config.orthoLeft = orthoLeft[0]
             }
 
-            val autoCalcBounds = config.autoCalculateBounds
-            if (ImGui.checkbox("Auto Calculate Bounds (Frustum)", autoCalcBounds)) {
-                config.autoCalculateBounds = !autoCalcBounds
+            val orthoRight = floatArrayOf(config.orthoRight)
+            if (ImGui.dragFloat("Right", orthoRight, 0.1f, 0f, 100f)) {
+                config.orthoRight = orthoRight[0]
             }
 
-            if (!config.autoCalculateBounds) {
-                ImGui.separator()
-                ImGui.text("Orthographic Bounds (Manual)")
-
-                val orthoLeft = floatArrayOf(config.orthoLeft)
-                if (ImGui.dragFloat("Left", orthoLeft, 0.1f, -100f, 0f)) {
-                    config.orthoLeft = orthoLeft[0]
-                }
-
-                val orthoRight = floatArrayOf(config.orthoRight)
-                if (ImGui.dragFloat("Right", orthoRight, 0.1f, 0f, 100f)) {
-                    config.orthoRight = orthoRight[0]
-                }
-
-                val orthoBottom = floatArrayOf(config.orthoBottom)
-                if (ImGui.dragFloat("Bottom", orthoBottom, 0.1f, -100f, 0f)) {
-                    config.orthoBottom = orthoBottom[0]
-                }
-
-                val orthoTop = floatArrayOf(config.orthoTop)
-                if (ImGui.dragFloat("Top", orthoTop, 0.1f, 0f, 100f)) {
-                    config.orthoTop = orthoTop[0]
-                }
+            val orthoBottom = floatArrayOf(config.orthoBottom)
+            if (ImGui.dragFloat("Bottom", orthoBottom, 0.1f, -100f, 0f)) {
+                config.orthoBottom = orthoBottom[0]
             }
 
-            ImGui.separator()
-            ImGui.text("Shadow Quality")
-
-            val stabilizeProj = config.stabilizeProjection
-            if (ImGui.checkbox("Stabilize Projection (Reduce Shimmering)", stabilizeProj)) {
-                config.stabilizeProjection = !stabilizeProj
+            val orthoTop = floatArrayOf(config.orthoTop)
+            if (ImGui.dragFloat("Top", orthoTop, 0.1f, 0f, 100f)) {
+                config.orthoTop = orthoTop[0]
             }
+        }
 
-            val depthBiasArr = floatArrayOf(config.depthBias)
-            if (ImGui.dragFloat("Depth Bias", depthBiasArr, 0.0001f, 0.0f, 0.1f, "%.4f")) {
-                config.depthBias = depthBiasArr[0]
-            }
+        ImGui.separator()
+        ImGui.text("Shadow Quality")
 
-            val slopeBiasArr = floatArrayOf(config.slopeScaledBias)
-            if (ImGui.dragFloat("Slope-Scaled Bias", slopeBiasArr, 0.001f, 0.0f, 0.1f, "%.3f")) {
-                config.slopeScaledBias = slopeBiasArr[0]
-            }
+        val stabilizeProj = config.stabilizeProjection
+        if (ImGui.checkbox("Stabilize Projection (Reduce Shimmering)", stabilizeProj)) {
+            config.stabilizeProjection = !stabilizeProj
+        }
+
+        val depthBiasArr = floatArrayOf(config.depthBias)
+        if (ImGui.dragFloat("Depth Bias", depthBiasArr, 0.0001f, 0.0f, 0.1f, "%.4f")) {
+            config.depthBias = depthBiasArr[0]
+        }
+
+        val slopeBiasArr = floatArrayOf(config.slopeScaledBias)
+        if (ImGui.dragFloat("Slope-Scaled Bias", slopeBiasArr, 0.001f, 0.0f, 0.1f, "%.3f")) {
+            config.slopeScaledBias = slopeBiasArr[0]
         }
     }
 }
