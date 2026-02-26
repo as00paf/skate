@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.utils.SkeletonMath
+import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -173,5 +174,73 @@ class AnimationSystem : System() {
         s1.lerp(s2, alpha)
 
         out.translationRotateScale(t1, r1, s1)
+    }
+
+    /**
+     * Global animation speed multiplier for all animations.
+     * Useful for slow-motion or time-scale effects.
+     */
+    var globalSpeedMultiplier: Float = 1.0f
+
+    /**
+     * Renders ImGui interface for debugging and tuning animations.
+     *
+     * ## Controls
+     *
+     * - Animated object count display
+     * - Per-object animation state (name, time, playing state)
+     * - Global speed multiplier
+     * - Cache statistics
+     */
+    override fun imgui() {
+        ImGui.text("Animated Objects: ${animatedObjects.size}")
+        ImGui.text("Cache Dirty: $cacheDirty")
+
+        ImGui.separator()
+
+        // Global speed multiplier
+        val speedArr = floatArrayOf(globalSpeedMultiplier)
+        if (ImGui.dragFloat("Global Speed Multiplier", speedArr, 0.1f, 0f, 3f, "%.2f")) {
+            globalSpeedMultiplier = speedArr[0].coerceIn(0f, 3f)
+        }
+
+        ImGui.separator()
+        ImGui.text("Per-Object Animation State")
+
+        // Show each animated object's state
+        animatedObjects.forEach { go ->
+            val animator = go.getComponent<Animator>()
+            val skeletonComponent = go.getComponent<SkeletonComponent>()
+
+            if (animator != null && skeletonComponent != null) {
+                val goName = go.name
+                val currentAnim = animator.currentAnimation
+                val isPlaying = animator.isPlaying
+                val currentTime = animator.currentTime
+                val duration = animator.duration
+                val blendTime = animator.blendTime
+
+                ImGui.text("$goName:")
+                ImGui.indent()
+
+                if (currentAnim != null) {
+                    ImGui.text("Animation: ${currentAnim.name}")
+                    ImGui.text("Time: %.2f / %.2f s".format(currentTime, duration))
+                    ImGui.text("Playing: $isPlaying")
+
+                    if (blendTime > 0f) {
+                        ImGui.text("Blending: %.2f s remaining".format(blendTime))
+                    }
+                } else {
+                    ImGui.text("No animation selected")
+                }
+
+                ImGui.unindent()
+            }
+        }
+
+        if (animatedObjects.isEmpty()) {
+            ImGui.text("No animated objects in scene")
+        }
     }
 }

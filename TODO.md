@@ -69,12 +69,17 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
   - Physics settings (jump impulse, walk/run speed, rotation speed, take off time, input smoothing)
   - Input state debug (gamepad axes and buttons display)
 
-- [ ] **A31.0.6: Implement AnimationSystem.imgui()**
+- [x] **A31.0.6: Implement AnimationSystem.imgui()**
   - Location: `engine/ecs/systems/AnimationSystem.kt`
   - Animated object count display
-  - Per-object animation state (current animation, time, playing state)
-  - Animation speed multiplier
-  - Cache statistics
+  - Cache dirty status
+  - Global speed multiplier (0-3x)
+  - Per-object animation state:
+    - Current animation name
+    - Current time / duration
+    - Playing state
+    - Blend time remaining
+  - Empty state message when no animated objects
 
 - [ ] **A31.0.7: Implement GizmoSystem.imgui()**
   - Location: `engine/ecs/systems/GizmoSystem.kt`
