@@ -118,40 +118,46 @@ Remaining shadow pipeline improvements for production-quality shadows.
 
 ---
 
-## 🔴 v0.29: Shadow Quality Improvements (Planned)
+## 🔴 v0.29: Shadow Quality Improvements (Complete) ✅
 
 ### Summary
 
-Shadow rendering works but has quality issues that need addressing.
+Shadow rendering works with robust frustum fitting and stabilization.
 
 ### Bug Fixes
 
-- [ ] **A29.0.4: Implement Robust Shadow Frustum Fitting (Bounding Spheres)**
-    - Current shadow map bounding box is fixed (50x50) and centered on camera position, causing clipping when character
-      moves away or camera rotates.
-    - Implement bounding sphere calculation for camera frustum:
-        1. Calculate the 8 corners of the camera's view frustum (limited by `shadowDistance`).
-        2. Compute the bounding sphere (center and radius) of these corners.
-        3. Use the bounding sphere center as the `lightTarget`.
-        4. Set orthographic bounds based on the sphere's radius (guarantees coverage regardless of camera rotation).
-    - Increase `zNear` and `zFar` planes significantly (e.g., -500 to 500) to prevent vertical clipping when camera
-      pedestals up/down.
+- [x] **A29.0.4: Implement Robust Shadow Frustum Fitting (Bounding Spheres)**
+  - ✅ Implemented bounding sphere calculation for camera frustum
+  - ✅ Fixed corner indices in frustum calculation
+  - ✅ Rotation-invariant shadow map coverage
+  - Location: `DirectionalLightSystem.kt`
+
+- [x] **A29.0.5: Fix Shadow Stabilization Logic**
+  - ✅ Implemented stable snapping to texel grid
+  - ✅ Reduced shimmering when camera moves
     - Location: `DirectionalLightSystem.kt`
 
-- [ ] **A29.0.5: Fix Shadow Stabilization Logic**
-    - Current stabilization is broken as it snaps against a moving light view matrix.
-    - Implement stable snapping:
-        1. Create a "fixed" light view matrix looking at (0,0,0) from the light direction.
-        2. Project the dynamic `lightTarget` into this fixed space.
-        3. Snap the coordinate to a texel grid based on shadow map resolution and bounds radius.
-        4. Un-project the snapped coordinate back to world space for the final `lightTarget`.
-    - This ensures the shadow map stays locked to world texels while moving smoothly.
+- [x] **A29.0.6: Fix High-Noon Light Up-Vector Failure**
+  - ✅ Dynamically switch Up vector to (0, 0, 1) when sun is overhead
     - Location: `DirectionalLightSystem.kt`
 
-- [ ] **A29.0.6: Fix High-Noon Light Up-Vector Failure**
-    - Current `setLookAt` uses a hardcoded Up vector (0, 1, 0), which fails when the sun is perfectly overhead.
-    - Dynamically switch Up vector to (0, 0, 1) when light direction is near vertical.
+- [x] **A29.0.7: Fix Shadow Clipping & "Far" Shadow Center**
+  - ✅ Increased buffer for shadow casters (500m)
+  - ✅ Centered shadow map on visible frustum
     - Location: `DirectionalLightSystem.kt`
+
+---
+
+## 🔴 v0.30: Production Polish (Planned)
+
+### Summary
+
+Finalizing the shadow pipeline and preparing for release.
+
+### Tasks
+
+- [ ] **A30.0.1: Verify shadow stability with moving character**
+- [ ] **A30.0.2: Implement Shadow Cascades (CSM) if performance allows**
 
 ### Summary
 

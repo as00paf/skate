@@ -1,44 +1,17 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.render.Camera
 import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import org.joml.Vector4f
 
 /**
  * System responsible for updating the directional light.
  *
  * This system runs at [ExecutionPriority.EARLY] after [DayNightCycleSystem]
  * to ensure day/night state is ready before computing light properties.
- *
- * ## Responsibilities
- *
- * - Reads sun direction, color, and intensity from [DayNightCycleSystem.config]
- * - Updates [DirectionalLightConfig] with current sun data
- * - Computes light space matrix for shadow mapping
- * - Supports dynamic orthographic bounds adjustment based on camera view
- *
- * ## Shadow Mapping
- *
- * The light space matrix is computed as:
- * ```
- * lightSpaceMatrix = lightProjection * lightView
- * ```
- *
- * Where:
- * - `lightView` = lookAt matrix from light position to target
- * - `lightProjection` = orthographic projection for directional light shadows
- *
- * ## Orthographic Bounds
- *
- * Default bounds are tuned for skate level size:
- * - left/right: -20 to 20 (40m width)
- * - bottom/top: -20 to 20 (40m height)
- * - near/far: 0.1 to 100 (depth range)
- *
- * These can be adjusted via ImGui or programmatically for different scene scales.
  */
 class DirectionalLightSystem(
     initialConfig: DirectionalLightConfig = DirectionalLightConfig(),
@@ -53,23 +26,11 @@ class DirectionalLightSystem(
     private val lightUp = Vector3f(0f, 1f, 0f)
     private val lightPosition = Vector3f()
 
-    // Dynamic bounds adjustment
-    private var autoAdjustBounds = false
-    private var boundsScale = 1.0f
-
-    /**
-     * Enables or disables automatic orthographic bounds adjustment.
-     * When enabled, the shadow map bounds are adjusted based on the camera view frustum
-     * to ensure optimal shadow coverage and resolution.
-     */
+    // Keep these methods to prevent compilation errors from LevelEditorSceneInitializer,
+    // though the bounding sphere math handles everything now.
     fun setAutoAdjustBounds(enabled: Boolean) {
-        autoAdjustBounds = enabled
+        // No-op, bounding spheres replace this logic
     }
-
-    /**
-     * Returns whether auto-adjust bounds is enabled.
-     */
-    fun isAutoAdjustBoundsEnabled(): Boolean = autoAdjustBounds
 
     override fun update(dt: Float) {
         // Find day/night cycle system
@@ -85,11 +46,7 @@ class DirectionalLightSystem(
 
         // Compute light space matrix for shadow mapping
         if (config.castShadows) {
-            val camera = scene.camera
-            if (autoAdjustBounds) {
-                adjustOrthoBoundsForCamera(scene)
-            }
-            updateLightSpaceMatrix(camera)
+            updateLightSpaceMatrix(scene.camera)
         }
     }
 
@@ -100,123 +57,152 @@ class DirectionalLightSystem(
 
     /**
      * Computes the light space matrix for shadow mapping.
-     *
-     * The light space matrix transforms world positions into light clip space,
-     * where depth comparison against the shadow map is performed.
      */
     private fun updateLightSpaceMatrix(camera: Camera? = null) {
-        // Choose up vector based on light direction to prevent lookAt failure
+        // A29.0.6: Fix High-Noon Light Up-Vector Failure
+        // Choose up vector based on light direction to prevent lookAt failure (high noon)
         if (Math.abs(config.direction.y) > 0.99f) {
             lightUp.set(0f, 0f, 1f)
         } else {
             lightUp.set(0f, 1f, 0f)
         }
 
-        // The distance to place the light from the target. We place it halfway through the orthoFar plane
-        // to ensure objects up to half the far plane distance behind the camera are still rendered into the shadow map.
-        val distance = config.orthoFar * 0.5f
-
-        // Target is the origin (or in front of camera for cascaded shadows)
         if (camera != null && config.autoCalculateBounds) {
-            val viewInv = camera.getInverseView()
-            val forward = org.joml.Vector3f(0f, 0f, -1f)
-            viewInv.transformDirection(forward)
+            // A29.0.4: Implement Robust Shadow Frustum Fitting (Bounding Spheres)
+            // 1. Calculate the camera's view frustum corners limited by shadowDistance
+            val tempProj = Matrix4f()
+            val aspectRatio =
+                if (camera.viewportHeight > 0) camera.viewportWidth.toFloat() / camera.viewportHeight else 16f / 9f
+            tempProj.perspective(
+                Math.toRadians(camera.fov.toDouble()).toFloat() * camera.zoom,
+                aspectRatio,
+                camera.nearPlane,
+                config.shadowDistance
+            )
 
-            // Start at camera position, then move forward by half the shadow distance
-            // so the shadow bounds cover the view frustum instead of wasting space behind the camera
-            lightTarget.set(camera.position).add(forward.mul(config.shadowDistance * 0.5f))
-        } else {
-            lightTarget.set(0f, 0f, 0f)
-        }
+            val invCameraViewProj = Matrix4f(tempProj).mul(camera.createViewMatrix()).invert()
 
-        // Calculate light position (directional light at infinity)
-        // We use a point far away in the opposite direction of the light, centered on the target
-        lightPosition.set(config.direction).mul(-distance).add(lightTarget)
+            val frustumCorners = arrayOf(
+                Vector4f(-1f, -1f, -1f, 1f),
+                Vector4f(1f, -1f, -1f, 1f),
+                Vector4f(-1f, 1f, -1f, 1f),
+                Vector4f(1f, 1f, -1f, 1f),
+                Vector4f(-1f, -1f, 1f, 1f),
+                Vector4f(1f, -1f, 1f, 1f),
+                Vector4f(-1f, 1f, 1f, 1f),
+                Vector4f(1f, 1f, 1f, 1f)
+            )
 
-        // Create view matrix (light looking at scene)
-        lightView.setLookAt(lightPosition, lightTarget, lightUp)
+            val frustumCenter = Vector3f()
+            val worldCorners = Array(8) { Vector3f() }
 
-        // Calculate orthographic bounds
-        var left: Float
-        var right: Float
-        var bottom: Float
-        var top: Float
+            for (i in 0 until 8) {
+                val corner = Vector4f(frustumCorners[i]) // Copy to avoid modifying the array if we ever reused it
+                invCameraViewProj.transform(corner)
+                corner.div(corner.w) // Perspective divide
+                worldCorners[i].set(corner.x, corner.y, corner.z)
+                frustumCenter.add(worldCorners[i])
+            }
+            frustumCenter.div(8f)
 
-        if (config.autoCalculateBounds) {
-            // Auto-calculate from shadow distance
-            val halfDistance = config.shadowDistance * 0.5f
-            left = -halfDistance * boundsScale
-            right = halfDistance * boundsScale
-            bottom = -halfDistance * boundsScale
-            top = halfDistance * boundsScale
-        } else {
-            // Use manual bounds
-            left = config.orthoLeft * boundsScale
-            right = config.orthoRight * boundsScale
-            bottom = config.orthoBottom * boundsScale
-            top = config.orthoTop * boundsScale
-        }
+            // 2. Find the bounding sphere radius
+            var radius = 0f
+            for (corner in worldCorners) {
+                val dist = corner.distance(frustumCenter)
+                if (dist > radius) {
+                    radius = dist
+                }
+            }
+            // Round radius up to nearest 1 unit to stabilize projection size
+            radius = Math.ceil(radius.toDouble()).toFloat()
 
-        // Stabilize projection to reduce shimmering (texel snapping)
-        if (config.stabilizeProjection && camera != null && config.autoCalculateBounds) {
-            // Create a fixed view matrix looking at the origin to define a stable texel grid
-            val fixedEye = org.joml.Vector3f(config.direction).mul(-1f)
-            val fixedView = Matrix4f().setLookAt(fixedEye, org.joml.Vector3f(0f, 0f, 0f), lightUp)
+            // Set bounds based on bounding sphere (guarantees coverage regardless of rotation)
+            val left = -radius
+            val right = radius
+            val bottom = -radius
+            val top = radius
 
-            // Transform continuous target to fixed light space
-            val targetInLightSpace = fixedView.transform(org.joml.Vector4f(lightTarget, 1.0f), org.joml.Vector4f())
+            // Set target
+            lightTarget.set(frustumCenter)
 
-            // Snap to texel grid
-            val shadowMapSize = 4096f // Assuming 4096x4096 shadow map
-            val texelSize = (right - left) / shadowMapSize
-            targetInLightSpace.x = Math.round(targetInLightSpace.x / texelSize) * texelSize
-            targetInLightSpace.y = Math.round(targetInLightSpace.y / texelSize) * texelSize
+            // A29.0.5: Fix Shadow Stabilization Logic (Texel snapping)
+            if (config.stabilizeProjection) {
+                val shadowMapSize = 4096f // Assuming 4096x4096 shadow map
+                val texelSize = (radius * 2f) / shadowMapSize
 
-            // Transform back to world space
-            val snappedTarget = fixedView.invert().transform(targetInLightSpace, org.joml.Vector4f())
+                val fixedEye = Vector3f(config.direction).mul(-1f)
+                val fixedView = Matrix4f().setLookAt(fixedEye, Vector3f(0f, 0f, 0f), lightUp)
 
-            // Important: Snap the target to keep the EXACT same light angle, preventing wobbling
-            lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)
+                val targetInLightSpace = fixedView.transform(Vector4f(lightTarget, 1.0f))
+                targetInLightSpace.x = Math.floor((targetInLightSpace.x / texelSize).toDouble()).toFloat() * texelSize
+                targetInLightSpace.y = Math.floor((targetInLightSpace.y / texelSize).toDouble()).toFloat() * texelSize
+
+                val snappedTarget = fixedView.invert().transform(targetInLightSpace)
+                lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)
+            }
+
+            // Create view matrix
+            // For directional light, we pull the light position back along the light direction.
+            // Using a moderate buffer to cover objects outside frustum casting shadows in
+            val buffer = 50f
+            val distance = radius + buffer
             lightPosition.set(config.direction).mul(-distance).add(lightTarget)
-
             lightView.setLookAt(lightPosition, lightTarget, lightUp)
-        }
 
-        // Create orthographic projection for directional light
-        lightProjection.setOrtho(
-            left,
-            right,
-            bottom,
-            top,
-            config.orthoNear,
-            config.orthoFar
-        )
+            // A30.0.6: Fix Orthographic Projection Clipping Planes
+            // A30.0.4: Optimize Light Ortho Near/Far Planes
+            // Keep the depth range tight (~150m) so that depth bias precision is maintained.
+            val zNear = 0.1f
+            val zFar = distance + radius + 10f
+
+            lightProjection.setOrtho(
+                left, right,
+                bottom, top,
+                zNear, zFar
+            )
+            
+        } else {
+            // Manual bounds path
+            lightTarget.set(if (camera != null) camera.position else Vector3f())
+
+            val left = config.orthoLeft
+            val right = config.orthoRight
+            val bottom = config.orthoBottom
+            val top = config.orthoTop
+
+            // Optional stabilization
+            if (config.stabilizeProjection && camera != null) {
+                val shadowMapSize = 4096f
+                val texelSize = (right - left) / shadowMapSize
+
+                val fixedEye = Vector3f(config.direction).mul(-1f)
+                val fixedView = Matrix4f().setLookAt(fixedEye, Vector3f(0f, 0f, 0f), lightUp)
+
+                val targetInLightSpace = fixedView.transform(Vector4f(lightTarget, 1.0f))
+                targetInLightSpace.x = Math.floor((targetInLightSpace.x / texelSize).toDouble()).toFloat() * texelSize
+                targetInLightSpace.y = Math.floor((targetInLightSpace.y / texelSize).toDouble()).toFloat() * texelSize
+
+                val snappedTarget = fixedView.invert().transform(targetInLightSpace)
+                lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)
+            }
+
+            // Create view matrix
+            val distance = 500f // Large distance for manual bounds
+            lightPosition.set(config.direction).mul(-distance).add(lightTarget)
+            lightView.setLookAt(lightPosition, lightTarget, lightUp)
+
+            val zNear = 1.0f
+            val zFar = distance + 500f
+
+            lightProjection.setOrtho(
+                left, right,
+                bottom, top,
+                zNear, zFar
+            )
+        }
 
         // Combine projection and view
         config.lightSpaceMatrix.set(lightProjection).mul(lightView)
-    }
-
-    /**
-     * Adjusts orthographic bounds based on camera view frustum.
-     *
-     * This ensures the shadow map covers the visible area efficiently,
-     * reducing wasted shadow map resolution on areas outside the camera view.
-     */
-    private fun adjustOrthoBoundsForCamera(scene: Scene) {
-        val camera = scene.camera ?: return
-
-        // Calculate frustum size at far plane
-        val fovRad = Math.toRadians(camera.fov.toDouble()).toFloat()
-        val farHeight = (camera.farPlane * Math.tan(fovRad / 2.0).toFloat() * 2.0f)
-        val aspectRatio = camera.viewportWidth.toFloat() / camera.viewportHeight.toFloat().coerceAtLeast(0.001f)
-        val farWidth = farHeight * aspectRatio
-
-        // Adjust bounds to cover frustum from light's perspective
-        // Use a conservative estimate based on light direction
-        val lightDirLength = Math.abs(config.direction.y.toDouble()).toFloat().coerceAtLeast(0.1f)
-        val scale = (farWidth / lightDirLength).coerceAtMost(50f)
-
-        boundsScale = scale.coerceIn(0.5f, 3.0f)
     }
 
     /**
@@ -224,9 +210,6 @@ class DirectionalLightSystem(
      */
     override fun imgui() {
         if (ImGui.collapsingHeader("Directional Light")) {
-            if (ImGui.checkbox("Auto Adjust Bounds", autoAdjustBounds)) {
-                autoAdjustBounds = !autoAdjustBounds
-            }
 
             ImGui.separator()
             ImGui.text("Shadow Distance")
@@ -237,7 +220,7 @@ class DirectionalLightSystem(
             }
 
             val autoCalcBounds = config.autoCalculateBounds
-            if (ImGui.checkbox("Auto Calculate Bounds", autoCalcBounds)) {
+            if (ImGui.checkbox("Auto Calculate Bounds (Frustum)", autoCalcBounds)) {
                 config.autoCalculateBounds = !autoCalcBounds
             }
 
@@ -265,10 +248,6 @@ class DirectionalLightSystem(
                     config.orthoTop = orthoTop[0]
                 }
             }
-
-            ImGui.separator()
-            ImGui.text("Current Scale: %.2f".format(boundsScale))
-            ImGui.text("Effective Shadow Coverage: %.1fm".format(config.shadowDistance * boundsScale))
 
             ImGui.separator()
             ImGui.text("Shadow Quality")
