@@ -95,16 +95,18 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
 - [x] **A31.0.8: Refactor ImGuiLayer for cleaner window management**
   - Location: `editor/imgui/ImGuiLayer.kt`
   - Created `IWindow` and `IWindowWithScene` interfaces for type-safe window handling
-  - Created `EditorWindow` data class combining window instance + visibility flag + metadata
+  - Created `EditorWindow` data class in dedicated file for window metadata
   - Created `editorWindows` registry list for centralized window management
   - Refactored window rendering loop (replaced 10 if statements with forEach)
   - Refactored View menu (replaced 10 checkbox calls with forEach)
   - Refactored dock builder (dynamic window docking based on registry)
+  - Extracted `EditorMenuBar` class for menu bar logic (~150 lines moved)
   - All 10 dockable windows updated to implement appropriate interface:
     - IWindow: PropertiesWindow, GameViewWindow, AssetBrowserWindow, ProfilerWindow, ConsoleWindow
     - IWindowWithScene: SceneHierarchyWindow, EnvironmentWindow, PhysicsTunerWindow, InputTestingWindow, SystemsWindow
   - Added `getHoveredGameObject()` public method for Engine access
-  - Reduced code by ~50 lines through eliminated duplication
+  - Reduced ImGuiLayer by ~200 lines through eliminated duplication
+  - SystemsWindow default visibility changed to true for better discoverability
 
 - [ ] **A31.0.9: Refactor EnvironmentWindow**
   - Location: `editor/windows/EnvironmentWindow.kt`
