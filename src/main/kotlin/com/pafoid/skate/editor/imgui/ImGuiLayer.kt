@@ -132,7 +132,7 @@ class ImGuiLayer(
         EditorWindow("window.console", consoleWindow, ImBoolean(true)),
         EditorWindow("window.physics_tuner", physicsTunerWindow, ImBoolean(true), requiresScene = true),
         EditorWindow("window.input_testing", inputTestingWindow, ImBoolean(false)),
-        EditorWindow("window.systems", systemsWindow, ImBoolean(false), requiresScene = true)
+        EditorWindow("window.systems", systemsWindow, ImBoolean(true), requiresScene = true)
     )
 
     private var isViewportMaximized = false
@@ -189,7 +189,7 @@ class ImGuiLayer(
         // Dock windows based on their default visibility
         editorWindows.filter { it.showFlag.get() }.forEach { window ->
             val dockId = when (window.nameKey) {
-                "window.hierarchy", "window.asset_browser", "window.properties" -> leftId
+                "window.hierarchy", "window.asset_browser", "window.properties", "window.systems" -> leftId
                 "window.game_viewport" -> mainBodyId.get()
                 "window.console", "window.profiler", "window.environment", "window.physics_tuner" -> bottomId
                 else -> mainBodyId.get() // Default to main area for unknown windows
