@@ -1,8 +1,11 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.config.DayNightCycleConfig
 import imgui.ImGui
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -42,7 +45,9 @@ import kotlin.math.sin
 class DayNightCycleSystem(
     initialConfig: DayNightCycleConfig = DayNightCycleConfig(),
     private val dayDurationOverride: Float? = null,
-) : System(priority = ExecutionPriority.EARLY) {
+) : System(priority = ExecutionPriority.EARLY), KoinComponent {
+
+    private val stringManager: StringManager by inject()
 
     // System-owned configuration
     val config = initialConfig
@@ -224,64 +229,91 @@ class DayNightCycleSystem(
      * - Sun direction, color, and intensity (read-only)
      */
     override fun imgui() {
-        // Current phase display
-        val currentPhase = getCurrentPhase()
-        ImGui.text("Current Phase: $currentPhase")
-        ImGui.text("Time: %.2f hours".format(config.cycleTime))
+        if (ImGui.collapsingHeader(stringManager.getString("lbl.day_night_cycle.header"))) {
+            // Current phase display
+            val currentPhase = getCurrentPhase()
+            ImGui.text(stringManager.getString("lbl.day_night_cycle.current_phase", currentPhase))
+            ImGui.text(stringManager.getString("lbl.day_night_cycle.time", config.cycleTime))
 
-        ImGui.separator()
+            ImGui.separator()
 
-        // Time of day slider
-        val cycleTimeArr = floatArrayOf(config.cycleTime)
-        if (ImGui.dragFloat("Time of Day (hours)", cycleTimeArr, 0.1f, 0f, 24f, "%.2f")) {
-            config.cycleTime = cycleTimeArr[0].coerceIn(0f, 24f)
-        }
+            // Time of day slider
+            val cycleTimeArr = floatArrayOf(config.cycleTime)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.day_night_cycle.time_of_day"),
+                    cycleTimeArr,
+                    0.1f,
+                    0f,
+                    24f,
+                    "%.2f"
+                )
+            ) {
+                config.cycleTime = cycleTimeArr[0].coerceIn(0f, 24f)
+            }
 
-        // Day duration slider
-        val dayDurationArr = floatArrayOf(config.dayDuration)
-        if (ImGui.dragFloat("Day Duration (seconds)", dayDurationArr, 1f, 60f, 600f, "%.0f")) {
-            config.dayDuration = dayDurationArr[0].coerceIn(60f, 600f)
-        }
+            // Day duration slider
+            val dayDurationArr = floatArrayOf(config.dayDuration)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.day_night_cycle.day_duration"),
+                    dayDurationArr,
+                    1f,
+                    60f,
+                    600f,
+                    "%.0f"
+                )
+            ) {
+                config.dayDuration = dayDurationArr[0].coerceIn(60f, 600f)
+            }
 
-        ImGui.separator()
+            ImGui.separator()
 
-        // Auto-ambient toggle
-        val autoAmbient = config.autoAmbient
-        if (ImGui.checkbox("Auto Ambient", autoAmbient)) {
-            config.autoAmbient = !autoAmbient
-        }
+            // Auto-ambient toggle
+            val autoAmbient = config.autoAmbient
+            if (ImGui.checkbox(stringManager.getString("lbl.day_night_cycle.auto_ambient"), autoAmbient)) {
+                config.autoAmbient = !autoAmbient
+            }
 
-        ImGui.separator()
+            ImGui.separator()
 
-        // Read-only sun properties
-        ImGui.text("Sun Direction:")
-        ImGui.text(
-            "  X: %.3f, Y: %.3f, Z: %.3f".format(
-                config.sunDirection.x,
-                config.sunDirection.y,
-                config.sunDirection.z
+            // Read-only sun properties
+            ImGui.text(stringManager.getString("lbl.day_night_cycle.sun_direction"))
+            ImGui.text(
+                stringManager.getString(
+                    "lbl.day_night_cycle.sun_direction_xyz",
+                    config.sunDirection.x,
+                    config.sunDirection.y,
+                    config.sunDirection.z
+                )
             )
-        )
 
-        ImGui.text("Sun Color:")
-        ImGui.text("  R: %.3f, G: %.3f, B: %.3f".format(config.sunColor.x, config.sunColor.y, config.sunColor.z))
-
-        ImGui.text("Sun Intensity: %.2f".format(config.sunIntensity))
-
-        ImGui.text("Ambient Color:")
-        ImGui.text(
-            "  R: %.3f, G: %.3f, B: %.3f".format(
-                config.ambientColor.x,
-                config.ambientColor.y,
-                config.ambientColor.z
+            ImGui.text(stringManager.getString("lbl.day_night_cycle.sun_color"))
+            ImGui.text(
+                stringManager.getString(
+                    "lbl.day_night_cycle.sun_color_rgb",
+                    config.sunColor.x,
+                    config.sunColor.y,
+                    config.sunColor.z
+                )
             )
-        )
 
-        ImGui.text("Ambient Intensity: %.2f".format(config.ambientIntensity))
+            ImGui.text(stringManager.getString("lbl.day_night_cycle.sun_intensity", config.sunIntensity))
 
-        ImGui.text("Shadow Intensity: %.2f".format(config.shadowIntensity))
+            ImGui.text(stringManager.getString("lbl.day_night_cycle.ambient_color"))
+            ImGui.text(
+                stringManager.getString(
+                    "lbl.day_night_cycle.ambient_color_rgb",
+                    config.ambientColor.x,
+                    config.ambientColor.y,
+                    config.ambientColor.z
+                )
+            )
 
-        ImGui.text("Is Daytime: ${config.isDaytime}")
+            ImGui.text(stringManager.getString("lbl.day_night_cycle.ambient_intensity", config.ambientIntensity))
+
+            ImGui.text(stringManager.getString("lbl.day_night_cycle.shadow_intensity", config.shadowIntensity))
+
+            ImGui.text(stringManager.getString("lbl.day_night_cycle.is_daytime", config.isDaytime))
+        }
     }
 
 }

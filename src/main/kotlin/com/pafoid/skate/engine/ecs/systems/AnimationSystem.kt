@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -9,6 +10,8 @@ import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
  * System responsible for updating skeletal animations on animated GameObjects.
@@ -16,7 +19,9 @@ import org.joml.Vector3f
  * Maintains a cached list of eligible GameObjects (those with both SkeletonComponent
  * and Animator) to avoid O(n) filtering every frame.
  */
-class AnimationSystem : System() {
+class AnimationSystem : System(), KoinComponent {
+
+    private val stringManager: StringManager by inject()
 
     // Cached list of GameObjects eligible for animation updates
     private val animatedObjects = mutableListOf<GameObject>()
@@ -193,54 +198,64 @@ class AnimationSystem : System() {
      * - Cache statistics
      */
     override fun imgui() {
-        ImGui.text("Animated Objects: ${animatedObjects.size}")
-        ImGui.text("Cache Dirty: $cacheDirty")
+        if (ImGui.collapsingHeader(stringManager.getString("lbl.animation_system.header"))) {
+            ImGui.text(stringManager.getString("lbl.animation_system.animated_objects", animatedObjects.size))
+            ImGui.text(stringManager.getString("lbl.animation_system.cache_dirty", cacheDirty))
 
-        ImGui.separator()
+            ImGui.separator()
 
-        // Global speed multiplier
-        val speedArr = floatArrayOf(globalSpeedMultiplier)
-        if (ImGui.dragFloat("Global Speed Multiplier", speedArr, 0.1f, 0f, 3f, "%.2f")) {
-            globalSpeedMultiplier = speedArr[0].coerceIn(0f, 3f)
-        }
-
-        ImGui.separator()
-        ImGui.text("Per-Object Animation State")
-
-        // Show each animated object's state
-        animatedObjects.forEach { go ->
-            val animator = go.getComponent<Animator>()
-            val skeletonComponent = go.getComponent<SkeletonComponent>()
-
-            if (animator != null && skeletonComponent != null) {
-                val goName = go.name
-                val currentAnim = animator.currentAnimation
-                val isPlaying = animator.isPlaying
-                val currentTime = animator.currentTime
-                val duration = animator.duration
-                val blendTime = animator.blendTime
-
-                ImGui.text("$goName:")
-                ImGui.indent()
-
-                if (currentAnim != null) {
-                    ImGui.text("Animation: ${currentAnim.name}")
-                    ImGui.text("Time: %.2f / %.2f s".format(currentTime, duration))
-                    ImGui.text("Playing: $isPlaying")
-
-                    if (blendTime > 0f) {
-                        ImGui.text("Blending: %.2f s remaining".format(blendTime))
-                    }
-                } else {
-                    ImGui.text("No animation selected")
-                }
-
-                ImGui.unindent()
+            // Global speed multiplier
+            val speedArr = floatArrayOf(globalSpeedMultiplier)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.animation_system.global_speed_multiplier"),
+                    speedArr,
+                    0.1f,
+                    0f,
+                    3f,
+                    "%.2f"
+                )
+            ) {
+                globalSpeedMultiplier = speedArr[0].coerceIn(0f, 3f)
             }
-        }
 
-        if (animatedObjects.isEmpty()) {
-            ImGui.text("No animated objects in scene")
+            ImGui.separator()
+            ImGui.text(stringManager.getString("lbl.animation_system.per_object_state"))
+
+            // Show each animated object's state
+            animatedObjects.forEach { go ->
+                val animator = go.getComponent<Animator>()
+                val skeletonComponent = go.getComponent<SkeletonComponent>()
+
+                if (animator != null && skeletonComponent != null) {
+                    val goName = go.name
+                    val currentAnim = animator.currentAnimation
+                    val isPlaying = animator.isPlaying
+                    val currentTime = animator.currentTime
+                    val duration = animator.duration
+                    val blendTime = animator.blendTime
+
+                    ImGui.text("$goName:")
+                    ImGui.indent()
+
+                    if (currentAnim != null) {
+                        ImGui.text(stringManager.getString("lbl.animation_system.animation", currentAnim.name))
+                        ImGui.text(stringManager.getString("lbl.animation_system.time", currentTime, duration))
+                        ImGui.text(stringManager.getString("lbl.animation_system.playing", isPlaying))
+
+                        if (blendTime > 0f) {
+                            ImGui.text(stringManager.getString("lbl.animation_system.blending", blendTime))
+                        }
+                    } else {
+                        ImGui.text(stringManager.getString("lbl.animation_system.no_animation"))
+                    }
+
+                    ImGui.unindent()
+                }
+            }
+
+            if (animatedObjects.isEmpty()) {
+                ImGui.text(stringManager.getString("lbl.animation_system.no_objects"))
+            }
         }
     }
 }

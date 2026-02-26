@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
@@ -13,6 +14,8 @@ import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import imgui.ImGui
 import org.joml.Vector2f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 
@@ -30,7 +33,9 @@ class InputSystem(
     private val inputProvider: IInputProvider,
     private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager
-) : System(priority = ExecutionPriority.EARLY) {
+) : System(priority = ExecutionPriority.EARLY), KoinComponent {
+
+    private val stringManager: StringManager by inject()
 
     private val mappings: InputMappings
         get() = settingsManager.settings.inputMappings
@@ -293,127 +298,234 @@ class InputSystem(
      * - Current input state debugging
      */
     override fun imgui() {
-        val inputSettings = settings
+        if (ImGui.collapsingHeader(stringManager.getString("lbl.input_system.header"))) {
+            val inputSettings = settings
 
-        ImGui.separator()
-        ImGui.text("Deadzones")
+            ImGui.separator()
+            ImGui.text(stringManager.getString("lbl.input_system.deadzones"))
 
-        // Left Stick Deadzone
-        val leftDeadzoneArr = floatArrayOf(inputSettings.leftStickDeadzone)
-        if (ImGui.dragFloat("Left Stick Deadzone", leftDeadzoneArr, 0.01f, 0f, 0.5f, "%.2f")) {
-            inputSettings.leftStickDeadzone = leftDeadzoneArr[0].coerceIn(0f, 0.5f)
-        }
-
-        // Right Stick Deadzone
-        val rightDeadzoneArr = floatArrayOf(inputSettings.rightStickDeadzone)
-        if (ImGui.dragFloat("Right Stick Deadzone", rightDeadzoneArr, 0.01f, 0f, 0.5f, "%.2f")) {
-            inputSettings.rightStickDeadzone = rightDeadzoneArr[0].coerceIn(0f, 0.5f)
-        }
-
-        // Trigger Threshold
-        val triggerThresholdArr = floatArrayOf(inputSettings.triggerThreshold)
-        if (ImGui.dragFloat("Trigger Threshold", triggerThresholdArr, 0.01f, 0f, 1f, "%.2f")) {
-            inputSettings.triggerThreshold = triggerThresholdArr[0].coerceIn(0f, 1f)
-        }
-
-        ImGui.separator()
-        ImGui.text("Sensitivity")
-
-        // Mouse Sensitivity
-        val mouseSensitivityArr = floatArrayOf(inputSettings.mouseSensitivity)
-        if (ImGui.dragFloat("Mouse Sensitivity", mouseSensitivityArr, 0.01f, 0.01f, 1f, "%.2f")) {
-            inputSettings.mouseSensitivity = mouseSensitivityArr[0].coerceIn(0.01f, 1f)
-        }
-
-        // Controller Sensitivity
-        val controllerSensitivityArr = floatArrayOf(inputSettings.controllerSensitivity)
-        if (ImGui.dragFloat("Controller Sensitivity", controllerSensitivityArr, 0.1f, 0.1f, 10f, "%.1f")) {
-            inputSettings.controllerSensitivity = controllerSensitivityArr[0].coerceIn(0.1f, 10f)
-        }
-
-        ImGui.separator()
-        ImGui.text("Movement Thresholds")
-
-        // Movement Threshold
-        val movementThresholdArr = floatArrayOf(inputSettings.movementThreshold)
-        if (ImGui.dragFloat("Movement Threshold", movementThresholdArr, 0.01f, 0f, 0.5f, "%.2f")) {
-            inputSettings.movementThreshold = movementThresholdArr[0].coerceIn(0f, 0.5f)
-        }
-
-        // Sprint Threshold
-        val sprintThresholdArr = floatArrayOf(inputSettings.sprintThreshold)
-        if (ImGui.dragFloat("Sprint Threshold", sprintThresholdArr, 0.01f, 0.5f, 1f, "%.2f")) {
-            inputSettings.sprintThreshold = sprintThresholdArr[0].coerceIn(0.5f, 1f)
-        }
-
-        ImGui.separator()
-        ImGui.text("Physics")
-
-        // Jump Impulse
-        val jumpImpulseArr = floatArrayOf(inputSettings.jumpImpulse)
-        if (ImGui.dragFloat("Jump Impulse", jumpImpulseArr, 1f, 100f, 1000f, "%.0f")) {
-            inputSettings.jumpImpulse = jumpImpulseArr[0].coerceIn(100f, 1000f)
-        }
-
-        // Walk Speed
-        val walkSpeedArr = floatArrayOf(inputSettings.walkSpeed)
-        if (ImGui.dragFloat("Walk Speed", walkSpeedArr, 0.1f, 1f, 5f, "%.1f")) {
-            inputSettings.walkSpeed = walkSpeedArr[0].coerceIn(1f, 5f)
-        }
-
-        // Run Speed
-        val runSpeedArr = floatArrayOf(inputSettings.runSpeed)
-        if (ImGui.dragFloat("Run Speed", runSpeedArr, 0.1f, 5f, 15f, "%.1f")) {
-            inputSettings.runSpeed = runSpeedArr[0].coerceIn(5f, 15f)
-        }
-
-        // Rotation Speed
-        val rotationSpeedArr = floatArrayOf(inputSettings.rotationSpeed)
-        if (ImGui.dragFloat("Rotation Speed", rotationSpeedArr, 1f, 1f, 30f, "%.0f")) {
-            inputSettings.rotationSpeed = rotationSpeedArr[0].coerceIn(1f, 30f)
-        }
-
-        // Take Off Time
-        val takeOffTimeArr = floatArrayOf(inputSettings.takeOffTime)
-        if (ImGui.dragFloat("Take Off Time", takeOffTimeArr, 0.1f, 0.1f, 2f, "%.1f")) {
-            inputSettings.takeOffTime = takeOffTimeArr[0].coerceIn(0.1f, 2f)
-        }
-
-        // Input Smoothing
-        val inputSmoothingArr = floatArrayOf(inputSettings.inputSmoothing)
-        if (ImGui.dragFloat("Input Smoothing", inputSmoothingArr, 1f, 1f, 20f, "%.0f")) {
-            inputSettings.inputSmoothing = inputSmoothingArr[0].coerceIn(1f, 20f)
-        }
-
-        ImGui.separator()
-        ImGui.text("Input State Debug")
-
-        // Show current gamepad state if connected
-        if (inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) {
-            val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1)
-            val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
-
-            ImGui.text("Gamepad Connected: Yes")
-
-            if (axes != null) {
-                ImGui.text("Left Stick: X=%.2f, Y=%.2f".format(axes[0], axes[1]))
-                ImGui.text("Right Stick: X=%.2f, Y=%.2f".format(axes[2], axes[3]))
-                ImGui.text("Left Trigger: %.2f".format(axes.getOrNull(4) ?: 0f))
-                ImGui.text("Right Trigger: %.2f".format(axes.getOrNull(5) ?: 0f))
-            }
-
-            if (buttons != null) {
-                ImGui.text(
-                    "Buttons: A=%b B=%b X=%b Y=%b".format(
-                        buttons.getOrNull(0) ?: false,
-                        buttons.getOrNull(1) ?: false,
-                        buttons.getOrNull(2) ?: false,
-                        buttons.getOrNull(3) ?: false
-                    )
+            // Left Stick Deadzone
+            val leftDeadzoneArr = floatArrayOf(inputSettings.leftStickDeadzone)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.left_stick_deadzone"),
+                    leftDeadzoneArr,
+                    0.01f,
+                    0f,
+                    0.5f,
+                    "%.2f"
                 )
+            ) {
+                inputSettings.leftStickDeadzone = leftDeadzoneArr[0].coerceIn(0f, 0.5f)
             }
-        } else {
-            ImGui.text("Gamepad Connected: No")
+
+            // Right Stick Deadzone
+            val rightDeadzoneArr = floatArrayOf(inputSettings.rightStickDeadzone)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.right_stick_deadzone"),
+                    rightDeadzoneArr,
+                    0.01f,
+                    0f,
+                    0.5f,
+                    "%.2f"
+                )
+            ) {
+                inputSettings.rightStickDeadzone = rightDeadzoneArr[0].coerceIn(0f, 0.5f)
+            }
+
+            // Trigger Threshold
+            val triggerThresholdArr = floatArrayOf(inputSettings.triggerThreshold)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.trigger_threshold"),
+                    triggerThresholdArr,
+                    0.01f,
+                    0f,
+                    1f,
+                    "%.2f"
+                )
+            ) {
+                inputSettings.triggerThreshold = triggerThresholdArr[0].coerceIn(0f, 1f)
+            }
+
+            ImGui.separator()
+            ImGui.text(stringManager.getString("lbl.input_system.sensitivity"))
+
+            // Mouse Sensitivity
+            val mouseSensitivityArr = floatArrayOf(inputSettings.mouseSensitivity)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.mouse_sensitivity"),
+                    mouseSensitivityArr,
+                    0.01f,
+                    0.01f,
+                    1f,
+                    "%.2f"
+                )
+            ) {
+                inputSettings.mouseSensitivity = mouseSensitivityArr[0].coerceIn(0.01f, 1f)
+            }
+
+            // Controller Sensitivity
+            val controllerSensitivityArr = floatArrayOf(inputSettings.controllerSensitivity)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.controller_sensitivity"),
+                    controllerSensitivityArr,
+                    0.1f,
+                    0.1f,
+                    10f,
+                    "%.1f"
+                )
+            ) {
+                inputSettings.controllerSensitivity = controllerSensitivityArr[0].coerceIn(0.1f, 10f)
+            }
+
+            ImGui.separator()
+            ImGui.text(stringManager.getString("lbl.input_system.movement_thresholds"))
+
+            // Movement Threshold
+            val movementThresholdArr = floatArrayOf(inputSettings.movementThreshold)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.movement_threshold"),
+                    movementThresholdArr,
+                    0.01f,
+                    0f,
+                    0.5f,
+                    "%.2f"
+                )
+            ) {
+                inputSettings.movementThreshold = movementThresholdArr[0].coerceIn(0f, 0.5f)
+            }
+
+            // Sprint Threshold
+            val sprintThresholdArr = floatArrayOf(inputSettings.sprintThreshold)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.sprint_threshold"),
+                    sprintThresholdArr,
+                    0.01f,
+                    0.5f,
+                    1f,
+                    "%.2f"
+                )
+            ) {
+                inputSettings.sprintThreshold = sprintThresholdArr[0].coerceIn(0.5f, 1f)
+            }
+
+            ImGui.separator()
+            ImGui.text(stringManager.getString("lbl.input_system.physics"))
+
+            // Jump Impulse
+            val jumpImpulseArr = floatArrayOf(inputSettings.jumpImpulse)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.jump_impulse"),
+                    jumpImpulseArr,
+                    1f,
+                    100f,
+                    1000f,
+                    "%.0f"
+                )
+            ) {
+                inputSettings.jumpImpulse = jumpImpulseArr[0].coerceIn(100f, 1000f)
+            }
+
+            // Walk Speed
+            val walkSpeedArr = floatArrayOf(inputSettings.walkSpeed)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.walk_speed"),
+                    walkSpeedArr,
+                    0.1f,
+                    1f,
+                    5f,
+                    "%.1f"
+                )
+            ) {
+                inputSettings.walkSpeed = walkSpeedArr[0].coerceIn(1f, 5f)
+            }
+
+            // Run Speed
+            val runSpeedArr = floatArrayOf(inputSettings.runSpeed)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.run_speed"),
+                    runSpeedArr,
+                    0.1f,
+                    5f,
+                    15f,
+                    "%.1f"
+                )
+            ) {
+                inputSettings.runSpeed = runSpeedArr[0].coerceIn(5f, 15f)
+            }
+
+            // Rotation Speed
+            val rotationSpeedArr = floatArrayOf(inputSettings.rotationSpeed)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.rotation_speed"),
+                    rotationSpeedArr,
+                    1f,
+                    1f,
+                    30f,
+                    "%.0f"
+                )
+            ) {
+                inputSettings.rotationSpeed = rotationSpeedArr[0].coerceIn(1f, 30f)
+            }
+
+            // Take Off Time
+            val takeOffTimeArr = floatArrayOf(inputSettings.takeOffTime)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.take_off_time"),
+                    takeOffTimeArr,
+                    0.1f,
+                    0.1f,
+                    2f,
+                    "%.1f"
+                )
+            ) {
+                inputSettings.takeOffTime = takeOffTimeArr[0].coerceIn(0.1f, 2f)
+            }
+
+            // Input Smoothing
+            val inputSmoothingArr = floatArrayOf(inputSettings.inputSmoothing)
+            if (ImGui.dragFloat(
+                    stringManager.getString("lbl.input_system.input_smoothing"),
+                    inputSmoothingArr,
+                    1f,
+                    1f,
+                    20f,
+                    "%.0f"
+                )
+            ) {
+                inputSettings.inputSmoothing = inputSmoothingArr[0].coerceIn(1f, 20f)
+            }
+
+            ImGui.separator()
+            ImGui.text(stringManager.getString("lbl.input_system.debug"))
+
+            // Show current gamepad state if connected
+            if (inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) {
+                val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1)
+                val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
+
+                ImGui.text(stringManager.getString("lbl.input_system.gamepad_connected", "Yes"))
+
+                if (axes != null) {
+                    ImGui.text(stringManager.getString("lbl.input_system.left_stick", axes[0], axes[1]))
+                    ImGui.text(stringManager.getString("lbl.input_system.right_stick", axes[2], axes[3]))
+                    ImGui.text(stringManager.getString("lbl.input_system.left_trigger", axes.getOrNull(4) ?: 0f))
+                    ImGui.text(stringManager.getString("lbl.input_system.right_trigger", axes.getOrNull(5) ?: 0f))
+                }
+
+                if (buttons != null) {
+                    ImGui.text(
+                        stringManager.getString(
+                            "lbl.input_system.buttons",
+                            buttons.getOrNull(0) ?: false,
+                            buttons.getOrNull(1) ?: false,
+                            buttons.getOrNull(2) ?: false,
+                            buttons.getOrNull(3) ?: false
+                        )
+                    )
+                }
+            } else {
+                ImGui.text(stringManager.getString("lbl.input_system.gamepad_connected", "No"))
+            }
         }
     }
 }
