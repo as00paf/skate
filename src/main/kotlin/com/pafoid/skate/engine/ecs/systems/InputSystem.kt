@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import imgui.ImGui
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
@@ -277,6 +278,142 @@ class InputSystem(
 
         if (editorInput.isInsideViewport) {
             editorInput.mouseScroll = mouseListener.getScrollY()
+        }
+    }
+
+    /**
+     * Renders ImGui interface for debugging and tuning input settings.
+     *
+     * ## Controls
+     *
+     * - Deadzone settings (left/right stick)
+     * - Trigger threshold
+     * - Sensitivity settings (mouse/controller)
+     * - Movement thresholds
+     * - Current input state debugging
+     */
+    override fun imgui() {
+        val inputSettings = settings
+
+        ImGui.separator()
+        ImGui.text("Deadzones")
+
+        // Left Stick Deadzone
+        val leftDeadzoneArr = floatArrayOf(inputSettings.leftStickDeadzone)
+        if (ImGui.dragFloat("Left Stick Deadzone", leftDeadzoneArr, 0.01f, 0f, 0.5f, "%.2f")) {
+            inputSettings.leftStickDeadzone = leftDeadzoneArr[0].coerceIn(0f, 0.5f)
+        }
+
+        // Right Stick Deadzone
+        val rightDeadzoneArr = floatArrayOf(inputSettings.rightStickDeadzone)
+        if (ImGui.dragFloat("Right Stick Deadzone", rightDeadzoneArr, 0.01f, 0f, 0.5f, "%.2f")) {
+            inputSettings.rightStickDeadzone = rightDeadzoneArr[0].coerceIn(0f, 0.5f)
+        }
+
+        // Trigger Threshold
+        val triggerThresholdArr = floatArrayOf(inputSettings.triggerThreshold)
+        if (ImGui.dragFloat("Trigger Threshold", triggerThresholdArr, 0.01f, 0f, 1f, "%.2f")) {
+            inputSettings.triggerThreshold = triggerThresholdArr[0].coerceIn(0f, 1f)
+        }
+
+        ImGui.separator()
+        ImGui.text("Sensitivity")
+
+        // Mouse Sensitivity
+        val mouseSensitivityArr = floatArrayOf(inputSettings.mouseSensitivity)
+        if (ImGui.dragFloat("Mouse Sensitivity", mouseSensitivityArr, 0.01f, 0.01f, 1f, "%.2f")) {
+            inputSettings.mouseSensitivity = mouseSensitivityArr[0].coerceIn(0.01f, 1f)
+        }
+
+        // Controller Sensitivity
+        val controllerSensitivityArr = floatArrayOf(inputSettings.controllerSensitivity)
+        if (ImGui.dragFloat("Controller Sensitivity", controllerSensitivityArr, 0.1f, 0.1f, 10f, "%.1f")) {
+            inputSettings.controllerSensitivity = controllerSensitivityArr[0].coerceIn(0.1f, 10f)
+        }
+
+        ImGui.separator()
+        ImGui.text("Movement Thresholds")
+
+        // Movement Threshold
+        val movementThresholdArr = floatArrayOf(inputSettings.movementThreshold)
+        if (ImGui.dragFloat("Movement Threshold", movementThresholdArr, 0.01f, 0f, 0.5f, "%.2f")) {
+            inputSettings.movementThreshold = movementThresholdArr[0].coerceIn(0f, 0.5f)
+        }
+
+        // Sprint Threshold
+        val sprintThresholdArr = floatArrayOf(inputSettings.sprintThreshold)
+        if (ImGui.dragFloat("Sprint Threshold", sprintThresholdArr, 0.01f, 0.5f, 1f, "%.2f")) {
+            inputSettings.sprintThreshold = sprintThresholdArr[0].coerceIn(0.5f, 1f)
+        }
+
+        ImGui.separator()
+        ImGui.text("Physics")
+
+        // Jump Impulse
+        val jumpImpulseArr = floatArrayOf(inputSettings.jumpImpulse)
+        if (ImGui.dragFloat("Jump Impulse", jumpImpulseArr, 1f, 100f, 1000f, "%.0f")) {
+            inputSettings.jumpImpulse = jumpImpulseArr[0].coerceIn(100f, 1000f)
+        }
+
+        // Walk Speed
+        val walkSpeedArr = floatArrayOf(inputSettings.walkSpeed)
+        if (ImGui.dragFloat("Walk Speed", walkSpeedArr, 0.1f, 1f, 5f, "%.1f")) {
+            inputSettings.walkSpeed = walkSpeedArr[0].coerceIn(1f, 5f)
+        }
+
+        // Run Speed
+        val runSpeedArr = floatArrayOf(inputSettings.runSpeed)
+        if (ImGui.dragFloat("Run Speed", runSpeedArr, 0.1f, 5f, 15f, "%.1f")) {
+            inputSettings.runSpeed = runSpeedArr[0].coerceIn(5f, 15f)
+        }
+
+        // Rotation Speed
+        val rotationSpeedArr = floatArrayOf(inputSettings.rotationSpeed)
+        if (ImGui.dragFloat("Rotation Speed", rotationSpeedArr, 1f, 1f, 30f, "%.0f")) {
+            inputSettings.rotationSpeed = rotationSpeedArr[0].coerceIn(1f, 30f)
+        }
+
+        // Take Off Time
+        val takeOffTimeArr = floatArrayOf(inputSettings.takeOffTime)
+        if (ImGui.dragFloat("Take Off Time", takeOffTimeArr, 0.1f, 0.1f, 2f, "%.1f")) {
+            inputSettings.takeOffTime = takeOffTimeArr[0].coerceIn(0.1f, 2f)
+        }
+
+        // Input Smoothing
+        val inputSmoothingArr = floatArrayOf(inputSettings.inputSmoothing)
+        if (ImGui.dragFloat("Input Smoothing", inputSmoothingArr, 1f, 1f, 20f, "%.0f")) {
+            inputSettings.inputSmoothing = inputSmoothingArr[0].coerceIn(1f, 20f)
+        }
+
+        ImGui.separator()
+        ImGui.text("Input State Debug")
+
+        // Show current gamepad state if connected
+        if (inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) {
+            val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1)
+            val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
+
+            ImGui.text("Gamepad Connected: Yes")
+
+            if (axes != null) {
+                ImGui.text("Left Stick: X=%.2f, Y=%.2f".format(axes[0], axes[1]))
+                ImGui.text("Right Stick: X=%.2f, Y=%.2f".format(axes[2], axes[3]))
+                ImGui.text("Left Trigger: %.2f".format(axes.getOrNull(4) ?: 0f))
+                ImGui.text("Right Trigger: %.2f".format(axes.getOrNull(5) ?: 0f))
+            }
+
+            if (buttons != null) {
+                ImGui.text(
+                    "Buttons: A=%b B=%b X=%b Y=%b".format(
+                        buttons.getOrNull(0) ?: false,
+                        buttons.getOrNull(1) ?: false,
+                        buttons.getOrNull(2) ?: false,
+                        buttons.getOrNull(3) ?: false
+                    )
+                )
+            }
+        } else {
+            ImGui.text("Gamepad Connected: No")
         }
     }
 }

@@ -60,11 +60,14 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
   - Ambient color/intensity display (read-only)
   - Shadow intensity display (read-only)
 
-- [ ] **A31.0.5: Implement InputSystem.imgui()**
+- [x] **A31.0.5: Implement InputSystem.imgui()**
   - Location: `engine/ecs/systems/InputSystem.kt`
-  - Input state debugging (current axis values, button states)
-  - Sensitivity/deadzone controls from InputSettings
-  - Binding viewer (keyboard/gamepad mapping display)
+  - Deadzone settings (left stick, right stick)
+  - Trigger threshold
+  - Sensitivity settings (mouse, controller)
+  - Movement thresholds (movement, sprint)
+  - Physics settings (jump impulse, walk/run speed, rotation speed, take off time, input smoothing)
+  - Input state debug (gamepad axes and buttons display)
 
 - [ ] **A31.0.6: Implement AnimationSystem.imgui()**
   - Location: `engine/ecs/systems/AnimationSystem.kt`
