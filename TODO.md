@@ -2,176 +2,213 @@
 
 ## Notes
 
-- See CHANGELOG.md for all completed items through v0.27
-- This file contains remaining v0.28 work (bug fixes + verification)
+- See CHANGELOG.md for all completed items through v0.30
+- This file contains planned improvements and technical debt
 
 ---
 
-## 🔴 v0.28: Shadow Quality & Robustness (Planned)
+## 🔴 v0.31: Systems ImGui Integration (Planned)
 
 ### Summary
 
-Remaining shadow pipeline improvements for production-quality shadows.
+The current ImGui architecture has a gap: `System.imgui()` methods exist but are never called by `ImGuiLayer`. This
+creates inconsistent UI patterns where Components have auto-generated UI but Systems require manual window classes.
 
-### Bug Fixes
+### Problem Statement
 
-- [x] **A28.0.1: Fix ShadowRenderer VAO attribute binding**
-  - `ShadowRenderer.renderShadowCaster()` binds VAO but doesn't enable attributes 6,7 (joints/weights)
-  - Skinned meshes won't render correctly to shadow map
-  - Added `vaoId.bindVAO(rawModel.enabledAttributes)` call
-  - Location: `ShadowRenderer.kt` line 105
-
-- [x] **A28.0.2: Fix shadow map texture binding synchronization**
-  - Reviewed code - texture binding pattern is correct (upload unit index, activate unit, bind texture)
-  - No actual bug found
-
-- [x] **A28.0.3: Extract hardcoded texture unit to constant**
-  - Created `ShaderConst.Uniforms.SHADOW_TEXTURE_UNIT = 4`
-  - Updated `LightingUniformsLoader.kt` to use constant
-  - Updated `GeometryPass.kt` to use constant
-  - Location: `ShaderConst.kt`, `LightingUniformsLoader.kt:53`, `GeometryPass.kt:114`
-
-- [x] **A28.0.4: Add framebuffer completeness check in ShadowMap**
-  - Replaced `assert()` with `IllegalStateException`
-  - Throws exception with status code if framebuffer is incomplete
-  - Works in both debug and release builds
-  - Location: `ShadowMap.kt` line 161
-
-- [x] **A28.0.5: Add logging when shadow pass is skipped**
-  - Uses `LoggerService.logEngine()` instead of println
-  - Logs when light system is null or castShadows is false
-  - Format: `[ShadowPass] Skipped: lightSystem=true/false, castShadows=true/false`
-  - Location: `ShadowPass.kt` line 44, `RenderResourcesFactory.kt` line 229
-
-- [x] **A28.0.6: Fix inconsistent shadow bias defaults**
-  - Reviewed code - fallback values (0.005, 0.01) match DirectionalLightConfig defaults exactly
-  - Fallback is a safety measure for edge cases where shadow map exists but light system is null
-  - No actual bug found
-
-- [x] **A28.0.7: Fix Out-of-Bounds Shadow Artifacts**
-  - Added early exit in `calculateShadow()` for fragments outside shadow map
-  - Returns 0.0 (no shadow) instead of sampling border color
-  - Checks: `projCoords` outside [-1, 1] range for x, y, z
-  - Location: `assets/shaders/shader_3d_default.glsl` line 162
-
-- [x] **A28.0.8: Support Alpha Masking in Shadow Pass**
-  - Updated `shadow.glsl` to sample base color texture and discard fragments with alpha < cutoff
-  - Added vertex shader texture coordinate passthrough
-  - Added fragment shader uniforms: `uBaseColorTexture`, `uAlphaMode`, `uAlphaCutoff`, `uHasBaseColorTexture`
-  - Added `Uniforms.HAS_BASE_COLOR_TEXTURE` constant to `ShaderConst.kt`
-  - Updated `ShadowRenderer` to bind base color texture and upload alpha uniforms for MASK mode materials
-  - OPAQUE and BLEND modes render all fragments (depth-only)
-  - Locations: `assets/shaders/shadow.glsl`, `ShadowRenderer.kt`, `ShaderConst.kt`
-
-- [x] **A28.0.9: Fix TranslateGizmo hardcoded resolution**
-  - Line 100: `screenToRay(mouseX, mouseY, 1920f, 1080f)` → use `viewportSize.x, viewportSize.y`
-  - Lines 159-160: `worldToScreen(..., 1920f, 1080f)` → use `viewportSize.x, viewportSize.y` (x2)
-  - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
-  - Location: `editor/gizmos/TranslateGizmo.kt`
-
-- [x] **A28.0.10: Fix RotationGizmo hardcoded resolution**
-  - Line 63: `screenToRay(mouseX, mouseY, 1920f, 1080f)` → use `viewportSize.x, viewportSize.y`
-  - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
-  - Location: `editor/gizmos/RotationGizmo.kt`
-
-- [x] **A28.0.11: Fix ScaleGizmo hardcoded resolution**
-  - Line 81: `screenToRay(mouseX, mouseY, 1920f, 1080f)` → use `viewportSize.x, viewportSize.y`
-  - Lines 162-163: `worldToScreen(..., 1920f, 1080f)` → use `viewportSize.x, viewportSize.y` (x2)
-  - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
-  - Location: `editor/gizmos/ScaleGizmo.kt`
-  - **Bonus fix:** Added NaN guard and scale clamping (min 0.01) to prevent physics crashes
-
-- [x] **A28.1: Verify shadow rendering pipeline**
-  - ✅ Shadow pass renders to ShadowMap (ShadowPass.kt executes before GeometryPass)
-  - ✅ Geometry pass samples ShadowMap with correct uniforms (texture bound to unit 4)
-  - ✅ PCF filtering uses correct texel size (1.0f / shadowMapResolution uploaded)
-  - ✅ Shadow map texture binding uses constant (Uniforms.SHADOW_TEXTURE_UNIT = 4)
-  - ✅ Alpha masking supported for transparent objects (shadow.glsl samples base color)
-  - ✅ Skinned meshes render correctly to shadow map (VAO attributes enabled)
-
-- [x] **A28.2: Verify day/night cycle affects lighting**
-  - ✅ Sun direction updates from DayNightCycleSystem (computed via trigonometry in updateSunDirection())
-  - ✅ Sun color interpolates through day phases (dawn → noon → dusk → night in updateSunColor())
-  - ✅ Sun intensity interpolates (0.0 at night, 1.0 at day)
-  - ✅ Ambient light interpolates with day/night (nightAmbient.lerp(dayAmbient, sunIntensity))
-  - ✅ DirectionalLightSystem reads from DayNightCycleSystem.config each frame
-  - ✅ LightingUniformsLoader uploads sun direction, color, intensity to shader
-  - ✅ Environment Window time slider syncs with DayNightCycleSystem.getCycleTime()/setCycleTime()
-
-- [x] **A28.0.12: Fix Skater Shadow (Uniform Name Mismatch + Depth Testing)**
-  - Skater doesn't cast a visible shadow.
-  - **Root Cause 1:** `shadow.glsl` declares `uniform bool uHasSkin;` but `ShaderConst.HAS_SKIN = "u_HasSkin"` (with
-    underscore). Uniform upload fails, skinning never applied in shadow pass.
-  - **Fix 1:** Changed `shadow.glsl` to use `uniform bool u_HasSkin;` to match ShaderConst
-  - **Root Cause 2:** `ShadowRenderer` didn't enable depth testing/writing, so shadow map never received depth values
-  - **Fix 2:** Added `glEnable(GL_DEPTH_TEST)` and `glDepthMask(true)` in `ShadowRenderer.render()`
-  - **Secondary:** Add `uTextureScale` uniform if alpha masking UVs still wrong after primary fix
-  - Location: `assets/shaders/shadow.glsl`, `ShadowRenderer.kt`
+1. **Unused System.imgui()**: The base `System` class defines `open fun imgui()` but `ImGuiLayer` never calls it
+2. **Scattered Windows**: System controls are split across multiple windows (EnvironmentWindow, PhysicsTunerWindow,
+   ProfilerWindow)
+3. **Inconsistent Pattern**: `Component.imgui()` uses reflection for auto-UI, but Systems need manual window boilerplate
+4. **Discovery Issues**: No centralized way to see all system controls in one place
 
 ### Tasks
 
-- [x] **A28.3: Test shadow quality settings**
-  - ✅ Shadow distance slider affects coverage (DirectionalLightConfig.shadowDistance, auto-calculates ortho bounds)
-  - ✅ Stabilize projection reduces shimmering (texel snapping in DirectionalLightSystem.updateLightSpaceMatrix())
-  - ✅ Depth bias eliminates acne without peter-panning (depthBias + slopeScaledBias uploaded to shader, used in
-    calculateShadow())
+- [ ] **A31.0.1: Create SystemsWindow.kt**
+  - Location: `editor/windows/SystemsWindow.kt`
+  - Single dockable window that lists all systems from current scene
+  - Uses collapsing headers for each system
+  - Calls each system's `imgui()` method inside its header
+  - Auto-discovers systems via `SystemManager.systems`
+  - Visual indication for `system.enabled` flag
+
+- [ ] **A31.0.2: Add System UI Metadata**
+  - Location: `engine/ecs/systems/System.kt`
+  - Add `open val displayName: String = javaClass.simpleName` for friendly names
+  - Add `open val showInInspector: Boolean = false` to control visibility
+  - Default `showInInspector = false` to avoid cluttering UI for internal systems
+
+- [ ] **A31.0.3: Update ImGuiLayer Integration**
+  - Location: `editor/imgui/ImGuiLayer.kt`
+  - Add `private val systemsWindow = SystemsWindow()` instance
+  - Add `showSystems: ImBoolean = ImBoolean(false)` visibility flag
+  - Add menu item: View → Windows → Systems
+  - Call `systemsWindow.imgui(currentScene)` in update loop
+  - Consider removing hardcoded system window calls where applicable
+
+- [ ] **A31.0.4: Implement DayNightCycleSystem.imgui()**
+  - Location: `engine/ecs/systems/DayNightCycleSystem.kt`
+  - Time of day slider (0-24 hours)
+  - Day duration slider
+  - Auto-ambient toggle
+  - Current phase display (Night/Dawn/Day/Dusk)
+  - Sun direction vector display (read-only)
+  - Sun color/intensity display (read-only)
+
+- [ ] **A31.0.5: Implement InputSystem.imgui()**
+  - Location: `engine/ecs/systems/InputSystem.kt`
+  - Input state debugging (current axis values, button states)
+  - Sensitivity/deadzone controls from InputSettings
+  - Binding viewer (keyboard/gamepad mapping display)
+
+- [ ] **A31.0.6: Implement AnimationSystem.imgui()**
+  - Location: `engine/ecs/systems/AnimationSystem.kt`
+  - Animated object count display
+  - Per-object animation state (current animation, time, playing state)
+  - Animation speed multiplier
+  - Cache statistics
+
+- [ ] **A31.0.7: Implement GizmoSystem.imgui()**
+  - Location: `engine/ecs/systems/GizmoSystem.kt`
+  - Current active gizmo display
+  - Gizmo size/scale multipliers
+  - Snapping settings (grid snap, rotation snap, scale snap)
+  - Tool key binding display
+
+- [ ] **A31.0.8: Refactor EnvironmentWindow**
+  - Location: `editor/windows/EnvironmentWindow.kt`
+  - Remove day/night cycle controls (moved to DayNightCycleSystem.imgui)
+  - Remove directional light controls (moved to DirectionalLightSystem.imgui)
+  - Keep scene-level settings: sky color, fog settings, time scale
+  - Add links/buttons to open Systems window for system-specific controls
+
+### Architecture Benefits
+
+- **Centralized**: All system controls discoverable in one place
+- **Auto-Discovery**: New systems with `imgui()` automatically appear
+- **Consistent**: Follows Component pattern with collapsing headers
+- **Cleaner Separation**: Systems own their UI logic
+- **Reduced Bloat**: Less hardcoded window management in ImGuiLayer
 
 ---
 
-## 🔴 v0.29: Shadow Quality Improvements (Complete) ✅
+## 🔴 v0.32: ImGui Refactor Cleanup (Planned)
 
 ### Summary
 
-Shadow rendering works with robust frustum fitting and stabilization.
-
-### Bug Fixes
-
-- [x] **A29.0.4: Implement Robust Shadow Frustum Fitting (Bounding Spheres)**
-  - ✅ Implemented bounding sphere calculation for camera frustum
-  - ✅ Fixed corner indices in frustum calculation
-  - ✅ Rotation-invariant shadow map coverage
-  - Location: `DirectionalLightSystem.kt`
-
-- [x] **A29.0.5: Fix Shadow Stabilization Logic**
-  - ✅ Implemented stable snapping to texel grid
-  - ✅ Reduced shimmering when camera moves
-    - Location: `DirectionalLightSystem.kt`
-
-- [x] **A29.0.6: Fix High-Noon Light Up-Vector Failure**
-  - ✅ Dynamically switch Up vector to (0, 0, 1) when sun is overhead
-    - Location: `DirectionalLightSystem.kt`
-
-- [x] **A29.0.7: Fix Shadow Clipping & "Far" Shadow Center**
-  - ✅ Increased buffer for shadow casters (500m)
-  - ✅ Centered shadow map on visible frustum
-    - Location: `DirectionalLightSystem.kt`
-
----
-
-## 🔴 v0.30: Production Polish (Planned)
-
-### Summary
-
-Finalizing the shadow pipeline and preparing for release.
+The v0.31 Systems ImGui refactor will create temporary code duplication as system controls are moved from dedicated
+windows (EnvironmentWindow, PhysicsTunerWindow) into system classes. This version tracks the cleanup work.
 
 ### Tasks
 
-- [x] **A30.0.1: Fix shadow peter-panning**
-  - ✅ Lowered default depthBias from 0.005 to 0.001
-  - ✅ Lowered default slopeScaledBias from 0.01 to 0.002
-  - ✅ Addressed detachment artifact while preserving acne prevention
-  - Locations: `DirectionalLightConfig.kt`, `GeometryPass.kt`
-- [x] **A30.0.2: Verify shadow stability with moving character**
+- [ ] **A32.0.1: Remove duplicate DayNightCycle controls from EnvironmentWindow**
+  - Location: `editor/windows/EnvironmentWindow.kt`
+  - Remove time slider (now in DayNightCycleSystem.imgui)
+  - Remove day duration controls (now in DayNightCycleSystem.imgui)
+  - Keep only sceneData.timeOfDay sync for save/load compatibility
+  - Add "Open Systems Window" button for full system controls
+
+- [ ] **A32.0.2: Remove duplicate DirectionalLight controls from EnvironmentWindow**
+  - Location: `editor/windows/EnvironmentWindow.kt`
+  - Remove shadow distance slider (now in DirectionalLightSystem.imgui)
+  - Remove ortho bounds controls (now in DirectionalLightSystem.imgui)
+  - Remove shadow quality toggles (stabilize, bias - now in DirectionalLightSystem.imgui)
+  - Keep only scene-level light overrides if needed
+
+- [ ] **A32.0.3: Audit PhysicsTunerWindow for system duplication**
+  - Location: `editor/windows/PhysicsTunerWindow.kt`
+  - Identify which controls access system data vs component data
+  - Gravity controls: Keep (global physics setting)
+  - PlayerController tuning: Consider moving to PlayerController.imgui() on component
+  - SkateboardPhysics tuning: Keep (component-level, not system)
+
+- [ ] **A32.0.4: Update ImGuiLayer to remove redundant window instantiations**
+  - Location: `editor/imgui/ImGuiLayer.kt`
+  - Remove `showEnvironment`, `showPhysicsTuner` flags if windows are deprecated
+  - Remove direct calls to deprecated window imgui methods
+  - Keep only essential windows: GameView, Hierarchy, Properties, AssetBrowser, Console, Systems
+
+- [ ] **A32.0.5: Update documentation and tooltips**
+  - Location: All modified window files
+  - Update KDoc to reflect new window purposes
+  - Add @Deprecated tags to removed functionality
+  - Update stringManager keys for any renamed UI elements
+
+- [ ] **A32.0.6: Test all ImGui windows for functionality**
+  - Verify all system controls work from SystemsWindow
+  - Verify EnvironmentWindow still functions for scene-level settings
+  - Check that save/load still works with new UI structure
+  - Test docking layout persistence
+
+---
+
+## 🔴 v0.33: Code Quality & Technical Debt (Planned)
 
 ### Summary
 
-**v0.28: Shadow Quality & Robustness - COMPLETE** ✅
+Ongoing code quality improvements and technical debt reduction.
 
-All shadow pipeline improvements implemented and verified:
+### Tasks
 
-- Shadow rendering pipeline integrated and functional
-- Day/night cycle properly affects lighting
-- Shadow quality settings (distance, stabilization, bias) working correctly
-- Alpha masking support for transparent objects
-- Skinned mesh shadow rendering fixed
-- Viewport/resizing issues fixed for all TRS gizmos
+- [ ] **A33.0.1: Audit remaining !! operators**
+  - Search codebase for `!!` usage
+  - Replace with safe calls (`?.`) and Elvis operator (`?:`)
+  - Add proper null handling or validation
+
+- [ ] **A33.0.2: Review resource management**
+  - Audit asset loading/unloading for memory leaks
+  - Ensure proper cleanup in `destroy()` methods
+  - Add resource tracking/debugging tools
+
+- [ ] **A33.0.3: Animation blending timing**
+  - Investigate crossfade transition timing issues
+  - Verify blend duration calculations
+  - Add blending debug visualization
+
+- [ ] **A33.0.4: Object allocation in hot loops**
+  - Profile physics and rendering loops
+  - Reduce garbage collection pressure
+  - Use object pooling where appropriate
+
+---
+
+## ✅ Completed Versions
+
+### v0.30: Shadow Pipeline Polish (Complete)
+
+- Shadow peter-panning fix (reduced bias defaults)
+- Systems ImGui architecture identified
+
+### v0.29: Shadow Quality Improvements (Complete)
+
+- Robust shadow frustum fitting (bounding spheres)
+- Shadow stabilization (texel snapping)
+- High-noon up-vector fix
+- Shadow clipping fix (increased buffer)
+
+### v0.28: Shadow Quality & Robustness (Complete)
+
+- ShadowRenderer VAO attribute binding fix
+- Alpha masking support in shadow pass
+- Framebuffer completeness check
+- Shadow pass logging
+- Out-of-bounds shadow artifact fix
+- SHADOW_TEXTURE_UNIT constant extraction
+- Skater shadow uniform name + depth testing fix
+- Translate/Rotation/Scale gizmo viewport fixes
+- Full shadow pipeline verification
+- Day/night cycle integration verification
+
+---
+
+## Historical Summary
+
+**All v0.28, v0.29, and v0.30 items are COMPLETE** ✅
+
+See CHANGELOG.md for detailed implementation notes.
+
+**Upcoming:**
+
+- **v0.31**: Systems ImGui Integration (centralized system UI)
+- **v0.32**: ImGui Refactor Cleanup (remove code duplication)
+- **v0.33**: Code Quality & Technical Debt (!! operators, resource management, animation, performance)

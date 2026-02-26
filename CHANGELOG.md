@@ -4,6 +4,192 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.30] - 2026-02-25: Shadow Pipeline Polish & Systems ImGui Plan
+
+### Summary
+
+Completed final shadow pipeline improvements and identified ImGui architecture improvements for system UI management.
+
+### Added
+
+- **Shadow Peter-Panning Fix**: Reduced shadow detachment artifacts (`engine/ecs/config/DirectionalLightConfig.kt`)
+  - `depthBias: Float = 0.001f` - Reduced from 0.005 (was causing visible detachment)
+  - `slopeScaledBias: Float = 0.002f` - Reduced from 0.01
+  - **Impact**: High - Shadows now appear properly attached to casters while preventing acne
+
+### Changed
+
+- **GeometryPass Shadow Bias Defaults**: Updated fallback values to match new defaults
+  - Fallback depthBias: 0.005 → 0.001
+  - Fallback slopeScaledBias: 0.01 → 0.002
+  - Ensures consistency when light system is unavailable
+
+### Architecture
+
+- **Systems ImGui Pattern Identified**: Current system UI architecture has gaps
+  - `System.imgui()` method exists but is unused by ImGuiLayer
+  - `Component.imgui()` has reflection-based auto-UI, systems require manual windows
+  - Multiple scattered windows (EnvironmentWindow, PhysicsTunerWindow, ProfilerWindow) instead of unified system
+    inspector
+  - **Future**: Create SystemsWindow for centralized system UI discovery and display
+
+---
+
+## [v0.29] - 2026-02-25: Shadow Quality Improvements
+
+### Summary
+
+Completed robust shadow frustum fitting with bounding sphere calculation and stabilization features for
+production-quality shadow rendering.
+
+### Added
+
+- **Robust Shadow Frustum Fitting**: Bounding sphere-based shadow map coverage (
+  `engine/ecs/systems/DirectionalLightSystem.kt`)
+  - Calculates camera view frustum corners limited by shadowDistance
+  - Computes bounding sphere center and radius from frustum corners
+  - Rotation-invariant shadow map coverage (no more rotating shadow bounds)
+  - Rounds radius to nearest texel for stabilization
+  - **Impact**: High - Shadows now maintain consistent coverage regardless of camera rotation
+
+- **Shadow Stabilization Logic**: Texel snapping to eliminate shimmering (
+  `engine/ecs/systems/DirectionalLightSystem.kt`)
+  - `stabilizeProjection: Boolean = true` - Enable/disable stabilization
+  - Snaps light target to texel-sized grid in light space
+  - Prevents shadow map crawling as camera moves subtly
+  - **Impact**: High - Eliminates distracting shadow shimmering artifacts
+
+- **High-Noon Up-Vector Fix**: Dynamic up-vector selection (`engine/ecs/systems/DirectionalLightSystem.kt`)
+  - Detects when sun direction Y > 0.99 (near overhead)
+  - Switches up vector from (0,1,0) to (0,0,1) to prevent lookAt failure
+  - **Impact**: Medium - Prevents shadow map corruption at high noon
+
+- **Shadow Clipping Fix**: Increased buffer and centering (`engine/ecs/systems/DirectionalLightSystem.kt`)
+  - Increased shadow caster buffer from default to 500m
+  - Centers shadow map on visible frustum rather than camera position
+  - **Impact**: High - Eliminates shadow clipping for objects near camera
+
+### Changed
+
+- **DirectionalLightSystem.updateLightSpaceMatrix()**: Complete rewrite for robust shadows
+  - Replaced manual ortho bounds with auto-calculated bounding sphere
+  - Added texel snapping for stabilization
+  - Added dynamic up-vector selection
+  - Increased buffer distance for caster coverage
+  - Optimized near/far planes for orthographic projection
+
+### Architecture
+
+- **Shadow Frustum Pipeline**: Multi-stage robust shadow calculation
+  1. Calculate frustum corners from camera projection
+  2. Compute bounding sphere (center + radius)
+  3. Snap center to texel grid for stability
+  4. Apply dynamic up-vector for edge cases
+  5. Center orthographic bounds on sphere
+  6. Add buffer for off-frustum casters
+
+---
+
+## [v0.28] - 2026-02-25: Shadow Quality & Robustness
+
+### Summary
+
+Completed comprehensive shadow pipeline improvements including VAO binding fixes, alpha masking support, gizmo viewport
+fixes, and skater shadow rendering.
+
+### Added
+
+- **Alpha Masking in Shadow Pass**: Transparent object shadow support (`assets/shaders/shadow.glsl`)
+  - Vertex shader: Passes texture coordinates to fragment shader
+  - Fragment shader: Samples base color texture, discards fragments with alpha < cutoff
+  - Uniforms: `uBaseColorTexture`, `uAlphaMode`, `uAlphaCutoff`, `uHasBaseColorTexture`
+  - `ShadowRenderer`: Binds base color texture and uploads alpha uniforms for MASK mode
+  - OPAQUE and BLEND modes render depth-only (all fragments)
+  - **Impact**: Medium - Foliage and cutout objects now cast proper shadows
+
+- **Framebuffer Completeness Check**: Runtime validation (`engine/render/ShadowMap.kt`)
+  - Replaced `assert()` with `IllegalStateException`
+  - Throws exception with GL framebuffer status code
+  - Works in both debug and release builds
+  - **Impact**: High - Catches shadow map initialization failures early
+
+- **Shadow Pass Logging**: Diagnostic logging for skipped passes (`engine/render/renderer/passes/ShadowPass.kt`)
+  - Uses `LoggerService.logEngine()` instead of println
+  - Logs when light system is null or castShadows is false
+  - Format: `[ShadowPass] Skipped: lightSystem=true/false, castShadows=true/false`
+  - **Impact**: Low - Helps debug shadow rendering issues
+
+- **Out-of-Bounds Shadow Fix**: Early exit for fragments beyond shadow map (`assets/shaders/shader_3d_default.glsl`)
+  - Checks projCoords outside [-1, 1] range for x, y, z
+  - Returns 0.0 (no shadow) instead of sampling border color
+  - **Impact**: Medium - Eliminates shadow artifacts at screen edges
+
+- **Shader Constant Extraction**: `SHADOW_TEXTURE_UNIT` constant (`engine/utils/ShaderConst.kt`)
+  - `Uniforms.SHADOW_TEXTURE_UNIT = 5` - Centralized shadow map texture unit
+  - Updated `LightingUniformsLoader.kt` and `GeometryPass.kt` to use constant
+  - **Impact**: Low - Prevents texture unit conflicts
+
+### Changed
+
+- **ShadowRenderer VAO Binding**: Fixed skinned mesh shadow rendering (`engine/render/renderer/ShadowRenderer.kt`)
+  - Changed from `vaoId.bind()` to `vaoId.bindVAO(rawModel.enabledAttributes)`
+  - Properly enables attributes 6,7 (joints/weights) for skinned meshes
+  - Uses `glBindVertexArray(0)` instead of `unbindVAO()` to preserve attribute state
+  - **Impact**: High - Skinned character shadows now render correctly
+
+- **ShadowRenderer Depth Testing**: Enabled depth write for shadow map (`engine/render/renderer/ShadowRenderer.kt`)
+  - Added `glEnable(GL_DEPTH_TEST)` at start of render()
+  - Added `glDepthMask(true)` to enable depth writes
+  - **Impact**: Critical - Shadow map now receives depth values
+
+- **Uniform Name Mismatch Fix**: Skater shadow rendering (`assets/shaders/shadow.glsl`)
+  - Changed `uniform bool uHasSkin` to `uniform bool u_HasSkin`
+  - Matches `ShaderConst.HAS_SKIN = "u_HasSkin"` constant
+  - **Impact**: Critical - Skinning now works in shadow pass
+
+- **TranslateGizmo Viewport Fix**: Dynamic viewport size (`editor/gizmos/TranslateGizmo.kt`)
+  - Line 100: `screenToRay()` now uses `viewportSize.x, viewportSize.y`
+  - Lines 159-160: `worldToScreen()` now uses dynamic viewport
+  - Pattern: `val viewportSize = mouseListener.getGameViewportSize()`
+  - **Impact**: High - Gizmo works correctly at non-1080p resolutions
+
+- **RotationGizmo Viewport Fix**: Dynamic viewport size (`editor/gizmos/RotationGizmo.kt`)
+  - Line 63: `screenToRay()` now uses `viewportSize.x, viewportSize.y`
+  - **Impact**: High - Gizmo works correctly at non-1080p resolutions
+
+- **ScaleGizmo Viewport Fix**: Dynamic viewport size (`editor/gizmos/ScaleGizmo.kt`)
+  - Line 81: `screenToRay()` now uses `viewportSize.x, viewportSize.y`
+  - Lines 162-163: `worldToScreen()` now uses dynamic viewport
+  - **Bonus**: Added NaN guard (`axisScreen.lengthSquared() < 0.0001f`)
+  - **Bonus**: Added scale clamping (min 0.01) to prevent physics crashes
+  - **Impact**: High - Gizmo works correctly at non-1080p resolutions
+
+### Verified
+
+- **Shadow Rendering Pipeline**: Full integration verification
+  - ✅ Shadow pass renders to ShadowMap (ShadowPass.kt executes before GeometryPass)
+  - ✅ Geometry pass samples ShadowMap with correct uniforms (texture bound to unit 5)
+  - ✅ PCF filtering uses correct texel size (1.0f / shadowMapResolution uploaded)
+  - ✅ Shadow map texture binding uses constant (Uniforms.SHADOW_TEXTURE_UNIT = 5)
+  - ✅ Alpha masking supported for transparent objects (shadow.glsl samples base color)
+  - ✅ Skinned meshes render correctly to shadow map (VAO attributes enabled)
+
+- **Day/Night Cycle Integration**: Full lighting verification
+  - ✅ Sun direction updates from DayNightCycleSystem (trigonometry in updateSunDirection())
+  - ✅ Sun color interpolates through day phases (dawn → noon → dusk → night)
+  - ✅ Sun intensity interpolates (0.0 at night, 1.0 at day)
+  - ✅ Ambient light interpolates with day/night (nightAmbient.lerp(dayAmbient, sunIntensity))
+  - ✅ DirectionalLightSystem reads from DayNightCycleSystem.config each frame
+  - ✅ LightingUniformsLoader uploads sun direction, color, intensity to shader
+  - ✅ Environment Window time slider syncs with DayNightCycleSystem.getCycleTime()/setCycleTime()
+
+- **Shadow Quality Settings**: All controls functional
+  - ✅ Shadow distance slider affects coverage (DirectionalLightConfig.shadowDistance)
+  - ✅ Stabilize projection reduces shimmering (texel snapping in updateLightSpaceMatrix())
+  - ✅ Depth bias eliminates acne without peter-panning (bias uploaded to shader)
+
+---
+
 ## [v0.23] - 2026-02-22: Input System Code Quality
 
 ### Summary
