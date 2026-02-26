@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.System
@@ -34,7 +35,7 @@ import org.koin.core.component.inject
  * @see System
  * @see SystemManager
  */
-class SystemsWindow : KoinComponent {
+class SystemsWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
 
     /**
@@ -42,7 +43,7 @@ class SystemsWindow : KoinComponent {
      *
      * @param currentScene The current scene to get systems from
      */
-    fun imgui(currentScene: Scene) {
+    override fun imgui(currentScene: Scene) {
         ImGui.begin(stringManager.getString("window.systems"))
 
         val systemManager = currentScene.systemManager

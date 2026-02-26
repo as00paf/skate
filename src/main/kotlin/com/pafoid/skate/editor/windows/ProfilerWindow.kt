@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.render.EngineStats
 import imgui.ImGui
@@ -9,7 +10,7 @@ import org.koin.core.component.inject
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadMXBean
 
-class ProfilerWindow : KoinComponent {
+class ProfilerWindow : IWindow, KoinComponent {
     private val stringManager: StringManager by inject()
     private val threadBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
     private val threadIds = mutableMapOf<String, Long>()
@@ -25,7 +26,7 @@ class ProfilerWindow : KoinComponent {
         }
     }
 
-    fun imgui(pOpen: ImBoolean? = null) {
+    override fun imgui(pOpen: ImBoolean?) {
         if (pOpen != null) {
             if (!ImGui.begin(stringManager.getString("window.profiler"), pOpen)) {
                 ImGui.end()

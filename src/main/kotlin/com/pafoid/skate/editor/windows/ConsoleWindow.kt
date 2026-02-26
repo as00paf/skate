@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LogEntry
 import com.pafoid.skate.editor.systems.LogLevel
@@ -15,12 +16,12 @@ import imgui.type.ImString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class ConsoleWindow : KoinComponent {
+class ConsoleWindow : IWindow, KoinComponent {
 
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
 
-    fun imgui(pOpen: ImBoolean) {
+    override fun imgui(pOpen: ImBoolean?) {
         if (!ImGui.begin(stringManager.getString("window.console"), pOpen)) {
             ImGui.end()
             return

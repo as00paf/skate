@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
@@ -8,11 +9,12 @@ import com.pafoid.skate.editor.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.windows.assetBrowser.TexturesTab
 import com.pafoid.skate.engine.assets.ResourceManager
 import imgui.ImGui
+import imgui.type.ImBoolean
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class AssetBrowserWindow : KoinComponent {
+class AssetBrowserWindow : IWindow, KoinComponent {
     private val thumbnailCache: ThumbnailCache by inject()
     private val resourceManager: ResourceManager by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
@@ -30,7 +32,7 @@ class AssetBrowserWindow : KoinComponent {
         texturesTab.refreshAssets()
     }
 
-    fun imgui() {
+    override fun imgui(pOpen: ImBoolean?) {
         ImGui.begin(stringManager.getString("window.asset_browser"))
 
         if (ImGui.beginTabBar("AssetBrowserTabs")) {

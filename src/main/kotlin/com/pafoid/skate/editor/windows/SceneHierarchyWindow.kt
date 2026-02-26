@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.StringManager
@@ -15,13 +16,13 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
 
-class SceneHierarchyWindow: KoinComponent {
+class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
     private val sceneManager: SceneManager by inject()
     private val stringManager: StringManager by inject()
     private val undoRedoManager: UndoRedoManager by inject()
 
-    fun imgui(scene: Scene) {
+    override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.hierarchy"))
 
         val gameObjects = scene.gameObjectManager.gameObjects

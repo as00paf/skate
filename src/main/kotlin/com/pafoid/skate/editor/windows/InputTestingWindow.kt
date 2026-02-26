@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.data.InputSettings
+import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -31,7 +32,7 @@ class InputTestingWindow(
     private val inputProvider: IInputProvider,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager
-) : KoinComponent {
+) : IWindowWithScene, KoinComponent {
 
     private var showRawAxes = true
     private var showProcessedState = true
@@ -43,7 +44,7 @@ class InputTestingWindow(
      *
      * @param currentScene Current scene for accessing InputStateComponent
      */
-    fun imgui(currentScene: Scene) {
+    override fun imgui(currentScene: Scene) {
         ImGui.begin(stringManager.getString("window.input_testing"))
 
         // Collapsing headers for sections

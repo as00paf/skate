@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.gizmos.MeasureTool
+import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
@@ -21,6 +22,7 @@ import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
+import imgui.type.ImBoolean
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -28,7 +30,7 @@ import org.koin.core.component.inject
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class GameViewWindow : KoinComponent {
+class GameViewWindow : IWindow, KoinComponent {
 
     private val logger: LoggerService by inject()
     private val mouseListener: MouseListener by inject()
@@ -47,7 +49,7 @@ class GameViewWindow : KoinComponent {
     private val gamepadOverlay = GamepadOverlay()
     private val trickUIWindow = TrickUIWindow()
 
-    fun imgui() {
+    override fun imgui(pOpen: ImBoolean?) {
         ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
 
         val windowSize = getLargestSizeForViewport()

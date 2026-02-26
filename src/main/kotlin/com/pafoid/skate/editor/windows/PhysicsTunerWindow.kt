@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
@@ -12,10 +13,10 @@ import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class PhysicsTunerWindow : KoinComponent {
+class PhysicsTunerWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
-    
-    fun imgui(currentScene: Scene) {
+
+    override fun imgui(currentScene: Scene) {
         val physics: IPhysics3D = currentScene.physics3d
 
 

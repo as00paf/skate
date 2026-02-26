@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -10,10 +11,10 @@ import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class EnvironmentWindow : KoinComponent {
+class EnvironmentWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
 
-    fun imgui(scene: Scene) {
+    override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.environment"))
 
         // Get systems

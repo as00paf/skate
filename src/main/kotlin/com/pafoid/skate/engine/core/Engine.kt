@@ -48,7 +48,7 @@ class Engine : KoinComponent {
             }
 
             // Render Scene
-            renderer.render(scene, scene.getSelectedGameObject(), imguiLayer.gameViewWindow.getHoveredObject())
+            renderer.render(scene, scene.getSelectedGameObject(), imguiLayer.getHoveredGameObject())
 
             // Update ImGui Layer
             imguiLayer.update(dt, scene)

@@ -94,34 +94,58 @@ class ImGuiLayer(
     private val glslVersion = "#version 330"
     private var glfwWindow: Long = 0
 
-    val propertiesWindow = PropertiesWindow()
-    val gameViewWindow = GameViewWindow()
-    val assetBrowser = AssetBrowserWindow()
-    val consoleWindow = ConsoleWindow()
-    private val physicsTunerWindow = PhysicsTunerWindow()
+    // Window instances
+    private val hierarchyWindow = SceneHierarchyWindow()
+    private val propertiesWindow = PropertiesWindow()
+    private val gameViewWindow = GameViewWindow()
+    private val assetBrowser = AssetBrowserWindow()
     private val environmentWindow = EnvironmentWindow()
     private val profilerWindow = ProfilerWindow()
-    private val hierarchyWindow = SceneHierarchyWindow()
-    val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
+    private val consoleWindow = ConsoleWindow()
+    private val physicsTunerWindow = PhysicsTunerWindow()
     private val inputTestingWindow = InputTestingWindow(inputProvider, settingsManager, stringManager)
-    private val settingsWindow = SettingsWindow(settingsManager, stringManager)
     private val systemsWindow = SystemsWindow()
+    private val settingsWindow = SettingsWindow(settingsManager, stringManager)
+    private val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
 
-    // Window Visibility Flags
-    private val showHierarchy = ImBoolean(true)
-    private val showProperties = ImBoolean(true)
-    private val showGameView = ImBoolean(true)
-    private val showAssetBrowser = ImBoolean(true)
-    private val showEnvironment = ImBoolean(true)
-    private val showProfiler = ImBoolean(true)
-    private val showConsole = ImBoolean(true)
-    private val showPhysicsTuner = ImBoolean(true)
-    private val showInputTesting = ImBoolean(false)
-    private val showSystems = ImBoolean(false)
+    /**
+     * Data class combining window instance with its visibility flag and metadata.
+     */
+    private data class EditorWindow(
+        val nameKey: String,           // Localization key for window title
+        val instance: Any,             // Window instance
+        val showFlag: ImBoolean,       // Visibility toggle flag
+        val requiresScene: Boolean = false  // Whether imgui() needs Scene parameter
+    )
+
+    /**
+     * Registry of all dockable editor windows.
+     * Centralizes window management for rendering, menus, and dock layout.
+     */
+    private val editorWindows = listOf(
+        EditorWindow("window.hierarchy", hierarchyWindow, ImBoolean(true), requiresScene = true),
+        EditorWindow("window.properties", propertiesWindow, ImBoolean(true)),
+        EditorWindow("window.game_viewport", gameViewWindow, ImBoolean(true)),
+        EditorWindow("window.asset_browser", assetBrowser, ImBoolean(true)),
+        EditorWindow("window.environment", environmentWindow, ImBoolean(true), requiresScene = true),
+        EditorWindow("window.profiler", profilerWindow, ImBoolean(true)),
+        EditorWindow("window.console", consoleWindow, ImBoolean(true)),
+        EditorWindow("window.physics_tuner", physicsTunerWindow, ImBoolean(true), requiresScene = true),
+        EditorWindow("window.input_testing", inputTestingWindow, ImBoolean(false)),
+        EditorWindow("window.systems", systemsWindow, ImBoolean(false), requiresScene = true)
+    )
+
     private var isViewportMaximized = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
     private lateinit var setVSync: (Boolean) -> Unit
+
+    /**
+     * Gets the currently hovered game object from the GameViewWindow.
+     */
+    fun getHoveredGameObject(): com.pafoid.skate.engine.ecs.GameObject? {
+        return gameViewWindow.getHoveredObject()
+    }
 
     fun init(glfwWindow: Long, fullScreenCallback:(Boolean)->Unit, vSyncCallback:(Boolean)->Unit) {
         this.glfwWindow = glfwWindow
@@ -162,16 +186,16 @@ class ImGuiLayer(
         val bottomId =
             dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
 
-        dockBuilderDockWindow(stringManager.getString("window.hierarchy"), leftId)
-        dockBuilderDockWindow(stringManager.getString("window.asset_browser"), leftId)
-        dockBuilderDockWindow(stringManager.getString("window.properties"), leftId)
-
-        dockBuilderDockWindow(stringManager.getString("window.game_viewport"), mainBodyId.get())
-
-        dockBuilderDockWindow(stringManager.getString("window.console"), bottomId)
-        dockBuilderDockWindow(stringManager.getString("window.profiler"), bottomId)
-        dockBuilderDockWindow(stringManager.getString("window.environment"), bottomId)
-        dockBuilderDockWindow(stringManager.getString("window.physics_tuner"), bottomId)
+        // Dock windows based on their default visibility
+        editorWindows.filter { it.showFlag.get() }.forEach { window ->
+            val dockId = when (window.nameKey) {
+                "window.hierarchy", "window.asset_browser", "window.properties" -> leftId
+                "window.game_viewport" -> mainBodyId.get()
+                "window.console", "window.profiler", "window.environment", "window.physics_tuner" -> bottomId
+                else -> mainBodyId.get() // Default to main area for unknown windows
+            }
+            dockBuilderDockWindow(stringManager.getString(window.nameKey), dockId)
+        }
 
         dockBuilderFinish(dockspaceId)
     }
@@ -180,7 +204,7 @@ class ImGuiLayer(
         if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_F12)) {
             isViewportMaximized = !isViewportMaximized
         }
-        
+
         startFrame()
 
         if (isViewportMaximized) {
@@ -191,10 +215,10 @@ class ImGuiLayer(
                 stringManager.getString("window.game_viewport") + " Maximized",
                 ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoDecoration
             )
-            
+
             val windowSize = ImVec2()
             getContentRegionAvail(windowSize)
-            
+
             val texId = renderer.frameBuffer.getTextureId()
             image(texId.toLong(), windowSize.x, windowSize.y, 0f, 1f, 1f, 0f)
 
@@ -203,17 +227,16 @@ class ImGuiLayer(
         } else {
             setupDockSpace(currentScene)
             currentScene.imgui()
-            
-            if (showHierarchy.get()) hierarchyWindow.imgui(currentScene)
-            if (showProperties.get()) propertiesWindow.imgui()
-            if (showGameView.get()) gameViewWindow.imgui()
-            if (showAssetBrowser.get()) assetBrowser.imgui()
-            if (showEnvironment.get()) environmentWindow.imgui(currentScene)
-            if (showProfiler.get()) profilerWindow.imgui()
-            if (showConsole.get()) consoleWindow.imgui(showConsole)
-            if (showPhysicsTuner.get()) physicsTunerWindow.imgui(currentScene)
-            if (showInputTesting.get()) inputTestingWindow.imgui(currentScene)
-            if (showSystems.get()) systemsWindow.imgui(currentScene)
+
+            // Render all visible editor windows
+            editorWindows.forEach { window ->
+                if (window.showFlag.get()) {
+                    when {
+                        window.requiresScene -> (window.instance as IWindowWithScene).imgui(currentScene)
+                        else -> (window.instance as IWindow).imgui()
+                    }
+                }
+            }
             settingsWindow.render()
             keyBindingsWindow.render()
         }
@@ -386,16 +409,10 @@ class ImGuiLayer(
             }
             if (beginMenu(stringManager.getString("menu.view"))) {
                 if (beginMenu(stringManager.getString("menu.view.windows"))) {
-                    checkbox(stringManager.getString("window.hierarchy"), showHierarchy)
-                    checkbox(stringManager.getString("window.properties"), showProperties)
-                    checkbox(stringManager.getString("window.game_viewport"), showGameView)
-                    checkbox(stringManager.getString("window.asset_browser"), showAssetBrowser)
-                    checkbox(stringManager.getString("window.environment"), showEnvironment)
-                    checkbox(stringManager.getString("window.profiler"), showProfiler)
-                    checkbox(stringManager.getString("window.console"), showConsole)
-                    checkbox(stringManager.getString("window.physics_tuner"), showPhysicsTuner)
-                    checkbox(stringManager.getString("window.input_testing"), showInputTesting)
-                    checkbox(stringManager.getString("window.systems"), showSystems)
+                    // Render checkbox for each editor window
+                    editorWindows.forEach { window ->
+                        checkbox(stringManager.getString(window.nameKey), window.showFlag)
+                    }
                     endMenu()
                 }
                 endMenu()

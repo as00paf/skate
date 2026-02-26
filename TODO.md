@@ -92,7 +92,21 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
   - Updated KoinModule.kt for InputSystem constructor injection
   - All UI text now properly localized without KoinComponent usage
 
-- [ ] **A31.0.8: Refactor EnvironmentWindow**
+- [x] **A31.0.8: Refactor ImGuiLayer for cleaner window management**
+  - Location: `editor/imgui/ImGuiLayer.kt`
+  - Created `IWindow` and `IWindowWithScene` interfaces for type-safe window handling
+  - Created `EditorWindow` data class combining window instance + visibility flag + metadata
+  - Created `editorWindows` registry list for centralized window management
+  - Refactored window rendering loop (replaced 10 if statements with forEach)
+  - Refactored View menu (replaced 10 checkbox calls with forEach)
+  - Refactored dock builder (dynamic window docking based on registry)
+  - All 10 dockable windows updated to implement appropriate interface:
+    - IWindow: PropertiesWindow, GameViewWindow, AssetBrowserWindow, ProfilerWindow, ConsoleWindow
+    - IWindowWithScene: SceneHierarchyWindow, EnvironmentWindow, PhysicsTunerWindow, InputTestingWindow, SystemsWindow
+  - Added `getHoveredGameObject()` public method for Engine access
+  - Reduced code by ~50 lines through eliminated duplication
+
+- [ ] **A31.0.9: Refactor EnvironmentWindow**
   - Location: `editor/windows/EnvironmentWindow.kt`
   - Remove day/night cycle controls (moved to DayNightCycleSystem.imgui)
   - Remove directional light controls (moved to DirectionalLightSystem.imgui)
@@ -106,6 +120,8 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
 - **Consistent**: Follows Component pattern with collapsing headers
 - **Cleaner Separation**: Systems own their UI logic
 - **Reduced Bloat**: Less hardcoded window management in ImGuiLayer
+- **Type-Safe**: Window interfaces enforce correct imgui() signatures
+- **Maintainable**: Single registry for all window management
 
 ---
 
@@ -139,10 +155,11 @@ windows (EnvironmentWindow, PhysicsTunerWindow) into system classes. This versio
   - PlayerController tuning: Consider moving to PlayerController.imgui() on component
   - SkateboardPhysics tuning: Keep (component-level, not system)
 
-- [ ] **A32.0.4: Update ImGuiLayer to remove redundant window instantiations**
+- [ ] **A32.0.4: Update ImGuiLayer window registry**
   - Location: `editor/imgui/ImGuiLayer.kt`
-  - Remove `showEnvironment`, `showPhysicsTuner` flags if windows are deprecated
-  - Remove direct calls to deprecated window imgui methods
+  - Window registry already complete (A31.0.8)
+  - Consider removing EnvironmentWindow and PhysicsTunerWindow from default dock layout
+  - Since they will be deprecated in favor of SystemsWindow
   - Keep only essential windows: GameView, Hierarchy, Properties, AssetBrowser, Console, Systems
 
 - [ ] **A32.0.5: Update documentation and tooltips**
@@ -224,8 +241,21 @@ Ongoing code quality improvements and technical debt reduction.
 
 See CHANGELOG.md for detailed implementation notes.
 
+### v0.31: Systems ImGui Integration (Complete) ✅
+
+- SystemsWindow created for centralized system UI
+- System UI metadata (displayName) added to base System class
+- DayNightCycleSystem.imgui() implemented with full controls
+- InputSystem.imgui() implemented with deadzones, sensitivity, and debug
+- AnimationSystem.imgui() implemented with per-object state display
+- DirectionalLightSystem.imgui() implemented with shadow quality controls
+- All hardcoded strings replaced with StringManager localization
+- ImGuiLayer refactored with EditorWindow registry pattern
+- IWindow and IWindowWithScene interfaces created for type safety
+- All 10 dockable windows updated to implement interfaces
+- ~50 lines of code reduction through eliminated duplication
+
 **Upcoming:**
 
-- **v0.31**: Systems ImGui Integration (centralized system UI)
-- **v0.32**: ImGui Refactor Cleanup (remove code duplication)
+- **v0.32**: ImGui Refactor Cleanup (remove EnvironmentWindow duplication)
 - **v0.33**: Code Quality & Technical Debt (!! operators, resource management, animation, performance)
