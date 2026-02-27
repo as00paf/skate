@@ -108,13 +108,6 @@ creates inconsistent UI patterns where Components have auto-generated UI but Sys
   - Reduced ImGuiLayer by ~200 lines through eliminated duplication
   - SystemsWindow default visibility changed to true for better discoverability
 
-- [ ] **A31.0.9: Refactor EnvironmentWindow**
-  - Location: `editor/windows/EnvironmentWindow.kt`
-  - Remove day/night cycle controls (moved to DayNightCycleSystem.imgui)
-  - Remove directional light controls (moved to DirectionalLightSystem.imgui)
-  - Keep scene-level settings: sky color, fog settings, time scale
-  - Add links/buttons to open Systems window for system-specific controls
-
 ### Architecture Benefits
 
 - **Centralized**: All system controls discoverable in one place
@@ -135,6 +128,13 @@ The v0.31 Systems ImGui refactor will create temporary code duplication as syste
 windows (EnvironmentWindow, PhysicsTunerWindow) into system classes. This version tracks the cleanup work.
 
 ### Tasks
+
+- [ ] **A31.0.9: Refactor EnvironmentWindow**
+  - Location: `editor/windows/EnvironmentWindow.kt`
+  - Remove day/night cycle controls (moved to DayNightCycleSystem.imgui)
+  - Remove directional light controls (moved to DirectionalLightSystem.imgui)
+  - Keep scene-level settings: sky color, fog settings, time scale
+  - Add links/buttons to open Systems window for system-specific controls
 
 - [ ] **A32.0.1: Remove duplicate DayNightCycle controls from EnvironmentWindow**
   - Location: `editor/windows/EnvironmentWindow.kt`
