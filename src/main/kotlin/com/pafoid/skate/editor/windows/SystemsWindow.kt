@@ -57,9 +57,10 @@ class SystemsWindow : IWindowWithScene, KoinComponent {
 
             systems.forEach { system ->
                 val headerLabel = system.displayName
+                val isDisabled = !system.enabled  // Capture state before checkbox can change it
 
                 // Color code based on enabled status
-                if (!system.enabled) {
+                if (isDisabled) {
                     ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
                 }
 
@@ -76,11 +77,12 @@ class SystemsWindow : IWindowWithScene, KoinComponent {
                     system.imgui()
                 }
 
-                if (!system.enabled) {
+                // Always pop the style color if we pushed it
+                if (isDisabled) {
                     ImGui.popStyleColor()
                 }
 
-                // Context menu for enabling/disabling system
+                // Context menu for enabling/disabling system (outside the header)
                 if (ImGui.beginPopupContextItem("${system.displayName}_context")) {
                     val contextEnabled = ImBoolean(system.enabled)
                     if (ImGui.checkbox(stringManager.getString("lbl.systems.toggle_enabled"), contextEnabled)) {
