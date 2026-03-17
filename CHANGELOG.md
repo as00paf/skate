@@ -4,6 +4,128 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.31] - 2026-02-25: Systems ImGui Integration & ImGuiLayer Refactoring
+
+### Summary
+
+Completed comprehensive ImGui integration for ECS systems and refactored ImGuiLayer for cleaner window management.
+Created centralized SystemsWindow for system debugging, implemented imgui() for all major systems, and extracted menu
+bar logic into dedicated class.
+
+### Added
+
+- **SystemsWindow**: Centralized window for system debugging and control (`editor/windows/SystemsWindow.kt`)
+  - Auto-discovers all systems via SystemManager
+  - Displays system enabled status with visual indicator (grayed out when disabled)
+  - Shows system execution priority in header
+  - Calls each system's imgui() method inside collapsing headers
+  - Context menu for enabling/disabling systems
+  - Supports runtime system toggling
+  - **Impact**: High - All system controls now discoverable in one place
+
+- **System UI Metadata**: Added displayName property to base System class (`engine/ecs/systems/System.kt`)
+  - `open val displayName: String` defaults to javaClass.simpleName
+  - Can be overridden for custom display names
+  - Used by SystemsWindow for header labels
+  - **Impact**: Low - Enables flexible system naming in UI
+
+- **DayNightCycleSystem.imgui()**: Full day/night cycle controls (`engine/ecs/systems/DayNightCycleSystem.kt`)
+  - Time of day slider (0-24 hours)
+  - Day duration slider (60-600 seconds)
+  - Auto-ambient toggle
+  - Read-only displays: sun direction, sun color, ambient color, intensities
+  - Current phase display (Night/Dawn/Day/Dusk)
+  - **Impact**: High - Real-time day/night tuning without code changes
+
+- **InputSystem.imgui()**: Complete input configuration and debugging (`engine/ecs/systems/InputSystem.kt`)
+  - Deadzone settings (left stick, right stick, trigger threshold)
+  - Sensitivity settings (mouse, controller)
+  - Movement thresholds (movement, sprint)
+  - Physics settings (jump impulse, walk/run speed, rotation speed, take off time, input smoothing)
+  - Live gamepad state debug (axes, buttons)
+  - **Impact**: High - Real-time input tuning and debugging
+
+- **AnimationSystem.imgui()**: Animation state visualization (`engine/ecs/systems/AnimationSystem.kt`)
+  - Animated object count display
+  - Cache dirty status
+  - Global speed multiplier (0-3x) for slow-motion effects
+  - Per-object animation state (name, time, playing, blending)
+  - **Impact**: Medium - Animation debugging and tuning
+
+- **DirectionalLightSystem.imgui()**: Shadow quality controls (`engine/ecs/systems/DirectionalLightSystem.kt`)
+  - Shadow distance slider (10-200m)
+  - Auto calculate bounds toggle
+  - Manual orthographic bounds (left/right/bottom/top)
+  - Shadow quality settings (stabilize projection, depth bias, slope-scaled bias)
+  - **Impact**: High - Real-time shadow quality tuning
+
+### Changed
+
+- **ImGuiLayer Window Management**: Complete refactor for cleaner architecture (`editor/imgui/ImGuiLayer.kt`)
+  - Created IWindow and IWindowWithScene interfaces for type-safe window handling
+  - Created EditorWindow data class for window metadata (name, instance, visibility, requiresScene)
+  - Created editorWindows registry list for centralized window management
+  - Refactored window rendering: 10 if statements → single forEach loop
+  - Refactored View menu: 10 checkbox calls → single forEach loop
+  - Refactored dock builder: hardcoded → dynamic based on registry
+  - Added getHoveredGameObject() public method for Engine access
+  - SystemsWindow default visibility: false → true for better discoverability
+  - **Impact**: High - ~200 lines reduction, easier to add/remove windows
+
+- **EditorMenuBar Extracted**: Menu bar logic moved to dedicated class (`editor/imgui/EditorMenuBar.kt`)
+  - ~150 lines moved from ImGuiLayer to EditorMenuBar
+  - Four private methods: buildFileMenu(), buildEditMenu(), buildSettingsMenu(), buildViewMenu()
+  - All dependencies injected via constructor
+  - ImGuiLayer reduced to lifecycle management only
+  - **Impact**: Medium - Better separation of concerns, improved testability
+
+- **StringManager Localization**: All system UI text externalized
+  - DayNightCycleSystem: 15 string keys
+  - InputSystem: 22 string keys
+  - AnimationSystem: 10 string keys
+  - DirectionalLightSystem: 13 string keys
+  - SystemsWindow: 5 string keys
+  - Total: 70+ new string keys in strings.properties and strings_fr.properties
+  - **Impact**: High - Full localization support for system UI
+
+- **Constructor Injection**: Systems receive StringManager via constructor
+  - DayNightCycleSystem: Added stringManager constructor parameter
+  - InputSystem: Added stringManager constructor parameter (4th param)
+  - AnimationSystem: Changed to primary constructor with stringManager
+  - DirectionalLightSystem: Added stringManager constructor parameter
+  - Updated LevelEditorSceneInitializer to pass StringManager
+  - Updated KoinModule.kt for InputSystem (4 params)
+  - **Impact**: Medium - Cleaner dependency injection, no KoinComponent in systems
+
+- **Window Interfaces**: All 10 dockable windows implement interfaces
+  - IWindow (no Scene): PropertiesWindow, GameViewWindow, AssetBrowserWindow, ProfilerWindow, ConsoleWindow
+  - IWindowWithScene (requires Scene): SceneHierarchyWindow, EnvironmentWindow, PhysicsTunerWindow, InputTestingWindow,
+    SystemsWindow
+  - **Impact**: Low - Type-safe window rendering
+
+### Architecture
+
+- **Systems ImGui Pattern**: Complete implementation
+  1. Systems implement imgui() with custom controls
+  2. SystemsWindow auto-discovers via SystemManager
+  3. Each system displayed in collapsing header
+  4. Enabled/disabled state visible and toggleable
+  5. Context menu for quick enable/disable
+
+- **Window Registry Pattern**: Centralized management
+  1. EditorWindow data class holds metadata
+  2. editorWindows list is single source of truth
+  3. Rendering, menus, and docking all use registry
+  4. Easy to add/remove windows (one line)
+
+- **Menu Bar Separation**: Clean architecture
+  1. EditorMenuBar owns all menu logic
+  2. ImGuiLayer owns lifecycle (init, update, destroy)
+  3. Dependencies injected via constructor
+  4. Each menu in dedicated method
+
+---
+
 ## [v0.30] - 2026-02-25: Shadow Pipeline Polish & Systems ImGui Plan
 
 ### Summary
