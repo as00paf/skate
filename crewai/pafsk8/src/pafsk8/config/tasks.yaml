@@ -1,0 +1,155 @@
+tasks:
+
+  codebase_review:
+    description: >
+      Review the existing engine codebase in its entirety. Identify
+      architectural issues, critical bugs, refactoring opportunities,
+      and unstable features. Document findings for the roadmap.
+    agents: [ tech_lead, reviewer, software_engineer, physics_engineer ]
+    dependencies: [ ]
+    parallelizable: false
+    output:
+      - "Codebase analysis report"
+      - "List of critical and unstable areas"
+    approval:
+      - po: true
+      - tech_lead: true
+    subtasks_file: "subtasks.yaml"   # Reference to subtasks
+    subtasks_key: "codebase_review"
+
+  roadmap_definition:
+    description: >
+      Define the roadmap for the engine including major features,
+      critical fixes, and refactoring priorities. Break large features
+      into small, actionable tasks for the crew.
+    agents: [ tech_lead, project_manager ]
+    dependencies: [ codebase_review ]
+    parallelizable: false
+    output:
+      - "Engine roadmap"
+      - "Task breakdown with rough estimates"
+    approval:
+      - po: true
+      - tech_lead: true
+    subtasks_file: "subtasks.yaml"
+    subtasks_key: "roadmap_definition"
+
+  feature_development:
+    description: >
+      Implement the features defined in the roadmap. Each feature must
+      be fully defined and ready for implementation. Agents will
+      autonomously create and execute sub-tasks for coding, physics,
+      and animation logic.
+    agents: [ software_engineer, physics_engineer ]
+    dependencies: [ roadmap_definition ]
+    parallelizable: true
+    output:
+      - "Implemented features"
+      - "Critical unit tests"
+    approval:
+      - po: true
+      - tech_lead: true
+      - reviewer: true
+    subtasks_file: "subtasks.yaml"
+    subtasks_key: "feature_development"
+
+  refactoring:
+    description: >
+      Refactor code for critical issues identified during reviews
+      or development. Non-critical improvements are scheduled separately.
+      Notify PM and PO of major refactoring.
+    agents: [ software_engineer, physics_engineer ]
+    dependencies: [ codebase_review ]
+    parallelizable: true
+    output:
+      - "Refactored code"
+      - "Updated documentation for stable parts"
+    approval:
+      - po: true
+      - tech_lead: true
+      - reviewer: true
+    subtasks_file: "subtasks.yaml"
+    subtasks_key: "refactoring"
+
+  code_review:
+    description: >
+      Review all code changes, enforce coding standards, and validate
+      adherence to SOLID, Clean Architecture, and project conventions.
+      Collaborate with Tech Lead for disagreements; escalate to PO if needed.
+    agents: [ reviewer ]
+    dependencies: [ feature_development, refactoring ]
+    parallelizable: true
+    output:
+      - "Code review reports"
+      - "Suggested improvements"
+    approval:
+      - tech_lead: true
+    subtasks_file: "subtasks.yaml"
+    subtasks_key: "code_review"
+
+  testing:
+    description: >
+      Test critical systems only (physics, ECS, complex algorithms). Focus
+      on high-impact areas and regression for stability. QA engineers will
+      coordinate integration testing across modules.
+    agents: [ qa_engineer ]
+    dependencies: [ feature_development, refactoring ]
+    parallelizable: true
+    output:
+      - "Test results"
+      - "Bug reports"
+    approval:
+      - tech_lead: true
+    subtasks_file: "subtasks.yaml"
+    subtasks_key: "testing"
+
+  documentation:
+    description: >
+      Write documentation only for stable and finalized parts of the engine.
+      Maintain separate sections for project, engine, and workflow.
+      Include implementation notes from UI/UX designer and PM collaboration.
+    agents: [ documentation_engineer, ui_ux_designer, project_manager ]
+    dependencies: [ feature_development, refactoring ]
+    parallelizable: true
+    output:
+      - "Stable system documentation"
+      - "UI/UX implementation notes"
+    approval:
+      - po: true
+      - tech_lead: true
+    subtasks_file: "subtasks.yaml"
+    subtasks_key: "documentation"
+
+  ui_ux_design:
+    description: >
+      Design intuitive and professional UI for engine editor tools.
+      Propose layouts, interaction patterns, and implementation hints
+      in collaboration with the PM, who will present proposals to PO.
+    agents: [ ui_ux_designer, project_manager ]
+    dependencies: [ roadmap_definition ]
+    parallelizable: true
+    output:
+      - "UI/UX design proposals"
+      - "Implementation guidance notes"
+    approval:
+      - po: true
+      - tech_lead: true
+    subtasks_file: "subtasks.yaml"
+    subtasks_key: "ui_ux_design"
+
+  integration_and_release:
+    description: >
+      Merge feature branches into master after PO approval. Perform final
+      integration testing, confirm stability, and push updates. Update CHANGELOG
+      following semver.
+    agents: [ project_manager, tech_lead, software_engineer, physics_engineer, qa_engineer, reviewer ]
+    dependencies: [ code_review, testing, documentation, ui_ux_design ]
+    parallelizable: false
+    output:
+      - "Merged master branch"
+      - "Release notes / CHANGELOG update"
+    approval:
+      - po: true
+      - tech_lead: true
+    subtasks_file: "subtasks.yaml"
+    subtasks_key: "integration_and_release"
