@@ -1,10 +1,9 @@
 # crew.py
 # Production-ready CrewAI configuration for the Skate Engine project
 
-import os
 from pathlib import Path
-from typing import List
 
+import os
 import yaml
 from crewai import Agent, Crew, Process, Task
 from crewai.agents.agent_builder.base_agent import BaseAgent
@@ -19,6 +18,7 @@ from crewai_tools import (
 )
 # ---------------- Load .env file ----------------
 from dotenv import load_dotenv
+from typing import List
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -149,7 +149,8 @@ class SkateEngineCrew:
         return Task(
             description=task_config['description'],
             expected_output=task_config['expected_output'],
-            agent=self.tech_lead()
+            agent=self.tech_lead(),
+            output_file='docs/crew_outputs/codebase_review.md'
         )
 
     @task
@@ -158,7 +159,8 @@ class SkateEngineCrew:
         return Task(
             description=task_config['description'],
             expected_output=task_config['expected_output'],
-            agent=self.project_manager()
+            agent=self.project_manager(),
+            output_file='docs/crew_outputs/roadmap.md'
         )
 
     # Note: Development tasks are in dev_tasks.yaml for separate execution

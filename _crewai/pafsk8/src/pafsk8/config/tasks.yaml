@@ -38,12 +38,12 @@ roadmap_definition:
   description: >
     Based on the codebase review, define a COMPLETE and STRUCTURED roadmap
     for the Skate Engine.
-    
+
     VERY IMPORTANT CONTEXT:
     The goal of this project is to build a HIGH-QUALITY 3D GAME ENGINE
     comparable in scope and usability to Godot, but specialized for
     skateboard games.
-    
+
     This means:
     - Strong physics integration (realistic skating mechanics)
     - Excellent animation system (Mixamo-like workflows)
@@ -51,35 +51,140 @@ roadmap_definition:
     - Extensible tooling and editor
     - Real-time iteration and debugging tools
     - Clean developer experience
-    
+
     Your responsibilities:
     - Break down the work into clear, actionable tasks
     - Prioritize tasks logically (foundations first)
     - Identify dependencies between tasks
     - Group tasks into milestones or phases
     - Avoid overly large tasks — keep them iterative
-    
+
     The roadmap MUST be actionable and usable as a development backlog.
-    
-    Output format (STRICT):
-    
-    ## Roadmap
-    
-    ### TASK-001: <Title>
-    Priority: High | Medium | Low
-    Status: Todo
-    Description: <clear implementation goal>
-    Dependencies: <optional>
-    
-    ### TASK-002: ...
-    
-    Rules:
-    - Tasks must be atomic and executable in a single development cycle
-    - Do NOT group multiple systems into one task
-    - Focus on incremental progress
-    - Include ECS, physics, rendering, tooling, UI/UX
+
+    =============================================
+    OUTPUT FORMAT (STRICT - PROFESSIONAL MARKDOWN)
+    =============================================
+
+    # 🛹 Skate Engine Development Roadmap
+
+    ## Executive Summary
+    [Brief 2-3 paragraph overview of the engine vision, current state, and roadmap strategy]
+
+    ---
+
+    ## Current State Assessment
+    ### What's Working Well
+    - [List key strengths]
+
+    ### Critical Gaps
+    - [List major missing systems]
+
+    ### Technical Debt
+    - [List key refactoring needs]
+
+    ---
+
+    ## Development Phases
+
+    ### Phase 1: Foundation [Estimated Timeline]
+    [Brief description of phase goals]
+
+    | ID | Task | Priority | Effort | Dependencies | Status |
+    |----|------|----------|--------|--------------|--------|
+    | TASK-001 | [Task Title] | 🔴 High | [S/M/L] | [None/Task IDs] | ⬜ Todo |
+    | TASK-002 | [Task Title] | 🟡 Medium | [S/M/L] | [TASK-001] | ⬜ Todo |
+
+    **Phase 1 Deliverables:**
+    - [List concrete deliverables]
+
+    ### Phase 2: Core Systems [Estimated Timeline]
+    [Brief description of phase goals]
+
+    | ID | Task | Priority | Effort | Dependencies | Status |
+    |----|------|----------|--------|--------------|--------|
+    | TASK-0XX | [Task Title] | 🔴 High | [S/M/L] | [Phase 1 tasks] | ⬜ Todo |
+
+    **Phase 2 Deliverables:**
+    - [List concrete deliverables]
+
+    ### Phase 3: Polish & Tooling [Estimated Timeline]
+    [Brief description of phase goals]
+
+    | ID | Task | Priority | Effort | Dependencies | Status |
+    |----|------|----------|--------|--------------|--------|
+    | TASK-0XX | [Task Title] | 🟢 Low | [S/M/L] | [Previous tasks] | ⬜ Todo |
+
+    **Phase 3 Deliverables:**
+    - [List concrete deliverables]
+
+    ---
+
+    ## Task Details
+
+    ### TASK-001: [Descriptive Title]
+    **Priority:** 🔴 High | **Effort:** [Small/Medium/Large] | **Phase:** [1/2/3]
+
+    **Description:**
+    [Clear, detailed description of what needs to be implemented]
+
+    **Acceptance Criteria:**
+    - [ ] [Specific, testable criterion 1]
+    - [ ] [Specific, testable criterion 2]
+    - [ ] [Specific, testable criterion 3]
+
+    **Technical Notes:**
+    [Any relevant technical considerations, architecture notes, or implementation hints]
+
+    **Dependencies:** [None / TASK-XXX, TASK-YYY]
+
+    ---
+
+    ### TASK-002: [Descriptive Title]
+    [Same format as above]
+
+    ---
+
+    ## Risk Assessment
+    | Risk | Likelihood | Impact | Mitigation |
+    |------|------------|--------|------------|
+    | [Risk description] | [Low/Med/High] | [Low/Med/High] | [Mitigation strategy] |
+
+    ---
+
+    ## Appendix
+
+    ### Architecture Diagrams
+    [Reference to any architecture diagrams or link to documentation]
+
+    ### References
+    - [Link to relevant documentation, libraries, or resources]
+
+    ---
+
+    *Last Updated: [Date]*
+    *Roadmap Version: 1.0*
+
+    =============================================
+    FORMATTING RULES
+    =============================================
+    - Use proper Markdown formatting with headers, tables, and lists
+    - Include emoji indicators for priority (🔴 High, 🟡 Medium, 🟢 Low)
+    - Include status indicators (⬜ Todo, 🔄 In Progress, ✅ Done)
+    - Use tables for task summaries
+    - Use checkboxes for acceptance criteria
+    - Separate sections with horizontal rules (---)
+    - Keep task titles descriptive but concise (5-10 words)
+    - Each task should be atomic (single responsibility)
+    - Include effort estimates (Small <4h, Medium 1-2 days, Large >2 days)
 
   expected_output: >
-    A structured roadmap formatted as a prioritized backlog of tasks
-    ready for iterative execution in the markdown format outputted to a file called roadmap.md.
+    A professional, well-formatted roadmap document in Markdown format with:
+    - Executive summary
+    - Current state assessment
+    - Phased development plan with task tables
+    - Detailed task descriptions with acceptance criteria
+    - Risk assessment
+    - Proper Markdown formatting (headers, tables, checkboxes, emoji indicators)
+    
+    The output should be production-ready and suitable for sharing with stakeholders.
   agent: project_manager
