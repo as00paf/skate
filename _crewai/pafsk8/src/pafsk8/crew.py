@@ -15,12 +15,7 @@ from crewai_tools import (
     SerperDevTool,
     ScrapeWebsiteTool,
     CodeInterpreterTool,
-    MDXSearchTool,
-    PDFSearchTool,
-    GithubSearchTool,
-    JSONSearchTool,
-    XMLSearchTool,
-    CodeDocsSearchTool,
+    DirectoryReadTool,
 )
 # ---------------- Load .env file ----------------
 from dotenv import load_dotenv
@@ -28,7 +23,8 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 # ---------------- Validate required environment variables ----------------
-required_vars = ["OPENAI_API_KEY", "MODEL", "FAST_MODEL", "SMART_MODEL", "GITHUB_TOKEN", "SERPER_API_KEY"]
+# Only validate variables that are actually required
+required_vars = ["MODEL", "FAST_MODEL", "SMART_MODEL"]
 for var in required_vars:
     if not os.getenv(var):
         raise ValueError(f"Required environment variable {var} not set. Check your .env file.")
@@ -40,10 +36,14 @@ CONFIG_FOLDER = CREW_ROOT / "pafsk8" / "config"
 AGENTS_FILE = CONFIG_FOLDER / "agents.yaml"
 TASKS_FILE = CONFIG_FOLDER / "tasks.yaml"
 
+# Skate project root (3 levels up from crewai/pafsk8)
+SKATE_PROJECT_ROOT = CREW_ROOT.parent.parent.parent
+
 # Knowledge base path from .env
 KNOWLEDGE_BASE = os.getenv("KNOWLEDGE_BASE_PATH", str(CREW_ROOT / "knowledge"))
 
 # ---------------- File Tools ----------------
+# Configure file tools to work in the skate project root
 file_read_tool = FileReadTool()
 file_write_tool = FileWriterTool()
 
@@ -51,19 +51,7 @@ file_write_tool = FileWriterTool()
 serper_dev_tool = SerperDevTool()
 scrape_website_tool = ScrapeWebsiteTool()
 code_interpreter_tool = CodeInterpreterTool()
-
-# ---------------- Documentation Tools ----------------
-mdx_search_tool = MDXSearchTool()
-pdf_search_tool = PDFSearchTool()
-
-# ---------------- Code & Repository Tools ----------------
-github_token = os.getenv("GITHUB_TOKEN")
-if not github_token:
-    raise ValueError("GITHUB_TOKEN is empty or not set. Check your .env file.")
-github_search_tool = GithubSearchTool(gh_token=github_token)
-json_search_tool = JSONSearchTool()
-xml_search_tool = XMLSearchTool()
-code_docs_search_tool = CodeDocsSearchTool()
+directory_read_tool = DirectoryReadTool()
 
 
 # ---------------- Load YAML Configs with env var interpolation ----------------
@@ -95,7 +83,7 @@ class SkateEngineCrew:
         return Agent(
             config=agents_config['tech_lead'],
             verbose=True,
-            tools=[file_read_tool, serper_dev_tool, scrape_website_tool, github_search_tool, code_docs_search_tool]
+            tools=[file_read_tool, directory_read_tool, serper_dev_tool, scrape_website_tool]
         )
 
     @agent
@@ -103,8 +91,7 @@ class SkateEngineCrew:
         return Agent(
             config=agents_config['software_engineer'],
             verbose=True,
-            tools=[file_read_tool, file_write_tool, scrape_website_tool, code_interpreter_tool, github_search_tool,
-                   json_search_tool, xml_search_tool, code_docs_search_tool]
+            tools=[file_read_tool, file_write_tool, directory_read_tool, scrape_website_tool, code_interpreter_tool]
         )
 
     @agent
@@ -112,8 +99,7 @@ class SkateEngineCrew:
         return Agent(
             config=agents_config['physics_engineer'],
             verbose=True,
-            tools=[file_read_tool, file_write_tool, serper_dev_tool, code_interpreter_tool, github_search_tool,
-                   code_docs_search_tool]
+            tools=[file_read_tool, file_write_tool, directory_read_tool, serper_dev_tool, code_interpreter_tool]
         )
 
     @agent
@@ -121,7 +107,7 @@ class SkateEngineCrew:
         return Agent(
             config=agents_config['reviewer'],
             verbose=True,
-            tools=[file_read_tool, mdx_search_tool, json_search_tool, xml_search_tool]
+            tools=[file_read_tool]
         )
 
     @agent
@@ -137,8 +123,7 @@ class SkateEngineCrew:
         return Agent(
             config=agents_config['documentation_engineer'],
             verbose=True,
-            tools=[file_read_tool, file_write_tool, scrape_website_tool, mdx_search_tool, pdf_search_tool,
-                   code_docs_search_tool]
+            tools=[file_read_tool, file_write_tool, scrape_website_tool]
         )
 
     @agent

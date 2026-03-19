@@ -1,18 +1,27 @@
 codebase_review:
   description: >
     Analyze the current Skate Engine project in detail.
-    
+
+    PROJECT LOCATION:
+    The Kotlin source code is located at:
+    C:\workspace\kotlin_workspace\skate\src
+
+    Key directories to explore:
+    - src/main/kotlin/com/pafoid/skate/ - Main engine code
+    - src/main/kotlin/com/pafoid/skate/engine/ - Engine components
+    - src/main/kotlin/com/pafoid/skate/skateboard/ - Skateboard logic
+
     The engine is a Kotlin-based 3D game engine using:
     - ECS architecture
     - Bullet physics
     - Custom rendering pipeline
-    
+
     Your goal:
     - Understand the current architecture and systems
     - Identify what is implemented vs missing
     - Evaluate code quality, modularity, and scalability
     - Detect technical debt and architectural risks
-    
+
     Output:
     - Clear summary of current state
     - List of strengths and weaknesses
@@ -72,5 +81,5 @@ roadmap_definition:
 
   expected_output: >
     A structured roadmap formatted as a prioritized backlog of tasks
-    ready for iterative execution.
+    ready for iterative execution in the markdown format outputted to a file called roadmap.md.
   agent: project_manager
