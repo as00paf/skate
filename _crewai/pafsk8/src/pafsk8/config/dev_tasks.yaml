@@ -1,0 +1,111 @@
+tasks:
+  task_selection:
+    description: >
+      Read the roadmap document located in:
+      docs/crew_knowledge_base/roadmap.md
+
+      Your goal:
+      - Identify all tasks with Status: Todo
+      - Select the HIGHEST PRIORITY task
+      - If multiple tasks share the same priority, choose the one with
+        satisfied dependencies or foundational importance
+
+      Output:
+      - The selected task ID and full description
+      - Justification for why it was selected
+
+    expected_output: >
+      A clear selection of the next task to execute, including reasoning.
+
+
+  feature_development:
+    description: >
+      Implement the selected task from the roadmap.
+
+      Guidelines:
+      - Focus ONLY on the selected task
+      - Do NOT attempt to implement multiple tasks
+      - Respect existing architecture (ECS, physics, rendering)
+      - Keep changes modular and maintainable
+      - Avoid overengineering
+
+      If the task involves:
+      - ECS → respect system/component separation
+      - Physics → ensure consistency with Bullet integration
+      - Rendering → maintain performance and clarity
+      - UI/UX → ensure usability and clarity
+
+      Output:
+      - Implementation plan
+      - Code suggestions or changes
+      - Explanation of design decisions
+
+    expected_output: >
+      A clear implementation plan with code-level details for the selected task.
+
+
+  code_review:
+    description: >
+      Review the proposed implementation critically.
+
+      Your goal:
+      - Ensure clean architecture and SOLID principles
+      - Detect bugs, edge cases, and performance issues
+      - Validate ECS and system boundaries
+      - Ensure consistency with engine vision
+
+      If issues are found:
+      - Suggest improvements
+      - Refine the implementation
+
+    expected_output: >
+      A thorough code review with improvements and validation.
+
+
+  testing:
+    description: >
+      Define a testing strategy for the implemented feature.
+
+      Focus on:
+      - Critical logic (physics, ECS interactions)
+      - Edge cases
+      - Integration points
+
+      Avoid:
+      - Trivial or low-value tests
+
+    expected_output: >
+      A focused and practical testing plan.
+
+
+  documentation:
+    description: >
+      Document the implemented feature.
+
+      Include:
+      - Purpose of the feature
+      - How it works
+      - How to use it
+      - Any constraints or limitations
+
+      Documentation should be:
+      - Clear
+      - Concise
+      - Developer-focused
+
+    expected_output: >
+      Clean documentation ready to be added to the project.
+
+
+  integration_and_update_roadmap:
+    description: >
+      Finalize the task execution.
+
+      Responsibilities:
+      - Mark the task as DONE in roadmap.md
+      - Update any related tasks if needed
+      - Add new tasks if new work emerged
+      - Ensure roadmap remains consistent and up-to-date
+
+    expected_output: >
+      Updated roadmap with the completed task marked as DONE and any necessary adjustments.

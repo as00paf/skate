@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 import sys
 import warnings
-
 from datetime import datetime
+from pathlib import Path
 
-from pafsk8.crew import Pafsk8
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent.parent / ".env")
+
+from pafsk8.crew import SkateEngineCrew
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
+
 
 # This main file is intended to be a way for you to run your
 # crew locally, so refrain from adding unnecessary logic into this file.
@@ -23,7 +28,7 @@ def run():
     }
 
     try:
-        Pafsk8().crew().kickoff(inputs=inputs)
+        SkateEngineCrew().crew().kickoff(inputs=inputs)
     except Exception as e:
         raise Exception(f"An error occurred while running the crew: {e}")
 
@@ -37,20 +42,22 @@ def train():
         'current_year': str(datetime.now().year)
     }
     try:
-        Pafsk8().crew().train(n_iterations=int(sys.argv[1]), filename=sys.argv[2], inputs=inputs)
+        SkateEngineCrew().crew().train(n_iterations=int(sys.argv[1]), filename=sys.argv[2], inputs=inputs)
 
     except Exception as e:
         raise Exception(f"An error occurred while training the crew: {e}")
+
 
 def replay():
     """
     Replay the crew execution from a specific task.
     """
     try:
-        Pafsk8().crew().replay(task_id=sys.argv[1])
+        SkateEngineCrew().crew().replay(task_id=sys.argv[1])
 
     except Exception as e:
         raise Exception(f"An error occurred while replaying the crew: {e}")
+
 
 def test():
     """
@@ -62,10 +69,11 @@ def test():
     }
 
     try:
-        Pafsk8().crew().test(n_iterations=int(sys.argv[1]), eval_llm=sys.argv[2], inputs=inputs)
+        SkateEngineCrew().crew().test(n_iterations=int(sys.argv[1]), eval_llm=sys.argv[2], inputs=inputs)
 
     except Exception as e:
         raise Exception(f"An error occurred while testing the crew: {e}")
+
 
 def run_with_trigger():
     """
@@ -88,7 +96,7 @@ def run_with_trigger():
     }
 
     try:
-        result = Pafsk8().crew().kickoff(inputs=inputs)
+        result = SkateEngineCrew().crew().kickoff(inputs=inputs)
         return result
     except Exception as e:
         raise Exception(f"An error occurred while running the crew with trigger: {e}")

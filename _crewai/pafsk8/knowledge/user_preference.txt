@@ -1,5 +1,5 @@
 User name is Alex.
-User is an Mobile Engineer.
+User is an Mobile Engineer experienced with Kotlin.
 User is interested in Skateboarding.
 User is based in Montreal, Quebec.
 

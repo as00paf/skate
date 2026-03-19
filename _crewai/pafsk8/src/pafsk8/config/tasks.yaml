@@ -1,0 +1,76 @@
+codebase_review:
+  description: >
+    Analyze the current Skate Engine project in detail.
+    
+    The engine is a Kotlin-based 3D game engine using:
+    - ECS architecture
+    - Bullet physics
+    - Custom rendering pipeline
+    
+    Your goal:
+    - Understand the current architecture and systems
+    - Identify what is implemented vs missing
+    - Evaluate code quality, modularity, and scalability
+    - Detect technical debt and architectural risks
+    
+    Output:
+    - Clear summary of current state
+    - List of strengths and weaknesses
+    - Identified gaps in engine capabilities
+    - Readiness level (early prototype, mid-stage, etc.)
+
+  expected_output: >
+    A structured analysis of the engine including architecture review,
+    missing systems, and key risks.
+  agent: tech_lead
+
+
+roadmap_definition:
+  description: >
+    Based on the codebase review, define a COMPLETE and STRUCTURED roadmap
+    for the Skate Engine.
+    
+    VERY IMPORTANT CONTEXT:
+    The goal of this project is to build a HIGH-QUALITY 3D GAME ENGINE
+    comparable in scope and usability to Godot, but specialized for
+    skateboard games.
+    
+    This means:
+    - Strong physics integration (realistic skating mechanics)
+    - Excellent animation system (Mixamo-like workflows)
+    - Modular ECS-based architecture
+    - Extensible tooling and editor
+    - Real-time iteration and debugging tools
+    - Clean developer experience
+    
+    Your responsibilities:
+    - Break down the work into clear, actionable tasks
+    - Prioritize tasks logically (foundations first)
+    - Identify dependencies between tasks
+    - Group tasks into milestones or phases
+    - Avoid overly large tasks — keep them iterative
+    
+    The roadmap MUST be actionable and usable as a development backlog.
+    
+    Output format (STRICT):
+    
+    ## Roadmap
+    
+    ### TASK-001: <Title>
+    Priority: High | Medium | Low
+    Status: Todo
+    Description: <clear implementation goal>
+    Dependencies: <optional>
+    
+    ### TASK-002: ...
+    
+    Rules:
+    - Tasks must be atomic and executable in a single development cycle
+    - Do NOT group multiple systems into one task
+    - Focus on incremental progress
+    - Include ECS, physics, rendering, tooling, UI/UX
+
+  expected_output: >
+    A structured roadmap formatted as a prioritized backlog of tasks
+    ready for iterative execution.
+  agent: project_manager
