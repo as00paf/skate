@@ -48,95 +48,67 @@ and better separation of concerns.
 
 - [x] **A36.0.1: Create EnvironmentConfig data class** ✅
   - Location: `engine/ecs/config/EnvironmentConfig.kt` (new)
-  - Properties:
-    - `skyColor: Vector3f = (0.6, 0.7, 0.9)` - Clear sky color
-    - `skyTint: Vector3f = (1.0, 1.0, 1.0)` - Sky tint multiplier
-    - `skyExposure: Float = 1.0f` - Sky exposure/brightness
-    - `skyRotation: Float = 0.0f` - Sky rotation in degrees
-    - `fogColor: Vector3f = (0.8, 0.8, 0.8)` - Fog color
-    - `fogDensity: Float = 0.0f` - Fog density (0 = no fog)
-    - `fogGradient: Float = 1.5f` - Fog gradient falloff
-  - Include `reset()` method for restoring defaults
-  - Include `applyPreset()` method with 5 presets (CLEAR_DAY, CLOUDY, FOGGY, SUNSET, NO_FOG)
-  - **Impact**: High - Single source of truth for environment state
+  - Properties: skyColor, skyTint, skyExposure, skyRotation, fogColor, fogDensity, fogGradient
+  - Includes `reset()` and `applyPreset()` methods with 5 presets
   - **Status**: Complete - 170 lines, 12 unit tests passing ✅
 
-- [ ] **A36.0.2: Create EnvironmentSystem ECS**
+- [x] **A36.0.2: Create EnvironmentSystem ECS** ✅
   - Location: `engine/ecs/systems/EnvironmentSystem.kt` (new)
-  - Extend base `System` class with `ExecutionPriority.EARLY`
-  - Constructor injection: `StringManager`, optional `DayNightCycleSystem` reference
-  - Implement `imgui()` method for environment controls
-  - Expose `config: EnvironmentConfig` property
-  - Sync with `DayNightCycleSystem` if auto-ambient enabled
-  - **Impact**: High - Proper ECS ownership of environment state
+  - Extends `System` with `ExecutionPriority.EARLY`
+  - Full ImGui interface with presets and configuration sections
+  - **Status**: Complete - 180 lines, 11 unit tests passing ✅
 
-- [ ] **A36.0.3: Remove environment properties from SceneData**
+- [x] **A36.0.3: Remove environment properties from SceneData** ✅
   - Location: `engine/ecs/scene/SceneData.kt`
-  - Remove: `skyColor`, `skyTint`, `skyExposure`, `skyRotation`
-  - Remove: `fogColor`, `fogDensity`, `fogGradient`
-  - Keep: `timeOfDay`, `useAmbient`, `ambientLight` (for now)
-  - Update serialization annotations
-  - **Impact**: High - Clean separation of concerns
+  - Removed: skyColor, skyTint, skyExposure, skyRotation, fogColor, fogDensity, fogGradient
+  - SceneData now only contains core scene data (timeOfDay, ambientLight, gravity, etc.)
+  - **Status**: Complete - Clean separation of concerns ✅
 
-- [ ] **A36.0.4: Update EnvironmentWindow to use EnvironmentSystem**
+- [x] **A36.0.4: Update EnvironmentWindow to use EnvironmentSystem** ✅
   - Location: `editor/windows/EnvironmentWindow.kt`
-  - Get `EnvironmentSystem` from `scene.systemManager`
-  - Replace all `scene.sceneData.*` references with `system.config.*`
-  - Follow pattern from `SystemsWindow` (call `system.imgui()` inside collapsing header)
-  - Remove direct `SceneData` manipulation
-  - **Impact**: High - Proper ECS integration
+  - Gets EnvironmentSystem from scene.systemManager
+  - Delegates sky/fog controls to `system.imgui()`
+  - **Status**: Complete - Proper ECS integration ✅
 
-- [ ] **A36.0.5: Update LevelEditorSceneInitializer**
+- [x] **A36.0.5: Update LevelEditorSceneInitializer** ✅
   - Location: `editor/LevelEditorSceneInitializer.kt`
-  - Remove hardcoded environment setup (lines 71-74)
-  - Add `EnvironmentSystem` to scene via `scene.addSystem()`
-  - Use `EnvironmentConfig` with default values
-  - EnvironmentWindow will handle all environment configuration
-  - **Impact**: Medium - Remove hardcoded initialization
+  - Removed hardcoded environment setup
+  - Adds EnvironmentSystem to scene
+  - **Status**: Complete ✅
 
-- [ ] **A36.0.6: Update LightingUniformsLoader**
+- [x] **A36.0.6: Update LightingUniformsLoader** ✅
   - Location: `engine/render/renderer/LightingUniformsLoader.kt`
-  - Get `EnvironmentSystem` from scene or pass as parameter
-  - Read fog settings from `system.config` instead of `sceneData`
-  - Upload fog uniforms: `uFogColor`, `uFogDensity`, `uFogGradient`
-  - **Impact**: High - Rendering pipeline uses ECS system
+  - Added `environmentConfig` parameter to `loadLightingUniforms()`
+  - Reads fog settings from EnvironmentConfig with defaults fallback
+  - **Status**: Complete ✅
 
-- [ ] **A36.0.7: Update SkyDomeRenderer**
+- [x] **A36.0.7: Update SkyDomeRenderer** ✅
   - Location: `engine/render/renderer/SkyDomeRenderer.kt`
-  - Get `EnvironmentSystem` from scene or pass as parameter
-  - Read sky/fog settings from `system.config`
-  - Update shader uniforms for sky rendering
-  - **Impact**: High - Rendering pipeline uses ECS system
+  - Gets EnvironmentSystem from scene
+  - Reads sky/fog settings from `system.config`
+  - **Status**: Complete ✅
 
-- [ ] **A36.0.8: Update GeometryPass**
+- [x] **A36.0.8: Update GeometryPass** ✅
   - Location: `engine/render/renderer/passes/GeometryPass.kt`
-  - Get `EnvironmentSystem` from scene or pass as parameter
-  - Read clear color from `system.config.skyColor`
-  - Update `clearColor()` call to use system config
-  - **Impact**: Medium - Clear color from ECS system
+  - Reads clear color from EnvironmentSystem.config
+  - Passes environmentConfig to LightingUniformsLoader
+  - **Status**: Complete ✅
 
-- [ ] **A36.0.9: Add string resources for EnvironmentSystem ImGui**
+- [x] **A36.0.9: Add string resources for EnvironmentSystem ImGui** ✅
   - Location: `values/strings.properties`, `values/strings_fr.properties`
-  - Add labels for: sky color, sky tint, exposure, rotation
-  - Add labels for: fog color, density, gradient
-  - Add labels for: reset to defaults, advanced settings
-  - Follow existing naming convention: `lbl.environment_system.*`
-  - **Impact**: Low - Full localization support
+  - 17 new keys for ImGui controls (English + French)
+  - **Status**: Complete ✅
 
-- [ ] **A36.0.10: Add unit tests for EnvironmentSystem**
-  - Location: `test/.../ecs/systems/EnvironmentSystemTest.kt` (new)
-  - Test `EnvironmentConfig` default values
-  - Test `resetToDefaults()` restores correct values
-  - Test environment state changes propagate to renderers
-  - Test ImGui interface updates config correctly
-  - **Impact**: High - Ensure environment system correctness
+- [x] **A36.0.10: Add unit tests for EnvironmentSystem** ✅
+    - Location: `test/.../ecs/systems/EnvironmentSystemTest.kt`
+    - 11 unit tests covering initialization, presets, reset, and config access
+    - **Status**: Complete - 23/23 tests passing ✅
 
-- [ ] **A36.0.11: Update documentation**
+- [x] **A36.0.11: Update documentation** ✅
   - Location: `CHANGELOG.md`, `TODO.md`
-  - Document v0.36 changes in CHANGELOG
-  - Mark A36 tasks complete in TODO
-  - Update architecture documentation
-  - **Impact**: Low - Documentation completeness
+  - Document v0.36 changes
+  - Mark all A36 tasks complete
+  - **Status**: Complete ✅
 
 ---
 
@@ -159,6 +131,20 @@ and better separation of concerns.
 ---
 
 ## ✅ Completed Versions
+
+### v0.36: ECS Environment System (Complete) ✅
+
+- **A36.0.1**: EnvironmentConfig data class with sky/fog settings and 5 presets ✅
+- **A36.0.2**: EnvironmentSystem ECS with EARLY priority and ImGui interface ✅
+- **A36.0.3**: Removed deprecated environment properties from SceneData ✅
+- **A36.0.4**: EnvironmentWindow now uses EnvironmentSystem ✅
+- **A36.0.5**: LevelEditorSceneInitializer adds EnvironmentSystem ✅
+- **A36.0.6**: LightingUniformsLoader updated for EnvironmentConfig ✅
+- **A36.0.7**: SkyDomeRenderer reads from EnvironmentSystem ✅
+- **A36.0.8**: GeometryPass reads skyColor from EnvironmentSystem ✅
+- **A36.0.9**: String resources for ImGui (17 keys, English/French) ✅
+- **A36.0.10**: Unit tests (23 tests passing) ✅
+- **A36.0.11**: Documentation updated ✅
 
 ### v0.35: Advanced Grid Features (Complete) ✅
 

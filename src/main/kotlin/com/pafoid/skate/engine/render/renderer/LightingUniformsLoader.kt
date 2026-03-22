@@ -57,10 +57,10 @@ class LightingUniformsLoader {
             // This will be set by the caller based on actual shadow map resolution
         }
 
-        // Fog - use EnvironmentConfig if available, otherwise fallback to SceneData
-        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentConfig?.fogColor ?: sceneData.fogColor)
-        shader.uploadFloat(Uniforms.FOG_DENSITY, environmentConfig?.fogDensity ?: sceneData.fogDensity)
-        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentConfig?.fogGradient ?: sceneData.fogGradient)
+        // Fog - use EnvironmentConfig if available, otherwise use defaults
+        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentConfig?.fogColor ?: Vector3f(0.8f, 0.8f, 0.8f))
+        shader.uploadFloat(Uniforms.FOG_DENSITY, environmentConfig?.fogDensity ?: 0.0f)
+        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentConfig?.fogGradient ?: 1.5f)
     }
 
     /**

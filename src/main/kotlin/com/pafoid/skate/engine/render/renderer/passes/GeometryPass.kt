@@ -76,7 +76,7 @@ class GeometryPass(
 
         // Clear with sky color from EnvironmentSystem
         val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
-        val skyColor = environmentSystem?.config?.skyColor ?: scene.sceneData.skyColor
+        val skyColor = environmentSystem?.config?.skyColor ?: Vector3f(0.6f, 0.7f, 0.9f)
         clearColor(skyColor)
 
         val camera = scene.camera
