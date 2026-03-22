@@ -1,4 +1,5 @@
 cleanup
+
 - cube vertices in pose gizmo
 - jobsystem.runio for file loading
 - FileManager to save and load files, scene.loadFromFile
@@ -12,9 +13,9 @@ For the next phase of the project, here is what I would like to do :
 
 Create a todo list in a markdown format so I can copy and paste it for this next phase.
 
-  Bugs
-- Fix the scale translate arrows changing size when the camera moves.
+Bugs
 
+- Fix the scale translate arrows changing size when the camera moves.
 
 Reports
 
@@ -45,8 +46,8 @@ Reports
 - [ ] **Interpolation Logic**: Implement Slerp (Spherical Linear Interpolation) for bone rotations to ensure smooth
   movement between keyframes.
 - [ ] **Keyframe Manipulation**:
-  - [ ] Add/Delete keyframes at the current timeline position.
-  - [ ] Drag existing keyframe markers to adjust animation timing.
+    - [ ] Add/Delete keyframes at the current timeline position.
+    - [ ] Drag existing keyframe markers to adjust animation timing.
 - [ ] **Onion Skinning**: Render semi-transparent "ghost" meshes of the previous and next keyframes to visualize the
   motion arc.
 
