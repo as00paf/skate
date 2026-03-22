@@ -4,6 +4,112 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.34] - 2026-03-22: Godot-style Grid Implementation
+
+### Summary
+
+Completed the Godot-style 3D grid system with dynamic extent, LOD transitions, ImGui configuration, and performance
+optimizations.
+The grid now follows the camera with an infinite scrolling effect, proper major/minor line distinction, and origin axes
+fixed at world origin.
+
+### Added
+
+- **GridConfig data class**: Mutable configuration for grid system (`engine/ecs/systems/GridLines.kt`)
+  - `majorStep: Float = 1.0f` - Spacing between major grid lines
+  - `minorStep: Float = 0.1f` - Spacing between minor grid lines
+  - `majorColor: Vector3f = (0.4, 0.4, 0.4)` - Godot-style dark gray
+  - `minorColor: Vector3f = (0.25, 0.25, 0.25)` - Lighter gray for subtlety
+  - `minExtent: Float = 10.0f` - Minimum grid extent when camera is close
+  - `maxExtent: Float = 100.0f` - Maximum grid extent when camera is far
+  - `lodCloseDistance: Float = 5.0f` - Distance where minor lines start fading
+  - `lodFarDistance: Float = 20.0f` - Distance where minor lines are fully hidden
+  - `showGrid: Boolean = true` - Toggle grid visibility
+  - `showOriginAxes: Boolean = true` - Toggle origin axes visibility
+  - `gridYOffset: Float = -0.1f` - Y offset to prevent Z-fighting
+  - `resetToDefaults()` method for restoring default values
+  - **Impact**: High - Full runtime configuration of grid system
+
+- **GridLines.imgui()**: Complete ImGui configuration panel
+  - Visibility toggles (Show Grid, Show Origin Axes)
+  - Grid spacing sliders (Major Step, Minor Step)
+  - LOD distance sliders (Close/Far)
+  - Extent settings (Min/Max)
+  - Color pickers (Major/Minor line colors)
+  - Z-fighting offset slider
+  - Reset to Defaults button
+  - **Impact**: High - Real-time grid tuning without code changes
+
+- **String resources**: 20+ localized strings for grid UI (`values/strings.properties`, `values/strings_fr.properties`)
+  - lbl.grid.header, lbl.grid.show_grid, lbl.grid.show_origin_axes
+  - lbl.grid.spacing, lbl.grid.major_step, lbl.grid.minor_step
+  - lbl.grid.lod_settings, lbl.grid.lod_close, lbl.grid.lod_far
+  - lbl.grid.extent_settings, lbl.grid.min_extent, lbl.grid.max_extent
+  - lbl.grid.colors, lbl.grid.major_color, lbl.grid.minor_color
+  - lbl.grid.z_fighting, lbl.grid.y_offset, lbl.grid.reset_to_defaults
+  - **Impact**: Low - Full localization support for grid UI
+
+- **Unit tests**: 20+ comprehensive tests (`test/.../GridLinesTest.kt`)
+  - Test dynamic extent calculation (6 tests)
+  - Test LOD alpha interpolation (5 tests)
+  - Test major/minor line detection (3 tests)
+  - Test smoothstep interpolation (3 tests)
+  - Test GridConfig default values, reset, and custom values (3 tests)
+  - **Impact**: High - Ensures grid calculations are correct and stable
+
+### Changed
+
+- **GridLines performance optimizations**: Reduced per-frame allocations (`engine/ecs/systems/GridLines.kt`)
+  - Added cached Vector3f objects (lineStart, lineEnd) to reuse instead of allocate
+  - Cached constants: tanHalfFov, padding, axis colors (xAxisColor, yAxisColor, zAxisColor)
+  - Pre-computed line endpoints (xMin, xMax, zMin, zMax) to avoid repeated calculations
+  - Added frustum culling: skips lines outside camera view (extent * 1.2f margin)
+  - Optimized calculateGridExtent() and calculateMinorLineAlpha() to use config directly
+  - **Impact**: Medium - Reduced GC pressure in editorUpdate()
+
+- **Z-fighting offset**: Changed default from -0.001f to -0.1f
+  - Grid now renders further below world origin to avoid ground plane conflicts
+  - Configurable via ImGui (-1.0 to 0.0 range)
+  - Added KDoc explaining Z-fighting prevention
+  - **Impact**: Medium - Eliminates grid/ground Z-fighting artifacts
+
+- **GridLines constructor**: Added stringManager dependency
+  - Updated LevelEditorSceneInitializer to pass stringManager
+  - Follows pattern from other systems (DayNightCycleSystem, InputSystem, etc.)
+  - **Impact**: Low - Required for ImGui localization
+
+- **Origin axes colors**: Fixed to match Godot convention
+  - X-axis: Red (1, 0.2, 0.2) - already correct
+  - Y-axis: Green (0.2, 1, 0.2) - was missing, now rendered vertically
+  - Z-axis: Blue (0.2, 0.2, 1) - was using green, now correct
+  - Axes fixed at world origin (0, 0, 0), not following camera
+  - Dynamic length based on camera distance (5-20 units, fades at 50 units)
+  - **Impact**: High - Correct spatial orientation for users
+
+### Architecture
+
+- **Grid System Pattern**: Complete Godot-style implementation
+  1. Dynamic extent: `extent = cameraDistance * tan(fov/2) * padding`
+  2. Infinite scrolling: grid center snaps to major step intervals
+  3. LOD system: smoothstep interpolation for minor line alpha
+  4. Origin axes: fixed at (0,0,0) with dynamic length
+  5. ImGui integration: full configuration panel in SystemsWindow
+  6. Performance: cached vectors, frustum culling, pre-computed endpoints
+
+### Verified
+
+- **Grid Rendering**: Full integration verification
+  - ✅ Dynamic extent fills viewport at any camera height
+  - ✅ LOD transitions smooth (no popping) with smoothstep interpolation
+  - ✅ Origin axes fixed at world origin with correct colors (RGB = XYZ)
+  - ✅ Godot-style colors (major: 0.4, minor: 0.25)
+  - ✅ Z-fighting offset prevents ground plane conflicts
+  - ✅ ImGui panel functional with all controls
+  - ✅ String localization (English/French)
+  - ✅ 20/20 unit tests passing
+
+---
+
 ## [v0.31] - 2026-02-25: Systems ImGui Integration & ImGuiLayer Refactoring
 
 ### Summary

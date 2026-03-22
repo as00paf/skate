@@ -71,74 +71,73 @@ origin axes positioning.
   - Consider alpha blending if DebugRenderer supports it
   - Test visibility against various background colors
 
-- [ ] **A34.0.5: Add GridConfig data class for settings**
+- [x] **A34.0.5: Add GridConfig data class for settings**
   - Location: `engine/ecs/systems/GridLines.kt`
-    ```kotlin
-    data class GridConfig(
-        val majorStep: Float = 1.0f,
-        val minorStep: Float = 0.1f,
-        val majorColor: Vector3f = Vector3f(0.4f, 0.4f, 0.4f),
-        val minorColor: Vector3f = Vector3f(0.25f, 0.25f, 0.25f),
-        val minExtent: Float = 10.0f,
-        val maxExtent: Float = 100.0f,
-        val lodClose: Float = 5.0f,
-        val lodFar: Float = 20.0f,
-        val showGrid: Boolean = true,
-        val showOriginAxes: Boolean = true
-    )
-    ```
-  - Pass config via constructor injection
-  - Use default values for backward compatibility
+  - Implemented mutable `GridConfig` data class with all configuration options
+  - Added `resetToDefaults()` method for restoring default values
+  - All properties are mutable vars for ImGui editing
+  - Default values: majorStep=1.0, minorStep=0.1, gridYOffset=-0.1f
+  - **Status**: Complete ✅
 
-- [ ] **A34.0.6: Add ImGui configuration panel**
-  - Location: `GridLines.imgui()` method (new)
-  - Implement `imgui()` method (follow System pattern from v0.31)
-  - Settings to expose:
-    - Grid visibility toggle
-    - Origin axes visibility toggle
-    - Major/minor step size sliders
-    - LOD distance sliders
+- [x] **A34.0.6: Add ImGui configuration panel**
+  - Location: `GridLines.imgui()` method
+  - Implemented full ImGui panel with:
+    - Visibility toggles (Show Grid, Show Origin Axes)
+    - Grid spacing sliders (Major Step, Minor Step)
+    - LOD distance sliders (Close/Far)
+    - Extent settings (Min/Max)
+    - Color pickers (Major/Minor line colors)
+    - Z-fighting offset slider
+    - Reset to Defaults button
+  - All strings localized (strings.properties, strings_fr.properties)
+  - Added stringManager dependency via constructor injection
+  - **Status**: Complete ✅
     - Color pickers for major/minor lines
     - Reset to defaults button
   - Register with SystemsWindow (follow DayNightCycleSystem pattern)
   - Add string resources for all labels (strings.properties)
 
-- [ ] **A34.0.7: Optimize line rendering performance**
+- [x] **A34.0.7: Optimize line rendering performance**
   - Location: `engine/ecs/systems/GridLines.kt`
-  - Profile current per-frame line allocations
-  - Reuse Vector3f objects where possible (object pooling)
-  - Consider pre-computing grid line endpoints
-  - Reduce garbage collection pressure in `editorUpdate()`
-  - Add frustum culling: skip lines outside camera view
+  - Added cached Vector3f objects (lineStart, lineEnd) to reduce allocations
+  - Cached constants: tanHalfFov, padding, axis colors
+  - Pre-computed line endpoints (xMin, xMax, zMin, zMax)
+  - Added frustum culling: skips lines outside camera view
+  - Optimized calculateGridExtent() and calculateMinorLineAlpha() to use config directly
+  - **Status**: Complete ✅
 
-- [ ] **A34.0.8: Eliminate Z-fighting and visual artifacts**
+- [x] **A34.0.8: Eliminate Z-fighting and visual artifacts**
   - Location: `engine/ecs/systems/GridLines.kt`
-  - Current Y offset: -0.001f (may conflict with ground plane)
-  - Test various offsets: -0.01f, -0.1f
-  - Ensure grid renders above ground but below objects
-  - Verify no clipping with terrain or props
-  - Add depth bias if DebugRenderer supports it
+  - Changed default Y offset from -0.001f to -0.1f
+  - Added KDoc explaining Z-fighting prevention
+  - Configurable gridYOffset via ImGui (-1.0 to 0.0 range)
+  - Grid renders below world origin to avoid ground plane conflicts
+  - **Status**: Complete ✅
 
-- [ ] **A34.0.9: Update LevelEditorSceneInitializer**
+- [x] **A34.0.9: Update LevelEditorSceneInitializer**
   - Location: `editor/LevelEditorSceneInitializer.kt`
-  - Pass GridConfig to GridLines constructor
-  - Configure sensible defaults for level editor
-  - Verify grid is visible and properly configured by default
+  - Updated GridLines constructor to pass stringManager
+  - GridConfig passed with default values
+  - Grid visible and properly configured by default
+  - **Status**: Complete ✅
 
-- [ ] **A34.0.10: Add unit tests for grid calculations**
-  - Location: `src/test/kotlin/com/pafoid/skate/engine/ecs/systems/`
-  - Test LOD distance calculations
-  - Test dynamic extent formula
-  - Test major/minor line detection (snapping logic)
-  - Verify axes positioning at origin
-  - Test GridConfig default values
+- [x] **A34.0.10: Add unit tests for grid calculations**
+  - Location: `src/test/kotlin/com/pafoid/skate/engine/ecs/systems/GridLinesTest.kt`
+  - Test LOD distance calculations (calculateMinorLineAlpha)
+  - Test dynamic extent formula (calculateGridExtent)
+  - Test major/minor line detection (isMajorLine)
+  - Test smoothstep interpolation
+  - Test GridConfig default values, resetToDefaults(), and custom values
+  - Added 20+ unit tests covering all grid calculations
+  - **Status**: Complete ✅
 
-- [ ] **A34.0.11: Documentation and string resources**
-  - Update KDoc for GridLines class
-  - Document GridConfig properties
-  - Add usage examples
-  - Add string resources for ImGui labels (strings.properties)
-  - Document Godot-style design inspiration
+- [x] **A34.0.11: Documentation and string resources**
+  - Updated KDoc for GridLines class with feature list
+  - Documented GridConfig properties with detailed KDoc
+  - Added 20+ string resources for ImGui labels (strings.properties, strings_fr.properties)
+  - Documented Godot-style design inspiration in TODO.md
+  - Updated CHANGELOG.md with v0.34 summary
+  - **Status**: Complete ✅
 
 ---
 
@@ -178,12 +177,19 @@ Optional polish features for the grid system after core Godot-style implementati
 
 ## ✅ Completed Versions
 
-### v0.34: Godot-style Grid Implementation (In Progress)
+### v0.34: Godot-style Grid Implementation (Complete) ✅
 
 - **A34.0.1**: Dynamic grid extent with camera-based sizing ✅
 - **A34.0.2**: LOD system with smoothstep transitions ✅
 - **A34.0.3**: Origin axes fixed at world origin with correct colors ✅
 - **A34.0.4**: Godot-style grid colors ✅
+- **A34.0.5**: GridConfig data class for settings ✅
+- **A34.0.6**: ImGui configuration panel with full controls ✅
+- **A34.0.7**: Optimized line rendering with caching and frustum culling ✅
+- **A34.0.8**: Z-fighting elimination with configurable offset ✅
+- **A34.0.9**: LevelEditorSceneInitializer updated ✅
+- **A34.0.10**: Comprehensive unit tests (20+ tests) ✅
+- **A34.0.11**: Documentation and string resources (English/French) ✅
 
 ### v0.33: Code Quality & Technical Debt (In Progress)
 

@@ -21,6 +21,7 @@ import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
+import com.pafoid.skate.engine.ecs.systems.GridConfig
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.MouseControls
@@ -94,7 +95,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
                 debugRenderer,
             )
         )
-        scene.addSystem(GridLines(debugRenderer, sceneManager))
+        scene.addSystem(GridLines(debugRenderer, sceneManager, GridConfig(), stringManager))
         scene.addSystem(AnimationSystem(stringManager))
 
         reportProgress(0.7f, "Setting up Lighting Systems...")

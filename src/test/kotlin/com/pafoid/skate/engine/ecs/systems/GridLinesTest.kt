@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -8,7 +9,7 @@ import kotlin.math.tan
 
 /**
  * Unit tests for GridLines dynamic extent calculation.
- * 
+ *
  * Tests the formula: extent = cameraDistance * tan(fov/2) * padding
  * This ensures the grid always fills the viewport regardless of camera height.
  */
@@ -16,6 +17,7 @@ class GridLinesTest {
 
     private val fov = 45f
     private val padding = 1.5f // Extra padding to ensure grid fills viewport
+    private val tanHalfFov = tan(Math.toRadians((fov / 2).toDouble())).toFloat()
 
     @Test
     fun `calculateGridExtent_closeCamera_returnsMinimumExtent`() {
@@ -25,7 +27,7 @@ class GridLinesTest {
 
         // Act
         val calculatedExtent =
-            calculateGridExtent(cameraDistance, fov, padding, minExtent = expectedMinExtent, maxExtent = 100.0f)
+            calculateGridExtent(cameraDistance, minExtent = expectedMinExtent, maxExtent = 100.0f)
 
         // Assert
         assertEquals(
@@ -44,12 +46,12 @@ class GridLinesTest {
 
         // Act
         val calculatedExtent =
-            calculateGridExtent(cameraDistance, fov, padding, minExtent = 10.0f, maxExtent = maxExtent)
+            calculateGridExtent(cameraDistance, minExtent = 10.0f, maxExtent = maxExtent)
 
         // Assert - when far, should clamp to max
         // Formula: 100 * tan(22.5°) * 1.5 ≈ 62.1, which is less than max, so it won't clamp
         // Use a distance that will actually exceed max
-        val expectedClampedValue = cameraDistance * tan(Math.toRadians((fov / 2).toDouble())).toFloat() * padding
+        val expectedClampedValue = cameraDistance * tanHalfFov * padding
         val expectedResult = expectedClampedValue.coerceIn(10.0f, maxExtent)
 
         assertEquals(expectedResult, calculatedExtent, 0.1f, "Should calculate extent correctly for far camera")
@@ -59,10 +61,10 @@ class GridLinesTest {
     fun `calculateGridExtent_mediumDistance_calculatesBasedOnFormula`() {
         // Arrange
         val cameraDistance = 10.0f
-        val expectedExtent = cameraDistance * tan(Math.toRadians((fov / 2).toDouble())).toFloat() * padding
+        val expectedExtent = cameraDistance * tanHalfFov * padding
 
         // Act
-        val calculatedExtent = calculateGridExtent(cameraDistance, fov, padding, minExtent = 10.0f, maxExtent = 100.0f)
+        val calculatedExtent = calculateGridExtent(cameraDistance, minExtent = 10.0f, maxExtent = 100.0f)
 
         // Assert - allow larger tolerance for floating point
         assertEquals(expectedExtent, calculatedExtent, 5.0f, "Should calculate extent using formula at medium distance")
@@ -77,10 +79,10 @@ class GridLinesTest {
 
         // Act
         val calculatedExtent =
-            calculateGridExtent(typicalEditorHeight, fov, padding, minExtent = minExtent, maxExtent = maxExtent)
+            calculateGridExtent(typicalEditorHeight, minExtent = minExtent, maxExtent = maxExtent)
 
         // Assert
-        val expectedExtent = typicalEditorHeight * tan(Math.toRadians((fov / 2).toDouble())).toFloat() * padding
+        val expectedExtent = typicalEditorHeight * tanHalfFov * padding
         val expectedResult = expectedExtent.coerceIn(minExtent, maxExtent)
         assertEquals(
             expectedResult,
@@ -98,7 +100,7 @@ class GridLinesTest {
         val cameraDistance = 0.0f
 
         // Act
-        val calculatedExtent = calculateGridExtent(cameraDistance, fov, padding, minExtent = 10.0f, maxExtent = 100.0f)
+        val calculatedExtent = calculateGridExtent(cameraDistance, minExtent = 10.0f, maxExtent = 100.0f)
 
         // Assert
         assertEquals(10.0f, calculatedExtent, 0.1f, "Should return minimum extent when camera distance is zero")
@@ -110,7 +112,7 @@ class GridLinesTest {
         val cameraDistance = -5.0f // Should not happen, but handle gracefully
 
         // Act
-        val calculatedExtent = calculateGridExtent(cameraDistance, fov, padding, minExtent = 10.0f, maxExtent = 100.0f)
+        val calculatedExtent = calculateGridExtent(cameraDistance, minExtent = 10.0f, maxExtent = 100.0f)
 
         // Assert
         assertEquals(10.0f, calculatedExtent, 0.1f, "Should return minimum extent for negative camera distance")
@@ -158,13 +160,11 @@ class GridLinesTest {
     // Helper function to test (will be moved to GridLines.kt)
     private fun calculateGridExtent(
         cameraDistance: Float,
-        fov: Float,
-        padding: Float,
         minExtent: Float,
         maxExtent: Float
     ): Float {
         val clampedDistance = cameraDistance.coerceAtLeast(0f)
-        val calculatedExtent = clampedDistance * tan(Math.toRadians((fov / 2).toDouble())).toFloat() * padding
+        val calculatedExtent = clampedDistance * tanHalfFov * padding
         return calculatedExtent.coerceIn(minExtent, maxExtent)
     }
 
@@ -288,5 +288,91 @@ class GridLinesTest {
         val remainder = abs(position % majorStep)
         val tolerance = 0.02f
         return (remainder < tolerance || remainder > majorStep - tolerance)
+    }
+
+    // ==================== GridConfig Tests ====================
+
+    @Test
+    fun `GridConfig_defaultValues_areCorrect`() {
+        // Arrange & Act
+        val config = GridConfig()
+
+        // Assert
+        assertEquals(1.0f, config.majorStep, 0.01f)
+        assertEquals(0.1f, config.minorStep, 0.01f)
+        assertEquals(0.4f, config.majorColor.x, 0.01f)
+        assertEquals(0.4f, config.majorColor.y, 0.01f)
+        assertEquals(0.4f, config.majorColor.z, 0.01f)
+        assertEquals(0.25f, config.minorColor.x, 0.01f)
+        assertEquals(0.25f, config.minorColor.y, 0.01f)
+        assertEquals(0.25f, config.minorColor.z, 0.01f)
+        assertEquals(10.0f, config.minExtent, 0.01f)
+        assertEquals(100.0f, config.maxExtent, 0.01f)
+        assertEquals(5.0f, config.lodCloseDistance, 0.01f)
+        assertEquals(20.0f, config.lodFarDistance, 0.01f)
+        assertEquals(true, config.showGrid)
+        assertEquals(true, config.showOriginAxes)
+        assertEquals(-0.1f, config.gridYOffset, 0.01f)
+    }
+
+    @Test
+    fun `GridConfig_resetToDefaults_restoresDefaultValues`() {
+        // Arrange
+        val config = GridConfig().apply {
+            majorStep = 2.0f
+            minorStep = 0.2f
+            minExtent = 20.0f
+            maxExtent = 200.0f
+            lodCloseDistance = 10.0f
+            lodFarDistance = 40.0f
+            showGrid = false
+            showOriginAxes = false
+            gridYOffset = -0.5f
+        }
+
+        // Act
+        config.resetToDefaults()
+
+        // Assert
+        assertEquals(1.0f, config.majorStep, 0.01f)
+        assertEquals(0.1f, config.minorStep, 0.01f)
+        assertEquals(10.0f, config.minExtent, 0.01f)
+        assertEquals(100.0f, config.maxExtent, 0.01f)
+        assertEquals(5.0f, config.lodCloseDistance, 0.01f)
+        assertEquals(20.0f, config.lodFarDistance, 0.01f)
+        assertEquals(true, config.showGrid)
+        assertEquals(true, config.showOriginAxes)
+        assertEquals(-0.1f, config.gridYOffset, 0.01f)
+    }
+
+    @Test
+    fun `GridConfig_customValues_areApplied`() {
+        // Arrange & Act
+        val config = GridConfig(
+            majorStep = 2.0f,
+            minorStep = 0.2f,
+            majorColor = Vector3f(0.5f, 0.5f, 0.5f),
+            minorColor = Vector3f(0.3f, 0.3f, 0.3f),
+            minExtent = 15.0f,
+            maxExtent = 150.0f,
+            lodCloseDistance = 8.0f,
+            lodFarDistance = 30.0f,
+            showGrid = false,
+            showOriginAxes = false,
+            gridYOffset = -0.5f
+        )
+
+        // Assert
+        assertEquals(2.0f, config.majorStep, 0.01f)
+        assertEquals(0.2f, config.minorStep, 0.01f)
+        assertEquals(0.5f, config.majorColor.x, 0.01f)
+        assertEquals(0.3f, config.minorColor.x, 0.01f)
+        assertEquals(15.0f, config.minExtent, 0.01f)
+        assertEquals(150.0f, config.maxExtent, 0.01f)
+        assertEquals(8.0f, config.lodCloseDistance, 0.01f)
+        assertEquals(30.0f, config.lodFarDistance, 0.01f)
+        assertEquals(false, config.showGrid)
+        assertEquals(false, config.showOriginAxes)
+        assertEquals(-0.5f, config.gridYOffset, 0.01f)
     }
 }
