@@ -25,6 +25,16 @@ import kotlin.math.tan
  * @param showOriginAxes Toggle origin axes visibility (default: true)
  * @param gridYOffset Y offset to prevent Z-fighting with ground plane (default: -0.1f)
  *     Negative values place grid below world origin. Adjust if grid conflicts with terrain.
+ * @param showCenterMarker Toggle center marker visibility (default: true)
+ * @param centerMarkerColor Color of the center marker crosshair (default: yellow)
+ * @param centerMarkerDistance Maximum camera distance to show center marker (default: 30.0)
+ * @param edgeFadeEnabled Enable fading at grid edges (default: true)
+ * @param edgeFadeStart Distance from center where fading starts (0.0-1.0, default: 0.7f)
+ * @param secondaryGridEnabled Enable secondary grid plane (default: false)
+ * @param secondaryGridY Y position of secondary grid (default: 2.0f)
+ * @param secondaryGridColor Color of secondary grid lines (default: cyan)
+ * @param snapVisualizationEnabled Enable grid snap visualization (default: true)
+ * @param snapMarkerColor Color of snap point marker (default: bright green)
  */
 data class GridConfig(
     var majorStep: Float = 1.0f,
@@ -37,7 +47,17 @@ data class GridConfig(
     var lodFarDistance: Float = 20.0f,
     var showGrid: Boolean = true,
     var showOriginAxes: Boolean = true,
-    var gridYOffset: Float = -0.1f
+    var gridYOffset: Float = -0.1f,
+    var showCenterMarker: Boolean = true,
+    var centerMarkerColor: Vector3f = Vector3f(1.0f, 1.0f, 0.0f),
+    var centerMarkerDistance: Float = 30.0f,
+    var edgeFadeEnabled: Boolean = true,
+    var edgeFadeStart: Float = 0.7f,
+    var secondaryGridEnabled: Boolean = false,
+    var secondaryGridY: Float = 2.0f,
+    var secondaryGridColor: Vector3f = Vector3f(0.0f, 0.8f, 0.8f),
+    var snapVisualizationEnabled: Boolean = true,
+    var snapMarkerColor: Vector3f = Vector3f(0.0f, 1.0f, 0.0f)
 ) {
     /**
      * Resets all configuration values to their defaults.
@@ -54,6 +74,16 @@ data class GridConfig(
         showGrid = true
         showOriginAxes = true
         gridYOffset = -0.1f
+        showCenterMarker = true
+        centerMarkerColor = Vector3f(1.0f, 1.0f, 0.0f)
+        centerMarkerDistance = 30.0f
+        edgeFadeEnabled = true
+        edgeFadeStart = 0.7f
+        secondaryGridEnabled = false
+        secondaryGridY = 2.0f
+        secondaryGridColor = Vector3f(0.0f, 0.8f, 0.8f)
+        snapVisualizationEnabled = true
+        snapMarkerColor = Vector3f(0.0f, 1.0f, 0.0f)
     }
 }
 
@@ -98,6 +128,12 @@ class GridLines(
     private val yAxisColor = Vector3f(0.2f, 1f, 0.2f)
     private val zAxisColor = Vector3f(0.2f, 0.2f, 1f)
 
+    // Center marker color (cached)
+    private val centerMarkerColorCached = Vector3f(1f, 1f, 0f)
+
+    // Snap visualization marker (cached)
+    private val snapMarkerColorCached = Vector3f(0f, 1f, 0f)
+
     override fun editorUpdate(dt: Float) {
         if (!config.showGrid) return
 
@@ -122,6 +158,83 @@ class GridLines(
         // Get camera frustum bounds for culling (optional optimization)
         val frustumMargin = extent * 1.2f // Slightly larger than grid extent
 
+        // Render primary grid
+        renderGridLines(
+            camPos = camPos,
+            centerY = config.gridYOffset,
+            centerX = centerX,
+            centerZ = centerZ,
+            extent = extent,
+            numLines = numLines,
+            frustumMargin = frustumMargin,
+            minorLineAlpha = minorLineAlpha,
+            lineColorMajor = config.majorColor,
+            lineColorMinor = config.minorColor
+        )
+
+        // Render secondary grid if enabled
+        if (config.secondaryGridEnabled) {
+            renderGridLines(
+                camPos = camPos,
+                centerY = config.secondaryGridY,
+                centerX = centerX,
+                centerZ = centerZ,
+                extent = extent,
+                numLines = numLines,
+                frustumMargin = frustumMargin,
+                minorLineAlpha = minorLineAlpha,
+                lineColorMajor = config.secondaryGridColor,
+                lineColorMinor = config.secondaryGridColor.withAlpha(0.5f)
+            )
+        }
+
+        // Render center marker at world origin
+        if (config.showCenterMarker && cameraDistance < config.centerMarkerDistance) {
+            renderCenterMarker(cameraDistance)
+        }
+
+        // Render origin axes when camera is nearby
+        if (config.showOriginAxes && cameraDistance < 50f) {
+            renderOriginAxes(cameraDistance)
+        }
+
+        // Render snap visualization
+        if (config.snapVisualizationEnabled) {
+            renderSnapVisualization(camPos, extent)
+        }
+    }
+
+    /**
+     * Renders grid lines with optional edge fading.
+     *
+     * @param camPos Camera position
+     * @param centerY Y position of the grid plane
+     * @param centerX Center X of the grid (snapped to major step)
+     * @param centerZ Center Z of the grid (snapped to major step)
+     * @param extent Grid extent from center
+     * @param numLines Number of lines to render in each direction
+     * @param frustumMargin Margin for frustum culling
+     * @param minorLineAlpha Alpha value for minor lines (LOD)
+     * @param lineColorMajor Color for major grid lines
+     * @param lineColorMinor Color for minor grid lines
+     */
+    private fun renderGridLines(
+        camPos: Vector3f,
+        centerY: Float,
+        centerX: Float,
+        centerZ: Float,
+        extent: Float,
+        numLines: Int,
+        frustumMargin: Float,
+        minorLineAlpha: Float,
+        lineColorMajor: Vector3f,
+        lineColorMinor: Vector3f
+    ) {
+        val xMin = centerX - extent
+        val xMax = centerX + extent
+        val zMin = centerZ - extent
+        val zMax = centerZ + extent
+
         for (i in -numLines..numLines) {
             val offset = i * config.minorStep
 
@@ -135,9 +248,16 @@ class GridLines(
             }
 
             if (isMajorZ || minorLineAlpha > 0f) {
-                val color = if (isMajorZ) config.majorColor else config.minorColor
-                lineStart.set(xMin, config.gridYOffset, worldZ)
-                lineEnd.set(xMax, config.gridYOffset, worldZ)
+                var color = if (isMajorZ) lineColorMajor else lineColorMinor
+
+                // Apply edge fading if enabled
+                if (config.edgeFadeEnabled) {
+                    val fadeAlpha = calculateEdgeFade(worldZ, centerZ, extent)
+                    color = color.withAlpha(fadeAlpha)
+                }
+
+                lineStart.set(xMin, centerY, worldZ)
+                lineEnd.set(xMax, centerY, worldZ)
                 debugRenderer.addLine3D(lineStart, lineEnd, color)
             }
 
@@ -151,32 +271,113 @@ class GridLines(
             }
 
             if (isMajorX || minorLineAlpha > 0f) {
-                val color = if (isMajorX) config.majorColor else config.minorColor
-                lineStart.set(worldX, config.gridYOffset, zMin)
-                lineEnd.set(worldX, config.gridYOffset, zMax)
+                var color = if (isMajorX) lineColorMajor else lineColorMinor
+
+                // Apply edge fading if enabled
+                if (config.edgeFadeEnabled) {
+                    val fadeAlpha = calculateEdgeFade(worldX, centerX, extent)
+                    color = color.withAlpha(fadeAlpha)
+                }
+
+                lineStart.set(worldX, centerY, zMin)
+                lineEnd.set(worldX, centerY, zMax)
                 debugRenderer.addLine3D(lineStart, lineEnd, color)
             }
         }
+    }
 
-        // Render origin axes when camera is nearby
-        if (config.showOriginAxes && cameraDistance < 50f) {
-            val axisLength = (20f * (50f - cameraDistance) / 50f).coerceIn(5f, 20f)
+    /**
+     * Calculates edge fade alpha based on distance from grid center.
+     *
+     * @param position Current position along the axis
+     * @param center Center position of the grid
+     * @param extent Grid extent from center
+     * @return Alpha value 0.0-1.0 for edge fading
+     */
+    private fun calculateEdgeFade(position: Float, center: Float, extent: Float): Float {
+        val distanceFromCenter = abs(position - center)
+        val normalizedDistance = distanceFromCenter / extent
 
-            // X-axis (red)
-            lineStart.set(-axisLength, 0.001f, 0f)
-            lineEnd.set(axisLength, 0.001f, 0f)
-            debugRenderer.addLine3D(lineStart, lineEnd, xAxisColor)
+        // Start fading at edgeFadeStart (0.0-1.0)
+        if (normalizedDistance <= config.edgeFadeStart) return 1.0f
+        if (normalizedDistance >= 1.0f) return 0.0f
 
-            // Z-axis (blue) - note: in X-Z plane, Z is depth
-            lineStart.set(0f, 0.001f, -axisLength)
-            lineEnd.set(0f, 0.001f, axisLength)
-            debugRenderer.addLine3D(lineStart, lineEnd, zAxisColor)
+        // Smooth fade from edgeFadeStart to edge
+        val fadeT = (normalizedDistance - config.edgeFadeStart) / (1.0f - config.edgeFadeStart)
+        return 1.0f - smoothstep(fadeT)
+    }
 
-            // Y-axis (green) - vertical axis
-            lineStart.set(0f, -axisLength, 0.001f)
-            lineEnd.set(0f, axisLength, 0.001f)
-            debugRenderer.addLine3D(lineStart, lineEnd, yAxisColor)
-        }
+    /**
+     * Renders a center marker crosshair at world origin.
+     *
+     * @param cameraDistance Distance from camera to grid plane
+     */
+    private fun renderCenterMarker(cameraDistance: Float) {
+        val markerSize = (2.0f * (config.centerMarkerDistance - cameraDistance) / config.centerMarkerDistance)
+            .coerceIn(0.5f, 2.0f)
+
+        // X-axis crosshair
+        lineStart.set(-markerSize, config.gridYOffset + 0.002f, 0f)
+        lineEnd.set(markerSize, config.gridYOffset + 0.002f, 0f)
+        debugRenderer.addLine3D(lineStart, lineEnd, config.centerMarkerColor)
+
+        // Z-axis crosshair
+        lineStart.set(0f, config.gridYOffset + 0.002f, -markerSize)
+        lineEnd.set(0f, config.gridYOffset + 0.002f, markerSize)
+        debugRenderer.addLine3D(lineStart, lineEnd, config.centerMarkerColor)
+    }
+
+    /**
+     * Renders origin axes at world origin.
+     *
+     * @param cameraDistance Distance from camera to grid plane
+     */
+    private fun renderOriginAxes(cameraDistance: Float) {
+        val axisLength = (20f * (50f - cameraDistance) / 50f).coerceIn(5f, 20f)
+
+        // X-axis (red)
+        lineStart.set(-axisLength, 0.001f, 0f)
+        lineEnd.set(axisLength, 0.001f, 0f)
+        debugRenderer.addLine3D(lineStart, lineEnd, xAxisColor)
+
+        // Z-axis (blue) - note: in X-Z plane, Z is depth
+        lineStart.set(0f, 0.001f, -axisLength)
+        lineEnd.set(0f, 0.001f, axisLength)
+        debugRenderer.addLine3D(lineStart, lineEnd, zAxisColor)
+
+        // Y-axis (green) - vertical axis
+        lineStart.set(0f, -axisLength, 0.001f)
+        lineEnd.set(0f, axisLength, 0.001f)
+        debugRenderer.addLine3D(lineStart, lineEnd, yAxisColor)
+    }
+
+    /**
+     * Renders snap visualization showing the nearest grid intersection.
+     *
+     * @param camPos Camera position
+     * @param extent Grid extent
+     */
+    private fun renderSnapVisualization(camPos: Vector3f, extent: Float) {
+        // Calculate nearest grid intersection from camera position (projected to X-Z plane)
+        val snapX = floor(camPos.x / config.majorStep) * config.majorStep
+        val snapZ = floor(camPos.z / config.majorStep) * config.majorStep
+
+        // Only show snap marker when camera is close to the grid
+        val cameraDistance = abs(camPos.y)
+        if (cameraDistance > 20f) return
+
+        // Draw a small box/cross at the snap point
+        val snapSize = 0.3f
+        val snapY = config.gridYOffset + 0.003f
+
+        // Draw snap point cross
+        lineStart.set(snapX - snapSize, snapY, snapZ)
+        lineEnd.set(snapX + snapSize, snapY, snapZ)
+        debugRenderer.addLine3D(lineStart, lineEnd, config.snapMarkerColor)
+
+        lineStart.set(snapX, snapY, snapZ - snapSize)
+        lineEnd.set(snapX, snapY, snapZ + snapSize)
+        debugRenderer.addLine3D(lineStart, lineEnd, config.snapMarkerColor)
     }
 
     /**
@@ -341,9 +542,116 @@ class GridLines(
 
         ImGui.separator()
 
+        // Advanced features
+        ImGui.text(stringManager.getString("lbl.grid.advanced"))
+
+        // Center marker
+        val showCenterMarker = ImBoolean(config.showCenterMarker)
+        if (ImGui.checkbox(stringManager.getString("lbl.grid.show_center_marker"), showCenterMarker)) {
+            config.showCenterMarker = showCenterMarker.get()
+        }
+
+        val centerMarkerColorArr =
+            floatArrayOf(config.centerMarkerColor.x, config.centerMarkerColor.y, config.centerMarkerColor.z)
+        if (ImGui.colorEdit3(stringManager.getString("lbl.grid.center_marker_color"), centerMarkerColorArr)) {
+            config.centerMarkerColor.set(centerMarkerColorArr[0], centerMarkerColorArr[1], centerMarkerColorArr[2])
+        }
+
+        val centerMarkerDistArr = floatArrayOf(config.centerMarkerDistance)
+        if (ImGui.dragFloat(
+                stringManager.getString("lbl.grid.center_marker_distance"),
+                centerMarkerDistArr,
+                1.0f,
+                5.0f,
+                100.0f,
+                "%.0f"
+            )
+        ) {
+            config.centerMarkerDistance = centerMarkerDistArr[0].coerceAtLeast(5.0f)
+        }
+
+        ImGui.separator()
+
+        // Edge fading
+        val edgeFadeEnabled = ImBoolean(config.edgeFadeEnabled)
+        if (ImGui.checkbox(stringManager.getString("lbl.grid.edge_fade_enabled"), edgeFadeEnabled)) {
+            config.edgeFadeEnabled = edgeFadeEnabled.get()
+        }
+
+        val edgeFadeStartArr = floatArrayOf(config.edgeFadeStart)
+        ImGui.pushItemWidth(120f)
+        if (ImGui.dragFloat(
+                stringManager.getString("lbl.grid.edge_fade_start"),
+                edgeFadeStartArr,
+                0.01f,
+                0.0f,
+                1.0f,
+                "%.2f"
+            )
+        ) {
+            config.edgeFadeStart = edgeFadeStartArr[0].coerceIn(0.0f, 1.0f)
+        }
+        ImGui.popItemWidth()
+
+        ImGui.separator()
+
+        // Secondary grid
+        val secondaryGridEnabled = ImBoolean(config.secondaryGridEnabled)
+        if (ImGui.checkbox(stringManager.getString("lbl.grid.secondary_grid_enabled"), secondaryGridEnabled)) {
+            config.secondaryGridEnabled = secondaryGridEnabled.get()
+        }
+
+        val secondaryGridYArr = floatArrayOf(config.secondaryGridY)
+        ImGui.pushItemWidth(120f)
+        if (ImGui.dragFloat(
+                stringManager.getString("lbl.grid.secondary_grid_y"),
+                secondaryGridYArr,
+                0.1f,
+                -10.0f,
+                10.0f,
+                "%.1f"
+            )
+        ) {
+            config.secondaryGridY = secondaryGridYArr[0]
+        }
+        ImGui.popItemWidth()
+
+        val secondaryGridColorArr =
+            floatArrayOf(config.secondaryGridColor.x, config.secondaryGridColor.y, config.secondaryGridColor.z)
+        if (ImGui.colorEdit3(stringManager.getString("lbl.grid.secondary_grid_color"), secondaryGridColorArr)) {
+            config.secondaryGridColor.set(secondaryGridColorArr[0], secondaryGridColorArr[1], secondaryGridColorArr[2])
+        }
+
+        ImGui.separator()
+
+        // Snap visualization
+        val snapVisEnabled = ImBoolean(config.snapVisualizationEnabled)
+        if (ImGui.checkbox(stringManager.getString("lbl.grid.snap_visualization_enabled"), snapVisEnabled)) {
+            config.snapVisualizationEnabled = snapVisEnabled.get()
+        }
+
+        val snapMarkerColorArr =
+            floatArrayOf(config.snapMarkerColor.x, config.snapMarkerColor.y, config.snapMarkerColor.z)
+        if (ImGui.colorEdit3(stringManager.getString("lbl.grid.snap_marker_color"), snapMarkerColorArr)) {
+            config.snapMarkerColor.set(snapMarkerColorArr[0], snapMarkerColorArr[1], snapMarkerColorArr[2])
+        }
+
+        ImGui.separator()
+
         // Reset button
         if (ImGui.button(stringManager.getString("lbl.grid.reset_to_defaults"))) {
             config.resetToDefaults()
         }
     }
+}
+
+/**
+ * Extension function to scale a Vector3f color by an alpha factor.
+ * This simulates alpha blending for debug line rendering.
+ *
+ * @param alpha Alpha value 0.0-1.0
+ * @return New Vector3f with scaled RGB values
+ */
+private fun Vector3f.withAlpha(alpha: Float): Vector3f {
+    return Vector3f(x * alpha, y * alpha, z * alpha)
 }

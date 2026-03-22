@@ -4,6 +4,123 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.35] - 2026-03-22: Advanced Grid Features
+
+### Summary
+
+Completed advanced grid features including center marker, edge fading, secondary grid plane, and snap visualization.
+These enhancements provide better spatial orientation and visual polish for the level editor.
+
+### Added
+
+- **Center marker crosshair**: Yellow marker at world origin (`engine/ecs/systems/GridLines.kt`)
+  - `showCenterMarker: Boolean = true` - Toggle visibility
+  - `centerMarkerColor: Vector3f = (1.0, 1.0, 0.0)` - Yellow by default
+  - `centerMarkerDistance: Float = 30.0` - Max camera distance to show marker
+  - Dynamic size scaling (0.5-2.0 units based on camera distance)
+  - Renders as X-Z crosshair at world origin (0, 0, 0)
+  - **Impact**: Medium - Helps users orient in world space
+
+- **Edge fading**: Smooth grid fade at extent boundaries
+  - `edgeFadeEnabled: Boolean = true` - Toggle edge fading
+  - `edgeFadeStart: Float = 0.7f` - Normalized distance (0-1) where fading starts
+  - Smoothstep interpolation for smooth fade transition
+  - Prevents hard cutoff at grid extent boundary
+  - Creates smoother infinite grid illusion
+  - **Impact**: Medium - Improved visual polish
+
+- **Secondary grid plane**: Additional grid at custom Y height
+  - `secondaryGridEnabled: Boolean = false` - Toggle secondary grid
+  - `secondaryGridY: Float = 2.0f` - Y position of secondary grid
+  - `secondaryGridColor: Vector3f = (0.0, 0.8, 0.8)` - Cyan by default
+  - 50% alpha for visual distinction from primary grid
+  - Useful for multi-level level design and ceiling work
+  - **Impact**: Low - Niche feature for complex scenes
+
+- **Snap visualization**: Green marker at nearest grid intersection
+  - `snapVisualizationEnabled: Boolean = true` - Toggle snap marker
+  - `snapMarkerColor: Vector3f = (0.0, 1.0, 0.0)` - Bright green
+  - Calculates snap point from camera X-Z position
+  - Only visible when camera is close to grid (< 20 units)
+  - Renders as small cross at snap point
+  - **Impact**: Low - Visual aid for object placement
+
+- **ImGui advanced features section**: New controls in GridLines.imgui()
+  - Center marker: visibility, color, distance sliders
+  - Edge fading: enable toggle, fade start slider
+  - Secondary grid: enable toggle, Y position, color picker
+  - Snap visualization: enable toggle, color picker
+  - All controls grouped under "Advanced Features" header
+  - **Impact**: Medium - Full runtime control of advanced features
+
+- **String resources**: 11 new localized strings (`values/strings.properties`, `values/strings_fr.properties`)
+  - lbl.grid.advanced, lbl.grid.show_center_marker, lbl.grid.center_marker_color
+  - lbl.grid.center_marker_distance, lbl.grid.edge_fade_enabled
+  - lbl.grid.edge_fade_start, lbl.grid.secondary_grid_enabled
+  - lbl.grid.secondary_grid_y, lbl.grid.secondary_grid_color
+  - lbl.grid.snap_visualization_enabled, lbl.grid.snap_marker_color
+  - **Impact**: Low - Full localization for new controls
+
+- **Unit tests**: 6 new tests for A35 features (`test/.../GridLinesTest.kt`)
+  - GridConfig A35 default values test
+  - calculateEdgeFade inside fade start test
+  - calculateEdgeFade at edge test
+  - calculateEdgeFade in fade zone test
+  - calculateEdgeFade disabled test
+  - GridConfig resetToDefaults restores A35 values test
+  - **Impact**: High - Ensures edge fading logic is correct
+
+### Changed
+
+- **GridConfig extended**: Added 10 new properties for A35 features
+  - Center marker: showCenterMarker, centerMarkerColor, centerMarkerDistance
+  - Edge fading: edgeFadeEnabled, edgeFadeStart
+  - Secondary grid: secondaryGridEnabled, secondaryGridY, secondaryGridColor
+  - Snap visualization: snapVisualizationEnabled, snapMarkerColor
+  - Updated resetToDefaults() to restore all new properties
+  - **Impact**: High - Expanded configuration options
+
+- **renderGridLines refactored**: Extracted grid rendering to dedicated method
+  - New private method renderGridLines() with parameters for Y position and colors
+  - Supports rendering multiple grid planes (primary + secondary)
+  - Applies edge fading per line using withAlpha() extension
+  - **Impact**: Medium - Cleaner code organization
+
+- **editorUpdate refactored**: Modular rendering pipeline
+  - Separate method calls: renderGridLines(), renderCenterMarker(), renderOriginAxes(), renderSnapVisualization()
+  - Clear separation of concerns for each visual feature
+  - Easier to maintain and extend
+  - **Impact**: Medium - Improved code maintainability
+
+### Architecture
+
+- **withAlpha() extension**: Vector3f alpha simulation
+  - Scales RGB values by alpha factor
+  - Simulates alpha blending for debug line rendering
+  - Used for edge fading and secondary grid transparency
+  - **Impact**: Low - Utility function for color manipulation
+
+- **Modular rendering**: Separated rendering concerns
+  - renderGridLines(): Core grid line rendering with edge fade
+  - renderCenterMarker(): World origin crosshair
+  - renderOriginAxes(): RGB axis lines at origin
+  - renderSnapVisualization(): Snap point marker
+  - calculateEdgeFade(): Edge fade alpha calculation
+  - **Impact**: Medium - Better code organization
+
+### Verified
+
+- **A35 Features**: Full integration verification
+  - ✅ Center marker renders at origin with correct color
+  - ✅ Edge fading smooth with smoothstep interpolation
+  - ✅ Secondary grid renders at custom Y with 50% alpha
+  - ✅ Snap visualization shows nearest grid intersection
+  - ✅ ImGui controls functional for all new features
+  - ✅ String localization (English/French)
+  - ✅ 26/26 unit tests passing (20 original + 6 new)
+
+---
+
 ## [v0.34] - 2026-03-22: Godot-style Grid Implementation
 
 ### Summary

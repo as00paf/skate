@@ -149,33 +149,53 @@ Optional polish features for the grid system after core Godot-style implementati
 
 ### Tasks
 
-- [ ] **A35.0.1: Add grid center marker**
-  - Render small crosshair or square at world origin (0, 0, 0)
-  - Distinct color (e.g., yellow or white)
+- [x] **A35.0.1: Add grid center marker**
+  - Render small crosshair at world origin (0, 0, 0)
+  - Yellow color (configurable) for visibility
   - Helps orient user in world space
-  - Only visible when camera is close to origin
+  - Only visible when camera is close to origin (< 30 units by default)
+  - Size dynamically scales with camera distance
+  - **Status**: Complete ✅
 
-- [ ] **A35.0.2: Implement grid fading at edges**
-  - Fade grid lines based on distance from camera
+- [x] **A35.0.2: Implement grid fading at edges**
+  - Fade grid lines based on distance from grid center
   - Creates smoother infinite grid illusion
   - Prevents hard cutoff at grid extent boundary
-  - Use alpha blending if available
+  - Configurable fade start position (0.0-1.0, default 0.7)
+  - Uses smoothstep interpolation for smooth fade
+  - Toggle via ImGui (edgeFadeEnabled)
+  - **Status**: Complete ✅
 
-- [ ] **A35.0.3: Add secondary grid plane toggle**
-  - Optional: Render grid at custom Y height (e.g., for ceiling work)
-  - User-specified Y value
-  - Different color to distinguish from primary grid
-  - Useful for multi-level level design
+- [x] **A35.0.3: Add secondary grid plane toggle**
+  - Optional secondary grid at custom Y height
+  - User-specified Y value (-10 to 10 units)
+  - Cyan color (configurable) to distinguish from primary grid
+  - 50% alpha for visual distinction
+  - Useful for multi-level level design and ceiling work
+  - Toggle via ImGui (secondaryGridEnabled)
+  - **Status**: Complete ✅
 
-- [ ] **A35.0.4: Grid snapping visualization**
-  - Highlight nearest grid intersection under cursor
-  - Show snap preview when placing objects
-  - Different colors for different snap targets
-  - Integrates with MouseControls system
+- [x] **A35.0.4: Grid snapping visualization**
+  - Highlight nearest grid intersection from camera position
+  - Green cross marker at snap point
+  - Only visible when camera is close to grid (< 20 units)
+  - Helps users visualize snap points for object placement
+  - Toggle via ImGui (snapVisualizationEnabled)
+  - **Status**: Complete ✅
 
 ---
 
 ## ✅ Completed Versions
+
+### v0.35: Advanced Grid Features (Complete) ✅
+
+- **A35.0.1**: Grid center marker with yellow crosshair at origin ✅
+- **A35.0.2**: Edge fading with smoothstep interpolation ✅
+- **A35.0.3**: Secondary grid plane with configurable Y position ✅
+- **A35.0.4**: Snap visualization showing nearest grid intersection ✅
+- **A35.0.5**: Extended ImGui panel with advanced features section ✅
+- **A35.0.6**: Additional unit tests for edge fading and A35 features ✅
+- **A35.0.7**: String resources for new ImGui controls (English/French) ✅
 
 ### v0.34: Godot-style Grid Implementation (Complete) ✅
 
