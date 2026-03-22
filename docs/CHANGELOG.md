@@ -4,6 +4,141 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.36] - 2026-03-22: ECS Environment System
+
+### Summary
+
+Migrated all environment settings (sky, fog, atmosphere) from hardcoded `SceneData` properties to a proper ECS system.
+The new `EnvironmentSystem` follows the established pattern from `DayNightCycleSystem` and `DirectionalLightSystem`
+for cleaner architecture and better separation of concerns.
+
+### Added
+
+- **EnvironmentConfig data class**: Centralized environment configuration (`engine/ecs/config/EnvironmentConfig.kt`)
+    - `skyColor: Vector3f = (0.6, 0.7, 0.9)` - Clear sky color
+    - `skyTint: Vector3f = (1.0, 1.0, 1.0)` - Sky tint multiplier
+    - `skyExposure: Float = 1.0f` - Sky exposure/brightness
+    - `skyRotation: Float = 0.0f` - Sky rotation in degrees
+    - `fogColor: Vector3f = (0.8, 0.8, 0.8)` - Fog color
+    - `fogDensity: Float = 0.0f` - Fog density (0 = no fog)
+    - `fogGradient: Float = 1.5f` - Fog gradient falloff
+    - `reset()` method for restoring default values
+    - `applyPreset()` method with 5 environment presets
+    - **Impact**: High - Single source of truth for environment state
+
+- **Environment presets**: Quick configuration for common environments (`engine/ecs/config/EnvironmentConfig.kt`)
+    - `CLEAR_DAY` - Light blue sky with minimal fog (0.0008 density)
+    - `CLOUDY` - Gray overcast sky with moderate fog (0.02 density)
+    - `FOGGY` - Dense atmospheric fog (0.05 density)
+    - `SUNSET` - Warm orange/red sunset colors
+    - `NO_FOG` - Clear visibility with no fog
+    - **Impact**: Medium - Quick environment setup
+
+- **EnvironmentSystem ECS**: Proper ECS system for environment management (`engine/ecs/systems/EnvironmentSystem.kt`)
+    - Extends `System` with `ExecutionPriority.EARLY`
+    - Constructor injection for `StringManager`
+    - Owns `EnvironmentConfig` instance
+    - Full ImGui interface with:
+        - 5 environment preset buttons
+        - Sky configuration section (color, tint, exposure, rotation)
+        - Fog configuration section (color, density, gradient)
+        - Reset to defaults button
+    - **Impact**: High - Proper ECS ownership of environment state
+
+- **ImGui string resources**: 17 new localized strings (`values/strings.properties`, `values/strings_fr.properties`)
+    - lbl.environment_system.header, lbl.environment_system.presets
+    - lbl.environment_system.preset_clear_day, preset_cloudy, preset_foggy, preset_sunset, preset_no_fog
+    - lbl.environment_system.sky_header, sky_color, sky_tint, sky_exposure, sky_rotation
+    - lbl.environment_system.fog_header, fog_color, fog_density, fog_gradient
+    - lbl.environment_system.reset_to_defaults
+    - **Impact**: Low - Full localization support
+
+- **Unit tests**: 23 comprehensive tests for environment system
+    - `EnvironmentConfigTest.kt` (12 tests) - Default values, reset, presets, property isolation
+    - `EnvironmentSystemTest.kt` (11 tests) - Initialization, presets, reset, config access
+    - **Impact**: High - Ensures environment system correctness
+
+### Changed
+
+- **SceneData cleaned up**: Removed environment properties (`engine/ecs/scene/SceneData.kt`)
+    - Removed: `skyColor`, `skyTint`, `skyExposure`, `skyRotation`
+    - Removed: `fogColor`, `fogDensity`, `fogGradient`
+    - Kept: `timeOfDay`, `useAmbient`, `ambientLight` (for DayNightCycleSystem integration)
+    - Updated KDoc to note environment settings moved to EnvironmentSystem
+    - **Impact**: High - Clean separation of concerns, no deprecated code
+
+- **EnvironmentWindow refactored**: Delegates to EnvironmentSystem (`editor/windows/EnvironmentWindow.kt`)
+    - Gets `EnvironmentSystem` from `scene.systemManager`
+    - Replaced direct SceneData manipulation with `system.imgui()` call
+    - Environment controls now in dedicated collapsing header
+    - Added KDoc explaining window responsibilities
+    - **Impact**: High - Proper ECS integration
+
+- **LevelEditorSceneInitializer updated**: Adds EnvironmentSystem (`editor/LevelEditorSceneInitializer.kt`)
+    - Removed hardcoded environment setup (previously lines 71-74)
+    - Added `scene.addSystem(EnvironmentSystem(stringManager))`
+    - Environment now initialized through proper ECS channel
+    - **Impact**: Medium - Remove hardcoded initialization
+
+- **SkyDomeRenderer updated**: Reads from EnvironmentSystem (`engine/render/renderer/SkyDomeRenderer.kt`)
+    - Gets `EnvironmentSystem` from scene
+    - Reads skyRotation, skyTint, skyExposure from `system.config`
+    - Reads fogColor, fogDensity, fogGradient from `system.config`
+    - Falls back to default values when system unavailable
+    - **Impact**: High - Rendering pipeline uses ECS system
+
+- **LightingUniformsLoader updated**: Added environmentConfig parameter (
+  `engine/render/renderer/LightingUniformsLoader.kt`)
+    - Added `environmentConfig: EnvironmentConfig? = null` parameter
+    - Reads fog settings from environmentConfig with defaults fallback
+    - Maintains backwards compatibility with optional parameter
+    - **Impact**: High - Rendering pipeline uses ECS system
+
+- **GeometryPass updated**: Reads skyColor from EnvironmentSystem (`engine/render/renderer/passes/GeometryPass.kt`)
+    - Gets `EnvironmentSystem` from scene
+    - Uses `system.config.skyColor` for framebuffer clear color
+    - Passes `environmentConfig` to `lightingUniformsLoader.loadLightingUniforms()`
+    - Falls back to default sky color when system unavailable
+    - **Impact**: High - Clear color from ECS system
+
+### Architecture
+
+- **ECS Environment Pattern**: Follows established system architecture
+    1. EnvironmentConfig owns all environment state
+    2. EnvironmentSystem provides ECS integration and ImGui UI
+    3. Rendering systems read from EnvironmentSystem.config
+    4. Sensible defaults when system unavailable
+    5. 5 presets for quick environment setup
+
+- **Clean SceneData**: Separation of concerns
+    - SceneData: Core scene data (time, ambient, gravity, level path)
+    - EnvironmentSystem: Sky, fog, atmosphere settings
+    - DayNightCycleSystem: Time progression, sun direction, auto-ambient
+    - DirectionalLightSystem: Shadow mapping, light direction
+
+### Removed
+
+- **Deprecated environment properties from SceneData**: Clean migration
+    - All environment settings now in EnvironmentSystem.config
+    - No backwards compatibility shims needed
+    - Rendering code uses defaults when EnvironmentSystem unavailable
+    - **Impact**: High - No technical debt from migration
+
+### Verified
+
+- **v0.36 Integration**: Full verification
+    - ✅ EnvironmentSystem initializes with correct defaults
+    - ✅ 5 presets apply correct values
+    - ✅ ImGui interface functional with all controls
+    - ✅ SkyDomeRenderer reads from EnvironmentSystem
+    - ✅ LightingUniformsLoader uploads fog uniforms correctly
+    - ✅ GeometryPass clears with correct sky color
+    - ✅ String localization (English/French)
+    - ✅ 23/23 unit tests passing
+    - ✅ Build successful with no deprecation warnings
+
+---
+
 ## [v0.35] - 2026-03-22: Advanced Grid Features
 
 ### Summary
