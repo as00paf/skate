@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.render.Camera
@@ -12,13 +13,15 @@ import org.junit.jupiter.api.Test
 
 class DirectionalLightSystemTest {
 
+    private val stringManager: StringManager = mockk(relaxed = true)
+
     @Test
     fun updateLightSpaceMatrix_FrustumCalculated_LightSpaceMatrixIsUpdated() {
         // Arrange
         val system = DirectionalLightSystem(DirectionalLightConfig().apply {
             castShadows = true
             autoCalculateBounds = true
-        })
+        }, stringManager)
 
         val mockScene = mockk<Scene>()
         val mockSystemManager = mockk<SystemManager>()
@@ -65,7 +68,7 @@ class DirectionalLightSystemTest {
             castShadows = true
             autoCalculateBounds = true
             direction = Vector3f(0f, -1f, 0f) // High noon
-        })
+        }, stringManager)
 
         val mockScene = mockk<Scene>()
         val mockSystemManager = mockk<SystemManager>()

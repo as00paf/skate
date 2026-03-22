@@ -177,3 +177,7 @@ The engine is actively developed with focus on:
 - **Phase E**: Code quality & refactoring (Ongoing)
 
 The project maintains high code quality standards with extensive testing, proper documentation, and continuous refactoring efforts.
+
+## Qwen Added Memories
+
+- @/docs/AI_INSTRUCTIONS.md
