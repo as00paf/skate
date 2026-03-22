@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
@@ -73,8 +74,10 @@ class GeometryPass(
             glViewport(0, 0, frameBuffer.width, frameBuffer.height)
         }
 
-        // Clear with sky color
-        clearColor(scene.sceneData.skyColor)
+        // Clear with sky color from EnvironmentSystem
+        val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
+        val skyColor = environmentSystem?.config?.skyColor ?: scene.sceneData.skyColor
+        clearColor(skyColor)
 
         val camera = scene.camera
 
@@ -89,11 +92,13 @@ class GeometryPass(
         // Upload lighting uniforms
         val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
         val directionalLight = lightSystem?.config
+        val environmentConfig = environmentSystem?.config
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,
             camera,
             scene.sceneData,
             directionalLight,
+            environmentConfig,
             shadowMapTextureId
         )
 

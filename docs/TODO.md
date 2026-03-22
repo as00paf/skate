@@ -46,7 +46,7 @@ and better separation of concerns.
 
 ### Tasks
 
-- [ ] **A36.0.1: Create EnvironmentConfig data class**
+- [x] **A36.0.1: Create EnvironmentConfig data class** ✅
   - Location: `engine/ecs/config/EnvironmentConfig.kt` (new)
   - Properties:
     - `skyColor: Vector3f = (0.6, 0.7, 0.9)` - Clear sky color
@@ -56,8 +56,10 @@ and better separation of concerns.
     - `fogColor: Vector3f = (0.8, 0.8, 0.8)` - Fog color
     - `fogDensity: Float = 0.0f` - Fog density (0 = no fog)
     - `fogGradient: Float = 1.5f` - Fog gradient falloff
-  - Include `resetToDefaults()` method
+  - Include `reset()` method for restoring defaults
+  - Include `applyPreset()` method with 5 presets (CLEAR_DAY, CLOUDY, FOGGY, SUNSET, NO_FOG)
   - **Impact**: High - Single source of truth for environment state
+  - **Status**: Complete - 170 lines, 12 unit tests passing ✅
 
 - [ ] **A36.0.2: Create EnvironmentSystem ECS**
   - Location: `engine/ecs/systems/EnvironmentSystem.kt` (new)

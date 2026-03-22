@@ -20,6 +20,7 @@ import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridConfig
 import com.pafoid.skate.engine.ecs.systems.GridLines
@@ -68,10 +69,8 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         this.currentScene = scene
 
         reportProgress(0.3f, "Initializing Scene Data...")
-        scene.sceneData.skyColor.set(0.6f, 0.7f, 0.9f)
-        scene.sceneData.fogColor.set(0.6f, 0.7f, 0.9f) // Match sky for infinite horizon
-        scene.sceneData.fogDensity = 0.0008f
-        scene.sceneData.fogGradient = 0.8f
+        // Note: Environment settings (sky, fog) are now managed by EnvironmentSystem
+        // Default values are set in EnvironmentConfig
 
         // Set camera position
         scene.camera.position.set(0f, 5f, 20f)
@@ -97,6 +96,9 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         )
         scene.addSystem(GridLines(debugRenderer, sceneManager, GridConfig(), stringManager))
         scene.addSystem(AnimationSystem(stringManager))
+
+        // Environment system - manages sky, fog, and atmosphere settings
+        scene.addSystem(EnvironmentSystem(stringManager = stringManager))
 
         reportProgress(0.7f, "Setting up Lighting Systems...")
 

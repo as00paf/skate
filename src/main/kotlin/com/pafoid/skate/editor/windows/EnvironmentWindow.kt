@@ -6,11 +6,21 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
+/**
+ * Environment editor window.
+ *
+ * This window provides controls for:
+ * - Time of day (via DayNightCycleSystem)
+ * - Environment settings (via EnvironmentSystem)
+ * - Directional light and shadows (via DirectionalLightSystem)
+ * - Ambient lighting (via DayNightCycleSystem and SceneData)
+ */
 class EnvironmentWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
 
@@ -20,6 +30,7 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
         // Get systems
         val dayNightSystem = scene.systemManager.getSystem<DayNightCycleSystem>()
         val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
+        val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
 
         if (ImGui.collapsingHeader("${Icons.GEAR} ${stringManager.getString("lbl.environment.time_of_day")}")) {
             // Sync with DayNightCycleSystem if available
@@ -35,25 +46,10 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             }
         }
 
-        if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment.atmosphere")}")) {
-            val skyColor = floatArrayOf(scene.sceneData.skyColor.x, scene.sceneData.skyColor.y, scene.sceneData.skyColor.z)
-            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.sky_color"), skyColor)) {
-                scene.sceneData.skyColor.set(skyColor[0], skyColor[1], skyColor[2])
-            }
-
-            val skyTint = floatArrayOf(scene.sceneData.skyTint.x, scene.sceneData.skyTint.y, scene.sceneData.skyTint.z)
-            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.sky_tint"), skyTint)) {
-                scene.sceneData.skyTint.set(skyTint[0], skyTint[1], skyTint[2])
-            }
-
-            val exposure = floatArrayOf(scene.sceneData.skyExposure)
-            if (ImGui.dragFloat(stringManager.getString("lbl.environment.sky_exposure"), exposure, 0.01f, 0f, 10f)) {
-                scene.sceneData.skyExposure = exposure[0]
-            }
-
-            val skyRot = floatArrayOf(scene.sceneData.skyRotation)
-            if (ImGui.dragFloat(stringManager.getString("lbl.environment.sky_rotation"), skyRot, 0.1f, 0f, 360f)) {
-                scene.sceneData.skyRotation = skyRot[0]
+        // Environment settings - delegated to EnvironmentSystem
+        environmentSystem?.let { system ->
+            if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment_system.header")}")) {
+                system.imgui()
             }
         }
 
@@ -109,23 +105,6 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             val slopeBias = floatArrayOf(config.slopeScaledBias)
             if (ImGui.dragFloat("Slope-Scaled Bias", slopeBias, 0.001f, 0f, 0.1f, "%.3f")) {
                 config.slopeScaledBias = slopeBias[0]
-            }
-        }
-
-        if (ImGui.collapsingHeader("${Icons.CLOUD} ${stringManager.getString("lbl.environment.fog")}")) {
-            val fogColor = floatArrayOf(scene.sceneData.fogColor.x, scene.sceneData.fogColor.y, scene.sceneData.fogColor.z)
-            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.fog_color"), fogColor)) {
-                scene.sceneData.fogColor.set(fogColor[0], fogColor[1], fogColor[2])
-            }
-
-            val fogDensity = floatArrayOf(scene.sceneData.fogDensity)
-            if (ImGui.dragFloat(stringManager.getString("lbl.environment.fog_density"), fogDensity, 0.0001f, 0f, 0.1f, "%.4f")) {
-                scene.sceneData.fogDensity = fogDensity[0]
-            }
-
-            val fogGradient = floatArrayOf(scene.sceneData.fogGradient)
-            if (ImGui.dragFloat(stringManager.getString("lbl.environment.fog_gradient"), fogGradient, 0.1f, 0.1f, 10f)) {
-                scene.sceneData.fogGradient = fogGradient[0]
             }
         }
 

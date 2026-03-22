@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
+import com.pafoid.skate.engine.ecs.config.EnvironmentConfig
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -17,8 +18,9 @@ class LightingUniformsLoader {
      *
      * @param shader The shader to upload uniforms to
      * @param camera The camera for position and view matrix
-     * @param sceneData The scene data containing ambient light and fog
+     * @param sceneData The scene data containing ambient light
      * @param directionalLight The directional light config
+     * @param environmentConfig Environment config for fog settings (optional)
      * @param shadowMapTextureId The shadow map depth texture ID (optional)
      */
     fun loadLightingUniforms(
@@ -26,6 +28,7 @@ class LightingUniformsLoader {
         camera: Camera,
         sceneData: SceneData,
         directionalLight: DirectionalLightConfig?,
+        environmentConfig: EnvironmentConfig? = null,
         shadowMapTextureId: Int = 0
     ) {
         // Directional light (sun) - single unified light source
@@ -54,10 +57,10 @@ class LightingUniformsLoader {
             // This will be set by the caller based on actual shadow map resolution
         }
 
-        // Fog
-        shader.uploadVec3f(Uniforms.FOG_COLOR, sceneData.fogColor)
-        shader.uploadFloat(Uniforms.FOG_DENSITY, sceneData.fogDensity)
-        shader.uploadFloat(Uniforms.FOG_GRADIENT, sceneData.fogGradient)
+        // Fog - use EnvironmentConfig if available, otherwise fallback to SceneData
+        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentConfig?.fogColor ?: sceneData.fogColor)
+        shader.uploadFloat(Uniforms.FOG_DENSITY, environmentConfig?.fogDensity ?: sceneData.fogDensity)
+        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentConfig?.fogGradient ?: sceneData.fogGradient)
     }
 
     /**
