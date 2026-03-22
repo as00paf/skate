@@ -4,6 +4,8 @@ import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.LightingStateComponent
+import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
@@ -16,10 +18,10 @@ import org.koin.core.component.inject
  * Environment editor window.
  *
  * This window provides controls for:
- * - Time of day (via DayNightCycleSystem)
+ * - Time of day (via TimeComponent and DayNightCycleSystem)
  * - Environment settings (via EnvironmentSystem)
  * - Directional light and shadows (via DirectionalLightSystem)
- * - Ambient lighting (via DayNightCycleSystem and SceneData)
+ * - Ambient lighting (via LightingStateComponent and DayNightCycleSystem)
  */
 class EnvironmentWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
@@ -32,16 +34,24 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
         val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
         val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
 
+        // Get scene components
+        val timeComponent = scene.getComponent<TimeComponent>() ?: TimeComponent()
+        val lightingStateComponent = scene.getComponent<LightingStateComponent>() ?: LightingStateComponent()
+
         if (ImGui.collapsingHeader("${Icons.GEAR} ${stringManager.getString("lbl.environment.time_of_day")}")) {
             // Sync with DayNightCycleSystem if available
-            val cycleTime = dayNightSystem?.getCycleTime() ?: scene.sceneData.timeOfDay
+            val cycleTime = dayNightSystem?.getCycleTime() ?: timeComponent.timeOfDay
             val time = floatArrayOf(cycleTime)
             val hours = time[0].toInt()
             val minutes = ((time[0] - hours) * 60).toInt()
             val timeString = String.format("%02d:%02d", hours, minutes)
 
             if (ImGui.sliderFloat(stringManager.getString("lbl.environment.time"), time, 0f, 24f, timeString)) {
-                scene.sceneData.timeOfDay = time[0]
+                timeComponent.timeOfDay = time[0]
+                // Ensure component is on scene
+                if (!scene.hasComponent<TimeComponent>()) {
+                    scene.addComponent(timeComponent)
+                }
                 dayNightSystem?.setCycleTime(time[0])
             }
         }
@@ -109,9 +119,13 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
         }
 
         if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment.lighting")}")) {
-            val useAmbient = ImBoolean(scene.sceneData.useAmbient)
+            val useAmbient = ImBoolean(lightingStateComponent.useAmbient)
             if (ImGui.checkbox(stringManager.getString("lbl.environment.use_ambient"), useAmbient)) {
-                scene.sceneData.useAmbient = useAmbient.get()
+                lightingStateComponent.useAmbient = useAmbient.get()
+                // Ensure component is on scene
+                if (!scene.hasComponent<LightingStateComponent>()) {
+                    scene.addComponent(lightingStateComponent)
+                }
             }
 
             // Auto Ambient toggle (only when DayNightCycleSystem exists)
@@ -126,7 +140,7 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             val autoAmbientEnabled = dayNightSystem?.config?.autoAmbient ?: true
             if (autoAmbientEnabled) {
                 // Show computed ambient (read-only display)
-                val computedAmbient = dayNightSystem?.config?.ambientColor ?: scene.sceneData.ambientLight
+                val computedAmbient = dayNightSystem?.config?.ambientColor ?: lightingStateComponent.ambientLight
                 ImGui.text(
                     "Ambient (Auto): (%.2f, %.2f, %.2f)".format(
                         computedAmbient.x,
@@ -137,12 +151,12 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             } else {
                 // Manual control enabled
                 val ambient = floatArrayOf(
-                    scene.sceneData.ambientLight.x,
-                    scene.sceneData.ambientLight.y,
-                    scene.sceneData.ambientLight.z
+                    lightingStateComponent.ambientLight.x,
+                    lightingStateComponent.ambientLight.y,
+                    lightingStateComponent.ambientLight.z
                 )
                 if (ImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
-                    scene.sceneData.ambientLight.set(ambient[0], ambient[1], ambient[2])
+                    lightingStateComponent.ambientLight.set(ambient[0], ambient[1], ambient[2])
                 }
             }
 

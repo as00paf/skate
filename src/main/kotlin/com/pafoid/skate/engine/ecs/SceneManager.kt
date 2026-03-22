@@ -13,18 +13,18 @@ class SceneManager : KoinComponent {
     suspend fun changeScene(scene: Scene, isFirstScene: Boolean = false) {
         if (!isFirstScene) {
             logger.logEditor("Destroying current scene...")
-            currentScene?.destroy()
+            currentScene?.destroyScene()
         }
         logger.logEngine("Changing scene to ${scene.name}...")
         currentScene = scene
         // TODO: fix loading of saved scene
         //scene.load()
         // scene.init() was already called by BootManager or caller
-        scene.start()
+        scene.startScene()
         logger.logEngine("Scene ${scene.initializer::class.simpleName} loaded and started.")
     }
 
     fun destroy() {
-        currentScene?.destroy()
+        currentScene?.destroyScene()
     }
 }

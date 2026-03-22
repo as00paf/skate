@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.ecs.config.EnvironmentConfig
 import com.pafoid.skate.engine.ecs.scene.SceneData
@@ -18,7 +19,8 @@ class LightingUniformsLoader {
      *
      * @param shader The shader to upload uniforms to
      * @param camera The camera for position and view matrix
-     * @param sceneData The scene data containing ambient light
+     * @param sceneData The scene data containing sun configuration
+     * @param lightingStateComponent Component containing ambient light state (optional)
      * @param directionalLight The directional light config
      * @param environmentConfig Environment config for fog settings (optional)
      * @param shadowMapTextureId The shadow map depth texture ID (optional)
@@ -27,6 +29,7 @@ class LightingUniformsLoader {
         shader: Shader,
         camera: Camera,
         sceneData: SceneData,
+        lightingStateComponent: LightingStateComponent?,
         directionalLight: DirectionalLightConfig?,
         environmentConfig: EnvironmentConfig? = null,
         shadowMapTextureId: Int = 0
@@ -46,8 +49,12 @@ class LightingUniformsLoader {
             shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
         }
 
-        // Ambient light
-        val ambient = if (sceneData.useAmbient) sceneData.ambientLight else Vector3f(0f, 0f, 0f)
+        // Ambient light - use LightingStateComponent if available
+        val ambient = if (lightingStateComponent?.useAmbient == true) {
+            lightingStateComponent.ambientLight
+        } else {
+            Vector3f(0f, 0f, 0f)
+        }
         shader.uploadVec3f(Uniforms.AMBIENT_LIGHT, ambient)
 
         // Shadow map texture (if available)

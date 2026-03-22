@@ -308,15 +308,16 @@ class GameViewWindow : IWindow, KoinComponent {
         // --- Center-aligned Buttons ---
         if (isPlaying) {
             buttons.add {
-                if (scene?.sceneData?.timeScale == 1.0f) {
+                val timeScale = scene?.getTimeScale() ?: 1.0f
+                if (timeScale == 1.0f) {
                     if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene.sceneData.timeScale = 0.0f
+                        scene?.setTimeScale(0.0f)
                         logger.logEditor("Simulation paused")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip("Pause Simulation (Time Scale: 0.0)")
                 } else {
                     if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene?.sceneData?.timeScale = 1.0f
+                        scene?.setTimeScale(1.0f)
                         logger.logEditor("Simulation resumed")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip("Resume Simulation (Time Scale: 1.0)")
@@ -325,7 +326,7 @@ class GameViewWindow : IWindow, KoinComponent {
             buttons.add {
                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                     engine.runtimePlaying = false
-                    scene?.sceneData?.timeScale = 1.0f // Reset timescale when stopping
+                    scene?.setTimeScale(1.0f) // Reset timescale when stopping
                     logger.logEditor("Simulation stopped")
                 }
                 if (ImGui.isItemHovered()) ImGui.setTooltip("Stop Simulation")

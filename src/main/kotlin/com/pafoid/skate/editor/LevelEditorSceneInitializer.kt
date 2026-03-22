@@ -13,6 +13,9 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.LightingStateComponent
+import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.config.DayNightCycleConfig
 import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
@@ -100,12 +103,17 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         // Environment system - manages sky, fog, and atmosphere settings
         scene.addSystem(EnvironmentSystem(stringManager = stringManager))
 
+        // Add initial scene components for environment, time, and lighting state
+        scene.addComponent(EnvironmentComponent())
+        scene.addComponent(TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f))
+        scene.addComponent(LightingStateComponent())
+
         reportProgress(0.7f, "Setting up Lighting Systems...")
 
         // Lighting Systems (must run after input systems)
         val dayNightCycleSystem = DayNightCycleSystem(
             DayNightCycleConfig().apply {
-                cycleTime = scene.sceneData.timeOfDay
+                cycleTime = scene.getTimeOfDay()
                 dayDuration = 300f  // 5 minutes per day
             },
             stringManager = stringManager

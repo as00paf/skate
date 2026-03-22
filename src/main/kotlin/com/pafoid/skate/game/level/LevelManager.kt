@@ -45,7 +45,6 @@ class LevelManager(
             val data = LevelData(
                 gameObjects = scene.gameObjectManager.gameObjects.filter { it.doSerialization() },
                 sceneData = scene.sceneData,
-                gravity = scene.physics3d.getGravity(),
                 levelPath = path
             )
             writer.write(serializer.encode(data))
@@ -95,8 +94,7 @@ class LevelManager(
             val data: LevelData = serializer.decode(inFile)
 
             scene.sceneData = data.sceneData
-            scene.physics3d.setGravity(data.gravity)
-            
+
             // Ensure the correct path is kept even if the loaded file has an old one
             scene.sceneData.levelPath = path
 

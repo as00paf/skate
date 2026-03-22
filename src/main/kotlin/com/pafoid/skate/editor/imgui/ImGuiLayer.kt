@@ -219,7 +219,7 @@ class ImGuiLayer(
             popStyleVar()
         } else {
             setupDockSpace(currentScene)
-            currentScene.imgui()
+            currentScene.imguiScene()
 
             // Render all visible editor windows
             editorWindows.forEach { window ->

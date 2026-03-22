@@ -106,10 +106,14 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, resourceMan
 
         shader.start()
 
+        // Get time component for time of day
+        val timeComponent = scene.getComponent<com.pafoid.skate.engine.ecs.components.TimeComponent>()
+        val timeOfDay = timeComponent?.timeOfDay ?: 12.0f
+
         // Center on camera
         modelMatrix.identity().translation(camera.position)
         // Match rotation to sun direction + manual offset
-        val angle = (scene.sceneData.timeOfDay / 24.0f - 0.5f) * 2.0f * PI.toFloat()
+        val angle = (timeOfDay / 24.0f - 0.5f) * 2.0f * PI.toFloat()
         modelMatrix.rotateY(-angle + Math.toRadians((envConfig?.skyRotation ?: 0f).toDouble()).toFloat())
 
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, modelMatrix)

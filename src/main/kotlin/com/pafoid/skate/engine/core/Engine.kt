@@ -41,9 +41,9 @@ class Engine : KoinComponent {
         if (dt >= 0 && scene != null) {
             if (runtimePlaying) {
                 // Update scene with the actual delta time
-                scene.update(dt)
+                scene.updateScene(dt)
             } else {
-                scene.editorUpdate(dt)
+                scene.editorUpdateScene(dt)
                 editorInputHandler.update(scene)
             }
 
