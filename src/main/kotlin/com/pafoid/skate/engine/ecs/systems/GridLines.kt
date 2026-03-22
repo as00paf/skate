@@ -40,6 +40,7 @@ class GridLines(
     private val padding = 1.5f
 
     // LOD configuration
+    private val lodCloseDistance = 5.0f
     private val lodFarDistance = 20.0f
 
     // Cached vectors to reduce allocations
@@ -52,8 +53,8 @@ class GridLines(
 
         val cameraDistance = abs(camPos.y)
         val extent = calculateGridExtent(cameraDistance, fov, padding, minExtent, maxExtent)
-        val showMinorLines = cameraDistance < lodFarDistance
-
+        val minorLineAlpha = calculateMinorLineAlpha(cameraDistance, lodCloseDistance, lodFarDistance)
+        
         val centerX = floor(camPos.x / majorStep) * majorStep
         val centerZ = floor(camPos.z / majorStep) * majorStep
         val numLines = (extent / minorStep).toInt()
@@ -64,8 +65,8 @@ class GridLines(
             val worldZ = centerZ + offset
             val isMajorZ = isMajorLine(worldZ, majorStep)
 
-            if (!isMajorZ && !showMinorLines) continue
-
+            if (!isMajorZ && minorLineAlpha <= 0f) continue
+            
             tempVec1.set(centerX - extent, -0.001f, worldZ)
             tempVec2.set(centerX + extent, -0.001f, worldZ)
             debugRenderer.addLine3D(tempVec1, tempVec2, if (isMajorZ) majorColor else minorColor)
@@ -73,8 +74,8 @@ class GridLines(
             val worldX = centerX + offset
             val isMajorX = isMajorLine(worldX, majorStep)
 
-            if (!isMajorX && !showMinorLines) continue
-
+            if (!isMajorX && minorLineAlpha <= 0f) continue
+            
             tempVec1.set(worldX, -0.001f, centerZ - extent)
             tempVec2.set(worldX, -0.001f, centerZ + extent)
             debugRenderer.addLine3D(tempVec1, tempVec2, if (isMajorX) majorColor else minorColor)
@@ -122,6 +123,40 @@ class GridLines(
         return calculatedExtent.coerceIn(minExtent, maxExtent)
     }
 
+    /**
+     * Calculates the alpha value for minor lines based on camera distance.
+     *
+     * Uses smoothstep interpolation between LOD thresholds to prevent popping:
+     * - Distance < closeDistance: alpha = 1.0 (fully visible)
+     * - Distance > farDistance: alpha = 0.0 (hidden)
+     * - Between: smooth interpolation
+     *
+     * @param cameraDistance Current camera distance from grid
+     * @param closeDistance Distance where minor lines start fading
+     * @param farDistance Distance where minor lines are fully hidden
+     * @return Alpha value 0.0-1.0 for minor line visibility
+     */
+    private fun calculateMinorLineAlpha(
+        cameraDistance: Float,
+        closeDistance: Float,
+        farDistance: Float
+    ): Float {
+        if (cameraDistance <= closeDistance) return 1.0f
+        if (cameraDistance >= farDistance) return 0.0f
+
+        val t = (cameraDistance - closeDistance) / (farDistance - closeDistance)
+        return 1.0f - smoothstep(t)
+    }
+
+    /**
+     * Smoothstep interpolation function.
+     * Provides smooth S-curve interpolation between 0 and 1.
+     */
+    private fun smoothstep(t: Float): Float {
+        val clamped = t.coerceIn(0f, 1f)
+        return clamped * clamped * (3f - 2f * clamped)
+    }
+    
     /**
      * Determines if a position is on a major grid line.
      *

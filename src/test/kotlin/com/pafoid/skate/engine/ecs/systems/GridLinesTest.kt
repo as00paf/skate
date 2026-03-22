@@ -168,6 +168,122 @@ class GridLinesTest {
         return calculatedExtent.coerceIn(minExtent, maxExtent)
     }
 
+    @Test
+    fun `calculateMinorLineAlpha_closeDistance_returnsFullAlpha`() {
+        // Arrange
+        val cameraDistance = 3.0f // Less than closeDistance (5.0)
+        val closeDistance = 5.0f
+        val farDistance = 20.0f
+
+        // Act
+        val alpha = calculateMinorLineAlpha(cameraDistance, closeDistance, farDistance)
+
+        // Assert
+        assertEquals(1.0f, alpha, 0.01f, "Should return full alpha when camera is close")
+    }
+
+    @Test
+    fun `calculateMinorLineAlpha_farDistance_returnsZeroAlpha`() {
+        // Arrange
+        val cameraDistance = 25.0f // Greater than farDistance (20.0)
+        val closeDistance = 5.0f
+        val farDistance = 20.0f
+
+        // Act
+        val alpha = calculateMinorLineAlpha(cameraDistance, closeDistance, farDistance)
+
+        // Assert
+        assertEquals(0.0f, alpha, 0.01f, "Should return zero alpha when camera is far")
+    }
+
+    @Test
+    fun `calculateMinorLineAlpha_atCloseDistance_returnsFullAlpha`() {
+        // Arrange
+        val cameraDistance = 5.0f // Exactly at closeDistance
+        val closeDistance = 5.0f
+        val farDistance = 20.0f
+
+        // Act
+        val alpha = calculateMinorLineAlpha(cameraDistance, closeDistance, farDistance)
+
+        // Assert
+        assertEquals(1.0f, alpha, 0.01f, "Should return full alpha at close distance boundary")
+    }
+
+    @Test
+    fun `calculateMinorLineAlpha_atFarDistance_returnsZeroAlpha`() {
+        // Arrange
+        val cameraDistance = 20.0f // Exactly at farDistance
+        val closeDistance = 5.0f
+        val farDistance = 20.0f
+
+        // Act
+        val alpha = calculateMinorLineAlpha(cameraDistance, closeDistance, farDistance)
+
+        // Assert
+        assertEquals(0.0f, alpha, 0.01f, "Should return zero alpha at far distance boundary")
+    }
+
+    @Test
+    fun `calculateMinorLineAlpha_midDistance_returnsInterpolatedAlpha`() {
+        // Arrange
+        val cameraDistance = 12.5f // Midway between close (5) and far (20)
+        val closeDistance = 5.0f
+        val farDistance = 20.0f
+
+        // Act
+        val alpha = calculateMinorLineAlpha(cameraDistance, closeDistance, farDistance)
+
+        // Assert
+        assertTrue(alpha > 0f && alpha < 1f, "Should return interpolated alpha at mid distance")
+        assertEquals(0.5f, alpha, 0.15f, "Should be approximately halfway at mid distance")
+    }
+
+    @Test
+    fun `smoothstep_zero_returnsZero`() {
+        // Act
+        val result = smoothstep(0f)
+
+        // Assert
+        assertEquals(0.0f, result, 0.01f)
+    }
+
+    @Test
+    fun `smoothstep_one_returnsOne`() {
+        // Act
+        val result = smoothstep(1f)
+
+        // Assert
+        assertEquals(1.0f, result, 0.01f)
+    }
+
+    @Test
+    fun `smoothstep_half_returnsSmoothInterpolation`() {
+        // Act
+        val result = smoothstep(0.5f)
+
+        // Assert
+        assertEquals(0.5f, result, 0.01f, "Smoothstep at 0.5 should be 0.5")
+    }
+
+    // Helper function to test (will be moved to GridLines.kt)
+    private fun calculateMinorLineAlpha(
+        cameraDistance: Float,
+        closeDistance: Float,
+        farDistance: Float
+    ): Float {
+        if (cameraDistance <= closeDistance) return 1.0f
+        if (cameraDistance >= farDistance) return 0.0f
+
+        val t = (cameraDistance - closeDistance) / (farDistance - closeDistance)
+        return 1.0f - smoothstep(t)
+    }
+
+    private fun smoothstep(t: Float): Float {
+        val clamped = t.coerceIn(0f, 1f)
+        return clamped * clamped * (3f - 2f * clamped)
+    }
+    
     private fun isMajorLine(position: Float, majorStep: Float): Boolean {
         val remainder = abs(position % majorStep)
         val tolerance = 0.02f

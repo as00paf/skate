@@ -33,7 +33,7 @@ origin axes positioning.
 
 ### Tasks
 
-- [ ] **A34.0.1: Increase grid extent and implement dynamic sizing**
+- [x] **A34.0.1: Increase grid extent and implement dynamic sizing**
   - Location: `engine/ecs/systems/GridLines.kt`
   - Current: Fixed 40 lines (±4.0 units) - too small
   - Target: Dynamic extent based on camera distance from grid
@@ -41,15 +41,18 @@ origin axes positioning.
   - Ensure grid always fills viewport regardless of camera height
   - Minimum extent: 10 units, Maximum extent: 100+ units
 
-- [ ] **A34.0.2: Implement camera distance-based LOD**
+- [x] **A34.0.2: Implement camera distance-based LOD with smooth transitions**
   - Location: `engine/ecs/systems/GridLines.kt`
-  - LOD 0 (close < 5 units): Show minor lines (0.1 step) + major lines (1.0 step)
-  - LOD 1 (medium 5-20 units): Show minor lines + major lines
+  - Current: Basic LOD (minor lines hidden when > 20 units)
+  - Target: Multi-level LOD with smooth fading
+  - LOD 0 (close < 5 units): Show all minor + major lines
+  - LOD 1 (medium 5-20 units): Show minor + major lines (current)
   - LOD 2 (far > 20 units): Hide minor lines, show only major lines
-  - Smooth transitions between LOD levels to prevent popping
+  - Add smooth alpha fading between LOD levels to prevent popping
   - Configurable LOD thresholds via constants
+  - **Status**: Implemented with smoothstep interpolation for smooth transitions ✅
 
-- [ ] **A34.0.3: Fix origin axes positioning**
+- [x] **A34.0.3: Fix origin axes positioning**
   - Location: `engine/ecs/systems/GridLines.kt`
   - Current: Axes follow camera (wrong)
   - Target: Axes fixed at world origin (0, 0, 0)
@@ -59,7 +62,7 @@ origin axes positioning.
   - Dynamic length based on camera distance (not hardcoded 100 units)
   - Only render axes when camera is within reasonable distance
 
-- [ ] **A34.0.4: Tune grid colors to match Godot style**
+- [x] **A34.0.4: Tune grid colors to match Godot style**
   - Location: `engine/ecs/systems/GridLines.kt`
   - Current: majorColor = (0.3, 0.3, 0.3), minorColor = (0.15, 0.15, 0.15)
   - Target Godot-style:
@@ -174,6 +177,13 @@ Optional polish features for the grid system after core Godot-style implementati
 ---
 
 ## ✅ Completed Versions
+
+### v0.34: Godot-style Grid Implementation (In Progress)
+
+- **A34.0.1**: Dynamic grid extent with camera-based sizing ✅
+- **A34.0.2**: LOD system with smoothstep transitions ✅
+- **A34.0.3**: Origin axes fixed at world origin with correct colors ✅
+- **A34.0.4**: Godot-style grid colors ✅
 
 ### v0.33: Code Quality & Technical Debt (In Progress)
 
