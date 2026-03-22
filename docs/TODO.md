@@ -1,187 +1,158 @@
-# 🛹 SkateSim - 3D Grid System (Godot-style)
+# 🛹 SkateSim Engine - TODO & Roadmap
 
-## Goal
+## Current Focus: ECS Architecture Improvements
 
-Refactor the grid system to work like Godot Engine's 3D editor viewport grid. The current implementation is close but
-needs improvements to achieve the polished, infinite-scrolling grid behavior that Godot is known for.
+This document tracks upcoming development priorities and technical debt for the SkateSim skateboarding simulation
+engine.
 
 ---
 
-## 🔴 v0.34: Godot-style Grid Implementation (Planned)
+## 🔴 v0.36: ECS Environment System (Planned)
 
 ### Summary
 
-The current `GridLines` system already renders a horizontal X-Z plane grid that follows the camera. However, it needs
-refinements to match Godot's polished grid behavior: larger extent, proper LOD, configurable settings, and correct
-origin axes positioning.
+Refactor environment settings (sky, fog, atmosphere) from hardcoded `SceneData` properties into a proper ECS system.
+This follows the established pattern from `DayNightCycleSystem` and `DirectionalLightSystem` for cleaner architecture
+and better separation of concerns.
 
-### Godot Grid Characteristics
+### Problem Statement
 
-**Visual Style:**
+**Current Issues:**
 
-- Single horizontal grid plane (X-Z at Y=0)
-- Dark gray grid lines with major/minor distinction
-- Origin axes (X=red, Y=green, Z=blue) fixed at world origin (0,0,0)
-- Clean, minimal appearance
+- Environment data (skyColor, fogColor, fogDensity, fogGradient) stored in `SceneData` but not managed by any system
+- `EnvironmentWindow` directly manipulates `SceneData` properties - no encapsulation
+- Hardcoded values in `LevelEditorSceneInitializer.kt` (lines 71-74)
+- Scattered environment logic across rendering, scene initialization, and UI
+- No ECS system owns environment state - violates single responsibility principle
 
-**Behavior:**
+**Files with hardcoded environment code:**
 
-- Grid follows camera but snaps to major step intervals (infinite scrolling illusion)
-- Grid extent is large enough to always fill the viewport
-- LOD adjusts grid density based on camera distance
-- No Z-fighting or popping artifacts
+- `LevelEditorSceneInitializer.kt`: Sets initial sky/fog values
+- `SceneData.kt`: Contains environment properties without system management
+- `EnvironmentWindow.kt`: Directly reads/writes `scene.sceneData` properties
+- `LightingUniformsLoader.kt`: Reads from `sceneData` for shader uniforms
+- `SkyDomeRenderer.kt`: Reads from `scene.sceneData` for rendering
+- `GeometryPass.kt`: Uses `scene.sceneData.skyColor` for clear color
+
+### Proposed Solution: EnvironmentSystem ECS
+
+**Create new `EnvironmentSystem` that:**
+
+1. Owns all environment state via `EnvironmentConfig` data class
+2. Provides ImGui interface for real-time editing
+3. Replaces `SceneData` environment properties
+4. Integrates with existing renderers via system reference
+5. Follows pattern from `DayNightCycleSystem` and `DirectionalLightSystem`
 
 ### Tasks
 
-- [x] **A34.0.1: Increase grid extent and implement dynamic sizing**
-  - Location: `engine/ecs/systems/GridLines.kt`
-  - Current: Fixed 40 lines (±4.0 units) - too small
-  - Target: Dynamic extent based on camera distance from grid
-  - Formula: `extent = cameraDistance * tan(fov/2) * padding`
-  - Ensure grid always fills viewport regardless of camera height
-  - Minimum extent: 10 units, Maximum extent: 100+ units
+- [ ] **A36.0.1: Create EnvironmentConfig data class**
+  - Location: `engine/ecs/config/EnvironmentConfig.kt` (new)
+  - Properties:
+    - `skyColor: Vector3f = (0.6, 0.7, 0.9)` - Clear sky color
+    - `skyTint: Vector3f = (1.0, 1.0, 1.0)` - Sky tint multiplier
+    - `skyExposure: Float = 1.0f` - Sky exposure/brightness
+    - `skyRotation: Float = 0.0f` - Sky rotation in degrees
+    - `fogColor: Vector3f = (0.8, 0.8, 0.8)` - Fog color
+    - `fogDensity: Float = 0.0f` - Fog density (0 = no fog)
+    - `fogGradient: Float = 1.5f` - Fog gradient falloff
+  - Include `resetToDefaults()` method
+  - **Impact**: High - Single source of truth for environment state
 
-- [x] **A34.0.2: Implement camera distance-based LOD with smooth transitions**
-  - Location: `engine/ecs/systems/GridLines.kt`
-  - Current: Basic LOD (minor lines hidden when > 20 units)
-  - Target: Multi-level LOD with smooth fading
-  - LOD 0 (close < 5 units): Show all minor + major lines
-  - LOD 1 (medium 5-20 units): Show minor + major lines (current)
-  - LOD 2 (far > 20 units): Hide minor lines, show only major lines
-  - Add smooth alpha fading between LOD levels to prevent popping
-  - Configurable LOD thresholds via constants
-  - **Status**: Implemented with smoothstep interpolation for smooth transitions ✅
+- [ ] **A36.0.2: Create EnvironmentSystem ECS**
+  - Location: `engine/ecs/systems/EnvironmentSystem.kt` (new)
+  - Extend base `System` class with `ExecutionPriority.EARLY`
+  - Constructor injection: `StringManager`, optional `DayNightCycleSystem` reference
+  - Implement `imgui()` method for environment controls
+  - Expose `config: EnvironmentConfig` property
+  - Sync with `DayNightCycleSystem` if auto-ambient enabled
+  - **Impact**: High - Proper ECS ownership of environment state
 
-- [x] **A34.0.3: Fix origin axes positioning**
-  - Location: `engine/ecs/systems/GridLines.kt`
-  - Current: Axes follow camera (wrong)
-  - Target: Axes fixed at world origin (0, 0, 0)
-  - X-axis: Red (1, 0.2, 0.2) - already correct
-  - Y-axis: Green (0.2, 1, 0.2) - **currently missing!**
-  - Z-axis: Blue (0.2, 0.2, 1) - **currently using green, needs fix**
-  - Dynamic length based on camera distance (not hardcoded 100 units)
-  - Only render axes when camera is within reasonable distance
+- [ ] **A36.0.3: Remove environment properties from SceneData**
+  - Location: `engine/ecs/scene/SceneData.kt`
+  - Remove: `skyColor`, `skyTint`, `skyExposure`, `skyRotation`
+  - Remove: `fogColor`, `fogDensity`, `fogGradient`
+  - Keep: `timeOfDay`, `useAmbient`, `ambientLight` (for now)
+  - Update serialization annotations
+  - **Impact**: High - Clean separation of concerns
 
-- [x] **A34.0.4: Tune grid colors to match Godot style**
-  - Location: `engine/ecs/systems/GridLines.kt`
-  - Current: majorColor = (0.3, 0.3, 0.3), minorColor = (0.15, 0.15, 0.15)
-  - Target Godot-style:
-    - Major lines: (0.4, 0.4, 0.4) - slightly brighter
-    - Minor lines: (0.25, 0.25, 0.25) - lighter for subtlety
-  - Consider alpha blending if DebugRenderer supports it
-  - Test visibility against various background colors
+- [ ] **A36.0.4: Update EnvironmentWindow to use EnvironmentSystem**
+  - Location: `editor/windows/EnvironmentWindow.kt`
+  - Get `EnvironmentSystem` from `scene.systemManager`
+  - Replace all `scene.sceneData.*` references with `system.config.*`
+  - Follow pattern from `SystemsWindow` (call `system.imgui()` inside collapsing header)
+  - Remove direct `SceneData` manipulation
+  - **Impact**: High - Proper ECS integration
 
-- [x] **A34.0.5: Add GridConfig data class for settings**
-  - Location: `engine/ecs/systems/GridLines.kt`
-  - Implemented mutable `GridConfig` data class with all configuration options
-  - Added `resetToDefaults()` method for restoring default values
-  - All properties are mutable vars for ImGui editing
-  - Default values: majorStep=1.0, minorStep=0.1, gridYOffset=-0.1f
-  - **Status**: Complete ✅
-
-- [x] **A34.0.6: Add ImGui configuration panel**
-  - Location: `GridLines.imgui()` method
-  - Implemented full ImGui panel with:
-    - Visibility toggles (Show Grid, Show Origin Axes)
-    - Grid spacing sliders (Major Step, Minor Step)
-    - LOD distance sliders (Close/Far)
-    - Extent settings (Min/Max)
-    - Color pickers (Major/Minor line colors)
-    - Z-fighting offset slider
-    - Reset to Defaults button
-  - All strings localized (strings.properties, strings_fr.properties)
-  - Added stringManager dependency via constructor injection
-  - **Status**: Complete ✅
-    - Color pickers for major/minor lines
-    - Reset to defaults button
-  - Register with SystemsWindow (follow DayNightCycleSystem pattern)
-  - Add string resources for all labels (strings.properties)
-
-- [x] **A34.0.7: Optimize line rendering performance**
-  - Location: `engine/ecs/systems/GridLines.kt`
-  - Added cached Vector3f objects (lineStart, lineEnd) to reduce allocations
-  - Cached constants: tanHalfFov, padding, axis colors
-  - Pre-computed line endpoints (xMin, xMax, zMin, zMax)
-  - Added frustum culling: skips lines outside camera view
-  - Optimized calculateGridExtent() and calculateMinorLineAlpha() to use config directly
-  - **Status**: Complete ✅
-
-- [x] **A34.0.8: Eliminate Z-fighting and visual artifacts**
-  - Location: `engine/ecs/systems/GridLines.kt`
-  - Changed default Y offset from -0.001f to -0.1f
-  - Added KDoc explaining Z-fighting prevention
-  - Configurable gridYOffset via ImGui (-1.0 to 0.0 range)
-  - Grid renders below world origin to avoid ground plane conflicts
-  - **Status**: Complete ✅
-
-- [x] **A34.0.9: Update LevelEditorSceneInitializer**
+- [ ] **A36.0.5: Update LevelEditorSceneInitializer**
   - Location: `editor/LevelEditorSceneInitializer.kt`
-  - Updated GridLines constructor to pass stringManager
-  - GridConfig passed with default values
-  - Grid visible and properly configured by default
-  - **Status**: Complete ✅
+  - Remove hardcoded environment setup (lines 71-74)
+  - Add `EnvironmentSystem` to scene via `scene.addSystem()`
+  - Use `EnvironmentConfig` with default values
+  - EnvironmentWindow will handle all environment configuration
+  - **Impact**: Medium - Remove hardcoded initialization
 
-- [x] **A34.0.10: Add unit tests for grid calculations**
-  - Location: `src/test/kotlin/com/pafoid/skate/engine/ecs/systems/GridLinesTest.kt`
-  - Test LOD distance calculations (calculateMinorLineAlpha)
-  - Test dynamic extent formula (calculateGridExtent)
-  - Test major/minor line detection (isMajorLine)
-  - Test smoothstep interpolation
-  - Test GridConfig default values, resetToDefaults(), and custom values
-  - Added 20+ unit tests covering all grid calculations
-  - **Status**: Complete ✅
+- [ ] **A36.0.6: Update LightingUniformsLoader**
+  - Location: `engine/render/renderer/LightingUniformsLoader.kt`
+  - Get `EnvironmentSystem` from scene or pass as parameter
+  - Read fog settings from `system.config` instead of `sceneData`
+  - Upload fog uniforms: `uFogColor`, `uFogDensity`, `uFogGradient`
+  - **Impact**: High - Rendering pipeline uses ECS system
 
-- [x] **A34.0.11: Documentation and string resources**
-  - Updated KDoc for GridLines class with feature list
-  - Documented GridConfig properties with detailed KDoc
-  - Added 20+ string resources for ImGui labels (strings.properties, strings_fr.properties)
-  - Documented Godot-style design inspiration in TODO.md
-  - Updated CHANGELOG.md with v0.34 summary
-  - **Status**: Complete ✅
+- [ ] **A36.0.7: Update SkyDomeRenderer**
+  - Location: `engine/render/renderer/SkyDomeRenderer.kt`
+  - Get `EnvironmentSystem` from scene or pass as parameter
+  - Read sky/fog settings from `system.config`
+  - Update shader uniforms for sky rendering
+  - **Impact**: High - Rendering pipeline uses ECS system
+
+- [ ] **A36.0.8: Update GeometryPass**
+  - Location: `engine/render/renderer/passes/GeometryPass.kt`
+  - Get `EnvironmentSystem` from scene or pass as parameter
+  - Read clear color from `system.config.skyColor`
+  - Update `clearColor()` call to use system config
+  - **Impact**: Medium - Clear color from ECS system
+
+- [ ] **A36.0.9: Add string resources for EnvironmentSystem ImGui**
+  - Location: `values/strings.properties`, `values/strings_fr.properties`
+  - Add labels for: sky color, sky tint, exposure, rotation
+  - Add labels for: fog color, density, gradient
+  - Add labels for: reset to defaults, advanced settings
+  - Follow existing naming convention: `lbl.environment_system.*`
+  - **Impact**: Low - Full localization support
+
+- [ ] **A36.0.10: Add unit tests for EnvironmentSystem**
+  - Location: `test/.../ecs/systems/EnvironmentSystemTest.kt` (new)
+  - Test `EnvironmentConfig` default values
+  - Test `resetToDefaults()` restores correct values
+  - Test environment state changes propagate to renderers
+  - Test ImGui interface updates config correctly
+  - **Impact**: High - Ensure environment system correctness
+
+- [ ] **A36.0.11: Update documentation**
+  - Location: `CHANGELOG.md`, `TODO.md`
+  - Document v0.36 changes in CHANGELOG
+  - Mark A36 tasks complete in TODO
+  - Update architecture documentation
+  - **Impact**: Low - Documentation completeness
 
 ---
 
-## 🔴 v0.35: Advanced Grid Features (Planned)
+## 🔵 Future: Code Quality & Technical Debt (Planned)
 
-### Summary
+### v0.33: Code Quality & Technical Debt
 
-Optional polish features for the grid system after core Godot-style implementation is complete.
+- [ ] Audit and replace remaining `!!` operators with safe calls
+- [ ] Review resource management for potential memory leaks
+- [ ] Optimize animation blending timing
+- [ ] Reduce object allocation in hot loops
+- [ ] Increase test coverage for complex systems
 
-### Tasks
+### v0.32: ImGui Refactor Cleanup
 
-- [x] **A35.0.1: Add grid center marker**
-  - Render small crosshair at world origin (0, 0, 0)
-  - Yellow color (configurable) for visibility
-  - Helps orient user in world space
-  - Only visible when camera is close to origin (< 30 units by default)
-  - Size dynamically scales with camera distance
-  - **Status**: Complete ✅
-
-- [x] **A35.0.2: Implement grid fading at edges**
-  - Fade grid lines based on distance from grid center
-  - Creates smoother infinite grid illusion
-  - Prevents hard cutoff at grid extent boundary
-  - Configurable fade start position (0.0-1.0, default 0.7)
-  - Uses smoothstep interpolation for smooth fade
-  - Toggle via ImGui (edgeFadeEnabled)
-  - **Status**: Complete ✅
-
-- [x] **A35.0.3: Add secondary grid plane toggle**
-  - Optional secondary grid at custom Y height
-  - User-specified Y value (-10 to 10 units)
-  - Cyan color (configurable) to distinguish from primary grid
-  - 50% alpha for visual distinction
-  - Useful for multi-level level design and ceiling work
-  - Toggle via ImGui (secondaryGridEnabled)
-  - **Status**: Complete ✅
-
-- [x] **A35.0.4: Grid snapping visualization**
-  - Highlight nearest grid intersection from camera position
-  - Green cross marker at snap point
-  - Only visible when camera is close to grid (< 20 units)
-  - Helps users visualize snap points for object placement
-  - Toggle via ImGui (snapVisualizationEnabled)
-  - **Status**: Complete ✅
+- [ ] Remove `EnvironmentWindow` duplication (moved to EnvironmentSystem)
+- [ ] Consolidate system UI patterns
+- [ ] Review dockable window registry for dead code
 
 ---
 
@@ -210,14 +181,6 @@ Optional polish features for the grid system after core Godot-style implementati
 - **A34.0.9**: LevelEditorSceneInitializer updated ✅
 - **A34.0.10**: Comprehensive unit tests (20+ tests) ✅
 - **A34.0.11**: Documentation and string resources (English/French) ✅
-
-### v0.33: Code Quality & Technical Debt (In Progress)
-
-- See previous TODO.md items for planned work
-
-### v0.32: ImGui Refactor Cleanup (Planned)
-
-- See previous TODO.md items for planned work
 
 ### v0.31: Systems ImGui Integration & ImGuiLayer Refactoring (Complete) ✅
 
@@ -262,57 +225,58 @@ Optional polish features for the grid system after core Godot-style implementati
 
 ---
 
-## Technical Notes
+## Historical Notes
 
-### Current GridLines.kt Analysis
+### Grid System Evolution (v0.34-v0.35)
 
-**File Location:** `src/main/kotlin/com/pafoid/skate/engine/ecs/systems/GridLines.kt`
+**v0.34** established the Godot-style grid foundation:
 
-**Current Behavior:**
+- Dynamic extent based on camera distance
+- LOD system with smoothstep transitions
+- Origin axes with correct RGB=XYZ colors
+- Full ImGui configuration panel
+- 20+ unit tests
 
-- ✅ Renders X-Z plane grid (horizontal)
-- ✅ Grid follows camera with major step snapping
-- ✅ Major/minor line distinction
-- ✅ Origin axes rendering (but wrong colors and positioning)
+**v0.35** added advanced polish features:
 
-**Issues to Fix:**
+- Center marker crosshair at world origin
+- Edge fading for smoother infinite grid illusion
+- Secondary grid plane for multi-level design
+- Snap visualization for object placement
+- 6 additional unit tests (26 total)
 
-- ❌ Grid extent too small (±4 units)
-- ❌ No LOD system
-- ❌ Origin axes follow camera (should be fixed at world origin)
-- ❌ Missing Y-axis (green) at origin
-- ❌ Z-axis uses green instead of blue
-- ❌ Hardcoded axis length (100 units)
-- ❌ No configuration options
-- ❌ Fixed grid size regardless of camera distance
+**Total grid system code:**
+
+- GridLines.kt: ~560 lines (rendering + ImGui)
+- GridConfig.kt: ~70 lines (embedded in GridLines.kt)
+- GridLinesTest.kt: ~520 lines (26 tests)
+- String resources: 31 keys (English + French)
+
+---
+
+## Technical Reference
 
 ### Godot Grid Reference
 
-**Key Characteristics:**
+**Visual Style:**
 
-- Single horizontal grid plane (X-Z)
-- Infinite scrolling via camera-follow + snap
-- Large extent (fills viewport at any distance)
-- LOD removes minor lines when camera is far
-- Origin axes fixed at (0, 0, 0) with X=red, Y=green, Z=blue
-- Clean, subtle appearance
+- Single horizontal grid plane (X-Z at Y=0)
+- Dark gray grid lines with major/minor distinction
+- Origin axes (X=red, Y=green, Z=blue) fixed at world origin (0,0,0)
+- Clean, minimal appearance
+
+**Behavior:**
+
+- Grid follows camera but snaps to major step intervals (infinite scrolling illusion)
+- Grid extent is large enough to always fill the viewport
+- LOD adjusts grid density based on camera distance
+- No Z-fighting or popping artifacts
 
 **Coordinate System:**
-
 - **X-axis**: Red (right/left)
 - **Y-axis**: Green (up/down)
 - **Z-axis**: Blue (forward/back)
 
 ---
 
-## Historical Summary
-
-**All v0.28, v0.29, v0.30, and v0.31 items are COMPLETE** ✅
-
-See CHANGELOG.md for detailed implementation notes.
-
-**Upcoming:**
-- **v0.32**: ImGui Refactor Cleanup (remove EnvironmentWindow duplication)
-- **v0.33**: Code Quality & Technical Debt (!! operators, resource management, animation, performance)
-- **v0.34**: Godot-style Grid Implementation (new - this document)
-- **v0.35**: Advanced Grid Features (new - this document)
+## End of TODO
