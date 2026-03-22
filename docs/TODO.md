@@ -38,8 +38,9 @@ the first step in incremental ECS migration.
 - [ ] **A38.0.1: Make Scene extend GameObject**
   - Location: `engine/ecs/Scene.kt`
   - Scene becomes a GameObject that can have components
-  - Camera becomes a component on Scene (or keep as special case)
-  - SceneData properties migrate to components
+  - Migrate `camera: Camera` to `CameraComponent` (or keep as special case with getter)
+  - Migrate `sceneData` properties to appropriate components
+  - Update `init()`, `start()`, `update()`, `editorUpdate()`, `destroy()` to call super
   - **Impact**: Critical - Foundation for component-based architecture
 
 - [ ] **A38.0.2: Create EnvironmentComponent**
@@ -49,37 +50,93 @@ the first step in incremental ECS migration.
   - Serializable for level saves
   - **Impact**: High - Environment data as component
 
-- [ ] **A38.0.3: Refactor EnvironmentSystem to iterate components**
+- [ ] **A38.0.3: Create TimeComponent (for timeOfDay, timeScale)**
+  - Location: `engine/ecs/components/TimeComponent.kt` (new)
+  - Properties: timeOfDay, timeScale
+  - Used by DayNightCycleSystem and Scene.update()
+  - **Impact**: High - Time state as component
+
+- [ ] **A38.0.4: Create LightingStateComponent (for ambientLight, useAmbient)**
+  - Location: `engine/ecs/components/LightingStateComponent.kt` (new)
+  - Properties: ambientLight, useAmbient
+  - Written by DayNightCycleSystem, read by LightingUniformsLoader
+  - **Impact**: High - Lighting state as component
+
+- [ ] **A38.0.5: Refactor EnvironmentSystem to iterate components**
   - Location: `engine/ecs/systems/EnvironmentSystem.kt`
   - Remove direct config ownership
   - Iterate GameObjects with EnvironmentComponent (including Scene)
   - Update method processes environment components
   - **Impact**: High - Proper ECS pattern
 
-- [ ] **A38.0.4: Update renderers to read from EnvironmentComponent**
+- [ ] **A38.0.6: Update DayNightCycleSystem to write to components**
+  - Location: `engine/ecs/systems/DayNightCycleSystem.kt`
+  - Keep config for cycle parameters (cycleTime, dayDuration)
+  - Write ambientColor to LightingStateComponent on Scene
+  - Read timeOfDay from TimeComponent on Scene
+  - **Impact**: High - Proper ECS data flow
+
+- [ ] **A38.0.7: Update renderers to read from components**
   - Location: `SkyDomeRenderer.kt`, `LightingUniformsLoader.kt`, `GeometryPass.kt`
   - Get EnvironmentComponent from Scene GameObject
+  - Get TimeComponent from Scene for timeOfDay
+  - Get LightingStateComponent for ambientLight
   - Remove `scene.systemManager.getSystem<EnvironmentSystem>()` calls
   - **Impact**: High - Decouple rendering from system classes
 
-- [ ] **A38.0.5: Create LightingComponent (prepare for DayNightCycle refactor)**
+- [ ] **A38.0.8: Update LevelEditorSceneInitializer**
+  - Location: `editor/LevelEditorSceneInitializer.kt`
+  - Add EnvironmentComponent to Scene (instead of EnvironmentSystem config)
+  - Add TimeComponent to Scene with initial timeOfDay
+  - Add LightingStateComponent to Scene
+  - Remove `scene.sceneData.*` references for environment properties
+  - **Impact**: High - Scene initialization uses components
+
+- [ ] **A38.0.9: Update EnvironmentWindow**
+  - Location: `editor/windows/EnvironmentWindow.kt`
+  - Read/write EnvironmentComponent on Scene
+  - Read/write TimeComponent for timeOfDay
+  - Read/write LightingStateComponent for ambientLight
+  - Keep DayNightCycleSystem integration for cycle time
+  - **Impact**: Medium - Editor UI uses components
+
+- [ ] **A38.0.10: Update LevelManager and LevelData**
+  - Location: `game/level/LevelManager.kt`, `game/level/LevelData.kt`
+  - LevelData.sceneData no longer contains environment properties
+  - Serialize components on Scene GameObject instead
+  - Update saveToFile() and loadFromFile() to handle component-based scene data
+  - **Impact**: Critical - Level serialization must work with new structure
+
+- [ ] **A38.0.11: Update SceneManager**
+  - Location: `engine/ecs/SceneManager.kt`
+  - Ensure scene change properly handles new component structure
+  - May need to update changeScene() to handle component initialization
+  - **Impact**: Medium - Scene management compatibility
+
+- [ ] **A38.0.12: Update GameViewWindow**
+  - Location: `editor/windows/GameViewWindow.kt`
+  - Update `scene.sceneData.timeScale` reference to use TimeComponent
+  - **Impact**: Low - Fix timeScale access
+
+- [ ] **A38.0.13: Update SkyDomeRenderer timeOfDay access**
+  - Location: `engine/render/renderer/SkyDomeRenderer.kt`
+  - Change `scene.sceneData.timeOfDay` to read from TimeComponent
+  - **Impact**: Low - Fix timeOfDay access
+
+- [ ] **A38.0.14: Create LightingComponent (prepare for DayNightCycle refactor)**
   - Location: `engine/ecs/components/LightingComponent.kt` (new)
-  - Properties: sunDirection, sunColor, ambientColor, sunIntensity, shadowIntensity, isDaytime
-  - Pure data component for lighting state
+  - Properties: sunDirection, sunColor, sunIntensity, shadowIntensity, isDaytime
+  - Pure data component for computed lighting state
   - **Impact**: Medium - Prepare for DayNightCycleSystem refactor
 
-- [ ] **A38.0.6: Update DayNightCycleSystem to write to LightingComponent**
-  - Location: `engine/ecs/systems/DayNightCycleSystem.kt`
-  - Keep config for cycle parameters (cycleTime, dayDuration)
-  - Write computed values (sunDirection, sunColor, ambientColor) to LightingComponent
-  - **Impact**: Medium - Partial ECS migration for lighting
-
-- [ ] **A38.0.7: Add unit tests for ECS foundation**
+- [ ] **A38.0.15: Add unit tests for ECS foundation**
   - Location: `test/.../ecs/components/`, `test/.../ecs/systems/`
   - Test Scene as GameObject
-  - Test EnvironmentComponent creation and serialization
+  - Test EnvironmentComponent, TimeComponent, LightingStateComponent creation
+  - Test component serialization/deserialization
   - Test EnvironmentSystem iterates components correctly
-  - **Impact**: High - Ensure ECS foundation is solid
+  - Test level save/load with new component structure
+  - **Impact**: High - Ensure ECS foundation is solid, no regressions
 
 ---
 
