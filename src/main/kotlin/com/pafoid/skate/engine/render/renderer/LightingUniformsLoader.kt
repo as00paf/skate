@@ -57,9 +57,11 @@ class LightingUniformsLoader {
             // This will be set by the caller based on actual shadow map resolution
         }
 
-        // Fog - use EnvironmentConfig if available, otherwise use defaults
+        // Fog - use EnvironmentConfig if available and enabled, otherwise use defaults
+        // When renderFog is false, upload zero density to disable fog effect
+        val fogEnabled = environmentConfig?.renderFog ?: true
         shader.uploadVec3f(Uniforms.FOG_COLOR, environmentConfig?.fogColor ?: Vector3f(0.8f, 0.8f, 0.8f))
-        shader.uploadFloat(Uniforms.FOG_DENSITY, environmentConfig?.fogDensity ?: 0.0f)
+        shader.uploadFloat(Uniforms.FOG_DENSITY, if (fogEnabled) environmentConfig?.fogDensity ?: 0.0f else 0.0f)
         shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentConfig?.fogGradient ?: 1.5f)
     }
 

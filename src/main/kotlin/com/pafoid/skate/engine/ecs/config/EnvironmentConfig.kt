@@ -16,12 +16,14 @@ import org.joml.Vector3f
  * - [skyTint]: Sky color tint multiplier
  * - [skyExposure]: Sky exposure/brightness
  * - [skyRotation]: Sky rotation in degrees
+ * - [renderSky]: Toggle sky rendering independently
  *
  * ## Fog Properties
  *
  * - [fogColor]: Fog color
  * - [fogDensity]: Fog density (0 = no fog)
  * - [fogGradient]: Fog gradient falloff
+ * - [renderFog]: Toggle fog rendering independently
  *
  * @see EnvironmentSystem
  */
@@ -65,6 +67,13 @@ data class EnvironmentConfig(
      */
     var skyRotation: Float = 0.0f,
 
+    /**
+     * Toggle sky rendering independently from fog.
+     * When false, sky dome is not rendered and framebuffer clears to fallback color.
+     * Default: true
+     */
+    var renderSky: Boolean = true,
+
     // =========================================================================
     // FOG CONFIGURATION
     // =========================================================================
@@ -95,7 +104,14 @@ data class EnvironmentConfig(
      * Default: 1.5
      * Range: 0.1 - 10.0.
      */
-    var fogGradient: Float = 1.5f
+    var fogGradient: Float = 1.5f,
+
+    /**
+     * Toggle fog rendering independently from sky.
+     * When false, fog uniforms are set to zero (no fog effect).
+     * Default: true
+     */
+    var renderFog: Boolean = true
 ) {
     /**
      * Resets all properties to default values.
@@ -108,9 +124,11 @@ data class EnvironmentConfig(
         skyTint.set(1.0f, 1.0f, 1.0f)
         skyExposure = 1.0f
         skyRotation = 0.0f
+        renderSky = true
         fogColor.set(0.8f, 0.8f, 0.8f)
         fogDensity = 0.0f
         fogGradient = 1.5f
+        renderFog = true
     }
 
     /**

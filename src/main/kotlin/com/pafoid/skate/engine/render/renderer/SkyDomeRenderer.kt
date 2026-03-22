@@ -91,15 +91,20 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, resourceMan
     }
 
     fun render(camera: Camera, scene: Scene) {
+        // Get environment system for sky/fog settings
+        val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
+        val envConfig = environmentSystem?.config
+
+        // Skip sky rendering if system is disabled or renderSky is false
+        if (environmentSystem?.enabled == false || (envConfig?.renderSky == false)) {
+            return
+        }
+
         glDisable(GL_CULL_FACE)
         glDepthFunc(GL_LEQUAL)
         glDepthMask(false)
 
         shader.start()
-
-        // Get environment system for sky/fog settings
-        val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
-        val envConfig = environmentSystem?.config
 
         // Center on camera
         modelMatrix.identity().translation(camera.position)

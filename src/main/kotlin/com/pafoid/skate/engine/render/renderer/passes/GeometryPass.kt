@@ -76,7 +76,13 @@ class GeometryPass(
 
         // Clear with sky color from EnvironmentSystem
         val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
-        val skyColor = environmentSystem?.config?.skyColor ?: Vector3f(0.6f, 0.7f, 0.9f)
+        val envConfig = environmentSystem?.config
+        // Use sky color if system is enabled and renderSky is true, otherwise use fallback gray
+        val skyColor = if (environmentSystem?.enabled != false && (envConfig?.renderSky != false)) {
+            envConfig?.skyColor ?: Vector3f(0.6f, 0.7f, 0.9f)
+        } else {
+            Vector3f(0.2f, 0.2f, 0.2f) // Fallback dark gray when sky is disabled
+        }
         clearColor(skyColor)
 
         val camera = scene.camera

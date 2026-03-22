@@ -24,37 +24,37 @@ environment rendering.
 
 ### Tasks
 
-- [ ] **A37.0.1: Add enabled flag checks to rendering pipeline**
+- [x] **A37.0.1: Add enabled flag checks to rendering pipeline** ✅
   - Check `environmentSystem.enabled` before reading config
   - Fall back to default values when system is disabled
-  - **Impact**: High - System enable/disable actually works
+  - **Status**: Complete - SkyDomeRenderer, GeometryPass, LightingUniformsLoader updated ✅
 
-- [ ] **A37.0.2: Add independent sky/fog enable toggles to EnvironmentConfig**
-  - Add `renderSky: Boolean = true` and `renderFog: Boolean = true` properties
-  - Update `reset()` method to restore defaults
-  - **Impact**: High - Independent control of sky and fog
+- [x] **A37.0.2: Add independent sky/fog enable toggles to EnvironmentConfig** ✅
+  - Added `renderSky: Boolean = true` and `renderFog: Boolean = true` properties
+  - Updated `reset()` method to restore defaults
+  - **Status**: Complete - Independent control of sky and fog ✅
 
-- [ ] **A37.0.3: Add sky/fog toggles to EnvironmentSystem ImGui**
-  - Add checkboxes in respective collapsing sections
-  - **Impact**: Medium - UI for independent control
+- [x] **A37.0.3: Add sky/fog toggles to EnvironmentSystem ImGui** ✅
+  - Added checkboxes in respective collapsing sections
+  - **Status**: Complete - UI for independent control ✅
 
-- [ ] **A37.0.4: Update SkyDomeRenderer to respect renderSky flag**
-  - Skip rendering when disabled
-  - **Impact**: High - Sky rendering can be disabled
+- [x] **A37.0.4: Update SkyDomeRenderer to respect renderSky flag** ✅
+  - Skip rendering when disabled (return early)
+  - **Status**: Complete - Sky rendering can be disabled ✅
 
-- [ ] **A37.0.5: Update LightingUniformsLoader to respect renderFog flag**
+- [x] **A37.0.5: Update LightingUniformsLoader to respect renderFog flag** ✅
   - Upload zero density when disabled
-  - **Impact**: High - Fog rendering can be disabled
+  - **Status**: Complete - Fog rendering can be disabled ✅
 
-- [ ] **A37.0.6: Update GeometryPass to respect renderSky flag**
-  - Use fallback clear color when disabled
-  - **Impact**: Medium - Proper clear color when sky disabled
+- [x] **A37.0.6: Update GeometryPass to respect renderSky flag** ✅
+  - Use fallback dark gray clear color when disabled
+  - **Status**: Complete - Proper clear color when sky disabled ✅
 
-- [ ] **A37.0.7: Add string resources for sky/fog toggles**
+- [x] **A37.0.7: Add string resources for sky/fog toggles** ✅
   - `lbl.environment_system.render_sky`, `lbl.environment_system.render_fog`
-  - **Impact**: Low - Localization for new toggles
+  - **Status**: Complete - Localization for new toggles ✅
 
-- [ ] **A37.0.8: Add unit tests for enabled flag and render toggles**
+- [x] **A37.0.8: Add unit tests for enabled flag and render toggles**
   - **Impact**: Medium - Ensure toggle functionality
 
 ---

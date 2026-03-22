@@ -161,6 +161,62 @@ class EnvironmentSystemTest {
     }
 
     // =========================================================================
+    // ENABLED FLAG AND RENDER TOGGLE TESTS (A37)
+    // =========================================================================
+
+    @Test
+    fun `enabled flag defaults to true`() {
+        // Arrange & Act
+        val system = EnvironmentSystem(stringManager = stringManager)
+
+        // Assert
+        assertEquals(true, system.enabled, "System should be enabled by default")
+    }
+
+    @Test
+    fun `enabled flag can be toggled`() {
+        // Arrange
+        val system = EnvironmentSystem(stringManager = stringManager)
+
+        // Act - disable
+        system.enabled = false
+
+        // Assert
+        assertEquals(false, system.enabled)
+
+        // Act - enable
+        system.enabled = true
+
+        // Assert
+        assertEquals(true, system.enabled)
+    }
+
+    @Test
+    fun `config renderSky and renderFog default to true`() {
+        // Arrange & Act
+        val system = EnvironmentSystem(stringManager = stringManager)
+
+        // Assert
+        assertEquals(true, system.config.renderSky)
+        assertEquals(true, system.config.renderFog)
+    }
+
+    @Test
+    fun `reset restores renderSky and renderFog to true`() {
+        // Arrange
+        val system = EnvironmentSystem(stringManager = stringManager)
+        system.config.renderSky = false
+        system.config.renderFog = false
+
+        // Act
+        system.reset()
+
+        // Assert
+        assertEquals(true, system.config.renderSky)
+        assertEquals(true, system.config.renderFog)
+    }
+
+    // =========================================================================
     // CONFIG ACCESS TESTS
     // =========================================================================
 

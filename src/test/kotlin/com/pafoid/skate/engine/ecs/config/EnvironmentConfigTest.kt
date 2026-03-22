@@ -116,6 +116,74 @@ class EnvironmentConfigTest {
     }
 
     // =========================================================================
+    // RENDER TOGGLE TESTS (A37)
+    // =========================================================================
+
+    @Test
+    fun `renderSky default value is true`() {
+        // Arrange & Act
+        val config = EnvironmentConfig()
+
+        // Assert
+        assertEquals(true, config.renderSky, "renderSky should default to true")
+    }
+
+    @Test
+    fun `renderFog default value is true`() {
+        // Arrange & Act
+        val config = EnvironmentConfig()
+
+        // Assert
+        assertEquals(true, config.renderFog, "renderFog should default to true")
+    }
+
+    @Test
+    fun `reset restores renderSky and renderFog to true`() {
+        // Arrange
+        val config = EnvironmentConfig().apply {
+            renderSky = false
+            renderFog = false
+        }
+
+        // Act
+        config.reset()
+
+        // Assert
+        assertEquals(true, config.renderSky, "renderSky should be restored to true")
+        assertEquals(true, config.renderFog, "renderFog should be restored to true")
+    }
+
+    @Test
+    fun `renderSky and renderFog can be toggled independently`() {
+        // Arrange
+        val config = EnvironmentConfig()
+
+        // Act - toggle sky only
+        config.renderSky = false
+        config.renderFog = true
+
+        // Assert
+        assertEquals(false, config.renderSky)
+        assertEquals(true, config.renderFog)
+
+        // Act - toggle fog only
+        config.renderSky = true
+        config.renderFog = false
+
+        // Assert
+        assertEquals(true, config.renderSky)
+        assertEquals(false, config.renderFog)
+
+        // Act - toggle both
+        config.renderSky = false
+        config.renderFog = false
+
+        // Assert
+        assertEquals(false, config.renderSky)
+        assertEquals(false, config.renderFog)
+    }
+
+    // =========================================================================
     // PRESET APPLICATION TESTS
     // =========================================================================
 

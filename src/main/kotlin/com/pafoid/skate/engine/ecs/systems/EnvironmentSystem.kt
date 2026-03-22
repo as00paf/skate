@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.config.EnvironmentConfig
 import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
 import imgui.ImGui
+import imgui.type.ImBoolean
 
 /**
  * System responsible for managing environment settings.
@@ -100,6 +101,12 @@ class EnvironmentSystem(
 
         // Sky configuration section
         if (ImGui.collapsingHeader(stringManager.getString("lbl.environment_system.sky_header"))) {
+            // Render sky toggle
+            val renderSky = ImBoolean(config.renderSky)
+            if (ImGui.checkbox(stringManager.getString("lbl.environment_system.render_sky"), renderSky)) {
+                config.renderSky = renderSky.get()
+            }
+
             // Sky color
             val skyColorArr = floatArrayOf(config.skyColor.x, config.skyColor.y, config.skyColor.z)
             if (ImGui.colorEdit3(stringManager.getString("lbl.environment_system.sky_color"), skyColorArr)) {
@@ -149,6 +156,12 @@ class EnvironmentSystem(
 
         // Fog configuration section
         if (ImGui.collapsingHeader(stringManager.getString("lbl.environment_system.fog_header"))) {
+            // Render fog toggle
+            val renderFog = ImBoolean(config.renderFog)
+            if (ImGui.checkbox(stringManager.getString("lbl.environment_system.render_fog"), renderFog)) {
+                config.renderFog = renderFog.get()
+            }
+
             // Fog color
             val fogColorArr = floatArrayOf(config.fogColor.x, config.fogColor.y, config.fogColor.z)
             if (ImGui.colorEdit3(stringManager.getString("lbl.environment_system.fog_color"), fogColorArr)) {
