@@ -174,23 +174,6 @@ Continue ECS migration by refactoring remaining systems to operate on components
 
 ---
 
-## 🔵 Future: Code Quality & Technical Debt
-
-### v0.33: Code Quality & Technical Debt
-
-- [ ] Audit and replace remaining `!!` operators with safe calls
-- [ ] Review resource management for potential memory leaks
-- [ ] Optimize animation blending timing
-- [ ] Reduce object allocation in hot loops
-- [ ] Increase test coverage for complex systems
-
-### v0.32: ImGui Refactor Cleanup
-
-- [ ] Consolidate system UI patterns
-- [ ] Review dockable window registry for dead code
-
----
-
 ## Architecture Notes
 
 ### Current Hybrid Pattern
