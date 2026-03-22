@@ -4,6 +4,68 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.37] - 2026-03-22: Environment System Polish
+
+### Summary
+
+Added enable/disable functionality and independent sky/fog rendering toggles to the EnvironmentSystem.
+The system can now be disabled via SystemsWindow, and sky/fog rendering can be controlled independently.
+
+### Added
+
+- **Independent sky/fog render toggles**: `EnvironmentConfig` properties (`engine/ecs/config/EnvironmentConfig.kt`)
+    - `renderSky: Boolean = true` - Toggle sky rendering independently
+    - `renderFog: Boolean = true` - Toggle fog rendering independently
+    - Both properties restored to `true` by `reset()` method
+    - **Impact**: High - Fine-grained control over environment rendering
+
+- **Unit tests for render toggles**: 8 new tests (`test/.../EnvironmentConfigTest.kt`,
+  `test/.../EnvironmentSystemTest.kt`)
+    - Test default values for renderSky and renderFog
+    - Test reset() restores toggle defaults
+    - Test independent toggling of sky and fog
+    - Test enabled flag defaults and toggling
+    - **Impact**: High - Ensures toggle functionality works correctly
+
+- **ImGui string resources**: 4 new localized strings (`values/strings.properties`, `values/strings_fr.properties`)
+    - lbl.environment_system.render_sky / Afficher le ciel
+    - lbl.environment_system.render_fog / Afficher le brouillard
+    - **Impact**: Low - Localization for new toggles
+
+### Changed
+
+- **SkyDomeRenderer**: Checks enabled flag and renderSky (`engine/render/renderer/SkyDomeRenderer.kt`)
+    - Returns early if `environmentSystem.enabled == false` or `config.renderSky == false`
+    - Sky dome not rendered when disabled
+    - **Impact**: High - Sky rendering can be fully disabled
+
+- **LightingUniformsLoader**: Checks renderFog flag (`engine/render/renderer/LightingUniformsLoader.kt`)
+    - Uploads zero fog density when `config.renderFog == false`
+    - Fog effect disabled without changing fogColor/fogGradient
+    - **Impact**: High - Fog rendering can be fully disabled
+
+- **GeometryPass**: Checks enabled flag and renderSky (`engine/render/renderer/passes/GeometryPass.kt`)
+    - Uses fallback dark gray (0.2, 0.2, 0.2) when sky disabled
+    - Proper clear color even when sky rendering is off
+    - **Impact**: Medium - Correct framebuffer clear when sky disabled
+
+- **EnvironmentSystem ImGui**: Added render toggles (`engine/ecs/systems/EnvironmentSystem.kt`)
+    - Checkbox at top of Sky Configuration section
+    - Checkbox at top of Fog Configuration section
+    - **Impact**: Medium - UI for independent control
+
+### Verified
+
+- **v0.37 Integration**: Full verification
+    - ✅ EnvironmentSystem can be disabled in SystemsWindow
+    - ✅ Sky rendering can be toggled independently
+    - ✅ Fog rendering can be toggled independently
+    - ✅ Fallback clear color when sky disabled
+    - ✅ Zero fog density when fog disabled
+    - ✅ 31/31 unit tests passing (23 original + 8 new)
+
+---
+
 ## [v0.36] - 2026-03-22: ECS Environment System
 
 ### Summary
