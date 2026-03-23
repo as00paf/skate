@@ -4,6 +4,10 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.GroundedStateChanged
+import com.pafoid.skate.engine.events.Landing
+import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.RayTestResult
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
@@ -18,6 +22,11 @@ import kotlin.math.abs
  * The suspension uses 4 raycasts (one at each wheel position) to simulate spring-damper behavior.
  * This approach (Hooke's Law) provides more stable behavior for skateboards than primitive colliders
  * because it allows for high-frequency impulses and realistic weight transfer.
+ *
+ * Publishes events:
+ * - [Landing] when skateboard lands on ground
+ * - [Takeoff] when skateboard takes off from ground
+ * - [GroundedStateChanged] when grounded state changes
  *
  * Physics parameters:
  * - [suspensionRestLength]: The maximum extension of the springs in meters.
@@ -49,12 +58,36 @@ class SkateboardPhysics : Component(), KoinComponent {
     var isGrounded = false
         private set
 
+    // Track previous grounded state for event publishing
+    private var wasGrounded = false
+
     override fun start() {
         rb = gameObject.getComponent<RigidBody3D>() ?: throw IllegalStateException("SkateboardPhysics requires RigidBody3D")
+        wasGrounded = false
     }
 
     override fun update(dt: Float) {
         checkIfGrounded()
+
+        // Publish events on grounded state change
+        if (isGrounded != wasGrounded) {
+            val eventSystem = getEventSystem()
+            eventSystem?.publish(GroundedStateChanged(isGrounded))
+
+            if (isGrounded) {
+                // Landing - calculate impact force from velocity
+                val velocity = rb.linearVelocity
+                val impactForce = kotlin.math.abs(velocity.y) * 10f // Simplified impact calculation
+                eventSystem?.publish(Landing(velocity, impactForce))
+            } else {
+                // Takeoff
+                val velocity = rb.linearVelocity
+                eventSystem?.publish(Takeoff(velocity))
+            }
+
+            wasGrounded = isGrounded
+        }
+        
         if (isGrounded) {
             applySteering(dt)
         }
@@ -145,5 +178,13 @@ class SkateboardPhysics : Component(), KoinComponent {
 
         // Apply force at the specific corner position
         rb.applyForce(worldForce, rayStart)
+    }
+
+    /**
+     * Gets the EventSystem from the scene for publishing events.
+     */
+    private fun getEventSystem(): EventSystem? {
+        val scene = sceneManager.currentScene ?: return null
+        return scene.systemManager.getSystem<EventSystem>()
     }
 }

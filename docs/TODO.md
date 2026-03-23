@@ -132,16 +132,16 @@ eventSystem.subscribe("physics.landing", (event) => {
 
 ### Tasks
 
-- [ ] **A43.0.1: Create EventSystem core infrastructure**
+- [x] **A43.0.1: Create EventSystem core infrastructure** ✅
   - Location: `engine/ecs/systems/EventSystem.kt` (new)
   - Create `GameEvent` sealed class with `eventName: String` property
   - Create `EventSystem` with dual subscribe API (type-safe + string-based)
   - Support one-time and persistent listeners
   - Support event priority (for ordering)
   - Support event cancellation (listeners can prevent further processing)
-  - **Impact**: Critical - Foundation for event-driven architecture
+  - **Status**: Complete - EventSystem created with full functionality ✅
 
-- [ ] **A43.0.2: Create input event types**
+- [x] **A43.0.2: Create input event types** ✅
   - Location: `engine/events/InputEvents.kt` (new)
   - Sealed class `InputEvent : GameEvent`
   - `JumpPressed(val force: Float)` : "input.jump_pressed"
@@ -149,24 +149,24 @@ eventSystem.subscribe("physics.landing", (event) => {
   - `MovementInput(val direction: Vector2f, val magnitude: Float)` : "input.movement"
   - `TrickInput(val trickType: TrickType, val isPressed: Boolean)` : "input.trick"
   - `CameraLook(val delta: Vector2f)` : "input.camera_look"
-  - **Impact**: High - Decouple input from gameplay
+  - **Status**: Complete - All input events created ✅
 
-- [ ] **A43.0.3: Create physics event types**
+- [x] **A43.0.3: Create physics event types** ✅
   - Location: `engine/events/PhysicsEvents.kt` (new)
   - Sealed class `PhysicsEvent : GameEvent`
   - `Landing(val velocity: Vector3f, val impactForce: Float)` : "physics.landing"
   - `Takeoff(val velocity: Vector3f)` : "physics.takeoff"
   - `GroundedStateChanged(val isGrounded: Boolean)` : "physics.grounded_changed"
   - `Collision(val other: GameObject, val contactPoint: Vector3f, val normal: Vector3f)` : "physics.collision"
-  - **Impact**: High - Decouple physics from gameplay
+  - **Status**: Complete - All physics events created ✅
 
-- [ ] **A43.0.4: Create trick event types**
+- [x] **A43.0.4: Create trick event types** ✅
   - Location: `engine/events/TrickEvents.kt` (new)
   - Sealed class `TrickEvent : GameEvent`
   - `TrickDetected(val trickName: String, val rotation: Vector3f)` : "trick.detected"
   - `TrickCompleted(val trickName: String, val score: Int, val style: Float)` : "trick.completed"
   - `TrickCancelled(val reason: String)` : "trick.cancelled"
-  - **Impact**: High - Decouple trick detection from UI/scoring
+  - **Status**: Complete - All trick events created ✅
 
 - [ ] **A43.0.5: Update InputSystem to publish events**
   - Location: `engine/ecs/systems/InputSystem.kt`

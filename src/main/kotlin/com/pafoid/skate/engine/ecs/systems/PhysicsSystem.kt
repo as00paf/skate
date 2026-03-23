@@ -10,11 +10,8 @@ import com.pafoid.skate.engine.physics3d.toVector3f
  * This system runs at [ExecutionPriority.EARLY] to ensure physics state is ready before
  * gameplay systems like [TrickDetector] and [PlayerController] read from [PhysicsComponent].
  *
- * ## Responsibilities
- *
- * - Iterate GameObjects with both PhysicsComponent and RigidBody3D
- * - Sync linear and angular velocity from physics body to component
- * - Update derived state (speed, isMoving, isRotating)
+ * Note: Landing/Takeoff events are published by SkateboardPhysics which has accurate
+ * grounded detection via raycast suspension. This system focuses on syncing physics state.
  *
  * ## Usage
  *
