@@ -48,6 +48,7 @@ class GameViewWindow : IWindow, KoinComponent {
 
     private val gamepadOverlay = GamepadOverlay()
     private val trickUIWindow = TrickUIWindow()
+    private var trickUIInitialized = false
 
     override fun imgui(pOpen: ImBoolean?) {
         ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
@@ -144,6 +145,12 @@ class GameViewWindow : IWindow, KoinComponent {
     private fun renderViewportOverlays(windowPos: ImVec2, windowSize: ImVec2) {
         val scene = sceneManager.currentScene
 
+        // Initialize TrickUIWindow with event subscriptions (once per scene)
+        if (scene != null && !trickUIInitialized) {
+            trickUIWindow.init(scene)
+            trickUIInitialized = true
+        }
+
         // FPS Overlay (Top Left)
         ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + OVERLAY_PADDING)
         ImGui.beginChild(
@@ -185,15 +192,10 @@ class GameViewWindow : IWindow, KoinComponent {
         }
 
         // Trick UI Overlay (Bottom Left, above Speedometer)
-        skateGo?.let { go ->
-            trickUIWindow.setTrickGameObject(go)
-            // Position above the speed overlay
-            val trickX = windowPos.x + OVERLAY_PADDING
-            val trickY =
-                windowPos.y + windowSize.y - SPEED_OVERLAY_HEIGHT - TRICK_OVERLAY_HEIGHT - (OVERLAY_PADDING * 2)
-
-            trickUIWindow.imgui(trickX, trickY, TRICK_OVERLAY_WIDTH, TRICK_OVERLAY_HEIGHT)
-        }
+        // TrickUIWindow now uses events - no need to pass GameObject
+        val trickX = windowPos.x + OVERLAY_PADDING
+        val trickY = windowPos.y + windowSize.y - SPEED_OVERLAY_HEIGHT - TRICK_OVERLAY_HEIGHT - (OVERLAY_PADDING * 2)
+        trickUIWindow.imgui(trickX, trickY, TRICK_OVERLAY_WIDTH, TRICK_OVERLAY_HEIGHT)
     }
 
     fun getHoveredObject(): GameObject? {

@@ -1,66 +1,135 @@
 package com.pafoid.skate.game.trick
 
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.Landing
+import com.pafoid.skate.engine.events.Takeoff
+import com.pafoid.skate.engine.events.TrickCompleted
+import com.pafoid.skate.engine.events.TrickDetected
 import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.skateboard.Stance
+import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.math.abs
 
+/**
+ * Component responsible for detecting tricks based on rotation during airborne state.
+ *
+ * Subscribes to physics events instead of polling:
+ * - [Takeoff] - Start trick detection (reset rotation accumulators)
+ * - [Landing] - Complete trick detection (publish TrickCompleted event)
+ *
+ * ## Usage
+ *
+ * ```kotlin
+ * val trickDetector = gameObject.addComponent(TrickDetector())
+ *
+ * // Subscribe to trick events
+ * eventSystem.subscribe<TrickDetected> { event ->
+ *     println("Trick detected: ${event.trickName}")
+ * }
+ * eventSystem.subscribe<TrickCompleted> { event ->
+ *     println("Trick completed: ${event.trickName}, Score: ${event.score}")
+ * }
+ * ```
+ */
 class TrickDetector : Component(), KoinComponent {
 
     private val trickManager: TrickManager by inject()
+    private val sceneManager: SceneManager by inject()
 
     var accumulatedRotationX = 0f
     var accumulatedRotationY = 0f
     var accumulatedRotationZ = 0f
 
-    private var lastGroundedState = true
+    private var isInAir = false
     private var detectedTrick: String? = null
+    private var trickInProgress = false
 
-    private var rigidBody: RigidBody3D? = null
     private var physicsComponent: PhysicsComponent? = null
     private var skateboardPhysics: SkateboardPhysics? = null
+    private var eventSystem: EventSystem? = null
 
     override fun start() {
-        rigidBody = gameObject.getComponent<RigidBody3D>()
         physicsComponent = gameObject.getComponent<PhysicsComponent>()
         skateboardPhysics = gameObject.getComponent<SkateboardPhysics>()
+
+        // Get event system for subscribing to events
+        val scene = sceneManager.currentScene
+        eventSystem = scene?.systemManager?.getSystem<EventSystem>()
+
+        // Subscribe to physics events
+        eventSystem?.subscribe<Takeoff> { onTakeoff(it) }
+        eventSystem?.subscribe<Landing> { onLanding(it) }
+    }
+
+    /**
+     * Called when the skateboard takes off.
+     * Resets rotation accumulators and starts trick detection.
+     */
+    private fun onTakeoff(event: Takeoff) {
+        isInAir = true
+        trickInProgress = true
+
+        // Reset rotation accumulators
+        accumulatedRotationX = 0f
+        accumulatedRotationY = 0f
+        accumulatedRotationZ = 0f
+        detectedTrick = null
+    }
+
+    /**
+     * Called when the skateboard lands.
+     * Publishes TrickCompleted event if a trick was detected.
+     */
+    private fun onLanding(event: Landing) {
+        if (trickInProgress) {
+            // Trick completed - publish event
+            val trickName = detectedTrick ?: "Ollie"
+            val score = calculateTrickScore()
+            val style = calculateStyleMultiplier(event.impactForce)
+
+            eventSystem?.publish(TrickCompleted(trickName, score, style))
+        }
+
+        // Reset state
+        isInAir = false
+        trickInProgress = false
+        accumulatedRotationX = 0f
+        accumulatedRotationY = 0f
+        accumulatedRotationZ = 0f
+        detectedTrick = null
     }
 
     override fun update(dt: Float) {
+        if (!isInAir || !trickInProgress) return
+
         val physicsComponent = physicsComponent ?: return
-        val skateboardPhysics = skateboardPhysics ?: return
 
-        if (skateboardPhysics.isGrounded) {
-            // Grounded, reset trick detection
-            accumulatedRotationX = 0f
-            accumulatedRotationY = 0f
-            accumulatedRotationZ = 0f
-            detectedTrick = null
-        } else {
-            // In air, accumulate rotation and detect trick
-            // Read angular velocity from PhysicsComponent instead of directly from rigidBody
-            val angularVelocity = physicsComponent.angularVelocity
-            accumulatedRotationX += Math.toDegrees(angularVelocity.x.toDouble()).toFloat() * dt
-            accumulatedRotationY += Math.toDegrees(angularVelocity.y.toDouble()).toFloat() * dt
-            accumulatedRotationZ += Math.toDegrees(angularVelocity.z.toDouble()).toFloat() * dt
+        // Accumulate rotation while in air
+        val angularVelocity = physicsComponent.angularVelocity
+        accumulatedRotationX += Math.toDegrees(angularVelocity.x.toDouble()).toFloat() * dt
+        accumulatedRotationY += Math.toDegrees(angularVelocity.y.toDouble()).toFloat() * dt
+        accumulatedRotationZ += Math.toDegrees(angularVelocity.z.toDouble()).toFloat() * dt
 
-            detectTrick()
-        }
+        // Detect trick in progress
+        detectTrick()
     }
 
     /**
      * Analyzes the accumulated rotations around the skateboard's local axes to identify a trick.
      * It checks for specific rotation thresholds for tricks like Kickflips, Heelflips, and Shove-its.
      * The identified trick name is then combined with a stance prefix (e.g., "Fakie", "Switch")
-     * based on the PlayerController's current state. The result is stored in the `detectedTrick` property.
+     * based on the PlayerStateManager's current stance.
+     * 
+     * Publishes [TrickDetected] event when a trick is identified mid-air.
      */
     internal fun detectTrick() {
-        // Reset detected trick each frame before re-evaluation
+        val previousTrick = detectedTrick
         detectedTrick = null
 
         var baseTrickKey: String? = null
@@ -102,6 +171,29 @@ class TrickDetector : Component(), KoinComponent {
         } else {
             detectedTrick = baseTrickName
         }
+
+        // Publish TrickDetected event if trick changed
+        if (detectedTrick != previousTrick && detectedTrick != null) {
+            val rotation = Vector3f(accumulatedRotationX, accumulatedRotationY, accumulatedRotationZ)
+            eventSystem?.publish(TrickDetected(detectedTrick!!, rotation))
+        }
+    }
+
+    /**
+     * Calculates trick score based on rotation magnitude.
+     */
+    private fun calculateTrickScore(): Int {
+        val totalRotation = abs(accumulatedRotationX) + abs(accumulatedRotationY) + abs(accumulatedRotationZ)
+        return (totalRotation / 360f * 100).toInt()
+    }
+
+    /**
+     * Calculates style multiplier based on landing quality.
+     * Softer landings (lower impact) = higher style.
+     */
+    private fun calculateStyleMultiplier(impactForce: Float): Float {
+        // Style is higher for softer landings (impact < 50 = perfect, > 200 = sloppy)
+        return (1.0f - (impactForce / 200f)).coerceIn(0.5f, 1.0f)
     }
 
     fun getDetectedTrick(): String? {
