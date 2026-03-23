@@ -190,32 +190,36 @@ class Animator : Component(), KoinComponent {
     }
 
     override fun update(dt: Float) {
-        // Fallback to PlayerStateManager if events aren't being received
-        // This ensures animations work even if event system isn't fully set up
-        val stateManager = gameObject.getComponent<PlayerStateManager>()
-        if (stateManager != null) {
-            updateFromStateManager(stateManager)
+        // Use event-driven state if available (set by event subscriptions)
+        // Event-driven state takes priority over PlayerStateManager
+        if (eventSystem != null) {
+            // Determine target state based on event-driven state
+            val targetState = when {
+                isInAir && !isGrounded -> AnimationState.FALLING
+                isSprinting -> AnimationState.RUN
+                isMoving -> AnimationState.WALK
+                else -> AnimationState.IDLE
+            }
+
+            // Only play animation if state changed
+            if (targetState != currentState) {
+                currentState = targetState
+                when (currentState) {
+                    AnimationState.FALLING -> play("falling idle")
+                    AnimationState.RUN -> play("running")
+                    AnimationState.WALK -> play("walking")
+                    AnimationState.IDLE -> play("idle")
+                    else -> {} // JUMP and LANDING are triggered by events
+                }
+            }
             return
         }
 
-        // Determine target state based on event-driven state
-        val targetState = when {
-            isInAir && !isGrounded -> AnimationState.FALLING
-            isSprinting -> AnimationState.RUN
-            isMoving -> AnimationState.WALK
-            else -> AnimationState.IDLE
-        }
-
-        // Only play animation if state changed
-        if (targetState != currentState) {
-            currentState = targetState
-            when (currentState) {
-                AnimationState.FALLING -> play("falling idle")
-                AnimationState.RUN -> play("running")
-                AnimationState.WALK -> play("walking")
-                AnimationState.IDLE -> play("idle")
-                else -> {} // JUMP and LANDING are triggered by events
-            }
+        // Fallback to PlayerStateManager if event system not available
+        // This ensures animations work even if EventSystem isn't set up
+        val stateManager = gameObject.getComponent<PlayerStateManager>()
+        if (stateManager != null) {
+            updateFromStateManager(stateManager)
         }
     }
 
