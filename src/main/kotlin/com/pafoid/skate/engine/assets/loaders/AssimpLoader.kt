@@ -58,7 +58,6 @@ class AssimpLoader {
     private val animationLoader = AnimationLoader()
 
     fun preLoadModel(filePath: String): PreLoadedModel {
-        // TODO: handle error
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
 

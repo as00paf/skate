@@ -4,6 +4,81 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.45.0.1] - 2026-03-23: Asset Management Pipeline Enhancement
+
+### Summary
+
+Enhanced ResourceManager with dependency tracking, LRU caching, and hot-reloading support for improved memory management and editor workflow.
+
+### Added
+
+- **Dependency tracking** (`engine/assets/ResourceManager.kt`)
+  - `modelDependencies` map tracks which textures each model uses
+  - `getModelDependencies(path)` - query model dependencies
+  - `isTextureInUse(path)` - prevents unloading textures still in use
+  - **Impact**: High - Safe asset unloading, memory management awareness
+
+- **LRU cache with memory limits** (`engine/assets/ResourceManager.kt`)
+  - `lruQueue` - CopyOnWriteArrayList for thread-safe LRU ordering
+  - `currentTextureMemory` - tracks GPU memory usage
+  - Auto-eviction when over limit (default 256MB)
+  - Memory estimation: `width * height * 4 bytes * 1.33 (mipmaps)`
+  - **Impact**: High - Prevents memory overflow, automatic cache management
+
+- **Hot-reloading for editor** (`engine/assets/ResourceManager.kt`)
+  - `watchService` - Java NIO WatchService for file monitoring
+  - `pollHotReload()` - call periodically in editor update loop
+  - `invalidateAsset()` - removes from cache, triggers reload
+  - `enableHotReload` constructor parameter (default false)
+  - **Impact**: Medium - Faster editor iteration, no restart needed
+
+### Changed
+
+- **ResourceManager constructor** - Added optional parameters:
+  - `maxMemoryBytes: Long = 256MB` - Cache memory limit
+  - `enableHotReload: Boolean = false` - Enable file watching
+  - **Impact**: Medium - Configurable for editor vs game builds
+
+- **getTexture()** - Now updates LRU queue on access
+  - **Impact**: Low - Proper cache behavior
+
+- **unloadTexture()** - Now checks `isTextureInUse()` before unloading
+  - **Impact**: High - Prevents breaking models that need textures
+
+- **clear()** - Now cleans up watch service and LRU queue
+  - **Impact**: Medium - Proper resource cleanup
+
+### Architecture
+
+- **LRU Cache Pattern**: Textures ordered by access time, oldest evicted first when over memory limit
+- **Dependency Graph**: Models track their texture dependencies, prevents premature unloading
+- **Hot-Reload Pattern**: File watching + invalidation + lazy reload on next access
+
+### Usage
+
+```kotlin
+// Editor configuration
+val resourceManager = ResourceManager(
+    maxMemoryBytes = 512 * 1024 * 1024, // 512MB for editor
+    enableHotReload = true
+)
+
+// In editor update loop
+fun update() {
+    resourceManager.pollHotReload()
+}
+```
+
+### Verified
+
+- ✅ Dependency tracking works correctly
+- ✅ LRU eviction triggers at memory limit
+- ✅ Hot-reload invalidates changed files
+- ✅ Textures in use are not evicted
+- ✅ Build successful with no errors
+
+---
+
 ## [v0.44] - 2026-03-23: Code Quality & Performance
 
 ### Summary

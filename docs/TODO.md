@@ -6,6 +6,36 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 ---
 
+## ✅ v0.45.0.1: Enhance Asset Management Pipeline (Complete)
+
+### Summary
+
+Enhanced ResourceManager with dependency tracking, LRU caching, and hot-reloading support.
+
+### Completed Tasks
+
+- [x] **Dependency tracking** ✅
+  - `modelDependencies` map tracks model→texture relationships
+  - `getModelDependencies(path)` - query dependencies
+  - `isTextureInUse(path)` - safe unload checking
+  - **Location**: `engine/assets/ResourceManager.kt`
+
+- [x] **LRU cache with memory limits** ✅
+  - `lruQueue` for access ordering
+  - `currentTextureMemory` tracking
+  - Auto-eviction at 256MB limit (configurable)
+  - Memory estimation: `width * height * 4 bytes * 1.33 (mipmaps)`
+  - **Location**: `engine/assets/ResourceManager.kt`
+
+- [x] **Hot-reloading (editor)** ✅
+  - `watchService` - Java NIO WatchService
+  - `pollHotReload()` - call periodically in editor
+  - `invalidateAsset()` - removes from cache
+  - `enableHotReload` constructor param (default false)
+  - **Location**: `engine/assets/ResourceManager.kt`
+
+---
+
 ## 📋 Phase 1: Foundation (Planned)
 
 **Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
