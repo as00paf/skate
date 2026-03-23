@@ -10,28 +10,37 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 ### Summary
 
-Implemented scene serialization system with JSON-based save/load, component polymorphic serialization, and scene hierarchy reconstruction.
-All 15 ECS components are now serializable with proper polymorphic handling.
+Refactored scene serialization to use existing LevelManager, removing duplicate code.
+All 15 ECS components are serializable for level persistence and GameObject copy operations.
 
 ### Completed Tasks
 
-- [x] **Core serialization infrastructure** ✅
-  - SceneSerializer with save/load functionality
-  - Register all 15 components for polymorphic serialization
-  - File I/O for scene saves
-  - **Location**: `engine/ecs/serialization/`
+- [x] **Component serialization support** ✅
+  - All 15 components registered for polymorphic serialization
+  - Non-serializable fields marked @Transient
+  - **Location**: `engine/assets/serialization/Serializer.kt`
 
-- [x] **Scene save/load integration** ✅
-  - saveScene() and loadScene() methods in Scene class
-  - SceneManager integration for scene transitions
-  - Handle scene hierarchy and object relationships
-  - **Location**: `engine/ecs/Scene.kt`, `engine/ecs/SceneManager.kt`
+- [x] **Level persistence via LevelManager** ✅
+  - LevelManager handles save/load with file dialogs
+  - Integrated with editor menu (File > Save/Open Level)
+  - Uses LevelData (gameObjects + SceneData)
+  - **Location**: `game/level/LevelManager.kt`
+
+- [x] **GameObject serialization for clipboard/prefabs** ✅
+  - GameObject.copy() uses Serializer for duplication
+  - ClipboardService uses copy() for copy/paste
+  - **Location**: `engine/ecs/GameObject.kt`, `editor/systems/ClipboardService.kt`
 
 - [x] **Unit tests** ✅
-  - Component serialization tests (8 tests)
-  - Scene save/load round-trip tests
-  - Hierarchy preservation tests
-  - **Location**: `test/.../ecs/serialization/`
+  - 7 GameObject serialization tests
+  - Transform, component, file operation tests
+  - **Location**: `test/.../ecs/serialization/GameObjectSerializationTest.kt`
+
+### Architecture
+
+- **Level** = Persisted file (LevelData: gameObjects + SceneData)
+- **Scene** = Runtime ECS container (not serialized)
+- **GameObject** = Serializable entity (for clipboard/prefabs)
 
 ---
 
