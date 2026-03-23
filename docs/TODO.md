@@ -1,16 +1,41 @@
 # 🛹 SkateSim Engine - TODO & Roadmap
 
-## Current Focus: ECS Architecture Complete
+## Current Status: ECS Architecture Complete ✅
 
-The ECS architecture is now complete through v0.41 with PhysicsSystem integration.
-All major systems now follow proper ECS patterns with components for state and systems for logic.
+The ECS architecture is now 100% complete through v0.42.
+All systems follow proper component-based patterns with no direct engine coupling in gameplay logic.
 
-See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](ECS_ARCHITECTURE.md) for architecture
-documentation.
+See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](ECS_ARCHITECTURE.md) for architecture documentation.
 
 ---
 
-## 🔵 Future: Future Enhancements (Planned)
+## Architecture Summary
+
+### Components (15 total)
+- **Core**: Transform, RenderComponent, RigidBody3D, PhysicsComponent
+- **Input**: InputStateComponent, EditorInputStateComponent
+- **Animation**: SkeletonComponent, Animator
+- **Environment**: EnvironmentComponent, TimeComponent, LightingStateComponent, LightingComponent
+- **Editor**: NonPickable, ModularTile, SpriteRenderer
+- **Special**: Component (base class)
+
+### Systems (12 total)
+- **ECS Infrastructure**: System, SystemManager, GameObjectManager
+- **Gameplay**: InputSystem, PhysicsSystem, AnimationSystem, DayNightCycleSystem
+- **Environment**: EnvironmentSystem, DirectionalLightSystem, GridLines
+- **Editor**: GizmoSystem, MouseControls
+
+### ECS Pattern Compliance
+- ✅ All gameplay systems read from components (not engine directly)
+- ✅ All physics state synced via PhysicsSystem
+- ✅ All input state written by InputSystem
+- ✅ All animation state managed by AnimationSystem
+- ✅ All environment state in components
+- ✅ Clean separation: Components = data, Systems = logic
+
+---
+
+## Future: Optional Enhancements (No ECS work remaining)
 
 ### Potential Future Work
 

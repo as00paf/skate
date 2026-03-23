@@ -4,6 +4,40 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.42] - 2026-03-22: ECS Architecture Complete
+
+### Summary
+
+Completed the ECS architecture by updating PlayerStateManager to read from PhysicsComponent.
+All gameplay systems now follow proper ECS patterns with no direct engine coupling.
+
+### Changed
+
+- **PlayerStateManager updated**: Reads from PhysicsComponent (`game/player/PlayerStateManager.kt`)
+    - Changed from `RigidBody3D.linearVelocity` to `PhysicsComponent.speed`
+    - Removed direct physics engine dependency
+    - Simplified speed calculation (uses pre-computed value from component)
+    - **Impact**: Medium - 100% ECS pattern compliance
+
+### Architecture
+
+- **ECS Architecture Complete**:
+    - 15 components covering all game state
+    - 12 systems following proper patterns
+    - All gameplay logic reads from components
+    - No direct engine coupling in gameplay systems
+    - **Impact**: High - Clean, testable, maintainable architecture
+
+### Verified
+
+- **v0.42 Integration**: Full verification
+    - ✅ PlayerStateManager reads from PhysicsComponent
+    - ✅ All gameplay systems ECS-compliant
+    - ✅ Build successful with no errors
+    - ✅ ECS architecture 100% complete
+
+---
+
 ## [v0.41] - 2026-03-22: Physics System Integration
 
 ### Summary

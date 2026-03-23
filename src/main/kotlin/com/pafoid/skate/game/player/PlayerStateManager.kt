@@ -4,7 +4,7 @@ import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.components.Component
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.game.skateboard.Stance
 import imgui.ImGui
 import org.koin.core.component.inject
@@ -15,7 +15,7 @@ class PlayerStateManager : Component() {
     private val stringManager: StringManager by inject()
 
     private val playerController: PlayerController? by lazy { gameObject.getComponent<PlayerController>() }
-    private val rigidBody3D: RigidBody3D? by lazy { gameObject.getComponent<RigidBody3D>() }
+    private val physicsComponent: PhysicsComponent? by lazy { gameObject.getComponent<PhysicsComponent>() }
 
     var currentState: PlayerState = PlayerState.IDLE
         private set
@@ -39,14 +39,13 @@ class PlayerStateManager : Component() {
 
     private fun handleOffBoardControls(dt: Float) {
         val controller = playerController ?: return
-        val rb = rigidBody3D ?: return
+        val physics = physicsComponent ?: return
 
         val intent = controller.desiredMoveDirection.length()
         val hasIntent = intent > 0.15f
 
-        // Calculate horizontal speed magnitude (handles both positive and negative velocities)
-        val linearVelocity = rb.linearVelocity
-        val speed = kotlin.math.sqrt(linearVelocity.x * linearVelocity.x + linearVelocity.z * linearVelocity.z)
+        // Read speed from PhysicsComponent instead of directly from rigidBody
+        val speed = physics.speed
 
         val newState =
             if (controller.isJumping) {
