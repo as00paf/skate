@@ -59,7 +59,7 @@ tooling.
 
 ## Development Phases
 
-### Phase 1: Foundation [Estimated Timeline: 4-6 Weeks] [Focus on core engine stability, asset pipeline, and essential gameplay foundations]
+### Phase 1: Foundation [Focus on core engine stability, asset pipeline, and essential gameplay foundations]
 
 | ID       | Task                                        | Priority  | Effort | Dependencies | Status |
 |:---------|:--------------------------------------------|:----------|:-------|:-------------|:-------|
@@ -81,7 +81,7 @@ tooling.
 * An initial automated testing framework.
 * A refactored, more modular rendering system.
 
-### Phase 2: Core Systems [Estimated Timeline: 6-8 Weeks] [Focus on advanced rendering, core gameplay mechanics, and core tooling]
+### Phase 2: Core Systems [Focus on advanced rendering, core gameplay mechanics, and core tooling]
 
 | ID       | Task                                    | Priority  | Effort | Dependencies       | Status |
 |:---------|:----------------------------------------|:----------|:-------|:-------------------|:-------|
@@ -103,7 +103,7 @@ tooling.
 * Enhanced animation capabilities.
 * More sophisticated editor tools for scene editing.
 
-### Phase 3: Polish & Tooling [Estimated Timeline: 4-6 Weeks] [Focus on game-specific features, optimization, and user experience]
+### Phase 3: Polish & Tooling [Focus on game-specific features, optimization, and user experience]
 
 | ID       | Task                                           | Priority  | Effort | Dependencies       | Status |
 |:---------|:-----------------------------------------------|:----------|:-------|:-------------------|:-------|

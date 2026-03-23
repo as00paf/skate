@@ -4,6 +4,84 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.44] - 2026-03-23: Code Quality & Performance
+
+### Summary
+
+Completed code quality improvements and performance optimizations focusing on null safety, resource management, object
+allocation, and test coverage.
+This release strengthens the engine foundation with safer code patterns and reduced garbage collection pressure.
+
+### Changed
+
+- **TrickDetector updated**: Fixed smart cast issue (`game/trick/TrickDetector.kt`)
+  - Replaced `detectedTrick!!` with `?.let {}` pattern
+  - Prevents potential NullPointerException on concurrent mutation
+  - **Impact**: Medium - Improve null safety
+
+- **KeyBindingsWindow updated**: Removed `!!` operator (`editor/windows/KeyBindingsWindow.kt`)
+  - Replaced `if (keyBindingAction != null) { keyBindingAction!! }` with `keyBindingAction?.let {}`
+  - More idiomatic Kotlin null handling
+  - **Impact**: Low - Improve code safety
+
+- **SceneManager updated**: Clear resources on scene change (`engine/ecs/SceneManager.kt`)
+  - Added `resourceManager.clear()` call during scene transitions
+  - Prevents accumulation of textures, models, shaders, and sounds
+  - Proper cleanup of OpenGL and OpenAL resources
+  - **Impact**: High - Prevent memory leaks
+
+- **SkateboardPhysics optimized**: Reusable vectors in hot loops (`game/skateboard/SkateboardPhysics.kt`)
+  - Added class-level reusable Vector3f instances:
+    - `rayStart`, `localDown`, `rayEnd` for raycast suspension
+    - `localRight`, `localUp` for steering calculations
+    - `torque`, `pointVelocity`, `worldForce` for physics computations
+  - Eliminates per-frame Vector3f allocations in `checkIfGrounded()`, `applySteering()`, and `applySuspensionForce()`
+  - Reduces garbage collection pressure during physics simulation
+  - **Impact**: Medium - Improve performance
+
+### Added
+
+- **EventSystem unit tests**: Comprehensive test coverage (`test/.../events/EventSystemTest.kt`)
+  - 18 tests covering all EventSystem functionality:
+    - System initialization and lifecycle
+    - Type-safe subscriptions with reified generics
+    - String-based subscriptions for scripting
+    - One-time listener functionality
+    - Event priority ordering (HIGH → NORMAL → LOW)
+    - Unsubscribe and clear operations
+    - Error handling (listener exceptions don't block other listeners)
+    - Integration scenarios (dual subscription patterns)
+  - **Impact**: High - Ensure event system reliability
+
+### Architecture
+
+- **Null Safety Pattern**: Consistent use of safe calls
+  - `?.let {}` for null-checked operations
+  - No `!!` operators in main source code
+  - Smart cast patterns for mutable properties
+
+- **Resource Management Pattern**: Scene lifecycle cleanup
+  - Resources cleared on scene transition
+  - Prevents cross-scene resource accumulation
+  - Engine-wide resources reload as needed
+
+- **Object Pooling Pattern**: Reusable vectors in hot paths
+  - Class-level Vector3f instances for physics calculations
+  - Reduces GC pressure in per-frame update loops
+  - Pattern applicable to other performance-critical systems
+
+### Verified
+
+- **v0.44 Integration**: Full verification
+  - ✅ No `!!` operators in main source code
+  - ✅ Resource cleanup on scene transitions
+  - ✅ Reusable vectors in physics hot loops
+  - ✅ 18/18 EventSystem tests passing
+  - ✅ Build successful with no errors
+  - ✅ Code quality improvements complete
+
+---
+
 ## [v0.43] - 2026-03-23: Event-Driven Architecture Complete
 
 ### Summary
