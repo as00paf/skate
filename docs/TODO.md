@@ -1,34 +1,47 @@
 # 🛹 SkateSim Engine - TODO & Roadmap
 
-## Current Focus: ECS Architecture Expansion
+## Current Focus: ECS Architecture Completion
 
-The ECS foundation is now in place with Scene as a GameObject supporting components.
-Remaining work focuses on completing the hybrid pattern migration and expanding component-based architecture.
+The ECS foundation is complete with EnvironmentSystem refactored to use components.
+Remaining work focuses on adding comprehensive unit tests for the new architecture.
 
 See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](ECS_ARCHITECTURE.md) for architecture
 documentation.
 
 ---
 
-## 🔴 v0.39: ECS Architecture Completion (Planned)
+## 🔴 v0.39: ECS Architecture Completion (In Progress)
 
 ### Summary
 
 Complete the ECS migration by refactoring EnvironmentSystem to iterate components and adding comprehensive unit tests
 for the new architecture.
 
-### Pending Tasks from v0.38
+### Completed Tasks
 
-- [ ] **A39.0.1: Refactor EnvironmentSystem to iterate components**
+- [x] **A39.0.1: Refactor EnvironmentSystem to iterate components** ✅
   - Location: `engine/ecs/systems/EnvironmentSystem.kt`
-  - Remove direct `config: EnvironmentConfig` ownership
-  - Add `update(dt: Float)` method that iterates GameObjects with EnvironmentComponent
-  - ImGui should read/write EnvironmentComponent on Scene directly
-  - Keep preset functionality (apply to Scene's EnvironmentComponent)
-  - **Impact**: High - Complete proper ECS pattern for environment
+  - Removed direct `config: EnvironmentConfig` ownership
+  - Added `getEnvironmentComponent()` to read from Scene
+  - Added `getOrCreateEnvironmentComponent()` to ensure Scene has component
+  - ImGui now reads/writes directly to Scene's EnvironmentComponent
+  - Updated SkyDomeRenderer, GeometryPass, LightingUniformsLoader to read from EnvironmentComponent
+  - **Status**: Complete - Proper ECS pattern for environment ✅
+
+- [x] **A39.0.3: Write ECS architecture documentation** ✅
+  - Location: `docs/ECS_ARCHITECTURE.md` ✅ CREATED
+  - Document component-based scene state architecture
+  - Explain hybrid pattern and why it was chosen
+  - Provide before/after code examples (v0.37 → v0.38)
+  - Document when to use components vs system config
+  - List all components and their purposes
+  - **Status**: Complete - See ECS_ARCHITECTURE.md ✅
+
+### Pending Tasks
 
 - [ ] **A39.0.2: Add comprehensive unit tests for ECS foundation**
   - Location: `test/.../ecs/components/`, `test/.../ecs/systems/`
+  - Update EnvironmentSystemTest for component-based API
   - Test EnvironmentComponent creation, presets, reset
   - Test TimeComponent with getFormattedTime()
   - Test LightingStateComponent and LightingComponent
@@ -36,15 +49,6 @@ for the new architecture.
   - Test component serialization/deserialization
   - Test level save/load with component-based scene data
   - **Impact**: High - Ensure ECS foundation is solid, no regressions
-
-- [ ] **A39.0.3: Write ECS architecture documentation**
-  - Location: `docs/ECS_ARCHITECTURE.md` (new) ✅ CREATED
-  - Document component-based scene state architecture
-  - Explain hybrid pattern and why it was chosen
-  - Provide before/after code examples (v0.37 → v0.38)
-  - Document when to use components vs system config
-  - List all components and their purposes
-  - **Status**: Complete - See ECS_ARCHITECTURE.md ✅
 
 ---
 

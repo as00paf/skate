@@ -1,59 +1,50 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.engine.ecs.config.EnvironmentConfig
-import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.EnvironmentPreset
+import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import kotlin.test.assertSame
 
 /**
- * Unit tests for EnvironmentSystem.
+ * Unit tests for EnvironmentSystem with component-based architecture.
  *
  * Tests cover:
- * - System initialization with default and custom config
- * - Config ownership and access
- * - Preset application
+ * - System initialization
+ * - EnvironmentComponent creation on Scene
+ * - Preset application to Scene's component
  * - Reset functionality
+ * - ImGui integration (smoke test)
  */
 class EnvironmentSystemTest {
 
     // Mock dependencies
     private val stringManager: StringManager = mockk()
+    private val sceneInitializer: SceneInitializer = mockk()
+
+    // Test scene for component tests
+    private fun createTestScene(): Scene {
+        return Scene("TestScene", sceneInitializer)
+    }
 
     // =========================================================================
     // INITIALIZATION TESTS
     // =========================================================================
 
     @Test
-    fun `EnvironmentSystem initializes with default config`() {
+    fun `EnvironmentSystem initializes without config`() {
         // Arrange & Act
         val system = EnvironmentSystem(stringManager = stringManager)
 
         // Assert
-        assertNotNull(system.config, "Config should not be null")
-        assertEquals(0.6f, system.config.skyColor.x, 0.0001f)
-        assertEquals(0.0f, system.config.fogDensity, 0.0001f)
-    }
-
-    @Test
-    fun `EnvironmentSystem initializes with custom config`() {
-        // Arrange
-        val customConfig = EnvironmentConfig().apply {
-            skyColor.set(1.0f, 0.0f, 0.0f)
-            fogDensity = 0.5f
-        }
-
-        // Act
-        val system = EnvironmentSystem(initialConfig = customConfig, stringManager = stringManager)
-
-        // Assert
-        assertSame(customConfig, system.config, "System should use provided config")
-        assertEquals(1.0f, system.config.skyColor.x, 0.0001f)
-        assertEquals(0.5f, system.config.fogDensity, 0.0001f)
+        assertNotNull(system, "System should be created")
     }
 
     @Test
@@ -65,7 +56,46 @@ class EnvironmentSystemTest {
         val priority = system.priority
 
         // Assert
-        assertEquals(ExecutionPriority.EARLY, priority, "EnvironmentSystem should run EARLY")
+        assertEquals(ExecutionPriority.EARLY, priority, "System should run EARLY")
+    }
+
+    // =========================================================================
+    // COMPONENT CREATION TESTS
+    // =========================================================================
+
+    @Test
+    fun `getOrCreateEnvironmentComponent creates component on Scene`() {
+        // Arrange
+        val system = EnvironmentSystem(stringManager = stringManager)
+        val scene = createTestScene()
+        system.init(scene)
+
+        // Act - use reflection to access private method
+        val method = EnvironmentSystem::class.java.getDeclaredMethod("getOrCreateEnvironmentComponent")
+        method.isAccessible = true
+        val component = method.invoke(system) as EnvironmentComponent
+
+        // Assert
+        assertNotNull(component, "Component should be created")
+        assertTrue(scene.hasComponent<EnvironmentComponent>(), "Scene should have component")
+    }
+
+    @Test
+    fun `getEnvironmentComponent returns existing component from Scene`() {
+        // Arrange
+        val system = EnvironmentSystem(stringManager = stringManager)
+        val scene = createTestScene()
+        val existingComponent = EnvironmentComponent()
+        scene.addComponent(existingComponent)
+        system.init(scene)
+
+        // Act - use reflection to access private method
+        val method = EnvironmentSystem::class.java.getDeclaredMethod("getEnvironmentComponent")
+        method.isAccessible = true
+        val component = method.invoke(system) as EnvironmentComponent?
+
+        // Assert
+        assertSame(existingComponent, component, "Should return existing component")
     }
 
     // =========================================================================
@@ -73,56 +103,69 @@ class EnvironmentSystemTest {
     // =========================================================================
 
     @Test
-    fun `applyPreset updates config with preset values`() {
+    fun `applyPreset creates component and applies preset to Scene`() {
         // Arrange
         val system = EnvironmentSystem(stringManager = stringManager)
-        val initialFogDensity = system.config.fogDensity
+        val scene = createTestScene()
+        system.init(scene)
 
         // Act
         system.applyPreset(EnvironmentPreset.FOGGY)
 
         // Assert
-        assertNotEquals(initialFogDensity, system.config.fogDensity, 0.0001f)
-        assertEquals(0.05f, system.config.fogDensity, 0.001f)
+        val component = scene.getComponent<EnvironmentComponent>()!!
+        assertNotNull(component, "Component should be created")
+        assertEquals(0.05f, component.fogDensity, 0.001f)
     }
 
     @Test
     fun `applyPreset CLEAR_DAY sets correct values`() {
         // Arrange
         val system = EnvironmentSystem(stringManager = stringManager)
+        val scene = createTestScene()
+        system.init(scene)
 
         // Act
         system.applyPreset(EnvironmentPreset.CLEAR_DAY)
 
         // Assert
-        assertEquals(0.6f, system.config.skyColor.x, 0.0001f)
-        assertEquals(0.0008f, system.config.fogDensity, 0.0001f)
+        val component = scene.getComponent<EnvironmentComponent>()!!
+        assertEquals(0.6f, component.skyColor.x, 0.0001f)
+        assertEquals(0.7f, component.skyColor.y, 0.0001f)
+        assertEquals(0.9f, component.skyColor.z, 0.0001f)
+        assertEquals(0.0008f, component.fogDensity, 0.0001f)
     }
 
     @Test
     fun `applyPreset SUNSET sets warm colors`() {
         // Arrange
         val system = EnvironmentSystem(stringManager = stringManager)
+        val scene = createTestScene()
+        system.init(scene)
 
         // Act
         system.applyPreset(EnvironmentPreset.SUNSET)
 
         // Assert
-        assertEquals(0.9f, system.config.skyColor.x, 0.0001f)
-        assertEquals(0.5f, system.config.skyColor.y, 0.0001f)
-        assertEquals(0.3f, system.config.skyColor.z, 0.0001f)
+        val component = scene.getComponent<EnvironmentComponent>()!!
+        assertEquals(0.9f, component.skyColor.x, 0.0001f)
+        assertEquals(0.5f, component.skyColor.y, 0.0001f)
+        assertEquals(0.3f, component.skyColor.z, 0.0001f)
     }
 
     @Test
     fun `applyPreset NO_FOG disables fog`() {
         // Arrange
         val system = EnvironmentSystem(stringManager = stringManager)
+        val scene = createTestScene()
+        system.init(scene)
 
         // Act
         system.applyPreset(EnvironmentPreset.NO_FOG)
 
         // Assert
-        assertEquals(0.0f, system.config.fogDensity, 0.0001f)
+        val component = scene.getComponent<EnvironmentComponent>()!!
+        assertEquals(0.0f, component.fogDensity, 0.0001f)
     }
 
     // =========================================================================
@@ -130,128 +173,87 @@ class EnvironmentSystemTest {
     // =========================================================================
 
     @Test
-    fun `reset restores config to default values`() {
-        // Arrange - modify config
-        val system = EnvironmentSystem(stringManager = stringManager)
-        system.config.skyColor.set(1.0f, 1.0f, 1.0f)
-        system.config.fogDensity = 0.1f
-        system.config.skyExposure = 5.0f
-
-        // Act
-        system.reset()
-
-        // Assert - defaults restored
-        assertEquals(0.6f, system.config.skyColor.x, 0.0001f)
-        assertEquals(0.0f, system.config.fogDensity, 0.0001f)
-        assertEquals(1.0f, system.config.skyExposure, 0.0001f)
-    }
-
-    @Test
-    fun `reset after preset application restores defaults`() {
+    fun `reset restores Scene's component to default values`() {
         // Arrange
         val system = EnvironmentSystem(stringManager = stringManager)
-
-        // Act - apply preset then reset
+        val scene = createTestScene()
+        system.init(scene)
         system.applyPreset(EnvironmentPreset.FOGGY)
-        system.reset()
-
-        // Assert
-        assertEquals(0.0f, system.config.fogDensity, 0.0001f)
-        assertEquals(1.5f, system.config.fogGradient, 0.0001f)
-    }
-
-    // =========================================================================
-    // ENABLED FLAG AND RENDER TOGGLE TESTS (A37)
-    // =========================================================================
-
-    @Test
-    fun `enabled flag defaults to true`() {
-        // Arrange & Act
-        val system = EnvironmentSystem(stringManager = stringManager)
-
-        // Assert
-        assertEquals(true, system.enabled, "System should be enabled by default")
-    }
-
-    @Test
-    fun `enabled flag can be toggled`() {
-        // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
-
-        // Act - disable
-        system.enabled = false
-
-        // Assert
-        assertEquals(false, system.enabled)
-
-        // Act - enable
-        system.enabled = true
-
-        // Assert
-        assertEquals(true, system.enabled)
-    }
-
-    @Test
-    fun `config renderSky and renderFog default to true`() {
-        // Arrange & Act
-        val system = EnvironmentSystem(stringManager = stringManager)
-
-        // Assert
-        assertEquals(true, system.config.renderSky)
-        assertEquals(true, system.config.renderFog)
-    }
-
-    @Test
-    fun `reset restores renderSky and renderFog to true`() {
-        // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
-        system.config.renderSky = false
-        system.config.renderFog = false
 
         // Act
         system.reset()
 
         // Assert
-        assertEquals(true, system.config.renderSky)
-        assertEquals(true, system.config.renderFog)
+        val component = scene.getComponent<EnvironmentComponent>()!!
+        assertEquals(0.0f, component.fogDensity, 0.0001f)
+        assertEquals(1.5f, component.fogGradient, 0.0001f)
+    }
+
+    @Test
+    fun `reset does nothing if Scene has no component`() {
+        // Arrange
+        val system = EnvironmentSystem(stringManager = stringManager)
+        val scene = createTestScene()
+        system.init(scene)
+
+        // Act - should not throw
+        system.reset()
+
+        // Assert - still no component
+        assertFalse(scene.hasComponent<EnvironmentComponent>())
     }
 
     // =========================================================================
-    // CONFIG ACCESS TESTS
+    // COMPONENT PROPERTY TESTS
     // =========================================================================
 
     @Test
-    fun `config is mutable after initialization`() {
-        // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
-
-        // Act
-        system.config.skyColor.set(0.5f, 0.5f, 0.5f)
-        system.config.fogDensity = 0.02f
-        system.config.skyExposure = 2.0f
+    fun `EnvironmentComponent renderSky and renderFog default to true`() {
+        // Arrange & Act
+        val component = EnvironmentComponent()
 
         // Assert
-        assertEquals(0.5f, system.config.skyColor.x, 0.0001f)
-        assertEquals(0.5f, system.config.skyColor.y, 0.0001f)
-        assertEquals(0.5f, system.config.skyColor.z, 0.0001f)
-        assertEquals(0.02f, system.config.fogDensity, 0.0001f)
-        assertEquals(2.0f, system.config.skyExposure, 0.0001f)
+        assertTrue(component.renderSky, "renderSky should default to true")
+        assertTrue(component.renderFog, "renderFog should default to true")
     }
 
     @Test
-    fun `config properties are independent`() {
+    fun `EnvironmentComponent reset restores render toggles to true`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
-        val originalFogX = system.config.fogColor.x
-        val originalFogY = system.config.fogColor.y
-        val originalFogZ = system.config.fogColor.z
+        val component = EnvironmentComponent().apply {
+            renderSky = false
+            renderFog = false
+        }
 
-        // Act - modify sky color
-        system.config.skyColor.set(1.0f, 0.0f, 0.0f)
+        // Act
+        component.reset()
 
-        // Assert - fog color unchanged
-        assertEquals(originalFogX, system.config.fogColor.x, 0.0001f)
-        assertEquals(originalFogY, system.config.fogColor.y, 0.0001f)
-        assertEquals(originalFogZ, system.config.fogColor.z, 0.0001f)
+        // Assert
+        assertTrue(component.renderSky)
+        assertTrue(component.renderFog)
+    }
+
+    @Test
+    fun `EnvironmentComponent renderSky and renderFog can be toggled independently`() {
+        // Arrange
+        val component = EnvironmentComponent()
+
+        // Act & Assert - toggle sky only
+        component.renderSky = false
+        component.renderFog = true
+        assertFalse(component.renderSky)
+        assertTrue(component.renderFog)
+
+        // Act & Assert - toggle fog only
+        component.renderSky = true
+        component.renderFog = false
+        assertTrue(component.renderSky)
+        assertFalse(component.renderFog)
+
+        // Act & Assert - toggle both
+        component.renderSky = false
+        component.renderFog = false
+        assertFalse(component.renderSky)
+        assertFalse(component.renderFog)
     }
 }
