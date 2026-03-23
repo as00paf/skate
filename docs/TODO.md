@@ -1,48 +1,8 @@
 # 🛹 SkateSim Engine - TODO & Roadmap
 
-## Current Status: Code Quality & Performance Complete ✅
-
-The ECS architecture is 100% complete through v0.42.
-The EventSystem implementation is complete through v0.43.
-Code quality improvements and performance optimizations are complete through v0.44.
+## Current Status
 
 See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](ECS_ARCHITECTURE.md) for architecture documentation.
-
----
-
-## ✅ v0.44: Code Quality & Performance (Complete)
-
-### Summary
-
-Focus on code quality improvements, performance optimization, and technical debt reduction.
-This release addresses null safety, resource management, object allocation, and test coverage.
-
-### Completed Tasks
-
-- [x] **A44.0.1: Audit and replace remaining `!!` operators** ✅
-  - Used safe calls (`?.`) and Elvis operator (`?:`)
-  - Fixed smart cast issues with `?.let {}` pattern
-  - **Impact**: Medium - Improve code safety
-  - **Location**: `TrickDetector.kt`, `KeyBindingsWindow.kt`
-
-- [x] **A44.0.2: Review resource management for memory leaks** ✅
-  - Added `resourceManager.clear()` during scene transitions
-  - Prevents accumulation of textures, models, shaders, and sounds
-  - **Impact**: High - Prevent memory leaks
-  - **Location**: `SceneManager.kt`
-
-- [x] **A44.0.3: Optimize object allocation in hot loops** ✅
-  - Added reusable Vector3f instances in SkateboardPhysics
-  - Reduced garbage collection pressure in physics update loop
-  - **Impact**: Medium - Improve performance
-  - **Location**: `SkateboardPhysics.kt`
-
-- [x] **A44.0.4: Increase test coverage for complex systems** ✅
-  - Added 18 comprehensive EventSystem tests
-  - Tests cover type-safe and string-based subscriptions
-  - Tests cover priority ordering and error handling
-  - **Impact**: High - Improve code reliability
-  - **Location**: `test/.../events/EventSystemTest.kt`
 
 ---
 
@@ -50,72 +10,60 @@ This release addresses null safety, resource management, object allocation, and 
 
 **Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
 
-### TASK-001: Enhance Asset Management Pipeline
+- [ ] **A45.0.1: Enhance Asset Management Pipeline**
+  - Support wider range of asset types (textures, audio, animations)
+  - Implement dependency tracking between assets
+  - Add caching mechanisms to avoid redundant loading
+  - Enable hot-reloading of assets during runtime and editor use
+  - Consider plugin-based system for asset loaders
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** None
+  - **Location:** `engine/assets/`
 
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] Support wider range of asset types (textures, audio, animations)
-- [ ] Implement dependency tracking between assets
-- [ ] Add caching mechanisms to avoid redundant loading
-- [ ] Enable hot-reloading of assets during runtime and editor use
-- [ ] Consider plugin-based system for asset loaders
-- **Dependencies:** None
+- [ ] **A45.0.2: Implement Scene Serialization**
+  - Save scenes to file format (JSON or custom binary)
+  - Load saved scenes, reconstructing scene accurately
+  - Serialize and deserialize all component data correctly
+  - Handle scene hierarchy and object relationships
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** A45.0.1
+  - **Location:** `engine/ecs/scene/`
 
-### TASK-002: Implement Scene Serialization
+- [ ] **A45.0.3: Develop Basic Audio System**
+  - Load and play audio files (WAV, OGG)
+  - Support for 2D audio playback (global sounds)
+  - Support for 3D audio playback with spatialization
+  - Basic controls for volume, looping, and playback status
+  - **Priority:** 🔴 High | **Effort:** Medium
+  - **Dependencies:** None
+  - **Location:** `engine/audio/`
 
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] Save scenes to file format (JSON or custom binary)
-- [ ] Load saved scenes, reconstructing scene accurately
-- [ ] Serialize and deserialize all component data correctly
-- [ ] Handle scene hierarchy and object relationships
-- **Dependencies:** TASK-001
+- [ ] **A45.0.4: Implement Ragdoll Physics**
+  - Define and create ragdoll skeletons from skeletal data
+  - Activate/deactivate ragdolls with animation blending
+  - Ragdolls respond to physics forces (gravity, collisions)
+  - Integration with physics system and component model
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** None
+  - **Location:** `engine/physics3d/`
 
-### TASK-003: Develop Basic Audio System
+- [ ] **A45.0.5: Set up Automated Testing Framework**
+  - Integrate testing framework (JUnit) into build process
+  - Unit tests for critical modules (ECS, asset loading, math)
+  - Integration tests for major system interactions
+  - Incorporate visual assertion tools into test suite
+  - **Priority:** 🟡 Medium | **Effort:** Medium
+  - **Dependencies:** None
+  - **Location:** `test/`
 
-- [ ] **Priority:** 🔴 High | **Effort:** Medium
-- [ ] Load and play audio files (WAV, OGG)
-- [ ] Support for 2D audio playback (global sounds)
-- [ ] Support for 3D audio playback with spatialization
-- [ ] Basic controls for volume, looping, and playback status
-- [ ] Research: OpenAL, LWJGL audio bindings
-- **Dependencies:** None
-
-### TASK-004: Implement Ragdoll Physics
-
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] Define and create ragdoll skeletons from skeletal data
-- [ ] Activate/deactivate ragdolls with animation blending
-- [ ] Ragdolls respond to physics forces (gravity, collisions)
-- [ ] Integration with physics system and component model
-- [ ] Research: Bullet RigidBody, TypedConstraint (HingeConstraint, ConeTwistConstraint)
-- **Dependencies:** None
-
-### TASK-005: Integrate Scripting Language (Kotlin Script)
-
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] Set up scripting environment integrated with ECS, input, etc.
-- [ ] Write scripts in Kotlin Script
-- [ ] Attach scripts to GameObjects as components
-- [ ] Scripts can access and manipulate engine systems
-- [ ] Manage script execution in engine update loop
-- **Dependencies:** None
-
-### TASK-006: Set up Automated Testing Framework
-
-- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
-- [ ] Integrate testing framework (JUnit) into build process
-- [ ] Unit tests for critical modules (ECS, asset loading, math)
-- [ ] Integration tests for major system interactions
-- [ ] Incorporate visual assertion tools into test suite
-- **Dependencies:** None
-
-### TASK-007: Refactor Renderer to Render Graph System
-
-- [ ] **Priority:** 🟡 Medium | **Effort:** Large
-- [ ] Define render graph structure with pass inputs/outputs
-- [ ] Dynamic pass compilation into execution order
-- [ ] Convert existing passes (Shadow, Picking, Geometry, Debug)
-- [ ] Extensible for deferred rendering and post-processing
-- **Dependencies:** None
+- [ ] **A45.0.6: Refactor Renderer to Render Graph System**
+  - Define render graph structure with pass inputs/outputs
+  - Dynamic pass compilation into execution order
+  - Convert existing passes (Shadow, Picking, Geometry, Debug)
+  - Extensible for deferred rendering and post-processing
+  - **Priority:** 🟡 Medium | **Effort:** Large
+  - **Dependencies:** None
+  - **Location:** `engine/render/`
 
 ---
 
@@ -123,77 +71,75 @@ This release addresses null safety, resource management, object allocation, and 
 
 **Focus:** Advanced rendering, core gameplay mechanics, and core tooling
 
-### TASK-010: Implement Advanced Lighting Models
+- [ ] **A46.0.1: Implement Advanced Lighting Models**
+  - Point lights with position, color, intensity
+  - Spot lights with adjustable parameters
+  - Image-Based Lighting (IBL) with environment maps
+  - Correct lighting calculations for all light types
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** A45.0.6
+  - **Location:** `engine/render/`
 
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] Point lights with position, color, intensity
-- [ ] Spot lights with adjustable parameters
-- [ ] Image-Based Lighting (IBL) with environment maps
-- [ ] Correct lighting calculations for all light types
-- **Dependencies:** TASK-007
+- [ ] **A46.0.2: Develop Post-Processing Stack**
+  - Framework for adding and chaining post-processing effects
+  - Implement bloom, depth of field, color grading
+  - Screen-space shaders using FBOs
+  - Enable/disable and configure effects via editor or scripts
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** A45.0.6
+  - **Location:** `engine/render/postprocess/`
 
-### TASK-011: Develop Post-Processing Stack
+- [ ] **A46.0.3: Create Advanced Material System**
+  - Standard PBR material model (Metallic-Roughness workflow)
+  - Manage material properties (textures, scalars)
+  - Integrate with rendering pipeline and shaders
+  - Support shader variants based on material properties
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** A45.0.6
+  - **Location:** `engine/render/materials/`
 
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] Framework for adding and chaining post-processing effects
-- [ ] Implement bloom, depth of field, color grading
-- [ ] Screen-space shaders using FBOs
-- [ ] Enable/disable and configure effects via editor or scripts
-- **Dependencies:** TASK-007
+- [ ] **A46.0.4: Implement In-Game UI System**
+  - Hierarchy of UI elements (Panel, Button, Text, Image)
+  - Position, size, and style UI elements
+  - User interaction support (clicks, input)
+  - Efficient rendering integrated into main scene
+  - **Priority:** 🔴 High | **Effort:** Medium
+  - **Dependencies:** None
+  - **Location:** `engine/ui/`
 
-### TASK-012: Create Advanced Material System
+- [ ] **A46.0.5: Develop VFX/Particle System**
+  - Particle emitter component
+  - Particle properties (lifetime, size, color, velocity, texture)
+  - Particle behaviors (gravity, drag, collision)
+  - Efficient rendering of large particle counts
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** None
+  - **Location:** `engine/vfx/`
 
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] Standard PBR material model (Metallic-Roughness workflow)
-- [ ] Manage material properties (textures, scalars)
-- [ ] Integrate with rendering pipeline and shaders
-- [ ] Support shader variants based on material properties
-- **Dependencies:** TASK-007
+- [ ] **A46.0.6: Implement Advanced Physics Constraints**
+  - Additional Bullet constraints (Generic6DofConstraint, etc.)
+  - API for creating and configuring constraints
+  - Stable constraint simulation
+  - **Priority:** 🟡 Medium | **Effort:** Medium
+  - **Dependencies:** A45.0.4
+  - **Location:** `engine/physics3d/`
 
-### TASK-013: Implement In-Game UI System
+- [ ] **A46.0.7: Enhance Animation System (Retargeting)**
+  - Bone transformation mapping between skeletons
+  - Retarget humanoid animations to different rigs
+  - Preserve animation feel and intent
+  - **Priority:** 🟡 Medium | **Effort:** Large
+  - **Dependencies:** None
+  - **Location:** `engine/animation/`
 
-- [ ] **Priority:** 🔴 High | **Effort:** Medium
-- [ ] Hierarchy of UI elements (Panel, Button, Text, Image)
-- [ ] Position, size, and style UI elements
-- [ ] User interaction support (clicks, input)
-- [ ] Efficient rendering integrated into main scene
-- **Dependencies:** None
-
-### TASK-014: Develop VFX/Particle System
-
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] Particle emitter component
-- [ ] Particle properties (lifetime, size, color, velocity, texture)
-- [ ] Particle behaviors (gravity, drag, collision)
-- [ ] Efficient rendering of large particle counts
-- [ ] Consider GPU particle simulation
-- **Dependencies:** None
-
-### TASK-015: Implement Advanced Physics Constraints
-
-- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
-- [ ] Additional Bullet constraints (Generic6DofConstraint, etc.)
-- [ ] API for creating and configuring constraints
-- [ ] Stable constraint simulation
-- **Dependencies:** TASK-004
-
-### TASK-016: Enhance Animation System (Retargeting)
-
-- [ ] **Priority:** 🟡 Medium | **Effort:** Large
-- [ ] Bone transformation mapping between skeletons
-- [ ] Retarget humanoid animations to different rigs
-- [ ] Preserve animation feel and intent
-- [ ] Research: Inverse kinematics techniques
-- **Dependencies:** None
-
-### TASK-017: Improve Editor Scene Manipulation Tools
-
-- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
-- [ ] More responsive and visually clear gizmos
-- [ ] Grid and object snapping options
-- [ ] Improved camera controls for scene view
-- [ ] Tools for duplicating and grouping objects
-- **Dependencies:** TASK-002, TASK-007
+- [ ] **A46.0.8: Improve Editor Scene Manipulation Tools**
+  - More responsive and visually clear gizmos
+  - Grid and object snapping options
+  - Improved camera controls for scene view
+  - Tools for duplicating and grouping objects
+  - **Priority:** 🟡 Medium | **Effort:** Medium
+  - **Dependencies:** A45.0.2, A45.0.6
+  - **Location:** `editor/`
 
 ---
 
@@ -201,78 +147,87 @@ This release addresses null safety, resource management, object allocation, and 
 
 **Focus:** Game-specific features, optimization, and user experience
 
-### TASK-020: Develop Skateboarding Physics Mechanics
+- [ ] **A47.0.1: Develop Skateboarding Physics Mechanics**
+  - Realistic skateboard physics (mass, center of gravity, rotation)
+  - Ollie mechanics and board aerial control
+  - Grinding on rails and ledges
+  - Accurate physics response during landings and impacts
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** A45.0.4, A46.0.6
+  - **Location:** `game/skateboard/`
 
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] Realistic skateboard physics (mass, center of gravity, rotation)
-- [ ] Ollie mechanics and board aerial control
-- [ ] Grinding on rails and ledges
-- [ ] Accurate physics response during landings and impacts
-- [ ] Custom physics logic beyond standard rigid bodies
-- **Dependencies:** TASK-004, TASK-015
+- [ ] **A47.0.2: Implement Character Controller & State Machine**
+  - State machine for player actions (standing, skating, jumping, grinding)
+  - Seamless state transitions driven by input and physics
+  - Integration with animation system
+  - Nuanced skateboarding movement control
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** A46.0.7
+  - **Location:** `game/player/`
 
-### TASK-021: Implement Character Controller & State Machine
+- [ ] **A47.0.3: Optimize Rendering Performance**
+  - Identify rendering bottlenecks through profiling
+  - Implement batching, culling (frustum, occlusion)
+  - Efficient shader usage
+  - Meet target frame rates on representative hardware
+  - **Priority:** 🟡 Medium | **Effort:** Medium
+  - **Dependencies:** A46.0.1, A46.0.2
+  - **Location:** `engine/render/`
 
-- [ ] **Priority:** 🔴 High | **Effort:** Large
-- [ ] State machine for player actions (standing, skating, jumping, grinding)
-- [ ] Seamless state transitions driven by input and physics
-- [ ] Integration with animation system
-- [ ] Nuanced skateboarding movement control
-- **Dependencies:** TASK-005, TASK-016
+- [ ] **A47.0.4: Optimize Physics Performance**
+  - Identify physics bottlenecks through profiling
+  - Optimize physics world settings, collision detection, solver iterations
+  - Ensure performance for target game complexity
+  - Tune solver iterations and broadphase settings
+  - **Priority:** 🟡 Medium | **Effort:** Medium
+  - **Dependencies:** A45.0.4, A46.0.6
+  - **Location:** `engine/physics3d/`
 
-### TASK-022: Integrate Networking for Multiplayer
+- [ ] **A47.0.5: Integrate Scripting Language (TypeScript)**
+  - Create scripting abstraction layer for multiple language support
+  - Implement TypeScript scripting engine as first language
+  - Scripts can be attached to GameObjects as components
+  - Scripts can access and manipulate engine systems via safe API
+  - Manage script execution in engine update loop
+  - Design abstraction to support future languages (Lua, Python, etc.)
+  - **Priority:** 🔴 High | **Effort:** Large
+  - **Dependencies:** A45.0.6
+  - **Location:** `engine/scripting/`
 
-- [ ] **Priority:** 🟡 Medium | **Effort:** Large
-- [ ] Basic client-server architecture
-- [ ] Core game state synchronization (positions, actions)
-- [ ] Handle network latency and packet loss
-- [ ] Simple multiplayer example
-- [ ] Research: Netcode for GameObjects, Netty/Kryo
-- **Dependencies:** TASK-005
+- [ ] **A47.0.6: Develop Sample Skate Game Project**
+  - Playable mini-game demonstrating core skateboarding mechanics
+  - Utilize most key engine features (rendering, physics, animation, UI, scripting)
+  - Provide practical example of engine usage
+  - **Priority:** 🟡 Medium | **Effort:** Large
+  - **Dependencies:** All previous except A47.0.7
+  - **Location:** `samples/`
 
-### TASK-023: Optimize Rendering Performance
+- [ ] **A47.0.7: Refine Editor Workflow & UX**
+  - Collect and analyze user feedback
+  - Address common pain points in editor workflow
+  - Improve editor performance and responsiveness
+  - Implement minor UI/UX improvements
+  - **Priority:** 🟢 Low | **Effort:** Medium
+  - **Dependencies:** A46.0.8
+  - **Location:** `editor/`
 
-- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
-- [ ] Identify rendering bottlenecks through profiling
-- [ ] Implement batching, culling (frustum, occlusion)
-- [ ] Efficient shader usage
-- [ ] Meet target frame rates on representative hardware
-- **Dependencies:** TASK-010, TASK-011
+- [ ] **A47.0.8: Comprehensive Documentation & Tutorials**
+  - Generate API documentation
+  - Create getting started guides for new users
+  - Tutorials for scene setup, scripting, animation, physics
+  - Well-organized and searchable documentation
+  - **Priority:** 🟢 Low | **Effort:** Large
+  - **Dependencies:** All previous tasks
+  - **Location:** `docs/`
 
-### TASK-024: Optimize Physics Performance
-
-- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
-- [ ] Identify physics bottlenecks through profiling
-- [ ] Optimize physics world settings, collision detection, solver iterations
-- [ ] Ensure performance for target game complexity
-- [ ] Tune solver iterations and broadphase settings
-- **Dependencies:** TASK-004, TASK-015
-
-### TASK-025: Develop Sample Skate Game Project
-
-- [ ] **Priority:** 🟡 Medium | **Effort:** Large
-- [ ] Playable mini-game demonstrating core skateboarding mechanics
-- [ ] Utilize most key engine features (rendering, physics, animation, UI, scripting)
-- [ ] Provide practical example of engine usage
-- **Dependencies:** All previous tasks
-
-### TASK-026: Refine Editor Workflow & UX
-
-- [ ] **Priority:** 🟢 Low | **Effort:** Medium
-- [ ] Collect and analyze user feedback
-- [ ] Address common pain points in editor workflow
-- [ ] Improve editor performance and responsiveness
-- [ ] Implement minor UI/UX improvements
-- **Dependencies:** TASK-017
-
-### TASK-027: Comprehensive Documentation & Tutorials
-
-- [ ] **Priority:** 🟢 Low | **Effort:** Large
-- [ ] Generate API documentation
-- [ ] Create getting started guides for new users
-- [ ] Tutorials for scene setup, scripting, animation, physics
-- [ ] Well-organized and searchable documentation
-- **Dependencies:** All previous tasks
+- [ ] **A47.0.9: Integrate Networking for Multiplayer**
+  - Basic client-server architecture
+  - Core game state synchronization (positions, actions)
+  - Handle network latency and packet loss
+  - Simple multiplayer example
+  - **Priority:** 🟡 Medium | **Effort:** Large
+  - **Dependencies:** A47.0.5
+  - **Location:** `engine/networking/`
 
 ---
 

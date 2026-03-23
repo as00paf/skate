@@ -61,15 +61,14 @@ tooling.
 
 ### Phase 1: Foundation [Focus on core engine stability, asset pipeline, and essential gameplay foundations]
 
-| ID       | Task                                        | Priority  | Effort | Dependencies | Status |
-|:---------|:--------------------------------------------|:----------|:-------|:-------------|:-------|
-| TASK-001 | Enhance Asset Management Pipeline           | 🔴 High   | L      | None         | ⬜ Todo |
-| TASK-002 | Implement Scene Serialization               | 🔴 High   | L      | TASK-001     | ⬜ Todo |
-| TASK-003 | Develop Basic Audio System                  | 🔴 High   | M      | None         | ⬜ Todo |
-| TASK-004 | Implement Ragdoll Physics                   | 🔴 High   | L      | None         | ⬜ Todo |
-| TASK-005 | Integrate Scripting Language (e.g., Kotlin) | 🔴 High   | L      | None         | ⬜ Todo |
-| TASK-006 | Set up Automated Testing Framework          | 🟡 Medium | M      | None         | ⬜ Todo |
-| TASK-007 | Refactor Renderer to Render Graph System    | 🟡 Medium | L      | None         | ⬜ Todo |
+| ID      | Task                                     | Priority  | Effort | Dependencies | Status |
+|:--------|:-----------------------------------------|:----------|:-------|:-------------|:-------|
+| A45.0.1 | Enhance Asset Management Pipeline        | 🔴 High   | L      | None         | ⬜ Todo |
+| A45.0.2 | Implement Scene Serialization            | 🔴 High   | L      | A45.0.1      | ⬜ Todo |
+| A45.0.3 | Develop Basic Audio System               | 🔴 High   | M      | None         | ⬜ Todo |
+| A45.0.4 | Implement Ragdoll Physics                | 🔴 High   | L      | None         | ⬜ Todo |
+| A45.0.5 | Set up Automated Testing Framework       | 🟡 Medium | M      | None         | ⬜ Todo |
+| A45.0.6 | Refactor Renderer to Render Graph System | 🟡 Medium | L      | None         | ⬜ Todo |
 
 **Phase 1 Deliverables:**
 
@@ -83,16 +82,16 @@ tooling.
 
 ### Phase 2: Core Systems [Focus on advanced rendering, core gameplay mechanics, and core tooling]
 
-| ID       | Task                                    | Priority  | Effort | Dependencies       | Status |
-|:---------|:----------------------------------------|:----------|:-------|:-------------------|:-------|
-| TASK-010 | Implement Advanced Lighting Models      | 🔴 High   | L      | TASK-007           | ⬜ Todo |
-| TASK-011 | Develop Post-Processing Stack           | 🔴 High   | L      | TASK-007           | ⬜ Todo |
-| TASK-012 | Create Advanced Material System         | 🔴 High   | L      | TASK-007           | ⬜ Todo |
-| TASK-013 | Implement In-Game UI System             | 🔴 High   | M      | None               | ⬜ Todo |
-| TASK-014 | Develop VFX/Particle System             | 🔴 High   | L      | None               | ⬜ Todo |
-| TASK-015 | Implement Advanced Physics Constraints  | 🟡 Medium | M      | TASK-004           | ⬜ Todo |
-| TASK-016 | Enhance Animation System (Retargeting)  | 🟡 Medium | L      | None               | ⬜ Todo |
-| TASK-017 | Improve Editor Scene Manipulation Tools | 🟡 Medium | M      | TASK-002, TASK-007 | ⬜ Todo |
+| ID      | Task                                    | Priority  | Effort | Dependencies     | Status |
+|:--------|:----------------------------------------|:----------|:-------|:-----------------|:-------|
+| A46.0.1 | Implement Advanced Lighting Models      | 🔴 High   | L      | A45.0.6          | ⬜ Todo |
+| A46.0.2 | Develop Post-Processing Stack           | 🔴 High   | L      | A45.0.6          | ⬜ Todo |
+| A46.0.3 | Create Advanced Material System         | 🔴 High   | L      | A45.0.6          | ⬜ Todo |
+| A46.0.4 | Implement In-Game UI System             | 🔴 High   | M      | None             | ⬜ Todo |
+| A46.0.5 | Develop VFX/Particle System             | 🔴 High   | L      | None             | ⬜ Todo |
+| A46.0.6 | Implement Advanced Physics Constraints  | 🟡 Medium | M      | A45.0.4          | ⬜ Todo |
+| A46.0.7 | Enhance Animation System (Retargeting)  | 🟡 Medium | L      | None             | ⬜ Todo |
+| A46.0.8 | Improve Editor Scene Manipulation Tools | 🟡 Medium | M      | A45.0.2, A45.0.6 | ⬜ Todo |
 
 **Phase 2 Deliverables:**
 
@@ -105,16 +104,17 @@ tooling.
 
 ### Phase 3: Polish & Tooling [Focus on game-specific features, optimization, and user experience]
 
-| ID       | Task                                           | Priority  | Effort | Dependencies       | Status |
-|:---------|:-----------------------------------------------|:----------|:-------|:-------------------|:-------|
-| TASK-020 | Develop Skateboarding Physics Mechanics        | 🔴 High   | L      | TASK-004, TASK-015 | ⬜ Todo |
-| TASK-021 | Implement Character Controller & State Machine | 🔴 High   | L      | TASK-005, TASK-016 | ⬜ Todo |
-| TASK-022 | Integrate Networking for Multiplayer           | 🟡 Medium | L      | TASK-005           | ⬜ Todo |
-| TASK-023 | Optimize Rendering Performance                 | 🟡 Medium | M      | TASK-010, TASK-011 | ⬜ Todo |
-| TASK-024 | Optimize Physics Performance                   | 🟡 Medium | M      | TASK-004, TASK-015 | ⬜ Todo |
-| TASK-025 | Develop Sample Skate Game Project              | 🟡 Medium | L      | All previous       | ⬜ Todo |
-| TASK-026 | Refine Editor Workflow & UX                    | 🟢 Low    | M      | TASK-017           | ⬜ Todo |
-| TASK-027 | Comprehensive Documentation & Tutorials        | 🟢 Low    | L      | All previous       | ⬜ Todo |
+| ID      | Task                                           | Priority  | Effort | Dependencies     | Status |
+|:--------|:-----------------------------------------------|:----------|:-------|:-----------------|:-------|
+| A47.0.1 | Develop Skateboarding Physics Mechanics        | 🔴 High   | L      | A45.0.4, A46.0.6 | ⬜ Todo |
+| A47.0.2 | Implement Character Controller & State Machine | 🔴 High   | L      | A46.0.7          | ⬜ Todo |
+| A47.0.3 | Optimize Rendering Performance                 | 🟡 Medium | M      | A46.0.1, A46.0.2 | ⬜ Todo |
+| A47.0.4 | Optimize Physics Performance                   | 🟡 Medium | M      | A45.0.4, A46.0.6 | ⬜ Todo |
+| A47.0.5 | Integrate Scripting Language (TypeScript)      | 🔴 High   | L      | A45.0.6          | ⬜ Todo |
+| A47.0.6 | Develop Sample Skate Game Project              | 🟡 Medium | L      | A47.0.5          | ⬜ Todo |
+| A47.0.7 | Refine Editor Workflow & UX                    | 🟢 Low    | M      | A46.0.8          | ⬜ Todo |
+| A47.0.8 | Comprehensive Documentation & Tutorials        | 🟢 Low    | L      | All previous     | ⬜ Todo |
+| A47.0.9 | Integrate Networking for Multiplayer           | 🟡 Medium | L      | A47.0.5          | ⬜ Todo |
 
 **Phase 3 Deliverables:**
 
@@ -129,7 +129,7 @@ tooling.
 
 ## Task Details
 
-### TASK-001: Enhance Asset Management Pipeline
+### A45.0.1: Enhance Asset Management Pipeline
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 1
 **Description:** Overhaul the existing asset management system to support a wider range of asset types, implement
@@ -148,7 +148,7 @@ includes defining clear asset types and loading processes.
 
 ---
 
-### TASK-002: Implement Scene Serialization
+### A45.0.2: Implement Scene Serialization
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 1
 **Description:** Develop a robust system for saving and loading entire scenes, including game objects, their components,
@@ -161,11 +161,11 @@ and their state. This system should be integrated with the asset management pipe
 *   [ ] The system handles scene hierarchy and relationships between game objects.
     **Technical Notes:** Consider using a serialization library or implementing a custom solution. Ensure extensibility
     for future component types.
-    **Dependencies:** TASK-001
+    **Dependencies:** A45.0.1
 
 ---
 
-### TASK-003: Develop Basic Audio System
+### A45.0.3: Develop Basic Audio System
 
 **Priority:** 🔴 High | **Effort:** Medium | **Phase:** 1
 **Description:** Integrate a foundational audio engine capable of playing 2D and 3D sound effects and background music.
@@ -182,7 +182,7 @@ This includes managing audio sources, spatialization, and volume control.
 
 ---
 
-### TASK-004: Implement Ragdoll Physics
+### A45.0.4: Implement Ragdoll Physics
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 1
 **Description:** Implement ragdoll physics capabilities using the underlying Bullet physics engine. This involves
@@ -200,25 +200,7 @@ actively controlled.
 
 ---
 
-### TASK-005: Integrate Scripting Language (e.g., Kotlin)
-
-**Priority:** 🔴 High | **Effort:** Large | **Phase:** 1
-**Description:** Integrate a scripting language to allow developers to define game logic, component behaviors, and
-custom system logic. Kotlin scripting is a strong candidate given the engine's core language.
-**Acceptance Criteria:**
-
-*   [ ] A scripting environment is set up and integrated with the engine's core systems (ECS, input, etc.).
-*   [ ] Developers can write scripts in the chosen language (e.g., Kotlin Script).
-*   [ ] Scripts can be attached to GameObjects as components.
-*   [ ] Scripts can access and manipulate engine systems and game object properties.
-*   [ ] Script execution is managed within the engine's update loop.
-    **Technical Notes:** Evaluate Kotlin Script or other embedded scripting solutions. Focus on providing a safe and
-    efficient API for script-engine interaction.
-    **Dependencies:** None
-
----
-
-### TASK-006: Set up Automated Testing Framework
+### A45.0.5: Set up Automated Testing Framework
 
 **Priority:** 🟡 Medium | **Effort:** Medium | **Phase:** 1
 **Description:** Establish a comprehensive automated testing framework, including unit tests for core systems and
@@ -236,7 +218,7 @@ suites.
 
 ---
 
-### TASK-007: Refactor Renderer to Render Graph System
+### A45.0.6: Refactor Renderer to Render Graph System
 
 **Priority:** 🟡 Medium | **Effort:** Large | **Phase:** 1
 **Description:** Refactor the current monolithic `Renderer.kt` into a more flexible and data-driven render graph system.
@@ -254,7 +236,7 @@ dependencies.
 
 ---
 
-### TASK-010: Implement Advanced Lighting Models
+### A46.0.1: Implement Advanced Lighting Models
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 2
 **Description:** Extend the lighting system to support various light types beyond directional lights, including point
@@ -268,11 +250,11 @@ lighting using skyboxes/HDRI maps.
 *   [ ] Lighting calculations correctly incorporate new light types and IBL.
     **Technical Notes:** Requires modifications to shaders and the rendering pipeline to handle multiple light sources
     and environment maps.
-    **Dependencies:** TASK-007
+    **Dependencies:** A45.0.7
 
 ---
 
-### TASK-011: Develop Post-Processing Stack
+### A46.0.2: Develop Post-Processing Stack
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 2
 **Description:** Create a flexible post-processing stack that can apply various visual effects to the final rendered
@@ -284,11 +266,11 @@ image. This includes effects like bloom, depth of field, color grading, and tone
 *   [ ] Effects are applied using screen-space shaders and FBOs.
 *   [ ] Effects can be enabled/disabled and configured via the editor or scripts.
     **Technical Notes:** This will leverage the FBO system and require shader programming for each effect.
-    **Dependencies:** TASK-007
+    **Dependencies:** A45.0.7
 
 ---
 
-### TASK-012: Create Advanced Material System
+### A46.0.3: Create Advanced Material System
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 2
 **Description:** Develop a more sophisticated, shader-driven material system that allows for complex surface properties
@@ -300,11 +282,11 @@ and PBR (Physically Based Rendering) workflows. This system should be easily ext
 *   [ ] Integrate material properties with the rendering pipeline and shaders.
 *   [ ] Support for shader variants based on material properties.
     **Technical Notes:** This will likely involve a shader generation system or a more flexible shader interface.
-    **Dependencies:** TASK-007
+    **Dependencies:** A45.0.7
 
 ---
 
-### TASK-013: Implement In-Game UI System
+### A46.0.4: Implement In-Game UI System
 
 **Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
 **Description:** Develop a dedicated UI system for creating in-game interfaces, distinct from the editor's ImGui. This
@@ -320,7 +302,7 @@ system should support elements like buttons, text, images, and layout management
 
 ---
 
-### TASK-014: Develop VFX/Particle System
+### A46.0.5: Develop VFX/Particle System
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 2
 **Description:** Create a particle system for generating and managing visual effects such as smoke, sparks, or debris.
@@ -336,7 +318,7 @@ This system should allow for defining particle properties, emission, movement, a
 
 ---
 
-### TASK-015: Implement Advanced Physics Constraints
+### A46.0.6: Implement Advanced Physics Constraints
 
 **Priority:** 🟡 Medium | **Effort:** Medium | **Phase:** 2
 **Description:** Extend the physics system to support a wider range of physics constraints beyond what's needed for
@@ -347,11 +329,11 @@ basic ragdolls. This could include generic joints, sliders, and gear constraints
 *   [ ] Provide an API for creating and configuring these constraints between rigid bodies.
 *   [ ] Constraints function correctly and maintain stability within the physics simulation.
     **Technical Notes:** Familiarize with the specifics of each constraint type in the Bullet physics library.
-    **Dependencies:** TASK-004
+    **Dependencies:** A45.0.4
 
 ---
 
-### TASK-016: Enhance Animation System (Retargeting)
+### A46.0.7: Enhance Animation System (Retargeting)
 
 **Priority:** 🟡 Medium | **Effort:** Large | **Phase:** 2
 **Description:** Improve the animation system by adding features like animation retargeting, which allows animations
@@ -367,7 +349,7 @@ created for one skeleton to be applied to another with a different bone structur
 
 ---
 
-### TASK-017: Improve Editor Scene Manipulation Tools
+### A46.0.8: Improve Editor Scene Manipulation Tools
 
 **Priority:** 🟡 Medium | **Effort:** Medium | **Phase:** 2
 **Description:** Enhance the existing editor tools for manipulating objects within the scene. This includes improving
@@ -380,11 +362,11 @@ the gizmos (translate, rotate, scale), adding snapping capabilities, and refinin
 *   [ ] Implement tools for duplicating and grouping objects.
     **Technical Notes:** Leverage existing gizmo implementations and extend them with new features. Ensure performance
     is maintained.
-    **Dependencies:** TASK-002, TASK-007
+    **Dependencies:** A45.0.2, A45.0.7
 
 ---
 
-### TASK-020: Develop Skateboarding Physics Mechanics
+### A47.0.1: Develop Skateboarding Physics Mechanics
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 3
 **Description:** Focus on implementing the core physics mechanics specific to skateboarding. This includes board
@@ -397,11 +379,11 @@ physics, truck/wheel interactions, ollies, grinds, and board control during airt
 *   [ ] Accurate physics response during landings and impacts.
     **Technical Notes:** This will require significant tuning of physics parameters and potentially custom physics logic
     beyond standard rigid bodies. Leverage ragdoll and constraint systems.
-    **Dependencies:** TASK-004, TASK-015
+    **Dependencies:** A45.0.4, A46.0.6
 
 ---
 
-### TASK-021: Implement Character Controller & State Machine
+### A47.0.2: Implement Character Controller & State Machine
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 3
 **Description:** Develop a character controller system that integrates with the animation and physics systems to manage
@@ -414,28 +396,11 @@ player movement, actions, and states specific to skateboarding.
 *   [ ] Control logic that allows for nuanced skateboarding movements.
     **Technical Notes:** This system will act as the bridge between player input, animation, and the specialized
     skateboarding physics.
-    **Dependencies:** TASK-005, TASK-016
+    **Dependencies:** A46.0.7
 
 ---
 
-### TASK-022: Integrate Networking for Multiplayer
-
-**Priority:** 🟡 Medium | **Effort:** Large | **Phase:** 3
-**Description:** Add networking capabilities to the engine to support multiplayer gameplay. This includes client-server
-architecture, state synchronization, and handling network latency.
-**Acceptance Criteria:**
-
-*   [ ] Basic client-server architecture is established.
-*   [ ] Core game state (player positions, actions) can be synchronized between clients.
-*   [ ] Mechanisms for handling network latency and packet loss are considered.
-*   [ ] A simple multiplayer example can be run.
-    **Technical Notes:** Research and integrate a suitable networking library (e.g., Netcode for GameObjects, custom
-    solution using Netty/Kryo).
-    **Dependencies:** TASK-005
-
----
-
-### TASK-023: Optimize Rendering Performance
+### A47.0.3: Optimize Rendering Performance
 
 **Priority:** 🟡 Medium | **Effort:** Medium | **Phase:** 3
 **Description:** Profile and optimize the rendering pipeline to ensure smooth performance, especially with complex
@@ -446,11 +411,11 @@ scenes and effects.
 *   [ ] Implement optimizations such as batching, culling (frustum, occlusion), and efficient shader usage.
 *   [ ] Ensure rendering performance meets target frame rates on representative hardware.
     **Technical Notes:** Utilize profiling tools to pinpoint areas for optimization. Focus on GPU-bound issues.
-    **Dependencies:** TASK-010, TASK-011
+    **Dependencies:** A46.0.1, A46.0.2
 
 ---
 
-### TASK-024: Optimize Physics Performance
+### A47.0.4: Optimize Physics Performance
 
 **Priority:** 🟡 Medium | **Effort:** Medium | **Phase:** 3
 **Description:** Profile and optimize the physics simulation to maintain performance, particularly with many dynamic
@@ -461,11 +426,30 @@ bodies and complex interactions.
 *   [ ] Optimize physics world settings, collision detection, and solver iterations.
 *   [ ] Ensure physics performance is adequate for the target game complexity.
     **Technical Notes:** Analyze CPU-bound physics issues. Tune solver iterations and broadphase settings.
-    **Dependencies:** TASK-004, TASK-015
+    **Dependencies:** A45.0.4, A46.0.6
 
 ---
 
-### TASK-025: Develop Sample Skate Game Project
+### A47.0.5: Integrate Scripting Language (TypeScript)
+
+**Priority:** 🔴 High | **Effort:** Large | **Phase:** 3
+**Description:** Integrate a scripting language to allow developers to define game logic, component behaviors, and
+custom system logic. TypeScript is the primary language with an abstraction layer for future language support.
+**Acceptance Criteria:**
+
+*   [ ] Create scripting abstraction layer for multiple language support.
+*   [ ] Implement TypeScript scripting engine as first language.
+*   [ ] Scripts can be attached to GameObjects as components.
+*   [ ] Scripts can access and manipulate engine systems via safe API.
+*   [ ] Script execution is managed within the engine's update loop.
+*   [ ] Design abstraction to support future languages (Lua, Python, etc.).
+    **Technical Notes:** Use GraalVM or similar for JavaScript/TypeScript execution. Design clean API boundary between
+    engine and scripts. Consider hot-reloading for rapid iteration.
+    **Dependencies:** A45.0.6
+
+---
+
+### A47.0.6: Develop Sample Skate Game Project
 
 **Priority:** 🟡 Medium | **Effort:** Large | **Phase:** 3
 **Description:** Create a small, representative skateboarding game project using the engine. This project will serve as
@@ -477,11 +461,11 @@ a showcase, a testbed for engine features, and a learning resource for new users
 *   [ ] Provides a practical example of how to use the engine's systems.
     **Technical Notes:** Focus on demonstrating the strengths of the engine, particularly the specialized skateboarding
     features.
-    **Dependencies:** All previous tasks
+    **Dependencies:** A47.0.5
 
 ---
 
-### TASK-026: Refine Editor Workflow & UX
+### A47.0.7: Refine Editor Workflow & UX
 
 **Priority:** 🟢 Low | **Effort:** Medium | **Phase:** 3
 **Description:** Conduct usability testing and gather feedback to refine the editor's workflow and overall user
@@ -493,11 +477,11 @@ experience, making it more intuitive and efficient.
 *   [ ] Editor performance and responsiveness are improved.
 *   [ ] Minor UI/UX improvements are implemented based on feedback.
     **Technical Notes:** Focus on iterative improvements rather than major overhauls at this stage.
-    **Dependencies:** TASK-017
+    **Dependencies:** A46.0.8
 
 ---
 
-### TASK-027: Comprehensive Documentation & Tutorials
+### A47.0.8: Comprehensive Documentation & Tutorials
 
 **Priority:** 🟢 Low | **Effort:** Large | **Phase:** 3
 **Description:** Create comprehensive documentation, including API references, getting started guides, and tutorials
@@ -514,16 +498,34 @@ covering key engine features and workflows.
 
 ---
 
+### A47.0.9: Integrate Networking for Multiplayer
+
+**Priority:** 🟡 Medium | **Effort:** Large | **Phase:** 3
+**Description:** Add networking capabilities to the engine to support multiplayer gameplay. This includes client-server
+architecture, state synchronization, and handling network latency.
+**Acceptance Criteria:**
+
+*   [ ] Basic client-server architecture is established.
+*   [ ] Core game state (player positions, actions) can be synchronized between clients.
+*   [ ] Mechanisms for handling network latency and packet loss are considered.
+*   [ ] A simple multiplayer example can be run.
+    **Technical Notes:** Research and integrate a suitable networking library (e.g., Netcode for GameObjects, custom
+    solution using Netty/Kryo). Requires scripting layer for networked script execution.
+    **Dependencies:** A47.0.5
+
+---
+
 ## Risk Assessment
 
-| Risk                                     | Likelihood | Impact | Mitigation                                                                                                                                        |
-|:-----------------------------------------|:-----------|:-------|:--------------------------------------------------------------------------------------------------------------------------------------------------|
-| Scope Creep                              | Medium     | High   | Strict adherence to the roadmap, prioritize tasks ruthlessly, defer non-essential features to future versions.                                    |
-| Technical Debt Slowdown                  | Medium     | Medium | Allocate dedicated time for refactoring (e.g., TASK-007), enforce code reviews, maintain automated testing.                                       |
-| Underestimated Complexity (Physics/Anim) | Medium     | High   | Allocate sufficient effort for physics and animation tasks, break them into smaller sub-tasks if needed, consult experts if necessary.            |
-| Performance Bottlenecks                  | Medium     | High   | Implement profiling early and regularly, dedicate tasks for optimization (TASK-023, TASK-024), focus on efficient algorithms and data structures. |
-| Lack of Documentation                    | High       | Medium | Integrate documentation creation into later phases (TASK-027), encourage team members to document as they go, use documentation generation tools. |
-| Insufficient Testing                     | Medium     | High   | Prioritize automated testing (TASK-006), ensure tests are comprehensive and reliable, incorporate testing into the CI/CD pipeline.                |
+| Risk                                     | Likelihood | Impact | Mitigation                                                                                                                                       |
+|:-----------------------------------------|:-----------|:-------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Scope Creep                              | Medium     | High   | Strict adherence to the roadmap, prioritize tasks ruthlessly, defer non-essential features to future versions.                                   |
+| Technical Debt Slowdown                  | Medium     | Medium | Allocate dedicated time for refactoring (e.g., A45.0.6), enforce code reviews, maintain automated testing.                                       |
+| Underestimated Complexity (Physics/Anim) | Medium     | High   | Allocate sufficient effort for physics and animation tasks, break them into smaller sub-tasks if needed, consult experts if necessary.           |
+| Performance Bottlenecks                  | Medium     | High   | Implement profiling early and regularly, dedicate tasks for optimization (A47.0.3, A47.0.4), focus on efficient algorithms and data structures.  |
+| Lack of Documentation                    | High       | Medium | Integrate documentation creation into later phases (A47.0.8), encourage team members to document as they go, use documentation generation tools. |
+| Insufficient Testing                     | Medium     | High   | Prioritize automated testing (A45.0.5), ensure tests are comprehensive and reliable, incorporate testing into the CI/CD pipeline.                |
+| Scripting Integration Complexity         | Medium     | High   | Start with minimal API surface, iterate based on user feedback, leverage established runtimes (GraalVM).                                         |
 
 ---
 
