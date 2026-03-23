@@ -1,6 +1,7 @@
 package com.pafoid.skate.game.trick
 
 import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
@@ -21,15 +22,17 @@ class TrickDetector : Component(), KoinComponent {
     private var detectedTrick: String? = null
 
     private var rigidBody: RigidBody3D? = null
+    private var physicsComponent: PhysicsComponent? = null
     private var skateboardPhysics: SkateboardPhysics? = null
 
     override fun start() {
         rigidBody = gameObject.getComponent<RigidBody3D>()
+        physicsComponent = gameObject.getComponent<PhysicsComponent>()
         skateboardPhysics = gameObject.getComponent<SkateboardPhysics>()
     }
 
     override fun update(dt: Float) {
-        val rigidBody = rigidBody ?: return
+        val physicsComponent = physicsComponent ?: return
         val skateboardPhysics = skateboardPhysics ?: return
 
         if (skateboardPhysics.isGrounded) {
@@ -40,7 +43,8 @@ class TrickDetector : Component(), KoinComponent {
             detectedTrick = null
         } else {
             // In air, accumulate rotation and detect trick
-            val angularVelocity = rigidBody.angularVelocity
+            // Read angular velocity from PhysicsComponent instead of directly from rigidBody
+            val angularVelocity = physicsComponent.angularVelocity
             accumulatedRotationX += Math.toDegrees(angularVelocity.x.toDouble()).toFloat() * dt
             accumulatedRotationY += Math.toDegrees(angularVelocity.y.toDouble()).toFloat() * dt
             accumulatedRotationZ += Math.toDegrees(angularVelocity.z.toDouble()).toFloat() * dt

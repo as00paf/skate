@@ -205,6 +205,16 @@ class PlayerController : Component(), KoinComponent {
     }
 
     /**
+     * Gets the current horizontal speed from PhysicsComponent.
+     * Falls back to lastSpeed if component not available.
+     *
+     * @return Current speed in m/s
+     */
+    private fun getCurrentSpeed(): Float {
+        return gameObject.getComponent<com.pafoid.skate.engine.ecs.components.PhysicsComponent>()?.speed ?: lastSpeed
+    }
+
+    /**
      * Raycasts downwards to snap the skater model to the ground while in the 'WALKING' state.
      * Prevents floating or clipping through terrain.
      */

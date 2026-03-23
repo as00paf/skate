@@ -29,6 +29,7 @@ import com.pafoid.skate.engine.ecs.systems.GridConfig
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.MouseControls
+import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -102,6 +103,9 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
         // Environment system - manages sky, fog, and atmosphere settings
         scene.addSystem(EnvironmentSystem(stringManager = stringManager))
+
+        // Physics system - syncs physics state to PhysicsComponent
+        scene.addSystem(PhysicsSystem())
 
         // Add initial scene components for environment, time, and lighting state
         scene.addComponent(EnvironmentComponent())
