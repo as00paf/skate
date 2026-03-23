@@ -4,6 +4,163 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.38] - 2026-03-22: ECS Architecture Foundation
+
+### Summary
+
+Established proper ECS foundation by making Scene extend GameObject and creating component-based architecture for
+environment, time, and lighting state.
+This migration moves scene-wide state from `SceneData` to components, enabling proper ECS patterns where systems operate
+on components rather than owning config directly.
+
+### Added
+
+- **Scene extends GameObject**: Core architecture change (`engine/ecs/Scene.kt`)
+    - Scene can now have components attached like any GameObject
+    - New helper methods: `getTimeScale()`, `setTimeScale()`, `getTimeOfDay()`, `setTimeOfDay()`
+    - New lifecycle methods: `startScene()`, `destroyScene()`, `editorUpdateScene()`, `updateScene()`, `imguiScene()`
+    - Camera remains as special property (not converted to component yet)
+    - **Impact**: Critical - Foundation for component-based architecture
+
+- **EnvironmentComponent**: Environment settings as component (`engine/ecs/components/EnvironmentComponent.kt`)
+    - Properties: skyColor, skyTint, skyExposure, skyRotation, fogColor, fogDensity, fogGradient, renderSky, renderFog
+    - Includes `applyPreset()` method with 5 presets (CLEAR_DAY, CLOUDY, FOGGY, SUNSET, NO_FOG)
+    - Includes `reset()` method for restoring defaults
+    - Serializable for level saves
+    - **Impact**: High - Environment data as pure component
+
+- **TimeComponent**: Time state as component (`engine/ecs/components/TimeComponent.kt`)
+    - Properties: timeOfDay (0-24 hours), timeScale (0.0 = paused, 1.0 = normal)
+    - Helper method: `getFormattedTime()` returns "HH:MM" format
+    - **Impact**: High - Time state accessible via component
+
+- **LightingStateComponent**: Ambient lighting state (`engine/ecs/components/LightingStateComponent.kt`)
+    - Properties: ambientLight (Vector3f), useAmbient (Boolean)
+    - Written by DayNightCycleSystem, read by LightingUniformsLoader
+    - **Impact**: High - Lighting state as component
+
+- **LightingComponent**: Computed lighting state (`engine/ecs/components/LightingComponent.kt`)
+    - Properties: sunDirection, sunColor, sunIntensity, shadowIntensity, isDaytime
+    - Prepared for DayNightCycleSystem to write computed values
+    - **Impact**: Medium - Prepared for future refactor
+
+### Changed
+
+- **SceneData simplified**: Removed environment/time/lighting properties (`engine/ecs/scene/SceneData.kt`)
+    - Removed: skyColor, skyTint, skyExposure, skyRotation, fogColor, fogDensity, fogGradient
+    - Removed: timeOfDay, timeScale, ambientLight, useAmbient, gravity
+    - Kept: light (legacy), sun (DirectionalLight), levelPath
+    - **Impact**: High - Clean separation: components for state, SceneData for serialization metadata
+
+- **LevelData simplified**: Removed gravity property (`game/level/LevelData.kt`)
+    - Now contains: gameObjects, sceneData, levelPath
+    - Gravity to be stored in PhysicsComponent (future work)
+    - **Impact**: Medium - Simplified level serialization
+
+- **DayNightCycleSystem**: Writes to LightingStateComponent (`engine/ecs/systems/DayNightCycleSystem.kt`)
+    - `updateSceneAmbient()` now writes to LightingStateComponent on Scene
+    - Reads timeOfDay via `Scene.getTimeOfDay()` helper
+    - **Impact**: High - Proper ECS data flow
+
+- **SkyDomeRenderer**: Reads TimeComponent (`engine/render/renderer/SkyDomeRenderer.kt`)
+    - Changed from `scene.sceneData.timeOfDay` to `scene.getComponent<TimeComponent>()?.timeOfDay`
+    - Falls back to 12.0f if component not found
+    - **Impact**: High - Decoupled from SceneData
+
+- **LightingUniformsLoader**: Reads LightingStateComponent (`engine/render/renderer/LightingUniformsLoader.kt`)
+    - New parameter: `lightingStateComponent: LightingStateComponent?`
+    - Reads ambientLight from component instead of SceneData
+    - Falls back to zero ambient if component not available
+    - **Impact**: High - Decoupled from SceneData
+
+- **GeometryPass**: Passes LightingStateComponent to loader (`engine/render/renderer/passes/GeometryPass.kt`)
+    - Gets LightingStateComponent from Scene
+    - Passes to `lightingUniformsLoader.loadLightingUniforms()`
+    - **Impact**: Medium - Proper component data flow
+
+- **LevelEditorSceneInitializer**: Adds components to Scene (`editor/LevelEditorSceneInitializer.kt`)
+    - Adds EnvironmentComponent with defaults
+    - Adds TimeComponent with timeOfDay=12.0, timeScale=1.0
+    - Adds LightingStateComponent with defaults
+    - Uses `scene.getTimeOfDay()` for DayNightCycleSystem initialization
+    - **Impact**: High - Scene initialization uses components
+
+- **EnvironmentWindow**: Reads/writes components (`editor/windows/EnvironmentWindow.kt`)
+    - Gets TimeComponent for timeOfDay slider
+    - Gets LightingStateComponent for ambient light controls
+    - Ensures components are added to Scene when modified
+    - **Impact**: Medium - Editor UI uses components
+
+- **GameViewWindow**: Uses TimeComponent helpers (`editor/windows/GameViewWindow.kt`)
+    - Changed from `scene.sceneData.timeScale` to `scene.getTimeScale()` / `scene.setTimeScale()`
+    - Play/Pause/Stop buttons work with TimeComponent
+    - **Impact**: Low - Clean API for time control
+
+- **SceneManager**: Updated lifecycle calls (`engine/ecs/SceneManager.kt`)
+    - Changed `scene.start()` to `scene.startScene()`
+    - Changed `scene.destroy()` to `scene.destroyScene()`
+    - **Impact**: Medium - Avoids conflict with GameObject lifecycle
+
+- **Engine**: Updated scene update calls (`engine/core/Engine.kt`)
+    - Changed `scene.update(dt)` to `scene.updateScene(dt)`
+    - Changed `scene.editorUpdate(dt)` to `scene.editorUpdateScene(dt)`
+    - **Impact**: Medium - Consistent with new Scene API
+
+- **ImGuiLayer**: Updated imgui call (`editor/imgui/ImGuiLayer.kt`)
+    - Changed `scene.imgui()` to `scene.imguiScene()`
+    - **Impact**: Low - Consistent with new Scene API
+
+### Removed
+
+- **SceneData properties**: Moved to components
+    - skyColor, skyTint, skyExposure, skyRotation → EnvironmentComponent
+    - timeOfDay, timeScale → TimeComponent
+    - ambientLight, useAmbient → LightingStateComponent
+    - gravity → To be added to PhysicsComponent (future)
+    - **Impact**: High - Eliminated global state anti-pattern
+
+### Architecture
+
+- **Component-based scene state**: Proper ECS pattern
+    1. Scene extends GameObject and can have components
+    2. EnvironmentComponent stores sky/fog settings
+    3. TimeComponent stores time state
+    4. LightingStateComponent stores ambient lighting
+    5. Rendering systems read from components, not SceneData
+    6. DayNightCycleSystem writes to LightingStateComponent
+
+- **Hybrid pattern maintained**: Pragmatic migration
+    - AnimationSystem, InputSystem already iterate components ✅
+    - EnvironmentSystem still owns config (to be refactored in v0.39)
+    - Renderers read from components instead of Service Locator ✅
+    - SceneData kept for minimal serialization metadata
+
+### Verified
+
+- **v0.38 Integration**: Full verification
+    - ✅ Scene extends GameObject with component support
+    - ✅ EnvironmentComponent, TimeComponent, LightingStateComponent, LightingComponent created
+    - ✅ DayNightCycleSystem writes to LightingStateComponent
+    - ✅ Renderers read from components (no SceneData dependencies)
+    - ✅ LevelEditorSceneInitializer adds components to Scene
+    - ✅ Editor UI (EnvironmentWindow, GameViewWindow) uses components
+    - ✅ Build successful with no compilation errors
+    - ✅ 35/35 existing tests passing
+
+### Known Limitations
+
+- **EnvironmentSystem still owns config**: To be refactored in v0.39
+    - Currently EnvironmentSystem.config owns environment state
+    - Should iterate GameObjects with EnvironmentComponent instead
+    - Requires updating ImGui to read/write component directly
+
+- **Comprehensive unit tests pending**: To be added in v0.39
+    - New components need dedicated unit tests
+    - Scene as GameObject needs tests
+    - Component serialization needs tests
+
+---
+
 ## [v0.37] - 2026-03-22: Environment System Polish
 
 ### Summary

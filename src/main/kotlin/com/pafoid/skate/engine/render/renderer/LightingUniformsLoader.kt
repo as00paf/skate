@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.render.renderer
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
-import com.pafoid.skate.engine.ecs.config.EnvironmentConfig
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -22,7 +21,7 @@ class LightingUniformsLoader {
      * @param sceneData The scene data containing sun configuration
      * @param lightingStateComponent Component containing ambient light state (optional)
      * @param directionalLight The directional light config
-     * @param environmentConfig Environment config for fog settings (optional)
+     * @param environmentComponent Component containing fog settings (optional)
      * @param shadowMapTextureId The shadow map depth texture ID (optional)
      */
     fun loadLightingUniforms(
@@ -31,7 +30,7 @@ class LightingUniformsLoader {
         sceneData: SceneData,
         lightingStateComponent: LightingStateComponent?,
         directionalLight: DirectionalLightConfig?,
-        environmentConfig: EnvironmentConfig? = null,
+        environmentComponent: com.pafoid.skate.engine.ecs.components.EnvironmentComponent? = null,
         shadowMapTextureId: Int = 0
     ) {
         // Directional light (sun) - single unified light source
@@ -64,12 +63,12 @@ class LightingUniformsLoader {
             // This will be set by the caller based on actual shadow map resolution
         }
 
-        // Fog - use EnvironmentConfig if available and enabled, otherwise use defaults
+        // Fog - use EnvironmentComponent if available and enabled, otherwise use defaults
         // When renderFog is false, upload zero density to disable fog effect
-        val fogEnabled = environmentConfig?.renderFog ?: true
-        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentConfig?.fogColor ?: Vector3f(0.8f, 0.8f, 0.8f))
-        shader.uploadFloat(Uniforms.FOG_DENSITY, if (fogEnabled) environmentConfig?.fogDensity ?: 0.0f else 0.0f)
-        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentConfig?.fogGradient ?: 1.5f)
+        val fogEnabled = environmentComponent?.renderFog ?: true
+        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentComponent?.fogColor ?: Vector3f(0.8f, 0.8f, 0.8f))
+        shader.uploadFloat(Uniforms.FOG_DENSITY, if (fogEnabled) environmentComponent?.fogDensity ?: 0.0f else 0.0f)
+        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentComponent?.fogGradient ?: 1.5f)
     }
 
     /**

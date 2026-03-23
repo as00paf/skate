@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
-import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
@@ -75,12 +74,12 @@ class GeometryPass(
             glViewport(0, 0, frameBuffer.width, frameBuffer.height)
         }
 
-        // Clear with sky color from EnvironmentSystem
-        val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
-        val envConfig = environmentSystem?.config
-        // Use sky color if system is enabled and renderSky is true, otherwise use fallback gray
-        val skyColor = if (environmentSystem?.enabled != false && (envConfig?.renderSky != false)) {
-            envConfig?.skyColor ?: Vector3f(0.6f, 0.7f, 0.9f)
+        // Clear with sky color from EnvironmentComponent
+        val environmentComponent = scene.getComponent<com.pafoid.skate.engine.ecs.components.EnvironmentComponent>()
+        val renderSky = environmentComponent?.renderSky ?: true
+        // Use sky color if renderSky is true, otherwise use fallback gray
+        val skyColor = if (renderSky) {
+            environmentComponent?.skyColor ?: Vector3f(0.6f, 0.7f, 0.9f)
         } else {
             Vector3f(0.2f, 0.2f, 0.2f) // Fallback dark gray when sky is disabled
         }
@@ -99,7 +98,7 @@ class GeometryPass(
         // Upload lighting uniforms
         val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
         val directionalLight = lightSystem?.config
-        val environmentConfig = environmentSystem?.config
+        val environmentConfig = environmentComponent
         val lightingStateComponent = scene.getComponent<LightingStateComponent>()
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,

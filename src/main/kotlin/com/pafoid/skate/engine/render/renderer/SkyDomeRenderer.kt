@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.RawModel
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -91,12 +90,12 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, resourceMan
     }
 
     fun render(camera: Camera, scene: Scene) {
-        // Get environment system for sky/fog settings
-        val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
-        val envConfig = environmentSystem?.config
+        // Get environment component for sky/fog settings
+        val environmentComponent = scene.getComponent<com.pafoid.skate.engine.ecs.components.EnvironmentComponent>()
+        val renderSky = environmentComponent?.renderSky ?: true
 
-        // Skip sky rendering if system is disabled or renderSky is false
-        if (environmentSystem?.enabled == false || (envConfig?.renderSky == false)) {
+        // Skip sky rendering if renderSky is false
+        if (!renderSky) {
             return
         }
 
@@ -114,21 +113,21 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, resourceMan
         modelMatrix.identity().translation(camera.position)
         // Match rotation to sun direction + manual offset
         val angle = (timeOfDay / 24.0f - 0.5f) * 2.0f * PI.toFloat()
-        modelMatrix.rotateY(-angle + Math.toRadians((envConfig?.skyRotation ?: 0f).toDouble()).toFloat())
+        modelMatrix.rotateY(-angle + Math.toRadians((environmentComponent?.skyRotation ?: 0f).toDouble()).toFloat())
 
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, modelMatrix)
         shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
         shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
         shader.uploadVec3f(Uniforms.SUN_COLOR, scene.sceneData.sun.color)
 
-        // Upload sky settings from EnvironmentSystem
-        shader.uploadVec3f(Uniforms.SKY_TINT, envConfig?.skyTint ?: org.joml.Vector3f(1f, 1f, 1f))
-        shader.uploadFloat(Uniforms.SKY_EXPOSURE, envConfig?.skyExposure ?: 1.0f)
+        // Upload sky settings from EnvironmentComponent
+        shader.uploadVec3f(Uniforms.SKY_TINT, environmentComponent?.skyTint ?: org.joml.Vector3f(1f, 1f, 1f))
+        shader.uploadFloat(Uniforms.SKY_EXPOSURE, environmentComponent?.skyExposure ?: 1.0f)
 
-        // Upload fog settings from EnvironmentSystem
-        shader.uploadVec3f(Uniforms.FOG_COLOR, envConfig?.fogColor ?: org.joml.Vector3f(0.8f, 0.8f, 0.8f))
-        shader.uploadFloat(Uniforms.FOG_DENSITY, envConfig?.fogDensity ?: 0.0f)
-        shader.uploadFloat(Uniforms.FOG_GRADIENT, envConfig?.fogGradient ?: 1.5f)
+        // Upload fog settings from EnvironmentComponent
+        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentComponent?.fogColor ?: org.joml.Vector3f(0.8f, 0.8f, 0.8f))
+        shader.uploadFloat(Uniforms.FOG_DENSITY, environmentComponent?.fogDensity ?: 0.0f)
+        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentComponent?.fogGradient ?: 1.5f)
         shader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
 
         glActiveTexture(GL_TEXTURE0)
