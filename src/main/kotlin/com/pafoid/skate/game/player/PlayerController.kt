@@ -7,6 +7,11 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.JumpPressed
+import com.pafoid.skate.engine.events.Landing
+import com.pafoid.skate.engine.events.MovementInput
+import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
@@ -26,10 +31,16 @@ import kotlin.math.atan2
  * appropriate physics forces (movement, jumping, ground snapping). It does not poll
  * raw hardware inputs directly - that is the responsibility of [com.pafoid.skate.engine.ecs.systems.InputSystem].
  *
+ * Subscribes to events for state changes:
+ * - [JumpPressed] - to trigger jumping
+ * - [Landing] - to handle landing state
+ * - [Takeoff] - to handle takeoff state
+ * - [MovementInput] - to update movement direction
+ *
  * ## Responsibilities
  *
  * - Read movement direction from [InputStateComponent] and apply velocity
- * - Handle jumping based on [InputStateComponent.jumpPressed]
+ * - Handle jumping based on [JumpPressed] events
  * - Read trick inputs from [InputStateComponent] (flip, kickflip, heelflip, grab, manual)
  * - Apply ground snapping to keep player model aligned with terrain
  * - Manage speed interpolation between walk and run states
@@ -65,6 +76,11 @@ class PlayerController : Component(), KoinComponent {
     var wasGrounded = false
     var isJumping = false
 
+    // Event-driven state
+    private var jumpPressed = false
+    private var movementDirection: Vector2f = Vector2f(0f, 0f)
+    private var movementMagnitude: Float = 0f
+
     // Trick input state
     private var flipLeftHeld = false
     private var flipRightHeld = false
@@ -74,6 +90,7 @@ class PlayerController : Component(), KoinComponent {
 
     private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
     private val physics3d: IPhysics3D? by lazy { sceneManager.currentScene?.physics3d }
+    private var eventSystem: EventSystem? = null
 
     // Exposed for PlayerStateManager to read player intent
     val desiredMoveDirection = Vector3f()
@@ -82,6 +99,46 @@ class PlayerController : Component(), KoinComponent {
     override fun start() {
         rb ?: run { logger.logEngine("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }
         stateManager ?: run { logger.logEngine("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
+
+        // Get event system and subscribe to events
+        val scene = sceneManager.currentScene
+        eventSystem = scene?.systemManager?.getSystem<EventSystem>()
+
+        eventSystem?.subscribe<JumpPressed> { onJumpPressed(it) }
+        eventSystem?.subscribe<Landing> { onLanding(it) }
+        eventSystem?.subscribe<Takeoff> { onTakeoff(it) }
+        eventSystem?.subscribe<MovementInput> { onMovementInput(it) }
+    }
+
+    /**
+     * Called when jump button is pressed.
+     */
+    private fun onJumpPressed(event: JumpPressed) {
+        jumpPressed = true
+    }
+
+    /**
+     * Called when landing on the ground.
+     */
+    private fun onLanding(event: Landing) {
+        isGrounded = true
+        isJumping = false
+    }
+
+    /**
+     * Called when taking off from the ground.
+     */
+    private fun onTakeoff(event: Takeoff) {
+        isGrounded = false
+        isJumping = true
+    }
+
+    /**
+     * Called when movement input changes.
+     */
+    private fun onMovementInput(event: MovementInput) {
+        movementDirection.set(event.direction)
+        movementMagnitude = event.magnitude
     }
 
     override fun update(dt: Float) {
@@ -90,12 +147,20 @@ class PlayerController : Component(), KoinComponent {
         val physics3d = physics3d ?: return
         val inputState = gameObject.getComponent<InputStateComponent>() ?: return
 
+        // Update grounded state from physics (for backward compatibility with InputStateComponent)
         isGrounded = checkIfGrounded(physics3d)
         inputState.isGrounded = isGrounded
 
-        // Get input direction from InputStateComponent
-        val inputDirection = inputState.moveDirection
-        val isSprinting = inputState.sprintPressed || inputDirection.lengthSquared() > 0.42f // 0.65^2
+        // Use event-driven movement state (updated by MovementInput events)
+        // Fall back to InputStateComponent polling if events not received
+        val inputDirection = if (movementMagnitude > 0.15f) {
+            movementDirection
+        } else {
+            inputState.moveDirection
+        }
+
+        val isSprinting =
+            inputState.sprintPressed || movementMagnitude > 0.65f || inputDirection.lengthSquared() > 0.42f
 
         // Move if input is above threshold
         if (inputDirection.lengthSquared() > 0.0225f) { // 0.15^2
@@ -112,7 +177,10 @@ class PlayerController : Component(), KoinComponent {
             applyMotion(motionData, body)
         }
 
-        handleJumping(inputState, dt)
+        // Use event-driven jump state
+        handleJumping(inputState, dt, jumpPressed)
+        jumpPressed = false // Reset after processing
+        
         handleTrickInputs(inputState, dt)
 
         wasGrounded = isGrounded
@@ -238,14 +306,15 @@ class PlayerController : Component(), KoinComponent {
      *
      * @param inputState The input state component containing jump button state
      * @param dt Delta time since last frame
+     * @param jumpPressedFromEvent Jump pressed flag from JumpPressed event (optional)
      */
-    fun handleJumping(inputState: InputStateComponent, dt: Float) {
+    fun handleJumping(inputState: InputStateComponent, dt: Float, jumpPressedFromEvent: Boolean = false) {
         if (jumpTimer > 0) {
             jumpTimer -= dt
         }
 
-        // Use jumpPressed from InputStateComponent (one-frame pulse)
-        val jumpPressed = inputState.jumpPressed
+        // Use jumpPressed from event if available, otherwise fall back to InputStateComponent polling
+        val jumpPressed = jumpPressedFromEvent || inputState.jumpPressed
 
         if (isJumping && !wasGrounded && isGrounded) { // Land
             isJumping = false

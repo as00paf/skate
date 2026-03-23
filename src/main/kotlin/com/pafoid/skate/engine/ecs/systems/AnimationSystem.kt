@@ -48,6 +48,9 @@ class AnimationSystem(
             val skeletonComponent = go.getComponent<SkeletonComponent>()
 
             if (animator != null && skeletonComponent != null) {
+                // Update animator state first (selects animation based on state)
+                animator.update(dt)
+                // Then update the animation
                 updateAnimation(animator, skeletonComponent, dt)
             }
         }
@@ -61,6 +64,9 @@ class AnimationSystem(
             val skeletonComponent = go.getComponent<SkeletonComponent>()
 
             if (animator != null && skeletonComponent != null) {
+                // Update animator state first (selects animation based on state)
+                animator.update(dt)
+                // Then update the animation
                 updateAnimation(animator, skeletonComponent, dt)
             }
         }

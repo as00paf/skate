@@ -7,6 +7,12 @@ import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
+import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.JumpPressed
+import com.pafoid.skate.engine.events.Landing
+import com.pafoid.skate.engine.events.MovementInput
+import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.game.player.PlayerState
 import com.pafoid.skate.game.player.PlayerStateManager
 import imgui.ImGui
@@ -23,11 +29,18 @@ import org.koin.core.component.inject
  * - Applying bone overrides from other components.
  * - Skeleton hierarchy updates.
  * - Editor visualization of the bone hierarchy.
+ *
+ * Subscribes to events for state-driven animation:
+ * - [MovementInput] - determines walk/run state based on movement magnitude
+ * - [JumpPressed] - triggers jump animation
+ * - [Landing] - triggers landing animation
+ * - [Takeoff] - triggers falling animation
  */
 class Animator : Component(), KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
+    private val sceneManager: SceneManager by inject()
 
     var currentAnimation: Animation? = null
         get() {
@@ -43,6 +56,12 @@ class Animator : Component(), KoinComponent {
     var previousAnimation: Animation? = null
     var previousTime = 0f
 
+    // Event-driven state
+    private var isMoving = false
+    private var isSprinting = false
+    private var isInAir = false
+    private var isGrounded = true
+    private var eventSystem: EventSystem? = null
 
     private val animations: MutableList<Animation> = mutableListOf()
 
@@ -107,15 +126,123 @@ class Animator : Component(), KoinComponent {
         play(anim, blend)
     }
 
+    override fun start() {
+        // Get event system and subscribe to events
+        val scene = sceneManager.currentScene
+        eventSystem = scene?.systemManager?.getSystem<EventSystem>()
+
+        eventSystem?.subscribe<MovementInput> { onMovementInput(it) }
+        eventSystem?.subscribe<JumpPressed> { onJumpPressed(it) }
+        eventSystem?.subscribe<Landing> { onLanding(it) }
+        eventSystem?.subscribe<Takeoff> { onTakeoff(it) }
+    }
+
+    /**
+     * Called when movement input changes.
+     * Updates isMoving and isSprinting state for animation selection.
+     */
+    private fun onMovementInput(event: MovementInput) {
+        isMoving = event.magnitude > 0.15f
+        isSprinting = event.magnitude > 0.65f
+    }
+
+    /**
+     * Called when jump button is pressed.
+     * Triggers jump animation.
+     */
+    private fun onJumpPressed(event: JumpPressed) {
+        if (isGrounded) {
+            play("jump", 0.2f)
+            isInAir = true
+            isGrounded = false
+        }
+    }
+
+    /**
+     * Called when landing on the ground.
+     * Triggers landing animation.
+     */
+    private fun onLanding(event: Landing) {
+        isInAir = false
+        isGrounded = true
+        play("hard landing")
+    }
+
+    /**
+     * Called when taking off from the ground.
+     * Sets falling state.
+     */
+    private fun onTakeoff(event: Takeoff) {
+        isInAir = true
+        isGrounded = false
+    }
+
+    // Track current animation state to avoid redundant play() calls
+    private var currentState: AnimationState = AnimationState.IDLE
+
+    enum class AnimationState {
+        IDLE,
+        WALK,
+        RUN,
+        JUMP,
+        FALLING,
+        LANDING
+    }
+
     override fun update(dt: Float) {
-        val stateManager = gameObject.getComponent<PlayerStateManager>() ?: return
-        when (stateManager.currentState) {
-            PlayerState.WALKING -> play("walk")
-            PlayerState.RUNNING -> play("run", .4f)
-            PlayerState.JUMPING -> play("jump", .2f)
-            PlayerState.FALLING -> play("falling idle", .2f)
-            PlayerState.LANDING -> play("falling to roll", .2f)
-            else -> play("idle", .2f)
+        // Fallback to PlayerStateManager if events aren't being received
+        // This ensures animations work even if event system isn't fully set up
+        val stateManager = gameObject.getComponent<PlayerStateManager>()
+        if (stateManager != null) {
+            updateFromStateManager(stateManager)
+            return
+        }
+
+        // Determine target state based on event-driven state
+        val targetState = when {
+            isInAir && !isGrounded -> AnimationState.FALLING
+            isSprinting -> AnimationState.RUN
+            isMoving -> AnimationState.WALK
+            else -> AnimationState.IDLE
+        }
+
+        // Only play animation if state changed
+        if (targetState != currentState) {
+            currentState = targetState
+            when (currentState) {
+                AnimationState.FALLING -> play("falling idle")
+                AnimationState.RUN -> play("running")
+                AnimationState.WALK -> play("walking")
+                AnimationState.IDLE -> play("idle")
+                else -> {} // JUMP and LANDING are triggered by events
+            }
+        }
+    }
+
+    /**
+     * Updates animation based on PlayerStateManager state (fallback method).
+     */
+    private fun updateFromStateManager(stateManager: PlayerStateManager) {
+        val targetState = when (stateManager.currentState) {
+            PlayerState.WALKING -> AnimationState.WALK
+            PlayerState.RUNNING -> AnimationState.RUN
+            PlayerState.JUMPING -> AnimationState.JUMP
+            PlayerState.FALLING -> AnimationState.FALLING
+            PlayerState.LANDING -> AnimationState.LANDING
+            else -> AnimationState.IDLE
+        }
+
+        // Only play animation if state changed
+        if (targetState != currentState) {
+            currentState = targetState
+            when (currentState) {
+                AnimationState.WALK -> play("walking")
+                AnimationState.RUN -> play("running")
+                AnimationState.JUMP -> play("jump")
+                AnimationState.FALLING -> play("falling idle")
+                AnimationState.LANDING -> play("hard landing")
+                AnimationState.IDLE -> play("idle")
+            }
         }
     }
 

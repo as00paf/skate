@@ -30,6 +30,7 @@ import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.MouseControls
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
+import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -85,6 +86,10 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         // Essential Editor Tools as Systems (create with constructor injection)
         val inputSystem = InputSystem(inputProvider, mouseListener, settingsManager, stringManager)
         scene.addSystem(inputSystem)
+
+        // Event system - must be added before systems that publish/subscribe to events
+        scene.addSystem(EventSystem())
+        
         scene.addSystem(EditorCamera(scene.camera, EditorInputStateComponent()))
         scene.addSystem(MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine))
         scene.addSystem(
