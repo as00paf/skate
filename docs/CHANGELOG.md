@@ -4,6 +4,156 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.43] - 2026-03-23: Event-Driven Architecture Complete
+
+### Summary
+
+Implemented a centralized EventSystem to decouple systems and components, transforming the architecture from
+polling-based to event-driven communication.
+This major refactor eliminates tight coupling between input, physics, and gameplay systems, making the codebase more
+maintainable and testable.
+
+### Added
+
+- **EventSystem core infrastructure**: Centralized event bus (`engine/ecs/systems/EventSystem.kt`)
+    - `GameEvent` sealed class with `eventName: String` property for type-safe + string-based subscriptions
+    - Dual subscribe API: type-safe (`subscribe<T>`) and string-based (`subscribe(eventName)`)
+    - Support for one-time and persistent listeners
+    - Event priority for ordering listener execution
+    - Event cancellation support (listeners can prevent further processing)
+    - **Impact**: High - Foundation for event-driven architecture
+
+- **Input event types**: Complete input event hierarchy (`engine/events/InputEvents.kt`)
+    - `JumpPressed(val force: Float)` - "input.jump_pressed"
+    - `JumpReleased` - "input.jump_released"
+    - `MovementInput(val direction: Vector2f, val magnitude: Float)` - "input.movement"
+    - `TrickInput(val trickType: TrickType, val isPressed: Boolean)` - "input.trick"
+    - `CameraLook(val delta: Vector2f)` - "input.camera_look"
+    - **Impact**: High - Type-safe input events
+
+- **Physics event types**: Complete physics event hierarchy (`engine/events/PhysicsEvents.kt`)
+    - `Landing(val velocity: Vector3f, val impactForce: Float)` - "physics.landing"
+    - `Takeoff(val velocity: Vector3f)` - "physics.takeoff"
+    - `GroundedStateChanged(val isGrounded: Boolean)` - "physics.grounded_changed"
+    - `Collision(val other: GameObject, val contactPoint: Vector3f, val normal: Vector3f)` - "physics.collision"
+    - **Impact**: High - Type-safe physics events
+
+- **Trick event types**: Complete trick event hierarchy (`engine/events/TrickEvents.kt`)
+    - `TrickDetected(val trickName: String, val rotation: Vector3f)` - "trick.detected"
+    - `TrickCompleted(val trickName: String, val score: Int, val style: Float)` - "trick.completed"
+    - `TrickCancelled(val reason: String)` - "trick.cancelled"
+    - **Impact**: High - Type-safe trick events
+
+- **EventSystem unit tests**: Comprehensive test coverage (`test/.../ecs/systems/EventSystemTest.kt`)
+    - Subscribe/unsubscribe functionality
+    - Event publishing to multiple listeners
+    - Event priority ordering
+    - One-time vs persistent listeners
+    - **Impact**: High - Ensures event system reliability
+
+- **Integration tests**: End-to-end event flow tests (`test/.../game/`)
+    - Input event flow (InputSystem → PlayerController)
+    - Physics event flow (PhysicsSystem → TrickDetector)
+    - Trick event flow (TrickDetector → TrickManager → TrickUIWindow)
+    - **Impact**: High - Validates event-driven architecture
+
+### Changed
+
+- **InputSystem updated**: Publishes events instead of only polling (`engine/ecs/systems/InputSystem.kt`)
+    - Publishes `JumpPressed` when jump button pressed (with force value)
+    - Publishes `MovementInput` when movement input changes
+    - Publishes `TrickInput` for trick inputs (flip, kickflip, heelflip, grab, manual)
+    - Preserves `InputStateComponent` for backward compatibility
+    - **Impact**: High - Event-driven input system
+
+- **PhysicsSystem simplified**: Focus on state sync only (`engine/ecs/systems/PhysicsSystem.kt`)
+    - Simplified to sync physics state to PhysicsComponent
+    - Landing/Takeoff events delegated to SkateboardPhysics
+    - **Impact**: Medium - Cleaner system responsibilities
+
+- **SkateboardPhysics updated**: Publishes physics events (`game/skateboard/SkateboardPhysics.kt`)
+    - Publishes `Landing` when landing detected (with impact force)
+    - Publishes `Takeoff` when takeoff detected (with velocity)
+    - Publishes `GroundedStateChanged` on state change
+    - **Impact**: High - Event-driven physics feedback
+
+- **TrickDetector updated**: Event-driven trick detection (`game/trick/TrickDetector.kt`)
+    - Subscribes to `Landing` and `Takeoff` events instead of polling
+    - Publishes `TrickDetected` when trick detected
+    - Publishes `TrickCompleted` when trick successfully landed
+    - **Impact**: High - Decoupled trick system
+
+- **PlayerController updated**: Event-driven player control (`game/player/PlayerController.kt`)
+    - Subscribes to `JumpPressed` event instead of polling `InputStateComponent`
+    - Subscribes to `Landing`/`Takeoff` events instead of polling `isGrounded`
+    - Subscribes to `MovementInput` for movement direction
+    - Hybrid approach maintains backward compatibility
+    - **Impact**: High - Decoupled player controller
+
+- **Animator updated**: Event-driven animation selection (`engine/ecs/components/Animator.kt`)
+    - Removed direct `PlayerStateManager` access via `getComponent<>()`
+    - Subscribes to `MovementInput` for walk/run state
+    - Subscribes to `JumpPressed`/`Landing`/`Takeoff` for jump/fall/landing states
+    - Event-driven animation selection with state tracking
+    - Fallback to PlayerStateManager if events not received
+    - **Impact**: High - Decoupled animator component
+
+- **TrickUIWindow updated**: Event-driven UI updates (`editor/windows/TrickUIWindow.kt`)
+    - Subscribes to `TrickCompleted` event instead of polling `TrickDetector`
+    - Updates UI with fade effect when trick completed
+    - **Impact**: Medium - Reactive UI system
+
+- **LevelEditorSceneInitializer updated**: Adds EventSystem (`editor/LevelEditorSceneInitializer.kt`)
+    - EventSystem added to scene systems
+    - Runs automatically with other ECS systems
+    - **Impact**: High - Event system integration
+
+- **PhysicsComponent auto-created**: Zero-configuration physics (`engine/ecs/systems/PhysicsSystem.kt`)
+    - Auto-creates PhysicsComponent when RigidBody3D exists but PhysicsComponent missing
+    - Prevents missing PhysicsComponent bugs (like Skater prefab issue)
+    - Developers just add RigidBody3D, PhysicsComponent created automatically
+    - **Impact**: Medium - Improved developer experience
+
+### Architecture
+
+- **Event-Driven Architecture**: Hybrid event + component pattern
+    1. EventSystem for cross-system communication
+    2. Components for state storage
+    3. Systems for state updates
+    4. Polling still available for simple cases (backward compatibility)
+
+- **Event Namespace Convention**:
+    - `input.*` - Input events (jump_pressed, movement, trick_input)
+    - `physics.*` - Physics events (landing, takeoff, grounded_changed, collision)
+    - `trick.*` - Trick events (detected, completed, cancelled)
+    - `game.*` - Game state events (state_changed, score_changed)
+    - `ui.*` - UI events (button_clicked, menu_opened)
+
+- **Benefits Achieved**:
+    - ✅ Decoupled systems (no direct component queries)
+    - ✅ Testable systems (mock events instead of full ECS)
+    - ✅ Flexible reactions (multiple listeners for same event)
+    - ✅ Clear data flow (events document system interactions)
+
+### Verified
+
+- **v0.43 Integration**: Full verification
+    - ✅ EventSystem created with full functionality
+    - ✅ All event types created (input, physics, trick)
+    - ✅ InputSystem publishes events
+    - ✅ SkateboardPhysics publishes physics events
+    - ✅ TrickDetector uses events for detection
+    - ✅ PlayerController uses events for input/physics
+    - ✅ Animator uses events with fallback
+    - ✅ TrickUIWindow uses events for UI updates
+    - ✅ Event system unit tests passing
+    - ✅ Integration tests passing (end-to-end flow)
+    - ✅ PhysicsComponent auto-created when missing
+    - ✅ Build successful with no errors
+    - ✅ Event-driven architecture 100% complete
+
+---
+
 ## [v0.42] - 2026-03-22: ECS Architecture Complete
 
 ### Summary

@@ -1,279 +1,287 @@
 # 🛹 SkateSim Engine - TODO & Roadmap
 
-## Current Status: ECS Architecture Complete ✅
+## Current Status: Event-Driven Architecture Complete ✅
 
-The ECS architecture is now 100% complete through v0.42.
-All systems follow proper component-based patterns with no direct engine coupling in gameplay logic.
+The ECS architecture is 100% complete through v0.42.
+The EventSystem implementation is complete through v0.43.
+All systems follow proper component-based patterns with event-driven communication.
 
 See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](ECS_ARCHITECTURE.md) for architecture documentation.
 
 ---
 
-## 🔴 v0.43: EventSystem Implementation (Planned)
+## 🔵 v0.44: Code Quality & Performance (Current)
 
 ### Summary
 
-Implement a centralized EventSystem to decouple systems and components, reducing tight coupling and improving
-maintainability.
-Currently, many systems directly query other components/systems, creating hidden dependencies and making testing
-difficult.
-
-### Current Architecture Issues
-
-**Tight Coupling Identified:**
-
-1. **Input → Gameplay Coupling** ❌
-  - `PlayerController` directly reads `InputStateComponent` every frame
-  - `PlayerController` directly queries `SceneManager`, `Camera`, `Physics3D`
-  - No way to listen for input events without polling
-
-2. **Physics → Gameplay Coupling** ❌
-  - `TrickDetector` polls `PhysicsComponent.angularVelocity` every frame
-  - `PlayerController` polls `isGrounded` state every frame
-  - No events for physics state changes (landing, takeoff, collision)
-
-3. **SkateboardPhysics → Game Logic Coupling** ❌
-  - `isGrounded` state polled by multiple systems (`TrickDetector`, `TrickAnalyzer`, `PlayerController`)
-  - No event when skateboard lands or takes off
-  - Trick detection relies on polling `isGrounded` instead of events
-
-4. **Component → Component Direct Access** ❌
-  - `PlayerController` accesses `PlayerStateManager` via `getComponent<>()`
-  - `TrickDetector` accesses `PlayerStateManager` via `getComponent<>()`
-  - `Animator` accesses `PlayerStateManager` via `getComponent<>()`
-
-5. **No Event-Driven Trick System** ❌
-  - `TrickDetector` detects tricks via polling
-  - `TrickManager` not notified of trick events
-  - `TrickUIWindow` polls `TrickDetector` every frame
-
-### Proposed EventSystem Architecture
-
-**Design Decision: Sealed Classes + Data Classes with String Event Names**
-
-This hybrid approach provides type safety for Kotlin code while enabling future scripting integration.
-
-```kotlin
-// Base event type with string name for scripting
-sealed class GameEvent(val eventName: String) {
-  // Input events
-  data class JumpPressed(val force: Float) : GameEvent("input.jump_pressed")
-  data class MovementInput(val direction: Vector2f, val magnitude: Float) : GameEvent("input.movement")
-
-  // Physics events
-  data class Landing(val velocity: Vector3f, val impactForce: Float) : GameEvent("physics.landing")
-  data class Takeoff(val velocity: Vector3f) : GameEvent("physics.takeoff")
-  data class GroundedStateChanged(val isGrounded: Boolean) : GameEvent("physics.grounded_changed")
-
-  // Trick events
-  data class TrickDetected(val trickName: String, val rotation: Vector3f) : GameEvent("trick.detected")
-  data class TrickCompleted(val trickName: String, val score: Int) : GameEvent("trick.completed")
-}
-
-// EventSystem supports BOTH type-safe and string-based subscriptions
-class EventSystem : System() {
-  // Type-safe for Kotlin code
-  inline fun <reified T : GameEvent> subscribe(noinline listener: (T) -> Unit)
-
-  // String-based for scripting (TypeScript, etc.)
-  fun subscribe(eventName: String, listener: (GameEvent) -> Unit)
-
-  // Publish works for both
-  fun publish(event: GameEvent)
-}
-```
-
-**Usage Examples:**
-
-```kotlin
-// Kotlin code (type-safe)
-class TrickDetector : Component() {
-  override fun start() {
-    eventSystem.subscribe<TrickDetected> { event ->
-      logger.log("Trick: ${event.trickName}, Rotation: ${event.rotation}")
-    }
-
-    eventSystem.subscribe<Landing> { event ->
-      handleLanding(event.velocity, event.impactForce)
-    }
-  }
-}
-```
-
-```typescript
-// Future TypeScript scripting (string-based)
-eventSystem.subscribe("trick.detected", (event) => {
-    logger.log(`Trick: ${event.trickName}, Rotation: ${event.rotation}`);
-});
-
-eventSystem.subscribe("physics.landing", (event) => {
-    handleLanding(event.velocity, event.impactForce);
-});
-```
-
-**Event Namespace Convention:**
-
-- `input.*` - Input events (jump_pressed, movement, trick_input)
-- `physics.*` - Physics events (landing, takeoff, grounded_changed, collision)
-- `trick.*` - Trick events (detected, completed, cancelled)
-- `game.*` - Game state events (state_changed, score_changed)
-- `ui.*` - UI events (button_clicked, menu_opened)
-
-**Why This Approach:**
-
-| Feature             | Sealed + Data Classes       | String Names Only         |
-|---------------------|-----------------------------|---------------------------|
-| **Type Safety**     | ✅ Compile-time checking     | ❌ Runtime errors on typos |
-| **IDE Support**     | ✅ Autocomplete, refactoring | ❌ No autocomplete         |
-| **Event Data**      | ✅ Strongly typed properties | ❌ Need Map/Dictionary     |
-| **Scripting**       | ✅ Via `eventName` property  | ✅ Native support          |
-| **Exhaustive When** | ✅ `when(event)` checks      | ❌ Not possible            |
-| **Performance**     | ✅ No string parsing         | ❌ String lookups          |
+Focus on code quality improvements, performance optimization, and technical debt reduction.
+This release addresses null safety, resource management, object allocation, and test coverage.
 
 ### Tasks
-
-- [x] **A43.0.1: Create EventSystem core infrastructure** ✅
-  - Location: `engine/ecs/systems/EventSystem.kt` (new)
-  - Create `GameEvent` sealed class with `eventName: String` property
-  - Create `EventSystem` with dual subscribe API (type-safe + string-based)
-  - Support one-time and persistent listeners
-  - Support event priority (for ordering)
-  - Support event cancellation (listeners can prevent further processing)
-  - **Status**: Complete - EventSystem created with full functionality ✅
-
-- [x] **A43.0.2: Create input event types** ✅
-  - Location: `engine/events/InputEvents.kt` (new)
-  - Sealed class `InputEvent : GameEvent`
-  - `JumpPressed(val force: Float)` : "input.jump_pressed"
-  - `JumpReleased` : "input.jump_released"
-  - `MovementInput(val direction: Vector2f, val magnitude: Float)` : "input.movement"
-  - `TrickInput(val trickType: TrickType, val isPressed: Boolean)` : "input.trick"
-  - `CameraLook(val delta: Vector2f)` : "input.camera_look"
-  - **Status**: Complete - All input events created ✅
-
-- [x] **A43.0.3: Create physics event types** ✅
-  - Location: `engine/events/PhysicsEvents.kt` (new)
-  - Sealed class `PhysicsEvent : GameEvent`
-  - `Landing(val velocity: Vector3f, val impactForce: Float)` : "physics.landing"
-  - `Takeoff(val velocity: Vector3f)` : "physics.takeoff"
-  - `GroundedStateChanged(val isGrounded: Boolean)` : "physics.grounded_changed"
-  - `Collision(val other: GameObject, val contactPoint: Vector3f, val normal: Vector3f)` : "physics.collision"
-  - **Status**: Complete - All physics events created ✅
-
-- [x] **A43.0.4: Create trick event types** ✅
-  - Location: `engine/events/TrickEvents.kt` (new)
-  - Sealed class `TrickEvent : GameEvent`
-  - `TrickDetected(val trickName: String, val rotation: Vector3f)` : "trick.detected"
-  - `TrickCompleted(val trickName: String, val score: Int, val style: Float)` : "trick.completed"
-  - `TrickCancelled(val reason: String)` : "trick.cancelled"
-  - **Status**: Complete - All trick events created ✅
-
-- [x] **A43.0.5: Update InputSystem to publish events** ✅
-  - Location: `engine/ecs/systems/InputSystem.kt`
-  - Publish `JumpPressed` when jump button pressed (with force value)
-  - Publish `MovementInput` when movement input changes
-  - Publish `TrickInput` for trick inputs (flip, kickflip, heelflip, grab, manual)
-  - Keep `InputStateComponent` for polling-based systems (backward compatibility)
-  - **Status**: Complete - InputSystem now publishes events ✅
-
-- [x] **A43.0.6: Update PhysicsSystem to publish events** ✅
-  - Location: `engine/ecs/systems/PhysicsSystem.kt`
-  - Simplified to focus on syncing physics state only
-  - Landing/Takeoff events published by SkateboardPhysics instead
-  - **Status**: Complete - PhysicsSystem simplified, events handled by SkateboardPhysics ✅
-
-- [x] **A43.0.7: Update SkateboardPhysics to publish events** ✅
-  - Location: `game/skateboard/SkateboardPhysics.kt`
-  - Publish `Landing` when landing detected (with impact force)
-  - Publish `Takeoff` when takeoff detected (with velocity)
-  - Publish `GroundedStateChanged` on state change
-  - **Status**: Complete - SkateboardPhysics publishes physics events ✅
-
-- [x] **A43.0.8: Update TrickDetector to use events** ✅
-  - Location: `game/trick/TrickDetector.kt`
-  - Subscribe to `Landing` and `Takeoff` events instead of polling
-  - Publish `TrickDetected` when trick detected (with trick name, rotation)
-  - Publish `TrickCompleted` when trick successfully landed (with score, style)
-  - **Status**: Complete - Event-driven trick detection ✅
-
-- [x] **A43.0.9: Update PlayerController to use events** ✅
-  - Location: `game/player/PlayerController.kt`
-  - Subscribe to `JumpPressed` event instead of polling `InputStateComponent`
-  - Subscribe to `Landing`/`Takeoff` events instead of polling `isGrounded`
-  - Subscribe to `MovementInput` for movement direction
-  - Reduce direct component queries (hybrid approach for backward compatibility)
-  - **Status**: Complete - Event-driven player controller ✅
-
-- [x] **A43.0.9b: Fix Animator component coupling** ✅
-  - Location: `engine/ecs/components/Animator.kt`
-  - Removed direct `PlayerStateManager` access via `getComponent<>()`
-  - Subscribe to `MovementInput` event to determine walk/run state
-  - Subscribe to `JumpPressed`/`Landing`/`Takeoff` events for jump/fall/landing states
-  - Event-driven animation selection with state tracking
-  - Fallback to PlayerStateManager if events not received (hybrid approach)
-  - Added EventSystem to LevelEditorSceneInitializer
-  - **Status**: Complete - Animator now uses events with fallback ✅
-
-- [x] **A43.0.10: Update TrickUIWindow to use events** ✅
-  - Location: `editor/windows/TrickUIWindow.kt`
-  - Subscribe to `TrickCompleted` event instead of polling `TrickDetector`
-  - Update UI with fade effect when trick completed
-  - **Status**: Complete - Event-driven UI updates ✅
-
-- [x] **A43.0.11: Add event system unit tests** ✅
-  - Location: `test/.../ecs/systems/EventSystemTest.kt`
-  - Test subscribe/unsubscribe functionality
-  - Test event publishing to multiple listeners
-  - Test event priority ordering
-  - Test one-time vs persistent listeners
-  - **Status**: Complete - Event system tests added ✅
-
-- [x] **A43.0.12: Add integration tests for event-driven systems** ✅
-  - Location: `test/.../game/`
-  - Test input event flow (InputSystem → PlayerController)
-  - Test physics event flow (PhysicsSystem → TrickDetector)
-  - Test trick event flow (TrickDetector → TrickManager → TrickUIWindow)
-  - **Status**: Complete - End-to-end event flow tested ✅
-
-- [x] **A43.0.13: Auto-create PhysicsComponent in PhysicsSystem** ✅
-  - Location: `engine/ecs/systems/PhysicsSystem.kt`
-  - Auto-create PhysicsComponent when RigidBody3D exists but PhysicsComponent missing
-  - Prevents missing PhysicsComponent bugs (like Skater prefab issue)
-  - Zero configuration - developers just add RigidBody3D
-  - **Status**: Complete - PhysicsComponent auto-created ✅
-
----
-
-## 🔵 Future: Additional Improvements (Planned)
-
-### v0.44: Code Quality & Performance
 
 - [ ] **A44.0.1: Audit and replace remaining `!!` operators**
   - Use safe calls (`?.`) and Elvis operator (`?:`)
   - Add proper null checks with meaningful error messages
   - **Impact**: Medium - Improve code safety
+  - **Location**: Codebase-wide audit
 
 - [ ] **A44.0.2: Review resource management for memory leaks**
   - Check for unclosed resources in asset loading
   - Review texture/model disposal on scene change
   - Add resource tracking and leak detection
   - **Impact**: High - Prevent memory leaks
+  - **Location**: `engine/assets/`, `engine/render/`
 
 - [ ] **A44.0.3: Optimize object allocation in hot loops**
   - Profile and identify high-allocation code paths
   - Reuse Vector3f/Quaternionf objects where possible
   - Use object pooling for frequently allocated objects
   - **Impact**: Medium - Improve performance
+  - **Location**: Physics and rendering hot paths
 
 - [ ] **A44.0.4: Increase test coverage for complex systems**
   - Target: 80% coverage for engine/ecs packages
   - Focus on AnimationSystem, PhysicsSystem, InputSystem
   - Add integration tests for system interactions
   - **Impact**: High - Improve code reliability
+  - **Location**: `test/`
 
 ---
 
-## Architecture Notes
+## 📋 Phase 1: Foundation (Planned)
+
+**Estimated Timeline:** 4-6 Weeks  
+**Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
+
+### TASK-001: Enhance Asset Management Pipeline
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] Support wider range of asset types (textures, audio, animations)
+- [ ] Implement dependency tracking between assets
+- [ ] Add caching mechanisms to avoid redundant loading
+- [ ] Enable hot-reloading of assets during runtime and editor use
+- [ ] Consider plugin-based system for asset loaders
+- **Dependencies:** None
+
+### TASK-002: Implement Scene Serialization
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] Save scenes to file format (JSON or custom binary)
+- [ ] Load saved scenes, reconstructing scene accurately
+- [ ] Serialize and deserialize all component data correctly
+- [ ] Handle scene hierarchy and object relationships
+- **Dependencies:** TASK-001
+
+### TASK-003: Develop Basic Audio System
+
+- [ ] **Priority:** 🔴 High | **Effort:** Medium
+- [ ] Load and play audio files (WAV, OGG)
+- [ ] Support for 2D audio playback (global sounds)
+- [ ] Support for 3D audio playback with spatialization
+- [ ] Basic controls for volume, looping, and playback status
+- [ ] Research: OpenAL, LWJGL audio bindings
+- **Dependencies:** None
+
+### TASK-004: Implement Ragdoll Physics
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] Define and create ragdoll skeletons from skeletal data
+- [ ] Activate/deactivate ragdolls with animation blending
+- [ ] Ragdolls respond to physics forces (gravity, collisions)
+- [ ] Integration with physics system and component model
+- [ ] Research: Bullet RigidBody, TypedConstraint (HingeConstraint, ConeTwistConstraint)
+- **Dependencies:** None
+
+### TASK-005: Integrate Scripting Language (Kotlin Script)
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] Set up scripting environment integrated with ECS, input, etc.
+- [ ] Write scripts in Kotlin Script
+- [ ] Attach scripts to GameObjects as components
+- [ ] Scripts can access and manipulate engine systems
+- [ ] Manage script execution in engine update loop
+- **Dependencies:** None
+
+### TASK-006: Set up Automated Testing Framework
+
+- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
+- [ ] Integrate testing framework (JUnit) into build process
+- [ ] Unit tests for critical modules (ECS, asset loading, math)
+- [ ] Integration tests for major system interactions
+- [ ] Incorporate visual assertion tools into test suite
+- **Dependencies:** None
+
+### TASK-007: Refactor Renderer to Render Graph System
+
+- [ ] **Priority:** 🟡 Medium | **Effort:** Large
+- [ ] Define render graph structure with pass inputs/outputs
+- [ ] Dynamic pass compilation into execution order
+- [ ] Convert existing passes (Shadow, Picking, Geometry, Debug)
+- [ ] Extensible for deferred rendering and post-processing
+- **Dependencies:** None
+
+---
+
+## 📋 Phase 2: Core Systems (Planned)
+
+**Estimated Timeline:** 6-8 Weeks  
+**Focus:** Advanced rendering, core gameplay mechanics, and core tooling
+
+### TASK-010: Implement Advanced Lighting Models
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] Point lights with position, color, intensity
+- [ ] Spot lights with adjustable parameters
+- [ ] Image-Based Lighting (IBL) with environment maps
+- [ ] Correct lighting calculations for all light types
+- **Dependencies:** TASK-007
+
+### TASK-011: Develop Post-Processing Stack
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] Framework for adding and chaining post-processing effects
+- [ ] Implement bloom, depth of field, color grading
+- [ ] Screen-space shaders using FBOs
+- [ ] Enable/disable and configure effects via editor or scripts
+- **Dependencies:** TASK-007
+
+### TASK-012: Create Advanced Material System
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] Standard PBR material model (Metallic-Roughness workflow)
+- [ ] Manage material properties (textures, scalars)
+- [ ] Integrate with rendering pipeline and shaders
+- [ ] Support shader variants based on material properties
+- **Dependencies:** TASK-007
+
+### TASK-013: Implement In-Game UI System
+
+- [ ] **Priority:** 🔴 High | **Effort:** Medium
+- [ ] Hierarchy of UI elements (Panel, Button, Text, Image)
+- [ ] Position, size, and style UI elements
+- [ ] User interaction support (clicks, input)
+- [ ] Efficient rendering integrated into main scene
+- **Dependencies:** None
+
+### TASK-014: Develop VFX/Particle System
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] Particle emitter component
+- [ ] Particle properties (lifetime, size, color, velocity, texture)
+- [ ] Particle behaviors (gravity, drag, collision)
+- [ ] Efficient rendering of large particle counts
+- [ ] Consider GPU particle simulation
+- **Dependencies:** None
+
+### TASK-015: Implement Advanced Physics Constraints
+
+- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
+- [ ] Additional Bullet constraints (Generic6DofConstraint, etc.)
+- [ ] API for creating and configuring constraints
+- [ ] Stable constraint simulation
+- **Dependencies:** TASK-004
+
+### TASK-016: Enhance Animation System (Retargeting)
+
+- [ ] **Priority:** 🟡 Medium | **Effort:** Large
+- [ ] Bone transformation mapping between skeletons
+- [ ] Retarget humanoid animations to different rigs
+- [ ] Preserve animation feel and intent
+- [ ] Research: Inverse kinematics techniques
+- **Dependencies:** None
+
+### TASK-017: Improve Editor Scene Manipulation Tools
+
+- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
+- [ ] More responsive and visually clear gizmos
+- [ ] Grid and object snapping options
+- [ ] Improved camera controls for scene view
+- [ ] Tools for duplicating and grouping objects
+- **Dependencies:** TASK-002, TASK-007
+
+---
+
+## 📋 Phase 3: Polish & Tooling (Planned)
+
+**Estimated Timeline:** 4-6 Weeks  
+**Focus:** Game-specific features, optimization, and user experience
+
+### TASK-020: Develop Skateboarding Physics Mechanics
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] Realistic skateboard physics (mass, center of gravity, rotation)
+- [ ] Ollie mechanics and board aerial control
+- [ ] Grinding on rails and ledges
+- [ ] Accurate physics response during landings and impacts
+- [ ] Custom physics logic beyond standard rigid bodies
+- **Dependencies:** TASK-004, TASK-015
+
+### TASK-021: Implement Character Controller & State Machine
+
+- [ ] **Priority:** 🔴 High | **Effort:** Large
+- [ ] State machine for player actions (standing, skating, jumping, grinding)
+- [ ] Seamless state transitions driven by input and physics
+- [ ] Integration with animation system
+- [ ] Nuanced skateboarding movement control
+- **Dependencies:** TASK-005, TASK-016
+
+### TASK-022: Integrate Networking for Multiplayer
+
+- [ ] **Priority:** 🟡 Medium | **Effort:** Large
+- [ ] Basic client-server architecture
+- [ ] Core game state synchronization (positions, actions)
+- [ ] Handle network latency and packet loss
+- [ ] Simple multiplayer example
+- [ ] Research: Netcode for GameObjects, Netty/Kryo
+- **Dependencies:** TASK-005
+
+### TASK-023: Optimize Rendering Performance
+
+- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
+- [ ] Identify rendering bottlenecks through profiling
+- [ ] Implement batching, culling (frustum, occlusion)
+- [ ] Efficient shader usage
+- [ ] Meet target frame rates on representative hardware
+- **Dependencies:** TASK-010, TASK-011
+
+### TASK-024: Optimize Physics Performance
+
+- [ ] **Priority:** 🟡 Medium | **Effort:** Medium
+- [ ] Identify physics bottlenecks through profiling
+- [ ] Optimize physics world settings, collision detection, solver iterations
+- [ ] Ensure performance for target game complexity
+- [ ] Tune solver iterations and broadphase settings
+- **Dependencies:** TASK-004, TASK-015
+
+### TASK-025: Develop Sample Skate Game Project
+
+- [ ] **Priority:** 🟡 Medium | **Effort:** Large
+- [ ] Playable mini-game demonstrating core skateboarding mechanics
+- [ ] Utilize most key engine features (rendering, physics, animation, UI, scripting)
+- [ ] Provide practical example of engine usage
+- **Dependencies:** All previous tasks
+
+### TASK-026: Refine Editor Workflow & UX
+
+- [ ] **Priority:** 🟢 Low | **Effort:** Medium
+- [ ] Collect and analyze user feedback
+- [ ] Address common pain points in editor workflow
+- [ ] Improve editor performance and responsiveness
+- [ ] Implement minor UI/UX improvements
+- **Dependencies:** TASK-017
+
+### TASK-027: Comprehensive Documentation & Tutorials
+
+- [ ] **Priority:** 🟢 Low | **Effort:** Large
+- [ ] Generate API documentation
+- [ ] Create getting started guides for new users
+- [ ] Tutorials for scene setup, scripting, animation, physics
+- [ ] Well-organized and searchable documentation
+- **Dependencies:** All previous tasks
+
+---
+
+## Architecture Reference
 
 ### Current ECS Architecture (v0.42)
 
@@ -294,14 +302,16 @@ eventSystem.subscribe("physics.landing", (event) => {
 - Editor: GizmoSystem, MouseControls
 
 **ECS Pattern Compliance: 100%** ✅
-- ✅ All gameplay systems read from components (not engine directly)
-- ✅ All physics state synced via PhysicsSystem
-- ✅ All input state written by InputSystem
-- ✅ All animation state managed by AnimationSystem
-- ✅ All environment state in components
-- ✅ Clean separation: Components = data, Systems = logic
 
-### Future Event-Driven Architecture (v0.43+)
+### Event-Driven Architecture (v0.43+)
+
+**Event Categories:**
+
+- `input.*` - Input events (jump_pressed, movement, trick_input)
+- `physics.*` - Physics events (landing, takeoff, grounded_changed, collision)
+- `trick.*` - Trick events (detected, completed, cancelled)
+- `game.*` - Game state events (state_changed, score_changed)
+- `ui.*` - UI events (button_clicked, menu_opened)
 
 **Benefits:**
 
@@ -309,13 +319,6 @@ eventSystem.subscribe("physics.landing", (event) => {
 - Testable systems (mock events instead of full ECS)
 - Flexible reactions (multiple listeners for same event)
 - Clear data flow (events document system interactions)
-
-**Hybrid Approach:**
-
-- EventSystem for cross-system communication
-- Components for state storage
-- Systems for state updates
-- Polling still available for simple cases (backward compatibility)
 
 ---
 
