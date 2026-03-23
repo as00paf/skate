@@ -220,20 +220,27 @@ eventSystem.subscribe("physics.landing", (event) => {
   - Update UI with fade effect when trick completed
   - **Status**: Complete - Event-driven UI updates ✅
 
-- [ ] **A43.0.11: Add event system unit tests**
+- [x] **A43.0.11: Add event system unit tests** ✅
   - Location: `test/.../ecs/systems/EventSystemTest.kt`
   - Test subscribe/unsubscribe functionality
   - Test event publishing to multiple listeners
   - Test event priority ordering
   - Test one-time vs persistent listeners
-  - **Impact**: High - Ensure event system reliability
+  - **Status**: Complete - Event system tests added ✅
 
-- [ ] **A43.0.12: Add integration tests for event-driven systems**
+- [x] **A43.0.12: Add integration tests for event-driven systems** ✅
   - Location: `test/.../game/`
   - Test input event flow (InputSystem → PlayerController)
   - Test physics event flow (PhysicsSystem → TrickDetector)
   - Test trick event flow (TrickDetector → TrickManager → TrickUIWindow)
-  - **Impact**: High - Ensure end-to-end event flow works
+  - **Status**: Complete - End-to-end event flow tested ✅
+
+- [x] **A43.0.13: Auto-create PhysicsComponent in PhysicsSystem** ✅
+  - Location: `engine/ecs/systems/PhysicsSystem.kt`
+  - Auto-create PhysicsComponent when RigidBody3D exists but PhysicsComponent missing
+  - Prevents missing PhysicsComponent bugs (like Skater prefab issue)
+  - Zero configuration - developers just add RigidBody3D
+  - **Status**: Complete - PhysicsComponent auto-created ✅
 
 ---
 

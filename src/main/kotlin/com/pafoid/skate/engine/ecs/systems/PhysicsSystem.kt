@@ -10,6 +10,9 @@ import com.pafoid.skate.engine.physics3d.toVector3f
  * This system runs at [ExecutionPriority.EARLY] to ensure physics state is ready before
  * gameplay systems like [TrickDetector] and [PlayerController] read from [PhysicsComponent].
  *
+ * Auto-creates PhysicsComponent on GameObjects that have RigidBody3D but no PhysicsComponent.
+ * This prevents bugs where developers forget to add PhysicsComponent to physics-enabled objects.
+ *
  * Note: Landing/Takeoff events are published by SkateboardPhysics which has accurate
  * grounded detection via raycast suspension. This system focuses on syncing physics state.
  *
@@ -19,7 +22,7 @@ import com.pafoid.skate.engine.physics3d.toVector3f
  * val physicsSystem = PhysicsSystem()
  * scene.addSystem(physicsSystem)
  *
- * // PhysicsComponent on GameObjects will be updated automatically
+ * // PhysicsComponent will be auto-created on GameObjects with RigidBody3D
  * val physics = gameObject.getComponent<PhysicsComponent>()
  * val speed = physics?.speed ?: 0f
  * ```
@@ -29,8 +32,15 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
     override fun update(dt: Float) {
         // Iterate all game objects and sync physics state
         scene.gameObjectManager.gameObjects.forEach { go ->
-            val physicsComponent = go.getComponent<PhysicsComponent>() ?: return@forEach
             val rigidBody = go.getComponent<RigidBody3D>() ?: return@forEach
+
+            // Auto-create PhysicsComponent if RigidBody3D exists but PhysicsComponent doesn't
+            // This prevents bugs where developers forget to add PhysicsComponent
+            var physicsComponent = go.getComponent<PhysicsComponent>()
+            if (physicsComponent == null) {
+                physicsComponent = PhysicsComponent()
+                go.addComponent(physicsComponent)
+            }
 
             // Sync physics state from body to component
             rigidBody.rawBody?.let { body ->

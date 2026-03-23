@@ -7,7 +7,6 @@ import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
-import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -59,7 +58,6 @@ class Skater(
             margin = 0.01f
         })
         addComponent(InputStateComponent())
-        addComponent(PhysicsComponent())
         addComponent(PlayerController())
         addComponent(PlayerStateManager())
         addComponent(BoneOverride())
