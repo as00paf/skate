@@ -75,7 +75,7 @@ class EventSystem : System() {
   // Type-safe for Kotlin code
   inline fun <reified T : GameEvent> subscribe(noinline listener: (T) -> Unit)
 
-  // String-based for scripting (Lua, Python, etc.)
+  // String-based for scripting (TypeScript, etc.)
   fun subscribe(eventName: String, listener: (GameEvent) -> Unit)
 
   // Publish works for both
@@ -100,15 +100,15 @@ class TrickDetector : Component() {
 }
 ```
 
-```lua
--- Future Lua scripting (string-based)
-eventSystem.subscribe("trick.detected", function(event)
-    logger.log("Trick: " .. event.trickName)
-end)
+```typescript
+// Future TypeScript scripting (string-based)
+eventSystem.subscribe("trick.detected", (event) => {
+    logger.log(`Trick: ${event.trickName}, Rotation: ${event.rotation}`);
+});
 
-eventSystem.subscribe("physics.landing", function(event)
-    handleLanding(event.velocity, event.impactForce)
-end)
+eventSystem.subscribe("physics.landing", (event) => {
+    handleLanding(event.velocity, event.impactForce);
+});
 ```
 
 **Event Namespace Convention:**
@@ -205,6 +205,14 @@ end)
   - Subscribe to `Landing`/`Takeoff` events instead of polling `isGrounded`
   - Reduce direct component queries
   - **Impact**: High - Event-driven player controller
+
+- [ ] **A43.0.9b: Fix Animator component coupling**
+  - Location: `engine/ecs/components/Animator.kt`
+  - Currently `Animator.update()` directly accesses `PlayerStateManager` via `getComponent<>()`
+  - Subscribe to `MovementInput` event to determine walk/run state
+  - Subscribe to `JumpPressed`/`Landing` events for jump/fall states
+  - Remove direct `PlayerStateManager` dependency from `Animator`
+  - **Impact**: Critical - Animation system currently broken due to tight coupling
 
 - [ ] **A43.0.10: Update TrickUIWindow to use events**
   - Location: `editor/windows/TrickUIWindow.kt`
