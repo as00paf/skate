@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import imgui.ImGui
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 open class GameObject(
@@ -16,6 +17,8 @@ open class GameObject(
         fun init(maxId: Int) {
             ID_COUNTER = maxId
         }
+
+        fun getIdCounter(): Int = ID_COUNTER
     }
 
     private var isDead: Boolean = false
@@ -25,7 +28,9 @@ open class GameObject(
 
     val components = mutableListOf<Component>()
 
+    @Transient
     var parent: GameObject? = null
+    @Transient
     val children = mutableListOf<GameObject>()
 
     fun addChild(child: GameObject) {

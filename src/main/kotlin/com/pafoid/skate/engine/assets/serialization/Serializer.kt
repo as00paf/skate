@@ -4,9 +4,20 @@ import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.BaseModel
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.InputStateComponent
+import com.pafoid.skate.engine.ecs.components.LightingComponent
+import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.ModularTile
+import com.pafoid.skate.engine.ecs.components.NonPickable
+import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.SkeletonComponent
+import com.pafoid.skate.engine.ecs.components.SpriteRenderer
+import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
@@ -28,15 +39,39 @@ class Serializer {
         contextual(Matrix4fSerializer)
 
         polymorphic(Component::class) {
+            // Core components
             subclass(Transform::class)
+            subclass(RenderComponent::class)
+            subclass(PhysicsComponent::class)
+
+            // Input components
+            subclass(InputStateComponent::class)
+            subclass(EditorInputStateComponent::class)
+
+            // Animation components
+            subclass(SkeletonComponent::class)
+            subclass(Animator::class)
+
+            // Environment components
+            subclass(EnvironmentComponent::class)
+            subclass(TimeComponent::class)
+            subclass(LightingStateComponent::class)
+            subclass(LightingComponent::class)
+
+            // Editor components
+            subclass(NonPickable::class)
             subclass(ModularTile::class)
-            subclass(TexturedModel::class)
+            subclass(SpriteRenderer::class)
+
+            // Physics components
+            subclass(RigidBody3D::class)
             subclass(BoxCollider3D::class)
             subclass(CylinderCollider3D::class)
             subclass(CustomCollider3D::class)
-            subclass(RigidBody3D::class)
+
+            // Asset components
             subclass(Texture::class)
-            subclass(RenderComponent::class)
+            subclass(TexturedModel::class)
         }
 
         polymorphic(BaseModel::class) {

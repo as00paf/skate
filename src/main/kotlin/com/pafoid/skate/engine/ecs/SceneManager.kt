@@ -24,8 +24,15 @@ class SceneManager : KoinComponent {
         }
         logger.logEngine("Changing scene to ${scene.name}...")
         currentScene = scene
-        // TODO: fix loading of saved scene
-        //scene.load()
+        // Load saved scene data if level path is set
+        if (scene.sceneData.levelPath.isNotBlank()) {
+            try {
+                logger.logEngine("Loading scene data from: ${scene.sceneData.levelPath}")
+                scene.loadScene()
+            } catch (e: Exception) {
+                logger.logEngine("Failed to load scene data: ${e.message}")
+            }
+        }
         // scene.init() was already called by BootManager or caller
         scene.startScene()
         logger.logEngine("Scene ${scene.initializer::class.simpleName} loaded and started.")

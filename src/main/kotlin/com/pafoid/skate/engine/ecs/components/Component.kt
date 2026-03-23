@@ -27,6 +27,8 @@ abstract class Component: KoinComponent {
         fun init(maxId: Int) {
             ID_COUNTER = maxId
         }
+        
+        fun getIdCounter(): Int = ID_COUNTER
     }
 
     var uId = -1

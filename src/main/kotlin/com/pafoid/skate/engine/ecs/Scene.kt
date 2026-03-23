@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
+import com.pafoid.skate.engine.ecs.serialization.SceneSerializer
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.physics3d.BulletPhysics3D
@@ -143,5 +144,25 @@ open class Scene(
         gameObjectManager.destroy()
         systemManager.destroy()
         super.destroy()
+    }
+    
+    /**
+     * Saves the current scene to a JSON file.
+     * 
+     * @param filePath Path to save the scene file
+     */
+    fun saveScene(filePath: String = sceneData.levelPath) {
+        val sceneSerializer = SceneSerializer()
+        sceneSerializer.saveScene(this, filePath)
+    }
+    
+    /**
+     * Loads a scene from a JSON file.
+     * 
+     * @param filePath Path to the scene file to load
+     */
+    fun loadScene(filePath: String = sceneData.levelPath) {
+        val sceneSerializer = SceneSerializer()
+        sceneSerializer.loadScene(this, filePath)
     }
 }

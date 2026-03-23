@@ -14,11 +14,14 @@ import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImBoolean
 import imgui.type.ImString
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.inject
 
+@Serializable
 class SkeletonComponent(
     val pose: SkeletonPose
 ) : Component() {
@@ -27,11 +30,15 @@ class SkeletonComponent(
     private val poseSerializer: PoseSerializer by inject()
     private val stringManager: StringManager by inject()
 
+    @Transient
     private var selectedBone: Bone? = null
+    @Transient
     private val poseFileName = ImString(128)
+    @Transient
     private val mirrorPoseEnabled = ImBoolean(false)
 
 
+    @Transient
     private val matrixPalette = Array(pose.skeleton.boneCount) { Matrix4f() }
 
     init {

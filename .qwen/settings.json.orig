@@ -3,9 +3,7 @@
     "allow": [
       "Bash(.\\gradlew.bat *)",
       "Bash(git push *)",
-      "Bash(git branch *)",
-      "Bash(type *)"
+      "Bash(git branch *)"
     ]
-  },
-  "$version": 3
+  }
 }

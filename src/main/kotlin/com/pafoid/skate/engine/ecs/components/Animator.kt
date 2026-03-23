@@ -17,6 +17,8 @@ import com.pafoid.skate.game.player.PlayerState
 import com.pafoid.skate.game.player.PlayerStateManager
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -36,10 +38,15 @@ import org.koin.core.component.inject
  * - [Landing] - triggers landing animation
  * - [Takeoff] - triggers falling animation
  */
+@Serializable
 class Animator : Component(), KoinComponent {
+    @Transient
     private val resourceManager: ResourceManager by inject()
+    @Transient
     private val logger: LoggerService by inject()
+    @Transient
     private val stringManager: StringManager by inject()
+    @Transient
     private val sceneManager: SceneManager by inject()
 
     var currentAnimation: Animation? = null
@@ -61,8 +68,10 @@ class Animator : Component(), KoinComponent {
     private var isSprinting = false
     private var isInAir = false
     private var isGrounded = true
+    @Transient
     private var eventSystem: EventSystem? = null
 
+    @Transient
     private val animations: MutableList<Animation> = mutableListOf()
 
     fun addAnimation(animation: Animation) {

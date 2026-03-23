@@ -2,16 +2,22 @@ package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.Texture
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Vector2f
 import org.joml.Vector4f
 
+@Serializable
 class SpriteRenderer(
-    private val color: Vector4f = Vector4f(1f, 1f, 1f, 1f),
-    private var sprite: Sprite = Sprite(),
+    @Contextual private val color: Vector4f = Vector4f(1f, 1f, 1f, 1f),
+    @Transient private var sprite: Sprite = Sprite(),
     val zIndex: Int = 0
 ): Component() {
 
+    @Transient
     private var lastTransform: Transform = Transform()
+    @Transient
     private var isDirty = true
 
     override fun start() {
