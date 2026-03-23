@@ -55,6 +55,17 @@ class SkateboardPhysics : Component(), KoinComponent {
 
     private lateinit var rb: IPhysicsBody3D
     private val worldUp = Vector3f(0f, 1f, 0f)
+
+    // Reusable vectors to reduce garbage collection in hot loops
+    private val rayStart = Vector3f()
+    private val localDown = Vector3f()
+    private val rayEnd = Vector3f()
+    private val localRight = Vector3f()
+    private val localUp = Vector3f()
+    private val torque = Vector3f()
+    private val pointVelocity = Vector3f()
+    private val worldForce = Vector3f()
+    
     var isGrounded = false
         private set
 
@@ -100,14 +111,14 @@ class SkateboardPhysics : Component(), KoinComponent {
 
         var groundedCount = 0
         offsets.forEach { offset ->
-            // Calculate ray start and end in world space
-            val rayStart = Vector3f(offset).mulProject(transformMatrix)
+            // Calculate ray start and end in world space (reuse vectors)
+            rayStart.set(offset).mulProject(transformMatrix)
 
             // Ray direction is board-local down
-            val localDown = Vector3f(0f, -1f, 0f)
+            localDown.set(0f, -1f, 0f)
             transformMatrix.transformDirection(localDown)
 
-            val rayEnd = Vector3f(localDown).mul(suspensionRestLength).add(rayStart)
+            rayEnd.set(localDown).mul(suspensionRestLength).add(rayStart)
             val closest = scene.physics3d.raycastClosest(rayStart, rayEnd)
             if (closest != null) {
                 applySuspensionForce(closest, rayStart, localDown)
@@ -121,7 +132,7 @@ class SkateboardPhysics : Component(), KoinComponent {
     private fun applySteering(dt: Float) {
         // Calculate Roll (Lean) relative to local forward
         // Local Right Vector in World Space
-        val localRight = Vector3f(0f, 0f, 1f)
+        localRight.set(0f, 0f, 1f)
         val transform = gameObject.getComponent<Transform>() ?: return
         transform.toWorldMatrix().transformDirection(localRight)
 
@@ -138,10 +149,10 @@ class SkateboardPhysics : Component(), KoinComponent {
         if (speed > 0.1f) {
             val torqueMagnitude = -roll * speed * steeringCoefficient
 
-            val localUp = Vector3f(0f, 1f, 0f)
+            localUp.set(0f, 1f, 0f)
             transform.toWorldMatrix().transformDirection(localUp)
 
-            val torque = Vector3f(localUp).mul(torqueMagnitude)
+            torque.set(localUp).mul(torqueMagnitude)
             rb.applyTorqueImpulse(torque.mul(dt))
         }
     }
@@ -156,10 +167,10 @@ class SkateboardPhysics : Component(), KoinComponent {
      * - x is the compression distance (restLength - currentLength)
      *
      * @param hit The raycast result containing hit fraction and normal.
-     * @param rayStart The origin of the ray in world space, where the force is applied.
-     * @param localDown The local downward vector of the board in world space.
+     * @param rayStartVec The origin of the ray in world space, where the force is applied.
+     * @param localDownVec The local downward vector of the board in world space.
      */
-    private fun applySuspensionForce(hit: RayTestResult, rayStart: Vector3f, localDown: Vector3f) {
+    private fun applySuspensionForce(hit: RayTestResult, rayStartVec: Vector3f, localDownVec: Vector3f) {
         val compression = (1.0f - hit.hitFraction) * suspensionRestLength
 
         // F = k * x (Spring)
@@ -167,17 +178,17 @@ class SkateboardPhysics : Component(), KoinComponent {
 
         // Damping: F = d * v
         // We project the point velocity onto the suspension axis (up)
-        val localUp = Vector3f(localDown).negate()
-        val pointVelocity = rb.getVelocityInPoint(rayStart)
+        localUp.set(localDownVec).negate()
+        pointVelocity.set(rb.getVelocityInPoint(rayStartVec))
         val vSuspension = pointVelocity.dot(localUp)
         val dampingForce = vSuspension * damping
 
         val forceMagnitude = (springForce - dampingForce).coerceAtLeast(0f)
 
-        val worldForce = Vector3f(localUp).mul(forceMagnitude)
+        worldForce.set(localUp).mul(forceMagnitude)
 
         // Apply force at the specific corner position
-        rb.applyForce(worldForce, rayStart)
+        rb.applyForce(worldForce, rayStartVec)
     }
 
     /**

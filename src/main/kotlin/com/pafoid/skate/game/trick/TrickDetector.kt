@@ -173,9 +173,11 @@ class TrickDetector : Component(), KoinComponent {
         }
 
         // Publish TrickDetected event if trick changed
-        if (detectedTrick != previousTrick && detectedTrick != null) {
-            val rotation = Vector3f(accumulatedRotationX, accumulatedRotationY, accumulatedRotationZ)
-            eventSystem?.publish(TrickDetected(detectedTrick!!, rotation))
+        if (detectedTrick != previousTrick) {
+            detectedTrick?.let { trickName ->
+                val rotation = Vector3f(accumulatedRotationX, accumulatedRotationY, accumulatedRotationZ)
+                eventSystem?.publish(TrickDetected(trickName, rotation))
+            }
         }
     }
 

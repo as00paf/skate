@@ -72,11 +72,11 @@ class KeyBindingsWindow(
             }
 
             // Handle Binding
-            if (keyBindingAction != null) {
+            keyBindingAction?.let { action ->
                 // Check for key press
                 for (i in 0..348) { // GLFW_KEY_LAST is 348
                     if (isKeyPressed(i)) {
-                        assignKeyBinding(inputMappings, keyBindingAction!!, i)
+                        assignKeyBinding(inputMappings, action, i)
                         keyBindingAction = null
                         settingsManager.save()
                         break
