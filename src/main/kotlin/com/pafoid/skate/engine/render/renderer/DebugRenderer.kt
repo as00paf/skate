@@ -147,6 +147,48 @@ class DebugRenderer(
         lines.add(Line3D(Vector3f(from), Vector3f(to), Vector3f(color), lifetime))
     }
 
+    /**
+     * Adds a thick line for emphasis (e.g., axis lines).
+     * Renders as 4 parallel lines to simulate thickness.
+     */
+    fun addThickLine3D(from: Vector3f, to: Vector3f, color: Vector3f = Vector3f(0f, 1f, 0f), lifetime: Int = 1) {
+        if (lines.size >= MAX_LINES - 4) return
+        // Draw 4 parallel lines to simulate thickness
+        val offset = 0.02f
+        lines.add(
+            Line3D(
+                Vector3f(from.x - offset, from.y, from.z - offset),
+                Vector3f(to.x - offset, to.y, to.z - offset),
+                Vector3f(color),
+                lifetime
+            )
+        )
+        lines.add(
+            Line3D(
+                Vector3f(from.x + offset, from.y, from.z - offset),
+                Vector3f(to.x + offset, to.y, to.z - offset),
+                Vector3f(color),
+                lifetime
+            )
+        )
+        lines.add(
+            Line3D(
+                Vector3f(from.x - offset, from.y, from.z + offset),
+                Vector3f(to.x - offset, to.y, to.z + offset),
+                Vector3f(color),
+                lifetime
+            )
+        )
+        lines.add(
+            Line3D(
+                Vector3f(from.x + offset, from.y, from.z + offset),
+                Vector3f(to.x + offset, to.y, to.z + offset),
+                Vector3f(color),
+                lifetime
+            )
+        )
+    }
+
     fun addTriangle3D(v1: Vector3f, v2: Vector3f, v3: Vector3f, color: Vector3f, lifetime: Int = 1) {
         if (triangles.size >= MAX_TRIANGLES) return
         triangles.add(Triangle3D(Vector3f(v1), Vector3f(v2), Vector3f(v3), Vector3f(color), lifetime))

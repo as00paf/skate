@@ -13,76 +13,77 @@ import kotlin.math.tan
 /**
  * Mutable configuration data class for the GridLines system.
  *
- * @param majorStep Spacing between major grid lines (default: 1.0)
- * @param minorStep Spacing between minor grid lines (default: 0.1)
- * @param majorColor Color of major grid lines (default: dark gray)
- * @param minorColor Color of minor grid lines (default: lighter gray)
- * @param minExtent Minimum grid extent when camera is close (default: 10.0)
- * @param maxExtent Maximum grid extent when camera is far (default: 100.0)
- * @param lodCloseDistance Distance where minor lines start fading (default: 5.0)
- * @param lodFarDistance Distance where minor lines are fully hidden (default: 20.0)
+ * @param majorStep Spacing between major grid lines (default: 10.0 m - Godot default)
+ * @param minorStep Spacing between minor grid lines (default: 1.0 m - Godot default)
+ * @param majorColor Color of major grid lines (default: dark gray 0.25)
+ * @param minorColor Color of minor grid lines (default: very dark gray 0.15)
+ * @param minExtent Minimum grid extent when camera is close (default: 50.0 m)
+ * @param maxExtent Maximum grid extent when camera is far (default: 500.0 m)
+ * @param lodCloseDistance Distance where minor lines start fading (default: 50.0 m)
+ * @param lodFarDistance Distance where minor lines are fully hidden (default: 200.0 m)
  * @param showGrid Toggle grid visibility (default: true)
  * @param showOriginAxes Toggle origin axes visibility (default: true)
- * @param gridYOffset Y offset to prevent Z-fighting with ground plane (default: -0.1f)
- *     Negative values place grid below world origin. Adjust if grid conflicts with terrain.
- * @param showCenterMarker Toggle center marker visibility (default: true)
+ * @param gridYOffset Y offset for the grid plane (default: 0.0f)
+ *     Grid is rendered at this Y position. Default is world origin (0.0) to align with origin axes.
+ *     Adjust if you need grid at a different height (e.g., -0.01f to prevent Z-fighting with ground plane).
+ * @param showCenterMarker Toggle center marker visibility (default: false - Godot doesn't have this)
  * @param centerMarkerColor Color of the center marker crosshair (default: yellow)
  * @param centerMarkerDistance Maximum camera distance to show center marker (default: 30.0)
- * @param edgeFadeEnabled Enable fading at grid edges (default: true)
+ * @param edgeFadeEnabled Enable fading at grid edges (default: false - Godot doesn't fade edges)
  * @param edgeFadeStart Distance from center where fading starts (0.0-1.0, default: 0.7f)
  * @param secondaryGridEnabled Enable secondary grid plane (default: false)
  * @param secondaryGridY Y position of secondary grid (default: 2.0f)
  * @param secondaryGridColor Color of secondary grid lines (default: cyan)
- * @param snapVisualizationEnabled Enable grid snap visualization (default: true)
+ * @param snapVisualizationEnabled Enable grid snap visualization (default: false - Godot doesn't have this)
  * @param snapMarkerColor Color of snap point marker (default: bright green)
  */
 data class GridConfig(
-    var majorStep: Float = 1.0f,
-    var minorStep: Float = 0.1f,
-    var majorColor: Vector3f = Vector3f(0.4f, 0.4f, 0.4f),
-    var minorColor: Vector3f = Vector3f(0.25f, 0.25f, 0.25f),
-    var minExtent: Float = 10.0f,
-    var maxExtent: Float = 100.0f,
-    var lodCloseDistance: Float = 5.0f,
-    var lodFarDistance: Float = 20.0f,
+    var majorStep: Float = 10.0f,  // Godot default: 10m spacing for major lines
+    var minorStep: Float = 1.0f,   // Godot default: 1m spacing for minor lines
+    var majorColor: Vector3f = Vector3f(0.25f, 0.25f, 0.25f),  // Even darker to match Godot's subtle grid
+    var minorColor: Vector3f = Vector3f(0.15f, 0.15f, 0.15f),  // Very subtle minor lines
+    var minExtent: Float = 50.0f,  // Godot shows a very large grid by default
+    var maxExtent: Float = 500.0f,  // Much larger maximum for far camera distances
+    var lodCloseDistance: Float = 50.0f,  // Minor lines visible much further (Godot: ~50m)
+    var lodFarDistance: Float = 200.0f,  // Minor lines fade out at very far distance
     var showGrid: Boolean = true,
     var showOriginAxes: Boolean = true,
-    var gridYOffset: Float = -0.1f,
-    var showCenterMarker: Boolean = true,
+    var gridYOffset: Float = 0.0f,
+    var showCenterMarker: Boolean = false,  // Disabled by default (Godot doesn't have this)
     var centerMarkerColor: Vector3f = Vector3f(1.0f, 1.0f, 0.0f),
     var centerMarkerDistance: Float = 30.0f,
-    var edgeFadeEnabled: Boolean = true,
+    var edgeFadeEnabled: Boolean = false,  // Disabled - Godot doesn't fade grid edges
     var edgeFadeStart: Float = 0.7f,
     var secondaryGridEnabled: Boolean = false,
     var secondaryGridY: Float = 2.0f,
     var secondaryGridColor: Vector3f = Vector3f(0.0f, 0.8f, 0.8f),
-    var snapVisualizationEnabled: Boolean = true,
+    var snapVisualizationEnabled: Boolean = false,  // Disabled by default (Godot doesn't have this)
     var snapMarkerColor: Vector3f = Vector3f(0.0f, 1.0f, 0.0f)
 ) {
     /**
      * Resets all configuration values to their defaults.
      */
     fun resetToDefaults() {
-        majorStep = 1.0f
-        minorStep = 0.1f
-        majorColor = Vector3f(0.4f, 0.4f, 0.4f)
-        minorColor = Vector3f(0.25f, 0.25f, 0.25f)
-        minExtent = 10.0f
-        maxExtent = 100.0f
-        lodCloseDistance = 5.0f
-        lodFarDistance = 20.0f
+        majorStep = 10.0f
+        minorStep = 1.0f
+        majorColor = Vector3f(0.25f, 0.25f, 0.25f)
+        minorColor = Vector3f(0.15f, 0.15f, 0.15f)
+        minExtent = 50.0f
+        maxExtent = 500.0f
+        lodCloseDistance = 50.0f
+        lodFarDistance = 200.0f
         showGrid = true
         showOriginAxes = true
-        gridYOffset = -0.1f
-        showCenterMarker = true
+        gridYOffset = 0.0f
+        showCenterMarker = false
         centerMarkerColor = Vector3f(1.0f, 1.0f, 0.0f)
         centerMarkerDistance = 30.0f
-        edgeFadeEnabled = true
+        edgeFadeEnabled = false
         edgeFadeStart = 0.7f
         secondaryGridEnabled = false
         secondaryGridY = 2.0f
         secondaryGridColor = Vector3f(0.0f, 0.8f, 0.8f)
-        snapVisualizationEnabled = true
+        snapVisualizationEnabled = false
         snapMarkerColor = Vector3f(0.0f, 1.0f, 0.0f)
     }
 }
@@ -121,7 +122,7 @@ class GridLines(
     // Cached constants
     private val fovRadians = Math.toRadians(22.5).toFloat() // 45/2 degrees
     private val tanHalfFov = tan(fovRadians)
-    private val padding = 1.5f
+    private val padding = 2.5f  // Increased to match Godot's larger grid extent
 
     // Origin axes colors (cached to avoid allocations)
     private val xAxisColor = Vector3f(1f, 0.2f, 0.2f)
@@ -188,19 +189,19 @@ class GridLines(
             )
         }
 
-        // Render center marker at world origin
+        // Render snap visualization (before axes, so axes appear on top)
+        if (config.snapVisualizationEnabled) {
+            renderSnapVisualization(camPos, extent)
+        }
+
+        // Render center marker at world origin (before axes, so axes appear on top)
         if (config.showCenterMarker && cameraDistance < config.centerMarkerDistance) {
             renderCenterMarker(cameraDistance)
         }
 
-        // Render origin axes when camera is nearby
+        // Render origin axes LAST so they appear on top of grid lines
         if (config.showOriginAxes && cameraDistance < 50f) {
             renderOriginAxes(cameraDistance)
-        }
-
-        // Render snap visualization
-        if (config.snapVisualizationEnabled) {
-            renderSnapVisualization(camPos, extent)
         }
     }
 
@@ -316,39 +317,55 @@ class GridLines(
         val markerSize = (2.0f * (config.centerMarkerDistance - cameraDistance) / config.centerMarkerDistance)
             .coerceIn(0.5f, 2.0f)
 
-        // X-axis crosshair
-        lineStart.set(-markerSize, config.gridYOffset + 0.002f, 0f)
-        lineEnd.set(markerSize, config.gridYOffset + 0.002f, 0f)
+        // X-axis crosshair (at grid level)
+        lineStart.set(-markerSize, 0.0f, 0f)
+        lineEnd.set(markerSize, 0.0f, 0f)
         debugRenderer.addLine3D(lineStart, lineEnd, config.centerMarkerColor)
 
-        // Z-axis crosshair
-        lineStart.set(0f, config.gridYOffset + 0.002f, -markerSize)
-        lineEnd.set(0f, config.gridYOffset + 0.002f, markerSize)
+        // Z-axis crosshair (at grid level)
+        lineStart.set(0f, 0.0f, -markerSize)
+        lineEnd.set(0f, 0.0f, markerSize)
         debugRenderer.addLine3D(lineStart, lineEnd, config.centerMarkerColor)
     }
 
     /**
      * Renders origin axes at world origin.
      *
+     * In Godot style:
+     * - X-axis (red) lies flat on the grid plane
+     * - Z-axis (blue) lies flat on the grid plane
+     * - Y-axis (green) goes straight UP from the grid (not below)
+     * - Axes are rendered thicker than grid lines for visibility
+     * - Axes are rendered LAST to appear on top of grid lines
+     *
      * @param cameraDistance Distance from camera to grid plane
      */
     private fun renderOriginAxes(cameraDistance: Float) {
         val axisLength = (20f * (50f - cameraDistance) / 50f).coerceIn(5f, 20f)
 
-        // X-axis (red)
-        lineStart.set(-axisLength, 0.001f, 0f)
-        lineEnd.set(axisLength, 0.001f, 0f)
-        debugRenderer.addLine3D(lineStart, lineEnd, xAxisColor)
+        // All axes at grid level (Y=0)
+        val gridY = 0.0f
 
-        // Z-axis (blue) - note: in X-Z plane, Z is depth
-        lineStart.set(0f, 0.001f, -axisLength)
-        lineEnd.set(0f, 0.001f, axisLength)
-        debugRenderer.addLine3D(lineStart, lineEnd, zAxisColor)
+        // X-axis (red) - lies flat on grid plane, rendered thick
+        debugRenderer.addThickLine3D(
+            Vector3f(-axisLength, gridY, 0f),
+            Vector3f(axisLength, gridY, 0f),
+            xAxisColor
+        )
 
-        // Y-axis (green) - vertical axis
-        lineStart.set(0f, -axisLength, 0.001f)
-        lineEnd.set(0f, axisLength, 0.001f)
-        debugRenderer.addLine3D(lineStart, lineEnd, yAxisColor)
+        // Z-axis (blue) - lies flat on grid plane, rendered thick
+        debugRenderer.addThickLine3D(
+            Vector3f(0f, gridY, -axisLength),
+            Vector3f(0f, gridY, axisLength),
+            zAxisColor
+        )
+
+        // Y-axis (green) - goes straight UP from grid (not below), rendered thick
+        debugRenderer.addThickLine3D(
+            Vector3f(0f, gridY, 0f),
+            Vector3f(0f, axisLength, 0f),
+            yAxisColor
+        )
     }
 
     /**
@@ -366,9 +383,9 @@ class GridLines(
         val cameraDistance = abs(camPos.y)
         if (cameraDistance > 20f) return
 
-        // Draw a small box/cross at the snap point
+        // Draw a small box/cross at the snap point (at grid level)
         val snapSize = 0.3f
-        val snapY = config.gridYOffset + 0.003f
+        val snapY = 0.0f  // At grid level
 
         // Draw snap point cross
         lineStart.set(snapX - snapSize, snapY, snapZ)
@@ -469,12 +486,28 @@ class GridLines(
         ImGui.pushItemWidth(120f)
 
         val majorStepArr = floatArrayOf(config.majorStep)
-        if (ImGui.dragFloat(stringManager.getString("lbl.grid.major_step"), majorStepArr, 0.1f, 0.1f, 10.0f, "%.1f")) {
+        if (ImGui.dragFloat(
+                stringManager.getString("lbl.grid.major_step"),
+                majorStepArr,
+                0.1f,
+                0.1f,
+                10.0f,
+                "%.1f m"
+            )
+        ) {
             config.majorStep = majorStepArr[0].coerceAtLeast(0.1f)
         }
 
         val minorStepArr = floatArrayOf(config.minorStep)
-        if (ImGui.dragFloat(stringManager.getString("lbl.grid.minor_step"), minorStepArr, 0.01f, 0.01f, 1.0f, "%.2f")) {
+        if (ImGui.dragFloat(
+                stringManager.getString("lbl.grid.minor_step"),
+                minorStepArr,
+                0.01f,
+                0.01f,
+                1.0f,
+                "%.2f m"
+            )
+        ) {
             config.minorStep = minorStepArr[0].coerceIn(0.01f, config.majorStep)
         }
         ImGui.popItemWidth()
@@ -486,12 +519,12 @@ class GridLines(
         ImGui.pushItemWidth(120f)
 
         val lodCloseArr = floatArrayOf(config.lodCloseDistance)
-        if (ImGui.dragFloat(stringManager.getString("lbl.grid.lod_close"), lodCloseArr, 0.1f, 0.1f, 50.0f, "%.1f")) {
+        if (ImGui.dragFloat(stringManager.getString("lbl.grid.lod_close"), lodCloseArr, 0.1f, 0.1f, 50.0f, "%.1f m")) {
             config.lodCloseDistance = lodCloseArr[0].coerceAtMost(config.lodFarDistance)
         }
 
         val lodFarArr = floatArrayOf(config.lodFarDistance)
-        if (ImGui.dragFloat(stringManager.getString("lbl.grid.lod_far"), lodFarArr, 0.1f, 0.1f, 50.0f, "%.1f")) {
+        if (ImGui.dragFloat(stringManager.getString("lbl.grid.lod_far"), lodFarArr, 0.1f, 0.1f, 50.0f, "%.1f m")) {
             config.lodFarDistance = lodFarArr[0].coerceAtLeast(config.lodCloseDistance)
         }
         ImGui.popItemWidth()
@@ -503,12 +536,28 @@ class GridLines(
         ImGui.pushItemWidth(120f)
 
         val minExtentArr = floatArrayOf(config.minExtent)
-        if (ImGui.dragFloat(stringManager.getString("lbl.grid.min_extent"), minExtentArr, 1.0f, 1.0f, 50.0f, "%.1f")) {
+        if (ImGui.dragFloat(
+                stringManager.getString("lbl.grid.min_extent"),
+                minExtentArr,
+                1.0f,
+                1.0f,
+                50.0f,
+                "%.1f m"
+            )
+        ) {
             config.minExtent = minExtentArr[0].coerceAtMost(config.maxExtent)
         }
 
         val maxExtentArr = floatArrayOf(config.maxExtent)
-        if (ImGui.dragFloat(stringManager.getString("lbl.grid.max_extent"), maxExtentArr, 1.0f, 1.0f, 200.0f, "%.1f")) {
+        if (ImGui.dragFloat(
+                stringManager.getString("lbl.grid.max_extent"),
+                maxExtentArr,
+                1.0f,
+                1.0f,
+                200.0f,
+                "%.1f m"
+            )
+        ) {
             config.maxExtent = maxExtentArr[0].coerceAtLeast(config.minExtent)
         }
         ImGui.popItemWidth()
@@ -535,7 +584,7 @@ class GridLines(
         ImGui.pushItemWidth(120f)
 
         val yOffsetArr = floatArrayOf(config.gridYOffset)
-        if (ImGui.dragFloat(stringManager.getString("lbl.grid.y_offset"), yOffsetArr, 0.01f, -1.0f, 0.0f, "%.2f")) {
+        if (ImGui.dragFloat(stringManager.getString("lbl.grid.y_offset"), yOffsetArr, 0.01f, -1.0f, 0.0f, "%.2f m")) {
             config.gridYOffset = yOffsetArr[0].coerceIn(-1.0f, 0.0f)
         }
         ImGui.popItemWidth()
@@ -564,7 +613,7 @@ class GridLines(
                 1.0f,
                 5.0f,
                 100.0f,
-                "%.0f"
+                "%.0f m"
             )
         ) {
             config.centerMarkerDistance = centerMarkerDistArr[0].coerceAtLeast(5.0f)
@@ -609,7 +658,7 @@ class GridLines(
                 0.1f,
                 -10.0f,
                 10.0f,
-                "%.1f"
+                "%.1f m"
             )
         ) {
             config.secondaryGridY = secondaryGridYArr[0]
