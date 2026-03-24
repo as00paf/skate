@@ -173,19 +173,21 @@ class ImGuiLayer(
         )
 
         val mainBodyId = ImInt(0)
-        val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.2f, null, mainBodyId)
-        val rightId =
-            dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.25f, null, mainBodyId)
-        val bottomId =
-            dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
+        // Split Left for Hierarchy
+        val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.18f, null, mainBodyId)
+        // Split Right for Properties & Environment
+        val rightId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.22f, null, mainBodyId)
+        // Split Bottom for Asset Browser, Console, Profiler
+        val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.28f, null, mainBodyId)
 
-        // Dock windows based on their default visibility
+        // Dock windows based on their logical function
         editorWindows.filter { it.showFlag.get() }.forEach { window ->
             val dockId = when (window.nameKey) {
-                "window.hierarchy", "window.asset_browser", "window.properties", "window.systems" -> leftId
+                "window.hierarchy" -> leftId
+                "window.properties", "window.environment", "window.systems" -> rightId
+                "window.asset_browser", "window.console", "window.profiler", "window.physics_tuner" -> bottomId
                 "window.game_viewport" -> mainBodyId.get()
-                "window.console", "window.profiler", "window.environment", "window.physics_tuner" -> bottomId
-                else -> mainBodyId.get() // Default to main area for unknown windows
+                else -> mainBodyId.get()
             }
             dockBuilderDockWindow(stringManager.getString(window.nameKey), dockId)
         }

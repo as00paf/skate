@@ -108,11 +108,13 @@ class EditorMenuBar(
     }
 
     private fun buildWindowControls() {
-        val buttonWidth = 40f
-        val totalWidth = buttonWidth * 3 + 4f // 3 buttons + very small padding
+        val buttonWidth = 45f
+        val totalWidth = buttonWidth * 3
         
-        ImGui.setCursorPosX(ImGui.getWindowWidth() - totalWidth)
-        ImGui.setCursorPosY(4f) // Lowered slightly
+        // Use the main viewport size to ensure we are at the very edge of the screen
+        val screenWidth = ImGui.getMainViewport().sizeX
+        ImGui.setCursorPosX(screenWidth - totalWidth)
+        ImGui.setCursorPosY(5f) // Lowered slightly for better alignment
 
         // Minimize
         if (ImGui.menuItem(Icons.WINDOW_MINIMIZE)) {
