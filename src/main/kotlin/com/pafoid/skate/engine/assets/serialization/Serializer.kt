@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.assets.data.models.BaseModel
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
@@ -43,6 +44,7 @@ class Serializer {
             subclass(Transform::class)
             subclass(RenderComponent::class)
             subclass(PhysicsComponent::class)
+            subclass(AudioComponent::class)
 
             // Input components
             subclass(InputStateComponent::class)

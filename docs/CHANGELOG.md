@@ -4,6 +4,35 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.45.0.3] - 2026-03-23: Basic Audio System (In Progress)
+
+### Summary
+
+Implementing basic audio system using OpenAL for 2D and 3D audio playback with spatialization.
+
+### Planned
+
+- **Audio System Core** (`engine/audio/`)
+  - AudioEngine for OpenAL context management
+  - SoundSource for 2D/3D audio sources
+  - AudioListener for 3D spatialization
+  - Volume, looping, and playback controls
+
+- **Audio Asset Loading** (`engine/assets/`)
+  - WAV and OGG file loading
+  - Audio buffer management
+  - Integration with ResourceManager
+
+- **ECS Integration** (`engine/ecs/components/`)
+  - AudioComponent for GameObjects
+  - AudioSystem for 3D position updates
+
+- **Editor Integration** (`editor/`)
+  - Audio component inspector
+  - Audio preview controls
+
+---
+
 ## [v0.45.0.2] - 2026-03-23: Scene Serialization Refactored
 
 ### Summary
