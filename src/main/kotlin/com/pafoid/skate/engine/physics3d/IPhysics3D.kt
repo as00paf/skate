@@ -11,6 +11,8 @@ interface IPhysics3D {
     fun add(go: GameObject)
     fun update(go: GameObject)
     fun remove(go: GameObject)
+    fun addConstraint(constraint: com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint)
+    fun removeConstraint(constraint: com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint)
     fun update(dt: Float)
     fun destroy()
 }

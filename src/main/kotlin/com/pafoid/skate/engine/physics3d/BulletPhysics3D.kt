@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.physics3d
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
+import com.jme3.bullet.collision.shapes.CapsuleCollisionShape
 import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.collision.shapes.CylinderCollisionShape
@@ -16,6 +17,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.Collider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -219,6 +221,17 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
         }
     }
 
+    override fun addConstraint(constraint: IPhysicsConstraint) {
+        val joint = constraint.rawJoint ?: constraint.createJoint()
+        physicsSpace.add(joint)
+    }
+
+    override fun removeConstraint(constraint: IPhysicsConstraint) {
+        constraint.rawJoint?.let {
+            physicsSpace.remove(it)
+        }
+    }
+
     private var accumulator = 0f
     private val fixedTimestep = 1.0f / 60.0f
 
@@ -265,6 +278,7 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
         when (shape) {
             is BoxCollisionShape -> drawBoxCollisionShape(shape, pos, rot, color)
             is CylinderCollisionShape -> drawCylinderCollisionShape(shape, pos, rot, color)
+            is CapsuleCollisionShape -> drawCapsuleCollisionShape(shape, pos, rot, color)
             is CompoundCollisionShape -> drawCompoundCollisionShape(shape, pos, rot, color)
             is HullCollisionShape, is MeshCollisionShape -> drawComplexShapes(shape, pos, rot, color)
         }
@@ -366,6 +380,30 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
             }
         }
         debugRenderer.addCylinder3D(pos, rot, radius, height, axis, color)
+    }
+
+    /**
+     * Draws a wireframe representation of a [CapsuleCollisionShape].
+     *
+     * @param shape The capsule shape.
+     * @param pos The world position.
+     * @param rot The world rotation.
+     * @param color The drawing color.
+     */
+    private fun drawCapsuleCollisionShape(
+        shape: CapsuleCollisionShape,
+        pos: JomlVector3f,
+        rot: Quaternionf,
+        color: JomlVector3f
+    ) {
+        val axis = shape.axis
+        val radius = shape.radius
+        val height = shape.height // In Bullet, this is usually the height of the cylinder part
+
+        // For debug drawing, a cylinder provides an approximate visualization of the capsule.
+        // Rendering full spheres at the ends is often overkill for wireframe debug view.
+        // The total height of capsule in bullet is height + 2 * radius
+        debugRenderer.addCylinder3D(pos, rot, radius, height + 2f * radius, axis, color)
     }
 
     /**

@@ -116,6 +116,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
         // Physics system - syncs physics state to PhysicsComponent
         scene.addSystem(PhysicsSystem())
+        scene.addSystem(com.pafoid.skate.engine.ecs.systems.RagdollSystem())
 
         // Add initial scene components for environment, time, and lighting state
         scene.addComponent(EnvironmentComponent())
