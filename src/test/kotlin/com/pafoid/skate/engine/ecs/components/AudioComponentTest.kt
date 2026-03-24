@@ -1,6 +1,9 @@
 package com.pafoid.skate.engine.ecs.components
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -94,15 +97,34 @@ class AudioComponentTest {
     }
 
     @Test
-    fun `isPlaying - returns false when no sound loaded`() {
+    fun `isPlaying - returns false by default`() {
         // Assert
-        assertFalse(audioComponent.isPlaying())
+        assertFalse(audioComponent.isPlaying)
     }
 
     @Test
-    fun `destroy - cleans up without error when no sound loaded`() {
+    fun `playback controls - set respective flags`() {
+        audioComponent.play()
+        assertTrue(audioComponent.playRequested)
+        assertFalse(audioComponent.stopRequested)
+        assertFalse(audioComponent.pauseRequested)
+
+        audioComponent.pause()
+        assertTrue(audioComponent.pauseRequested)
+        assertFalse(audioComponent.playRequested)
+        assertFalse(audioComponent.stopRequested)
+
+        audioComponent.stop()
+        assertTrue(audioComponent.stopRequested)
+        assertFalse(audioComponent.playRequested)
+        assertFalse(audioComponent.pauseRequested)
+    }
+
+    @Test
+    fun `destroy - does nothing`() {
         // Act & Assert - should not throw
-        audioComponent.destroy()
-        assertFalse(audioComponent.isPlaying())
+        assertDoesNotThrow {
+            audioComponent.destroy()
+        }
     }
 }

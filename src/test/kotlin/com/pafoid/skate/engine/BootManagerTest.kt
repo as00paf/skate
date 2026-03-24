@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
@@ -42,9 +43,11 @@ class BootManagerTest : KoinTest {
     private val engine = mockk<Engine>(relaxed = true)
     private val settingsManager = mockk<SettingsManager>(relaxed = true)
     private val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
+    private val audioEngine = mockk<AudioEngine>(relaxed = true)
 
     // Use Unconfined dispatcher for testing to avoid JobSystem dependency
-    private val bootManager = BootManager(sceneManager, renderer, logger, splashScreen, Dispatchers.Unconfined)
+    private val bootManager =
+        BootManager(sceneManager, renderer, logger, splashScreen, audioEngine, Dispatchers.Unconfined)
 
     @BeforeEach
     fun setup() {
