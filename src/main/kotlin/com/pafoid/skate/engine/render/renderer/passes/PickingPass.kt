@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.render.PickingTexture
+import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
@@ -65,11 +66,13 @@ class PickingPass(
     private val modelRenderer: ModelRenderer
 ) : RenderPass {
 
+    override val name: String = "PickingPass"
+
     fun resize(width: Int, height: Int) {
         pickingTexture.resize(width, height)
     }
 
-    fun beginFrame() {
+    override fun prepare() {
         val width = pickingTexture.width
         val height = pickingTexture.height
         
@@ -84,7 +87,15 @@ class PickingPass(
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
     }
 
+    @Deprecated("Use execute(context: RenderContext) instead")
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+        execute(RenderContext(scene, activeGameObject, hoveredGameObject))
+    }
+
+    override fun execute(context: RenderContext) {
+        val scene = context.scene
+        val activeGameObject = context.activeGameObject
+
         // PERFORMANCE: Skip entire picking pass when object is selected.
         // Hover detection is unnecessary while manipulating a selected object,
         // and this saves GPU draw calls + CPU iteration.

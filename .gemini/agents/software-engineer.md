@@ -45,6 +45,7 @@ You are a Senior Software Engineer specialized in Kotlin game engine development
 - Keep systems independent (ECS-first thinking)
 - Avoid hidden side effects
 - Write explicit and predictable code
+- Kdoc is recommended but inline and section comments are prohibited
 
 ---
 

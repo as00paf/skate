@@ -22,6 +22,10 @@ import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.utils.GLStateTracker
 
+import com.pafoid.skate.engine.render.graph.RenderGraph
+import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
+import com.pafoid.skate.engine.render.graph.RenderResource
+
 /**
  * Factory for creating all rendering resources.
  *
@@ -92,6 +96,9 @@ class RenderResourcesFactory(
             shadowMap = shadowMap
         )
 
+        logger.logEngine("Building render graph...")
+        val renderGraph = buildRenderGraph(renderPasses, shadowMap)
+
         logger.logEngine("Render resources initialization complete.")
 
         return RenderResources(
@@ -100,8 +107,32 @@ class RenderResourcesFactory(
             pickingTexture = pickingTexture,
             renderers = renderers,
             renderPasses = renderPasses,
+            renderGraph = renderGraph,
             shadowMap = shadowMap
         )
+    }
+
+    /**
+     * Builds the render graph by connecting passes and registering resources.
+     */
+    private fun buildRenderGraph(
+        passes: RenderPasses,
+        shadowMap: ShadowMap?
+    ): RenderGraph {
+        val builder = RenderGraphBuilder()
+        
+        // Register shadow map if available
+        if (shadowMap != null) {
+            builder.withResources(RenderResource.Texture("ShadowMap", shadowMap.getDepthTextureId()))
+        }
+        
+        // Build the execution chain in the correct order
+        return builder
+            .addPass(passes.shadow)   // 1. Shadows first
+            .addPass(passes.picking)  // 2. Picking
+            .addPass(passes.geometry) // 3. Full geometry with lighting
+            .addPass(passes.debug)    // 4. Debug overlay
+            .build()
     }
 
     /**

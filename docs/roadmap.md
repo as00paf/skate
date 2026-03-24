@@ -62,7 +62,7 @@ tooling.
 
 | ID      | Task                                     | Priority  | Effort | Dependencies | Status |
 |:--------|:-----------------------------------------|:----------|:-------|:-------------|:-------|
-| A45.0.6 | Refactor Renderer to Render Graph System | 🟡 Medium | L      | None         | ⬜ Todo |
+| A45.0.6 | Refactor Renderer to Render Graph System | 🟡 Medium | L      | None         | ✅ Done |
 
 **Phase 1 Deliverables:**
 

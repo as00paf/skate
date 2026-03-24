@@ -10,7 +10,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 **Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
 
-- [ ] **A45.0.6: Refactor Renderer to Render Graph System**
+- [x] **A45.0.6: Refactor Renderer to Render Graph System**
   - Define render graph structure with pass inputs/outputs
   - Dynamic pass compilation into execution order
   - Convert existing passes (Shadow, Picking, Geometry, Debug)

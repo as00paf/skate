@@ -55,11 +55,7 @@ class Renderer(
     }
 
     /**
-     * Renders the scene by executing all render passes in order:
-     * 1. Shadow Pass - Render depth to shadow map
-     * 2. Picking Pass - For mouse selection
-     * 3. Geometry Pass - Full scene with PBR shading
-     * 4. Debug Pass - Debug visualization overlay
+     * Renders the scene by executing the render graph.
      *
      * @param scene The scene to render
      * @param activeGameObject The currently selected game object (if any)
@@ -72,25 +68,8 @@ class Renderer(
         scene.camera.viewportWidth = width
         scene.camera.viewportHeight = height
 
-        // Begin frame for debug and picking systems
-        renderResources.renderPasses.debug.beginFrame()
-        renderResources.renderPasses.picking.beginFrame()
-
-        // 1. Shadow Pass - Render depth to shadow map (must be before geometry pass)
-        renderResources.renderPasses.shadow.execute(scene, activeGameObject, hoveredGameObject)
-
-        // 2. Picking Pass - Render object IDs for mouse selection
-        renderResources.renderPasses.picking.execute(scene, activeGameObject, hoveredGameObject)
-
-        // 3. Geometry Pass - Render full scene with PBR shading
-        renderResources.renderPasses.geometry.execute(scene, activeGameObject, hoveredGameObject)
-
-        // 4. Debug Pass - Render debug visualization on top (still in FBO)
-        renderResources.renderPasses.debug.execute(scene, activeGameObject, hoveredGameObject)
-
-        // Now unbind and cleanup geometry pass
-        renderResources.renderPasses.geometry.unbind()
-        renderResources.renderPasses.geometry.cleanup()
+        // Execute the render graph - this handles all preparation, execution, and cleanup of passes
+        renderResources.renderGraph.execute(scene, activeGameObject, hoveredGameObject)
 
         // Final screen viewport reset
         glViewport(0, 0, renderResources.frameBuffer.width, renderResources.frameBuffer.height)

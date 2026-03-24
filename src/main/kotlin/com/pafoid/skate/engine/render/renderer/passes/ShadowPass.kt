@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.render.ShadowMap
+import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
 
 /**
@@ -32,7 +33,16 @@ class ShadowPass(
     private val logger: LoggerService
 ) : RenderPass {
 
+    override val name: String = "ShadowPass"
+    override val outputs: Set<String> = setOf("ShadowMap")
+
+    @Deprecated("Use execute(context: RenderContext) instead")
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+        execute(RenderContext(scene, activeGameObject, hoveredGameObject))
+    }
+
+    override fun execute(context: RenderContext) {
+        val scene = context.scene
         // Get directional light system from scene
         val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
 

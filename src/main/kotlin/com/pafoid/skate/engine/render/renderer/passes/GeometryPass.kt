@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.render.FrameBuffer
+import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
@@ -46,7 +47,7 @@ import org.lwjgl.opengl.GL30.glViewport
  * @param lightingUniformsLoader Helper for uploading lighting uniforms
  * @param sceneManager The scene manager for accessing current scene
  * @param getUseFbo Lambda to get current FBO usage setting at render time
- * @param shadowMapTextureId Optional shadow map texture ID for shadow mapping
+ * @param shadowMapTextureId Default shadow map texture ID
  * @param shadowMapResolution Shadow map resolution for PCF texel size calculation
  */
 class GeometryPass(
@@ -63,7 +64,23 @@ class GeometryPass(
     private val shadowMapResolution: Float = 2048f
 ) : RenderPass {
 
+    override val name: String = "GeometryPass"
+    override val inputs: Set<String> = setOf("ShadowMap")
+
+    @Deprecated("Use execute(context: RenderContext) instead")
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+        execute(RenderContext(scene, activeGameObject, hoveredGameObject))
+    }
+
+    override fun execute(context: RenderContext) {
+        val scene = context.scene
+        val activeGameObject = context.activeGameObject
+        val hoveredGameObject = context.hoveredGameObject
+        
+        // Use shadow map from context if available, otherwise fallback to default
+        val contextShadowMap = context.getTexture("ShadowMap")
+        val currentShadowMap = if (contextShadowMap != 0) contextShadowMap else shadowMapTextureId
+
         // Setup framebuffer
         val useFbo = getUseFbo()
         if (useFbo) {
@@ -107,11 +124,11 @@ class GeometryPass(
             lightingStateComponent,
             directionalLight,
             environmentConfig,
-            shadowMapTextureId
+            currentShadowMap
         )
 
         // Upload shadow map texel size for PCF
-        if (shadowMapTextureId != 0) {
+        if (currentShadowMap != 0) {
             defaultShader.uploadFloat(Uniforms.SHADOW_MAP_TEXEL_SIZE, 1.0f / shadowMapResolution)
             // Upload shadow bias uniforms
             if (directionalLight != null) {
@@ -124,7 +141,7 @@ class GeometryPass(
 
             // Bind shadow map texture to texture unit
             glActiveTexture(GL_TEXTURE0 + Uniforms.SHADOW_TEXTURE_UNIT)
-            glBindTexture(GL_TEXTURE_2D, shadowMapTextureId)
+            glBindTexture(GL_TEXTURE_2D, currentShadowMap)
         }
 
         // Render all 3D game objects
@@ -181,13 +198,10 @@ class GeometryPass(
         GL30.glClear(GL30.GL_COLOR_BUFFER_BIT or GL30.GL_DEPTH_BUFFER_BIT)
     }
 
-    fun unbind() {
+    override fun cleanup() {
         if (getUseFbo()) {
             frameBuffer.unbind()
         }
-    }
-
-    fun cleanup() {
         // Final state cleanup
         glUseProgram(0)
         glBindVertexArray(0)

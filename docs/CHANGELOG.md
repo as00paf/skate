@@ -4,6 +4,39 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.45.0.6] - 2026-03-24: Refactor Renderer to Render Graph System
+
+### Summary
+
+Refactored the monolithic Renderer into a modular, data-driven Render Graph system. This improves extensibility and allows for complex pass dependencies and resource sharing.
+
+### Added
+
+- **RenderGraph System**: New core architecture for managing rendering passes and resources.
+  - `RenderGraph`: Orchestrates the execution of render passes.
+  - `RenderPass`: Interface for individual rendering stages with lifecycle methods (`prepare`, `execute`, `cleanup`).
+  - `RenderResource`: Generic container for textures, buffers, and values used in the graph.
+  - `RenderContext`: Provides passes with access to resources and scene state.
+  - `RenderGraphBuilder`: Fluent API for constructing the graph.
+
+### Changed
+
+- **Renderer.kt**: Now delegates all rendering work to the `RenderGraph`.
+- **RenderPasses Refactored**: All existing passes converted to the new system:
+  - `ShadowPass`: Defines output "ShadowMap".
+  - `PickingPass`: Now uses `prepare()` for FBO setup.
+  - `GeometryPass`: Dynamically samples "ShadowMap" from the graph context if available.
+  - `DebugPass`: Now properly integrated into the graph lifecycle.
+- **RenderResourcesFactory**: Now builds and configures the `RenderGraph` during initialization.
+
+### Verified
+
+- ✅ All unit tests passing
+- ✅ Render graph logic verified with new unit tests
+- ✅ Shadow map resource propagation through the graph confirmed
+
+---
+
 ## [v0.45.0.5] - 2026-03-24: Set up Automated Testing Framework & Fix Failing Tests
 
 ### Summary

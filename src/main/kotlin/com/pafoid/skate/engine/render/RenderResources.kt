@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.render.graph.RenderGraph
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
@@ -73,6 +74,7 @@ data class RenderPasses(
  * - Renderers: Renderer instances for different object types
  * - RenderPasses: Organized render passes for the pipeline
  * - ShadowMap: Depth texture for shadow mapping
+ * - RenderGraph: Orchestrator for the rendering pipeline
  *
  * @param shaders All shader programs
  * @param frameBuffer The framebuffer for FBO rendering
@@ -80,6 +82,7 @@ data class RenderPasses(
  * @param renderers All renderer instances
  * @param renderPasses All render passes
  * @param shadowMap Optional shadow map for shadow mapping
+ * @param renderGraph The render graph for pass execution
  */
 data class RenderResources(
     val shaders: Shaders,
@@ -87,5 +90,6 @@ data class RenderResources(
     val pickingTexture: PickingTexture,
     val renderers: Renderers,
     val renderPasses: RenderPasses,
+    val renderGraph: RenderGraph,
     val shadowMap: ShadowMap? = null
 )

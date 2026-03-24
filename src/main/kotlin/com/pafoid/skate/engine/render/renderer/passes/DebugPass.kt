@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 
 /**
@@ -17,11 +18,18 @@ class DebugPass(
     private val debugRenderer: DebugRenderer
 ) : RenderPass {
 
-    fun beginFrame() {
+    override val name: String = "DebugPass"
+
+    override fun prepare() {
         debugRenderer.beginFrame()
     }
 
+    @Deprecated("Use execute(context: RenderContext) instead")
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+        execute(RenderContext(scene, activeGameObject, hoveredGameObject))
+    }
+
+    override fun execute(context: RenderContext) {
         debugRenderer.draw()
     }
 }
