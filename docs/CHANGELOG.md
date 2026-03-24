@@ -4,32 +4,27 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
-## [v0.45.0.3] - 2026-03-23: Basic Audio System (In Progress)
+## [v0.45.0.3] - 2026-03-23: Develop Basic Audio System
 
 ### Summary
 
-Implementing basic audio system using OpenAL for 2D and 3D audio playback with spatialization.
+Implemented basic audio system using OpenAL for 2D and 3D audio playback with spatialization.
 
-### Planned
+### Completed
 
-- **Audio System Core** (`engine/audio/`)
-  - AudioEngine for OpenAL context management
-  - SoundSource for 2D/3D audio sources
-  - AudioListener for 3D spatialization
-  - Volume, looping, and playback controls
-
-- **Audio Asset Loading** (`engine/assets/`)
-  - WAV and OGG file loading
-  - Audio buffer management
-  - Integration with ResourceManager
-
-- **ECS Integration** (`engine/ecs/components/`)
-  - AudioComponent for GameObjects
-  - AudioSystem for 3D position updates
-
-- **Editor Integration** (`editor/`)
-  - Audio component inspector
-  - Audio preview controls
+- Load and play audio files (WAV, OGG)
+- Support for 2D audio playback (global sounds)
+- Support for 3D audio playback with spatialization
+- Basic controls for volume, looping, and playback status
+- Refactor AudioComponent to be a pure data container (remove logic, load(), play(), stop(), and Sound instances)
+- Move audio state evaluation and OpenAL interaction into AudioSystem
+- Integrate audio loading with ResourceManager to prevent redundant file loading and manage shared SoundBuffers vs
+  individual SoundSources
+- Implement setPosition, setVolume, setLooping, and setRelative methods in Sound.kt
+- Connect AudioSystem to update Sound instances based on Transform and AudioComponent data
+- Fix hardcoded 0.3f volume gain and missing AL_SOURCE_RELATIVE flag for 2D audio
+- Fix resource leaks in WAV loading (add .use blocks) and use proper LWJGL memory deallocation (MemoryUtil.memFree)
+  instead of LibCStdlib.free()
 
 ---
 

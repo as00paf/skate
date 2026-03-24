@@ -6,48 +6,9 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 ---
 
-## 📦 Completed Releases
-
-### v0.45.0.2: Scene Serialization Refactored ✅
-
-Refactored scene serialization to use existing LevelManager, removing duplicate code.
-
-**Key achievements:**
-- All 15 ECS components serializable for level persistence and GameObject copy operations
-- LevelManager confirmed as single source of truth for level persistence
-- GameObject.copy() used for clipboard/prefab operations
-- 7/7 GameObject serialization tests passing
-- Clear architecture: Level (persisted) vs Scene (runtime) vs GameObject (serializable entity)
-
-### v0.45.0.1: Asset Management Pipeline Enhancement ✅
-
-Enhanced ResourceManager with dependency tracking, LRU caching, and hot-reloading support.
-
-**Key achievements:**
-- Dependency tracking for models and textures
-- LRU cache with 256MB memory limit
-- Hot-reloading support for editor workflow
-
----
-
 ## 📋 Phase 1: Foundation (Planned)
 
 **Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
-
-- [x] **A45.0.3: Develop Basic Audio System** 🔄
-  - Load and play audio files (WAV, OGG)
-  - Support for 2D audio playback (global sounds)
-  - Support for 3D audio playback with spatialization
-  - Basic controls for volume, looping, and playback status
-  - Refactor AudioComponent to be a pure data container (remove logic, load(), play(), stop(), and Sound instances)
-  - Move audio state evaluation and OpenAL interaction into AudioSystem
-  - Integrate audio loading with ResourceManager to prevent redundant file loading and manage shared SoundBuffers vs
-    individual SoundSources
-  - Implement setPosition, setVolume, setLooping, and setRelative methods in Sound.kt
-  - Connect AudioSystem to update Sound instances based on Transform and AudioComponent data
-  - Fix hardcoded 0.3f volume gain and missing AL_SOURCE_RELATIVE flag for 2D audio
-  - Fix resource leaks in WAV loading (add .use blocks) and use proper LWJGL memory deallocation (MemoryUtil.memFree)
-    instead of LibCStdlib.free()
 
 - [ ] **A45.0.4: Implement Ragdoll Physics**
   - Define and create ragdoll skeletons from skeletal data
