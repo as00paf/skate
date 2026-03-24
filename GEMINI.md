@@ -1,10 +1,10 @@
-# SkateSim MVP - Project Context
+# SkateSim MVP (PAFSK8) - Project Context
 
 ## Project Overview
 
 **PAFSK8** is a high-fidelity skateboarding simulation engine built in Kotlin. It aims to combine 3D graphics, strict physics simulation, and robust editor tools to create a realistic skateboarding experience.
 
-## Tech Stack
+## Tech Stack & Architecture
 
 *   **Language:** Kotlin (JVM Target 17)
 *   **Graphics:** OpenGL 3.3+ (Forward Rendering)
@@ -13,6 +13,7 @@
 *   **UI/Tweak Tool:** Dear ImGui
 *   **Input:** LWJGL (GLFW)
 *   **Data:** JSON for Level/Config persistence
+* **Architecture:** Hybrid ECS (Entity-Component-System). See `@docs/ECS_ARCHITECTURE.md`.
 
 ## Core Architecture & State
 
@@ -20,13 +21,20 @@
 *   **Edit Mode:** Physics paused, Free-fly camera, ImGui Gizmos active, Object picking/placement enabled.
 *   **Play Mode:** Physics active, Spring-arm camera, Continuous Vectoring input, Session markers enabled.
 
-This is the main instructions :
-@./AI_INSTRUCTIONS.md
+---
 
-This is the to-do list.
+## AI Instructions & Mandates
 
-@./TODO.md
+The following mandates must be strictly adhered to. They establish the role, conventions, workflows, and testing
+protocol for this workspace.
 
-This is the obstacle list :
+@AI_INSTRUCTIONS.md
 
-@./obstacles.md
+---
+
+## Project Status & Tracking
+
+Current goals, known issues, and general project status. Ensure `docs/TODO.md` is maintained.
+
+@docs/TODO.md
+@docs/obstacles.md
