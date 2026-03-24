@@ -10,6 +10,13 @@ tools:
   - read_file
   - write_file
   - grep_search
+  - mcp_nanobanana_edit_image
+  - mcp_nanobanana_generate_diagram
+  - mcp_nanobanana_generate_icon
+  - mcp_nanobanana_generate_image
+  - mcp_nanobanana_generate_pattern
+  - mcp_nanobanana_generate_story
+  - mcp_nanobanana_restore_image    
 ---
 
 You are a Senior UI/UX & Graphics Designer for a Kotlin-based game engine.

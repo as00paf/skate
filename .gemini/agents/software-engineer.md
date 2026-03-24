@@ -12,7 +12,6 @@ tools:
   - write_file
   - grep_search
   - replace
-  - gradlew
 
 ---
 

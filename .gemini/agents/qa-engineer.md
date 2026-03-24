@@ -10,7 +10,6 @@ tools:
   - read_file
   - grep_search
   - write_file
-  - gradlew
 ---
 
 You are a Senior QA Engineer specialized in testing complex game engine systems.
