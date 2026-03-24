@@ -24,7 +24,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 - [⏳] **A46.0.1: Comprehensive Engine UI & Editor Tooling Revamp**
   - **Status: IMPLEMENTATION**
-  - [ ] **A46.0.1.1: Visual Style & Theme Implementation** (Islands Dark / IntelliJ-like)
+  - [x] **A46.0.1.1: Visual Style & Theme Implementation** (Islands Dark / IntelliJ-like)
   - [ ] **A46.0.1.2: Custom GLFW Window Controls** (Minimize, Maximize/Restore, Quit)
   - [ ] **A46.0.1.3: ImGui Docking Refinement** (Fix issues and optimize layout)
   - [ ] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory, scene name)

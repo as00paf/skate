@@ -9,12 +9,15 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
+import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.utils.UnitSystem
 import com.pafoid.skate.game.level.LevelManager
+import imgui.ImGui
+import imgui.flag.ImGuiColorEditFlags
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.beginMenuBar
 import imgui.internal.ImGui.checkbox
@@ -58,6 +61,7 @@ class EditorMenuBar(
     private val setFullscreen: (Boolean) -> Unit,
     private val setVSync: (Boolean) -> Unit
 ) {
+    private val windowController = WindowController(glfwWindow)
 
     /**
      * Renders the complete menu bar.
@@ -69,7 +73,61 @@ class EditorMenuBar(
             buildEditMenu(currentScene)
             buildSettingsMenu()
             buildViewMenu()
+
+            // Window dragging logic
+            handleDragging()
+
+            // Aligns window controls to the right
+            buildWindowControls()
+
             endMenuBar()
+        }
+    }
+
+    private fun handleDragging() {
+        val mouseX = DoubleArray(1)
+        val mouseY = DoubleArray(1)
+        GLFW.glfwGetCursorPos(glfwWindow, mouseX, mouseY)
+
+        // Only allow dragging if the mouse is in the menu bar area
+        // We use getFrameHeight() which corresponds to the height of the menu bar
+        val isOverMenuBar = mouseY[0] >= 0 && mouseY[0] <= ImGui.getFrameHeight()
+
+        if (isOverMenuBar && ImGui.isWindowHovered() && ImGui.isMouseClicked(0)) {
+            // Check if we're not clicking on any menu item or other active widget
+            if (!ImGui.isAnyItemActive() && !ImGui.isAnyItemHovered()) {
+                windowController.startDrag(mouseX[0], mouseY[0])
+            }
+        }
+
+        if (ImGui.isMouseDown(0)) {
+            windowController.updateDrag(mouseX[0], mouseY[0])
+        } else {
+            windowController.stopDrag()
+        }
+    }
+
+    private fun buildWindowControls() {
+        val buttonWidth = 40f
+        val totalWidth = buttonWidth * 3 + 4f // 3 buttons + very small padding
+        
+        ImGui.setCursorPosX(ImGui.getWindowWidth() - totalWidth)
+        ImGui.setCursorPosY(4f) // Lowered slightly
+
+        // Minimize
+        if (ImGui.menuItem(Icons.WINDOW_MINIMIZE)) {
+            windowController.minimize()
+        }
+
+        // Maximize/Restore
+        val maxRestoreIcon = if (windowController.isMaximized()) Icons.WINDOW_RESTORE else Icons.WINDOW_MAXIMIZE
+        if (ImGui.menuItem(maxRestoreIcon)) {
+            windowController.toggleMaximize()
+        }
+
+        // Close
+        if (ImGui.menuItem(Icons.WINDOW_CLOSE)) {
+            windowController.close()
         }
     }
 

@@ -112,7 +112,7 @@ class Window(
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE)
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE)
-        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE)
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE)
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, openGLDebug)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
