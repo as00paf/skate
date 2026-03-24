@@ -58,12 +58,19 @@ object SkeletonMath {
 
     fun buildSkinMatrices(pose: SkeletonPose, outPalette: Array<Matrix4f>) {
         val skeleton = pose.skeleton
-        val boneCount = minOf(skeleton.boneCount, outPalette.size)
-
         // Compute global transforms from local transforms
         computeGlobalTransforms(skeleton.rootBone, pose.localTransforms, pose.globalTransforms)
+        buildSkinMatricesFromGlobal(pose, outPalette)
+    }
 
-        // Build the skin matrices
+    /**
+     * Builds the skin matrices using the EXISTING global transforms in the pose.
+     * This is useful when global transforms are driven by external sources like physics (Ragdoll).
+     */
+    fun buildSkinMatricesFromGlobal(pose: SkeletonPose, outPalette: Array<Matrix4f>) {
+        val skeleton = pose.skeleton
+        val boneCount = minOf(skeleton.boneCount, outPalette.size)
+
         for (i in 0 until boneCount) {
             val bone = skeleton.bones[i]
             if (bone != null) {

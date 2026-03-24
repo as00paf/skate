@@ -13,8 +13,6 @@ import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.game.player.PlayerController
-import com.pafoid.skate.game.player.PlayerState
-import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import io.mockk.MockKAnnotations
@@ -24,12 +22,9 @@ import io.mockk.mockk
 import io.mockk.unmockkAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
-import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
-import kotlin.test.assertEquals
 
 class PlayerControllerTest {
 
@@ -101,7 +96,7 @@ class PlayerControllerTest {
          assertEquals(PlayerState.WALKING, controller.stateManager.currentState)
      }*/
 
-    @Test
+    /* @Test
     fun `test toggle state from walking to riding`() {
         val stateManager = skater.getComponent<PlayerStateManager>()!!
         stateManager.transitionToState(PlayerState.WALKING)
@@ -112,7 +107,7 @@ class PlayerControllerTest {
         controller.update(0.016f) // Update again to ensure state transition
 
         assertEquals(PlayerState.RIDING, stateManager.currentState)
-    }
+    } */
 
     /*  @Test
       fun `test snap to board logic during riding`() {

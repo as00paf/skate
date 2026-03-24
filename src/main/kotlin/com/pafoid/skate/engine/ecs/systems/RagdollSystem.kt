@@ -1,10 +1,12 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
+import com.pafoid.skate.engine.utils.SkeletonMath
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -16,7 +18,7 @@ import org.joml.Vector3f
 class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
 
     private val tempVecJme = com.jme3.math.Vector3f()
-    private val tempQuatJme = com.jme3.math.Quaternion()
+    private val tempQuatJme = Quaternion()
 
     private val tempVecJoml = Vector3f()
     private val tempQuatJoml = Quaternionf()
@@ -67,7 +69,7 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
                     }
 
                     // Rebuild skin matrices based on the overwritten global transforms
-                    com.pafoid.skate.engine.utils.SkeletonMath.buildSkinMatrices(pose, skeletonComp.getMatrixPalette())
+                    SkeletonMath.buildSkinMatricesFromGlobal(pose, skeletonComp.getMatrixPalette())
                 }
 
                 RagdollState.ANIMATED -> {
@@ -88,7 +90,7 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
 
                             body.setPhysicsLocation(com.jme3.math.Vector3f(tempVecJoml.x, tempVecJoml.y, tempVecJoml.z))
                             body.setPhysicsRotation(
-                                com.jme3.math.Quaternion(
+                                Quaternion(
                                     tempQuatJoml.x,
                                     tempQuatJoml.y,
                                     tempQuatJoml.z,
