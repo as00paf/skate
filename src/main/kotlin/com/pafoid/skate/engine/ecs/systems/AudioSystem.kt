@@ -5,9 +5,12 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import imgui.ImGui
 import org.joml.Vector3f
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * ECS system for audio playback and 3D spatialization.
@@ -41,6 +44,34 @@ class AudioSystem(
         update(dt)
     }
 
+    override fun imgui() {
+        // Master Volume
+        val volumeArray = floatArrayOf(1.0f)
+        if (ImGui.dragFloat("Master Volume", volumeArray, 0.01f, 0f, 1f)) {
+            audioEngine.setMasterVolume(volumeArray[0])
+        }
+
+        // Mute toggle
+        val isMuted = volumeArray[0] <= 0.001f
+        if (ImGui.button(if (isMuted) "Unmute" else "Mute")) {
+            val newVolume = if (isMuted) 1.0f else 0.0f
+            audioEngine.setMasterVolume(newVolume)
+        }
+
+        ImGui.separator()
+
+        // Status
+        val status = if (audioEngine.isInitialized) "Initialized" else "Not Initialized"
+        val color = if (audioEngine.isInitialized) floatArrayOf(0f, 1f, 0f, 1f) else floatArrayOf(0.5f, 0.5f, 0.5f, 1f)
+        ImGui.textColored(color[0], color[1], color[2], color[3], "Status: $status")
+
+        ImGui.separator()
+
+        // Listener info
+        ImGui.text("Listener Information")
+        ImGui.text("Volume: %.2f".format(volumeArray[0]))
+    }
+
     private fun updateListener() {
         if (!audioEngine.isInitialized) return
 
@@ -69,10 +100,10 @@ class AudioSystem(
     private fun calculateForwardVector(yaw: Float, pitch: Float): Vector3f {
         val yawRad = Math.toRadians(yaw.toDouble())
         val pitchRad = Math.toRadians(pitch.toDouble())
-        val cosYaw = kotlin.math.cos(yawRad).toFloat()
-        val sinYaw = kotlin.math.sin(yawRad).toFloat()
-        val cosPitch = kotlin.math.cos(pitchRad).toFloat()
-        val sinPitch = kotlin.math.sin(pitchRad).toFloat()
+        val cosYaw = cos(yawRad).toFloat()
+        val sinYaw = sin(yawRad).toFloat()
+        val cosPitch = cos(pitchRad).toFloat()
+        val sinPitch = sin(pitchRad).toFloat()
 
         return Vector3f(
             cosYaw * cosPitch,
