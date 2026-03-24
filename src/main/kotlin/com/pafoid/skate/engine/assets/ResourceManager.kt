@@ -3,7 +3,7 @@ package com.pafoid.skate.engine.assets
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.assets.data.Sound
+import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.TextureData
 import com.pafoid.skate.engine.assets.data.models.BaseModel
@@ -56,7 +56,7 @@ class ResourceManager(
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
     private val models = ConcurrentHashMap<String, BaseModel>()
-    private val sounds = ConcurrentHashMap<String, Sound>()
+    private val sounds = ConcurrentHashMap<String, SoundBuffer>()
     private val animations = ConcurrentHashMap<String, Animation>()
     private val modelDependencies = ConcurrentHashMap<String, Set<String>>()
     private val lruQueue = CopyOnWriteArrayList<String>()
@@ -270,14 +270,14 @@ class ResourceManager(
         return shaders[File(path).absolutePath]
     }
 
-    fun loadSound(path: String, loops: Boolean): Sound {
+    fun loadSound(path: String): SoundBuffer {
         val file = File(path)
         val absolutePath = file.absolutePath
 
         sounds[absolutePath]?.let { return it }
 
         return try {
-            val sound = Sound(absolutePath, loops)
+            val sound = SoundBuffer(absolutePath)
             sounds[absolutePath] = sound
             sound
         } catch (e: Exception) {
@@ -286,7 +286,7 @@ class ResourceManager(
         }
     }
 
-    fun getSound(path: String): Sound? {
+    fun getSound(path: String): SoundBuffer? {
         return sounds[File(path).absolutePath]
     }
 
@@ -513,7 +513,6 @@ class ResourceManager(
         animations.clear()
 
         sounds.values.forEach {
-            it.stop()
             it.delete()
         }
         sounds.clear()

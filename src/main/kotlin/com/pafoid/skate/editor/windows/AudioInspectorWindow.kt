@@ -67,7 +67,16 @@ class AudioInspectorWindow : KoinComponent {
                 stringManager.getString("lbl.audio.sound_file"),
                 filePath
             )
-            audioComponent.soundFilePath = filePath.get()
+
+            if (ImGui.beginDragDropTarget()) {
+                val payload = ImGui.acceptDragDropPayload<String>("SOUND")
+                if (payload != null) {
+                    audioComponent.soundFilePath = payload
+                }
+                ImGui.endDragDropTarget()
+            } else {
+                audioComponent.soundFilePath = filePath.get()
+            }
 
             ImGui.separator()
 
@@ -94,11 +103,10 @@ class AudioInspectorWindow : KoinComponent {
             ImGui.separator()
 
             // Playback controls
-            val isPlaying = audioComponent.isPlaying()
+            val isPlaying = audioComponent.isPlaying
 
             if (!isPlaying) {
                 if (ImGui.button(stringManager.getString("btn.audio.play"))) {
-                    audioComponent.load()
                     audioComponent.play()
                 }
             } else {

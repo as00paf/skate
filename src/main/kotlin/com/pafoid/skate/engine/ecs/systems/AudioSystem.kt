@@ -2,11 +2,15 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import imgui.ImGui
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
 import kotlin.math.cos
@@ -21,9 +25,13 @@ import kotlin.math.sin
 class AudioSystem(
     private val audioEngine: AudioEngine,
     private val logger: LoggerService
-) : System(priority = ExecutionPriority.LATE) {
+) : System(priority = ExecutionPriority.LATE), KoinComponent {
 
+    private val resourceManager: ResourceManager by inject()
     private var isInitialized = false
+
+    // Maps Entity ID to its active SoundSource
+    private val activeSources = mutableMapOf<Int, SoundSource>()
 
     override fun update(dt: Float) {
         if (!isInitialized) {
@@ -113,17 +121,73 @@ class AudioSystem(
     }
 
     private fun updateAudioSources() {
+        val currentEntities = mutableSetOf<Int>()
+
         scene.gameObjectManager.gameObjects.forEach { gameObject ->
             val audioComponent = gameObject.getComponent<AudioComponent>()
             val transform = gameObject.getComponent<Transform>()
 
-            if (audioComponent != null && transform != null && audioComponent.is3D) {
-                audioComponent.updatePosition(transform.translation)
+            if (audioComponent != null) {
+                currentEntities.add(gameObject.getUid())
+                var source = activeSources[gameObject.getUid()]
+
+                if (source == null && audioComponent.soundFilePath.isNotBlank()) {
+                    // Try to load the sound buffer
+                    val buffer = resourceManager.loadSound(audioComponent.soundFilePath)
+                    if (buffer.bufferId != -1) {
+                        source = SoundSource(audioComponent.loops, !audioComponent.is3D)
+                        source.setBuffer(buffer.bufferId)
+                        activeSources[gameObject.getUid()] = source
+                    }
+                }
+
+                if (source != null) {
+                    // Update state
+                    source.setVolume(audioComponent.volume)
+                    source.setLooping(audioComponent.loops)
+                    source.setRelative(!audioComponent.is3D)
+
+                    if (transform != null && audioComponent.is3D) {
+                        source.setPosition(transform.translation.x, transform.translation.y, transform.translation.z)
+                    } else {
+                        // For 2D sounds (relative), position is usually 0,0,0 relative to listener
+                        source.setPosition(0f, 0f, 0f)
+                    }
+
+                    // Handle playback requests
+                    if (audioComponent.playRequested) {
+                        source.play()
+                        audioComponent.playRequested = false
+                        audioComponent.isPlaying = true
+                    }
+                    if (audioComponent.pauseRequested) {
+                        source.pause()
+                        audioComponent.pauseRequested = false
+                        audioComponent.isPlaying = false
+                    }
+                    if (audioComponent.stopRequested) {
+                        source.stop()
+                        audioComponent.stopRequested = false
+                        audioComponent.isPlaying = false
+                    }
+
+                    // Sync isPlaying state back to component
+                    audioComponent.isPlaying = source.isPlaying()
+                }
             }
+        }
+
+        // Cleanup sources for removed components/entities
+        val removedEntities = activeSources.keys - currentEntities
+        removedEntities.forEach { id ->
+            activeSources[id]?.delete()
+            activeSources.remove(id)
         }
     }
 
     override fun destroy() {
         isInitialized = false
+        activeSources.values.forEach { it.delete() }
+        activeSources.clear()
     }
 }

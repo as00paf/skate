@@ -1,17 +1,13 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.editor.systems.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.engine.assets.data.Sound
-import com.pafoid.skate.engine.audio.AudioEngine
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.joml.Vector3f
 
 /**
- * AudioComponent attaches a sound source to a GameObject.
- *
+ * AudioComponent is a pure data container for a sound source attached to a GameObject.
+ * 
  * Supports 2D and 3D audio with spatialization, looping, and volume control.
+ * Playback logic and OpenAL interactions are handled by AudioSystem.
  */
 @Serializable
 class AudioComponent(
@@ -22,45 +18,33 @@ class AudioComponent(
 ) : Component() {
 
     @Transient
-    private var sound: Sound? = null
-
+    var isPlaying: Boolean = false
+    
     @Transient
-    private var isLoaded = false
-
+    var playRequested: Boolean = false
+    
     @Transient
-    private var audioEngine: AudioEngine? = null
-
+    var stopRequested: Boolean = false
+    
     @Transient
-    private var logger: LoggerService? = null
-
-    fun setDependencies(audioEngine: AudioEngine, logger: LoggerService) {
-        this.audioEngine = audioEngine
-        this.logger = logger
-    }
-
-    fun load() {
-        if (isLoaded || soundFilePath.isBlank()) return
-
-        try {
-            sound = Sound(soundFilePath, loops)
-            applyVolume(volume)
-            isLoaded = true
-        } catch (e: Exception) {
-            logger?.logEngine("AudioComponent: Failed to load sound '$soundFilePath' - ${e.message}", LogLevel.ERROR)
-        }
-    }
+    var pauseRequested: Boolean = false
 
     fun play() {
-        if (!isLoaded) load()
-        sound?.play()
+        playRequested = true
+        stopRequested = false
+        pauseRequested = false
     }
 
     fun stop() {
-        sound?.stop()
+        stopRequested = true
+        playRequested = false
+        pauseRequested = false
     }
 
     fun pause() {
-        stop()
+        pauseRequested = true
+        playRequested = false
+        stopRequested = false
     }
 
     fun applyVolume(vol: Float) {
@@ -72,21 +56,10 @@ class AudioComponent(
     }
 
     fun applyLooping(loop: Boolean) {
-        loops = loop
-    }
-
-    fun isPlaying(): Boolean {
-        return sound?.isPlaying() ?: false
-    }
-
-    fun updatePosition(position: Vector3f) {
-        if (!is3D || !isLoaded) return
-        // TODO: Implement 3D position update in Sound class
+        this.loops = loop
     }
 
     override fun destroy() {
-        sound?.delete()
-        sound = null
-        isLoaded = false
+        // Handled by AudioSystem which will detect removal or cleanup
     }
 }

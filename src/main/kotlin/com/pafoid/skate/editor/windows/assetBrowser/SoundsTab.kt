@@ -5,7 +5,7 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.data.Sound
+import com.pafoid.skate.engine.assets.data.SoundSource
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -24,7 +24,7 @@ class SoundsTab(
 ) : AssetBrowserTab(resourceManager, thumbnailCache, stringManager), KoinComponent {
 
     private val logger: LoggerService by inject()
-    private var playingSound: Sound? = null
+    private var playingSource: SoundSource? = null
     private var currentPlayingFile: File? = null
 
     override fun renderFileItem(file: File) {
@@ -36,29 +36,31 @@ class SoundsTab(
 
         // Music note icon placeholder
         ImGui.dummy(iconSize, iconSize)
-        val isPlaying = currentPlayingFile == file && playingSound?.isPlaying() == true
+        val isPlaying = currentPlayingFile == file && playingSource?.isPlaying() == true
 
         // Single toggle button with icon
         val buttonText = if (isPlaying) "⏹ Stop" else "▶ Play"
         if (ImGui.button(buttonText, iconSize * 2f, 0f)) {
             if (isPlaying) {
-                playingSound?.stop()
-                playingSound?.delete()
+                playingSource?.stop()
+                playingSource?.delete()
                 currentPlayingFile = null
             } else {
                 // Stop any currently playing sound
-                playingSound?.stop()
-                playingSound?.delete()
+                playingSource?.stop()
+                playingSource?.delete()
 
                 currentPlayingFile = file
                 try {
                     logger.logEngine("SoundsTab: Loading sound '${file.path}'", LogLevel.INFO)
-                    playingSound = Sound(file.absolutePath, false)
-                    if (playingSound != null) {
+                    val buffer = resourceManager.loadSound(file.absolutePath)
+                    if (buffer.bufferId != -1) {
+                        playingSource = SoundSource(isLooping = false, isRelative = true)
+                        playingSource?.setBuffer(buffer.bufferId)
                         logger.logEngine("SoundsTab: Playing sound '${file.name}'", LogLevel.INFO)
-                        playingSound?.play()
+                        playingSource?.play()
                     } else {
-                        logger.logEngine("SoundsTab: Failed to create Sound object", LogLevel.ERROR)
+                        logger.logEngine("SoundsTab: Failed to load Sound buffer", LogLevel.ERROR)
                         currentPlayingFile = null
                     }
                 } catch (e: Exception) {
@@ -69,17 +71,17 @@ class SoundsTab(
             }
         }
 
-        ImGui.textWrapped(file.name)
-        ImGui.dummy(0f, padding)
-        ImGui.endGroup()
-        ImGui.popID()
-
         // Drag and drop source for audio files (must be after item)
-        if (ImGui.isItemHovered() && ImGui.beginDragDropSource()) {
+        if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("SOUND", file.path)
             ImGui.text("♪ " + file.name)
             ImGui.endDragDropSource()
         }
+
+        ImGui.textWrapped(file.name)
+        ImGui.dummy(0f, padding)
+        ImGui.popID()
+        ImGui.endGroup()
     }
 
     override fun refreshAssets() {
@@ -94,8 +96,8 @@ class SoundsTab(
     }
 
     fun destroy() {
-        playingSound?.delete()
-        playingSound = null
+        playingSource?.delete()
+        playingSource = null
         currentPlayingFile = null
     }
 }
