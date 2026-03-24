@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.windows.assetBrowser.AnimationsTab
 import com.pafoid.skate.editor.windows.assetBrowser.PrefabsTab
+import com.pafoid.skate.editor.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.windows.assetBrowser.TexturesTab
 import com.pafoid.skate.engine.assets.ResourceManager
 import imgui.ImGui
@@ -25,6 +26,7 @@ class AssetBrowserWindow : IWindow, KoinComponent {
     private val animationsTab = AnimationsTab(resourceManager, thumbnailCache, stringManager)
     private val texturesTab = TexturesTab(resourceManager, thumbnailCache, stringManager)
     private val prefabsTab = PrefabsTab(resourceManager, thumbnailCache, stringManager, prefabsGenerator)
+    private val soundsTab = SoundsTab(resourceManager, thumbnailCache, stringManager)
 
     init {
         prefabsTab.refreshAssets()
@@ -42,6 +44,10 @@ class AssetBrowserWindow : IWindow, KoinComponent {
             }
             if (ImGui.beginTabItem(stringManager.getString("lbl.textures"))) {
                 texturesTab.imgui("##searchTextures", searchText)
+                ImGui.endTabItem()
+            }
+            if (ImGui.beginTabItem(stringManager.getString("lbl.sounds"))) {
+                soundsTab.imgui("##searchSounds", searchText)
                 ImGui.endTabItem()
             }
             if (ImGui.beginTabItem(stringManager.getString("lbl.prefabs"))) {
