@@ -21,6 +21,7 @@ import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
+import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
@@ -55,6 +56,7 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
     private val renderer: Renderer by inject()
     private val engine: Engine by inject()
     private val inputProvider: com.pafoid.skate.engine.input.IInputProvider by inject()
+    private val audioEngine: com.pafoid.skate.engine.audio.AudioEngine by inject()
 
     private var currentScene: Scene? = null
 
@@ -105,6 +107,9 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         )
         scene.addSystem(GridLines(debugRenderer, sceneManager, GridConfig(), stringManager))
         scene.addSystem(AnimationSystem(stringManager))
+
+        // Audio system - manages 3D audio positions and listener
+        scene.addSystem(AudioSystem(audioEngine, logger))
 
         // Environment system - manages sky, fog, and atmosphere settings
         scene.addSystem(EnvironmentSystem(stringManager = stringManager))

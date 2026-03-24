@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.core
 import com.pafoid.skate.app.SplashScreen
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.renderer.Renderer
@@ -16,6 +17,7 @@ class BootManager(
     private val renderer: Renderer,
     private val logger: LoggerService,
     private val splashScreen: SplashScreen,
+    private val audioEngine: AudioEngine,
     private val mainDispatcher: CoroutineDispatcher = JobSystem.Main
 ) {
 

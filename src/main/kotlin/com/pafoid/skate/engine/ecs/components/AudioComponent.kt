@@ -1,19 +1,22 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.data.Sound
+import com.pafoid.skate.engine.audio.AudioEngine
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 /**
  * AudioComponent attaches a sound source to a GameObject.
- * 
+ *
  * Supports:
  * - 2D audio (ignores position, global sound)
  * - 3D audio (position-based spatialization)
  * - Looping control
  * - Volume control per source
  * - Play/pause/stop controls
- * 
+ *
  * @param soundFilePath Path to the audio file (WAV or OGG)
  * @param is3D Whether this sound should be spatialized in 3D space
  * @param loops Whether the sound should loop continuously
@@ -26,21 +29,39 @@ class AudioComponent(
     var loops: Boolean = false,
     var volume: Float = 1.0f
 ) : Component() {
-    
+
     @Transient
     private var sound: Sound? = null
-    
+
     @Transient
     private var isLoaded = false
-    
+
     @Transient
-    private var audioEngine: com.pafoid.skate.engine.audio.AudioEngine? = null
+    private var audioEngine: AudioEngine? = null
+
+    @Transient
+    private var logger: LoggerService? = null
+
+    /**
+     * Sets dependencies after deserialization.
+     */
+    fun setDependencies(audioEngine: AudioEngine, logger: LoggerService) {
+        this.audioEngine = audioEngine
+        this.logger = logger
+    }
     
     /**
      * Sets the audio engine reference for 3D positioning.
      */
-    fun setAudioEngine(engine: com.pafoid.skate.engine.audio.AudioEngine) {
+    fun setAudioEngine(engine: AudioEngine) {
         this.audioEngine = engine
+    }
+
+    /**
+     * Sets the logger reference.
+     */
+    fun setLogger(logger: LoggerService) {
+        this.logger = logger
     }
     
     /**
@@ -49,13 +70,13 @@ class AudioComponent(
      */
     fun load() {
         if (isLoaded || soundFilePath.isBlank()) return
-        
+
         try {
             sound = Sound(soundFilePath, loops)
             applyVolume(volume)
             isLoaded = true
         } catch (e: Exception) {
-            println("AudioComponent: Failed to load sound '$soundFilePath' - ${e.message}")
+            logger?.logEngine("AudioComponent: Failed to load sound '$soundFilePath' - ${e.message}", LogLevel.ERROR)
         }
     }
     
