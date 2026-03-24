@@ -27,9 +27,12 @@ Every task must follow this strict lifecycle:
 8.  **Await:** Go back to the master branch and wait for further instructions.
 
 ## 🚦 3. Operational Flow
-* **One Step at a Time:** Work on exactly one item from the `TODO.md` list. Do not anticipate or jump to the next item.
+
+* **One Step at a Time:** Work on exactly one item from the `docs/TODO.md` list. Do not anticipate or jump to the next
+  item.
 * **User Confirmation:** After completing an item or a task, you must wait for the user to say "Ready to move on" or "Proceed" before starting the next item.
-* **TODO Management:** Maintain and update a `TODO.md` file in the root. Mark items as complete `[x]` only after they are merged into `master` and pushed to the repository.
+* **TODO Management:** Maintain and update the `docs/TODO.md` file. Mark items as complete `[x]` only after they are
+  merged into `master` and pushed to the repository.
 * **Troubleshooting:** If a bug arises, confirm with the user if we need to branch off to a `bug/` branch if we are not currently on a feature branch. Do not fix bugs directly in `master`.
 
 ## 🧪 4. TDD (Test-Driven Development) Protocol
