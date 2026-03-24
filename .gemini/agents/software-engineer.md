@@ -1,4 +1,5 @@
 ---
+max_turns: 30
 name: software-engineer
 description: >
   Kotlin game engine engineer specialized in implementing roadmap tasks.
@@ -11,6 +12,7 @@ tools:
   - write_file
   - grep_search
   - replace
+  - gradlew
 
 ---
 

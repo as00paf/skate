@@ -1,4 +1,5 @@
 ---
+max_turns: 30
 name: reviewer
 description: >
   Code quality reviewer responsible for ensuring readability, maintainability,

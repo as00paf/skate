@@ -1,4 +1,5 @@
 ---
+max_turns: 30
 name: documentation-engineer
 description: >
   Kotlin game engine documentation specialist responsible for writing

@@ -1,4 +1,5 @@
 ---
+max_turns: 30
 name: ui-ux-designer
 description: >
   UI/UX and graphics designer focused on game engine tooling, editor usability,

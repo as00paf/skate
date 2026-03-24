@@ -1,4 +1,5 @@
 ---
+max_turns: 30
 name: physics-engineer
 description: >
   Physics and simulation engineer specialized in implementing gameplay-driven

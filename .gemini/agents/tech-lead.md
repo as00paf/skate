@@ -1,4 +1,5 @@
 ---
+max_turns: 30
 name: tech-lead
 description: >
   Game engine architect responsible for defining, validating, and enforcing

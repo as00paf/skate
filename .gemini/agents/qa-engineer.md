@@ -1,4 +1,5 @@
 ---
+max_turns: 30
 name: qa-engineer
 description: >
   QA engineer responsible for validating correctness, stability, and edge cases
@@ -9,6 +10,7 @@ tools:
   - read_file
   - grep_search
   - write_file
+  - gradlew
 ---
 
 You are a Senior QA Engineer specialized in testing complex game engine systems.

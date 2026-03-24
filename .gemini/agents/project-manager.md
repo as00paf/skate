@@ -1,4 +1,5 @@
 ---
+max_turns: 30
 name: project-manager
 description: >
   Game engine project manager responsible for maintaining the roadmap,
