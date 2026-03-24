@@ -4,6 +4,24 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.45.0.4] - 2026-03-23: Implement Ragdoll Physics
+
+### Summary
+
+Implemented Ragdoll Physics successfully according to the ECS architecture.
+
+### Completed
+
+- Implemented Ragdoll Component and Ragdoll System
+- Implemented CapsuleCollider3D and Builder for Ragdoll creation
+- Defined and created ragdoll skeletons from skeletal data
+- Added ability to activate/deactivate ragdolls with animation blending
+- Enabled ragdoll responses to physics forces (gravity, collisions)
+- Integrated with physics system and component model
+- Tests implemented successfully
+
+---
+
 ## [v0.45.0.3] - 2026-03-23: Develop Basic Audio System
 
 ### Summary

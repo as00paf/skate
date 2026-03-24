@@ -10,7 +10,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 **Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
 
-- [ ] **A45.0.4: Implement Ragdoll Physics**
+- [x] **A45.0.4: Implement Ragdoll Physics**
   - Define and create ragdoll skeletons from skeletal data
   - Activate/deactivate ragdolls with animation blending
   - Ragdolls respond to physics forces (gravity, collisions)
