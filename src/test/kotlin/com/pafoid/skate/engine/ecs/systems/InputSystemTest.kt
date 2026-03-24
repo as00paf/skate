@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
+import com.pafoid.skate.engine.ecs.scene.createGameObject
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
@@ -59,11 +60,11 @@ class InputSystemTest {
     @BeforeEach
     fun setup() {
         // Create mocks
-        inputProvider = mockk()
-        mouseListener = mockk()
-        stringManager = mockk()
-        settingsManager = mockk()
-        sceneInitializer = mockk()
+        inputProvider = mockk(relaxed = true)
+        mouseListener = mockk(relaxed = true)
+        stringManager = mockk(relaxed = true)
+        settingsManager = mockk(relaxed = true)
+        sceneInitializer = mockk(relaxed = true)
 
         // Create test scene
         scene = Scene("TestScene", sceneInitializer)
@@ -104,6 +105,9 @@ class InputSystemTest {
             every { editorInputMappings } returns this@InputSystemTest.editorInputMappings
         }
 
+        // Ensure game input is processed by default
+        every { inputProvider.isCursorDisabled() } returns true
+
         // Create input system
         inputSystem = InputSystem(
             inputProvider = inputProvider,
@@ -134,7 +138,9 @@ class InputSystemTest {
     @Test
     fun `JumpPressed event published when jump button pressed`() {
         // Arrange
-        scene.gameObjectManager.createGameObject("TestPlayer").addComponent(InputStateComponent())
+        val player = scene.gameObjectManager.createGameObject("TestPlayer")
+        player.addComponent(InputStateComponent())
+        scene.gameObjectManager.addGameObject(player)
 
         // Add EventSystem to scene
         val eventSystem = EventSystem()
@@ -148,23 +154,22 @@ class InputSystemTest {
         buttons[0] = true // Jump button pressed
         every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns buttons
 
+        var jumpPressedReceived = false
+        eventSystem.subscribe<JumpPressed> { jumpPressedReceived = true }
+
         // Act
         inputSystem.update(0.016f)
 
         // Assert - verify event was published
-        var jumpPressedReceived = false
-        eventSystem.subscribe<JumpPressed> { jumpPressedReceived = true }
-
-        // Trigger another update to check event
-        inputSystem.update(0.016f)
-
         assertTrue(jumpPressedReceived, "JumpPressed event should be published on first press")
     }
 
     @Test
     fun `JumpReleased event published when jump button released`() {
         // Arrange
-        scene.gameObjectManager.createGameObject("TestPlayer").addComponent(InputStateComponent())
+        val player = scene.createGameObject("TestPlayer")
+        player.addComponent(InputStateComponent())
+        scene.gameObjectManager.addGameObject(player)
 
         val eventSystem = EventSystem()
         eventSystem.init(scene)
@@ -180,25 +185,26 @@ class InputSystemTest {
         // First update (press)
         inputSystem.update(0.016f)
 
-        // Now release
+        // Now prepare to release
         val buttonsReleased = BooleanArray(10)
         every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns buttonsReleased
 
-        // Act
+        var jumpReleasedReceived = false
+        eventSystem.subscribe<JumpReleased> { jumpReleasedReceived = true }
+
+        // Act - release update
         inputSystem.update(0.016f)
 
         // Assert
-        var jumpReleasedReceived = false
-        eventSystem.subscribe<JumpReleased> { jumpReleasedReceived = true }
-        inputSystem.update(0.016f)
-
         assertTrue(jumpReleasedReceived, "JumpReleased event should be published on release")
     }
 
     @Test
     fun `TrickInput events published for trick buttons`() {
         // Arrange
-        scene.gameObjectManager.createGameObject("TestPlayer").addComponent(InputStateComponent())
+        val player = scene.createGameObject("TestPlayer")
+        player.addComponent(InputStateComponent())
+        scene.gameObjectManager.addGameObject(player)
 
         val eventSystem = EventSystem()
         eventSystem.init(scene)
@@ -210,14 +216,13 @@ class InputSystemTest {
         buttons[2] = true // Kickflip button
         every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns buttons
 
+        val receivedTricks = mutableListOf<TrickInput>()
+        eventSystem.subscribe<TrickInput> { receivedTricks.add(it) }
+
         // Act
         inputSystem.update(0.016f)
 
         // Assert
-        val receivedTricks = mutableListOf<TrickInput>()
-        eventSystem.subscribe<TrickInput> { receivedTricks.add(it) }
-        inputSystem.update(0.016f)
-
         assertTrue(
             receivedTricks.any { it.trickType == TrickType.KICKFLIP && it.isPressed },
             "Kickflip TrickInput event should be published"
