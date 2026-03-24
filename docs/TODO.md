@@ -10,19 +10,13 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 **Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
 
-- [x] **A45.0.4: Implement Ragdoll Physics**
-  - Define and create ragdoll skeletons from skeletal data
-  - Activate/deactivate ragdolls with animation blending
-  - Ragdolls respond to physics forces (gravity, collisions)
-  - Integration with physics system and component model
+- [ ] **A46.0.6: Improve Editor Scene Manipulation Tools**
+  - More responsive and visually clear gizmos
+  - Grid and object snapping options
+  - Improved camera controls for scene view
+  - Tools for duplicating and grouping objects
 
-- [ ] **A45.0.5: Set up Automated Testing Framework**
-  - Integrate testing framework (JUnit) into build process
-  - Unit tests for critical modules (ECS, asset loading, math)
-  - Integration tests for major system interactions
-  - Incorporate visual assertion tools into test suite
-
-- [ ] **A45.0.6: Refactor Renderer to Render Graph System**
+- [ ] **A45.0.7: Refactor Renderer to Render Graph System**
   - Define render graph structure with pass inputs/outputs
   - Dynamic pass compilation into execution order
   - Convert existing passes (Shadow, Picking, Geometry, Debug)
@@ -73,12 +67,6 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - Bone transformation mapping between skeletons
   - Retarget humanoid animations to different rigs
   - Preserve animation feel and intent
-
-- [ ] **A46.0.8: Improve Editor Scene Manipulation Tools**
-  - More responsive and visually clear gizmos
-  - Grid and object snapping options
-  - Improved camera controls for scene view
-  - Tools for duplicating and grouping objects
 
 ---
 

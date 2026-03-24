@@ -4,6 +4,21 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.45.0.5] - 2026-03-24: Set up Automated Testing Framework & Fix Failing Tests
+
+### Summary
+
+Set up the automated testing framework, fixed failing tests, and expanded test coverage for core systems.
+
+### Completed
+
+- Fixed currently failing tests including AudioEngineTest, BootManagerTest, and AudioComponentTest
+- Expanded test coverage for core systems (ECS, asset loading, math)
+- Ensured all tests pass consistently in the CI/CD pipeline
+- Set up automated testing framework
+
+---
+
 ## [v0.45.0.4] - 2026-03-23: Implement Ragdoll Physics
 
 ### Summary
