@@ -39,6 +39,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - [ ] **A46.0.1.13: Implement Drag & Drop System** (Asset assignment and hierarchy reordering)
   - [ ] **A46.0.1.14: Implement "Search Everywhere" Global Search** (Ctrl+P)
   - [ ] **A46.0.1.15: Improve Gizmos & Undo/Redo History UI**
+  - [ ] **A46.0.1.16: Implement Render Graph Visualization Window** (Display pass structure and dependencies)
 
 - [ ] **A46.0.2: Implement Advanced Lighting Models**
   - Point lights with position, color, intensity

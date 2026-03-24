@@ -155,6 +155,7 @@ as enhancing gizmos and camera controls.
 *   [ ] **Search:** "Search Everywhere" global search (Ctrl+P) for quick access to objects and assets.
 *   [ ] **History:** Undo/Redo history UI for tracking scene changes.
 *   [ ] **Gizmos:** Improved responsiveness and visual clarity for transformation tools.
+*   [ ] **Render Graph:** Visualization window for pass structure, execution order, and resource dependencies.
 
 **Technical Notes:** Implementation must follow Clean Architecture and ECS principles. Styles should be centralized
 in a theme manager. Event system should be used for cross-window communication (e.g., asset selection).
