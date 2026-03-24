@@ -10,13 +10,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 **Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
 
-- [ ] **A46.0.6: Improve Editor Scene Manipulation Tools**
-  - More responsive and visually clear gizmos
-  - Grid and object snapping options
-  - Improved camera controls for scene view
-  - Tools for duplicating and grouping objects
-
-- [ ] **A45.0.7: Refactor Renderer to Render Graph System**
+- [ ] **A45.0.6: Refactor Renderer to Render Graph System**
   - Define render graph structure with pass inputs/outputs
   - Dynamic pass compilation into execution order
   - Convert existing passes (Shadow, Picking, Geometry, Debug)
@@ -28,45 +22,63 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 **Focus:** Advanced rendering, core gameplay mechanics, and core tooling
 
-- [ ] **A46.0.1: Implement Advanced Lighting Models**
+- [⏳] **A46.0.1: Comprehensive Engine UI & Editor Tooling Revamp**
+  - **Status: IMPLEMENTATION**
+  - [ ] **A46.0.1.1: Visual Style & Theme Implementation** (Islands Dark / IntelliJ-like)
+  - [ ] **A46.0.1.2: Custom GLFW Window Controls** (Minimize, Maximize/Restore, Quit)
+  - [ ] **A46.0.1.3: ImGui Docking Refinement** (Fix issues and optimize layout)
+  - [ ] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory, scene name)
+  - [ ] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
+  - [ ] **A46.0.1.6: Refactor Properties Window** (Rename from Inspector, improve layout)
+  - [ ] **A46.0.1.7: Enhance Scene Hierarchy** (Visibility/lock toggles, search, "+" button, link button)
+  - [ ] **A46.0.1.8: Implement File System / Asset Browser Window** (Dedicated asset navigation)
+  - [ ] **A46.0.1.9: Enhance Console Window** (Add search function and "Clear" button)
+  - [ ] **A46.0.1.10: Implement Profiler Graph View** (Real-time performance metrics)
+  - [ ] **A46.0.1.11: Redesign Viewport Toolbar** (New layout, icons, and gizmo toggles)
+  - [ ] **A46.0.1.12: Add Contextual Menus** (Right-click in Hierarchy, Assets, and Viewport)
+  - [ ] **A46.0.1.13: Implement Drag & Drop System** (Asset assignment and hierarchy reordering)
+  - [ ] **A46.0.1.14: Implement "Search Everywhere" Global Search** (Ctrl+P)
+  - [ ] **A46.0.1.15: Improve Gizmos & Undo/Redo History UI**
+
+- [ ] **A46.0.2: Implement Advanced Lighting Models**
   - Point lights with position, color, intensity
   - Spot lights with adjustable parameters
   - Image-Based Lighting (IBL) with environment maps
   - Correct lighting calculations for all light types
 
-- [ ] **A46.0.2: Develop Post-Processing Stack**
+- [ ] **A46.0.3: Develop Post-Processing Stack**
   - Framework for adding and chaining post-processing effects
   - Implement bloom, depth of field, color grading
   - Screen-space shaders using FBOs
   - Enable/disable and configure effects via editor or scripts
 
-- [ ] **A46.0.3: Create Advanced Material System**
+- [ ] **A46.0.4: Create Advanced Material System**
   - Standard PBR material model (Metallic-Roughness workflow)
   - Manage material properties (textures, scalars)
   - Integrate with rendering pipeline and shaders
   - Support shader variants based on material properties
 
-- [ ] **A46.0.4: Implement In-Game UI System**
+- [ ] **A46.0.5: Implement In-Game UI System**
   - Hierarchy of UI elements (Panel, Button, Text, Image)
   - Position, size, and style UI elements
   - User interaction support (clicks, input)
   - Efficient rendering integrated into main scene
 
-- [ ] **A46.0.5: Develop VFX/Particle System**
+- [ ] **A46.0.6: Develop VFX/Particle System**
   - Particle emitter component
   - Particle properties (lifetime, size, color, velocity, texture)
   - Particle behaviors (gravity, drag, collision)
   - Efficient rendering of large particle counts
 
-- [ ] **A46.0.6: Implement Advanced Physics Constraints**
-  - Additional Bullet constraints (Generic6DofConstraint, etc.)
-  - API for creating and configuring constraints
-  - Stable constraint simulation
-
 - [ ] **A46.0.7: Enhance Animation System (Retargeting)**
   - Bone transformation mapping between skeletons
   - Retarget humanoid animations to different rigs
   - Preserve animation feel and intent
+
+- [ ] **A46.0.8: Implement Advanced Physics Constraints**
+  - Additional Bullet constraints (Generic6DofConstraint, etc.)
+  - API for creating and configuring constraints
+  - Stable constraint simulation
 
 ---
 

@@ -29,21 +29,23 @@ tooling.
 * **Rendering Pipeline:** A flexible multi-pass forward renderer supporting essential stages like shadow mapping, object
   picking, and debug rendering, with FBO integration for the editor.
 * **Physics Integration:** Robust 3D physics using Bullet, with a clean abstraction layer (`IPhysics3D`), fixed
-  timestep, and a debug renderer.
+  timestep, and a debug renderer. Includes ragdoll physics support.
 * **Editor Tooling:** An extensive and well-integrated ImGui-based editor suite, including scene hierarchy, property
   inspector, asset browser, and transformation gizmos.
 * **Code Quality:** Clean, modular, and maintainable Kotlin codebase adhering to good software engineering principles.
 * **Animation System:** A foundational skeletal animation system capable of bone, skeleton, and animation playback.
+* **Asset Pipeline:** Functional asset management with support for shaders, models, and basic hot-reloading.
+* **Scene Management:** Robust system for saving and loading scenes to disk.
+* **Audio System:** Integrated basic audio engine for sound effects and music.
+* **Automated Testing:** Established automated testing framework with unit and integration tests.
 
 ### Critical Gaps
 
 * **Advanced Rendering:** Lack of deferred rendering, post-processing effects, advanced lighting (point/spot lights,
   IBL), and a sophisticated material system.
-* **Audio System:** No integrated audio engine for sound effects and music.
-* **Scene Management:** No robust system for saving and loading scenes to disk.
 * **In-Game UI:** No system for creating user-facing interfaces (menus, HUDs).
 * **VFX/Particle System:** No system for particle effects.
-* **Advanced Physics:** Missing ragdoll physics and high-level physics constraint support.
+* **Advanced Physics:** Missing high-level physics constraint support.
 * **Scripting:** No integrated scripting language for game logic implementation.
 * **Networking:** No networking capabilities for multiplayer.
 
@@ -51,9 +53,6 @@ tooling.
 
 * **Renderer Centralization:** `Renderer.kt` is becoming a monolithic class; refactoring towards a render graph system
   is recommended.
-* **Asset Pipeline:** Current asset management is rudimentary; needs enhancement for dependency tracking, caching, and
-  hot-reloading.
-* **Automated Testing:** Limited automated testing suite poses a risk for regressions.
 
 ---
 
@@ -63,56 +62,45 @@ tooling.
 
 | ID      | Task                                     | Priority  | Effort | Dependencies | Status |
 |:--------|:-----------------------------------------|:----------|:-------|:-------------|:-------|
-| A45.0.1 | Enhance Asset Management Pipeline        | 🔴 High   | L      | None         | ⬜ Todo |
-| A45.0.2 | Implement Scene Serialization            | 🔴 High   | L      | A45.0.1      | ⬜ Todo |
-| A45.0.3 | Develop Basic Audio System               | 🔴 High   | M      | None         | ⬜ Todo |
-| A45.0.4 | Implement Ragdoll Physics                | 🔴 High   | L      | None         | ⬜ Todo |
-| A45.0.5 | Set up Automated Testing Framework       | 🟡 Medium | M      | None         | ⬜ Todo |
 | A45.0.6 | Refactor Renderer to Render Graph System | 🟡 Medium | L      | None         | ⬜ Todo |
 
 **Phase 1 Deliverables:**
 
-* A robust asset pipeline capable of managing and hot-reloading game assets.
-* Functional scene saving and loading capabilities.
-* A basic audio system for sound playback.
-* Integrated ragdoll physics for character simulation.
-* A scripting system enabling custom game logic.
-* An initial automated testing framework.
-* A refactored, more modular rendering system.
+* A refactored, more modular rendering system based on a render graph.
 
 ### Phase 2: Core Systems [Focus on advanced rendering, core gameplay mechanics, and core tooling]
 
-| ID      | Task                                    | Priority  | Effort | Dependencies     | Status |
-|:--------|:----------------------------------------|:----------|:-------|:-----------------|:-------|
-| A46.0.1 | Implement Advanced Lighting Models      | 🔴 High   | L      | A45.0.6          | ⬜ Todo |
-| A46.0.2 | Develop Post-Processing Stack           | 🔴 High   | L      | A45.0.6          | ⬜ Todo |
-| A46.0.3 | Create Advanced Material System         | 🔴 High   | L      | A45.0.6          | ⬜ Todo |
-| A46.0.4 | Implement In-Game UI System             | 🔴 High   | M      | None             | ⬜ Todo |
-| A46.0.5 | Develop VFX/Particle System             | 🔴 High   | L      | None             | ⬜ Todo |
-| A46.0.6 | Implement Advanced Physics Constraints  | 🟡 Medium | M      | A45.0.4          | ⬜ Todo |
-| A46.0.7 | Enhance Animation System (Retargeting)  | 🟡 Medium | L      | None             | ⬜ Todo |
-| A46.0.8 | Improve Editor Scene Manipulation Tools | 🟡 Medium | M      | A45.0.2, A45.0.6 | ⬜ Todo |
+| ID      | Task                                            | Priority  | Effort | Dependencies | Status           |
+|:--------|:------------------------------------------------|:----------|:-------|:-------------|:-----------------|
+| A46.0.1 | Comprehensive Engine UI & Editor Tooling Revamp | 🔴 High   | XL     | A45.0.6      | ⏳ Implementation |
+| A46.0.2 | Implement Advanced Lighting Models              | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
+| A46.0.3 | Develop Post-Processing Stack                   | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
+| A46.0.4 | Create Advanced Material System                 | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
+| A46.0.5 | Implement In-Game UI System                     | 🔴 High   | M      | None         | ⬜ Todo           |
+| A46.0.6 | Develop VFX/Particle System                     | 🔴 High   | L      | None         | ⬜ Todo           |
+| A46.0.7 | Enhance Animation System (Retargeting)          | 🟡 Medium | L      | None         | ⬜ Todo           |
+| A46.0.8 | Implement Advanced Physics Constraints          | 🟡 Medium | M      | None         | ⬜ Todo           |
 
 **Phase 2 Deliverables:**
 
+* Professional-grade engine UI and sophisticated editor tools for scene editing.
 * Support for various light types, post-processing effects, and a flexible material system.
 * A functional in-game UI system.
 * A particle system for visual effects.
 * Advanced physics constraint functionalities.
 * Enhanced animation capabilities.
-* More sophisticated editor tools for scene editing.
 
 ### Phase 3: Polish & Tooling [Focus on game-specific features, optimization, and user experience]
 
 | ID      | Task                                           | Priority  | Effort | Dependencies     | Status |
 |:--------|:-----------------------------------------------|:----------|:-------|:-----------------|:-------|
-| A47.0.1 | Develop Skateboarding Physics Mechanics        | 🔴 High   | L      | A45.0.4, A46.0.6 | ⬜ Todo |
+| A47.0.1 | Develop Skateboarding Physics Mechanics        | 🔴 High   | L      | A46.0.8          | ⬜ Todo |
 | A47.0.2 | Implement Character Controller & State Machine | 🔴 High   | L      | A46.0.7          | ⬜ Todo |
-| A47.0.3 | Optimize Rendering Performance                 | 🟡 Medium | M      | A46.0.1, A46.0.2 | ⬜ Todo |
-| A47.0.4 | Optimize Physics Performance                   | 🟡 Medium | M      | A45.0.4, A46.0.6 | ⬜ Todo |
+| A47.0.3 | Optimize Rendering Performance                 | 🟡 Medium | M      | A46.0.2, A46.0.3 | ⬜ Todo |
+| A47.0.4 | Optimize Physics Performance                   | 🟡 Medium | M      | A46.0.8          | ⬜ Todo |
 | A47.0.5 | Integrate Scripting Language (TypeScript)      | 🔴 High   | L      | A45.0.6          | ⬜ Todo |
 | A47.0.6 | Develop Sample Skate Game Project              | 🟡 Medium | L      | A47.0.5          | ⬜ Todo |
-| A47.0.7 | Refine Editor Workflow & UX                    | 🟢 Low    | M      | A46.0.8          | ⬜ Todo |
+| A47.0.7 | Refine Editor Workflow & UX                    | 🟢 Low    | M      | A46.0.1          | ⬜ Todo |
 | A47.0.8 | Comprehensive Documentation & Tutorials        | 🟢 Low    | L      | All previous     | ⬜ Todo |
 | A47.0.9 | Integrate Networking for Multiplayer           | 🟡 Medium | L      | A47.0.5          | ⬜ Todo |
 
@@ -128,95 +116,6 @@ tooling.
 ---
 
 ## Task Details
-
-### A45.0.1: Enhance Asset Management Pipeline
-
-**Priority:** 🔴 High | **Effort:** Large | **Phase:** 1
-**Description:** Overhaul the existing asset management system to support a wider range of asset types, implement
-dependency tracking, add caching mechanisms, and enable hot-reloading of assets during runtime and editor use. This
-includes defining clear asset types and loading processes.
-**Acceptance Criteria:**
-
-*   [ ] All currently supported asset types (shaders, models) are loaded efficiently.
-*   [ ] New loaders for textures, audio, and potentially animations are implemented.
-*   [ ] Asset dependencies are correctly identified and managed.
-*   [ ] Assets can be hot-reloaded in the editor without restarting the engine.
-*   [ ] Caching mechanisms are in place to avoid redundant loading.
-    **Technical Notes:** Consider using a plugin-based system for asset loaders to improve modularity. Investigate
-    existing asset pipeline solutions or libraries for inspiration.
-    **Dependencies:** None
-
----
-
-### A45.0.2: Implement Scene Serialization
-
-**Priority:** 🔴 High | **Effort:** Large | **Phase:** 1
-**Description:** Develop a robust system for saving and loading entire scenes, including game objects, their components,
-and their state. This system should be integrated with the asset management pipeline.
-**Acceptance Criteria:**
-
-*   [ ] Scenes can be saved to a file format (e.g., JSON, custom binary).
-*   [ ] Saved scenes can be loaded back into the engine, reconstructing the scene accurately.
-*   [ ] All component data is serialized and deserialized correctly.
-*   [ ] The system handles scene hierarchy and relationships between game objects.
-    **Technical Notes:** Consider using a serialization library or implementing a custom solution. Ensure extensibility
-    for future component types.
-    **Dependencies:** A45.0.1
-
----
-
-### A45.0.3: Develop Basic Audio System
-
-**Priority:** 🔴 High | **Effort:** Medium | **Phase:** 1
-**Description:** Integrate a foundational audio engine capable of playing 2D and 3D sound effects and background music.
-This includes managing audio sources, spatialization, and volume control.
-**Acceptance Criteria:**
-
-*   [ ] Ability to load and play audio files (e.g., WAV, OGG).
-*   [ ] Support for 2D audio playback (global sounds).
-*   [ ] Support for 3D audio playback with spatialization based on object position.
-*   [ ] Basic controls for volume, looping, and playback status.
-    **Technical Notes:** Research and integrate a suitable cross-platform audio library (e.g., OpenAL, LWJGL's audio
-    bindings).
-    **Dependencies:** None
-
----
-
-### A45.0.4: Implement Ragdoll Physics
-
-**Priority:** 🔴 High | **Effort:** Large | **Phase:** 1
-**Description:** Implement ragdoll physics capabilities using the underlying Bullet physics engine. This involves
-creating articulated bodies and constraints that allow characters to react realistically to physics forces when not
-actively controlled.
-**Acceptance Criteria:**
-
-*   [ ] Functionality to define and create ragdoll skeletons from skeletal data.
-*   [ ] Ragdolls can be activated and deactivated, blending with skeletal animation.
-*   [ ] Ragdolls respond correctly to physics forces (gravity, collisions).
-*   [ ] Integration with the existing physics system and component model.
-    **Technical Notes:** Requires understanding of Bullet's `RigidBody` construction, `TypedConstraint`s (e.g.,
-    `HingeConstraint`, `ConeTwistConstraint`), and their setup for humanoid skeletons.
-    **Dependencies:** None
-
----
-
-### A45.0.5: Set up Automated Testing Framework
-
-**Priority:** 🟡 Medium | **Effort:** Medium | **Phase:** 1
-**Description:** Establish a comprehensive automated testing framework, including unit tests for core systems and
-integration tests for key engine features. This will involve setting up testing environments and writing initial test
-suites.
-**Acceptance Criteria:**
-
-*   [ ] A testing framework (e.g., JUnit) is integrated into the build process.
-*   [ ] Unit tests cover critical engine modules (ECS, asset loading, math library).
-*   [ ] Integration tests verify the interaction between major systems (e.g., physics and rendering).
-*   [ ] Existing visual assertion tools are incorporated into the test suite.
-    **Technical Notes:** Prioritize testing of foundational systems first. Ensure tests can run reliably in a CI/CD
-    environment.
-    **Dependencies:** None
-
----
 
 ### A45.0.6: Refactor Renderer to Render Graph System
 
@@ -236,7 +135,34 @@ dependencies.
 
 ---
 
-### A46.0.1: Implement Advanced Lighting Models
+### A46.0.1: Comprehensive Engine UI & Editor Tooling Revamp
+
+**Priority:** 🔴 High | **Effort:** Extra Large | **Phase:** 2
+**Description:** A complete overhaul of the engine's user interface to reach professional standards (Godot/Unity) and
+significant improvements to scene manipulation tools. This includes redesigning menus, panels, and buttons, as well
+as enhancing gizmos and camera controls.
+**Acceptance Criteria:**
+
+*   [ ] **Visual Style:** "Islands Dark" theme (IntelliJ-like) implemented across all windows.
+*   [ ] **Windowing:** Custom GLFW window controls (minimize, maximize, quit) and refined ImGui docking.
+*   [ ] **Status & Navigation:** Implementation of a bottom status bar and a scenes tab bar.
+*   [ ] **Properties Window:** Renamed from Inspector, with improved layout and field organization.
+*   [ ] **Scene Hierarchy:** Enhanced with visibility/lock toggles, search, and quick creation buttons.
+*   [ ] **Asset Management:** Dedicated File System / Asset Browser window with navigation.
+*   [ ] **Diagnostics:** Enhanced Console (search, clear) and new Profiler with graph views.
+*   [ ] **Viewport Tools:** Redesigned toolbar with icons and integrated gizmo/grid controls.
+*   [ ] **Interactions:** Right-click context menus and Drag & Drop support for assets and hierarchy.
+*   [ ] **Search:** "Search Everywhere" global search (Ctrl+P) for quick access to objects and assets.
+*   [ ] **History:** Undo/Redo history UI for tracking scene changes.
+*   [ ] **Gizmos:** Improved responsiveness and visual clarity for transformation tools.
+
+**Technical Notes:** Implementation must follow Clean Architecture and ECS principles. Styles should be centralized
+in a theme manager. Event system should be used for cross-window communication (e.g., asset selection).
+**Dependencies:** A45.0.6
+
+---
+
+### A46.0.2: Implement Advanced Lighting Models
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 2
 **Description:** Extend the lighting system to support various light types beyond directional lights, including point
@@ -250,11 +176,11 @@ lighting using skyboxes/HDRI maps.
 *   [ ] Lighting calculations correctly incorporate new light types and IBL.
     **Technical Notes:** Requires modifications to shaders and the rendering pipeline to handle multiple light sources
     and environment maps.
-    **Dependencies:** A45.0.7
+    **Dependencies:** A45.0.6
 
 ---
 
-### A46.0.2: Develop Post-Processing Stack
+### A46.0.3: Develop Post-Processing Stack
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 2
 **Description:** Create a flexible post-processing stack that can apply various visual effects to the final rendered
@@ -266,11 +192,11 @@ image. This includes effects like bloom, depth of field, color grading, and tone
 *   [ ] Effects are applied using screen-space shaders and FBOs.
 *   [ ] Effects can be enabled/disabled and configured via the editor or scripts.
     **Technical Notes:** This will leverage the FBO system and require shader programming for each effect.
-    **Dependencies:** A45.0.7
+    **Dependencies:** A45.0.6
 
 ---
 
-### A46.0.3: Create Advanced Material System
+### A46.0.4: Create Advanced Material System
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 2
 **Description:** Develop a more sophisticated, shader-driven material system that allows for complex surface properties
@@ -282,11 +208,11 @@ and PBR (Physically Based Rendering) workflows. This system should be easily ext
 *   [ ] Integrate material properties with the rendering pipeline and shaders.
 *   [ ] Support for shader variants based on material properties.
     **Technical Notes:** This will likely involve a shader generation system or a more flexible shader interface.
-    **Dependencies:** A45.0.7
+    **Dependencies:** A45.0.6
 
 ---
 
-### A46.0.4: Implement In-Game UI System
+### A46.0.5: Implement In-Game UI System
 
 **Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
 **Description:** Develop a dedicated UI system for creating in-game interfaces, distinct from the editor's ImGui. This
@@ -302,7 +228,7 @@ system should support elements like buttons, text, images, and layout management
 
 ---
 
-### A46.0.5: Develop VFX/Particle System
+### A46.0.6: Develop VFX/Particle System
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 2
 **Description:** Create a particle system for generating and managing visual effects such as smoke, sparks, or debris.
@@ -318,7 +244,23 @@ This system should allow for defining particle properties, emission, movement, a
 
 ---
 
-### A46.0.6: Implement Advanced Physics Constraints
+### A46.0.7: Enhance Animation System (Retargeting)
+
+**Priority:** 🟡 Medium | **Effort:** Large | **Phase:** 2
+**Description:** Improve the animation system by adding features like animation retargeting, which allows animations
+created for one skeleton to be applied to another with a different bone structure.
+**Acceptance Criteria:**
+
+*   [ ] Implement algorithms for mapping bone transformations between different skeletons.
+*   [ ] Support for retargeting humanoid animations to different rigs.
+*   [ ] Retargeting should preserve the feel and intent of the original animation.
+    **Technical Notes:** This is a complex computer graphics problem often involving inverse kinematics or related
+    techniques.
+    **Dependencies:** None
+
+---
+
+### A46.0.8: Implement Advanced Physics Constraints
 
 **Priority:** 🟡 Medium | **Effort:** Medium | **Phase:** 2
 **Description:** Extend the physics system to support a wider range of physics constraints beyond what's needed for
@@ -329,40 +271,7 @@ basic ragdolls. This could include generic joints, sliders, and gear constraints
 *   [ ] Provide an API for creating and configuring these constraints between rigid bodies.
 *   [ ] Constraints function correctly and maintain stability within the physics simulation.
     **Technical Notes:** Familiarize with the specifics of each constraint type in the Bullet physics library.
-    **Dependencies:** A45.0.4
-
----
-
-### A46.0.7: Enhance Animation System (Retargeting)
-
-**Priority:** 🟡 Medium | **Effort:** Large | **Phase:** 2
-**Description:** Improve the animation system by adding features like animation retargeting, which allows animations
-created for one skeleton to be applied to another with a different bone structure.
-**Acceptance Criteria:**
-
-*   [ ] Implement algorithms for mapping bone transformations between different skeletons.
-*   [ ] Support for retargeting humanoid animations to different humanoid rigs.
-*   [ ] Retargeting should preserve the feel and intent of the original animation.
-    **Technical Notes:** This is a complex computer graphics problem often involving inverse kinematics or related
-    techniques.
     **Dependencies:** None
-
----
-
-### A46.0.8: Improve Editor Scene Manipulation Tools
-
-**Priority:** 🟡 Medium | **Effort:** Medium | **Phase:** 2
-**Description:** Enhance the existing editor tools for manipulating objects within the scene. This includes improving
-the gizmos (translate, rotate, scale), adding snapping capabilities, and refining the scene view controls.
-**Acceptance Criteria:**
-
-*   [ ] Gizmos are more responsive and visually clear.
-*   [ ] Add options for snapping transformations to a grid or other objects.
-*   [ ] Improve camera controls within the scene view for smoother navigation.
-*   [ ] Implement tools for duplicating and grouping objects.
-    **Technical Notes:** Leverage existing gizmo implementations and extend them with new features. Ensure performance
-    is maintained.
-    **Dependencies:** A45.0.2, A45.0.7
 
 ---
 
@@ -379,7 +288,7 @@ physics, truck/wheel interactions, ollies, grinds, and board control during airt
 *   [ ] Accurate physics response during landings and impacts.
     **Technical Notes:** This will require significant tuning of physics parameters and potentially custom physics logic
     beyond standard rigid bodies. Leverage ragdoll and constraint systems.
-    **Dependencies:** A45.0.4, A46.0.6
+    **Dependencies:** A46.0.8
 
 ---
 
@@ -411,7 +320,7 @@ scenes and effects.
 *   [ ] Implement optimizations such as batching, culling (frustum, occlusion), and efficient shader usage.
 *   [ ] Ensure rendering performance meets target frame rates on representative hardware.
     **Technical Notes:** Utilize profiling tools to pinpoint areas for optimization. Focus on GPU-bound issues.
-    **Dependencies:** A46.0.1, A46.0.2
+    **Dependencies:** A46.0.2, A46.0.3
 
 ---
 
@@ -426,7 +335,7 @@ bodies and complex interactions.
 *   [ ] Optimize physics world settings, collision detection, and solver iterations.
 *   [ ] Ensure physics performance is adequate for the target game complexity.
     **Technical Notes:** Analyze CPU-bound physics issues. Tune solver iterations and broadphase settings.
-    **Dependencies:** A45.0.4, A46.0.6
+    **Dependencies:** A46.0.8
 
 ---
 
@@ -477,7 +386,7 @@ experience, making it more intuitive and efficient.
 *   [ ] Editor performance and responsiveness are improved.
 *   [ ] Minor UI/UX improvements are implemented based on feedback.
     **Technical Notes:** Focus on iterative improvements rather than major overhauls at this stage.
-    **Dependencies:** A46.0.8
+    **Dependencies:** A46.0.1
 
 ---
 
@@ -519,7 +428,7 @@ architecture, state synchronization, and handling network latency.
 
 | Risk                                     | Likelihood | Impact | Mitigation                                                                                                                                       |
 |:-----------------------------------------|:-----------|:-------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
-| Scope Creep                              | Medium     | High   | Strict adherence to the roadmap, prioritize tasks ruthlessly, defer non-essential features to future versions.                                   |
+| Scope Creep                              | High       | High   | Strict adherence to the roadmap, prioritize tasks ruthlessly, defer non-essential features to future versions.                                   |
 | Technical Debt Slowdown                  | Medium     | Medium | Allocate dedicated time for refactoring (e.g., A45.0.6), enforce code reviews, maintain automated testing.                                       |
 | Underestimated Complexity (Physics/Anim) | Medium     | High   | Allocate sufficient effort for physics and animation tasks, break them into smaller sub-tasks if needed, consult experts if necessary.           |
 | Performance Bottlenecks                  | Medium     | High   | Implement profiling early and regularly, dedicate tasks for optimization (A47.0.3, A47.0.4), focus on efficient algorithms and data structures.  |
@@ -545,5 +454,5 @@ architecture, state synchronization, and handling network latency.
 
 ---
 
-*Last Updated: 2023-10-27*
-*Roadmap Version: 1.0*
+*Last Updated: 2024-05-15*
+*Roadmap Version: 1.2*
