@@ -36,7 +36,7 @@ class BootManagerTest : KoinTest {
 
     private val sceneManager = mockk<SceneManager>(relaxed = true)
     private val renderer = mockk<Renderer>(relaxed = true)
-    private val logger = mockk<LoggerService>(relaxed = true)
+    private val mockLogger = mockk<LoggerService>(relaxed = true)
     private val splashScreen = mockk<SplashScreen>(relaxed = true)
     private val resourceManager = mockk<ResourceManager>(relaxed = true)
     private val undoRedoManager = mockk<UndoRedoManager>(relaxed = true)
@@ -45,24 +45,38 @@ class BootManagerTest : KoinTest {
     private val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
     private val audioEngine = mockk<AudioEngine>(relaxed = true)
 
+    private val stringManager = mockk<com.pafoid.skate.editor.systems.StringManager>(relaxed = true)
+    private val keyListener = mockk<com.pafoid.skate.engine.input.listeners.KeyListener>(relaxed = true)
+    private val mouseListener = mockk<com.pafoid.skate.engine.input.listeners.MouseListener>(relaxed = true)
+    private val serializer = mockk<com.pafoid.skate.engine.assets.serialization.Serializer>(relaxed = true)
+    private val debugRenderer = mockk<com.pafoid.skate.engine.render.renderer.DebugRenderer>(relaxed = true)
+    private val inputProvider = mockk<com.pafoid.skate.engine.input.IInputProvider>(relaxed = true)
+
     // Use Unconfined dispatcher for testing to avoid JobSystem dependency
     private val bootManager =
-        BootManager(sceneManager, renderer, logger, splashScreen, audioEngine, Dispatchers.Unconfined)
+        BootManager(sceneManager, renderer, mockLogger, splashScreen, audioEngine, Dispatchers.Unconfined)
 
     @BeforeEach
     fun setup() {
         startKoin {
             modules(module {
-                single { logger }
-                single { bootManager }
-                single { renderer }
-                single { resourceManager }
-                single { sceneManager }
-                single { splashScreen }
-                single { undoRedoManager }
-                single { engine }
-                single { settingsManager }
-                single { prefabsGenerator }
+                single<LoggerService> { mockLogger }
+                single<BootManager> { bootManager }
+                single<Renderer> { renderer }
+                single<ResourceManager> { resourceManager }
+                single<SceneManager> { sceneManager }
+                single<SplashScreen> { splashScreen }
+                single<UndoRedoManager> { undoRedoManager }
+                single<Engine> { engine }
+                single<SettingsManager> { settingsManager }
+                single<PrefabsGenerator> { prefabsGenerator }
+                single<AudioEngine> { audioEngine }
+                single<com.pafoid.skate.editor.systems.StringManager> { stringManager }
+                single<com.pafoid.skate.engine.input.listeners.KeyListener> { keyListener }
+                single<com.pafoid.skate.engine.input.listeners.MouseListener> { mouseListener }
+                single<com.pafoid.skate.engine.assets.serialization.Serializer> { serializer }
+                single<com.pafoid.skate.engine.render.renderer.DebugRenderer> { debugRenderer }
+                single<com.pafoid.skate.engine.input.IInputProvider> { inputProvider }
             })
         }
     }

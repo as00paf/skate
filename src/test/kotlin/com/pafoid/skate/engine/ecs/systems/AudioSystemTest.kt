@@ -4,8 +4,11 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.render.camera.Camera
-import io.mockk.*
+import com.pafoid.skate.engine.render.Camera
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.unmockkAll
+import io.mockk.verify
 import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -41,7 +44,7 @@ class AudioSystemTest : KoinTest {
         every { camera.pitch } returns 0f
 
         audioSystem = AudioSystem(audioEngine, logger)
-        audioSystem.scene = scene
+        audioSystem.init(scene)
     }
 
     @AfterEach
@@ -55,7 +58,7 @@ class AudioSystemTest : KoinTest {
         // Arrange
         every { audioEngine.init() } returns true
         every { audioEngine.isInitialized } returns true
-        every { gameObjectManager.gameObjects } returns emptyList()
+        every { gameObjectManager.gameObjects } returns mutableListOf()
 
         // Act
         audioSystem.update(0.16f)
@@ -69,7 +72,7 @@ class AudioSystemTest : KoinTest {
     fun `update - stops if initialization fails`() {
         // Arrange
         every { audioEngine.init() } returns false
-        every { gameObjectManager.gameObjects } returns emptyList()
+        every { gameObjectManager.gameObjects } returns mutableListOf()
 
         // Act
         audioSystem.update(0.16f)

@@ -32,6 +32,8 @@ class PhysicsCalibrationTest {
                     single<Engine> { engine }
                     single<SceneManager> { sceneManager }
                     single<DebugRenderer> { debugRenderer }
+                    single { mockk<com.pafoid.skate.editor.systems.StringManager>(relaxed = true) }
+                    single { mockk<com.pafoid.skate.editor.systems.LoggerService>(relaxed = true) }
                 })
             }
         }

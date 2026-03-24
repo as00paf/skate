@@ -10,9 +10,9 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
+import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.unmockkAll
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.junit.jupiter.api.AfterAll
@@ -41,6 +41,8 @@ class SkateboardPhysicsTest {
                     single<Engine> { engine }
                     single<SceneManager> { sceneManager }
                     single<DebugRenderer> { debugRenderer }
+                    single { mockk<com.pafoid.skate.editor.systems.StringManager>(relaxed = true) }
+                    single { mockk<com.pafoid.skate.editor.systems.LoggerService>(relaxed = true) }
                 })
             }
         }
@@ -62,12 +64,13 @@ class SkateboardPhysicsTest {
         val mockScene = mockk<Scene>()
         every { sceneManager.currentScene } returns mockScene
         every { mockScene.physics3d } returns physics
+        every { mockScene.systemManager } returns mockk(relaxed = true)
     }
 
     @AfterEach
     fun teardown() {
         physics.destroy()
-        unmockkAll()
+        clearAllMocks()
     }
 
     @Test

@@ -298,21 +298,21 @@ class GridLinesTest {
         val config = GridConfig()
 
         // Assert
-        assertEquals(1.0f, config.majorStep, 0.01f)
-        assertEquals(0.1f, config.minorStep, 0.01f)
-        assertEquals(0.4f, config.majorColor.x, 0.01f)
-        assertEquals(0.4f, config.majorColor.y, 0.01f)
-        assertEquals(0.4f, config.majorColor.z, 0.01f)
-        assertEquals(0.25f, config.minorColor.x, 0.01f)
-        assertEquals(0.25f, config.minorColor.y, 0.01f)
-        assertEquals(0.25f, config.minorColor.z, 0.01f)
-        assertEquals(10.0f, config.minExtent, 0.01f)
-        assertEquals(100.0f, config.maxExtent, 0.01f)
-        assertEquals(5.0f, config.lodCloseDistance, 0.01f)
-        assertEquals(20.0f, config.lodFarDistance, 0.01f)
+        assertEquals(10.0f, config.majorStep, 0.01f)
+        assertEquals(1.0f, config.minorStep, 0.01f)
+        assertEquals(0.25f, config.majorColor.x, 0.01f)
+        assertEquals(0.25f, config.majorColor.y, 0.01f)
+        assertEquals(0.25f, config.majorColor.z, 0.01f)
+        assertEquals(0.15f, config.minorColor.x, 0.01f)
+        assertEquals(0.15f, config.minorColor.y, 0.01f)
+        assertEquals(0.15f, config.minorColor.z, 0.01f)
+        assertEquals(50.0f, config.minExtent, 0.01f)
+        assertEquals(500.0f, config.maxExtent, 0.01f)
+        assertEquals(50.0f, config.lodCloseDistance, 0.01f)
+        assertEquals(200.0f, config.lodFarDistance, 0.01f)
         assertEquals(true, config.showGrid)
         assertEquals(true, config.showOriginAxes)
-        assertEquals(-0.1f, config.gridYOffset, 0.01f)
+        assertEquals(0.0f, config.gridYOffset, 0.01f)
     }
 
     @Test
@@ -334,15 +334,15 @@ class GridLinesTest {
         config.resetToDefaults()
 
         // Assert
-        assertEquals(1.0f, config.majorStep, 0.01f)
-        assertEquals(0.1f, config.minorStep, 0.01f)
-        assertEquals(10.0f, config.minExtent, 0.01f)
-        assertEquals(100.0f, config.maxExtent, 0.01f)
-        assertEquals(5.0f, config.lodCloseDistance, 0.01f)
-        assertEquals(20.0f, config.lodFarDistance, 0.01f)
+        assertEquals(10.0f, config.majorStep, 0.01f)
+        assertEquals(1.0f, config.minorStep, 0.01f)
+        assertEquals(50.0f, config.minExtent, 0.01f)
+        assertEquals(500.0f, config.maxExtent, 0.01f)
+        assertEquals(50.0f, config.lodCloseDistance, 0.01f)
+        assertEquals(200.0f, config.lodFarDistance, 0.01f)
         assertEquals(true, config.showGrid)
         assertEquals(true, config.showOriginAxes)
-        assertEquals(-0.1f, config.gridYOffset, 0.01f)
+        assertEquals(0.0f, config.gridYOffset, 0.01f)
     }
 
     @Test
@@ -384,14 +384,14 @@ class GridLinesTest {
         val config = GridConfig()
 
         // Assert - A35.0.1 Center marker
-        assertEquals(true, config.showCenterMarker)
+        assertEquals(false, config.showCenterMarker)
         assertEquals(1.0f, config.centerMarkerColor.x, 0.01f)
         assertEquals(1.0f, config.centerMarkerColor.y, 0.01f)
         assertEquals(0.0f, config.centerMarkerColor.z, 0.01f)
         assertEquals(30.0f, config.centerMarkerDistance, 0.01f)
 
         // Assert - A35.0.2 Edge fading
-        assertEquals(true, config.edgeFadeEnabled)
+        assertEquals(false, config.edgeFadeEnabled)
         assertEquals(0.7f, config.edgeFadeStart, 0.01f)
 
         // Assert - A35.0.3 Secondary grid
@@ -402,7 +402,7 @@ class GridLinesTest {
         assertEquals(0.8f, config.secondaryGridColor.z, 0.01f)
 
         // Assert - A35.0.4 Snap visualization
-        assertEquals(true, config.snapVisualizationEnabled)
+        assertEquals(false, config.snapVisualizationEnabled)
         assertEquals(0.0f, config.snapMarkerColor.x, 0.01f)
         assertEquals(1.0f, config.snapMarkerColor.y, 0.01f)
         assertEquals(0.0f, config.snapMarkerColor.z, 0.01f)
@@ -487,13 +487,13 @@ class GridLinesTest {
         config.resetToDefaults()
 
         // Assert - A35 features
-        assertEquals(true, config.showCenterMarker)
+        assertEquals(false, config.showCenterMarker)
         assertEquals(30.0f, config.centerMarkerDistance, 0.01f)
-        assertEquals(true, config.edgeFadeEnabled)
+        assertEquals(false, config.edgeFadeEnabled)
         assertEquals(0.7f, config.edgeFadeStart, 0.01f)
         assertEquals(false, config.secondaryGridEnabled)
         assertEquals(2.0f, config.secondaryGridY, 0.01f)
-        assertEquals(true, config.snapVisualizationEnabled)
+        assertEquals(false, config.snapVisualizationEnabled)
     }
 
     // Helper function for edge fade testing

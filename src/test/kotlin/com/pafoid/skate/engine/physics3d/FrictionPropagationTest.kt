@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import io.mockk.mockk
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,7 +24,9 @@ class FrictionPropagationTest {
         fun beforeAll() {
             startKoin {
                 modules(module {
-                    single { mockk<DebugRenderer>(relaxed = true) }
+                    single { mockk<com.pafoid.skate.engine.render.renderer.DebugRenderer>(relaxed = true) }
+                    single { mockk<com.pafoid.skate.editor.systems.StringManager>(relaxed = true) }
+                    single { mockk<com.pafoid.skate.editor.systems.LoggerService>(relaxed = true) }
                 })
             }
             physics = BulletPhysics3D()
