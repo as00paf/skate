@@ -103,7 +103,7 @@ class Window(
 
     private fun init() {
         settingsManager.load()
-        val settings = settingsManager.settings.displaySettings
+        val settings = settingsManager.engine.display
 
         // Error callback
         GLFWErrorCallback.createPrint(System.err).set()
@@ -116,8 +116,7 @@ class Window(
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
 
         // Window decoration depends on mode (Borderless uses custom controls)
-        val decorated =
-            if (settings.windowMode == com.pafoid.skate.editor.data.WindowMode.WINDOWED) GLFW_TRUE else GLFW_FALSE
+        val decorated = if (settings.windowMode == com.pafoid.skate.engine.settings.WindowMode.WINDOWED) GLFW_TRUE else GLFW_FALSE
         glfwWindowHint(GLFW_DECORATED, decorated)
 
         // MSAA Support
@@ -144,14 +143,13 @@ class Window(
         windowHeight = winHeight
 
         // Create the window
-        val monitorHandle =
-            if (settings.windowMode == com.pafoid.skate.editor.data.WindowMode.FULLSCREEN) monitor else NULL
+        val monitorHandle = if (settings.windowMode == com.pafoid.skate.engine.settings.WindowMode.FULLSCREEN) monitor else NULL
         glfwWindow = glfwCreateWindow(winWidth, winHeight, title, monitorHandle, NULL)
         if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
 
         // Position window if not fullscreen
-        if (settings.windowMode != com.pafoid.skate.editor.data.WindowMode.FULLSCREEN) {
-            if (settings.windowMode == com.pafoid.skate.editor.data.WindowMode.BORDERLESS) {
+        if (settings.windowMode != com.pafoid.skate.engine.settings.WindowMode.FULLSCREEN) {
+            if (settings.windowMode == com.pafoid.skate.engine.settings.WindowMode.BORDERLESS) {
                 glfwSetWindowPos(glfwWindow, 0, 0)
                 glfwMaximizeWindow(glfwWindow)
             } else {
@@ -161,11 +159,7 @@ class Window(
                 glfwGetMonitorPos(monitor, xPos, yPos)
                 val monitorWidth = videoMode?.width() ?: 1920
                 val monitorHeight = videoMode?.height() ?: 1080
-                glfwSetWindowPos(
-                    glfwWindow,
-                    xPos[0] + (monitorWidth - winWidth) / 2,
-                    yPos[0] + (monitorHeight - winHeight) / 2
-                )
+                glfwSetWindowPos(glfwWindow, xPos[0] + (monitorWidth - winWidth) / 2, yPos[0] + (monitorHeight - winHeight) / 2)
             }
         }
 

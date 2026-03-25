@@ -47,7 +47,8 @@ object Assets {
     }
     object Files {
         const val IMGUI = "imgui.ini"
-        const val SETTINGS_FILE = "settings.json"
+        const val ENGINE_SETTINGS_FILE = "engine_settings.json"
+        const val PROJECT_SETTINGS_FILE = "project_settings.json"
     }
     object Folders {
         const val ANIMATIONS = "assets/characters/animations"

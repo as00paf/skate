@@ -275,30 +275,30 @@ class EditorMenuBar(
      */
     private fun buildSettingsMenu() {
         if (beginMenu(stringManager.getString("menu.settings"))) {
-            val settings = settingsManager.settings
+            val engineSettings = settingsManager.engine
 
             // Display settings
-            val displaySettings = settings.displaySettings
+            val displaySettings = engineSettings.display
             val vsync = ImBoolean(displaySettings.vsync)
             if (checkbox(stringManager.getString("menu.settings.vsync"), vsync)) {
                 displaySettings.vsync = vsync.get()
                 setVSync(displaySettings.vsync)
-                settingsManager.save()
+                settingsManager.saveEngine()
             }
 
-            val isFullscreen = displaySettings.windowMode == com.pafoid.skate.editor.data.WindowMode.FULLSCREEN
+            val isFullscreen = displaySettings.windowMode == com.pafoid.skate.engine.settings.WindowMode.FULLSCREEN
             val fullscreen = ImBoolean(isFullscreen)
             if (checkbox(stringManager.getString("menu.settings.fullscreen"), fullscreen)) {
-                displaySettings.windowMode =
-                    if (fullscreen.get()) com.pafoid.skate.editor.data.WindowMode.FULLSCREEN else com.pafoid.skate.editor.data.WindowMode.WINDOWED
+                displaySettings.windowMode = if (fullscreen.get()) com.pafoid.skate.engine.settings.WindowMode.FULLSCREEN else com.pafoid.skate.engine.settings.WindowMode.WINDOWED
                 setFullscreen(fullscreen.get())
-                settingsManager.save()
+                settingsManager.saveEngine()
             }
 
             separator()
 
             // Gamepad overlay settings
-            val overlaySize = floatArrayOf(settings.gamepadOverlaySize)
+            val editorSettings = engineSettings.editor
+            val overlaySize = floatArrayOf(editorSettings.gamepadOverlaySize)
             if (sliderFloat(
                     stringManager.getString("menu.settings.gamepad_overlay_size"),
                     overlaySize,
@@ -306,36 +306,36 @@ class EditorMenuBar(
                     0.5f
                 )
             ) {
-                settings.gamepadOverlaySize = overlaySize[0]
-                settingsManager.save()
+                editorSettings.gamepadOverlaySize = overlaySize[0]
+                settingsManager.saveEngine()
             }
 
-            val showOverlay = ImBoolean(settings.showGamepadOverlay)
+            val showOverlay = ImBoolean(editorSettings.showGamepadOverlay)
             if (checkbox(stringManager.getString("menu.settings.show_gamepad_overlay"), showOverlay)) {
-                settings.showGamepadOverlay = showOverlay.get()
-                settingsManager.save()
+                editorSettings.showGamepadOverlay = showOverlay.get()
+                settingsManager.saveEngine()
             }
 
             separator()
 
             // Unit system
             val unitSystems = UnitSystem.entries.toTypedArray()
-            val currentUnitIdx = ImInt(settings.unitSystem.ordinal)
+            val currentUnitIdx = ImInt(editorSettings.unitSystem.ordinal)
             if (combo(
                     stringManager.getString("menu.settings.unit_system"),
                     currentUnitIdx,
                     unitSystems.map { it.name }.toTypedArray()
                 )
             ) {
-                settings.unitSystem = unitSystems[currentUnitIdx.get()]
-                settingsManager.save()
+                editorSettings.unitSystem = unitSystems[currentUnitIdx.get()]
+                settingsManager.saveEngine()
             }
 
             separator()
 
             // Language selection
             val languages = arrayOf("en", "fr")
-            val currentLangIdx = ImInt(languages.indexOf(settings.language))
+            val currentLangIdx = ImInt(languages.indexOf(editorSettings.language))
             if (combo(
                     stringManager.getString("menu.settings.language"),
                     currentLangIdx,
@@ -344,9 +344,9 @@ class EditorMenuBar(
                 )
             ) {
                 val newLang = languages[currentLangIdx.get()]
-                settings.language = newLang
+                editorSettings.language = newLang
                 settingsManager.setLocale(newLang)
-                settingsManager.save()
+                settingsManager.saveEngine()
             }
 
             separator()

@@ -106,7 +106,7 @@ class GameViewWindow : IWindow, KoinComponent {
         renderViewportOverlays(windowPos, windowSize)
 
         // Render Gamepad Overlay
-        if (settingsManager.settings.showGamepadOverlay) {
+        if (settingsManager.engine.editor.showGamepadOverlay) {
             gamepadOverlay.imgui(Vector2f(imageScreenPosX, imageScreenPosY), Vector2f(imageSizeX, imageSizeY))
         }
 
@@ -169,7 +169,7 @@ class GameViewWindow : IWindow, KoinComponent {
         val velocity = rb?.rawBody?.getLinearVelocity(null)
         if (velocity != null) {
             val speedMS = velocity.length()
-            val settings = settingsManager.settings
+            val settings = settingsManager.engine.editor
             val (speedDisplay, unitLabel) = if (settings.unitSystem == UnitSystem.METRIC) {
                 Pair(speedMS * 3.6f, "km/h")
             } else {

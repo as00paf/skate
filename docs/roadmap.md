@@ -53,6 +53,7 @@ tooling.
 
 * **Renderer Centralization:** `Renderer.kt` is becoming a monolithic class; refactoring towards a render graph system
   is recommended.
+* **Settings Separation:** Engine settings (hardware, UI) are mixed with project settings (gameplay physics).
 
 ---
 
@@ -84,6 +85,7 @@ tooling.
 |:--------|:------------------------------------------------|:----------|:-------|:-------------|:-----------------|
 | A46.0.1 | Comprehensive Engine UI & Editor Tooling Revamp | 🔴 High   | XL     | A45.0.6      | ⏳ Implementation |
 | A46.0.9 | Implement Project Creation & Management System  | 🔴 High   | M      | None         | ⬜ Todo           |
+| A46.0.10| Settings System Architectural Separation        | 🔴 High   | M      | None         | ⏳ Implementation |
 | A46.0.2 | Implement Advanced Lighting Models              | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
 | A46.0.3 | Develop Post-Processing Stack                   | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
 | A46.0.4 | Create Advanced Material System                 | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
@@ -96,6 +98,7 @@ tooling.
 
 * Professional-grade engine UI and sophisticated editor tools for scene editing.
 * **Project Management:** System for creating, saving, and managing engine projects.
+* **Settings Management:** Clear separation between Engine and Project settings.
 * Support for various light types, post-processing effects, and a flexible material system.
 * A functional in-game UI system.
 * A particle system for visual effects.
@@ -115,15 +118,6 @@ tooling.
 | A47.0.7 | Refine Editor Workflow & UX                    | 🟢 Low    | M      | A46.0.1          | ⬜ Todo |
 | A47.0.8 | Comprehensive Documentation & Tutorials        | 🟢 Low    | L      | All previous     | ⬜ Todo |
 | A47.0.9 | Integrate Networking for Multiplayer           | 🟡 Medium | L      | A47.0.5          | ⬜ Todo |
-
-**Phase 3 Deliverables:**
-
-* Core skateboarding physics and character control systems.
-* Basic multiplayer support.
-* Optimized rendering and physics performance.
-* A sample project demonstrating engine capabilities.
-* Polished editor user experience.
-* Comprehensive documentation and learning resources.
 
 ---
 
@@ -176,6 +170,22 @@ as enhancing gizmos and camera controls.
 in a theme manager. Event system should be used for cross-window communication (e.g., asset selection).
 Coordinate with @ui-ux-designer for icon assets (App Icon, Hamburger, Project Icon).
 **Dependencies:** A45.0.6
+
+---
+
+### A46.0.10: Settings System Architectural Separation
+
+**Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
+**Description:** Refactor the settings system to clearly separate Engine Settings (global, hardware, UI) from Project Settings (gameplay, physics, project-specific).
+**Acceptance Criteria:**
+*   [ ] **Data Separation:** Define `EngineSettings` (global) and `ProjectSettings` (local) data classes.
+*   [ ] **Engine Settings:** Refactor `SettingsManager` to manage global hardware and editor configurations.
+*   [ ] **Project Settings:** Implement/Enhance `ProjectManager` to manage project-specific gameplay and physics settings.
+*   [ ] **Storage:** Engine settings saved in global engine directory; Project settings saved within project folder.
+*   [ ] **UI Integration:** `SettingsWindow` updated to reflect the separation with distinct categories.
+
+**Technical Notes:** Hardware input (deadzones, sensitivities) belong to Engine Settings. Gameplay physics (jump impulse, speeds) belong to Project Settings.
+**Dependencies:** None
 
 ---
 
@@ -508,4 +518,4 @@ architecture, state synchronization, and handling network latency.
 ---
 
 *Last Updated: 2024-05-15*
-*Roadmap Version: 1.2*
+*Roadmap Version: 1.3*

@@ -27,7 +27,7 @@ class GamepadOverlay : KoinComponent {
     }
 
     fun imgui(gameViewPos: Vector2f, gameViewSize: Vector2f) {
-        val settings = settingsManager.settings
+        val editorSettings = settingsManager.engine.editor
         val windowFlags = ImGuiWindowFlags.NoDecoration or
                          ImGuiWindowFlags.NoInputs or
                          ImGuiWindowFlags.AlwaysAutoResize or
@@ -36,8 +36,8 @@ class GamepadOverlay : KoinComponent {
                          ImGuiWindowFlags.NoBackground
 
         // Target size: customizable percentage of viewport width/height
-        val maxOverlayWidth = gameViewSize.x * settings.gamepadOverlaySize
-        val maxOverlayHeight = gameViewSize.y * settings.gamepadOverlaySize
+        val maxOverlayWidth = gameViewSize.x * editorSettings.gamepadOverlaySize
+        val maxOverlayHeight = gameViewSize.y * editorSettings.gamepadOverlaySize
         
         // Calculate scale to fit within user-defined percentage of viewport
         val scaleX = maxOverlayWidth / controllerTexture.width

@@ -44,8 +44,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - [ ] **A46.0.1.16: Implement Render Graph Visualization Window** (Display pass structure and dependencies)
   - [ ] **A46.0.1.17: Top Menu Bar Overhaul**
     - Match IntelliJ IDEA look and behavior.
-    -
-    Order: [App Icon] -> [Hamburger Menu Icon (for main menus)] -> [Project Icon & Name] -> ... -> [Window Controls (Right)].
+    - Order: [App Icon] -> [Hamburger Menu Icon (for main menus)] -> [Project Icon & Name] -> ... -> [Window Controls (Right)].
     - Coordinate with @ui-ux-designer for icon assets.
   - [ ] **A46.0.1.18: App Icon Finalization (@ui-ux-designer)**
     - [ ] Deliver full-frame (minimal margin) 1024x1024 version.
@@ -56,6 +55,14 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - Project wizard for creating new projects.
   - Project settings (name, paths, engine version).
   - Project switching and recent projects list.
+
+- [⏳] **A46.0.10: Settings System Architectural Separation**
+  - **Status: IMPLEMENTATION (PRIORITY: ENGINE SETTINGS)**
+  - [ ] **A46.0.10.1: Define EngineSettings and HardwareSettings data classes** (@software-engineer)
+  - [ ] **A46.0.10.2: Define ProjectSettings and GameplaySettings data classes** (@software-engineer)
+  - [ ] **A46.0.10.3: Refactor SettingsManager to manage only EngineSettings** (@software-engineer)
+  - [ ] **A46.0.10.4: Create ProjectManager to manage ProjectSettings** (@software-engineer)
+  - [ ] **A46.0.10.5: Update SettingsWindow to separate Engine and Project tabs** (@software-engineer)
 
 - [ ] **A46.0.2: Implement Advanced Lighting Models**
   - Point lights with position, color, intensity

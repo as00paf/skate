@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.data
 
 import com.pafoid.skate.engine.input.EditorInputMappings
 import com.pafoid.skate.engine.input.InputMappings
+import com.pafoid.skate.engine.settings.DisplaySettings
 import com.pafoid.skate.engine.utils.UnitSystem
 import kotlinx.serialization.Serializable
 
