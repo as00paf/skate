@@ -3,14 +3,10 @@ package com.pafoid.skate.editor.windows
 import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.systems.VideoModeInfo
-import com.pafoid.skate.engine.settings.DisplaySettings
 import com.pafoid.skate.engine.settings.EditorSettings
 import com.pafoid.skate.engine.settings.GameplaySettings
 import com.pafoid.skate.engine.settings.HardwareSettings
-import com.pafoid.skate.engine.settings.WindowMode
 import com.pafoid.skate.engine.utils.UnitSystem
-import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.button
@@ -31,7 +27,7 @@ import org.koin.core.component.KoinComponent
  * Window for configuring engine and project settings.
  *
  * Separates settings into two main categories:
- * - Engine: Hardware calibration, display settings, and editor preferences.
+ * - Engine: Hardware calibration and editor preferences.
  * - Project: Gameplay constants, physics, and project metadata.
  *
  * @param settingsManager Settings manager for loading/saving settings
@@ -46,18 +42,13 @@ class SettingsWindow(
 
     var isOpen = false
     private var settingsCategory = 0 // 0=Engine, 1=Project
-    private var subTab = 0 // Engine: 0=Hardware, 1=Display, 2=Editor | Project: 0=Gameplay, 1=Physics
+    private var subTab = 0 // Engine: 0=Hardware, 1=Editor | Project: 0=Gameplay, 1=Physics
 
     // Temporary storage for settings being edited
     private var tempHardware = HardwareSettings()
-    private var tempDisplay = DisplaySettings()
     private var tempEditor = EditorSettings()
     private var tempGameplay = GameplaySettings()
     private var hasUnsavedChanges = false
-
-    // Hardware discovery cache
-    private var availableMonitors = emptyList<com.pafoid.skate.editor.systems.MonitorInfo>()
-    private var availableVideoModes = emptyList<VideoModeInfo>()
 
     /**
      * Renders the settings window.
@@ -72,7 +63,6 @@ class SettingsWindow(
             if (combo("##CategorySelector", catSelector, categories, categories.size)) {
                 settingsCategory = catSelector.get()
                 subTab = 0 // Reset subtab when category changes
-                if (settingsCategory == 0 && subTab == 1) refreshHardwareInfo()
             }
 
             separator()
@@ -108,18 +98,16 @@ class SettingsWindow(
     }
 
     private fun renderEngineSubTabs() {
-        val tabs = arrayOf("Hardware", "Display", "Editor")
+        val tabs = arrayOf("Hardware", "Editor")
         val tabSelector = ImInt(subTab)
         if (combo("##EngineSubTab", tabSelector, tabs, tabs.size)) {
             subTab = tabSelector.get()
-            if (subTab == 1) refreshHardwareInfo()
         }
         separator()
 
         when (subTab) {
             0 -> renderHardwareSettings()
-            1 -> renderDisplaySettings()
-            2 -> renderEditorSettings()
+            1 -> renderEditorSettings()
         }
     }
 
@@ -170,65 +158,6 @@ class SettingsWindow(
         val controllerS = floatArrayOf(tempHardware.controllerSensitivity)
         if (sliderFloat("Controller Sensitivity", controllerS, 0.1f, 10f)) {
             tempHardware.controllerSensitivity = controllerS[0]
-            hasUnsavedChanges = true
-        }
-    }
-
-    private fun renderDisplaySettings() {
-        if (!hasUnsavedChanges) {
-            syncTempSettings()
-            refreshHardwareInfo()
-        }
-
-        text(stringManager.getString("lbl.settings.display_settings"))
-        separator()
-
-        // Monitor Selection
-        val monitorNames = availableMonitors.map { it.name }.toTypedArray()
-        val currentMonitorIdx = ImInt(tempDisplay.monitorIndex)
-        if (combo(stringManager.getString("lbl.settings.monitor"), currentMonitorIdx, monitorNames, monitorNames.size)) {
-            tempDisplay.monitorIndex = currentMonitorIdx.get()
-            refreshHardwareInfo()
-            hasUnsavedChanges = true
-        }
-
-        // Window Mode
-        val modes = com.pafoid.skate.engine.settings.WindowMode.entries.toTypedArray()
-        val modeNames = modes.map { stringManager.getString("lbl.settings.window_mode.${it.name.lowercase()}") }.toTypedArray()
-        val currentModeIdx = ImInt(tempDisplay.windowMode.ordinal)
-        if (combo(stringManager.getString("lbl.settings.window_mode"), currentModeIdx, modeNames, modeNames.size)) {
-            tempDisplay.windowMode = modes[currentModeIdx.get()]
-            hasUnsavedChanges = true
-        }
-
-        // Resolution
-        val videoModeNames = availableVideoModes.map { "${it.width}x${it.height} @ ${it.refreshRate}Hz" }.toTypedArray()
-        var modePos = availableVideoModes.indexOfFirst { 
-            it.width == tempDisplay.width && it.height == tempDisplay.height && it.refreshRate == tempDisplay.refreshRate 
-        }.coerceAtLeast(0)
-        
-        val currentVideoModeIdx = ImInt(modePos)
-        if (combo(stringManager.getString("lbl.settings.resolution"), currentVideoModeIdx, videoModeNames, videoModeNames.size)) {
-            val selected = availableVideoModes[currentVideoModeIdx.get()]
-            tempDisplay.width = selected.width
-            tempDisplay.height = selected.height
-            tempDisplay.refreshRate = selected.refreshRate
-            hasUnsavedChanges = true
-        }
-
-        // MSAA
-        val msaaOptions = arrayOf("Off", "2x", "4x", "8x")
-        val msaaValues = intArrayOf(0, 2, 4, 8)
-        var msaaPos = msaaValues.indexOf(tempDisplay.msaaSamples).coerceAtLeast(2)
-        val currentMsaaIdx = ImInt(msaaPos)
-        if (combo(stringManager.getString("lbl.settings.msaa"), currentMsaaIdx, msaaOptions, msaaOptions.size)) {
-            tempDisplay.msaaSamples = msaaValues[currentMsaaIdx.get()]
-            hasUnsavedChanges = true
-        }
-
-        val vsync = ImBoolean(tempDisplay.vsync)
-        if (checkbox(stringManager.getString("lbl.settings.vsync"), vsync)) {
-            tempDisplay.vsync = vsync.get()
             hasUnsavedChanges = true
         }
     }
@@ -321,15 +250,8 @@ class SettingsWindow(
         textColored(0.5f, 0.5f, 0.5f, 1f, "Project physics settings (Gravity, Timestep) go here.")
     }
 
-    private fun refreshHardwareInfo() {
-        availableMonitors = displayService.getAvailableMonitors()
-        val mIdx = tempDisplay.monitorIndex.coerceIn(0, availableMonitors.size - 1)
-        availableVideoModes = displayService.getAvailableVideoModes(mIdx)
-    }
-
     private fun syncTempSettings() {
         tempHardware = settingsManager.engine.hardware.copy()
-        tempDisplay = settingsManager.engine.display.copy()
         tempEditor = settingsManager.engine.editor.copy()
         tempGameplay = settingsManager.project.gameplay.copy()
     }
@@ -339,7 +261,6 @@ class SettingsWindow(
         tempGameplay.validate()
 
         settingsManager.engine.hardware = tempHardware
-        settingsManager.engine.display = tempDisplay
         settingsManager.engine.editor = tempEditor
         settingsManager.project.gameplay = tempGameplay
 
@@ -355,7 +276,6 @@ class SettingsWindow(
 
     private fun resetToDefaults() {
         tempHardware = HardwareSettings()
-        tempDisplay = DisplaySettings()
         tempEditor = EditorSettings()
         tempGameplay = GameplaySettings()
         hasUnsavedChanges = true

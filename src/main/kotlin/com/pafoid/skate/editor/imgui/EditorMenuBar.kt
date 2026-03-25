@@ -277,25 +277,6 @@ class EditorMenuBar(
         if (beginMenu(stringManager.getString("menu.settings"))) {
             val engineSettings = settingsManager.engine
 
-            // Display settings
-            val displaySettings = engineSettings.display
-            val vsync = ImBoolean(displaySettings.vsync)
-            if (checkbox(stringManager.getString("menu.settings.vsync"), vsync)) {
-                displaySettings.vsync = vsync.get()
-                setVSync(displaySettings.vsync)
-                settingsManager.saveEngine()
-            }
-
-            val isFullscreen = displaySettings.windowMode == com.pafoid.skate.engine.settings.WindowMode.FULLSCREEN
-            val fullscreen = ImBoolean(isFullscreen)
-            if (checkbox(stringManager.getString("menu.settings.fullscreen"), fullscreen)) {
-                displaySettings.windowMode = if (fullscreen.get()) com.pafoid.skate.engine.settings.WindowMode.FULLSCREEN else com.pafoid.skate.engine.settings.WindowMode.WINDOWED
-                setFullscreen(fullscreen.get())
-                settingsManager.saveEngine()
-            }
-
-            separator()
-
             // Gamepad overlay settings
             val editorSettings = engineSettings.editor
             val overlaySize = floatArrayOf(editorSettings.gamepadOverlaySize)

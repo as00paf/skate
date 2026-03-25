@@ -36,6 +36,7 @@ import org.lwjgl.glfw.GLFW.glfwGetMonitorPos
 import org.lwjgl.glfw.GLFW.glfwGetMonitors
 import org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor
 import org.lwjgl.glfw.GLFW.glfwGetVideoMode
+import org.lwjgl.glfw.GLFW.glfwGetWindowSize
 import org.lwjgl.glfw.GLFW.glfwInit
 import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
 import org.lwjgl.glfw.GLFW.glfwMaximizeWindow
@@ -103,7 +104,6 @@ class Window(
 
     private fun init() {
         settingsManager.load()
-        val settings = settingsManager.engine.display
 
         // Error callback
         GLFWErrorCallback.createPrint(System.err).set()
@@ -115,14 +115,10 @@ class Window(
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE)
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
 
-        // Window decoration depends on mode (Borderless uses custom controls)
-        val decorated = if (settings.windowMode == com.pafoid.skate.engine.settings.WindowMode.WINDOWED) GLFW_TRUE else GLFW_FALSE
-        glfwWindowHint(GLFW_DECORATED, decorated)
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE)
 
         // MSAA Support
-        if (settings.msaaSamples > 0) {
-            glfwWindowHint(GLFW_SAMPLES, settings.msaaSamples)
-        }
+        glfwWindowHint(GLFW_SAMPLES, 4)
 
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, openGLDebug)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
@@ -130,38 +126,38 @@ class Window(
 
         // Monitor and Video Mode discovery
         val monitors = glfwGetMonitors() ?: throw IllegalStateException("No monitors found")
-        val monitorIndex = settings.monitorIndex.coerceIn(0, monitors.capacity() - 1)
-        val monitor = monitors.get(monitorIndex)
+        val monitor = monitors.get(0)
         val videoMode = glfwGetVideoMode(monitor)
 
         // Use settings or fallback to monitor defaults
-        val winWidth = if (settings.width > 0) settings.width else (videoMode?.width() ?: width)
-        val winHeight = if (settings.height > 0) settings.height else (videoMode?.height() ?: height)
+        val winWidth = width
+        val winHeight = height
 
         // Store window dimensions
         windowWidth = winWidth
         windowHeight = winHeight
 
         // Create the window
-        val monitorHandle = if (settings.windowMode == com.pafoid.skate.engine.settings.WindowMode.FULLSCREEN) monitor else NULL
-        glfwWindow = glfwCreateWindow(winWidth, winHeight, title, monitorHandle, NULL)
+        glfwWindow = glfwCreateWindow(winWidth, winHeight, title, NULL, NULL)
         if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
 
-        // Position window if not fullscreen
-        if (settings.windowMode != com.pafoid.skate.engine.settings.WindowMode.FULLSCREEN) {
-            if (settings.windowMode == com.pafoid.skate.engine.settings.WindowMode.BORDERLESS) {
-                glfwSetWindowPos(glfwWindow, 0, 0)
-                glfwMaximizeWindow(glfwWindow)
-            } else {
-                // Center on monitor
-                val xPos = IntArray(1)
-                val yPos = IntArray(1)
-                glfwGetMonitorPos(monitor, xPos, yPos)
-                val monitorWidth = videoMode?.width() ?: 1920
-                val monitorHeight = videoMode?.height() ?: 1080
-                glfwSetWindowPos(glfwWindow, xPos[0] + (monitorWidth - winWidth) / 2, yPos[0] + (monitorHeight - winHeight) / 2)
-            }
-        }
+        // Center on monitor
+        val xPos = IntArray(1)
+        val yPos = IntArray(1)
+        glfwGetMonitorPos(monitor, xPos, yPos)
+        val monitorWidth = videoMode?.width() ?: 1920
+        val monitorHeight = videoMode?.height() ?: 1080
+        glfwSetWindowPos(glfwWindow, xPos[0] + (monitorWidth - winWidth) / 2, yPos[0] + (monitorHeight - winHeight) / 2)
+
+        // Maximize window on startup
+        glfwMaximizeWindow(glfwWindow)
+
+        // Get the maximized window size
+        val widthBuffer = IntArray(1)
+        val heightBuffer = IntArray(1)
+        glfwGetWindowSize(glfwWindow, widthBuffer, heightBuffer)
+        windowWidth = widthBuffer[0]
+        windowHeight = heightBuffer[0]
 
         // Set the window icon
         setWindowIcon(Assets.Textures.APP_ICON)
@@ -169,8 +165,8 @@ class Window(
         // Make OpenGL context current
         glfwMakeContextCurrent(glfwWindow)
 
-        // Enable v-sync
-        glfwSwapInterval(if (settings.vsync) 1 else 0)
+        // Disable v-sync
+        glfwSwapInterval(0)
 
         // This is needed for OpenGL
         GL.createCapabilities()
@@ -183,9 +179,10 @@ class Window(
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
 
         // Enable MSAA if configured
-        if (settings.msaaSamples > 0) {
-            glEnable(org.lwjgl.opengl.GL13.GL_MULTISAMPLE)
-        }
+        glEnable(org.lwjgl.opengl.GL13.GL_MULTISAMPLE)
+
+        // Set initial viewport for maximized window
+        glViewport(0, 0, windowWidth, windowHeight)
 
         installCallbacks()
         joystickListener.init()

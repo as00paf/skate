@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class EngineSettings(
-    var display: DisplaySettings = DisplaySettings(),
     var editor: EditorSettings = EditorSettings(),
     var hardware: HardwareSettings = HardwareSettings()
 )
