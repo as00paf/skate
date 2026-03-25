@@ -93,7 +93,7 @@ class EditorMenuBar(
             renderAppIcon(barHeight)
             renderHamburgerMenu(currentScene, barHeight)
             renderProjectInfo(barHeight)
-            handleDragging(barHeight)
+            //handleDragging(barHeight)
             buildWindowControls(barHeight)
 
             endMenuBar()

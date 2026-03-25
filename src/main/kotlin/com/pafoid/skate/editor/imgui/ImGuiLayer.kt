@@ -122,6 +122,22 @@ class ImGuiLayer(
     private lateinit var setVSync: (Boolean) -> Unit
 
     /**
+     * Flag to track if window decoration changed and needs ImGui viewport update.
+     * Set by [onWindowDecorationChanged] and consumed in [endFrame].
+     */
+    private var needsDecorationUpdate = false
+
+    /**
+     * Notifies ImGui that the window decoration state has changed.
+     * Call this when toggling between maximized (undecorated) and restored (decorated) states
+     * to ensure ImGui recalculates its work area to account for window decorations.
+     */
+    fun onWindowDecorationChanged() {
+        // Defer the update until endFrame() to avoid ImGui assertion errors
+        needsDecorationUpdate = true
+    }
+
+    /**
      * Gets the currently hovered game object from the GameViewWindow.
      */
     fun getHoveredGameObject(): com.pafoid.skate.engine.ecs.GameObject? {
@@ -259,7 +275,15 @@ class ImGuiLayer(
             updatePlatformWindows()
             renderPlatformWindowsDefault()
             GLFW.glfwMakeContextCurrent(backupWindowPtr)
+        } else if (needsDecorationUpdate) {
+            // If viewports are not enabled, we still need to update platform windows
+            // when decoration state changes to recalculate work area
+            val backupWindowPtr = GLFW.glfwGetCurrentContext()
+            updatePlatformWindows()
+            GLFW.glfwMakeContextCurrent(backupWindowPtr)
         }
+
+        needsDecorationUpdate = false
     }
 
     private fun setupDockSpace(currentScene: Scene) {

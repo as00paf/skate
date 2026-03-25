@@ -32,11 +32,11 @@ import org.lwjgl.glfw.GLFW.glfwCreateWindow
 import org.lwjgl.glfw.GLFW.glfwDefaultWindowHints
 import org.lwjgl.glfw.GLFW.glfwDestroyWindow
 import org.lwjgl.glfw.GLFW.glfwFocusWindow
+import org.lwjgl.glfw.GLFW.glfwGetFramebufferSize
 import org.lwjgl.glfw.GLFW.glfwGetMonitorPos
 import org.lwjgl.glfw.GLFW.glfwGetMonitors
 import org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor
 import org.lwjgl.glfw.GLFW.glfwGetVideoMode
-import org.lwjgl.glfw.GLFW.glfwGetWindowSize
 import org.lwjgl.glfw.GLFW.glfwInit
 import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
 import org.lwjgl.glfw.GLFW.glfwMaximizeWindow
@@ -44,6 +44,7 @@ import org.lwjgl.glfw.GLFW.glfwPollEvents
 import org.lwjgl.glfw.GLFW.glfwRequestWindowAttention
 import org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback
 import org.lwjgl.glfw.GLFW.glfwSetErrorCallback
+import org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback
 import org.lwjgl.glfw.GLFW.glfwSetKeyCallback
 import org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback
 import org.lwjgl.glfw.GLFW.glfwSetScrollCallback
@@ -52,7 +53,6 @@ import org.lwjgl.glfw.GLFW.glfwSetWindowIcon
 import org.lwjgl.glfw.GLFW.glfwSetWindowMaximizeCallback
 import org.lwjgl.glfw.GLFW.glfwSetWindowMonitor
 import org.lwjgl.glfw.GLFW.glfwSetWindowPos
-import org.lwjgl.glfw.GLFW.glfwSetWindowSizeCallback
 import org.lwjgl.glfw.GLFW.glfwShowWindow
 import org.lwjgl.glfw.GLFW.glfwSwapBuffers
 import org.lwjgl.glfw.GLFW.glfwSwapInterval
@@ -96,6 +96,9 @@ class Window(
     private var isFirstDraw = true
     private var windowWidth: Int = 1920
     private var windowHeight: Int = 1080
+
+    // Flag to track if we need to update framebuffer size after decorations change
+    private var needsFramebufferUpdate = false
 
     private val openGLDebug = GLFW_FALSE
 
@@ -154,12 +157,12 @@ class Window(
         // Maximize window on startup
         glfwMaximizeWindow(glfwWindow)
 
-        // Get the maximized window size
-        val widthBuffer = IntArray(1)
-        val heightBuffer = IntArray(1)
-        glfwGetWindowSize(glfwWindow, widthBuffer, heightBuffer)
-        windowWidth = widthBuffer[0]
-        windowHeight = heightBuffer[0]
+        // Get the maximized framebuffer size
+        val fbSizeWidth = IntArray(1)
+        val fbSizeHeight = IntArray(1)
+        glfwGetFramebufferSize(glfwWindow, fbSizeWidth, fbSizeHeight)
+        windowWidth = fbSizeWidth[0]
+        windowHeight = fbSizeHeight[0]
 
         // Set the window icon
         setWindowIcon(Assets.Textures.APP_ICON)
@@ -222,25 +225,29 @@ class Window(
     }
 
     private fun installCallbacks() {
-        glfwSetWindowSizeCallback(glfwWindow) { w: Long, newWidth: Int, newHeight: Int ->
-            windowWidth = newWidth
-            windowHeight = newHeight
-            glViewport(0, 0, newWidth, newHeight)
-            renderer.resize(newWidth, newHeight)
-        }
-
         glfwSetWindowMaximizeCallback(glfwWindow) { window, maximized ->
+            // Toggle decorations based on maximize state
+            // (undecorated when maximized, decorated when restored)
             if (maximized) {
                 glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE)
-                val widthBuffer = IntArray(1)
-                val heightBuffer = IntArray(1)
-
-                glfwSetWindowPos(window, 0, 0)
-                glfwGetWindowSize(window, widthBuffer, heightBuffer)
-                glViewport(0, 0, widthBuffer[0], heightBuffer[0])
             } else {
                 glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE)
             }
+
+            // Flag that we need to update framebuffer size on next frame
+            // (after GLFW has processed the decoration change)
+            needsFramebufferUpdate = true
+
+            // Notify ImGui to recalculate viewport work area for decorations
+            imGuiLayer.onWindowDecorationChanged()
+        }
+
+        // Framebuffer size callback - fires when content area changes (e.g., resizing, HiDPI)
+        glfwSetFramebufferSizeCallback(glfwWindow) { window, width, height ->
+            windowWidth = width
+            windowHeight = height
+            glViewport(0, 0, width, height)
+            renderer.resize(width, height)
         }
 
         glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
@@ -258,6 +265,31 @@ class Window(
             glfwPollEvents()
             joystickListener.update()
             JobSystem.update()
+
+            // Check if we need to update framebuffer size after decoration change
+            if (needsFramebufferUpdate) {
+                needsFramebufferUpdate = false
+                val fbWidth = IntArray(1)
+                val fbHeight = IntArray(1)
+                glfwGetFramebufferSize(glfwWindow, fbWidth, fbHeight)
+
+                logger.logEngine(
+                    "Framebuffer size changed: ${fbWidth[0]}x${fbHeight[0]} (was ${windowWidth}x${windowHeight})",
+                    com.pafoid.skate.editor.systems.LogLevel.INFO
+                )
+
+                // Only update if size actually changed
+                if (fbWidth[0] != windowWidth || fbHeight[0] != windowHeight) {
+                    windowWidth = fbWidth[0]
+                    windowHeight = fbHeight[0]
+                    glViewport(0, 0, fbWidth[0], fbHeight[0])
+                    renderer.resize(fbWidth[0], fbHeight[0])
+                    logger.logEngine(
+                        "Updated viewport and renderer to: ${fbWidth[0]}x${fbHeight[0]}",
+                        com.pafoid.skate.editor.systems.LogLevel.INFO
+                    )
+                }
+            }
 
             // Record high-frequency input
             inputBuffer.push(
