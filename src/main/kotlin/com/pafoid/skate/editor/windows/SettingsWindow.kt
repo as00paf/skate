@@ -1,8 +1,12 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.data.DisplaySettings
 import com.pafoid.skate.editor.data.InputSettings
+import com.pafoid.skate.editor.data.WindowMode
+import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.editor.systems.VideoModeInfo
 import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
@@ -30,10 +34,12 @@ import org.koin.core.component.KoinComponent
  *
  * @param settingsManager Settings manager for loading/saving settings
  * @param stringManager String manager for localization
+ * @param displayService Helper for hardware discovery
  */
 class SettingsWindow(
     private val settingsManager: SettingsManager,
-    private val stringManager: StringManager
+    private val stringManager: StringManager,
+    private val displayService: DisplayService
 ) : KoinComponent {
 
     var isOpen = false
@@ -41,7 +47,12 @@ class SettingsWindow(
 
     // Temporary storage for settings being edited
     private var tempInputSettings = InputSettings()
+    private var tempDisplaySettings = DisplaySettings()
     private var hasUnsavedChanges = false
+
+    // Hardware discovery cache
+    private var availableMonitors = emptyList<com.pafoid.skate.editor.systems.MonitorInfo>()
+    private var availableVideoModes = emptyList<VideoModeInfo>()
 
     /**
      * Renders the settings window.
@@ -55,6 +66,10 @@ class SettingsWindow(
             val tabSelector = ImInt(settingsTab)
             if (combo("##TabSelector", tabSelector, tabNames, tabNames.size)) {
                 settingsTab = tabSelector.get()
+                // Refresh hardware info when switching to display tab
+                if (settingsTab == 2) {
+                    refreshHardwareInfo()
+                }
             }
 
             separator()
@@ -93,25 +108,34 @@ class SettingsWindow(
         end()
     }
 
+    private fun refreshHardwareInfo() {
+        availableMonitors = displayService.getAvailableMonitors()
+        val monitorIdx =
+            if (tempDisplaySettings.monitorIndex < availableMonitors.size) tempDisplaySettings.monitorIndex else 0
+        availableVideoModes = displayService.getAvailableVideoModes(monitorIdx)
+    }
+
     /**
      * Syncs temporary settings with current settings when window opens.
      */
     private fun syncTempSettings() {
+        val s = settingsManager.settings
         tempInputSettings = InputSettings().apply {
-            leftStickDeadzone = settingsManager.settings.inputSettings.leftStickDeadzone
-            rightStickDeadzone = settingsManager.settings.inputSettings.rightStickDeadzone
-            triggerThreshold = settingsManager.settings.inputSettings.triggerThreshold
-            mouseSensitivity = settingsManager.settings.inputSettings.mouseSensitivity
-            controllerSensitivity = settingsManager.settings.inputSettings.controllerSensitivity
-            movementThreshold = settingsManager.settings.inputSettings.movementThreshold
-            sprintThreshold = settingsManager.settings.inputSettings.sprintThreshold
-            jumpImpulse = settingsManager.settings.inputSettings.jumpImpulse
-            walkSpeed = settingsManager.settings.inputSettings.walkSpeed
-            runSpeed = settingsManager.settings.inputSettings.runSpeed
-            rotationSpeed = settingsManager.settings.inputSettings.rotationSpeed
-            takeOffTime = settingsManager.settings.inputSettings.takeOffTime
-            inputSmoothing = settingsManager.settings.inputSettings.inputSmoothing
+            leftStickDeadzone = s.inputSettings.leftStickDeadzone
+            rightStickDeadzone = s.inputSettings.rightStickDeadzone
+            triggerThreshold = s.inputSettings.triggerThreshold
+            mouseSensitivity = s.inputSettings.mouseSensitivity
+            controllerSensitivity = s.inputSettings.controllerSensitivity
+            movementThreshold = s.inputSettings.movementThreshold
+            sprintThreshold = s.inputSettings.sprintThreshold
+            jumpImpulse = s.inputSettings.jumpImpulse
+            walkSpeed = s.inputSettings.walkSpeed
+            runSpeed = s.inputSettings.runSpeed
+            rotationSpeed = s.inputSettings.rotationSpeed
+            takeOffTime = s.inputSettings.takeOffTime
+            inputSmoothing = s.inputSettings.inputSmoothing
         }
+        tempDisplaySettings = s.displaySettings.copy()
     }
 
     /**
@@ -122,6 +146,7 @@ class SettingsWindow(
         if (!hasUnsavedChanges) {
             syncTempSettings()
         }
+        // ... (rest of input settings tab)
 
         text(stringManager.getString("lbl.settings.deadzones"))
         separator()
@@ -276,28 +301,89 @@ class SettingsWindow(
      * Renders the display settings tab.
      */
     private fun renderDisplaySettingsTab() {
+        if (!hasUnsavedChanges) {
+            syncTempSettings()
+            refreshHardwareInfo()
+        }
+
         text(stringManager.getString("lbl.settings.display_settings"))
         separator()
 
-        // Note: Full implementation would require integration with BootManager/Window
-        // This is a placeholder for future implementation
-
-        val fullscreen = ImBoolean(settingsManager.settings.fullscreen)
-        if (checkbox(stringManager.getString("lbl.settings.fullscreen"), fullscreen)) {
-            settingsManager.settings.fullscreen = fullscreen.get()
-            settingsManager.save()
+        // Monitor Selection
+        val monitorNames = availableMonitors.map { it.name }.toTypedArray()
+        val currentMonitorIdx = ImInt(tempDisplaySettings.monitorIndex)
+        if (combo(
+                stringManager.getString("lbl.settings.monitor"),
+                currentMonitorIdx,
+                monitorNames,
+                monitorNames.size
+            )
+        ) {
+            tempDisplaySettings.monitorIndex = currentMonitorIdx.get()
+            refreshHardwareInfo() // Refresh video modes for new monitor
+            hasUnsavedChanges = true
         }
 
-        val vsync = ImBoolean(settingsManager.settings.vsync)
+        // Window Mode
+        val windowModes = WindowMode.entries.toTypedArray()
+        val windowModeNames = windowModes.map {
+            stringManager.getString("lbl.settings.window_mode.${it.name.lowercase()}")
+        }.toTypedArray()
+        val currentModeIdx = ImInt(tempDisplaySettings.windowMode.ordinal)
+        if (combo(
+                stringManager.getString("lbl.settings.window_mode"),
+                currentModeIdx,
+                windowModeNames,
+                windowModeNames.size
+            )
+        ) {
+            tempDisplaySettings.windowMode = windowModes[currentModeIdx.get()]
+            hasUnsavedChanges = true
+        }
+
+        // Resolution & Refresh Rate (only for Fullscreen/Borderless or specific resolutions)
+        val videoModeNames = availableVideoModes.map { "${it.width}x${it.height} @ ${it.refreshRate}Hz" }.toTypedArray()
+        var currentModePos = availableVideoModes.indexOfFirst {
+            it.width == tempDisplaySettings.width &&
+                    it.height == tempDisplaySettings.height &&
+                    it.refreshRate == tempDisplaySettings.refreshRate
+        }
+        if (currentModePos == -1) currentModePos = 0
+
+        val currentVideoModeIdx = ImInt(currentModePos)
+        if (combo(
+                stringManager.getString("lbl.settings.resolution"),
+                currentVideoModeIdx,
+                videoModeNames,
+                videoModeNames.size
+            )
+        ) {
+            val selectedMode = availableVideoModes[currentVideoModeIdx.get()]
+            tempDisplaySettings.width = selectedMode.width
+            tempDisplaySettings.height = selectedMode.height
+            tempDisplaySettings.refreshRate = selectedMode.refreshRate
+            hasUnsavedChanges = true
+        }
+
+        separator()
+
+        // MSAA Samples
+        val msaaOptions = arrayOf("Off", "2x", "4x", "8x")
+        val msaaValues = intArrayOf(0, 2, 4, 8)
+        var currentMsaaPos = msaaValues.indexOf(tempDisplaySettings.msaaSamples)
+        if (currentMsaaPos == -1) currentMsaaPos = 2 // Default 4x
+
+        val currentMsaaIdx = ImInt(currentMsaaPos)
+        if (combo(stringManager.getString("lbl.settings.msaa"), currentMsaaIdx, msaaOptions, msaaOptions.size)) {
+            tempDisplaySettings.msaaSamples = msaaValues[currentMsaaIdx.get()]
+            hasUnsavedChanges = true
+        }
+
+        // VSync
+        val vsync = ImBoolean(tempDisplaySettings.vsync)
         if (checkbox(stringManager.getString("lbl.settings.vsync"), vsync)) {
-            settingsManager.settings.vsync = vsync.get()
-            settingsManager.save()
-        }
-
-        val borderless = ImBoolean(settingsManager.settings.borderless)
-        if (checkbox(stringManager.getString("lbl.settings.borderless"), borderless)) {
-            settingsManager.settings.borderless = borderless.get()
-            settingsManager.save()
+            tempDisplaySettings.vsync = vsync.get()
+            hasUnsavedChanges = true
         }
 
         separator()
@@ -308,15 +394,20 @@ class SettingsWindow(
      * Saves all settings to disk.
      */
     private fun saveSettings() {
-        // Apply temp input settings to main settings
+        // Apply temp settings to main settings
         settingsManager.settings.inputSettings = tempInputSettings
+        settingsManager.settings.displaySettings = tempDisplaySettings
 
         // Validate settings
         settingsManager.settings.inputSettings.validate()
+        settingsManager.settings.displaySettings.validate()
 
         // Save to disk
         settingsManager.save()
         hasUnsavedChanges = false
+
+        // Note: Full application of display settings would happen via a callback 
+        // to the Window class, typically triggered here or on restart.
     }
 
     /**
@@ -324,6 +415,7 @@ class SettingsWindow(
      */
     private fun resetToDefaults() {
         tempInputSettings = InputSettings()
+        tempDisplaySettings = DisplaySettings()
         hasUnsavedChanges = true
     }
 }
