@@ -25,9 +25,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 - [⏳] **A46.0.1: Comprehensive Engine UI & Editor Tooling Revamp**
   - **Status: IMPLEMENTATION**
   - [x] **A46.0.1.1: Visual Style & Theme Implementation** (Islands Dark / IntelliJ-like)
-  - [ ] **A46.0.1.2: Custom GLFW Window Controls**
-    - Redesign window buttons (Minimize, Maximize, Close) to be larger and match IntelliJ behavior.
-    - Implement a specific red hover/highlight color for the Close button.
+  - [ ] **A46.0.1.2: Fix GLFW Window issues**
   - [ ] **A46.0.1.3: ImGui Docking Refinement** (Fix issues and optimize layout)
   - [ ] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory, scene name)
   - [ ] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
