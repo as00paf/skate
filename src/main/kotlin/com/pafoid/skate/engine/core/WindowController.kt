@@ -1,6 +1,17 @@
 package com.pafoid.skate.engine.core
 
-import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFW.GLFW_DECORATED
+import org.lwjgl.glfw.GLFW.GLFW_FALSE
+import org.lwjgl.glfw.GLFW.GLFW_MAXIMIZED
+import org.lwjgl.glfw.GLFW.GLFW_TRUE
+import org.lwjgl.glfw.GLFW.glfwGetWindowAttrib
+import org.lwjgl.glfw.GLFW.glfwGetWindowPos
+import org.lwjgl.glfw.GLFW.glfwIconifyWindow
+import org.lwjgl.glfw.GLFW.glfwMaximizeWindow
+import org.lwjgl.glfw.GLFW.glfwRestoreWindow
+import org.lwjgl.glfw.GLFW.glfwSetWindowAttrib
+import org.lwjgl.glfw.GLFW.glfwSetWindowPos
+import org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose
 
 /**
  * Handles custom window operations for a GLFW window without decorations.
@@ -34,6 +45,7 @@ class WindowController(private val glfwWindow: Long) {
      * Maximizes the window.
      */
     fun maximize() {
+        glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
         glfwMaximizeWindow(glfwWindow)
     }
 
@@ -41,6 +53,7 @@ class WindowController(private val glfwWindow: Long) {
      * Restores the window from a maximized or minimized state.
      */
     fun restore() {
+        glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
         glfwRestoreWindow(glfwWindow)
     }
 

@@ -47,7 +47,9 @@ import org.lwjgl.glfw.GLFW.glfwSetErrorCallback
 import org.lwjgl.glfw.GLFW.glfwSetKeyCallback
 import org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback
 import org.lwjgl.glfw.GLFW.glfwSetScrollCallback
+import org.lwjgl.glfw.GLFW.glfwSetWindowAttrib
 import org.lwjgl.glfw.GLFW.glfwSetWindowIcon
+import org.lwjgl.glfw.GLFW.glfwSetWindowMaximizeCallback
 import org.lwjgl.glfw.GLFW.glfwSetWindowMonitor
 import org.lwjgl.glfw.GLFW.glfwSetWindowPos
 import org.lwjgl.glfw.GLFW.glfwSetWindowSizeCallback
@@ -226,6 +228,21 @@ class Window(
             glViewport(0, 0, newWidth, newHeight)
             renderer.resize(newWidth, newHeight)
         }
+
+        glfwSetWindowMaximizeCallback(glfwWindow) { window, maximized ->
+            if (maximized) {
+                glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE)
+                val widthBuffer = IntArray(1)
+                val heightBuffer = IntArray(1)
+
+                glfwSetWindowPos(window, 0, 0)
+                glfwGetWindowSize(window, widthBuffer, heightBuffer)
+                glViewport(0, 0, widthBuffer[0], heightBuffer[0])
+            } else {
+                glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE)
+            }
+        }
+
         glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
         glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
         glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)

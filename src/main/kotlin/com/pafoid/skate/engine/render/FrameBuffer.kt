@@ -21,7 +21,7 @@ import org.lwjgl.opengl.GL30.glGenTextures
 import org.lwjgl.opengl.GL30.glTexImage2D
 import org.lwjgl.opengl.GL30.glTexParameteri
 
-class FrameBuffer(val width: Int, val height: Int) {
+class FrameBuffer(var width: Int, var height: Int) {
     private var fboId = 0
     private var depthTexture: Int = 0
     private lateinit var texture: Texture
@@ -55,6 +55,9 @@ class FrameBuffer(val width: Int, val height: Int) {
      */
     fun resize(width: Int, height: Int) {
         if (width == this.width && height == this.height) return
+
+        this.width = width
+        this.height = height
 
         // Cleanup old resources
         if (fboId != 0) {
