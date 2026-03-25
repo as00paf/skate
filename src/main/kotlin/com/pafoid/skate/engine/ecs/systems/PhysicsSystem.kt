@@ -43,11 +43,17 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
             }
 
             // Sync physics state from body to component
+            // Note: rawBody may be null or not yet initialized if physics world is not yet set up (e.g., in debug mode)
             rigidBody.rawBody?.let { body ->
-                physicsComponent.updateFromPhysics(
-                    body.getLinearVelocity(null).toVector3f(),
-                    body.getAngularVelocity(null).toVector3f()
-                )
+                try {
+                    physicsComponent.updateFromPhysics(
+                        body.getLinearVelocity(null).toVector3f(),
+                        body.getAngularVelocity(null).toVector3f()
+                    )
+                } catch (e: AssertionError) {
+                    // Body is not yet in physics world - skip this frame
+                    // This can happen during initialization in debug mode
+                }
             }
         }
     }
