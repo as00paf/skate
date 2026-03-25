@@ -31,7 +31,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - [ ] **A46.0.1.3: ImGui Docking Refinement** (Fix issues and optimize layout)
   - [ ] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory, scene name)
   - [ ] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
-  - [ ] **A46.0.1.6: Refactor Properties Window** (Rename from Inspector, improve layout)
+  - [ ] **A46.0.1.6: Refactor Properties Window** (Improve layout)
   - [ ] **A46.0.1.7: Enhance Scene Hierarchy** (Visibility/lock toggles, search, "+" button, link button)
   - [ ] **A46.0.1.8: Implement File System / Asset Browser Window** (Dedicated asset navigation)
   - [ ] **A46.0.1.9: Enhance Console Window** (Add search function and "Clear" button)

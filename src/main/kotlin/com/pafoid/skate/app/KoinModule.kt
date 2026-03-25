@@ -2,6 +2,7 @@ package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
@@ -50,6 +51,7 @@ val appModule = module {
     single { EditorInputHandler(get(), get(), get(), get()) }
     single { StringManager() }
     single { SettingsManager(get(), get(), get()) }
+    single { DisplayService() }
     single { TrickManager() }
 }
 
@@ -81,7 +83,7 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { BootManager(get(), get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection

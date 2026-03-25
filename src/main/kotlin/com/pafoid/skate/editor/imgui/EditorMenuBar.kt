@@ -278,17 +278,20 @@ class EditorMenuBar(
             val settings = settingsManager.settings
 
             // Display settings
-            val vsync = ImBoolean(settings.vsync)
+            val displaySettings = settings.displaySettings
+            val vsync = ImBoolean(displaySettings.vsync)
             if (checkbox(stringManager.getString("menu.settings.vsync"), vsync)) {
-                settings.vsync = vsync.get()
-                setVSync(settings.vsync)
+                displaySettings.vsync = vsync.get()
+                setVSync(displaySettings.vsync)
                 settingsManager.save()
             }
 
-            val fullscreen = ImBoolean(settings.fullscreen)
+            val isFullscreen = displaySettings.windowMode == com.pafoid.skate.editor.data.WindowMode.FULLSCREEN
+            val fullscreen = ImBoolean(isFullscreen)
             if (checkbox(stringManager.getString("menu.settings.fullscreen"), fullscreen)) {
-                settings.fullscreen = fullscreen.get()
-                setFullscreen(settings.fullscreen)
+                displaySettings.windowMode =
+                    if (fullscreen.get()) com.pafoid.skate.editor.data.WindowMode.FULLSCREEN else com.pafoid.skate.editor.data.WindowMode.WINDOWED
+                setFullscreen(fullscreen.get())
                 settingsManager.save()
             }
 

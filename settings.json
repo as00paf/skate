@@ -1,9 +1,13 @@
 {
-    "width": 1920,
-    "height": 1080,
-    "vsync": false,
-    "fullscreen": true,
-    "borderless": true,
+    "displaySettings": {
+        "width": 1920,
+        "height": 1080,
+        "refreshRate": 60,
+        "monitorIndex": 0,
+        "vsync": true,
+        "windowMode": "FULLSCREEN",
+        "msaaSamples": 4
+    },
     "gamepadOverlaySize": 0.214,
     "showGamepadOverlay": true,
     "unitSystem": "METRIC",
