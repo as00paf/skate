@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.CreateGameObjectCommand
@@ -9,6 +10,8 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -17,14 +20,20 @@ import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.utils.UnitSystem
 import com.pafoid.skate.game.level.LevelManager
 import imgui.ImGui
-import imgui.flag.ImGuiColorEditFlags
+import imgui.flag.ImGuiCol
+import imgui.flag.ImGuiStyleVar
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.beginMenuBar
 import imgui.internal.ImGui.checkbox
 import imgui.internal.ImGui.combo
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.endMenuBar
+import imgui.internal.ImGui.image
 import imgui.internal.ImGui.menuItem
+import imgui.internal.ImGui.popStyleColor
+import imgui.internal.ImGui.popStyleVar
+import imgui.internal.ImGui.pushStyleColor
+import imgui.internal.ImGui.pushStyleVar
 import imgui.internal.ImGui.separator
 import imgui.internal.ImGui.sliderFloat
 import imgui.type.ImBoolean
@@ -40,6 +49,7 @@ import org.lwjgl.glfw.GLFW
  * @param clipboardService Clipboard copy/paste
  * @param sceneManager Current scene access
  * @param settingsManager Settings access and persistence
+ * @param resourceManager To load app icon and other textures
  * @param keyBindingsWindow Open on menu click
  * @param settingsWindow Open on menu click
  * @param editorWindows List of windows for View menu checkboxes
@@ -54,6 +64,7 @@ class EditorMenuBar(
     private val clipboardService: ClipboardService,
     private val sceneManager: SceneManager,
     private val settingsManager: SettingsManager,
+    private val resourceManager: ResourceManager,
     private val keyBindingsWindow: KeyBindingsWindow,
     private val settingsWindow: SettingsWindow,
     private val editorWindows: List<EditorWindow>,
@@ -62,6 +73,14 @@ class EditorMenuBar(
     private val setVSync: (Boolean) -> Unit
 ) {
     private val windowController = WindowController(glfwWindow)
+    private var appIconTexId = -1
+    private val projectIcon = Icons.CUBE
+    private val projectName = "Skate Project"
+
+    init {
+        // App Icon is loaded synchronously for immediate availability in the menu bar
+        appIconTexId = resourceManager.loadTextureSync(Assets.Textures.APP_ICON).texId
+    }
 
     /**
      * Renders the complete menu bar.
@@ -69,32 +88,74 @@ class EditorMenuBar(
      */
     fun render(currentScene: Scene) {
         if (beginMenuBar()) {
-            buildFileMenu(currentScene)
-            buildEditMenu(currentScene)
-            buildSettingsMenu()
-            buildViewMenu()
+            val barHeight = 48f
 
-            // Window dragging logic
-            handleDragging()
-
-            // Aligns window controls to the right
-            buildWindowControls()
+            renderAppIcon(barHeight)
+            renderHamburgerMenu(currentScene, barHeight)
+            renderProjectInfo(barHeight)
+            handleDragging(barHeight)
+            buildWindowControls(barHeight)
 
             endMenuBar()
         }
     }
 
-    private fun handleDragging() {
+    private fun renderAppIcon(barHeight: Float) {
+        if (appIconTexId != -1) {
+            val iconSize = 32f
+            // Centering logic: (Bar Height - Icon Height) / 2
+            ImGui.setCursorPosY((barHeight - iconSize) / 2f)
+            image(appIconTexId.toLong(), iconSize, iconSize)
+        }
+    }
+
+    private fun renderHamburgerMenu(currentScene: Scene, barHeight: Float) {
+        val btnSize = 30f
+        val offsetY = (barHeight - btnSize) / 2f
+        ImGui.setCursorPosY(offsetY)
+
+        // Use a square button as the menu trigger
+        if (ImGui.button(Icons.MENU, btnSize, btnSize)) {
+            ImGui.openPopup("main_hamburger_menu")
+        }
+
+        // Define the menu as a popup that appears below the button
+        if (ImGui.beginPopup("main_hamburger_menu")) {
+            buildFileMenu(currentScene)
+            buildEditMenu(currentScene)
+            buildSettingsMenu()
+            buildViewMenu()
+            ImGui.endPopup()
+        }
+    }
+
+    private fun renderProjectInfo(barHeight: Float) {
+        val fontSize = ImGui.getFontSize()
+        val textY = (barHeight - fontSize) / 2f * 0.8f
+        ImGui.setCursorPosY(textY)
+
+        ImGui.textDisabled("|")
+        ImGui.setCursorPosY(textY)
+        ImGui.textColored(
+            Color.ISLAND_ACCENT_BLUE.x,
+            Color.ISLAND_ACCENT_BLUE.y,
+            Color.ISLAND_ACCENT_BLUE.z,
+            Color.ISLAND_ACCENT_BLUE.w,
+            projectIcon
+        )
+        ImGui.setCursorPosY(textY)
+        ImGui.text(projectName)
+    }
+
+    private fun handleDragging(barHeight: Float) {
         val mouseX = DoubleArray(1)
         val mouseY = DoubleArray(1)
         GLFW.glfwGetCursorPos(glfwWindow, mouseX, mouseY)
 
-        // Only allow dragging if the mouse is in the menu bar area
-        // We use getFrameHeight() which corresponds to the height of the menu bar
-        val isOverMenuBar = mouseY[0] >= 0 && mouseY[0] <= ImGui.getFrameHeight()
+        // Dragging area covers the whole bar height
+        val isOverMenuBar = mouseY[0] >= 0 && mouseY[0] <= barHeight
 
         if (isOverMenuBar && ImGui.isWindowHovered() && ImGui.isMouseClicked(0)) {
-            // Check if we're not clicking on any menu item or other active widget
             if (!ImGui.isAnyItemActive() && !ImGui.isAnyItemHovered()) {
                 windowController.startDrag(mouseX[0], mouseY[0])
             }
@@ -107,30 +168,46 @@ class EditorMenuBar(
         }
     }
 
-    private fun buildWindowControls() {
-        val buttonWidth = 45f
-        val totalWidth = buttonWidth * 3
-        
-        // Use the main viewport size to ensure we are at the very edge of the screen
-        val screenWidth = ImGui.getMainViewport().sizeX
-        ImGui.setCursorPosX(screenWidth - totalWidth)
-        ImGui.setCursorPosY(5f) // Lowered slightly for better alignment
+    private fun buildWindowControls(barHeight: Float) {
+        val btnSize = 48f
+        val totalW = btnSize * 3f
+
+        // Calculate starting X to be exactly totalW from the right edge of the available space
+        val currentX = ImGui.getCursorPosX()
+        val availX = ImGui.getContentRegionAvailX()
+        ImGui.setCursorPosX(currentX + availX - totalW)
+
+        // Reset Y to 0 relative to the menu bar to ensure buttons are top-aligned
+        ImGui.setCursorPosY(0f)
+
+        // Remove all padding and spacing to ensure buttons are flush and uniform
+        pushStyleVar(ImGuiStyleVar.FramePadding, 0f, 0f)
+        pushStyleVar(ImGuiStyleVar.ItemSpacing, 0f, 0f)
+        pushStyleColor(ImGuiCol.Button, 0f, 0f, 0f, 0f) // Transparent base
 
         // Minimize
-        if (ImGui.menuItem(Icons.WINDOW_MINIMIZE)) {
+        if (ImGui.button(Icons.WINDOW_MINIMIZE, btnSize, btnSize)) {
             windowController.minimize()
         }
 
-        // Maximize/Restore
+        // Maximize
+        ImGui.setCursorPosY(0f)
         val maxRestoreIcon = if (windowController.isMaximized()) Icons.WINDOW_RESTORE else Icons.WINDOW_MAXIMIZE
-        if (ImGui.menuItem(maxRestoreIcon)) {
+        if (ImGui.button(maxRestoreIcon, btnSize, btnSize)) {
             windowController.toggleMaximize()
         }
 
-        // Close
-        if (ImGui.menuItem(Icons.WINDOW_CLOSE)) {
+        // Close - Red highlight
+        ImGui.setCursorPosY(0f)
+        pushStyleColor(ImGuiCol.ButtonHovered, 0.83f, 0.13f, 0.17f, 1f)
+        pushStyleColor(ImGuiCol.ButtonActive, 0.93f, 0.23f, 0.27f, 1f)
+        if (ImGui.button(Icons.WINDOW_CLOSE, btnSize, btnSize)) {
             windowController.close()
         }
+        popStyleColor(2) // ButtonHovered, ButtonActive
+
+        popStyleColor(1) // Button base
+        popStyleVar(2) // FramePadding, ItemSpacing
     }
 
     /**

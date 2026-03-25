@@ -25,7 +25,9 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 - [⏳] **A46.0.1: Comprehensive Engine UI & Editor Tooling Revamp**
   - **Status: IMPLEMENTATION**
   - [x] **A46.0.1.1: Visual Style & Theme Implementation** (Islands Dark / IntelliJ-like)
-  - [ ] **A46.0.1.2: Custom GLFW Window Controls** (Minimize, Maximize/Restore, Quit)
+  - [ ] **A46.0.1.2: Custom GLFW Window Controls**
+    - Redesign window buttons (Minimize, Maximize, Close) to be larger and match IntelliJ behavior.
+    - Implement a specific red hover/highlight color for the Close button.
   - [ ] **A46.0.1.3: ImGui Docking Refinement** (Fix issues and optimize layout)
   - [ ] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory, scene name)
   - [ ] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
@@ -40,6 +42,20 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - [ ] **A46.0.1.14: Implement "Search Everywhere" Global Search** (Ctrl+P)
   - [ ] **A46.0.1.15: Improve Gizmos & Undo/Redo History UI**
   - [ ] **A46.0.1.16: Implement Render Graph Visualization Window** (Display pass structure and dependencies)
+  - [ ] **A46.0.1.17: Top Menu Bar Overhaul**
+    - Match IntelliJ IDEA look and behavior.
+    -
+    Order: [App Icon] -> [Hamburger Menu Icon (for main menus)] -> [Project Icon & Name] -> ... -> [Window Controls (Right)].
+    - Coordinate with @ui-ux-designer for icon assets.
+  - [ ] **A46.0.1.18: App Icon Finalization (@ui-ux-designer)**
+    - [ ] Deliver full-frame (minimal margin) 1024x1024 version.
+    - [ ] Ensure background is truly transparent.
+    - [ ] Provide variants: 16x16, 32x32, 64x64.
+
+- [ ] **A46.0.9: Implement Project Creation & Management System**
+  - Project wizard for creating new projects.
+  - Project settings (name, paths, engine version).
+  - Project switching and recent projects list.
 
 - [ ] **A46.0.2: Implement Advanced Lighting Models**
   - Point lights with position, color, intensity

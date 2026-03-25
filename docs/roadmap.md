@@ -56,6 +56,16 @@ tooling.
 
 ---
 
+## Asset Status
+
+| Asset Name          | Source                                   | Status               | Issues                                                                    |
+|:--------------------|:-----------------------------------------|:---------------------|:--------------------------------------------------------------------------|
+| App Icon            | `a_professional_minimalist_app_ic_2.png` | 🟡 Refinement Needed | Too much margin; Background is not truly transparent (checkerboard/fill). |
+| Hamburger Menu Icon | TBD                                      | ⬜ Todo               | Needs design to match IntelliJ style.                                     |
+| Project Icon        | TBD                                      | ⬜ Todo               | Needs design to match IntelliJ style.                                     |
+
+---
+
 ## Development Phases
 
 ### Phase 1: Foundation [Focus on core engine stability, asset pipeline, and essential gameplay foundations]
@@ -73,6 +83,7 @@ tooling.
 | ID      | Task                                            | Priority  | Effort | Dependencies | Status           |
 |:--------|:------------------------------------------------|:----------|:-------|:-------------|:-----------------|
 | A46.0.1 | Comprehensive Engine UI & Editor Tooling Revamp | 🔴 High   | XL     | A45.0.6      | ⏳ Implementation |
+| A46.0.9 | Implement Project Creation & Management System  | 🔴 High   | M      | None         | ⬜ Todo           |
 | A46.0.2 | Implement Advanced Lighting Models              | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
 | A46.0.3 | Develop Post-Processing Stack                   | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
 | A46.0.4 | Create Advanced Material System                 | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
@@ -84,6 +95,7 @@ tooling.
 **Phase 2 Deliverables:**
 
 * Professional-grade engine UI and sophisticated editor tools for scene editing.
+* **Project Management:** System for creating, saving, and managing engine projects.
 * Support for various light types, post-processing effects, and a flexible material system.
 * A functional in-game UI system.
 * A particle system for visual effects.
@@ -144,7 +156,10 @@ as enhancing gizmos and camera controls.
 **Acceptance Criteria:**
 
 *   [ ] **Visual Style:** "Islands Dark" theme (IntelliJ-like) implemented across all windows.
-*   [ ] **Windowing:** Custom GLFW window controls (minimize, maximize, quit) and refined ImGui docking.
+*   [ ] **Windowing:** Custom GLFW window controls (minimize, maximize, quit) with redesigned buttons to match IntelliJ
+    behavior (larger buttons, red hover for Close).
+*   [ ] **Menu Bar:** Redesigned top menu bar following IntelliJ IDEA
+    layout: [App Icon] -> [Hamburger Menu] -> [Project Icon & Name] -> [Window Controls].
 *   [ ] **Status & Navigation:** Implementation of a bottom status bar and a scenes tab bar.
 *   [ ] **Properties Window:** Renamed from Inspector, with improved layout and field organization.
 *   [ ] **Scene Hierarchy:** Enhanced with visibility/lock toggles, search, and quick creation buttons.
@@ -159,7 +174,29 @@ as enhancing gizmos and camera controls.
 
 **Technical Notes:** Implementation must follow Clean Architecture and ECS principles. Styles should be centralized
 in a theme manager. Event system should be used for cross-window communication (e.g., asset selection).
+Coordinate with @ui-ux-designer for icon assets (App Icon, Hamburger, Project Icon).
 **Dependencies:** A45.0.6
+
+---
+
+### A46.0.1.18: App Icon Finalization
+
+**Priority:** 🔴 High | **Effort:** Small | **Phase:** 2
+**Description:** Deliver the final version of the App Icon based on `a_professional_minimalist_app_ic_2.png`.
+**Acceptance Criteria:**
+
+*   [ ] **Full-frame:** Icon should fill the 1024x1024 canvas with minimal/appropriate margins (current version has too
+    much margin).
+*   [ ] **Transparency:** Background must be truly transparent (no checkerboard or white/black fill).
+*   [ ] **Variants:** Provide UI-sized variants: 16x16, 32x32, and 64x64 pixels.
+*   [ ] **Output Paths:**
+    - `assets/textures/app_icon.png` (1024x1024)
+    - `assets/textures/app_icon_16.png`
+    - `assets/textures/app_icon_32.png`
+    - `assets/textures/app_icon_64.png`
+*   [ ] **Format:** PNG format for all variants.
+    **Assigned to:** @ui-ux-designer
+    **Dependencies:** None
 
 ---
 
@@ -272,6 +309,21 @@ basic ragdolls. This could include generic joints, sliders, and gear constraints
 *   [ ] Provide an API for creating and configuring these constraints between rigid bodies.
 *   [ ] Constraints function correctly and maintain stability within the physics simulation.
     **Technical Notes:** Familiarize with the specifics of each constraint type in the Bullet physics library.
+    **Dependencies:** None
+
+---
+
+### A46.0.9: Implement Project Creation & Management System
+
+**Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
+**Description:** Implement a system for creating and managing game engine projects. This includes a project wizard,
+settings management, and the ability to switch between projects.
+**Acceptance Criteria:**
+
+*   [ ] Project wizard for creating new projects with basic templates.
+*   [ ] Ability to save and load project settings (name, asset paths, etc.).
+*   [ ] Recent projects list and project switching mechanism.
+    **Technical Notes:** This should integrate with the existing asset management and scene loading systems.
     **Dependencies:** None
 
 ---

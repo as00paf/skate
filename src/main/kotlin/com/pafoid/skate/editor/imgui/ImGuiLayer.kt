@@ -17,6 +17,7 @@ import com.pafoid.skate.editor.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.editor.windows.SystemsWindow
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
@@ -71,7 +72,8 @@ class ImGuiLayer(
     private val stringManager: StringManager,
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
-    private val levelManager: LevelManager
+    private val levelManager: LevelManager,
+    private val resourceManager: ResourceManager
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -151,6 +153,7 @@ class ImGuiLayer(
             clipboardService = clipboardService,
             sceneManager = sceneManager,
             settingsManager = settingsManager,
+            resourceManager = resourceManager,
             keyBindingsWindow = keyBindingsWindow,
             settingsWindow = settingsWindow,
             editorWindows = editorWindows,
@@ -270,10 +273,15 @@ class ImGuiLayer(
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.NoMove or
                 ImGuiWindowFlags.NoBringToFrontOnFocus or ImGuiWindowFlags.NoNavFocus)
 
+        // Push large FramePadding specifically to give the Menu Bar more vertical space
+        pushStyleVar(ImGuiStyleVar.FramePadding, 12f, 22f)
+        pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
         pushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f)
         pushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f)
+
         begin(stringManager.getString("lbl.editor_title"), ImBoolean(true), windowFlags)
-        popStyleVar(2)
+
+        popStyleVar(4) // Pop FramePadding, WindowPadding, WindowRounding, WindowBorderSize
 
         dockSpace(getID("DockSpace"))
         setupLayout(getID("DockSpace"))

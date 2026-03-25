@@ -40,4 +40,5 @@ object Icons {
     const val WINDOW_MAXIMIZE = "\uf065"
     const val WINDOW_RESTORE = "\uf066"
     const val WINDOW_CLOSE = "\uf00d"
+    const val MENU = "\uf0c9"
 }
