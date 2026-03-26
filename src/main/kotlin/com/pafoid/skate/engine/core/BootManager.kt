@@ -36,7 +36,7 @@ class BootManager(
         splashScreen.loadingProgress.set(1.0f)
         logger.logEngine("Engine initialization complete.")
 
-        sceneManager.changeScene(scene, true)
+        sceneManager.openScene(scene, forceSingle = true)
     }
 
     private suspend fun initRenderSystem() {

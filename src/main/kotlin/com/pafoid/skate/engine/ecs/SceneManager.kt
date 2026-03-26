@@ -13,12 +13,12 @@ class SceneManager : KoinComponent {
     val openScenes = mutableListOf<Scene>()
     var activeSceneIndex: Int = -1
 
-    var currentScene: Scene?
+    val currentScene: Scene?
         get() = openScenes.getOrNull(activeSceneIndex)
-        private set(value) {}
 
-    suspend fun changeScene(scene: Scene, isFirstScene: Boolean = false) {
-        if (isFirstScene) {
+    suspend fun openScene(scene: Scene, forceSingle: Boolean = false) {
+        if (forceSingle) {
+            openScenes.forEach { it.destroyScene() }
             openScenes.clear()
         }
 

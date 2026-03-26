@@ -239,7 +239,9 @@ class ImGuiLayer(
         dockBuilderFinish(dockspaceId)
     }
 
-    fun update(dt: Float, currentScene: Scene) {
+    fun update(dt: Float) {
+        val currentScene = sceneManager.currentScene ?: return
+
         if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_F12)) {
             isViewportMaximized = !isViewportMaximized
         }

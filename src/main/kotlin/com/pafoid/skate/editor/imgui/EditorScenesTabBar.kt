@@ -21,7 +21,7 @@ class EditorScenesTabBar {
                     if (sceneManager.activeSceneIndex == index) flags = flags or ImGuiTabItemFlags.SetSelected
 
                     // Render the tab item
-                    if (ImGui.beginTabItem(scene.name, open, flags)) {
+                    if (ImGui.beginTabItem("${scene.name}###${scene.hashCode()}", open, flags)) {
                         if (sceneManager.activeSceneIndex != index) {
                             sceneManager.switchScene(index)
                         }

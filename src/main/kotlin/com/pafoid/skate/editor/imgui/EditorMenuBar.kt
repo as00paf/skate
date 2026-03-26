@@ -175,7 +175,7 @@ class EditorMenuBar(
                     val initializer = com.pafoid.skate.editor.LevelEditorSceneInitializer()
                     val newScene = Scene("New Scene", initializer)
                     newScene.init()
-                    sceneManager.changeScene(newScene)
+                    sceneManager.openScene(newScene)
                 }
             }
             if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
@@ -189,7 +189,7 @@ class EditorMenuBar(
                     val initializer = com.pafoid.skate.editor.LevelEditorSceneInitializer()
                     val newScene = Scene("Loaded Scene", initializer)
                     newScene.init()
-                    sceneManager.changeScene(newScene)
+                    sceneManager.openScene(newScene)
                     levelManager.open(newScene)
                 }
             }
