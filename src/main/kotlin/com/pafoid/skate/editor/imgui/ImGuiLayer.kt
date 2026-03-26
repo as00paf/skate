@@ -186,8 +186,6 @@ class ImGuiLayer(
             editorWindows = editorWindows,
             glfwWindow = glfwWindow,
             windowController = windowController,
-            setFullscreen = setFullscreen,
-            setVSync = setVSync
         )
     }
 

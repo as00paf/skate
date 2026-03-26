@@ -54,8 +54,6 @@ import org.lwjgl.glfw.GLFW
  * @param settingsWindow Open on menu click
  * @param editorWindows List of windows for View menu checkboxes
  * @param glfwWindow GLFW window handle for closing
- * @param setFullscreen Fullscreen toggle callback
- * @param setVSync VSync toggle callback
  */
 class EditorMenuBar(
     private val stringManager: StringManager,
@@ -70,8 +68,6 @@ class EditorMenuBar(
     private val editorWindows: List<EditorWindow>,
     private val glfwWindow: Long,
     private val windowController: WindowController,
-    private val setFullscreen: (Boolean) -> Unit,
-    private val setVSync: (Boolean) -> Unit
 ) {
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
