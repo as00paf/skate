@@ -36,7 +36,7 @@ object Icons {
     const val MOVE = "\uf0b2"
     const val ROTATE = "\uf021"
     const val SCALE = "\uf31e"
-    const val WINDOW_MINIMIZE = "\uf068"
+    const val WINDOW_MINIMIZE = "\uf2d1"
     const val WINDOW_MAXIMIZE = "\uf2d0"
     const val WINDOW_RESTORE = "\uf2d2"
     const val WINDOW_CLOSE = "\uf00d"

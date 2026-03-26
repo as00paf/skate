@@ -128,6 +128,8 @@ class ImGuiLayer(
      */
     private var needsDecorationUpdate = false
 
+    private var layoutInitialized = false
+
     /**
      * Notifies ImGui that the window decoration state has changed.
      * Call this when toggling between maximized (undecorated) and restored (decorated) states
@@ -190,11 +192,14 @@ class ImGuiLayer(
     }
 
     private fun setupLayout(dockspaceId: Int) {
+        if (layoutInitialized) return
+        layoutInitialized = true
+
         val iniFile = File(Assets.Files.IMGUI)
         if (iniFile.exists()) return
 
         dockBuilderRemoveNode(dockspaceId)
-        dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.None)
+        dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.PassthruCentralNode)
         dockBuilderSetNodeSize(
             dockspaceId,
             getMainViewport().sizeX,
@@ -316,8 +321,8 @@ class ImGuiLayer(
 
         popStyleVar(4) // Pop FramePadding, WindowPadding, WindowRounding, WindowBorderSize
 
-        dockSpace(getID("DockSpace"))
         setupLayout(getID("DockSpace"))
+        dockSpace(getID("DockSpace"))
 
         // Render menu bar
         menuBar.render(currentScene)

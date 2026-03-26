@@ -78,14 +78,9 @@ class EditorMenuBar(
     private val projectName = "Skate Project"
 
     init {
-        // App Icon is loaded synchronously for immediate availability in the menu bar
         appIconTexId = resourceManager.loadTextureSync(Assets.Textures.APP_ICON).texId
     }
 
-    /**
-     * Renders the complete menu bar.
-     * Call this inside the dockspace window after begin() and before dockSpace().
-     */
     fun render(currentScene: Scene) {
         if (beginMenuBar()) {
             val barHeight = 48f
@@ -93,7 +88,7 @@ class EditorMenuBar(
             renderAppIcon(barHeight)
             renderHamburgerMenu(currentScene, barHeight)
             renderProjectInfo(barHeight)
-            buildWindowControls(barHeight)
+            buildWindowControls()
 
             endMenuBar()
         }
@@ -102,7 +97,7 @@ class EditorMenuBar(
     private fun renderAppIcon(barHeight: Float) {
         if (appIconTexId != -1) {
             val iconSize = 32f
-            // Centering logic: (Bar Height - Icon Height) / 2
+
             ImGui.setCursorPosY((barHeight - iconSize) / 2f)
             image(appIconTexId.toLong(), iconSize, iconSize)
         }
@@ -113,7 +108,6 @@ class EditorMenuBar(
         val offsetY = (barHeight - btnSize) / 2f
         ImGui.setCursorPosY(offsetY)
 
-        // Use a square button as the menu trigger
         if (ImGui.button(Icons.MENU, btnSize, btnSize)) {
             ImGui.openPopup("main_hamburger_menu")
         }
@@ -146,51 +140,38 @@ class EditorMenuBar(
         ImGui.text(projectName)
     }
 
-    private fun buildWindowControls(barHeight: Float) {
-        val btnSize = 48f
+    private fun buildWindowControls() {
+        val btnSize = 40f
         val totalW = btnSize * 3f
 
-        // Calculate starting X to be exactly totalW from the right edge of the available space
         val currentX = ImGui.getCursorPosX()
         val availX = ImGui.getContentRegionAvailX()
         ImGui.setCursorPosX(currentX + availX - totalW)
 
-        // Reset Y to 0 relative to the menu bar to ensure buttons are top-aligned
-        ImGui.setCursorPosY(0f)
-
-        // Remove all padding and spacing to ensure buttons are flush and uniform
         pushStyleVar(ImGuiStyleVar.FramePadding, 0f, 0f)
         pushStyleVar(ImGuiStyleVar.ItemSpacing, 0f, 0f)
         pushStyleColor(ImGuiCol.Button, 0f, 0f, 0f, 0f) // Transparent base
 
-        // Minimize
         if (ImGui.button(Icons.WINDOW_MINIMIZE, btnSize, btnSize)) {
             windowController.minimize()
         }
 
-        // Maximize
-        ImGui.setCursorPosY(0f)
         val maxRestoreIcon = if (windowController.isMaximized()) Icons.WINDOW_RESTORE else Icons.WINDOW_MAXIMIZE
         if (ImGui.button(maxRestoreIcon, btnSize, btnSize)) {
             windowController.toggleMaximize()
         }
 
-        // Close - Red highlight
-        ImGui.setCursorPosY(0f)
         pushStyleColor(ImGuiCol.ButtonHovered, 0.83f, 0.13f, 0.17f, 1f)
         pushStyleColor(ImGuiCol.ButtonActive, 0.93f, 0.23f, 0.27f, 1f)
         if (ImGui.button(Icons.WINDOW_CLOSE, btnSize, btnSize)) {
             windowController.close()
         }
-        popStyleColor(2) // ButtonHovered, ButtonActive
+        popStyleColor(2)
 
-        popStyleColor(1) // Button base
-        popStyleVar(2) // FramePadding, ItemSpacing
+        popStyleColor(1)
+        popStyleVar(2)
     }
 
-    /**
-     * Builds the File menu with save/load/open and quit options.
-     */
     private fun buildFileMenu(currentScene: Scene) {
         if (beginMenu(stringManager.getString("menu.file"))) {
             if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
@@ -210,9 +191,6 @@ class EditorMenuBar(
         }
     }
 
-    /**
-     * Builds the Edit menu with undo/redo and clipboard operations.
-     */
     private fun buildEditMenu(currentScene: Scene) {
         if (beginMenu(stringManager.getString("menu.edit"))) {
             if (menuItem("${Icons.UNDO} ${stringManager.getString("menu.edit.undo")}", "Ctrl+Z")) {
@@ -248,9 +226,6 @@ class EditorMenuBar(
         }
     }
 
-    /**
-     * Builds the Settings menu with display, input, and localization options.
-     */
     private fun buildSettingsMenu() {
         if (beginMenu(stringManager.getString("menu.settings"))) {
             val engineSettings = settingsManager.engine
@@ -322,9 +297,6 @@ class EditorMenuBar(
         }
     }
 
-    /**
-     * Builds the View menu with window visibility toggles.
-     */
     private fun buildViewMenu() {
         if (beginMenu(stringManager.getString("menu.view"))) {
             if (beginMenu(stringManager.getString("menu.view.windows"))) {
