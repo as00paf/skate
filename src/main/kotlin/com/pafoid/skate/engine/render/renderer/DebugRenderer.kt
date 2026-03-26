@@ -60,6 +60,10 @@ class DebugRenderer(
             return
         }
         
+        started = true
+        
+        if (vaoId != -1) return // Already setup OpenGL state
+        
         // Lines
         vaoId = glGenVertexArrays()
         glBindVertexArray(vaoId)
@@ -83,7 +87,6 @@ class DebugRenderer(
         glEnableVertexAttribArray(1)
 
         glLineWidth(4.0f)
-        started = true
     }
 
     fun beginFrame() {
@@ -93,8 +96,14 @@ class DebugRenderer(
     }
 
     fun draw() {
+        if (!started || !::shader.isInitialized) {
+            start()
+        }
+        if (!::shader.isInitialized) return
+        
         shader.start()
         val camera = sceneManager.currentScene?.camera ?: return
+
         shader.uploadMat4f(PROJECTION, camera.createProjectionMatrix())
         shader.uploadMat4f(VIEW, camera.createViewMatrix())
 

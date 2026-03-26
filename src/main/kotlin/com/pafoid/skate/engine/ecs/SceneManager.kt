@@ -20,7 +20,6 @@ class SceneManager : KoinComponent {
     suspend fun changeScene(scene: Scene, isFirstScene: Boolean = false) {
         if (isFirstScene) {
             openScenes.clear()
-            resourceManager.clear()
         }
 
         // Add the new scene and set it as active
