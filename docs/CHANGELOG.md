@@ -4,6 +4,37 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.46.0.1.5] - 2026-03-25: Scenes Tab Bar and Reviewer-Approved Refinements
+
+### Summary
+
+Implemented a multi-scene tab bar integrated into the Game Viewport, allowing users to seamlessly switch between open scenes. This update also incorporates several reviewer-approved refactorings to improve code clarity and robustness.
+
+### Added
+
+- **Scenes Tab Bar**:
+  - A tab bar is now rendered at the top of the `GameViewWindow`.
+  - Each open scene is represented by a tab, which can be selected to switch the active scene.
+  - Tabs indicate their saved state (an asterisk `*` appears for unsaved scenes).
+  - A permanent `+` button is included on the tab bar to allow for quick creation of new, empty scenes.
+- **Multi-Scene Management**:
+  - `SceneManager` was refactored to manage a list of `openScenes` instead of a single `currentScene`.
+
+### Fixed
+
+- **Redundant Docking Headers**: The native "Game Viewport" tab and header are now hidden using a combination of `ImGuiWindowFlags.NoTabItem` and `ImGuiDockNodeFlags.NoTabBar`, making the Scenes Tab Bar the sole navigation element.
+- **Stale Scene References**: Refactored UI windows to fetch the `currentScene` directly from `SceneManager` to prevent one-frame lag and ensure all UI elements are always in sync.
+
+### Changed
+
+- **Code Clarity**:
+  - Renamed `SceneManager.changeScene` to `openScene` to better reflect its new behavior.
+  - Converted `SceneManager.currentScene` to a read-only computed property.
+- **UI Robustness**:
+  - Tab items in the Scenes Tab Bar now use unique IDs to prevent selection conflicts if multiple scenes have the same name.
+
+---
+
 ## [v0.46.0.1.3] - 2026-03-25: Editor UI & Window Management Improvements
 
 ### Summary

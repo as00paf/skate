@@ -42,8 +42,8 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
         bottom-right corner) that captures mouse drag, calculates new dimensions, and updates `glfwSetWindowSize`.
         Ensure ImGui panels automatically scale to cover the full window surface.
   - [x] **A46.0.1.3: ImGui Docking Refinement** (Fix issues and optimize layout)
-  - [ ] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory)
-  - [ ] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
+  - [x] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory, scene name)
+  - [x] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
   - [ ] **A46.0.1.6: Refactor Properties Window** (Improve layout)
   - [ ] **A46.0.1.7: Enhance Scene Hierarchy** (Visibility/lock toggles, search, "+" button, link button)
   - [ ] **A46.0.1.8: Implement File System / Asset Browser Window** (Dedicated asset navigation)
