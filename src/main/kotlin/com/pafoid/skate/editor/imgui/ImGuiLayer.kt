@@ -99,6 +99,7 @@ class ImGuiLayer(
     private val statusBar = EditorStatusBar()
 
     private lateinit var menuBar: EditorMenuBar
+    private val scenesTabBar = EditorScenesTabBar()
 
     /**
      * Registry of all dockable editor windows.
@@ -326,8 +327,9 @@ class ImGuiLayer(
         setupLayout(getID("DockSpace"))
         dockSpace(getID("DockSpace"))
 
-        // Render menu bar
+        // Render menu bar and tabs
         menuBar.render(currentScene)
+        scenesTabBar.render(sceneManager)
 
         end()
     }

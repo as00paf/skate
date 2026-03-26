@@ -49,6 +49,7 @@ class LevelManager(
             )
             writer.write(serializer.encode(data))
             writer.close()
+            scene.isDirty = false
             logger.logEditor("Level saved to $path")
         } catch (e: IOException) {
             e.printStackTrace()

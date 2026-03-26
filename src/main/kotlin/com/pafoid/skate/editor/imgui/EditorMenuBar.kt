@@ -170,6 +170,14 @@ class EditorMenuBar(
 
     private fun buildFileMenu(currentScene: Scene) {
         if (beginMenu(stringManager.getString("menu.file"))) {
+            if (menuItem("${Icons.PLUS} New Scene", "Ctrl+N")) {
+                com.pafoid.skate.engine.utils.JobSystem.runOnMain {
+                    val initializer = com.pafoid.skate.editor.LevelEditorSceneInitializer()
+                    val newScene = Scene("New Scene", initializer)
+                    newScene.init()
+                    sceneManager.changeScene(newScene)
+                }
+            }
             if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
                 levelManager.save(currentScene)
             }
@@ -177,7 +185,13 @@ class EditorMenuBar(
                 levelManager.saveAs(currentScene)
             }
             if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open")}", "Ctrl+O")) {
-                levelManager.open(currentScene)
+                com.pafoid.skate.engine.utils.JobSystem.runOnMain {
+                    val initializer = com.pafoid.skate.editor.LevelEditorSceneInitializer()
+                    val newScene = Scene("Loaded Scene", initializer)
+                    newScene.init()
+                    sceneManager.changeScene(newScene)
+                    levelManager.open(newScene)
+                }
             }
             separator()
             if (menuItem("${Icons.TRASH} ${stringManager.getString("menu.file.quit")}")) {
