@@ -39,7 +39,6 @@ import org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor
 import org.lwjgl.glfw.GLFW.glfwGetVideoMode
 import org.lwjgl.glfw.GLFW.glfwInit
 import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
-import org.lwjgl.glfw.GLFW.glfwMaximizeWindow
 import org.lwjgl.glfw.GLFW.glfwPollEvents
 import org.lwjgl.glfw.GLFW.glfwRequestWindowAttention
 import org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback
@@ -98,6 +97,7 @@ class Window(
         private set
 
     private val openGLDebug = GLFW_FALSE
+    private var isFixingMaximize = false
 
     fun run() {
         init()
@@ -157,11 +157,15 @@ class Window(
         windowController = WindowController(glfwWindow)
 
         // Maximize window on startup
-        glfwMaximizeWindow(glfwWindow)
+        windowController.maximize()
 
         org.lwjgl.glfw.GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
+            if (isFixingMaximize) return@glfwSetWindowMaximizeCallback
+
+            windowController.setLogicallyMaximized(maximized)
             if (maximized) {
                 org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
+                isFixingMaximize = true
             } else {
                 org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
                 imGuiLayer.onWindowDecorationChanged()
@@ -253,9 +257,13 @@ class Window(
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
 
+            if (isFixingMaximize) {
+                windowController.fixMaximizeBounds()
+                isFixingMaximize = false
+            }
+
             joystickListener.update()
             JobSystem.update()
-
             // Check framebuffer size every frame and update viewport if changed
             // This handles window resize, maximize/restore, and HiDPI changes
             val fbWidth = IntArray(1)
