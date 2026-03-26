@@ -120,6 +120,7 @@ class ImGuiLayer(
 
     private lateinit var setFullscreen: (Boolean) -> Unit
     private lateinit var setVSync: (Boolean) -> Unit
+    private lateinit var windowController: com.pafoid.skate.engine.core.WindowController
 
     /**
      * Flag to track if window decoration changed and needs ImGui viewport update.
@@ -144,8 +145,14 @@ class ImGuiLayer(
         return gameViewWindow.getHoveredObject()
     }
 
-    fun init(glfwWindow: Long, fullScreenCallback:(Boolean)->Unit, vSyncCallback:(Boolean)->Unit) {
+    fun init(
+        glfwWindow: Long,
+        windowController: com.pafoid.skate.engine.core.WindowController,
+        fullScreenCallback: (Boolean) -> Unit,
+        vSyncCallback: (Boolean) -> Unit
+    ) {
         this.glfwWindow = glfwWindow
+        this.windowController = windowController
         this.setFullscreen = fullScreenCallback
         this.setVSync = vSyncCallback
 
@@ -176,6 +183,7 @@ class ImGuiLayer(
             settingsWindow = settingsWindow,
             editorWindows = editorWindows,
             glfwWindow = glfwWindow,
+            windowController = windowController,
             setFullscreen = setFullscreen,
             setVSync = setVSync
         )
@@ -224,8 +232,8 @@ class ImGuiLayer(
         startFrame()
 
         if (isViewportMaximized) {
-            setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY)
-            setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY)
+            setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY, ImGuiCond.Always)
+            setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY, ImGuiCond.Always)
             pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
             begin(
                 stringManager.getString("window.game_viewport") + " Maximized",
@@ -290,10 +298,9 @@ class ImGuiLayer(
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
 
         val viewport = getMainViewport()
-        setNextWindowPos(viewport.workPosX, viewport.workPosY)
-        setNextWindowSize(viewport.workSizeX, viewport.workSizeY)
+        setNextWindowPos(viewport.workPosX, viewport.workPosY, ImGuiCond.Always)
+        setNextWindowSize(viewport.workSizeX, viewport.workSizeY, ImGuiCond.Always)
         setNextWindowViewport(viewport.id)
-        setNextWindowPos(0.0f, 0.0f, ImGuiCond.Always)
 
         windowFlags = windowFlags or (ImGuiWindowFlags.NoTitleBar or ImGuiWindowFlags.NoCollapse or
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.NoMove or

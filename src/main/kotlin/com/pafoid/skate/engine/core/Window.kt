@@ -44,13 +44,10 @@ import org.lwjgl.glfw.GLFW.glfwPollEvents
 import org.lwjgl.glfw.GLFW.glfwRequestWindowAttention
 import org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback
 import org.lwjgl.glfw.GLFW.glfwSetErrorCallback
-import org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback
 import org.lwjgl.glfw.GLFW.glfwSetKeyCallback
 import org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback
 import org.lwjgl.glfw.GLFW.glfwSetScrollCallback
-import org.lwjgl.glfw.GLFW.glfwSetWindowAttrib
 import org.lwjgl.glfw.GLFW.glfwSetWindowIcon
-import org.lwjgl.glfw.GLFW.glfwSetWindowMaximizeCallback
 import org.lwjgl.glfw.GLFW.glfwSetWindowMonitor
 import org.lwjgl.glfw.GLFW.glfwSetWindowPos
 import org.lwjgl.glfw.GLFW.glfwShowWindow
@@ -97,8 +94,8 @@ class Window(
     private var windowWidth: Int = 1920
     private var windowHeight: Int = 1080
 
-    // Flag to track if we need to update framebuffer size after decorations change
-    private var needsFramebufferUpdate = false
+    lateinit var windowController: WindowController
+        private set
 
     private val openGLDebug = GLFW_FALSE
 
@@ -146,6 +143,9 @@ class Window(
         glfwWindow = glfwCreateWindow(winWidth, winHeight, title, NULL, NULL)
         if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
 
+        // Enforce Minimum Window Size Constraints
+        org.lwjgl.glfw.GLFW.glfwSetWindowSizeLimits(glfwWindow, 1024, 768, GLFW_DONT_CARE, GLFW_DONT_CARE)
+
         // Center on monitor
         val xPos = IntArray(1)
         val yPos = IntArray(1)
@@ -154,8 +154,19 @@ class Window(
         val monitorHeight = videoMode?.height() ?: 1080
         glfwSetWindowPos(glfwWindow, xPos[0] + (monitorWidth - winWidth) / 2, yPos[0] + (monitorHeight - winHeight) / 2)
 
+        windowController = WindowController(glfwWindow)
+
         // Maximize window on startup
         glfwMaximizeWindow(glfwWindow)
+
+        org.lwjgl.glfw.GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
+            if (maximized) {
+                org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
+            } else {
+                org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
+                imGuiLayer.onWindowDecorationChanged()
+            }
+        }
 
         // Get the maximized framebuffer size
         val fbSizeWidth = IntArray(1)
@@ -191,7 +202,7 @@ class Window(
 
         installCallbacks()
         joystickListener.init()
-        imGuiLayer.init(glfwWindow, ::setFullscreen, ::setVSync)
+        imGuiLayer.init(glfwWindow, windowController, ::setFullscreen, ::setVSync)
     }
 
     private fun setWindowIcon(iconPath: String) {
@@ -225,30 +236,8 @@ class Window(
     }
 
     private fun installCallbacks() {
-        glfwSetWindowMaximizeCallback(glfwWindow) { window, maximized ->
-            // Toggle decorations based on maximize state
-            // (undecorated when maximized, decorated when restored)
-            if (maximized) {
-                glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE)
-            } else {
-                glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE)
-            }
-
-            // Flag that we need to update framebuffer size on next frame
-            // (after GLFW has processed the decoration change)
-            needsFramebufferUpdate = true
-
-            // Notify ImGui to recalculate viewport work area for decorations
-            imGuiLayer.onWindowDecorationChanged()
-        }
-
-        // Framebuffer size callback - fires when content area changes (e.g., resizing, HiDPI)
-        glfwSetFramebufferSizeCallback(glfwWindow) { window, width, height ->
-            windowWidth = width
-            windowHeight = height
-            glViewport(0, 0, width, height)
-            renderer.resize(width, height)
-        }
+        // Note: Framebuffer and window size callbacks are handled by ImGui
+        // We update viewport/renderer in the main loop by polling framebuffer size
 
         glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
         glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
@@ -263,32 +252,21 @@ class Window(
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
+
             joystickListener.update()
             JobSystem.update()
 
-            // Check if we need to update framebuffer size after decoration change
-            if (needsFramebufferUpdate) {
-                needsFramebufferUpdate = false
-                val fbWidth = IntArray(1)
-                val fbHeight = IntArray(1)
-                glfwGetFramebufferSize(glfwWindow, fbWidth, fbHeight)
+            // Check framebuffer size every frame and update viewport if changed
+            // This handles window resize, maximize/restore, and HiDPI changes
+            val fbWidth = IntArray(1)
+            val fbHeight = IntArray(1)
+            glfwGetFramebufferSize(glfwWindow, fbWidth, fbHeight)
 
-                logger.logEngine(
-                    "Framebuffer size changed: ${fbWidth[0]}x${fbHeight[0]} (was ${windowWidth}x${windowHeight})",
-                    com.pafoid.skate.editor.systems.LogLevel.INFO
-                )
-
-                // Only update if size actually changed
-                if (fbWidth[0] != windowWidth || fbHeight[0] != windowHeight) {
-                    windowWidth = fbWidth[0]
-                    windowHeight = fbHeight[0]
-                    glViewport(0, 0, fbWidth[0], fbHeight[0])
-                    renderer.resize(fbWidth[0], fbHeight[0])
-                    logger.logEngine(
-                        "Updated viewport and renderer to: ${fbWidth[0]}x${fbHeight[0]}",
-                        com.pafoid.skate.editor.systems.LogLevel.INFO
-                    )
-                }
+            if (fbWidth[0] != windowWidth || fbHeight[0] != windowHeight) {
+                windowWidth = fbWidth[0]
+                windowHeight = fbHeight[0]
+                glViewport(0, 0, fbWidth[0], fbHeight[0])
+                renderer.resize(fbWidth[0], fbHeight[0])
             }
 
             // Record high-frequency input

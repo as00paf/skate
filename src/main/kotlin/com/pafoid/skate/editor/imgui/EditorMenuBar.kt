@@ -69,10 +69,10 @@ class EditorMenuBar(
     private val settingsWindow: SettingsWindow,
     private val editorWindows: List<EditorWindow>,
     private val glfwWindow: Long,
+    private val windowController: WindowController,
     private val setFullscreen: (Boolean) -> Unit,
     private val setVSync: (Boolean) -> Unit
 ) {
-    private val windowController = WindowController(glfwWindow)
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
     private val projectName = "Skate Project"
@@ -93,7 +93,6 @@ class EditorMenuBar(
             renderAppIcon(barHeight)
             renderHamburgerMenu(currentScene, barHeight)
             renderProjectInfo(barHeight)
-            //handleDragging(barHeight)
             buildWindowControls(barHeight)
 
             endMenuBar()
@@ -145,27 +144,6 @@ class EditorMenuBar(
         )
         ImGui.setCursorPosY(textY)
         ImGui.text(projectName)
-    }
-
-    private fun handleDragging(barHeight: Float) {
-        val mouseX = DoubleArray(1)
-        val mouseY = DoubleArray(1)
-        GLFW.glfwGetCursorPos(glfwWindow, mouseX, mouseY)
-
-        // Dragging area covers the whole bar height
-        val isOverMenuBar = mouseY[0] >= 0 && mouseY[0] <= barHeight
-
-        if (isOverMenuBar && ImGui.isWindowHovered() && ImGui.isMouseClicked(0)) {
-            if (!ImGui.isAnyItemActive() && !ImGui.isAnyItemHovered()) {
-                windowController.startDrag(mouseX[0], mouseY[0])
-            }
-        }
-
-        if (ImGui.isMouseDown(0)) {
-            windowController.updateDrag(mouseX[0], mouseY[0])
-        } else {
-            windowController.stopDrag()
-        }
     }
 
     private fun buildWindowControls(barHeight: Float) {
