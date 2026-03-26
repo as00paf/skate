@@ -24,6 +24,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.game.level.LevelManager
+import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
@@ -99,7 +100,6 @@ class ImGuiLayer(
     private val statusBar = EditorStatusBar()
 
     private lateinit var menuBar: EditorMenuBar
-    private val scenesTabBar = EditorScenesTabBar()
 
     /**
      * Registry of all dockable editor windows.
@@ -214,6 +214,16 @@ class ImGuiLayer(
         // Split Bottom for Asset Browser, Console, Profiler
         val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.28f, null, mainBodyId)
 
+        // Set NoTabBar, NoWindowMenuButton, and NoCloseButton flags on the final central node to hide the "Game Viewport" tab entirely
+        val centralNode = imgui.internal.ImGui.dockBuilderGetNode(mainBodyId.get())
+        // NoTabBar (1 << 3), NoWindowMenuButton (1 << 12), NoCloseButton (1 << 13)
+        val noTabBar = imgui.internal.flag.ImGuiDockNodeFlags.NoTabBar
+        val noWindowMenuButton = 1 shl 12
+        val noCloseButton = 1 shl 13
+        
+        centralNode.setLocalFlags(noTabBar or noWindowMenuButton or noCloseButton)
+
+
         // Dock windows based on their logical function
         editorWindows.filter { it.showFlag.get() }.forEach { window ->
             val dockId = when (window.nameKey) {
@@ -327,9 +337,8 @@ class ImGuiLayer(
         setupLayout(getID("DockSpace"))
         dockSpace(getID("DockSpace"))
 
-        // Render menu bar and tabs
+        // Render menu bar
         menuBar.render(currentScene)
-        scenesTabBar.render(sceneManager)
 
         end()
     }

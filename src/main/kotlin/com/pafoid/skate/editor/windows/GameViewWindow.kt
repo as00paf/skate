@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.gizmos.MeasureTool
+import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
@@ -48,10 +49,15 @@ class GameViewWindow : IWindow, KoinComponent {
 
     private val gamepadOverlay = GamepadOverlay()
     private val trickUIWindow = TrickUIWindow()
+    private val scenesTabBar = EditorScenesTabBar()
     private var trickUIInitialized = false
 
     override fun imgui(pOpen: ImBoolean?) {
-        ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
+        // Using literal for NoTabItem (1 << 23) since it's missing in bindings
+        val noTabItem = 1 shl 23
+        ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoTitleBar or noTabItem)
+
+        scenesTabBar.render(sceneManager)
 
         val windowSize = getLargestSizeForViewport()
         val windowPos = getCenteredPositionForViewport(windowSize)
@@ -136,7 +142,7 @@ class GameViewWindow : IWindow, KoinComponent {
         imageScreenPosX = screenPos.x
         imageScreenPosY = screenPos.y
         imageSizeX = windowSize.x
-        imageSizeY = windowSize.y - TOOLBAR_HEIGHT
+        imageSizeY = windowSize.y - TOOLBAR_HEIGHT - TAB_BAR_HEIGHT
 
         val texId = renderer.frameBuffer.getTextureId()
         ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
@@ -222,7 +228,7 @@ class GameViewWindow : IWindow, KoinComponent {
         ImGui.getContentRegionAvail(windowSize)
 
         val viewportX = (windowSize.x / 2.0f) - (aspectSize.x / 2.0f)
-        val viewportY = (windowSize.y / 2.0f) - (aspectSize.y / 2.0f)
+        val viewportY = (windowSize.y / 2.0f) - (aspectSize.y / 2.0f) + TAB_BAR_HEIGHT
 
         return ImVec2(viewportX + ImGui.getCursorPosX(), viewportY + ImGui.getCursorPosY())
     }
@@ -416,6 +422,7 @@ class GameViewWindow : IWindow, KoinComponent {
         private const val TRICK_OVERLAY_WIDTH = 200f // Adjusted width for trick names
         private const val TRICK_OVERLAY_HEIGHT = 30f
         private const val TOOLBAR_HEIGHT = 40f
+        private const val TAB_BAR_HEIGHT = 25f
         private const val TOOLBAR_BUTTON_HEIGHT = 30f
         private const val TOOLBAR_BUTTON_SPACING = 10f
     }

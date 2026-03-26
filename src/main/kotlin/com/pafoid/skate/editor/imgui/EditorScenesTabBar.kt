@@ -9,7 +9,7 @@ import imgui.type.ImBoolean
 class EditorScenesTabBar {
     fun render(sceneManager: SceneManager) {
         if (sceneManager.openScenes.isNotEmpty()) {
-            if (ImGui.beginTabBar("ScenesTabBar", ImGuiTabBarFlags.Reorderable or ImGuiTabBarFlags.AutoSelectNewTabs)) {
+            if (ImGui.beginTabBar("##EditorScenesTabBar", ImGuiTabBarFlags.Reorderable or ImGuiTabBarFlags.AutoSelectNewTabs)) {
                 
                 // Track tabs that need to be closed to avoid concurrent modification during iteration
                 var tabToClose: Int? = null
