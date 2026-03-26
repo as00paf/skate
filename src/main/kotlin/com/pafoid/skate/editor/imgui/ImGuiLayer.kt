@@ -96,6 +96,7 @@ class ImGuiLayer(
     private val systemsWindow = SystemsWindow()
     private val settingsWindow = SettingsWindow(settingsManager, stringManager, displayService)
     private val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
+    private val statusBar = EditorStatusBar()
 
     private lateinit var menuBar: EditorMenuBar
 
@@ -253,6 +254,7 @@ class ImGuiLayer(
             popStyleVar()
         } else {
             setupDockSpace(currentScene)
+            statusBar.render(currentScene)
             currentScene.imguiScene()
 
             // Render all visible editor windows
@@ -301,8 +303,10 @@ class ImGuiLayer(
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
 
         val viewport = getMainViewport()
+        val statusBarHeight = 30f // Height for EditorStatusBar
+
         setNextWindowPos(viewport.workPosX, viewport.workPosY, ImGuiCond.Always)
-        setNextWindowSize(viewport.workSizeX, viewport.workSizeY, ImGuiCond.Always)
+        setNextWindowSize(viewport.workSizeX, viewport.workSizeY - statusBarHeight, ImGuiCond.Always)
         setNextWindowViewport(viewport.id)
 
         windowFlags = windowFlags or (ImGuiWindowFlags.NoTitleBar or ImGuiWindowFlags.NoCollapse or

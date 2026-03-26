@@ -25,24 +25,24 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 - [⏳] **A46.0.1: Comprehensive Engine UI & Editor Tooling Revamp**
   - **Status: IMPLEMENTATION**
   - [x] **A46.0.1.1: Visual Style & Theme Implementation** (Islands Dark / IntelliJ-like)
-  - [ ] **A46.0.1.2: Fix GLFW Window issues (Resizability, Movability, Constraints)**
+  - [x] **A46.0.1.2: Fix GLFW Window issues (Resizability, Movability, Constraints)**
     - **Architectural Approach:** The main application window should ALWAYS remain undecorated (
       `GLFW_DECORATED = GLFW_FALSE`) to support the custom IntelliJ-like UI theme. Since OS decorations are removed,
       custom logic must handle dragging and resizing.
-    - [ ] **A46.0.1.2a: Enforce Minimum Window Size Constraints** (@software-engineer)
+    - [x] **A46.0.1.2a: Enforce Minimum Window Size Constraints** (@software-engineer)
       - Call `glfwSetWindowSizeLimits` (e.g., min 1024x768) in `Window.kt` initialization.
-    - [ ] **A46.0.1.2b: Clean up Window Decoration Logic** (@software-engineer)
+    - [x] **A46.0.1.2b: Clean up Window Decoration Logic** (@software-engineer)
       - In `Window.kt`, remove the `glfwSetWindowMaximizeCallback` logic that dynamically toggles `GLFW_DECORATED`.
         Ensure the window stays borderless.
-    - [ ] **A46.0.1.2c: Implement Custom Window Movability** (@software-engineer)
+    - [x] **A46.0.1.2c: Implement Custom Window Movability** (@software-engineer)
       - Uncomment and fix `handleDragging` in `EditorMenuBar.kt`. Update `WindowController.kt` to accurately calculate
         mouse deltas for smooth dragging using `glfwSetWindowPos`, enabling movement across monitors.
-    - [ ] **A46.0.1.2d: Implement Custom Window Resizability** (@software-engineer)
+    - [x] **A46.0.1.2d: Implement Custom Window Resizability** (@software-engineer)
       - Implement a custom resize mechanism for the undecorated window. Use ImGui to create a resize grip (e.g.,
         bottom-right corner) that captures mouse drag, calculates new dimensions, and updates `glfwSetWindowSize`.
         Ensure ImGui panels automatically scale to cover the full window surface.
-  - [ ] **A46.0.1.3: ImGui Docking Refinement** (Fix issues and optimize layout)
-  - [ ] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory, scene name)
+  - [x] **A46.0.1.3: ImGui Docking Refinement** (Fix issues and optimize layout)
+  - [ ] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory)
   - [ ] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
   - [ ] **A46.0.1.6: Refactor Properties Window** (Improve layout)
   - [ ] **A46.0.1.7: Enhance Scene Hierarchy** (Visibility/lock toggles, search, "+" button, link button)
@@ -107,7 +107,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - Particle behaviors (gravity, drag, collision)
   - Efficient rendering of large particle counts
 
-- [ ] **A46.0.7: Enhance Animation System (Retargeting)**
+- [ ] **A47.0.7: Enhance Animation System (Retargeting)**
   - Bone transformation mapping between skeletons
   - Retarget humanoid animations to different rigs
   - Preserve animation feel and intent

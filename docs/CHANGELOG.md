@@ -4,6 +4,30 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.46.0.1.3] - 2026-03-25: Editor UI & Window Management Improvements
+
+### Summary
+
+Significant improvements to the custom editor window behavior and ImGui docking layout stability as part of the Engine UI revamp.
+
+### Added
+
+- **Custom Window Resizing**: Added manual resize grips in the editor UI for undecorated window management.
+- **Custom Window Dragging**: Implemented smooth window movement across monitors via the editor menu bar and `WindowController`.
+
+### Fixed
+
+- **GLFW Window Issues**:
+    - Enforced consistent undecorated state (`GLFW_DECORATED = GLFW_FALSE`) for the main application window to support custom UI themes.
+    - Fixed window bounds calculation when maximizing an undecorated window on Windows OS.
+    - Implemented minimum window size constraints (1024x768).
+- **ImGui Docking**:
+    - Resolved layout initialization issues where the dockspace could fail to set up on first launch.
+    - Optimized `DockBuilder` submission order to ensure reliable and consistent panel placement (Viewport, Hierarchy, Properties, Console).
+    - Improved layout persistence and initialization state.
+
+---
+
 ## [v0.45.0.6] - 2026-03-24: Refactor Renderer to Render Graph System
 
 ### Summary
