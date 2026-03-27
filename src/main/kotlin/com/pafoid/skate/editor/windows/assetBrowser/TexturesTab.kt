@@ -73,8 +73,11 @@ class TexturesTab(
 
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("TEXTURE", file.path)
-            ImGui.image(texId.toLong(), size *0.8f, size *0.8f, 0f, 0f, 1f, 1f)
+            // Enhanced drag preview with larger texture and info
+            ImGui.image(texId.toLong(), size *1.5f, size *1.5f, 0f, 0f, 1f, 1f)
             ImGui.text(file.name)
+            val tex = resourceManager.loadTextureSync(file.path)
+            ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "${tex.width}x${tex.height}")
             ImGui.endDragDropSource()
         }
 

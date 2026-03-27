@@ -189,8 +189,12 @@ class PrefabsTab(
         
         if (data.dragDropPayload != null && ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload(data.dragDropPayload, data)
-            ImGui.image(texId.toLong(), size*0.8f, size*0.8f, 0f, 1f, 1f, 0f)
+            // Enhanced drag preview with larger image and material info
+            ImGui.image(texId.toLong(), size*1.2f, size*1.2f, 0f, 1f, 1f, 0f)
             ImGui.text(data.name)
+            if (data.material != null) {
+                ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "Material: ${data.material.displayName}")
+            }
             ImGui.endDragDropSource()
         }
 

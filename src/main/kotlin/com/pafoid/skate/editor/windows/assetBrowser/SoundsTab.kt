@@ -105,7 +105,10 @@ class SoundsTab(
         
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("SOUND", file.path)
+            // Enhanced drag preview with sound info
             ImGui.text("${Icons.MUSIC} ${file.name}")
+            ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "Duration: ${duration}s")
+            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Drop on object to add AudioComponent")
             ImGui.endDragDropSource()
         }
 

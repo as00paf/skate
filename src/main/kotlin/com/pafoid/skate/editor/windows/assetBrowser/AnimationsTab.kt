@@ -61,8 +61,9 @@ class AnimationsTab(
 
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("ANIMATION", file.path)
-            ImGui.text("${Icons.PLAY}")
-            ImGui.text(file.name)
+            // Enhanced drag preview with animation info
+            ImGui.text("${Icons.PLAY} ${file.name}")
+            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Drop on object with Animator")
             ImGui.endDragDropSource()
         }
 
