@@ -4,6 +4,24 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.46.0.1.8] - 2026-03-25: Enhance Asset Browser Window
+
+### Summary
+
+Improved the Asset Browser Window with better usability, dynamic layout, and enhanced audio management.
+
+### Added
+
+- **Full-Width Toolbar**: Search bar and Refresh button now utilize the full width of the window for better accessibility.
+- **Dynamic Grid Columns**: Asset items in the Animations, Textures, and Prefabs tabs now automatically adjust the number of columns based on the window width.
+- **Enhanced Sounds Tab**:
+    - **List View**: Refactored to a table-based list view for better information density.
+    - **Audio Durations**: Displays the duration of audio files in seconds.
+    - **Playback Controls**: Integrated Play/Stop icon buttons for quick audio preview.
+- **Localized Tooltips**: Added descriptive tooltips to all buttons and search fields using `StringManager`.
+
+---
+
 ## [v0.46.0.1.7] - 2026-03-25: Enhance Scene Hierarchy
 
 ### Summary

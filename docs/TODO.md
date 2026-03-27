@@ -46,7 +46,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - [x] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
   - [x] **A46.0.1.6: Refactor Properties Window** (Improve layout)
   - [x] **A46.0.1.7: Enhance Scene Hierarchy** (Visibility/lock toggles, search, "+" button, link button)
-  - [ ] **A46.0.1.8: Enhance Asset Browser Window**
+  - [x] **A46.0.1.8: Enhance Asset Browser Window**
   - [ ] **A46.0.1.9: Enhance Console Window** (Add search function, multiline selection, and "Save to file" and "Clear"
     button)
   - [ ] **A46.0.1.10: Implement Profiler Graph View** (Real-time performance metrics)

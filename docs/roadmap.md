@@ -131,10 +131,10 @@ This will allow for easier addition of new rendering passes, effects, and better
 dependencies.
 **Acceptance Criteria:**
 
-*   [ ] A render graph structure is defined, allowing passes to specify inputs and outputs.
-*   [ ] Passes can be dynamically compiled into an execution order at runtime.
-*   [ ] The existing rendering passes (Shadow, Picking, Geometry, Debug) are converted to use the new system.
-*   [ ] The system is extensible for future rendering features (e.g., deferred rendering, post-processing).
+*   [x] A render graph structure is defined, allowing passes to specify inputs and outputs.
+*   [x] Passes can be dynamically compiled into an execution order at runtime.
+*   [x] The existing rendering passes (Shadow, Picking, Geometry, Debug) are converted to use the new system.
+*   [x] The system is extensible for future rendering features (e.g., deferred rendering, post-processing).
     **Technical Notes:** Research modern rendering techniques and render graph implementations. This is a significant
     architectural change.
     **Dependencies:** None
@@ -149,19 +149,19 @@ significant improvements to scene manipulation tools. This includes redesigning 
 as enhancing gizmos and camera controls.
 **Sub-Tasks:**
 - **A46.0.1.7:** Enhance Scene Hierarchy (✅ Done)
-- **A46.0.1.8:** Enhance Asset Browser Window (⏳ In Progress)
+- **A46.0.1.8:** Enhance Asset Browser Window (✅ Done)
 
 **Acceptance Criteria:**
 
-*   [ ] **Visual Style:** "Islands Dark" theme (IntelliJ-like) implemented across all windows.
-*   [ ] **Windowing:** Custom GLFW window controls (minimize, maximize, quit) with redesigned buttons to match IntelliJ
+*   [x] **Visual Style:** "Islands Dark" theme (IntelliJ-like) implemented across all windows.
+*   [x] **Windowing:** Custom GLFW window controls (minimize, maximize, quit) with redesigned buttons to match IntelliJ
     behavior (larger buttons, red hover for Close).
-*   [ ] **Menu Bar:** Redesigned top menu bar following IntelliJ IDEA
+*   [x] **Menu Bar:** Redesigned top menu bar following IntelliJ IDEA
     layout: [App Icon] -> [Hamburger Menu] -> [Project Icon & Name] -> [Window Controls].
-*   [ ] **Status & Navigation:** Implementation of a bottom status bar and a scenes tab bar.
-*   [ ] **Properties Window:** Renamed from Inspector, with improved layout and field organization.
-*   [ ] **Scene Hierarchy:** Enhanced with visibility/lock toggles, search, and quick creation buttons.
-*   [ ] **Asset Management:** Dedicated File System / Asset Browser window with navigation.
+*   [x] **Status & Navigation:** Implementation of a bottom status bar and a scenes tab bar.
+*   [x] **Properties Window:** Renamed from Inspector, with improved layout and field organization.
+*   [x] **Scene Hierarchy:** Enhanced with visibility/lock toggles, search, and quick creation buttons.
+*   [x] **Asset Management:** Dedicated File System / Asset Browser window with navigation.
 *   [ ] **Diagnostics:** Enhanced Console (search, clear) and new Profiler with graph views.
 *   [ ] **Viewport Tools:** Redesigned toolbar with icons and integrated gizmo/grid controls.
 *   [ ] **Interactions:** Right-click context menus and Drag & Drop support for assets and hierarchy.
@@ -181,16 +181,16 @@ Coordinate with @ui-ux-designer for icon assets (App Icon, Hamburger, Project Ic
 
 **Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
 **Description:** Improve the Asset Browser Window's usability by adding tooltips, optimizing the layout for full-width search, implementing dynamic grid columns, and refactoring the Sounds tab with better controls and information.
-**Status:** ⏳ In Progress
+**Status:** ✅ Done
 **Assigned to:** @software-engineer
 **Acceptance Criteria:**
-*   [ ] **Tooltips:** Add tooltips to all buttons, localized via `StringManager`.
-*   [ ] **Layout:** Search bar and Refresh button take the full width of the window.
-*   [ ] **Dynamic Grid:** Implement dynamic column counts for asset items based on the current window width.
-*   [ ] **Sounds Tab:**
-    *   [ ] Refactor to better represent audio files with icons and duration.
-    *   [ ] Improved play/stop controls using icons.
-    *   [ ] Tooltips for playback buttons.
+*   [x] **Tooltips:** Add tooltips to all buttons, localized via `StringManager`.
+*   [x] **Layout:** Search bar and Refresh button take the full width of the window.
+*   [x] **Dynamic Grid:** Implement dynamic column counts for asset items based on the current window width.
+*   [x] **Sounds Tab:**
+    *   [x] Refactor to better represent audio files with icons and duration.
+    *   [x] Improved play/stop controls using icons.
+    *   [x] Tooltips for playback buttons.
 
 **Technical Notes:** Refactoring `SoundBuffer` may be required to include duration data. Use FontAwesome icons for playback controls.
 **Dependencies:** A46.0.1
@@ -541,5 +541,5 @@ architecture, state synchronization, and handling network latency.
 
 ---
 
-*Last Updated: 2024-05-15*
-*Roadmap Version: 1.5*
+*Last Updated: 2026-03-25*
+*Roadmap Version: 1.6*
