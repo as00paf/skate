@@ -266,6 +266,8 @@ class InputSystem(
     }
 
     private fun pollEditorKeyboardInput(editorInput: EditorInputStateComponent) {
+        if (!editorInput.isFocused) return
+
         val moveInput = Vector2f()
 
         if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_W)) moveInput.y += 1f

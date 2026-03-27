@@ -119,6 +119,10 @@ class GameViewWindow : IWindow, KoinComponent {
         mouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
         mouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
 
+        // Update focus state for InputSystem - ensures WASD/Shift only work when viewport is focused
+        val editorInput = sceneManager.currentScene?.systemManager?.getSystem<com.pafoid.skate.editor.EditorCamera>()?.editorInput
+        editorInput?.isFocused = ImGui.isWindowFocused()
+
         // Debug Info Overlay
         // We now get the hovered object from SelectionGizmo (via getHoveredObject)
         val hovered = getHoveredObject()
