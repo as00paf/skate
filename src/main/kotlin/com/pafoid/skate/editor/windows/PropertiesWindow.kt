@@ -85,7 +85,7 @@ class PropertiesWindow : IWindow, KoinComponent {
         val buttonSize = ImGui.getFrameHeight()
         val spacing = ImGui.getStyle().itemSpacingX
         ImGui.pushItemWidth(ImGui.getContentRegionAvailX() - buttonSize - spacing)
-        val flags = ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
+        val flags = ImGuiInputTextFlags.AutoSelectAll
         ImGui.inputTextWithHint("##search_input","${Icons.SEARCH} ${stringManager.getString("lbl.search")}...", searchString, flags)
         ImGui.popItemWidth()
         ImGui.sameLine()

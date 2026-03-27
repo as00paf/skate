@@ -44,4 +44,5 @@ object Icons {
     const val WINDOW_RESTORE = "\uf2d2"
     const val WINDOW_CLOSE = "\uf00d"
     const val MENU = "\uf0c9"
+    const val EDIT = "\uf044"
 }

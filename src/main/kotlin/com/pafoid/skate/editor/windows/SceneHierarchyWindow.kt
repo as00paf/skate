@@ -19,6 +19,8 @@ import imgui.type.ImString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
+import org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE
+import org.lwjgl.glfw.GLFW.GLFW_KEY_F2
 
 class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
@@ -28,6 +30,10 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
     
     private val searchQuery = ImString(256)
     private var isLinked = false
+    
+    private var editingObjUid: Int? = null
+    private val editNameStr = ImString(128)
+    private var focusEditInput = false
 
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.hierarchy"))
@@ -89,6 +95,15 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             }
         }
 
+        // Handle global rename input
+        if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_F2)) {
+            sceneManager.currentScene?.getSelectedGameObject()?.let { go ->
+                editingObjUid = go.getUid()
+                editNameStr.set(go.name)
+                focusEditInput = true
+            }
+        }
+
         ImGui.end()
     }
 
@@ -114,13 +129,54 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             ImGui.setNextItemOpen(true, imgui.flag.ImGuiCond.Always)
         }
 
-        val nodeOpen = ImGui.treeNodeEx(obj.name, flags)
+        val isEditing = editingObjUid == obj.getUid()
+        val nodeOpen = if (isEditing) {
+            val isOpen = ImGui.treeNodeEx("##${obj.getUid()}", flags)
+            ImGui.sameLine()
+            ImGui.pushItemWidth(-1f)
+            
+            if (focusEditInput) {
+                ImGui.setKeyboardFocusHere()
+                focusEditInput = false
+            }
+            
+            val enterPressed = ImGui.inputText("##rename_${obj.getUid()}", editNameStr, imgui.flag.ImGuiInputTextFlags.EnterReturnsTrue or imgui.flag.ImGuiInputTextFlags.AutoSelectAll)
+            
+            if (enterPressed) {
+                obj.name = editNameStr.get()
+                editingObjUid = null
+            } else if (ImGui.isItemDeactivated()) {
+                if (ImGui.isKeyPressed(GLFW_KEY_ESCAPE)) {
+                    editingObjUid = null
+                } else {
+                    obj.name = editNameStr.get()
+                    editingObjUid = null
+                }
+            }
+            
+            ImGui.popItemWidth()
+            isOpen
+        } else {
+            ImGui.treeNodeEx(obj.name, flags)
+        }
 
-        if (ImGui.isItemClicked()) {
-            sceneManager.currentScene?.setSelectedGameObject(obj)
+        if (!isEditing) {
+            if (ImGui.isItemHovered() && ImGui.isMouseDoubleClicked(0)) {
+                editingObjUid = obj.getUid()
+                editNameStr.set(obj.name)
+                focusEditInput = true
+                sceneManager.currentScene?.setSelectedGameObject(obj)
+            } else if (ImGui.isItemClicked()) {
+                sceneManager.currentScene?.setSelectedGameObject(obj)
+            }
         }
         
         if (ImGui.beginPopupContextItem()) {
+            if (ImGui.menuItem("${Icons.EDIT} Rename")) {
+                editingObjUid = obj.getUid()
+                editNameStr.set(obj.name)
+                focusEditInput = true
+            }
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("lbl.delete")}")) {
                 sceneManager.currentScene?.let { scn ->
                     undoRedoManager.executeCommand(DeleteGameObjectCommand(obj, scn))
