@@ -114,6 +114,10 @@ class EditorMenuBar(
             buildEditMenu(currentScene)
             buildSettingsMenu()
             buildViewMenu()
+            ImGui.separator()
+            if (ImGui.menuItem(stringManager.getString("menu.file.quit"))) {
+                windowController.close()
+            }
             ImGui.endPopup()
         }
     }
