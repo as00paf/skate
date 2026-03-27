@@ -58,6 +58,7 @@ class PrefabsTab(
         ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
         if (items.isNotEmpty()) {
+            ImGui.pushID("PlayerPrefabs")
             if (ImGui.beginTable("SimulationTable", numColumns, ImGuiTableFlags.SizingFixedFit)) {
                 for (item in items) {
                     ImGui.tableNextColumn()
@@ -65,6 +66,7 @@ class PrefabsTab(
                 }
                 ImGui.endTable()
             }
+            ImGui.popID()
         }
     }
 
@@ -103,6 +105,7 @@ class PrefabsTab(
         ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
         if (configs.isNotEmpty()) {
+            ImGui.pushID("ObstaclePrefabs")
             if (ImGui.beginTable("ObstacleTable", numColumns, ImGuiTableFlags.SizingFixedFit)) {
                 for (config in configs) {
                     for (material in config.allowedMaterials) {
@@ -115,6 +118,7 @@ class PrefabsTab(
                 }
                 ImGui.endTable()
             }
+            ImGui.popID()
         }
     }
 
@@ -197,6 +201,8 @@ class PrefabsTab(
             }
             ImGui.endDragDropSource()
         }
+        
+        ImGui.popID()
 
         ImGui.textWrapped(data.name)
         ImGui.endGroup()

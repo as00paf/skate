@@ -12,6 +12,7 @@ import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.editor.systems.AddAudioComponentCommand
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
@@ -740,17 +741,19 @@ class GameViewWindow : IWindow, KoinComponent {
     }
     
     private fun addSoundToObject(gameObject: GameObject, soundPath: String) {
-        var audioComponent = gameObject.getComponent<AudioComponent>()
+        val audioComponent = gameObject.getComponent<AudioComponent>()
+        val hadAudioComponent = audioComponent != null
         
-        if (audioComponent == null) {
-            // Create new AudioComponent
-            audioComponent = AudioComponent()
-            gameObject.addComponent(audioComponent)
-            logger.logEditor("Added AudioComponent to ${gameObject.name}")
+        // Use UndoRedoManager for proper undo/redo support
+        undoRedoManager.executeCommand(
+            AddAudioComponentCommand(gameObject, soundPath, hadAudioComponent)
+        )
+        
+        if (hadAudioComponent) {
+            logger.logEditor("Updated sound for ${gameObject.name}: $soundPath")
+        } else {
+            logger.logEditor("Added AudioComponent to ${gameObject.name}: $soundPath")
         }
-        
-        audioComponent.soundFilePath = soundPath
-        logger.logEditor("Set sound for ${gameObject.name}: $soundPath")
     }
     
     private fun applyAnimationToObject(gameObject: GameObject, animationPath: String) {
