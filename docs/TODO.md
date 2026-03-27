@@ -45,9 +45,10 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - [x] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory, scene name)
   - [x] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
   - [x] **A46.0.1.6: Refactor Properties Window** (Improve layout)
-  - [ ] **A46.0.1.7: Enhance Scene Hierarchy** (Visibility/lock toggles, search, "+" button, link button)
+  - [x] **A46.0.1.7: Enhance Scene Hierarchy** (Visibility/lock toggles, search, "+" button, link button)
   - [ ] **A46.0.1.8: Enhance Asset Browser Window**
-  - [ ] **A46.0.1.9: Enhance Console Window** (Add search function, multiline selection, and "Clear" button)
+  - [ ] **A46.0.1.9: Enhance Console Window** (Add search function, multiline selection, and "Save to file" and "Clear"
+    button)
   - [ ] **A46.0.1.10: Implement Profiler Graph View** (Real-time performance metrics)
   - [ ] **A46.0.1.11: Redesign Viewport Toolbar** (New layout, icons, and gizmo toggles)
   - [ ] **A46.0.1.12: Add Contextual Menus** (Right-click in Hierarchy, Assets, and Viewport)

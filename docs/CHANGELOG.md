@@ -4,6 +4,23 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.46.0.1.7] - 2026-03-25: Enhance Scene Hierarchy
+
+### Summary
+
+Significantly improved the Scene Hierarchy window with better organization, search capabilities, and essential scene management tools.
+
+### Added
+
+- **Visibility & Lock Toggles**: Added interactive icons to each GameObject in the hierarchy to quickly toggle visibility and locking.
+- **Search Filtering**: Implemented a search bar to filter the hierarchy by GameObject name.
+- **Inline Renaming**: Support for renaming GameObjects directly within the hierarchy.
+- **F2 Shortcut**: Pressing F2 with a GameObject selected now triggers inline renaming.
+- **"Add GameObject" Button**: Added a "+" button to the hierarchy toolbar for quick object creation.
+- **Hierarchy Toolbar**: A dedicated toolbar at the top of the hierarchy window for common actions.
+
+---
+
 ## [v0.46.0.1.6] - 2026-03-25: Refactor Properties Window
 
 ### Summary
