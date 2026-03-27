@@ -159,11 +159,32 @@ class DebugRenderer(
     /**
      * Adds a thick line for emphasis (e.g., axis lines).
      * Renders as 4 parallel lines to simulate thickness.
+     * 
+     * @param from Start position
+     * @param to End position
+     * @param color Line color
+     * @param lifetime Frames to live
+     * @param cameraDistance Optional camera distance for LOD scaling (recommended for consistent thickness)
      */
-    fun addThickLine3D(from: Vector3f, to: Vector3f, color: Vector3f = Vector3f(0f, 1f, 0f), lifetime: Int = 1) {
+    fun addThickLine3D(
+        from: Vector3f, 
+        to: Vector3f, 
+        color: Vector3f = Vector3f(0f, 1f, 0f), 
+        lifetime: Int = 1,
+        cameraDistance: Float? = null
+    ) {
         if (lines.size >= MAX_LINES - 4) return
+        
+        // Scale offset based on camera distance for consistent visual thickness
+        val baseOffset = 0.02f
+        val offset = if (cameraDistance != null) {
+            // Closer camera = smaller offset to prevent seeing individual lines
+            baseOffset * (cameraDistance / 10.0f).coerceIn(0.2f, 1.0f)
+        } else {
+            baseOffset
+        }
+        
         // Draw 4 parallel lines to simulate thickness
-        val offset = 0.02f
         lines.add(
             Line3D(
                 Vector3f(from.x - offset, from.y, from.z - offset),
@@ -196,6 +217,63 @@ class DebugRenderer(
                 lifetime
             )
         )
+    }
+    
+    /**
+     * Adds a thick line rendered as a quad ribbon.
+     * Provides consistent screen-space thickness regardless of camera distance.
+     * Preferred over addThickLine3D() for axis lines and important debug geometry.
+     * 
+     * Note: The quad billboards to face the camera, ensuring visibility from all angles.
+     * 
+     * @param from Start position
+     * @param to End position
+     * @param color Line color
+     * @param thickness World-space thickness (default: 0.08f)
+     * @param lifetime Frames to live
+     */
+    fun addThickLineQuad3D(
+        from: Vector3f,
+        to: Vector3f,
+        color: Vector3f = Vector3f(0f, 1f, 0f),
+        thickness: Float = 0.08f,
+        lifetime: Int = 1
+    ) {
+        if (triangles.size >= MAX_TRIANGLES - 2) return
+        
+        val direction = Vector3f(to).sub(from)
+        val lineLength = direction.length()
+        
+        if (lineLength < 0.001f) return // Degenerate line
+        
+        val lineDir = direction.normalize()
+        
+        // Get camera position for billboarding calculation
+        val cameraPos = sceneManager.currentScene?.camera?.position ?: Vector3f(0f, 5f, 20f)
+        val cameraToLine = Vector3f(from).sub(cameraPos).normalize()
+        
+        // Calculate perpendicular vector that faces the camera (billboard effect)
+        // Cross product of line direction and camera-to-line vector gives us the perpendicular
+        var perpendicular = Vector3f(lineDir).cross(cameraToLine).normalize()
+        
+        // If perpendicular is too small (camera aligned with line), use fallback
+        if (perpendicular.length() < 0.01f) {
+            // Camera is looking along the line, use arbitrary perpendicular
+            val up = if (abs(lineDir.y) > 0.9f) Vector3f(0f, 0f, 1f) else Vector3f(0f, 1f, 0f)
+            perpendicular = Vector3f(lineDir).cross(up).normalize()
+        }
+        
+        perpendicular.mul(thickness * 0.5f)
+        
+        // Quad corners: v1, v2, v3, v4 (forming a ribbon along the line)
+        val v1 = Vector3f(from).add(perpendicular)  // Start + offset
+        val v2 = Vector3f(from).sub(perpendicular)  // Start - offset
+        val v3 = Vector3f(to).add(perpendicular)    // End + offset
+        val v4 = Vector3f(to).sub(perpendicular)    // End - offset
+        
+        // Add as 2 triangles (v1, v2, v3) and (v2, v4, v3)
+        triangles.add(Triangle3D(v1, v2, v3, Vector3f(color), lifetime))
+        triangles.add(Triangle3D(v2, v4, v3, Vector3f(color), lifetime))
     }
 
     fun addTriangle3D(v1: Vector3f, v2: Vector3f, v3: Vector3f, color: Vector3f, lifetime: Int = 1) {
