@@ -60,13 +60,16 @@ class GameViewWindow : IWindow, KoinComponent {
         scenesTabBar.render(sceneManager)
 
         val windowSize = getLargestSizeForViewport()
-        val windowPos = getCenteredPositionForViewport(windowSize)
+        val windowPos = ImVec2(0f, TAB_BAR_HEIGHT)
 
         // Render the toolbar first
-        renderToolbar(windowPos, windowSize)
+        renderToolbar(windowPos)
 
         // Adjust cursor for the image to be below the toolbar
-        ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
+        ImGui.setCursorPos(
+            windowPos.x + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingX,
+            windowPos.y + TOOLBAR_HEIGHT + ImGui.getStyle().framePaddingY
+        )
 
         // Capture EXACT screen position before drawing image
         drawImage(windowSize)
@@ -146,7 +149,7 @@ class GameViewWindow : IWindow, KoinComponent {
         imageScreenPosX = screenPos.x
         imageScreenPosY = screenPos.y
         imageSizeX = windowSize.x
-        imageSizeY = windowSize.y - TOOLBAR_HEIGHT - TAB_BAR_HEIGHT
+        imageSizeY = windowSize.y - TOOLBAR_HEIGHT
 
         val texId = renderer.frameBuffer.getTextureId()
         ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
@@ -161,8 +164,8 @@ class GameViewWindow : IWindow, KoinComponent {
             trickUIInitialized = true
         }
 
-        // FPS Overlay (Top Left)
-        ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + OVERLAY_PADDING)
+        // FPS Overlay (Top Left - inside game view)
+        ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + TOOLBAR_HEIGHT + OVERLAY_PADDING)
         ImGui.beginChild(
             "FPS_Overlay",
             FPS_OVERLAY_WIDTH,
@@ -227,20 +230,10 @@ class GameViewWindow : IWindow, KoinComponent {
         return ImVec2(aspectWidth, aspectHeight)
     }
 
-    private fun getCenteredPositionForViewport(aspectSize: ImVec2): ImVec2 {
-        val windowSize = ImVec2()
-        ImGui.getContentRegionAvail(windowSize)
-
-        val viewportX = (windowSize.x / 2.0f) - (aspectSize.x / 2.0f)
-        val viewportY = (windowSize.y / 2.0f) - (aspectSize.y / 2.0f) + TAB_BAR_HEIGHT
-
-        return ImVec2(viewportX + ImGui.getCursorPosX(), viewportY + ImGui.getCursorPosY())
-    }
-
-    private fun renderToolbar(windowPos: ImVec2, windowSize: ImVec2) {
+    private fun renderToolbar(windowPos: ImVec2) {
         val isPlaying = engine.runtimePlaying
         val scene = sceneManager.currentScene
-        val toolbarPosY = windowPos.y + OVERLAY_PADDING
+        val toolbarPosY = windowPos.y + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingY
 
         val buttons = mutableListOf<() -> Unit>()
 
@@ -396,7 +389,7 @@ class GameViewWindow : IWindow, KoinComponent {
             if (ImGui.isItemHovered()) ImGui.setTooltip("Take Screenshot")
         }
         val totalButtonWidth = (TOOLBAR_BUTTON_HEIGHT * buttons.size) + (TOOLBAR_BUTTON_SPACING * (buttons.size - 1))
-        val toolbarPosX = windowPos.x + (windowSize.x / 2f) - (totalButtonWidth / 2f)
+        val toolbarPosX = windowPos.x + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingX
         ImGui.setCursorPos(toolbarPosX, toolbarPosY)
         ImGui.beginChild(
             "GameViewportToolbar",
