@@ -150,6 +150,7 @@ as enhancing gizmos and camera controls.
 **Sub-Tasks:**
 - **A46.0.1.7:** Enhance Scene Hierarchy (✅ Done)
 - **A46.0.1.8:** Enhance Asset Browser Window (✅ Done)
+- **A46.0.1.11:** Redesign Viewport Toolbar (✅ Done)
 
 **Acceptance Criteria:**
 
@@ -174,6 +175,27 @@ as enhancing gizmos and camera controls.
 in a theme manager. Event system should be used for cross-window communication (e.g., asset selection).
 Coordinate with @ui-ux-designer for icon assets (App Icon, Hamburger, Project Icon).
 **Dependencies:** A45.0.6
+
+---
+
+### A46.0.1.11: Redesign Viewport Toolbar
+
+**Priority:** 🔴 High | **Effort:** Small | **Phase:** 2
+**Description:** Redesign the Viewport Toolbar to align with professional UI standards. Includes left-aligning buttons,
+fixing vertical positioning, and relocating the FPS counter to the game view area.
+**Status:** ⏳ Implementation
+**Assigned to:** @software-engineer
+**Acceptance Criteria:**
+
+*   [ ] **Alignment:** Buttons are aligned to the left of the viewport area with consistent padding.
+*   [ ] **Vertical Position:** Toolbar is positioned closer to the top of its container.
+*   [ ] **Spacing:** Proper and consistent spacing between toolbar buttons.
+*   [ ] **FPS Counter:** Relocated to the interior of the game view (image area), below the toolbar.
+*   [ ] **Icons:** Current buttons and icons are preserved.
+
+**Technical Notes:** Implement changes in `GameViewWindow.kt`. Ensure coordinates are relative to the viewport container
+correctly.
+**Dependencies:** A46.0.1
 
 ---
 
