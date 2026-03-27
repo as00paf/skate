@@ -5,20 +5,33 @@ import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.CreateGameObjectCommand
+import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
+import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.ScreenshotUtils
 import com.pafoid.skate.engine.utils.UnitSystem
+import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol
@@ -41,6 +54,8 @@ class GameViewWindow : IWindow, KoinComponent {
     private val stringManager: StringManager by inject()
     private val renderer: Renderer by inject()
     private val engine: Engine by inject()
+    private val undoRedoManager: UndoRedoManager by inject()
+    private val resourceManager: ResourceManager by inject()
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -73,6 +88,9 @@ class GameViewWindow : IWindow, KoinComponent {
 
         // Capture EXACT screen position before drawing image
         drawImage(windowSize)
+
+        // Render viewport context menu (right-click on viewport area)
+        renderViewportContextMenu(windowPos, windowSize)
 
         // Drag and Drop Target should be over the image area
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
@@ -422,5 +440,209 @@ class GameViewWindow : IWindow, KoinComponent {
         private const val TAB_BAR_HEIGHT = 25f
         private const val TOOLBAR_BUTTON_HEIGHT = 30f
         private const val TOOLBAR_BUTTON_SPACING = 10f
+    }
+
+    private fun renderViewportContextMenu(windowPos: ImVec2, windowSize: ImVec2) {
+        // Set cursor pos to the image area for context menu
+        ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
+        
+        if (ImGui.beginPopupContextWindow("ViewportContextMenu")) {
+            ImGui.text(stringManager.getString("context.viewport.title"))
+            ImGui.separator()
+            
+            val scene = sceneManager.currentScene
+            
+            // Create Empty
+            if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.viewport.create_empty")}")) {
+                scene?.let {
+                    val newObj = GameObject("GameObject")
+                    undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, it))
+                }
+            }
+            
+            // Create 3D Object submenu
+            if (ImGui.beginMenu("${Icons.CUBE} ${stringManager.getString("context.viewport.create_3d_object")}")) {
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cube"))) {
+                    createPrimitiveObject("Cube", Vector3f(0.5f, 0.5f, 0.5f))
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.sphere"))) {
+                    createPrimitiveObject("Sphere", Vector3f(0.5f, 0.5f, 0.5f))
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cylinder"))) {
+                    createPrimitiveObject("Cylinder", Vector3f(0.5f, 1f, 0.5f))
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.plane"))) {
+                    createPrimitiveObject("Plane", Vector3f(5f, 0f, 5f))
+                }
+                ImGui.endMenu()
+            }
+            
+            // Create Light submenu
+            if (ImGui.beginMenu("${Icons.SUN} ${stringManager.getString("context.viewport.create_light")}")) {
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.directional"))) {
+                    createLightObject("DirectionalLight", LightType.DIRECTIONAL)
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.point"))) {
+                    createLightObject("PointLight", LightType.POINT)
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.spot"))) {
+                    createLightObject("SpotLight", LightType.SPOT)
+                }
+                ImGui.endMenu()
+            }
+            
+            // Create Camera
+            if (ImGui.menuItem("${Icons.CAMERA} ${stringManager.getString("context.viewport.create_camera")}")) {
+                scene?.let {
+                    val cameraObj = GameObject("Camera")
+                    // Camera component would be added here when implemented
+                    undoRedoManager.executeCommand(CreateGameObjectCommand(cameraObj, it))
+                }
+            }
+            
+            ImGui.separator()
+            
+            // Create Skateboard Obstacle submenu
+            if (ImGui.beginMenu("${Icons.GEAR} ${stringManager.getString("context.viewport.create_obstacle")}")) {
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.rail"))) {
+                    prefabsGenerator.spawnRail(Vector3f(0f, 0.5f, 0f), null)
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.ledge"))) {
+                    prefabsGenerator.spawnLedge(Vector3f(0f, 0.25f, 0f), null)
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.kicker"))) {
+                    prefabsGenerator.spawnKicker(Vector3f(0f, 0f, 0f), null)
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.manual_pad"))) {
+                    prefabsGenerator.spawnManualPad(Vector3f(0f, 0.1f, 0f), null)
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.bank"))) {
+                    prefabsGenerator.spawnBank(Vector3f(0f, 0f, 0f), null)
+                }
+                if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.quarter_pipe"))) {
+                    prefabsGenerator.spawnQuarterPipe(Vector3f(0f, 0f, 0f), null)
+                }
+                ImGui.endMenu()
+            }
+            
+            ImGui.separator()
+            
+            // Object manipulation (only if object is selected)
+            val selectedObject = scene?.getSelectedGameObject()
+            if (selectedObject != null) {
+                if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.viewport.duplicate")}")) {
+                    duplicateGameObject(selectedObject)
+                }
+                if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.viewport.delete")}")) {
+                    undoRedoManager.executeCommand(DeleteGameObjectCommand(selectedObject, scene!!))
+                }
+                ImGui.separator()
+            }
+            
+            // Focus Selected
+            if (ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.viewport.focus_selected")}")) {
+                focusOnSelectedObject()
+            }
+            
+            // Reset Camera
+            if (ImGui.menuItem("${Icons.ROTATE} ${stringManager.getString("context.viewport.reset_camera")}")) {
+                scene?.camera?.position?.set(0f, 5f, 20f)
+                scene?.camera?.yaw = 0f
+                scene?.camera?.pitch = 0f
+            }
+            
+            ImGui.endPopup()
+        }
+    }
+    
+    private fun createPrimitiveObject(name: String, halfExtents: Vector3f) {
+        val scene = sceneManager.currentScene ?: return
+        
+        val obj = GameObject(name)
+        val transform = Transform()
+        transform.translation.set(0f, halfExtents.y, 0f)
+        obj.addComponent(transform)
+        
+        // Add render component with basic cube model (using JobSystem for async loading)
+        JobSystem.runAsync {
+            val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
+            val texture = resourceManager.loadTexture(Assets.Textures.DEFAULT)
+            val texturedModel = TexturedModel(
+                baseModel.mesh[0].rawModel,
+                texture
+            )
+            
+            JobSystem.runOnMain {
+                obj.addComponent(RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true))
+                // Add physics components
+                obj.addComponent(RigidBody3D(1f).apply { friction = 0.5f; bodyType = BodyType.Dynamic })
+                obj.addComponent(BoxCollider3D(halfExtents))
+                undoRedoManager.executeCommand(CreateGameObjectCommand(obj, scene))
+            }
+        }
+    }
+    
+    private enum class LightType {
+        DIRECTIONAL,
+        POINT,
+        SPOT
+    }
+    
+    private fun createLightObject(name: String, type: LightType) {
+        val scene = sceneManager.currentScene ?: return
+        
+        val lightObj = GameObject(name)
+        val transform = Transform()
+        when (type) {
+            LightType.DIRECTIONAL -> {
+                transform.translation.set(0f, 10f, 0f)
+                transform.rotation?.set(
+                    Math.toRadians(-45.0).toFloat(),
+                    Math.toRadians(45.0).toFloat(),
+                    0f
+                )
+            }
+            LightType.POINT -> transform.translation.set(0f, 5f, 0f)
+            LightType.SPOT -> {
+                transform.translation.set(0f, 5f, 0f)
+                transform.rotation?.set(Math.toRadians(-90.0).toFloat(), 0f, 0f)
+            }
+        }
+        lightObj.addComponent(transform)
+        
+        // Light component would be added here when implemented
+        // For now, just create the GameObject with a marker
+        
+        undoRedoManager.executeCommand(CreateGameObjectCommand(lightObj, scene))
+    }
+    
+    private fun duplicateGameObject(gameObject: GameObject) {
+        val scene = sceneManager.currentScene ?: return
+        
+        // Create a new GameObject with copied transform
+        val duplicated = GameObject("${gameObject.name}_clone")
+        val originalTransform = gameObject.getComponent<Transform>()
+        val newTransform = Transform()
+        originalTransform?.let { orig ->
+            newTransform.copyFrom(orig)
+        }
+        newTransform.translation.x += 1f // Offset by 1 unit on X
+        
+        duplicated.addComponent(newTransform)
+        
+        undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
+    }
+    
+    private fun focusOnSelectedObject() {
+        val scene = sceneManager.currentScene ?: return
+        val selectedObject = scene.getSelectedGameObject() ?: return
+        
+        val transform = selectedObject.getComponent<Transform>() ?: return
+        val pos = transform.translation
+        
+        // Move camera to look at the object from a reasonable distance
+        val offset = Vector3f(5f, 5f, 5f)
+        scene.camera.position.set(Vector3f(pos).add(offset))
+        scene.camera.lookAt(pos)
     }
 }

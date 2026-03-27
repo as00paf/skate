@@ -43,15 +43,54 @@ class PropertiesWindow : IWindow, KoinComponent {
             ImGui.spacing()
 
             val components = go.getAllComponents().filter { it.getName().contains(searchString.get(), true) }
-            components.forEach { component ->
-                if (ImGui.collapsingHeader(component.getName())) {
-                    component.imgui()
-                }
+            components.forEachIndexed { index, component ->
+                renderComponentWithContextMenu(go, component, index)
             }
 
             contextualMenu(go)
         }
         ImGui.end()
+    }
+    
+    private fun renderComponentWithContextMenu(go: GameObject, component: Component, index: Int) {
+        val headerLabel = component.getName()
+        
+        if (ImGui.collapsingHeader(headerLabel)) {
+            component.imgui()
+        }
+        
+        // Context menu on right-click of the header
+        if (ImGui.beginPopupContextItem("${component.javaClass.simpleName}_context")) {
+            if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.properties.copy_component")}")) {
+                // TODO: Implement copy component to clipboard
+                stringManager // Placeholder
+            }
+            if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.properties.remove_component")}")) {
+                // Don't allow removing Transform component (core component)
+                if (component !is Transform) {
+                    // Remove by finding the component type and using inline function
+                    removeComponentByType(go, component)
+                }
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.properties.reset_to_default")}")) {
+                // TODO: Implement reset component to default values
+            }
+            ImGui.endPopup()
+        }
+    }
+    
+    private fun removeComponentByType(go: GameObject, component: Component) {
+        // Use the component's class to remove it
+        when (component) {
+            is AudioComponent -> go.removeComponent<AudioComponent>()
+            is BoxCollider3D -> go.removeComponent<BoxCollider3D>()
+            is CylinderCollider3D -> go.removeComponent<CylinderCollider3D>()
+            is RenderComponent -> go.removeComponent<RenderComponent>()
+            is RigidBody3D -> go.removeComponent<RigidBody3D>()
+            // Transform cannot be removed
+            else -> go.components.remove(component)
+        }
     }
 
     private fun enabledCheckbox(go: GameObject) {

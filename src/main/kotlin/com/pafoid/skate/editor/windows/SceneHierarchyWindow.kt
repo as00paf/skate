@@ -2,12 +2,15 @@ package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.editor.systems.CreateGameObjectCommand
 import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import imgui.ImGui
@@ -16,6 +19,7 @@ import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImString
+import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
@@ -27,7 +31,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val stringManager: StringManager by inject()
     private val undoRedoManager: UndoRedoManager by inject()
-    
+    private val clipboardService: ClipboardService by inject()
+
     private val searchQuery = ImString(256)
     private var isLinked = false
     
@@ -172,16 +177,84 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         }
         
         if (ImGui.beginPopupContextItem()) {
-            if (ImGui.menuItem("${Icons.EDIT} Rename")) {
-                editingObjUid = obj.getUid()
-                editNameStr.set(obj.name)
-                focusEditInput = true
+            // Create Empty Child
+            if (ImGui.beginMenu("${Icons.PLUS} ${stringManager.getString("context.hierarchy.create_empty_child")}")) {
+                if (ImGui.menuItem("Empty GameObject")) {
+                    val childObj = GameObject("GameObject")
+                    val parentTransform = obj.getComponent<Transform>()
+                    childObj.addComponent(Transform())
+                    childObj.parent = obj
+                    sceneManager.currentScene?.let { scn ->
+                        undoRedoManager.executeCommand(CreateGameObjectCommand(childObj, scn))
+                    }
+                }
+                ImGui.endMenu()
             }
-            if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("lbl.delete")}")) {
+            
+            ImGui.separator()
+            
+            // Duplicate
+            if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.duplicate")}")) {
+                duplicateGameObject(obj)
+            }
+            
+            // Copy/Cut/Paste
+            if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.copy")}")) {
+                clipboardService.copy(obj)
+            }
+            if (ImGui.menuItem("${Icons.CUT} ${stringManager.getString("context.hierarchy.cut")}")) {
+                clipboardService.copy(obj)
                 sceneManager.currentScene?.let { scn ->
                     undoRedoManager.executeCommand(DeleteGameObjectCommand(obj, scn))
                 }
             }
+            if (ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("context.hierarchy.paste_as_child")}")) {
+                pasteAsChild(obj)
+            }
+            
+            ImGui.separator()
+            
+            // Delete
+            if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.hierarchy.delete")}")) {
+                sceneManager.currentScene?.let { scn ->
+                    undoRedoManager.executeCommand(DeleteGameObjectCommand(obj, scn))
+                }
+            }
+            
+            // Rename
+            if (ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.hierarchy.rename")}")) {
+                editingObjUid = obj.getUid()
+                editNameStr.set(obj.name)
+                focusEditInput = true
+            }
+            
+            ImGui.separator()
+            
+            // Focus in Viewport
+            if (ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.hierarchy.focus_in_viewport")}")) {
+                focusOnGameObject(obj)
+            }
+            
+            ImGui.separator()
+            
+            // Lock/Unlock toggle
+            val lockLabel = if (obj.isLocked) 
+                "${Icons.UNLOCK} ${stringManager.getString("context.hierarchy.lock_unlock")}" 
+            else 
+                "${Icons.LOCK} ${stringManager.getString("context.hierarchy.lock_unlock")}"
+            if (ImGui.menuItem(lockLabel)) {
+                obj.isLocked = !obj.isLocked
+            }
+            
+            // Visible/Hidden toggle
+            val visLabel = if (obj.isVisible) 
+                "${Icons.EYE_SLASH} ${stringManager.getString("context.hierarchy.visible_hidden")}" 
+            else 
+                "${Icons.EYE} ${stringManager.getString("context.hierarchy.visible_hidden")}"
+            if (ImGui.menuItem(visLabel)) {
+                obj.isVisible = !obj.isVisible
+            }
+            
             ImGui.endPopup()
         }
 
@@ -236,5 +309,41 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             if (hasMatchingChild(child, filter)) return true
         }
         return false
+    }
+    
+    private fun duplicateGameObject(gameObject: GameObject) {
+        val scene = sceneManager.currentScene ?: return
+        // Create a new GameObject with copied transform
+        val duplicated = GameObject("${gameObject.name}_clone")
+        val originalTransform = gameObject.getComponent<Transform>()
+        val newTransform = Transform()
+        originalTransform?.let { orig ->
+            newTransform.copyFrom(orig)
+        }
+        newTransform.translation.x += 0.5f
+        newTransform.translation.z += 0.5f
+        
+        duplicated.addComponent(newTransform)
+        undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
+    }
+    
+    private fun pasteAsChild(parentObject: GameObject) {
+        val scene = sceneManager.currentScene ?: return
+        val cloned = clipboardService.paste() ?: return
+        cloned.name = "${cloned.name}_child"
+        cloned.parent = parentObject
+        cloned.getComponent<Transform>()?.translation?.set(0f, 0f, 0f)
+        undoRedoManager.executeCommand(CreateGameObjectCommand(cloned, scene))
+    }
+    
+    private fun focusOnGameObject(gameObject: GameObject) {
+        val scene = sceneManager.currentScene ?: return
+        val transform = gameObject.getComponent<Transform>() ?: return
+        val pos = transform.translation
+        
+        // Move camera to look at the object from a reasonable distance
+        val offset = org.joml.Vector3f(5f, 5f, 5f)
+        scene.camera.position.set(org.joml.Vector3f(pos).add(offset))
+        scene.camera.lookAt(pos)
     }
 }

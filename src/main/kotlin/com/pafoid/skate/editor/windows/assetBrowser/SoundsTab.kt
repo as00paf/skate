@@ -71,9 +71,38 @@ class SoundsTab(
         ImGui.tableNextColumn()
         ImGui.text(Icons.MUSIC)
 
-        // Column 1: Name + Drag and Drop
+        // Column 1: Name + Drag and Drop + Context Menu
         ImGui.tableNextColumn()
         ImGui.selectable(file.name, false)
+        
+        // Context menu on right-click
+        if (ImGui.beginPopupContextItem()) {
+            val playStopLabel = if (isPlaying) 
+                "${Icons.STOP} ${stringManager.getString("context.asset_browser.play_stop")}" 
+            else 
+                "${Icons.PLAY} ${stringManager.getString("context.asset_browser.play_stop")}"
+            
+            if (ImGui.menuItem(playStopLabel)) {
+                handlePlayback(file, buffer)
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.add_to_gameobject")}")) {
+                addSoundToSelectedObject(file.path)
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.asset_browser.open_external")}")) {
+                java.awt.Desktop.getDesktop().open(file)
+            }
+            if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {
+                java.awt.Desktop.getDesktop().open(file.parentFile)
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
+                logger.logEditor("Sound: ${file.name}, Duration: ${duration}s, Path: ${file.absolutePath}")
+            }
+            ImGui.endPopup()
+        }
+        
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("SOUND", file.path)
             ImGui.text("${Icons.MUSIC} ${file.name}")
@@ -97,6 +126,11 @@ class SoundsTab(
         }
 
         ImGui.popID()
+    }
+
+    private fun addSoundToSelectedObject(soundPath: String) {
+        // TODO: Implement adding AudioComponent to selected object
+        logger.logEditor("Add sound to object not yet implemented: $soundPath")
     }
 
     private fun handlePlayback(file: File, buffer: com.pafoid.skate.engine.assets.data.SoundBuffer) {

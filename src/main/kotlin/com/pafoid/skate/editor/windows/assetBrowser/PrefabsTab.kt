@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.windows.assetBrowser
 import com.pafoid.skate.editor.data.PrefabConfig
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
@@ -15,13 +16,19 @@ import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImString
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import java.awt.Desktop
+import java.io.File
 
 class PrefabsTab(
     resourceManager: ResourceManager,
     thumbnailCache: ThumbnailCache,
     stringManager: StringManager,
     private val prefabsGenerator: PrefabsGenerator
-): AssetBrowserTab(resourceManager, thumbnailCache, stringManager) {
+): AssetBrowserTab(resourceManager, thumbnailCache, stringManager), KoinComponent {
+
+    private val logger: LoggerService by inject()
 
     override fun imgui(label: String, searchText: ImString) {
         renderHeader(label, searchText)
@@ -147,10 +154,41 @@ class PrefabsTab(
 
             }
         }
-        ImGui.popID()
-
+        
+        // Context menu on right-click
+        if (ImGui.beginPopupContextItem()) {
+            if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.spawn_in_scene")}")) {
+                JobSystem.runOnMain {
+                    when (data.type) {
+                        PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
+                        PrefabType.SKATER -> prefabsGenerator.spawnSkater()
+                        PrefabType.LEDGE -> prefabsGenerator.spawnLedge(material = data.material)
+                        PrefabType.RAIL -> prefabsGenerator.spawnRail(material = data.material)
+                        PrefabType.KICKER -> prefabsGenerator.spawnKicker(material = data.material)
+                        PrefabType.MANUAL_PAD -> prefabsGenerator.spawnManualPad(material = data.material)
+                        PrefabType.BANK -> prefabsGenerator.spawnBank(material = data.material)
+                        PrefabType.QUARTER_PIPE -> prefabsGenerator.spawnQuarterPipe(material = data.material)
+                    }
+                }
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.STAR} ${stringManager.getString("context.asset_browser.add_to_favorites")}")) {
+                // TODO: Implement favorites system
+                logger.logEditor("Add to favorites not yet implemented")
+            }
+            if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {
+                // Open folder in file explorer
+                java.awt.Desktop.getDesktop().open(File(data.modelPath ?: ".").parentFile)
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
+                logger.logEditor("Properties: ${data.name}, Type: ${data.type}, Material: ${data.material?.name}")
+            }
+            ImGui.endPopup()
+        }
+        
         if (data.dragDropPayload != null && ImGui.beginDragDropSource()) {
-            ImGui.setDragDropPayload(data.dragDropPayload, data) 
+            ImGui.setDragDropPayload(data.dragDropPayload, data)
             ImGui.image(texId.toLong(), size*0.8f, size*0.8f, 0f, 1f, 1f, 0f)
             ImGui.text(data.name)
             ImGui.endDragDropSource()

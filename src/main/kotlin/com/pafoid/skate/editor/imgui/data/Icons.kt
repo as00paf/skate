@@ -50,4 +50,9 @@ object Icons {
     const val MICROCHIP = "\uf2db"
     const val MEMORY = "\uf538"
     const val CLOCK = "\uf017"
+    const val STAR = "\uf005"
+    const val FOLDER = "\uf07b"
+    const val INFO = "\uf05a"
+    const val CHECK = "\uf00c"
+    const val EXTERNAL_LINK = "\uf08e"
 }

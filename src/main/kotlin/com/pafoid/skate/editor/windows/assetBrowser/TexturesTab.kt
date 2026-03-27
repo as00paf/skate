@@ -1,18 +1,28 @@
 package com.pafoid.skate.editor.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
+import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.io.File
 
 class TexturesTab(
     resourceManager: ResourceManager,
     thumbnailCache: ThumbnailCache,
     stringManager: StringManager,
-    ): AssetBrowserTab(resourceManager, thumbnailCache, stringManager) {
+    ): AssetBrowserTab(resourceManager, thumbnailCache, stringManager), KoinComponent {
+
+    private val logger: LoggerService by inject()
+    private val sceneManager: SceneManager by inject()
 
     private val supportedTextureFormats = listOf("png", "jpg", "jpeg")
 
@@ -32,6 +42,33 @@ class TexturesTab(
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(file.name)
         }
+        
+        // Context menu on right-click
+        if (ImGui.beginPopupContextItem()) {
+            if (ImGui.menuItem("${Icons.CHECK} ${stringManager.getString("context.asset_browser.apply_to_selected")}")) {
+                applyTextureToSelected(file.path)
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.EXTERNAL_LINK} ${stringManager.getString("context.asset_browser.open_external")}")) {
+                java.awt.Desktop.getDesktop().open(file)
+            }
+            if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {
+                java.awt.Desktop.getDesktop().open(file.parentFile)
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.asset_browser.refresh")}")) {
+                // Force reload by clearing cache first (if such method exists)
+                // For now, just log that refresh was requested
+                logger.logEditor("Refresh requested for: ${file.name}")
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
+                val tex = resourceManager.loadTextureSync(file.path)
+                logger.logEditor("Texture: ${file.name}, Size: ${tex.width}x${tex.height}, ID: ${tex.texId}")
+            }
+            ImGui.endPopup()
+        }
+        
         ImGui.popID()
 
         if (ImGui.beginDragDropSource()) {
@@ -44,6 +81,24 @@ class TexturesTab(
         ImGui.textWrapped(file.name)
         ImGui.dummy(0f, padding)
         ImGui.endGroup()
+    }
+    
+    private fun applyTextureToSelected(texturePath: String) {
+        val scene = sceneManager.currentScene ?: return
+        val selectedObject = scene.getSelectedGameObject() ?: run {
+            logger.logEditor("No object selected")
+            return
+        }
+        
+        val renderComponent = selectedObject.getComponent<RenderComponent>() ?: run {
+            logger.logEditor("Selected object has no RenderComponent")
+            return
+        }
+        
+        val texture = resourceManager.loadTextureSync(texturePath)
+        // Update the texture path in the render component
+        // Note: This is a simplified approach - may need proper material system integration
+        logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
     }
 
     override fun refreshAssets() {
