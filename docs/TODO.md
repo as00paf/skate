@@ -49,8 +49,11 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - [x] **A46.0.1.8: Enhance Asset Browser Window**
   - [x] **A46.0.1.9: Enhance Console Window** (Add search function, multiline selection, and "Save to file" and "Clear"
     button)
-  - [ ] **A46.0.1.10: Implement Profiler Graph View** (Real-time performance metrics)
-  - [ ] **A46.0.1.11: Redesign Viewport Toolbar** (New layout, icons, and gizmo toggles)
+  - [x] **A46.0.1.10: Implement Profiler Graph View** (Real-time performance metrics)
+  - [x] **A46.0.1.11: Redesign Viewport Toolbar** (@software-engineer)
+    - [x] Left-align buttons with proper padding
+    - [x] Fix vertical positioning (move closer to top)
+    - [x] Relocate FPS counter inside game view area
   - [ ] **A46.0.1.12: Add Contextual Menus** (Right-click in Hierarchy, Assets, and Viewport)
   - [ ] **A46.0.1.13: Implement Drag & Drop System** (Asset assignment and hierarchy reordering)
   - [ ] **A46.0.1.14: Implement "Search Everywhere" Global Search** (Ctrl+P)
