@@ -25,6 +25,8 @@ open class GameObject(
     private var isDead: Boolean = false
     private var doSerialization = true
     var isEnabled = true
+    var isVisible = true
+    var isLocked = false
     private var uId = ID_COUNTER++
 
     val components = mutableListOf<Component>()
