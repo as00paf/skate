@@ -13,8 +13,6 @@ import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.sun.tools.javac.tree.TreeInfo.flags
-import com.sun.tools.sjavac.Main.go
 import imgui.ImGui
 import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiWindowFlags
@@ -34,9 +32,15 @@ class PropertiesWindow : IWindow, KoinComponent {
         ImGui.begin(stringManager.getString("window.properties"), pOpen)
         sceneManager.currentScene?.getSelectedGameObject()?.let { go ->
             enabledCheckbox(go)
+            ImGui.spacing()
             objectName(go)
+            ImGui.spacing()
             ImGui.separator()
+            ImGui.spacing()
             searchBar()
+            ImGui.spacing()
+            ImGui.separator()
+            ImGui.spacing()
 
             val components = go.getAllComponents().filter { it.getName().contains(searchString.get(), true) }
             components.forEach { component ->
@@ -75,17 +79,19 @@ class PropertiesWindow : IWindow, KoinComponent {
 
     private fun searchBar() {
         ImGui.text(stringManager.getString("lbl.components"))
+        ImGui.spacing()
 
         // Search bar
-        ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
+        val buttonSize = ImGui.getFrameHeight()
+        val spacing = ImGui.getStyle().itemSpacingX
+        ImGui.pushItemWidth(ImGui.getContentRegionAvailX() - buttonSize - spacing)
         val flags = ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
         ImGui.inputTextWithHint("##search_input","${Icons.SEARCH} ${stringManager.getString("lbl.search")}...", searchString, flags)
+        ImGui.popItemWidth()
         ImGui.sameLine()
-        if(ImGui.button("+")) {
+        if(ImGui.button("+", buttonSize, buttonSize)) {
             ImGui.openPopup("add_component_popup")
         }
-
-        ImGui.popItemWidth()
     }
 
     private fun contextualMenu(go: GameObject) {

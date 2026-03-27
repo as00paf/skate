@@ -181,12 +181,14 @@ Coordinate with @ui-ux-designer for icon assets (App Icon, Hamburger, Project Ic
 **Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
 **Description:** Refactor the Properties Window to improve usability and provide a more intuitive interface for editing GameObject properties and components.
 **Status:** ⏳ In Progress
+**Assigned to:** @software-engineer
 **Acceptance Criteria:**
 *   [ ] **Properties Window Layout:**
     *   [ ] Editable text input for the game object's name.
     *   [ ] `isEnabled` checkbox for the selected game object.
     *   [ ] Search field to filter components.
     *   [ ] A button to add new components.
+    *   [ ] Add vertical spacing (`ImGui.spacing()` or `ImGui.dummy()`) between the elements to prevent vertical packing (e.g., between name/enable row, the separator, the search bar, and the components list).
 *   [ ] **Context Menu:**
     *   [ ] Update the context menu to allow adding components by type.
 *   [ ] **Incremental Component Refactor:**

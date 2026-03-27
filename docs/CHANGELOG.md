@@ -4,6 +4,22 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.46.0.1.6] - 2026-03-25: Refactor Properties Window
+
+### Summary
+
+Refactored the Properties Window to improve the layout and provide more robust tools for component and GameObject editing.
+
+### Added
+
+- **Dynamic Component Creation**: Support for adding new components to the selected GameObject directly from the UI.
+- **Editable Name**: Ability to edit the GameObject's name directly in the properties panel.
+- **isEnabled Toggle**: Added a toggle to easily enable or disable the GameObject.
+- **Search Bar**: Included a search bar for filtering attached components.
+- **Add Component Popup**: Introduced a popup menu for selecting and adding new components to the selected GameObject.
+
+---
+
 ## [v0.46.0.1.5] - 2026-03-25: Scenes Tab Bar and Reviewer-Approved Refinements
 
 ### Summary
