@@ -89,7 +89,7 @@ class PropertiesWindow : IWindow, KoinComponent {
         ImGui.inputTextWithHint("##search_input","${Icons.SEARCH} ${stringManager.getString("lbl.search")}...", searchString, flags)
         ImGui.popItemWidth()
         ImGui.sameLine()
-        if(ImGui.button("+", buttonSize, buttonSize)) {
+        if(ImGui.button(Icons.PLUS, buttonSize, buttonSize)) {
             ImGui.openPopup("add_component_popup")
         }
     }

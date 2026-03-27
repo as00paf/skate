@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.ecs.SceneManager
 import imgui.ImGui
 import imgui.flag.ImGuiTabBarFlags
@@ -35,7 +36,7 @@ class EditorScenesTabBar {
             
             // Add a '+' button as a tab to create a new scene
             val addTabFlags = ImGuiTabItemFlags.Trailing or ImGuiTabItemFlags.NoTooltip
-            if (ImGui.beginTabItem("+", addTabFlags)) {
+            if (ImGui.beginTabItem(Icons.PLUS, addTabFlags)) {
                 // This tab was clicked, create a new scene
                 com.pafoid.skate.engine.utils.JobSystem.runOnMain {
                     val initializer = com.pafoid.skate.editor.LevelEditorSceneInitializer()
