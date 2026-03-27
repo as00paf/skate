@@ -92,6 +92,7 @@ class PropertiesWindow : IWindow, KoinComponent {
         if(ImGui.button(Icons.PLUS, buttonSize, buttonSize)) {
             ImGui.openPopup("add_component_popup")
         }
+        if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.properties.add_component"))
     }
 
     private fun contextualMenu(go: GameObject) {
