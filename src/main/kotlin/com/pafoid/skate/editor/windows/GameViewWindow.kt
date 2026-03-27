@@ -21,6 +21,8 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
@@ -107,6 +109,12 @@ class GameViewWindow : IWindow, KoinComponent {
             
             // Texture payload
             val payloadTexture = ImGui.acceptDragDropPayload<String>("TEXTURE")
+            
+            // Sound payload
+            val payloadSound = ImGui.acceptDragDropPayload<String>("SOUND")
+            
+            // Animation payload
+            val payloadAnimation = ImGui.acceptDragDropPayload<String>("ANIMATION")
 
             val prefabPayload = payloadRail ?: payloadLedge ?: payloadKicker ?: payloadManualPad ?: payloadBank ?: payloadQuarterPipe ?: payloadSkateboard
 
@@ -161,6 +169,26 @@ class GameViewWindow : IWindow, KoinComponent {
                         // Not hovering any object, create plane at ground position
                         createTexturedPlaneAtDropLocation(scene, payloadTexture)
                     }
+                }
+            }
+            
+            // Handle sound drop - add AudioComponent to hovered object
+            if (payloadSound != null) {
+                val hoveredObject = getHoveredObject()
+                if (hoveredObject != null) {
+                    addSoundToObject(hoveredObject, payloadSound)
+                } else {
+                    logger.logEditor("Drop sound on an object to add AudioComponent")
+                }
+            }
+            
+            // Handle animation drop - apply to hovered skater object
+            if (payloadAnimation != null) {
+                val hoveredObject = getHoveredObject()
+                if (hoveredObject != null) {
+                    applyAnimationToObject(hoveredObject, payloadAnimation)
+                } else {
+                    logger.logEditor("Drop animation on a skater object")
                 }
             }
             
@@ -709,6 +737,37 @@ class GameViewWindow : IWindow, KoinComponent {
         // For a proper implementation, we'd need to update the material's texture path
         logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
         // TODO: Implement proper material texture update when material system is available
+    }
+    
+    private fun addSoundToObject(gameObject: GameObject, soundPath: String) {
+        var audioComponent = gameObject.getComponent<AudioComponent>()
+        
+        if (audioComponent == null) {
+            // Create new AudioComponent
+            audioComponent = AudioComponent()
+            gameObject.addComponent(audioComponent)
+            logger.logEditor("Added AudioComponent to ${gameObject.name}")
+        }
+        
+        audioComponent.soundFilePath = soundPath
+        logger.logEditor("Set sound for ${gameObject.name}: $soundPath")
+    }
+    
+    private fun applyAnimationToObject(gameObject: GameObject, animationPath: String) {
+        val animator = gameObject.getComponent<Animator>()
+        
+        if (animator != null) {
+            // Load and add animation
+            val animation = resourceManager.getAnimation(animationPath)
+            if (animation != null) {
+                animator.addAnimation(animation)
+                logger.logEditor("Added animation to ${gameObject.name}: $animationPath")
+            } else {
+                logger.logEditor("Failed to load animation: $animationPath")
+            }
+        } else {
+            logger.logEditor("Object has no Animator component")
+        }
     }
     
     private fun duplicateGameObject(gameObject: GameObject) {
