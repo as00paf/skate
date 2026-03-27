@@ -55,6 +55,9 @@ dependencies {
     // Serialization
     implementation(libs.kotlinx.serialization.json)
 
+    // Reflection
+    implementation(kotlin("reflect"))
+
     // Koin
     implementation(libs.koin.core)
     testImplementation(libs.koin.test)

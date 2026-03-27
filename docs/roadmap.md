@@ -147,6 +147,9 @@ dependencies.
 **Description:** A complete overhaul of the engine's user interface to reach professional standards (Godot/Unity) and
 significant improvements to scene manipulation tools. This includes redesigning menus, panels, and buttons, as well
 as enhancing gizmos and camera controls.
+**Sub-Tasks:**
+- **A46.0.1.6:** Refactor Properties Window (⏳ In Progress)
+
 **Acceptance Criteria:**
 
 *   [ ] **Visual Style:** "Islands Dark" theme (IntelliJ-like) implemented across all windows.
@@ -170,6 +173,27 @@ as enhancing gizmos and camera controls.
 in a theme manager. Event system should be used for cross-window communication (e.g., asset selection).
 Coordinate with @ui-ux-designer for icon assets (App Icon, Hamburger, Project Icon).
 **Dependencies:** A45.0.6
+
+---
+
+### A46.0.1.6: Refactor Properties Window
+
+**Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
+**Description:** Refactor the Properties Window to improve usability and provide a more intuitive interface for editing GameObject properties and components.
+**Status:** ⏳ In Progress
+**Acceptance Criteria:**
+*   [ ] **Properties Window Layout:**
+    *   [ ] Editable text input for the game object's name.
+    *   [ ] `isEnabled` checkbox for the selected game object.
+    *   [ ] Search field to filter components.
+    *   [ ] A button to add new components.
+*   [ ] **Context Menu:**
+    *   [ ] Update the context menu to allow adding components by type.
+*   [ ] **Incremental Component Refactor:**
+    *   [ ] Outline a plan to refactor each component's `imgui` method one by one, starting with the most common ones (e.g., `Transform`, `RenderComponent`).
+
+**Technical Notes:** This task is part of the larger UI revamp and should be consistent with the new "Islands Dark" theme.
+**Dependencies:** A46.0.1
 
 ---
 
@@ -198,7 +222,7 @@ Coordinate with @ui-ux-designer for icon assets (App Icon, Hamburger, Project Ic
 *   [ ] **Full-frame:** Icon should fill the 1024x1024 canvas with minimal/appropriate margins (current version has too
     much margin).
 *   [ ] **Transparency:** Background must be truly transparent (no checkerboard or white/black fill).
-*   [ ] **Variants:** Provide UI-sized variants: 16x16, 32x32, and 64x64 pixels.
+*   [ ] **Variants:** provide UI-sized variants: 16x16, 32x32, and 64x64 pixels.
 *   [ ] **Output Paths:**
     - `assets/textures/app_icon.png` (1024x1024)
     - `assets/textures/app_icon_16.png`
@@ -429,8 +453,8 @@ a showcase, a testbed for engine features, and a learning resource for new users
 **Acceptance Criteria:**
 
 *   [ ] A playable mini-game demonstrating core skateboarding mechanics.
-*   [ ] Utilizes most of the engine's key features (rendering, physics, animation, UI, scripting).
-*   [ ] Provides a practical example of how to use the engine's systems.
+*   [ ] Utilizes most of lounging's key features (rendering, physics, animation, UI, scripting).
+*   [ ] provides a practical example of how to use the engine's systems.
     **Technical Notes:** Focus on demonstrating the strengths of the engine, particularly the specialized skateboarding
     features.
     **Dependencies:** A47.0.5
@@ -518,4 +542,4 @@ architecture, state synchronization, and handling network latency.
 ---
 
 *Last Updated: 2024-05-15*
-*Roadmap Version: 1.3*
+*Roadmap Version: 1.5*

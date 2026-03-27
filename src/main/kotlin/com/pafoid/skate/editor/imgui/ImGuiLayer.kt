@@ -223,7 +223,6 @@ class ImGuiLayer(
         
         centralNode.setLocalFlags(noTabBar or noWindowMenuButton or noCloseButton)
 
-
         // Dock windows based on their logical function
         editorWindows.filter { it.showFlag.get() }.forEach { window ->
             val dockId = when (window.nameKey) {
