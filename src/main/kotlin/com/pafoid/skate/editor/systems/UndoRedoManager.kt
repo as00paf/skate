@@ -3,6 +3,8 @@ package com.pafoid.skate.editor.systems
 interface Command {
     fun execute()
     fun undo()
+    fun getDisplayName(): String
+    fun getTargetName(): String?
 }
 
 class UndoRedoManager {
@@ -36,6 +38,32 @@ class UndoRedoManager {
             val command = redoStack.removeAt(redoStack.size - 1)
             command.execute()
             undoStack.add(command)
+        }
+    }
+
+    // History accessors for UI
+    fun getUndoHistory(): List<Command> = undoStack.toList()
+    fun getRedoHistory(): List<Command> = redoStack.toList()
+    fun getUndoCount(): Int = undoStack.size
+    fun getRedoCount(): Int = redoStack.size
+
+    // Clear all history
+    fun clear() {
+        undoStack.clear()
+        redoStack.clear()
+    }
+
+    // Undo to a specific index in the stack
+    fun undoTo(index: Int) {
+        while (undoStack.size > index && undoStack.isNotEmpty()) {
+            undo()
+        }
+    }
+
+    // Redo to a specific index in the stack
+    fun redoTo(index: Int) {
+        while (redoStack.size > index && redoStack.isNotEmpty()) {
+            redo()
         }
     }
 }

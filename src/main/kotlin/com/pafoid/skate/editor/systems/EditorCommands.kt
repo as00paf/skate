@@ -23,6 +23,9 @@ class TransformCommand(
     override fun undo() {
         gameObject.getComponent<Transform>()?.copyFrom(oldT)
     }
+
+    override fun getDisplayName(): String = "Transform"
+    override fun getTargetName(): String? = gameObject.name
 }
 
 class CreateGameObjectCommand(
@@ -38,6 +41,9 @@ class CreateGameObjectCommand(
         scene.removeGameObject(gameObject)
         scene.setSelectedGameObject(null)
     }
+
+    override fun getDisplayName(): String = "Create GameObject"
+    override fun getTargetName(): String? = gameObject.name
 }
 
 class DeleteGameObjectCommand(
@@ -53,6 +59,9 @@ class DeleteGameObjectCommand(
         scene.addGameObjectToScene(gameObject)
         scene.setSelectedGameObject(gameObject)
     }
+
+    override fun getDisplayName(): String = "Delete GameObject"
+    override fun getTargetName(): String? = gameObject.name
 }
 
 class ApplyTextureCommand(
@@ -68,6 +77,9 @@ class ApplyTextureCommand(
     override fun undo() {
         // Revert to old texture path when material system is implemented
     }
+
+    override fun getDisplayName(): String = "Apply Texture"
+    override fun getTargetName(): String? = gameObject.name
 }
 
 class AddAudioComponentCommand(
@@ -76,7 +88,7 @@ class AddAudioComponentCommand(
     private val hadAudioComponent: Boolean
 ) : Command {
     private var createdComponent: AudioComponent? = null
-    
+
     override fun execute() {
         var audioComponent = gameObject.getComponent<AudioComponent>()
         if (audioComponent == null) {
@@ -95,6 +107,9 @@ class AddAudioComponentCommand(
             audioComponent?.let { it.soundFilePath = "" }
         }
     }
+
+    override fun getDisplayName(): String = "Add Audio Component"
+    override fun getTargetName(): String? = gameObject.name
 }
 
 class ApplyAnimationCommand(
@@ -110,4 +125,7 @@ class ApplyAnimationCommand(
     override fun undo() {
         // Remove animation when material system is implemented
     }
+
+    override fun getDisplayName(): String = "Apply Animation"
+    override fun getTargetName(): String? = gameObject.name
 }
