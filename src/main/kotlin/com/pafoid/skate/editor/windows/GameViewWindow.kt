@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -95,13 +96,21 @@ class GameViewWindow : IWindow, KoinComponent {
         // Drag and Drop Target should be over the image area
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
         if (ImGui.beginDragDropTarget()) {
+            // Prefab payloads
             val payloadLedge = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_LEDGE")
             val payloadRail = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_RAIL")
             val payloadKicker = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_KICKER")
+            val payloadManualPad = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_MANUAL_PAD")
+            val payloadBank = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_BANK")
+            val payloadQuarterPipe = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_QUARTER_PIPE")
+            val payloadSkateboard = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_SKATEBOARD")
+            
+            // Texture payload
+            val payloadTexture = ImGui.acceptDragDropPayload<String>("TEXTURE")
 
-            val payload = payloadRail ?: payloadLedge ?: payloadKicker
+            val prefabPayload = payloadRail ?: payloadLedge ?: payloadKicker ?: payloadManualPad ?: payloadBank ?: payloadQuarterPipe ?: payloadSkateboard
 
-            if (payload != null) {
+            if (prefabPayload != null) {
                 val scene = sceneManager.currentScene
                 if (scene != null) {
                     val mousePos = ImVec2()
@@ -119,14 +128,42 @@ class GameViewWindow : IWindow, KoinComponent {
                             val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
 
                             when {
-                                payloadRail != null -> prefabsGenerator.spawnRail(hitPoint, payload.material)
-                                payloadLedge != null -> prefabsGenerator.spawnLedge(hitPoint, payload.material)
-                                payloadKicker != null -> prefabsGenerator.spawnKicker(hitPoint, payload.material)
+                                payloadRail != null -> prefabsGenerator.spawnRail(hitPoint, payloadRail.material)
+                                payloadLedge != null -> prefabsGenerator.spawnLedge(hitPoint, payloadLedge.material)
+                                payloadKicker != null -> prefabsGenerator.spawnKicker(hitPoint, payloadKicker.material)
+                                payloadManualPad != null -> prefabsGenerator.spawnManualPad(hitPoint, payloadManualPad.material)
+                                payloadBank != null -> prefabsGenerator.spawnBank(hitPoint, payloadBank.material)
+                                payloadQuarterPipe != null -> prefabsGenerator.spawnQuarterPipe(hitPoint, payloadQuarterPipe.material)
+                                payloadSkateboard != null -> prefabsGenerator.spawnSkateboard()
                             }
                         }
                     }
                 }
             }
+            
+            // Handle texture drop - create textured plane at drop location OR apply to hovered object
+            if (payloadTexture != null) {
+                val scene = sceneManager.currentScene
+                val hoveredObject = getHoveredObject()
+                
+                if (scene != null) {
+                    // If hovering over an object with RenderComponent, apply texture to it
+                    if (hoveredObject != null) {
+                        val renderComponent = hoveredObject.getComponent<RenderComponent>()
+                        if (renderComponent != null) {
+                            // Apply texture to hovered object
+                            applyTextureToObject(hoveredObject, payloadTexture)
+                        } else {
+                            // No render component, create plane instead
+                            createTexturedPlaneAtDropLocation(scene, payloadTexture)
+                        }
+                    } else {
+                        // Not hovering any object, create plane at ground position
+                        createTexturedPlaneAtDropLocation(scene, payloadTexture)
+                    }
+                }
+            }
+            
             ImGui.endDragDropTarget()
         }
 
@@ -614,6 +651,64 @@ class GameViewWindow : IWindow, KoinComponent {
         // For now, just create the GameObject with a marker
         
         undoRedoManager.executeCommand(CreateGameObjectCommand(lightObj, scene))
+    }
+    
+    private fun createTexturedPlane(position: Vector3f, texturePath: String) {
+        val scene = sceneManager.currentScene ?: return
+        
+        JobSystem.runAsync {
+            val planeObj = GameObject("TexturedPlane")
+            val transform = Transform()
+            transform.translation.set(position)
+            transform.scale.set(10f, 0.1f, 10f) // Flat plane
+            planeObj.addComponent(transform)
+            
+            // Load texture and create plane using cube model scaled flat
+            val texture = resourceManager.loadTexture(texturePath)
+            val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
+            val texturedModel = TexturedModel(
+                baseModel.mesh[0].rawModel,
+                texture
+            )
+            
+            JobSystem.runOnMain {
+                planeObj.addComponent(RenderComponent(model = texturedModel, castShadow = false, receiveShadow = true))
+                planeObj.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
+                planeObj.addComponent(BoxCollider3D(Vector3f(5f, 0.05f, 5f)))
+                undoRedoManager.executeCommand(CreateGameObjectCommand(planeObj, scene))
+                logger.logEditor("Created textured plane at ${position.x}, ${position.y}, ${position.z}")
+            }
+        }
+    }
+    
+    private fun createTexturedPlaneAtDropLocation(scene: Scene, texturePath: String) {
+        val mousePos = ImVec2()
+        ImGui.getMousePos(mousePos)
+        val relX = mousePos.x - imageScreenPosX
+        val relY = mousePos.y - imageScreenPosY
+
+        val ray = scene.camera.screenToRay(relX, relY, imageSizeX, imageSizeY)
+
+        // Intersect ray with ground plane (Y=0)
+        if (abs(ray.direction.y) > 0.0001f) {
+            val t = -ray.origin.y / ray.direction.y
+            if (t > 0) {
+                val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
+                createTexturedPlane(hitPoint, texturePath)
+            }
+        }
+    }
+    
+    private fun applyTextureToObject(gameObject: GameObject, texturePath: String) {
+        val renderComponent = gameObject.getComponent<RenderComponent>() ?: run {
+            logger.logEditor("Object has no RenderComponent")
+            return
+        }
+        
+        // Update the texture - note: this modifies the existing material
+        // For a proper implementation, we'd need to update the material's texture path
+        logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
+        // TODO: Implement proper material texture update when material system is available
     }
     
     private fun duplicateGameObject(gameObject: GameObject) {

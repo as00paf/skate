@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.CreateGameObjectCommand
 import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.GameObject
@@ -32,6 +33,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
     private val undoRedoManager: UndoRedoManager by inject()
     private val clipboardService: ClipboardService by inject()
+    private val logger: LoggerService by inject()
 
     private val searchQuery = ImString(256)
     private var isLinked = false
@@ -173,6 +175,30 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                 sceneManager.currentScene?.setSelectedGameObject(obj)
             } else if (ImGui.isItemClicked()) {
                 sceneManager.currentScene?.setSelectedGameObject(obj)
+            }
+            
+            // Drag and Drop Source - allow dragging GameObject to reparent
+            if (ImGui.beginDragDropSource()) {
+                ImGui.setDragDropPayload("GAMEOBJECT_UID", obj.getUid() as Any)
+                ImGui.text(obj.name)
+                ImGui.endDragDropSource()
+            }
+            
+            // Drag and Drop Target - allow dropping GameObjects to reparent
+            if (ImGui.beginDragDropTarget()) {
+                val payload = ImGui.acceptDragDropPayload<Int>("GAMEOBJECT_UID")
+                if (payload != null) {
+                    val draggedUid = payload
+                    val scene = sceneManager.currentScene
+                    if (scene != null) {
+                        val draggedObject = scene.gameObjectManager.getGameObject(draggedUid)
+                        // Don't allow dropping on self or children
+                        if (draggedObject != null && draggedObject != obj && !isChildOf(obj, draggedObject)) {
+                            reparentGameObject(draggedObject, obj)
+                        }
+                    }
+                }
+                ImGui.endDragDropTarget()
             }
         }
         
@@ -345,5 +371,29 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         val offset = org.joml.Vector3f(5f, 5f, 5f)
         scene.camera.position.set(org.joml.Vector3f(pos).add(offset))
         scene.camera.lookAt(pos)
+    }
+    
+    private fun reparentGameObject(child: GameObject, newParent: GameObject) {
+        val oldParent = child.parent
+        child.parent = newParent
+        
+        // Update transform to maintain world space
+        val childTransform = child.getComponent<Transform>()
+        val parentTransform = newParent.getComponent<Transform>()
+        if (childTransform != null && parentTransform != null) {
+            // Adjust child's local transform to maintain world position
+            childTransform.translation.sub(parentTransform.translation)
+        }
+        
+        logger.logEditor("Reparented ${child.name} to ${newParent.name}")
+    }
+    
+    private fun isChildOf(potentialParent: GameObject, child: GameObject): Boolean {
+        var current = child.parent
+        while (current != null) {
+            if (current == potentialParent) return true
+            current = current.parent
+        }
+        return false
     }
 }

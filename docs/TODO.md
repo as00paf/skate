@@ -59,14 +59,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - [ ] **A46.0.1.14: Implement "Search Everywhere" Global Search** (Ctrl+P)
   - [ ] **A46.0.1.15: Improve Gizmos & Undo/Redo History UI**
   - [ ] **A46.0.1.16: Implement Render Graph Visualization Window** (Display pass structure and dependencies)
-  - [ ] **A46.0.1.17: Top Menu Bar Overhaul**
-    - Match IntelliJ IDEA look and behavior.
-    - Order: [App Icon] -> [Hamburger Menu Icon (for main menus)] -> [Project Icon & Name] -> ... -> [Window Controls (Right)].
-    - Coordinate with @ui-ux-designer for icon assets.
-  - [ ] **A46.0.1.18: App Icon Finalization (@ui-ux-designer)**
-    - [ ] Deliver full-frame (minimal margin) 1024x1024 version.
-    - [ ] Ensure background is truly transparent.
-    - [ ] Provide variants: 16x16, 32x32, 64x64.
+  - [ ] **A46.0.1.17: Fix game viewport resizing**
 
 - [ ] **A46.0.9: Implement Project Creation & Management System**
   - Project wizard for creating new projects.
