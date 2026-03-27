@@ -50,7 +50,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             scene.setSelectedGameObject(newObj)
         }
         if (ImGui.isItemHovered()) {
-            ImGui.setTooltip("Add new GameObject")
+            ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.add_gameobject"))
         }
         
         ImGui.sameLine()
@@ -200,6 +200,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         if (ImGui.button("$visIcon##vis_${obj.getUid()}")) {
             obj.isVisible = !obj.isVisible
         }
+        if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.toggle_visibility"))
         ImGui.popStyleColor(4)
         
         ImGui.tableNextColumn()
@@ -215,6 +216,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         if (ImGui.button("$lockIcon##lock_${obj.getUid()}")) {
             obj.isLocked = !obj.isLocked
         }
+        if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.toggle_lock"))
         ImGui.popStyleColor(4)
 
         if (nodeOpen) {
