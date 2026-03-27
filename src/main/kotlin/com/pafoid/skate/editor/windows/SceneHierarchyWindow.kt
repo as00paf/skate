@@ -69,7 +69,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         
         ImGui.separator()
 
-        val gameObjects = scene.gameObjectManager.gameObjects
+        val gameObjects = scene.gameObjectManager.gameObjects.toList()
         val filter = searchQuery.get()
 
         if (ImGui.beginTable("HierarchyTable", 3, ImGuiTableFlags.BordersInnerH or ImGuiTableFlags.Resizable or ImGuiTableFlags.ScrollY)) {
@@ -220,7 +220,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         ImGui.popStyleColor(4)
 
         if (nodeOpen) {
-            obj.children.forEach { child ->
+            obj.children.toList().forEach { child ->
                 doTreeNode(child, filter)
             }
             ImGui.treePop()
