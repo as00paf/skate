@@ -45,4 +45,5 @@ object Icons {
     const val WINDOW_CLOSE = "\uf00d"
     const val MENU = "\uf0c9"
     const val EDIT = "\uf044"
+    const val MUSIC = "\uf001"
 }

@@ -148,7 +148,8 @@ dependencies.
 significant improvements to scene manipulation tools. This includes redesigning menus, panels, and buttons, as well
 as enhancing gizmos and camera controls.
 **Sub-Tasks:**
-- **A46.0.1.6:** Refactor Properties Window (⏳ In Progress)
+- **A46.0.1.7:** Enhance Scene Hierarchy (✅ Done)
+- **A46.0.1.8:** Enhance Asset Browser Window (⏳ In Progress)
 
 **Acceptance Criteria:**
 
@@ -176,25 +177,22 @@ Coordinate with @ui-ux-designer for icon assets (App Icon, Hamburger, Project Ic
 
 ---
 
-### A46.0.1.6: Refactor Properties Window
+### A46.0.1.8: Enhance Asset Browser Window
 
 **Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
-**Description:** Refactor the Properties Window to improve usability and provide a more intuitive interface for editing GameObject properties and components.
+**Description:** Improve the Asset Browser Window's usability by adding tooltips, optimizing the layout for full-width search, implementing dynamic grid columns, and refactoring the Sounds tab with better controls and information.
 **Status:** ⏳ In Progress
 **Assigned to:** @software-engineer
 **Acceptance Criteria:**
-*   [ ] **Properties Window Layout:**
-    *   [ ] Editable text input for the game object's name.
-    *   [ ] `isEnabled` checkbox for the selected game object.
-    *   [ ] Search field to filter components.
-    *   [ ] A button to add new components.
-    *   [ ] Add vertical spacing (`ImGui.spacing()` or `ImGui.dummy()`) between the elements to prevent vertical packing (e.g., between name/enable row, the separator, the search bar, and the components list).
-*   [ ] **Context Menu:**
-    *   [ ] Update the context menu to allow adding components by type.
-*   [ ] **Incremental Component Refactor:**
-    *   [ ] Outline a plan to refactor each component's `imgui` method one by one, starting with the most common ones (e.g., `Transform`, `RenderComponent`).
+*   [ ] **Tooltips:** Add tooltips to all buttons, localized via `StringManager`.
+*   [ ] **Layout:** Search bar and Refresh button take the full width of the window.
+*   [ ] **Dynamic Grid:** Implement dynamic column counts for asset items based on the current window width.
+*   [ ] **Sounds Tab:**
+    *   [ ] Refactor to better represent audio files with icons and duration.
+    *   [ ] Improved play/stop controls using icons.
+    *   [ ] Tooltips for playback buttons.
 
-**Technical Notes:** This task is part of the larger UI revamp and should be consistent with the new "Islands Dark" theme.
+**Technical Notes:** Refactoring `SoundBuffer` may be required to include duration data. Use FontAwesome icons for playback controls.
 **Dependencies:** A46.0.1
 
 ---

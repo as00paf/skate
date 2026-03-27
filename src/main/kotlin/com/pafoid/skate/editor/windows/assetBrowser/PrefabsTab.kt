@@ -23,11 +23,8 @@ class PrefabsTab(
     private val prefabsGenerator: PrefabsGenerator
 ): AssetBrowserTab(resourceManager, thumbnailCache, stringManager) {
 
-    private val loadingSet = HashSet<String>()
-
     override fun imgui(label: String, searchText: ImString) {
-        ImGui.inputTextWithHint("##searchPrefabs", "${Icons.SEARCH} Search...", searchText)
-        ImGui.separator()
+        renderHeader(label, searchText)
 
         if (ImGui.collapsingHeader("${Icons.CUBE} Player", ImGuiTreeNodeFlags.DefaultOpen)) {
             renderPlayerPrefabs(searchText)
@@ -39,6 +36,9 @@ class PrefabsTab(
     }
 
     private fun renderPlayerPrefabs(searchText: ImString) {
+        val availableWidth = ImGui.getContentRegionAvailX()
+        val numColumns = Math.max(1, (availableWidth / ITEM_WIDTH).toInt())
+
         val items = listOf(
             PrefabConfig(
                 "Skateboard",
@@ -51,7 +51,7 @@ class PrefabsTab(
         ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
         if (items.isNotEmpty()) {
-            if (ImGui.beginTable("SimulationTable", 2, ImGuiTableFlags.SizingFixedFit)) {
+            if (ImGui.beginTable("SimulationTable", numColumns, ImGuiTableFlags.SizingFixedFit)) {
                 for (item in items) {
                     ImGui.tableNextColumn()
                     renderPrefabItem(PrefabData(item.name, item.type, item.modelPath, item.dragDropPayload))
@@ -62,6 +62,9 @@ class PrefabsTab(
     }
 
     private fun renderObstaclePrefabs(searchText: ImString) {
+        val availableWidth = ImGui.getContentRegionAvailX()
+        val numColumns = Math.max(1, (availableWidth / ITEM_WIDTH).toInt())
+
         val metalOnly = listOf(MaterialType.METAL)
         val woodOrConcrete = listOf(
             MaterialType.CONCRETE,
@@ -70,9 +73,6 @@ class PrefabsTab(
             MaterialType.WOOD_TAN,
             MaterialType.WOOD_DARK
         )
-        // Specific constraints if we had the models:
-        // Picnic Table -> Wood variants
-        // Jersey Barrier -> Concrete only
 
         val configs = listOf(
             PrefabConfig("Rail", PrefabType.RAIL, Assets.Models.RAIL, "PREFAB_RAIL", metalOnly),
@@ -96,8 +96,7 @@ class PrefabsTab(
         ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
         if (configs.isNotEmpty()) {
-            // Use 4 columns to show more variants
-            if (ImGui.beginTable("ObstacleTable", 4, ImGuiTableFlags.SizingFixedFit)) {
+            if (ImGui.beginTable("ObstacleTable", numColumns, ImGuiTableFlags.SizingFixedFit)) {
                 for (config in configs) {
                     for (material in config.allowedMaterials) {
                         ImGui.tableNextColumn()
@@ -131,7 +130,7 @@ class PrefabsTab(
             resourceManager.loadTextureSync(Assets.Textures.DEFAULT).texId
         }
 
-        // Push ID to avoid collision if names are identical (though we made them unique with variant name)
+        // Push ID to avoid collision if names are identical
         ImGui.pushID(data.name)
         if (ImGui.imageButton("PrefabItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
             JobSystem.runOnMain {
@@ -151,7 +150,7 @@ class PrefabsTab(
         ImGui.popID()
 
         if (data.dragDropPayload != null && ImGui.beginDragDropSource()) {
-            ImGui.setDragDropPayload(data.dragDropPayload, data) // We might need to encode material in payload too
+            ImGui.setDragDropPayload(data.dragDropPayload, data) 
             ImGui.image(texId.toLong(), size*0.8f, size*0.8f, 0f, 1f, 1f, 0f)
             ImGui.text(data.name)
             ImGui.endDragDropSource()
@@ -159,5 +158,9 @@ class PrefabsTab(
 
         ImGui.textWrapped(data.name)
         ImGui.endGroup()
+    }
+
+    override fun refreshAssets() {
+        // Prefabs are static for now, no need to crawl files
     }
 }

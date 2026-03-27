@@ -29,6 +29,9 @@ class TexturesTab(
         if (ImGui.imageButton("TextureItem", texId.toLong(), size, size, 0f, 0f, 1f, 1f)) {
             // On Click
         }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip(file.name)
+        }
         ImGui.popID()
 
         if (ImGui.beginDragDropSource()) {

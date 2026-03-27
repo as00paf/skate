@@ -28,6 +28,9 @@ class AnimationsTab(
         if (ImGui.button("${Icons.PLAY}", size, size)) {
             // Preview?
         }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip(file.name)
+        }
         ImGui.popID()
 
         if (ImGui.beginDragDropSource()) {
