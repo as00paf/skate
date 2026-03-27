@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.DisplayService
+import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -15,6 +16,7 @@ import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
 import com.pafoid.skate.editor.windows.PropertiesWindow
 import com.pafoid.skate.editor.windows.SceneHierarchyWindow
+import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.editor.windows.SystemsWindow
 import com.pafoid.skate.engine.assets.Assets
@@ -63,6 +65,7 @@ import imgui.internal.ImGui.updatePlatformWindows
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 import java.io.File
 
@@ -97,7 +100,9 @@ class ImGuiLayer(
     private val systemsWindow = SystemsWindow()
     private val settingsWindow = SettingsWindow(settingsManager, stringManager, displayService)
     private val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
+    private val searchEverywhereWindow = SearchEverywhereWindow()
     private val statusBar = EditorStatusBar()
+    private val editorInputHandler: EditorInputHandler by inject()
 
     private lateinit var menuBar: EditorMenuBar
 
@@ -185,6 +190,7 @@ class ImGuiLayer(
             resourceManager = resourceManager,
             keyBindingsWindow = keyBindingsWindow,
             settingsWindow = settingsWindow,
+            searchEverywhereWindow = searchEverywhereWindow,
             editorWindows = editorWindows,
             glfwWindow = glfwWindow,
             windowController = windowController,
@@ -241,11 +247,20 @@ class ImGuiLayer(
     fun update(dt: Float) {
         val currentScene = sceneManager.currentScene ?: return
 
+        // Handle Ctrl+P BEFORE ImGui processes input (so it works even when typing)
+        val ctrlDown = inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || inputProvider.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
+        if (ctrlDown && inputProvider.keyBeginPress(GLFW.GLFW_KEY_P)) {
+            searchEverywhereWindow.open()
+        }
+
         if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_F12)) {
             isViewportMaximized = !isViewportMaximized
         }
 
         startFrame()
+
+        // Handle other editor input (copy, cut, paste, etc.)
+        editorInputHandler.update(currentScene)
 
         if (isViewportMaximized) {
             setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY, ImGuiCond.Always)
@@ -280,6 +295,7 @@ class ImGuiLayer(
             }
             settingsWindow.render()
             keyBindingsWindow.render()
+            searchEverywhereWindow.imgui(null)
         }
 
         endFrame()

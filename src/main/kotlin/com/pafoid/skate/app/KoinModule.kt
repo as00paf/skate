@@ -1,6 +1,12 @@
 package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.imgui.ImGuiLayer
+import com.pafoid.skate.editor.search.SearchEngine
+import com.pafoid.skate.editor.search.history.SearchHistory
+import com.pafoid.skate.editor.search.providers.ActionSearchProvider
+import com.pafoid.skate.editor.search.providers.AssetSearchProvider
+import com.pafoid.skate.editor.search.providers.ComponentSearchProvider
+import com.pafoid.skate.editor.search.providers.GameObjectSearchProvider
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.EditorInputHandler
@@ -10,6 +16,7 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
@@ -53,6 +60,22 @@ val appModule = module {
     single { SettingsManager(get(), get(), get()) }
     single { DisplayService() }
     single { TrickManager() }
+
+    // Search infrastructure
+    single {
+        SearchEngine().apply {
+            registerProvider(get<GameObjectSearchProvider>())
+            registerProvider(get<AssetSearchProvider>())
+            registerProvider(get<ComponentSearchProvider>())
+            registerProvider(get<ActionSearchProvider>())
+        }
+    }
+    single { SearchHistory() }
+    single { GameObjectSearchProvider() }
+    single { AssetSearchProvider() }
+    single { ComponentSearchProvider() }
+    single { ActionSearchProvider() }
+    single { SearchEverywhereWindow() }
 }
 
 val inputModule = module {

@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.engine.assets.Assets
@@ -65,6 +66,7 @@ class EditorMenuBar(
     private val resourceManager: ResourceManager,
     private val keyBindingsWindow: KeyBindingsWindow,
     private val settingsWindow: SettingsWindow,
+    private val searchEverywhereWindow: SearchEverywhereWindow,
     private val editorWindows: List<EditorWindow>,
     private val glfwWindow: Long,
     private val windowController: WindowController,
@@ -142,7 +144,7 @@ class EditorMenuBar(
 
     private fun buildWindowControls() {
         val btnSize = 40f
-        val totalW = btnSize * 3f
+        val totalW = btnSize * 4f  // Increased from 3 to 4 for search button
 
         val currentX = ImGui.getCursorPosX()
         val availX = ImGui.getContentRegionAvailX()
@@ -152,6 +154,15 @@ class EditorMenuBar(
         pushStyleVar(ImGuiStyleVar.ItemSpacing, 0f, 0f)
         pushStyleColor(ImGuiCol.Button, 0f, 0f, 0f, 0f) // Transparent base
 
+        // Search button (to the left of minimize)
+        if (ImGui.button("${Icons.SEARCH}", btnSize, btnSize)) {
+            searchEverywhereWindow.open()
+        }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip("Search Everywhere (Ctrl+P)")
+        }
+
+        ImGui.sameLine(0f, 0f)
         if (ImGui.button(Icons.WINDOW_MINIMIZE, btnSize, btnSize)) {
             windowController.minimize()
         }
