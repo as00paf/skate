@@ -46,4 +46,8 @@ object Icons {
     const val MENU = "\uf0c9"
     const val EDIT = "\uf044"
     const val MUSIC = "\uf001"
+    const val CHART_LINE = "\uf201"
+    const val MICROCHIP = "\uf2db"
+    const val MEMORY = "\uf538"
+    const val CLOCK = "\uf017"
 }

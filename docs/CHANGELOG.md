@@ -4,6 +4,23 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.46.0.1.9] - 2026-03-25: Enhance Console Window
+
+### Summary
+
+Improved the Console Window with advanced logging features, search capabilities, and better user interaction.
+
+### Added
+
+- **Console Toolbar**: Added a dedicated toolbar at the top of the console.
+- **Search Filtering**: Real-time log filtering based on search keywords.
+- **Clear Button**: One-click action to clear all logs from the console.
+- **Multi-Selection**: Support for selecting multiple log entries using Shift and Ctrl keys.
+- **Clipboard Support**: Copy selected logs to the system clipboard using Ctrl+C.
+- **Localized UI**: Updated all new UI elements with `StringManager` for localization.
+
+---
+
 ## [v0.46.0.1.8] - 2026-03-25: Enhance Asset Browser Window
 
 ### Summary
