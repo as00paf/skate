@@ -237,7 +237,7 @@ class ImGuiLayer(
         // Dock windows based on their logical function
         editorWindows.filter { it.showFlag.get() }.forEach { window ->
             val dockId = when (window.nameKey) {
-                "window.hierarchy", "window.properties", "window.systems", "window.asset_browser", "window.command_history" -> leftId
+                "window.hierarchy", "window.properties", "window.systems", "window.asset_browser", "window.command_history", "window.render_graph" -> leftId
                 "window.console", "window.profiler", "window.physics_tuner", "window.environment" -> bottomId
                 "window.game_viewport" -> mainBodyId.get()
                 else -> mainBodyId.get()
@@ -300,8 +300,6 @@ class ImGuiLayer(
             settingsWindow.render()
             keyBindingsWindow.render()
             searchEverywhereWindow.imgui(null)
-            commandHistoryWindow.imgui(null)
-            renderGraphWindow.imgui(null)
         }
 
         endFrame()
