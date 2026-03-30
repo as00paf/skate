@@ -54,11 +54,11 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
     - [x] Left-align buttons with proper padding
     - [x] Fix vertical positioning (move closer to top)
     - [x] Relocate FPS counter inside game view area
-  - [ ] **A46.0.1.12: Add Contextual Menus** (Right-click in Hierarchy, Assets, and Viewport)
-  - [ ] **A46.0.1.13: Implement Drag & Drop System** (Asset assignment and hierarchy reordering)
-  - [ ] **A46.0.1.14: Implement "Search Everywhere" Global Search** (Ctrl+Shift+A)
-  - [ ] **A46.0.1.15: Improve Gizmos & Undo/Redo History UI**
-  - [ ] **A46.0.1.16: Implement Render Graph Visualization Window** (Display pass structure and dependencies)
+  - [x] **A46.0.1.12: Add Contextual Menus** (Right-click in Hierarchy, Assets, and Viewport)
+  - [x] **A46.0.1.13: Implement Drag & Drop System** (Asset assignment and hierarchy reordering)
+  - [x] **A46.0.1.14: Implement "Search Everywhere" Global Search** (Ctrl+P)
+  - [x] **A46.0.1.15: Improve Gizmos & Undo/Redo History UI** (Command History window)
+  - [x] **A46.0.1.16: Implement Render Graph Visualization Window** (Display pass structure and dependencies)
   - [ ] **A46.0.1.17: Fix game viewport resizing**
 
 - [ ] **A46.0.9: Implement Project Creation & Management System**

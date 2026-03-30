@@ -4,6 +4,201 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.46.0.1.16] - 2026-03-27: Implement Render Graph Visualization Window
+
+### Summary
+
+Added a new dockable editor window that visualizes the rendering pipeline, showing render passes, their dependencies, execution order, and performance metrics.
+
+### Added
+
+- **RenderGraphWindow**: New dockable window displaying the rendering pipeline structure
+  - Node-based visualization of all render passes in execution order
+  - Per-pass performance metrics (execution time in milliseconds)
+  - Enable/disable toggles for debugging individual passes
+  - Auto-update option for real-time metrics
+  - Zoom control for node layout (0.5x - 2.0x)
+  - Status bar with total frame time, pass count, and draw calls
+- **RenderPass Enhancements**:
+  - Added `executionTimeNs` property for performance tracking
+  - Added `isEnabled` property for enable/disable functionality
+  - Added `toggleEnable()` method for toggling pass execution
+  - Added `executeWithTiming()` wrapper for automatic timing
+  - Added metadata properties: `displayName`, `description`, `canDisable`
+- **BaseRenderPass**: New abstract base class providing default implementations
+  - Automatic displayName formatting (e.g., "GeometryPass" → "Geometry")
+  - Default metadata implementations
+  - Reduces boilerplate for new render passes
+- **RenderGraph Enhancements**:
+  - Added `getAllPasses()` method for UI access
+  - Added `getPassByName(name)` method for finding specific passes
+  - Execute only enabled passes (optimization)
+- **Renderer Enhancement**: Exposed `renderGraph` property for UI access
+- **Updated All Existing Passes**: PickingPass, GeometryPass, ShadowPass, DebugPass
+- **Localization**: Added all UI strings for Render Graph window
+
+### Usage
+
+- Open from View menu → Render Graph
+- View all render passes in execution order
+- Click to expand pass details (inputs, outputs, timing)
+- Toggle enable/disable to debug rendering issues
+- Use auto-update for real-time performance metrics
+
+---
+
+## [v0.46.0.1.15] - 2026-03-27: Improve Gizmos & Undo/Redo History UI
+
+### Summary
+
+Created a new "Command History" editor window that displays the undo/redo stack with visual feedback, allowing users to see their edit history, navigate through commands, and selectively undo/redo operations.
+
+### Added
+
+- **CommandHistoryWindow**: New dockable editor window for undo/redo visualization
+  - Undo History list (most recent first)
+  - Redo History list (populated after undoing)
+  - Click-to-jump: Click any command to undo/redo to that specific state
+  - Toolbar buttons: Undo, Redo, Clear History
+  - Auto-scroll to show newest commands
+  - Keyboard shortcuts: Ctrl+Z (Undo), Ctrl+Y (Redo)
+- **UndoRedoManager Enhancements**:
+  - Added `getUndoHistory()` and `getRedoHistory()` accessors
+  - Added `getUndoCount()` and `getRedoCount()` for quick counts
+  - Added `clear()` method to clear all history
+  - Added `undoTo(index)` and `redoTo(index)` for jumping to specific states
+- **Command Interface Enhancements**:
+  - Added `getDisplayName()` method for human-readable command names
+  - Added `getTargetName()` method for target object names
+- **Updated All Commands**: TransformCommand, CreateGameObjectCommand, DeleteGameObjectCommand, ApplyTextureCommand, AddAudioComponentCommand, ApplyAnimationCommand
+- **Localization**: Added all UI strings for Command History window
+
+### Usage
+
+- Open from View menu → Command History
+- Click on any command to jump to that state
+- Use Undo/Redo buttons for single-step navigation
+- Clear button removes all history
+- Keyboard shortcuts work globally (Ctrl+Z, Ctrl+Y)
+
+---
+
+## [v0.46.0.1.14] - 2026-03-27: Implement "Search Everywhere" Global Search
+
+### Summary
+
+Implemented a unified global search feature inspired by Unity's "Quick Search" and VS Code's "Ctrl+P" that allows users to search across all editor resources (GameObjects, assets, components, actions) from a single searchable overlay.
+
+### Added
+
+- **SearchEverywhereWindow**: Modal overlay window for global search
+  - Real-time search as user types (50ms debounce)
+  - Results grouped by category (GameObjects, Assets, Components, Actions)
+  - Keyboard navigation (↑↓ arrows, Enter to select, Esc to close)
+  - Recent searches display when query is empty
+  - Search history persistence (JSON file, 20 entries max)
+- **Search Providers**:
+  - **GameObjectSearchProvider**: Searches GameObject names, tags, layers
+  - **AssetSearchProvider**: Searches textures, models, animations, sounds, prefabs
+  - **ComponentSearchProvider**: Searches component types on all GameObjects
+  - **ActionSearchProvider**: 7 editor actions (Create Empty, Save, Play, Stop, Reset Transform, Delete, Duplicate)
+- **SearchEngine**: Core search orchestration with parallel provider queries
+- **SearchHistory**: Thread-safe search history with JSON persistence
+- **SearchResult**: Data classes with 8 categories for result classification
+- **Global Hotkey**: Ctrl+P opens search overlay from anywhere in editor
+- **Search Button**: 🔍 button in menu bar (top-right, left of minimize)
+- **Localization**: Added 40+ search-related UI strings
+
+### Usage
+
+- Press Ctrl+P or click search button (🔍) in menu bar
+- Type to search across all resources
+- Use ↑↓ arrows to navigate results
+- Press Enter to select and navigate to result
+- Press Esc to close overlay
+- Recent searches shown when query is empty
+
+---
+
+## [v0.46.0.1.13] - 2026-03-27: Implement Drag & Drop System
+
+### Summary
+
+Implemented comprehensive drag and drop functionality across editor windows, allowing users to spawn prefabs, apply textures, add sounds/animations to objects, and reparent GameObjects in the hierarchy.
+
+### Added
+
+- **GameViewWindow Drag and Drop**:
+  - All prefab types: Rail, Ledge, Kicker, Manual Pad, Bank, Quarter Pipe, Skateboard
+  - Texture drag and drop to create textured planes in viewport
+  - Texture drag to 3D objects (applies texture to hovered object)
+  - Sound drag and drop to add AudioComponent to objects
+  - Animation drag and drop to apply animations to Animator objects
+- **SceneHierarchyWindow Drag and Drop**:
+  - GameObject reparenting (drag GameObject, drop on another)
+  - Prevents circular parenting (can't drop parent on child)
+  - Maintains world-space transform when reparenting
+- **Enhanced Drag Previews** (All AssetBrowserTabs):
+  - **PrefabsTab**: Larger preview (1.2x), shows material name
+  - **TexturesTab**: Larger preview (1.5x), shows texture resolution
+  - **SoundsTab**: Shows sound duration, helper text for drop target
+  - **AnimationsTab**: Helper text for Animator requirement
+- **Payload Types**: Centralized payload type strings in DragDropPayload.kt (future enhancement)
+
+### Usage
+
+- Drag prefabs from Asset Browser → drop in viewport to spawn
+- Drag textures → drop in viewport to create plane, or drop on object to apply
+- Drag sounds → drop on object to add AudioComponent
+- Drag animations → drop on object with Animator to apply
+- Drag GameObjects in hierarchy → drop on another to reparent
+
+---
+
+## [v0.46.0.1.12] - 2026-03-27: Add Contextual Menus
+
+### Summary
+
+Implemented comprehensive context menus across all editor windows, providing quick access to common actions through right-click menus.
+
+### Added
+
+- **GameViewWindow Viewport Context Menu**:
+  - Create Empty GameObject
+  - Create 3D Objects (Cube, Sphere, Cylinder, Plane)
+  - Create Lights (Directional, Point, Spot)
+  - Create Camera
+  - Create Skateboard Obstacles (Rail, Ledge, Kicker, Manual Pad, Bank, Quarter Pipe)
+  - Duplicate/Delete selected object
+  - Focus on selected object
+  - Reset camera view
+- **AssetBrowserWindow Context Menus** (All Tabs):
+  - **PrefabsTab**: Spawn in Scene, Add to Favorites, Show in Folder, Properties
+  - **TexturesTab**: Apply to Selected, Open External, Show in Folder, Refresh, Properties
+  - **SoundsTab**: Play/Stop, Add to GameObject, Open External, Show in Folder, Properties
+  - **AnimationsTab**: Preview Animation, Apply to Selected, Show in Folder, Properties
+- **SceneHierarchyWindow Enhanced Menu**:
+  - Create Empty Child
+  - Duplicate, Copy, Cut, Paste as Child
+  - Delete, Rename
+  - Focus in Viewport
+  - Lock/Unlock toggle
+  - Visible/Hidden toggle
+- **PropertiesWindow Component Menus**:
+  - Copy Component, Remove Component, Reset to Default
+  - (Protected: cannot remove Transform component)
+- **Icons Added**: STAR, FOLDER, INFO, CHECK, EXTERNAL_LINK
+- **Localization**: Added 60+ context menu strings in English and French
+
+### Usage
+
+- Right-click in viewport for create menu
+- Right-click on assets for asset-specific actions
+- Right-click on hierarchy items for GameObject actions
+- Right-click on component headers for component actions
+
+---
+
 ## [v0.46.0.1.9] - 2026-03-25: Enhance Console Window
 
 ### Summary
