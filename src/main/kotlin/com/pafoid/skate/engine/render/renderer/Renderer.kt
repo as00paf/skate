@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources
 import com.pafoid.skate.engine.render.RenderResourcesFactory
+import com.pafoid.skate.engine.render.graph.RenderGraph
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL30.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL30.GL_DEPTH_BUFFER_BIT
@@ -42,6 +43,13 @@ class Renderer(
      */
     val frameBuffer: FrameBuffer
         get() = renderResources.frameBuffer
+
+    /**
+     * Exposes the render graph for visualization and debugging.
+     * Use this to access render pass information for the Render Graph window.
+     */
+    val renderGraph: RenderGraph
+        get() = renderResources.renderGraph
 
     /**
      * Initializes the renderer by creating all render resources.

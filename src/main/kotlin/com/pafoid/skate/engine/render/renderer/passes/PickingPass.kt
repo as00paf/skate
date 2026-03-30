@@ -64,9 +64,10 @@ class PickingPass(
     private val renderer2D: Renderer2D,
     private val pickingShader: Shader,
     private val modelRenderer: ModelRenderer
-) : RenderPass {
+) : BaseRenderPass() {
 
     override val name: String = "PickingPass"
+    override val description: String = "Renders object IDs for mouse picking and selection"
 
     fun resize(width: Int, height: Int) {
         pickingTexture.resize(width, height)

@@ -16,9 +16,10 @@ import com.pafoid.skate.engine.render.renderer.DebugRenderer
  */
 class DebugPass(
     private val debugRenderer: DebugRenderer
-) : RenderPass {
+) : BaseRenderPass() {
 
     override val name: String = "DebugPass"
+    override val description: String = "Renders debug visualization (physics, gizmos, etc.)"
 
     override fun prepare() {
         debugRenderer.beginFrame()

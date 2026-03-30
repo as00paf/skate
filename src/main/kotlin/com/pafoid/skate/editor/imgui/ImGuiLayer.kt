@@ -16,6 +16,7 @@ import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
 import com.pafoid.skate.editor.windows.PropertiesWindow
+import com.pafoid.skate.editor.windows.RenderGraphWindow
 import com.pafoid.skate.editor.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
@@ -102,6 +103,7 @@ class ImGuiLayer(
     private val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
     private val searchEverywhereWindow = SearchEverywhereWindow()
     private val commandHistoryWindow = CommandHistoryWindow()
+    private val renderGraphWindow = RenderGraphWindow()
     private val statusBar = EditorStatusBar()
     private val editorInputHandler: EditorInputHandler by inject()
 
@@ -122,7 +124,8 @@ class ImGuiLayer(
         EditorWindow("window.physics_tuner", physicsTunerWindow, ImBoolean(true), requiresScene = true),
         EditorWindow("window.input_testing", inputTestingWindow, ImBoolean(false)),
         EditorWindow("window.systems", systemsWindow, ImBoolean(true), requiresScene = true),
-        EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(true))
+        EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(true)),
+        EditorWindow("window.render_graph", renderGraphWindow, ImBoolean(false))
     )
 
     private var isViewportMaximized = false
@@ -297,6 +300,8 @@ class ImGuiLayer(
             settingsWindow.render()
             keyBindingsWindow.render()
             searchEverywhereWindow.imgui(null)
+            commandHistoryWindow.imgui(null)
+            renderGraphWindow.imgui(null)
         }
 
         endFrame()

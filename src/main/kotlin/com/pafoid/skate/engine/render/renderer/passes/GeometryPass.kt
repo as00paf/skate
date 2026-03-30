@@ -62,9 +62,10 @@ class GeometryPass(
     private val sceneManager: SceneManager,
     private val shadowMapTextureId: Int = 0,
     private val shadowMapResolution: Float = 2048f
-) : RenderPass {
+) : BaseRenderPass() {
 
     override val name: String = "GeometryPass"
+    override val description: String = "Renders all 3D geometry and sprites to the framebuffer"
     override val inputs: Set<String> = setOf("ShadowMap")
 
     @Deprecated("Use execute(context: RenderContext) instead")
