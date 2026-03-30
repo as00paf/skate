@@ -27,7 +27,6 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.game.level.LevelManager
-import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
@@ -123,7 +122,7 @@ class ImGuiLayer(
         EditorWindow("window.physics_tuner", physicsTunerWindow, ImBoolean(true), requiresScene = true),
         EditorWindow("window.input_testing", inputTestingWindow, ImBoolean(false)),
         EditorWindow("window.systems", systemsWindow, ImBoolean(true), requiresScene = true),
-        EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(false))
+        EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(true))
     )
 
     private var isViewportMaximized = false
@@ -235,9 +234,8 @@ class ImGuiLayer(
         // Dock windows based on their logical function
         editorWindows.filter { it.showFlag.get() }.forEach { window ->
             val dockId = when (window.nameKey) {
-                "window.hierarchy" -> leftId
-                "window.properties", "window.environment", "window.systems" -> rightId
-                "window.asset_browser", "window.console", "window.profiler", "window.physics_tuner" -> bottomId
+                "window.hierarchy", "window.properties", "window.systems", "window.asset_browser", "window.command_history" -> leftId
+                "window.console", "window.profiler", "window.physics_tuner", "window.environment" -> bottomId
                 "window.game_viewport" -> mainBodyId.get()
                 else -> mainBodyId.get()
             }
@@ -299,7 +297,6 @@ class ImGuiLayer(
             settingsWindow.render()
             keyBindingsWindow.render()
             searchEverywhereWindow.imgui(null)
-            commandHistoryWindow.imgui(null)
         }
 
         endFrame()
