@@ -8,8 +8,8 @@ import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.KeyBindingsWindow
+import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
@@ -110,7 +110,6 @@ class EditorMenuBar(
             ImGui.openPopup("main_hamburger_menu")
         }
 
-        // Define the menu as a popup that appears below the button
         if (ImGui.beginPopup("main_hamburger_menu")) {
             buildFileMenu(currentScene)
             buildEditMenu(currentScene)
@@ -144,7 +143,7 @@ class EditorMenuBar(
 
     private fun buildWindowControls() {
         val btnSize = 40f
-        val totalW = btnSize * 4f  // Increased from 3 to 4 for search button
+        val totalW = btnSize * 4f
 
         val currentX = ImGui.getCursorPosX()
         val availX = ImGui.getContentRegionAvailX()
@@ -154,7 +153,6 @@ class EditorMenuBar(
         pushStyleVar(ImGuiStyleVar.ItemSpacing, 0f, 0f)
         pushStyleColor(ImGuiCol.Button, 0f, 0f, 0f, 0f) // Transparent base
 
-        // Search button (to the left of minimize)
         if (ImGui.button("${Icons.SEARCH}", btnSize, btnSize)) {
             searchEverywhereWindow.open()
         }
@@ -255,7 +253,6 @@ class EditorMenuBar(
         if (beginMenu(stringManager.getString("menu.settings"))) {
             val engineSettings = settingsManager.engine
 
-            // Gamepad overlay settings
             val editorSettings = engineSettings.editor
             val overlaySize = floatArrayOf(editorSettings.gamepadOverlaySize)
             if (sliderFloat(
@@ -277,7 +274,6 @@ class EditorMenuBar(
 
             separator()
 
-            // Unit system
             val unitSystems = UnitSystem.entries.toTypedArray()
             val currentUnitIdx = ImInt(editorSettings.unitSystem.ordinal)
             if (combo(
@@ -292,7 +288,6 @@ class EditorMenuBar(
 
             separator()
 
-            // Language selection
             val languages = arrayOf("en", "fr")
             val currentLangIdx = ImInt(languages.indexOf(editorSettings.language))
             if (combo(
@@ -310,7 +305,6 @@ class EditorMenuBar(
 
             separator()
 
-            // Open settings windows
             if (menuItem(stringManager.getString("menu.settings.keybindings"))) {
                 keyBindingsWindow.isOpen = true
             }
@@ -325,7 +319,6 @@ class EditorMenuBar(
     private fun buildViewMenu() {
         if (beginMenu(stringManager.getString("menu.view"))) {
             if (beginMenu(stringManager.getString("menu.view.windows"))) {
-                // Render checkbox for each editor window
                 editorWindows.forEach { window ->
                     checkbox(stringManager.getString(window.nameKey), window.showFlag)
                 }
