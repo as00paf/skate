@@ -2,6 +2,7 @@ package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.search.SearchEngine
+import com.pafoid.skate.editor.search.SearchProvider
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.providers.ActionSearchProvider
 import com.pafoid.skate.editor.search.providers.AssetSearchProvider
@@ -16,7 +17,15 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.editor.ui.viewmodels.SelectionViewModel
+import com.pafoid.skate.editor.ui.viewmodels.SceneViewModel
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.SceneOpened
+import com.pafoid.skate.engine.events.SceneChanged
+import com.pafoid.skate.engine.events.SceneClosed
+import com.pafoid.skate.engine.events.GameObjectSelected
+import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
@@ -60,6 +69,13 @@ val appModule = module {
     single { SettingsManager(get(), get(), get()) }
     single { DisplayService() }
     single { TrickManager() }
+    
+    // EventSystem for editor event bus
+    single { EventSystem() }
+    
+    // ViewModels for UI state management
+    factory { SelectionViewModel(get(), get()) }
+    factory { SceneViewModel(get(), get()) }
 
     // Search infrastructure
     single {
