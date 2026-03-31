@@ -26,6 +26,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.game.level.LevelManager
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
@@ -85,6 +86,8 @@ class ImGuiLayer(
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"
     private var glfwWindow: Long = 0
+
+    private val eventSystem: EventSystem by inject()
 
     private val hierarchyWindow = SceneHierarchyWindow()
     private val propertiesWindow = PropertiesWindow()
@@ -173,6 +176,7 @@ class ImGuiLayer(
             editorWindows = editorWindows,
             glfwWindow = glfwWindow,
             windowController = windowController,
+            eventSystem = eventSystem
         )
     }
 

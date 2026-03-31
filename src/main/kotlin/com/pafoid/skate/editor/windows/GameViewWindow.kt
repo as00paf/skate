@@ -25,6 +25,10 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
+import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.GameObjectSelected
+import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.BodyType
@@ -58,6 +62,7 @@ class GameViewWindow : IWindow, KoinComponent {
     private val engine: Engine by inject()
     private val undoRedoManager: UndoRedoManager by inject()
     private val resourceManager: ResourceManager by inject()
+    private val eventSystem: EventSystem by inject()
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
@@ -586,6 +591,7 @@ class GameViewWindow : IWindow, KoinComponent {
                 }
                 if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.viewport.delete")}")) {
                     undoRedoManager.executeCommand(DeleteGameObjectCommand(selectedObject, scene!!))
+                    eventSystem.publish(SelectionCleared)
                 }
                 ImGui.separator()
             }

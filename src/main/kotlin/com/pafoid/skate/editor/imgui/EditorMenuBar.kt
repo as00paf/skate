@@ -18,6 +18,10 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.GameObjectSelected
+import com.pafoid.skate.engine.events.SceneOpened
+import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.utils.UnitSystem
 import com.pafoid.skate.game.level.LevelManager
 import imgui.ImGui
@@ -70,6 +74,7 @@ class EditorMenuBar(
     private val editorWindows: List<EditorWindow>,
     private val glfwWindow: Long,
     private val windowController: WindowController,
+    private val eventSystem: EventSystem
 ) {
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
@@ -229,6 +234,7 @@ class EditorMenuBar(
                 if (selected != null) {
                     clipboardService.copy(selected)
                     undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene))
+                    eventSystem.publish(SelectionCleared)
                 }
             }
             if (menuItem("${Icons.COPY} ${stringManager.getString("menu.edit.copy")}", "Ctrl+C")) {
