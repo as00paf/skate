@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.input.listeners.GamepadListener
+import com.sun.org.apache.xalan.internal.lib.ExsltStrings.padding
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -45,9 +46,10 @@ class GamepadOverlay : KoinComponent {
         val displayWidth = controllerTexture.width * scale
         val displayHeight = controllerTexture.height * scale
 
-        val padding = 10f
-        val overlayPosX = gameViewPos.x + gameViewSize.x - displayWidth - padding
-        val overlayPosY = gameViewPos.y + gameViewSize.y - displayHeight - padding
+        val paddingX = 0f
+        val paddingY = 25f
+        val overlayPosX = gameViewPos.x + gameViewSize.x - displayWidth - paddingX - ImGui.getStyle().framePaddingX
+        val overlayPosY = gameViewPos.y + gameViewSize.y - displayHeight - paddingY - ImGui.getStyle().framePaddingY
 
         ImGui.setNextWindowPos(overlayPosX, overlayPosY)
         ImGui.setNextWindowSize(displayWidth, displayHeight)

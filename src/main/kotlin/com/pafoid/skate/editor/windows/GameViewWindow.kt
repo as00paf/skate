@@ -87,6 +87,7 @@ class GameViewWindow : IWindow, KoinComponent {
         )
 
         drawImage(windowSize)
+        updateFramebufferForViewport()
 
         renderViewportContextMenu(windowPos, windowSize)
 
@@ -137,7 +138,7 @@ class GameViewWindow : IWindow, KoinComponent {
             if (payloadTexture != null) {
                 val scene = sceneManager.currentScene
                 val hoveredObject = getHoveredObject()
-                
+
                 if (scene != null) {
                     if (hoveredObject != null) {
                         val renderComponent = hoveredObject.getComponent<RenderComponent>()
@@ -169,7 +170,7 @@ class GameViewWindow : IWindow, KoinComponent {
                     logger.logEditor("Drop animation on a skater object")
                 }
             }
-            
+
             ImGui.endDragDropTarget()
         }
 
@@ -206,10 +207,33 @@ class GameViewWindow : IWindow, KoinComponent {
         imageScreenPosX = screenPos.x
         imageScreenPosY = screenPos.y
         imageSizeX = windowSize.x
-        imageSizeY = windowSize.y - TOOLBAR_HEIGHT
+        imageSizeY = windowSize.y
 
         val texId = renderer.frameBuffer.getTextureId()
         ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
+    }
+
+    /**
+     * Updates the framebuffer and camera to match the current viewport dimensions.
+     * Must be called every frame to handle window resizing.
+     */
+    private fun updateFramebufferForViewport() {
+        val fbWidth = imageSizeX.toInt()
+        val fbHeight = imageSizeY.toInt()
+        
+        // Skip if dimensions are invalid or unchanged
+        if (fbWidth <= 0 || fbHeight <= 0) return
+        
+        val currentFb = renderer.frameBuffer
+        if (currentFb.width != fbWidth || currentFb.height != fbHeight) {
+            renderer.resize(fbWidth, fbHeight)
+        }
+        
+        // Sync camera viewport dimensions for correct aspect ratio
+        sceneManager.currentScene?.camera?.let { camera ->
+            camera.viewportWidth = fbWidth
+            camera.viewportHeight = fbHeight
+        }
     }
 
     private fun renderViewportOverlays(windowPos: ImVec2, windowSize: ImVec2) {
@@ -275,16 +299,9 @@ class GameViewWindow : IWindow, KoinComponent {
     private fun getLargestSizeForViewport(): ImVec2 {
         val windowSize = ImVec2()
         ImGui.getContentRegionAvail(windowSize)
-
-        val targetAspectRatio = 1920f / 1080f
-        var aspectWidth = windowSize.x
-        var aspectHeight = aspectWidth / targetAspectRatio
-        if (aspectHeight > windowSize.y) {
-            aspectHeight = windowSize.y
-            aspectWidth = aspectHeight * targetAspectRatio
-        }
-
-        return ImVec2(aspectWidth, aspectHeight)
+        
+        // Return full available space - no aspect ratio constraint
+        return ImVec2(windowSize.x, windowSize.y)
     }
 
     private fun renderToolbar(windowPos: ImVec2) {
@@ -479,13 +496,13 @@ class GameViewWindow : IWindow, KoinComponent {
     private fun renderViewportContextMenu(windowPos: ImVec2, windowSize: ImVec2) {
         // Set cursor pos to the image area for context menu
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
-        
+
         if (ImGui.beginPopupContextWindow("ViewportContextMenu")) {
             ImGui.text(stringManager.getString("context.viewport.title"))
             ImGui.separator()
-            
+
             val scene = sceneManager.currentScene
-            
+
             // Create Empty
             if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.viewport.create_empty")}")) {
                 scene?.let {
@@ -493,7 +510,7 @@ class GameViewWindow : IWindow, KoinComponent {
                     undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, it))
                 }
             }
-            
+
             // Create 3D Object submenu
             if (ImGui.beginMenu("${Icons.CUBE} ${stringManager.getString("context.viewport.create_3d_object")}")) {
                 if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cube"))) {
@@ -510,7 +527,7 @@ class GameViewWindow : IWindow, KoinComponent {
                 }
                 ImGui.endMenu()
             }
-            
+
             // Create Light submenu
             if (ImGui.beginMenu("${Icons.SUN} ${stringManager.getString("context.viewport.create_light")}")) {
                 if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.directional"))) {
@@ -524,7 +541,7 @@ class GameViewWindow : IWindow, KoinComponent {
                 }
                 ImGui.endMenu()
             }
-            
+
             // Create Camera
             if (ImGui.menuItem("${Icons.CAMERA} ${stringManager.getString("context.viewport.create_camera")}")) {
                 scene?.let {
@@ -533,9 +550,9 @@ class GameViewWindow : IWindow, KoinComponent {
                     undoRedoManager.executeCommand(CreateGameObjectCommand(cameraObj, it))
                 }
             }
-            
+
             ImGui.separator()
-            
+
             // Create Skateboard Obstacle submenu
             if (ImGui.beginMenu("${Icons.GEAR} ${stringManager.getString("context.viewport.create_obstacle")}")) {
                 if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.rail"))) {
@@ -558,9 +575,9 @@ class GameViewWindow : IWindow, KoinComponent {
                 }
                 ImGui.endMenu()
             }
-            
+
             ImGui.separator()
-            
+
             // Object manipulation (only if object is selected)
             val selectedObject = scene?.getSelectedGameObject()
             if (selectedObject != null) {
@@ -572,31 +589,31 @@ class GameViewWindow : IWindow, KoinComponent {
                 }
                 ImGui.separator()
             }
-            
+
             // Focus Selected
             if (ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.viewport.focus_selected")}")) {
                 focusOnSelectedObject()
             }
-            
+
             // Reset Camera
             if (ImGui.menuItem("${Icons.ROTATE} ${stringManager.getString("context.viewport.reset_camera")}")) {
                 scene?.camera?.position?.set(0f, 5f, 20f)
                 scene?.camera?.yaw = 0f
                 scene?.camera?.pitch = 0f
             }
-            
+
             ImGui.endPopup()
         }
     }
-    
+
     private fun createPrimitiveObject(name: String, halfExtents: Vector3f) {
         val scene = sceneManager.currentScene ?: return
-        
+
         val obj = GameObject(name)
         val transform = Transform()
         transform.translation.set(0f, halfExtents.y, 0f)
         obj.addComponent(transform)
-        
+
         // Add render component with basic cube model (using JobSystem for async loading)
         JobSystem.runAsync {
             val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
@@ -605,10 +622,9 @@ class GameViewWindow : IWindow, KoinComponent {
                 baseModel.mesh[0].rawModel,
                 texture
             )
-            
+
             JobSystem.runOnMain {
                 obj.addComponent(RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true))
-                // Add physics components
                 obj.addComponent(RigidBody3D(1f).apply { friction = 0.5f; bodyType = BodyType.Dynamic })
                 obj.addComponent(BoxCollider3D(halfExtents))
                 undoRedoManager.executeCommand(CreateGameObjectCommand(obj, scene))
@@ -618,7 +634,7 @@ class GameViewWindow : IWindow, KoinComponent {
 
     private fun createLightObject(name: String, type: LightType) {
         val scene = sceneManager.currentScene ?: return
-        
+
         val lightObj = GameObject(name)
         val transform = Transform()
         when (type) {
@@ -633,17 +649,17 @@ class GameViewWindow : IWindow, KoinComponent {
             LightType.POINT -> transform.translation.set(0f, 5f, 0f)
             LightType.SPOT -> {
                 transform.translation.set(0f, 5f, 0f)
-                transform.rotation?.set(Math.toRadians(-90.0).toFloat(), 0f, 0f)
+                transform.rotation.set(Math.toRadians(-90.0).toFloat(), 0f, 0f)
             }
         }
         lightObj.addComponent(transform)
 
         undoRedoManager.executeCommand(CreateGameObjectCommand(lightObj, scene))
     }
-    
+
     private fun createTexturedPlane(position: Vector3f, texturePath: String) {
         val scene = sceneManager.currentScene ?: return
-        
+
         JobSystem.runAsync {
             val planeObj = GameObject("TexturedPlane")
             val transform = Transform()
@@ -657,7 +673,7 @@ class GameViewWindow : IWindow, KoinComponent {
                 baseModel.mesh[0].rawModel,
                 texture
             )
-            
+
             JobSystem.runOnMain {
                 planeObj.addComponent(RenderComponent(model = texturedModel, castShadow = false, receiveShadow = true))
                 planeObj.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
@@ -667,7 +683,7 @@ class GameViewWindow : IWindow, KoinComponent {
             }
         }
     }
-    
+
     private fun createTexturedPlaneAtDropLocation(scene: Scene, texturePath: String) {
         val mousePos = ImVec2()
         ImGui.getMousePos(mousePos)
@@ -684,19 +700,19 @@ class GameViewWindow : IWindow, KoinComponent {
             }
         }
     }
-    
+
     private fun applyTextureToObject(gameObject: GameObject, texturePath: String) {
         val renderComponent = gameObject.getComponent<RenderComponent>() ?: run {
             logger.logEditor("Object has no RenderComponent")
             return
         }
-        
+
         // Update the texture - note: this modifies the existing material
         // For a proper implementation, we'd need to update the material's texture path
         logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
         // TODO: Implement proper material texture update when material system is available
     }
-    
+
     private fun addSoundToObject(gameObject: GameObject, soundPath: String) {
         val audioComponent = gameObject.getComponent<AudioComponent>()
         val hadAudioComponent = audioComponent != null
@@ -704,17 +720,17 @@ class GameViewWindow : IWindow, KoinComponent {
         undoRedoManager.executeCommand(
             AddAudioComponentCommand(gameObject, soundPath, hadAudioComponent)
         )
-        
+
         if (hadAudioComponent) {
             logger.logEditor("Updated sound for ${gameObject.name}: $soundPath")
         } else {
             logger.logEditor("Added AudioComponent to ${gameObject.name}: $soundPath")
         }
     }
-    
+
     private fun applyAnimationToObject(gameObject: GameObject, animationPath: String) {
         val animator = gameObject.getComponent<Animator>()
-        
+
         if (animator != null) {
             val animation = resourceManager.getAnimation(animationPath)
             if (animation != null) {
@@ -727,7 +743,7 @@ class GameViewWindow : IWindow, KoinComponent {
             logger.logEditor("Object has no Animator component")
         }
     }
-    
+
     private fun duplicateGameObject(gameObject: GameObject) {
         val scene = sceneManager.currentScene ?: return
 
@@ -738,23 +754,22 @@ class GameViewWindow : IWindow, KoinComponent {
             newTransform.copyFrom(orig)
         }
         newTransform.translation.x += 1f // Offset by 1 unit on X
-        
+
         duplicated.addComponent(newTransform)
-        
+
         undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
     }
-    
+
     private fun focusOnSelectedObject() {
         val scene = sceneManager.currentScene ?: return
         val selectedObject = scene.getSelectedGameObject() ?: return
-        
+
         val transform = selectedObject.getComponent<Transform>() ?: return
         val pos = transform.translation
-        
+
         // Move camera to look at the object from a reasonable distance
         val offset = Vector3f(5f, 5f, 5f)
         scene.camera.position.set(Vector3f(pos).add(offset))
         scene.camera.lookAt(pos)
     }
 }
-

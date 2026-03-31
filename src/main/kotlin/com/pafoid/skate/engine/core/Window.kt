@@ -17,6 +17,7 @@ import org.joml.Vector2f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
+import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR
 import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR
 import org.lwjgl.glfw.GLFW.GLFW_DECORATED
@@ -84,7 +85,6 @@ class Window(
     private val mouseListener: MouseListener by inject()
     private val settingsManager: SettingsManager by inject()
     private val engine: Engine by inject()
-    private val renderer: Renderer by inject()
     private val imGuiLayer: ImGuiLayer by inject()
     private val logger: LoggerService by inject()
 
@@ -144,7 +144,7 @@ class Window(
         if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
 
         // Enforce Minimum Window Size Constraints
-        org.lwjgl.glfw.GLFW.glfwSetWindowSizeLimits(glfwWindow, 1024, 768, GLFW_DONT_CARE, GLFW_DONT_CARE)
+        GLFW.glfwSetWindowSizeLimits(glfwWindow, 1024, 768, GLFW_DONT_CARE, GLFW_DONT_CARE)
 
         // Center on monitor
         val xPos = IntArray(1)
@@ -159,15 +159,15 @@ class Window(
         // Maximize window on startup
         windowController.maximize()
 
-        org.lwjgl.glfw.GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
+        GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
             if (isFixingMaximize) return@glfwSetWindowMaximizeCallback
 
             windowController.setLogicallyMaximized(maximized)
             if (maximized) {
-                org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
+                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
                 isFixingMaximize = true
             } else {
-                org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
+                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
                 imGuiLayer.onWindowDecorationChanged()
             }
         }
@@ -240,9 +240,6 @@ class Window(
     }
 
     private fun installCallbacks() {
-        // Note: Framebuffer and window size callbacks are handled by ImGui
-        // We update viewport/renderer in the main loop by polling framebuffer size
-
         glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
         glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
         glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
@@ -264,18 +261,6 @@ class Window(
 
             joystickListener.update()
             JobSystem.update()
-            // Check framebuffer size every frame and update viewport if changed
-            // This handles window resize, maximize/restore, and HiDPI changes
-            val fbWidth = IntArray(1)
-            val fbHeight = IntArray(1)
-            glfwGetFramebufferSize(glfwWindow, fbWidth, fbHeight)
-
-            if (fbWidth[0] != windowWidth || fbHeight[0] != windowHeight) {
-                windowWidth = fbWidth[0]
-                windowHeight = fbHeight[0]
-                glViewport(0, 0, fbWidth[0], fbHeight[0])
-                renderer.resize(fbWidth[0], fbHeight[0])
-            }
 
             // Record high-frequency input
             inputBuffer.push(
@@ -286,6 +271,11 @@ class Window(
 
             if (isFirstDraw) {
                 // Set viewport if not already initialized
+                val fbWidth = IntArray(1)
+                val fbHeight = IntArray(1)
+                glfwGetFramebufferSize(glfwWindow, fbWidth, fbHeight)
+                windowWidth = fbWidth[0]
+                windowHeight = fbHeight[0]
                 glViewport(0, 0, windowWidth, windowHeight)
                 runOnMain {
                     show()
@@ -332,11 +322,9 @@ class Window(
         imGuiLayer.destroy()
         engine.destroy()
 
-        // Free memory
         glfwFreeCallbacks(glfwWindow)
         glfwDestroyWindow(glfwWindow)
 
-        // Terminate GLFW and free the error callback
         glfwTerminate()
         glfwSetErrorCallback(null)?.free()
     }

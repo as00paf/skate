@@ -18,6 +18,7 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
+import org.lwjgl.glfw.GLFW
 import java.util.concurrent.atomic.AtomicReference
 
 class SplashScreen : KoinComponent {
@@ -72,6 +73,13 @@ class SplashScreen : KoinComponent {
             GL11.glClearColor(0f, 0f, 0f, 0.0f)
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
         }
+
+        // Ensure viewport is set to full screen before rendering splash
+        // This prevents viewport changes from renderer during fade
+        val fbWidth = IntArray(1)
+        val fbHeight = IntArray(1)
+        GLFW.glfwGetFramebufferSize(GLFW.glfwGetCurrentContext(), fbWidth, fbHeight)
+        GL11.glViewport(0, 0, fbWidth[0], fbHeight[0])
 
         renderSplashQuad()
 
