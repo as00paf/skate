@@ -4,6 +4,62 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.46.0.1.17] - 2026-03-30: Fix Game Viewport Sizing and Splash Screen Stability
+
+### Summary
+
+Fixed the Game viewport sizing issue where the viewport was incorrectly constrained to a 16:9 aspect ratio and didn't
+fill the available window space. Also fixed splash screen shifting during the fade animation.
+
+### Fixed
+
+- **GameViewWindow Viewport Sizing**:
+    - Removed 16:9 aspect ratio constraint from `getLargestSizeForViewport()`
+    - Viewport now fills the entire available width and height of the GameViewWindow minus the toolbar
+    - Added `updateFramebufferForViewport()` method to sync framebuffer and camera dimensions every frame
+    - Fixed `drawImage()` to use the full viewport size without double-subtracting toolbar height
+    - Camera aspect ratio now correctly matches the displayed viewport dimensions
+
+- **Window.kt Framebuffer Management**:
+    - Removed per-frame `renderer.resize()` call from window resize handler
+    - GameViewWindow now controls framebuffer dimensions, not the main window
+    - Added explanatory comment for framebuffer ownership
+
+- **SplashScreen Stability**:
+    - Removed per-frame framebuffer size check that was causing viewport shifts during fade
+    - Added explicit viewport reset before rendering splash quad
+    - Splash screen now always renders at full framebuffer size regardless of renderer state
+
+### Changed
+
+- **GameViewWindow.kt**:
+    - `getLargestSizeForViewport()`: Returns full content region without aspect ratio constraint
+    - `drawImage()`: Uses `windowSize.y` directly (toolbar already subtracted in layout)
+    - Added `updateFramebufferForViewport()`: Syncs framebuffer and camera each frame
+
+- **Window.kt**:
+    - Removed `renderer.resize()` from framebuffer size check loop
+    - Viewport is now only set once during `isFirstDraw`
+
+- **SplashScreen.kt**:
+    - Added explicit `glViewport()` call before rendering splash quad
+    - Added `GLFW` import for framebuffer size query
+
+### Technical Details
+
+**Root Cause**: There was a mismatch between three systems:
+
+1. Framebuffer used full window size
+2. Displayed image was constrained to 16:9 and subtracted toolbar height
+3. Camera used framebuffer dimensions for aspect ratio
+
+This caused visual stretching, incorrect picking, and wasted screen space.
+
+**Solution**: The GameViewWindow now owns the framebuffer size and ensures the camera's aspect ratio matches the
+displayed viewport dimensions.
+
+---
+
 ## [v0.46.0.1.16] - 2026-03-27: Implement Render Graph Visualization Window
 
 ### Summary
