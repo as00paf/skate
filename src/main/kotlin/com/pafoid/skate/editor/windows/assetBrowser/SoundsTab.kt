@@ -36,18 +36,16 @@ class SoundsTab(
 
         val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
-        // List View using Table
         val tableFlags = ImGuiTableFlags.RowBg or 
                          ImGuiTableFlags.BordersInnerV or 
                          ImGuiTableFlags.ScrollY or 
                          ImGuiTableFlags.Resizable
         
         if (ImGui.beginTable("##${label}Table", 4, tableFlags)) {
-            // Setup columns
-            ImGui.tableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 24f) // Icon
-            ImGui.tableSetupColumn(stringManager.getString("lbl.name"), ImGuiTableColumnFlags.WidthStretch) // Filename
-            ImGui.tableSetupColumn(stringManager.getString("lbl.duration"), ImGuiTableColumnFlags.WidthFixed, 60f) // Duration
-            ImGui.tableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 40f) // Actions
+            ImGui.tableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 24f)
+            ImGui.tableSetupColumn(stringManager.getString("lbl.name"), ImGuiTableColumnFlags.WidthStretch)
+            ImGui.tableSetupColumn(stringManager.getString("lbl.duration"), ImGuiTableColumnFlags.WidthFixed, 60f)
+            ImGui.tableSetupColumn("", ImGuiTableColumnFlags.WidthFixed, 40f)
             
             ImGui.tableHeadersRow()
 
@@ -61,21 +59,17 @@ class SoundsTab(
 
     private fun renderSoundRow(file: File) {
         ImGui.pushID(file.absolutePath)
-        
-        // Pre-load sound for duration info
+
         val buffer = resourceManager.getSound(file.absolutePath) ?: resourceManager.loadSound(file.absolutePath)
         val duration = buffer.durationInSeconds
         val isPlaying = currentPlayingFile == file && playingSource?.isPlaying() == true
 
-        // Column 0: Icon
         ImGui.tableNextColumn()
         ImGui.text(Icons.MUSIC)
 
-        // Column 1: Name + Drag and Drop + Context Menu
         ImGui.tableNextColumn()
         ImGui.selectable(file.name, false)
-        
-        // Context menu on right-click
+
         if (ImGui.beginPopupContextItem()) {
             val playStopLabel = if (isPlaying) 
                 "${Icons.STOP} ${stringManager.getString("context.asset_browser.play_stop")}" 
@@ -105,18 +99,15 @@ class SoundsTab(
         
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("SOUND", file.path)
-            // Enhanced drag preview with sound info
             ImGui.text("${Icons.MUSIC} ${file.name}")
             ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "Duration: ${duration}s")
             ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Drop on object to add AudioComponent")
             ImGui.endDragDropSource()
         }
 
-        // Column 2: Duration
         ImGui.tableNextColumn()
         ImGui.text("%.2fs".format(duration))
 
-        // Column 3: Actions (Play/Stop)
         ImGui.tableNextColumn()
         val buttonIcon = if (isPlaying) Icons.STOP else Icons.PLAY
         val tooltipKey = if (isPlaying) "tooltip.stop_sound" else "tooltip.play_sound"

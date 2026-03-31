@@ -15,7 +15,6 @@ import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import imgui.ImGui
 import imgui.flag.ImGuiInputTextFlags
-import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
@@ -58,8 +57,7 @@ class PropertiesWindow : IWindow, KoinComponent {
         if (ImGui.collapsingHeader(headerLabel)) {
             component.imgui()
         }
-        
-        // Context menu on right-click of the header
+
         if (ImGui.beginPopupContextItem("${component.javaClass.simpleName}_context")) {
             if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.properties.copy_component")}")) {
                 // TODO: Implement copy component to clipboard

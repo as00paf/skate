@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
@@ -80,7 +79,6 @@ class ImGuiLayer(
     private val renderer: Renderer,
     private val levelManager: LevelManager,
     private val resourceManager: ResourceManager,
-    private val displayService: DisplayService
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -98,7 +96,7 @@ class ImGuiLayer(
     private val physicsTunerWindow = PhysicsTunerWindow()
     private val inputTestingWindow = InputTestingWindow(inputProvider, settingsManager, stringManager)
     private val systemsWindow = SystemsWindow()
-    private val settingsWindow = SettingsWindow(settingsManager, stringManager, displayService)
+    private val settingsWindow = SettingsWindow(settingsManager, stringManager)
     private val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
     private val searchEverywhereWindow = SearchEverywhereWindow()
     private val commandHistoryWindow = CommandHistoryWindow()

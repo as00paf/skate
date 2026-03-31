@@ -114,15 +114,11 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
 
         ImGui.begin(stringManager.getString("search.everywhere.title"), null, windowFlags)
 
-        // Handle keyboard input
         handleKeyboardInput()
-
-        // Search input field with icon
         renderSearchInput()
 
         ImGui.separator()
 
-        // Results or recent searches
         ImGui.beginChild("SearchResults", 0f, 400f)
         if (searchQuery.get().isBlank()) {
             renderRecentSearches()
@@ -133,7 +129,6 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
 
         ImGui.separator()
 
-        // Footer with keyboard shortcuts
         renderFooter()
 
         ImGui.end()
@@ -145,24 +140,20 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
     }
 
     private fun handleKeyboardInput() {
-        // Close on Escape
         if (ImGui.isKeyPressed(ImGuiKey.Escape)) {
             close()
             return
         }
 
-        // Navigate up
         if (ImGui.isKeyPressed(ImGuiKey.UpArrow)) {
             selectedResultIndex = (selectedResultIndex - 1).coerceAtLeast(0)
         }
 
-        // Navigate down
         if (ImGui.isKeyPressed(ImGuiKey.DownArrow)) {
             val maxIndex = flattenedResults.size - 1
             selectedResultIndex = (selectedResultIndex + 1).coerceAtMost(maxIndex)
         }
 
-        // Select on Enter
         if (ImGui.isKeyPressed(ImGuiKey.Enter) && flattenedResults.isNotEmpty()) {
             if (selectedResultIndex in flattenedResults.indices) {
                 val result = flattenedResults[selectedResultIndex].result
@@ -175,11 +166,9 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
         val buttonSize = ImGui.getFrameHeight()
         val spacing = ImGui.getStyle().itemSpacingX
 
-        // Search icon
         ImGui.textColored(0.4f, 0.4f, 0.4f, 1f, Icons.SEARCH)
         ImGui.sameLine()
 
-        // Input field
         val inputWidth = ImGui.getContentRegionAvailX() - buttonSize - spacing
         ImGui.pushItemWidth(inputWidth)
         val flags = ImGuiInputTextFlags.AutoSelectAll
@@ -193,7 +182,6 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
         ImGui.popItemWidth()
         ImGui.sameLine()
 
-        // Clear button
         if (ImGui.button(Icons.WINDOW_CLOSE, buttonSize, buttonSize)) {
             searchQuery.set("")
             currentResults = emptyMap()
@@ -205,7 +193,6 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
             ImGui.setTooltip(stringManager.getString("lbl.clear"))
         }
 
-        // Trigger search when input is edited (text changed)
         if (inputEdited) {
             triggerSearch()
         }
@@ -213,9 +200,8 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
 
     private fun triggerSearch() {
         val query = searchQuery.get().trim()
-        
-        // Don't search if query hasn't changed
         if (query == lastQueriedText) return
+
         lastQueriedText = query
 
         if (query.isEmpty()) {
@@ -225,15 +211,11 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
             return
         }
 
-        // Cancel previous search job
         searchJob?.cancel()
 
-        // Debounced search (50ms delay to avoid searching on every keystroke)
         isSearching = true
         searchJob = JobSystem.runAsync {
             Thread.sleep(debounceDelayMs)
-
-            // Check if query changed during debounce
             if (searchQuery.get().trim() != query) {
                 return@runAsync
             }
@@ -276,7 +258,6 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
 
             val label = "${Icons.CLOCK} ${entry.query}"
             if (ImGui.selectable(label, isSelected)) {
-                // Re-execute the search
                 searchQuery.set(entry.query)
                 triggerSearch()
             }
@@ -302,12 +283,10 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
         currentResults.forEach { (category, results) ->
             if (results.isEmpty()) return@forEach
 
-            // Category header
             val categoryColor = getCategoryColor(category)
             ImGui.textColored(categoryColor, "${category.displayName} (${results.size})")
             ImGui.separator()
 
-            // Results
             results.forEach { result ->
                 val isSelected = (globalIndex == selectedResultIndex)
                 if (isSelected) {
@@ -385,11 +364,5 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
         )
     }
 
-    /**
-     * Helper data class to hold result with its category for flattened list.
-     */
-    private data class SearchResultWithCategory(
-        val category: SearchCategory,
-        val result: SearchResult
-    )
 }
+

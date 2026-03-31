@@ -6,7 +6,6 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import imgui.ImGui
-import imgui.ImVec2
 import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
@@ -41,12 +40,8 @@ class RenderGraphWindow : IWindow, KoinComponent {
     override fun imgui(pOpen: ImBoolean?) {
         ImGui.begin(stringManager.getString("window.render_graph"), pOpen)
 
-        // Toolbar
         renderToolbar()
-
         ImGui.separator()
-
-        // Graph visualization area
         ImGui.beginChild("GraphView", 0f, 400f)
 
         if (autoUpdate) {
@@ -56,10 +51,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
         }
 
         ImGui.endChild()
-
         ImGui.separator()
-
-        // Status bar
         renderStatusBar()
 
         ImGui.end()
@@ -91,7 +83,6 @@ class RenderGraphWindow : IWindow, KoinComponent {
             ImGui.setTooltip("Show execution time for each pass")
         }
 
-        // Zoom controls
         ImGui.sameLine()
         ImGui.text("Zoom:")
         ImGui.sameLine()

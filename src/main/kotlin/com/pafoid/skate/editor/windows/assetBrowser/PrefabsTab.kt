@@ -54,7 +54,6 @@ class PrefabsTab(
                 "PREFAB_SKATEBOARD",
                 listOf()
             ),
-            //PrefabConfig("Skater", PrefabType.SKATER, Assets.Models.JAMES, "PREFAB_SKATER", listOf(), ::spawnSkater),
         ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
         if (items.isNotEmpty()) {
@@ -132,16 +131,13 @@ class PrefabsTab(
             val baseModel = resourceManager.loadModelSync(data.modelPath)
             val rawModel = baseModel.mesh[0].rawModel
             val texture = resourceManager.loadTextureSync(data.material?.texturePath)
-            // Create a temporary TexturedModel for the thumbnail generator
             val model = TexturedModel(rawModel, texture)
-            // Use specific ID per variant so they don't overwrite each other in cache
             val cacheId = "${data.modelPath}_${data.material?.name}"
             thumbnailCache.getThumbnail(cacheId, model)
         } else {
             resourceManager.loadTextureSync(Assets.Textures.DEFAULT).texId
         }
 
-        // Push ID to avoid collision if names are identical
         ImGui.pushID(data.name)
         if (ImGui.imageButton("PrefabItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
             JobSystem.runOnMain {
@@ -158,8 +154,7 @@ class PrefabsTab(
 
             }
         }
-        
-        // Context menu on right-click
+
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.spawn_in_scene")}")) {
                 JobSystem.runOnMain {
@@ -181,8 +176,7 @@ class PrefabsTab(
                 logger.logEditor("Add to favorites not yet implemented")
             }
             if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {
-                // Open folder in file explorer
-                java.awt.Desktop.getDesktop().open(File(data.modelPath ?: ".").parentFile)
+                Desktop.getDesktop().open(File(data.modelPath ?: ".").parentFile)
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
@@ -193,7 +187,6 @@ class PrefabsTab(
         
         if (data.dragDropPayload != null && ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload(data.dragDropPayload, data)
-            // Enhanced drag preview with larger image and material info
             ImGui.image(texId.toLong(), size*1.2f, size*1.2f, 0f, 1f, 1f, 0f)
             ImGui.text(data.name)
             if (data.material != null) {

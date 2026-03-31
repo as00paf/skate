@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.windows
 
-import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.settings.EditorSettings
@@ -37,7 +36,6 @@ import org.koin.core.component.KoinComponent
 class SettingsWindow(
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
-    private val displayService: DisplayService
 ) : KoinComponent {
 
     var isOpen = false

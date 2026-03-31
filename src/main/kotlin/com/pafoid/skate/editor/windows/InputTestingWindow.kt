@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.windows
 
-import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
@@ -78,7 +77,6 @@ class InputTestingWindow(
     private fun renderRawGamepadSection() {
         ImGui.indent()
 
-        // Check if gamepad is connected
         val gamepadConnected = inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)
         if (!gamepadConnected) {
             ImGui.textColored(1f, 0.3f, 0.3f, 1f, "No gamepad detected (GLFW_JOYSTICK_1)")

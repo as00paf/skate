@@ -20,7 +20,6 @@ import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImString
-import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
@@ -83,7 +82,6 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             ImGui.tableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch)
             ImGui.tableSetupColumn("Vis", ImGuiTableColumnFlags.WidthFixed, 24f)
             ImGui.tableSetupColumn("Lock", ImGuiTableColumnFlags.WidthFixed, 24f)
-            // ImGui.tableHeadersRow() // Optional, skipping for cleaner look
 
             gameObjects.forEach { obj ->
                 if (obj.parent == null) { // Only draw root objects
@@ -92,8 +90,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             }
             ImGui.endTable()
         }
-        
-        // Handle global deletion input
+
         if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_DELETE)) {
             sceneManager.currentScene?.let { scn ->
                 scn.getSelectedGameObject()?.let { go ->
@@ -102,7 +99,6 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             }
         }
 
-        // Handle global rename input
         if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_F2)) {
             sceneManager.currentScene?.getSelectedGameObject()?.let { go ->
                 editingObjUid = go.getUid()

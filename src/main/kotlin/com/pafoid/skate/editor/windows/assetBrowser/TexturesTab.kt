@@ -6,9 +6,9 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
@@ -31,9 +31,6 @@ class TexturesTab(
         val padding = 5f
 
         ImGui.beginGroup()
-
-        // We can load it since ResourceManager caches it
-        // Warning: Loading many large textures might still be heavy on VRAM
         val texId: Int = resourceManager.loadTextureSync(file.path).texId
         ImGui.pushID(file.absolutePath)
         if (ImGui.imageButton("TextureItem", texId.toLong(), size, size, 0f, 0f, 1f, 1f)) {
@@ -57,8 +54,6 @@ class TexturesTab(
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.asset_browser.refresh")}")) {
-                // Force reload by clearing cache first (if such method exists)
-                // For now, just log that refresh was requested
                 logger.logEditor("Refresh requested for: ${file.name}")
             }
             ImGui.separator()
@@ -73,7 +68,6 @@ class TexturesTab(
 
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("TEXTURE", file.path)
-            // Enhanced drag preview with larger texture and info
             ImGui.image(texId.toLong(), size *1.5f, size *1.5f, 0f, 0f, 1f, 1f)
             ImGui.text(file.name)
             val tex = resourceManager.loadTextureSync(file.path)
@@ -99,8 +93,6 @@ class TexturesTab(
         }
         
         val texture = resourceManager.loadTextureSync(texturePath)
-        // Update the texture path in the render component
-        // Note: This is a simplified approach - may need proper material system integration
         logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
     }
 

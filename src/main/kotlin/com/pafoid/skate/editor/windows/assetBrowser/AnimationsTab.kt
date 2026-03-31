@@ -29,15 +29,14 @@ class AnimationsTab(
         ImGui.beginGroup()
 
         ImGui.pushID(file.absolutePath)
-        // Use a generic icon for animations since we don't have thumbnails
+
         if (ImGui.button("${Icons.PLAY}", size, size)) {
             previewAnimation(file)
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(file.name)
         }
-        
-        // Context menu on right-click
+
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.menuItem("${Icons.PLAY} ${stringManager.getString("context.asset_browser.preview_animation")}")) {
                 previewAnimation(file)
@@ -61,7 +60,6 @@ class AnimationsTab(
 
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("ANIMATION", file.path)
-            // Enhanced drag preview with animation info
             ImGui.text("${Icons.PLAY} ${file.name}")
             ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Drop on object with Animator")
             ImGui.endDragDropSource()

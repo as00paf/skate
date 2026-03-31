@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.AddAudioComponentCommand
 import com.pafoid.skate.editor.systems.CreateGameObjectCommand
 import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.LoggerService
@@ -12,7 +13,6 @@ import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.editor.systems.AddAudioComponentCommand
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
@@ -20,22 +20,20 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.AudioComponent
-import com.pafoid.skate.engine.ecs.components.Animator
-import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.ScreenshotUtils
 import com.pafoid.skate.engine.utils.UnitSystem
-import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol
@@ -81,25 +79,19 @@ class GameViewWindow : IWindow, KoinComponent {
         val windowSize = getLargestSizeForViewport()
         val windowPos = ImVec2(0f, TAB_BAR_HEIGHT)
 
-        // Render the toolbar first
         renderToolbar(windowPos)
 
-        // Adjust cursor for the image to be below the toolbar
         ImGui.setCursorPos(
             windowPos.x + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingX,
             windowPos.y + TOOLBAR_HEIGHT + ImGui.getStyle().framePaddingY
         )
 
-        // Capture EXACT screen position before drawing image
         drawImage(windowSize)
 
-        // Render viewport context menu (right-click on viewport area)
         renderViewportContextMenu(windowPos, windowSize)
 
-        // Drag and Drop Target should be over the image area
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
         if (ImGui.beginDragDropTarget()) {
-            // Prefab payloads
             val payloadLedge = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_LEDGE")
             val payloadRail = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_RAIL")
             val payloadKicker = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_KICKER")
@@ -107,16 +99,10 @@ class GameViewWindow : IWindow, KoinComponent {
             val payloadBank = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_BANK")
             val payloadQuarterPipe = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_QUARTER_PIPE")
             val payloadSkateboard = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_SKATEBOARD")
-            
-            // Texture payload
-            val payloadTexture = ImGui.acceptDragDropPayload<String>("TEXTURE")
-            
-            // Sound payload
-            val payloadSound = ImGui.acceptDragDropPayload<String>("SOUND")
-            
-            // Animation payload
-            val payloadAnimation = ImGui.acceptDragDropPayload<String>("ANIMATION")
 
+            val payloadTexture = ImGui.acceptDragDropPayload<String>("TEXTURE")
+            val payloadSound = ImGui.acceptDragDropPayload<String>("SOUND")
+            val payloadAnimation = ImGui.acceptDragDropPayload<String>("ANIMATION")
             val prefabPayload = payloadRail ?: payloadLedge ?: payloadKicker ?: payloadManualPad ?: payloadBank ?: payloadQuarterPipe ?: payloadSkateboard
 
             if (prefabPayload != null) {
@@ -129,8 +115,6 @@ class GameViewWindow : IWindow, KoinComponent {
 
                     val ray = scene.camera.screenToRay(relX, relY, imageSizeX, imageSizeY)
 
-                    // Intersect ray with ground plane (Y=0)
-                    // P = O + t*D -> Py = 0 -> Oy + t*Dy = 0 -> t = -Oy / Dy
                     if (abs(ray.direction.y) > 0.0001f) {
                         val t = -ray.origin.y / ray.direction.y
                         if (t > 0) {
@@ -149,31 +133,25 @@ class GameViewWindow : IWindow, KoinComponent {
                     }
                 }
             }
-            
-            // Handle texture drop - create textured plane at drop location OR apply to hovered object
+
             if (payloadTexture != null) {
                 val scene = sceneManager.currentScene
                 val hoveredObject = getHoveredObject()
                 
                 if (scene != null) {
-                    // If hovering over an object with RenderComponent, apply texture to it
                     if (hoveredObject != null) {
                         val renderComponent = hoveredObject.getComponent<RenderComponent>()
                         if (renderComponent != null) {
-                            // Apply texture to hovered object
                             applyTextureToObject(hoveredObject, payloadTexture)
                         } else {
-                            // No render component, create plane instead
                             createTexturedPlaneAtDropLocation(scene, payloadTexture)
                         }
                     } else {
-                        // Not hovering any object, create plane at ground position
                         createTexturedPlaneAtDropLocation(scene, payloadTexture)
                     }
                 }
             }
-            
-            // Handle sound drop - add AudioComponent to hovered object
+
             if (payloadSound != null) {
                 val hoveredObject = getHoveredObject()
                 if (hoveredObject != null) {
@@ -182,8 +160,7 @@ class GameViewWindow : IWindow, KoinComponent {
                     logger.logEditor("Drop sound on an object to add AudioComponent")
                 }
             }
-            
-            // Handle animation drop - apply to hovered skater object
+
             if (payloadAnimation != null) {
                 val hoveredObject = getHoveredObject()
                 if (hoveredObject != null) {
@@ -198,7 +175,6 @@ class GameViewWindow : IWindow, KoinComponent {
 
         renderViewportOverlays(windowPos, windowSize)
 
-        // Render Gamepad Overlay
         if (settingsManager.engine.editor.showGamepadOverlay) {
             gamepadOverlay.imgui(Vector2f(imageScreenPosX, imageScreenPosY), Vector2f(imageSizeX, imageSizeY))
         }
@@ -206,12 +182,9 @@ class GameViewWindow : IWindow, KoinComponent {
         mouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
         mouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
 
-        // Update focus state for InputSystem - ensures WASD/Shift only work when viewport is focused
         val editorInput = sceneManager.currentScene?.systemManager?.getSystem<com.pafoid.skate.editor.EditorCamera>()?.editorInput
         editorInput?.isFocused = ImGui.isWindowFocused()
 
-        // Debug Info Overlay
-        // We now get the hovered object from SelectionGizmo (via getHoveredObject)
         val hovered = getHoveredObject()
         if (hovered != null) {
             ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 20f)
@@ -320,8 +293,6 @@ class GameViewWindow : IWindow, KoinComponent {
         val toolbarPosY = windowPos.y + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingY
 
         val buttons = mutableListOf<() -> Unit>()
-
-        // --- Gizmo Controls ---
         val gizmoSystem = scene?.systemManager?.getSystem<GizmoSystem>()
 
         if (gizmoSystem != null && !isPlaying) {
@@ -394,7 +365,6 @@ class GameViewWindow : IWindow, KoinComponent {
             }
         }
 
-        // --- Center-aligned Buttons ---
         if (isPlaying) {
             buttons.add {
                 val timeScale = scene?.getTimeScale() ?: 1.0f
@@ -430,10 +400,8 @@ class GameViewWindow : IWindow, KoinComponent {
             }
         }
 
-        // --- All Buttons ---
         buttons.add {
             if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                // Reset logic
                 scene?.let{
                     scene.gameObjectManager.gameObjects.find { it.name == "Skateboard" }?.let { skate ->
                         skate.getComponent<Transform>()?.translation?.set(0f, 0.5f, 0f)
@@ -647,13 +615,7 @@ class GameViewWindow : IWindow, KoinComponent {
             }
         }
     }
-    
-    private enum class LightType {
-        DIRECTIONAL,
-        POINT,
-        SPOT
-    }
-    
+
     private fun createLightObject(name: String, type: LightType) {
         val scene = sceneManager.currentScene ?: return
         
@@ -675,10 +637,7 @@ class GameViewWindow : IWindow, KoinComponent {
             }
         }
         lightObj.addComponent(transform)
-        
-        // Light component would be added here when implemented
-        // For now, just create the GameObject with a marker
-        
+
         undoRedoManager.executeCommand(CreateGameObjectCommand(lightObj, scene))
     }
     
@@ -691,8 +650,7 @@ class GameViewWindow : IWindow, KoinComponent {
             transform.translation.set(position)
             transform.scale.set(10f, 0.1f, 10f) // Flat plane
             planeObj.addComponent(transform)
-            
-            // Load texture and create plane using cube model scaled flat
+
             val texture = resourceManager.loadTexture(texturePath)
             val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
             val texturedModel = TexturedModel(
@@ -718,7 +676,6 @@ class GameViewWindow : IWindow, KoinComponent {
 
         val ray = scene.camera.screenToRay(relX, relY, imageSizeX, imageSizeY)
 
-        // Intersect ray with ground plane (Y=0)
         if (abs(ray.direction.y) > 0.0001f) {
             val t = -ray.origin.y / ray.direction.y
             if (t > 0) {
@@ -743,8 +700,7 @@ class GameViewWindow : IWindow, KoinComponent {
     private fun addSoundToObject(gameObject: GameObject, soundPath: String) {
         val audioComponent = gameObject.getComponent<AudioComponent>()
         val hadAudioComponent = audioComponent != null
-        
-        // Use UndoRedoManager for proper undo/redo support
+
         undoRedoManager.executeCommand(
             AddAudioComponentCommand(gameObject, soundPath, hadAudioComponent)
         )
@@ -760,7 +716,6 @@ class GameViewWindow : IWindow, KoinComponent {
         val animator = gameObject.getComponent<Animator>()
         
         if (animator != null) {
-            // Load and add animation
             val animation = resourceManager.getAnimation(animationPath)
             if (animation != null) {
                 animator.addAnimation(animation)
@@ -775,8 +730,7 @@ class GameViewWindow : IWindow, KoinComponent {
     
     private fun duplicateGameObject(gameObject: GameObject) {
         val scene = sceneManager.currentScene ?: return
-        
-        // Create a new GameObject with copied transform
+
         val duplicated = GameObject("${gameObject.name}_clone")
         val originalTransform = gameObject.getComponent<Transform>()
         val newTransform = Transform()
@@ -803,3 +757,4 @@ class GameViewWindow : IWindow, KoinComponent {
         scene.camera.lookAt(pos)
     }
 }
+

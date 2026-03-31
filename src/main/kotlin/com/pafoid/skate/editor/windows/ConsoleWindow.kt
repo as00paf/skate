@@ -8,8 +8,6 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
-import imgui.flag.ImGuiInputTextFlags
-import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import imgui.type.ImString
@@ -45,7 +43,6 @@ class ConsoleWindow : IWindow, KoinComponent {
             ImGui.endTabBar()
         }
 
-        // Handle Ctrl+C for copying
         if (ImGui.isWindowFocused() && ImGui.getIO().keyCtrl && ImGui.isKeyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_C)) {
             copySelectedToClipboard()
         }
@@ -57,7 +54,6 @@ class ConsoleWindow : IWindow, KoinComponent {
         if (selectedLogs.isEmpty()) return
         
         val sb = StringBuilder()
-        // Sort by timestamp to maintain log order
         selectedLogs.sortedBy { it.timestamp }.forEach { entry ->
             sb.append("[${entry.level}] ${entry.message}\n")
         }
@@ -116,10 +112,8 @@ class ConsoleWindow : IWindow, KoinComponent {
                 val io = ImGui.getIO()
                 
                 if (io.keyCtrl) {
-                    // Toggle selection
                     if (isSelected) selectedLogs.remove(entry) else selectedLogs.add(entry)
                 } else if (io.keyShift && lastSelectedIndex != -1 && lastSelectedIndex < filteredLogs.size) {
-                    // Range selection
                     selectedLogs.clear()
                     val start = Math.min(lastSelectedIndex, index)
                     val end = Math.max(lastSelectedIndex, index)
@@ -127,7 +121,6 @@ class ConsoleWindow : IWindow, KoinComponent {
                         selectedLogs.add(filteredLogs[i])
                     }
                 } else {
-                    // Single selection
                     selectedLogs.clear()
                     selectedLogs.add(entry)
                 }
@@ -137,7 +130,6 @@ class ConsoleWindow : IWindow, KoinComponent {
             ImGui.popStyleColor()
         }
 
-        // Context Menu for right-click actions
         if (ImGui.beginPopupContextWindow()) {
             if (ImGui.menuItem("Copy Selected", "Ctrl+C")) {
                 copySelectedToClipboard()
@@ -160,7 +152,6 @@ class ConsoleWindow : IWindow, KoinComponent {
             ImGui.endPopup()
         }
 
-        // Auto-scroll to bottom if not dragging scrollbar and no selection
         if (selectedLogs.isEmpty() && ImGui.getScrollY() >= ImGui.getScrollMaxY()) {
             ImGui.setScrollHereY(1.0f)
         }

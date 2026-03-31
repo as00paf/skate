@@ -36,22 +36,16 @@ class CommandHistoryWindow : IWindow, KoinComponent {
     override fun imgui(pOpen: ImBoolean?) {
         ImGui.begin(stringManager.getString("window.command_history"), pOpen)
 
-        // Toolbar
         renderToolbar()
 
         ImGui.separator()
 
-        // Undo History
         renderUndoHistory()
 
         ImGui.separator()
-
-        // Redo History
         renderRedoHistory()
 
         ImGui.separator()
-
-        // Footer with shortcuts
         renderFooter()
 
         ImGui.end()
@@ -61,7 +55,6 @@ class CommandHistoryWindow : IWindow, KoinComponent {
         val undoCount = undoRedoManager.getUndoCount()
         val redoCount = undoRedoManager.getRedoCount()
 
-        // Undo button
         if (undoCount > 0) {
             if (ImGui.button("${Icons.UNDO} Undo")) {
                 undoRedoManager.undo()
@@ -81,7 +74,6 @@ class CommandHistoryWindow : IWindow, KoinComponent {
 
         ImGui.sameLine()
 
-        // Redo button
         if (redoCount > 0) {
             if (ImGui.button("${Icons.REDO} Redo")) {
                 undoRedoManager.redo()
@@ -101,7 +93,6 @@ class CommandHistoryWindow : IWindow, KoinComponent {
 
         ImGui.sameLine()
 
-        // Clear button
         if (undoCount > 0 || redoCount > 0) {
             if (ImGui.button("${Icons.TRASH} Clear")) {
                 undoRedoManager.clear()
@@ -126,14 +117,12 @@ class CommandHistoryWindow : IWindow, KoinComponent {
 
         ImGui.beginChild("UndoHistory", 0f, undoStackHeight)
 
-        // Render in reverse (most recent first)
         for (i in undoStack.indices.reversed()) {
             val command = undoStack[i]
             val targetName = command.getTargetName() ?: "Unknown"
             val label = "${i + 1}. ${command.getDisplayName()} ($targetName)"
 
             if (ImGui.selectable(label, false)) {
-                // Undo to this state
                 undoTo(i)
                 scrollToBottom = true
             }
@@ -160,7 +149,6 @@ class CommandHistoryWindow : IWindow, KoinComponent {
             val label = "${i + 1}. ${command.getDisplayName()} ($targetName)"
 
             if (ImGui.selectable(label, false)) {
-                // Redo to this state
                 redoTo(i)
                 scrollToBottom = true
             }

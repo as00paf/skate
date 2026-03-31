@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import imgui.ImGui
@@ -54,14 +55,12 @@ class AudioInspectorWindow : KoinComponent {
 
                 ImGui.separator()
 
-                // Add audio component button
                 if (ImGui.button(stringManager.getString("btn.audio.add_component"))) {
                     selectedObject.addComponent(AudioComponent())
                 }
                 return
             }
 
-            // Sound file path
             val filePath = ImString(audioComponent.soundFilePath, 256)
             ImGui.inputText(
                 stringManager.getString("lbl.audio.sound_file"),
@@ -80,13 +79,11 @@ class AudioInspectorWindow : KoinComponent {
 
             ImGui.separator()
 
-            // 3D toggle
             val is3D = audioComponent.is3D
             if (ImGui.checkbox(stringManager.getString("lbl.audio.is_3d"), is3D)) {
                 audioComponent.apply3D(!is3D)
             }
 
-            // Looping toggle
             val loops = audioComponent.loops
             if (ImGui.checkbox(stringManager.getString("lbl.audio.looping"), loops)) {
                 audioComponent.applyLooping(!loops)
@@ -94,7 +91,6 @@ class AudioInspectorWindow : KoinComponent {
 
             ImGui.separator()
 
-            // Volume control
             val volumeArray = floatArrayOf(audioComponent.volume)
             if (ImGui.dragFloat(stringManager.getString("lbl.audio.volume"), volumeArray, 0.01f, 0f, 1f)) {
                 audioComponent.applyVolume(volumeArray[0])
@@ -102,7 +98,6 @@ class AudioInspectorWindow : KoinComponent {
 
             ImGui.separator()
 
-            // Playback controls
             val isPlaying = audioComponent.isPlaying
 
             if (!isPlaying) {
@@ -124,9 +119,6 @@ class AudioInspectorWindow : KoinComponent {
     }
 }
 
-// Extension function to get selected game object from scene
-fun Scene.getSelectedGameObject(): com.pafoid.skate.engine.ecs.GameObject? {
-    // This would need to be implemented based on how selection is tracked
-    // For now, return null - the actual implementation would use a selection service
+fun Scene.getSelectedGameObject(): GameObject? {
     return null
 }
