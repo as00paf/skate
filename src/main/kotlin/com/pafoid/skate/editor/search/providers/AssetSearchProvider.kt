@@ -1,14 +1,11 @@
 package com.pafoid.skate.editor.search.providers
 
-import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.SearchCategory
 import com.pafoid.skate.editor.search.SearchResult
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.utils.JobSystem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -35,8 +32,6 @@ import java.io.File
  */
 class AssetSearchProvider : BaseSearchProvider(), KoinComponent {
 
-    private val resourceManager: ResourceManager by inject()
-    private val imGuiLayer: ImGuiLayer by inject()
     private val logger: LoggerService by inject()
 
     override val category: SearchCategory = SearchCategory.ASSET_MODEL
@@ -251,20 +246,5 @@ class AssetSearchProvider : BaseSearchProvider(), KoinComponent {
         )
     }
 
-    private data class PrefabInfo(
-        val name: String,
-        val type: PrefabType,
-        val modelPath: String
-    )
-
-    private enum class PrefabType {
-        SKATEBOARD,
-        SKATER,
-        RAIL,
-        LEDGE,
-        KICKER,
-        MANUAL_PAD,
-        BANK,
-        QUARTER_PIPE
-    }
 }
+

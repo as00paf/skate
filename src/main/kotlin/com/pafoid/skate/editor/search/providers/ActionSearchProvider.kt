@@ -15,8 +15,6 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.game.level.LevelManager
-import org.joml.Quaternionf
-import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -148,11 +146,9 @@ class ActionSearchProvider : BaseSearchProvider(), KoinComponent {
     private fun calculateActionScore(action: EditorAction, query: String): Float {
         var bestScore = 0.0f
 
-        // Check display name
         val displayNameScore = calculateRelevance(action.displayName, query)
         bestScore = maxOf(bestScore, displayNameScore)
 
-        // Check keywords
         for (keyword in action.keywords) {
             val keywordScore = calculateRelevance(keyword, query)
             bestScore = maxOf(bestScore, keywordScore * 0.9f) // Keywords score slightly lower
@@ -187,8 +183,6 @@ class ActionSearchProvider : BaseSearchProvider(), KoinComponent {
             )
         )
     }
-
-    // Action implementations
 
     private fun createEmptyGameObject() {
         val scene = sceneManager.currentScene ?: return
@@ -248,29 +242,10 @@ class ActionSearchProvider : BaseSearchProvider(), KoinComponent {
         val duplicated = selected.copy(serializer)
         duplicated.name = "${selected.name} (Copy)"
 
-        // Offset the duplicate slightly
         duplicated.getComponent<Transform>()?.translation?.add(1f, 0f, 0f)
 
         undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
         logger.logEditor("Duplicated GameObject: ${selected.name} -> ${duplicated.name}")
     }
-
-    /**
-     * Data class representing an editor action.
-     *
-     * @property actionId Unique identifier for the action
-     * @property displayName Human-readable name shown in search results
-     * @property keywords List of keywords for matching search queries
-     * @property description Brief description of what the action does
-     * @property icon Icon identifier for visual representation
-     * @property execute Lambda function that executes the action
-     */
-    private data class EditorAction(
-        val actionId: String,
-        val displayName: String,
-        val keywords: List<String>,
-        val description: String,
-        val icon: String,
-        val execute: () -> Unit = { /* Default no-op, should be overridden */ }
-    )
 }
+
