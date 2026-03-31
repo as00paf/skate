@@ -6,17 +6,14 @@ import imgui.ImGuiStyle
 import org.joml.Vector4f
 
 fun ImGuiIO.loadFonts(fontsFile:String) {
-    // Load Fonts
     val fontAtlas = fonts
     val fontConfig = ImFontConfig()
 
-    // Default Font
     fontAtlas.addFontDefault()
 
-    // Merge FontAwesome
     fontConfig.mergeMode = true
     fontConfig.pixelSnapH = true
-    fontConfig.glyphMinAdvanceX = 14f // Use size of font
+    fontConfig.glyphMinAdvanceX = 14f
 
     val iconRanges = shortArrayOf(0xe000.toShort(), 0xf8ff.toShort(), 0)
     fontAtlas.addFontFromFileTTF(fontsFile, 14f, fontConfig, iconRanges)

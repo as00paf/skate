@@ -41,8 +41,7 @@ class EditorStatusBar {
             val sceneText = "Scene: ${currentScene.name}"
             val textSize = ImGui.calcTextSize(sceneText)
             val windowWidth = ImGui.getWindowWidth()
-            
-            // Align to right
+
             ImGui.sameLine(windowWidth - textSize.x - 16f)
             ImGui.text(sceneText)
         }
