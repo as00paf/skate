@@ -46,7 +46,6 @@ object MImGui {
 
         val widthEach = (ImGui.calcItemWidth() - (buttonSizeX * 2f)) / 2f
 
-        // X
         ImGui.pushItemWidth(widthEach)
         ImGui.pushStyleColor(ImGuiCol.Button, 0.8f, 0.1f, 0.15f, 1.0f)
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.9f, 0.2f, 0.2f, 1.0f)
@@ -63,7 +62,6 @@ object MImGui {
         ImGui.popItemWidth()
         ImGui.sameLine()
 
-        // Y
         ImGui.pushItemWidth(widthEach)
         ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.7f, 0.2f, 1.0f)
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.3f, 0.8f, 0.3f, 1.0f)
@@ -159,7 +157,6 @@ object MImGui {
 
         val widthEach = (ImGui.calcItemWidth() - (buttonSizeX * 3f)) / 3f
 
-        // X
         ImGui.pushItemWidth(widthEach)
         ImGui.pushStyleColor(ImGuiCol.Button, 0.8f, 0.1f, 0.15f, 1.0f)
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.9f, 0.2f, 0.2f, 1.0f)
@@ -176,7 +173,6 @@ object MImGui {
         ImGui.popItemWidth()
         ImGui.sameLine()
 
-        // Y
         ImGui.pushItemWidth(widthEach)
         ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.7f, 0.2f, 1.0f)
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.3f, 0.8f, 0.3f, 1.0f)
@@ -193,7 +189,6 @@ object MImGui {
         ImGui.popItemWidth()
         ImGui.sameLine()
 
-        // Z
         ImGui.pushItemWidth(widthEach)
         ImGui.pushStyleColor(ImGuiCol.Button, 0.1f, 0.25f, 0.8f, 1.0f)
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.2f, 0.35f, 0.9f, 1.0f)

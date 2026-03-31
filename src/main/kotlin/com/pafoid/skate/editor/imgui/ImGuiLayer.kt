@@ -88,7 +88,6 @@ class ImGuiLayer(
     private val glslVersion = "#version 330"
     private var glfwWindow: Long = 0
 
-    // Window instances
     private val hierarchyWindow = SceneHierarchyWindow()
     private val propertiesWindow = PropertiesWindow()
     private val gameViewWindow = GameViewWindow()
@@ -134,30 +133,8 @@ class ImGuiLayer(
     private lateinit var setVSync: (Boolean) -> Unit
     private lateinit var windowController: com.pafoid.skate.engine.core.WindowController
 
-    /**
-     * Flag to track if window decoration changed and needs ImGui viewport update.
-     * Set by [onWindowDecorationChanged] and consumed in [endFrame].
-     */
     private var needsDecorationUpdate = false
-
     private var layoutInitialized = false
-
-    /**
-     * Notifies ImGui that the window decoration state has changed.
-     * Call this when toggling between maximized (undecorated) and restored (decorated) states
-     * to ensure ImGui recalculates its work area to account for window decorations.
-     */
-    fun onWindowDecorationChanged() {
-        // Defer the update until endFrame() to avoid ImGui assertion errors
-        needsDecorationUpdate = true
-    }
-
-    /**
-     * Gets the currently hovered game object from the GameViewWindow.
-     */
-    fun getHoveredGameObject(): com.pafoid.skate.engine.ecs.GameObject? {
-        return gameViewWindow.getHoveredObject()
-    }
 
     fun init(
         glfwWindow: Long,
@@ -184,7 +161,6 @@ class ImGuiLayer(
 
         ImGuiStyleManager.setupStyle()
 
-        // Initialize menu bar after editorWindows is populated
         menuBar = EditorMenuBar(
             stringManager = stringManager,
             levelManager = levelManager,
@@ -218,23 +194,17 @@ class ImGuiLayer(
         )
 
         val mainBodyId = ImInt(0)
-        // Split Left for Hierarchy
         val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.18f, null, mainBodyId)
-        // Split Right for Properties & Environment
         val rightId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.22f, null, mainBodyId)
-        // Split Bottom for Asset Browser, Console, Profiler
         val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.28f, null, mainBodyId)
 
-        // Set NoTabBar, NoWindowMenuButton, and NoCloseButton flags on the final central node to hide the "Game Viewport" tab entirely
         val centralNode = imgui.internal.ImGui.dockBuilderGetNode(mainBodyId.get())
-        // NoTabBar (1 << 3), NoWindowMenuButton (1 << 12), NoCloseButton (1 << 13)
         val noTabBar = imgui.internal.flag.ImGuiDockNodeFlags.NoTabBar
         val noWindowMenuButton = 1 shl 12
         val noCloseButton = 1 shl 13
         
         centralNode.setLocalFlags(noTabBar or noWindowMenuButton or noCloseButton)
 
-        // Dock windows based on their logical function
         editorWindows.filter { it.showFlag.get() }.forEach { window ->
             val dockId = when (window.nameKey) {
                 "window.hierarchy", "window.properties", "window.systems", "window.asset_browser", "window.command_history", "window.render_graph" -> leftId
@@ -250,9 +220,8 @@ class ImGuiLayer(
 
     fun update(dt: Float) {
         val currentScene = sceneManager.currentScene ?: return
-
-        // Handle Ctrl+P BEFORE ImGui processes input (so it works even when typing)
         val ctrlDown = inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || inputProvider.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
+
         if (ctrlDown && inputProvider.keyBeginPress(GLFW.GLFW_KEY_P)) {
             searchEverywhereWindow.open()
         }
@@ -263,7 +232,6 @@ class ImGuiLayer(
 
         startFrame()
 
-        // Handle other editor input (copy, cut, paste, etc.)
         editorInputHandler.update(currentScene)
 
         if (isViewportMaximized) {
@@ -288,7 +256,6 @@ class ImGuiLayer(
             statusBar.render(currentScene)
             currentScene.imguiScene()
 
-            // Render all visible editor windows
             editorWindows.forEach { window ->
                 if (window.showFlag.get()) {
                     when {
@@ -321,8 +288,6 @@ class ImGuiLayer(
             renderPlatformWindowsDefault()
             GLFW.glfwMakeContextCurrent(backupWindowPtr)
         } else if (needsDecorationUpdate) {
-            // If viewports are not enabled, we still need to update platform windows
-            // when decoration state changes to recalculate work area
             val backupWindowPtr = GLFW.glfwGetCurrentContext()
             updatePlatformWindows()
             GLFW.glfwMakeContextCurrent(backupWindowPtr)
@@ -345,7 +310,6 @@ class ImGuiLayer(
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.NoMove or
                 ImGuiWindowFlags.NoBringToFrontOnFocus or ImGuiWindowFlags.NoNavFocus)
 
-        // Push large FramePadding specifically to give the Menu Bar more vertical space
         pushStyleVar(ImGuiStyleVar.FramePadding, 12f, 22f)
         pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
         pushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f)
@@ -353,15 +317,22 @@ class ImGuiLayer(
 
         begin(stringManager.getString("lbl.editor_title"), ImBoolean(true), windowFlags)
 
-        popStyleVar(4) // Pop FramePadding, WindowPadding, WindowRounding, WindowBorderSize
+        popStyleVar(4)
 
         setupLayout(getID("DockSpace"))
         dockSpace(getID("DockSpace"))
 
-        // Render menu bar
         menuBar.render(currentScene)
 
         end()
+    }
+
+    fun onWindowDecorationChanged() {
+        needsDecorationUpdate = true
+    }
+
+    fun getHoveredGameObject(): com.pafoid.skate.engine.ecs.GameObject? {
+        return gameViewWindow.getHoveredObject()
     }
 
     fun destroy() {

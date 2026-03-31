@@ -64,7 +64,6 @@ object ImGuiStyleManager {
             scrollbarRounding = s.rounding
             tabRounding = s.rounding
 
-            // Spacing & Padding
             windowPadding.set(s.windowPadding.x, s.windowPadding.y)
             framePadding.set(s.framePadding.x, s.framePadding.y)
             itemSpacing.set(s.itemSpacing.x, s.itemSpacing.y)
