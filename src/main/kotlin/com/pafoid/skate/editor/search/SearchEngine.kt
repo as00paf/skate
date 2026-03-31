@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Central search engine that aggregates results from multiple [SearchProvider]s.
@@ -23,9 +22,6 @@ import org.koin.core.component.inject
  * ```
  */
 class SearchEngine : KoinComponent {
-
-    private val sceneManager: SceneManager by inject()
-    private val resourceManager: com.pafoid.skate.engine.assets.ResourceManager by inject()
 
     private val providers = mutableListOf<SearchProvider>()
 
@@ -66,7 +62,6 @@ class SearchEngine : KoinComponent {
             return@coroutineScope emptyMap()
         }
 
-        // Launch async search for each provider
         val deferredResults = providers.map { provider ->
             async {
                 try {
@@ -79,7 +74,6 @@ class SearchEngine : KoinComponent {
             }
         }
 
-        // Aggregate results by category
         val resultsByCategory = mutableMapOf<SearchCategory, MutableList<SearchResult>>()
 
         deferredResults.forEach { deferred ->
@@ -91,7 +85,6 @@ class SearchEngine : KoinComponent {
             }
         }
 
-        // Sort each category by relevance score (descending)
         resultsByCategory.forEach { (_, results) ->
             results.sortByDescending { it.relevanceScore }
         }
