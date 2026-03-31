@@ -75,13 +75,16 @@ class GameViewWindow : IWindow, KoinComponent {
     private val viewportContextMenu: ViewportContextMenu by inject()
     private val viewportOverlays: ViewportOverlays by inject()
     
-    // Gamepad overlay (not extracted yet)
+    // Gamepad overlay and scene tab bar (not extracted yet)
     private val gamepadOverlay = GamepadOverlay()
+    private val scenesTabBar = EditorScenesTabBar()
 
     override fun imgui(pOpen: ImBoolean?) {
         // Using literal for NoTabItem (1 << 23) since it's missing in bindings
         val noTabItem = 1 shl 23
         ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoTitleBar or noTabItem)
+
+        scenesTabBar.render(sceneManager)
 
         val windowSize = getLargestSizeForViewport()
         val windowPos = ImVec2(0f, TAB_BAR_HEIGHT)

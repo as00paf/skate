@@ -20,6 +20,11 @@ import com.pafoid.skate.editor.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.editor.windows.SystemsWindow
+import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -163,20 +168,13 @@ class ImGuiLayer(
         ImGuiStyleManager.setupStyle()
 
         menuBar = EditorMenuBar(
+            fileMenu = FileMenuBuilder(stringManager, levelManager, sceneManager, glfwWindow),
+            editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
+            settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, keyBindingsWindow, settingsWindow),
+            viewMenu = ViewMenuBuilder(stringManager, editorWindows),
+            windowControls = WindowControlsRenderer(searchEverywhereWindow, windowController),
             stringManager = stringManager,
-            levelManager = levelManager,
-            undoRedoManager = undoRedoManager,
-            clipboardService = clipboardService,
-            sceneManager = sceneManager,
-            settingsManager = settingsManager,
-            resourceManager = resourceManager,
-            keyBindingsWindow = keyBindingsWindow,
-            settingsWindow = settingsWindow,
-            searchEverywhereWindow = searchEverywhereWindow,
-            editorWindows = editorWindows,
-            glfwWindow = glfwWindow,
-            windowController = windowController,
-            eventSystem = eventSystem
+            resourceManager = resourceManager
         )
     }
 

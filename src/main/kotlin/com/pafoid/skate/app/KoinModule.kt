@@ -23,6 +23,11 @@ import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenu
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportOverlays
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportRenderer
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportToolbar
+import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.TrickUIWindow
 import com.pafoid.skate.engine.events.EventSystem
@@ -88,6 +93,13 @@ val appModule = module {
     factory { ViewportToolbar(get(), get(), get()) }
     factory { ViewportContextMenu(get()) }
     factory { ViewportOverlays(get(), get()) }
+    
+    // Menu builders for EditorMenuBar
+    factory { FileMenuBuilder(get(), get(), get(), 0L) }
+    factory { EditMenuBuilder(get(), get(), get(), get(), get()) }
+    factory { SettingsMenuBuilder(get(), get(), get(), get()) }
+    factory { ViewMenuBuilder(get(), get()) }
+    factory { WindowControlsRenderer(get(), get()) }
 
     // Search infrastructure
     single {
