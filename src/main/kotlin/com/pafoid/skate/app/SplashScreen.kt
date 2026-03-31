@@ -73,7 +73,14 @@ class SplashScreen : KoinComponent {
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
         }
 
-        // Render Splash Quad
+        renderSplashQuad()
+
+        if (engineState != EngineState.RUNNING) {
+            showImGui(imguiLayer)
+        }
+    }
+
+    private fun renderSplashQuad() {
         val shader = splashShader
         val texture = splashTexture
         val quad = splashQuad
@@ -103,24 +110,26 @@ class SplashScreen : KoinComponent {
             shader.stop()
             GL11.glDisable(GL11.GL_BLEND)
         }
+    }
 
-        // Only show ImGui if we are still loading, not during fade out
-        if (engineState != EngineState.RUNNING) {
-            // Simple ImGui Loading Overlay
-            imguiLayer.startFrame()
+    private fun showImGui(imguiLayer: ImGuiLayer) {
+        imguiLayer.startFrame()
 
-            val viewport = ImGui.getMainViewport()
-            ImGui.setNextWindowPos(viewport.getCenter().x, viewport.getCenter().y + 200f, ImGuiCond.Always, 0.5f, 0.5f)
-            ImGui.setNextWindowSize(400f, 100f)
+        val viewport = ImGui.getMainViewport()
+        ImGui.setNextWindowPos(viewport.getCenter().x, viewport.getCenter().y + 200f, ImGuiCond.Always, 0.5f, 0.5f)
+        ImGui.setNextWindowSize(400f, 100f)
 
-            if (ImGui.begin("Loading Status", ImGuiWindowFlags.NoDecoration or ImGuiWindowFlags.NoMove or ImGuiWindowFlags.NoSavedSettings or ImGuiWindowFlags.NoBackground)) {
-                ImGui.setWindowFontScale(1.5f)
-                ImGui.text(loadingText)
-                ImGui.end()
-            }
-
-            imguiLayer.endFrame()
+        if (ImGui.begin(
+                "Loading Status",
+                ImGuiWindowFlags.NoDecoration or ImGuiWindowFlags.NoMove or ImGuiWindowFlags.NoSavedSettings or ImGuiWindowFlags.NoBackground
+            )
+        ) {
+            ImGui.setWindowFontScale(1.5f)
+            ImGui.text(loadingText)
+            ImGui.end()
         }
+
+        imguiLayer.endFrame()
     }
 
     fun increaseLoadingProgress(message: String = "...", progress:Float = 0.1f) {
