@@ -4,18 +4,6 @@ import org.lwjgl.glfw.GLFW.glfwGetMonitorName
 import org.lwjgl.glfw.GLFW.glfwGetMonitors
 import org.lwjgl.glfw.GLFW.glfwGetVideoModes
 
-data class MonitorInfo(
-    val index: Int,
-    val name: String,
-    val handle: Long
-)
-
-data class VideoModeInfo(
-    val width: Int,
-    val height: Int,
-    val refreshRate: Int
-)
-
 class DisplayService {
 
     /**
