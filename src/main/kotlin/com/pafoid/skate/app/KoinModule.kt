@@ -19,7 +19,12 @@ import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.viewmodels.SelectionViewModel
 import com.pafoid.skate.editor.ui.viewmodels.SceneViewModel
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenu
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportOverlays
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportRenderer
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportToolbar
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
+import com.pafoid.skate.editor.windows.TrickUIWindow
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.SceneOpened
 import com.pafoid.skate.engine.events.SceneChanged
@@ -69,13 +74,20 @@ val appModule = module {
     single { SettingsManager(get(), get(), get()) }
     single { DisplayService() }
     single { TrickManager() }
-    
+    single { TrickUIWindow() }
+
     // EventSystem for editor event bus
     single { EventSystem() }
     
     // ViewModels for UI state management
     factory { SelectionViewModel(get(), get()) }
     factory { SceneViewModel(get(), get()) }
+    
+    // Viewport components for GameViewWindow
+    factory { ViewportRenderer(get(), get()) }
+    factory { ViewportToolbar(get(), get(), get()) }
+    factory { ViewportContextMenu(get()) }
+    factory { ViewportOverlays(get(), get()) }
 
     // Search infrastructure
     single {
