@@ -65,7 +65,6 @@ class ScaleGizmo(
                 transform.scale.z = transform.scale.z.coerceAtLeast(0.01f)
             }
 
-            // Draw Handles
             drawHandle(pos, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f), dynamicLength, dynamicBoxSize)
             drawHandle(pos, Vector3f(0f, 1f, 0f), if (yAxisActive || yAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 1f, 0f), dynamicLength, dynamicBoxSize)
             drawHandle(pos, Vector3f(0f, 0f, 1f), if (zAxisActive || zAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 0f, 1f), dynamicLength, dynamicBoxSize)

@@ -26,8 +26,6 @@ class PoseGizmo : Component(), KoinComponent {
             val goTransform = gameObject.getComponent<Transform>()
         val modelMatrix = goTransform?.toWorldMatrix() ?: Matrix4f().identity()
             val boneWorldTransform = Matrix4f(modelMatrix).mul(bone.worldTransform)
-
-            // Add a small scale to the bone's transform for visibility
             val gizmoTransform = Matrix4f(boneWorldTransform).scale(0.05f)
 
             val objectId = bone.index + BONE_ID_OFFSET

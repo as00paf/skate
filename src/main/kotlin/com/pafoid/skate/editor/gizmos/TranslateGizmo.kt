@@ -43,7 +43,6 @@ class TranslateGizmo(
             val dynamicConeSize = coneSize * (dist * 0.1f)
             val dynamicHitThreshold = hitThreshold * (dist * 0.1f)
 
-            // 1. Logic for dragging
             checkInput(dynamicArrowLength, dynamicHitThreshold)
 
             if (xAxisActive) {
@@ -57,7 +56,6 @@ class TranslateGizmo(
                 if (go.getComponent<ModularTile>() != null) transform.translation.z = (transform.translation.z / 2.0f).roundToInt() * 2.0f
             }
 
-            // 2. Draw Arrows
             drawArrow(pos, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f), dynamicArrowLength, dynamicConeSize) // X - Red/Yellow
             drawArrow(pos, Vector3f(0f, 1f, 0f), if (yAxisActive || yAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 1f, 0f), dynamicArrowLength, dynamicConeSize) // Y - Green/Yellow
             drawArrow(pos, Vector3f(0f, 0f, 1f), if (zAxisActive || zAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 0f, 1f), dynamicArrowLength, dynamicConeSize) // Z - Blue/Yellow
@@ -67,8 +65,7 @@ class TranslateGizmo(
     private fun drawArrow(origin: Vector3f, direction: Vector3f, color: Vector3f, length: Float, cSize: Float) {
         val end = Vector3f(origin).add(Vector3f(direction).mul(length))
         debugRenderer.addLine3D(origin, end, color)
-        
-        // Solid Pyramid at the end
+
         val ortho1 = if (abs(direction.x) > 0.9f) Vector3f(0f, 1f, 0f) else Vector3f(1f, 0f, 0f)
         val ortho2 = Vector3f(direction).cross(ortho1).normalize().mul(cSize)
         val ortho3 = Vector3f(direction).cross(ortho2).normalize().mul(cSize)
@@ -78,14 +75,12 @@ class TranslateGizmo(
         val p2 = Vector3f(base).sub(ortho2)
         val p3 = Vector3f(base).add(ortho3)
         val p4 = Vector3f(base).sub(ortho3)
-        
-        // Draw 4 triangles for the sides
+
         debugRenderer.addTriangle3D(end, p1, p3, color)
         debugRenderer.addTriangle3D(end, p3, p2, color)
         debugRenderer.addTriangle3D(end, p2, p4, color)
         debugRenderer.addTriangle3D(end, p4, p1, color)
-        
-        // Base triangles
+
         debugRenderer.addTriangle3D(p1, p2, p3, color)
         debugRenderer.addTriangle3D(p1, p2, p4, color)
     }
@@ -100,7 +95,6 @@ class TranslateGizmo(
         val viewportSize = mouseListener.getGameViewportSize()
         val ray = scene.camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
 
-        // Reset hover states
         xAxisHot = false
         yAxisHot = false
         zAxisHot = false
@@ -162,7 +156,6 @@ class TranslateGizmo(
         val s2 = worldToScreen(p2, view, proj, viewportSize.x, viewportSize.y)
 
         val axisScreen = s2.sub(s1)
-        // Guard against NaN: axis is perpendicular to camera or object scale is zero
         if (axisScreen.lengthSquared() < 0.0001f) return 0f
 
         val axisScreenDir = axisScreen.normalize()

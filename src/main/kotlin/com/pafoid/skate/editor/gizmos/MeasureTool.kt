@@ -41,23 +41,18 @@ class MeasureTool(
         val viewportSize = mouseListener.getGameViewportSize()
         val viewportPos = mouseListener.getGameViewportPos()
 
-        // Use MouseListener for consistent state
         val mouseX = mouseListener.getX()
         val mouseY = mouseListener.getY()
 
         val relX = mouseX - viewportPos.x
         val relY = mouseY - viewportPos.y
 
-        // Clear previous text (will be set if we have a measurement)
         measurementText = null
         measurementPos = null
 
         if (relX >= 0 && relX <= viewportSize.x && relY >= 0 && relY <= viewportSize.y) {
             val ray = scene.camera.screenToRay(relX, relY, viewportSize.x, viewportSize.y)
 
-            // For simplicity, we'll measure on the ground plane (Y=0)
-            // OR we could raycast against physics objects.
-            // Let's try to raycast against the ground plane first.
             if (abs(ray.direction.y) > 0.0001f) {
                 val t = -ray.origin.y / ray.direction.y
                 if (t > 0) {
@@ -72,7 +67,6 @@ class MeasureTool(
                         }
                     }
 
-                    // Preview line if we have a start point
                     startPoint?.let { start ->
                         val currentEnd = endPoint ?: hitPoint
                         debugRenderer.addLine3D(start, currentEnd, Vector3f(1f, 1f, 0f))
@@ -86,7 +80,6 @@ class MeasureTool(
                             String.format("%.2f ft", feet)
                         }
 
-                        // Store for rendering
                         measurementText = "Distance: $displayText"
                         measurementPos = Vector2f(mouseX + 20, mouseY + 20)
                     }
