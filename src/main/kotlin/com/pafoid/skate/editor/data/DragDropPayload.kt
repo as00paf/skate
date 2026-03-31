@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.data
 
 import com.pafoid.skate.editor.windows.assetBrowser.PrefabType
-import com.pafoid.skate.game.prefabs.MaterialType
 
 /**
  * Centralized registry for all drag and drop payload types.
@@ -10,53 +9,28 @@ import com.pafoid.skate.game.prefabs.MaterialType
  * string-based payload type errors.
  */
 sealed class DragDropPayload {
-    
-    /**
-     * Prefab payload for spawning obstacles and objects in the scene.
-     * @param type The type of prefab
-     * @param data The prefab data including name, model path, and material
-     */
+
     data class Prefab(
         val type: PrefabType,
         val data: PrefabData
     ) : DragDropPayload()
-    
-    /**
-     * Texture payload for applying textures to objects or creating textured planes.
-     * @param filePath The path to the texture file
-     */
+
     data class Texture(
         val filePath: String
     ) : DragDropPayload()
-    
-    /**
-     * Sound payload for adding audio to objects.
-     * @param filePath The path to the sound file
-     */
+
     data class Sound(
         val filePath: String
     ) : DragDropPayload()
-    
-    /**
-     * Animation payload for applying animations to objects with Animator.
-     * @param filePath The path to the animation file
-     */
+
     data class Animation(
         val filePath: String
     ) : DragDropPayload()
-    
-    /**
-     * GameObject payload for reparenting in hierarchy.
-     * @param uid The unique ID of the GameObject
-     */
+
     data class GameObject(
         val uid: Int
     ) : DragDropPayload()
-    
-    /**
-     * Companion object containing all payload type string constants.
-     * These constants are used with ImGui's drag and drop system.
-     */
+
     companion object {
         // Prefab payload types
         const val TYPE_PREFAB_RAIL = "PREFAB_RAIL"
