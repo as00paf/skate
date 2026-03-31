@@ -14,6 +14,9 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.GameObjectSelected
+import com.pafoid.skate.engine.events.SelectionCleared
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiTableColumnFlags
@@ -33,6 +36,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
     private val undoRedoManager: UndoRedoManager by inject()
     private val clipboardService: ClipboardService by inject()
     private val logger: LoggerService by inject()
+    private val eventSystem: EventSystem by inject()
 
     private val searchQuery = ImString(256)
     private var isLinked = false
@@ -54,6 +58,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             val newObj = GameObject("New GameObject")
             scene.gameObjectManager.addGameObject(newObj)
             scene.setSelectedGameObject(newObj)
+            eventSystem.publish(GameObjectSelected(newObj))
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.add_gameobject"))
@@ -95,6 +100,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             sceneManager.currentScene?.let { scn ->
                 scn.getSelectedGameObject()?.let { go ->
                     undoRedoManager.executeCommand(DeleteGameObjectCommand(go, scn))
+                    eventSystem.publish(SelectionCleared)
                 }
             }
         }
@@ -169,8 +175,10 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                 editNameStr.set(obj.name)
                 focusEditInput = true
                 sceneManager.currentScene?.setSelectedGameObject(obj)
+                eventSystem.publish(GameObjectSelected(obj))
             } else if (ImGui.isItemClicked()) {
                 sceneManager.currentScene?.setSelectedGameObject(obj)
+                eventSystem.publish(GameObjectSelected(obj))
             }
             
             // Drag and Drop Source - allow dragging GameObject to reparent

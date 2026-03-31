@@ -2,6 +2,10 @@ package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.SceneChanged
+import com.pafoid.skate.engine.events.SceneClosed
+import com.pafoid.skate.engine.events.SceneOpened
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -9,6 +13,7 @@ class SceneManager : KoinComponent {
 
     private val logger: LoggerService by inject()
     private val resourceManager: ResourceManager by inject()
+    private val eventSystem: EventSystem by inject()
 
     val openScenes = mutableListOf<Scene>()
     var activeSceneIndex: Int = -1
@@ -28,6 +33,11 @@ class SceneManager : KoinComponent {
 
         logger.logEngine("Loading scene: ${scene.name}")
         scene.startScene()
+        
+        // Publish scene opened event
+        eventSystem.publish(SceneOpened(scene))
+        eventSystem.publish(SceneChanged)
+        
         logger.logEngine("Scene ${scene.initializer::class.simpleName} loaded and started.")
     }
 
@@ -35,6 +45,7 @@ class SceneManager : KoinComponent {
         if (index in 0 until openScenes.size) {
             activeSceneIndex = index
             logger.logEditor("Switched to scene: ${currentScene?.name}")
+            eventSystem.publish(SceneChanged)
         }
     }
 
@@ -48,6 +59,10 @@ class SceneManager : KoinComponent {
         }
 
         logger.logEditor("Destroying scene: ${sceneToClose.name}")
+        
+        // Publish scene closing event
+        eventSystem.publish(SceneClosed(sceneToClose))
+        
         sceneToClose.destroyScene()
         openScenes.removeAt(index)
 
