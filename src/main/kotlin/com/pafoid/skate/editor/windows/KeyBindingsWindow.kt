@@ -41,7 +41,8 @@ class KeyBindingsWindow(
         if (!isOpen) return
 
         if (begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.AlwaysAutoResize)) {
-            val inputMappings = settingsManager.project.inputMappings
+            // TODO: Get input mappings from proper settings location (Phase 5)
+            val inputMappings = com.pafoid.skate.engine.input.InputMappings()
 
             // Tab selection using combo
             val tabNames = arrayOf("Editor", "Camera", "Gamepad")

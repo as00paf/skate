@@ -241,6 +241,28 @@ class SettingsManager(
     }
     
     /**
+     * Update editor settings and save.
+     */
+    fun updateEditorSettings(
+        gamepadOverlaySize: Float? = null,
+        showGamepadOverlay: Boolean? = null,
+        unitSystem: com.pafoid.skate.engine.utils.UnitSystem? = null,
+        language: String? = null
+    ) {
+        val currentEditor = engine.editor
+        engine = engine.copy(
+            editor = currentEditor.copy(
+                gamepadOverlaySize = gamepadOverlaySize ?: currentEditor.gamepadOverlaySize,
+                showGamepadOverlay = showGamepadOverlay ?: currentEditor.showGamepadOverlay,
+                unitSystem = unitSystem ?: currentEditor.unitSystem,
+                language = language ?: currentEditor.language
+            )
+        )
+        language?.let { stringManager.setLocale(it) }
+        saveEngine()
+    }
+
+    /**
      * Check if a project is currently loaded.
      */
     fun hasProject(): Boolean = project != null

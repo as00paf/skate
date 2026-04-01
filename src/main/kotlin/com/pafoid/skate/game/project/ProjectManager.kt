@@ -1,7 +1,7 @@
 package com.pafoid.skate.game.project
 
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.LoggerService.LogLevel
+import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.serialization.Serializer

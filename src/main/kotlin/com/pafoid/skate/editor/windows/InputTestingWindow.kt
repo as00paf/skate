@@ -100,8 +100,8 @@ class InputTestingWindow(
             // Show raw values
             ImGui.text("  Raw: X=%.3f, Y=%.3f".format(leftStickX, leftStickY))
 
-            // Deadzone visualization
-            val deadzone = settingsManager.engine.hardware.leftStickDeadzone
+            // Deadzone visualization (TODO Phase 5: Get from settings)
+            val deadzone = 0.15f // settingsManager.engine.hardware.leftStickDeadzone
             renderDeadzoneIndicator("  ", leftStickX, leftStickY, deadzone)
 
             // After deadzone
@@ -122,7 +122,7 @@ class InputTestingWindow(
 
             ImGui.text("  Raw: X=%.3f, Y=%.3f".format(rightStickX, rightStickY))
 
-            val deadzone = settingsManager.engine.hardware.rightStickDeadzone
+            val deadzone = 0.1f // settingsManager.engine.hardware.rightStickDeadzone
             renderDeadzoneIndicator("  ", rightStickX, rightStickY, deadzone)
 
             val afterDeadzoneX = applyDeadzone(rightStickX, deadzone)
@@ -317,11 +317,15 @@ class InputTestingWindow(
      * Shows current deadzone, threshold, and sensitivity values.
      */
     private fun renderSettingsSection() {
+        // TODO Phase 5: Update to use new immutable settings structure
         ImGui.indent()
 
-        val hardware = settingsManager.engine.hardware
-        val gameplay = settingsManager.project.gameplay
-
+        // val hardware = settingsManager.engine.hardware
+        // val gameplay = settingsManager.project.gameplay
+        
+        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Input settings configuration will be available after Phase 5 completion")
+        
+        /*
         // Hardware Deadzones
         ImGui.text("Hardware Calibration")
         val leftDeadzone = floatArrayOf(hardware.leftStickDeadzone)
@@ -347,7 +351,9 @@ class InputTestingWindow(
         if (ImGui.dragFloat("  Jump Impulse", jumpImpulse, 1f, 100f, 1000f)) {
             gameplay.jumpImpulse = jumpImpulse[0].coerceIn(100f, 1000f)
         }
-
+        */
+        
+        /*
         val walkSpeed = floatArrayOf(gameplay.walkSpeed)
         if (ImGui.dragFloat("  Walk Speed", walkSpeed, 0.1f, 1f, 5f)) {
             gameplay.walkSpeed = walkSpeed[0].coerceIn(1f, 5f)
@@ -363,6 +369,7 @@ class InputTestingWindow(
         if (ImGui.button("Reset to Defaults")) {
             settingsManager.save() // Just a save for now
         }
+        */
 
         ImGui.unindent()
     }
@@ -370,10 +377,18 @@ class InputTestingWindow(
     /**
      * Renders the input bindings section.
      * Shows current keyboard and gamepad bindings for all actions.
+     * 
+     * TODO Phase 5: Update to use new immutable settings structure
      */
     private fun renderBindingsSection() {
+        // TODO Phase 5: Update to use new immutable settings structure
         ImGui.indent()
 
+        // val mappings = settingsManager.project.inputMappings
+        
+        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Input bindings configuration will be available after Phase 5 completion")
+        
+        /*
         val mappings = settingsManager.project.inputMappings
 
         ImGui.text("Movement")
@@ -400,7 +415,9 @@ class InputTestingWindow(
         ImGui.text("  Manual: Key=${getKeyName(mappings.manual.keyboardKey)}, Button=${mappings.manual.gamepadButton}")
 
         ImGui.spacing()
-
+        */
+        
+        /*
         ImGui.text("Camera")
         ImGui.text("  Camera Look X: Axis=${mappings.cameraLookX.gamepadAxis}")
         ImGui.text("  Camera Look Y: Axis=${mappings.cameraLookY.gamepadAxis}")
@@ -413,6 +430,7 @@ class InputTestingWindow(
         ImGui.text("  Reset: Key=${getKeyName(mappings.reset.keyboardKey)}, Button=${mappings.reset.gamepadButton}")
         ImGui.text("  Stance Change: Key=${getKeyName(mappings.stanceChange.keyboardKey)}, Button=${mappings.stanceChange.gamepadButton}")
         ImGui.text("  Stance Change Right: Key=${getKeyName(mappings.stanceChangeRight.keyboardKey)}, Button=${mappings.stanceChangeRight.gamepadButton}")
+        */
 
         ImGui.unindent()
     }

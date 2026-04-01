@@ -40,6 +40,11 @@ import java.io.File
 class ProjectWizard {
     
     /**
+     * Whether the wizard is currently open.
+     */
+    val isOpen = imgui.type.ImBoolean(false)
+    
+    /**
      * Current wizard step (0-3).
      */
     var currentStep: Int = 0

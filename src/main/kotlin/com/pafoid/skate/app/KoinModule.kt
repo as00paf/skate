@@ -36,6 +36,8 @@ import com.pafoid.skate.editor.windows.InputTestingWindow
 import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
+import com.pafoid.skate.editor.windows.ProjectWizardWindow
+import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
 import com.pafoid.skate.editor.windows.RenderGraphWindow
 import com.pafoid.skate.editor.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
@@ -141,6 +143,8 @@ val appModule = module {
     // Project management
     single { ProjectManager(get(), get(), get()) }
     factory { ProjectWizard() }
+    single { ProjectWizardWindow() }
+    single { ProjectSwitcherDialog() }
 
     // Search infrastructure
     single {

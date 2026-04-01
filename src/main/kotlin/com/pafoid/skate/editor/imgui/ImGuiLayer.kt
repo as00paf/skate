@@ -6,6 +6,8 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.WindowRegistry
+import com.pafoid.skate.editor.windows.ProjectWizardWindow
+import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
 import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
@@ -18,9 +20,12 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.game.level.LevelManager
 import imgui.ImVec2
+import imgui.ImGui
+import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiDir
@@ -47,13 +52,16 @@ import imgui.internal.ImGui.getIO
 import imgui.internal.ImGui.getMainViewport
 import imgui.internal.ImGui.image
 import imgui.internal.ImGui.newFrame
+import imgui.internal.ImGui.popStyleColor
 import imgui.internal.ImGui.popStyleVar
+import imgui.internal.ImGui.pushStyleColor
 import imgui.internal.ImGui.pushStyleVar
 import imgui.internal.ImGui.render
 import imgui.internal.ImGui.renderPlatformWindowsDefault
 import imgui.internal.ImGui.setNextWindowPos
 import imgui.internal.ImGui.setNextWindowSize
 import imgui.internal.ImGui.setNextWindowViewport
+import imgui.internal.ImGui.text
 import imgui.internal.ImGui.updatePlatformWindows
 import imgui.type.ImBoolean
 import imgui.type.ImInt
@@ -82,7 +90,10 @@ class ImGuiLayer(
 
     private val eventSystem: EventSystem by inject()
     private val editorInputHandler: EditorInputHandler by inject()
+    private val projectManager: com.pafoid.skate.game.project.ProjectManager by inject()
     private val statusBar = EditorStatusBar()
+    private val projectWizardWindow: ProjectWizardWindow by inject()
+    private val projectSwitcherDialog: ProjectSwitcherDialog by inject()
     private lateinit var menuBar: EditorMenuBar
     
     // Reusable buffer to avoid per-frame allocations
@@ -129,7 +140,9 @@ class ImGuiLayer(
             viewMenu = ViewMenuBuilder(stringManager, windowRegistry.windows),
             windowControls = WindowControlsRenderer(windowRegistry.searchEverywhereWindow, windowController),
             stringManager = stringManager,
-            resourceManager = resourceManager
+            resourceManager = resourceManager,
+            projectManager = projectManager,
+            projectSwitcher = projectSwitcherDialog
         )
     }
 
@@ -189,6 +202,24 @@ class ImGuiLayer(
 
         editorInputHandler.update(currentScene)
 
+        // Setup dockspace first (always needed for ImGui context)
+        setupDockSpace(currentScene)
+
+        // Show project wizard if no project is loaded (overlay on top of editor)
+        if (!projectManager.hasProject()) {
+            // Show project wizard and switcher as modal overlays
+            projectWizardWindow.imgui(null)
+            projectSwitcherDialog.render()
+
+            // Debug: Show a simple window to verify ImGui is working
+            setNextWindowPos(100f, 100f)
+            begin("Debug - No Project Mode", ImBoolean(true))
+            text("No project loaded")
+            text("Wizard should be visible")
+            text("Viewport: ${getMainViewport().sizeX}x${getMainViewport().sizeY}")
+            end()
+        }
+
         if (isViewportMaximized) {
             setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY, ImGuiCond.Always)
             setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY, ImGuiCond.Always)
@@ -206,7 +237,6 @@ class ImGuiLayer(
             end()
             popStyleVar()
         } else {
-            setupDockSpace(currentScene)
             statusBar.render(currentScene)
             currentScene.imguiScene()
 
@@ -221,6 +251,7 @@ class ImGuiLayer(
             windowRegistry.settingsWindow.render()
             windowRegistry.keyBindingsWindow.render()
             windowRegistry.searchEverywhereWindow.imgui(null)
+            projectSwitcherDialog.render()
         }
 
         endFrame()

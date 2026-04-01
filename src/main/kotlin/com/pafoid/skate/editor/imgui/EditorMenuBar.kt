@@ -2,14 +2,17 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
+import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.game.project.ProjectManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiStyleVar
@@ -37,8 +40,10 @@ class EditorMenuBar(
     private val settingsMenu: SettingsMenuBuilder,
     private val viewMenu: ViewMenuBuilder,
     private val windowControls: WindowControlsRenderer,
-    private val stringManager: com.pafoid.skate.editor.systems.StringManager,
-    private val resourceManager: ResourceManager
+    private val stringManager: StringManager,
+    private val resourceManager: ResourceManager,
+    private val projectManager: ProjectManager,
+    private val projectSwitcher: ProjectSwitcherDialog
 ) {
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
@@ -85,6 +90,23 @@ class EditorMenuBar(
             settingsMenu.render()
             viewMenu.render()
             ImGui.separator()
+            
+            // Recent projects submenu
+            if (ImGui.beginMenu("Recent Projects")) {
+                val recentProjects = projectManager.getRecentProjects()
+                if (recentProjects.isNotEmpty()) {
+                    for (project in recentProjects) {
+                        if (ImGui.menuItem(project.name)) {
+                            projectManager.openProject(java.io.File(project.path))
+                        }
+                    }
+                } else {
+                    ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "No recent projects")
+                }
+                ImGui.endMenu()
+            }
+            
+            ImGui.separator()
             if (ImGui.menuItem(stringManager.getString("menu.file.quit"))) {
                 // Window close handled by WindowControlsRenderer
             }
@@ -107,6 +129,14 @@ class EditorMenuBar(
             projectIcon
         )
         ImGui.setCursorPosY(textY)
-        ImGui.text(projectName)
+        
+        // Show current project name, clickable to open project switcher
+        val currentProjectName = projectManager.getProjectName()
+        if (ImGui.button(currentProjectName)) {
+            projectSwitcher.open()
+        }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip("Click to switch projects")
+        }
     }
 }

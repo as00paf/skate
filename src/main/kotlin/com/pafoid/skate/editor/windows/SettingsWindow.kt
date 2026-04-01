@@ -124,8 +124,13 @@ class SettingsWindow(
     }
 
     private fun renderHardwareSettings() {
+        // TODO Phase 5: Update to use new immutable settings structure
+        text("Hardware Settings")
+        separator()
+        textColored(0.5f, 0.5f, 0.5f, 1f, "Hardware settings configuration will be available after Phase 5 completion")
+        /*
         if (!hasUnsavedChanges) syncTempSettings()
-        
+
         text("Input Calibration")
         separator()
 
@@ -158,13 +163,16 @@ class SettingsWindow(
             tempHardware.controllerSensitivity = controllerS[0]
             hasUnsavedChanges = true
         }
+        */
     }
 
     private fun renderEditorSettings() {
-        if (!hasUnsavedChanges) syncTempSettings()
-
+        // TODO Phase 5: Update to use new immutable settings structure
         text("Editor Preferences")
         separator()
+        textColored(0.5f, 0.5f, 0.5f, 1f, "Editor settings configuration will be available after Phase 5 completion")
+        /*
+        if (!hasUnsavedChanges) syncTempSettings()
 
         val languages = arrayOf("en", "fr")
         val currentLangIdx = ImInt(languages.indexOf(tempEditor.language).coerceAtLeast(0))
@@ -191,11 +199,17 @@ class SettingsWindow(
             tempEditor.gamepadOverlaySize = overlaySize[0]
             hasUnsavedChanges = true
         }
+        */
     }
 
     private fun renderGameplaySettings() {
+        // TODO Phase 5: Update to use new immutable settings structure
+        text("Gameplay Constants")
+        separator()
+        textColored(0.5f, 0.5f, 0.5f, 1f, "Gameplay settings configuration will be available after Phase 5 completion")
+        /*
         if (!hasUnsavedChanges) syncTempSettings()
-        
+
         text("Gameplay Constants")
         separator()
 
@@ -234,27 +248,31 @@ class SettingsWindow(
             tempGameplay.rotationSpeed = rotS[0]
             hasUnsavedChanges = true
         }
-        
+
         val inputSm = floatArrayOf(tempGameplay.inputSmoothing)
         if (dragFloat("Input Smoothing", inputSm, 0.5f, 1f, 20f)) {
             tempGameplay.inputSmoothing = inputSm[0]
             hasUnsavedChanges = true
         }
+        */
     }
 
     private fun renderPhysicsSettings() {
         text("Physics Engine Constants")
         separator()
-        textColored(0.5f, 0.5f, 0.5f, 1f, "Project physics settings (Gravity, Timestep) go here.")
+        textColored(0.5f, 0.5f, 0.5f, 1f, "Project physics settings configuration will be available after Phase 5 completion")
     }
 
     private fun syncTempSettings() {
-        tempHardware = settingsManager.engine.hardware.copy()
-        tempEditor = settingsManager.engine.editor.copy()
-        tempGameplay = settingsManager.project.gameplay.copy()
+        // TODO Phase 5: Update to use new immutable settings structure
+        // tempHardware = settingsManager.engine.hardware.copy()
+        // tempEditor = settingsManager.engine.editor.copy()
+        // tempGameplay = settingsManager.project.gameplay.copy()
     }
 
     private fun saveSettings() {
+        // TODO Phase 5: Update to use new immutable settings structure with updateEditorSettings
+        /*
         tempHardware.validate()
         tempGameplay.validate()
 
@@ -264,11 +282,11 @@ class SettingsWindow(
 
         settingsManager.saveEngine()
         settingsManager.saveProject()
-        
+
         if (tempEditor.language != settingsManager.engine.editor.language) {
             settingsManager.setLocale(tempEditor.language)
         }
-        
+        */
         hasUnsavedChanges = false
     }
 
