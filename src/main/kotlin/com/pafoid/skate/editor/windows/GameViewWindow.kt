@@ -79,6 +79,10 @@ class GameViewWindow : IWindow, KoinComponent {
     
     // Gamepad overlay and scene tab bar (not extracted yet)
     private val gamepadOverlay = GamepadOverlay()
+    
+    // Reusable buffers to avoid per-frame allocations
+    private val tempVec2 = ImVec2()
+    private val tempMousePos = ImVec2()
     private val scenesTabBar = EditorScenesTabBar()
 
     override fun imgui(pOpen: ImBoolean?) {
@@ -155,10 +159,9 @@ class GameViewWindow : IWindow, KoinComponent {
             if (prefabPayload != null) {
                 val scene = sceneManager.currentScene
                 if (scene != null) {
-                    val mousePos = ImVec2()
-                    ImGui.getMousePos(mousePos)
-                    val relX = mousePos.x - viewportRenderer.imageScreenPosX
-                    val relY = mousePos.y - viewportRenderer.imageScreenPosY
+                    ImGui.getMousePos(tempMousePos)
+                    val relX = tempMousePos.x - viewportRenderer.imageScreenPosX
+                    val relY = tempMousePos.y - viewportRenderer.imageScreenPosY
 
                     val ray = scene.camera.screenToRay(relX, relY, viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)
 
@@ -256,11 +259,10 @@ class GameViewWindow : IWindow, KoinComponent {
     }
 
     private fun getLargestSizeForViewport(): ImVec2 {
-        val windowSize = ImVec2()
-        ImGui.getContentRegionAvail(windowSize)
-        
+        ImGui.getContentRegionAvail(tempVec2)
+
         // Return full available space - no aspect ratio constraint
-        return ImVec2(windowSize.x, windowSize.y)
+        return ImVec2(tempVec2.x, tempVec2.y)
     }
 
     companion object {

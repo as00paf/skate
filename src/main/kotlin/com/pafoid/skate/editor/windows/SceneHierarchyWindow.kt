@@ -80,7 +80,6 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         
         ImGui.separator()
 
-        val gameObjects = scene.gameObjectManager.gameObjects.toList()
         val filter = searchQuery.get()
 
         if (ImGui.beginTable("HierarchyTable", 3, ImGuiTableFlags.BordersInnerH or ImGuiTableFlags.Resizable or ImGuiTableFlags.ScrollY)) {
@@ -88,7 +87,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             ImGui.tableSetupColumn("Vis", ImGuiTableColumnFlags.WidthFixed, 24f)
             ImGui.tableSetupColumn("Lock", ImGuiTableColumnFlags.WidthFixed, 24f)
 
-            gameObjects.forEach { obj ->
+            // Iterate directly without toList() to avoid per-frame allocation
+            scene.gameObjectManager.gameObjects.forEach { obj ->
                 if (obj.parent == null) { // Only draw root objects
                     doTreeNode(obj, filter)
                 }
@@ -323,7 +323,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         ImGui.popStyleColor(4)
 
         if (nodeOpen) {
-            obj.children.toList().forEach { child ->
+            // Iterate directly without toList() to avoid per-frame allocation
+            obj.children.forEach { child ->
                 doTreeNode(child, filter)
             }
             ImGui.treePop()

@@ -98,6 +98,9 @@ class ImGuiLayer(
     private val editorInputHandler: EditorInputHandler by inject()
     private val statusBar = EditorStatusBar()
     private lateinit var menuBar: EditorMenuBar
+    
+    // Reusable buffer to avoid per-frame allocations
+    private val tempVec2 = ImVec2()
 
     private var isViewportMaximized = false
 
@@ -209,11 +212,10 @@ class ImGuiLayer(
                 ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoDecoration
             )
 
-            val windowSize = ImVec2()
-            getContentRegionAvail(windowSize)
+            getContentRegionAvail(tempVec2)
 
             val texId = renderer.frameBuffer.getTextureId()
-            image(texId.toLong(), windowSize.x, windowSize.y, 0f, 1f, 1f, 0f)
+            image(texId.toLong(), tempVec2.x, tempVec2.y, 0f, 1f, 1f, 0f)
 
             end()
             popStyleVar()

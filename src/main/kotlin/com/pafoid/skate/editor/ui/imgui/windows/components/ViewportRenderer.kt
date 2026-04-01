@@ -25,6 +25,9 @@ class ViewportRenderer(
     var imageSizeX = 0f
     var imageSizeY = 0f
     
+    // Reusable buffer to avoid per-frame allocations
+    private val tempScreenPos = ImVec2()
+    
     /**
      * Renders the framebuffer texture as an ImGui image.
      * 
@@ -33,10 +36,9 @@ class ViewportRenderer(
      * @param windowSize The available window size for the viewport
      */
     fun render(windowSize: ImVec2) {
-        val screenPos = ImVec2()
-        ImGui.getCursorScreenPos(screenPos)
-        imageScreenPosX = screenPos.x
-        imageScreenPosY = screenPos.y
+        ImGui.getCursorScreenPos(tempScreenPos)
+        imageScreenPosX = tempScreenPos.x
+        imageScreenPosY = tempScreenPos.y
         imageSizeX = windowSize.x
         imageSizeY = windowSize.y
         
