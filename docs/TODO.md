@@ -6,18 +6,6 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 ---
 
-## ✅ Phase 1: Foundation (COMPLETED - v0.45.0.6)
-
-**Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
-
-- [x] **A45.0.6: Refactor Renderer to Render Graph System**
-  - Define render graph structure with pass inputs/outputs
-  - Dynamic pass compilation into execution order
-  - Convert existing passes (Shadow, Picking, Geometry, Debug)
-  - Extensible for deferred rendering and post-processing
-
----
-
 ## 📋 Phase 2: Core Systems (Planned)
 
 **Focus:** Advanced rendering, core gameplay mechanics, and core tooling
