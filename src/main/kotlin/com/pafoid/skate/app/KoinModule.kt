@@ -77,6 +77,8 @@ import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.game.project.ProjectManager
+import com.pafoid.skate.game.project.ProjectWizard
 import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
@@ -135,6 +137,10 @@ val appModule = module {
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    
+    // Project management
+    single { ProjectManager(get(), get(), get()) }
+    factory { ProjectWizard() }
 
     // Search infrastructure
     single {
