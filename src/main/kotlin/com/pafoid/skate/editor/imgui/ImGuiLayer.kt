@@ -210,14 +210,6 @@ class ImGuiLayer(
             // Show project wizard and switcher as modal overlays
             projectWizardWindow.imgui(null)
             projectSwitcherDialog.render()
-
-            // Debug: Show a simple window to verify ImGui is working
-            setNextWindowPos(100f, 100f)
-            begin("Debug - No Project Mode", ImBoolean(true))
-            text("No project loaded")
-            text("Wizard should be visible")
-            text("Viewport: ${getMainViewport().sizeX}x${getMainViewport().sizeY}")
-            end()
         }
 
         if (isViewportMaximized) {
