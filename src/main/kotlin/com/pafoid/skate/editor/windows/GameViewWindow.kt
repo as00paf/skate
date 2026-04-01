@@ -6,6 +6,8 @@ import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.AddAudioComponentCommand
+import com.pafoid.skate.editor.systems.ApplyAnimationCommand
+import com.pafoid.skate.editor.systems.ApplyTextureCommand
 import com.pafoid.skate.editor.systems.CreateGameObjectCommand
 import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.LoggerService
@@ -377,10 +379,13 @@ class GameViewWindow : IWindow, KoinComponent {
             return
         }
 
-        // Update the texture - note: this modifies the existing material
-        // For a proper implementation, we'd need to update the material's texture path
+        // For now, pass null for old texture path (undo will be limited)
+        // A full implementation would extract the current texture path from the model
+        undoRedoManager.executeCommand(
+            ApplyTextureCommand(gameObject, null, texturePath, resourceManager, eventSystem)
+        )
+        
         logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
-        // TODO: Implement proper material texture update when material system is available
     }
 
     private fun addSoundToObject(gameObject: GameObject, soundPath: String) {
@@ -402,13 +407,11 @@ class GameViewWindow : IWindow, KoinComponent {
         val animator = gameObject.getComponent<Animator>()
 
         if (animator != null) {
-            val animation = resourceManager.getAnimation(animationPath)
-            if (animation != null) {
-                animator.addAnimation(animation)
-                logger.logEditor("Added animation to ${gameObject.name}: $animationPath")
-            } else {
-                logger.logEditor("Failed to load animation: $animationPath")
-            }
+            // For now, pass null for old animation path (undo will be limited)
+            undoRedoManager.executeCommand(
+                ApplyAnimationCommand(gameObject, null, animationPath, resourceManager, eventSystem)
+            )
+            logger.logEditor("Added animation to ${gameObject.name}: $animationPath")
         } else {
             logger.logEditor("Object has no Animator component")
         }
