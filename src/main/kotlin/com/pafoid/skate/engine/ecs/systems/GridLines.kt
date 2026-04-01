@@ -36,6 +36,7 @@ import kotlin.math.tan
  * @param secondaryGridColor Color of secondary grid lines (default: cyan)
  * @param snapVisualizationEnabled Enable grid snap visualization (default: false - Godot doesn't have this)
  * @param snapMarkerColor Color of snap point marker (default: bright green)
+ * @param originAxesThickness Thickness of origin axis lines when using quad-based rendering (default: 0.08f)
  */
 data class GridConfig(
     var majorStep: Float = 10.0f,  // Godot default: 10m spacing for major lines
@@ -58,7 +59,8 @@ data class GridConfig(
     var secondaryGridY: Float = 2.0f,
     var secondaryGridColor: Vector3f = Vector3f(0.0f, 0.8f, 0.8f),
     var snapVisualizationEnabled: Boolean = false,  // Disabled by default (Godot doesn't have this)
-    var snapMarkerColor: Vector3f = Vector3f(0.0f, 1.0f, 0.0f)
+    var snapMarkerColor: Vector3f = Vector3f(0.0f, 1.0f, 0.0f),
+    var originAxesThickness: Float = 0.04f  // Thickness of axis lines (quad-based rendering)
 ) {
     /**
      * Resets all configuration values to their defaults.
@@ -85,6 +87,7 @@ data class GridConfig(
         secondaryGridColor = Vector3f(0.0f, 0.8f, 0.8f)
         snapVisualizationEnabled = false
         snapMarkerColor = Vector3f(0.0f, 1.0f, 0.0f)
+        originAxesThickness = 0.04f
     }
 }
 
@@ -341,30 +344,34 @@ class GridLines(
      * @param cameraDistance Distance from camera to grid plane
      */
     private fun renderOriginAxes(cameraDistance: Float) {
-        val axisLength = (20f * (50f - cameraDistance) / 50f).coerceIn(5f, 20f)
+        val axisLength = (100f * (50f - cameraDistance) / 50f).coerceIn(5f, 100f)
+        val thickness = config.originAxesThickness
 
         // All axes at grid level (Y=0)
         val gridY = 0.0f
 
-        // X-axis (red) - lies flat on grid plane, rendered thick
-        debugRenderer.addThickLine3D(
-            Vector3f(-axisLength, gridY, 0f),
-            Vector3f(axisLength, gridY, 0f),
-            xAxisColor
+        // X-axis (red) - lies flat on grid plane, rendered thick using quad ribbon
+        debugRenderer.addThickLineQuad3D(
+            from = Vector3f(-axisLength, gridY, 0f),
+            to = Vector3f(axisLength, gridY, 0f),
+            color = xAxisColor,
+            thickness = thickness
         )
 
-        // Z-axis (blue) - lies flat on grid plane, rendered thick
-        debugRenderer.addThickLine3D(
-            Vector3f(0f, gridY, -axisLength),
-            Vector3f(0f, gridY, axisLength),
-            zAxisColor
+        // Z-axis (blue) - lies flat on grid plane, rendered thick using quad ribbon
+        debugRenderer.addThickLineQuad3D(
+            from = Vector3f(0f, gridY, -axisLength),
+            to = Vector3f(0f, gridY, axisLength),
+            color = zAxisColor,
+            thickness = thickness
         )
 
-        // Y-axis (green) - goes straight UP from grid (not below), rendered thick
-        debugRenderer.addThickLine3D(
-            Vector3f(0f, gridY, 0f),
-            Vector3f(0f, axisLength, 0f),
-            yAxisColor
+        // Y-axis (green) - goes straight UP from grid (not below), rendered thick using quad ribbon
+        debugRenderer.addThickLineQuad3D(
+            from = Vector3f(0f, gridY, 0f),
+            to = Vector3f(0f, axisLength, 0f),
+            color = yAxisColor,
+            thickness = thickness
         )
     }
 
@@ -477,6 +484,16 @@ class GridLines(
         val showOriginAxes = ImBoolean(config.showOriginAxes)
         if (ImGui.checkbox(stringManager.getString("lbl.grid.show_origin_axes"), showOriginAxes)) {
             config.showOriginAxes = showOriginAxes.get()
+        }
+
+        // Axis thickness slider (only if axes are enabled)
+        if (config.showOriginAxes) {
+            ImGui.pushItemWidth(120f)
+            val thicknessArr = floatArrayOf(config.originAxesThickness)
+            if (ImGui.sliderFloat("Axis Thickness", thicknessArr, 0.02f, 0.2f, "%.3f")) {
+                config.originAxesThickness = thicknessArr[0]
+            }
+            ImGui.popItemWidth()
         }
 
         ImGui.separator()

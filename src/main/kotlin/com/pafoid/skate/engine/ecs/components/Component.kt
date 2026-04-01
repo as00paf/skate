@@ -142,6 +142,10 @@ abstract class Component: KoinComponent {
 
     fun getUid() = uId
 
+    open fun getName(): String {
+        return this.javaClass.simpleName
+    }
+
     open fun destroy() {
     }
 }

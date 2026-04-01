@@ -53,6 +53,17 @@ tooling.
 
 * **Renderer Centralization:** `Renderer.kt` is becoming a monolithic class; refactoring towards a render graph system
   is recommended.
+* **Settings Separation:** Engine settings (hardware, UI) are mixed with project settings (gameplay physics).
+
+---
+
+## Asset Status
+
+| Asset Name          | Source                                   | Status               | Issues                                                                    |
+|:--------------------|:-----------------------------------------|:---------------------|:--------------------------------------------------------------------------|
+| App Icon            | `a_professional_minimalist_app_ic_2.png` | 🟡 Refinement Needed | Too much margin; Background is not truly transparent (checkerboard/fill). |
+| Hamburger Menu Icon | TBD                                      | ⬜ Todo               | Needs design to match IntelliJ style.                                     |
+| Project Icon        | TBD                                      | ⬜ Todo               | Needs design to match IntelliJ style.                                     |
 
 ---
 
@@ -73,6 +84,8 @@ tooling.
 | ID      | Task                                            | Priority  | Effort | Dependencies | Status           |
 |:--------|:------------------------------------------------|:----------|:-------|:-------------|:-----------------|
 | A46.0.1 | Comprehensive Engine UI & Editor Tooling Revamp | 🔴 High   | XL     | A45.0.6      | ⏳ Implementation |
+| A46.0.9 | Implement Project Creation & Management System  | 🔴 High   | M      | None         | ⬜ Todo           |
+| A46.0.10| Settings System Architectural Separation        | 🔴 High   | M      | None         | ⏳ Implementation |
 | A46.0.2 | Implement Advanced Lighting Models              | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
 | A46.0.3 | Develop Post-Processing Stack                   | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
 | A46.0.4 | Create Advanced Material System                 | 🔴 High   | L      | A45.0.6      | ⬜ Todo           |
@@ -84,6 +97,8 @@ tooling.
 **Phase 2 Deliverables:**
 
 * Professional-grade engine UI and sophisticated editor tools for scene editing.
+* **Project Management:** System for creating, saving, and managing engine projects.
+* **Settings Management:** Clear separation between Engine and Project settings.
 * Support for various light types, post-processing effects, and a flexible material system.
 * A functional in-game UI system.
 * A particle system for visual effects.
@@ -104,15 +119,6 @@ tooling.
 | A47.0.8 | Comprehensive Documentation & Tutorials        | 🟢 Low    | L      | All previous     | ⬜ Todo |
 | A47.0.9 | Integrate Networking for Multiplayer           | 🟡 Medium | L      | A47.0.5          | ⬜ Todo |
 
-**Phase 3 Deliverables:**
-
-* Core skateboarding physics and character control systems.
-* Basic multiplayer support.
-* Optimized rendering and physics performance.
-* A sample project demonstrating engine capabilities.
-* Polished editor user experience.
-* Comprehensive documentation and learning resources.
-
 ---
 
 ## Task Details
@@ -125,10 +131,10 @@ This will allow for easier addition of new rendering passes, effects, and better
 dependencies.
 **Acceptance Criteria:**
 
-*   [ ] A render graph structure is defined, allowing passes to specify inputs and outputs.
-*   [ ] Passes can be dynamically compiled into an execution order at runtime.
-*   [ ] The existing rendering passes (Shadow, Picking, Geometry, Debug) are converted to use the new system.
-*   [ ] The system is extensible for future rendering features (e.g., deferred rendering, post-processing).
+*   [x] A render graph structure is defined, allowing passes to specify inputs and outputs.
+*   [x] Passes can be dynamically compiled into an execution order at runtime.
+*   [x] The existing rendering passes (Shadow, Picking, Geometry, Debug) are converted to use the new system.
+*   [x] The system is extensible for future rendering features (e.g., deferred rendering, post-processing).
     **Technical Notes:** Research modern rendering techniques and render graph implementations. This is a significant
     architectural change.
     **Dependencies:** None
@@ -141,14 +147,22 @@ dependencies.
 **Description:** A complete overhaul of the engine's user interface to reach professional standards (Godot/Unity) and
 significant improvements to scene manipulation tools. This includes redesigning menus, panels, and buttons, as well
 as enhancing gizmos and camera controls.
+**Sub-Tasks:**
+- **A46.0.1.7:** Enhance Scene Hierarchy (✅ Done)
+- **A46.0.1.8:** Enhance Asset Browser Window (✅ Done)
+- **A46.0.1.11:** Redesign Viewport Toolbar (✅ Done)
+
 **Acceptance Criteria:**
 
-*   [ ] **Visual Style:** "Islands Dark" theme (IntelliJ-like) implemented across all windows.
-*   [ ] **Windowing:** Custom GLFW window controls (minimize, maximize, quit) and refined ImGui docking.
-*   [ ] **Status & Navigation:** Implementation of a bottom status bar and a scenes tab bar.
-*   [ ] **Properties Window:** Renamed from Inspector, with improved layout and field organization.
-*   [ ] **Scene Hierarchy:** Enhanced with visibility/lock toggles, search, and quick creation buttons.
-*   [ ] **Asset Management:** Dedicated File System / Asset Browser window with navigation.
+*   [x] **Visual Style:** "Islands Dark" theme (IntelliJ-like) implemented across all windows.
+*   [x] **Windowing:** Custom GLFW window controls (minimize, maximize, quit) with redesigned buttons to match IntelliJ
+    behavior (larger buttons, red hover for Close).
+*   [x] **Menu Bar:** Redesigned top menu bar following IntelliJ IDEA
+    layout: [App Icon] -> [Hamburger Menu] -> [Project Icon & Name] -> [Window Controls].
+*   [x] **Status & Navigation:** Implementation of a bottom status bar and a scenes tab bar.
+*   [x] **Properties Window:** Renamed from Inspector, with improved layout and field organization.
+*   [x] **Scene Hierarchy:** Enhanced with visibility/lock toggles, search, and quick creation buttons.
+*   [x] **Asset Management:** Dedicated File System / Asset Browser window with navigation.
 *   [ ] **Diagnostics:** Enhanced Console (search, clear) and new Profiler with graph views.
 *   [ ] **Viewport Tools:** Redesigned toolbar with icons and integrated gizmo/grid controls.
 *   [ ] **Interactions:** Right-click context menus and Drag & Drop support for assets and hierarchy.
@@ -159,7 +173,86 @@ as enhancing gizmos and camera controls.
 
 **Technical Notes:** Implementation must follow Clean Architecture and ECS principles. Styles should be centralized
 in a theme manager. Event system should be used for cross-window communication (e.g., asset selection).
+Coordinate with @ui-ux-designer for icon assets (App Icon, Hamburger, Project Icon).
 **Dependencies:** A45.0.6
+
+---
+
+### A46.0.1.11: Redesign Viewport Toolbar
+
+**Priority:** 🔴 High | **Effort:** Small | **Phase:** 2
+**Description:** Redesign the Viewport Toolbar to align with professional UI standards. Includes left-aligning buttons,
+fixing vertical positioning, and relocating the FPS counter to the game view area.
+**Status:** ⏳ Implementation
+**Assigned to:** @software-engineer
+**Acceptance Criteria:**
+
+*   [ ] **Alignment:** Buttons are aligned to the left of the viewport area with consistent padding.
+*   [ ] **Vertical Position:** Toolbar is positioned closer to the top of its container.
+*   [ ] **Spacing:** Proper and consistent spacing between toolbar buttons.
+*   [ ] **FPS Counter:** Relocated to the interior of the game view (image area), below the toolbar.
+*   [ ] **Icons:** Current buttons and icons are preserved.
+
+**Technical Notes:** Implement changes in `GameViewWindow.kt`. Ensure coordinates are relative to the viewport container
+correctly.
+**Dependencies:** A46.0.1
+
+---
+
+### A46.0.1.8: Enhance Asset Browser Window
+
+**Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
+**Description:** Improve the Asset Browser Window's usability by adding tooltips, optimizing the layout for full-width search, implementing dynamic grid columns, and refactoring the Sounds tab with better controls and information.
+**Status:** ✅ Done
+**Assigned to:** @software-engineer
+**Acceptance Criteria:**
+*   [x] **Tooltips:** Add tooltips to all buttons, localized via `StringManager`.
+*   [x] **Layout:** Search bar and Refresh button take the full width of the window.
+*   [x] **Dynamic Grid:** Implement dynamic column counts for asset items based on the current window width.
+*   [x] **Sounds Tab:**
+    *   [x] Refactor to better represent audio files with icons and duration.
+    *   [x] Improved play/stop controls using icons.
+    *   [x] Tooltips for playback buttons.
+
+**Technical Notes:** Refactoring `SoundBuffer` may be required to include duration data. Use FontAwesome icons for playback controls.
+**Dependencies:** A46.0.1
+
+---
+
+### A46.0.10: Settings System Architectural Separation
+
+**Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
+**Description:** Refactor the settings system to clearly separate Engine Settings (global, hardware, UI) from Project Settings (gameplay, physics, project-specific).
+**Acceptance Criteria:**
+*   [ ] **Data Separation:** Define `EngineSettings` (global) and `ProjectSettings` (local) data classes.
+*   [ ] **Engine Settings:** Refactor `SettingsManager` to manage global hardware and editor configurations.
+*   [ ] **Project Settings:** Implement/Enhance `ProjectManager` to manage project-specific gameplay and physics settings.
+*   [ ] **Storage:** Engine settings saved in global engine directory; Project settings saved within project folder.
+*   [ ] **UI Integration:** `SettingsWindow` updated to reflect the separation with distinct categories.
+
+**Technical Notes:** Hardware input (deadzones, sensitivities) belong to Engine Settings. Gameplay physics (jump impulse, speeds) belong to Project Settings.
+**Dependencies:** None
+
+---
+
+### A46.0.1.18: App Icon Finalization
+
+**Priority:** 🔴 High | **Effort:** Small | **Phase:** 2
+**Description:** Deliver the final version of the App Icon based on `a_professional_minimalist_app_ic_2.png`.
+**Acceptance Criteria:**
+
+*   [ ] **Full-frame:** Icon should fill the 1024x1024 canvas with minimal/appropriate margins (current version has too
+    much margin).
+*   [ ] **Transparency:** Background must be truly transparent (no checkerboard or white/black fill).
+*   [ ] **Variants:** provide UI-sized variants: 16x16, 32x32, and 64x64 pixels.
+*   [ ] **Output Paths:**
+    - `assets/textures/app_icon.png` (1024x1024)
+    - `assets/textures/app_icon_16.png`
+    - `assets/textures/app_icon_32.png`
+    - `assets/textures/app_icon_64.png`
+*   [ ] **Format:** PNG format for all variants.
+    **Assigned to:** @ui-ux-designer
+    **Dependencies:** None
 
 ---
 
@@ -276,6 +369,21 @@ basic ragdolls. This could include generic joints, sliders, and gear constraints
 
 ---
 
+### A46.0.9: Implement Project Creation & Management System
+
+**Priority:** 🔴 High | **Effort:** Medium | **Phase:** 2
+**Description:** Implement a system for creating and managing game engine projects. This includes a project wizard,
+settings management, and the ability to switch between projects.
+**Acceptance Criteria:**
+
+*   [ ] Project wizard for creating new projects with basic templates.
+*   [ ] Ability to save and load project settings (name, asset paths, etc.).
+*   [ ] Recent projects list and project switching mechanism.
+    **Technical Notes:** This should integrate with the existing asset management and scene loading systems.
+    **Dependencies:** None
+
+---
+
 ### A47.0.1: Develop Skateboarding Physics Mechanics
 
 **Priority:** 🔴 High | **Effort:** Large | **Phase:** 3
@@ -367,8 +475,8 @@ a showcase, a testbed for engine features, and a learning resource for new users
 **Acceptance Criteria:**
 
 *   [ ] A playable mini-game demonstrating core skateboarding mechanics.
-*   [ ] Utilizes most of the engine's key features (rendering, physics, animation, UI, scripting).
-*   [ ] Provides a practical example of how to use the engine's systems.
+*   [ ] Utilizes most of lounging's key features (rendering, physics, animation, UI, scripting).
+*   [ ] provides a practical example of how to use the engine's systems.
     **Technical Notes:** Focus on demonstrating the strengths of the engine, particularly the specialized skateboarding
     features.
     **Dependencies:** A47.0.5
@@ -455,5 +563,5 @@ architecture, state synchronization, and handling network latency.
 
 ---
 
-*Last Updated: 2024-05-15*
-*Roadmap Version: 1.2*
+*Last Updated: 2026-03-25*
+*Roadmap Version: 1.6*

@@ -2,20 +2,47 @@ package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.gizmos.MeasureTool
+import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.AddAudioComponentCommand
+import com.pafoid.skate.editor.systems.ApplyAnimationCommand
+import com.pafoid.skate.editor.systems.ApplyTextureCommand
+import com.pafoid.skate.editor.systems.CreateGameObjectCommand
+import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
+import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.GameObjectSelected
+import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenu
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenuCallbacks
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportOverlays
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportRenderer
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportToolbar
+import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.ScreenshotUtils
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
@@ -40,81 +67,174 @@ class GameViewWindow : IWindow, KoinComponent {
     private val stringManager: StringManager by inject()
     private val renderer: Renderer by inject()
     private val engine: Engine by inject()
+    private val undoRedoManager: UndoRedoManager by inject()
+    private val resourceManager: ResourceManager by inject()
+    private val eventSystem: EventSystem by inject()
 
-    var imageScreenPosX = 0f
-    var imageScreenPosY = 0f
-    var imageSizeX = 0f
-    var imageSizeY = 0f
-
+    // Extracted viewport components
+    private val viewportRenderer: ViewportRenderer by inject()
+    private val viewportToolbar: ViewportToolbar by inject()
+    private val viewportContextMenu: ViewportContextMenu by inject()
+    private val viewportOverlays: ViewportOverlays by inject()
+    
+    // Gamepad overlay and scene tab bar (not extracted yet)
     private val gamepadOverlay = GamepadOverlay()
-    private val trickUIWindow = TrickUIWindow()
-    private var trickUIInitialized = false
+    
+    // Reusable buffers to avoid per-frame allocations
+    private val tempVec2 = ImVec2()
+    private val tempMousePos = ImVec2()
+    private val scenesTabBar = EditorScenesTabBar()
 
     override fun imgui(pOpen: ImBoolean?) {
-        ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse)
+        val noTabItem = 1 shl 23
+        ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoTitleBar or noTabItem)
+
+        scenesTabBar.render(sceneManager)
 
         val windowSize = getLargestSizeForViewport()
-        val windowPos = getCenteredPositionForViewport(windowSize)
+        val windowPos = ImVec2(0f, TAB_BAR_HEIGHT)
 
-        // Render the toolbar first
-        renderToolbar(windowPos, windowSize)
+        viewportToolbar.render(windowPos)
 
-        // Adjust cursor for the image to be below the toolbar
-        ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
+        ImGui.setCursorPos(
+            windowPos.x + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingX,
+            windowPos.y + TOOLBAR_HEIGHT + ImGui.getStyle().framePaddingY
+        )
 
-        // Capture EXACT screen position before drawing image
-        drawImage(windowSize)
+        viewportRenderer.render(windowSize)
+        viewportRenderer.updateFramebuffer()
 
-        // Drag and Drop Target should be over the image area
+        viewportContextMenu.render(windowPos, sceneManager.currentScene, object : ViewportContextMenuCallbacks {
+            override fun onCreateEmpty(scene: Scene) {
+                val newObj = GameObject("GameObject")
+                undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene))
+            }
+            override fun onCreatePrimitive(name: String, halfExtents: Vector3f) {
+                createPrimitiveObject(name, halfExtents)
+            }
+            override fun onCreateLight(name: String, type: LightType) {
+                createLightObject(name, type)
+            }
+            override fun onCreateCamera(scene: Scene) {
+                val cameraObj = GameObject("Camera")
+                undoRedoManager.executeCommand(CreateGameObjectCommand(cameraObj, scene))
+            }
+            override fun onSpawnRail() = prefabsGenerator.spawnRail(Vector3f(0f, 0.5f, 0f), null)
+            override fun onSpawnLedge() = prefabsGenerator.spawnLedge(Vector3f(0f, 0.25f, 0f), null)
+            override fun onSpawnKicker() = prefabsGenerator.spawnKicker(Vector3f(0f, 0f, 0f), null)
+            override fun onSpawnManualPad() = prefabsGenerator.spawnManualPad(Vector3f(0f, 0.1f, 0f), null)
+            override fun onSpawnBank() = prefabsGenerator.spawnBank(Vector3f(0f, 0f, 0f), null)
+            override fun onSpawnQuarterPipe() = prefabsGenerator.spawnQuarterPipe(Vector3f(0f, 0f, 0f), null)
+            override fun onDuplicate(gameObject: GameObject) = duplicateGameObject(gameObject)
+            override fun onDelete(gameObject: GameObject, scene: Scene) {
+                undoRedoManager.executeCommand(DeleteGameObjectCommand(gameObject, scene))
+                eventSystem.publish(SelectionCleared)
+            }
+            override fun onFocusSelected(scene: Scene) = focusOnSelectedObject()
+            override fun onResetCamera(scene: Scene) {
+                scene.camera.position.set(0f, 5f, 20f)
+                scene.camera.yaw = 0f
+            }
+        })
+
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
         if (ImGui.beginDragDropTarget()) {
             val payloadLedge = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_LEDGE")
             val payloadRail = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_RAIL")
             val payloadKicker = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_KICKER")
+            val payloadManualPad = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_MANUAL_PAD")
+            val payloadBank = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_BANK")
+            val payloadQuarterPipe = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_QUARTER_PIPE")
+            val payloadSkateboard = ImGui.acceptDragDropPayload<PrefabData>("PREFAB_SKATEBOARD")
 
-            val payload = payloadRail ?: payloadLedge ?: payloadKicker
+            val payloadTexture = ImGui.acceptDragDropPayload<String>("TEXTURE")
+            val payloadSound = ImGui.acceptDragDropPayload<String>("SOUND")
+            val payloadAnimation = ImGui.acceptDragDropPayload<String>("ANIMATION")
+            val prefabPayload = payloadRail ?: payloadLedge ?: payloadKicker ?: payloadManualPad ?: payloadBank ?: payloadQuarterPipe ?: payloadSkateboard
 
-            if (payload != null) {
+            if (prefabPayload != null) {
                 val scene = sceneManager.currentScene
                 if (scene != null) {
-                    val mousePos = ImVec2()
-                    ImGui.getMousePos(mousePos)
-                    val relX = mousePos.x - imageScreenPosX
-                    val relY = mousePos.y - imageScreenPosY
+                    ImGui.getMousePos(tempMousePos)
+                    val relX = tempMousePos.x - viewportRenderer.imageScreenPosX
+                    val relY = tempMousePos.y - viewportRenderer.imageScreenPosY
 
-                    val ray = scene.camera.screenToRay(relX, relY, imageSizeX, imageSizeY)
+                    val ray = scene.camera.screenToRay(relX, relY, viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)
 
-                    // Intersect ray with ground plane (Y=0)
-                    // P = O + t*D -> Py = 0 -> Oy + t*Dy = 0 -> t = -Oy / Dy
                     if (abs(ray.direction.y) > 0.0001f) {
                         val t = -ray.origin.y / ray.direction.y
                         if (t > 0) {
                             val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
 
                             when {
-                                payloadRail != null -> prefabsGenerator.spawnRail(hitPoint, payload.material)
-                                payloadLedge != null -> prefabsGenerator.spawnLedge(hitPoint, payload.material)
-                                payloadKicker != null -> prefabsGenerator.spawnKicker(hitPoint, payload.material)
+                                payloadRail != null -> prefabsGenerator.spawnRail(hitPoint, payloadRail.material)
+                                payloadLedge != null -> prefabsGenerator.spawnLedge(hitPoint, payloadLedge.material)
+                                payloadKicker != null -> prefabsGenerator.spawnKicker(hitPoint, payloadKicker.material)
+                                payloadManualPad != null -> prefabsGenerator.spawnManualPad(hitPoint, payloadManualPad.material)
+                                payloadBank != null -> prefabsGenerator.spawnBank(hitPoint, payloadBank.material)
+                                payloadQuarterPipe != null -> prefabsGenerator.spawnQuarterPipe(hitPoint, payloadQuarterPipe.material)
+                                payloadSkateboard != null -> prefabsGenerator.spawnSkateboard()
                             }
                         }
                     }
                 }
             }
+
+            if (payloadTexture != null) {
+                val scene = sceneManager.currentScene
+                val hoveredObject = getHoveredObject()
+
+                if (scene != null) {
+                    if (hoveredObject != null) {
+                        val renderComponent = hoveredObject.getComponent<RenderComponent>()
+                        if (renderComponent != null) {
+                            applyTextureToObject(hoveredObject, payloadTexture)
+                        } else {
+                            createTexturedPlaneAtDropLocation(scene, payloadTexture)
+                        }
+                    } else {
+                        createTexturedPlaneAtDropLocation(scene, payloadTexture)
+                    }
+                }
+            }
+
+            if (payloadSound != null) {
+                val hoveredObject = getHoveredObject()
+                if (hoveredObject != null) {
+                    addSoundToObject(hoveredObject, payloadSound)
+                } else {
+                    logger.logEditor("Drop sound on an object to add AudioComponent")
+                }
+            }
+
+            if (payloadAnimation != null) {
+                val hoveredObject = getHoveredObject()
+                if (hoveredObject != null) {
+                    applyAnimationToObject(hoveredObject, payloadAnimation)
+                } else {
+                    logger.logEditor("Drop animation on a skater object")
+                }
+            }
+
             ImGui.endDragDropTarget()
         }
 
-        renderViewportOverlays(windowPos, windowSize)
+        // Render overlays using extracted component
+        viewportOverlays.render(windowPos, windowSize, sceneManager.currentScene)
 
-        // Render Gamepad Overlay
-        if (settingsManager.settings.showGamepadOverlay) {
-            gamepadOverlay.imgui(Vector2f(imageScreenPosX, imageScreenPosY), Vector2f(imageSizeX, imageSizeY))
+        if (settingsManager.engine.editor.showGamepadOverlay) {
+            gamepadOverlay.imgui(
+                Vector2f(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY),
+                Vector2f(viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)
+            )
         }
 
-        mouseListener.setGameViewportPos(Vector2f(imageScreenPosX, imageScreenPosY))
-        mouseListener.setGameViewportSize(Vector2f(imageSizeX, imageSizeY))
+        mouseListener.setGameViewportPos(Vector2f(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY))
+        mouseListener.setGameViewportSize(Vector2f(viewportRenderer.imageSizeX, viewportRenderer.imageSizeY))
 
-        // Debug Info Overlay
-        // We now get the hovered object from SelectionGizmo (via getHoveredObject)
+        val editorInput = sceneManager.currentScene?.systemManager?.getSystem<com.pafoid.skate.editor.EditorCamera>()?.editorInput
+        editorInput?.isFocused = ImGui.isWindowFocused()
+
         val hovered = getHoveredObject()
         if (hovered != null) {
             ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 20f)
@@ -130,280 +250,15 @@ class GameViewWindow : IWindow, KoinComponent {
         ImGui.end()
     }
 
-    private fun drawImage(windowSize: ImVec2) {
-        val screenPos = ImVec2()
-        ImGui.getCursorScreenPos(screenPos)
-        imageScreenPosX = screenPos.x
-        imageScreenPosY = screenPos.y
-        imageSizeX = windowSize.x
-        imageSizeY = windowSize.y - TOOLBAR_HEIGHT
-
-        val texId = renderer.frameBuffer.getTextureId()
-        ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
-    }
-
-    private fun renderViewportOverlays(windowPos: ImVec2, windowSize: ImVec2) {
-        val scene = sceneManager.currentScene
-
-        // Initialize TrickUIWindow with event subscriptions (once per scene)
-        if (scene != null && !trickUIInitialized) {
-            trickUIWindow.init(scene)
-            trickUIInitialized = true
-        }
-
-        // FPS Overlay (Top Left)
-        ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + OVERLAY_PADDING)
-        ImGui.beginChild(
-            "FPS_Overlay",
-            FPS_OVERLAY_WIDTH,
-            FPS_OVERLAY_HEIGHT,
-            false,
-            ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration
-        )
-        ImGui.textColored(0f, 1f, 0f, 1f, "FPS: ${ImGui.getIO().framerate.toInt()}")
-        ImGui.endChild()
-
-        // Speedometer Overlay (Bottom Left)
-        val skateGo = scene?.gameObjectManager?.gameObjects?.find { it.name == "Skateboard" }
-        val rb = skateGo?.getComponent<RigidBody3D>()
-        val velocity = rb?.rawBody?.getLinearVelocity(null)
-        if (velocity != null) {
-            val speedMS = velocity.length()
-            val settings = settingsManager.settings
-            val (speedDisplay, unitLabel) = if (settings.unitSystem == UnitSystem.METRIC) {
-                Pair(speedMS * 3.6f, "km/h")
-            } else {
-                Pair(speedMS * 2.23694f, "mph")
-            }
-
-            ImGui.setCursorPos(
-                windowPos.x + OVERLAY_PADDING,
-                windowPos.y + windowSize.y - SPEED_OVERLAY_HEIGHT - OVERLAY_PADDING
-            )
-            ImGui.beginChild(
-                "Speed_Overlay",
-                SPEED_OVERLAY_WIDTH,
-                SPEED_OVERLAY_HEIGHT,
-                false,
-                ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration
-            )
-            ImGui.textColored(1f, 1f, 1f, 1f, "${speedDisplay.roundToInt()} $unitLabel")
-            ImGui.endChild()
-        }
-
-        // Trick UI Overlay (Bottom Left, above Speedometer)
-        // TrickUIWindow now uses events - no need to pass GameObject
-        val trickX = windowPos.x + OVERLAY_PADDING
-        val trickY = windowPos.y + windowSize.y - SPEED_OVERLAY_HEIGHT - TRICK_OVERLAY_HEIGHT - (OVERLAY_PADDING * 2)
-        trickUIWindow.imgui(trickX, trickY, TRICK_OVERLAY_WIDTH, TRICK_OVERLAY_HEIGHT)
-    }
-
     fun getHoveredObject(): GameObject? {
         return sceneManager.currentScene?.systemManager?.getSystem<GizmoSystem>()?.getHoveredGameObject()
     }
 
     private fun getLargestSizeForViewport(): ImVec2 {
-        val windowSize = ImVec2()
-        ImGui.getContentRegionAvail(windowSize)
+        ImGui.getContentRegionAvail(tempVec2)
 
-        val targetAspectRatio = 1920f / 1080f
-        var aspectWidth = windowSize.x
-        var aspectHeight = aspectWidth / targetAspectRatio
-        if (aspectHeight > windowSize.y) {
-            aspectHeight = windowSize.y
-            aspectWidth = aspectHeight * targetAspectRatio
-        }
-
-        return ImVec2(aspectWidth, aspectHeight)
-    }
-
-    private fun getCenteredPositionForViewport(aspectSize: ImVec2): ImVec2 {
-        val windowSize = ImVec2()
-        ImGui.getContentRegionAvail(windowSize)
-
-        val viewportX = (windowSize.x / 2.0f) - (aspectSize.x / 2.0f)
-        val viewportY = (windowSize.y / 2.0f) - (aspectSize.y / 2.0f)
-
-        return ImVec2(viewportX + ImGui.getCursorPosX(), viewportY + ImGui.getCursorPosY())
-    }
-
-    private fun renderToolbar(windowPos: ImVec2, windowSize: ImVec2) {
-        val isPlaying = engine.runtimePlaying
-        val scene = sceneManager.currentScene
-        val toolbarPosY = windowPos.y + OVERLAY_PADDING
-
-        val buttons = mutableListOf<() -> Unit>()
-
-        // --- Gizmo Controls ---
-        val gizmoSystem = scene?.systemManager?.getSystem<GizmoSystem>()
-
-        if (gizmoSystem != null && !isPlaying) {
-            // Select Tool
-            buttons.add {
-                val isActive = gizmoSystem.usingGizmo == GizmoSystem.SELECTION_GIZMO
-                if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-                if (ImGui.button(Icons.MOUSE_POINTER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.toggleGizmo(GizmoSystem.SELECTION_GIZMO)
-                }
-                if (isActive) ImGui.popStyleColor()
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Select Tool (Q)")
-            }
-
-            // Translate Tool
-            buttons.add {
-                val isActive = gizmoSystem.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
-                if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-                if (ImGui.button(Icons.MOVE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.toggleGizmo(GizmoSystem.TRANSLATE_GIZMO)
-                }
-                if (isActive) ImGui.popStyleColor()
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Translate Tool (W)")
-            }
-
-            // Rotate Tool
-            buttons.add {
-                val isActive = gizmoSystem.usingGizmo == GizmoSystem.ROTATION_GIZMO
-                if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-                if (ImGui.button(Icons.ROTATE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.toggleGizmo(GizmoSystem.ROTATION_GIZMO)
-                }
-                if (isActive) ImGui.popStyleColor()
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Rotate Tool (E)")
-            }
-
-            // Scale Tool
-            buttons.add {
-                val isActive = gizmoSystem.usingGizmo == GizmoSystem.SCALE_GIZMO
-                if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-                if (ImGui.button(Icons.SCALE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.toggleGizmo(GizmoSystem.SCALE_GIZMO)
-                }
-                if (isActive) ImGui.popStyleColor()
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Scale Tool (R)")
-            }
-
-            // Measure Tool
-            buttons.add {
-                val isActive = gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO
-                if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-                if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    gizmoSystem.toggleGizmo(GizmoSystem.MEASURE_GIZMO)
-                }
-                if (isActive) {
-                    ImGui.popStyleColor()
-                    // Render measurement tooltip
-                    scene.systemManager.getSystem<MeasureTool>()?.let { tool ->
-                        tool.measurementText?.let { text ->
-                            tool.measurementPos?.let { pos ->
-                                ImGui.setNextWindowPos(pos.x, pos.y)
-                                ImGui.beginTooltip()
-                                ImGui.text(text)
-                                ImGui.endTooltip()
-                            }
-                        }
-                    }
-                }
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Measure Tool (M)")
-            }
-        }
-
-        // --- Center-aligned Buttons ---
-        if (isPlaying) {
-            buttons.add {
-                val timeScale = scene?.getTimeScale() ?: 1.0f
-                if (timeScale == 1.0f) {
-                    if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene?.setTimeScale(0.0f)
-                        logger.logEditor("Simulation paused")
-                    }
-                    if (ImGui.isItemHovered()) ImGui.setTooltip("Pause Simulation (Time Scale: 0.0)")
-                } else {
-                    if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene?.setTimeScale(1.0f)
-                        logger.logEditor("Simulation resumed")
-                    }
-                    if (ImGui.isItemHovered()) ImGui.setTooltip("Resume Simulation (Time Scale: 1.0)")
-                }
-            }
-            buttons.add {
-                if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    engine.runtimePlaying = false
-                    scene?.setTimeScale(1.0f) // Reset timescale when stopping
-                    logger.logEditor("Simulation stopped")
-                }
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Stop Simulation")
-            }
-        } else {
-            buttons.add {
-                if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    engine.runtimePlaying = true
-                    logger.logEditor("Simulation started")
-                }
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Play Simulation")
-            }
-        }
-
-        // --- All Buttons ---
-        buttons.add {
-            if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                // Reset logic
-                scene?.let{
-                    scene.gameObjectManager.gameObjects.find { it.name == "Skateboard" }?.let { skate ->
-                        skate.getComponent<Transform>()?.translation?.set(0f, 0.5f, 0f)
-                        skate.getComponent<Transform>()?.rotation?.set(0f, 0f, 0f)
-                        val rb = skate.getComponent<RigidBody3D>()
-                        rb?.linearVelocity = Vector3f(0f, 0f, 0f)
-                        rb?.angularVelocity = Vector3f(0f, 0f, 0f)
-                        logger.logEditor("Scene reset")
-                    }
-
-                    scene.camera.position.set(0f, 5f, 20f)
-                    scene.camera.yaw = 0f
-                }
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Reset Scene")
-        }
-        buttons.add {
-            val physicsDebugEnabled = scene?.physics3d?.debugEnabled ?: false
-            if (physicsDebugEnabled) {
-                ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
-            }
-            if (ImGui.button(Icons.ATOM, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                scene?.physics3d?.debugEnabled = !physicsDebugEnabled
-                logger.logEditor("Physics debug toggled")
-            }
-            if (physicsDebugEnabled) {
-                ImGui.popStyleColor()
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Toggle Physics Debug Wireframe")
-        }
-        buttons.add {
-            if (ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                val fbo = renderer.frameBuffer
-                ScreenshotUtils.takeScreenshot(fbo.width, fbo.height, fbo.getFboId())
-                logger.logEditor("Screenshot taken")
-            }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Take Screenshot")
-        }
-        val totalButtonWidth = (TOOLBAR_BUTTON_HEIGHT * buttons.size) + (TOOLBAR_BUTTON_SPACING * (buttons.size - 1))
-        val toolbarPosX = windowPos.x + (windowSize.x / 2f) - (totalButtonWidth / 2f)
-        ImGui.setCursorPos(toolbarPosX, toolbarPosY)
-        ImGui.beginChild(
-            "GameViewportToolbar",
-            totalButtonWidth,
-            TOOLBAR_HEIGHT,
-            false,
-            ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration
-        )
-
-        buttons.forEachIndexed { index, button ->
-            button()
-            if (index < buttons.size - 1) {
-                ImGui.sameLine(0f, TOOLBAR_BUTTON_SPACING)
-            }
-        }
-
-        ImGui.endChild()
+        // Return full available space - no aspect ratio constraint
+        return ImVec2(tempVec2.x, tempVec2.y)
     }
 
     companion object {
@@ -416,7 +271,176 @@ class GameViewWindow : IWindow, KoinComponent {
         private const val TRICK_OVERLAY_WIDTH = 200f // Adjusted width for trick names
         private const val TRICK_OVERLAY_HEIGHT = 30f
         private const val TOOLBAR_HEIGHT = 40f
+        private const val TAB_BAR_HEIGHT = 25f
         private const val TOOLBAR_BUTTON_HEIGHT = 30f
         private const val TOOLBAR_BUTTON_SPACING = 10f
+    }
+
+    private fun createPrimitiveObject(name: String, halfExtents: Vector3f) {
+        val scene = sceneManager.currentScene ?: return
+
+        val obj = GameObject(name)
+        val transform = Transform()
+        transform.translation.set(0f, halfExtents.y, 0f)
+        obj.addComponent(transform)
+
+        // Add render component with basic cube model (using JobSystem for async loading)
+        JobSystem.runAsync {
+            val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
+            val texture = resourceManager.loadTexture(Assets.Textures.DEFAULT)
+            val texturedModel = TexturedModel(
+                baseModel.mesh[0].rawModel,
+                texture
+            )
+
+            JobSystem.runOnMain {
+                obj.addComponent(RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true))
+                obj.addComponent(RigidBody3D(1f).apply { friction = 0.5f; bodyType = BodyType.Dynamic })
+                obj.addComponent(BoxCollider3D(halfExtents))
+                undoRedoManager.executeCommand(CreateGameObjectCommand(obj, scene))
+            }
+        }
+    }
+
+    private fun createLightObject(name: String, type: LightType) {
+        val scene = sceneManager.currentScene ?: return
+
+        val lightObj = GameObject(name)
+        val transform = Transform()
+        when (type) {
+            LightType.DIRECTIONAL -> {
+                transform.translation.set(0f, 10f, 0f)
+                transform.rotation?.set(
+                    Math.toRadians(-45.0).toFloat(),
+                    Math.toRadians(45.0).toFloat(),
+                    0f
+                )
+            }
+            LightType.POINT -> transform.translation.set(0f, 5f, 0f)
+            LightType.SPOT -> {
+                transform.translation.set(0f, 5f, 0f)
+                transform.rotation.set(Math.toRadians(-90.0).toFloat(), 0f, 0f)
+            }
+        }
+        lightObj.addComponent(transform)
+
+        undoRedoManager.executeCommand(CreateGameObjectCommand(lightObj, scene))
+    }
+
+    private fun createTexturedPlane(position: Vector3f, texturePath: String) {
+        val scene = sceneManager.currentScene ?: return
+
+        JobSystem.runAsync {
+            val planeObj = GameObject("TexturedPlane")
+            val transform = Transform()
+            transform.translation.set(position)
+            transform.scale.set(10f, 0.1f, 10f) // Flat plane
+            planeObj.addComponent(transform)
+
+            val texture = resourceManager.loadTexture(texturePath)
+            val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
+            val texturedModel = TexturedModel(
+                baseModel.mesh[0].rawModel,
+                texture
+            )
+
+            JobSystem.runOnMain {
+                planeObj.addComponent(RenderComponent(model = texturedModel, castShadow = false, receiveShadow = true))
+                planeObj.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
+                planeObj.addComponent(BoxCollider3D(Vector3f(5f, 0.05f, 5f)))
+                undoRedoManager.executeCommand(CreateGameObjectCommand(planeObj, scene))
+                logger.logEditor("Created textured plane at ${position.x}, ${position.y}, ${position.z}")
+            }
+        }
+    }
+
+    private fun createTexturedPlaneAtDropLocation(scene: Scene, texturePath: String) {
+        val mousePos = ImVec2()
+        ImGui.getMousePos(mousePos)
+        val relX = mousePos.x - viewportRenderer.imageScreenPosX
+        val relY = mousePos.y - viewportRenderer.imageScreenPosY
+
+        val ray = scene.camera.screenToRay(relX, relY, viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)
+
+        if (abs(ray.direction.y) > 0.0001f) {
+            val t = -ray.origin.y / ray.direction.y
+            if (t > 0) {
+                val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
+                createTexturedPlane(hitPoint, texturePath)
+            }
+        }
+    }
+
+    private fun applyTextureToObject(gameObject: GameObject, texturePath: String) {
+        val renderComponent = gameObject.getComponent<RenderComponent>() ?: run {
+            logger.logEditor("Object has no RenderComponent")
+            return
+        }
+
+        // For now, pass null for old texture path (undo will be limited)
+        // A full implementation would extract the current texture path from the model
+        undoRedoManager.executeCommand(
+            ApplyTextureCommand(gameObject, null, texturePath, resourceManager, eventSystem)
+        )
+        
+        logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
+    }
+
+    private fun addSoundToObject(gameObject: GameObject, soundPath: String) {
+        val audioComponent = gameObject.getComponent<AudioComponent>()
+        val hadAudioComponent = audioComponent != null
+
+        undoRedoManager.executeCommand(
+            AddAudioComponentCommand(gameObject, soundPath, hadAudioComponent)
+        )
+
+        if (hadAudioComponent) {
+            logger.logEditor("Updated sound for ${gameObject.name}: $soundPath")
+        } else {
+            logger.logEditor("Added AudioComponent to ${gameObject.name}: $soundPath")
+        }
+    }
+
+    private fun applyAnimationToObject(gameObject: GameObject, animationPath: String) {
+        val animator = gameObject.getComponent<Animator>()
+
+        if (animator != null) {
+            // For now, pass null for old animation path (undo will be limited)
+            undoRedoManager.executeCommand(
+                ApplyAnimationCommand(gameObject, null, animationPath, resourceManager, eventSystem)
+            )
+            logger.logEditor("Added animation to ${gameObject.name}: $animationPath")
+        } else {
+            logger.logEditor("Object has no Animator component")
+        }
+    }
+
+    private fun duplicateGameObject(gameObject: GameObject) {
+        val scene = sceneManager.currentScene ?: return
+
+        val duplicated = GameObject("${gameObject.name}_clone")
+        val originalTransform = gameObject.getComponent<Transform>()
+        val newTransform = Transform()
+        originalTransform?.let { orig ->
+            newTransform.copyFrom(orig)
+        }
+        newTransform.translation.x += 1f // Offset by 1 unit on X
+
+        duplicated.addComponent(newTransform)
+
+        undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
+    }
+
+    private fun focusOnSelectedObject() {
+        val scene = sceneManager.currentScene ?: return
+        val selectedObject = scene.getSelectedGameObject() ?: return
+
+        val transform = selectedObject.getComponent<Transform>() ?: return
+        val pos = transform.translation
+
+        // Move camera to look at the object from a reasonable distance
+        val offset = Vector3f(5f, 5f, 5f)
+        scene.camera.position.set(Vector3f(pos).add(offset))
+        scene.camera.lookAt(pos)
     }
 }

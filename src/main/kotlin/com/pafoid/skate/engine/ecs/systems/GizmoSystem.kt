@@ -24,7 +24,7 @@ import com.pafoid.skate.engine.render.renderer.Renderer
  *
  * ## Input Handling
  *
- * Gizmo selection uses editor-specific key bindings from [SettingsManager.settings.editorInputMappings]:
+ * Gizmo selection uses editor-specific key bindings from [SettingsManager.engine.editor.editorInputMappings]:
  * - **Translate**: W key (default)
  * - **Rotate**: E key (default)
  * - **Scale**: R key (default)
@@ -84,7 +84,7 @@ class GizmoSystem(
         }
 
         // Handle gizmo selection key bindings
-        val bindings = settingsManager.settings.editorInputMappings
+        val bindings = settingsManager.engine.editor.editorInputMappings
 
         if (keyListener.isKeyPressed(bindings.gizmoTranslate.keyboardKey)) {
             usingGizmo = TRANSLATE_GIZMO

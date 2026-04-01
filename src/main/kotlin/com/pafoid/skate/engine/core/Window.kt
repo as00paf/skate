@@ -17,21 +17,25 @@ import org.joml.Vector2f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
+import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR
 import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR
 import org.lwjgl.glfw.GLFW.GLFW_DECORATED
 import org.lwjgl.glfw.GLFW.GLFW_DONT_CARE
 import org.lwjgl.glfw.GLFW.GLFW_FALSE
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
-import org.lwjgl.glfw.GLFW.GLFW_MAXIMIZED
 import org.lwjgl.glfw.GLFW.GLFW_OPENGL_DEBUG_CONTEXT
 import org.lwjgl.glfw.GLFW.GLFW_RESIZABLE
+import org.lwjgl.glfw.GLFW.GLFW_SAMPLES
 import org.lwjgl.glfw.GLFW.GLFW_TRUE
 import org.lwjgl.glfw.GLFW.GLFW_VISIBLE
 import org.lwjgl.glfw.GLFW.glfwCreateWindow
 import org.lwjgl.glfw.GLFW.glfwDefaultWindowHints
 import org.lwjgl.glfw.GLFW.glfwDestroyWindow
 import org.lwjgl.glfw.GLFW.glfwFocusWindow
+import org.lwjgl.glfw.GLFW.glfwGetFramebufferSize
+import org.lwjgl.glfw.GLFW.glfwGetMonitorPos
+import org.lwjgl.glfw.GLFW.glfwGetMonitors
 import org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor
 import org.lwjgl.glfw.GLFW.glfwGetVideoMode
 import org.lwjgl.glfw.GLFW.glfwInit
@@ -46,7 +50,6 @@ import org.lwjgl.glfw.GLFW.glfwSetScrollCallback
 import org.lwjgl.glfw.GLFW.glfwSetWindowIcon
 import org.lwjgl.glfw.GLFW.glfwSetWindowMonitor
 import org.lwjgl.glfw.GLFW.glfwSetWindowPos
-import org.lwjgl.glfw.GLFW.glfwSetWindowSizeCallback
 import org.lwjgl.glfw.GLFW.glfwShowWindow
 import org.lwjgl.glfw.GLFW.glfwSwapBuffers
 import org.lwjgl.glfw.GLFW.glfwSwapInterval
@@ -82,7 +85,6 @@ class Window(
     private val mouseListener: MouseListener by inject()
     private val settingsManager: SettingsManager by inject()
     private val engine: Engine by inject()
-    private val renderer: Renderer by inject()
     private val imGuiLayer: ImGuiLayer by inject()
     private val logger: LoggerService by inject()
 
@@ -91,7 +93,11 @@ class Window(
     private var windowWidth: Int = 1920
     private var windowHeight: Int = 1080
 
+    lateinit var windowController: WindowController
+        private set
+
     private val openGLDebug = GLFW_FALSE
+    private var isFixingMaximize = false
 
     fun run() {
         init()
@@ -100,7 +106,6 @@ class Window(
 
     private fun init() {
         settingsManager.load()
-        val settings = settingsManager.settings
 
         // Error callback
         GLFWErrorCallback.createPrint(System.err).set()
@@ -111,29 +116,68 @@ class Window(
         glfwDefaultWindowHints()
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE)
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
-        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE)
-        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE)
+
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE)
+
+        // MSAA Support
+        glfwWindowHint(GLFW_SAMPLES, 4)
+
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, openGLDebug)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
 
-        // Get the primary monitor and its video mode
-        val primaryMonitor = glfwGetPrimaryMonitor()
-        val videoMode = glfwGetVideoMode(primaryMonitor)
-        
-        val winWidth = videoMode?.width() ?: width
-        val winHeight = videoMode?.height() ?: height
+        // Monitor and Video Mode discovery
+        val monitors = glfwGetMonitors() ?: throw IllegalStateException("No monitors found")
+        val monitor = monitors.get(0)
+        val videoMode = glfwGetVideoMode(monitor)
+
+        // Use settings or fallback to monitor defaults
+        val winWidth = width
+        val winHeight = height
 
         // Store window dimensions
         windowWidth = winWidth
         windowHeight = winHeight
 
-        // Create the window (passing NULL for monitor makes it windowed)
+        // Create the window
         glfwWindow = glfwCreateWindow(winWidth, winHeight, title, NULL, NULL)
         if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
 
-        // Center/Position at 0,0
-        glfwSetWindowPos(glfwWindow, 0, 0) // Corrected yPos to integer 0
+        // Enforce Minimum Window Size Constraints
+        GLFW.glfwSetWindowSizeLimits(glfwWindow, 1024, 768, GLFW_DONT_CARE, GLFW_DONT_CARE)
+
+        // Center on monitor
+        val xPos = IntArray(1)
+        val yPos = IntArray(1)
+        glfwGetMonitorPos(monitor, xPos, yPos)
+        val monitorWidth = videoMode?.width() ?: 1920
+        val monitorHeight = videoMode?.height() ?: 1080
+        glfwSetWindowPos(glfwWindow, xPos[0] + (monitorWidth - winWidth) / 2, yPos[0] + (monitorHeight - winHeight) / 2)
+
+        windowController = WindowController(glfwWindow)
+
+        // Maximize window on startup
+        windowController.maximize()
+
+        GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
+            if (isFixingMaximize) return@glfwSetWindowMaximizeCallback
+
+            windowController.setLogicallyMaximized(maximized)
+            if (maximized) {
+                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
+                isFixingMaximize = true
+            } else {
+                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
+                imGuiLayer.onWindowDecorationChanged()
+            }
+        }
+
+        // Get the maximized framebuffer size
+        val fbSizeWidth = IntArray(1)
+        val fbSizeHeight = IntArray(1)
+        glfwGetFramebufferSize(glfwWindow, fbSizeWidth, fbSizeHeight)
+        windowWidth = fbSizeWidth[0]
+        windowHeight = fbSizeHeight[0]
 
         // Set the window icon
         setWindowIcon(Assets.Textures.APP_ICON)
@@ -141,8 +185,8 @@ class Window(
         // Make OpenGL context current
         glfwMakeContextCurrent(glfwWindow)
 
-        // Enable v-sync
-        glfwSwapInterval(if (settings.vsync) 1 else 0)
+        // Disable v-sync
+        glfwSwapInterval(0)
 
         // This is needed for OpenGL
         GL.createCapabilities()
@@ -154,9 +198,15 @@ class Window(
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
 
+        // Enable MSAA if configured
+        glEnable(org.lwjgl.opengl.GL13.GL_MULTISAMPLE)
+
+        // Set initial viewport for maximized window
+        glViewport(0, 0, windowWidth, windowHeight)
+
         installCallbacks()
         joystickListener.init()
-        imGuiLayer.init(glfwWindow, ::setFullscreen, ::setVSync)
+        imGuiLayer.init(glfwWindow, windowController, ::setFullscreen, ::setVSync)
     }
 
     private fun setWindowIcon(iconPath: String) {
@@ -190,12 +240,6 @@ class Window(
     }
 
     private fun installCallbacks() {
-        glfwSetWindowSizeCallback(glfwWindow) { w: Long, newWidth: Int, newHeight: Int ->
-            windowWidth = newWidth
-            windowHeight = newHeight
-            glViewport(0, 0, newWidth, newHeight)
-            renderer.resize(newWidth, newHeight)
-        }
         glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
         glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
         glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
@@ -209,6 +253,12 @@ class Window(
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
+
+            if (isFixingMaximize) {
+                windowController.fixMaximizeBounds()
+                isFixingMaximize = false
+            }
+
             joystickListener.update()
             JobSystem.update()
 
@@ -221,6 +271,11 @@ class Window(
 
             if (isFirstDraw) {
                 // Set viewport if not already initialized
+                val fbWidth = IntArray(1)
+                val fbHeight = IntArray(1)
+                glfwGetFramebufferSize(glfwWindow, fbWidth, fbHeight)
+                windowWidth = fbWidth[0]
+                windowHeight = fbHeight[0]
                 glViewport(0, 0, windowWidth, windowHeight)
                 runOnMain {
                     show()
@@ -267,11 +322,9 @@ class Window(
         imGuiLayer.destroy()
         engine.destroy()
 
-        // Free memory
         glfwFreeCallbacks(glfwWindow)
         glfwDestroyWindow(glfwWindow)
 
-        // Terminate GLFW and free the error callback
         glfwTerminate()
         glfwSetErrorCallback(null)?.free()
     }

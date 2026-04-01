@@ -6,40 +6,22 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 ---
 
-## 📋 Phase 1: Foundation (Planned)
-
-**Focus:** Core engine stability, asset pipeline, and essential gameplay foundations
-
-- [x] **A45.0.6: Refactor Renderer to Render Graph System**
-  - Define render graph structure with pass inputs/outputs
-  - Dynamic pass compilation into execution order
-  - Convert existing passes (Shadow, Picking, Geometry, Debug)
-  - Extensible for deferred rendering and post-processing
-
----
-
 ## 📋 Phase 2: Core Systems (Planned)
 
 **Focus:** Advanced rendering, core gameplay mechanics, and core tooling
 
-- [⏳] **A46.0.1: Comprehensive Engine UI & Editor Tooling Revamp**
-  - **Status: IMPLEMENTATION**
-  - [ ] **A46.0.1.1: Visual Style & Theme Implementation** (Islands Dark / IntelliJ-like)
-  - [ ] **A46.0.1.2: Custom GLFW Window Controls** (Minimize, Maximize/Restore, Quit)
-  - [ ] **A46.0.1.3: ImGui Docking Refinement** (Fix issues and optimize layout)
-  - [ ] **A46.0.1.4: Implement Bottom Status Bar** (FPS, memory, scene name)
-  - [ ] **A46.0.1.5: Implement Scenes Tab Bar** (Switch between open scenes)
-  - [ ] **A46.0.1.6: Refactor Properties Window** (Rename from Inspector, improve layout)
-  - [ ] **A46.0.1.7: Enhance Scene Hierarchy** (Visibility/lock toggles, search, "+" button, link button)
-  - [ ] **A46.0.1.8: Implement File System / Asset Browser Window** (Dedicated asset navigation)
-  - [ ] **A46.0.1.9: Enhance Console Window** (Add search function and "Clear" button)
-  - [ ] **A46.0.1.10: Implement Profiler Graph View** (Real-time performance metrics)
-  - [ ] **A46.0.1.11: Redesign Viewport Toolbar** (New layout, icons, and gizmo toggles)
-  - [ ] **A46.0.1.12: Add Contextual Menus** (Right-click in Hierarchy, Assets, and Viewport)
-  - [ ] **A46.0.1.13: Implement Drag & Drop System** (Asset assignment and hierarchy reordering)
-  - [ ] **A46.0.1.14: Implement "Search Everywhere" Global Search** (Ctrl+P)
-  - [ ] **A46.0.1.15: Improve Gizmos & Undo/Redo History UI**
-  - [ ] **A46.0.1.16: Implement Render Graph Visualization Window** (Display pass structure and dependencies)
+- [ ] **A46.0.9: Implement Project Creation & Management System**
+  - Project wizard for creating new projects.
+  - Project settings (name, paths, engine version).
+  - Project switching and recent projects list.
+
+- [⏳] **A46.0.10: Settings System Architectural Separation**
+  - **Status: IMPLEMENTATION (PRIORITY: ENGINE SETTINGS)**
+  - [ ] **A46.0.10.1: Define EngineSettings and HardwareSettings data classes** (@software-engineer)
+  - [ ] **A46.0.10.2: Define ProjectSettings and GameplaySettings data classes** (@software-engineer)
+  - [ ] **A46.0.10.3: Refactor SettingsManager to manage only EngineSettings** (@software-engineer)
+  - [ ] **A46.0.10.4: Create ProjectManager to manage ProjectSettings** (@software-engineer)
+  - [ ] **A46.0.10.5: Update SettingsWindow to separate Engine and Project tabs** (@software-engineer)
 
 - [ ] **A46.0.2: Implement Advanced Lighting Models**
   - Point lights with position, color, intensity
@@ -71,7 +53,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - Particle behaviors (gravity, drag, collision)
   - Efficient rendering of large particle counts
 
-- [ ] **A46.0.7: Enhance Animation System (Retargeting)**
+- [ ] **A47.0.7: Enhance Animation System (Retargeting)**
   - Bone transformation mapping between skeletons
   - Retarget humanoid animations to different rigs
   - Preserve animation feel and intent

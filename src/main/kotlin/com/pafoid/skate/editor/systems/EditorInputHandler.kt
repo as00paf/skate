@@ -1,11 +1,13 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 
 class EditorInputHandler(
@@ -15,9 +17,12 @@ class EditorInputHandler(
     private val logger: LoggerService
 ) : KoinComponent {
 
+    private val searchEverywhereWindow: SearchEverywhereWindow by inject()
+
     fun update(currentScene: Scene?) {
         if (currentScene == null) return
 
+        // Note: Ctrl+P is handled in ImGuiLayer.update() before ImGui processes input
         val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
         if (ctrlDown) {
@@ -46,7 +51,7 @@ class EditorInputHandler(
                     // Add to scene at origin for now
                     val origin = Vector3f(0f, 0f, 0f)
                     clonedGameObject.getComponent<Transform>()?.translation?.set(origin)
-                    
+
                     // Set parent to null, as it's being pasted as a root object
                     clonedGameObject.parent = null
 

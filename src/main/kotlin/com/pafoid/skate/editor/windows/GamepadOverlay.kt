@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.input.listeners.GamepadListener
+import com.sun.org.apache.xalan.internal.lib.ExsltStrings.padding
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -27,7 +28,7 @@ class GamepadOverlay : KoinComponent {
     }
 
     fun imgui(gameViewPos: Vector2f, gameViewSize: Vector2f) {
-        val settings = settingsManager.settings
+        val editorSettings = settingsManager.engine.editor
         val windowFlags = ImGuiWindowFlags.NoDecoration or
                          ImGuiWindowFlags.NoInputs or
                          ImGuiWindowFlags.AlwaysAutoResize or
@@ -35,11 +36,9 @@ class GamepadOverlay : KoinComponent {
                          ImGuiWindowFlags.NoNav or
                          ImGuiWindowFlags.NoBackground
 
-        // Target size: customizable percentage of viewport width/height
-        val maxOverlayWidth = gameViewSize.x * settings.gamepadOverlaySize
-        val maxOverlayHeight = gameViewSize.y * settings.gamepadOverlaySize
-        
-        // Calculate scale to fit within user-defined percentage of viewport
+        val maxOverlayWidth = gameViewSize.x * editorSettings.gamepadOverlaySize
+        val maxOverlayHeight = gameViewSize.y * editorSettings.gamepadOverlaySize
+
         val scaleX = maxOverlayWidth / controllerTexture.width
         val scaleY = maxOverlayHeight / controllerTexture.height
         val scale = min(scaleX, scaleY)
@@ -47,9 +46,10 @@ class GamepadOverlay : KoinComponent {
         val displayWidth = controllerTexture.width * scale
         val displayHeight = controllerTexture.height * scale
 
-        val padding = 10f
-        val overlayPosX = gameViewPos.x + gameViewSize.x - displayWidth - padding
-        val overlayPosY = gameViewPos.y + gameViewSize.y - displayHeight - padding
+        val paddingX = 0f
+        val paddingY = 25f
+        val overlayPosX = gameViewPos.x + gameViewSize.x - displayWidth - paddingX - ImGui.getStyle().framePaddingX
+        val overlayPosY = gameViewPos.y + gameViewSize.y - displayHeight - paddingY - ImGui.getStyle().framePaddingY
 
         ImGui.setNextWindowPos(overlayPosX, overlayPosY)
         ImGui.setNextWindowSize(displayWidth, displayHeight)
@@ -59,7 +59,6 @@ class GamepadOverlay : KoinComponent {
             val drawList = ImGui.getWindowDrawList()
             val windowPos = ImGui.getWindowPos()
 
-            // Draw Controller Background
             drawList.addImage(controllerTexture.texId.toLong(), 
                 windowPos.x, windowPos.y, 
                 windowPos.x + displayWidth, windowPos.y + displayHeight,
@@ -69,25 +68,18 @@ class GamepadOverlay : KoinComponent {
             val axes = joystickListener.getAxes(GLFW_JOYSTICK_1)
             val buttons = joystickListener.getButtons(GLFW_JOYSTICK_1)
 
-            // Dynamic Stick Highlights
             val lsPos = ImVec2(windowPos.x + displayWidth * 0.245f, windowPos.y + displayHeight * 0.305f)
             val rsPos = ImVec2(windowPos.x + displayWidth * 0.615f, windowPos.y + displayHeight * 0.518f)
             val stickRadius = 75f * scale
 
             if (axes != null && axes.size >= 4) {
-                // Background of the stick area for better visibility
                 drawList.addCircleFilled(lsPos.x, lsPos.y, stickRadius, ImGui.getColorU32(1f, 1f, 1f, 0.2f))
                 drawList.addCircleFilled(rsPos.x, rsPos.y, stickRadius, ImGui.getColorU32(1f, 1f, 1f, 0.2f))
-
-                // Left Stick - brighter red
                 drawList.addCircleFilled(lsPos.x + axes[0] * stickRadius, lsPos.y + axes[1] * stickRadius, 10f * scale, ImGui.getColorU32(1f, 0.2f, 0.2f, 1.0f))
-                
-                // Right Stick - brighter red
                 drawList.addCircleFilled(rsPos.x + axes[2] * stickRadius, rsPos.y + axes[3] * stickRadius, 10f * scale, ImGui.getColorU32(1f, 0.2f, 0.2f, 1.0f))
             }
 
             if (buttons != null) {
-                // Adjusting the base for the new larger layout, scaling offsets
                 val buttonBaseX = windowPos.x + displayWidth * 0.7375f
                 val buttonBaseY = windowPos.y + displayHeight * 0.305f
                 val bSize = CONTROLS_OVERLAY_BUTTON_SIZE * scale

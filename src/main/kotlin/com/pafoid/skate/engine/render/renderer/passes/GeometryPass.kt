@@ -62,9 +62,10 @@ class GeometryPass(
     private val sceneManager: SceneManager,
     private val shadowMapTextureId: Int = 0,
     private val shadowMapResolution: Float = 2048f
-) : RenderPass {
+) : BaseRenderPass() {
 
     override val name: String = "GeometryPass"
+    override val description: String = "Renders all 3D geometry and sprites to the framebuffer"
     override val inputs: Set<String> = setOf("ShadowMap")
 
     @Deprecated("Use execute(context: RenderContext) instead")
@@ -146,6 +147,7 @@ class GeometryPass(
 
         // Render all 3D game objects
         scene.gameObjectManager.gameObjects.forEach { go ->
+            if (!go.isVisible) return@forEach
             val renderComponent = go.getComponent<RenderComponent>()
             val transformComponent = go.getComponent<Transform>()
             if (renderComponent != null && transformComponent != null) {
@@ -184,6 +186,7 @@ class GeometryPass(
         renderer2D.bindCamera(scene.camera)
 
         scene.gameObjectManager.gameObjects.forEach { go ->
+            if (!go.isVisible) return@forEach
             go.getComponent<SpriteRenderer>()?.let { sprite ->
                 renderer2D.add(go)
             }

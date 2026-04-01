@@ -1,0 +1,34 @@
+{
+    "entries": [
+        {
+            "query": "skat",
+            "timestamp": 1774648559819,
+            "resultId": "go_1",
+            "category": "GAMEOBJECT"
+        },
+        {
+            "query": "walk",
+            "timestamp": 1774648837098,
+            "resultId": "asset_animation_C:\\workspace\\kotlin_workspace\\skate\\assets\\characters\\animations\\walking.fbx",
+            "category": "ASSET_ANIMATION"
+        },
+        {
+            "query": "",
+            "timestamp": 1774648852057,
+            "resultId": "go_1",
+            "category": "GAMEOBJECT"
+        },
+        {
+            "query": "sk",
+            "timestamp": 1774648864880,
+            "resultId": "asset_animation_C:\\workspace\\kotlin_workspace\\skate\\assets\\characters\\animations\\walking.fbx",
+            "category": "ASSET_ANIMATION"
+        },
+        {
+            "query": "ska",
+            "timestamp": 1774649184737,
+            "resultId": "go_1",
+            "category": "GAMEOBJECT"
+        }
+    ]
+}

@@ -37,6 +37,7 @@ open class Scene(
     val systemManager: SystemManager = SystemManager()
 
     var isRunning: Boolean = false
+    var isDirty: Boolean = false
 
     /**
      * Gets the time scale from TimeComponent if available, otherwise returns 1.0f.

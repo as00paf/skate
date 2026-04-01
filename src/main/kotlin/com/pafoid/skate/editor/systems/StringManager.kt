@@ -64,7 +64,6 @@ class StringManager(
             else -> "$key.other"
         }
         val formatString = properties.getProperty(resourceKey, "!!${resourceKey}!!")
-        // Prepend the quantity to the format arguments for keys like ".other"
         return String.format(formatString, quantity, *formatArgs)
     }
 }

@@ -92,6 +92,12 @@ class EditorInputStateComponent : Component() {
      */
     var isInsideViewport = false
 
+    /**
+     * True when the game viewport window is the currently focused ImGui window.
+     * Use this to determine if keyboard inputs (like WASD, Space, Shift) should affect the editor camera.
+     */
+    var isFocused = false
+
     // =========================================================================
     // GIZMO TOOL INPUTS
     // =========================================================================
@@ -159,8 +165,8 @@ class EditorInputStateComponent : Component() {
         measureToolPressed = false
         deselectAllPressed = false
 
-        // Viewport state (not reset - updated by InputSystem)
-        // isInsideViewport is set based on mouse position
+        // Viewport state (not reset - maintained by windows/InputSystem)
+        // isInsideViewport and isFocused are updated by external UI state
     }
 
     override fun init(gameObject: GameObject) {

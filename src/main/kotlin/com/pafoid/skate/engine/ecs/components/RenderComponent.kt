@@ -14,5 +14,7 @@ class RenderComponent(
     var castShadow: Boolean = true,
     var receiveShadow: Boolean = true
 ) : Component() {
-
+    override fun imgui() {
+        super.imgui()
+    }
 }

@@ -31,10 +31,12 @@ class ShadowPass(
     private val shadowRenderer: ShadowRenderer,
     private val shadowMap: ShadowMap,
     private val logger: LoggerService
-) : RenderPass {
+) : BaseRenderPass() {
 
     override val name: String = "ShadowPass"
+    override val description: String = "Renders shadow map from light's perspective"
     override val outputs: Set<String> = setOf("ShadowMap")
+    override val canDisable: Boolean = true  // Shadows can be disabled for performance
 
     @Deprecated("Use execute(context: RenderContext) instead")
     override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
@@ -63,7 +65,7 @@ class ShadowPass(
 
         // Render all shadow casters
         shadowRenderer.render(
-            gameObjects = scene.gameObjectManager.gameObjects,
+            gameObjects = scene.gameObjectManager.gameObjects.filter { it.isVisible },
             lightSpaceMatrix = lightSpaceMatrix,
         )
 

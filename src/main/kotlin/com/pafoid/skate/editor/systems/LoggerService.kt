@@ -17,4 +17,17 @@ class LoggerService {
         if (editorLogs.size > 1000) editorLogs.poll()
     }
 
+    fun clearEngineLogs() {
+        engineLogs.clear()
+    }
+
+    fun clearEditorLogs() {
+        editorLogs.clear()
+    }
+
+    fun clearAllLogs() {
+        clearEngineLogs()
+        clearEditorLogs()
+    }
+
 }

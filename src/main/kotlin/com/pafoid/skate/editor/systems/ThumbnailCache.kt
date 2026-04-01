@@ -81,7 +81,6 @@ class ThumbnailCache(
             frameBuffer = FrameBuffer(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
         }
 
-        // Save current state
         val lastFbo = glGetInteger(GL_FRAMEBUFFER_BINDING)
         val lastViewport = IntArray(4)
         glGetIntegerv(GL_VIEWPORT, lastViewport)
@@ -96,16 +95,14 @@ class ThumbnailCache(
 
         val shader = resourceManager.loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
         shader.start()
-        
-        // Setup simple matrices
+
         val projectionMatrix = Matrix4f().perspective(Math.toRadians(45.0).toFloat(), 1.0f, 0.1f, 100f)
         val viewMatrix = camera.createViewMatrix()
         
         shader.uploadMat4f(Attribs.PROJECTION_MATRIX, projectionMatrix)
         shader.uploadMat4f(Attribs.VIEW_MATRIX, viewMatrix)
         shader.uploadMat4f(Attribs.TRANSFORMATION_MATRIX, transform.toMatrix())
-        
-        // Simple lighting
+
         shader.uploadVec3f(Uniforms.LIGHT_POSITION, Vector3f(5f, 5f, 5f))
         shader.uploadVec3f(Uniforms.LIGHT_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
         shader.uploadVec3f(Uniforms.AMBIENT_LIGHT, Vector3f(0.8f, 0.8f, 0.8f))

@@ -263,6 +263,8 @@ class RenderResourcesFactory(
         } else {
             // Fallback pass that does nothing if no shadow map
             object : RenderPass {
+                override var executionTimeNs: Long = 0
+                override var isEnabled: Boolean = true
                 override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
                     // No-op
                 }

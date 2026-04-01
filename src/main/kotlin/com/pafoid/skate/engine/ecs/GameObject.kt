@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import imgui.ImGui
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlin.reflect.KClass
 
 @Serializable
 open class GameObject(
@@ -23,7 +24,9 @@ open class GameObject(
 
     private var isDead: Boolean = false
     private var doSerialization = true
-    private var isEnabled = true
+    var isEnabled = true
+    var isVisible = true
+    var isLocked = false
     private var uId = ID_COUNTER++
 
     val components = mutableListOf<Component>()
@@ -46,6 +49,10 @@ open class GameObject(
 
     inline fun <reified T> getComponent(): T? {
         return components.filterIsInstance<T>().firstOrNull()
+    }
+
+    fun <T : Component> getComponent(componentClass: KClass<T>): T? {
+        return components.find { componentClass.isInstance(it) } as? T
     }
 
     inline fun <reified T> removeComponent() {
@@ -84,9 +91,6 @@ open class GameObject(
             if (it.enabled) it.editorUpdate(dt)
         }
     }
-
-    fun isEnabled(): Boolean = isEnabled
-    fun setEnabled(enabled: Boolean) { isEnabled = enabled }
 
     fun imgui() {
         components.forEach {

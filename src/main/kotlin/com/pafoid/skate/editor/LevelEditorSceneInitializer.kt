@@ -76,22 +76,15 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         this.currentScene = scene
 
         reportProgress(0.3f, "Initializing Scene Data...")
-        // Note: Environment settings (sky, fog) are now managed by EnvironmentSystem
-        // Default values are set in EnvironmentConfig
 
-        // Set camera position
         scene.camera.position.set(0f, 5f, 20f)
         scene.camera.yaw = 0f
 
         reportProgress(0.5f, "Setting up Editor Tools...")
 
-        // Essential Editor Tools as Systems (create with constructor injection)
         val inputSystem = InputSystem(inputProvider, mouseListener, settingsManager, stringManager)
         scene.addSystem(inputSystem)
-
-        // Event system - must be added before systems that publish/subscribe to events
         scene.addSystem(EventSystem())
-        
         scene.addSystem(EditorCamera(scene.camera, EditorInputStateComponent()))
         scene.addSystem(MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine))
         scene.addSystem(
@@ -107,25 +100,17 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         )
         scene.addSystem(GridLines(debugRenderer, sceneManager, GridConfig(), stringManager))
         scene.addSystem(AnimationSystem(stringManager))
-
-        // Audio system - manages 3D audio positions and listener
         scene.addSystem(AudioSystem(audioEngine, logger))
-
-        // Environment system - manages sky, fog, and atmosphere settings
         scene.addSystem(EnvironmentSystem(stringManager = stringManager))
-
-        // Physics system - syncs physics state to PhysicsComponent
         scene.addSystem(PhysicsSystem())
         scene.addSystem(com.pafoid.skate.engine.ecs.systems.RagdollSystem())
 
-        // Add initial scene components for environment, time, and lighting state
         scene.addComponent(EnvironmentComponent())
         scene.addComponent(TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f))
         scene.addComponent(LightingStateComponent())
 
         reportProgress(0.7f, "Setting up Lighting Systems...")
 
-        // Lighting Systems (must run after input systems)
         val dayNightCycleSystem = DayNightCycleSystem(
             DayNightCycleConfig().apply {
                 cycleTime = scene.getTimeOfDay()

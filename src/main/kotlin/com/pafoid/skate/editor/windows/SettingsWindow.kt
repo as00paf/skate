@@ -1,9 +1,11 @@
 package com.pafoid.skate.editor.windows
 
-import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
-import imgui.ImGui
+import com.pafoid.skate.engine.settings.EditorSettings
+import com.pafoid.skate.engine.settings.GameplaySettings
+import com.pafoid.skate.engine.settings.HardwareSettings
+import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.button
@@ -21,26 +23,29 @@ import imgui.type.ImInt
 import org.koin.core.component.KoinComponent
 
 /**
- * Window for configuring game settings including input, physics, and display options.
+ * Window for configuring engine and project settings.
  *
- * Provides a tabbed interface for organizing settings by category:
- * - Input: Deadzones, sensitivities, thresholds
- * - Physics: Jump impulse, movement speeds, rotation
- * - Display: Resolution, fullscreen, vsync
+ * Separates settings into two main categories:
+ * - Engine: Hardware calibration and editor preferences.
+ * - Project: Gameplay constants, physics, and project metadata.
  *
  * @param settingsManager Settings manager for loading/saving settings
  * @param stringManager String manager for localization
+ * @param displayService Helper for hardware discovery
  */
 class SettingsWindow(
     private val settingsManager: SettingsManager,
-    private val stringManager: StringManager
+    private val stringManager: StringManager,
 ) : KoinComponent {
 
     var isOpen = false
-    private var settingsTab = 0  // 0=Input, 1=Physics, 2=Display
+    private var settingsCategory = 0 // 0=Engine, 1=Project
+    private var subTab = 0 // Engine: 0=Hardware, 1=Editor | Project: 0=Gameplay, 1=Physics
 
     // Temporary storage for settings being edited
-    private var tempInputSettings = InputSettings()
+    private var tempHardware = HardwareSettings()
+    private var tempEditor = EditorSettings()
+    private var tempGameplay = GameplaySettings()
     private var hasUnsavedChanges = false
 
     /**
@@ -50,20 +55,20 @@ class SettingsWindow(
         if (!isOpen) return
 
         if (begin(stringManager.getString("window.settings"), ImGuiWindowFlags.AlwaysAutoResize)) {
-            // Tab selection using combo
-            val tabNames = arrayOf("Input", "Physics", "Display")
-            val tabSelector = ImInt(settingsTab)
-            if (combo("##TabSelector", tabSelector, tabNames, tabNames.size)) {
-                settingsTab = tabSelector.get()
+            // Main category selection
+            val categories = arrayOf("Engine Settings", "Project Settings")
+            val catSelector = ImInt(settingsCategory)
+            if (combo("##CategorySelector", catSelector, categories, categories.size)) {
+                settingsCategory = catSelector.get()
+                subTab = 0 // Reset subtab when category changes
             }
 
             separator()
 
-            // Render selected tab
-            when (settingsTab) {
-                0 -> renderInputSettingsTab()
-                1 -> renderPhysicsSettingsTab()
-                2 -> renderDisplaySettingsTab()
+            // Sub-tab selection
+            when (settingsCategory) {
+                0 -> renderEngineSubTabs()
+                1 -> renderProjectSubTabs()
             }
 
             separator()
@@ -78,252 +83,199 @@ class SettingsWindow(
             }
             sameLine()
             if (button(stringManager.getString("btn.close"))) {
+                if (hasUnsavedChanges) saveSettings()
                 isOpen = false
-                if (hasUnsavedChanges) {
-                    saveSettings()
-                }
             }
 
-            // Show unsaved changes indicator
             if (hasUnsavedChanges) {
                 sameLine()
-                ImGui.textColored(1f, 0.8f, 0f, 1f, "* Unsaved changes")
+                textColored(1f, 0.8f, 0f, 1f, "* Unsaved changes")
             }
         }
         end()
     }
 
-    /**
-     * Syncs temporary settings with current settings when window opens.
-     */
+    private fun renderEngineSubTabs() {
+        val tabs = arrayOf("Hardware", "Editor")
+        val tabSelector = ImInt(subTab)
+        if (combo("##EngineSubTab", tabSelector, tabs, tabs.size)) {
+            subTab = tabSelector.get()
+        }
+        separator()
+
+        when (subTab) {
+            0 -> renderHardwareSettings()
+            1 -> renderEditorSettings()
+        }
+    }
+
+    private fun renderProjectSubTabs() {
+        val tabs = arrayOf("Gameplay", "Physics")
+        val tabSelector = ImInt(subTab)
+        if (combo("##ProjectSubTab", tabSelector, tabs, tabs.size)) {
+            subTab = tabSelector.get()
+        }
+        separator()
+
+        when (subTab) {
+            0 -> renderGameplaySettings()
+            1 -> renderPhysicsSettings()
+        }
+    }
+
+    private fun renderHardwareSettings() {
+        if (!hasUnsavedChanges) syncTempSettings()
+        
+        text("Input Calibration")
+        separator()
+
+        val leftDZ = floatArrayOf(tempHardware.leftStickDeadzone)
+        if (dragFloat("Left Stick Deadzone", leftDZ, 0.01f, 0f, 0.5f)) {
+            tempHardware.leftStickDeadzone = leftDZ[0]
+            hasUnsavedChanges = true
+        }
+
+        val rightDZ = floatArrayOf(tempHardware.rightStickDeadzone)
+        if (dragFloat("Right Stick Deadzone", rightDZ, 0.01f, 0f, 0.5f)) {
+            tempHardware.rightStickDeadzone = rightDZ[0]
+            hasUnsavedChanges = true
+        }
+
+        val triggerT = floatArrayOf(tempHardware.triggerThreshold)
+        if (dragFloat("Trigger Threshold", triggerT, 0.01f, 0f, 1f)) {
+            tempHardware.triggerThreshold = triggerT[0]
+            hasUnsavedChanges = true
+        }
+
+        val mouseS = floatArrayOf(tempHardware.mouseSensitivity)
+        if (sliderFloat("Mouse Sensitivity", mouseS, 0.01f, 1f)) {
+            tempHardware.mouseSensitivity = mouseS[0]
+            hasUnsavedChanges = true
+        }
+
+        val controllerS = floatArrayOf(tempHardware.controllerSensitivity)
+        if (sliderFloat("Controller Sensitivity", controllerS, 0.1f, 10f)) {
+            tempHardware.controllerSensitivity = controllerS[0]
+            hasUnsavedChanges = true
+        }
+    }
+
+    private fun renderEditorSettings() {
+        if (!hasUnsavedChanges) syncTempSettings()
+
+        text("Editor Preferences")
+        separator()
+
+        val languages = arrayOf("en", "fr")
+        val currentLangIdx = ImInt(languages.indexOf(tempEditor.language).coerceAtLeast(0))
+        if (combo(stringManager.getString("menu.settings.language"), currentLangIdx, languages, languages.size)) {
+            tempEditor.language = languages[currentLangIdx.get()]
+            hasUnsavedChanges = true
+        }
+
+        val units = UnitSystem.entries.toTypedArray()
+        val currentUnitIdx = ImInt(tempEditor.unitSystem.ordinal)
+        if (combo(stringManager.getString("menu.settings.unit_system"), currentUnitIdx, units.map { it.name }.toTypedArray())) {
+            tempEditor.unitSystem = units[currentUnitIdx.get()]
+            hasUnsavedChanges = true
+        }
+
+        val showOverlay = ImBoolean(tempEditor.showGamepadOverlay)
+        if (checkbox(stringManager.getString("menu.settings.show_gamepad_overlay"), showOverlay)) {
+            tempEditor.showGamepadOverlay = showOverlay.get()
+            hasUnsavedChanges = true
+        }
+
+        val overlaySize = floatArrayOf(tempEditor.gamepadOverlaySize)
+        if (sliderFloat(stringManager.getString("menu.settings.gamepad_overlay_size"), overlaySize, 0.05f, 0.5f)) {
+            tempEditor.gamepadOverlaySize = overlaySize[0]
+            hasUnsavedChanges = true
+        }
+    }
+
+    private fun renderGameplaySettings() {
+        if (!hasUnsavedChanges) syncTempSettings()
+        
+        text("Gameplay Constants")
+        separator()
+
+        val moveT = floatArrayOf(tempGameplay.movementThreshold)
+        if (dragFloat("Movement Threshold", moveT, 0.01f, 0f, 0.5f)) {
+            tempGameplay.movementThreshold = moveT[0]
+            hasUnsavedChanges = true
+        }
+
+        val sprintT = floatArrayOf(tempGameplay.sprintThreshold)
+        if (dragFloat("Sprint Threshold", sprintT, 0.01f, 0.5f, 1f)) {
+            tempGameplay.sprintThreshold = sprintT[0]
+            hasUnsavedChanges = true
+        }
+
+        val jumpI = floatArrayOf(tempGameplay.jumpImpulse)
+        if (dragFloat("Jump Impulse", jumpI, 1f, 100f, 1000f)) {
+            tempGameplay.jumpImpulse = jumpI[0]
+            hasUnsavedChanges = true
+        }
+
+        val walkS = floatArrayOf(tempGameplay.walkSpeed)
+        if (dragFloat("Walk Speed", walkS, 0.1f, 1f, 5f)) {
+            tempGameplay.walkSpeed = walkS[0]
+            hasUnsavedChanges = true
+        }
+
+        val runS = floatArrayOf(tempGameplay.runSpeed)
+        if (dragFloat("Run Speed", runS, 0.1f, 5f, 15f)) {
+            tempGameplay.runSpeed = runS[0]
+            hasUnsavedChanges = true
+        }
+
+        val rotS = floatArrayOf(tempGameplay.rotationSpeed)
+        if (dragFloat("Rotation Speed", rotS, 0.5f, 1f, 30f)) {
+            tempGameplay.rotationSpeed = rotS[0]
+            hasUnsavedChanges = true
+        }
+        
+        val inputSm = floatArrayOf(tempGameplay.inputSmoothing)
+        if (dragFloat("Input Smoothing", inputSm, 0.5f, 1f, 20f)) {
+            tempGameplay.inputSmoothing = inputSm[0]
+            hasUnsavedChanges = true
+        }
+    }
+
+    private fun renderPhysicsSettings() {
+        text("Physics Engine Constants")
+        separator()
+        textColored(0.5f, 0.5f, 0.5f, 1f, "Project physics settings (Gravity, Timestep) go here.")
+    }
+
     private fun syncTempSettings() {
-        tempInputSettings = InputSettings().apply {
-            leftStickDeadzone = settingsManager.settings.inputSettings.leftStickDeadzone
-            rightStickDeadzone = settingsManager.settings.inputSettings.rightStickDeadzone
-            triggerThreshold = settingsManager.settings.inputSettings.triggerThreshold
-            mouseSensitivity = settingsManager.settings.inputSettings.mouseSensitivity
-            controllerSensitivity = settingsManager.settings.inputSettings.controllerSensitivity
-            movementThreshold = settingsManager.settings.inputSettings.movementThreshold
-            sprintThreshold = settingsManager.settings.inputSettings.sprintThreshold
-            jumpImpulse = settingsManager.settings.inputSettings.jumpImpulse
-            walkSpeed = settingsManager.settings.inputSettings.walkSpeed
-            runSpeed = settingsManager.settings.inputSettings.runSpeed
-            rotationSpeed = settingsManager.settings.inputSettings.rotationSpeed
-            takeOffTime = settingsManager.settings.inputSettings.takeOffTime
-            inputSmoothing = settingsManager.settings.inputSettings.inputSmoothing
-        }
+        tempHardware = settingsManager.engine.hardware.copy()
+        tempEditor = settingsManager.engine.editor.copy()
+        tempGameplay = settingsManager.project.gameplay.copy()
     }
 
-    /**
-     * Renders the input settings tab.
-     */
-    private fun renderInputSettingsTab() {
-        // Ensure temp settings are synced on first render
-        if (!hasUnsavedChanges) {
-            syncTempSettings()
-        }
-
-        text(stringManager.getString("lbl.settings.deadzones"))
-        separator()
-
-        // Left Stick Deadzone
-        val leftDeadzone = floatArrayOf(tempInputSettings.leftStickDeadzone)
-        if (dragFloat("##LeftDeadzone", leftDeadzone, 0.01f, 0f, 0.5f, "%.2f")) {
-            tempInputSettings.leftStickDeadzone = leftDeadzone[0].coerceIn(0f, 0.5f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.left_stick_deadzone"))
-
-        // Right Stick Deadzone
-        val rightDeadzone = floatArrayOf(tempInputSettings.rightStickDeadzone)
-        if (dragFloat("##RightDeadzone", rightDeadzone, 0.01f, 0f, 0.5f, "%.2f")) {
-            tempInputSettings.rightStickDeadzone = rightDeadzone[0].coerceIn(0f, 0.5f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.right_stick_deadzone"))
-
-        // Trigger Threshold
-        val triggerThreshold = floatArrayOf(tempInputSettings.triggerThreshold)
-        if (dragFloat("##TriggerThreshold", triggerThreshold, 0.01f, 0f, 1f, "%.2f")) {
-            tempInputSettings.triggerThreshold = triggerThreshold[0].coerceIn(0f, 1f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.trigger_threshold"))
-
-        separator()
-        text(stringManager.getString("lbl.settings.sensitivities"))
-        separator()
-
-        // Mouse Sensitivity
-        val mouseSensitivity = floatArrayOf(tempInputSettings.mouseSensitivity)
-        if (sliderFloat("##MouseSensitivity", mouseSensitivity, 0.01f, 1f, "%.2f")) {
-            tempInputSettings.mouseSensitivity = mouseSensitivity[0].coerceIn(0.01f, 1f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.mouse_sensitivity"))
-
-        // Controller Sensitivity
-        val controllerSensitivity = floatArrayOf(tempInputSettings.controllerSensitivity)
-        if (sliderFloat("##ControllerSensitivity", controllerSensitivity, 0.1f, 10f, "%.2f")) {
-            tempInputSettings.controllerSensitivity = controllerSensitivity[0].coerceIn(0.1f, 10f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.controller_sensitivity"))
-
-        separator()
-        text(stringManager.getString("lbl.settings.thresholds"))
-        separator()
-
-        // Movement Threshold
-        val movementThreshold = floatArrayOf(tempInputSettings.movementThreshold)
-        if (dragFloat("##MovementThreshold", movementThreshold, 0.01f, 0f, 0.5f, "%.2f")) {
-            tempInputSettings.movementThreshold = movementThreshold[0].coerceIn(0f, 0.5f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.movement_threshold"))
-
-        // Sprint Threshold
-        val sprintThreshold = floatArrayOf(tempInputSettings.sprintThreshold)
-        if (dragFloat("##SprintThreshold", sprintThreshold, 0.01f, 0.5f, 1f, "%.2f")) {
-            tempInputSettings.sprintThreshold = sprintThreshold[0].coerceIn(0.5f, 1f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.sprint_threshold"))
-    }
-
-    /**
-     * Renders the physics settings tab.
-     */
-    private fun renderPhysicsSettingsTab() {
-        if (!hasUnsavedChanges) {
-            syncTempSettings()
-        }
-
-        text(stringManager.getString("lbl.settings.jump_physics"))
-        separator()
-
-        // Jump Impulse
-        val jumpImpulse = floatArrayOf(tempInputSettings.jumpImpulse)
-        if (dragFloat("##JumpImpulse", jumpImpulse, 1f, 100f, 1000f, "%.0f")) {
-            tempInputSettings.jumpImpulse = jumpImpulse[0].coerceIn(100f, 1000f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.jump_impulse"))
-
-        // Take Off Time
-        val takeOffTime = floatArrayOf(tempInputSettings.takeOffTime)
-        if (dragFloat("##TakeOffTime", takeOffTime, 0.01f, 0.1f, 2f, "%.2f")) {
-            tempInputSettings.takeOffTime = takeOffTime[0].coerceIn(0.1f, 2f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.take_off_time"))
-
-        separator()
-        text(stringManager.getString("lbl.settings.movement_physics"))
-        separator()
-
-        // Walk Speed
-        val walkSpeed = floatArrayOf(tempInputSettings.walkSpeed)
-        if (dragFloat("##WalkSpeed", walkSpeed, 0.1f, 1f, 5f, "%.1f")) {
-            tempInputSettings.walkSpeed = walkSpeed[0].coerceIn(1f, 5f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.walk_speed"))
-
-        // Run Speed
-        val runSpeed = floatArrayOf(tempInputSettings.runSpeed)
-        if (dragFloat("##RunSpeed", runSpeed, 0.1f, 5f, 15f, "%.1f")) {
-            tempInputSettings.runSpeed = runSpeed[0].coerceIn(5f, 15f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.run_speed"))
-
-        // Rotation Speed
-        val rotationSpeed = floatArrayOf(tempInputSettings.rotationSpeed)
-        if (dragFloat("##RotationSpeed", rotationSpeed, 0.5f, 1f, 30f, "%.1f")) {
-            tempInputSettings.rotationSpeed = rotationSpeed[0].coerceIn(1f, 30f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.rotation_speed"))
-
-        separator()
-        text(stringManager.getString("lbl.settings.input_smoothing"))
-        separator()
-
-        // Input Smoothing
-        val inputSmoothing = floatArrayOf(tempInputSettings.inputSmoothing)
-        if (dragFloat("##InputSmoothing", inputSmoothing, 0.5f, 1f, 20f, "%.1f")) {
-            tempInputSettings.inputSmoothing = inputSmoothing[0].coerceIn(1f, 20f)
-            hasUnsavedChanges = true
-        }
-        sameLine()
-        text(stringManager.getString("lbl.settings.input_smoothing_value"))
-    }
-
-    /**
-     * Renders the display settings tab.
-     */
-    private fun renderDisplaySettingsTab() {
-        text(stringManager.getString("lbl.settings.display_settings"))
-        separator()
-
-        // Note: Full implementation would require integration with BootManager/Window
-        // This is a placeholder for future implementation
-
-        val fullscreen = ImBoolean(settingsManager.settings.fullscreen)
-        if (checkbox(stringManager.getString("lbl.settings.fullscreen"), fullscreen)) {
-            settingsManager.settings.fullscreen = fullscreen.get()
-            settingsManager.save()
-        }
-
-        val vsync = ImBoolean(settingsManager.settings.vsync)
-        if (checkbox(stringManager.getString("lbl.settings.vsync"), vsync)) {
-            settingsManager.settings.vsync = vsync.get()
-            settingsManager.save()
-        }
-
-        val borderless = ImBoolean(settingsManager.settings.borderless)
-        if (checkbox(stringManager.getString("lbl.settings.borderless"), borderless)) {
-            settingsManager.settings.borderless = borderless.get()
-            settingsManager.save()
-        }
-
-        separator()
-        textColored(0.7f, 0.7f, 0.7f, 1f, stringManager.getString("lbl.settings.display_note"))
-    }
-
-    /**
-     * Saves all settings to disk.
-     */
     private fun saveSettings() {
-        // Apply temp input settings to main settings
-        settingsManager.settings.inputSettings = tempInputSettings
+        tempHardware.validate()
+        tempGameplay.validate()
 
-        // Validate settings
-        settingsManager.settings.inputSettings.validate()
+        settingsManager.engine.hardware = tempHardware
+        settingsManager.engine.editor = tempEditor
+        settingsManager.project.gameplay = tempGameplay
 
-        // Save to disk
-        settingsManager.save()
+        settingsManager.saveEngine()
+        settingsManager.saveProject()
+        
+        if (tempEditor.language != settingsManager.engine.editor.language) {
+            settingsManager.setLocale(tempEditor.language)
+        }
+        
         hasUnsavedChanges = false
     }
 
-    /**
-     * Resets all settings to default values.
-     */
     private fun resetToDefaults() {
-        tempInputSettings = InputSettings()
+        tempHardware = HardwareSettings()
+        tempEditor = EditorSettings()
+        tempGameplay = GameplaySettings()
         hasUnsavedChanges = true
     }
 }

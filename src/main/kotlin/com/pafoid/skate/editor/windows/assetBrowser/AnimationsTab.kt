@@ -1,19 +1,24 @@
 package com.pafoid.skate.editor.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.io.File
 
 class AnimationsTab(
     resourceManager: ResourceManager,
     thumbnailCache: ThumbnailCache,
     stringManager: StringManager
-): AssetBrowserTab(resourceManager, thumbnailCache, stringManager) {
+): AssetBrowserTab(resourceManager, thumbnailCache, stringManager), KoinComponent {
+
+    private val logger: LoggerService by inject()
 
     private val supportedAnimationFormats = listOf("fbx")
 
@@ -24,22 +29,54 @@ class AnimationsTab(
         ImGui.beginGroup()
 
         ImGui.pushID(file.absolutePath)
-        // Use a generic icon for animations since we don't have thumbnails
+
         if (ImGui.button("${Icons.PLAY}", size, size)) {
-            // Preview?
+            previewAnimation(file)
         }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip(file.name)
+        }
+
+        if (ImGui.beginPopupContextItem()) {
+            if (ImGui.menuItem("${Icons.PLAY} ${stringManager.getString("context.asset_browser.preview_animation")}")) {
+                previewAnimation(file)
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.CHECK} ${stringManager.getString("context.asset_browser.apply_to_selected")}")) {
+                applyAnimationToSelected(file.path)
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {
+                java.awt.Desktop.getDesktop().open(file.parentFile)
+            }
+            ImGui.separator()
+            if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
+                logger.logEditor("Animation: ${file.name}, Format: ${file.extension}, Path: ${file.absolutePath}")
+            }
+            ImGui.endPopup()
+        }
+        
         ImGui.popID()
 
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("ANIMATION", file.path)
-            ImGui.text("${Icons.PLAY}")
-            ImGui.text(file.name)
+            ImGui.text("${Icons.PLAY} ${file.name}")
+            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Drop on object with Animator")
             ImGui.endDragDropSource()
         }
 
         ImGui.textWrapped(file.name)
         ImGui.dummy(0f, padding)
         ImGui.endGroup()
+    }
+    
+    private fun previewAnimation(file: File) {
+        logger.logEditor("Preview animation: ${file.name} (not yet implemented)")
+    }
+    
+    private fun applyAnimationToSelected(animationPath: String) {
+        // Future enhancement: Apply animation to selected GameObject's Animator component
+        logger.logEditor("Apply animation to selected not yet implemented: $animationPath")
     }
 
     override fun refreshAssets() {

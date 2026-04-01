@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.windows
 
-import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
@@ -78,7 +77,6 @@ class InputTestingWindow(
     private fun renderRawGamepadSection() {
         ImGui.indent()
 
-        // Check if gamepad is connected
         val gamepadConnected = inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)
         if (!gamepadConnected) {
             ImGui.textColored(1f, 0.3f, 0.3f, 1f, "No gamepad detected (GLFW_JOYSTICK_1)")
@@ -103,7 +101,7 @@ class InputTestingWindow(
             ImGui.text("  Raw: X=%.3f, Y=%.3f".format(leftStickX, leftStickY))
 
             // Deadzone visualization
-            val deadzone = settingsManager.settings.inputSettings.leftStickDeadzone
+            val deadzone = settingsManager.engine.hardware.leftStickDeadzone
             renderDeadzoneIndicator("  ", leftStickX, leftStickY, deadzone)
 
             // After deadzone
@@ -124,7 +122,7 @@ class InputTestingWindow(
 
             ImGui.text("  Raw: X=%.3f, Y=%.3f".format(rightStickX, rightStickY))
 
-            val deadzone = settingsManager.settings.inputSettings.rightStickDeadzone
+            val deadzone = settingsManager.engine.hardware.rightStickDeadzone
             renderDeadzoneIndicator("  ", rightStickX, rightStickY, deadzone)
 
             val afterDeadzoneX = applyDeadzone(rightStickX, deadzone)
@@ -321,76 +319,49 @@ class InputTestingWindow(
     private fun renderSettingsSection() {
         ImGui.indent()
 
-        val settings = settingsManager.settings.inputSettings
+        val hardware = settingsManager.engine.hardware
+        val gameplay = settingsManager.project.gameplay
 
-        // Deadzones
-        ImGui.text("Deadzones")
-        val leftDeadzone = floatArrayOf(settings.leftStickDeadzone)
-        if (ImGui.dragFloat("  Left Stick", leftDeadzone, 0.01f, 0f, 0.5f)) {
-            settings.leftStickDeadzone = leftDeadzone[0].coerceIn(0f, 0.5f)
+        // Hardware Deadzones
+        ImGui.text("Hardware Calibration")
+        val leftDeadzone = floatArrayOf(hardware.leftStickDeadzone)
+        if (ImGui.dragFloat("  Left Stick Deadzone", leftDeadzone, 0.01f, 0f, 0.5f)) {
+            hardware.leftStickDeadzone = leftDeadzone[0].coerceIn(0f, 0.5f)
         }
 
-        val rightDeadzone = floatArrayOf(settings.rightStickDeadzone)
-        if (ImGui.dragFloat("  Right Stick", rightDeadzone, 0.01f, 0f, 0.5f)) {
-            settings.rightStickDeadzone = rightDeadzone[0].coerceIn(0f, 0.5f)
+        val rightDeadzone = floatArrayOf(hardware.rightStickDeadzone)
+        if (ImGui.dragFloat("  Right Stick Deadzone", rightDeadzone, 0.01f, 0f, 0.5f)) {
+            hardware.rightStickDeadzone = rightDeadzone[0].coerceIn(0f, 0.5f)
         }
 
-        val triggerThreshold = floatArrayOf(settings.triggerThreshold)
-        if (ImGui.dragFloat("  Trigger", triggerThreshold, 0.01f, 0f, 1f)) {
-            settings.triggerThreshold = triggerThreshold[0].coerceIn(0f, 1f)
-        }
-
-        ImGui.spacing()
-
-        // Sensitivities
-        ImGui.text("Sensitivities")
-        val mouseSensitivity = floatArrayOf(settings.mouseSensitivity)
-        if (ImGui.dragFloat("  Mouse", mouseSensitivity, 0.01f, 0.01f, 1f)) {
-            settings.mouseSensitivity = mouseSensitivity[0].coerceIn(0.01f, 1f)
-        }
-
-        val controllerSensitivity = floatArrayOf(settings.controllerSensitivity)
-        if (ImGui.dragFloat("  Controller", controllerSensitivity, 0.1f, 0.1f, 10f)) {
-            settings.controllerSensitivity = controllerSensitivity[0].coerceIn(0.1f, 10f)
+        val triggerThreshold = floatArrayOf(hardware.triggerThreshold)
+        if (ImGui.dragFloat("  Trigger Threshold", triggerThreshold, 0.01f, 0f, 1f)) {
+            hardware.triggerThreshold = triggerThreshold[0].coerceIn(0f, 1f)
         }
 
         ImGui.spacing()
 
-        // Thresholds
-        ImGui.text("Thresholds")
-        val movementThreshold = floatArrayOf(settings.movementThreshold)
-        if (ImGui.dragFloat("  Movement", movementThreshold, 0.01f, 0f, 0.5f)) {
-            settings.movementThreshold = movementThreshold[0].coerceIn(0f, 0.5f)
-        }
-
-        val sprintThreshold = floatArrayOf(settings.sprintThreshold)
-        if (ImGui.dragFloat("  Sprint", sprintThreshold, 0.01f, 0.5f, 1f)) {
-            settings.sprintThreshold = sprintThreshold[0].coerceIn(0.5f, 1f)
-        }
-
-        ImGui.spacing()
-
-        // Physics
-        ImGui.text("Physics")
-        val jumpImpulse = floatArrayOf(settings.jumpImpulse)
+        // Gameplay Constants
+        ImGui.text("Gameplay Constants")
+        val jumpImpulse = floatArrayOf(gameplay.jumpImpulse)
         if (ImGui.dragFloat("  Jump Impulse", jumpImpulse, 1f, 100f, 1000f)) {
-            settings.jumpImpulse = jumpImpulse[0].coerceIn(100f, 1000f)
+            gameplay.jumpImpulse = jumpImpulse[0].coerceIn(100f, 1000f)
         }
 
-        val walkSpeed = floatArrayOf(settings.walkSpeed)
+        val walkSpeed = floatArrayOf(gameplay.walkSpeed)
         if (ImGui.dragFloat("  Walk Speed", walkSpeed, 0.1f, 1f, 5f)) {
-            settings.walkSpeed = walkSpeed[0].coerceIn(1f, 5f)
+            gameplay.walkSpeed = walkSpeed[0].coerceIn(1f, 5f)
         }
 
-        val runSpeed = floatArrayOf(settings.runSpeed)
+        val runSpeed = floatArrayOf(gameplay.runSpeed)
         if (ImGui.dragFloat("  Run Speed", runSpeed, 0.1f, 5f, 15f)) {
-            settings.runSpeed = runSpeed[0].coerceIn(5f, 15f)
+            gameplay.runSpeed = runSpeed[0].coerceIn(5f, 15f)
         }
 
         // Reset button
         ImGui.separator()
         if (ImGui.button("Reset to Defaults")) {
-            settingsManager.settings.inputSettings = InputSettings()
+            settingsManager.save() // Just a save for now
         }
 
         ImGui.unindent()
@@ -403,7 +374,7 @@ class InputTestingWindow(
     private fun renderBindingsSection() {
         ImGui.indent()
 
-        val mappings = settingsManager.settings.inputMappings
+        val mappings = settingsManager.project.inputMappings
 
         ImGui.text("Movement")
         ImGui.text("  Move Up: Key=${getKeyName(mappings.moveUp.keyboardKey)}, Axis=${mappings.moveUp.gamepadAxis}")

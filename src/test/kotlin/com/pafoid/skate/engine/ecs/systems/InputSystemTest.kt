@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.EditorCamera
-import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -18,6 +17,10 @@ import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.settings.EngineSettings
+import com.pafoid.skate.engine.settings.GameplaySettings
+import com.pafoid.skate.engine.settings.HardwareSettings
+import com.pafoid.skate.engine.settings.ProjectSettings
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -50,10 +53,9 @@ class InputSystemTest {
     // Test subject
     private lateinit var inputSystem: InputSystem
 
-    // Test input settings
-    private lateinit var inputSettings: InputSettings
-
-    // Test input mappings
+    // Test settings
+    private lateinit var hardwareSettings: HardwareSettings
+    private lateinit var gameplaySettings: GameplaySettings
     private lateinit var inputMappings: InputMappings
     private lateinit var editorInputMappings: EditorInputMappings
 
@@ -69,20 +71,22 @@ class InputSystemTest {
         // Create test scene
         scene = Scene("TestScene", sceneInitializer)
 
-        // Setup input settings with defaults
-        inputSettings = InputSettings().apply {
+        // Setup settings with defaults
+        hardwareSettings = HardwareSettings().apply {
             leftStickDeadzone = 0.1f
             rightStickDeadzone = 0.1f
             triggerThreshold = 0.5f
             mouseSensitivity = 0.1f
             controllerSensitivity = 1.0f
+        }
+
+        gameplaySettings = GameplaySettings().apply {
             movementThreshold = 0.1f
             sprintThreshold = 0.5f
             jumpImpulse = 300f
             walkSpeed = 2f
             runSpeed = 5f
             rotationSpeed = 10f
-            takeOffTime = 0.5f
             inputSmoothing = 5f
         }
 
@@ -99,10 +103,15 @@ class InputSystemTest {
         editorInputMappings = EditorInputMappings()
 
         // Setup settings manager mock
-        every { settingsManager.settings } returns mockk {
-            every { inputSettings } returns this@InputSystemTest.inputSettings
+        every { settingsManager.engine } returns mockk {
+            every { hardware } returns this@InputSystemTest.hardwareSettings
+            every { editor } returns mockk {
+                every { editorInputMappings } returns this@InputSystemTest.editorInputMappings
+            }
+        }
+        every { settingsManager.project } returns mockk {
+            every { gameplay } returns this@InputSystemTest.gameplaySettings
             every { inputMappings } returns this@InputSystemTest.inputMappings
-            every { editorInputMappings } returns this@InputSystemTest.editorInputMappings
         }
 
         // Ensure game input is processed by default

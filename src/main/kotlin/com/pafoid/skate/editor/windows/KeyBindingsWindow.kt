@@ -41,7 +41,7 @@ class KeyBindingsWindow(
         if (!isOpen) return
 
         if (begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.AlwaysAutoResize)) {
-            val inputMappings = settingsManager.settings.inputMappings
+            val inputMappings = settingsManager.project.inputMappings
 
             // Tab selection using combo
             val tabNames = arrayOf("Editor", "Camera", "Gamepad")

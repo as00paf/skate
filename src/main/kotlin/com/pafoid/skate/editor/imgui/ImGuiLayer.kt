@@ -1,26 +1,24 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.editor.windows.AssetBrowserWindow
-import com.pafoid.skate.editor.windows.ConsoleWindow
-import com.pafoid.skate.editor.windows.EnvironmentWindow
-import com.pafoid.skate.editor.windows.GameViewWindow
-import com.pafoid.skate.editor.windows.InputTestingWindow
-import com.pafoid.skate.editor.windows.KeyBindingsWindow
-import com.pafoid.skate.editor.windows.PhysicsTunerWindow
-import com.pafoid.skate.editor.windows.ProfilerWindow
-import com.pafoid.skate.editor.windows.PropertiesWindow
-import com.pafoid.skate.editor.windows.SceneHierarchyWindow
-import com.pafoid.skate.editor.windows.SettingsWindow
-import com.pafoid.skate.editor.windows.SystemsWindow
+import com.pafoid.skate.editor.ui.WindowRegistry
+import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
+import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
+import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.game.level.LevelManager
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
@@ -60,6 +58,7 @@ import imgui.internal.ImGui.updatePlatformWindows
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 import java.io.File
 
@@ -71,7 +70,9 @@ class ImGuiLayer(
     private val stringManager: StringManager,
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
-    private val levelManager: LevelManager
+    private val levelManager: LevelManager,
+    private val resourceManager: ResourceManager,
+    private val windowRegistry: WindowRegistry,
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -79,53 +80,31 @@ class ImGuiLayer(
     private val glslVersion = "#version 330"
     private var glfwWindow: Long = 0
 
-    // Window instances
-    private val hierarchyWindow = SceneHierarchyWindow()
-    private val propertiesWindow = PropertiesWindow()
-    private val gameViewWindow = GameViewWindow()
-    private val assetBrowser = AssetBrowserWindow()
-    private val environmentWindow = EnvironmentWindow()
-    private val profilerWindow = ProfilerWindow()
-    private val consoleWindow = ConsoleWindow()
-    private val physicsTunerWindow = PhysicsTunerWindow()
-    private val inputTestingWindow = InputTestingWindow(inputProvider, settingsManager, stringManager)
-    private val systemsWindow = SystemsWindow()
-    private val settingsWindow = SettingsWindow(settingsManager, stringManager)
-    private val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
-
+    private val eventSystem: EventSystem by inject()
+    private val editorInputHandler: EditorInputHandler by inject()
+    private val statusBar = EditorStatusBar()
     private lateinit var menuBar: EditorMenuBar
-
-    /**
-     * Registry of all dockable editor windows.
-     * Centralizes window management for rendering, menus, and dock layout.
-     */
-    private val editorWindows = listOf(
-        EditorWindow("window.hierarchy", hierarchyWindow, ImBoolean(true), requiresScene = true),
-        EditorWindow("window.properties", propertiesWindow, ImBoolean(true)),
-        EditorWindow("window.game_viewport", gameViewWindow, ImBoolean(true)),
-        EditorWindow("window.asset_browser", assetBrowser, ImBoolean(true)),
-        EditorWindow("window.environment", environmentWindow, ImBoolean(true), requiresScene = true),
-        EditorWindow("window.profiler", profilerWindow, ImBoolean(true)),
-        EditorWindow("window.console", consoleWindow, ImBoolean(true)),
-        EditorWindow("window.physics_tuner", physicsTunerWindow, ImBoolean(true), requiresScene = true),
-        EditorWindow("window.input_testing", inputTestingWindow, ImBoolean(false)),
-        EditorWindow("window.systems", systemsWindow, ImBoolean(true), requiresScene = true)
-    )
+    
+    // Reusable buffer to avoid per-frame allocations
+    private val tempVec2 = ImVec2()
 
     private var isViewportMaximized = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
     private lateinit var setVSync: (Boolean) -> Unit
+    private lateinit var windowController: com.pafoid.skate.engine.core.WindowController
 
-    /**
-     * Gets the currently hovered game object from the GameViewWindow.
-     */
-    fun getHoveredGameObject(): com.pafoid.skate.engine.ecs.GameObject? {
-        return gameViewWindow.getHoveredObject()
-    }
+    private var needsDecorationUpdate = false
+    private var layoutInitialized = false
 
-    fun init(glfwWindow: Long, fullScreenCallback:(Boolean)->Unit, vSyncCallback:(Boolean)->Unit) {
+    fun init(
+        glfwWindow: Long,
+        windowController: com.pafoid.skate.engine.core.WindowController,
+        fullScreenCallback: (Boolean) -> Unit,
+        vSyncCallback: (Boolean) -> Unit
+    ) {
         this.glfwWindow = glfwWindow
+        this.windowController = windowController
         this.setFullscreen = fullScreenCallback
         this.setVSync = vSyncCallback
 
@@ -143,29 +122,26 @@ class ImGuiLayer(
 
         ImGuiStyleManager.setupStyle()
 
-        // Initialize menu bar after editorWindows is populated
         menuBar = EditorMenuBar(
+            fileMenu = FileMenuBuilder(stringManager, levelManager, sceneManager, glfwWindow),
+            editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
+            settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, windowRegistry.keyBindingsWindow, windowRegistry.settingsWindow),
+            viewMenu = ViewMenuBuilder(stringManager, windowRegistry.windows),
+            windowControls = WindowControlsRenderer(windowRegistry.searchEverywhereWindow, windowController),
             stringManager = stringManager,
-            levelManager = levelManager,
-            undoRedoManager = undoRedoManager,
-            clipboardService = clipboardService,
-            sceneManager = sceneManager,
-            settingsManager = settingsManager,
-            keyBindingsWindow = keyBindingsWindow,
-            settingsWindow = settingsWindow,
-            editorWindows = editorWindows,
-            glfwWindow = glfwWindow,
-            setFullscreen = setFullscreen,
-            setVSync = setVSync
+            resourceManager = resourceManager
         )
     }
 
     private fun setupLayout(dockspaceId: Int) {
+        if (layoutInitialized) return
+        layoutInitialized = true
+
         val iniFile = File(Assets.Files.IMGUI)
         if (iniFile.exists()) return
 
         dockBuilderRemoveNode(dockspaceId)
-        dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.None)
+        dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.PassthruCentralNode)
         dockBuilderSetNodeSize(
             dockspaceId,
             getMainViewport().sizeX,
@@ -173,19 +149,23 @@ class ImGuiLayer(
         )
 
         val mainBodyId = ImInt(0)
-        val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.2f, null, mainBodyId)
-        val rightId =
-            dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.25f, null, mainBodyId)
-        val bottomId =
-            dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.25f, null, mainBodyId)
+        val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.18f, null, mainBodyId)
+        val rightId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.22f, null, mainBodyId)
+        val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.28f, null, mainBodyId)
 
-        // Dock windows based on their default visibility
-        editorWindows.filter { it.showFlag.get() }.forEach { window ->
+        val centralNode = imgui.internal.ImGui.dockBuilderGetNode(mainBodyId.get())
+        val noTabBar = imgui.internal.flag.ImGuiDockNodeFlags.NoTabBar
+        val noWindowMenuButton = 1 shl 12
+        val noCloseButton = 1 shl 13
+        
+        centralNode.setLocalFlags(noTabBar or noWindowMenuButton or noCloseButton)
+
+        windowRegistry.windows.filter { it.showFlag.get() }.forEach { window ->
             val dockId = when (window.nameKey) {
-                "window.hierarchy", "window.asset_browser", "window.properties", "window.systems" -> leftId
+                "window.hierarchy", "window.properties", "window.systems", "window.asset_browser", "window.command_history", "window.render_graph" -> leftId
+                "window.console", "window.profiler", "window.physics_tuner", "window.environment" -> bottomId
                 "window.game_viewport" -> mainBodyId.get()
-                "window.console", "window.profiler", "window.environment", "window.physics_tuner" -> bottomId
-                else -> mainBodyId.get() // Default to main area for unknown windows
+                else -> mainBodyId.get()
             }
             dockBuilderDockWindow(stringManager.getString(window.nameKey), dockId)
         }
@@ -193,45 +173,54 @@ class ImGuiLayer(
         dockBuilderFinish(dockspaceId)
     }
 
-    fun update(dt: Float, currentScene: Scene) {
+    fun update(dt: Float) {
+        val currentScene = sceneManager.currentScene ?: return
+        val ctrlDown = inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || inputProvider.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
+
+        if (ctrlDown && inputProvider.keyBeginPress(GLFW.GLFW_KEY_P)) {
+            windowRegistry.searchEverywhereWindow.open()
+        }
+
         if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_F12)) {
             isViewportMaximized = !isViewportMaximized
         }
 
         startFrame()
 
+        editorInputHandler.update(currentScene)
+
         if (isViewportMaximized) {
-            setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY)
-            setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY)
+            setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY, ImGuiCond.Always)
+            setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY, ImGuiCond.Always)
             pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
             begin(
                 stringManager.getString("window.game_viewport") + " Maximized",
                 ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoDecoration
             )
 
-            val windowSize = ImVec2()
-            getContentRegionAvail(windowSize)
+            getContentRegionAvail(tempVec2)
 
             val texId = renderer.frameBuffer.getTextureId()
-            image(texId.toLong(), windowSize.x, windowSize.y, 0f, 1f, 1f, 0f)
+            image(texId.toLong(), tempVec2.x, tempVec2.y, 0f, 1f, 1f, 0f)
 
             end()
             popStyleVar()
         } else {
             setupDockSpace(currentScene)
+            statusBar.render(currentScene)
             currentScene.imguiScene()
 
-            // Render all visible editor windows
-            editorWindows.forEach { window ->
+            windowRegistry.windows.forEach { window ->
                 if (window.showFlag.get()) {
                     when {
-                        window.requiresScene -> (window.instance as IWindowWithScene).imgui(currentScene)
-                        else -> (window.instance as IWindow).imgui()
+                        window.requiresScene -> (window.instance as? IWindowWithScene)?.imgui(currentScene)
+                        else -> (window.instance as? IWindow)?.imgui()
                     }
                 }
             }
-            settingsWindow.render()
-            keyBindingsWindow.render()
+            windowRegistry.settingsWindow.render()
+            windowRegistry.keyBindingsWindow.render()
+            windowRegistry.searchEverywhereWindow.imgui(null)
         }
 
         endFrame()
@@ -252,34 +241,52 @@ class ImGuiLayer(
             updatePlatformWindows()
             renderPlatformWindowsDefault()
             GLFW.glfwMakeContextCurrent(backupWindowPtr)
+        } else if (needsDecorationUpdate) {
+            val backupWindowPtr = GLFW.glfwGetCurrentContext()
+            updatePlatformWindows()
+            GLFW.glfwMakeContextCurrent(backupWindowPtr)
         }
+
+        needsDecorationUpdate = false
     }
 
     private fun setupDockSpace(currentScene: Scene) {
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
 
         val viewport = getMainViewport()
-        setNextWindowPos(viewport.workPosX, viewport.workPosY)
-        setNextWindowSize(viewport.workSizeX, viewport.workSizeY)
+        val statusBarHeight = 30f // Height for EditorStatusBar
+
+        setNextWindowPos(viewport.workPosX, viewport.workPosY, ImGuiCond.Always)
+        setNextWindowSize(viewport.workSizeX, viewport.workSizeY - statusBarHeight, ImGuiCond.Always)
         setNextWindowViewport(viewport.id)
-        setNextWindowPos(0.0f, 0.0f, ImGuiCond.Always)
 
         windowFlags = windowFlags or (ImGuiWindowFlags.NoTitleBar or ImGuiWindowFlags.NoCollapse or
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.NoMove or
                 ImGuiWindowFlags.NoBringToFrontOnFocus or ImGuiWindowFlags.NoNavFocus)
 
+        pushStyleVar(ImGuiStyleVar.FramePadding, 12f, 22f)
+        pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
         pushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f)
         pushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f)
+
         begin(stringManager.getString("lbl.editor_title"), ImBoolean(true), windowFlags)
-        popStyleVar(2)
 
-        dockSpace(getID("DockSpace"))
+        popStyleVar(4)
+
         setupLayout(getID("DockSpace"))
+        dockSpace(getID("DockSpace"))
 
-        // Render menu bar
         menuBar.render(currentScene)
 
         end()
+    }
+
+    fun onWindowDecorationChanged() {
+        needsDecorationUpdate = true
+    }
+
+    fun getHoveredGameObject(): com.pafoid.skate.engine.ecs.GameObject? {
+        return windowRegistry.gameViewWindow.getHoveredObject()
     }
 
     fun destroy() {

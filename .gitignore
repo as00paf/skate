@@ -47,6 +47,8 @@ bin/
 # Generated files
 imgui.ini
 level.json
+engine_settings.json
+project_settings.json
 
 # Temp files
 /screenshots/

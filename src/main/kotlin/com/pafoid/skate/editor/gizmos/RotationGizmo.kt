@@ -42,7 +42,6 @@ class RotationGizmo(
                 transform.rotation.z += mouseListener.getScreenDy()
             }
 
-            // Draw Rings
             with(debugRenderer) {
                 drawCircle(pos, dynamicRadius, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f)) // X - Red/Yellow
                 drawCircle(pos, dynamicRadius, Vector3f(0f, 1f, 0f), if (yAxisActive || yAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 1f, 0f)) // Y - Green/Yellow

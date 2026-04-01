@@ -30,6 +30,8 @@ class SoundBuffer(val filePath: String) : KoinComponent {
     private val logger: LoggerService by inject()
     var bufferId: Int = -1
         private set
+    var durationInSeconds: Float = 0f
+        private set
 
     init {
         load()
@@ -76,6 +78,8 @@ class SoundBuffer(val filePath: String) : KoinComponent {
             logger.logEngine("SoundBuffer: Loaded OGG '$path' - ${channels} channels, ${sampleRate}Hz", LogLevel.INFO)
             val format = if (channels == 1) AL_FORMAT_MONO16 else AL_FORMAT_STEREO16
 
+            durationInSeconds = rawAudioBuffer.limit().toFloat() / channels / sampleRate
+
             bufferId = alGenBuffers()
             alBufferData(bufferId, format, rawAudioBuffer, sampleRate)
             // Fix resource leaks per requirements
@@ -95,6 +99,8 @@ class SoundBuffer(val filePath: String) : KoinComponent {
             format = audioInputStream.format
             bytes = audioInputStream.readAllBytes()
         }
+
+        durationInSeconds = bytes.size.toFloat() / (format.channels * format.sampleSizeInBits / 8) / format.sampleRate
 
         // Convert 24-bit or 32-bit to 16-bit for OpenAL compatibility
         if (format.sampleSizeInBits > 16) {
