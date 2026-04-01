@@ -56,14 +56,15 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         val centerX = if (viewport.sizeX > 0) viewport.centerX else 400f
         val centerY = if (viewport.sizeY > 0) viewport.centerY else 300f
 
-        ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.Always, 0.5f, 0.5f)
+        // Only set position on first frame, then allow user to move it
+        ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
         ImGui.setNextWindowSize(600f, 450f)
         ImGui.setNextWindowBgAlpha(0.95f)  // Ensure window has visible background
 
         val isOpen = ImGui.begin(
             stringManager.getString("wizard.project.title"),
             projectWizard.isOpen,
-            ImGuiWindowFlags.NoResize or ImGuiWindowFlags.NoCollapse or ImGuiWindowFlags.Modal
+            ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
         )
         
         if (isOpen) {

@@ -16,6 +16,7 @@ import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
@@ -23,6 +24,7 @@ import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.game.project.ProjectManager
 import imgui.ImVec2
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -90,7 +92,7 @@ class ImGuiLayer(
 
     private val eventSystem: EventSystem by inject()
     private val editorInputHandler: EditorInputHandler by inject()
-    private val projectManager: com.pafoid.skate.game.project.ProjectManager by inject()
+    private val projectManager: ProjectManager by inject()
     private val statusBar = EditorStatusBar()
     private val projectWizardWindow: ProjectWizardWindow by inject()
     private val projectSwitcherDialog: ProjectSwitcherDialog by inject()
@@ -103,14 +105,14 @@ class ImGuiLayer(
 
     private lateinit var setFullscreen: (Boolean) -> Unit
     private lateinit var setVSync: (Boolean) -> Unit
-    private lateinit var windowController: com.pafoid.skate.engine.core.WindowController
+    private lateinit var windowController: WindowController
 
     private var needsDecorationUpdate = false
     private var layoutInitialized = false
 
     fun init(
         glfwWindow: Long,
-        windowController: com.pafoid.skate.engine.core.WindowController,
+        windowController: WindowController,
         fullScreenCallback: (Boolean) -> Unit,
         vSyncCallback: (Boolean) -> Unit
     ) {
