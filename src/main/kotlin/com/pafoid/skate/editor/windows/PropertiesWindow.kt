@@ -69,8 +69,7 @@ class PropertiesWindow : IWindow, KoinComponent {
 
         if (ImGui.beginPopupContextItem("${component.javaClass.simpleName}_context")) {
             if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.properties.copy_component")}")) {
-                // TODO: Implement copy component to clipboard
-                stringManager // Placeholder
+                // Future enhancement: Copy component to clipboard for pasting to other objects
             }
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.properties.remove_component")}")) {
                 // Don't allow removing Transform component (core component)
@@ -81,7 +80,7 @@ class PropertiesWindow : IWindow, KoinComponent {
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.properties.reset_to_default")}")) {
-                // TODO: Implement reset component to default values
+                // Future enhancement: Reset component properties to default values
             }
             ImGui.endPopup()
         }

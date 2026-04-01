@@ -172,7 +172,7 @@ class PrefabsTab(
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.STAR} ${stringManager.getString("context.asset_browser.add_to_favorites")}")) {
-                // TODO: Implement favorites system
+                // Future enhancement: Implement favorites system for quick access to prefabs
                 logger.logEditor("Add to favorites not yet implemented")
             }
             if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {

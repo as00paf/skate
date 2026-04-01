@@ -86,7 +86,6 @@ class GameViewWindow : IWindow, KoinComponent {
     private val scenesTabBar = EditorScenesTabBar()
 
     override fun imgui(pOpen: ImBoolean?) {
-        // Using literal for NoTabItem (1 << 23) since it's missing in bindings
         val noTabItem = 1 shl 23
         ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoTitleBar or noTabItem)
 
@@ -95,7 +94,6 @@ class GameViewWindow : IWindow, KoinComponent {
         val windowSize = getLargestSizeForViewport()
         val windowPos = ImVec2(0f, TAB_BAR_HEIGHT)
 
-        // Render toolbar using extracted component
         viewportToolbar.render(windowPos)
 
         ImGui.setCursorPos(
@@ -103,11 +101,9 @@ class GameViewWindow : IWindow, KoinComponent {
             windowPos.y + TOOLBAR_HEIGHT + ImGui.getStyle().framePaddingY
         )
 
-        // Render viewport image and update framebuffer using extracted component
         viewportRenderer.render(windowSize)
         viewportRenderer.updateFramebuffer()
 
-        // Render context menu using extracted component
         viewportContextMenu.render(windowPos, sceneManager.currentScene, object : ViewportContextMenuCallbacks {
             override fun onCreateEmpty(scene: Scene) {
                 val newObj = GameObject("GameObject")

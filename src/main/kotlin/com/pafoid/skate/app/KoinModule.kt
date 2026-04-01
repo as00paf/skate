@@ -105,7 +105,7 @@ val appModule = module {
     
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get(), get()) }
-    factory { ViewportToolbar(get(), get(), get()) }
+    factory { ViewportToolbar(get(), get(), get(), get()) }
     factory { ViewportContextMenu(get()) }
     factory { ViewportOverlays(get(), get()) }
     
@@ -133,7 +133,7 @@ val appModule = module {
     factory { RenderGraphWindow() }
     
     // Window registry
-    single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Search infrastructure

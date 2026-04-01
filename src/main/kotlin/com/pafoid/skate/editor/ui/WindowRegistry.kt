@@ -39,7 +39,8 @@ class WindowRegistry(
     val settingsWindow: SettingsWindow,
     val keyBindingsWindow: KeyBindingsWindow,
     val commandHistoryWindow: CommandHistoryWindow,
-    val renderGraphWindow: RenderGraphWindow
+    val renderGraphWindow: RenderGraphWindow,
+    val searchEverywhereWindow: SearchEverywhereWindow
 ) {
     
     /**
@@ -59,8 +60,6 @@ class WindowRegistry(
         EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(true)),
         EditorWindow("window.render_graph", renderGraphWindow, ImBoolean(false))
     )
-    
-    val searchEverywhereWindow = SearchEverywhereWindow()
     
     /**
      * Get a window by its name key.

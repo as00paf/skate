@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.imgui.windows.components
 import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -16,21 +17,23 @@ import org.joml.Vector3f
 
 /**
  * Renders the viewport toolbar with gizmo, play, and utility buttons.
- * 
+ *
  * This component handles:
  * - Gizmo tool selection (Select, Translate, Rotate, Scale, Measure)
  * - Play/Pause/Stop simulation controls
  * - Scene reset and physics debug toggles
  * - Screenshot capture
- * 
+ *
  * @param sceneManager For accessing current scene and systems
  * @param engine For runtime playing state control
  * @param logger For logging toolbar actions
+ * @param stringManager For localized tooltips
  */
 class ViewportToolbar(
     private val sceneManager: SceneManager,
     private val engine: Engine,
-    private val logger: LoggerService
+    private val logger: LoggerService,
+    private val stringManager: StringManager
 ) {
     
     companion object {
@@ -80,9 +83,9 @@ class ViewportToolbar(
                 gizmoSystem.toggleGizmo(GizmoSystem.SELECTION_GIZMO)
             }
             if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Select Tool (Q)")
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.select_tool"))
         }
-        
+
         // Translate Tool
         buttons.add {
             val isActive = gizmoSystem.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
@@ -91,9 +94,9 @@ class ViewportToolbar(
                 gizmoSystem.toggleGizmo(GizmoSystem.TRANSLATE_GIZMO)
             }
             if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Translate Tool (W)")
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.translate_tool"))
         }
-        
+
         // Rotate Tool
         buttons.add {
             val isActive = gizmoSystem.usingGizmo == GizmoSystem.ROTATION_GIZMO
@@ -102,9 +105,9 @@ class ViewportToolbar(
                 gizmoSystem.toggleGizmo(GizmoSystem.ROTATION_GIZMO)
             }
             if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Rotate Tool (E)")
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.rotate_tool"))
         }
-        
+
         // Scale Tool
         buttons.add {
             val isActive = gizmoSystem.usingGizmo == GizmoSystem.SCALE_GIZMO
@@ -113,9 +116,9 @@ class ViewportToolbar(
                 gizmoSystem.toggleGizmo(GizmoSystem.SCALE_GIZMO)
             }
             if (isActive) ImGui.popStyleColor()
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Scale Tool (R)")
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.scale_tool"))
         }
-        
+
         // Measure Tool
         buttons.add {
             val isActive = gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO
@@ -136,7 +139,7 @@ class ViewportToolbar(
                     }
                 }
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Measure Tool (M)")
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.measure_tool"))
         }
     }
     
@@ -154,13 +157,13 @@ class ViewportToolbar(
                         scene?.setTimeScale(0.0f)
                         logger.logEditor("Simulation paused")
                     }
-                    if (ImGui.isItemHovered()) ImGui.setTooltip("Pause Simulation (Time Scale: 0.0)")
+                    if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.pause_simulation"))
                 } else {
                     if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                         scene?.setTimeScale(1.0f)
                         logger.logEditor("Simulation resumed")
                     }
-                    if (ImGui.isItemHovered()) ImGui.setTooltip("Resume Simulation (Time Scale: 1.0)")
+                    if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.resume_simulation"))
                 }
             }
             // Stop button
@@ -170,7 +173,7 @@ class ViewportToolbar(
                     scene?.setTimeScale(1.0f)
                     logger.logEditor("Simulation stopped")
                 }
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Stop Simulation")
+                if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.stop_simulation"))
             }
         } else {
             // Play button
@@ -179,7 +182,7 @@ class ViewportToolbar(
                     engine.runtimePlaying = true
                     logger.logEditor("Simulation started")
                 }
-                if (ImGui.isItemHovered()) ImGui.setTooltip("Play Simulation")
+                if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.play_simulation"))
             }
         }
     }
@@ -204,9 +207,9 @@ class ViewportToolbar(
                     it.camera.yaw = 0f
                 }
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Reset Scene")
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.reset_scene"))
         }
-        
+
         // Physics Debug button
         buttons.add {
             val physicsDebugEnabled = scene?.physics3d?.debugEnabled ?: false
@@ -220,9 +223,9 @@ class ViewportToolbar(
             if (physicsDebugEnabled) {
                 ImGui.popStyleColor()
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Toggle Physics Debug Wireframe")
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.physics_debug"))
         }
-        
+
         // Screenshot button
         buttons.add {
             // Screenshot functionality would be called from GameViewWindow
@@ -230,7 +233,7 @@ class ViewportToolbar(
             if (ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 // Signal to take screenshot - handled by GameViewWindow
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Take Screenshot")
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.screenshot"))
         }
     }
     

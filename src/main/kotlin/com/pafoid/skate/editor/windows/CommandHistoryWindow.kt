@@ -61,14 +61,14 @@ class CommandHistoryWindow : IWindow, KoinComponent {
                 scrollToBottom = true
             }
             if (ImGui.isItemHovered()) {
-                ImGui.setTooltip("Undo last operation (Ctrl+Z)")
+                ImGui.setTooltip(stringManager.getString("tooltip.command_history.undo"))
             }
         } else {
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
             ImGui.button("${Icons.UNDO} Undo")
             ImGui.popStyleColor()
             if (ImGui.isItemHovered()) {
-                ImGui.setTooltip("Nothing to undo")
+                ImGui.setTooltip(stringManager.getString("tooltip.command_history.undo_empty"))
             }
         }
 
@@ -80,14 +80,14 @@ class CommandHistoryWindow : IWindow, KoinComponent {
                 scrollToBottom = true
             }
             if (ImGui.isItemHovered()) {
-                ImGui.setTooltip("Redo last undone operation (Ctrl+Y)")
+                ImGui.setTooltip(stringManager.getString("tooltip.command_history.redo"))
             }
         } else {
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
             ImGui.button("${Icons.REDO} Redo")
             ImGui.popStyleColor()
             if (ImGui.isItemHovered()) {
-                ImGui.setTooltip("Nothing to redo")
+                ImGui.setTooltip(stringManager.getString("tooltip.command_history.redo_empty"))
             }
         }
 
@@ -98,14 +98,14 @@ class CommandHistoryWindow : IWindow, KoinComponent {
                 undoRedoManager.clear()
             }
             if (ImGui.isItemHovered()) {
-                ImGui.setTooltip("Clear all undo/redo history")
+                ImGui.setTooltip(stringManager.getString("tooltip.command_history.clear"))
             }
         } else {
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
             ImGui.button("${Icons.TRASH} Clear")
             ImGui.popStyleColor()
             if (ImGui.isItemHovered()) {
-                ImGui.setTooltip("History is already empty")
+                ImGui.setTooltip(stringManager.getString("tooltip.command_history.clear_empty"))
             }
         }
     }

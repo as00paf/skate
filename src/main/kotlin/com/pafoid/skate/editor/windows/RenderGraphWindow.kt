@@ -62,7 +62,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
             // Force refresh (metrics already update automatically)
         }
         if (ImGui.isItemHovered()) {
-            ImGui.setTooltip("Refresh pass information")
+            ImGui.setTooltip(stringManager.getString("tooltip.render_graph.refresh"))
         }
 
         ImGui.sameLine()
@@ -71,7 +71,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
             autoUpdate = autoUpdateBool.get()
         }
         if (ImGui.isItemHovered()) {
-            ImGui.setTooltip("Automatically update pass metrics every frame")
+            ImGui.setTooltip(stringManager.getString("tooltip.render_graph.auto_update"))
         }
 
         ImGui.sameLine()
@@ -80,7 +80,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
             showPerformance = showPerfBool.get()
         }
         if (ImGui.isItemHovered()) {
-            ImGui.setTooltip("Show execution time for each pass")
+            ImGui.setTooltip(stringManager.getString("tooltip.render_graph.show_performance"))
         }
 
         ImGui.sameLine()

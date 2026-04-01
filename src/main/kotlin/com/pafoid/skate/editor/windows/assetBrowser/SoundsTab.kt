@@ -123,7 +123,7 @@ class SoundsTab(
     }
 
     private fun addSoundToSelectedObject(soundPath: String) {
-        // TODO: Implement adding AudioComponent to selected object
+        // Future enhancement: Add AudioComponent to selected GameObject with this sound
         logger.logEditor("Add sound to object not yet implemented: $soundPath")
     }
 

@@ -210,7 +210,6 @@ class ImGuiLayer(
             statusBar.render(currentScene)
             currentScene.imguiScene()
 
-            // Render windows from registry
             windowRegistry.windows.forEach { window ->
                 if (window.showFlag.get()) {
                     when {

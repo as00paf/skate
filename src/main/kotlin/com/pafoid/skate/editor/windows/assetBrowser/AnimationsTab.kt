@@ -75,7 +75,7 @@ class AnimationsTab(
     }
     
     private fun applyAnimationToSelected(animationPath: String) {
-        // TODO: Implement applying animation to selected GameObject
+        // Future enhancement: Apply animation to selected GameObject's Animator component
         logger.logEditor("Apply animation to selected not yet implemented: $animationPath")
     }
 
