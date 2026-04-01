@@ -10,18 +10,45 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 **Focus:** Advanced rendering, core gameplay mechanics, and core tooling
 
-- [ ] **A46.0.9: Implement Project Creation & Management System**
-  - Project wizard for creating new projects.
-  - Project settings (name, paths, engine version).
-  - Project switching and recent projects list.
+- [⏳] **A46.0.9: Implement Project Creation & Management System**
+  - **Status:** READY FOR IMPLEMENTATION
+  - **Estimated Effort:** 23-29 hours
+  - **Priority:** High
+  - **Implementation Plan:** See `docs/A46.0.9_46.0.10_Implementation_Plan.md`
+  
+  **Features:**
+  - Project wizard (shows on startup if no project loaded)
+  - Project creation (name, location, settings, folder structure)
+  - Project switching (hamburger menu + project name click)
+  - Recent projects list (up to 5)
+  - Project persistence (.skateproject file)
+  
+  **Phases:**
+  - [ ] Phase 1: Settings Data Models & Serialization (4-5h)
+  - [ ] Phase 2: ProjectManager Implementation (4-5h)
+  - [ ] Phase 3: Project Wizard UI (5-6h)
+  - [ ] Phase 4: Project Switching UI (3-4h)
+  - [ ] Phase 5: Settings Window Overhaul (4-5h)
+  - [ ] Phase 6: Integration & Boot Sequence (3-4h)
 
 - [⏳] **A46.0.10: Settings System Architectural Separation**
-  - **Status: IMPLEMENTATION (PRIORITY: ENGINE SETTINGS)**
-  - [ ] **A46.0.10.1: Define EngineSettings and HardwareSettings data classes** (@software-engineer)
-  - [ ] **A46.0.10.2: Define ProjectSettings and GameplaySettings data classes** (@software-engineer)
-  - [ ] **A46.0.10.3: Refactor SettingsManager to manage only EngineSettings** (@software-engineer)
-  - [ ] **A46.0.10.4: Create ProjectManager to manage ProjectSettings** (@software-engineer)
-  - [ ] **A46.0.10.5: Update SettingsWindow to separate Engine and Project tabs** (@software-engineer)
+  - **Status:** READY FOR IMPLEMENTATION (integrated with A46.0.9)
+  - **Estimated Effort:** Included in A46.0.9
+  - **Priority:** High
+  - **Implementation Plan:** See `docs/A46.0.9_46.0.10_Implementation_Plan.md`
+  
+  **Settings Hierarchy:**
+  - EngineSettings (global, engine-wide)
+  - ProjectSettings (per-project)
+  - UserSettings (user preferences)
+  - HardwareSettings (graphics, audio, input)
+  
+  **Settings Window Overhaul:**
+  - Tabbed interface (Engine, Project, User, Hardware)
+  - Search functionality
+  - Reset to defaults per category
+  - Visual indicator for modified settings
+  - Import/Export settings
 
 - [ ] **A46.0.2: Implement Advanced Lighting Models**
   - Point lights with position, color, intensity
