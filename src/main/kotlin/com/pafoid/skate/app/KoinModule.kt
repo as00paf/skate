@@ -19,6 +19,7 @@ import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.viewmodels.SelectionViewModel
 import com.pafoid.skate.editor.ui.viewmodels.SceneViewModel
+import com.pafoid.skate.editor.ui.WindowRegistry
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenu
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportOverlays
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportRenderer
@@ -28,8 +29,22 @@ import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
+import com.pafoid.skate.editor.windows.CommandHistoryWindow
+import com.pafoid.skate.editor.windows.ConsoleWindow
+import com.pafoid.skate.editor.windows.EnvironmentWindow
+import com.pafoid.skate.editor.windows.InputTestingWindow
+import com.pafoid.skate.editor.windows.KeyBindingsWindow
+import com.pafoid.skate.editor.windows.PhysicsTunerWindow
+import com.pafoid.skate.editor.windows.ProfilerWindow
+import com.pafoid.skate.editor.windows.RenderGraphWindow
+import com.pafoid.skate.editor.windows.SceneHierarchyWindow
+import com.pafoid.skate.editor.windows.SettingsWindow
+import com.pafoid.skate.editor.windows.SystemsWindow
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.TrickUIWindow
+import com.pafoid.skate.editor.windows.PropertiesWindow
+import com.pafoid.skate.editor.windows.GameViewWindow
+import com.pafoid.skate.editor.windows.AssetBrowserWindow
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.SceneOpened
 import com.pafoid.skate.engine.events.SceneChanged
@@ -100,6 +115,26 @@ val appModule = module {
     factory { SettingsMenuBuilder(get(), get(), get(), get()) }
     factory { ViewMenuBuilder(get(), get()) }
     factory { WindowControlsRenderer(get(), get()) }
+    
+    // Editor windows
+    factory { SceneHierarchyWindow() }
+    factory { PropertiesWindow() }
+    factory { GameViewWindow() }
+    factory { AssetBrowserWindow() }
+    factory { EnvironmentWindow() }
+    factory { ProfilerWindow() }
+    factory { ConsoleWindow() }
+    factory { PhysicsTunerWindow() }
+    factory { InputTestingWindow(get(), get(), get()) }
+    factory { SystemsWindow() }
+    factory { SettingsWindow(get(), get()) }
+    factory { KeyBindingsWindow(get(), get()) }
+    factory { CommandHistoryWindow() }
+    factory { RenderGraphWindow() }
+    
+    // Window registry
+    single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Search infrastructure
     single {
@@ -146,7 +181,6 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { BootManager(get(), get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection

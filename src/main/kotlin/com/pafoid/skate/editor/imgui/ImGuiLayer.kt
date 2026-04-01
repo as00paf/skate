@@ -20,6 +20,7 @@ import com.pafoid.skate.editor.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.editor.windows.SystemsWindow
+import com.pafoid.skate.editor.ui.WindowRegistry
 import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
@@ -85,6 +86,7 @@ class ImGuiLayer(
     private val renderer: Renderer,
     private val levelManager: LevelManager,
     private val resourceManager: ResourceManager,
+    private val windowRegistry: WindowRegistry,
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -93,45 +95,9 @@ class ImGuiLayer(
     private var glfwWindow: Long = 0
 
     private val eventSystem: EventSystem by inject()
-
-    private val hierarchyWindow = SceneHierarchyWindow()
-    private val propertiesWindow = PropertiesWindow()
-    private val gameViewWindow = GameViewWindow()
-    private val assetBrowser = AssetBrowserWindow()
-    private val environmentWindow = EnvironmentWindow()
-    private val profilerWindow = ProfilerWindow()
-    private val consoleWindow = ConsoleWindow()
-    private val physicsTunerWindow = PhysicsTunerWindow()
-    private val inputTestingWindow = InputTestingWindow(inputProvider, settingsManager, stringManager)
-    private val systemsWindow = SystemsWindow()
-    private val settingsWindow = SettingsWindow(settingsManager, stringManager)
-    private val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
-    private val searchEverywhereWindow = SearchEverywhereWindow()
-    private val commandHistoryWindow = CommandHistoryWindow()
-    private val renderGraphWindow = RenderGraphWindow()
-    private val statusBar = EditorStatusBar()
     private val editorInputHandler: EditorInputHandler by inject()
-
+    private val statusBar = EditorStatusBar()
     private lateinit var menuBar: EditorMenuBar
-
-    /**
-     * Registry of all dockable editor windows.
-     * Centralizes window management for rendering, menus, and dock layout.
-     */
-    private val editorWindows = listOf(
-        EditorWindow("window.hierarchy", hierarchyWindow, ImBoolean(true), requiresScene = true),
-        EditorWindow("window.properties", propertiesWindow, ImBoolean(true)),
-        EditorWindow("window.game_viewport", gameViewWindow, ImBoolean(true)),
-        EditorWindow("window.asset_browser", assetBrowser, ImBoolean(true)),
-        EditorWindow("window.environment", environmentWindow, ImBoolean(true), requiresScene = true),
-        EditorWindow("window.profiler", profilerWindow, ImBoolean(true)),
-        EditorWindow("window.console", consoleWindow, ImBoolean(true)),
-        EditorWindow("window.physics_tuner", physicsTunerWindow, ImBoolean(true), requiresScene = true),
-        EditorWindow("window.input_testing", inputTestingWindow, ImBoolean(false)),
-        EditorWindow("window.systems", systemsWindow, ImBoolean(true), requiresScene = true),
-        EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(true)),
-        EditorWindow("window.render_graph", renderGraphWindow, ImBoolean(false))
-    )
 
     private var isViewportMaximized = false
 
@@ -170,9 +136,9 @@ class ImGuiLayer(
         menuBar = EditorMenuBar(
             fileMenu = FileMenuBuilder(stringManager, levelManager, sceneManager, glfwWindow),
             editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
-            settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, keyBindingsWindow, settingsWindow),
-            viewMenu = ViewMenuBuilder(stringManager, editorWindows),
-            windowControls = WindowControlsRenderer(searchEverywhereWindow, windowController),
+            settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, windowRegistry.keyBindingsWindow, windowRegistry.settingsWindow),
+            viewMenu = ViewMenuBuilder(stringManager, windowRegistry.windows),
+            windowControls = WindowControlsRenderer(windowRegistry.searchEverywhereWindow, windowController),
             stringManager = stringManager,
             resourceManager = resourceManager
         )
@@ -205,7 +171,7 @@ class ImGuiLayer(
         
         centralNode.setLocalFlags(noTabBar or noWindowMenuButton or noCloseButton)
 
-        editorWindows.filter { it.showFlag.get() }.forEach { window ->
+        windowRegistry.windows.filter { it.showFlag.get() }.forEach { window ->
             val dockId = when (window.nameKey) {
                 "window.hierarchy", "window.properties", "window.systems", "window.asset_browser", "window.command_history", "window.render_graph" -> leftId
                 "window.console", "window.profiler", "window.physics_tuner", "window.environment" -> bottomId
@@ -223,7 +189,7 @@ class ImGuiLayer(
         val ctrlDown = inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || inputProvider.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
         if (ctrlDown && inputProvider.keyBeginPress(GLFW.GLFW_KEY_P)) {
-            searchEverywhereWindow.open()
+            windowRegistry.searchEverywhereWindow.open()
         }
 
         if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_F12)) {
@@ -256,17 +222,18 @@ class ImGuiLayer(
             statusBar.render(currentScene)
             currentScene.imguiScene()
 
-            editorWindows.forEach { window ->
+            // Render windows from registry
+            windowRegistry.windows.forEach { window ->
                 if (window.showFlag.get()) {
                     when {
-                        window.requiresScene -> (window.instance as IWindowWithScene).imgui(currentScene)
-                        else -> (window.instance as IWindow).imgui()
+                        window.requiresScene -> (window.instance as? IWindowWithScene)?.imgui(currentScene)
+                        else -> (window.instance as? IWindow)?.imgui()
                     }
                 }
             }
-            settingsWindow.render()
-            keyBindingsWindow.render()
-            searchEverywhereWindow.imgui(null)
+            windowRegistry.settingsWindow.render()
+            windowRegistry.keyBindingsWindow.render()
+            windowRegistry.searchEverywhereWindow.imgui(null)
         }
 
         endFrame()
@@ -332,7 +299,7 @@ class ImGuiLayer(
     }
 
     fun getHoveredGameObject(): com.pafoid.skate.engine.ecs.GameObject? {
-        return gameViewWindow.getHoveredObject()
+        return windowRegistry.gameViewWindow.getHoveredObject()
     }
 
     fun destroy() {
