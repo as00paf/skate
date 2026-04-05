@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.StringManager
@@ -59,7 +60,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         val centerY = if (viewport.sizeY > 0) viewport.centerY else 300f
 
         ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
-        ImGui.setNextWindowSize(550f, 440f)
+        ImGui.setNextWindowSize(UiConstants.DIALOG_WIDTH, UiConstants.DIALOG_HEIGHT)
         ImGui.setNextWindowBgAlpha(0.95f)
 
         val isOpen = ImGui.begin(

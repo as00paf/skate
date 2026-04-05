@@ -24,11 +24,6 @@ import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenu
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportOverlays
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportRenderer
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportToolbar
-import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.windows.ConsoleWindow
 import com.pafoid.skate.editor.windows.EnvironmentWindow
@@ -47,6 +42,7 @@ import com.pafoid.skate.editor.windows.TrickUIWindow
 import com.pafoid.skate.editor.windows.PropertiesWindow
 import com.pafoid.skate.editor.windows.GameViewWindow
 import com.pafoid.skate.editor.windows.AssetBrowserWindow
+import com.pafoid.skate.editor.windows.AudioInspectorWindow
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.SceneOpened
 import com.pafoid.skate.engine.events.SceneChanged
@@ -113,13 +109,6 @@ val appModule = module {
     factory { ViewportContextMenu(get()) }
     factory { ViewportOverlays(get(), get()) }
     
-    // Menu builders for EditorMenuBar
-    factory { FileMenuBuilder(get(), get(), get(), 0L) }
-    factory { EditMenuBuilder(get(), get(), get(), get(), get()) }
-    factory { SettingsMenuBuilder(get(), get(), get(), get()) }
-    factory { ViewMenuBuilder(get(), get()) }
-    factory { WindowControlsRenderer(get(), get()) }
-    
     // Editor windows
     factory { SceneHierarchyWindow() }
     factory { PropertiesWindow() }
@@ -135,9 +124,10 @@ val appModule = module {
     factory { KeyBindingsWindow(get(), get()) }
     factory { CommandHistoryWindow() }
     factory { RenderGraphWindow() }
-    
-    // Window registry
-    single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { AudioInspectorWindow() }
+
+    // Window registry (18 windows)
+    single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     
     // Project management

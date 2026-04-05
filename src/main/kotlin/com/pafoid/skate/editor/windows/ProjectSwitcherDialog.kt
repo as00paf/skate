@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.StringManager
@@ -85,9 +86,9 @@ class ProjectSwitcherDialog : KoinComponent {
             ImGui.spacing()
             
             // Action buttons
-            val buttonHeight = 30f
+            val buttonHeight = UiConstants.DEFAULT_BUTTON_HEIGHT
             val buttonWidth = 150f
-            val spacing = 10f
+            val spacing = UiConstants.SECTION_SPACING
             val totalWidth = (2 * buttonWidth) + spacing
             
             val contentRegionWidth = ImGui.getContentRegionAvailX()

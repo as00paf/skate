@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.settings.EditorSettings
@@ -20,7 +21,6 @@ import imgui.internal.ImGui.text
 import imgui.internal.ImGui.textColored
 import imgui.type.ImBoolean
 import imgui.type.ImInt
-import org.koin.core.component.KoinComponent
 
 /**
  * Window for configuring engine and project settings.
@@ -31,14 +31,12 @@ import org.koin.core.component.KoinComponent
  *
  * @param settingsManager Settings manager for loading/saving settings
  * @param stringManager String manager for localization
- * @param displayService Helper for hardware discovery
  */
 class SettingsWindow(
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
-) : KoinComponent {
+) : IWindow {
 
-    var isOpen = false
     private var settingsCategory = 0 // 0=Engine, 1=Project
     private var subTab = 0 // Engine: 0=Hardware, 1=Editor | Project: 0=Gameplay, 1=Physics
 
@@ -51,8 +49,8 @@ class SettingsWindow(
     /**
      * Renders the settings window.
      */
-    fun render() {
-        if (!isOpen) return
+    override fun imgui(pOpen: imgui.type.ImBoolean?) {
+        if (pOpen?.get() == false) return
 
         if (begin(stringManager.getString("window.settings"), ImGuiWindowFlags.AlwaysAutoResize)) {
             // Main category selection
@@ -84,7 +82,7 @@ class SettingsWindow(
             sameLine()
             if (button(stringManager.getString("btn.close"))) {
                 if (hasUnsavedChanges) saveSettings()
-                isOpen = false
+                pOpen?.set(false)
             }
 
             if (hasUnsavedChanges) {

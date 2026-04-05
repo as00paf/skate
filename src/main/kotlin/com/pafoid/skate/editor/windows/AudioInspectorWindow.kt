@@ -1,9 +1,11 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import imgui.ImGui
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
@@ -11,28 +13,22 @@ import org.koin.core.component.inject
 
 /**
  * Editor window for audio component inspector.
- * 
+ *
  * Features:
  * - Audio component inspector for selected objects
  * - Play/stop controls
  * - Volume and 3D settings
  */
-class AudioInspectorWindow : KoinComponent {
+class AudioInspectorWindow : IWindowWithScene, KoinComponent {
 
     private val stringManager: StringManager by inject()
 
     /**
      * Renders the audio inspector window.
      */
-    fun imgui(scene: Scene?) {
+    override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.audio_inspector"))
-
-        if (scene != null) {
-            renderAudioComponentInspector(scene)
-        } else {
-            ImGui.textColored(0.5f, 0.5f, 0.5f, 1.0f, "No scene loaded")
-        }
-
+        renderAudioComponentInspector(scene)
         ImGui.end()
     }
 
@@ -117,8 +113,4 @@ class AudioInspectorWindow : KoinComponent {
             }
         }
     }
-}
-
-fun Scene.getSelectedGameObject(): GameObject? {
-    return null
 }

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.input.InputMappings
@@ -29,16 +30,16 @@ import org.lwjgl.glfw.GLFW
 class KeyBindingsWindow(
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager
-) {
-    var isOpen = false
+) : IWindow {
+
     private var keyBindingAction: String? = null
     private var keyBindingTab = 0  // 0=Editor, 1=Camera, 2=Gamepad
 
     /**
      * Renders the key bindings window.
      */
-    fun render() {
-        if (!isOpen) return
+    override fun imgui(pOpen: imgui.type.ImBoolean?) {
+        if (pOpen?.get() == false) return
 
         if (begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.AlwaysAutoResize)) {
             // TODO: Get input mappings from proper settings location (Phase 5)
@@ -62,7 +63,7 @@ class KeyBindingsWindow(
 
             separator()
             if (button(stringManager.getString("btn.close"))) {
-                isOpen = false
+                pOpen?.set(false)
                 keyBindingAction = null
                 settingsManager.save()
             }

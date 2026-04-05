@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImGui
 import imgui.flag.ImGuiCond
@@ -7,7 +8,7 @@ import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
 
 class EditorStatusBar {
-    val height = 30f
+    val height = UiConstants.STATUS_BAR_HEIGHT
 
     fun render(currentScene: Scene) {
         val viewport = ImGui.getMainViewport()

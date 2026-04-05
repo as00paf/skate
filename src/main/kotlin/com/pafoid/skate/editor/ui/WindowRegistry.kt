@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.ui
 
 import com.pafoid.skate.editor.imgui.EditorWindow
-import com.pafoid.skate.editor.ui.interfaces.IWindowLifecycle
 import com.pafoid.skate.editor.windows.AssetBrowserWindow
+import com.pafoid.skate.editor.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.windows.ConsoleWindow
 import com.pafoid.skate.editor.windows.EnvironmentWindow
@@ -11,6 +11,8 @@ import com.pafoid.skate.editor.windows.InputTestingWindow
 import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
+import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
+import com.pafoid.skate.editor.windows.ProjectWizardWindow
 import com.pafoid.skate.editor.windows.PropertiesWindow
 import com.pafoid.skate.editor.windows.RenderGraphWindow
 import com.pafoid.skate.editor.windows.SceneHierarchyWindow
@@ -40,11 +42,16 @@ class WindowRegistry(
     val keyBindingsWindow: KeyBindingsWindow,
     val commandHistoryWindow: CommandHistoryWindow,
     val renderGraphWindow: RenderGraphWindow,
-    val searchEverywhereWindow: SearchEverywhereWindow
+    val searchEverywhereWindow: SearchEverywhereWindow,
+    val projectWizardWindow: ProjectWizardWindow,
+    val projectSwitcherDialog: ProjectSwitcherDialog,
+    val audioInspectorWindow: AudioInspectorWindow
 ) {
-    
+
     /**
-     * List of all registered editor windows with their metadata.
+     * List of all dockable editor windows with their metadata.
+     * Modal/overlay windows (projectWizard, projectSwitcher, searchEverywhere)
+     * are accessed directly via val properties and are NOT in this list.
      */
     val windows: List<EditorWindow> = listOf(
         EditorWindow("window.hierarchy", hierarchyWindow, ImBoolean(true), requiresScene = true),
@@ -58,77 +65,29 @@ class WindowRegistry(
         EditorWindow("window.input_testing", inputTestingWindow, ImBoolean(false)),
         EditorWindow("window.systems", systemsWindow, ImBoolean(true), requiresScene = true),
         EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(true)),
-        EditorWindow("window.render_graph", renderGraphWindow, ImBoolean(false))
+        EditorWindow("window.render_graph", renderGraphWindow, ImBoolean(false)),
+        EditorWindow("window.settings", settingsWindow, ImBoolean(false)),
+        EditorWindow("window.keybindings", keyBindingsWindow, ImBoolean(false)),
+        EditorWindow("window.audio_inspector", audioInspectorWindow, ImBoolean(false), requiresScene = true)
     )
-    
+
     /**
      * Get a window by its name key.
-     * 
+     *
      * @param key The window name key (e.g., "window.hierarchy")
-     * @return The window instance
-     * @throws IllegalArgumentException if window not found
+     * @return The window instance or null if not found
      */
-    fun getWindow(key: String): IWindowLifecycle {
-        return windows.find { it.nameKey == key }?.instance as? IWindowLifecycle
-            ?: throw IllegalArgumentException("Unknown window: $key")
+    fun getWindow(key: String): Any? {
+        return windows.find { it.nameKey == key }?.instance
     }
-    
+
     /**
      * Get a window by its type.
-     * 
+     *
      * @param T The window type
      * @return The window instance or null if not found
      */
     inline fun <reified T> getWindow(): T? {
         return windows.find { it.instance is T }?.instance as? T
-    }
-    
-    /**
-     * Initialize all windows.
-     * 
-     * Calls onInit() on each registered window.
-     */
-    fun initializeAll() {
-        windows.forEach { window ->
-            (window.instance as? IWindowLifecycle)?.onInit()
-        }
-    }
-    
-    /**
-     * Update all windows.
-     * 
-     * Calls onUpdate(dt) on each registered window.
-     * 
-     * @param dt Delta time since last frame
-     */
-    fun updateAll(dt: Float) {
-        windows.forEach { window ->
-            (window.instance as? IWindowLifecycle)?.onUpdate(dt)
-        }
-    }
-    
-    /**
-     * Notify all windows of scene change.
-     * 
-     * Calls onSceneChanged(oldScene, newScene) on each registered window.
-     * 
-     * @param oldScene The previous scene (null if first scene)
-     * @param newScene The new scene (null if scene closed)
-     */
-    fun onSceneChangedAll(oldScene: com.pafoid.skate.engine.ecs.Scene?, newScene: com.pafoid.skate.engine.ecs.Scene?) {
-        windows.forEach { window ->
-            (window.instance as? IWindowLifecycle)?.onSceneChanged(oldScene, newScene)
-        }
-    }
-    
-    /**
-     * Destroy all windows.
-     * 
-     * Calls onDestroy() on each registered window.
-     */
-    fun destroyAll() {
-        windows.forEach { window ->
-            (window.instance as? IWindowLifecycle)?.onDestroy()
-        }
     }
 }

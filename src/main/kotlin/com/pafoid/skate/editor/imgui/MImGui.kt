@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.imgui
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiStyleVar
-import imgui.type.ImBoolean
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -13,8 +12,6 @@ import org.joml.Vector4f
  * This helps maintain a consistent look and feel across the editor's UI.
  */
 object MImGui {
-
-    private var uniformScaling = true
 
     private const val DEFAULT_COLUMN_WIDTH = 220f
     private const val SENSIBILITY = 0.01f
@@ -220,21 +217,12 @@ object MImGui {
      * @param resetValue The value to set when a component's reset button is clicked.
      * @param sens The sensitivity of the drag float controls.
      */
-    fun drawVec3TransformControl(label: String, values: Vector3f, resetValue: Float = 0f, sens: Float = SENSIBILITY) {
+    fun drawVec3TransformControl(label: String, values: Vector3f, resetValue: Float = 0f, sens: Float = SENSIBILITY, uniformScaling: Boolean = true) {
         ImGui.pushID(label)
 
         ImGui.columns(2)
         ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
         ImGui.text(label)
-
-        if (label == "Scale") {
-            ImGui.sameLine()
-            val imBool = ImBoolean(uniformScaling)
-            if (ImGui.checkbox("Uniform", imBool)) {
-                uniformScaling = imBool.get()
-            }
-        }
-
         ImGui.nextColumn()
 
         val lineHeight = ImGui.getFontSize() + ImGui.getStyle().framePaddingY * 2f

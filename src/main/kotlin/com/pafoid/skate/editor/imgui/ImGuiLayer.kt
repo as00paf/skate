@@ -6,8 +6,6 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.WindowRegistry
-import com.pafoid.skate.editor.windows.ProjectWizardWindow
-import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
 import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
@@ -94,8 +92,6 @@ class ImGuiLayer(
     private val editorInputHandler: EditorInputHandler by inject()
     private val projectManager: ProjectManager by inject()
     private val statusBar = EditorStatusBar()
-    private val projectWizardWindow: ProjectWizardWindow by inject()
-    private val projectSwitcherDialog: ProjectSwitcherDialog by inject()
     private lateinit var menuBar: EditorMenuBar
     
     // Reusable buffer to avoid per-frame allocations
@@ -138,13 +134,17 @@ class ImGuiLayer(
         menuBar = EditorMenuBar(
             fileMenu = FileMenuBuilder(stringManager, levelManager, sceneManager, glfwWindow),
             editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
-            settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, windowRegistry.keyBindingsWindow, windowRegistry.settingsWindow),
+            settingsMenu = SettingsMenuBuilder(
+                stringManager, settingsManager,
+                keyBindingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.keybindings" }?.showFlag ?: ImBoolean(false),
+                settingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.settings" }?.showFlag ?: ImBoolean(false)
+            ),
             viewMenu = ViewMenuBuilder(stringManager, windowRegistry.windows),
             windowControls = WindowControlsRenderer(windowRegistry.searchEverywhereWindow, windowController),
             stringManager = stringManager,
             resourceManager = resourceManager,
             projectManager = projectManager,
-            projectSwitcher = projectSwitcherDialog
+            projectSwitcher = windowRegistry.projectSwitcherDialog
         )
     }
 
@@ -209,9 +209,7 @@ class ImGuiLayer(
 
         // Show project wizard if no project is loaded (overlay on top of editor)
         if (!projectManager.hasProject()) {
-            // Show project wizard and switcher as modal overlays
-            projectWizardWindow.imgui(null)
-            projectSwitcherDialog.render()
+            windowRegistry.projectWizardWindow.imgui(null)
         }
 
         if (isViewportMaximized) {
@@ -234,6 +232,7 @@ class ImGuiLayer(
             statusBar.render(currentScene)
             currentScene.imguiScene()
 
+            // Render all dockable windows through the registry
             windowRegistry.windows.forEach { window ->
                 if (window.showFlag.get()) {
                     when {
@@ -242,10 +241,10 @@ class ImGuiLayer(
                     }
                 }
             }
-            windowRegistry.settingsWindow.render()
-            windowRegistry.keyBindingsWindow.render()
+
+            // Render modal/overlay windows that aren't in the dockable list
             windowRegistry.searchEverywhereWindow.imgui(null)
-            projectSwitcherDialog.render()
+            windowRegistry.projectSwitcherDialog.render()
         }
 
         endFrame()
@@ -279,7 +278,7 @@ class ImGuiLayer(
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
 
         val viewport = getMainViewport()
-        val statusBarHeight = 30f // Height for EditorStatusBar
+        val statusBarHeight = com.pafoid.skate.editor.imgui.data.UiConstants.STATUS_BAR_HEIGHT
 
         setNextWindowPos(viewport.workPosX, viewport.workPosY, ImGuiCond.Always)
         setNextWindowSize(viewport.workSizeX, viewport.workSizeY - statusBarHeight, ImGuiCond.Always)

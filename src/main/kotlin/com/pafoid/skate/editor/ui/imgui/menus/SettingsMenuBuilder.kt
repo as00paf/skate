@@ -3,8 +3,6 @@ package com.pafoid.skate.editor.ui.imgui.menus
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.windows.KeyBindingsWindow
-import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.internal.ImGui.beginMenu
@@ -35,8 +33,8 @@ import imgui.type.ImInt
 class SettingsMenuBuilder(
     private val stringManager: StringManager,
     private val settingsManager: SettingsManager,
-    private val keyBindingsWindow: KeyBindingsWindow,
-    private val settingsWindow: SettingsWindow
+    private val keyBindingsShowFlag: ImBoolean,
+    private val settingsShowFlag: ImBoolean
 ) {
     
     /**
@@ -106,10 +104,10 @@ class SettingsMenuBuilder(
     
     private fun renderWindowItems() {
         if (menuItem(stringManager.getString("menu.settings.keybindings"))) {
-            keyBindingsWindow.isOpen = true
+            keyBindingsShowFlag.set(true)
         }
         if (menuItem(stringManager.getString("menu.settings.settings"))) {
-            settingsWindow.isOpen = true
+            settingsShowFlag.set(true)
         }
     }
 }
