@@ -27,11 +27,10 @@ import javax.swing.UIManager
  * - "New Project" button
  * - "Open Project" button
  */
-class ProjectSwitcherDialog(
-    private val projectWizard: com.pafoid.skate.game.project.ProjectWizard
-) : KoinComponent {
-    
+class ProjectSwitcherDialog : KoinComponent {
+
     private val projectManager: ProjectManager by inject()
+    private val wizard: com.pafoid.skate.game.project.ProjectWizard by inject()
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
     
@@ -99,7 +98,7 @@ class ProjectSwitcherDialog(
             
             if (ImGui.button("${Icons.PLUS} New Project", buttonWidth, buttonHeight)) {
                 close()
-                projectWizard.open()
+                wizard.open()
             }
             
             ImGui.sameLine(0f, spacing)

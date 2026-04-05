@@ -49,11 +49,6 @@ class ProjectWizardWindow : IWindow, KoinComponent {
      * Render the project creation dialog.
      */
     override fun imgui(pOpen: ImBoolean?) {
-        // Auto-open dialog if no project is loaded AND user hasn't explicitly dismissed it
-        if (!projectManager.hasProject() && !wizard.isOpen.get() && !wizard.userDismissed) {
-            wizard.open()
-        }
-
         if (!wizard.isOpen.get()) return
 
         val viewport = ImGui.getMainViewport()
@@ -80,11 +75,6 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         // Detect if user closed the window via the X button
         if (!wizard.isOpen.get()) {
             wizard.dismiss()
-        }
-
-        // Close dialog if project was created
-        if (projectManager.hasProject()) {
-            wizard.isOpen.set(false)
         }
     }
 

@@ -98,6 +98,7 @@ class ImGuiLayer(
     private val tempVec2 = ImVec2()
 
     private var isViewportMaximized = false
+    private var hadProjectLastFrame = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
     private lateinit var setVSync: (Boolean) -> Unit
@@ -209,16 +210,6 @@ class ImGuiLayer(
         // Setup dockspace first (always needed for ImGui context)
         setupDockSpace(currentScene)
 
-        // Try to auto-load the last project before showing the wizard
-        if (!projectManager.hasProject()) {
-            projectManager.loadLastProject()
-        }
-
-        // Show project wizard if no project is loaded (overlay on top of editor)
-        if (!projectManager.hasProject()) {
-            windowRegistry.projectWizardWindow.imgui(null)
-        }
-
         if (isViewportMaximized) {
             setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY, ImGuiCond.Always)
             setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY, ImGuiCond.Always)
@@ -255,6 +246,25 @@ class ImGuiLayer(
         }
 
         statusBar.render(currentScene)
+
+        // Try to auto-load the last project before showing the wizard
+        if (!projectManager.hasProject()) {
+            projectManager.loadLastProject()
+        }
+
+        // Auto-close wizard when a project is created (but not when one already existed)
+        if (!hadProjectLastFrame && projectManager.hasProject() && windowRegistry.projectWizardWindow.wizard.isOpen.get()) {
+            windowRegistry.projectWizardWindow.wizard.dismiss()
+        }
+        hadProjectLastFrame = projectManager.hasProject()
+
+        // Auto-open wizard if no project and user hasn't dismissed it
+        if (!projectManager.hasProject() && !windowRegistry.projectWizardWindow.wizard.isOpen.get() && !windowRegistry.projectWizardWindow.wizard.userDismissed) {
+            windowRegistry.projectWizardWindow.wizard.open()
+        }
+
+        // Render the project wizard LAST so it appears on top of all other windows
+        windowRegistry.projectWizardWindow.imgui(null)
 
         endFrame()
     }
