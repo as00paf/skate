@@ -23,18 +23,6 @@ import imgui.internal.ImGui.popStyleVar
 import imgui.internal.ImGui.pushStyleColor
 import imgui.internal.ImGui.pushStyleVar
 
-/**
- * Renders the main editor menu bar with File, Edit, Settings, and View menus.
- * Delegates menu building to specialized builder components.
- *
- * @param fileMenu Builder for File menu
- * @param editMenu Builder for Edit menu
- * @param settingsMenu Builder for Settings menu
- * @param viewMenu Builder for View menu
- * @param windowControls Renderer for window control buttons
- * @param stringManager Localization for menu labels
- * @param resourceManager To load app icon texture
- */
 class EditorMenuBar(
     private val fileMenu: FileMenuBuilder,
     private val editMenu: EditMenuBuilder,
@@ -46,14 +34,19 @@ class EditorMenuBar(
     private val projectManager: ProjectManager,
     private val projectSwitcher: ProjectSwitcherDialog,
     private val windowController: WindowController,
-    private val projectWizard: com.pafoid.skate.game.project.ProjectWizard
+    private val projectWizard: com.pafoid.skate.game.project.ProjectWizard,
+    private val imguiLayer: ImGuiLayer
 ) {
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
     private val projectName = "Skate Project"
 
     init {
-        appIconTexId = resourceManager.loadTextureSync(Assets.Textures.APP_ICON).texId
+        appIconTexId = try {
+            resourceManager.loadTextureSync(Assets.Textures.APP_ICON).texId
+        } catch (e: Exception) {
+            -1
+        }
     }
 
     fun render(currentScene: Scene) {
@@ -93,8 +86,7 @@ class EditorMenuBar(
             settingsMenu.render()
             viewMenu.render()
             ImGui.separator()
-            
-            // Recent projects submenu
+
             if (ImGui.beginMenu(stringManager.getString("menu.file.recent_projects"))) {
                 val currentPath = projectManager.currentProject?.getProjectFile()?.absolutePath
                 val recentProjects = projectManager.getRecentProjects()
@@ -114,9 +106,10 @@ class EditorMenuBar(
 
             ImGui.separator()
 
-            // Project management
             if (projectManager.hasProject()) {
                 if (ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}")) {
+                    imguiLayer.markWizardResetNeeded()
+                    imguiLayer.markAutoLoadResetNeeded()
                     projectManager.closeProject()
                 }
             }
@@ -150,8 +143,7 @@ class EditorMenuBar(
             projectIcon
         )
         ImGui.setCursorPosY(textY)
-        
-        // Show current project name, clickable to open project switcher
+
         val currentProjectName = projectManager.getProjectName()
         if (ImGui.button(currentProjectName)) {
             projectSwitcher.open()

@@ -26,28 +26,22 @@ class ProjectSwitcherDialog : KoinComponent {
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
 
-    private var isOpen = false
     private val windowOpen = ImBoolean(false)
+    private var lastOpenFailed = false
+    private var lastOpenErrorMessage = ""
 
-    /**
-     * Open the project switcher dialog.
-     */
+    val isOpen: Boolean get() = windowOpen.get()
+
     fun open() {
-        isOpen = true
+        lastOpenFailed = false
+        lastOpenErrorMessage = ""
         windowOpen.set(true)
     }
 
-    /**
-     * Close the project switcher dialog.
-     */
     fun close() {
-        isOpen = false
         windowOpen.set(false)
     }
 
-    /**
-     * Render the project switcher dialog.
-     */
     fun render() {
         if (!isOpen) return
 
@@ -66,7 +60,11 @@ class ProjectSwitcherDialog : KoinComponent {
             ImGui.text(stringManager.getString("lbl.switch_project.select_or_create"))
             ImGui.spacing()
 
-            // Recent projects list
+            if (lastOpenFailed) {
+                MImGui.errorText("${Icons.WINDOW_CLOSE} $lastOpenErrorMessage")
+                ImGui.spacing()
+            }
+
             val recentProjects = getRecentProjectsDisplayInfo()
             if (recentProjects.isNotEmpty()) {
                 ImGui.text(stringManager.getString("lbl.switch_project.recent"))
@@ -82,7 +80,6 @@ class ProjectSwitcherDialog : KoinComponent {
             ImGui.separator()
             ImGui.spacing()
 
-            // Action buttons
             val buttonHeight = UiConstants.DEFAULT_BUTTON_HEIGHT
             val newButtonWidth = 150f
             val openButtonWidth = 130f
@@ -113,25 +110,20 @@ class ProjectSwitcherDialog : KoinComponent {
             ImGui.end()
         }
 
-        // Detect if user closed the window via the X button
         if (!windowOpen.get()) {
             close()
         }
     }
 
-    /**
-     * Render a single recent project item.
-     */
     private fun renderRecentProjectItem(project: RecentProjectDisplayInfo) {
         ImGui.pushID(project.path)
-        
+
         val isClickable = project.exists
-        
+
         if (!isClickable) {
             ImGui.pushStyleColor(imgui.flag.ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
         }
-        
-        // Project name
+
         ImGui.textColored(
             if (isClickable) 0.3f else 0.5f,
             if (isClickable) 0.6f else 0.5f,
@@ -139,34 +131,28 @@ class ProjectSwitcherDialog : KoinComponent {
             1f,
             project.name
         )
-        
-        // Project path
+
         ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, project.path)
-        
-        // Last opened
+
         ImGui.textColored(0.4f, 0.4f, 0.4f, 1f, "${stringManager.getString("lbl.switch_project.last_opened").format(project.getLastOpenedString())}")
 
         if (!isClickable) {
             ImGui.popStyleColor()
             MImGui.errorText(stringManager.getString("lbl.switch_project.not_found"))
         } else {
-            // Make clickable
             if (ImGui.isItemHovered()) {
                 ImGui.setMouseCursor(imgui.flag.ImGuiMouseCursor.Hand)
             }
-            
+
             if (ImGui.isItemClicked()) {
                 openProject(File(project.path))
             }
         }
-        
+
         ImGui.separator()
         ImGui.popID()
     }
-    
-    /**
-     * Get recent projects with display info.
-     */
+
     private fun getRecentProjectsDisplayInfo(): List<RecentProjectDisplayInfo> {
         return projectManager.getRecentProjects().map { recent ->
             val exists = File(recent.path).exists()
@@ -178,26 +164,23 @@ class ProjectSwitcherDialog : KoinComponent {
             )
         }
     }
-    
-    /**
-     * Open a project from file.
-     */
+
     private fun openProject(projectFile: File) {
         logger.logEditor("Opening project: ${projectFile.absolutePath}")
-        
+
         val success = projectManager.openProject(projectFile)
-        
+
         if (success) {
             logger.logEditor("Project opened: ${projectManager.getProjectName()}")
+            lastOpenFailed = false
             close()
         } else {
+            lastOpenFailed = true
+            lastOpenErrorMessage = stringManager.getString("lbl.switch_project.open_failed").replace("%s", projectFile.name)
             logger.logEngine("Failed to open project: ${projectFile.absolutePath}", LogLevel.ERROR)
         }
     }
-    
-    /**
-     * Open file chooser dialog to select a project.
-     */
+
     private fun openProjectDialog() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())

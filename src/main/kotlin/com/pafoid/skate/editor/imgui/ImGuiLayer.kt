@@ -93,12 +93,13 @@ class ImGuiLayer(
     private val projectManager: ProjectManager by inject()
     private val statusBar = EditorStatusBar()
     private lateinit var menuBar: EditorMenuBar
-    
-    // Reusable buffer to avoid per-frame allocations
+
     private val tempVec2 = ImVec2()
 
     private var isViewportMaximized = false
     private var hadProjectLastFrame = false
+    private var needsWizardReset = false
+    private var hasAttemptedAutoLoad = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
     private lateinit var setVSync: (Boolean) -> Unit
@@ -106,6 +107,14 @@ class ImGuiLayer(
 
     private var needsDecorationUpdate = false
     private var layoutInitialized = false
+
+    fun markWizardResetNeeded() {
+        needsWizardReset = true
+    }
+
+    fun markAutoLoadResetNeeded() {
+        hasAttemptedAutoLoad = false
+    }
 
     fun init(
         glfwWindow: Long,
@@ -147,7 +156,8 @@ class ImGuiLayer(
             projectManager = projectManager,
             projectSwitcher = windowRegistry.projectSwitcherDialog,
             windowController = windowController,
-            projectWizard = windowRegistry.projectWizardWindow.wizard
+            projectWizard = windowRegistry.projectWizardWindow.wizard,
+            imguiLayer = this
         )
     }
 
@@ -175,7 +185,7 @@ class ImGuiLayer(
         val noTabBar = imgui.internal.flag.ImGuiDockNodeFlags.NoTabBar
         val noWindowMenuButton = 1 shl 12
         val noCloseButton = 1 shl 13
-        
+
         centralNode.setLocalFlags(noTabBar or noWindowMenuButton or noCloseButton)
 
         windowRegistry.windows.filter { it.showFlag.get() }.forEach { window ->
@@ -207,7 +217,6 @@ class ImGuiLayer(
 
         editorInputHandler.update(currentScene)
 
-        // Setup dockspace first (always needed for ImGui context)
         setupDockSpace(currentScene)
 
         if (isViewportMaximized) {
@@ -227,10 +236,8 @@ class ImGuiLayer(
             end()
             popStyleVar()
         } else if (projectManager.hasProject()) {
-            // Only render project-dependent UI when a project is loaded
             currentScene.imguiScene()
 
-            // Render all dockable windows through the registry
             windowRegistry.windows.forEach { window ->
                 if (window.showFlag.get()) {
                     when {
@@ -240,35 +247,35 @@ class ImGuiLayer(
                 }
             }
 
-            // Render modal/overlay windows that aren't in the dockable list
             windowRegistry.searchEverywhereWindow.imgui(null)
             windowRegistry.projectSwitcherDialog.render()
         }
 
         statusBar.render(currentScene)
 
-        // Try to auto-load the last project (skips the one the user just closed)
-        if (!projectManager.hasProject()) {
+        if (needsWizardReset) {
+            windowRegistry.projectWizardWindow.wizard.resetForNewProject()
+            needsWizardReset = false
+        }
+
+        if (!hasAttemptedAutoLoad && !projectManager.hasProject()) {
+            hasAttemptedAutoLoad = true
             projectManager.loadLastProject()
         }
 
-        // When project is closed, reset wizard dismissal so it can appear again
         if (!projectManager.hasProject() && !hadProjectLastFrame) {
-            windowRegistry.projectWizardWindow.wizard.resetForNewProject()
+            hasAttemptedAutoLoad = false
         }
 
-        // Auto-close wizard when a project is created (but not when one already existed)
         if (!hadProjectLastFrame && projectManager.hasProject() && windowRegistry.projectWizardWindow.wizard.isOpen.get()) {
             windowRegistry.projectWizardWindow.wizard.dismiss()
         }
         hadProjectLastFrame = projectManager.hasProject()
 
-        // Auto-open wizard if no project and user hasn't dismissed it
         if (!projectManager.hasProject() && !windowRegistry.projectWizardWindow.wizard.isOpen.get() && !windowRegistry.projectWizardWindow.wizard.userDismissed) {
             windowRegistry.projectWizardWindow.wizard.open()
         }
 
-        // Render the project wizard LAST so it appears on top of all other windows
         windowRegistry.projectWizardWindow.imgui(null)
 
         endFrame()
