@@ -228,8 +228,8 @@ class ImGuiLayer(
 
             end()
             popStyleVar()
-        } else {
-            statusBar.render(currentScene)
+        } else if (projectManager.hasProject()) {
+            // Only render project-dependent UI when a project is loaded
             currentScene.imguiScene()
 
             // Render all dockable windows through the registry
@@ -246,6 +246,8 @@ class ImGuiLayer(
             windowRegistry.searchEverywhereWindow.imgui(null)
             windowRegistry.projectSwitcherDialog.render()
         }
+
+        statusBar.render(currentScene)
 
         endFrame()
     }
