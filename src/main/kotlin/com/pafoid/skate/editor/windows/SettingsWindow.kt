@@ -55,7 +55,10 @@ class SettingsWindow(
 
         if (begin(stringManager.getString("window.settings"), ImGuiWindowFlags.AlwaysAutoResize)) {
             // Main category selection
-            val categories = arrayOf("Engine Settings", "Project Settings")
+            val categories = arrayOf(
+                stringManager.getString("tab.settings.engine"),
+                stringManager.getString("tab.settings.project")
+            )
             val catSelector = ImInt(settingsCategory)
             if (combo("##CategorySelector", catSelector, categories, categories.size)) {
                 settingsCategory = catSelector.get()
@@ -95,7 +98,10 @@ class SettingsWindow(
     }
 
     private fun renderEngineSubTabs() {
-        val tabs = arrayOf("Hardware", "Editor")
+        val tabs = arrayOf(
+            stringManager.getString("tab.settings.hardware"),
+            stringManager.getString("tab.settings.editor")
+        )
         val tabSelector = ImInt(subTab)
         if (combo("##EngineSubTab", tabSelector, tabs, tabs.size)) {
             subTab = tabSelector.get()
@@ -109,7 +115,10 @@ class SettingsWindow(
     }
 
     private fun renderProjectSubTabs() {
-        val tabs = arrayOf("Gameplay", "Physics")
+        val tabs = arrayOf(
+            stringManager.getString("tab.settings.gameplay"),
+            stringManager.getString("tab.settings.physics")
+        )
         val tabSelector = ImInt(subTab)
         if (combo("##ProjectSubTab", tabSelector, tabs, tabs.size)) {
             subTab = tabSelector.get()
@@ -124,7 +133,7 @@ class SettingsWindow(
 
     private fun renderHardwareSettings() {
         // TODO Phase 5: Update to use new immutable settings structure
-        text("Hardware Settings")
+        text(stringManager.getString("lbl.settings.hardware_title"))
         separator()
         MImGui.textDisabled("Hardware settings configuration will be available after Phase 5 completion")
         /*
@@ -167,7 +176,7 @@ class SettingsWindow(
 
     private fun renderEditorSettings() {
         // TODO Phase 5: Update to use new immutable settings structure
-        text("Editor Preferences")
+        text(stringManager.getString("lbl.settings.editor_prefs"))
         separator()
         MImGui.textDisabled("Editor settings configuration will be available after Phase 5 completion")
         /*
@@ -203,7 +212,7 @@ class SettingsWindow(
 
     private fun renderGameplaySettings() {
         // TODO Phase 5: Update to use new immutable settings structure
-        text("Gameplay Constants")
+        text(stringManager.getString("lbl.settings.gameplay_constants"))
         separator()
         MImGui.textDisabled("Gameplay settings configuration will be available after Phase 5 completion")
         /*
@@ -257,7 +266,7 @@ class SettingsWindow(
     }
 
     private fun renderPhysicsSettings() {
-        text("Physics Engine Constants")
+        text(stringManager.getString("lbl.settings.physics_constants"))
         separator()
         MImGui.textDisabled("Project physics settings configuration will be available after Phase 5 completion")
     }

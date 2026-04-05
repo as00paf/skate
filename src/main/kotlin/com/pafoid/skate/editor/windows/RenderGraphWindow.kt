@@ -48,7 +48,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
         if (autoUpdate) {
             renderGraphNodes()
         } else {
-            ImGui.text("Auto-update disabled. Click Refresh to update.")
+            ImGui.text(stringManager.getString("lbl.render_graph.auto_update_disabled"))
         }
 
         ImGui.endChild()
@@ -59,7 +59,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
     }
 
     private fun renderToolbar() {
-        if (ImGui.button("${Icons.ARROW_ROTATE} Refresh")) {
+        if (ImGui.button("${Icons.ARROW_ROTATE} ${stringManager.getString("lbl.render_graph.refresh")}")) {
             // Force refresh (metrics already update automatically)
         }
         if (ImGui.isItemHovered()) {
@@ -85,7 +85,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
         }
 
         ImGui.sameLine()
-        ImGui.text("Zoom:")
+        ImGui.text("${stringManager.getString("lbl.render_graph.zoom")}")
         ImGui.sameLine()
         val zoomArr = floatArrayOf(zoomLevel)
         if (ImGui.sliderFloat("##Zoom", zoomArr, 0.5f, 2.0f, "%.1f")) {
@@ -98,7 +98,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
         val passes: List<RenderPass> = renderGraph.getAllPasses()
 
         if (passes.isEmpty()) {
-            MImGui.warningText("No render passes found")
+            MImGui.warningText(stringManager.getString("lbl.render_graph.no_passes"))
             return
         }
 
@@ -182,7 +182,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
                     clicked = true
                 }
             } else {
-                MImGui.textDisabled("Required pass (cannot disable)")
+                MImGui.textDisabled(stringManager.getString("lbl.render_graph.required_pass"))
             }
         }
 

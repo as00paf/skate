@@ -95,7 +95,7 @@ class EditorMenuBar(
             ImGui.separator()
             
             // Recent projects submenu
-            if (ImGui.beginMenu("Recent Projects")) {
+            if (ImGui.beginMenu(stringManager.getString("menu.file.recent_projects"))) {
                 val currentPath = projectManager.currentProject?.getProjectFile()?.absolutePath
                 val recentProjects = projectManager.getRecentProjects()
                 val filteredProjects = recentProjects.filter { it.path != currentPath }
@@ -107,7 +107,7 @@ class EditorMenuBar(
                         }
                     }
                 } else {
-                    ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "No recent projects")
+                    ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.no_recent_projects"))
                 }
                 ImGui.endMenu()
             }
@@ -116,14 +116,14 @@ class EditorMenuBar(
 
             // Project management
             if (projectManager.hasProject()) {
-                if (ImGui.menuItem("${Icons.WINDOW_CLOSE} Close Project")) {
+                if (ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}")) {
                     projectManager.closeProject()
                 }
             }
-            if (ImGui.menuItem("${Icons.PLUS} New Project")) {
+            if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}")) {
                 projectWizard.open()
             }
-            if (ImGui.menuItem("${Icons.FOLDER_OPEN} Open Project")) {
+            if (ImGui.menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}")) {
                 projectSwitcher.open()
             }
 
@@ -157,7 +157,7 @@ class EditorMenuBar(
             projectSwitcher.open()
         }
         if (ImGui.isItemHovered()) {
-            ImGui.setTooltip("Click to switch projects")
+            ImGui.setTooltip(stringManager.getString("tooltip.switch_projects"))
         }
     }
 }

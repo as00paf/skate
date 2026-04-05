@@ -33,11 +33,11 @@ class PrefabsTab(
     override fun imgui(label: String, searchText: ImString) {
         renderHeader(label, searchText)
 
-        if (ImGui.collapsingHeader("${Icons.CUBE} Player", ImGuiTreeNodeFlags.DefaultOpen)) {
+        if (ImGui.collapsingHeader("${Icons.CUBE} ${stringManager.getString("lbl.prefabs.player")}", ImGuiTreeNodeFlags.DefaultOpen)) {
             renderPlayerPrefabs(searchText)
         }
 
-        if (ImGui.collapsingHeader("${Icons.GEAR} Obstacles", ImGuiTreeNodeFlags.DefaultOpen)) {
+        if (ImGui.collapsingHeader("${Icons.GEAR} ${stringManager.getString("lbl.prefabs.obstacles")}", ImGuiTreeNodeFlags.DefaultOpen)) {
             renderObstaclePrefabs(searchText)
         }
     }
@@ -190,7 +190,7 @@ class PrefabsTab(
             ImGui.image(texId.toLong(), size*1.2f, size*1.2f, 0f, 1f, 1f, 0f)
             ImGui.text(data.name)
             if (data.material != null) {
-                ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "Material: ${data.material.displayName}")
+                ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "${stringManager.getString("lbl.material")}: ${data.material.displayName}")
             }
             ImGui.endDragDropSource()
         }

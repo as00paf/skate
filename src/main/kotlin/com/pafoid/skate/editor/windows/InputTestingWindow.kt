@@ -48,22 +48,22 @@ class InputTestingWindow(
         ImGui.begin(stringManager.getString("window.input_testing"))
 
         // Collapsing headers for sections
-        showRawAxes = ImGui.collapsingHeader("Raw Gamepad Input", ImGuiWindowFlags.None)
+        showRawAxes = ImGui.collapsingHeader(stringManager.getString("lbl.input_testing.raw_gamepad"), ImGuiWindowFlags.None)
         if (showRawAxes) {
             renderRawGamepadSection()
         }
 
-        showProcessedState = ImGui.collapsingHeader("Processed Input State", ImGuiWindowFlags.None)
+        showProcessedState = ImGui.collapsingHeader(stringManager.getString("lbl.input_testing.processed_state"), ImGuiWindowFlags.None)
         if (showProcessedState) {
             renderProcessedStateSection(currentScene)
         }
 
-        showSettings = ImGui.collapsingHeader("Input Settings", ImGuiWindowFlags.None)
+        showSettings = ImGui.collapsingHeader(stringManager.getString("lbl.input_testing.settings"), ImGuiWindowFlags.None)
         if (showSettings) {
             renderSettingsSection()
         }
 
-        showBindings = ImGui.collapsingHeader("Input Bindings", ImGuiWindowFlags.None)
+        showBindings = ImGui.collapsingHeader(stringManager.getString("lbl.input_testing.bindings"), ImGuiWindowFlags.None)
         if (showBindings) {
             renderBindingsSection()
         }
@@ -80,12 +80,12 @@ class InputTestingWindow(
 
         val gamepadConnected = inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)
         if (!gamepadConnected) {
-            MImGui.errorText("No gamepad detected (GLFW_JOYSTICK_1)")
+            MImGui.errorText(stringManager.getString("lbl.input_testing.no_gamepad"))
             ImGui.unindent()
             return
         }
 
-        MImGui.successText("Gamepad Connected")
+        MImGui.successText(stringManager.getString("lbl.input_testing.gamepad_connected"))
 
         val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1)
         val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
@@ -93,13 +93,13 @@ class InputTestingWindow(
         ImGui.separator()
 
         // Left Stick (Axes 0, 1)
-        ImGui.text("Left Stick (Movement)")
+        ImGui.text(stringManager.getString("lbl.input_testing.left_stick"))
         if (axes != null && axes.size > 1) {
             val leftStickX = axes[0]
             val leftStickY = axes[1]
 
             // Show raw values
-            ImGui.text("  Raw: X=%.3f, Y=%.3f".format(leftStickX, leftStickY))
+            ImGui.text("  " + stringManager.getString("lbl.input_testing.raw_values").format(leftStickX, leftStickY))
 
             // Deadzone visualization (TODO Phase 5: Get from settings)
             val deadzone = 0.15f // settingsManager.engine.hardware.leftStickDeadzone
@@ -108,46 +108,46 @@ class InputTestingWindow(
             // After deadzone
             val afterDeadzoneX = applyDeadzone(leftStickX, deadzone)
             val afterDeadzoneY = applyDeadzone(leftStickY, deadzone)
-            ImGui.text("  After Deadzone: X=%.3f, Y=%.3f".format(afterDeadzoneX, afterDeadzoneY))
+            ImGui.text("  " + stringManager.getString("lbl.input_testing.after_deadzone").format(afterDeadzoneX, afterDeadzoneY))
         } else {
-            MImGui.warningText("  No axis data")
+            MImGui.warningText("  " + stringManager.getString("lbl.input_testing.no_axis_data"))
         }
 
         ImGui.spacing()
 
         // Right Stick (Axes 2, 3)
-        ImGui.text("Right Stick (Camera)")
+        ImGui.text(stringManager.getString("lbl.input_testing.right_stick"))
         if (axes != null && axes.size > 3) {
             val rightStickX = axes[2]
             val rightStickY = axes[3]
 
-            ImGui.text("  Raw: X=%.3f, Y=%.3f".format(rightStickX, rightStickY))
+            ImGui.text("  " + stringManager.getString("lbl.input_testing.raw_values").format(rightStickX, rightStickY))
 
             val deadzone = 0.1f // settingsManager.engine.hardware.rightStickDeadzone
             renderDeadzoneIndicator("  ", rightStickX, rightStickY, deadzone)
 
             val afterDeadzoneX = applyDeadzone(rightStickX, deadzone)
             val afterDeadzoneY = applyDeadzone(rightStickY, deadzone)
-            ImGui.text("  After Deadzone: X=%.3f, Y=%.3f".format(afterDeadzoneX, afterDeadzoneY))
+            ImGui.text("  " + stringManager.getString("lbl.input_testing.after_deadzone").format(afterDeadzoneX, afterDeadzoneY))
         } else {
-            MImGui.warningText("  No axis data")
+            MImGui.warningText("  " + stringManager.getString("lbl.input_testing.no_axis_data"))
         }
 
         ImGui.spacing()
 
         // Triggers (Axes 4, 5)
-        ImGui.text("Triggers")
+        ImGui.text(stringManager.getString("lbl.input_testing.triggers"))
         if (axes != null && axes.size > 4) {
             val leftTrigger = axes[4]
             val rightTrigger = if (axes.size > 5) axes[5] else 0f
-            ImGui.text("  Left Trigger: %.3f".format(leftTrigger))
-            ImGui.text("  Right Trigger: %.3f".format(rightTrigger))
+            ImGui.text("  " + stringManager.getString("lbl.input_testing.left_trigger_val").format(leftTrigger))
+            ImGui.text("  " + stringManager.getString("lbl.input_testing.right_trigger_val").format(rightTrigger))
         }
 
         ImGui.separator()
 
         // Button states
-        ImGui.text("Buttons")
+        ImGui.text(stringManager.getString("lbl.input_testing.buttons"))
         if (buttons != null) {
             val buttonNames = getGamepadButtonNames()
             val columns = 4
@@ -168,7 +168,7 @@ class InputTestingWindow(
                 }
             }
         } else {
-            MImGui.warningText("  No button data")
+            MImGui.warningText("  " + stringManager.getString("lbl.input_testing.no_button_data"))
         }
 
         ImGui.unindent()
@@ -226,7 +226,7 @@ class InputTestingWindow(
 
         // Show if within deadzone
         val magnitude = kotlin.math.sqrt(x * x + y * y)
-        val status = if (magnitude < deadzone) "WITHIN DEADZONE" else "ACTIVE"
+        val status = if (magnitude < deadzone) stringManager.getString("lbl.input_testing.within_deadzone") else stringManager.getString("lbl.input_testing.active")
         if (magnitude < deadzone) {
             MImGui.textDisabled("${prefix}Status: $status")
         } else {
@@ -252,7 +252,7 @@ class InputTestingWindow(
         val inputState = skater?.getComponent<InputStateComponent>()
 
         if (inputState == null) {
-            MImGui.errorText("No InputStateComponent found on Skater")
+            MImGui.errorText(stringManager.getString("lbl.input_testing.no_input_state"))
             ImGui.unindent()
             return
         }
@@ -260,22 +260,22 @@ class InputTestingWindow(
         ImGui.separator()
 
         // Movement
-        ImGui.text("Movement")
-        ImGui.text("  Move Direction: X=%.3f, Y=%.3f".format(inputState.moveDirection.x, inputState.moveDirection.y))
-        ImGui.text("  Sprint: ${inputState.sprintPressed}")
-        ImGui.text("  Crouch: ${inputState.crouchPressed}")
+        ImGui.text(stringManager.getString("lbl.input_testing.movement"))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.move_direction").format(inputState.moveDirection.x, inputState.moveDirection.y))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.sprint").format(if (inputState.sprintPressed) "true" else "false"))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.crouch").format(if (inputState.crouchPressed) "true" else "false"))
 
         ImGui.spacing()
 
         // Jump
-        ImGui.text("Jump")
-        ImGui.text("  Jump Pressed: ${inputState.jumpPressed}")
-        ImGui.text("  Jump Held: ${inputState.jumpHeld}")
+        ImGui.text(stringManager.getString("lbl.input_testing.jump"))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.jump_pressed").format(if (inputState.jumpPressed) "true" else "false"))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.jump_held").format(if (inputState.jumpHeld) "true" else "false"))
 
         ImGui.spacing()
 
         // Tricks
-        ImGui.text("Tricks")
+        ImGui.text(stringManager.getString("lbl.input_testing.tricks"))
         ImGui.text("  Flip Left: ${inputState.flipLeftPressed}")
         ImGui.text("  Flip Right: ${inputState.flipRightPressed}")
         ImGui.text("  Kickflip: ${inputState.kickflipPressed}")
@@ -286,26 +286,26 @@ class InputTestingWindow(
         ImGui.spacing()
 
         // Camera
-        ImGui.text("Camera")
-        ImGui.text("  Camera Look: X=%.3f, Y=%.3f".format(inputState.cameraLook.x, inputState.cameraLook.y))
-        ImGui.text("  Camera Reset: ${inputState.cameraResetPressed}")
+        ImGui.text(stringManager.getString("lbl.input_testing.camera"))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.camera_look").format(inputState.cameraLook.x, inputState.cameraLook.y))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.camera_reset_val").format(if (inputState.cameraResetPressed) "true" else "false"))
 
         ImGui.spacing()
 
         // Game State
-        ImGui.text("Game State")
-        ImGui.text("  Pause: ${inputState.pausePressed}")
-        ImGui.text("  Reset: ${inputState.resetPressed}")
-        ImGui.text("  Stance Change: ${inputState.stanceChangePressed}")
+        ImGui.text(stringManager.getString("lbl.input_testing.game_state"))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.pause_val").format(if (inputState.pausePressed) "true" else "false"))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.reset_val").format(if (inputState.resetPressed) "true" else "false"))
+        ImGui.text("  " + stringManager.getString("lbl.input_testing.stance_val").format(if (inputState.stanceChangePressed) "true" else "false"))
 
         ImGui.spacing()
 
         // Physics State
-        ImGui.text("Physics State")
+        ImGui.text(stringManager.getString("lbl.input_testing.physics_state"))
         if (inputState.isGrounded) {
-            MImGui.successText("  Is Grounded: ${inputState.isGrounded}")
+            MImGui.successText("  " + stringManager.getString("lbl.input_testing.is_grounded").format(inputState.isGrounded))
         } else {
-            MImGui.errorText("  Is Grounded: ${inputState.isGrounded}")
+            MImGui.errorText("  " + stringManager.getString("lbl.input_testing.is_grounded").format(inputState.isGrounded))
         }
 
         ImGui.unindent()

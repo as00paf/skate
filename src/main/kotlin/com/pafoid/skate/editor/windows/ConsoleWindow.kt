@@ -32,11 +32,11 @@ class ConsoleWindow : IWindow, KoinComponent {
         renderToolbar()
 
         if (ImGui.beginTabBar("ConsoleTabs")) {
-            if (ImGui.beginTabItem("${Icons.GEAR} Engine")) {
+            if (ImGui.beginTabItem("${Icons.GEAR} ${stringManager.getString("tab.console.engine")}")) {
                 renderLogList(logger.engineLogs.toList(), "Engine")
                 ImGui.endTabItem()
             }
-            if (ImGui.beginTabItem("${Icons.USER} Editor")) {
+            if (ImGui.beginTabItem("${Icons.USER} ${stringManager.getString("tab.console.editor")}")) {
                 renderLogList(logger.editorLogs.toList(), "Editor")
                 ImGui.endTabItem()
             }
@@ -131,20 +131,20 @@ class ConsoleWindow : IWindow, KoinComponent {
         }
 
         if (ImGui.beginPopupContextWindow()) {
-            if (ImGui.menuItem("Copy Selected", "Ctrl+C")) {
+            if (ImGui.menuItem(stringManager.getString("context.console.copy_selected"), stringManager.getString("shortcut.copy"))) {
                 copySelectedToClipboard()
             }
-            if (ImGui.menuItem("Copy All")) {
+            if (ImGui.menuItem(stringManager.getString("context.console.copy_all"))) {
                 val sb = StringBuilder()
                 logs.forEach { sb.append("[${it.level}] ${it.message}\n") }
                 ImGui.setClipboardText(sb.toString())
             }
             ImGui.separator()
-            if (ImGui.menuItem("Clear Selection")) {
+            if (ImGui.menuItem(stringManager.getString("context.console.clear_selection"))) {
                 selectedLogs.clear()
                 lastSelectedIndex = -1
             }
-            if (ImGui.menuItem("Clear All Logs")) {
+            if (ImGui.menuItem(stringManager.getString("context.console.clear_all_logs"))) {
                 logger.clearAllLogs()
                 selectedLogs.clear()
                 lastSelectedIndex = -1

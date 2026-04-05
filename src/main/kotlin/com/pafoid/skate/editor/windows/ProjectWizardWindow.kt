@@ -85,7 +85,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         ImGui.spacing()
 
         // Project Name
-        ImGui.text("Project Name:")
+        ImGui.text(stringManager.getString("wizard.project.name"))
         ImGui.spacing()
         ImGui.pushItemWidth(450f)
         val nameFlags = ImGuiInputTextFlags.AutoSelectAll
@@ -97,7 +97,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         val currentName = projectNameInput.get()
         if (currentName.isNotBlank()) {
             if (!wizard.isProjectNameValid()) {
-                MImGui.errorText("${Icons.WINDOW_CLOSE} Invalid characters (cannot use: <>:/\\|?*)")
+                MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.invalid_chars")}")
             } else {
                 MImGui.successText("${Icons.CHECK} Valid")
             }
@@ -107,14 +107,14 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         ImGui.spacing()
 
         // Project Location
-        ImGui.text("Location:")
+        ImGui.text(stringManager.getString("wizard.project.location"))
         ImGui.spacing()
         ImGui.pushItemWidth(350f)
         ImGui.inputText("##ProjectPath", projectPathInput, ImGuiInputTextFlags.None)
         ImGui.popItemWidth()
 
         ImGui.sameLine()
-        if (ImGui.button("Browse...")) {
+        if (ImGui.button(stringManager.getString("wizard.project.browse"))) {
             browseForFolder()
         }
 
@@ -124,13 +124,13 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         if (currentPath.isNotBlank()) {
             val folder = File(currentPath)
             if (!folder.exists()) {
-                MImGui.errorText("${Icons.WINDOW_CLOSE} Folder does not exist")
+                MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.folder_not_exist")}")
             } else if (!folder.isDirectory) {
-                MImGui.errorText("${Icons.WINDOW_CLOSE} Not a directory")
+                MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.not_directory")}")
             } else if (!folder.canWrite()) {
-                MImGui.errorText("${Icons.WINDOW_CLOSE} Folder is not writable")
+                MImGui.errorText("${Icons.WINDOW_CLOSE} ${stringManager.getString("wizard.project.not_writable")}")
             } else {
-                MImGui.successText("${Icons.CHECK} Valid location")
+                MImGui.successText("${Icons.CHECK} ${stringManager.getString("wizard.project.valid_location")}")
             }
         }
 
@@ -160,13 +160,13 @@ class ProjectWizardWindow : IWindow, KoinComponent {
 
         // Panel header
         ImGui.pushStyleColor(ImGuiCol.Text, 0.85f, 0.85f, 0.85f, 1f)
-        ImGui.text("${Icons.FOLDER} Project Structure")
+        ImGui.text("${Icons.FOLDER} ${stringManager.getString("wizard.project.project_structure")}")
         ImGui.popStyleColor()
         ImGui.separator()
         ImGui.spacing()
 
         // Structure items with icons and colored text
-        val projectName = wizard.projectName.ifBlank { "MyProject" }
+        val projectName = wizard.projectName.ifBlank { stringManager.getString("wizard.project.default_project_name") }
 
         // Root folder
         ImGui.pushStyleColor(ImGuiCol.Text, 0.9f, 0.8f, 0.4f, 1f)
@@ -230,7 +230,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         ImGui.setCursorPosX(ImGui.getCursorPosX() + xPos)
 
         // Cancel button
-        if (ImGui.button("Cancel", cancelButtonWidth, buttonHeight)) {
+        if (ImGui.button(stringManager.getString("wizard.project.cancel"), cancelButtonWidth, buttonHeight)) {
             wizard.dismiss()
             wizard.reset()
             projectNameInput.set("")
@@ -246,7 +246,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
             ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.25f, 0.7f, 0.25f, 1f)
             ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.15f, 0.5f, 0.15f, 1f)
         }
-        if (ImGui.button("${Icons.PLUS} Create Project", createButtonWidth, buttonHeight)) {
+        if (ImGui.button("${Icons.PLUS} ${stringManager.getString("wizard.project.create")}", createButtonWidth, buttonHeight)) {
             createProject()
         }
         if (canCreate) {
@@ -264,7 +264,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
 
             val fileChooser = JFileChooser()
             fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-            fileChooser.dialogTitle = "Select Project Location"
+            fileChooser.dialogTitle = stringManager.getString("dialog.select_project_location")
 
             val result = fileChooser.showOpenDialog(null)
             if (result == JFileChooser.APPROVE_OPTION) {

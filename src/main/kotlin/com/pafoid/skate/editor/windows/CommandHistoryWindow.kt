@@ -56,7 +56,7 @@ class CommandHistoryWindow : IWindow, KoinComponent {
         val redoCount = undoRedoManager.getRedoCount()
 
         if (undoCount > 0) {
-            if (ImGui.button("${Icons.UNDO} Undo")) {
+            if (ImGui.button("${Icons.UNDO} ${stringManager.getString("btn.undo")}")) {
                 undoRedoManager.undo()
                 scrollToBottom = true
             }
@@ -65,7 +65,7 @@ class CommandHistoryWindow : IWindow, KoinComponent {
             }
         } else {
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
-            ImGui.button("${Icons.UNDO} Undo")
+            ImGui.button("${Icons.UNDO} ${stringManager.getString("btn.undo")}")
             ImGui.popStyleColor()
             if (ImGui.isItemHovered()) {
                 ImGui.setTooltip(stringManager.getString("tooltip.command_history.undo_empty"))
@@ -75,7 +75,7 @@ class CommandHistoryWindow : IWindow, KoinComponent {
         ImGui.sameLine()
 
         if (redoCount > 0) {
-            if (ImGui.button("${Icons.REDO} Redo")) {
+            if (ImGui.button("${Icons.REDO} ${stringManager.getString("btn.redo")}")) {
                 undoRedoManager.redo()
                 scrollToBottom = true
             }
@@ -84,7 +84,7 @@ class CommandHistoryWindow : IWindow, KoinComponent {
             }
         } else {
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
-            ImGui.button("${Icons.REDO} Redo")
+            ImGui.button("${Icons.REDO} ${stringManager.getString("btn.redo")}")
             ImGui.popStyleColor()
             if (ImGui.isItemHovered()) {
                 ImGui.setTooltip(stringManager.getString("tooltip.command_history.redo_empty"))
@@ -94,7 +94,7 @@ class CommandHistoryWindow : IWindow, KoinComponent {
         ImGui.sameLine()
 
         if (undoCount > 0 || redoCount > 0) {
-            if (ImGui.button("${Icons.TRASH} Clear")) {
+            if (ImGui.button("${Icons.TRASH} ${stringManager.getString("btn.clear_history")}")) {
                 undoRedoManager.clear()
             }
             if (ImGui.isItemHovered()) {
@@ -102,7 +102,7 @@ class CommandHistoryWindow : IWindow, KoinComponent {
             }
         } else {
             ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
-            ImGui.button("${Icons.TRASH} Clear")
+            ImGui.button("${Icons.TRASH} ${stringManager.getString("btn.clear_history")}")
             ImGui.popStyleColor()
             if (ImGui.isItemHovered()) {
                 ImGui.setTooltip(stringManager.getString("tooltip.command_history.clear_empty"))
@@ -119,7 +119,7 @@ class CommandHistoryWindow : IWindow, KoinComponent {
 
         for (i in undoStack.indices.reversed()) {
             val command = undoStack[i]
-            val targetName = command.getTargetName() ?: "Unknown"
+            val targetName = command.getTargetName() ?: stringManager.getString("lbl.unknown")
             val label = "${i + 1}. ${command.getDisplayName()} ($targetName)"
 
             if (ImGui.selectable(label, false)) {
@@ -145,7 +145,7 @@ class CommandHistoryWindow : IWindow, KoinComponent {
 
         for (i in redoStack.indices) {
             val command = redoStack[i]
-            val targetName = command.getTargetName() ?: "Unknown"
+            val targetName = command.getTargetName() ?: stringManager.getString("lbl.unknown")
             val label = "${i + 1}. ${command.getDisplayName()} ($targetName)"
 
             if (ImGui.selectable(label, false)) {

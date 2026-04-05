@@ -58,25 +58,25 @@ class ProjectSwitcherDialog : KoinComponent {
         ImGui.setNextWindowSize(500f, 400f)
 
         if (ImGui.begin(
-                "Switch Project",
+                stringManager.getString("window.switch_project"),
                 windowOpen,
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
             )
         ) {
-            ImGui.text("Select a recent project or create a new one:")
+            ImGui.text(stringManager.getString("lbl.switch_project.select_or_create"))
             ImGui.spacing()
 
             // Recent projects list
             val recentProjects = getRecentProjectsDisplayInfo()
             if (recentProjects.isNotEmpty()) {
-                ImGui.text("Recent Projects:")
+                ImGui.text(stringManager.getString("lbl.switch_project.recent"))
                 ImGui.spacing()
 
                 for (project in recentProjects) {
                     renderRecentProjectItem(project)
                 }
             } else {
-                MImGui.textDisabled("No recent projects")
+                MImGui.textDisabled(stringManager.getString("lbl.no_recent_projects"))
             }
 
             ImGui.separator()
@@ -93,20 +93,20 @@ class ProjectSwitcherDialog : KoinComponent {
             val contentRegionWidth = ImGui.getContentRegionAvailX()
             ImGui.setCursorPosX(ImGui.getCursorPosX() + contentRegionWidth - totalWidth)
 
-            if (ImGui.button("${Icons.PLUS} New Project", newButtonWidth, buttonHeight)) {
+            if (ImGui.button("${Icons.PLUS} ${stringManager.getString("btn.new_project")}", newButtonWidth, buttonHeight)) {
                 close()
                 wizard.open()
             }
 
             ImGui.sameLine(0f, spacing)
 
-            if (ImGui.button("${Icons.FOLDER_OPEN} Open Project", openButtonWidth, buttonHeight)) {
+            if (ImGui.button("${Icons.FOLDER_OPEN} ${stringManager.getString("btn.open_project")}", openButtonWidth, buttonHeight)) {
                 openProjectDialog()
             }
 
             ImGui.sameLine(0f, spacing)
 
-            if (ImGui.button("Cancel", cancelWidth, buttonHeight)) {
+            if (ImGui.button(stringManager.getString("btn.cancel"), cancelWidth, buttonHeight)) {
                 close()
             }
 
@@ -144,11 +144,11 @@ class ProjectSwitcherDialog : KoinComponent {
         ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, project.path)
         
         // Last opened
-        ImGui.textColored(0.4f, 0.4f, 0.4f, 1f, "Last opened: ${project.getLastOpenedString()}")
-        
+        ImGui.textColored(0.4f, 0.4f, 0.4f, 1f, "${stringManager.getString("lbl.switch_project.last_opened").format(project.getLastOpenedString())}")
+
         if (!isClickable) {
             ImGui.popStyleColor()
-            MImGui.errorText("Project not found")
+            MImGui.errorText(stringManager.getString("lbl.switch_project.not_found"))
         } else {
             // Make clickable
             if (ImGui.isItemHovered()) {
@@ -204,13 +204,13 @@ class ProjectSwitcherDialog : KoinComponent {
 
             val fileChooser = JFileChooser()
             fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
-            fileChooser.dialogTitle = "Open Project"
+            fileChooser.dialogTitle = stringManager.getString("dialog.open_project")
             fileChooser.addChoosableFileFilter(object : javax.swing.filechooser.FileFilter() {
                 override fun accept(file: File): Boolean {
                     return file.isDirectory || file.extension == "skateproject"
                 }
                 override fun getDescription(): String {
-                    return "SkateSim Projects (*.skateproject)"
+                    return stringManager.getString("dialog.skateproject_filter")
                 }
             })
 
