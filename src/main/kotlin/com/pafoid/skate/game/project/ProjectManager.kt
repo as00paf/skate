@@ -77,10 +77,13 @@ class ProjectManager(
 
     /**
      * Try to load the most recently opened project.
+     * Skips the project that was just closed by the user.
      * Returns true if a valid last project was found and loaded, false otherwise.
      */
     fun loadLastProject(): Boolean {
         val recent = settingsManager.recentProjects.firstOrNull() ?: return false
+        // Don't auto-reload the project the user just closed
+        if (recent.path == lastClosedProjectPath) return false
         val projectFile = File(recent.path)
         if (!projectFile.exists()) return false
         return openProject(projectFile)
@@ -111,12 +114,15 @@ class ProjectManager(
     
     /**
      * Open an existing project from a .skateproject file.
-     * 
+     *
      * @param projectFile Path to the .skateproject file
      * @return true if project opened successfully, false otherwise
      */
     fun openProject(projectFile: File): Boolean {
         return try {
+            // Clear the "just closed" state when opening a new project
+            lastClosedProjectPath = null
+
             logger.logEditor("Opening project: ${projectFile.absolutePath}")
             
             if (!projectFile.exists()) {
@@ -147,13 +153,21 @@ class ProjectManager(
     }
     
     /**
+     * Path of the project that was most recently closed by the user.
+     * Prevents auto-reload of the same project.
+     */
+    private var lastClosedProjectPath: String? = null
+
+    /**
      * Close the current project.
-     * 
+     *
      * This does not save the project - call saveProject() first if needed.
      */
     fun closeProject() {
+        val path = currentProject?.getProjectFile()?.absolutePath
         logger.logEditor("Closing project: ${getProjectName()}")
         currentProject = null
+        lastClosedProjectPath = path
         settingsManager.closeProject()
     }
     

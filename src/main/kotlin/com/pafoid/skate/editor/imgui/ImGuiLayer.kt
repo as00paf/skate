@@ -247,9 +247,14 @@ class ImGuiLayer(
 
         statusBar.render(currentScene)
 
-        // Try to auto-load the last project before showing the wizard
+        // Try to auto-load the last project (skips the one the user just closed)
         if (!projectManager.hasProject()) {
             projectManager.loadLastProject()
+        }
+
+        // When project is closed, reset wizard dismissal so it can appear again
+        if (!projectManager.hasProject() && !hadProjectLastFrame) {
+            windowRegistry.projectWizardWindow.wizard.resetForNewProject()
         }
 
         // Auto-close wizard when a project is created (but not when one already existed)

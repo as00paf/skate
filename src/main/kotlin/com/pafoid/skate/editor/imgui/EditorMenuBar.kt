@@ -96,9 +96,12 @@ class EditorMenuBar(
             
             // Recent projects submenu
             if (ImGui.beginMenu("Recent Projects")) {
+                val currentPath = projectManager.currentProject?.getProjectFile()?.absolutePath
                 val recentProjects = projectManager.getRecentProjects()
-                if (recentProjects.isNotEmpty()) {
-                    for (project in recentProjects) {
+                val filteredProjects = recentProjects.filter { it.path != currentPath }
+
+                if (filteredProjects.isNotEmpty()) {
+                    for (project in filteredProjects) {
                         if (ImGui.menuItem(project.name)) {
                             projectManager.openProject(java.io.File(project.path))
                         }
@@ -108,10 +111,15 @@ class EditorMenuBar(
                 }
                 ImGui.endMenu()
             }
-            
+
             ImGui.separator()
 
             // Project management
+            if (projectManager.hasProject()) {
+                if (ImGui.menuItem("${Icons.WINDOW_CLOSE} Close Project")) {
+                    projectManager.closeProject()
+                }
+            }
             if (ImGui.menuItem("${Icons.PLUS} New Project")) {
                 projectWizard.open()
             }

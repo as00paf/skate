@@ -19,98 +19,106 @@ import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.UIManager
 
-/**
- * Project switcher dialog for opening recent projects or creating new ones.
- * 
- * Shows:
- * - List of recent projects (up to 5)
- * - "New Project" button
- * - "Open Project" button
- */
 class ProjectSwitcherDialog : KoinComponent {
 
     private val projectManager: ProjectManager by inject()
     private val wizard: com.pafoid.skate.game.project.ProjectWizard by inject()
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
-    
+
     private var isOpen = false
-    
+    private val windowOpen = ImBoolean(false)
+
     /**
      * Open the project switcher dialog.
      */
     fun open() {
         isOpen = true
+        windowOpen.set(true)
     }
-    
+
     /**
      * Close the project switcher dialog.
      */
     fun close() {
         isOpen = false
+        windowOpen.set(false)
     }
-    
+
     /**
      * Render the project switcher dialog.
      */
     fun render() {
         if (!isOpen) return
-        
+
         val centerX = ImGui.getMainViewport().centerX
         val centerY = ImGui.getMainViewport().centerY
-        
+
         ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.Always, 0.5f, 0.5f)
         ImGui.setNextWindowSize(500f, 400f)
-        
+
         if (ImGui.begin(
                 "Switch Project",
-                ImBoolean(true),
+                windowOpen,
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
             )
         ) {
             ImGui.text("Select a recent project or create a new one:")
             ImGui.spacing()
-            
+
             // Recent projects list
             val recentProjects = getRecentProjectsDisplayInfo()
             if (recentProjects.isNotEmpty()) {
                 ImGui.text("Recent Projects:")
                 ImGui.spacing()
-                
+
                 for (project in recentProjects) {
                     renderRecentProjectItem(project)
                 }
             } else {
                 MImGui.textDisabled("No recent projects")
             }
-            
+
             ImGui.separator()
             ImGui.spacing()
-            
+
             // Action buttons
             val buttonHeight = UiConstants.DEFAULT_BUTTON_HEIGHT
-            val buttonWidth = 150f
+            val newButtonWidth = 150f
+            val openButtonWidth = 130f
+            val cancelWidth = 100f
             val spacing = UiConstants.SECTION_SPACING
-            val totalWidth = (2 * buttonWidth) + spacing
-            
+            val totalWidth = newButtonWidth + openButtonWidth + cancelWidth + (2 * spacing)
+
             val contentRegionWidth = ImGui.getContentRegionAvailX()
             ImGui.setCursorPosX(ImGui.getCursorPosX() + contentRegionWidth - totalWidth)
-            
-            if (ImGui.button("${Icons.PLUS} New Project", buttonWidth, buttonHeight)) {
+
+            if (ImGui.button("${Icons.PLUS} New Project", newButtonWidth, buttonHeight)) {
                 close()
                 wizard.open()
             }
-            
+
             ImGui.sameLine(0f, spacing)
-            
-            if (ImGui.button("${Icons.FOLDER_OPEN} Open Project", buttonWidth, buttonHeight)) {
+
+            if (ImGui.button("${Icons.FOLDER_OPEN} Open Project", openButtonWidth, buttonHeight)) {
                 openProjectDialog()
             }
-            
+
+            ImGui.sameLine(0f, spacing)
+
+            if (ImGui.button("Cancel", cancelWidth, buttonHeight)) {
+                close()
+            }
+
             ImGui.end()
         }
+
+        // Detect if user closed the window via the X button
+        if (!windowOpen.get()) {
+            close()
+        }
     }
-    
+
     /**
      * Render a single recent project item.
      */

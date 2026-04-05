@@ -160,9 +160,18 @@ class ProjectWizard {
     }
 
     /**
-     * Reset dialog to initial state (does NOT clear the dismissal flag).
+     * Reset dialog to initial state without changing the dismissal flag.
      */
     fun reset() {
+        projectName = ""
+        projectPath = ""
+    }
+
+    /**
+     * Reset dialog fully (used when closing a project to allow wizard to appear again).
+     */
+    fun resetForNewProject() {
+        userDismissed = false
         projectName = ""
         projectPath = ""
     }
