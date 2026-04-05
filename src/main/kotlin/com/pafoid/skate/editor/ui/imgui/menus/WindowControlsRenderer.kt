@@ -11,42 +11,50 @@ import imgui.internal.ImGui.pushStyleVar
 import imgui.internal.ImGui.popStyleColor
 import imgui.internal.ImGui.popStyleVar
 import imgui.internal.ImGui.sameLine
+import imgui.type.ImBoolean
 
 /**
- * Renders the window control buttons (Search, Minimize, Maximize/Restore, Close).
- * 
+ * Renders the window control buttons (Settings, Search, Minimize, Maximize/Restore, Close).
+ *
  * This component handles:
+ * - Settings gear button with popup menu
  * - Search Everywhere button
  * - Window minimize button
  * - Window maximize/restore button
  * - Window close button (with red hover effect)
- * 
+ *
  * @param searchEverywhereWindow To open on search button click
  * @param windowController For window operations
+ * @param editorSettingsShowFlag Show flag for editor settings window
+ * @param projectSettingsShowFlag Show flag for project settings window
  */
 class WindowControlsRenderer(
     private val searchEverywhereWindow: SearchEverywhereWindow,
-    private val windowController: WindowController
+    private val windowController: WindowController,
+    private val editorSettingsShowFlag: ImBoolean,
+    private val projectSettingsShowFlag: ImBoolean
 ) {
-    
+
     companion object {
         private const val BTN_SIZE = 40f
     }
-    
+
     /**
      * Renders the window control buttons.
      */
     fun render() {
-        val totalW = BTN_SIZE * 4f
-        
+        val totalW = BTN_SIZE * 5f
+
         val currentX = ImGui.getCursorPosX()
         val availX = ImGui.getContentRegionAvailX()
         ImGui.setCursorPosX(currentX + availX - totalW)
-        
+
         pushStyleVar(ImGuiStyleVar.FramePadding, 0f, 0f)
         pushStyleVar(ImGuiStyleVar.ItemSpacing, 0f, 0f)
         pushStyleColor(ImGuiCol.Button, 0f, 0f, 0f, 0f) // Transparent base
-        
+
+        renderSettingsButton()
+        sameLine(0f, 0f)
         renderSearchButton()
         sameLine(0f, 0f)
         renderMinimizeButton()
@@ -54,11 +62,30 @@ class WindowControlsRenderer(
         renderMaximizeRestoreButton()
         sameLine(0f, 0f)
         renderCloseButton()
-        
+
         popStyleColor(1)
         popStyleVar(2)
     }
-    
+
+    private fun renderSettingsButton() {
+        if (ImGui.button(Icons.GEAR, BTN_SIZE, BTN_SIZE)) {
+            ImGui.openPopup("##SettingsPopup")
+        }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip("Settings")
+        }
+
+        if (ImGui.beginPopup("##SettingsPopup")) {
+            if (ImGui.menuItem("Editor Settings")) {
+                editorSettingsShowFlag.set(true)
+            }
+            if (ImGui.menuItem("Project Settings")) {
+                projectSettingsShowFlag.set(true)
+            }
+            ImGui.endPopup()
+        }
+    }
+
     private fun renderSearchButton() {
         if (ImGui.button("${Icons.SEARCH}", BTN_SIZE, BTN_SIZE)) {
             searchEverywhereWindow.open()
@@ -67,13 +94,13 @@ class WindowControlsRenderer(
             ImGui.setTooltip("Search Everywhere (Ctrl+P)")
         }
     }
-    
+
     private fun renderMinimizeButton() {
         if (ImGui.button(Icons.WINDOW_MINIMIZE, BTN_SIZE, BTN_SIZE)) {
             windowController.minimize()
         }
     }
-    
+
     private fun renderMaximizeRestoreButton() {
         val maxRestoreIcon = if (windowController.isMaximized()) {
             Icons.WINDOW_RESTORE
@@ -84,7 +111,7 @@ class WindowControlsRenderer(
             windowController.toggleMaximize()
         }
     }
-    
+
     private fun renderCloseButton() {
         pushStyleColor(ImGuiCol.ButtonHovered, 0.83f, 0.13f, 0.17f, 1f)
         pushStyleColor(ImGuiCol.ButtonActive, 0.93f, 0.23f, 0.27f, 1f)

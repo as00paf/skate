@@ -5,25 +5,26 @@ import com.pafoid.skate.editor.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.windows.ConsoleWindow
+import com.pafoid.skate.editor.windows.EditorSettingsWindow
 import com.pafoid.skate.editor.windows.EnvironmentWindow
 import com.pafoid.skate.editor.windows.GameViewWindow
 import com.pafoid.skate.editor.windows.InputTestingWindow
 import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
+import com.pafoid.skate.editor.windows.ProjectSettingsWindow
 import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
 import com.pafoid.skate.editor.windows.ProjectWizardWindow
 import com.pafoid.skate.editor.windows.PropertiesWindow
 import com.pafoid.skate.editor.windows.RenderGraphWindow
 import com.pafoid.skate.editor.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
-import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.editor.windows.SystemsWindow
 import imgui.type.ImBoolean
 
 /**
  * Registry of all dockable editor windows.
- * 
+ *
  * Centralizes window management for rendering, menus, and dock layout.
  * All windows are created via dependency injection and registered here.
  */
@@ -38,7 +39,8 @@ class WindowRegistry(
     val physicsTunerWindow: PhysicsTunerWindow,
     val inputTestingWindow: InputTestingWindow,
     val systemsWindow: SystemsWindow,
-    val settingsWindow: SettingsWindow,
+    val editorSettingsWindow: EditorSettingsWindow,
+    val projectSettingsWindow: ProjectSettingsWindow,
     val keyBindingsWindow: KeyBindingsWindow,
     val commandHistoryWindow: CommandHistoryWindow,
     val renderGraphWindow: RenderGraphWindow,
@@ -66,7 +68,8 @@ class WindowRegistry(
         EditorWindow("window.systems", systemsWindow, ImBoolean(true), requiresScene = true),
         EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(true)),
         EditorWindow("window.render_graph", renderGraphWindow, ImBoolean(false)),
-        EditorWindow("window.settings", settingsWindow, ImBoolean(false)),
+        EditorWindow("window.editor_settings", editorSettingsWindow, ImBoolean(false)),
+        EditorWindow("window.project_settings", projectSettingsWindow, ImBoolean(false)),
         EditorWindow("window.keybindings", keyBindingsWindow, ImBoolean(false)),
         EditorWindow("window.audio_inspector", audioInspectorWindow, ImBoolean(false), requiresScene = true)
     )

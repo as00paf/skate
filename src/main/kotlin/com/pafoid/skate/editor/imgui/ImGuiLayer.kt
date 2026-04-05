@@ -141,16 +141,24 @@ class ImGuiLayer(
 
         ImGuiStyleManager.setupStyle()
 
+        val editorSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.editor_settings" }?.showFlag ?: ImBoolean(false)
+        val projectSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.project_settings" }?.showFlag ?: ImBoolean(false)
+
         menuBar = EditorMenuBar(
             fileMenu = FileMenuBuilder(stringManager, levelManager, sceneManager, glfwWindow),
             editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
             settingsMenu = SettingsMenuBuilder(
                 stringManager, settingsManager,
                 keyBindingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.keybindings" }?.showFlag ?: ImBoolean(false),
-                settingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.settings" }?.showFlag ?: ImBoolean(false)
+                settingsShowFlag = editorSettingsShowFlag
             ),
             viewMenu = ViewMenuBuilder(stringManager, windowRegistry.windows),
-            windowControls = WindowControlsRenderer(windowRegistry.searchEverywhereWindow, windowController),
+            windowControls = WindowControlsRenderer(
+                windowRegistry.searchEverywhereWindow,
+                windowController,
+                editorSettingsShowFlag,
+                projectSettingsShowFlag
+            ),
             stringManager = stringManager,
             resourceManager = resourceManager,
             projectManager = projectManager,
