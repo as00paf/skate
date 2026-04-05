@@ -1,6 +1,5 @@
 package com.pafoid.skate.game.project
 
-import com.pafoid.skate.engine.settings.ProjectSettings
 import java.io.File
 
 /**
@@ -25,7 +24,6 @@ enum class ItemType {
  * This class handles the single-screen project creation dialog:
  * - Project name input with validation
  * - Project location selection with validation
- * - Resolution and quality settings
  * - Live preview of project structure
  *
  * ## Usage
@@ -68,37 +66,6 @@ class ProjectWizard {
         private set
 
     /**
-     * Selected default resolution index.
-     */
-    var selectedResolution: Int = 0  // 0=1920x1080, 1=1280x720, 2=2560x1440
-        private set
-
-    /**
-     * Selected graphics quality index.
-     */
-    var selectedQuality: Int = 2  // 0=LOW, 1=MEDIUM, 2=HIGH, 3=ULTRA
-        private set
-
-    /**
-     * Available resolution options.
-     */
-    val resolutionOptions: List<String> = listOf(
-        "1920 x 1080 (Full HD)",
-        "1280 x 720 (HD)",
-        "2560 x 1440 (2K)"
-    )
-
-    /**
-     * Available graphics quality options.
-     */
-    val qualityOptions: List<String> = listOf(
-        "Low",
-        "Medium",
-        "High",
-        "Ultra"
-    )
-
-    /**
      * Set the project name.
      */
     fun setProjectName(name: String) {
@@ -110,20 +77,6 @@ class ProjectWizard {
      */
     fun setProjectLocation(path: String) {
         projectPath = path.trim()
-    }
-
-    /**
-     * Set the selected resolution.
-     */
-    fun setSelectedResolution(index: Int) {
-        selectedResolution = index.coerceIn(0, resolutionOptions.size - 1)
-    }
-
-    /**
-     * Set the selected graphics quality.
-     */
-    fun setSelectedQuality(index: Int) {
-        selectedQuality = index.coerceIn(0, qualityOptions.size - 1)
     }
 
     /**
@@ -184,25 +137,10 @@ class ProjectWizard {
     }
 
     /**
-     * Get the projected project structure as display text (legacy).
-     */
-    @Deprecated("Use getProjectStructureItems instead")
-    fun getProjectStructureText(): String {
-        return buildString {
-            appendLine("  [DIR]  Assets/")
-            appendLine("  [DIR]  Scenes/")
-            appendLine("  [DIR]  Builds/")
-            appendLine("  [FILE] $projectName.skateproject")
-        }
-    }
-
-    /**
      * Reset dialog to initial state.
      */
     fun reset() {
         projectName = ""
         projectPath = ""
-        selectedResolution = 0
-        selectedQuality = 2
     }
 }

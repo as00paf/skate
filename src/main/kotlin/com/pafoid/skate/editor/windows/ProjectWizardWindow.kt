@@ -15,7 +15,6 @@ import imgui.ImVec2
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiInputTextFlags
-import imgui.flag.ImGuiTreeNodeFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import imgui.type.ImInt
@@ -32,7 +31,6 @@ import javax.swing.UIManager
  * Shows a single-screen form with all project options:
  * - Project name with live validation
  * - Project location with folder browser
- * - Resolution and quality settings
  * - Live preview of project structure
  */
 class ProjectWizardWindow : IWindow, KoinComponent {
@@ -61,7 +59,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         val centerY = if (viewport.sizeY > 0) viewport.centerY else 300f
 
         ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
-        ImGui.setNextWindowSize(550f, 520f)
+        ImGui.setNextWindowSize(550f, 440f)
         ImGui.setNextWindowBgAlpha(0.95f)
 
         val isOpen = ImGui.begin(
@@ -72,7 +70,6 @@ class ProjectWizardWindow : IWindow, KoinComponent {
 
         if (isOpen) {
             renderForm()
-            ImGui.separator()
             renderFooter()
 
             ImGui.end()
@@ -94,20 +91,18 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         ImGui.text("Project Name:")
         ImGui.spacing()
         ImGui.pushItemWidth(450f)
-        val nameFlags = ImGuiInputTextFlags.AutoSelectAll or ImGuiInputTextFlags.EnterReturnsTrue
-        if (ImGui.inputText("##ProjectName", projectNameInput, nameFlags)) {
-            // Enter pressed - could validate but no step navigation needed
-        }
+        val nameFlags = ImGuiInputTextFlags.AutoSelectAll
+        ImGui.inputText("##ProjectName", projectNameInput, nameFlags)
         ImGui.popItemWidth()
 
-        // Live validation feedback for name
+        // Update wizard state and show validation
+        projectWizard.setProjectName(projectNameInput.get())
         val currentName = projectNameInput.get()
-        projectWizard.setProjectName(currentName)
         if (currentName.isNotBlank()) {
             if (!projectWizard.isProjectNameValid()) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "⚠ Invalid characters (cannot use: <>:/\\|?*)")
+                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "${Icons.WINDOW_CLOSE} Invalid characters (cannot use: <>:/\\|?*)")
             } else {
-                ImGui.textColored(0.3f, 0.9f, 0.3f, 1f, "✓ Valid")
+                ImGui.textColored(0.3f, 0.9f, 0.3f, 1f, "${Icons.CHECK} Valid")
             }
         }
 
@@ -118,9 +113,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         ImGui.text("Location:")
         ImGui.spacing()
         ImGui.pushItemWidth(350f)
-        if (ImGui.inputText("##ProjectPath", projectPathInput, ImGuiInputTextFlags.None)) {
-            projectWizard.setProjectLocation(projectPathInput.get())
-        }
+        ImGui.inputText("##ProjectPath", projectPathInput, ImGuiInputTextFlags.None)
         ImGui.popItemWidth()
 
         ImGui.sameLine()
@@ -128,57 +121,33 @@ class ProjectWizardWindow : IWindow, KoinComponent {
             browseForFolder()
         }
 
-        // Live validation feedback for path
+        // Update wizard state and show validation
+        projectWizard.setProjectLocation(projectPathInput.get())
         val currentPath = projectPathInput.get()
-        projectWizard.setProjectLocation(currentPath)
         if (currentPath.isNotBlank()) {
             val folder = File(currentPath)
             if (!folder.exists()) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "⚠ Folder does not exist")
+                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "${Icons.WINDOW_CLOSE} Folder does not exist")
             } else if (!folder.isDirectory) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "⚠ Not a directory")
+                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "${Icons.WINDOW_CLOSE} Not a directory")
             } else if (!folder.canWrite()) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "⚠ Folder is not writable")
+                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "${Icons.WINDOW_CLOSE} Folder is not writable")
             } else {
-                ImGui.textColored(0.3f, 0.9f, 0.3f, 1f, "✓ Valid location")
+                ImGui.textColored(0.3f, 0.9f, 0.3f, 1f, "${Icons.CHECK} Valid location")
             }
         }
 
         ImGui.spacing()
         ImGui.spacing()
 
-        // Resolution
-        ImGui.text("Resolution:")
-        ImGui.sameLine()
-        val currentRes = ImInt(projectWizard.selectedResolution)
-        ImGui.pushItemWidth(250f)
-        if (ImGui.combo("##Resolution", currentRes, projectWizard.resolutionOptions.toTypedArray())) {
-            projectWizard.setSelectedResolution(currentRes.get())
-        }
-        ImGui.popItemWidth()
+        // Project Structure Preview
+        renderProjectStructurePreview()
+    }
 
-        ImGui.spacing()
-
-        // Graphics Quality
-        ImGui.text("Graphics Quality:")
-        ImGui.sameLine()
-        val currentQuality = ImInt(projectWizard.selectedQuality)
-        ImGui.pushItemWidth(200f)
-        if (ImGui.combo("##Quality", currentQuality, projectWizard.qualityOptions.toTypedArray())) {
-            projectWizard.setSelectedQuality(currentQuality.get())
-        }
-        ImGui.popItemWidth()
-
-        ImGui.spacing()
-        ImGui.spacing()
-
-        // Project Structure Preview - Enhanced with boxed panel
-        ImGui.separator()
-        ImGui.spacing()
-        
-        ImGui.textColored(0.6f, 0.6f, 0.6f, 1f, "Engine Version: ${BuildConfig.ENGINE_VERSION}")
-        ImGui.spacing()
-
+    /**
+     * Render the project structure preview in a boxed panel.
+     */
+    private fun renderProjectStructurePreview() {
         // Draw boxed panel for project structure
         val structureItems = projectWizard.getProjectStructureItems()
         val panelPadding = 8f
@@ -186,47 +155,44 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         val headerHeight = 26f
         val panelHeight = headerHeight + (structureItems.size * itemHeight) + (panelPadding * 3)
         val panelWidth = ImGui.getContentRegionAvailX()
-        
+
         // Draw panel background with border
         ImGui.pushStyleColor(ImGuiCol.Border, 0.35f, 0.35f, 0.35f, 1f)
         ImGui.pushStyleColor(ImGuiCol.ChildBg, 0.1f, 0.1f, 0.1f, 0.6f)
         ImGui.beginChild("StructurePanel", panelWidth, panelHeight, true, ImGuiWindowFlags.None)
-        
+
         // Panel header
         ImGui.pushStyleColor(ImGuiCol.Text, 0.85f, 0.85f, 0.85f, 1f)
         ImGui.text("${Icons.FOLDER} Project Structure")
         ImGui.popStyleColor()
         ImGui.separator()
         ImGui.spacing()
-        
+
         // Structure items with icons and colored text
         val projectName = projectWizard.projectName.ifBlank { "MyProject" }
-        
+
         // Root folder
-        ImGui.pushStyleColor(ImGuiCol.Text, 0.9f, 0.8f, 0.4f, 1f) // Golden yellow for root
-        ImGui.text("  ${Icons.FOLDER} $projectName/")
+        ImGui.pushStyleColor(ImGuiCol.Text, 0.9f, 0.8f, 0.4f, 1f)
+        ImGui.text("  ${Icons.FOLDER_OPEN} $projectName/")
         ImGui.popStyleColor()
         ImGui.indent()
-        
+
         for (item in structureItems) {
             val (icon, textColor) = when (item.type) {
-                ItemType.DIRECTORY -> 
-                    Icons.FOLDER to Triple(0.9f, 0.75f, 0.3f) // Yellow for folders
-                ItemType.FILE -> 
-                    Icons.EDIT to Triple(0.5f, 0.8f, 0.95f) // Light blue for files
+                ItemType.DIRECTORY ->
+                    Icons.FOLDER to Triple(0.9f, 0.75f, 0.3f)
+                ItemType.FILE ->
+                    Icons.EDIT to Triple(0.5f, 0.8f, 0.95f)
             }
-            
+
             ImGui.pushStyleColor(ImGuiCol.Text, textColor.first, textColor.second, textColor.third, 1f)
             ImGui.text("$icon ${item.name}")
             ImGui.popStyleColor()
         }
-        
+
         ImGui.unindent()
         ImGui.endChild()
         ImGui.popStyleColor(2)
-        
-        ImGui.spacing()
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "These settings can be changed later in Settings.")
     }
 
     /**
