@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -62,12 +63,12 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             val config = lightSystem.config
 
             val sunDir = floatArrayOf(config.direction.x, config.direction.y, config.direction.z)
-            if (ImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f, -1f, 1f)) {
+            if (MImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f)) {
                 config.direction.set(sunDir[0], sunDir[1], sunDir[2]).normalize()
             }
 
             val sunColor = floatArrayOf(config.color.x, config.color.y, config.color.z)
-            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.sun_color"), sunColor)) {
+            if (MImGui.colorEdit3(stringManager.getString("lbl.environment.sun_color"), sunColor)) {
                 config.color.set(sunColor[0], sunColor[1], sunColor[2])
             }
 
@@ -77,7 +78,7 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             }
 
             ImGui.separator()
-            ImGui.text("Shadow Settings")
+            MImGui.textDisabled("Shadow Settings")
 
             val shadowDistance = floatArrayOf(config.shadowDistance)
             if (ImGui.dragFloat("Shadow Distance (m)", shadowDistance, 1f, 10f, 200f)) {
@@ -138,7 +139,7 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
                     lightingStateComponent.ambientLight.y,
                     lightingStateComponent.ambientLight.z
                 )
-                if (ImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
+                if (MImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
                     lightingStateComponent.ambientLight.set(ambient[0], ambient[1], ambient[2])
                 }
             }

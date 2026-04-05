@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.render.renderer.Renderer
@@ -97,7 +98,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
         val passes: List<RenderPass> = renderGraph.getAllPasses()
 
         if (passes.isEmpty()) {
-            ImGui.textColored(1f, 0.5f, 0f, 1f, "No render passes found")
+            MImGui.warningText("No render passes found")
             return
         }
 
@@ -138,7 +139,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
         if (ImGui.collapsingHeader("${getPassIcon(pass)} ${pass.displayName}##${pass.name}", headerFlags)) {
             // Show description
             if (pass.description.isNotEmpty()) {
-                ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, pass.description)
+                MImGui.textDisabled(pass.description)
             }
 
             // Show inputs
@@ -160,15 +161,17 @@ class RenderGraphWindow : IWindow, KoinComponent {
             // Show execution time
             if (showPerformance) {
                 val timeMs = pass.executionTimeNs / 1_000_000f
-                val color = if (timeMs > 2.0f) {
+                val (r, g, b) = if (timeMs > 2.0f) {
                     Triple(1f, 0.3f, 0.3f)  // Red for slow
                 } else if (timeMs > 1.0f) {
                     Triple(1f, 1f, 0.3f)  // Yellow for moderate
                 } else {
                     Triple(0.3f, 1f, 0.3f)  // Green for fast
                 }
-                ImGui.textColored(color.first, color.second, color.third, 1f,
-                    "${stringManager.getString("lbl.render_graph.execution_time")}: %.2fms".format(timeMs))
+                MImGui.coloredText(
+                    "${stringManager.getString("lbl.render_graph.execution_time")}: %.2fms".format(timeMs),
+                    r, g, b
+                )
             }
 
             // Enable/disable toggle
@@ -179,7 +182,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
                     clicked = true
                 }
             } else {
-                ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Required pass (cannot disable)")
+                MImGui.textDisabled("Required pass (cannot disable)")
             }
         }
 
@@ -196,7 +199,7 @@ class RenderGraphWindow : IWindow, KoinComponent {
     private fun drawConnectionArrow(yPos: Float) {
         // Simple text arrow for now
         ImGui.setCursorPos(100f * zoomLevel, yPos)
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "↓")
+        MImGui.textDisabled("↓")
     }
 
     private fun getPassIcon(pass: RenderPass): String {
@@ -223,11 +226,11 @@ class RenderGraphWindow : IWindow, KoinComponent {
 
         if (disabledCount > 0) {
             ImGui.sameLine()
-            ImGui.textColored(1f, 0.7f, 0f, 1f, "($disabledCount disabled)")
+            MImGui.warningText("($disabledCount disabled)")
         }
 
         // Help text
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f,
+        MImGui.textDisabled(
             "  ${stringManager.getString("lbl.render_graph.click_to_toggle")}")
     }
 }

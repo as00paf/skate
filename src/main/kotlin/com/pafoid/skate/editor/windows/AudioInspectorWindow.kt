@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -40,14 +41,14 @@ class AudioInspectorWindow : IWindowWithScene, KoinComponent {
             val selectedObject = scene.getSelectedGameObject()
 
             if (selectedObject == null) {
-                ImGui.textColored(0.5f, 0.5f, 0.5f, 1.0f, "No object selected")
+                MImGui.textDisabled("No object selected")
                 return
             }
 
             val audioComponent = selectedObject.getComponent<AudioComponent>()
 
             if (audioComponent == null) {
-                ImGui.textColored(0.5f, 0.5f, 0.5f, 1.0f, "No AudioComponent on selected object")
+                MImGui.textDisabled("No AudioComponent on selected object")
 
                 ImGui.separator()
 

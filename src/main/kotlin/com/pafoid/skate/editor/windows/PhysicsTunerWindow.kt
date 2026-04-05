@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
@@ -32,8 +33,8 @@ class PhysicsTunerWindow : IWindowWithScene, KoinComponent {
 
             val gravity = physics.getGravity()
             val gVal = floatArrayOf(gravity.x, gravity.y, gravity.z)
-            if (ImGui.dragFloat3(stringManager.getString("lbl.physics_tuner.gravity"), gVal)) {
-                physics.setGravity(Vector3f(gVal[0], gVal[1], gVal[2]))
+            if (MImGui.dragFloat3(stringManager.getString("lbl.physics_tuner.gravity"), gVal)) {
+                physics.setGravity(org.joml.Vector3f(gVal[0], gVal[1], gVal[2]))
             }
         }
 

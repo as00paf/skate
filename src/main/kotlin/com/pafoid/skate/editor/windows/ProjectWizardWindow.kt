@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.LoggerService
@@ -101,9 +102,9 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         val currentName = projectNameInput.get()
         if (currentName.isNotBlank()) {
             if (!projectWizard.isProjectNameValid()) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "${Icons.WINDOW_CLOSE} Invalid characters (cannot use: <>:/\\|?*)")
+                MImGui.errorText("${Icons.WINDOW_CLOSE} Invalid characters (cannot use: <>:/\\|?*)")
             } else {
-                ImGui.textColored(0.3f, 0.9f, 0.3f, 1f, "${Icons.CHECK} Valid")
+                MImGui.successText("${Icons.CHECK} Valid")
             }
         }
 
@@ -128,13 +129,13 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         if (currentPath.isNotBlank()) {
             val folder = File(currentPath)
             if (!folder.exists()) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "${Icons.WINDOW_CLOSE} Folder does not exist")
+                MImGui.errorText("${Icons.WINDOW_CLOSE} Folder does not exist")
             } else if (!folder.isDirectory) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "${Icons.WINDOW_CLOSE} Not a directory")
+                MImGui.errorText("${Icons.WINDOW_CLOSE} Not a directory")
             } else if (!folder.canWrite()) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "${Icons.WINDOW_CLOSE} Folder is not writable")
+                MImGui.errorText("${Icons.WINDOW_CLOSE} Folder is not writable")
             } else {
-                ImGui.textColored(0.3f, 0.9f, 0.3f, 1f, "${Icons.CHECK} Valid location")
+                MImGui.successText("${Icons.CHECK} Valid location")
             }
         }
 

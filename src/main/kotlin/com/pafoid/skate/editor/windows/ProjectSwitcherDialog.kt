@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.LoggerService
@@ -79,7 +80,7 @@ class ProjectSwitcherDialog : KoinComponent {
                     renderRecentProjectItem(project)
                 }
             } else {
-                ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "No recent projects")
+                MImGui.textDisabled("No recent projects")
             }
             
             ImGui.separator()
@@ -138,7 +139,7 @@ class ProjectSwitcherDialog : KoinComponent {
         
         if (!isClickable) {
             ImGui.popStyleColor()
-            ImGui.textColored(1f, 0.3f, 0.3f, 1f, "Project not found")
+            MImGui.errorText("Project not found")
         } else {
             // Make clickable
             if (ImGui.isItemHovered()) {

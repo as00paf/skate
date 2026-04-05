@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.settings.EditorSettings
@@ -87,7 +88,7 @@ class SettingsWindow(
 
             if (hasUnsavedChanges) {
                 sameLine()
-                textColored(1f, 0.8f, 0f, 1f, "* Unsaved changes")
+                MImGui.warningText("* Unsaved changes")
             }
         }
         end()
@@ -125,7 +126,7 @@ class SettingsWindow(
         // TODO Phase 5: Update to use new immutable settings structure
         text("Hardware Settings")
         separator()
-        textColored(0.5f, 0.5f, 0.5f, 1f, "Hardware settings configuration will be available after Phase 5 completion")
+        MImGui.textDisabled("Hardware settings configuration will be available after Phase 5 completion")
         /*
         if (!hasUnsavedChanges) syncTempSettings()
 
@@ -168,7 +169,7 @@ class SettingsWindow(
         // TODO Phase 5: Update to use new immutable settings structure
         text("Editor Preferences")
         separator()
-        textColored(0.5f, 0.5f, 0.5f, 1f, "Editor settings configuration will be available after Phase 5 completion")
+        MImGui.textDisabled("Editor settings configuration will be available after Phase 5 completion")
         /*
         if (!hasUnsavedChanges) syncTempSettings()
 
@@ -204,7 +205,7 @@ class SettingsWindow(
         // TODO Phase 5: Update to use new immutable settings structure
         text("Gameplay Constants")
         separator()
-        textColored(0.5f, 0.5f, 0.5f, 1f, "Gameplay settings configuration will be available after Phase 5 completion")
+        MImGui.textDisabled("Gameplay settings configuration will be available after Phase 5 completion")
         /*
         if (!hasUnsavedChanges) syncTempSettings()
 
@@ -258,7 +259,7 @@ class SettingsWindow(
     private fun renderPhysicsSettings() {
         text("Physics Engine Constants")
         separator()
-        textColored(0.5f, 0.5f, 0.5f, 1f, "Project physics settings configuration will be available after Phase 5 completion")
+        MImGui.textDisabled("Project physics settings configuration will be available after Phase 5 completion")
     }
 
     private fun syncTempSettings() {

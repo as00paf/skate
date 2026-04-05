@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -79,12 +80,12 @@ class InputTestingWindow(
 
         val gamepadConnected = inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)
         if (!gamepadConnected) {
-            ImGui.textColored(1f, 0.3f, 0.3f, 1f, "No gamepad detected (GLFW_JOYSTICK_1)")
+            MImGui.errorText("No gamepad detected (GLFW_JOYSTICK_1)")
             ImGui.unindent()
             return
         }
 
-        ImGui.textColored(0.3f, 1f, 0.3f, 1f, "Gamepad Connected")
+        MImGui.successText("Gamepad Connected")
 
         val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1)
         val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
@@ -109,7 +110,7 @@ class InputTestingWindow(
             val afterDeadzoneY = applyDeadzone(leftStickY, deadzone)
             ImGui.text("  After Deadzone: X=%.3f, Y=%.3f".format(afterDeadzoneX, afterDeadzoneY))
         } else {
-            ImGui.textColored(1f, 0.5f, 0f, 1f, "  No axis data")
+            MImGui.warningText("  No axis data")
         }
 
         ImGui.spacing()
@@ -129,7 +130,7 @@ class InputTestingWindow(
             val afterDeadzoneY = applyDeadzone(rightStickY, deadzone)
             ImGui.text("  After Deadzone: X=%.3f, Y=%.3f".format(afterDeadzoneX, afterDeadzoneY))
         } else {
-            ImGui.textColored(1f, 0.5f, 0f, 1f, "  No axis data")
+            MImGui.warningText("  No axis data")
         }
 
         ImGui.spacing()
@@ -167,7 +168,7 @@ class InputTestingWindow(
                 }
             }
         } else {
-            ImGui.textColored(1f, 0.5f, 0f, 1f, "  No button data")
+            MImGui.warningText("  No button data")
         }
 
         ImGui.unindent()
@@ -226,9 +227,11 @@ class InputTestingWindow(
         // Show if within deadzone
         val magnitude = kotlin.math.sqrt(x * x + y * y)
         val status = if (magnitude < deadzone) "WITHIN DEADZONE" else "ACTIVE"
-        val statusColor =
-            if (magnitude < deadzone) floatArrayOf(0.5f, 0.5f, 0.5f, 1f) else floatArrayOf(0.3f, 1f, 0.3f, 1f)
-        ImGui.textColored(statusColor[0], statusColor[1], statusColor[2], statusColor[3], "${prefix}Status: $status")
+        if (magnitude < deadzone) {
+            MImGui.textDisabled("${prefix}Status: $status")
+        } else {
+            MImGui.successText("${prefix}Status: $status")
+        }
     }
 
     /**
@@ -249,7 +252,7 @@ class InputTestingWindow(
         val inputState = skater?.getComponent<InputStateComponent>()
 
         if (inputState == null) {
-            ImGui.textColored(1f, 0.3f, 0.3f, 1f, "No InputStateComponent found on Skater")
+            MImGui.errorText("No InputStateComponent found on Skater")
             ImGui.unindent()
             return
         }
@@ -299,15 +302,11 @@ class InputTestingWindow(
 
         // Physics State
         ImGui.text("Physics State")
-        val groundedColor =
-            if (inputState.isGrounded) floatArrayOf(0.3f, 1f, 0.3f, 1f) else floatArrayOf(1f, 0.3f, 0.3f, 1f)
-        ImGui.textColored(
-            groundedColor[0],
-            groundedColor[1],
-            groundedColor[2],
-            1f,
-            "  Is Grounded: ${inputState.isGrounded}"
-        )
+        if (inputState.isGrounded) {
+            MImGui.successText("  Is Grounded: ${inputState.isGrounded}")
+        } else {
+            MImGui.errorText("  Is Grounded: ${inputState.isGrounded}")
+        }
 
         ImGui.unindent()
     }
@@ -322,8 +321,8 @@ class InputTestingWindow(
 
         // val hardware = settingsManager.engine.hardware
         // val gameplay = settingsManager.project.gameplay
-        
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Input settings configuration will be available after Phase 5 completion")
+
+        MImGui.textDisabled("Input settings configuration will be available after Phase 5 completion")
         
         /*
         // Hardware Deadzones
@@ -385,8 +384,8 @@ class InputTestingWindow(
         ImGui.indent()
 
         // val mappings = settingsManager.project.inputMappings
-        
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Input bindings configuration will be available after Phase 5 completion")
+
+        MImGui.textDisabled("Input bindings configuration will be available after Phase 5 completion")
         
         /*
         val mappings = settingsManager.project.inputMappings
