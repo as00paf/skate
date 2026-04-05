@@ -7,13 +7,18 @@ import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.BuildConfig
 import com.pafoid.skate.game.project.ProjectManager
+import com.pafoid.skate.game.project.ProjectStructureItem
 import com.pafoid.skate.game.project.ProjectWizard
+import com.pafoid.skate.game.project.ItemType
 import imgui.ImGui
 import imgui.ImVec2
+import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiInputTextFlags
+import imgui.flag.ImGuiTreeNodeFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
+import imgui.type.ImInt
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -22,300 +27,282 @@ import javax.swing.JFileChooser
 import javax.swing.UIManager
 
 /**
- * Project wizard window for creating new projects.
- * 
- * Shows a multi-step wizard:
- * - Step 0: Welcome & Project Name
- * - Step 1: Project Location
- * - Step 2: Project Settings (resolution, quality)
- * - Step 3: Summary & Create
+ * Project creation dialog window.
+ *
+ * Shows a single-screen form with all project options:
+ * - Project name with live validation
+ * - Project location with folder browser
+ * - Resolution and quality settings
+ * - Live preview of project structure
  */
 class ProjectWizardWindow : IWindow, KoinComponent {
-    
+
     private val projectManager: ProjectManager by inject()
     private val projectWizard: ProjectWizard by inject()
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
-    
-    private val isOpen = ImBoolean(false)
+
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
-    
+
     /**
-     * Render the project wizard window.
+     * Render the project creation dialog.
      */
     override fun imgui(pOpen: ImBoolean?) {
-        // Auto-open wizard if no project is loaded
+        // Auto-open dialog if no project is loaded
         if (!projectManager.hasProject() && !projectWizard.isOpen.get()) {
             projectWizard.isOpen.set(true)
         }
-    
+
         if (!projectWizard.isOpen.get()) return
 
         val viewport = ImGui.getMainViewport()
         val centerX = if (viewport.sizeX > 0) viewport.centerX else 400f
         val centerY = if (viewport.sizeY > 0) viewport.centerY else 300f
 
-        // Only set position on first frame, then allow user to move it
         ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
-        ImGui.setNextWindowSize(600f, 450f)
-        ImGui.setNextWindowBgAlpha(0.95f)  // Ensure window has visible background
+        ImGui.setNextWindowSize(550f, 520f)
+        ImGui.setNextWindowBgAlpha(0.95f)
 
         val isOpen = ImGui.begin(
             stringManager.getString("wizard.project.title"),
             projectWizard.isOpen,
             ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
         )
-        
+
         if (isOpen) {
-            renderHeader()
-            ImGui.separator()
-
-            renderStepContent()
-
+            renderForm()
             ImGui.separator()
             renderFooter()
 
             ImGui.end()
         }
 
-        // Close wizard if project was created
+        // Close dialog if project was created
         if (projectManager.hasProject()) {
             projectWizard.isOpen.set(false)
         }
     }
-    
+
     /**
-     * Render wizard header with step indicator.
+     * Render the main form with all inputs.
      */
-    private fun renderHeader() {
-        // Step indicator
-        val totalSteps = projectWizard.totalSteps
-        for (i in 0 until totalSteps) {
-            ImGui.pushStyleColor(
-                imgui.flag.ImGuiCol.PlotHistogram,
-                if (i <= projectWizard.currentStep) 0.3f else 0.1f,
-                if (i <= projectWizard.currentStep) 0.6f else 0.3f,
-                if (i <= projectWizard.currentStep) 0.9f else 0.5f,
-                1f
-            )
-            ImGui.progressBar(1f / totalSteps, 80f, 20f, "")
-            ImGui.popStyleColor()
-            if (i < totalSteps - 1) {
-                ImGui.sameLine()
-            }
-        }
-        
-        // Step title
+    private fun renderForm() {
         ImGui.spacing()
-        ImGui.textColored(0.3f, 0.6f, 0.9f, 1f, "Step ${projectWizard.currentStep + 1} of $totalSteps")
-        ImGui.sameLine()
-        ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "- ${projectWizard.getStepTitle()}")
-        
-        // Step description
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, projectWizard.getStepDescription())
-    }
-    
-    /**
-     * Render current step content.
-     */
-    private fun renderStepContent() {
-        ImGui.spacing()
-        ImGui.spacing()
-        
-        when (projectWizard.currentStep) {
-            0 -> renderStep0_Welcome()
-            1 -> renderStep1_Location()
-            2 -> renderStep2_Settings()
-            3 -> renderStep3_Summary()
-        }
-    }
-    
-    /**
-     * Step 0: Welcome & Project Name
-     */
-    private fun renderStep0_Welcome() {
-        ImGui.text("Welcome to SkateSim Engine!")
-        ImGui.spacing()
-        ImGui.textWrapped("Let's create a new project. First, choose a name for your project.")
-        ImGui.spacing()
-        ImGui.spacing()
-        
+
+        // Project Name
         ImGui.text("Project Name:")
-        ImGui.sameLine()
-        ImGui.pushItemWidth(300f)
-        
-        val flags = ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
-        if (ImGui.inputText("##ProjectName", projectNameInput, flags)) {
-            // Enter pressed - validate and go to next step
-            projectWizard.setProjectName(projectNameInput.get())
-            if (projectWizard.isCurrentStepValid()) {
-                projectWizard.nextStep()
-            }
+        ImGui.spacing()
+        ImGui.pushItemWidth(450f)
+        val nameFlags = ImGuiInputTextFlags.AutoSelectAll or ImGuiInputTextFlags.EnterReturnsTrue
+        if (ImGui.inputText("##ProjectName", projectNameInput, nameFlags)) {
+            // Enter pressed - could validate but no step navigation needed
         }
         ImGui.popItemWidth()
-        
-        // Update wizard state
-        projectWizard.setProjectName(projectNameInput.get())
-        
-        // Show validation error
-        if (projectNameInput.get().isNotBlank() && !projectWizard.isProjectNameValid()) {
-            ImGui.textColored(1f, 0.3f, 0.3f, 1f, "Invalid characters in project name")
+
+        // Live validation feedback for name
+        val currentName = projectNameInput.get()
+        projectWizard.setProjectName(currentName)
+        if (currentName.isNotBlank()) {
+            if (!projectWizard.isProjectNameValid()) {
+                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "⚠ Invalid characters (cannot use: <>:/\\|?*)")
+            } else {
+                ImGui.textColored(0.3f, 0.9f, 0.3f, 1f, "✓ Valid")
+            }
         }
-    }
-    
-    /**
-     * Step 1: Project Location
-     */
-    private fun renderStep1_Location() {
-        ImGui.text("Choose where to save your project:")
+
         ImGui.spacing()
         ImGui.spacing()
-        
-        ImGui.text("Project Location:")
-        ImGui.sameLine()
-        ImGui.pushItemWidth(400f)
-        
+
+        // Project Location
+        ImGui.text("Location:")
+        ImGui.spacing()
+        ImGui.pushItemWidth(350f)
         if (ImGui.inputText("##ProjectPath", projectPathInput, ImGuiInputTextFlags.None)) {
             projectWizard.setProjectLocation(projectPathInput.get())
         }
         ImGui.popItemWidth()
-        
+
         ImGui.sameLine()
         if (ImGui.button("Browse...")) {
             browseForFolder()
         }
-        
-        // Update wizard state
-        projectWizard.setProjectLocation(projectPathInput.get())
-        
-        // Show validation
-        if (projectPathInput.get().isNotBlank()) {
-            val folder = File(projectPathInput.get())
+
+        // Live validation feedback for path
+        val currentPath = projectPathInput.get()
+        projectWizard.setProjectLocation(currentPath)
+        if (currentPath.isNotBlank()) {
+            val folder = File(currentPath)
             if (!folder.exists()) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "Folder does not exist")
+                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "⚠ Folder does not exist")
+            } else if (!folder.isDirectory) {
+                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "⚠ Not a directory")
             } else if (!folder.canWrite()) {
-                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "Folder is not writable")
+                ImGui.textColored(1f, 0.3f, 0.3f, 1f, "⚠ Folder is not writable")
             } else {
                 ImGui.textColored(0.3f, 0.9f, 0.3f, 1f, "✓ Valid location")
             }
         }
-    }
-    
-    /**
-     * Step 2: Project Settings
-     */
-    private fun renderStep2_Settings() {
-        ImGui.text("Configure your project settings:")
+
         ImGui.spacing()
         ImGui.spacing()
-        
+
         // Resolution
-        ImGui.text("Default Resolution:")
+        ImGui.text("Resolution:")
         ImGui.sameLine()
-        val currentRes = imgui.type.ImInt(projectWizard.selectedResolution)
+        val currentRes = ImInt(projectWizard.selectedResolution)
+        ImGui.pushItemWidth(250f)
         if (ImGui.combo("##Resolution", currentRes, projectWizard.resolutionOptions.toTypedArray())) {
             projectWizard.setSelectedResolution(currentRes.get())
         }
+        ImGui.popItemWidth()
 
         ImGui.spacing()
 
         // Graphics Quality
         ImGui.text("Graphics Quality:")
         ImGui.sameLine()
-        val currentQuality = imgui.type.ImInt(projectWizard.selectedQuality)
+        val currentQuality = ImInt(projectWizard.selectedQuality)
+        ImGui.pushItemWidth(200f)
         if (ImGui.combo("##Quality", currentQuality, projectWizard.qualityOptions.toTypedArray())) {
             projectWizard.setSelectedQuality(currentQuality.get())
         }
-        
+        ImGui.popItemWidth()
+
         ImGui.spacing()
         ImGui.spacing()
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "These settings can be changed later in the Settings window.")
-    }
-    
-    /**
-     * Step 3: Summary & Create
-     */
-    private fun renderStep3_Summary() {
-        ImGui.text("Review your settings and create the project:")
-        ImGui.spacing()
-        ImGui.spacing()
-        
-        // Summary text
-        val summary = projectWizard.getSummaryText()
-        val summaryLines = summary.split("\n")
-        for (line in summaryLines) {
-            ImGui.text(line)
-        }
-        
-        ImGui.spacing()
+
+        // Project Structure Preview - Enhanced with boxed panel
         ImGui.separator()
         ImGui.spacing()
         
-        // Engine version
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Engine Version: ${BuildConfig.ENGINE_VERSION}")
+        ImGui.textColored(0.6f, 0.6f, 0.6f, 1f, "Engine Version: ${BuildConfig.ENGINE_VERSION}")
+        ImGui.spacing()
+
+        // Draw boxed panel for project structure
+        val structureItems = projectWizard.getProjectStructureItems()
+        val panelPadding = 8f
+        val itemHeight = 18f
+        val headerHeight = 26f
+        val panelHeight = headerHeight + (structureItems.size * itemHeight) + (panelPadding * 3)
+        val panelWidth = ImGui.getContentRegionAvailX()
+        
+        // Draw panel background with border
+        ImGui.pushStyleColor(ImGuiCol.Border, 0.35f, 0.35f, 0.35f, 1f)
+        ImGui.pushStyleColor(ImGuiCol.ChildBg, 0.1f, 0.1f, 0.1f, 0.6f)
+        ImGui.beginChild("StructurePanel", panelWidth, panelHeight, true, ImGuiWindowFlags.None)
+        
+        // Panel header
+        ImGui.pushStyleColor(ImGuiCol.Text, 0.85f, 0.85f, 0.85f, 1f)
+        ImGui.text("${Icons.FOLDER} Project Structure")
+        ImGui.popStyleColor()
+        ImGui.separator()
+        ImGui.spacing()
+        
+        // Structure items with icons and colored text
+        val projectName = projectWizard.projectName.ifBlank { "MyProject" }
+        
+        // Root folder
+        ImGui.pushStyleColor(ImGuiCol.Text, 0.9f, 0.8f, 0.4f, 1f) // Golden yellow for root
+        ImGui.text("  ${Icons.FOLDER} $projectName/")
+        ImGui.popStyleColor()
+        ImGui.indent()
+        
+        for (item in structureItems) {
+            val (icon, textColor) = when (item.type) {
+                ItemType.DIRECTORY -> 
+                    Icons.FOLDER to Triple(0.9f, 0.75f, 0.3f) // Yellow for folders
+                ItemType.FILE -> 
+                    Icons.EDIT to Triple(0.5f, 0.8f, 0.95f) // Light blue for files
+            }
+            
+            ImGui.pushStyleColor(ImGuiCol.Text, textColor.first, textColor.second, textColor.third, 1f)
+            ImGui.text("$icon ${item.name}")
+            ImGui.popStyleColor()
+        }
+        
+        ImGui.unindent()
+        ImGui.endChild()
+        ImGui.popStyleColor(2)
+        
+        ImGui.spacing()
+        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "These settings can be changed later in Settings.")
     }
-    
+
     /**
-     * Render wizard footer with navigation buttons.
+     * Render footer with action buttons.
      */
     private fun renderFooter() {
-        val isLastStep = projectWizard.currentStep == projectWizard.totalSteps - 1
-        val isFirstStep = projectWizard.currentStep == 0
-        val canProceed = projectWizard.isCurrentStepValid()
-        
-        // Calculate button positions
-        val cancelButtonWidth = 100f
-        val backButtonWidth = 100f
-        val nextButtonWidth = if (isLastStep) 120f else 100f
-        val spacing = 10f
-        val totalWidth = cancelButtonWidth + backButtonWidth + nextButtonWidth + (2 * spacing)
-        
-        // Position cursor for right-aligned buttons
-        val contentRegionWidth = ImGui.getContentRegionAvailX()
-        ImGui.setCursorPosX(ImGui.getCursorPosX() + contentRegionWidth - totalWidth)
-        
+        val canCreate = projectWizard.canCreate()
+
+        // Separator before footer
+        ImGui.separator()
+        ImGui.spacing()
+
+        // Calculate button positions (right-aligned)
+        val cancelButtonWidth = 110f
+        val createButtonWidth = 150f
+        val buttonSpacing = 12f
+        val buttonHeight = 30f
+        val totalButtonWidth = cancelButtonWidth + createButtonWidth + buttonSpacing
+        val bottomPadding = 12f
+
+        // Calculate Y position to place buttons at the bottom
+        val availableHeight = ImGui.getContentRegionAvailY()
+        val buttonYPos = if (availableHeight > buttonHeight + bottomPadding) {
+            availableHeight - buttonHeight - bottomPadding
+        } else {
+            0f
+        }
+
+        // Move cursor to bottom position
+        val currentPos = ImGui.getCursorPos()
+        ImGui.setCursorPos(currentPos.x, currentPos.y + buttonYPos)
+
+        // Push buttons to the right side
+        val availableWidth = ImGui.getContentRegionAvailX()
+        val rightPadding = 15f
+        val xPos = availableWidth - totalButtonWidth - rightPadding
+
+        ImGui.setCursorPosX(ImGui.getCursorPosX() + xPos)
+
         // Cancel button
-        if (ImGui.button("Cancel", cancelButtonWidth, 0f)) {
+        if (ImGui.button("Cancel", cancelButtonWidth, buttonHeight)) {
             projectWizard.isOpen.set(false)
             projectWizard.reset()
+            projectNameInput.set("")
+            projectPathInput.set("")
         }
-        
-        ImGui.sameLine(0f, spacing)
-        
-        // Back button
-        ImGui.beginDisabled(isFirstStep)
-        if (ImGui.button("Back", backButtonWidth, 0f)) {
-            projectWizard.previousStep()
+
+        ImGui.sameLine(0f, buttonSpacing)
+
+        // Create button (highlighted)
+        ImGui.beginDisabled(!canCreate)
+        if (canCreate) {
+            ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+            ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.25f, 0.7f, 0.25f, 1f)
+            ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.15f, 0.5f, 0.15f, 1f)
         }
-        ImGui.endDisabled()
-        
-        ImGui.sameLine(0f, spacing)
-        
-        // Next/Create button
-        ImGui.beginDisabled(!canProceed)
-        val buttonText = if (isLastStep) "${Icons.PLUS} Create" else "Next >"
-        if (ImGui.button(buttonText, nextButtonWidth, 0f)) {
-            if (isLastStep) {
-                createProject()
-            } else {
-                projectWizard.nextStep()
-            }
+        if (ImGui.button("${Icons.PLUS} Create Project", createButtonWidth, buttonHeight)) {
+            createProject()
+        }
+        if (canCreate) {
+            ImGui.popStyleColor(3)
         }
         ImGui.endDisabled()
     }
-    
+
     /**
      * Browse for folder using system file chooser.
      */
     private fun browseForFolder() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-            
+
             val fileChooser = JFileChooser()
             fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
             fileChooser.dialogTitle = "Select Project Location"
-            
+
             val result = fileChooser.showOpenDialog(null)
             if (result == JFileChooser.APPROVE_OPTION) {
                 val folder = fileChooser.selectedFile
@@ -326,21 +313,20 @@ class ProjectWizardWindow : IWindow, KoinComponent {
             logger.logEditor("Error browsing for folder: ${e.message}")
         }
     }
-    
+
     /**
-     * Create the project with current wizard settings.
+     * Create the project with current dialog settings.
      */
     private fun createProject() {
         val name = projectWizard.projectName
         val path = File(projectWizard.projectPath)
-        
+
         logger.logEditor("Creating project: $name at ${path.absolutePath}")
-        
+
         val result = projectManager.createProject(name, path, BuildConfig.ENGINE_VERSION)
-        
+
         result.onSuccess { project ->
             logger.logEditor("Project created successfully: ${project.metadata.name}")
-            // Project will be loaded, scene will be initialized by ImGuiLayer
         }
 
         result.onFailure { error ->
