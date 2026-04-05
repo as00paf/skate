@@ -74,6 +74,18 @@ class ProjectManager(
      * @param engineVersion Engine version to store in project metadata
      * @return Result with ProjectSettings on success, error on failure
      */
+
+    /**
+     * Try to load the most recently opened project.
+     * Returns true if a valid last project was found and loaded, false otherwise.
+     */
+    fun loadLastProject(): Boolean {
+        val recent = settingsManager.recentProjects.firstOrNull() ?: return false
+        val projectFile = File(recent.path)
+        if (!projectFile.exists()) return false
+        return openProject(projectFile)
+    }
+
     fun createProject(name: String, folder: File, engineVersion: String = "v0.46.0.1.19"): Result<ProjectSettings> {
         return try {
             logger.logEditor("Creating project: $name in ${folder.absolutePath}")

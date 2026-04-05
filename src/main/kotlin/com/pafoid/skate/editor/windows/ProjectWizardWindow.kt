@@ -38,7 +38,7 @@ import javax.swing.UIManager
 class ProjectWizardWindow : IWindow, KoinComponent {
 
     private val projectManager: ProjectManager by inject()
-    private val projectWizard: ProjectWizard by inject()
+    val wizard: ProjectWizard by inject()
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
 
@@ -49,12 +49,12 @@ class ProjectWizardWindow : IWindow, KoinComponent {
      * Render the project creation dialog.
      */
     override fun imgui(pOpen: ImBoolean?) {
-        // Auto-open dialog if no project is loaded
-        if (!projectManager.hasProject() && !projectWizard.isOpen.get()) {
-            projectWizard.isOpen.set(true)
+        // Auto-open dialog if no project is loaded AND user hasn't explicitly dismissed it
+        if (!projectManager.hasProject() && !wizard.isOpen.get() && !wizard.userDismissed) {
+            wizard.open()
         }
 
-        if (!projectWizard.isOpen.get()) return
+        if (!wizard.isOpen.get()) return
 
         val viewport = ImGui.getMainViewport()
         val centerX = if (viewport.sizeX > 0) viewport.centerX else 400f
@@ -66,7 +66,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
 
         val isOpen = ImGui.begin(
             stringManager.getString("wizard.project.title"),
-            projectWizard.isOpen,
+            wizard.isOpen,
             ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
         )
 
@@ -77,9 +77,14 @@ class ProjectWizardWindow : IWindow, KoinComponent {
             ImGui.end()
         }
 
+        // Detect if user closed the window via the X button
+        if (!wizard.isOpen.get()) {
+            wizard.dismiss()
+        }
+
         // Close dialog if project was created
         if (projectManager.hasProject()) {
-            projectWizard.isOpen.set(false)
+            wizard.isOpen.set(false)
         }
     }
 
@@ -98,10 +103,10 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         ImGui.popItemWidth()
 
         // Update wizard state and show validation
-        projectWizard.setProjectName(projectNameInput.get())
+        wizard.setProjectName(projectNameInput.get())
         val currentName = projectNameInput.get()
         if (currentName.isNotBlank()) {
-            if (!projectWizard.isProjectNameValid()) {
+            if (!wizard.isProjectNameValid()) {
                 MImGui.errorText("${Icons.WINDOW_CLOSE} Invalid characters (cannot use: <>:/\\|?*)")
             } else {
                 MImGui.successText("${Icons.CHECK} Valid")
@@ -124,7 +129,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         }
 
         // Update wizard state and show validation
-        projectWizard.setProjectLocation(projectPathInput.get())
+        wizard.setProjectLocation(projectPathInput.get())
         val currentPath = projectPathInput.get()
         if (currentPath.isNotBlank()) {
             val folder = File(currentPath)
@@ -151,7 +156,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
      */
     private fun renderProjectStructurePreview() {
         // Draw boxed panel for project structure
-        val structureItems = projectWizard.getProjectStructureItems()
+        val structureItems = wizard.getProjectStructureItems()
         val panelPadding = 8f
         val itemHeight = 18f
         val headerHeight = 26f
@@ -171,7 +176,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         ImGui.spacing()
 
         // Structure items with icons and colored text
-        val projectName = projectWizard.projectName.ifBlank { "MyProject" }
+        val projectName = wizard.projectName.ifBlank { "MyProject" }
 
         // Root folder
         ImGui.pushStyleColor(ImGuiCol.Text, 0.9f, 0.8f, 0.4f, 1f)
@@ -201,7 +206,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
      * Render footer with action buttons.
      */
     private fun renderFooter() {
-        val canCreate = projectWizard.canCreate()
+        val canCreate = wizard.canCreate()
 
         // Separator before footer
         ImGui.separator()
@@ -236,8 +241,8 @@ class ProjectWizardWindow : IWindow, KoinComponent {
 
         // Cancel button
         if (ImGui.button("Cancel", cancelButtonWidth, buttonHeight)) {
-            projectWizard.isOpen.set(false)
-            projectWizard.reset()
+            wizard.dismiss()
+            wizard.reset()
             projectNameInput.set("")
             projectPathInput.set("")
         }
@@ -275,7 +280,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
             if (result == JFileChooser.APPROVE_OPTION) {
                 val folder = fileChooser.selectedFile
                 projectPathInput.set(folder.absolutePath)
-                projectWizard.setProjectLocation(folder.absolutePath)
+                wizard.setProjectLocation(folder.absolutePath)
             }
         } catch (e: Exception) {
             logger.logEditor("Error browsing for folder: ${e.message}")
@@ -286,8 +291,8 @@ class ProjectWizardWindow : IWindow, KoinComponent {
      * Create the project with current dialog settings.
      */
     private fun createProject() {
-        val name = projectWizard.projectName
-        val path = File(projectWizard.projectPath)
+        val name = wizard.projectName
+        val path = File(wizard.projectPath)
 
         logger.logEditor("Creating project: $name at ${path.absolutePath}")
 

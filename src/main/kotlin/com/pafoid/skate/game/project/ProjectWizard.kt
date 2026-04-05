@@ -54,6 +54,13 @@ class ProjectWizard {
     val isOpen = imgui.type.ImBoolean(false)
 
     /**
+     * Whether the user explicitly dismissed the dialog.
+     * Prevents auto-reopen after the user clicks Cancel.
+     */
+    var userDismissed: Boolean = false
+        private set
+
+    /**
      * Project name entered by user.
      */
     var projectName: String = ""
@@ -64,6 +71,22 @@ class ProjectWizard {
      */
     var projectPath: String = ""
         private set
+
+    /**
+     * Open the dialog (clears dismissal flag).
+     */
+    fun open() {
+        userDismissed = false
+        isOpen.set(true)
+    }
+
+    /**
+     * Close the dialog and mark as explicitly dismissed.
+     */
+    fun dismiss() {
+        userDismissed = true
+        isOpen.set(false)
+    }
 
     /**
      * Set the project name.
@@ -137,7 +160,7 @@ class ProjectWizard {
     }
 
     /**
-     * Reset dialog to initial state.
+     * Reset dialog to initial state (does NOT clear the dismissal flag).
      */
     fun reset() {
         projectName = ""

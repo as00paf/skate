@@ -144,7 +144,9 @@ class ImGuiLayer(
             stringManager = stringManager,
             resourceManager = resourceManager,
             projectManager = projectManager,
-            projectSwitcher = windowRegistry.projectSwitcherDialog
+            projectSwitcher = windowRegistry.projectSwitcherDialog,
+            windowController = windowController,
+            projectWizard = windowRegistry.projectWizardWindow.wizard
         )
     }
 
@@ -206,6 +208,11 @@ class ImGuiLayer(
 
         // Setup dockspace first (always needed for ImGui context)
         setupDockSpace(currentScene)
+
+        // Try to auto-load the last project before showing the wizard
+        if (!projectManager.hasProject()) {
+            projectManager.loadLastProject()
+        }
 
         // Show project wizard if no project is loaded (overlay on top of editor)
         if (!projectManager.hasProject()) {

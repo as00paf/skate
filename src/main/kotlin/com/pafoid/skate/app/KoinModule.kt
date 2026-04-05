@@ -134,7 +134,7 @@ val appModule = module {
     single { ProjectManager(get(), get(), get()) }
     factory { ProjectWizard() }
     single { ProjectWizardWindow() }
-    single { ProjectSwitcherDialog() }
+    single { ProjectSwitcherDialog(get()) }
 
     // Search infrastructure
     single {

@@ -27,7 +27,9 @@ import javax.swing.UIManager
  * - "New Project" button
  * - "Open Project" button
  */
-class ProjectSwitcherDialog : KoinComponent {
+class ProjectSwitcherDialog(
+    private val projectWizard: com.pafoid.skate.game.project.ProjectWizard
+) : KoinComponent {
     
     private val projectManager: ProjectManager by inject()
     private val logger: LoggerService by inject()
@@ -96,8 +98,8 @@ class ProjectSwitcherDialog : KoinComponent {
             ImGui.setCursorPosX(ImGui.getCursorPosX() + contentRegionWidth - totalWidth)
             
             if (ImGui.button("${Icons.PLUS} New Project", buttonWidth, buttonHeight)) {
-                // Will be handled by EditorMenuBar
                 close()
+                projectWizard.open()
             }
             
             ImGui.sameLine(0f, spacing)

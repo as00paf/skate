@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.game.project.ProjectManager
+import com.pafoid.skate.engine.core.WindowController
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiStyleVar
@@ -43,7 +44,9 @@ class EditorMenuBar(
     private val stringManager: StringManager,
     private val resourceManager: ResourceManager,
     private val projectManager: ProjectManager,
-    private val projectSwitcher: ProjectSwitcherDialog
+    private val projectSwitcher: ProjectSwitcherDialog,
+    private val windowController: WindowController,
+    private val projectWizard: com.pafoid.skate.game.project.ProjectWizard
 ) {
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
@@ -107,8 +110,18 @@ class EditorMenuBar(
             }
             
             ImGui.separator()
+
+            // Project management
+            if (ImGui.menuItem("${Icons.PLUS} New Project")) {
+                projectWizard.open()
+            }
+            if (ImGui.menuItem("${Icons.FOLDER_OPEN} Open Project")) {
+                projectSwitcher.open()
+            }
+
+            ImGui.separator()
             if (ImGui.menuItem(stringManager.getString("menu.file.quit"))) {
-                // Window close handled by WindowControlsRenderer
+                windowController.close()
             }
             ImGui.endPopup()
         }
