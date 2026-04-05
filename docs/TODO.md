@@ -26,7 +26,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
   - [ ] Phase 2: ProjectManager Implementation (4-5h)
   - [ ] Phase 3: Project Wizard UI (5-6h)
   - [ ] Phase 4: Project Switching UI (3-4h)
-  - [ ] Phase 5: Settings Window Overhaul (4-5h) - *Will fix build errors*
+  - [ ] Phase 5: Settings Window Overhaul (4-5h)
   - [ ] Phase 6: Integration & Boot Sequence (3-4h)
   
   **Note:** Build has expected errors in SettingsWindow, InputSystem, and related files. These will be fixed in Phase 5 when the Settings Window is overhauled to use the new settings structure.
