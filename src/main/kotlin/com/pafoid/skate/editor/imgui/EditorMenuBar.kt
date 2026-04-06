@@ -2,14 +2,18 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
+import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.game.project.ProjectManager
+import com.pafoid.skate.engine.core.WindowController
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiStyleVar
@@ -19,33 +23,30 @@ import imgui.internal.ImGui.popStyleVar
 import imgui.internal.ImGui.pushStyleColor
 import imgui.internal.ImGui.pushStyleVar
 
-/**
- * Renders the main editor menu bar with File, Edit, Settings, and View menus.
- * Delegates menu building to specialized builder components.
- *
- * @param fileMenu Builder for File menu
- * @param editMenu Builder for Edit menu
- * @param settingsMenu Builder for Settings menu
- * @param viewMenu Builder for View menu
- * @param windowControls Renderer for window control buttons
- * @param stringManager Localization for menu labels
- * @param resourceManager To load app icon texture
- */
 class EditorMenuBar(
     private val fileMenu: FileMenuBuilder,
     private val editMenu: EditMenuBuilder,
     private val settingsMenu: SettingsMenuBuilder,
     private val viewMenu: ViewMenuBuilder,
     private val windowControls: WindowControlsRenderer,
-    private val stringManager: com.pafoid.skate.editor.systems.StringManager,
-    private val resourceManager: ResourceManager
+    private val stringManager: StringManager,
+    private val resourceManager: ResourceManager,
+    private val projectManager: ProjectManager,
+    private val projectSwitcher: ProjectSwitcherDialog,
+    private val windowController: WindowController,
+    private val projectWizard: com.pafoid.skate.game.project.ProjectWizard,
+    private val imguiLayer: ImGuiLayer
 ) {
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
     private val projectName = "Skate Project"
 
     init {
-        appIconTexId = resourceManager.loadTextureSync(Assets.Textures.APP_ICON).texId
+        appIconTexId = try {
+            resourceManager.loadTextureSync(Assets.Textures.APP_ICON).texId
+        } catch (e: Exception) {
+            -1
+        }
     }
 
     fun render(currentScene: Scene) {
@@ -85,8 +86,43 @@ class EditorMenuBar(
             settingsMenu.render()
             viewMenu.render()
             ImGui.separator()
+
+            if (ImGui.beginMenu(stringManager.getString("menu.file.recent_projects"))) {
+                val currentPath = projectManager.currentProject?.getProjectFile()?.absolutePath
+                val recentProjects = projectManager.getRecentProjects()
+                val filteredProjects = recentProjects.filter { it.path != currentPath }
+
+                if (filteredProjects.isNotEmpty()) {
+                    for (project in filteredProjects) {
+                        if (ImGui.menuItem(project.name)) {
+                            projectManager.openProject(java.io.File(project.path))
+                        }
+                    }
+                } else {
+                    ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.no_recent_projects"))
+                }
+                ImGui.endMenu()
+            }
+
+            ImGui.separator()
+
+            if (projectManager.hasProject()) {
+                if (ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}")) {
+                    imguiLayer.markWizardResetNeeded()
+                    imguiLayer.markAutoLoadResetNeeded()
+                    projectManager.closeProject()
+                }
+            }
+            if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}")) {
+                projectWizard.open()
+            }
+            if (ImGui.menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}")) {
+                projectSwitcher.open()
+            }
+
+            ImGui.separator()
             if (ImGui.menuItem(stringManager.getString("menu.file.quit"))) {
-                // Window close handled by WindowControlsRenderer
+                windowController.close()
             }
             ImGui.endPopup()
         }
@@ -107,6 +143,13 @@ class EditorMenuBar(
             projectIcon
         )
         ImGui.setCursorPosY(textY)
-        ImGui.text(projectName)
+
+        val currentProjectName = projectManager.getProjectName()
+        if (ImGui.button(currentProjectName)) {
+            projectSwitcher.open()
+        }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip(stringManager.getString("tooltip.switch_projects"))
+        }
     }
 }

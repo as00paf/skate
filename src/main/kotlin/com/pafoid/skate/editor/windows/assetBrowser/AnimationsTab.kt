@@ -61,7 +61,7 @@ class AnimationsTab(
         if (ImGui.beginDragDropSource()) {
             ImGui.setDragDropPayload("ANIMATION", file.path)
             ImGui.text("${Icons.PLAY} ${file.name}")
-            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Drop on object with Animator")
+            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.asset_browser.drop_animation_hint"))
             ImGui.endDragDropSource()
         }
 

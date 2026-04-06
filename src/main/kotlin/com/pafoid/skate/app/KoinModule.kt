@@ -24,27 +24,26 @@ import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenu
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportOverlays
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportRenderer
 import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportToolbar
-import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.windows.ConsoleWindow
+import com.pafoid.skate.editor.windows.EditorSettingsWindow
 import com.pafoid.skate.editor.windows.EnvironmentWindow
 import com.pafoid.skate.editor.windows.InputTestingWindow
 import com.pafoid.skate.editor.windows.KeyBindingsWindow
 import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
+import com.pafoid.skate.editor.windows.ProjectSettingsWindow
+import com.pafoid.skate.editor.windows.ProjectWizardWindow
+import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
 import com.pafoid.skate.editor.windows.RenderGraphWindow
 import com.pafoid.skate.editor.windows.SceneHierarchyWindow
-import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.editor.windows.SystemsWindow
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.windows.TrickUIWindow
 import com.pafoid.skate.editor.windows.PropertiesWindow
 import com.pafoid.skate.editor.windows.GameViewWindow
 import com.pafoid.skate.editor.windows.AssetBrowserWindow
+import com.pafoid.skate.editor.windows.AudioInspectorWindow
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.SceneOpened
 import com.pafoid.skate.engine.events.SceneChanged
@@ -77,6 +76,8 @@ import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.game.project.ProjectManager
+import com.pafoid.skate.game.project.ProjectWizard
 import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
@@ -98,24 +99,17 @@ val appModule = module {
 
     // EventSystem for editor event bus
     single { EventSystem() }
-    
+
     // ViewModels for UI state management
     factory { SelectionViewModel(get(), get()) }
     factory { SceneViewModel(get(), get()) }
-    
+
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get(), get()) }
     factory { ViewportToolbar(get(), get(), get(), get()) }
     factory { ViewportContextMenu(get()) }
     factory { ViewportOverlays(get(), get()) }
-    
-    // Menu builders for EditorMenuBar
-    factory { FileMenuBuilder(get(), get(), get(), 0L) }
-    factory { EditMenuBuilder(get(), get(), get(), get(), get()) }
-    factory { SettingsMenuBuilder(get(), get(), get(), get()) }
-    factory { ViewMenuBuilder(get(), get()) }
-    factory { WindowControlsRenderer(get(), get()) }
-    
+
     // Editor windows
     factory { SceneHierarchyWindow() }
     factory { PropertiesWindow() }
@@ -127,14 +121,22 @@ val appModule = module {
     factory { PhysicsTunerWindow() }
     factory { InputTestingWindow(get(), get(), get()) }
     factory { SystemsWindow() }
-    factory { SettingsWindow(get(), get()) }
+    factory { EditorSettingsWindow(get(), get()) }
+    factory { ProjectSettingsWindow(get(), get(), get(), get()) }
     factory { KeyBindingsWindow(get(), get()) }
     factory { CommandHistoryWindow() }
     factory { RenderGraphWindow() }
-    
-    // Window registry
-    single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { AudioInspectorWindow() }
+
+    // Window registry (19 windows)
+    single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+
+    // Project management
+    single { ProjectManager(get(), get(), get()) }
+    single { ProjectWizard() }
+    single { ProjectWizardWindow() }
+    single { ProjectSwitcherDialog() }
 
     // Search infrastructure
     single {

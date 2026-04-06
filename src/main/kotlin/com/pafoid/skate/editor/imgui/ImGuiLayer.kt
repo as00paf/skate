@@ -14,13 +14,18 @@ import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.game.project.ProjectManager
 import imgui.ImVec2
+import imgui.ImGui
+import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiDir
@@ -47,13 +52,16 @@ import imgui.internal.ImGui.getIO
 import imgui.internal.ImGui.getMainViewport
 import imgui.internal.ImGui.image
 import imgui.internal.ImGui.newFrame
+import imgui.internal.ImGui.popStyleColor
 import imgui.internal.ImGui.popStyleVar
+import imgui.internal.ImGui.pushStyleColor
 import imgui.internal.ImGui.pushStyleVar
 import imgui.internal.ImGui.render
 import imgui.internal.ImGui.renderPlatformWindowsDefault
 import imgui.internal.ImGui.setNextWindowPos
 import imgui.internal.ImGui.setNextWindowSize
 import imgui.internal.ImGui.setNextWindowViewport
+import imgui.internal.ImGui.text
 import imgui.internal.ImGui.updatePlatformWindows
 import imgui.type.ImBoolean
 import imgui.type.ImInt
@@ -82,24 +90,35 @@ class ImGuiLayer(
 
     private val eventSystem: EventSystem by inject()
     private val editorInputHandler: EditorInputHandler by inject()
+    private val projectManager: ProjectManager by inject()
     private val statusBar = EditorStatusBar()
     private lateinit var menuBar: EditorMenuBar
-    
-    // Reusable buffer to avoid per-frame allocations
+
     private val tempVec2 = ImVec2()
 
     private var isViewportMaximized = false
+    private var hadProjectLastFrame = false
+    private var needsWizardReset = false
+    private var hasAttemptedAutoLoad = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
     private lateinit var setVSync: (Boolean) -> Unit
-    private lateinit var windowController: com.pafoid.skate.engine.core.WindowController
+    private lateinit var windowController: WindowController
 
     private var needsDecorationUpdate = false
     private var layoutInitialized = false
 
+    fun markWizardResetNeeded() {
+        needsWizardReset = true
+    }
+
+    fun markAutoLoadResetNeeded() {
+        hasAttemptedAutoLoad = false
+    }
+
     fun init(
         glfwWindow: Long,
-        windowController: com.pafoid.skate.engine.core.WindowController,
+        windowController: WindowController,
         fullScreenCallback: (Boolean) -> Unit,
         vSyncCallback: (Boolean) -> Unit
     ) {
@@ -107,6 +126,9 @@ class ImGuiLayer(
         this.windowController = windowController
         this.setFullscreen = fullScreenCallback
         this.setVSync = vSyncCallback
+
+        // Wire display callbacks to SettingsManager so settings windows can change V-Sync/Fullscreen
+        settingsManager.setDisplayCallbacks(setVSync, setFullscreen)
 
         createContext()
 
@@ -122,14 +144,31 @@ class ImGuiLayer(
 
         ImGuiStyleManager.setupStyle()
 
+        val editorSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.editor_settings" }?.showFlag ?: ImBoolean(false)
+        val projectSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.project_settings" }?.showFlag ?: ImBoolean(false)
+
         menuBar = EditorMenuBar(
             fileMenu = FileMenuBuilder(stringManager, levelManager, sceneManager, glfwWindow),
             editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
-            settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, windowRegistry.keyBindingsWindow, windowRegistry.settingsWindow),
+            settingsMenu = SettingsMenuBuilder(
+                stringManager, settingsManager,
+                keyBindingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.keybindings" }?.showFlag ?: ImBoolean(false),
+                settingsShowFlag = editorSettingsShowFlag
+            ),
             viewMenu = ViewMenuBuilder(stringManager, windowRegistry.windows),
-            windowControls = WindowControlsRenderer(windowRegistry.searchEverywhereWindow, windowController),
+            windowControls = WindowControlsRenderer(
+                windowRegistry.searchEverywhereWindow,
+                windowController,
+                editorSettingsShowFlag,
+                projectSettingsShowFlag
+            ),
             stringManager = stringManager,
-            resourceManager = resourceManager
+            resourceManager = resourceManager,
+            projectManager = projectManager,
+            projectSwitcher = windowRegistry.projectSwitcherDialog,
+            windowController = windowController,
+            projectWizard = windowRegistry.projectWizardWindow.wizard,
+            imguiLayer = this
         )
     }
 
@@ -157,7 +196,7 @@ class ImGuiLayer(
         val noTabBar = imgui.internal.flag.ImGuiDockNodeFlags.NoTabBar
         val noWindowMenuButton = 1 shl 12
         val noCloseButton = 1 shl 13
-        
+
         centralNode.setLocalFlags(noTabBar or noWindowMenuButton or noCloseButton)
 
         windowRegistry.windows.filter { it.showFlag.get() }.forEach { window ->
@@ -189,6 +228,8 @@ class ImGuiLayer(
 
         editorInputHandler.update(currentScene)
 
+        setupDockSpace(currentScene)
+
         if (isViewportMaximized) {
             setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY, ImGuiCond.Always)
             setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY, ImGuiCond.Always)
@@ -205,23 +246,48 @@ class ImGuiLayer(
 
             end()
             popStyleVar()
-        } else {
-            setupDockSpace(currentScene)
-            statusBar.render(currentScene)
+        } else if (projectManager.hasProject()) {
             currentScene.imguiScene()
 
             windowRegistry.windows.forEach { window ->
                 if (window.showFlag.get()) {
                     when {
                         window.requiresScene -> (window.instance as? IWindowWithScene)?.imgui(currentScene)
-                        else -> (window.instance as? IWindow)?.imgui()
+                        else -> (window.instance as? IWindow)?.imgui(window.showFlag)
                     }
                 }
             }
-            windowRegistry.settingsWindow.render()
-            windowRegistry.keyBindingsWindow.render()
+
             windowRegistry.searchEverywhereWindow.imgui(null)
+            windowRegistry.projectSwitcherDialog.render()
         }
+
+        statusBar.render(currentScene)
+
+        if (needsWizardReset) {
+            windowRegistry.projectWizardWindow.wizard.resetForNewProject()
+            needsWizardReset = false
+        }
+
+        if (!hasAttemptedAutoLoad && !projectManager.hasProject()) {
+            hasAttemptedAutoLoad = true
+            projectManager.loadLastProject()
+        }
+
+        if (!projectManager.hasProject() && !hadProjectLastFrame) {
+            hasAttemptedAutoLoad = false
+        }
+
+        if (!hadProjectLastFrame && projectManager.hasProject() && windowRegistry.projectWizardWindow.wizard.isOpen.get()) {
+            windowRegistry.projectWizardWindow.wizard.dismiss()
+        }
+        hadProjectLastFrame = projectManager.hasProject()
+
+        if (!projectManager.hasProject() && !windowRegistry.projectWizardWindow.wizard.isOpen.get() && !windowRegistry.projectWizardWindow.wizard.userDismissed) {
+            windowRegistry.projectWizardWindow.wizard.open()
+        }
+
+        windowRegistry.projectWizardWindow.imgui(null)
 
         endFrame()
     }
@@ -254,7 +320,7 @@ class ImGuiLayer(
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
 
         val viewport = getMainViewport()
-        val statusBarHeight = 30f // Height for EditorStatusBar
+        val statusBarHeight = com.pafoid.skate.editor.imgui.data.UiConstants.STATUS_BAR_HEIGHT
 
         setNextWindowPos(viewport.workPosX, viewport.workPosY, ImGuiCond.Always)
         setNextWindowSize(viewport.workSizeX, viewport.workSizeY - statusBarHeight, ImGuiCond.Always)

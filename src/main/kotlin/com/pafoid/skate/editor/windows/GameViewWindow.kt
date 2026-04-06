@@ -97,7 +97,7 @@ class GameViewWindow : IWindow, KoinComponent {
         viewportToolbar.render(windowPos)
 
         ImGui.setCursorPos(
-            windowPos.x + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingX,
+            windowPos.x + 10f / 2f + ImGui.getStyle().framePaddingX,
             windowPos.y + TOOLBAR_HEIGHT + ImGui.getStyle().framePaddingY
         )
 
@@ -261,19 +261,9 @@ class GameViewWindow : IWindow, KoinComponent {
         return ImVec2(tempVec2.x, tempVec2.y)
     }
 
-    companion object {
-        // Overlay Constants
-        private const val OVERLAY_PADDING = 10f
-        private const val FPS_OVERLAY_WIDTH = 80f
-        private const val FPS_OVERLAY_HEIGHT = 30f
-        private const val SPEED_OVERLAY_WIDTH = 120f
-        private const val SPEED_OVERLAY_HEIGHT = 30f
-        private const val TRICK_OVERLAY_WIDTH = 200f // Adjusted width for trick names
-        private const val TRICK_OVERLAY_HEIGHT = 30f
+    private companion object {
         private const val TOOLBAR_HEIGHT = 40f
         private const val TAB_BAR_HEIGHT = 25f
-        private const val TOOLBAR_BUTTON_HEIGHT = 30f
-        private const val TOOLBAR_BUTTON_SPACING = 10f
     }
 
     private fun createPrimitiveObject(name: String, halfExtents: Vector3f) {

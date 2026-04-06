@@ -50,12 +50,12 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         
         // Toolbar
         ImGui.pushItemWidth(ImGui.getContentRegionAvailX() - 60f)
-        ImGui.inputTextWithHint("##Search", "${Icons.SEARCH} Search...", searchQuery)
+        ImGui.inputTextWithHint("##Search", "${Icons.SEARCH} ${stringManager.getString("lbl.hierarchy.search")}", searchQuery)
         ImGui.popItemWidth()
-        
+
         ImGui.sameLine()
         if (ImGui.button(Icons.PLUS)) {
-            val newObj = GameObject("New GameObject")
+            val newObj = GameObject(stringManager.getString("lbl.gameobject.new"))
             scene.gameObjectManager.addGameObject(newObj)
             scene.setSelectedGameObject(newObj)
             eventSystem.publish(GameObjectSelected(newObj))
@@ -63,7 +63,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.add_gameobject"))
         }
-        
+
         ImGui.sameLine()
         if (isLinked) {
             ImGui.pushStyleColor(ImGuiCol.Button, ImGui.getColorU32(ImGuiCol.ButtonActive))
@@ -75,7 +75,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             ImGui.popStyleColor()
         }
         if (ImGui.isItemHovered()) {
-            ImGui.setTooltip("Link selection to viewport")
+            ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.link_selection"))
         }
         
         ImGui.separator()
@@ -83,9 +83,9 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         val filter = searchQuery.get()
 
         if (ImGui.beginTable("HierarchyTable", 3, ImGuiTableFlags.BordersInnerH or ImGuiTableFlags.Resizable or ImGuiTableFlags.ScrollY)) {
-            ImGui.tableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch)
-            ImGui.tableSetupColumn("Vis", ImGuiTableColumnFlags.WidthFixed, 24f)
-            ImGui.tableSetupColumn("Lock", ImGuiTableColumnFlags.WidthFixed, 24f)
+            ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.name"), ImGuiTableColumnFlags.WidthStretch)
+            ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.visibility"), ImGuiTableColumnFlags.WidthFixed, 24f)
+            ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.lock"), ImGuiTableColumnFlags.WidthFixed, 24f)
 
             // Iterate directly without toList() to avoid per-frame allocation
             scene.gameObjectManager.gameObjects.forEach { obj ->
@@ -209,8 +209,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         if (ImGui.beginPopupContextItem()) {
             // Create Empty Child
             if (ImGui.beginMenu("${Icons.PLUS} ${stringManager.getString("context.hierarchy.create_empty_child")}")) {
-                if (ImGui.menuItem("Empty GameObject")) {
-                    val childObj = GameObject("GameObject")
+                if (ImGui.menuItem(stringManager.getString("lbl.gameobject.empty"))) {
+                    val childObj = GameObject(stringManager.getString("lbl.gameobject.default"))
                     val parentTransform = obj.getComponent<Transform>()
                     childObj.addComponent(Transform())
                     childObj.parent = obj
@@ -353,11 +353,11 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         }
         newTransform.translation.x += 0.5f
         newTransform.translation.z += 0.5f
-        
+
         duplicated.addComponent(newTransform)
         undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
     }
-    
+
     private fun pasteAsChild(parentObject: GameObject) {
         val scene = sceneManager.currentScene ?: return
         val cloned = clipboardService.paste() ?: return

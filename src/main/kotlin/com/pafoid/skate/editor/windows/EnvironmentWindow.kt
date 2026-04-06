@@ -1,8 +1,12 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.EnvironmentPropertyCommand
+import com.pafoid.skate.editor.systems.EnvironmentToggleCommand
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
@@ -14,17 +18,9 @@ import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-/**
- * Environment editor window.
- *
- * This window provides controls for:
- * - Time of day (via TimeComponent and DayNightCycleSystem)
- * - Environment settings (via EnvironmentSystem)
- * - Directional light and shadows (via DirectionalLightSystem)
- * - Ambient lighting (via LightingStateComponent and DayNightCycleSystem)
- */
 class EnvironmentWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
+    private val undoRedoManager: UndoRedoManager by inject()
 
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.environment"))
@@ -44,11 +40,23 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             val timeString = String.format("%02d:%02d", hours, minutes)
 
             if (ImGui.sliderFloat(stringManager.getString("lbl.environment.time"), time, 0f, 24f, timeString)) {
-                timeComponent.timeOfDay = time[0]
+                val oldTime = timeComponent.timeOfDay
+                val newTime = time[0]
+                undoRedoManager.executeCommand(
+                    EnvironmentPropertyCommand(
+                        displayName = "Set Time of Day",
+                        targetName = null,
+                        setter = { t -> 
+                            timeComponent.timeOfDay = t
+                            dayNightSystem?.setCycleTime(t)
+                        },
+                        oldValue = oldTime,
+                        newValue = newTime
+                    )
+                )
                 if (!scene.hasComponent<TimeComponent>()) {
                     scene.addComponent(timeComponent)
                 }
-                dayNightSystem?.setCycleTime(time[0])
             }
         }
 
@@ -62,12 +70,12 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             val config = lightSystem.config
 
             val sunDir = floatArrayOf(config.direction.x, config.direction.y, config.direction.z)
-            if (ImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f, -1f, 1f)) {
+            if (MImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f)) {
                 config.direction.set(sunDir[0], sunDir[1], sunDir[2]).normalize()
             }
 
             val sunColor = floatArrayOf(config.color.x, config.color.y, config.color.z)
-            if (ImGui.colorEdit3(stringManager.getString("lbl.environment.sun_color"), sunColor)) {
+            if (MImGui.colorEdit3(stringManager.getString("lbl.environment.sun_color"), sunColor)) {
                 config.color.set(sunColor[0], sunColor[1], sunColor[2])
             }
 
@@ -77,30 +85,30 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             }
 
             ImGui.separator()
-            ImGui.text("Shadow Settings")
+            MImGui.textDisabled(stringManager.getString("lbl.environment.shadow_settings"))
 
             val shadowDistance = floatArrayOf(config.shadowDistance)
-            if (ImGui.dragFloat("Shadow Distance (m)", shadowDistance, 1f, 10f, 200f)) {
+            if (ImGui.dragFloat(stringManager.getString("lbl.environment.shadow_distance"), shadowDistance, 1f, 10f, 200f)) {
                 config.shadowDistance = shadowDistance[0]
             }
 
             val autoBounds = ImBoolean(config.autoCalculateBounds)
-            if (ImGui.checkbox("Auto Calculate Bounds", autoBounds)) {
+            if (ImGui.checkbox(stringManager.getString("lbl.environment.auto_calculate_bounds"), autoBounds)) {
                 config.autoCalculateBounds = autoBounds.get()
             }
 
             val stabilize = ImBoolean(config.stabilizeProjection)
-            if (ImGui.checkbox("Stabilize Projection", stabilize)) {
+            if (ImGui.checkbox(stringManager.getString("lbl.environment.stabilize_projection"), stabilize)) {
                 config.stabilizeProjection = stabilize.get()
             }
 
             val depthBias = floatArrayOf(config.depthBias)
-            if (ImGui.dragFloat("Depth Bias", depthBias, 0.0001f, 0f, 0.1f, "%.4f")) {
+            if (ImGui.dragFloat(stringManager.getString("lbl.environment.depth_bias"), depthBias, 0.0001f, 0f, 0.1f, "%.4f")) {
                 config.depthBias = depthBias[0]
             }
 
             val slopeBias = floatArrayOf(config.slopeScaledBias)
-            if (ImGui.dragFloat("Slope-Scaled Bias", slopeBias, 0.001f, 0f, 0.1f, "%.3f")) {
+            if (ImGui.dragFloat(stringManager.getString("lbl.environment.slope_scaled_bias"), slopeBias, 0.001f, 0f, 0.1f, "%.3f")) {
                 config.slopeScaledBias = slopeBias[0]
             }
         }
@@ -108,7 +116,16 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
         if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment.lighting")}")) {
             val useAmbient = ImBoolean(lightingStateComponent.useAmbient)
             if (ImGui.checkbox(stringManager.getString("lbl.environment.use_ambient"), useAmbient)) {
-                lightingStateComponent.useAmbient = useAmbient.get()
+                val oldVal = lightingStateComponent.useAmbient
+                val newVal = useAmbient.get()
+                undoRedoManager.executeCommand(
+                    EnvironmentToggleCommand(
+                        displayName = "Toggle Use Ambient",
+                        setter = { v -> lightingStateComponent.useAmbient = v },
+                        oldValue = oldVal,
+                        newValue = newVal
+                    )
+                )
                 if (!scene.hasComponent<LightingStateComponent>()) {
                     scene.addComponent(lightingStateComponent)
                 }
@@ -116,8 +133,17 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
 
             dayNightSystem?.let { system ->
                 val autoAmbient = ImBoolean(system.config.autoAmbient)
-                if (ImGui.checkbox("Auto Ambient (Day/Night Cycle)", autoAmbient)) {
-                    system.config.autoAmbient = autoAmbient.get()
+                if (ImGui.checkbox(stringManager.getString("lbl.environment.auto_ambient"), autoAmbient)) {
+                    val oldVal = system.config.autoAmbient
+                    val newVal = autoAmbient.get()
+                    undoRedoManager.executeCommand(
+                        EnvironmentToggleCommand(
+                            displayName = "Toggle Auto Ambient",
+                            setter = { v -> system.config.autoAmbient = v },
+                            oldValue = oldVal,
+                            newValue = newVal
+                        )
+                    )
                 }
             }
 
@@ -126,7 +152,7 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
                 // Show computed ambient (read-only display)
                 val computedAmbient = dayNightSystem?.config?.ambientColor ?: lightingStateComponent.ambientLight
                 ImGui.text(
-                    "Ambient (Auto): (%.2f, %.2f, %.2f)".format(
+                    stringManager.getString("lbl.environment.ambient_auto").format(
                         computedAmbient.x,
                         computedAmbient.y,
                         computedAmbient.z
@@ -138,14 +164,14 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
                     lightingStateComponent.ambientLight.y,
                     lightingStateComponent.ambientLight.z
                 )
-                if (ImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
+                if (MImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
                     lightingStateComponent.ambientLight.set(ambient[0], ambient[1], ambient[2])
                 }
             }
 
             dayNightSystem?.let { system ->
                 val ambientIntensityArr = floatArrayOf(system.config.ambientIntensity)
-                if (ImGui.sliderFloat("Ambient Intensity", ambientIntensityArr, 0.0f, 2.0f)) {
+                if (ImGui.sliderFloat(stringManager.getString("lbl.environment.ambient_intensity"), ambientIntensityArr, 0.0f, 2.0f)) {
                     system.config.ambientIntensity = ambientIntensityArr[0].coerceIn(0.0f, 2.0f)
                 }
             }

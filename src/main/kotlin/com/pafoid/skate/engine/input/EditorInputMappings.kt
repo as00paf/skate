@@ -114,4 +114,18 @@ class EditorInputMappings {
         measureTool = InputBinding(keyboardKey = GLFW.GLFW_KEY_M)
         deselectAll = InputBinding(keyboardKey = GLFW.GLFW_KEY_ESCAPE)
     }
+
+    /**
+     * Create a copy of this EditorInputMappings instance.
+     */
+    fun copy(): EditorInputMappings {
+        val new = EditorInputMappings()
+        new.gizmoTranslate = gizmoTranslate.copy()
+        new.gizmoRotate = gizmoRotate.copy()
+        new.gizmoScale = gizmoScale.copy()
+        new.gizmoSelect = gizmoSelect.copy()
+        new.measureTool = measureTool.copy()
+        new.deselectAll = deselectAll.copy()
+        return new
+    }
 }

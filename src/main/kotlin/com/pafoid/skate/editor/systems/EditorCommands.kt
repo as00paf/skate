@@ -8,8 +8,11 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.removeGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
@@ -18,6 +21,7 @@ import com.pafoid.skate.engine.events.AnimationRemoved
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.GameEvent
 import com.pafoid.skate.engine.events.TextureApplied
+import org.joml.Vector3f
 
 class TransformCommand(
     private val gameObject: GameObject,
@@ -198,4 +202,48 @@ class ApplyAnimationCommand(
 
     override fun getDisplayName(): String = "Apply Animation"
     override fun getTargetName(): String? = gameObject.name
+}
+
+/**
+ * Command for changing a single environment property (time of day, light config values, etc.).
+ */
+class EnvironmentPropertyCommand<T>(
+    private val displayName: String,
+    private val targetName: String? = null,
+    private val setter: (T) -> Unit,
+    private val oldValue: T,
+    private val newValue: T
+) : Command {
+    override fun execute() {
+        setter(newValue)
+    }
+
+    override fun undo() {
+        setter(oldValue)
+    }
+
+    override fun getDisplayName(): String = displayName
+    override fun getTargetName(): String? = targetName
+}
+
+/**
+ * Command for toggling a boolean environment property (checkboxes).
+ */
+class EnvironmentToggleCommand(
+    private val displayName: String,
+    private val targetName: String? = null,
+    private val setter: (Boolean) -> Unit,
+    private val oldValue: Boolean,
+    private val newValue: Boolean
+) : Command {
+    override fun execute() {
+        setter(newValue)
+    }
+
+    override fun undo() {
+        setter(oldValue)
+    }
+
+    override fun getDisplayName(): String = displayName
+    override fun getTargetName(): String? = targetName
 }

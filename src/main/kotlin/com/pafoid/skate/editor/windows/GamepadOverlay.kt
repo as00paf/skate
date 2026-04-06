@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.windows
 
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Texture
@@ -22,6 +23,7 @@ class GamepadOverlay : KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val joystickListener: GamepadListener by inject()
     private val settingsManager: SettingsManager by inject()
+    private val stringManager: StringManager by inject()
     
     private val controllerTexture: Texture by lazy {
         resourceManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER)
@@ -55,7 +57,7 @@ class GamepadOverlay : KoinComponent {
         ImGui.setNextWindowSize(displayWidth, displayHeight)
         ImGui.setNextWindowBgAlpha(0.0f)
 
-        if (ImGui.begin("Gamepad Overlay", windowFlags)) {
+        if (ImGui.begin(stringManager.getString("window.gamepad_overlay"), windowFlags)) {
             val drawList = ImGui.getWindowDrawList()
             val windowPos = ImGui.getWindowPos()
 

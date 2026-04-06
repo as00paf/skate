@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.input.InputMappings
@@ -29,22 +30,28 @@ import org.lwjgl.glfw.GLFW
 class KeyBindingsWindow(
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager
-) {
-    var isOpen = false
+) : IWindow {
+
     private var keyBindingAction: String? = null
     private var keyBindingTab = 0  // 0=Editor, 1=Camera, 2=Gamepad
+
+    // Load input mappings once from persisted storage (or defaults)
+    private var inputMappings: com.pafoid.skate.engine.input.InputMappings =
+        settingsManager.loadInputMappings() ?: com.pafoid.skate.engine.input.InputMappings()
 
     /**
      * Renders the key bindings window.
      */
-    fun render() {
-        if (!isOpen) return
+    override fun imgui(pOpen: imgui.type.ImBoolean?) {
+        if (pOpen?.get() == false) return
 
         if (begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.AlwaysAutoResize)) {
-            val inputMappings = settingsManager.project.inputMappings
-
             // Tab selection using combo
-            val tabNames = arrayOf("Editor", "Camera", "Gamepad")
+            val tabNames = arrayOf(
+                stringManager.getString("tab.keybindings.editor"),
+                stringManager.getString("tab.keybindings.camera"),
+                stringManager.getString("tab.keybindings.gamepad")
+            )
             val tabSelector = ImInt(keyBindingTab)
             if (combo("##TabSelector", tabSelector, tabNames, tabNames.size)) {
                 keyBindingTab = tabSelector.get()
@@ -61,14 +68,14 @@ class KeyBindingsWindow(
 
             separator()
             if (button(stringManager.getString("btn.close"))) {
-                isOpen = false
+                pOpen?.set(false)
                 keyBindingAction = null
-                settingsManager.save()
+                settingsManager.updateInputMappings(inputMappings)
             }
             sameLine()
-            if (button("Reset to Defaults")) {
+            if (button(stringManager.getString("btn.reset_to_defaults"))) {
                 inputMappings.resetToDefaults()
-                settingsManager.save()
+                settingsManager.updateInputMappings(inputMappings)
             }
 
             // Handle Binding
@@ -76,9 +83,9 @@ class KeyBindingsWindow(
                 // Check for key press
                 for (i in 0..348) { // GLFW_KEY_LAST is 348
                     if (isKeyPressed(i)) {
-                        assignKeyBinding(inputMappings, action, i)
+                        assignKeyBinding(action, i)
                         keyBindingAction = null
-                        settingsManager.save()
+                        settingsManager.updateInputMappings(inputMappings)
                         break
                     }
                 }
@@ -125,28 +132,28 @@ class KeyBindingsWindow(
     private fun renderCameraBindingsTab(inputMappings: InputMappings) {
         text(stringManager.getString("lbl.keybindings.camera_section"))
         separator()
-        drawBindRow("Camera Reset", inputMappings.cameraReset.keyboardKey, "cameraReset")
+        drawBindRow(stringManager.getString("lbl.keybindings.camera_reset"), inputMappings.cameraReset.keyboardKey, "cameraReset")
 
         separator()
         text(stringManager.getString("lbl.keybindings.game_state_section"))
         separator()
-        drawBindRow("Pause", inputMappings.pause.keyboardKey, "pause")
-        drawBindRow("Reset", inputMappings.reset.keyboardKey, "reset")
-        drawBindRow("Stance Change", inputMappings.stanceChange.keyboardKey, "stanceChange")
+        drawBindRow(stringManager.getString("lbl.keybindings.pause"), inputMappings.pause.keyboardKey, "pause")
+        drawBindRow(stringManager.getString("lbl.keybindings.reset"), inputMappings.reset.keyboardKey, "reset")
+        drawBindRow(stringManager.getString("lbl.keybindings.stance"), inputMappings.stanceChange.keyboardKey, "stanceChange")
     }
 
     private fun renderGamepadBindingsTab(inputMappings: InputMappings) {
         text(stringManager.getString("lbl.keybindings.gamepad_section"))
         separator()
-        text("Gamepad bindings are auto-configured for standard Xbox/PS controllers")
-        text("Keyboard overrides gamepad when both are connected")
+        text(stringManager.getString("lbl.keybindings.gamepad_auto"))
+        text(stringManager.getString("lbl.keybindings.keyboard_override"))
 
         separator()
         text(stringManager.getString("lbl.keybindings.movement_section"))
-        drawBindRow("Move (Axis)", inputMappings.moveUp.gamepadAxis, "gamepadMove")
-        drawBindRow("Camera (Axis)", inputMappings.cameraLookX.gamepadAxis, "gamepadCamera")
-        drawBindRow("Jump", inputMappings.jump.gamepadButton, "gamepadJump")
-        drawBindRow("Sprint (Trigger)", inputMappings.sprint.gamepadAxis, "gamepadSprint")
+        drawBindRow(stringManager.getString("lbl.keybindings.move_axis"), inputMappings.moveUp.gamepadAxis, "gamepadMove")
+        drawBindRow(stringManager.getString("lbl.keybindings.camera_axis"), inputMappings.cameraLookX.gamepadAxis, "gamepadCamera")
+        drawBindRow(stringManager.getString("lbl.keybindings.jump"), inputMappings.jump.gamepadButton, "gamepadJump")
+        drawBindRow(stringManager.getString("lbl.keybindings.sprint_trigger"), inputMappings.sprint.gamepadAxis, "gamepadSprint")
     }
 
     private fun drawBindRow(label: String, currentKey: Int, bindAction: String) {
@@ -162,7 +169,7 @@ class KeyBindingsWindow(
         }
     }
 
-    private fun assignKeyBinding(inputMappings: InputMappings, action: String, key: Int) {
+    private fun assignKeyBinding(action: String, key: Int) {
         when (action) {
             // Editor
             "editorGizmoTranslate" -> inputMappings.editorGizmoTranslate.keyboardKey = key

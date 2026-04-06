@@ -4,35 +4,55 @@ import com.pafoid.skate.engine.input.EditorInputMappings
 import com.pafoid.skate.engine.utils.UnitSystem
 import kotlinx.serialization.Serializable
 
+/**
+ * Engine-wide settings that apply globally across all projects.
+ * These settings are stored in the user's settings directory.
+ *
+ * @property editor Editor UI settings (language, theme, overlays)
+ * @property autoSave Auto-save configuration
+ */
 @Serializable
 data class EngineSettings(
-    var editor: EditorSettings = EditorSettings(),
-    var hardware: HardwareSettings = HardwareSettings()
-)
+    val editor: EditorSettings = EditorSettings(),
+    val autoSave: AutoSaveSettings = AutoSaveSettings()
+) {
+    fun validate(): EngineSettings {
+        return copy(
+            editor = editor.validate()
+        )
+    }
+}
 
+/**
+ * Editor UI settings.
+ */
 @Serializable
 data class EditorSettings(
-    var language: String = "en",
-    var theme: String = "default",
-    var showGamepadOverlay: Boolean = true,
-    var gamepadOverlaySize: Float = 0.225f,
-    var unitSystem: UnitSystem = UnitSystem.METRIC,
-    var editorInputMappings: EditorInputMappings = EditorInputMappings()
-)
-
-@Serializable
-data class HardwareSettings(
-    var leftStickDeadzone: Float = 0.15f,
-    var rightStickDeadzone: Float = 0.1f,
-    var triggerThreshold: Float = 0.5f,
-    var mouseSensitivity: Float = 0.1f,
-    var controllerSensitivity: Float = 2.0f
+    val language: String = "en",
+    val theme: String = "Islands Dark",
+    val showGamepadOverlay: Boolean = true,
+    val gamepadOverlaySize: Float = 0.225f,
+    val unitSystem: UnitSystem = UnitSystem.METRIC,
+    val editorInputMappings: EditorInputMappings = EditorInputMappings()
 ) {
-    fun validate() {
-        leftStickDeadzone = leftStickDeadzone.coerceIn(0f, 1f)
-        rightStickDeadzone = rightStickDeadzone.coerceIn(0f, 1f)
-        triggerThreshold = triggerThreshold.coerceIn(0f, 1f)
-        mouseSensitivity = mouseSensitivity.coerceIn(0.01f, 1f)
-        controllerSensitivity = controllerSensitivity.coerceIn(0.1f, 10f)
+    fun validate(): EditorSettings {
+        return copy(
+            gamepadOverlaySize = gamepadOverlaySize.coerceIn(0.1f, 0.5f)
+        )
+    }
+}
+
+/**
+ * Auto-save configuration settings.
+ */
+@Serializable
+data class AutoSaveSettings(
+    val enabled: Boolean = true,
+    val intervalMinutes: Int = 5
+) {
+    fun validate(): AutoSaveSettings {
+        return copy(
+            intervalMinutes = intervalMinutes.coerceIn(1, 60)
+        )
     }
 }

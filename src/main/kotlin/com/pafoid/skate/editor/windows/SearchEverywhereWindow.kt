@@ -270,12 +270,12 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
 
     private fun renderResults() {
         if (isSearching) {
-            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Searching...")
+            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.search.searching"))
             return
         }
 
         if (currentResults.isEmpty()) {
-            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "No results found")
+            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.search.no_results"))
             return
         }
 
@@ -284,7 +284,7 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
             if (results.isEmpty()) return@forEach
 
             val categoryColor = getCategoryColor(category)
-            ImGui.textColored(categoryColor, "${category.displayName} (${results.size})")
+            ImGui.textColored(categoryColor, "${stringManager.getString(category.displayNameKey)} (${results.size})")
             ImGui.separator()
 
             results.forEach { result ->
@@ -298,7 +298,7 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
                     append(icon)
                     append(" ")
                     append(result.displayName)
-                    if (result.subcategory.isNotEmpty() && result.subcategory != category.displayName) {
+                    if (result.subcategory.isNotEmpty() && result.subcategory != stringManager.getString(category.displayNameKey)) {
                         append(" (")
                         append(result.subcategory)
                         append(")")

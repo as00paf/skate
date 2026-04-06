@@ -3,8 +3,6 @@ package com.pafoid.skate.editor.ui.imgui.menus
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.windows.KeyBindingsWindow
-import com.pafoid.skate.editor.windows.SettingsWindow
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.internal.ImGui.beginMenu
@@ -35,8 +33,8 @@ import imgui.type.ImInt
 class SettingsMenuBuilder(
     private val stringManager: StringManager,
     private val settingsManager: SettingsManager,
-    private val keyBindingsWindow: KeyBindingsWindow,
-    private val settingsWindow: SettingsWindow
+    private val keyBindingsShowFlag: ImBoolean,
+    private val settingsShowFlag: ImBoolean
 ) {
     
     /**
@@ -55,9 +53,8 @@ class SettingsMenuBuilder(
     }
     
     private fun renderGamepadSettings() {
-        val engineSettings = settingsManager.engine
-        val editorSettings = engineSettings.editor
-        
+        val editorSettings = settingsManager.engine.editor
+
         val overlaySize = floatArrayOf(editorSettings.gamepadOverlaySize)
         if (sliderFloat(
                 stringManager.getString("menu.settings.gamepad_overlay_size"),
@@ -66,17 +63,15 @@ class SettingsMenuBuilder(
                 0.5f
             )
         ) {
-            editorSettings.gamepadOverlaySize = overlaySize[0]
-            settingsManager.saveEngine()
+            settingsManager.updateEditorSettings(gamepadOverlaySize = overlaySize[0])
         }
-        
+
         val showOverlay = ImBoolean(editorSettings.showGamepadOverlay)
         if (checkbox(stringManager.getString("menu.settings.show_gamepad_overlay"), showOverlay)) {
-            editorSettings.showGamepadOverlay = showOverlay.get()
-            settingsManager.saveEngine()
+            settingsManager.updateEditorSettings(showGamepadOverlay = showOverlay.get())
         }
     }
-    
+
     private fun renderUnitSystemSetting() {
         val editorSettings = settingsManager.engine.editor
         val unitSystems = UnitSystem.entries.toTypedArray()
@@ -87,11 +82,10 @@ class SettingsMenuBuilder(
                 unitSystems.map { it.name }.toTypedArray()
             )
         ) {
-            editorSettings.unitSystem = unitSystems[currentUnitIdx.get()]
-            settingsManager.saveEngine()
+            settingsManager.updateEditorSettings(unitSystem = unitSystems[currentUnitIdx.get()])
         }
     }
-    
+
     private fun renderLanguageSetting() {
         val editorSettings = settingsManager.engine.editor
         val languages = arrayOf("en", "fr")
@@ -104,18 +98,16 @@ class SettingsMenuBuilder(
             )
         ) {
             val newLang = languages[currentLangIdx.get()]
-            editorSettings.language = newLang
             settingsManager.setLocale(newLang)
-            settingsManager.saveEngine()
         }
     }
     
     private fun renderWindowItems() {
         if (menuItem(stringManager.getString("menu.settings.keybindings"))) {
-            keyBindingsWindow.isOpen = true
+            keyBindingsShowFlag.set(true)
         }
         if (menuItem(stringManager.getString("menu.settings.settings"))) {
-            settingsWindow.isOpen = true
+            settingsShowFlag.set(true)
         }
     }
 }

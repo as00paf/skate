@@ -6,22 +6,9 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 ---
 
-## 📋 Phase 2: Core Systems (Planned)
+## 📋 Phase 2: Core Systems
 
 **Focus:** Advanced rendering, core gameplay mechanics, and core tooling
-
-- [ ] **A46.0.9: Implement Project Creation & Management System**
-  - Project wizard for creating new projects.
-  - Project settings (name, paths, engine version).
-  - Project switching and recent projects list.
-
-- [⏳] **A46.0.10: Settings System Architectural Separation**
-  - **Status: IMPLEMENTATION (PRIORITY: ENGINE SETTINGS)**
-  - [ ] **A46.0.10.1: Define EngineSettings and HardwareSettings data classes** (@software-engineer)
-  - [ ] **A46.0.10.2: Define ProjectSettings and GameplaySettings data classes** (@software-engineer)
-  - [ ] **A46.0.10.3: Refactor SettingsManager to manage only EngineSettings** (@software-engineer)
-  - [ ] **A46.0.10.4: Create ProjectManager to manage ProjectSettings** (@software-engineer)
-  - [ ] **A46.0.10.5: Update SettingsWindow to separate Engine and Project tabs** (@software-engineer)
 
 - [ ] **A46.0.2: Implement Advanced Lighting Models**
   - Point lights with position, color, intensity

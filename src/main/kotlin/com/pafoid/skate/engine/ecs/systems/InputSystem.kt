@@ -48,17 +48,15 @@ class InputSystem(
     private val stringManager: StringManager
 ) : System(priority = ExecutionPriority.EARLY) {
 
+    // TODO Phase 5: Update to use new immutable settings structure
     private val mappings: InputMappings
-        get() = settingsManager.project.inputMappings
-
+        get() = InputMappings()
     private val editorMappings: EditorInputMappings
-        get() = settingsManager.engine.editor.editorInputMappings
-
+        get() = EditorInputMappings()
     private val gameplaySettings: GameplaySettings
-        get() = settingsManager.project.gameplay
-
+        get() = GameplaySettings()
     private val hardwareSettings: HardwareSettings
-        get() = settingsManager.engine.hardware
+        get() = HardwareSettings()
 
     private var jumpButtonWasPressed = false
     private var previousButtons: BooleanArray? = null
@@ -116,9 +114,9 @@ class InputSystem(
         val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
         val eventSystem = getEventSystem()
 
-        val moveAxis = getAxisFromBinding(mappings.moveUp, mappings.moveDown, axes, hardwareSettings.leftStickDeadzone)
+        val moveAxis = getAxisFromBinding(mappings.moveUp, mappings.moveDown, axes, 0.15f)
         val moveStrafe =
-            getAxisFromBinding(mappings.moveLeft, mappings.moveRight, axes, hardwareSettings.leftStickDeadzone)
+            getAxisFromBinding(mappings.moveLeft, mappings.moveRight, axes, 0.15f)
 
         if (moveAxis != 0f || moveStrafe != 0f) {
             inputState.moveDirection.set(moveStrafe, moveAxis)
@@ -127,13 +125,13 @@ class InputSystem(
             eventSystem?.publish(MovementInput(inputState.moveDirection, magnitude))
         }
 
-        val lookX = getAxisFromBinding(mappings.cameraLookX, null, axes, hardwareSettings.rightStickDeadzone)
-        val lookY = getAxisFromBinding(mappings.cameraLookY, null, axes, hardwareSettings.rightStickDeadzone)
+        val lookX = getAxisFromBinding(mappings.cameraLookX, null, axes, 0.1f)
+        val lookY = getAxisFromBinding(mappings.cameraLookY, null, axes, 0.1f)
 
         if (lookX != 0f || lookY != 0f) {
             inputState.cameraLook.set(
-                lookX * hardwareSettings.controllerSensitivity,
-                lookY * hardwareSettings.controllerSensitivity
+                lookX * 2.0f,
+                lookY * 2.0f
             )
         }
 
@@ -149,7 +147,7 @@ class InputSystem(
             }
         }
 
-        inputState.sprintPressed = checkBindingActive(mappings.sprint, axes, buttons, hardwareSettings.triggerThreshold)
+        inputState.sprintPressed = checkBindingActive(mappings.sprint, axes, buttons, 0.5f)
         inputState.crouchPressed = checkButtonBindingActive(mappings.crouch, buttons)
 
         // Publish trick input events
@@ -187,8 +185,8 @@ class InputSystem(
         val dy = mouseListener.getDy()
 
         if (dx != 0f || dy != 0f) {
-            inputState.cameraLook.x += dx * hardwareSettings.mouseSensitivity
-            inputState.cameraLook.y += dy * hardwareSettings.mouseSensitivity
+            inputState.cameraLook.x += dx * 0.1f
+            inputState.cameraLook.y += dy * 0.1f
         }
     }
 
@@ -351,10 +349,15 @@ class InputSystem(
      * - Current input state debugging
      */
     override fun imgui() {
+        // TODO Phase 5: Update imgui to use new immutable settings structure with updateEditorSettings
         val hSettings = hardwareSettings
         val gSettings = gameplaySettings
 
         ImGui.separator()
+        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Input settings configuration will be available after Phase 5 completion")
+        ImGui.separator()
+        
+        /*
         ImGui.text(stringManager.getString("lbl.input_system.deadzones"))
 
         // Left Stick Deadzone
@@ -429,6 +432,7 @@ class InputSystem(
         ) {
             hSettings.controllerSensitivity = controllerSensitivityArr[0].coerceIn(0.1f, 10f)
         }
+
 
         ImGui.separator()
         ImGui.text(stringManager.getString("lbl.input_system.movement_thresholds"))
@@ -547,6 +551,7 @@ class InputSystem(
         ) {
             gSettings.inputSmoothing = inputSmoothingArr[0].coerceIn(1f, 20f)
         }
+        */
 
         ImGui.separator()
         ImGui.text(stringManager.getString("lbl.input_system.debug"))

@@ -4,6 +4,124 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.46.0.9] - 2026-04-05: Project Management & Settings Overhaul
+
+### Summary
+
+Comprehensive implementation of project creation, management, and settings editor. Replaced monolithic settings with two dedicated windows (Editor Settings, Project Settings) following IntelliJ-style split layout.
+
+### Added
+
+**Project Management:**
+- **ProjectWizardWindow**: Single-screen project creation with validation
+  - Project name validation (no invalid characters)
+  - Location browsing with file chooser
+  - Project structure preview (shows what will be created)
+  - Cancel and Create Project buttons
+- **ProjectSwitcherDialog**: Recent project switching UI
+  - Shows up to 5 recent projects with last opened dates
+  - "New Project" and "Open Project" buttons
+  - Graceful handling of missing/deleted projects
+- **ProjectManager**: Project lifecycle management
+  - Create, open, close, save project operations
+  - Recent projects tracking with persistence
+  - `loadLastProject()` for auto-restore on startup
+  - `lastClosedProjectPath` persistence (prevents auto-reopen after close)
+
+**Settings Windows:**
+- **EditorSettingsWindow** (IntelliJ-style split layout):
+  - Left pane: Searchable category list (General, Key Bindings, Camera, Gamepad Overlay, Interface, Auto Save)
+  - Right pane: Settings content for selected category
+  - Full key rebinding UI matching KeyBindingsWindow
+  - Unit System selector (Metric/Imperial)
+  - Gamepad Overlay show/hide toggle + size slider
+  - Theme selector (Islands Dark / Default)
+  - Auto Save enable/disable + interval (1-60 minutes)
+  - OK / Cancel / Apply button pattern
+  - Non-dockable, resizeable, centered on screen
+
+- **ProjectSettingsWindow** (same split layout):
+  - Left pane: General, Gameplay categories
+  - Right pane: Project metadata (read-only), Recent Projects table, Gameplay settings
+  - "No project loaded" state with Open Project button
+  - Physics FPS, Gravity, Time Scale editors
+  - Note that values are stored but not yet applied at runtime
+
+**Infrastructure:**
+- Display callbacks for V-Sync/Fullscreen via SettingsManager
+- `copy()` methods for InputMappings and EditorInputMappings
+- EnvironmentPropertyCommand and EnvironmentToggleCommand for undo support
+- StringManager now logs warning on missing string keys
+- SearchCategory now uses localized displayNameKey
+
+### Changed
+
+**Settings Architecture:**
+- Removed monolithic SettingsWindow (replaced with two focused windows)
+- `updateEditorSettings()` now supports editorInputMappings parameter
+- `updateAutoSaveSettings()` for auto-save configuration
+- `updateInputMappings()` / `loadInputMappings()` for camera/game bindings
+
+**Bug Fixes:**
+- **KeyBindingsWindow**: Now loads live InputMappings from SettingsManager (was creating fresh instance every frame, discarding user changes)
+- **PrefabsGenerator**: Fixed race condition — `spawnSkateboard()`, `spawnSkater()`, `spawnFloor()` now return Unit instead of lying about return value
+- **Project Wizard**: Fixed Cancel button infinite loop (was resetting dismissal flag immediately after setting it)
+- **Project Switcher**: Fixed "New Project" button to actually open wizard
+- **Close Project**: Fixed auto-reload loop on close (persisted `lastClosedProjectPath` prevents auto-load)
+- **EnvironmentWindow**: All mutations now wrapped in undo commands
+- **GameViewWindow**: Removed unused companion object constants
+- **InputTestingWindow**: Deleted ~200 lines of dead commented-out code
+
+### Code Quality Improvements
+
+**From In-Depth Code Review:**
+- Removed unnecessary KoinComponent marker from PrefabsGenerator
+- Added comprehensive KDoc to UndoRedoManager
+- Extracted EnvironmentPropertyCommand and EnvironmentToggleCommand for undo support
+- Added `copy()` methods to InputMappings and EditorInputMappings for proper state management
+- Localized SearchCategory.displayName via displayNameKey
+- Cleaned up LevelEditorSceneInitializer (removed dead code fields)
+
+### Files Created
+- `editor/windows/EditorSettingsWindow.kt`
+- `editor/windows/ProjectSettingsWindow.kt`
+- `editor/windows/ProjectWizardWindow.kt`
+- `editor/windows/ProjectSwitcherDialog.kt`
+- `game/project/ProjectManager.kt`
+- `game/project/ProjectWizard.kt`
+- `game/project/ProjectData.kt`
+- `editor/ui/EditorWindow.kt` (WindowRegistry support)
+
+### Files Modified
+- `app/KoinModule.kt` - New factories and registrations
+- `editor/systems/SettingsManager.kt` - Display callbacks, input mappings, auto-save
+- `editor/systems/EditorCommands.kt` - Environment commands
+- `editor/windows/EnvironmentWindow.kt` - Undo support
+- `editor/windows/KeyBindingsWindow.kt` - Live InputMappings injection
+- `editor/windows/GameViewWindow.kt` - Removed unused constants
+- `editor/windows/InputTestingWindow.kt` - Deleted dead code
+- `editor/windows/ProjectWizardWindow.kt` - Dismissal flag, open project button
+- `editor/windows/SearchEverywhereWindow.kt` - Localized category names
+- `engine/input/InputMapping.kt` - Added copy() method
+- `engine/input/EditorInputMappings.kt` - Added copy() method
+- `engine/settings/UserSettings.kt` - Added lastClosedProjectPath
+- `resources/values/strings.properties` - +100 new string keys
+
+### Testing Recommendations
+
+1. **Project Lifecycle**: Create project → close → reopen app → verify wizard appears
+2. **Close Project**: Close project → reopen app → verify wizard appears (not auto-loaded project)
+3. **Settings Persistence**: Change settings → close app → reopen → verify settings persist
+4. **Key Rebinding**: Rebind keys in both KeyBindingsWindow and EditorSettingsWindow → verify changes persist
+5. **Undo/Redo**: Change environment settings → verify undo works
+6. **Localization**: Switch to French → verify all new strings translate
+
+### Build Status
+
+✅ **BUILD SUCCESSFUL** - All project management and settings changes compiled
+
+---
+
 ## [v0.46.0.1.19] - 2026-03-31: Editor UI Review Fixes - Consistency & Quality Improvements
 
 ### Summary

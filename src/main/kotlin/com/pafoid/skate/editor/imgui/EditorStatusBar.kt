@@ -1,13 +1,18 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.imgui.data.UiConstants
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImGui
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class EditorStatusBar {
-    val height = 30f
+class EditorStatusBar : KoinComponent {
+    private val stringManager: StringManager by inject()
+    val height = UiConstants.STATUS_BAR_HEIGHT
 
     fun render(currentScene: Scene) {
         val viewport = ImGui.getMainViewport()
@@ -27,7 +32,7 @@ class EditorStatusBar {
 
         if (ImGui.begin("##StatusBar", windowFlags)) {
             val fps = ImGui.getIO().framerate
-            ImGui.text("FPS: %.1f".format(fps))
+            ImGui.text(stringManager.getString("lbl.status_bar.fps").format(fps))
 
             ImGui.sameLine()
             ImGui.textDisabled(" | ")
@@ -36,9 +41,9 @@ class EditorStatusBar {
             val rt = Runtime.getRuntime()
             val usedMB = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024)
             val totalMB = rt.totalMemory() / (1024 * 1024)
-            ImGui.text("Memory: %d MB / %d MB".format(usedMB, totalMB))
+            ImGui.text(stringManager.getString("lbl.status_bar.memory").format(usedMB, totalMB))
 
-            val sceneText = "Scene: ${currentScene.name}"
+            val sceneText = stringManager.getString("lbl.status_bar.scene").format(currentScene.name)
             val textSize = ImGui.calcTextSize(sceneText)
             val windowWidth = ImGui.getWindowWidth()
 
