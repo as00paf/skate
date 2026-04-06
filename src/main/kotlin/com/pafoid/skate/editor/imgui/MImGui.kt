@@ -483,4 +483,82 @@ object MImGui {
             }
         }
     }
+
+    // ─── Property Grid Helpers ───
+
+    /**
+     * Generic property row: 2-column table with label, widget, and optional reset button.
+     */
+    fun propertyRow(
+        label: String,
+        helpTooltip: String? = null,
+        onReset: (() -> Unit)? = null,
+        widget: () -> Unit
+    ) {
+        ImGui.pushID(label)
+        if (ImGui.beginTable("##${label}_prop", 2)) {
+            ImGui.tableSetupColumn("Label")
+            ImGui.tableSetupColumn("Control")
+            ImGui.tableNextRow()
+            ImGui.tableSetColumnIndex(0)
+            ImGui.text(label)
+            if (helpTooltip != null && ImGui.isItemHovered()) {
+                ImGui.setTooltip(helpTooltip)
+            }
+            ImGui.tableSetColumnIndex(1)
+            ImGui.pushItemWidth(-1f)
+            widget()
+            ImGui.popItemWidth()
+            if (onReset != null) {
+                ImGui.sameLine()
+                if (ImGui.button("↺##reset_$label")) {
+                    onReset()
+                }
+            }
+            ImGui.endTable()
+        }
+        ImGui.popID()
+    }
+
+    /**
+     * Read-only property row with label and text value.
+     */
+    fun propertyRowReadOnly(label: String, value: String, helpTooltip: String? = null) {
+        ImGui.pushID(label)
+        if (ImGui.beginTable("##${label}_prop", 2)) {
+            ImGui.tableSetupColumn("Label")
+            ImGui.tableSetupColumn("Control")
+            ImGui.tableNextRow()
+            ImGui.tableSetColumnIndex(0)
+            ImGui.text(label)
+            if (helpTooltip != null && ImGui.isItemHovered()) {
+                ImGui.setTooltip(helpTooltip)
+            }
+            ImGui.tableSetColumnIndex(1)
+            textDisabled(value)
+            ImGui.endTable()
+        }
+        ImGui.popID()
+    }
+
+    /**
+     * Grayed-out "Coming Soon" row for features not yet implemented.
+     */
+    fun comingSoonRow(label: String, helpText: String = "This feature is not yet implemented.") {
+        ImGui.pushID(label)
+        if (ImGui.beginTable("##${label}_coming", 2)) {
+            ImGui.tableSetupColumn("Label")
+            ImGui.tableSetupColumn("Control")
+            ImGui.tableNextRow()
+            ImGui.tableSetColumnIndex(0)
+            ImGui.text(label)
+            ImGui.tableSetColumnIndex(1)
+            textDisabled("Coming Soon")
+            if (helpText.isNotEmpty() && ImGui.isItemHovered()) {
+                ImGui.setTooltip(helpText)
+            }
+            ImGui.endTable()
+        }
+        ImGui.popID()
+    }
 }

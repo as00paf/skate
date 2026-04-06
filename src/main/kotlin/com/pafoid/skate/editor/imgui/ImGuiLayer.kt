@@ -127,6 +127,9 @@ class ImGuiLayer(
         this.setFullscreen = fullScreenCallback
         this.setVSync = vSyncCallback
 
+        // Wire display callbacks to SettingsManager so settings windows can change V-Sync/Fullscreen
+        settingsManager.setDisplayCallbacks(setVSync, setFullscreen)
+
         createContext()
 
         with(getIO()) {
@@ -250,7 +253,7 @@ class ImGuiLayer(
                 if (window.showFlag.get()) {
                     when {
                         window.requiresScene -> (window.instance as? IWindowWithScene)?.imgui(currentScene)
-                        else -> (window.instance as? IWindow)?.imgui()
+                        else -> (window.instance as? IWindow)?.imgui(window.showFlag)
                     }
                 }
             }

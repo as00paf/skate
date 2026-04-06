@@ -122,7 +122,7 @@ val appModule = module {
     factory { InputTestingWindow(get(), get(), get()) }
     factory { SystemsWindow() }
     factory { EditorSettingsWindow(get(), get()) }
-    factory { ProjectSettingsWindow(get(), get()) }
+    factory { ProjectSettingsWindow(get(), get(), get(), get()) }
     factory { KeyBindingsWindow(get(), get()) }
     factory { CommandHistoryWindow() }
     factory { RenderGraphWindow() }

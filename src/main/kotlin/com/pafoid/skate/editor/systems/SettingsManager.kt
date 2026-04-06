@@ -110,9 +110,11 @@ class SettingsManager(
         }
     }
 
-    fun saveHardware() {
+    fun saveHardware(hw: HardwareSettings? = null) {
         try {
-            logger.logEditor("Hardware settings saved (defaults)")
+            hw?.let { hardware = it }
+            // Hardware save is deferred until persistence layer is implemented
+            logger.logEditor("Hardware settings updated (persistence deferred)")
         } catch (e: Exception) {
             logger.logEngine("Error saving hardware settings: ${e.message}", LogLevel.ERROR)
         }
@@ -205,4 +207,25 @@ class SettingsManager(
     fun hasProject(): Boolean = project != null
 
     fun getProjectName(): String = project?.metadata?.name ?: "No Project"
+
+    // ─── Display callbacks (set at app init, called from settings windows) ───
+    private var vsyncCallback: ((Boolean) -> Unit)? = null
+    private var fullscreenCallback: ((Boolean) -> Unit)? = null
+
+    fun setDisplayCallbacks(vsync: (Boolean) -> Unit, fullscreen: (Boolean) -> Unit) {
+        vsyncCallback = vsync
+        fullscreenCallback = fullscreen
+    }
+
+    fun applyVSync(enabled: Boolean) {
+        hardware = hardware.copy(display = hardware.display.copy(vsync = enabled))
+        vsyncCallback?.invoke(enabled)
+    }
+
+    fun applyFullscreen(enabled: Boolean) {
+        hardware = hardware.copy(display = hardware.display.copy(fullscreen = enabled))
+        fullscreenCallback?.invoke(enabled)
+    }
+
+    fun getCurrentHardware() = hardware
 }
