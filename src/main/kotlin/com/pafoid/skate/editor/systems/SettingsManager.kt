@@ -189,7 +189,8 @@ class SettingsManager(
         gamepadOverlaySize: Float? = null,
         showGamepadOverlay: Boolean? = null,
         unitSystem: com.pafoid.skate.engine.utils.UnitSystem? = null,
-        language: String? = null
+        language: String? = null,
+        theme: String? = null
     ) {
         val currentEditor = engine.editor
         engine = engine.copy(
@@ -197,10 +198,22 @@ class SettingsManager(
                 gamepadOverlaySize = gamepadOverlaySize ?: currentEditor.gamepadOverlaySize,
                 showGamepadOverlay = showGamepadOverlay ?: currentEditor.showGamepadOverlay,
                 unitSystem = unitSystem ?: currentEditor.unitSystem,
-                language = language ?: currentEditor.language
+                language = language ?: currentEditor.language,
+                theme = theme ?: currentEditor.theme
             )
         )
         language?.let { stringManager.setLocale(it) }
+        saveEngine()
+    }
+
+    fun updateAutoSaveSettings(enabled: Boolean? = null, intervalMinutes: Int? = null) {
+        val current = engine.autoSave
+        engine = engine.copy(
+            autoSave = current.copy(
+                enabled = enabled ?: current.enabled,
+                intervalMinutes = intervalMinutes ?: current.intervalMinutes
+            )
+        )
         saveEngine()
     }
 
@@ -210,21 +223,15 @@ class SettingsManager(
 
     // ─── Display callbacks (set at app init, called from settings windows) ───
     private var vsyncCallback: ((Boolean) -> Unit)? = null
-    private var fullscreenCallback: ((Boolean) -> Unit)? = null
 
     fun setDisplayCallbacks(vsync: (Boolean) -> Unit, fullscreen: (Boolean) -> Unit) {
         vsyncCallback = vsync
-        fullscreenCallback = fullscreen
+        // fullscreen callback kept for future use
     }
 
     fun applyVSync(enabled: Boolean) {
         hardware = hardware.copy(display = hardware.display.copy(vsync = enabled))
         vsyncCallback?.invoke(enabled)
-    }
-
-    fun applyFullscreen(enabled: Boolean) {
-        hardware = hardware.copy(display = hardware.display.copy(fullscreen = enabled))
-        fullscreenCallback?.invoke(enabled)
     }
 
     fun getCurrentHardware() = hardware
