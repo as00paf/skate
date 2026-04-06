@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.BaseModel
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Component
@@ -15,15 +16,23 @@ import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.ModularTile
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
+import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.editor.gizmos.PoseGizmo
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.physics3d.components.CapsuleCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.game.player.PlayerController
+import com.pafoid.skate.game.player.PlayerStateManager
+import com.pafoid.skate.game.skateboard.SkateboardPhysics
+import com.pafoid.skate.game.trick.TrickAnalyzer
+import com.pafoid.skate.game.trick.TrickDetector
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -51,6 +60,7 @@ class Serializer {
             subclass(EditorInputStateComponent::class)
 
             // Animation components
+            subclass(BoneOverride::class)
             subclass(SkeletonComponent::class)
             subclass(Animator::class)
 
@@ -64,12 +74,20 @@ class Serializer {
             subclass(NonPickable::class)
             subclass(ModularTile::class)
             subclass(SpriteRenderer::class)
+            subclass(PoseGizmo::class)
+            subclass(RagdollComponent::class)
 
             // Physics components
             subclass(RigidBody3D::class)
             subclass(BoxCollider3D::class)
             subclass(CylinderCollider3D::class)
             subclass(CustomCollider3D::class)
+            subclass(CapsuleCollider3D::class)
+            subclass(SkateboardPhysics::class)
+            subclass(TrickDetector::class)
+            subclass(TrickAnalyzer::class)
+            subclass(PlayerController::class)
+            subclass(PlayerStateManager::class)
 
             // Asset components
             subclass(Texture::class)

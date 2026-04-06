@@ -2,13 +2,14 @@ package com.pafoid.skate.game.project
 
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.settings.ProjectSettings
 import com.pafoid.skate.engine.settings.RecentProjectInfo
-import com.pafoid.skate.engine.settings.SettingsData
+import com.pafoid.skate.game.level.LevelManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
@@ -17,13 +18,14 @@ class ProjectManager(
     private val settingsManager: SettingsManager,
     private val serializer: Serializer,
     private val logger: LoggerService,
-    private val assetDatabase: AssetDatabase
+    private val assetDatabase: AssetDatabase,
+    private val sceneManager: SceneManager,
+    private val prefabsGenerator: PrefabsGenerator,
+    private val levelManager: LevelManager
 ) : KoinComponent {
 
     var currentProject: ProjectSettings? = null
         private set
-
-    var onProjectLoaded: (() -> Unit)? = null
 
     fun hasProject(): Boolean = currentProject != null
 
@@ -66,8 +68,8 @@ class ProjectManager(
                     )
                 }
 
-                // Notify listeners that a project has been loaded
-                onProjectLoaded?.invoke()
+                // Create default scene with prefabs
+                createDefaultScene()
             }
 
             result.onFailure { error ->
@@ -79,6 +81,47 @@ class ProjectManager(
             logger.logEngine("Error creating project: ${e.message}", LogLevel.ERROR)
             Result.failure(e)
         }
+    }
+
+    /**
+     * Create the default scene with prefabs when a new project is created.
+     * This is the project manager's responsibility — it owns project lifecycle.
+     */
+    private fun createDefaultScene() {
+        val projectDir = getProjectDirectory() ?: run {
+            logger.logEditor("No project directory, cannot create default scene")
+            return
+        }
+        val defaultSceneFile = File(projectDir, "Scenes/main.scene")
+
+        // Already exists — nothing to do
+        if (defaultSceneFile.exists()) {
+            return
+        }
+
+        logger.logEditor("Creating default scene with prefabs...")
+
+        // Ensure parent directory exists
+        defaultSceneFile.parentFile?.mkdirs()
+
+        // Get the current scene from scene manager
+        val scene = sceneManager.currentScene ?: run {
+            logger.logEditor("No current scene, cannot create default scene")
+            return
+        }
+
+        // Spawn prefabs synchronously — uses addGameObjectImmediate so they go into gameObjects
+        prefabsGenerator.spawnSkateboardSync(scene)
+        prefabsGenerator.spawnSkaterSync(scene = scene)
+        prefabsGenerator.spawnFloorSync(scene)
+
+        logger.logEditor("Spawned ${scene.gameObjectManager.gameObjects.size} objects")
+
+        // Set the level path and save
+        scene.sceneData.levelPath = defaultSceneFile.absolutePath
+        levelManager.saveToFile(scene, defaultSceneFile.absolutePath)
+
+        logger.logEditor("Default scene saved to ${defaultSceneFile.absolutePath}")
     }
 
     fun openProject(projectFile: File): Boolean {
@@ -123,10 +166,6 @@ class ProjectManager(
                 }
 
                 logger.logEditor("Project opened successfully: ${getProjectName()}")
-
-                // Notify listeners that a project has been loaded
-                // This is used to trigger default scene save after boot
-                onProjectLoaded?.invoke()
             } else {
                 logger.logEngine("Failed to load project: ${projectFile.absolutePath}", LogLevel.ERROR)
             }
@@ -179,33 +218,5 @@ class ProjectManager(
         return getProjectDirectory()?.let { projectDir ->
             File(projectDir, "Scenes")
         }
-    }
-
-    fun getBuildsDirectory(): File? {
-        return getProjectDirectory()?.let { projectDir ->
-            File(projectDir, "Builds")
-        }
-    }
-
-    fun isValidProjectStructure(projectDir: File): Boolean {
-        if (!projectDir.exists() || !projectDir.isDirectory) {
-            return false
-        }
-
-        val projectFiles = projectDir.listFiles { file ->
-            file.extension == "skateproject"
-        }
-
-        return projectFiles != null && projectFiles.isNotEmpty()
-    }
-
-    fun findProjectsInDirectory(directory: File): List<File> {
-        if (!directory.exists() || !directory.isDirectory) {
-            return emptyList()
-        }
-
-        return directory.listFiles { file ->
-            file.extension == "skateproject"
-        }?.toList() ?: emptyList()
     }
 }

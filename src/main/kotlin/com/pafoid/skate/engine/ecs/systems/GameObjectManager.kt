@@ -30,6 +30,20 @@ class GameObjectManager(
     }
 
     /**
+     * Adds a GameObject directly to gameObjects with full initialization.
+     * Use for editor-driven additions (spawning prefabs, default content).
+     * If the scene is running, calls start() and registers with physics immediately.
+     * If the scene is not running, start()/physics will happen in startScene().
+     */
+    fun addGameObjectImmediate(gameObject: GameObject, isRunning: Boolean = false) {
+        gameObjects.add(gameObject)
+        if (isRunning) {
+            gameObject.start()
+            physics3d.add(gameObject)
+        }
+    }
+
+    /**
      * Removes a GameObject from the scene and the physics system.
      */
     fun removeGameObject(gameObject: GameObject) {

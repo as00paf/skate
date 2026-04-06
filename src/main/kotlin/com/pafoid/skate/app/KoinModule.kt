@@ -148,7 +148,7 @@ val appModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectWizardWindow() }
     single { ProjectSwitcherDialog() }
@@ -214,7 +214,7 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { BootManager(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { BootManager(get(), get(), get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection
     single { InputSystem(get(), get(), get(), get()) }

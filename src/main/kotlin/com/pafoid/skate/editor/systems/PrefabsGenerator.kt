@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.scene.addGameObjectImmediate
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.createGameObject
 import com.pafoid.skate.engine.physics3d.BodyType
@@ -61,7 +62,7 @@ class PrefabsGenerator(
         val model = resourceManager.loadModelSync(Assets.Models.SKATEBOARD_GLB)
         val skate = Skateboard(model as TexturedModel)
         val targetScene = scene ?: sceneManager.currentScene
-        targetScene?.addGameObjectToScene(skate)
+        targetScene?.addGameObjectImmediate(skate)
     }
 
     fun spawnSkater(skate: GameObject? = null) {
@@ -102,7 +103,7 @@ class PrefabsGenerator(
         }
 
         val targetScene = scene ?: sceneManager.currentScene
-        targetScene?.addGameObjectToScene(skater)
+        targetScene?.addGameObjectImmediate(skater)
     }
 
     fun spawnFloor() {
@@ -131,7 +132,7 @@ class PrefabsGenerator(
 
         val tile = Tile("Tile", texturedModel)
         val targetScene = scene ?: sceneManager.currentScene
-        targetScene?.addGameObjectToScene(tile)
+        targetScene?.addGameObjectImmediate(tile)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?) {

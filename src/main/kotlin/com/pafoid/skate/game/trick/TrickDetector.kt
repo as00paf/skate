@@ -11,6 +11,8 @@ import com.pafoid.skate.engine.events.TrickDetected
 import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.skateboard.Stance
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -37,6 +39,7 @@ import kotlin.math.abs
  * }
  * ```
  */
+@Serializable
 class TrickDetector : Component(), KoinComponent {
 
     private val trickManager: TrickManager by inject()
@@ -52,6 +55,7 @@ class TrickDetector : Component(), KoinComponent {
 
     private var physicsComponent: PhysicsComponent? = null
     private var skateboardPhysics: SkateboardPhysics? = null
+    @Transient
     private var eventSystem: EventSystem? = null
 
     override fun start() {

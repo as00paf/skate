@@ -17,6 +17,8 @@ import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.Interpolator
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Quaternionf
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -56,9 +58,10 @@ import kotlin.math.atan2
  * - [InputSettings.rotationSpeed] - Character rotation speed
  * - [InputSettings.takeOffTime] - Jump charge time
  */
+@Serializable
 class PlayerController : Component(), KoinComponent {
-    private val sceneManager: SceneManager by inject()
-    private val logger: LoggerService by inject()
+    @Transient private val sceneManager: SceneManager by inject()
+    @Transient private val logger: LoggerService by inject()
 
     // Physics values - can be overridden or loaded from InputSettings
     var jumpImpulse = 300.0f
@@ -78,23 +81,23 @@ class PlayerController : Component(), KoinComponent {
 
     // Event-driven state
     private var jumpPressed = false
-    private var movementDirection: Vector2f = Vector2f(0f, 0f)
+    @Transient private var movementDirection: Vector2f = Vector2f(0f, 0f)
     private var movementMagnitude: Float = 0f
 
     // Trick input state
     private var flipLeftHeld = false
     private var flipRightHeld = false
 
-    private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
-    private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
+    @Transient private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
+    @Transient private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
 
-    private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
-    private val physics3d: IPhysics3D? by lazy { sceneManager.currentScene?.physics3d }
-    private var eventSystem: EventSystem? = null
+    @Transient private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
+    @Transient private val physics3d: IPhysics3D? by lazy { sceneManager.currentScene?.physics3d }
+    @Transient private var eventSystem: EventSystem? = null
 
     // Exposed for PlayerStateManager to read player intent
-    val desiredMoveDirection = Vector3f()
-    private val desiredRotation = Quaternionf()
+    @Transient val desiredMoveDirection = Vector3f()
+    @Transient private val desiredRotation = Quaternionf()
 
     override fun start() {
         rb ?: run { logger.logEngine("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }

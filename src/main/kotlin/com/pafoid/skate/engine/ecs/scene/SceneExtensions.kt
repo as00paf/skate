@@ -29,6 +29,14 @@ fun Scene.addGameObjectToScene(gameObject: GameObject) {
     gameObjectManager.addGameObject(gameObject, this.isRunning)
 }
 
+/**
+ * Adds a GameObject immediately to the scene's gameObjects list.
+ * Use for editor-driven additions. Bypasses the pending queue.
+ */
+fun Scene.addGameObjectImmediate(gameObject: GameObject) {
+    gameObjectManager.addGameObjectImmediate(gameObject, this.isRunning)
+}
+
 fun Scene.removeGameObject(gameObject: GameObject) {
     gameObjectManager.removeGameObject(gameObject)
 }

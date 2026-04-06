@@ -11,6 +11,8 @@ import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.RayTestResult
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -33,6 +35,7 @@ import kotlin.math.abs
  * - [stiffness]: The spring constant (k). Higher values mean stiffer suspension.
  * - [damping]: Resistance to oscillation. Prevents the board from bouncing indefinitely.
  */
+@Serializable
 class SkateboardPhysics : Component(), KoinComponent {
 
     private val sceneManager: SceneManager by inject()
@@ -46,25 +49,25 @@ class SkateboardPhysics : Component(), KoinComponent {
     // Corner offsets for 4 raycasts (deck corners/wheels)
     // Real-world Skateboard: ~0.8m length, ~0.2m width
     // Wheelbase: ~0.35m
-    private val offsets = arrayOf(
+    @Transient private val offsets = arrayOf(
         Vector3f(-0.175f, -0.01f, -0.1f), // Front Left (Wheel position)
         Vector3f(-0.175f, -0.01f, 0.1f),  // Front Right
         Vector3f(0.175f, -0.01f, -0.1f),  // Back Left
         Vector3f(0.175f, -0.01f, 0.1f)    // Back Right
     )
 
-    private lateinit var rb: IPhysicsBody3D
-    private val worldUp = Vector3f(0f, 1f, 0f)
+    @Transient private lateinit var rb: IPhysicsBody3D
+    @Transient private val worldUp = Vector3f(0f, 1f, 0f)
 
     // Reusable vectors to reduce garbage collection in hot loops
-    private val rayStart = Vector3f()
-    private val localDown = Vector3f()
-    private val rayEnd = Vector3f()
-    private val localRight = Vector3f()
-    private val localUp = Vector3f()
-    private val torque = Vector3f()
-    private val pointVelocity = Vector3f()
-    private val worldForce = Vector3f()
+    @Transient private val rayStart = Vector3f()
+    @Transient private val localDown = Vector3f()
+    @Transient private val rayEnd = Vector3f()
+    @Transient private val localRight = Vector3f()
+    @Transient private val localUp = Vector3f()
+    @Transient private val torque = Vector3f()
+    @Transient private val pointVelocity = Vector3f()
+    @Transient private val worldForce = Vector3f()
     
     var isGrounded = false
         private set

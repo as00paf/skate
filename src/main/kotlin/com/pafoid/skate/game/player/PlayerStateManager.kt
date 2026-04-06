@@ -7,15 +7,18 @@ import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.game.skateboard.Stance
 import imgui.ImGui
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.koin.core.component.inject
 
+@Serializable
 class PlayerStateManager : Component() {
 
-    private val logger: LoggerService by inject()
-    private val stringManager: StringManager by inject()
+    @Transient private val logger: LoggerService by inject()
+    @Transient private val stringManager: StringManager by inject()
 
-    private val playerController: PlayerController? by lazy { gameObject.getComponent<PlayerController>() }
-    private val physicsComponent: PhysicsComponent? by lazy { gameObject.getComponent<PhysicsComponent>() }
+    @Transient private val playerController: PlayerController? by lazy { gameObject.getComponent<PlayerController>() }
+    @Transient private val physicsComponent: PhysicsComponent? by lazy { gameObject.getComponent<PhysicsComponent>() }
 
     var currentState: PlayerState = PlayerState.IDLE
         private set

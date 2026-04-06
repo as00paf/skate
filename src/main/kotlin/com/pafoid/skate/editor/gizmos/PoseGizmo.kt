@@ -8,15 +8,18 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.render.data.PickingMesh
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
+@Serializable
 class PoseGizmo : Component(), KoinComponent {
-    private val pickingRenderer: PickingRenderer by inject()
+    @Transient private val pickingRenderer: PickingRenderer by inject()
 
-    private val boneMap = mutableMapOf<Int, Bone>()
+    @Transient private val boneMap = mutableMapOf<Int, Bone>()
 
     override fun editorUpdate(dt: Float) {
         val skeleton = (gameObject.getComponent<RenderComponent>()?.model as? CharacterModel)?.skeleton ?: return

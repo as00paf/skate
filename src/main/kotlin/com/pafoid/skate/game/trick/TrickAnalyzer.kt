@@ -5,23 +5,26 @@ import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import imgui.ImGui
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.math.abs
 
+@Serializable
 class TrickAnalyzer : Component(), KoinComponent {
-    private val stringManager: StringManager by inject()
-    private val trickManager: TrickManager by inject()
-    
+    @Transient private val stringManager: StringManager by inject()
+    @Transient private val trickManager: TrickManager by inject()
+
     private var physics: SkateboardPhysics? = null
     private var isAirborne = false
-    
-    private val totalRotation = Vector3f()
-    private val lastRotation = Vector3f()
+
+    @Transient private val totalRotation = Vector3f()
+    @Transient private val lastRotation = Vector3f()
     
     var lastTrickName = ""
-    var currentAirRotation = Vector3f()
+    @Transient var currentAirRotation = Vector3f()
 
     override fun start() {
         physics = gameObject.getComponent<SkateboardPhysics>()
