@@ -35,6 +35,10 @@ class KeyBindingsWindow(
     private var keyBindingAction: String? = null
     private var keyBindingTab = 0  // 0=Editor, 1=Camera, 2=Gamepad
 
+    // Load input mappings once from persisted storage (or defaults)
+    private var inputMappings: com.pafoid.skate.engine.input.InputMappings =
+        settingsManager.loadInputMappings() ?: com.pafoid.skate.engine.input.InputMappings()
+
     /**
      * Renders the key bindings window.
      */
@@ -42,9 +46,6 @@ class KeyBindingsWindow(
         if (pOpen?.get() == false) return
 
         if (begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.AlwaysAutoResize)) {
-            // TODO: Get input mappings from proper settings location (Phase 5)
-            val inputMappings = com.pafoid.skate.engine.input.InputMappings()
-
             // Tab selection using combo
             val tabNames = arrayOf(
                 stringManager.getString("tab.keybindings.editor"),
@@ -69,12 +70,12 @@ class KeyBindingsWindow(
             if (button(stringManager.getString("btn.close"))) {
                 pOpen?.set(false)
                 keyBindingAction = null
-                settingsManager.save()
+                settingsManager.updateInputMappings(inputMappings)
             }
             sameLine()
             if (button(stringManager.getString("btn.reset_to_defaults"))) {
                 inputMappings.resetToDefaults()
-                settingsManager.save()
+                settingsManager.updateInputMappings(inputMappings)
             }
 
             // Handle Binding
@@ -82,9 +83,9 @@ class KeyBindingsWindow(
                 // Check for key press
                 for (i in 0..348) { // GLFW_KEY_LAST is 348
                     if (isKeyPressed(i)) {
-                        assignKeyBinding(inputMappings, action, i)
+                        assignKeyBinding(action, i)
                         keyBindingAction = null
-                        settingsManager.save()
+                        settingsManager.updateInputMappings(inputMappings)
                         break
                     }
                 }
@@ -168,7 +169,7 @@ class KeyBindingsWindow(
         }
     }
 
-    private fun assignKeyBinding(inputMappings: InputMappings, action: String, key: Int) {
+    private fun assignKeyBinding(action: String, key: Int) {
         when (action) {
             // Editor
             "editorGizmoTranslate" -> inputMappings.editorGizmoTranslate.keyboardKey = key

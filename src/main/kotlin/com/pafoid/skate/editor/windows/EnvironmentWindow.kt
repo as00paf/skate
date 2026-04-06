@@ -3,7 +3,10 @@ package com.pafoid.skate.editor.windows
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.EnvironmentPropertyCommand
+import com.pafoid.skate.editor.systems.EnvironmentToggleCommand
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
@@ -15,17 +18,9 @@ import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-/**
- * Environment editor window.
- *
- * This window provides controls for:
- * - Time of day (via TimeComponent and DayNightCycleSystem)
- * - Environment settings (via EnvironmentSystem)
- * - Directional light and shadows (via DirectionalLightSystem)
- * - Ambient lighting (via LightingStateComponent and DayNightCycleSystem)
- */
 class EnvironmentWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
+    private val undoRedoManager: UndoRedoManager by inject()
 
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.environment"))
@@ -45,11 +40,23 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             val timeString = String.format("%02d:%02d", hours, minutes)
 
             if (ImGui.sliderFloat(stringManager.getString("lbl.environment.time"), time, 0f, 24f, timeString)) {
-                timeComponent.timeOfDay = time[0]
+                val oldTime = timeComponent.timeOfDay
+                val newTime = time[0]
+                undoRedoManager.executeCommand(
+                    EnvironmentPropertyCommand(
+                        displayName = "Set Time of Day",
+                        targetName = null,
+                        setter = { t -> 
+                            timeComponent.timeOfDay = t
+                            dayNightSystem?.setCycleTime(t)
+                        },
+                        oldValue = oldTime,
+                        newValue = newTime
+                    )
+                )
                 if (!scene.hasComponent<TimeComponent>()) {
                     scene.addComponent(timeComponent)
                 }
-                dayNightSystem?.setCycleTime(time[0])
             }
         }
 
@@ -109,7 +116,16 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
         if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment.lighting")}")) {
             val useAmbient = ImBoolean(lightingStateComponent.useAmbient)
             if (ImGui.checkbox(stringManager.getString("lbl.environment.use_ambient"), useAmbient)) {
-                lightingStateComponent.useAmbient = useAmbient.get()
+                val oldVal = lightingStateComponent.useAmbient
+                val newVal = useAmbient.get()
+                undoRedoManager.executeCommand(
+                    EnvironmentToggleCommand(
+                        displayName = "Toggle Use Ambient",
+                        setter = { v -> lightingStateComponent.useAmbient = v },
+                        oldValue = oldVal,
+                        newValue = newVal
+                    )
+                )
                 if (!scene.hasComponent<LightingStateComponent>()) {
                     scene.addComponent(lightingStateComponent)
                 }
@@ -118,7 +134,16 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             dayNightSystem?.let { system ->
                 val autoAmbient = ImBoolean(system.config.autoAmbient)
                 if (ImGui.checkbox(stringManager.getString("lbl.environment.auto_ambient"), autoAmbient)) {
-                    system.config.autoAmbient = autoAmbient.get()
+                    val oldVal = system.config.autoAmbient
+                    val newVal = autoAmbient.get()
+                    undoRedoManager.executeCommand(
+                        EnvironmentToggleCommand(
+                            displayName = "Toggle Auto Ambient",
+                            setter = { v -> system.config.autoAmbient = v },
+                            oldValue = oldVal,
+                            newValue = newVal
+                        )
+                    )
                 }
             }
 

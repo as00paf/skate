@@ -50,12 +50,20 @@ class StringManager(
     }
 
     fun getString(key: String): String {
-        return properties.getProperty(key, "!!${key}!!")
+        val value = properties.getProperty(key)
+        if (value == null) {
+            logger.logEditor("Missing string key: $key")
+        }
+        return value ?: "!!${key}!!"
     }
 
     fun getString(key: String, vararg formatArgs: Any): String {
-        val formatString = properties.getProperty(key, "!!${key}!!")
-        return String.format(formatString, *formatArgs)
+        val formatString = properties.getProperty(key)
+        if (formatString == null) {
+            logger.logEditor("Missing string key: $key")
+        }
+        val fmt = formatString ?: "!!${key}!!"
+        return String.format(fmt, *formatArgs)
     }
 
     fun getQuantityString(key: String, quantity: Int, vararg formatArgs: Any): String {

@@ -60,10 +60,6 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
 
     private var currentScene: Scene? = null
 
-    private var skateboard: GameObject? = null
-    private var skater: GameObject? = null
-    private var floor: List<GameObject?>? = null
-
     override suspend fun loadResources(scene: Scene) {
         reportProgress(0.1f, "Loading Character Model...")
         resourceManager.loadModel(Assets.Models.JAMES)
@@ -138,9 +134,8 @@ class LevelEditorSceneInitializer: SceneInitializer(), KoinComponent {
         scene.addSystem(directionalLightSystem)
 
         reportProgress(0.8f, "Spawning Prefabs...")
-        //skateboard = prefabsGenerator.spawnSkateboard()
-        skater = prefabsGenerator.spawnSkater(null)
-        floor = prefabsGenerator.spawnFloor()
+        prefabsGenerator.spawnSkater()
+        prefabsGenerator.spawnFloor()
 
         reportProgress(1.0f, "Ready.")
     }

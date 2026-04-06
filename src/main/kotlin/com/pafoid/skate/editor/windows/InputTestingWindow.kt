@@ -316,121 +316,20 @@ class InputTestingWindow(
      * Shows current deadzone, threshold, and sensitivity values.
      */
     private fun renderSettingsSection() {
-        // TODO Phase 5: Update to use new immutable settings structure
         ImGui.indent()
-
-        // val hardware = settingsManager.engine.hardware
-        // val gameplay = settingsManager.project.gameplay
-
         MImGui.textDisabled("Input settings configuration will be available after Phase 5 completion")
-        
-        /*
-        // Hardware Deadzones
-        ImGui.text("Hardware Calibration")
-        val leftDeadzone = floatArrayOf(hardware.leftStickDeadzone)
-        if (ImGui.dragFloat("  Left Stick Deadzone", leftDeadzone, 0.01f, 0f, 0.5f)) {
-            hardware.leftStickDeadzone = leftDeadzone[0].coerceIn(0f, 0.5f)
-        }
-
-        val rightDeadzone = floatArrayOf(hardware.rightStickDeadzone)
-        if (ImGui.dragFloat("  Right Stick Deadzone", rightDeadzone, 0.01f, 0f, 0.5f)) {
-            hardware.rightStickDeadzone = rightDeadzone[0].coerceIn(0f, 0.5f)
-        }
-
-        val triggerThreshold = floatArrayOf(hardware.triggerThreshold)
-        if (ImGui.dragFloat("  Trigger Threshold", triggerThreshold, 0.01f, 0f, 1f)) {
-            hardware.triggerThreshold = triggerThreshold[0].coerceIn(0f, 1f)
-        }
-
-        ImGui.spacing()
-
-        // Gameplay Constants
-        ImGui.text("Gameplay Constants")
-        val jumpImpulse = floatArrayOf(gameplay.jumpImpulse)
-        if (ImGui.dragFloat("  Jump Impulse", jumpImpulse, 1f, 100f, 1000f)) {
-            gameplay.jumpImpulse = jumpImpulse[0].coerceIn(100f, 1000f)
-        }
-        */
-        
-        /*
-        val walkSpeed = floatArrayOf(gameplay.walkSpeed)
-        if (ImGui.dragFloat("  Walk Speed", walkSpeed, 0.1f, 1f, 5f)) {
-            gameplay.walkSpeed = walkSpeed[0].coerceIn(1f, 5f)
-        }
-
-        val runSpeed = floatArrayOf(gameplay.runSpeed)
-        if (ImGui.dragFloat("  Run Speed", runSpeed, 0.1f, 5f, 15f)) {
-            gameplay.runSpeed = runSpeed[0].coerceIn(5f, 15f)
-        }
-
-        // Reset button
-        ImGui.separator()
-        if (ImGui.button("Reset to Defaults")) {
-            settingsManager.save() // Just a save for now
-        }
-        */
-
         ImGui.unindent()
     }
 
     /**
      * Renders the input bindings section.
      * Shows current keyboard and gamepad bindings for all actions.
-     * 
+     *
      * TODO Phase 5: Update to use new immutable settings structure
      */
     private fun renderBindingsSection() {
-        // TODO Phase 5: Update to use new immutable settings structure
         ImGui.indent()
-
-        // val mappings = settingsManager.project.inputMappings
-
         MImGui.textDisabled("Input bindings configuration will be available after Phase 5 completion")
-        
-        /*
-        val mappings = settingsManager.project.inputMappings
-
-        ImGui.text("Movement")
-        ImGui.text("  Move Up: Key=${getKeyName(mappings.moveUp.keyboardKey)}, Axis=${mappings.moveUp.gamepadAxis}")
-        ImGui.text("  Move Down: Key=${getKeyName(mappings.moveDown.keyboardKey)}, Axis=${mappings.moveDown.gamepadAxis}")
-        ImGui.text("  Move Left: Key=${getKeyName(mappings.moveLeft.keyboardKey)}, Axis=${mappings.moveLeft.gamepadAxis}")
-        ImGui.text("  Move Right: Key=${getKeyName(mappings.moveRight.keyboardKey)}, Axis=${mappings.moveRight.gamepadAxis}")
-        ImGui.text("  Sprint: Key=${getKeyName(mappings.sprint.keyboardKey)}, Axis=${mappings.sprint.gamepadAxis}")
-        ImGui.text("  Crouch: Key=${getKeyName(mappings.crouch.keyboardKey)}, Button=${mappings.crouch.gamepadButton}")
-
-        ImGui.spacing()
-
-        ImGui.text("Jump")
-        ImGui.text("  Jump: Key=${getKeyName(mappings.jump.keyboardKey)}, Button=${mappings.jump.gamepadButton}")
-
-        ImGui.spacing()
-
-        ImGui.text("Tricks")
-        ImGui.text("  Flip Left: Key=${getKeyName(mappings.flipLeft.keyboardKey)}, Button=${mappings.flipLeft.gamepadButton}")
-        ImGui.text("  Flip Right: Key=${getKeyName(mappings.flipRight.keyboardKey)}, Button=${mappings.flipRight.gamepadButton}")
-        ImGui.text("  Kickflip: Key=${getKeyName(mappings.kickflip.keyboardKey)}, Button=${mappings.kickflip.gamepadButton}")
-        ImGui.text("  Heelflip: Key=${getKeyName(mappings.heelflip.keyboardKey)}, Button=${mappings.heelflip.gamepadButton}")
-        ImGui.text("  Grab: Key=${getKeyName(mappings.grab.keyboardKey)}, Button=${mappings.grab.gamepadButton}")
-        ImGui.text("  Manual: Key=${getKeyName(mappings.manual.keyboardKey)}, Button=${mappings.manual.gamepadButton}")
-
-        ImGui.spacing()
-        */
-        
-        /*
-        ImGui.text("Camera")
-        ImGui.text("  Camera Look X: Axis=${mappings.cameraLookX.gamepadAxis}")
-        ImGui.text("  Camera Look Y: Axis=${mappings.cameraLookY.gamepadAxis}")
-        ImGui.text("  Camera Reset: Key=${getKeyName(mappings.cameraReset.keyboardKey)}, Button=${mappings.cameraReset.gamepadButton}")
-
-        ImGui.spacing()
-
-        ImGui.text("Game State")
-        ImGui.text("  Pause: Key=${getKeyName(mappings.pause.keyboardKey)}, Button=${mappings.pause.gamepadButton}")
-        ImGui.text("  Reset: Key=${getKeyName(mappings.reset.keyboardKey)}, Button=${mappings.reset.gamepadButton}")
-        ImGui.text("  Stance Change: Key=${getKeyName(mappings.stanceChange.keyboardKey)}, Button=${mappings.stanceChange.gamepadButton}")
-        ImGui.text("  Stance Change Right: Key=${getKeyName(mappings.stanceChangeRight.keyboardKey)}, Button=${mappings.stanceChangeRight.gamepadButton}")
-        */
-
         ImGui.unindent()
     }
 

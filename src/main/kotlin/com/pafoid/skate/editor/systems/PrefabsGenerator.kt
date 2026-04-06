@@ -25,12 +25,11 @@ import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import com.pafoid.skate.game.prefabs.Tile
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 
 class PrefabsGenerator(
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
-) : KoinComponent {
+) {
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
         val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
         val go = scene.createGameObject(name)
@@ -43,25 +42,20 @@ class PrefabsGenerator(
         return go
     }
 
-    fun spawnSkateboard(): Skateboard? {
-        var skate: Skateboard? = null
+    fun spawnSkateboard() {
         JobSystem.runAsync {
             val model = resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
             JobSystem.runOnMain {
-                skate = Skateboard(model as TexturedModel)
+                val skate = Skateboard(model as TexturedModel)
                 sceneManager.currentScene?.addGameObjectToScene(skate)
             }
         }
-
-        return skate
     }
 
-    fun spawnSkater(skate: GameObject? = null): Skater? {
-        var skater: Skater? = null
-
+    fun spawnSkater(skate: GameObject? = null) {
         JobSystem.runAsync {
             val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
-            skater = Skater("Skater", model, skate)
+            val skater = Skater("Skater", model, skate)
 
             animations.forEach { path ->
                 val animation = resourceManager.loadAnimation(path, skater.skeletonComponent.pose.skeleton)
@@ -72,13 +66,9 @@ class PrefabsGenerator(
                 sceneManager.currentScene?.addGameObjectToScene(skater)
             }
         }
-
-        return skater
     }
 
-    fun spawnFloor(): List<Tile?> {
-        var tile: Tile? = null
-
+    fun spawnFloor() {
         JobSystem.runAsync {
             val texture = resourceManager.loadTexture(Assets.Textures.ASPHALT)
             val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
@@ -86,12 +76,10 @@ class PrefabsGenerator(
             texturedModel.mesh[0].material.baseColorPath = Assets.Textures.ASPHALT
 
             JobSystem.runOnMain {
-                tile = Tile("Tile", texturedModel)
+                val tile = Tile("Tile", texturedModel)
                 sceneManager.currentScene?.addGameObjectToScene(tile)
             }
         }
-
-        return listOf(tile)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?) {

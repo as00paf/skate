@@ -284,7 +284,7 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
             if (results.isEmpty()) return@forEach
 
             val categoryColor = getCategoryColor(category)
-            ImGui.textColored(categoryColor, "${category.displayName} (${results.size})")
+            ImGui.textColored(categoryColor, "${stringManager.getString(category.displayNameKey)} (${results.size})")
             ImGui.separator()
 
             results.forEach { result ->
@@ -298,7 +298,7 @@ class SearchEverywhereWindow : IWindow, KoinComponent {
                     append(icon)
                     append(" ")
                     append(result.displayName)
-                    if (result.subcategory.isNotEmpty() && result.subcategory != category.displayName) {
+                    if (result.subcategory.isNotEmpty() && result.subcategory != stringManager.getString(category.displayNameKey)) {
                         append(" (")
                         append(result.subcategory)
                         append(")")
