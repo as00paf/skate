@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.input.EditorInputMappings
+import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.flag.ImGuiCond
@@ -19,7 +20,9 @@ import imgui.internal.ImGui.dragInt
 import imgui.internal.ImGui.end
 import imgui.internal.ImGui.endChild
 import imgui.internal.ImGui.inputText
+import imgui.internal.ImGui.isKeyPressed
 import imgui.internal.ImGui.sameLine
+import imgui.internal.ImGui.separator
 import imgui.internal.ImGui.setNextWindowPos
 import imgui.internal.ImGui.setNextWindowSize
 import imgui.internal.ImGui.sliderFloat
@@ -50,6 +53,11 @@ class EditorSettingsWindow(
     private var selectedCategoryId = "general"
     private var hasPendingChanges = false
 
+    // Keybinding state
+    private var tempMappings = EditorInputMappings()
+    private var tempCameraMappings = InputMappings()
+    private var rebindingAction: String? = null
+
     private var tempVSync = true
     private var tempMSAA = 4
     private var tempLanguage = "en"
@@ -66,7 +74,7 @@ class EditorSettingsWindow(
     private val categories: List<Category> by lazy {
         listOf(
             Category("general", "settings.editor.general", arrayOf("general", "language")) { renderGeneral() },
-            Category("keybindings", "settings.editor.keybindings", arrayOf("key", "binding", "gizmo", "translate", "rotate", "scale", "select", "measure", "deselect")) { renderKeyBindings() },
+            Category("keybindings", "settings.editor.keybindings", arrayOf("key", "binding", "gizmo", "translate", "rotate", "scale", "select", "measure", "deselect", "camera", "reset")) { renderKeyBindings() },
             Category("display", "settings.editor.display", arrayOf("display", "vsync", "msaa", "sync", "anti-aliasing")) { renderDisplay() },
             Category("interface", "settings.editor.interface", arrayOf("interface", "theme", "unit", "overlay", "gamepad")) { renderInterface() },
             Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() }
@@ -124,6 +132,18 @@ class EditorSettingsWindow(
             selected?.render()
             endChild()
 
+            // Handle key rebinding
+            rebindingAction?.let { action ->
+                for (i in 0..348) {
+                    if (isKeyPressed(i)) {
+                        assignKeyBinding(action, i)
+                        rebindingAction = null
+                        hasPendingChanges = true
+                        break
+                    }
+                }
+            }
+
             ImGui.spacing()
             val btnW = 100f
             if (button("OK", btnW, 0f)) {
@@ -134,6 +154,7 @@ class EditorSettingsWindow(
             if (button("Cancel", btnW, 0f)) {
                 syncTempSettings()
                 hasPendingChanges = false
+                rebindingAction = null
                 pOpen?.set(false)
             }
             ImGui.sameLine()
@@ -162,6 +183,10 @@ class EditorSettingsWindow(
             tempOverlaySize = editor.gamepadOverlaySize
             tempAutoSaveEnabled = autoSave.enabled
             tempAutoSaveInterval = autoSave.intervalMinutes
+            // Copy input mappings
+            tempMappings = editor.editorInputMappings.copy()
+            // Load saved camera mappings or use defaults
+            tempCameraMappings = settingsManager.loadInputMappings() ?: InputMappings()
         }
     }
 
@@ -184,30 +209,74 @@ class EditorSettingsWindow(
         }
     }
 
+    // ─── Key Bindings ───
+
     private fun renderKeyBindings() {
-        val mappings = EditorInputMappings()
-        val actions = listOf(
-            stringManager.getString("settings.editor.keybindings.gizmo_translate") to GLFW.glfwGetKeyName(mappings.gizmoTranslate.keyboardKey, 0),
-            stringManager.getString("settings.editor.keybindings.gizmo_rotate") to GLFW.glfwGetKeyName(mappings.gizmoRotate.keyboardKey, 0),
-            stringManager.getString("settings.editor.keybindings.gizmo_scale") to GLFW.glfwGetKeyName(mappings.gizmoScale.keyboardKey, 0),
-            stringManager.getString("settings.editor.keybindings.gizmo_select") to GLFW.glfwGetKeyName(mappings.gizmoSelect.keyboardKey, 0),
-            stringManager.getString("settings.editor.keybindings.measure_tool") to GLFW.glfwGetKeyName(mappings.measureTool.keyboardKey, 0),
-            stringManager.getString("settings.editor.keybindings.deselect") to GLFW.glfwGetKeyName(mappings.deselectAll.keyboardKey, 0),
-        )
-        if (ImGui.beginTable("##keybindings_table", 2)) {
-            ImGui.tableSetupColumn(stringManager.getString("settings.editor.keybindings.action"))
-            ImGui.tableSetupColumn(stringManager.getString("settings.editor.keybindings.bound_key"))
-            ImGui.tableHeadersRow()
-            for ((action, keyName) in actions) {
-                ImGui.tableNextRow()
-                ImGui.tableSetColumnIndex(0)
-                ImGui.text(action)
-                ImGui.tableSetColumnIndex(1)
-                ImGui.text(keyName ?: "Unknown")
-            }
-            ImGui.endTable()
+        // Editor section
+        ImGui.text(stringManager.getString("lbl.keybindings.editor_section"))
+        separator()
+        drawBindRow(stringManager.getString("lbl.keybindings.translate"), tempMappings.gizmoTranslate.keyboardKey, "editorGizmoTranslate")
+        drawBindRow(stringManager.getString("lbl.keybindings.rotate"), tempMappings.gizmoRotate.keyboardKey, "editorGizmoRotate")
+        drawBindRow(stringManager.getString("lbl.keybindings.scale"), tempMappings.gizmoScale.keyboardKey, "editorGizmoScale")
+        drawBindRow(stringManager.getString("lbl.keybindings.select"), tempMappings.gizmoSelect.keyboardKey, "editorGizmoSelect")
+        drawBindRow(stringManager.getString("lbl.keybindings.measure"), tempMappings.measureTool.keyboardKey, "editorMeasure")
+        drawBindRow(stringManager.getString("lbl.keybindings.deselect"), tempMappings.deselectAll.keyboardKey, "editorDeselect")
+        
+        separator()
+        // Camera section
+        ImGui.text(stringManager.getString("lbl.keybindings.camera_section"))
+        separator()
+        drawBindRow(stringManager.getString("lbl.keybindings.camera_reset"), tempCameraMappings.cameraReset.keyboardKey, "cameraReset")
+        separator()
+        ImGui.text(stringManager.getString("lbl.keybindings.camera_look"))
+        MImGui.textDisabled(stringManager.getString("lbl.keybindings.camera_look_note"))
+    }
+
+    private fun drawBindRow(label: String, currentValue: Int, bindAction: String) {
+        ImGui.text(label)
+        ImGui.sameLine(200f)
+
+        val keyName = getKeyName(currentValue)
+        val btnText = if (rebindingAction == bindAction) stringManager.getString("lbl.keybindings.press_key") else keyName
+
+        if (button("$btnText##$bindAction", 120f, 0f)) {
+            rebindingAction = bindAction
         }
-        MImGui.textDisabled(stringManager.getString("settings.editor.keybindings.readonly_note"))
+    }
+
+    private fun assignKeyBinding(action: String, key: Int) {
+        when (action) {
+            "editorGizmoTranslate" -> tempMappings.gizmoTranslate.keyboardKey = key
+            "editorGizmoRotate" -> tempMappings.gizmoRotate.keyboardKey = key
+            "editorGizmoScale" -> tempMappings.gizmoScale.keyboardKey = key
+            "editorGizmoSelect" -> tempMappings.gizmoSelect.keyboardKey = key
+            "editorMeasure" -> tempMappings.measureTool.keyboardKey = key
+            "editorDeselect" -> tempMappings.deselectAll.keyboardKey = key
+            "cameraReset" -> tempCameraMappings.cameraReset.keyboardKey = key
+        }
+    }
+
+    private fun getKeyName(key: Int): String {
+        return when (key) {
+            GLFW.GLFW_KEY_ESCAPE -> "Esc"
+            GLFW.GLFW_KEY_ENTER -> "Enter"
+            GLFW.GLFW_KEY_TAB -> "Tab"
+            GLFW.GLFW_KEY_BACKSPACE -> "Backspace"
+            GLFW.GLFW_KEY_INSERT -> "Insert"
+            GLFW.GLFW_KEY_DELETE -> "Del"
+            GLFW.GLFW_KEY_RIGHT -> "Right"
+            GLFW.GLFW_KEY_LEFT -> "Left"
+            GLFW.GLFW_KEY_DOWN -> "Down"
+            GLFW.GLFW_KEY_UP -> "Up"
+            GLFW.GLFW_KEY_PAGE_UP -> "PgUp"
+            GLFW.GLFW_KEY_PAGE_DOWN -> "PgDn"
+            GLFW.GLFW_KEY_HOME -> "Home"
+            GLFW.GLFW_KEY_END -> "End"
+            else -> {
+                val name = GLFW.glfwGetKeyName(key, 0)
+                name?.uppercase() ?: "Key $key"
+            }
+        }
     }
 
     private fun renderDisplay() {
@@ -335,6 +404,10 @@ class EditorSettingsWindow(
             showGamepadOverlay = tempShowOverlay,
             gamepadOverlaySize = tempOverlaySize
         )
+        // Save keybindings
+        settingsManager.updateEditorSettings(editorInputMappings = tempMappings)
+        // Save camera mappings
+        settingsManager.updateInputMappings(tempCameraMappings)
         settingsManager.updateAutoSaveSettings(tempAutoSaveEnabled, tempAutoSaveInterval)
         hasPendingChanges = false
     }

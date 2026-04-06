@@ -401,4 +401,40 @@ class InputMappings {
         editorMeasure = InputBinding(keyboardKey = GLFW.GLFW_KEY_M)
         editorDeselect = InputBinding(keyboardKey = GLFW.GLFW_KEY_ESCAPE)
     }
+
+    /**
+     * Create a shallow copy of this InputMappings instance.
+     */
+    fun copy(): InputMappings {
+        val new = InputMappings()
+        // Gameplay
+        new.moveUp = moveUp.copy()
+        new.moveDown = moveDown.copy()
+        new.moveLeft = moveLeft.copy()
+        new.moveRight = moveRight.copy()
+        new.sprint = sprint.copy()
+        new.crouch = crouch.copy()
+        new.jump = jump.copy()
+        new.flipLeft = flipLeft.copy()
+        new.flipRight = flipRight.copy()
+        new.kickflip = kickflip.copy()
+        new.heelflip = heelflip.copy()
+        new.grab = grab.copy()
+        new.manual = manual.copy()
+        new.cameraLookX = cameraLookX.copy()
+        new.cameraLookY = cameraLookY.copy()
+        new.cameraReset = cameraReset.copy()
+        new.pause = pause.copy()
+        new.reset = reset.copy()
+        new.stanceChange = stanceChange.copy()
+        new.stanceChangeRight = stanceChangeRight.copy()
+        // Editor
+        new.editorGizmoTranslate = editorGizmoTranslate.copy()
+        new.editorGizmoRotate = editorGizmoRotate.copy()
+        new.editorGizmoScale = editorGizmoScale.copy()
+        new.editorGizmoSelect = editorGizmoSelect.copy()
+        new.editorMeasure = editorMeasure.copy()
+        new.editorDeselect = editorDeselect.copy()
+        return new
+    }
 }

@@ -190,7 +190,8 @@ class SettingsManager(
         showGamepadOverlay: Boolean? = null,
         unitSystem: com.pafoid.skate.engine.utils.UnitSystem? = null,
         language: String? = null,
-        theme: String? = null
+        theme: String? = null,
+        editorInputMappings: com.pafoid.skate.engine.input.EditorInputMappings? = null
     ) {
         val currentEditor = engine.editor
         engine = engine.copy(
@@ -199,7 +200,8 @@ class SettingsManager(
                 showGamepadOverlay = showGamepadOverlay ?: currentEditor.showGamepadOverlay,
                 unitSystem = unitSystem ?: currentEditor.unitSystem,
                 language = language ?: currentEditor.language,
-                theme = theme ?: currentEditor.theme
+                theme = theme ?: currentEditor.theme,
+                editorInputMappings = editorInputMappings ?: currentEditor.editorInputMappings
             )
         )
         language?.let { stringManager.setLocale(it) }
@@ -215,6 +217,31 @@ class SettingsManager(
             )
         )
         saveEngine()
+    }
+
+    fun updateInputMappings(inputMappings: com.pafoid.skate.engine.input.InputMappings) {
+        // Store input mappings in a dedicated file for now
+        // TODO Phase 5: Integrate with proper settings persistence
+        try {
+            val file = SettingsData.getSettingsDirectory().resolve("input_mappings.json")
+            file.parentFile?.mkdirs()
+            file.writeText(serializer.encode(inputMappings))
+            logger.logEditor("Input mappings saved to ${file.absolutePath}")
+        } catch (e: Exception) {
+            logger.logEngine("Error saving input mappings: ${e.message}", LogLevel.ERROR)
+        }
+    }
+
+    fun loadInputMappings(): com.pafoid.skate.engine.input.InputMappings? {
+        return try {
+            val file = SettingsData.getSettingsDirectory().resolve("input_mappings.json")
+            if (file.exists()) {
+                serializer.decode<com.pafoid.skate.engine.input.InputMappings>(file.readText())
+            } else null
+        } catch (e: Exception) {
+            logger.logEditor("Using default input mappings")
+            null
+        }
     }
 
     fun hasProject(): Boolean = project != null
