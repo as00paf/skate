@@ -74,7 +74,7 @@ class WindowRegistry(
         EditorWindow("window.project_settings", projectSettingsWindow, ImBoolean(false)),
         EditorWindow("window.keybindings", keyBindingsWindow, ImBoolean(false)),
         EditorWindow("window.audio_inspector", audioInspectorWindow, ImBoolean(false), requiresScene = true),
-        EditorWindow("window.project", projectWindow, ImBoolean(false))
+        EditorWindow("window.project", projectWindow, ImBoolean(true))
     )
 
     /**
