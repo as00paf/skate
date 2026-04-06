@@ -58,8 +58,6 @@ class EditorSettingsWindow(
     private var tempCameraMappings = InputMappings()
     private var rebindingAction: String? = null
 
-    private var tempVSync = true
-    private var tempMSAA = 4
     private var tempLanguage = "en"
     private var tempTheme = "Islands Dark"
     private var tempUnitSystem = UnitSystem.METRIC
@@ -68,15 +66,14 @@ class EditorSettingsWindow(
     private var tempAutoSaveEnabled = true
     private var tempAutoSaveInterval = 5
 
-    private val tempVSyncBool = ImBoolean(true)
     private val tempShowOverlayBool = ImBoolean(true)
 
     private val categories: List<Category> by lazy {
         listOf(
-            Category("general", "settings.editor.general", arrayOf("general", "language")) { renderGeneral() },
+            Category("general", "settings.editor.general", arrayOf("general", "language", "unit", "metric", "imperial")) { renderGeneral() },
             Category("keybindings", "settings.editor.keybindings", arrayOf("key", "binding", "gizmo", "translate", "rotate", "scale", "select", "measure", "deselect", "camera", "reset")) { renderKeyBindings() },
-            Category("display", "settings.editor.display", arrayOf("display", "vsync", "msaa", "sync", "anti-aliasing")) { renderDisplay() },
-            Category("interface", "settings.editor.interface", arrayOf("interface", "theme", "unit", "overlay", "gamepad")) { renderInterface() },
+            Category("gamepad_overlay", "settings.editor.gamepad_overlay", arrayOf("gamepad", "overlay", "show", "size", "scale")) { renderGamepadOverlay() },
+            Category("interface", "settings.editor.interface", arrayOf("interface", "theme")) { renderInterface() },
             Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() }
         )
     }
@@ -169,12 +166,8 @@ class EditorSettingsWindow(
 
     private fun syncTempSettings() {
         if (!hasPendingChanges) {
-            val hw = settingsManager.getCurrentHardware()
             val editor = settingsManager.engine.editor
             val autoSave = settingsManager.engine.autoSave
-            tempVSync = hw.display.vsync
-            tempVSyncBool.set(tempVSync)
-            tempMSAA = hw.graphics.msaa
             tempLanguage = editor.language
             tempTheme = editor.theme
             tempUnitSystem = editor.unitSystem
@@ -191,6 +184,7 @@ class EditorSettingsWindow(
     }
 
     private fun renderGeneral() {
+        // Language
         val languages = arrayOf(
             stringManager.getString("settings.editor.language.english"),
             stringManager.getString("settings.editor.language.french")
@@ -198,12 +192,19 @@ class EditorSettingsWindow(
         val langCodes = arrayOf("en", "fr")
         val currentIdx = langCodes.indexOf(tempLanguage).coerceAtLeast(0)
         val selector = ImInt(currentIdx)
-        MImGui.propertyRow(
-            label = stringManager.getString("settings.editor.language"),
-            onReset = { tempLanguage = "en"; hasPendingChanges = true }
-        ) {
+        MImGui.propertyRow(label = stringManager.getString("settings.editor.language")) {
             if (combo("##language", selector, languages, languages.size)) {
                 tempLanguage = langCodes[selector.get()]
+                hasPendingChanges = true
+            }
+        }
+
+        // Unit System
+        val unitOptions = UnitSystem.entries.map { it.name }.toTypedArray()
+        val unitSel = ImInt(tempUnitSystem.ordinal)
+        MImGui.propertyRow(label = stringManager.getString("settings.editor.interface.unit_system")) {
+            if (combo("##unit", unitSel, unitOptions, unitOptions.size)) {
+                tempUnitSystem = UnitSystem.entries[unitSel.get()]
                 hasPendingChanges = true
             }
         }
@@ -279,35 +280,27 @@ class EditorSettingsWindow(
         }
     }
 
-    private fun renderDisplay() {
+    private fun renderGamepadOverlay() {
         MImGui.propertyRow(
-            label = stringManager.getString("settings.editor.display.vsync"),
-            helpTooltip = stringManager.getString("settings.editor.display.vsync.desc"),
-            onReset = { tempVSync = true; tempVSyncBool.set(true); hasPendingChanges = true }
+            label = stringManager.getString("settings.editor.interface.show_overlay"),
+            helpTooltip = stringManager.getString("settings.editor.interface.show_overlay.desc")
         ) {
-            if (ImGui.checkbox("##vsync", tempVSyncBool)) {
-                tempVSync = tempVSyncBool.get()
+            if (ImGui.checkbox("##overlay", tempShowOverlayBool)) {
+                tempShowOverlay = tempShowOverlayBool.get()
                 hasPendingChanges = true
             }
         }
-        val msaaOptions = arrayOf(
-            stringManager.getString("settings.editor.display.msaa.none"),
-            "2", "4", "8"
-        )
-        val msaaValues = arrayOf(0, 2, 4, 8)
-        val msaaIdx = msaaValues.indexOf(tempMSAA).coerceAtLeast(0)
-        val msaaSel = ImInt(msaaIdx)
+
+        val overlayArr = floatArrayOf(tempOverlaySize)
         MImGui.propertyRow(
-            label = stringManager.getString("settings.editor.display.msaa"),
-            helpTooltip = stringManager.getString("settings.editor.display.msaa.desc"),
-            onReset = { tempMSAA = 4; hasPendingChanges = true }
+            label = stringManager.getString("settings.editor.interface.overlay_size"),
+            helpTooltip = stringManager.getString("settings.editor.interface.overlay_size.desc")
         ) {
-            if (combo("##msaa", msaaSel, msaaOptions, msaaOptions.size)) {
-                tempMSAA = msaaValues[msaaSel.get()]
+            if (sliderFloat("##overlay_size", overlayArr, 0.05f, 0.5f)) {
+                tempOverlaySize = overlayArr[0]
                 hasPendingChanges = true
             }
         }
-        MImGui.textDisabled(stringManager.getString("settings.restart_note"))
     }
 
     private fun renderInterface() {
@@ -320,47 +313,10 @@ class EditorSettingsWindow(
         val themeSel = ImInt(themeIdx)
         MImGui.propertyRow(
             label = stringManager.getString("settings.editor.interface.theme"),
-            helpTooltip = stringManager.getString("settings.editor.interface.theme.desc"),
-            onReset = { tempTheme = "Islands Dark"; hasPendingChanges = true }
+            helpTooltip = stringManager.getString("settings.editor.interface.theme.desc")
         ) {
             if (combo("##theme", themeSel, themeOptions, themeOptions.size)) {
                 tempTheme = themeValues[themeSel.get()]
-                hasPendingChanges = true
-            }
-        }
-
-        val unitOptions = UnitSystem.entries.map { it.name }.toTypedArray()
-        val unitSel = ImInt(tempUnitSystem.ordinal)
-        MImGui.propertyRow(
-            label = stringManager.getString("settings.editor.interface.unit_system"),
-            helpTooltip = stringManager.getString("settings.editor.interface.unit_system.desc"),
-            onReset = { tempUnitSystem = UnitSystem.METRIC; hasPendingChanges = true }
-        ) {
-            if (combo("##unit", unitSel, unitOptions, unitOptions.size)) {
-                tempUnitSystem = UnitSystem.entries[unitSel.get()]
-                hasPendingChanges = true
-            }
-        }
-
-        MImGui.propertyRow(
-            label = stringManager.getString("settings.editor.interface.show_overlay"),
-            helpTooltip = stringManager.getString("settings.editor.interface.show_overlay.desc"),
-            onReset = { tempShowOverlay = true; tempShowOverlayBool.set(true); hasPendingChanges = true }
-        ) {
-            if (ImGui.checkbox("##overlay", tempShowOverlayBool)) {
-                tempShowOverlay = tempShowOverlayBool.get()
-                hasPendingChanges = true
-            }
-        }
-
-        val overlayArr = floatArrayOf(tempOverlaySize)
-        MImGui.propertyRow(
-            label = stringManager.getString("settings.editor.interface.overlay_size"),
-            helpTooltip = stringManager.getString("settings.editor.interface.overlay_size.desc"),
-            onReset = { tempOverlaySize = 0.225f; hasPendingChanges = true }
-        ) {
-            if (sliderFloat("##overlay_size", overlayArr, 0.05f, 0.5f)) {
-                tempOverlaySize = overlayArr[0]
                 hasPendingChanges = true
             }
         }
@@ -397,7 +353,6 @@ class EditorSettingsWindow(
         if (tempLanguage != settingsManager.engine.editor.language) {
             settingsManager.updateEditorSettings(language = tempLanguage)
         }
-        settingsManager.applyVSync(tempVSync)
         settingsManager.updateEditorSettings(
             theme = tempTheme,
             unitSystem = tempUnitSystem,
