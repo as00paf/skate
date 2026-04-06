@@ -14,6 +14,7 @@ import com.pafoid.skate.editor.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.windows.ProfilerWindow
 import com.pafoid.skate.editor.windows.ProjectSettingsWindow
 import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
+import com.pafoid.skate.editor.windows.ProjectWindow
 import com.pafoid.skate.editor.windows.ProjectWizardWindow
 import com.pafoid.skate.editor.windows.PropertiesWindow
 import com.pafoid.skate.editor.windows.RenderGraphWindow
@@ -47,7 +48,8 @@ class WindowRegistry(
     val searchEverywhereWindow: SearchEverywhereWindow,
     val projectWizardWindow: ProjectWizardWindow,
     val projectSwitcherDialog: ProjectSwitcherDialog,
-    val audioInspectorWindow: AudioInspectorWindow
+    val audioInspectorWindow: AudioInspectorWindow,
+    val projectWindow: ProjectWindow
 ) {
 
     /**
@@ -71,7 +73,8 @@ class WindowRegistry(
         EditorWindow("window.editor_settings", editorSettingsWindow, ImBoolean(false)),
         EditorWindow("window.project_settings", projectSettingsWindow, ImBoolean(false)),
         EditorWindow("window.keybindings", keyBindingsWindow, ImBoolean(false)),
-        EditorWindow("window.audio_inspector", audioInspectorWindow, ImBoolean(false), requiresScene = true)
+        EditorWindow("window.audio_inspector", audioInspectorWindow, ImBoolean(false), requiresScene = true),
+        EditorWindow("window.project", projectWindow, ImBoolean(false))
     )
 
     /**

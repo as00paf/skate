@@ -55,4 +55,7 @@ object Icons {
     const val INFO = "\uf05a"
     const val CHECK = "\uf00c"
     const val EXTERNAL_LINK = "\uf08e"
+    const val FILM = "\uf008"
+    const val FILE_TEXT = "\uf15c"
+    const val MAGIC = "\uf0d0"
 }

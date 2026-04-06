@@ -44,6 +44,8 @@ import com.pafoid.skate.editor.windows.PropertiesWindow
 import com.pafoid.skate.editor.windows.GameViewWindow
 import com.pafoid.skate.editor.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.windows.AudioInspectorWindow
+import com.pafoid.skate.editor.windows.ProjectWindow
+import com.pafoid.skate.editor.systems.FileSystemScanner
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.SceneOpened
 import com.pafoid.skate.engine.events.SceneChanged
@@ -127,9 +129,13 @@ val appModule = module {
     factory { CommandHistoryWindow() }
     factory { RenderGraphWindow() }
     factory { AudioInspectorWindow() }
+    factory { ProjectWindow() }
 
-    // Window registry (19 windows)
-    single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    // FileSystem service
+    single { FileSystemScanner(get(), get(), get()) }
+
+    // Window registry (20 windows)
+    single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management

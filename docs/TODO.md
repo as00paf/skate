@@ -10,6 +10,39 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 **Focus:** Advanced rendering, core gameplay mechanics, and core tooling
 
+- [ ] **A46.0.11: Implement Project Window (File System Browser)**
+  - **Priority:** High (needed before A46.0.2)
+  - **Estimated Effort:** 15-20 hours
+  - **Implementation Plan:** See implementation notes below
+
+  **Features:**
+  - Tree view of project directories (recursive file/folder display)
+  - File type icons (folders, scenes, textures, models, sounds, scripts, configs)
+  - Search/filter bar with real-time filtering
+  - Breadcrumb navigation showing current project
+  - Context menu: New Folder, New File, Rename, Delete, Show in Explorer, Copy Path, Open External
+  - Favorites system with persistence (star important folders/files)
+  - Double-click actions: Open .scene files in editor, open scripts in external editor
+  - Status bar with file count, folder count, total size
+  - Undo support for Create, Delete, Rename operations
+  - EventSystem integration: FileSystemChangedEvent triggers AssetBrowser refresh
+  - Mimics Godot's FileSystem dock behavior
+
+  **New Files:**
+  - `editor/windows/ProjectWindow.kt` — Main window implementation
+  - `editor/windows/project/FileSystemItem.kt` — Data model (FileSystemItem, FileType enum)
+  - `editor/systems/FileSystemScanner.kt` — Directory scanning, favorites management
+  - `editor/commands/DeleteFileCommand.kt` — Undoable file deletion
+  - `editor/commands/CreateFileCommand.kt` — Undoable file/folder creation
+  - `editor/commands/RenameFileCommand.kt` — Undoable file/folder rename
+  - `engine/events/FileSystemEvents.kt` — FileSystemChangedEvent, OpenSceneFileEvent
+
+  **Modified Files:**
+  - `editor/ui/WindowRegistry.kt` — Add ProjectWindow registration
+  - `app/KoinModule.kt` — Add FileSystemScanner and ProjectWindow factories
+  - `resources/values/strings.properties` — Add 15+ project window string keys
+  - `editor/imgui/data/Icons.kt` — Add FILM, FILE_TEXT, MAGIC icons
+
 - [ ] **A46.0.2: Implement Advanced Lighting Models**
   - Point lights with position, color, intensity
   - Spot lights with adjustable parameters
