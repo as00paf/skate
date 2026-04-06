@@ -34,10 +34,12 @@ class LevelManager(
         val filters = MemoryUtil.memAllocPointer(1)
         filters.put(0, filter)
 
-        val path = TinyFileDialogs.tinyfd_saveFileDialog(scene.sceneData.levelPath, "Save Level", filters, "Scene Files")
-
-        MemoryUtil.memFree(filters)
-        MemoryUtil.memFree(filter)
+        val path = try {
+            TinyFileDialogs.tinyfd_saveFileDialog(scene.sceneData.levelPath, "Save Level", filters, "Scene Files")
+        } finally {
+            MemoryUtil.memFree(filter)
+            MemoryUtil.memFree(filters)
+        }
 
         if (path != null) {
             scene.sceneData.levelPath = path
@@ -47,19 +49,23 @@ class LevelManager(
 
     fun saveToFile(scene: Scene, path: String) {
         try {
-            val writer = FileWriter(path)
+            // Ensure parent directory exists
+            java.io.File(path).parentFile?.mkdirs()
+
             val data = LevelData(
                 gameObjects = scene.gameObjectManager.gameObjects.filter { it.doSerialization() },
                 sceneData = scene.sceneData,
                 levelPath = path
             )
-            writer.write(serializer.encode(data))
-            writer.close()
+
+            java.io.FileWriter(path).use { writer ->
+                writer.write(serializer.encode(data))
+            }
+
             scene.isDirty = false
             logger.logEditor("Level saved to $path")
         } catch (e: IOException) {
-            e.printStackTrace()
-            logger.logEngine("Failed to save level to $path", LogLevel.ERROR)
+            logger.logEngine("Failed to save level to $path: ${e.message}", LogLevel.ERROR)
         }
     }
 
@@ -72,10 +78,12 @@ class LevelManager(
         val filters = MemoryUtil.memAllocPointer(1)
         filters.put(0, filter)
 
-        val path = TinyFileDialogs.tinyfd_openFileDialog("Open Level", scene.sceneData.levelPath, filters, "Scene Files", false)
-
-        MemoryUtil.memFree(filters)
-        MemoryUtil.memFree(filter)
+        val path = try {
+            TinyFileDialogs.tinyfd_openFileDialog("Open Level", scene.sceneData.levelPath, filters, "Scene Files", false)
+        } finally {
+            MemoryUtil.memFree(filter)
+            MemoryUtil.memFree(filters)
+        }
 
         if (path != null) {
             scene.sceneData.levelPath = path
@@ -83,7 +91,7 @@ class LevelManager(
         }
     }
 
-    private fun loadFromFile(scene: Scene, path: String) {
+    fun loadFromFile(scene: Scene, path: String) {
         var inFile = ""
         try {
             inFile = String(Files.readAllBytes(Paths.get(path)))
@@ -114,6 +122,14 @@ class LevelManager(
         var maxCompId = -1
 
         data.gameObjects.forEach { obj ->
+            // Initialize deserialized components with their parent object
+            // (JSON deserialization creates components without calling init)
+            obj.getAllComponents().forEach { it.init(obj) }
+
+            // Restore animation references after init (needs Koin injections)
+            obj.getAllComponents().filterIsInstance<com.pafoid.skate.engine.ecs.components.Animator>()
+                .forEach { it.reloadAnimations() }
+
             scene.addGameObjectToScene(obj)
 
             obj.getAllComponents().forEach { component ->

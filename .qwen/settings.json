@@ -4,7 +4,9 @@
       "Bash(.\\gradlew.bat *)",
       "Bash(git push *)",
       "Bash(git branch *)",
-      "Bash(type *)"
+      "Bash(type *)",
+      "Read(C:\\Users\\as00p\\AppData\\Local\\nvm\\v24.13.0\\node_modules\\@qwen-code\\qwen-code\\bundled\\qc-helper\\docs/features/**)",
+      "Read(C:\\Users\\as00p\\AppData\\Local\\nvm\\v24.13.0\\node_modules\\@qwen-code\\qwen-code\\bundled\\qc-helper\\docs/configuration/**)"
     ]
   },
   "$version": 3

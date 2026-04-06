@@ -28,8 +28,8 @@ enum class AssetType(
         metaExtensions = setOf("glsl", "vert", "frag", "comp")
     ),
     SCENE(
-        extensions = setOf("json", "skatescene"),
-        metaExtensions = setOf("json")
+        extensions = setOf("scene", "skatescene"),
+        metaExtensions = setOf("scene", "skatescene", "json")
     ),
     SCRIPT(
         extensions = setOf("kts"),

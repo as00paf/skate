@@ -10,8 +10,6 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.settings.ProjectSettings
 import com.pafoid.skate.engine.settings.RecentProjectInfo
 import com.pafoid.skate.game.level.LevelManager
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.io.File
 
 class ProjectManager(
@@ -22,7 +20,7 @@ class ProjectManager(
     private val sceneManager: SceneManager,
     private val prefabsGenerator: PrefabsGenerator,
     private val levelManager: LevelManager
-) : KoinComponent {
+) {
 
     var currentProject: ProjectSettings? = null
         private set
@@ -164,6 +162,9 @@ class ProjectManager(
                 }
 
                 logger.logEditor("Project opened successfully: ${getProjectName()}")
+
+                // Load the default scene if it exists
+                loadDefaultScene()
             } else {
                 logger.logEngine("Failed to load project: ${projectFile.absolutePath}", LogLevel.ERROR)
             }
@@ -186,6 +187,15 @@ class ProjectManager(
             settingsManager.updateProjectAssetRegistry(project, registryData)
         }
 
+        // Clear all game objects from open scenes to release physics/GPU/model resources
+        // but keep the scene infrastructure intact for the next project
+        sceneManager.openScenes.forEach { scene ->
+            scene.gameObjectManager.gameObjects.forEach { it.destroy() }
+            scene.gameObjectManager.gameObjects.clear()
+            scene.gameObjectManager.pendingObjects.clear()
+            scene.physics3d.destroy()
+        }
+
         currentProject = null
         assetDatabase.shutdown()
         settingsManager.setLastClosedProjectPath(path)
@@ -194,6 +204,24 @@ class ProjectManager(
     }
 
     var onProjectClosed: (() -> Unit)? = null
+
+    /**
+     * Load the project's default scene if it exists.
+     */
+    private fun loadDefaultScene() {
+        val projectDir = getProjectDirectory() ?: return
+        val defaultSceneFile = File(projectDir, "Scenes/main.scene")
+
+        if (!defaultSceneFile.exists()) {
+            logger.logEditor("No default scene found at ${defaultSceneFile.absolutePath}")
+            return
+        }
+
+        // Use the current scene (from BootManager init) to load the file
+        val scene = sceneManager.currentScene ?: return
+        levelManager.loadFromFile(scene, defaultSceneFile.absolutePath)
+        logger.logEditor("Loaded default scene from ${defaultSceneFile.absolutePath}")
+    }
 
     fun saveProject(): Boolean {
         val project = currentProject ?: run {

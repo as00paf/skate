@@ -27,6 +27,7 @@ import java.nio.file.StandardWatchEventKinds
 import java.nio.file.WatchService
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Manages loading, caching, and unloading of engine assets.
@@ -63,7 +64,7 @@ class ResourceManager(
     private val animations = ConcurrentHashMap<String, Animation>()
     private val modelDependencies = ConcurrentHashMap<String, Set<String>>()
     private val lruQueue = CopyOnWriteArrayList<String>()
-    private var currentTextureMemory = 0L
+    private var currentTextureMemory = AtomicLong(0L)
     private var watchService: WatchService? = null
     private val watchedPaths = ConcurrentHashMap<String, String>()
 
@@ -93,7 +94,7 @@ class ResourceManager(
         }
 
         return withContext(JobSystem.Main) {
-            while (currentTextureMemory > maxMemoryBytes && lruQueue.isNotEmpty()) {
+            while (currentTextureMemory.get() > maxMemoryBytes && lruQueue.isNotEmpty()) {
                 val oldestPath = lruQueue.firstOrNull() ?: break
                 evictTexture(oldestPath)
             }
@@ -105,7 +106,7 @@ class ResourceManager(
             textures[absolutePath] = texture
             
             val estimatedMemory = texture.width * texture.height * 4L * 4 / 3
-            currentTextureMemory += estimatedMemory
+            currentTextureMemory.addAndGet(estimatedMemory)
             
             lruQueue.add(absolutePath)
             
@@ -160,7 +161,7 @@ class ResourceManager(
         
         textures.remove(path)?.let {
             val estimatedMemory = it.width * it.height * 4L * 4 / 3
-            currentTextureMemory -= estimatedMemory
+            currentTextureMemory.addAndGet(-estimatedMemory)
             JobSystem.runOnMain {
                 it.destroy()
             }
@@ -223,7 +224,7 @@ class ResourceManager(
         
         textures.remove(absolutePath)?.let {
             val estimatedMemory = it.width * it.height * 4L * 4 / 3
-            currentTextureMemory -= estimatedMemory
+            currentTextureMemory.addAndGet(-estimatedMemory)
             JobSystem.runOnMain { it.destroy() }
             lruQueue.remove(absolutePath)
         }
@@ -521,7 +522,7 @@ class ResourceManager(
         sounds.clear()
 
         lruQueue.clear()
-        currentTextureMemory = 0L
+        currentTextureMemory.set(0L)
 
         watchService?.close()
         watchService = null

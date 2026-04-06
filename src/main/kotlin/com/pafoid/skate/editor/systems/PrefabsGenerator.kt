@@ -220,8 +220,8 @@ class PrefabsGenerator(
         }
 
         if (jmeVertices.isNotEmpty()) {
-            val kickerShape = HullCollisionShape(jmeVertices)
-            kicker.addComponent(CustomCollider3D(kickerShape))
+            val hullPoints = jmeVertices.map { Vector3f(it.x, it.y, it.z) }
+            kicker.addComponent(CustomCollider3D(hullPoints))
         }
 
         scene.addGameObjectToScene(kicker)
@@ -284,8 +284,7 @@ class PrefabsGenerator(
                 )
             )
         }
-        val shape = HullCollisionShape(jmeVertices)
-        go.addComponent(CustomCollider3D(shape))
+        go.addComponent(CustomCollider3D(jmeVertices.map { Vector3f(it.x, it.y, it.z) }))
 
         scene.addGameObjectToScene(go)
     }
@@ -323,8 +322,7 @@ class PrefabsGenerator(
                 )
             )
         }
-        val shape = HullCollisionShape(jmeVertices)
-        go.addComponent(CustomCollider3D(shape))
+        go.addComponent(CustomCollider3D(jmeVertices.map { Vector3f(it.x, it.y, it.z) }))
 
         scene.addGameObjectToScene(go)
     }

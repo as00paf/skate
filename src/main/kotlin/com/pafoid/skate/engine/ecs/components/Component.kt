@@ -36,9 +36,16 @@ abstract class Component: KoinComponent {
 
     @Transient
     lateinit var gameObject: GameObject
+        private set
 
+    /**
+     * Called by GameObject.addComponent() and after scene deserialization.
+     * Idempotent — safe to call multiple times.
+     */
     open fun init(gameObject: GameObject) {
+        if (::gameObject.isInitialized) return
         this.gameObject = gameObject
+        uId = ID_COUNTER++
     }
     open fun start() {}
     open fun update(dt: Float) {}

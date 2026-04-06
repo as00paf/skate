@@ -63,6 +63,9 @@ class Animator : Component(), KoinComponent {
     var previousAnimation: Animation? = null
     var previousTime = 0f
 
+    // Serializable animation paths — restored after deserialization
+    var animationPaths: List<String> = emptyList()
+
     // Event-driven state
     private var isMoving = false
     private var isSprinting = false
@@ -74,7 +77,26 @@ class Animator : Component(), KoinComponent {
     @Transient
     private val animations: MutableList<Animation> = mutableListOf()
 
-    fun addAnimation(animation: Animation) {
+    /**
+     * Reloads animation references from saved paths.
+     * Called manually after scene deserialization to restore animations.
+     */
+    fun reloadAnimations() {
+        if (animationPaths.isNotEmpty()) {
+            animationPaths.forEach { path ->
+                try {
+                    val anim = resourceManager.getAnimation(path)
+                    if (anim != null) {
+                        animations.add(anim)
+                    }
+                } catch (e: Exception) {
+                    logger.logEngine("Failed to load animation '$path': ${e.message}", LogLevel.WARN)
+                }
+            }
+        }
+    }
+
+    fun addAnimation(animation: Animation, path: String? = null) {
         val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton
         val isValid = validateSkeletonCompatibility(skeleton, animation)
         val alreadyHasAnimation = animations.any { it.name == animation.name }
