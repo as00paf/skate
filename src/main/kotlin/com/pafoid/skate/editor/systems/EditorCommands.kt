@@ -89,8 +89,9 @@ class ApplyTextureCommand(
     override fun execute() {
         val renderComponent = gameObject.getComponent<RenderComponent>()
         renderComponent?.let { component ->
+            val oldModel = component.model ?: return@let
             val texture = resourceManager.loadTextureSync(newTexturePath)
-            val meshPart = component.model.mesh[0]
+            val meshPart = oldModel.mesh[0]
             val newMaterial = Material(baseColorTexture = texture)
             val newMeshPart = MeshPart(meshPart.rawModel, newMaterial, meshPart.inverseBindMatrices)
             val newModel = TexturedModel(listOf(newMeshPart))
@@ -119,8 +120,9 @@ class ApplyTextureCommand(
         if (oldTexturePath != null) {
             val renderComponent = gameObject.getComponent<RenderComponent>()
             renderComponent?.let { component ->
+                val oldModel = component.model ?: return@let
                 val texture = resourceManager.loadTextureSync(oldTexturePath)
-                val meshPart = component.model.mesh[0]
+                val meshPart = oldModel.mesh[0]
                 val newMaterial = Material(baseColorTexture = texture)
                 val newMeshPart = MeshPart(meshPart.rawModel, newMaterial, meshPart.inverseBindMatrices)
                 val newModel = TexturedModel(listOf(newMeshPart))

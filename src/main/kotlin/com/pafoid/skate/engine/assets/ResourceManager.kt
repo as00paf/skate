@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.assets
 
+import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.assets.database.AssetGuid
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.data.Shader
@@ -50,7 +52,8 @@ class ResourceManager(
     private val vaoLoader: VAOLoader,
     private val logger: LoggerService,
     private val maxMemoryBytes: Long = 256 * 1024 * 1024,
-    private val enableHotReload: Boolean = false
+    private val enableHotReload: Boolean = false,
+    private val assetDatabase: AssetDatabase? = null
 ) {
 
     private val textures = ConcurrentHashMap<String, Texture>()
@@ -500,7 +503,7 @@ class ResourceManager(
 
     fun clear() {
         modelDependencies.clear()
-        
+
         val texKeys = textures.keys.toList()
         texKeys.forEach { unloadTexture(it) }
 
@@ -516,12 +519,60 @@ class ResourceManager(
             it.delete()
         }
         sounds.clear()
-        
+
         lruQueue.clear()
         currentTextureMemory = 0L
-        
+
         watchService?.close()
         watchService = null
         watchedPaths.clear()
+    }
+
+    // ─── GUID-Aware Loading ───────────────────────────
+
+    /**
+     * Load a texture by its asset GUID.
+     * Resolves the GUID through the AssetDatabase to find the source path.
+     */
+    suspend fun loadTextureByGuid(guid: AssetGuid): Texture {
+        val asset = assetDatabase?.getByGuid(guid)
+            ?: throw IllegalArgumentException("Asset not found: $guid")
+        return loadTexture(asset.absoluteSourcePath)
+    }
+
+    /**
+     * Load a texture synchronously by its asset GUID.
+     */
+    fun loadTextureSyncByGuid(guid: AssetGuid): Texture {
+        val asset = assetDatabase?.getByGuid(guid)
+            ?: throw IllegalArgumentException("Asset not found: $guid")
+        return loadTextureSync(asset.absoluteSourcePath)
+    }
+
+    /**
+     * Load a model by its asset GUID.
+     */
+    suspend fun loadModelByGuid(guid: AssetGuid): BaseModel {
+        val asset = assetDatabase?.getByGuid(guid)
+            ?: throw IllegalArgumentException("Asset not found: $guid")
+        return loadModel(asset.absoluteSourcePath)
+    }
+
+    /**
+     * Load a model synchronously by its asset GUID.
+     */
+    fun loadModelSyncByGuid(guid: AssetGuid): BaseModel {
+        val asset = assetDatabase?.getByGuid(guid)
+            ?: throw IllegalArgumentException("Asset not found: $guid")
+        return loadModelSync(asset.absoluteSourcePath)
+    }
+
+    /**
+     * Load a sound by its asset GUID.
+     */
+    fun loadSoundByGuid(guid: AssetGuid): SoundBuffer {
+        val asset = assetDatabase?.getByGuid(guid)
+            ?: throw IllegalArgumentException("Asset not found: $guid")
+        return loadSound(asset.absoluteSourcePath)
     }
 }

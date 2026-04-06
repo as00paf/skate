@@ -183,17 +183,18 @@ class ModelRenderer(
         }
 
         val skeleton = skeletonComponent?.pose?.skeleton
+        val model = renderComponent.model ?: return // No model to render
 
         // Render mesh if requested
         if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
-            for (part in renderComponent.model.mesh) {
+            for (part in model.mesh) {
                 renderMeshPart(part, defaultShader)
             }
         }
 
         // Render skeleton if requested
         if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
-            if (renderComponent.model is CharacterModel && skeleton != null) {
+            if (model is CharacterModel && skeleton != null) {
                 renderSkeleton(skeleton, transform)
             }
         }
@@ -221,17 +222,18 @@ class ModelRenderer(
         }
 
         val skeleton = skeletonComponent?.pose?.skeleton
+        val model = renderComponent.model ?: return
 
         // Render mesh if requested
         if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
-            for (part in renderComponent.model.mesh) {
+            for (part in model.mesh) {
                 renderMeshPartSimple(part, shader)
             }
         }
 
         // Render skeleton if requested
         if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
-            if (renderComponent.model is CharacterModel && skeleton != null) {
+            if (model is CharacterModel && skeleton != null) {
                 renderSkeleton(skeleton, transform)
             }
         }

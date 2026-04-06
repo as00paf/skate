@@ -85,7 +85,7 @@ class ShadowRenderer(
         skeleton: SkeletonComponent?,
         shader: Shader
     ) {
-        val model = renderComponent.model
+        val model = renderComponent.model ?: return
         val worldMatrix = transform.toWorldMatrix()
 
         // Render each mesh part

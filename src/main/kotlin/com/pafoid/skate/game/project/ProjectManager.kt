@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.settings.ProjectSettings
 import com.pafoid.skate.engine.settings.RecentProjectInfo
@@ -15,7 +16,8 @@ import java.io.File
 class ProjectManager(
     private val settingsManager: SettingsManager,
     private val serializer: Serializer,
-    private val logger: LoggerService
+    private val logger: LoggerService,
+    private val assetDatabase: AssetDatabase
 ) : KoinComponent {
 
     var currentProject: ProjectSettings? = null
@@ -80,6 +82,21 @@ class ProjectManager(
 
             if (success) {
                 currentProject = settingsManager.project
+
+                // Initialize asset database for this project
+                val projectDir = getProjectDirectory()
+                if (projectDir != null) {
+                    assetDatabase.initialize(projectDir).fold(
+                        onSuccess = {
+                            assetDatabase.scanAll()
+                            logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
+                        },
+                        onFailure = { e ->
+                            logger.logEditor("Failed to initialize asset database: ${e.message}")
+                        }
+                    )
+                }
+
                 logger.logEditor("Project opened successfully: ${getProjectName()}")
             } else {
                 logger.logEngine("Failed to load project: ${projectFile.absolutePath}", LogLevel.ERROR)
@@ -96,6 +113,7 @@ class ProjectManager(
         val path = currentProject?.getProjectFile()?.absolutePath
         logger.logEditor("Closing project: ${getProjectName()}")
         currentProject = null
+        assetDatabase.shutdown()
         settingsManager.setLastClosedProjectPath(path)
         settingsManager.closeProject()
     }

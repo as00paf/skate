@@ -53,6 +53,13 @@ import com.pafoid.skate.engine.events.SceneClosed
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.assets.database.AssetDatabaseImpl
+import com.pafoid.skate.engine.assets.database.ImportPipeline
+import com.pafoid.skate.engine.assets.database.importers.AudioImporter
+import com.pafoid.skate.engine.assets.database.importers.ModelImporter
+import com.pafoid.skate.engine.assets.database.importers.ShaderImporter
+import com.pafoid.skate.engine.assets.database.importers.TextureImporter
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
@@ -89,7 +96,7 @@ val appModule = module {
     single { Serializer() }
     single { LoggerService() }
     single { AudioEngine(get()) }
-    single { LevelManager(get(), get()) }
+    single { LevelManager(get(), get(), get(), get()) }
     single { ClipboardService(get()) }
     single { UndoRedoManager() }
     single { EditorInputHandler(get(), get(), get(), get()) }
@@ -139,7 +146,7 @@ val appModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectWizardWindow() }
     single { ProjectSwitcherDialog() }
@@ -173,7 +180,25 @@ val engineModule = module {
     single { ShaderLoader(false) }
     single { VAOLoader() }
     single { AssimpLoader() }
-    single { ResourceManager(get(), get(), get(), get()) }
+
+    // Asset database and import pipeline
+    single { ImportPipeline(get()) }
+    single { AssetDatabaseImpl(get(), get(), get()) as AssetDatabase }
+    factory { TextureImporter() }
+    factory { ModelImporter() }
+    factory { AudioImporter() }
+    factory { ShaderImporter() }
+
+    single {
+        get<ImportPipeline>().apply {
+            registerImporter(get<TextureImporter>())
+            registerImporter(get<ModelImporter>())
+            registerImporter(get<AudioImporter>())
+            registerImporter(get<ShaderImporter>())
+        }
+    }
+
+    single { ResourceManager(get(), get(), get(), get(), assetDatabase = get()) }
     single { PoseSerializer() }
 
     single { DebugRenderer(get(), get(), get()) }
