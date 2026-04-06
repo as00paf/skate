@@ -113,11 +113,52 @@ class ProjectManager(
 
         logger.logEditor("Spawned ${scene.gameObjectManager.gameObjects.size} objects")
 
+        // CRITICAL: Populate modelGuid on all RenderComponents before saving.
+        // model is @Transient and won't be serialized — without modelGuid, 
+        // models won't reload when the scene is opened later.
+        resolveModelGuidsInScene(scene)
+
         // Set the level path and save
         scene.sceneData.levelPath = defaultSceneFile.absolutePath
         levelManager.saveToFile(scene, defaultSceneFile.absolutePath)
 
         logger.logEditor("Default scene saved to ${defaultSceneFile.absolutePath}")
+    }
+
+    /**
+     * Walk all RenderComponents in the scene and populate modelGuid from the AssetDatabase.
+     * This is called before saving the default scene to ensure models can be
+     * reloaded when the scene is opened later.
+     */
+    private fun resolveModelGuidsInScene(scene: com.pafoid.skate.engine.ecs.Scene) {
+        scene.gameObjectManager.gameObjects.forEach { obj ->
+            resolveModelGuidForObject(obj)
+            obj.children.forEach { child -> resolveModelGuidForObject(child) }
+        }
+    }
+
+    private fun resolveModelGuidForObject(obj: com.pafoid.skate.engine.ecs.GameObject) {
+        val rc = obj.getComponent<com.pafoid.skate.engine.ecs.components.RenderComponent>() ?: return
+        val model = rc.model ?: return
+        if (rc.modelGuid.isNotBlank()) return
+
+        val modelPath = model.sourcePath ?: return
+        val modelFile = File(modelPath)
+
+        // Always use absolute path for reliable round-trip serialization
+        val absolutePath = if (modelFile.isAbsolute) modelFile.absolutePath else File(modelPath).absolutePath
+
+        // Try to find this model in the AssetDatabase
+        val asset = assetDatabase.getByAbsolutePath(absolutePath)
+
+        if (asset != null) {
+            rc.modelGuid = asset.guid.value
+            logger.logEditor("Resolved model GUID for ${obj.name}: ${asset.guid.value.take(8)}... (${asset.sourcePath})")
+        } else {
+            // Engine-bundled asset not in AssetDatabase — store absolute path as fallback
+            rc.modelGuid = absolutePath
+            logger.logEditor("Stored absolute path for ${obj.name}: $absolutePath (engine-bundled asset)")
+        }
     }
 
     fun openProject(projectFile: File): Boolean {

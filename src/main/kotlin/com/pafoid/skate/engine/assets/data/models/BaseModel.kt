@@ -9,6 +9,7 @@ import org.joml.Matrix4f
 @Serializable
 abstract class BaseModel(
     open val mesh: List<@Contextual MeshPart>,
+    @Transient var sourcePath: String? = null,
 ): Component() {
 
     constructor(rawModel: RawModel, texture: Texture) : this(listOf(MeshPart(rawModel, Material(baseColorTexture = texture))))

@@ -366,6 +366,7 @@ class ResourceManager(
                      modelDependencies[absolutePath] = texturePaths.toSet()
                      
                      models[absolutePath] = characterModel
+                     characterModel.sourcePath = path
                      characterModel
                  }
         } catch (e: Exception) {

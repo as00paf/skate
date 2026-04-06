@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.scene.addGameObjectImmediate
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
@@ -126,11 +127,10 @@ class LevelManager(
             // (JSON deserialization creates components without calling init)
             obj.getAllComponents().forEach { it.init(obj) }
 
-            // Restore animation references after init (needs Koin injections)
-            obj.getAllComponents().filterIsInstance<com.pafoid.skate.engine.ecs.components.Animator>()
-                .forEach { it.reloadAnimations() }
-
-            scene.addGameObjectToScene(obj)
+            // Add objects directly to gameObjects (not pendingObjects) so that
+            // resolveAssetReferences() can find them immediately.
+            // addGameObjectToScene() would defer to pendingObjects since isRunning=true.
+            scene.addGameObjectImmediate(obj)
 
             obj.getAllComponents().forEach { component ->
                 if (component.getUid() > maxCompId) {
@@ -180,8 +180,17 @@ class LevelManager(
                     } else {
                         logger.logEditor("Asset not found for GUID: ${rc.modelGuid} on ${obj.name}")
                     }
+                } catch (e: IllegalArgumentException) {
+                    // Not a valid GUID — treat as raw file path (engine-bundled asset)
+                    val path = rc.modelGuid
+                    val file = java.io.File(path)
+                    if (file.exists()) {
+                        rc.model = resourceManager.loadModelSync(path)
+                    } else {
+                        logger.logEditor("Model file not found: $path on ${obj.name}")
+                    }
                 } catch (e: Exception) {
-                    logger.logEditor("Failed to resolve model GUID ${rc.modelGuid} on ${obj.name}: ${e.message}")
+                    logger.logEditor("Failed to resolve model ${rc.modelGuid} on ${obj.name}: ${e.message}")
                 }
             }
         }
