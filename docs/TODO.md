@@ -6,48 +6,9 @@ See [CHANGELOG.md](CHANGELOG.md) for complete history and [ECS_ARCHITECTURE.md](
 
 ---
 
-## 📋 Phase 2: Core Systems (Planned)
+## 📋 Phase 2: Core Systems
 
 **Focus:** Advanced rendering, core gameplay mechanics, and core tooling
-
-- [🔄] **A46.0.9: Implement Project Creation & Management System**
-  - **Status:** PHASE 1 COMPLETE (Data Models)
-  - **Estimated Effort:** 23-29 hours
-  - **Priority:** High
-  - **Implementation Plan:** See `docs/A46.0.9_46.0.10_Implementation_Plan.md`
-  
-  **Completed:**
-  - ✅ Phase 1: Settings Data Models & Serialization
-    - UserSettings, HardwareSettings, EngineSettings (new structure)
-    - SettingsData (serialization helpers, ProjectMetadata, ProjectSettings)
-    - SettingsManager (refactored for all settings types)
-  
-  **Remaining Phases:**
-  - [ ] Phase 2: ProjectManager Implementation (4-5h)
-  - [ ] Phase 3: Project Wizard UI (5-6h)
-  - [ ] Phase 4: Project Switching UI (3-4h)
-  - [ ] Phase 5: Settings Window Overhaul (4-5h)
-  - [ ] Phase 6: Integration & Boot Sequence (3-4h)
-  
-  **Note:** Build has expected errors in SettingsWindow, InputSystem, and related files. These will be fixed in Phase 5 when the Settings Window is overhauled to use the new settings structure.
-
-- [🔄] **A46.0.10: Settings System Architectural Separation**
-  - **Status:** PHASE 1 COMPLETE (Data Models)
-  - **Estimated Effort:** Included in A46.0.9
-  - **Priority:** High
-  - **Implementation Plan:** See `docs/A46.0.9_46.0.10_Implementation_Plan.md`
-  
-  **Completed:**
-  - ✅ Settings Hierarchy Defined:
-    - EngineSettings (global, engine-wide)
-    - ProjectSettings (per-project, via SettingsData)
-    - UserSettings (user preferences)
-    - HardwareSettings (graphics, audio, input)
-  
-  **Remaining:**
-  - Settings Window Overhaul (Phase 5 of A46.0.9)
-    - Tabbed interface (Engine, Project, User, Hardware)
-    - Fix existing settings references in UI
 
 - [ ] **A46.0.2: Implement Advanced Lighting Models**
   - Point lights with position, color, intensity
