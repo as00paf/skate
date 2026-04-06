@@ -34,8 +34,6 @@ class SoundsTab(
     private var playingSource: SoundSource? = null
     private var currentPlayingFile: File? = null
 
-    private val supportedAudioFormats = setOf("wav", "ogg", "mp3", "flac", "aiff")
-
     override fun imgui(label: String, searchText: ImString) {
         renderHeader(label, searchText)
 
@@ -162,7 +160,7 @@ class SoundsTab(
     }
 
     override fun refreshAssets() {
-        refreshFromDatabase(AssetType.AUDIO, supportedAudioFormats)
+        refreshFromDatabase(AssetType.AUDIO, setOf("wav", "ogg", "mp3", "flac", "aiff"))
     }
 
     override fun refreshFromDirectory(fileExtensions: Set<String>) {

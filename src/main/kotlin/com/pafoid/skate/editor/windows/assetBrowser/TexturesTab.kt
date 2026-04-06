@@ -101,7 +101,7 @@ class TexturesTab(
 
     override fun refreshAssets() {
         JobSystem.runIO {
-            refreshFromDatabase(AssetType.TEXTURE, supportedTextureFormats.toSet())
+            refreshFromDatabase(AssetType.TEXTURE, setOf("png", "jpg", "jpeg"))
         }
     }
 

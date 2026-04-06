@@ -85,7 +85,7 @@ class AnimationsTab(
     override fun refreshAssets() {
         JobSystem.runIO {
             // Animation assets not yet in AssetDatabase — use directory fallback
-            refreshFromDirectory(supportedAnimationFormats.toSet())
+            refreshFromDirectory(setOf("fbx"))
         }
     }
 
