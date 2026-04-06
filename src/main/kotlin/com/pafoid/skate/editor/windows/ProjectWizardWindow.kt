@@ -204,10 +204,11 @@ class ProjectWizardWindow : IWindow, KoinComponent {
 
         // Calculate button positions (right-aligned)
         val cancelButtonWidth = 110f
+        val openButtonWidth = 150f
         val createButtonWidth = 150f
         val buttonSpacing = 12f
         val buttonHeight = 30f
-        val totalButtonWidth = cancelButtonWidth + createButtonWidth + buttonSpacing
+        val totalButtonWidth = cancelButtonWidth + openButtonWidth + createButtonWidth + buttonSpacing * 2
         val bottomPadding = 12f
 
         // Calculate Y position to place buttons at the bottom
@@ -239,6 +240,13 @@ class ProjectWizardWindow : IWindow, KoinComponent {
 
         ImGui.sameLine(0f, buttonSpacing)
 
+        // Open existing project button
+        if (ImGui.button("${Icons.FOLDER_OPEN} Open Project", openButtonWidth, buttonHeight)) {
+            openExistingProjectDialog()
+        }
+
+        ImGui.sameLine(0f, buttonSpacing)
+
         // Create button (highlighted)
         ImGui.beginDisabled(!canCreate)
         if (canCreate) {
@@ -253,6 +261,43 @@ class ProjectWizardWindow : IWindow, KoinComponent {
             ImGui.popStyleColor(3)
         }
         ImGui.endDisabled()
+    }
+
+    /**
+     * Open file chooser dialog to select an existing .skateproject file.
+     */
+    private fun openExistingProjectDialog() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+
+            val fileChooser = JFileChooser()
+            fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
+            fileChooser.dialogTitle = "Open Existing Project"
+            fileChooser.addChoosableFileFilter(object : javax.swing.filechooser.FileFilter() {
+                override fun accept(file: File): Boolean {
+                    return file.isDirectory || file.extension == "skateproject"
+                }
+                override fun getDescription(): String {
+                    return "SkateSim Projects (*.skateproject)"
+                }
+            })
+
+            val result = fileChooser.showOpenDialog(null)
+            if (result == JFileChooser.APPROVE_OPTION) {
+                val projectFile = fileChooser.selectedFile
+                logger.logEditor("Opening project: ${projectFile.absolutePath}")
+
+                val success = projectManager.openProject(projectFile)
+
+                if (success) {
+                    logger.logEditor("Project opened: ${projectManager.getProjectName()}")
+                } else {
+                    logger.logEngine("Failed to open project: ${projectFile.absolutePath}", LogLevel.ERROR)
+                }
+            }
+        } catch (e: Exception) {
+            logger.logEditor("Error opening project dialog: ${e.message}", LogLevel.ERROR)
+        }
     }
 
     /**
