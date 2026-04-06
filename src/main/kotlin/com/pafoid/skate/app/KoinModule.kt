@@ -182,21 +182,15 @@ val engineModule = module {
     single { AssimpLoader() }
 
     // Asset database and import pipeline
-    single { ImportPipeline(get()) }
-    single { AssetDatabaseImpl(get(), get(), get()) as AssetDatabase }
-    factory { TextureImporter() }
-    factory { ModelImporter() }
-    factory { AudioImporter() }
-    factory { ShaderImporter() }
-
     single {
-        get<ImportPipeline>().apply {
-            registerImporter(get<TextureImporter>())
-            registerImporter(get<ModelImporter>())
-            registerImporter(get<AudioImporter>())
-            registerImporter(get<ShaderImporter>())
+        ImportPipeline(get()).apply {
+            registerImporter(TextureImporter())
+            registerImporter(ModelImporter())
+            registerImporter(AudioImporter())
+            registerImporter(ShaderImporter())
         }
     }
+    single { AssetDatabaseImpl(get(), get(), get()) as AssetDatabase }
 
     single { ResourceManager(get(), get(), get(), get(), assetDatabase = get()) }
     single { PoseSerializer() }

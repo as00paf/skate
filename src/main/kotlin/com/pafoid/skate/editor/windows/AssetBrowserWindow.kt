@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.windows.assetBrowser.TexturesTab
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.database.AssetDatabase
 import imgui.ImGui
 import imgui.type.ImBoolean
 import imgui.type.ImString
@@ -20,13 +21,14 @@ class AssetBrowserWindow : IWindow, KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val stringManager: StringManager by inject()
+    private val assetDatabase: AssetDatabase by inject()
 
     private var searchText = ImString(256)
 
-    private val animationsTab = AnimationsTab(resourceManager, thumbnailCache, stringManager)
-    private val texturesTab = TexturesTab(resourceManager, thumbnailCache, stringManager)
-    private val prefabsTab = PrefabsTab(resourceManager, thumbnailCache, stringManager, prefabsGenerator)
-    private val soundsTab = SoundsTab(resourceManager, thumbnailCache, stringManager)
+    private val animationsTab by lazy { AnimationsTab(resourceManager, thumbnailCache, stringManager, assetDatabase) }
+    private val texturesTab by lazy { TexturesTab(resourceManager, thumbnailCache, stringManager, assetDatabase) }
+    private val prefabsTab by lazy { PrefabsTab(resourceManager, thumbnailCache, stringManager, prefabsGenerator) }
+    private val soundsTab by lazy { SoundsTab(resourceManager, thumbnailCache, stringManager, assetDatabase) }
 
     init {
         prefabsTab.refreshAssets()

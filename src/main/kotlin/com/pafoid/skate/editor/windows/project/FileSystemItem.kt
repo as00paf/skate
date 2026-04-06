@@ -15,7 +15,8 @@ data class FileSystemItem(
     val file: File,
     val type: FileType,
     val isFavorite: Boolean = false,
-    val children: List<FileSystemItem> = emptyList()
+    val children: List<FileSystemItem> = emptyList(),
+    val assetGuid: String? = null
 ) {
     val name: String get() = file.name
     val path: String get() = file.absolutePath

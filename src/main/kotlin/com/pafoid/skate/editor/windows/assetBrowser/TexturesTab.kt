@@ -6,6 +6,8 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.assets.database.AssetType
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
@@ -19,7 +21,8 @@ class TexturesTab(
     resourceManager: ResourceManager,
     thumbnailCache: ThumbnailCache,
     stringManager: StringManager,
-    ): AssetBrowserTab(resourceManager, thumbnailCache, stringManager), KoinComponent {
+    assetDatabase: AssetDatabase? = null
+    ): AssetBrowserTab(resourceManager, thumbnailCache, stringManager, assetDatabase), KoinComponent {
 
     private val logger: LoggerService by inject()
     private val sceneManager: SceneManager by inject()
@@ -98,13 +101,17 @@ class TexturesTab(
 
     override fun refreshAssets() {
         JobSystem.runIO {
-            items.clear()
-            val texturesDir = File(Assets.Folders.TEXTURES)
-            if (texturesDir.exists()) {
-                items.addAll(texturesDir.walkTopDown().filter {
-                    it.isFile && supportedTextureFormats.contains(it.extension)
-                })
-            }
+            refreshFromDatabase(AssetType.TEXTURE, supportedTextureFormats.toSet())
+        }
+    }
+
+    override fun refreshFromDirectory(fileExtensions: Set<String>) {
+        items.clear()
+        val texturesDir = File(Assets.Folders.TEXTURES)
+        if (texturesDir.exists()) {
+            items.addAll(texturesDir.walkTopDown().filter {
+                it.isFile && fileExtensions.contains(it.extension)
+            })
         }
     }
 }

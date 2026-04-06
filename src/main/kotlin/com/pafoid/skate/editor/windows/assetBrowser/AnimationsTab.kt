@@ -6,6 +6,8 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.assets.database.AssetType
 import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
@@ -15,8 +17,9 @@ import java.io.File
 class AnimationsTab(
     resourceManager: ResourceManager,
     thumbnailCache: ThumbnailCache,
-    stringManager: StringManager
-): AssetBrowserTab(resourceManager, thumbnailCache, stringManager), KoinComponent {
+    stringManager: StringManager,
+    assetDatabase: AssetDatabase? = null
+): AssetBrowserTab(resourceManager, thumbnailCache, stringManager, assetDatabase), KoinComponent {
 
     private val logger: LoggerService by inject()
 
@@ -81,14 +84,19 @@ class AnimationsTab(
 
     override fun refreshAssets() {
         JobSystem.runIO {
-            items.clear()
-            val animationsDir = File(Assets.Folders.ANIMATIONS)
-            if(animationsDir.exists()) {
-                items.addAll(
-                    animationsDir.walkTopDown().filter {
-                        it.isFile && supportedAnimationFormats.contains(it.extension)
-                    })
-            }
+            // Animation assets not yet in AssetDatabase — use directory fallback
+            refreshFromDirectory(supportedAnimationFormats.toSet())
+        }
+    }
+
+    override fun refreshFromDirectory(fileExtensions: Set<String>) {
+        items.clear()
+        val animationsDir = File(Assets.Folders.ANIMATIONS)
+        if(animationsDir.exists()) {
+            items.addAll(
+                animationsDir.walkTopDown().filter {
+                    it.isFile && fileExtensions.contains(it.extension)
+                })
         }
     }
 }

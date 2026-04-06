@@ -7,7 +7,7 @@ import kotlinx.serialization.Transient
 
 @Serializable
 class RenderComponent(
-    val modelGuid: String = "",
+    var modelGuid: String = "",
     @Transient var model: BaseModel? = null,
     var shininess: Float = 10f,
     var reflectivity: Float = 1f,

@@ -6,6 +6,8 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.assets.database.AssetType
 import com.pafoid.skate.engine.assets.data.SoundSource
 import imgui.ImGui
 import imgui.flag.ImGuiTableColumnFlags
@@ -24,12 +26,15 @@ import java.io.File
 class SoundsTab(
     resourceManager: ResourceManager,
     thumbnailCache: ThumbnailCache,
-    stringManager: StringManager
-) : AssetBrowserTab(resourceManager, thumbnailCache, stringManager), KoinComponent {
+    stringManager: StringManager,
+    assetDatabase: AssetDatabase? = null
+) : AssetBrowserTab(resourceManager, thumbnailCache, stringManager, assetDatabase), KoinComponent {
 
     private val logger: LoggerService by inject()
     private var playingSource: SoundSource? = null
     private var currentPlayingFile: File? = null
+
+    private val supportedAudioFormats = setOf("wav", "ogg", "mp3", "flac", "aiff")
 
     override fun imgui(label: String, searchText: ImString) {
         renderHeader(label, searchText)
@@ -157,12 +162,16 @@ class SoundsTab(
     }
 
     override fun refreshAssets() {
+        refreshFromDatabase(AssetType.AUDIO, supportedAudioFormats)
+    }
+
+    override fun refreshFromDirectory(fileExtensions: Set<String>) {
         items.clear()
         val soundsDir = File("assets/sounds")
         if (soundsDir.exists()) {
             items.addAll(soundsDir.walkTopDown().filter { file ->
                 val ext = file.extension.lowercase()
-                ext == "wav" || ext == "ogg"
+                ext in fileExtensions
             })
         }
     }

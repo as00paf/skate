@@ -288,6 +288,14 @@ class ProjectWindow : IWindow, KoinComponent {
                     }
                     else -> {
                         // File context menu
+                        // Show GUID if asset has one
+                        if (target.assetGuid != null) {
+                            if (menuItem("${Icons.COPY} Copy GUID")) {
+                                copyPathToClipboard(target.assetGuid)
+                                logger.logEditor("Copied GUID: ${target.assetGuid}")
+                            }
+                            separator()
+                        }
                         if (menuItem("${Icons.STAR} ${if (target.isFavorite)
                             stringManager.getString("context.project.remove_favorite")
                             else stringManager.getString("context.project.add_favorite")}")) {
@@ -297,6 +305,12 @@ class ProjectWindow : IWindow, KoinComponent {
                         separator()
                         if (menuItem("${Icons.EDIT} ${stringManager.getString("context.project.rename")}")) {
                             startRename(target)
+                        }
+                        if (target.assetGuid != null) {
+                            if (menuItem("${Icons.ARROW_ROTATE} Reimport")) {
+                                reimportAsset(target)
+                            }
+                            separator()
                         }
                         if (menuItem("${Icons.TRASH} ${stringManager.getString("context.project.delete")}")) {
                             deleteItem(target)
@@ -340,6 +354,15 @@ class ProjectWindow : IWindow, KoinComponent {
             DeleteFileCommand(item.path, logger)
         )
         eventSystem.publish(FileSystemChangedEvent(item.path))
+        needsRefresh = true
+    }
+
+    private fun reimportAsset(item: FileSystemItem) {
+        val guid = item.assetGuid ?: return
+        val root = projectManager.getProjectDirectory() ?: return
+        val sourceFile = File(root, item.name)
+        // For now, just log — actual reimport would go through ImportPipeline
+        logger.logEditor("Reimport requested for: ${item.name} (GUID: ${guid.take(8)}...)")
         needsRefresh = true
     }
 
