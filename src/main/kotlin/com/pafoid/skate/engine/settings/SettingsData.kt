@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.settings
 
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.database.AssetRegistryData
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import kotlinx.serialization.Serializable
 import java.io.File
@@ -46,7 +47,8 @@ data class ProjectSettings(
     val assetPaths: List<String> = listOf("Assets"),
     val scenePaths: List<String> = listOf("Scenes"),
     val buildPaths: List<String> = listOf("Builds"),
-    val gameplaySettings: GameplaySettings = GameplaySettings()
+    val gameplaySettings: GameplaySettings = GameplaySettings(),
+    val assetRegistry: AssetRegistryData? = null
 ) {
     fun getProjectDirectory(): File {
         return File(metadata.projectPath).parentFile
@@ -171,7 +173,7 @@ class SettingsSerializer(private val serializer: Serializer) {
 
             val project = ProjectSettings(
                 metadata = metadata,
-                defaultScene = "",
+                defaultScene = "Scenes/main.scene",
                 assetPaths = listOf("Assets"),
                 scenePaths = listOf("Scenes"),
                 buildPaths = listOf("Builds")

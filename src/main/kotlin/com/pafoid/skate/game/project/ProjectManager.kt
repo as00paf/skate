@@ -83,6 +83,12 @@ class ProjectManager(
             if (success) {
                 currentProject = settingsManager.project
 
+                // Load asset registry from project file if present
+                currentProject?.assetRegistry?.let { registryData ->
+                    assetDatabase.importRegistryData(registryData)
+                    logger.logEditor("Asset registry loaded from project file (${registryData.assets.size} assets)")
+                }
+
                 // Initialize asset database for this project
                 val projectDir = getProjectDirectory()
                 if (projectDir != null) {
@@ -112,6 +118,14 @@ class ProjectManager(
     fun closeProject() {
         val path = currentProject?.getProjectFile()?.absolutePath
         logger.logEditor("Closing project: ${getProjectName()}")
+
+        // Export registry and embed in project file before closing
+        currentProject?.let { project ->
+            val registryData = assetDatabase.exportRegistryData()
+            // Update the project settings with the registry
+            settingsManager.updateProjectAssetRegistry(project, registryData)
+        }
+
         currentProject = null
         assetDatabase.shutdown()
         settingsManager.setLastClosedProjectPath(path)

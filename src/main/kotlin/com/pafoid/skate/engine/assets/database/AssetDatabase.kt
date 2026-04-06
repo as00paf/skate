@@ -131,12 +131,22 @@ interface AssetDatabase {
     // ─── Persistence ──────────────────────────────────
 
     /**
-     * Save the registry to disk.
+     * Export the current registry data for embedding in the project file.
+     */
+    fun exportRegistryData(): AssetRegistryData
+
+    /**
+     * Load registry data from a project file snapshot.
+     */
+    fun importRegistryData(data: AssetRegistryData)
+
+    /**
+     * Save the registry to disk (cache only, for rebuild safety).
      */
     fun saveRegistry(): Result<Unit>
 
     /**
-     * Load the registry from disk.
+     * Load the registry from disk cache.
      */
     fun loadRegistry(): Result<Unit>
 

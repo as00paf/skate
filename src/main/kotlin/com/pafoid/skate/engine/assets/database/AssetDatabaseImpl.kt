@@ -28,8 +28,11 @@ class AssetDatabaseImpl(
     private val byAbsolutePath = mutableMapOf<String, AssetInfo>()
     private val reverseDeps = mutableMapOf<AssetGuid, MutableSet<AssetGuid>>()
 
+    // Cache path for registry (derived artifact, not project data)
+    private val cacheDir: File?
+        get() = _projectRoot?.let { File(it, ".cache") }
     private val registryPath: File?
-        get() = _projectRoot?.let { File(it, ".asset_registry.json") }
+        get() = cacheDir?.let { File(it, "asset_registry.json") }
 
     // Directories to skip during scan
     private val skipDirs = setOf(
@@ -103,8 +106,8 @@ class AssetDatabaseImpl(
     }
 
     private fun processFile(file: File, root: File) {
-        // Skip .meta files themselves — we process the source file, not the meta
-        if (file.extension == "meta" || file.name == ".asset_registry.json") return
+        // Skip .meta files themselves, the registry file, and the project file
+        if (file.extension == "meta" || file.name == ".asset_registry.json" || file.extension == "skateproject") return
 
         val metaFile = File("${file.absolutePath}.meta")
         if (metaFile.exists()) {
@@ -402,32 +405,105 @@ class AssetDatabaseImpl(
     override fun loadRegistry(): Result<Unit> {
         val registryFile = registryPath ?: return Result.failure(IllegalStateException("Not initialized"))
         return try {
+            // Migrate: if old root-level registry exists, move it to cache
+            migrateOldRegistryIfPresent()
+
             if (registryFile.exists()) {
                 val data = serializer.decode<AssetRegistryData>(registryFile.readText())
-                clearIndexes()
-                for ((guidStr, entry) in data.assets) {
-                    val root = File(data.projectPath)
-                    val info = AssetInfo(
-                        guid = AssetGuid(guidStr),
-                        assetType = AssetType.valueOf(entry.assetType),
-                        importerType = entry.importerType,
-                        sourcePath = entry.sourcePath,
-                        absoluteSourcePath = File(root, entry.sourcePath).absolutePath,
-                        importTimestamp = entry.importTimestamp,
-                        lastModified = entry.lastModified,
-                        settings = ImporterSettings(),
-                        dependencies = entry.dependencies.map { AssetGuid(it) }.toSet(),
-                        generatedOutputPaths = entry.generatedOutputPaths,
-                        isImported = entry.isImported
-                    )
-                    indexAsset(info)
-                }
+                loadRegistryFromData(data)
                 logger.logEngine("Loaded registry with ${byGuid.size} assets", LogLevel.INFO)
             }
             Result.success(Unit)
         } catch (e: Exception) {
             logger.logEngine("Failed to load registry: ${e.message}", LogLevel.WARN)
             Result.success(Unit) // Start fresh on error
+        }
+    }
+
+    override fun exportRegistryData(): AssetRegistryData {
+        return AssetRegistryData(
+            projectPath = _projectRoot?.absolutePath ?: "",
+            lastScanTimestamp = System.currentTimeMillis(),
+            assets = byGuid.values.associateBy(
+                { it.guid.value },
+                { info ->
+                    RegistryAssetEntry(
+                        guid = info.guid.value,
+                        assetType = info.assetType.name,
+                        sourcePath = info.sourcePath,
+                        importerType = info.importerType,
+                        importTimestamp = info.importTimestamp,
+                        lastModified = info.lastModified,
+                        dependencies = info.dependencies.map { it.value },
+                        generatedOutputPaths = info.generatedOutputPaths,
+                        isImported = info.isImported
+                    )
+                }
+            )
+        )
+    }
+
+    override fun importRegistryData(data: AssetRegistryData) {
+        clearIndexes()
+        val root = File(data.projectPath)
+        for ((guidStr, entry) in data.assets) {
+            val info = AssetInfo(
+                guid = AssetGuid(guidStr),
+                assetType = AssetType.valueOf(entry.assetType),
+                importerType = entry.importerType,
+                sourcePath = entry.sourcePath,
+                absoluteSourcePath = File(root, entry.sourcePath).absolutePath,
+                importTimestamp = entry.importTimestamp,
+                lastModified = entry.lastModified,
+                settings = ImporterSettings(),
+                dependencies = entry.dependencies.map { AssetGuid(it) }.toSet(),
+                generatedOutputPaths = entry.generatedOutputPaths,
+                isImported = entry.isImported
+            )
+            indexAsset(info)
+        }
+        logger.logEngine("Imported registry with ${byGuid.size} assets from project file", LogLevel.INFO)
+    }
+
+    /**
+     * Migrate old root-level .asset_registry.json to .cache/ directory.
+     */
+    private fun migrateOldRegistryIfPresent() {
+        val root = _projectRoot ?: return
+        val oldFile = File(root, ".asset_registry.json")
+        if (oldFile.exists()) {
+            try {
+                cacheDir?.mkdirs()
+                oldFile.copyTo(registryPath!!, overwrite = true)
+                oldFile.delete()
+                logger.logEngine("Migrated asset registry to .cache/ directory", LogLevel.INFO)
+            } catch (e: Exception) {
+                logger.logEngine("Failed to migrate old registry: ${e.message}", LogLevel.WARN)
+            }
+        }
+    }
+
+    /**
+     * Load registry data into the in-memory indexes.
+     */
+    private fun loadRegistryFromData(data: AssetRegistryData) {
+        clearIndexes()
+        val root = File(data.projectPath)
+        for ((guidStr, entry) in data.assets) {
+            val info = AssetInfo(
+                guid = AssetGuid(guidStr),
+                assetType = AssetType.valueOf(entry.assetType),
+                importerType = entry.importerType,
+                sourcePath = entry.sourcePath,
+                absoluteSourcePath = File(root, entry.sourcePath).absolutePath,
+                importTimestamp = entry.importTimestamp,
+                lastModified = entry.lastModified,
+                settings = ImporterSettings(),
+                dependencies = entry.dependencies.map { AssetGuid(it) }.toSet(),
+                generatedOutputPaths = entry.generatedOutputPaths,
+                isImported = entry.isImported
+            )
+            indexAsset(info)
         }
     }
 

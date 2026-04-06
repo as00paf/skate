@@ -30,11 +30,11 @@ class LevelManager(
     }
 
     fun saveAs(scene: Scene) {
-        val filter = MemoryUtil.memUTF8("*.json")
+        val filter = MemoryUtil.memUTF8("*.scene")
         val filters = MemoryUtil.memAllocPointer(1)
         filters.put(0, filter)
 
-        val path = TinyFileDialogs.tinyfd_saveFileDialog("Save Level", scene.sceneData.levelPath, filters, "JSON Files")
+        val path = TinyFileDialogs.tinyfd_saveFileDialog(scene.sceneData.levelPath, "Save Level", filters, "Scene Files")
 
         MemoryUtil.memFree(filters)
         MemoryUtil.memFree(filter)
@@ -68,11 +68,11 @@ class LevelManager(
     }
 
     fun open(scene: Scene) {
-        val filter = MemoryUtil.memUTF8("*.json")
+        val filter = MemoryUtil.memUTF8("*.scene")
         val filters = MemoryUtil.memAllocPointer(1)
         filters.put(0, filter)
 
-        val path = TinyFileDialogs.tinyfd_openFileDialog("Open Level", scene.sceneData.levelPath, filters, "JSON Files", false)
+        val path = TinyFileDialogs.tinyfd_openFileDialog("Open Level", scene.sceneData.levelPath, filters, "Scene Files", false)
 
         MemoryUtil.memFree(filters)
         MemoryUtil.memFree(filter)

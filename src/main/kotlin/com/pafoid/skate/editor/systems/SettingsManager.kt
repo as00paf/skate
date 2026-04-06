@@ -160,6 +160,18 @@ class SettingsManager(
         }
     }
 
+    /**
+     * Update the asset registry embedded in the project settings and save.
+     * Called when closing a project to persist the registry in the project file.
+     */
+    fun updateProjectAssetRegistry(
+        project: com.pafoid.skate.engine.settings.ProjectSettings,
+        registryData: com.pafoid.skate.engine.assets.database.AssetRegistryData
+    ) {
+        val updated = project.copy(assetRegistry = registryData)
+        saveProject(updated)
+    }
+
     fun createProject(name: String, folder: File, engineVersion: String): Result<ProjectSettings> {
         return settingsSerializer.createProject(name, folder, engineVersion)
             .onSuccess { project = it }

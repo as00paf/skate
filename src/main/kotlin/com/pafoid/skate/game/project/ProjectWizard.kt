@@ -77,6 +77,7 @@ class ProjectWizard {
         return listOf(
             ProjectStructureItem("Assets/", ItemType.DIRECTORY),
             ProjectStructureItem("Scenes/", ItemType.DIRECTORY),
+            ProjectStructureItem("  main.scene", ItemType.FILE),
             ProjectStructureItem("Builds/", ItemType.DIRECTORY),
             ProjectStructureItem("$projectName.skateproject", ItemType.FILE)
         )
