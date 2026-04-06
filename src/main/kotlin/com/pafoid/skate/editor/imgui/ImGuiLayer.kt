@@ -101,6 +101,7 @@ class ImGuiLayer(
     private var hadProjectLastFrame = false
     private var needsWizardReset = false
     private var hasAttemptedAutoLoad = false
+    private var wasProjectClosed = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
     private lateinit var setVSync: (Boolean) -> Unit
@@ -275,12 +276,17 @@ class ImGuiLayer(
             projectManager.loadLastProject()
         }
 
-        if (!projectManager.hasProject() && !hadProjectLastFrame) {
-            hasAttemptedAutoLoad = false
+        // Detect when a project was just closed — hide all project windows
+        if (hadProjectLastFrame && !projectManager.hasProject()) {
+            windowRegistry.hideAllWindows()
         }
 
-        if (!hadProjectLastFrame && projectManager.hasProject() && windowRegistry.projectWizardWindow.wizard.isOpen.get()) {
-            windowRegistry.projectWizardWindow.wizard.dismiss()
+        // Project was just opened — show default windows and dismiss wizard
+        if (!hadProjectLastFrame && projectManager.hasProject()) {
+            windowRegistry.showDefaultWindows()
+            if (windowRegistry.projectWizardWindow.wizard.isOpen.get()) {
+                windowRegistry.projectWizardWindow.wizard.dismiss()
+            }
         }
         hadProjectLastFrame = projectManager.hasProject()
 

@@ -37,8 +37,6 @@ class ProjectManager(
 
     fun loadLastProject(): Boolean {
         val recent = settingsManager.recentProjects.firstOrNull() ?: return false
-        val closedPath = settingsManager.getLastClosedProjectPath()
-        if (recent.path == closedPath) return false
         val projectFile = File(recent.path)
         if (!projectFile.exists()) return false
         return openProject(projectFile)
@@ -192,7 +190,10 @@ class ProjectManager(
         assetDatabase.shutdown()
         settingsManager.setLastClosedProjectPath(path)
         settingsManager.closeProject()
+        onProjectClosed?.invoke()
     }
+
+    var onProjectClosed: (() -> Unit)? = null
 
     fun saveProject(): Boolean {
         val project = currentProject ?: run {

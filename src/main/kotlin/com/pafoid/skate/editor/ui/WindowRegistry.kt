@@ -96,4 +96,38 @@ class WindowRegistry(
     inline fun <reified T> getWindow(): T? {
         return windows.find { it.instance is T }?.instance as? T
     }
+
+    /**
+     * Hide all project-specific windows (set showFlag to false).
+     * Called when a project is closed.
+     */
+    fun hideAllWindows() {
+        windows.forEach { it.showFlag.set(false) }
+    }
+
+    /**
+     * Show default editor windows for a new or loaded project.
+     * Only shows windows that were originally visible by default.
+     */
+    fun showDefaultWindows() {
+        val defaultVisible = setOf(
+            "window.hierarchy",
+            "window.properties",
+            "window.game_viewport",
+            "window.asset_browser",
+            "window.environment",
+            "window.profiler",
+            "window.console",
+            "window.physics_tuner",
+            "window.systems",
+            "window.command_history",
+            "window.project",
+            "window.audio_inspector",
+            "window.render_graph",
+        )
+
+        windows.forEach {
+            it.showFlag.set(it.nameKey in defaultVisible)
+        }
+    }
 }

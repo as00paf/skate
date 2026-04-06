@@ -104,12 +104,6 @@ src/
 
 ## Testing Strategy
 
-### TDD Protocol
-- **Red-Green-Refactor**: Strict cycle for all logic-heavy tasks
-- **Naming Convention**: `methodName_scenario_expectedBehavior`
-- **Structure**: Arrange-Act-Assert (AAA) pattern
-- **Coverage**: Focus on physics, math, and state management
-
 ### Test Categories
 - **Unit Tests**: Physics constants, collision detection, math operations
 - **Integration Tests**: Asset loading, component interactions
@@ -159,25 +153,13 @@ src/
 - **Bug Fixes**: `bug/description-of-bug`
 - **Atomic Commits**: Small, focused changes with descriptive messages
 
-### Development Cycle
-1. Create feature/bug branch from master
-2. Write tests first (TDD approach)
-3. Implement minimal code to pass tests
-4. Refactor for SOLID compliance
-5. Submit pull request for review
-6. Merge after confirmation and testing
-
 ## Project Status
-
-The engine is actively developed with focus on:
-- **Phase A**: Core infrastructure (Complete)
-- **Phase B**: Simulation & atmosphere (Complete) 
-- **Phase D**: Animation pipeline and character controller (Complete)
-- **Phase I**: Animation authoring tools (In Progress)
-- **Phase E**: Code quality & refactoring (Ongoing)
 
 The project maintains high code quality standards with extensive testing, proper documentation, and continuous refactoring efforts.
 
-## Qwen Added Memories
-
-- @/docs/AI_INSTRUCTIONS.md
+## Development Environment Protocol
+- **OS**: Windows 10 (Native PowerShell / Windows Terminal).
+- **Shell**: PowerShell 7+ (Avoid Bash/Sh/Zsh).
+- **Build Tool**: `gradlew.bat` (Not `./gradlew`).
+- **File System**: Windows-style paths (`C:\path\to\file`).
+- **Commands**: Use PowerShell cmdlets (`Remove-Item`, `Copy-Item`, `Expand-Archive`) or standard Windows binaries.

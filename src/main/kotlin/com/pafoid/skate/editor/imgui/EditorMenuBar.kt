@@ -109,7 +109,6 @@ class EditorMenuBar(
             if (projectManager.hasProject()) {
                 if (ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}")) {
                     imguiLayer.markWizardResetNeeded()
-                    imguiLayer.markAutoLoadResetNeeded()
                     projectManager.closeProject()
                 }
             }
