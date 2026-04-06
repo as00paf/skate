@@ -31,7 +31,8 @@ class ProjectManager(
 
     fun loadLastProject(): Boolean {
         val recent = settingsManager.recentProjects.firstOrNull() ?: return false
-        if (recent.path == lastClosedProjectPath) return false
+        val closedPath = settingsManager.getLastClosedProjectPath()
+        if (recent.path == closedPath) return false
         val projectFile = File(recent.path)
         if (!projectFile.exists()) return false
         return openProject(projectFile)
@@ -61,7 +62,7 @@ class ProjectManager(
 
     fun openProject(projectFile: File): Boolean {
         return try {
-            lastClosedProjectPath = null
+            settingsManager.setLastClosedProjectPath(null)
 
             logger.logEditor("Opening project: ${projectFile.absolutePath}")
 
@@ -91,13 +92,11 @@ class ProjectManager(
         }
     }
 
-    private var lastClosedProjectPath: String? = null
-
     fun closeProject() {
         val path = currentProject?.getProjectFile()?.absolutePath
         logger.logEditor("Closing project: ${getProjectName()}")
         currentProject = null
-        lastClosedProjectPath = path
+        settingsManager.setLastClosedProjectPath(path)
         settingsManager.closeProject()
     }
 

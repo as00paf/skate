@@ -171,6 +171,15 @@ class SettingsManager(
         logger.logEditor("Project closed")
     }
 
+    fun setLastClosedProjectPath(path: String?) {
+        user = user.copy(lastClosedProjectPath = path)
+        saveUser()
+    }
+
+    fun getLastClosedProjectPath(): String? {
+        return user.lastClosedProjectPath
+    }
+
     fun addToRecentProjects(projectPath: String) {
         cachedRecentProjects = null
         user = user.addRecentProject(projectPath)

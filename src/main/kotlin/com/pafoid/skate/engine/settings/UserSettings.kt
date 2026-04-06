@@ -22,7 +22,8 @@ data class UserSettings(
     val autoSaveInterval: Int = 5,
     val recentProjects: List<String> = emptyList(),
     val lastOpenedProject: String? = null,
-    val loadLastProjectOnStartup: Boolean = true
+    val loadLastProjectOnStartup: Boolean = true,
+    val lastClosedProjectPath: String? = null
 ) {
     /**
      * Add a project to recent projects list.
