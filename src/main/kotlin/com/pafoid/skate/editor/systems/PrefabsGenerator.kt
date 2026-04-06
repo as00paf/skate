@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
@@ -52,6 +53,17 @@ class PrefabsGenerator(
         }
     }
 
+    /**
+     * Synchronous version for default scene creation.
+     * Blocks until the skateboard is added to the scene.
+     */
+    fun spawnSkateboardSync(scene: Scene? = null) {
+        val model = resourceManager.loadModelSync(Assets.Models.SKATEBOARD_GLB)
+        val skate = Skateboard(model as TexturedModel)
+        val targetScene = scene ?: sceneManager.currentScene
+        targetScene?.addGameObjectToScene(skate)
+    }
+
     fun spawnSkater(skate: GameObject? = null) {
         JobSystem.runAsync {
             val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
@@ -68,6 +80,31 @@ class PrefabsGenerator(
         }
     }
 
+    /**
+     * Synchronous version for default scene creation.
+     * Blocks until the skater is added to the scene.
+     * Loads animations synchronously to ensure they're in the scene before serialization.
+     */
+    fun spawnSkaterSync(skate: GameObject? = null, scene: Scene? = null) {
+        val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
+        val skater = Skater("Skater", model, skate)
+
+        // Load animations synchronously for default scene
+        animations.forEach { path ->
+            try {
+                val animation = resourceManager.getAnimation(path)
+                if (animation != null) {
+                    skater.animator.addAnimation(animation)
+                }
+            } catch (e: Exception) {
+                // Skip missing animations during scene creation
+            }
+        }
+
+        val targetScene = scene ?: sceneManager.currentScene
+        targetScene?.addGameObjectToScene(skater)
+    }
+
     fun spawnFloor() {
         JobSystem.runAsync {
             val texture = resourceManager.loadTexture(Assets.Textures.ASPHALT)
@@ -80,6 +117,21 @@ class PrefabsGenerator(
                 sceneManager.currentScene?.addGameObjectToScene(tile)
             }
         }
+    }
+
+    /**
+     * Synchronous version for default scene creation.
+     * Blocks until the floor tile is added to the scene.
+     */
+    fun spawnFloorSync(scene: Scene? = null) {
+        val texture = resourceManager.loadTextureSync(Assets.Textures.ASPHALT)
+        val baseModel = resourceManager.loadModelSync(Assets.Models.CUBE)
+        val texturedModel = TexturedModel(baseModel.mesh[0].rawModel, texture)
+        texturedModel.mesh[0].material.baseColorPath = Assets.Textures.ASPHALT
+
+        val tile = Tile("Tile", texturedModel)
+        val targetScene = scene ?: sceneManager.currentScene
+        targetScene?.addGameObjectToScene(tile)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?) {

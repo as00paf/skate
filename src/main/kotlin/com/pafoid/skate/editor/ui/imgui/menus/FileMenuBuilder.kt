@@ -29,7 +29,8 @@ class FileMenuBuilder(
     private val stringManager: StringManager,
     private val levelManager: LevelManager,
     private val sceneManager: com.pafoid.skate.engine.ecs.SceneManager,
-    private val glfwWindow: Long
+    private val glfwWindow: Long,
+    private val sceneInitializer: com.pafoid.skate.editor.LevelEditorSceneInitializer
 ) {
     
     /**
@@ -51,8 +52,7 @@ class FileMenuBuilder(
     private fun renderNewSceneItem() {
         if (menuItem("${Icons.PLUS} New Scene", "Ctrl+N")) {
             JobSystem.runOnMain {
-                val initializer = com.pafoid.skate.editor.LevelEditorSceneInitializer()
-                val newScene = Scene("New Scene", initializer)
+                val newScene = Scene("New Scene", sceneInitializer)
                 newScene.init()
                 sceneManager.openScene(newScene)
             }
@@ -71,8 +71,7 @@ class FileMenuBuilder(
     private fun renderOpenItem() {
         if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open")}", "Ctrl+O")) {
             JobSystem.runOnMain {
-                val initializer = com.pafoid.skate.editor.LevelEditorSceneInitializer()
-                val newScene = Scene("Loaded Scene", initializer)
+                val newScene = Scene("Loaded Scene", sceneInitializer)
                 newScene.init()
                 sceneManager.openScene(newScene)
                 levelManager.open(newScene)

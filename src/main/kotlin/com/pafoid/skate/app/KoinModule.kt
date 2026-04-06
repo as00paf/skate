@@ -47,7 +47,6 @@ import com.pafoid.skate.editor.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.windows.ProjectWindow
 import com.pafoid.skate.editor.systems.FileSystemScanner
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
-import com.pafoid.skate.editor.DefaultSceneContentSpawner
 import com.pafoid.skate.editor.EditorSystemFactory
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.SceneOpened
@@ -155,8 +154,8 @@ val appModule = module {
     single { ProjectSwitcherDialog() }
 
     // Scene initialization components
+    factory { LevelEditorSceneInitializer() }
     factory { EditorSystemFactory() }
-    factory { DefaultSceneContentSpawner() }
 
     // Search infrastructure
     single {
@@ -215,7 +214,7 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { BootManager(get(), get(), get(), get(), get()) }
+    single { BootManager(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection
     single { InputSystem(get(), get(), get(), get()) }

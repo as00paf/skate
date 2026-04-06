@@ -91,6 +91,7 @@ class ImGuiLayer(
     private val eventSystem: EventSystem by inject()
     private val editorInputHandler: EditorInputHandler by inject()
     private val projectManager: ProjectManager by inject()
+    private val sceneInitializer: com.pafoid.skate.editor.LevelEditorSceneInitializer by inject()
     private val statusBar = EditorStatusBar()
     private lateinit var menuBar: EditorMenuBar
 
@@ -148,7 +149,7 @@ class ImGuiLayer(
         val projectSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.project_settings" }?.showFlag ?: ImBoolean(false)
 
         menuBar = EditorMenuBar(
-            fileMenu = FileMenuBuilder(stringManager, levelManager, sceneManager, glfwWindow),
+            fileMenu = FileMenuBuilder(stringManager, levelManager, sceneManager, glfwWindow, sceneInitializer),
             editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
             settingsMenu = SettingsMenuBuilder(
                 stringManager, settingsManager,

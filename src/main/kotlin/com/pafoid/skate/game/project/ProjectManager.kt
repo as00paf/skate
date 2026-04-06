@@ -23,6 +23,8 @@ class ProjectManager(
     var currentProject: ProjectSettings? = null
         private set
 
+    var onProjectLoaded: (() -> Unit)? = null
+
     fun hasProject(): Boolean = currentProject != null
 
     fun getProjectName(): String = currentProject?.metadata?.name ?: "No Project"
@@ -49,6 +51,23 @@ class ProjectManager(
             result.onSuccess { project ->
                 currentProject = project
                 logger.logEditor("Project created successfully: ${project.metadata.name}")
+
+                // Initialize asset database for this new project
+                val projectDir = getProjectDirectory()
+                if (projectDir != null) {
+                    assetDatabase.initialize(projectDir).fold(
+                        onSuccess = {
+                            assetDatabase.scanAll()
+                            logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
+                        },
+                        onFailure = { e ->
+                            logger.logEditor("Failed to initialize asset database: ${e.message}")
+                        }
+                    )
+                }
+
+                // Notify listeners that a project has been loaded
+                onProjectLoaded?.invoke()
             }
 
             result.onFailure { error ->
@@ -104,6 +123,10 @@ class ProjectManager(
                 }
 
                 logger.logEditor("Project opened successfully: ${getProjectName()}")
+
+                // Notify listeners that a project has been loaded
+                // This is used to trigger default scene save after boot
+                onProjectLoaded?.invoke()
             } else {
                 logger.logEngine("Failed to load project: ${projectFile.absolutePath}", LogLevel.ERROR)
             }

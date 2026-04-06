@@ -45,7 +45,7 @@ class LevelManager(
         }
     }
 
-    private fun saveToFile(scene: Scene, path: String) {
+    fun saveToFile(scene: Scene, path: String) {
         try {
             val writer = FileWriter(path)
             val data = LevelData(

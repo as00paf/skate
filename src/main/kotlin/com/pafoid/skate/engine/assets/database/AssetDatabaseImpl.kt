@@ -374,26 +374,10 @@ class AssetDatabaseImpl(
     override fun saveRegistry(): Result<Unit> {
         val registryFile = registryPath ?: return Result.failure(IllegalStateException("Not initialized"))
         return try {
-            val data = AssetRegistryData(
-                projectPath = _projectRoot!!.absolutePath,
-                lastScanTimestamp = System.currentTimeMillis(),
-                assets = byGuid.values.associateBy(
-                    { it.guid.value },
-                    { info ->
-                        RegistryAssetEntry(
-                            guid = info.guid.value,
-                            assetType = info.assetType.name,
-                            sourcePath = info.sourcePath,
-                            importerType = info.importerType,
-                            importTimestamp = info.importTimestamp,
-                            lastModified = info.lastModified,
-                            dependencies = info.dependencies.map { it.value },
-                            generatedOutputPaths = info.generatedOutputPaths,
-                            isImported = info.isImported
-                        )
-                    }
-                )
-            )
+            // Ensure cache directory exists
+            registryFile.parentFile?.mkdirs()
+
+            val data = exportRegistryData()
             registryFile.writeText(serializer.encode(data))
             Result.success(Unit)
         } catch (e: Exception) {

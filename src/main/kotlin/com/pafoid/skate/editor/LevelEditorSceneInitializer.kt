@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor
 
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -10,7 +9,6 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
@@ -44,16 +42,13 @@ import org.koin.core.component.inject
 
 /**
  * Thin orchestrator for editor scene initialization.
- * Delegates system creation and prefab spawning to specialized components.
+ * Delegates system creation to specialized components.
+ * Does NOT spawn prefabs or save scenes — that is handled by BootManager after project load.
  */
 class LevelEditorSceneInitializer : SceneInitializer(), KoinComponent {
 
-    private val logger: LoggerService by inject()
     private val resourceManager: ResourceManager by inject()
     private val editorSystemFactory: EditorSystemFactory by inject()
-    private val defaultSceneSpawner: DefaultSceneContentSpawner by inject()
-
-    private var currentScene: Scene? = null
 
     override suspend fun loadResources(scene: Scene) {
         reportProgress(0.1f, "Loading Character Model...")
@@ -64,8 +59,6 @@ class LevelEditorSceneInitializer : SceneInitializer(), KoinComponent {
     }
 
     override suspend fun init(scene: Scene) {
-        this.currentScene = scene
-
         reportProgress(0.3f, "Initializing Scene Data...")
 
         scene.camera.position.set(0f, 5f, 20f)
@@ -73,10 +66,8 @@ class LevelEditorSceneInitializer : SceneInitializer(), KoinComponent {
 
         reportProgress(0.5f, "Setting up Editor Tools...")
 
-        // Delegate system creation to factory
         editorSystemFactory.addEditorSystems(scene)
 
-        // Add scene components
         scene.addComponent(EnvironmentComponent())
         scene.addComponent(TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f))
         scene.addComponent(LightingStateComponent())
@@ -84,11 +75,6 @@ class LevelEditorSceneInitializer : SceneInitializer(), KoinComponent {
         reportProgress(0.7f, "Setting up Lighting Systems...")
 
         editorSystemFactory.addLightingSystems(scene)
-
-        reportProgress(0.8f, "Spawning Prefabs...")
-
-        // Delegate prefab spawning to spawner
-        defaultSceneSpawner.spawnDefaultContent(scene)
 
         reportProgress(1.0f, "Ready.")
     }
@@ -153,7 +139,7 @@ class EditorSystemFactory : KoinComponent {
         val dayNightCycleSystem = DayNightCycleSystem(
             DayNightCycleConfig().apply {
                 cycleTime = scene.getTimeOfDay()
-                dayDuration = 300f  // 5 minutes per day
+                dayDuration = 300f
             },
             stringManager = stringManager
         )
@@ -161,8 +147,8 @@ class EditorSystemFactory : KoinComponent {
 
         val directionalLightSystem = DirectionalLightSystem(
             DirectionalLightConfig().apply {
-                direction.set(0f, -1f, 0f)  // Noon position
-                color.set(1f, 0.95f, 0.8f)  // Warm sunlight
+                direction.set(0f, -1f, 0f)
+                color.set(1f, 0.95f, 0.8f)
                 intensity = 1f
                 shadowDistance = 50f
                 autoCalculateBounds = true
@@ -175,24 +161,5 @@ class EditorSystemFactory : KoinComponent {
         )
         directionalLightSystem.setAutoAdjustBounds(true)
         scene.addSystem(directionalLightSystem)
-    }
-}
-
-/**
- * Spawns default scene content (skater, floor, etc.).
- *
- * Can be replaced by loading a saved scene file in the future.
- */
-class DefaultSceneContentSpawner : KoinComponent {
-    private val prefabsGenerator: PrefabsGenerator by inject()
-    private val logger: LoggerService by inject()
-
-    /**
-     * Spawn default editor prefabs: skater and floor.
-     */
-    fun spawnDefaultContent(scene: Scene) {
-        prefabsGenerator.spawnSkater()
-        prefabsGenerator.spawnFloor()
-        logger.logEditor("Default scene content spawned")
     }
 }

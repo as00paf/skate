@@ -1,18 +1,23 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.LevelEditorSceneInitializer
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import imgui.flag.ImGuiTabBarFlags
 import imgui.flag.ImGuiTabItemFlags
 import imgui.type.ImBoolean
 
-class EditorScenesTabBar {
+class EditorScenesTabBar(
+    private val sceneInitializer: LevelEditorSceneInitializer
+) {
     fun render(sceneManager: SceneManager) {
         if (ImGui.beginTabBar("##EditorScenesTabBar", ImGuiTabBarFlags.Reorderable or ImGuiTabBarFlags.AutoSelectNewTabs)) {
 
             var tabToClose: Int? = null
-            
+
             sceneManager.openScenes.forEachIndexed { index, scene ->
                 val open = ImBoolean(true)
                 var flags = 0
@@ -33,15 +38,14 @@ class EditorScenesTabBar {
 
             val addTabFlags = ImGuiTabItemFlags.Trailing or ImGuiTabItemFlags.NoTooltip
             if (ImGui.beginTabItem(Icons.PLUS, addTabFlags)) {
-                com.pafoid.skate.engine.utils.JobSystem.runOnMain {
-                    val initializer = com.pafoid.skate.editor.LevelEditorSceneInitializer()
-                    val newScene = com.pafoid.skate.engine.ecs.Scene("New Scene", initializer)
+                JobSystem.runOnMain {
+                    val newScene = Scene("New Scene", sceneInitializer)
                     newScene.init()
                     sceneManager.openScene(newScene)
                 }
                 ImGui.endTabItem()
             }
-            
+
             ImGui.endTabBar()
 
             tabToClose?.let { sceneManager.closeScene(it) }

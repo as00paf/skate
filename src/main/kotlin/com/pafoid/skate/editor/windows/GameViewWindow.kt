@@ -79,11 +79,12 @@ class GameViewWindow : IWindow, KoinComponent {
     
     // Gamepad overlay and scene tab bar (not extracted yet)
     private val gamepadOverlay = GamepadOverlay()
-    
+    private val sceneInitializer: com.pafoid.skate.editor.LevelEditorSceneInitializer by inject()
+    private val scenesTabBar by lazy { EditorScenesTabBar(sceneInitializer) }
+
     // Reusable buffers to avoid per-frame allocations
     private val tempVec2 = ImVec2()
     private val tempMousePos = ImVec2()
-    private val scenesTabBar = EditorScenesTabBar()
 
     override fun imgui(pOpen: ImBoolean?) {
         val noTabItem = 1 shl 23
