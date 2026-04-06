@@ -92,50 +92,54 @@ class LevelManager(
             return
         }
 
-        if (inFile.isNotBlank()) {
-            // Clear current scene first if loading a new one
-            scene.gameObjectManager.gameObjects.forEach { it.destroy() }
-            scene.gameObjectManager.gameObjects.clear()
-            scene.gameObjectManager.pendingObjects.clear()
+        if (inFile.isBlank()) return
 
-            val data: LevelData = serializer.decode(inFile)
-
-            scene.sceneData = data.sceneData
-
-            // Ensure the correct path is kept even if the loaded file has an old one
-            scene.sceneData.levelPath = path
-
-            var maxGoId = -1
-            var maxCompId = -1
-
-            data.gameObjects.forEach { obj ->
-                scene.addGameObjectToScene(obj)
-
-                obj.getAllComponents().forEach { component ->
-                    if (component.getUid() > maxCompId) {
-                        maxCompId = component.getUid()
-                    }
-                }
-
-                if (obj.getUid() > maxGoId) {
-                    maxGoId = obj.getUid()
-                }
-            }
-
-            maxGoId++
-            maxCompId++
-            GameObject.init(maxGoId)
-            Component.init(maxCompId)
-
-            // Resolve GUID references for RenderComponents
-            if (assetDatabase != null) {
-                resolveAssetReferences(scene)
-                // Migrate legacy scenes: create GUIDs for models that don't have them
-                migrateLegacyModels(scene)
-            }
-
-            logger.logEditor("Level loaded from $path")
+        // Deserialize to temporary data structure first (atomic load)
+        val data: LevelData = try {
+            serializer.decode(inFile)
+        } catch (e: Exception) {
+            logger.logEngine("Failed to deserialize scene from $path: ${e.message}", LogLevel.ERROR)
+            return
         }
+
+        // Only clear the scene after successful deserialization
+        scene.gameObjectManager.gameObjects.forEach { it.destroy() }
+        scene.gameObjectManager.gameObjects.clear()
+        scene.gameObjectManager.pendingObjects.clear()
+
+        scene.sceneData = data.sceneData
+        scene.sceneData.levelPath = path
+
+        var maxGoId = -1
+        var maxCompId = -1
+
+        data.gameObjects.forEach { obj ->
+            scene.addGameObjectToScene(obj)
+
+            obj.getAllComponents().forEach { component ->
+                if (component.getUid() > maxCompId) {
+                    maxCompId = component.getUid()
+                }
+            }
+
+            if (obj.getUid() > maxGoId) {
+                maxGoId = obj.getUid()
+            }
+        }
+
+        maxGoId++
+        maxCompId++
+        GameObject.init(maxGoId)
+        Component.init(maxCompId)
+
+        // Resolve GUID references for RenderComponents
+        if (assetDatabase != null) {
+            resolveAssetReferences(scene)
+            // Migrate legacy scenes: create GUIDs for models that don't have them
+            migrateLegacyModels(scene)
+        }
+
+        logger.logEditor("Level loaded from $path")
     }
 
     /**

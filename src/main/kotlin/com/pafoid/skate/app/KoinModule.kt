@@ -46,6 +46,9 @@ import com.pafoid.skate.editor.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.windows.ProjectWindow
 import com.pafoid.skate.editor.systems.FileSystemScanner
+import com.pafoid.skate.editor.LevelEditorSceneInitializer
+import com.pafoid.skate.editor.DefaultSceneContentSpawner
+import com.pafoid.skate.editor.EditorSystemFactory
 import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.SceneOpened
 import com.pafoid.skate.engine.events.SceneChanged
@@ -150,6 +153,10 @@ val appModule = module {
     single { ProjectWizard() }
     single { ProjectWizardWindow() }
     single { ProjectSwitcherDialog() }
+
+    // Scene initialization components
+    factory { EditorSystemFactory() }
+    factory { DefaultSceneContentSpawner() }
 
     // Search infrastructure
     single {
