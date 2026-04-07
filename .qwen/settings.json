@@ -1,12 +1,19 @@
 {
   "permissions": {
+    "defaultMode": "auto-edit",
     "allow": [
-      "Bash(.\\gradlew.bat *)",
-      "Bash(git push *)",
-      "Bash(git branch *)",
-      "Bash(type *)",
-      "Read(C:\\Users\\as00p\\AppData\\Local\\nvm\\v24.13.0\\node_modules\\@qwen-code\\qwen-code\\bundled\\qc-helper\\docs/features/**)",
-      "Read(C:\\Users\\as00p\\AppData\\Local\\nvm\\v24.13.0\\node_modules\\@qwen-code\\qwen-code\\bundled\\qc-helper\\docs/configuration/**)"
+      "Bash(.\\\\gradlew\\\\.bat .*)",
+      "Bash(git .*)",
+      "read_file",
+      "edit",
+      "write_file",
+      "grep_search",
+      "glob",
+      "list_directory",
+      "read_many_files",
+      "todo_write",
+      "save_memory",
+      "ask_user_question"
     ]
   },
   "$version": 3
