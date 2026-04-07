@@ -1,9 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.gizmos.PoseGizmo
 import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
@@ -101,16 +99,5 @@ class MouseControls(
     private fun getObjectById(id: Int): GameObject? {
         if (engine.engineState.get() != EngineState.RUNNING) return null
         return scene.getGameObject(id)
-    }
-
-    private fun getBoneById(id: Int): Bone? {
-        if (engine.engineState.get() != EngineState.RUNNING) return null
-        scene.gameObjectManager.gameObjects.forEach { go ->
-            go.getComponent<PoseGizmo>()?.let { pg ->
-                val bone = pg.getBoneById(id)
-                if (bone != null) return bone
-            }
-        }
-        return null
     }
 }

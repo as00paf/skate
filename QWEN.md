@@ -558,7 +558,6 @@ Animator subscribes to events for automatic state transitions:
 - `ScaleGizmo` — 3-axis scale handles
 - `SelectionGizmo` — selection visualization
 - `MeasureTool` — distance measurement
-- `PoseGizmo` — bone pose manipulation
 
 **Asset Browser Tabs:**
 - Textures, Models, Animations, Sounds, Prefabs

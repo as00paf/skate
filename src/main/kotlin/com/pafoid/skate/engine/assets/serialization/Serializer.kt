@@ -18,7 +18,6 @@ import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.editor.gizmos.PoseGizmo
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.TimeComponent
@@ -74,7 +73,6 @@ class Serializer {
             subclass(NonPickable::class)
             subclass(ModularTile::class)
             subclass(SpriteRenderer::class)
-            subclass(PoseGizmo::class)
             subclass(RagdollComponent::class)
 
             // Physics components
