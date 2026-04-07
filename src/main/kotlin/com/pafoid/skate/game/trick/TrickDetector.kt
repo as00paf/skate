@@ -3,7 +3,7 @@ package com.pafoid.skate.game.trick
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
-import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.events.TrickCompleted

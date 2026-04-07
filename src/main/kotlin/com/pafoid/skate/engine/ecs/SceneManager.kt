@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.SceneChanged
 import com.pafoid.skate.engine.events.SceneClosed
 import com.pafoid.skate.engine.events.SceneOpened

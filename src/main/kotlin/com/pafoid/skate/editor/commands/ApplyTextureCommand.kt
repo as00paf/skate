@@ -6,7 +6,7 @@ import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.TextureApplied
 
 class ApplyTextureCommand(

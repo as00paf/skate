@@ -24,6 +24,7 @@ import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridConfig
 import com.pafoid.skate.engine.ecs.systems.GridLines
@@ -31,7 +32,6 @@ import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.MouseControls
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
-import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener

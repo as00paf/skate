@@ -1,13 +1,12 @@
-package com.pafoid.skate.engine.events
+package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
-import com.pafoid.skate.engine.ecs.systems.System
+import com.pafoid.skate.engine.events.Event
 import kotlin.reflect.KClass
 
 /**
  * Listener function type for event handlers.
  */
-typealias GameEventListener = (GameEvent) -> Unit
+typealias EventListener = (Event) -> Unit
 
 /**
  * System responsible for publishing and subscribing to game events.
@@ -59,7 +58,7 @@ class EventSystem(
      * Listener entry with priority and one-time flag.
      */
     internal data class ListenerEntry(
-        val listener: GameEventListener,
+        val listener: EventListener,
         val priority: EventPriority = EventPriority.NORMAL,
         val isOneTime: Boolean = false
     )
@@ -74,7 +73,7 @@ class EventSystem(
     }
 
     // Listeners organized by event class
-    private val listenersByClass = mutableMapOf<KClass<out GameEvent>, MutableList<ListenerEntry>>()
+    private val listenersByClass = mutableMapOf<KClass<out Event>, MutableList<ListenerEntry>>()
 
     // Listeners organized by event name (for scripting)
     private val listenersByName = mutableMapOf<String, MutableList<ListenerEntry>>()
@@ -85,7 +84,7 @@ class EventSystem(
      * @param priority Listener priority (default: NORMAL)
      * @param listener Function to call when event is published
      */
-    fun <T : GameEvent> subscribe(
+    fun <T : Event> subscribe(
         eventType: KClass<T>,
         priority: EventPriority = EventPriority.NORMAL,
         listener: (T) -> Unit
@@ -104,7 +103,7 @@ class EventSystem(
      * @param priority Listener priority (default: NORMAL)
      * @param listener Function to call when event is published
      */
-    inline fun <reified T : GameEvent> subscribe(
+    inline fun <reified T : Event> subscribe(
         priority: EventPriority = EventPriority.NORMAL,
         noinline listener: (T) -> Unit
     ) {
@@ -119,7 +118,7 @@ class EventSystem(
      * @param priority Listener priority (default: NORMAL)
      * @param listener Function to call when event is published
      */
-    fun <T : GameEvent> subscribeOnce(
+    fun <T : Event> subscribeOnce(
         eventType: KClass<T>,
         priority: EventPriority = EventPriority.NORMAL,
         listener: (T) -> Unit
@@ -140,7 +139,7 @@ class EventSystem(
      * @param priority Listener priority (default: NORMAL)
      * @param listener Function to call when event is published
      */
-    inline fun <reified T : GameEvent> subscribeOnce(
+    inline fun <reified T : Event> subscribeOnce(
         priority: EventPriority = EventPriority.NORMAL,
         noinline listener: (T) -> Unit
     ) {
@@ -157,7 +156,7 @@ class EventSystem(
     fun subscribe(
         eventName: String,
         priority: EventPriority = EventPriority.NORMAL,
-        listener: GameEventListener
+        listener: EventListener
     ) {
         val entry = ListenerEntry(
             listener = listener,
@@ -177,7 +176,7 @@ class EventSystem(
     fun subscribeOnce(
         eventName: String,
         priority: EventPriority = EventPriority.NORMAL,
-        listener: GameEventListener
+        listener: EventListener
     ) {
         val entry = ListenerEntry(
             listener = listener,
@@ -193,14 +192,14 @@ class EventSystem(
      * Note: Lambda comparison is not reliable, so this removes ALL listeners for the type.
      * For fine-grained control, keep a reference to your listener and use unsubscribe(eventName, listener).
      */
-    fun <T : GameEvent> unsubscribe(eventType: KClass<T>) {
+    fun <T : Event> unsubscribe(eventType: KClass<T>) {
         listenersByClass.remove(eventType)
     }
 
     /**
      * Unsubscribes all listeners for an event type (reified version).
      */
-    inline fun <reified T : GameEvent> unsubscribe() {
+    inline fun <reified T : Event> unsubscribe() {
         unsubscribe(T::class)
     }
 
@@ -210,7 +209,7 @@ class EventSystem(
      * @param eventName Event name string
      * @param listener The listener function to remove
      */
-    fun unsubscribe(eventName: String, listener: GameEventListener) {
+    fun unsubscribe(eventName: String, listener: EventListener) {
         listenersByName[eventName]?.removeIf { entry ->
             entry.listener == listener
         }
@@ -224,7 +223,7 @@ class EventSystem(
      *
      * @param event The event to publish
      */
-    fun publish(event: GameEvent) {
+    fun publish(event: Event) {
         val listenersToExecute = mutableListOf<ListenerEntry>()
         val oneTimeListenersToRemove = mutableListOf<ListenerEntry>()
 

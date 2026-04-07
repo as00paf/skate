@@ -2,6 +2,8 @@ package com.pafoid.skate.engine.events
 
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
+import com.pafoid.skate.engine.ecs.systems.EventListener
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -154,7 +156,7 @@ class EventSystemTest {
     @Test
     fun `string-based subscription receives events`() {
         // Arrange
-        var receivedEvent: GameEvent? = null
+        var receivedEvent: Event? = null
         eventSystem.subscribe("physics.landing") { event ->
             receivedEvent = event
         }
@@ -247,8 +249,8 @@ class EventSystemTest {
         var receivedA = false
         var receivedB = false
 
-        val listenerA: GameEventListener = { receivedA = true }
-        val listenerB: GameEventListener = { receivedB = true }
+        val listenerA: EventListener = { receivedA = true }
+        val listenerB: EventListener = { receivedB = true }
 
         eventSystem.subscribe("physics.landing", listener = listenerA)
         eventSystem.subscribe("physics.takeoff", listener = listenerB)

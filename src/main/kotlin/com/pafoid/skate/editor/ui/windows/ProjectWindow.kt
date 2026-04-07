@@ -13,7 +13,7 @@ import com.pafoid.skate.editor.ui.windows.project.FileSystemItem
 import com.pafoid.skate.editor.ui.windows.project.FileType
 import com.pafoid.skate.editor.ui.windows.project.FileTypeResolver
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.FileSystemChangedEvent
 import com.pafoid.skate.engine.events.OpenSceneFileEvent
 import com.pafoid.skate.game.project.ProjectManager

@@ -7,7 +7,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.MovementInput

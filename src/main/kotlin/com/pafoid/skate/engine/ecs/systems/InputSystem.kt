@@ -6,12 +6,10 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
-import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.events.TrickInput
-import com.pafoid.skate.engine.events.TrickType
 import com.pafoid.skate.engine.input.EditorInputMappings
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
@@ -19,6 +17,7 @@ import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.settings.GameplaySettings
 import com.pafoid.skate.engine.settings.HardwareSettings
+import com.pafoid.skate.game.skateboard.TrickType
 import imgui.ImGui
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW

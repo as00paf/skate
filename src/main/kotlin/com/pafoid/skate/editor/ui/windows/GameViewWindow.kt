@@ -32,8 +32,8 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
-import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.BodyType

@@ -64,10 +64,10 @@ import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.MouseControls
-import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBuffer

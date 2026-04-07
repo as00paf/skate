@@ -12,7 +12,7 @@ package com.pafoid.skate.engine.events
  *
  * ```kotlin
  * // Define custom event
- * data class MyEvent(val value: Int) : GameEvent("my.event")
+ * data class MyEvent(val value: Int) : Event("my.event")
  *
  * // Publish event
  * eventSystem.publish(MyEvent(42))
@@ -29,4 +29,4 @@ package com.pafoid.skate.engine.events
  * }
  * ```
  */
-sealed class GameEvent(val eventName: String)
+sealed class Event(val eventName: String)

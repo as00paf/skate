@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.ui.viewmodels
 
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.SceneChanged
 import com.pafoid.skate.engine.events.SceneClosed
 import com.pafoid.skate.engine.events.SceneOpened
