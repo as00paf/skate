@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor.imgui
+package com.pafoid.skate.editor.imgui.data
 
 import imgui.type.ImBoolean
 

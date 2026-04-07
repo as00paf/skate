@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.ui
 
-import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.data.EditorWindow
 import com.pafoid.skate.editor.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.windows.CommandHistoryWindow

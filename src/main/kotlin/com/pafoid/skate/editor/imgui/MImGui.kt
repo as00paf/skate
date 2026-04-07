@@ -2,9 +2,7 @@ package com.pafoid.skate.editor.imgui
 
 import imgui.ImGui
 import imgui.flag.ImGuiCol
-import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiStyleVar
-import imgui.flag.ImGuiTableFlags
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -25,10 +23,6 @@ object MImGui {
     private const val SENSIBILITY = 0.01f
     const val SENSIBILITY_SCALE = 0.005f
     const val SENSIBILITY_ROTATION = 0.1f
-
-    // ──────────────────────────────────────────────
-    //  DATA CONTROLS (vector, drag, color pickers)
-    // ──────────────────────────────────────────────
 
     /** Draws a two-column table with label and vector2 editor + reset buttons. */
     fun drawVec2Control(label: String, values: Vector2f, resetValue: Float = 0f, columnWidth: Float = DEFAULT_COLUMN_WIDTH, sens: Float = SENSIBILITY) {
@@ -185,10 +179,6 @@ object MImGui {
         return res
     }
 
-    // ──────────────────────────────────────────────
-    //  SEMANTIC TEXT helpers
-    // ──────────────────────────────────────────────
-
     /** Renders text with a custom RGBA color. */
     fun coloredText(text: String, r: Float, g: Float, b: Float, a: Float = 1f) {
         ImGui.pushStyleColor(ImGuiCol.Text, r, g, b, a)
@@ -215,10 +205,6 @@ object MImGui {
     fun textDisabled(text: String) {
         coloredText(text, 0.5f, 0.5f, 0.5f)
     }
-
-    // ──────────────────────────────────────────────
-    //  LAYOUT HELPERS
-    // ──────────────────────────────────────────────
 
     /**
      * Renders a square icon button with optional tooltip and active/disabled states.
@@ -298,16 +284,6 @@ object MImGui {
         }
     }
 
-    /** Renders a small "(?)" help icon with a tooltip. */
-    fun helpIcon(tooltip: String) {
-        ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
-        ImGui.text("(?)")
-        ImGui.popStyleColor()
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(tooltip)
-        }
-    }
-
     /** Renders a toolbar group — tight spacing followed by a separator. */
     fun toolbarGroup(content: () -> Unit) {
         ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, 2f, 2f)
@@ -317,10 +293,6 @@ object MImGui {
         ImGui.separator()
         ImGui.sameLine()
     }
-
-    // ──────────────────────────────────────────────
-    //  ARRAY-BASED helpers (for direct ImGui patterns)
-    // ──────────────────────────────────────────────
 
     /** Two-column labeled drag-float3 for Vector3 data (e.g. gravity). */
     fun dragFloat3(label: String, values: FloatArray, speed: Float = 0.01f): Boolean {
@@ -361,10 +333,6 @@ object MImGui {
         ImGui.popID()
         return changed
     }
-
-    // ──────────────────────────────────────────────
-    //  PRIVATE internal helpers
-    // ──────────────────────────────────────────────
 
     private fun drawVec2Axis(values: Vector2f, resetValue: Float, sens: Float) {
         val lineHeight = ImGui.getFontSize() + ImGui.getStyle().framePaddingY * 2f
@@ -484,8 +452,6 @@ object MImGui {
         }
     }
 
-    // ─── Property Grid Helpers ───
-
     /**
      * Generic property row: 2-column table with label, widget, and optional reset button.
      */
@@ -536,27 +502,6 @@ object MImGui {
             }
             ImGui.tableSetColumnIndex(1)
             textDisabled(value)
-            ImGui.endTable()
-        }
-        ImGui.popID()
-    }
-
-    /**
-     * Grayed-out "Coming Soon" row for features not yet implemented.
-     */
-    fun comingSoonRow(label: String, helpText: String = "This feature is not yet implemented.") {
-        ImGui.pushID(label)
-        if (ImGui.beginTable("##${label}_coming", 2)) {
-            ImGui.tableSetupColumn("Label")
-            ImGui.tableSetupColumn("Control")
-            ImGui.tableNextRow()
-            ImGui.tableSetColumnIndex(0)
-            ImGui.text(label)
-            ImGui.tableSetColumnIndex(1)
-            textDisabled("Coming Soon")
-            if (helpText.isNotEmpty() && ImGui.isItemHovered()) {
-                ImGui.setTooltip(helpText)
-            }
             ImGui.endTable()
         }
         ImGui.popID()

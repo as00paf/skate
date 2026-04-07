@@ -1,8 +1,7 @@
 package com.pafoid.skate.editor.ui.imgui.menus
 
-import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.data.EditorWindow
 import com.pafoid.skate.editor.systems.StringManager
-import imgui.ImGui
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.checkbox
 import imgui.internal.ImGui.endMenu

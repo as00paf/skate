@@ -11,21 +11,17 @@ import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
-import com.pafoid.skate.editor.windows.SearchEverywhereWindow
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.engine.events.EventSystem
 import com.pafoid.skate.game.level.LevelManager
 import com.pafoid.skate.game.project.ProjectManager
 import imgui.ImVec2
-import imgui.ImGui
-import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
 import imgui.flag.ImGuiDir
@@ -52,16 +48,13 @@ import imgui.internal.ImGui.getIO
 import imgui.internal.ImGui.getMainViewport
 import imgui.internal.ImGui.image
 import imgui.internal.ImGui.newFrame
-import imgui.internal.ImGui.popStyleColor
 import imgui.internal.ImGui.popStyleVar
-import imgui.internal.ImGui.pushStyleColor
 import imgui.internal.ImGui.pushStyleVar
 import imgui.internal.ImGui.render
 import imgui.internal.ImGui.renderPlatformWindowsDefault
 import imgui.internal.ImGui.setNextWindowPos
 import imgui.internal.ImGui.setNextWindowSize
 import imgui.internal.ImGui.setNextWindowViewport
-import imgui.internal.ImGui.text
 import imgui.internal.ImGui.updatePlatformWindows
 import imgui.type.ImBoolean
 import imgui.type.ImInt
@@ -101,7 +94,6 @@ class ImGuiLayer(
     private var hadProjectLastFrame = false
     private var needsWizardReset = false
     private var hasAttemptedAutoLoad = false
-    private var wasProjectClosed = false
 
     private lateinit var setFullscreen: (Boolean) -> Unit
     private lateinit var setVSync: (Boolean) -> Unit
@@ -112,10 +104,6 @@ class ImGuiLayer(
 
     fun markWizardResetNeeded() {
         needsWizardReset = true
-    }
-
-    fun markAutoLoadResetNeeded() {
-        hasAttemptedAutoLoad = false
     }
 
     fun init(

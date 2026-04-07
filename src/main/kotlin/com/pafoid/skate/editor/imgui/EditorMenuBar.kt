@@ -11,17 +11,11 @@ import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.game.project.ProjectManager
-import com.pafoid.skate.engine.core.WindowController
 import imgui.ImGui
-import imgui.flag.ImGuiCol
-import imgui.flag.ImGuiStyleVar
 import imgui.internal.ImGui.image
-import imgui.internal.ImGui.popStyleColor
-import imgui.internal.ImGui.popStyleVar
-import imgui.internal.ImGui.pushStyleColor
-import imgui.internal.ImGui.pushStyleVar
 
 class EditorMenuBar(
     private val fileMenu: FileMenuBuilder,
@@ -39,7 +33,6 @@ class EditorMenuBar(
 ) {
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
-    private val projectName = "Skate Project"
 
     init {
         appIconTexId = try {

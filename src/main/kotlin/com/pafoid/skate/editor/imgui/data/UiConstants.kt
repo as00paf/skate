@@ -13,7 +13,6 @@ object UiConstants {
     const val DEFAULT_BUTTON_HEIGHT = 30f
 
     // -- Spacing --
-    const val BUTTON_SPACING = 12f
     const val SECTION_SPACING = 10f
 
     // -- Window defaults --
