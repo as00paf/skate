@@ -40,6 +40,11 @@ class AnimationSystem(
         cacheDirty = true
     }
 
+    override fun invalidateCaches() {
+        animatedObjects.clear()
+        cacheDirty = true
+    }
+
     override fun update(dt: Float) {
         if (cacheDirty) rebuildCache()
 

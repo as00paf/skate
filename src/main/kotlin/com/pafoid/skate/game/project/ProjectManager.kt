@@ -291,12 +291,18 @@ class ProjectManager(
             settingsManager.updateProjectAssetRegistry(project, registryData)
         }
 
-        // Destroy all game objects from open scenes
+        // Destroy all game objects from open scenes and clean up physics
         sceneManager.openScenes.toList().forEach { scene ->
-            // Destroy all game objects (releases physics bodies, GPU resources)
+            // Remove physics bodies BEFORE destroying game objects
+            scene.gameObjectManager.gameObjects.forEach { go ->
+                scene.physics3d.remove(go)
+            }
             scene.gameObjectManager.gameObjects.forEach { it.destroy() }
             scene.gameObjectManager.gameObjects.clear()
             scene.gameObjectManager.pendingObjects.clear()
+
+            // Reset system caches so they rebuild with new objects
+            scene.systemManager.resetSystemCaches()
         }
 
         currentProject = null

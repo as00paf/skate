@@ -101,6 +101,20 @@ class SystemManager {
     }
 
     /**
+     * Resets all system caches.
+     * Call this when the scene's GameObject list changes (e.g. after reload)
+     * so that systems rebuild their cached references.
+     */
+    fun resetSystemCaches() {
+        _systems.forEach { system ->
+            system.invalidateCaches()
+        }
+        pendingSystems.forEach { system ->
+            system.invalidateCaches()
+        }
+    }
+
+    /**
      * Destroys all systems managed by this manager.
      */
     fun destroy() {

@@ -66,4 +66,11 @@ abstract class System(
      * Called when the system is destroyed.
      */
     open fun destroy() {}
+
+    /**
+     * Called when the scene's GameObject list changes (e.g. after reload).
+     * Subsystems that cache GameObject references should clear them here.
+     * Default implementation does nothing.
+     */
+    open fun invalidateCaches() {}
 }
