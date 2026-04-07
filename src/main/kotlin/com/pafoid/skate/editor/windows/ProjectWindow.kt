@@ -55,6 +55,12 @@ class ProjectWindow : IWindow, KoinComponent {
     private var treeCache: List<FileSystemItem> = emptyList()
     private var needsRefresh = true
 
+    // Cached status bar counts — only recalculate when treeCache changes
+    private var statusFileCount = 0
+    private var statusFolderCount = 0
+    private var statusTotalSize = 0L
+    private var statusTreeVersion = 0
+
     // Rename state
     private var renamingItemPath: String? = null
     private val renameInput = ImString("", 128)
@@ -79,6 +85,7 @@ class ProjectWindow : IWindow, KoinComponent {
             if (needsRefresh) {
                 treeCache = fileSystemScanner.scanProject()
                 needsRefresh = false
+                statusTreeVersion++  // Invalidate status cache
             }
 
             // ── Search ──
@@ -96,7 +103,7 @@ class ProjectWindow : IWindow, KoinComponent {
 
             separator()
 
-            // ── Status Bar ──
+            // ── Status Bar (uses cached counts, only recalculates when tree changes) ──
             renderStatusBar()
         }
         end()
@@ -447,18 +454,25 @@ class ProjectWindow : IWindow, KoinComponent {
     // Status Bar
     // ─────────────────────────────────────────────────────────
     private fun renderStatusBar() {
-        val allFiles = countFiles(treeCache)
-        val allFolders = countFolders(treeCache)
-        val totalSize = treeCache.sumOf { it.size }
+        // Only recalculate when tree changes (avoids O(n) traversals every frame)
+        val currentVersion = statusTreeVersion
+        if (currentVersion != statusTreeCacheVersion) {
+            statusFileCount = countFiles(treeCache)
+            statusFolderCount = countFolders(treeCache)
+            statusTotalSize = treeCache.sumOf { it.size }
+            statusTreeCacheVersion = currentVersion
+        }
 
-        val sizeStr = formatFileSize(totalSize)
+        val sizeStr = formatFileSize(statusTotalSize)
         val filter = searchText.get().trim()
         val filterInfo = if (filter.isNotEmpty()) " (${stringManager.getString("lbl.filtered")})" else ""
 
         textColored(0.5f, 0.5f, 0.5f, 1.0f,
-            "${Icons.FOLDER} $allFolders  ${Icons.PLUS} $allFiles$filterInfo  │  $sizeStr"
+            "${Icons.FOLDER} $statusFolderCount  ${Icons.PLUS} $statusFileCount$filterInfo  │  $sizeStr"
         )
     }
+
+    private var statusTreeCacheVersion = 0
 
     private fun countFiles(items: List<FileSystemItem>): Int =
         items.sumOf { if (it.type != FileType.FOLDER) 1 + countFiles(it.children) else countFiles(it.children) }

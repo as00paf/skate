@@ -10,18 +10,21 @@ import java.io.File
  * @property type The resolved file type for icon display
  * @property isFavorite Whether this item is marked as a favorite
  * @property children Child items (only populated for directories)
+ * @property assetGuid GUID from .meta file (models/animations only)
+ * @property computedSize Pre-computed file/folder size (cached during buildTree)
  */
 data class FileSystemItem(
     val file: File,
     val type: FileType,
     val isFavorite: Boolean = false,
     val children: List<FileSystemItem> = emptyList(),
-    val assetGuid: String? = null
+    val assetGuid: String? = null,
+    val computedSize: Long = if (file.isFile) file.length() else 0L
 ) {
     val name: String get() = file.name
     val path: String get() = file.absolutePath
     val exists: Boolean get() = file.exists()
-    val size: Long get() = if (file.isFile) file.length() else children.sumOf { it.size }
+    val size: Long get() = computedSize
     val extension: String get() = file.extension
 
     /**

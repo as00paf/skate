@@ -69,7 +69,10 @@ class FileSystemScanner(
             emptyList()
         }
 
-        return FileSystemItem(file, type, isFav, children, guid)
+        // Pre-compute folder size from children (avoids File.length() on every access)
+        val computedSize = if (file.isFile) file.length() else children.sumOf { it.computedSize }
+
+        return FileSystemItem(file, type, isFav, children, guid, computedSize)
     }
 
     /**
