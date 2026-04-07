@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
@@ -67,11 +66,6 @@ class GeometryPass(
     override val name: String = "GeometryPass"
     override val description: String = "Renders all 3D geometry and sprites to the framebuffer"
     override val inputs: Set<String> = setOf("ShadowMap")
-
-    @Deprecated("Use execute(context: RenderContext) instead")
-    override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
-        execute(RenderContext(scene, activeGameObject, hoveredGameObject))
-    }
 
     override fun execute(context: RenderContext) {
         val scene = context.scene

@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -86,11 +85,6 @@ class PickingPass(
 
         glClearColor(0f, 0f, 0f, 0f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-    }
-
-    @Deprecated("Use execute(context: RenderContext) instead")
-    override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
-        execute(RenderContext(scene, activeGameObject, hoveredGameObject))
     }
 
     override fun execute(context: RenderContext) {

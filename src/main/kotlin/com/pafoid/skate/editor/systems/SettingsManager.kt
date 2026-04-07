@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.settings.EngineSettings
@@ -212,7 +213,7 @@ class SettingsManager(
         unitSystem: com.pafoid.skate.engine.utils.UnitSystem? = null,
         language: String? = null,
         theme: String? = null,
-        editorInputMappings: com.pafoid.skate.engine.input.EditorInputMappings? = null
+        editorInputMappings: EditorInputMappings? = null
     ) {
         val currentEditor = engine.editor
         engine = engine.copy(

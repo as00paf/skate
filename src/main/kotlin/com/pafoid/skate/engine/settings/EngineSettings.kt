@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.settings
 
-import com.pafoid.skate.engine.input.EditorInputMappings
+import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.engine.utils.UnitSystem
 import kotlinx.serialization.Serializable
 

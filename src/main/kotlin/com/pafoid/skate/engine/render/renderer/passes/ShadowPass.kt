@@ -1,8 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.render.ShadowMap
 import com.pafoid.skate.engine.render.graph.RenderContext
@@ -37,11 +35,6 @@ class ShadowPass(
     override val description: String = "Renders shadow map from light's perspective"
     override val outputs: Set<String> = setOf("ShadowMap")
     override val canDisable: Boolean = true  // Shadows can be disabled for performance
-
-    @Deprecated("Use execute(context: RenderContext) instead")
-    override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
-        execute(RenderContext(scene, activeGameObject, hoveredGameObject))
-    }
 
     override fun execute(context: RenderContext) {
         val scene = context.scene

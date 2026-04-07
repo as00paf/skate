@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.EditorCamera
+import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -10,7 +11,6 @@ import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.events.TrickInput
-import com.pafoid.skate.engine.input.EditorInputMappings
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
@@ -47,7 +47,6 @@ class InputSystem(
     private val stringManager: StringManager
 ) : System(priority = ExecutionPriority.EARLY) {
 
-    // TODO Phase 5: Update to use new immutable settings structure
     private val mappings: InputMappings
         get() = InputMappings()
     private val editorMappings: EditorInputMappings

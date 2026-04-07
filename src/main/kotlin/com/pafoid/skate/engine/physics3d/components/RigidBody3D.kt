@@ -211,7 +211,4 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
         return position.toVector3f()
     }
 
-    override fun imgui() {
-        super.imgui()
-    }
 }

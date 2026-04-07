@@ -89,17 +89,6 @@ class MouseListener: KoinComponent {
 
     }
 
-    fun getWorldDx(): Float {
-        return (lastWorldX - worldX).toFloat()
-    }
-
-    fun getWorldDy(): Float {
-        return (lastWorldY - worldY).toFloat()
-    }
-
-    fun getWorldX(): Float = worldX.toFloat()
-    fun getWorldY(): Float = worldY.toFloat()
-
     fun getWorld(): Vector2f {
         var currentX: Float = getX() - gameViewportPos.x
         currentX = 2.0f * (currentX / gameViewportSize.x) - 1.0f

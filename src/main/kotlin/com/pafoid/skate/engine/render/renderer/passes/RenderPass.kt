@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
-import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.graph.RenderContext
 
 /**
@@ -54,18 +52,6 @@ interface RenderPass {
      * Implementations must provide storage for this property.
      */
     var isEnabled: Boolean
-
-    /**
-     * Executes this render pass.
-     *
-     * @param scene The scene to render
-     * @param activeGameObject The currently selected game object (if any)
-     * @param hoveredGameObject The currently hovered game object (if any)
-     */
-    @Deprecated("Use execute(context: RenderContext) instead", ReplaceWith("execute(RenderContext(scene, activeGameObject, hoveredGameObject))"))
-    fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
-        execute(RenderContext(scene, activeGameObject, hoveredGameObject))
-    }
 
     /**
      * Called before any passes are executed to prepare resources for the frame.
