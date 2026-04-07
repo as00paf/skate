@@ -1,26 +1,26 @@
 package com.pafoid.skate.editor.ui
 
 import com.pafoid.skate.editor.imgui.data.EditorWindow
-import com.pafoid.skate.editor.windows.AssetBrowserWindow
-import com.pafoid.skate.editor.windows.AudioInspectorWindow
-import com.pafoid.skate.editor.windows.CommandHistoryWindow
-import com.pafoid.skate.editor.windows.ConsoleWindow
-import com.pafoid.skate.editor.windows.EditorSettingsWindow
-import com.pafoid.skate.editor.windows.EnvironmentWindow
-import com.pafoid.skate.editor.windows.GameViewWindow
-import com.pafoid.skate.editor.windows.InputTestingWindow
-import com.pafoid.skate.editor.windows.KeyBindingsWindow
-import com.pafoid.skate.editor.windows.PhysicsTunerWindow
-import com.pafoid.skate.editor.windows.ProfilerWindow
-import com.pafoid.skate.editor.windows.ProjectSettingsWindow
-import com.pafoid.skate.editor.windows.ProjectSwitcherDialog
-import com.pafoid.skate.editor.windows.ProjectWindow
-import com.pafoid.skate.editor.windows.ProjectWizardWindow
-import com.pafoid.skate.editor.windows.PropertiesWindow
-import com.pafoid.skate.editor.windows.RenderGraphWindow
-import com.pafoid.skate.editor.windows.SceneHierarchyWindow
-import com.pafoid.skate.editor.windows.SearchEverywhereWindow
-import com.pafoid.skate.editor.windows.SystemsWindow
+import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
+import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
+import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
+import com.pafoid.skate.editor.ui.windows.ConsoleWindow
+import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
+import com.pafoid.skate.editor.ui.windows.EnvironmentWindow
+import com.pafoid.skate.editor.ui.windows.GameViewWindow
+import com.pafoid.skate.editor.ui.windows.InputTestingWindow
+import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
+import com.pafoid.skate.editor.ui.windows.PhysicsTunerWindow
+import com.pafoid.skate.editor.ui.windows.ProfilerWindow
+import com.pafoid.skate.editor.ui.windows.ProjectSettingsWindow
+import com.pafoid.skate.editor.ui.windows.ProjectSwitcherDialog
+import com.pafoid.skate.editor.ui.windows.ProjectWindow
+import com.pafoid.skate.editor.ui.windows.ProjectWizardWindow
+import com.pafoid.skate.editor.ui.windows.PropertiesWindow
+import com.pafoid.skate.editor.ui.windows.RenderGraphWindow
+import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
+import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
+import com.pafoid.skate.editor.ui.windows.SystemsWindow
 import imgui.type.ImBoolean
 
 /**

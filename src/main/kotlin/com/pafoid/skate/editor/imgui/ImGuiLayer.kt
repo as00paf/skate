@@ -6,11 +6,11 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.WindowRegistry
-import com.pafoid.skate.editor.ui.imgui.menus.EditMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.FileMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.SettingsMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.ViewMenuBuilder
-import com.pafoid.skate.editor.ui.imgui.menus.WindowControlsRenderer
+import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
+import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
+import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
+import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
+import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.WindowController

@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.data
 
-import com.pafoid.skate.editor.windows.assetBrowser.PrefabType
+import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 
 /**
  * Centralized registry for all drag and drop payload types.
