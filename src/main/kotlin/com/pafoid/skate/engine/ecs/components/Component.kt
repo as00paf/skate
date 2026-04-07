@@ -27,8 +27,15 @@ abstract class Component: KoinComponent {
         fun init(maxId: Int) {
             ID_COUNTER = maxId
         }
-        
+
         fun getIdCounter(): Int = ID_COUNTER
+
+        /** Cache for reflection results — avoids expensive Class.getDeclaredFields() per frame */
+        private val fieldCache = mutableMapOf<Class<*>, Array<java.lang.reflect.Field>>()
+
+        fun getCachedFields(clazz: Class<*>): Array<java.lang.reflect.Field> {
+            return fieldCache.getOrPut(clazz) { clazz.declaredFields }
+        }
     }
 
     var uId = -1
@@ -54,7 +61,7 @@ abstract class Component: KoinComponent {
     open fun imgui() {
         try {
             ImGui.pushID(this.javaClass.simpleName)
-            val fields = this.javaClass.declaredFields
+            val fields = getCachedFields(this.javaClass)
             fields.forEach { field ->
                 val modifiers = field.modifiers
                 if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) return@forEach

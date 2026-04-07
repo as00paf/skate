@@ -37,6 +37,11 @@ class PrefabsGenerator(
     /** Root path for engine-bundled assets copied into the project (null = use engine paths) */
     private var engineDefaultsRoot: String? = null
 
+    /** Cache for resolved model paths to avoid repeated File.exists() syscalls */
+    private val resolvedModelPaths = mutableMapOf<String, String>()
+    private val resolvedTexturePaths = mutableMapOf<String, String>()
+    private val resolvedAnimationPaths = mutableMapOf<String, String>()
+
     /**
      * Set the root path for engine-bundled default assets.
      * Called by ProjectManager after copying assets into the project.
@@ -45,34 +50,39 @@ class PrefabsGenerator(
         engineDefaultsRoot = File(projectDir, "Assets/EngineDefaults").absolutePath
     }
 
-    /** Resolve a model path — use project copy if available, fall back to engine path */
+    /** Resolve a model path — use cached result, project copy, or fall back to engine path */
     private fun resolveModelPath(enginePath: String): String {
-        val root = engineDefaultsRoot ?: return enginePath
+        resolvedModelPaths[enginePath]?.let { return it }
+        val root = engineDefaultsRoot ?: return enginePath.also { resolvedModelPaths[enginePath] = it }
         val fileName = File(enginePath).name
-        val candidates = listOf(
-            File(root, "Models/$fileName").absolutePath,
-            File(root, "Characters/$fileName").absolutePath,
-        )
-        for (candidate in candidates) {
-            if (File(candidate).exists()) return candidate
-        }
-        return enginePath
+        val result = listOf("Models", "Characters").firstNotNullOfOrNull { dir ->
+            val candidate = File(root, "$dir/$fileName")
+            if (candidate.exists()) candidate.absolutePath else null
+        } ?: enginePath
+        resolvedModelPaths[enginePath] = result
+        return result
     }
 
-    /** Resolve a texture path — use project copy if available, fall back to engine path */
+    /** Resolve a texture path — use cached result, project copy, or fall back to engine path */
     private fun resolveTexturePath(enginePath: String): String {
-        val root = engineDefaultsRoot ?: return enginePath
+        resolvedTexturePaths[enginePath]?.let { return it }
+        val root = engineDefaultsRoot ?: return enginePath.also { resolvedTexturePaths[enginePath] = it }
         val fileName = File(enginePath).name
-        val candidate = File(root, "Textures/$fileName").absolutePath
-        return if (File(candidate).exists()) candidate else enginePath
+        val candidate = File(root, "Textures/$fileName")
+        val result = if (candidate.exists()) candidate.absolutePath else enginePath
+        resolvedTexturePaths[enginePath] = result
+        return result
     }
 
-    /** Resolve an animation path — use project copy if available, fall back to engine path */
+    /** Resolve an animation path — use cached result, project copy, or fall back to engine path */
     private fun resolveAnimationPath(enginePath: String): String {
-        val root = engineDefaultsRoot ?: return enginePath
+        resolvedAnimationPaths[enginePath]?.let { return it }
+        val root = engineDefaultsRoot ?: return enginePath.also { resolvedAnimationPaths[enginePath] = it }
         val fileName = File(enginePath).name
-        val candidate = File(root, "Characters/animations/$fileName").absolutePath
-        return if (File(candidate).exists()) candidate else enginePath
+        val candidate = File(root, "Characters/animations/$fileName")
+        val result = if (candidate.exists()) candidate.absolutePath else enginePath
+        resolvedAnimationPaths[enginePath] = result
+        return result
     }
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
         val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
