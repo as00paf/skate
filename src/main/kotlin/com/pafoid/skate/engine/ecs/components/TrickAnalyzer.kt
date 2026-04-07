@@ -1,9 +1,8 @@
-package com.pafoid.skate.game.trick
+package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.engine.ecs.components.Component
-import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
+import com.pafoid.skate.game.trick.TrickManager
 import imgui.ImGui
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient

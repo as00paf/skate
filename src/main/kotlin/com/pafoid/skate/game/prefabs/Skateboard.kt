@@ -4,10 +4,10 @@ import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.TrickDetector
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
-import com.pafoid.skate.game.trick.TrickDetector
 import org.joml.Vector3f
 
 class Skateboard(

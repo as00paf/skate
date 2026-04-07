@@ -16,7 +16,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.FileSystemChangedEvent
 import com.pafoid.skate.engine.events.OpenSceneFileEvent
-import com.pafoid.skate.game.project.ProjectManager
+import com.pafoid.skate.engine.project.ProjectManager
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin

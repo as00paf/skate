@@ -4,9 +4,9 @@ import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.scene.getGameObject
 import com.pafoid.skate.engine.physics3d.IPhysics3D
-import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import imgui.ImGui
 import imgui.type.ImBoolean

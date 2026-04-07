@@ -4,9 +4,10 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.render.graph.RenderGraph
+import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
+import com.pafoid.skate.engine.render.graph.RenderResource
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
@@ -21,10 +22,6 @@ import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.utils.GLStateTracker
-
-import com.pafoid.skate.engine.render.graph.RenderGraph
-import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
-import com.pafoid.skate.engine.render.graph.RenderResource
 
 /**
  * Factory for creating all rendering resources.
@@ -265,9 +262,6 @@ class RenderResourcesFactory(
             object : RenderPass {
                 override var executionTimeNs: Long = 0
                 override var isEnabled: Boolean = true
-                override fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
-                    // No-op
-                }
             }
         }
 

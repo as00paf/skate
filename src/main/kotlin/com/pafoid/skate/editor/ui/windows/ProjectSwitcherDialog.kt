@@ -6,9 +6,9 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.game.project.ProjectManager
-import com.pafoid.skate.game.project.ProjectWizard
-import com.pafoid.skate.game.project.RecentProjectDisplayInfo
+import com.pafoid.skate.engine.project.ProjectManager
+import com.pafoid.skate.engine.project.ProjectWizard
+import com.pafoid.skate.engine.project.RecentProjectDisplayInfo
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond

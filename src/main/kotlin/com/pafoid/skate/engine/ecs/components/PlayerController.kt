@@ -1,12 +1,9 @@
-package com.pafoid.skate.game.player
+package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.Component
-import com.pafoid.skate.engine.ecs.components.InputStateComponent
-import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
@@ -17,6 +14,7 @@ import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.Interpolator
+import com.pafoid.skate.game.player.MotionData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Quaternionf
@@ -282,7 +280,7 @@ class PlayerController : Component(), KoinComponent {
      * @return Current speed in m/s
      */
     private fun getCurrentSpeed(): Float {
-        return gameObject.getComponent<com.pafoid.skate.engine.ecs.components.PhysicsComponent>()?.speed ?: lastSpeed
+        return gameObject.getComponent<PhysicsComponent>()?.speed ?: lastSpeed
     }
 
     /**

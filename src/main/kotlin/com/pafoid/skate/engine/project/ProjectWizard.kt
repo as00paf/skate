@@ -1,5 +1,6 @@
-package com.pafoid.skate.game.project
+package com.pafoid.skate.engine.project
 
+import imgui.type.ImBoolean
 import java.io.File
 
 data class ProjectStructureItem(
@@ -18,8 +19,8 @@ class ProjectWizard {
         private val INVALID_NAME_CHARS = Regex("[<>:\"/\\\\|?*]")
     }
 
-    private val _isOpen = imgui.type.ImBoolean(false)
-    val isOpen: imgui.type.ImBoolean get() = _isOpen
+    private val _isOpen = ImBoolean(false)
+    val isOpen: ImBoolean get() = _isOpen
     val isCurrentlyOpen: Boolean get() = _isOpen.get()
 
     var userDismissed: Boolean = false

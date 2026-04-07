@@ -8,9 +8,9 @@ import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.BuildConfig
-import com.pafoid.skate.game.project.ItemType
-import com.pafoid.skate.game.project.ProjectManager
-import com.pafoid.skate.game.project.ProjectWizard
+import com.pafoid.skate.engine.project.ItemType
+import com.pafoid.skate.engine.project.ProjectManager
+import com.pafoid.skate.engine.project.ProjectWizard
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond

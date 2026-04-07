@@ -1,16 +1,14 @@
-package com.pafoid.skate.game.trick
+package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.Component
-import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.events.TrickCompleted
 import com.pafoid.skate.engine.events.TrickDetected
-import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.skateboard.Stance
+import com.pafoid.skate.game.trick.TrickManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Vector3f

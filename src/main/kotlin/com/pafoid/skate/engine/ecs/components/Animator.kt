@@ -14,7 +14,6 @@ import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.game.player.PlayerState
-import com.pafoid.skate.game.player.PlayerStateManager
 import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
 import kotlinx.serialization.Serializable

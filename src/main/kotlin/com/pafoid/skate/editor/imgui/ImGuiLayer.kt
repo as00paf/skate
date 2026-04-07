@@ -18,9 +18,9 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.project.ProjectManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.game.level.LevelManager
-import com.pafoid.skate.game.project.ProjectManager
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags

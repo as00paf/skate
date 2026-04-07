@@ -1,12 +1,14 @@
-package com.pafoid.skate.game.project
+package com.pafoid.skate.engine.project
 
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.settings.ProjectSettings
 import com.pafoid.skate.engine.settings.RecentProjectInfo
 import com.pafoid.skate.game.level.LevelManager
@@ -14,7 +16,6 @@ import java.io.File
 
 class ProjectManager(
     private val settingsManager: SettingsManager,
-    private val serializer: Serializer,
     private val logger: LoggerService,
     private val assetDatabase: AssetDatabase,
     private val engineAssetCopier: EngineAssetCopier,
@@ -144,15 +145,15 @@ class ProjectManager(
      * This is called before saving the default scene to ensure models can be
      * reloaded when the scene is opened later.
      */
-    private fun resolveModelGuidsInScene(scene: com.pafoid.skate.engine.ecs.Scene) {
+    private fun resolveModelGuidsInScene(scene: Scene) {
         scene.gameObjectManager.gameObjects.forEach { obj ->
             resolveModelGuidForObject(obj)
             obj.children.forEach { child -> resolveModelGuidForObject(child) }
         }
     }
 
-    private fun resolveModelGuidForObject(obj: com.pafoid.skate.engine.ecs.GameObject) {
-        val rc = obj.getComponent<com.pafoid.skate.engine.ecs.components.RenderComponent>() ?: return
+    private fun resolveModelGuidForObject(obj: GameObject) {
+        val rc = obj.getComponent<RenderComponent>() ?: return
         val model = rc.model ?: return
         if (rc.modelGuid.isNotBlank()) return
 
@@ -185,8 +186,8 @@ class ProjectManager(
      * Walk all mesh part materials in the model and store texture paths as GUIDs
      * (or absolute paths for engine-bundled textures not in the AssetDatabase).
      */
-    private fun resolveTextureGuidsForObject(obj: com.pafoid.skate.engine.ecs.GameObject) {
-        val rc = obj.getComponent<com.pafoid.skate.engine.ecs.components.RenderComponent>() ?: return
+    private fun resolveTextureGuidsForObject(obj: GameObject) {
+        val rc = obj.getComponent<RenderComponent>() ?: return
         val model = rc.model ?: return
 
         model.mesh.forEach { meshPart ->

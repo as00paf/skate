@@ -13,7 +13,8 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.game.project.ProjectManager
+import com.pafoid.skate.engine.project.ProjectManager
+import com.pafoid.skate.engine.project.ProjectWizard
 import imgui.ImGui
 import imgui.internal.ImGui.image
 
@@ -28,7 +29,7 @@ class EditorMenuBar(
     private val projectManager: ProjectManager,
     private val projectSwitcher: ProjectSwitcherDialog,
     private val windowController: WindowController,
-    private val projectWizard: com.pafoid.skate.game.project.ProjectWizard,
+    private val projectWizard: ProjectWizard,
     private val imguiLayer: ImGuiLayer
 ) {
     private var appIconTexId = -1

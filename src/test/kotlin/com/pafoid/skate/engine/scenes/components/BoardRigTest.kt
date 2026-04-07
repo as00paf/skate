@@ -7,6 +7,8 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.ecs.components.PlayerStateManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
@@ -15,9 +17,7 @@ import com.pafoid.skate.engine.physics3d.RayTestResult
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import com.pafoid.skate.game.player.PlayerController
 import com.pafoid.skate.game.player.PlayerState
-import com.pafoid.skate.game.player.PlayerStateManager
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.trick.TrickManager
 import io.mockk.MockKAnnotations
