@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.assets.serialization
 
-import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import org.koin.core.component.KoinComponent

@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.data.LogEntry
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.LogEntry
-import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import imgui.ImGui

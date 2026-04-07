@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.core
 
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.imgui.ImGuiLayer
-import com.pafoid.skate.editor.systems.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.JobSystem.runOnMain
 import com.pafoid.skate.engine.utils.Time

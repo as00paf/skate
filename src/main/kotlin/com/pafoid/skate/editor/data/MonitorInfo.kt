@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor.systems
+package com.pafoid.skate.editor.data
 
 data class MonitorInfo(
     val index: Int,

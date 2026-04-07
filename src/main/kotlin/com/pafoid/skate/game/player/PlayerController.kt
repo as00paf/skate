@@ -1,7 +1,7 @@
 package com.pafoid.skate.game.player
 
 import com.pafoid.skate.editor.data.InputSettings
-import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component

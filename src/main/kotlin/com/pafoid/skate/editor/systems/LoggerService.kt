@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.data.LogEntry
+import com.pafoid.skate.editor.data.LogLevel
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class LoggerService {

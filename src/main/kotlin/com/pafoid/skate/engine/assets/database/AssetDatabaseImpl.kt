@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.assets.database
 
-import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileNotFoundException

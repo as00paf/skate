@@ -1,6 +1,6 @@
 package com.pafoid.skate.game.trick
 
-import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject

@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.BoneNameMapper

@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.data.MonitorInfo
+import com.pafoid.skate.editor.data.VideoModeInfo
 import org.lwjgl.glfw.GLFW.glfwGetMonitorName
 import org.lwjgl.glfw.GLFW.glfwGetMonitors
 import org.lwjgl.glfw.GLFW.glfwGetVideoModes

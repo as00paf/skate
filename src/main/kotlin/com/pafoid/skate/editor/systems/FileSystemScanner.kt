@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.systems
 
-import com.pafoid.skate.editor.windows.project.FileTypeResolver
 import com.pafoid.skate.editor.windows.project.FileSystemItem
+import com.pafoid.skate.editor.windows.project.FileTypeResolver
 import com.pafoid.skate.game.project.ProjectManager
 import java.io.File
 
@@ -95,8 +95,6 @@ class FileSystemScanner(
     private fun shouldScanDirectory(dir: File): Boolean {
         return dir.name !in SKIP_NAMES
     }
-
-    // ─── Favorites ───────────────────────────────────────────
 
     /**
      * Toggle favorite status for the given file path.

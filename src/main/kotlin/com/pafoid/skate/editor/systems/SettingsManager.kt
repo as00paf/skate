@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.systems
 
-import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.settings.EngineSettings
 import com.pafoid.skate.engine.settings.HardwareSettings

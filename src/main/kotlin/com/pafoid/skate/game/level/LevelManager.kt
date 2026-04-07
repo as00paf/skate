@@ -1,6 +1,6 @@
 package com.pafoid.skate.game.level
 
-import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
@@ -11,10 +11,8 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.scene.addGameObjectImmediate
-import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
-import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths

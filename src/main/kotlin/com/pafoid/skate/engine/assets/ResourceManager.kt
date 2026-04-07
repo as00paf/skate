@@ -1,8 +1,6 @@
 package com.pafoid.skate.engine.assets
 
-import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.assets.database.AssetGuid
-import com.pafoid.skate.editor.systems.LogLevel
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.SoundBuffer
@@ -14,6 +12,8 @@ import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
+import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.assets.database.AssetGuid
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.render.VAOLoader
