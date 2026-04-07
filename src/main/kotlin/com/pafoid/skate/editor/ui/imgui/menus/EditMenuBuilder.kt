@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.ui.imgui.menus
 
+import com.pafoid.skate.editor.commands.CreateGameObjectCommand
+import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.CreateGameObjectCommand
-import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -15,7 +15,6 @@ import imgui.ImGui
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem
-import imgui.internal.ImGui.separator
 
 /**
  * Builds the Edit menu with undo/redo and clipboard operations.

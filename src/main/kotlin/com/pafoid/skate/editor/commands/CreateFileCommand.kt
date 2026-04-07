@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.commands
 
-import com.pafoid.skate.editor.systems.Command
 import com.pafoid.skate.editor.systems.LoggerService
 import java.io.File
 

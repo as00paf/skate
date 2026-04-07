@@ -1,20 +1,23 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.commands.AddAudioComponentCommand
+import com.pafoid.skate.editor.commands.ApplyAnimationCommand
+import com.pafoid.skate.editor.commands.ApplyTextureCommand
+import com.pafoid.skate.editor.commands.CreateGameObjectCommand
+import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.data.PrefabData
-import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
-import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.AddAudioComponentCommand
-import com.pafoid.skate.editor.systems.ApplyAnimationCommand
-import com.pafoid.skate.editor.systems.ApplyTextureCommand
-import com.pafoid.skate.editor.systems.CreateGameObjectCommand
-import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenu
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenuCallbacks
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportOverlays
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportRenderer
+import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportToolbar
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
@@ -27,27 +30,17 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
-import com.pafoid.skate.engine.events.EventSystem
-import com.pafoid.skate.engine.events.GameObjectSelected
-import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
+import com.pafoid.skate.engine.events.EventSystem
+import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenu
-import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportContextMenuCallbacks
-import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportOverlays
-import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportRenderer
-import com.pafoid.skate.editor.ui.imgui.windows.components.ViewportToolbar
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.engine.utils.ScreenshotUtils
-import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
-import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import org.joml.Vector2f
@@ -55,7 +48,6 @@ import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 class GameViewWindow : IWindow, KoinComponent {
 

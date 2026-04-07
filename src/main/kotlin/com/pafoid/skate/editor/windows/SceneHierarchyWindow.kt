@@ -1,10 +1,10 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.commands.CreateGameObjectCommand
+import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.CreateGameObjectCommand
-import com.pafoid.skate.editor.systems.DeleteGameObjectCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager

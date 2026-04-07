@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor.systems
+package com.pafoid.skate.editor.commands
 
 interface Command {
     fun execute()

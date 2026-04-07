@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.gizmos
 
-import com.pafoid.skate.editor.systems.TransformCommand
+import com.pafoid.skate.editor.commands.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.input.listeners.MouseListener

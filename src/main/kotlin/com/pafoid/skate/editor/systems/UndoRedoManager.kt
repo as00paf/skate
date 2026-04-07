@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.commands.Command
+
 /**
  * Manages undo/redo operations using the command pattern.
  *

@@ -1,10 +1,10 @@
 package com.pafoid.skate.editor.windows
 
+import com.pafoid.skate.editor.commands.EnvironmentPropertyCommand
+import com.pafoid.skate.editor.commands.EnvironmentToggleCommand
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.EnvironmentPropertyCommand
-import com.pafoid.skate.editor.systems.EnvironmentToggleCommand
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.Scene
