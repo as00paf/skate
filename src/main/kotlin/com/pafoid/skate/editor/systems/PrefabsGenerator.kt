@@ -28,10 +28,52 @@ import com.pafoid.skate.game.prefabs.Skater
 import com.pafoid.skate.game.prefabs.Tile
 import org.joml.Vector3f
 
+import java.io.File
+
 class PrefabsGenerator(
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
 ) {
+    /** Root path for engine-bundled assets copied into the project (null = use engine paths) */
+    private var engineDefaultsRoot: String? = null
+
+    /**
+     * Set the root path for engine-bundled default assets.
+     * Called by ProjectManager after copying assets into the project.
+     */
+    fun setEngineDefaultsRoot(projectDir: File) {
+        engineDefaultsRoot = File(projectDir, "Assets/EngineDefaults").absolutePath
+    }
+
+    /** Resolve a model path — use project copy if available, fall back to engine path */
+    private fun resolveModelPath(enginePath: String): String {
+        val root = engineDefaultsRoot ?: return enginePath
+        val fileName = File(enginePath).name
+        val candidates = listOf(
+            File(root, "Models/$fileName").absolutePath,
+            File(root, "Characters/$fileName").absolutePath,
+        )
+        for (candidate in candidates) {
+            if (File(candidate).exists()) return candidate
+        }
+        return enginePath
+    }
+
+    /** Resolve a texture path — use project copy if available, fall back to engine path */
+    private fun resolveTexturePath(enginePath: String): String {
+        val root = engineDefaultsRoot ?: return enginePath
+        val fileName = File(enginePath).name
+        val candidate = File(root, "Textures/$fileName").absolutePath
+        return if (File(candidate).exists()) candidate else enginePath
+    }
+
+    /** Resolve an animation path — use project copy if available, fall back to engine path */
+    private fun resolveAnimationPath(enginePath: String): String {
+        val root = engineDefaultsRoot ?: return enginePath
+        val fileName = File(enginePath).name
+        val candidate = File(root, "Characters/animations/$fileName").absolutePath
+        return if (File(candidate).exists()) candidate else enginePath
+    }
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
         val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
         val go = scene.createGameObject(name)
@@ -59,7 +101,8 @@ class PrefabsGenerator(
      * Blocks until the skateboard is added to the scene.
      */
     fun spawnSkateboardSync(scene: Scene? = null) {
-        val model = resourceManager.loadModelSync(Assets.Models.SKATEBOARD_GLB)
+        val modelPath = resolveModelPath(Assets.Models.SKATEBOARD_GLB)
+        val model = resourceManager.loadModelSync(modelPath)
         val skate = Skateboard(model as TexturedModel)
         val targetScene = scene ?: sceneManager.currentScene
         targetScene?.addGameObjectImmediate(skate)
@@ -87,13 +130,16 @@ class PrefabsGenerator(
      * Loads animations synchronously to ensure they're in the scene before serialization.
      */
     fun spawnSkaterSync(skate: GameObject? = null, scene: Scene? = null) {
-        val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
+        val modelPath = resolveModelPath(Assets.Models.JAMES)
+        val model = resourceManager.getModel(modelPath) as CharacterModel?
+            ?: resourceManager.loadModelSync(modelPath) as CharacterModel
         val skater = Skater("Skater", model, skate)
 
         // Load animations synchronously for default scene
         animations.forEach { path ->
             try {
-                val animation = resourceManager.getAnimation(path)
+                val animPath = resolveAnimationPath(path)
+                val animation = resourceManager.getAnimation(animPath)
                 if (animation != null) {
                     skater.animator.addAnimation(animation)
                 }
@@ -125,10 +171,13 @@ class PrefabsGenerator(
      * Blocks until the floor tile is added to the scene.
      */
     fun spawnFloorSync(scene: Scene? = null) {
-        val texture = resourceManager.loadTextureSync(Assets.Textures.ASPHALT)
-        val baseModel = resourceManager.loadModelSync(Assets.Models.CUBE)
+        val texturePath = resolveTexturePath(Assets.Textures.ASPHALT)
+        val modelPath = resolveModelPath(Assets.Models.CUBE)
+        val texture = resourceManager.loadTextureSync(texturePath)
+        val baseModel = resourceManager.loadModelSync(modelPath)
         val texturedModel = TexturedModel(baseModel.mesh[0].rawModel, texture)
-        texturedModel.mesh[0].material.baseColorPath = Assets.Textures.ASPHALT
+        texturedModel.sourcePath = modelPath
+        texturedModel.mesh[0].material.baseColorPath = texturePath
 
         val tile = Tile("Tile", texturedModel)
         val targetScene = scene ?: sceneManager.currentScene

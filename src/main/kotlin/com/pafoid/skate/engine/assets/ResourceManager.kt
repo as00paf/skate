@@ -424,6 +424,7 @@ class ResourceManager(
                      TexturedModel(parts)
                  }
                  models[absolutePath] = characterModel
+                 characterModel.sourcePath = path
                  characterModel
         } catch (e: Exception) {
             logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)

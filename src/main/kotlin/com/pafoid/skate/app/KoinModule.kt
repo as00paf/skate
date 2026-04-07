@@ -87,6 +87,7 @@ import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.game.project.EngineAssetCopier
 import com.pafoid.skate.game.project.ProjectManager
 import com.pafoid.skate.game.project.ProjectWizard
 import com.pafoid.skate.game.trick.TrickManager
@@ -148,7 +149,7 @@ val appModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectWizardWindow() }
     single { ProjectSwitcherDialog() }
@@ -206,6 +207,7 @@ val engineModule = module {
 
     single { ThumbnailCache(get()) }
     single { PrefabsGenerator(get(), get()) }
+    single { EngineAssetCopier() }
     single { SplashScreen() }
 
     // Render resources factory - created lazily when Renderer is requested

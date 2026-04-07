@@ -192,7 +192,78 @@ class LevelManager(
                 } catch (e: Exception) {
                     logger.logEditor("Failed to resolve model ${rc.modelGuid} on ${obj.name}: ${e.message}")
                 }
+
+                // Apply texture GUIDs after loading the model
+                if (rc.model != null) {
+                    applyTextureGuidsToObject(obj)
+                }
             }
+        }
+    }
+
+    /**
+     * Load textures from saved GUIDs/paths and apply them to the model's materials.
+     */
+    private fun applyTextureGuidsToObject(obj: GameObject) {
+        val rc = obj.getComponent<RenderComponent>() ?: return
+        val model = rc.model ?: return
+
+        model.mesh.forEach { meshPart ->
+            val mat = meshPart.material
+
+            // Albedo
+            if (rc.albedoTextureGuid.isNotBlank() && mat.baseColorTexture == null) {
+                loadTextureFromGuidOrPath(rc.albedoTextureGuid)?.let { tex ->
+                    mat.baseColorTexture = tex
+                    mat.baseColorPath = tex.filePath
+                }
+            }
+            // Normal map
+            if (rc.normalMapGuid.isNotBlank() && mat.normalMap == null) {
+                loadTextureFromGuidOrPath(rc.normalMapGuid)?.let { tex ->
+                    mat.normalMap = tex
+                    mat.normalMapPath = tex.filePath
+                }
+            }
+            // Metallic/roughness
+            if (rc.metallicRoughnessGuid.isNotBlank() && mat.metallicRoughnessTexture == null) {
+                loadTextureFromGuidOrPath(rc.metallicRoughnessGuid)?.let { tex ->
+                    mat.metallicRoughnessTexture = tex
+                    mat.metallicRoughnessPath = tex.filePath
+                }
+            }
+            // AO
+            if (rc.aoGuid.isNotBlank() && mat.aoTexture == null) {
+                loadTextureFromGuidOrPath(rc.aoGuid)?.let { tex ->
+                    mat.aoTexture = tex
+                    mat.aoPath = tex.filePath
+                }
+            }
+            // Emissive
+            if (rc.emissiveGuid.isNotBlank() && mat.emissiveTexture == null) {
+                loadTextureFromGuidOrPath(rc.emissiveGuid)?.let { tex ->
+                    mat.emissiveTexture = tex
+                    mat.emissivePath = tex.filePath
+                }
+            }
+        }
+    }
+
+    private fun loadTextureFromGuidOrPath(guidOrPath: String): com.pafoid.skate.engine.assets.data.Texture? {
+        return try {
+            val guid = AssetGuid.parse(guidOrPath)
+            val asset = assetDatabase?.getByGuid(guid)
+            if (asset != null) {
+                resourceManager.loadTextureSync(asset.absoluteSourcePath)
+            } else null
+        } catch (e: IllegalArgumentException) {
+            // Not a valid GUID — treat as raw file path
+            val file = java.io.File(guidOrPath)
+            if (file.exists()) {
+                resourceManager.loadTextureSync(guidOrPath)
+            } else null
+        } catch (e: Exception) {
+            null
         }
     }
 

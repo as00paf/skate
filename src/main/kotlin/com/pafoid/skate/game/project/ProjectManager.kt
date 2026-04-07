@@ -17,6 +17,7 @@ class ProjectManager(
     private val serializer: Serializer,
     private val logger: LoggerService,
     private val assetDatabase: AssetDatabase,
+    private val engineAssetCopier: EngineAssetCopier,
     private val sceneManager: SceneManager,
     private val prefabsGenerator: PrefabsGenerator,
     private val levelManager: LevelManager
@@ -55,6 +56,19 @@ class ProjectManager(
                 if (projectDir != null) {
                     assetDatabase.initialize(projectDir).fold(
                         onSuccess = {
+                            // Copy engine-bundled default assets BEFORE scanning
+                            // so AssetDatabase can discover them and create .meta files with GUIDs
+                            engineAssetCopier.copyBundledAssets(projectDir).fold(
+                                onSuccess = { count ->
+                                    logger.logEditor("Copied $count engine-bundled assets to project")
+                                    // Tell PrefabsGenerator where to find the copied assets
+                                    prefabsGenerator.setEngineDefaultsRoot(projectDir)
+                                },
+                                onFailure = { e ->
+                                    logger.logEditor("Failed to copy engine assets: ${e.message}")
+                                }
+                            )
+                            // Now scan — .meta files will be created for all assets
                             assetDatabase.scanAll()
                             logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
                         },
@@ -114,7 +128,7 @@ class ProjectManager(
         logger.logEditor("Spawned ${scene.gameObjectManager.gameObjects.size} objects")
 
         // CRITICAL: Populate modelGuid on all RenderComponents before saving.
-        // model is @Transient and won't be serialized — without modelGuid, 
+        // model is @Transient and won't be serialized — without modelGuid,
         // models won't reload when the scene is opened later.
         resolveModelGuidsInScene(scene)
 
@@ -142,7 +156,10 @@ class ProjectManager(
         val model = rc.model ?: return
         if (rc.modelGuid.isNotBlank()) return
 
-        val modelPath = model.sourcePath ?: return
+        val modelPath = model.sourcePath ?: run {
+            logger.logEditor("WARNING: model.sourcePath is null for '${obj.name}', cannot resolve modelGuid")
+            return
+        }
         val modelFile = File(modelPath)
 
         // Always use absolute path for reliable round-trip serialization
@@ -158,6 +175,50 @@ class ProjectManager(
             // Engine-bundled asset not in AssetDatabase — store absolute path as fallback
             rc.modelGuid = absolutePath
             logger.logEditor("Stored absolute path for ${obj.name}: $absolutePath (engine-bundled asset)")
+        }
+
+        // Also resolve texture GUIDs from the model's materials
+        resolveTextureGuidsForObject(obj)
+    }
+
+    /**
+     * Walk all mesh part materials in the model and store texture paths as GUIDs
+     * (or absolute paths for engine-bundled textures not in the AssetDatabase).
+     */
+    private fun resolveTextureGuidsForObject(obj: com.pafoid.skate.engine.ecs.GameObject) {
+        val rc = obj.getComponent<com.pafoid.skate.engine.ecs.components.RenderComponent>() ?: return
+        val model = rc.model ?: return
+
+        model.mesh.forEach { meshPart ->
+            val mat = meshPart.material
+            // Resolve albedo/base color texture
+            if (mat.baseColorTexture != null && rc.albedoTextureGuid.isBlank()) {
+                val texPath = mat.baseColorTexture?.filePath ?: mat.baseColorPath ?: ""
+                if (texPath.isNotBlank()) {
+                    val texFile = File(texPath)
+                    val texAbsolutePath = if (texFile.isAbsolute) texFile.absolutePath else File(texPath).absolutePath
+                    val texAsset = assetDatabase.getByAbsolutePath(texAbsolutePath)
+                    rc.albedoTextureGuid = texAsset?.guid?.value ?: texAbsolutePath
+                }
+            }
+            if (mat.normalMap != null && rc.normalMapGuid.isBlank()) {
+                val texPath = mat.normalMap?.filePath ?: mat.normalMapPath ?: ""
+                if (texPath.isNotBlank()) {
+                    val texFile = File(texPath)
+                    val texAbsolutePath = if (texFile.isAbsolute) texFile.absolutePath else File(texPath).absolutePath
+                    val texAsset = assetDatabase.getByAbsolutePath(texAbsolutePath)
+                    rc.normalMapGuid = texAsset?.guid?.value ?: texAbsolutePath
+                }
+            }
+            if (mat.metallicRoughnessTexture != null && rc.metallicRoughnessGuid.isBlank()) {
+                val texPath = mat.metallicRoughnessTexture?.filePath ?: mat.metallicRoughnessPath ?: ""
+                if (texPath.isNotBlank()) {
+                    val texFile = File(texPath)
+                    val texAbsolutePath = if (texFile.isAbsolute) texFile.absolutePath else File(texPath).absolutePath
+                    val texAsset = assetDatabase.getByAbsolutePath(texAbsolutePath)
+                    rc.metallicRoughnessGuid = texAsset?.guid?.value ?: texAbsolutePath
+                }
+            }
         }
     }
 
@@ -194,6 +255,8 @@ class ProjectManager(
                     assetDatabase.initialize(projectDir).fold(
                         onSuccess = {
                             assetDatabase.scanAll()
+                            // Tell PrefabsGenerator where to find engine-bundled assets
+                            prefabsGenerator.setEngineDefaultsRoot(projectDir)
                             logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
                         },
                         onFailure = { e ->
@@ -228,13 +291,12 @@ class ProjectManager(
             settingsManager.updateProjectAssetRegistry(project, registryData)
         }
 
-        // Clear all game objects from open scenes to release physics/GPU/model resources
-        // but keep the scene infrastructure intact for the next project
-        sceneManager.openScenes.forEach { scene ->
+        // Destroy all game objects from open scenes
+        sceneManager.openScenes.toList().forEach { scene ->
+            // Destroy all game objects (releases physics bodies, GPU resources)
             scene.gameObjectManager.gameObjects.forEach { it.destroy() }
             scene.gameObjectManager.gameObjects.clear()
             scene.gameObjectManager.pendingObjects.clear()
-            scene.physics3d.destroy()
         }
 
         currentProject = null
@@ -258,9 +320,13 @@ class ProjectManager(
             return
         }
 
-        // Use the current scene (from BootManager init) to load the file
-        val scene = sceneManager.currentScene ?: return
+        val scene = sceneManager.currentScene ?: run {
+            logger.logEditor("No current scene, cannot load default scene")
+            return
+        }
+
         levelManager.loadFromFile(scene, defaultSceneFile.absolutePath)
+
         logger.logEditor("Loaded default scene from ${defaultSceneFile.absolutePath}")
     }
 
