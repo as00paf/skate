@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.physics3d.RayTestResult
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -57,6 +58,7 @@ class SkateboardPhysics : Component(), KoinComponent {
     )
 
     @Transient private lateinit var rb: IPhysicsBody3D
+    @Transient private lateinit var cachedTransform: Transform
     @Transient private val worldUp = Vector3f(0f, 1f, 0f)
 
     // Reusable vectors to reduce garbage collection in hot loops
@@ -68,20 +70,44 @@ class SkateboardPhysics : Component(), KoinComponent {
     @Transient private val torque = Vector3f()
     @Transient private val pointVelocity = Vector3f()
     @Transient private val worldForce = Vector3f()
-    
+
     var isGrounded = false
         private set
 
     // Track previous grounded state for event publishing
     private var wasGrounded = false
 
+    // Fixed-timestep accumulator for physics (120Hz)
+    private var updateAccumulator = 0f
+    private val updateTimestep = 1f / 120f
+
     override fun start() {
         rb = gameObject.getComponent<RigidBody3D>() ?: throw IllegalStateException("SkateboardPhysics requires RigidBody3D")
+        cachedTransform = gameObject.getComponent<Transform>() ?: throw IllegalStateException("SkateboardPhysics requires Transform")
         wasGrounded = false
     }
 
     override fun update(dt: Float) {
-        checkIfGrounded()
+        val worldMatrix = cachedTransform.toWorldMatrix()
+
+        // Run physics logic at fixed 120Hz timestep
+        updateAccumulator += dt
+        while (updateAccumulator >= updateTimestep) {
+            updateAccumulator -= updateTimestep
+            runPhysicsStep(worldMatrix)
+        }
+
+        // Steering runs every frame for responsiveness
+        if (isGrounded) {
+            applySteering(dt, worldMatrix)
+        }
+    }
+
+    /**
+     * Runs the physics step at fixed timestep: grounded check and event publishing.
+     */
+    private fun runPhysicsStep(worldMatrix: Matrix4f) {
+        checkIfGrounded(worldMatrix)
 
         // Publish events on grounded state change
         if (isGrounded != wasGrounded) {
@@ -101,25 +127,25 @@ class SkateboardPhysics : Component(), KoinComponent {
 
             wasGrounded = isGrounded
         }
-        
-        if (isGrounded) {
-            applySteering(dt)
-        }
     }
 
-    private fun checkIfGrounded() {
+    private fun checkIfGrounded(worldMatrix: Matrix4f) {
+        // Early exit: moving upward fast and already not grounded
+        if (rb.linearVelocity.y > 2.0f && !isGrounded) return
+
+        // Early exit: very high above ground — raycasts won't reach
+        if (cachedTransform.translation.y > suspensionRestLength * 3) return
+
         val scene = sceneManager.currentScene ?: return
-        val transform = gameObject.getComponent<Transform>() ?: return
-        val transformMatrix = transform.toWorldMatrix()
 
         var groundedCount = 0
         offsets.forEach { offset ->
             // Calculate ray start and end in world space (reuse vectors)
-            rayStart.set(offset).mulProject(transformMatrix)
+            rayStart.set(offset).mulProject(worldMatrix)
 
             // Ray direction is board-local down
             localDown.set(0f, -1f, 0f)
-            transformMatrix.transformDirection(localDown)
+            worldMatrix.transformDirection(localDown)
 
             rayEnd.set(localDown).mul(suspensionRestLength).add(rayStart)
             val closest = scene.physics3d.raycastClosest(rayStart, rayEnd)
@@ -132,12 +158,11 @@ class SkateboardPhysics : Component(), KoinComponent {
         isGrounded = groundedCount > 0
     }
 
-    private fun applySteering(dt: Float) {
+    private fun applySteering(dt: Float, worldMatrix: Matrix4f) {
         // Calculate Roll (Lean) relative to local forward
         // Local Right Vector in World Space
         localRight.set(0f, 0f, 1f)
-        val transform = gameObject.getComponent<Transform>() ?: return
-        transform.toWorldMatrix().transformDirection(localRight)
+        worldMatrix.transformDirection(localRight)
 
         // Project Local Right onto World Up to get Roll component
         // Dot product gives the sine of the angle if vectors are normalized
@@ -153,7 +178,7 @@ class SkateboardPhysics : Component(), KoinComponent {
             val torqueMagnitude = -roll * speed * steeringCoefficient
 
             localUp.set(0f, 1f, 0f)
-            transform.toWorldMatrix().transformDirection(localUp)
+            worldMatrix.transformDirection(localUp)
 
             torque.set(localUp).mul(torqueMagnitude)
             rb.applyTorqueImpulse(torque.mul(dt))

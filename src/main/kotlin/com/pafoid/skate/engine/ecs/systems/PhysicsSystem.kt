@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.toVector3f
@@ -29,21 +31,36 @@ import com.pafoid.skate.engine.physics3d.toVector3f
  */
 class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
 
-    override fun update(dt: Float) {
-        // Iterate all game objects and sync physics state
-        scene.gameObjectManager.gameObjects.forEach { go ->
-            val rigidBody = go.getComponent<RigidBody3D>() ?: return@forEach
+    private val rigidBodies = mutableListOf<GameObject>()
+    private var cacheDirty = true
 
-            // Auto-create PhysicsComponent if RigidBody3D exists but PhysicsComponent doesn't
-            // This prevents bugs where developers forget to add PhysicsComponent
+    override fun init(scene: Scene) {
+        super.init(scene)
+        rebuildCache()
+        cacheDirty = false
+    }
+
+    override fun start() {
+        cacheDirty = true
+    }
+
+    override fun invalidateCaches() {
+        rigidBodies.clear()
+        cacheDirty = true
+    }
+
+    override fun update(dt: Float) {
+        if (cacheDirty) rebuildCache()
+
+        for (go in rigidBodies) {
+            val rigidBody = go.getComponent<RigidBody3D>() ?: continue
+
             var physicsComponent = go.getComponent<PhysicsComponent>()
             if (physicsComponent == null) {
                 physicsComponent = PhysicsComponent()
                 go.addComponent(physicsComponent)
             }
 
-            // Sync physics state from body to component
-            // Note: rawBody may be null or not yet initialized if physics world is not yet set up (e.g., in debug mode)
             rigidBody.rawBody?.let { body ->
                 try {
                     physicsComponent.updateFromPhysics(
@@ -52,14 +69,22 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
                     )
                 } catch (e: AssertionError) {
                     // Body is not yet in physics world - skip this frame
-                    // This can happen during initialization in debug mode
                 }
             }
         }
     }
 
     override fun editorUpdate(dt: Float) {
-        // Also update in editor mode for debug visualization
         update(dt)
+    }
+
+    private fun rebuildCache() {
+        rigidBodies.clear()
+
+        for (go in scene.gameObjectManager.gameObjects) {
+            if (go.hasComponent<RigidBody3D>()) {
+                rigidBodies.add(go)
+            }
+        }
     }
 }

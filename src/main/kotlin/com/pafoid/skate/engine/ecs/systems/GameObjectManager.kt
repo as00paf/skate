@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 
 /**
  * Manages the lifecycle and operations of GameObjects within a scene.
@@ -79,7 +80,11 @@ class GameObjectManager(
                 continue
             }
             go.editorUpdate(dt)
-            physics3d.update(go)
+            val rb = go.getComponent<RigidBody3D>()
+            if (rb?.physicsDirty == true) {
+                physics3d.update(go)
+                rb.physicsDirty = false
+            }
         }
 
         processPendingObjects()

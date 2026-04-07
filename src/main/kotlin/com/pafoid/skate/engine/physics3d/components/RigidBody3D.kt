@@ -25,17 +25,21 @@ import org.joml.Vector3f
  */
 @Serializable
 open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
-    
+
     /**
      * The type of physics body (Dynamic, Static, Kinematic).
      */
     var bodyType: BodyType = BodyType.Dynamic
+        set(value) {
+            field = value
+            physicsDirty = true
+        }
 
     /**
      * Whether to use Continuous Collision Detection (CCD) for fast moving objects.
      */
     var useCCD: Boolean = false
-    
+
     /**
      * The friction coefficient of the surface.
      * Updates the underlying physics body immediately.
@@ -43,9 +47,10 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
     var friction: Float = 0.5f
         set(value) {
             field = value
+            physicsDirty = true
             rawBody?.friction = value
         }
-        
+
     /**
      * The linear damping (air resistance) applied to linear velocity.
      * Updates the underlying physics body immediately.
@@ -53,9 +58,10 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
     var linearDamping: Float = 0.0f
         set(value) {
             field = value
+            physicsDirty = true
             rawBody?.setDamping(value, angularDamping)
         }
-        
+
     /**
      * The angular damping (air resistance) applied to angular velocity.
      * Updates the underlying physics body immediately.
@@ -63,8 +69,16 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
     var angularDamping: Float = 0.0f
         set(value) {
             field = value
+            physicsDirty = true
             rawBody?.setDamping(linearDamping, value)
         }
+
+    /**
+     * Flag indicating whether physics properties have changed and need syncing.
+     * Set to true when friction, damping, or bodyType are modified.
+     * Reset to false after sync in editor mode.
+     */
+    var physicsDirty = false
 
     override fun start() {
         rawBody?.setAngularFactor(JmeVector3f(0f, 1f, 0f))
@@ -76,6 +90,9 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
      */
     @Transient var rawBody: PhysicsRigidBody? = null
 
+    @Transient private val tempQuat = Quaternionf()
+    @Transient private val tempEuler = Vector3f()
+
     override fun update(dt: Float) {
         rawBody?.let { body ->
             val transform = gameObject.getComponent<Transform>() ?: return
@@ -84,14 +101,13 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
 
             transform.translation.set(pos.x, pos.y, pos.z)
 
-            // JME Quaternion to Euler (JOML)
-            val q = Quaternionf(rot.x, rot.y, rot.z, rot.w)
-            val euler = JomlVector3f()
-            q.getEulerAnglesXYZ(euler)
+            // JME Quaternion to Euler (JOML) — reused temp objects
+            tempQuat.set(rot.x, rot.y, rot.z, rot.w)
+            tempQuat.getEulerAnglesXYZ(tempEuler)
             transform.rotation.set(
-                Math.toDegrees(euler.x.toDouble()).toFloat(),
-                Math.toDegrees(euler.y.toDouble()).toFloat(),
-                Math.toDegrees(euler.z.toDouble()).toFloat()
+                Math.toDegrees(tempEuler.x.toDouble()).toFloat(),
+                Math.toDegrees(tempEuler.y.toDouble()).toFloat(),
+                Math.toDegrees(tempEuler.z.toDouble()).toFloat()
             )
         }
     }

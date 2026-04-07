@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources
 import com.pafoid.skate.engine.render.RenderResourcesFactory
@@ -70,6 +71,9 @@ class Renderer(
      * @param hoveredGameObject The currently hovered game object (if any)
      */
     override fun render(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
+        // Reset per-frame draw call counter
+        EngineStats.resetDrawCalls()
+
         // Update camera viewport dimensions once for all passes (correct aspect ratio)
         val width = renderResources.frameBuffer.width
         val height = renderResources.frameBuffer.height
