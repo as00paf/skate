@@ -87,8 +87,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.visibility"), ImGuiTableColumnFlags.WidthFixed, 24f)
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.lock"), ImGuiTableColumnFlags.WidthFixed, 24f)
 
-            // Iterate directly without toList() to avoid per-frame allocation
-            scene.gameObjectManager.gameObjects.forEach { obj ->
+            // Use toList() to snapshot the list — deleting objects during iteration causes ConcurrentModificationException
+            scene.gameObjectManager.gameObjects.toList().forEach { obj ->
                 if (obj.parent == null) { // Only draw root objects
                     doTreeNode(obj, filter)
                 }
@@ -323,8 +323,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         ImGui.popStyleColor(4)
 
         if (nodeOpen) {
-            // Iterate directly without toList() to avoid per-frame allocation
-            obj.children.forEach { child ->
+            // Use toList() to snapshot the list — deleting objects during iteration causes ConcurrentModificationException
+            obj.children.toList().forEach { child ->
                 doTreeNode(child, filter)
             }
             ImGui.treePop()

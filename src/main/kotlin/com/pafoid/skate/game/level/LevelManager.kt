@@ -156,6 +156,16 @@ class LevelManager(
         }
 
         logger.logEditor("Level loaded from $path")
+
+        // ─── DIAGNOSTIC: Compare scene state with master branch ───
+        val goCount = scene.gameObjectManager.gameObjects.size
+        val pendingCount = scene.gameObjectManager.pendingObjects.size
+        val systemCount = scene.systemManager.systems.size
+        logger.logEditor("[DIAG] GameObjects: $goCount, Pending: $pendingCount, Systems: $systemCount, isRunning: ${scene.isRunning}")
+        scene.gameObjectManager.gameObjects.forEach { go ->
+            val compCount = go.getAllComponents().size
+            logger.logEditor("[DIAG]   - ${go.name}: $compCount components")
+        }
     }
 
     /**
