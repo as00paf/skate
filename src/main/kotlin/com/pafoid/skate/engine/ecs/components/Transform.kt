@@ -40,7 +40,7 @@ class Transform(
     override fun imgui() {
         MImGui.drawVec3TransformControl("Position", translation)
         MImGui.drawVec3TransformControl("Rotation", rotation, 0f, MImGui.SENSIBILITY_ROTATION)
-        MImGui.drawVec3TransformControl("Scale", scale, 1f, MImGui.SENSIBILITY_SCALE)
+        MImGui.drawVec3TransformControl("Scale", scale, 1f, MImGui.SENSIBILITY_SCALE, true)
     }
 }
 
