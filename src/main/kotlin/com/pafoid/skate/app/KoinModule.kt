@@ -161,10 +161,10 @@ val appModule = module {
             registerProvider(get<ActionSearchProvider>())
         }
     }
-    single { GameObjectSearchProvider() }
-    single { AssetSearchProvider() }
-    single { ComponentSearchProvider() }
-    single { ActionSearchProvider() }
+    single { GameObjectSearchProvider(get(), get()) }
+    single { AssetSearchProvider(get()) }
+    single { ComponentSearchProvider(get(), get()) }
+    single { ActionSearchProvider(get(), get(), get(), get(), get()) }
     single { SearchEverywhereWindow(SearchHistory(serializer = get())) }
 }
 

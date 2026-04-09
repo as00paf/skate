@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.search.providers
 import com.pafoid.skate.editor.commands.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.TransformCommand
+import com.pafoid.skate.editor.data.EditorAction
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.SearchCategory
@@ -16,40 +17,20 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.game.level.LevelManager
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Search provider for editor actions and commands.
  *
  * This provider searches a hardcoded list of editor actions by display name and keywords.
  * Results support direct execution of the action when selected.
- *
- * Search features:
- * - Case-insensitive matching on display name and keywords
- * - Fuzzy matching for abbreviated queries
- * - Action description shown in result
- * - Action ID in metadata for execution
- *
- * Navigation:
- * - Executes the associated action lambda
- * - Actions include scene management, object creation, and transform operations
- *
- * Available actions:
- * - Create Empty: Create empty GameObject
- * - Save Scene: Save current scene to disk
- * - Play: Start simulation
- * - Stop: Stop simulation
- * - Reset Transform: Reset selected object's transform to identity
- * - Delete: Delete selected object
- * - Duplicate: Duplicate selected object
  */
-class ActionSearchProvider : BaseSearchProvider(), KoinComponent {
-
-    private val sceneManager: SceneManager by inject()
-    private val levelManager: LevelManager by inject()
-    private val undoRedoManager: UndoRedoManager by inject()
-    private val logger: LoggerService by inject()
-    private val serializer: Serializer by inject()
+class ActionSearchProvider(
+    private val sceneManager: SceneManager,
+    private val levelManager: LevelManager,
+    private val undoRedoManager: UndoRedoManager,
+    private val serializer: Serializer,
+    private val logger: LoggerService,
+) : BaseSearchProvider(), KoinComponent {
 
     override val category: SearchCategory = SearchCategory.ACTION
 

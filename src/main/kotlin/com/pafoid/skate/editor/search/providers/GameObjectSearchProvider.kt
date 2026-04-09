@@ -12,7 +12,6 @@ import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Search provider for GameObjects in the current scene.
@@ -31,10 +30,10 @@ import org.koin.core.component.inject
  * - Selects the GameObject in SceneHierarchy via GameObjectManager
  * - The selected GameObject will be focused in viewport by existing GizmoSystem
  */
-class GameObjectSearchProvider : BaseSearchProvider(), KoinComponent {
-
-    private val sceneManager: SceneManager by inject()
-    private val stringManager: StringManager by inject()
+class GameObjectSearchProvider(
+    private val sceneManager: SceneManager,
+    private val stringManager: StringManager,
+) : BaseSearchProvider(), KoinComponent {
 
     override val category: SearchCategory = SearchCategory.GAMEOBJECT
 

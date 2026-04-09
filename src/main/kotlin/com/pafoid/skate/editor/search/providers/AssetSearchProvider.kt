@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.search.providers
 
+import com.pafoid.skate.editor.data.PrefabInfo
+import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.SearchCategory
@@ -9,7 +11,6 @@ import com.pafoid.skate.engine.assets.Assets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.io.File
 
 /**
@@ -30,16 +31,14 @@ import java.io.File
  * - Opens AssetBrowserWindow
  * - Future enhancement: Switch to the appropriate tab and highlight the asset
  */
-class AssetSearchProvider : BaseSearchProvider(), KoinComponent {
-
-    private val logger: LoggerService by inject()
+class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvider(), KoinComponent {
 
     override val category: SearchCategory = SearchCategory.ASSET_MODEL
 
     private val textureExtensions = listOf("png", "jpg", "jpeg")
     private val modelExtensions = listOf("obj", "glb", "gltf", "fbx")
     private val animationExtensions = listOf("fbx")
-    private val soundExtensions = listOf("wav", "ogg")
+    private val soundExtensions = listOf("wav", "ogg", "mp3")
 
     override suspend fun search(query: String): List<SearchResult> {
         if (query.isBlank()) return emptyList()

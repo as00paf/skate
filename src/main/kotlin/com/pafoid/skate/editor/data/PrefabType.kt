@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor.search.providers
+package com.pafoid.skate.editor.data
 
 enum class PrefabType {
     SKATEBOARD,

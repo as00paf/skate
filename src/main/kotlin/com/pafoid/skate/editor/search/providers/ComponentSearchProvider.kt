@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Search provider for components on all GameObjects in the scene.
@@ -30,10 +29,10 @@ import org.koin.core.component.inject
  * - The PropertiesWindow will display the GameObject's components
  * - User can then expand the specific component in the UI
  */
-class ComponentSearchProvider : BaseSearchProvider(), KoinComponent {
-
-    private val sceneManager: SceneManager by inject()
-    private val stringManager: StringManager by inject()
+class ComponentSearchProvider(
+    private val sceneManager: SceneManager,
+    private val stringManager: StringManager,
+) : BaseSearchProvider(), KoinComponent {
 
     override val category: SearchCategory = SearchCategory.COMPONENT
 
