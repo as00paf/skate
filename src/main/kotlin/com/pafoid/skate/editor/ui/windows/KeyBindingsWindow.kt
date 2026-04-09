@@ -34,7 +34,7 @@ class KeyBindingsWindow(
 ) : IWindow {
 
     private var keyBindingAction: String? = null
-    private var keyBindingTab = 0  // 0=Editor, 1=Camera, 2=Gamepad
+    private var keyBindingTab = 0  // 0=Editor, 1=Camera, 2=Gamepad, 3=Hierarchy
 
     // Load input mappings once from persisted storage (or defaults)
     private var inputMappings: InputMappings =
@@ -51,7 +51,8 @@ class KeyBindingsWindow(
             val tabNames = arrayOf(
                 stringManager.getString("tab.keybindings.editor"),
                 stringManager.getString("tab.keybindings.camera"),
-                stringManager.getString("tab.keybindings.gamepad")
+                stringManager.getString("tab.keybindings.gamepad"),
+                stringManager.getString("tab.keybindings.hierarchy")
             )
             val tabSelector = ImInt(keyBindingTab)
             if (combo("##TabSelector", tabSelector, tabNames, tabNames.size)) {
@@ -65,6 +66,7 @@ class KeyBindingsWindow(
                 0 -> renderEditorBindingsTab(inputMappings)
                 1 -> renderCameraBindingsTab(inputMappings)
                 2 -> renderGamepadBindingsTab(inputMappings)
+                3 -> renderHierarchyBindingsTab(inputMappings)
             }
 
             separator()
@@ -157,6 +159,26 @@ class KeyBindingsWindow(
         drawBindRow(stringManager.getString("lbl.keybindings.sprint_trigger"), inputMappings.sprint.gamepadAxis, "gamepadSprint")
     }
 
+    private fun renderHierarchyBindingsTab(inputMappings: InputMappings) {
+        text(stringManager.getString("lbl.keybindings.hierarchy_section"))
+        separator()
+        drawBindRow(stringManager.getString("lbl.hierarchy.create_new"), inputMappings.hierarchyCreateNew.keyboardKey, "hierarchyCreateNew")
+        drawBindRow(stringManager.getString("lbl.hierarchy.delete"), inputMappings.hierarchyDelete.keyboardKey, "hierarchyDelete")
+        drawBindRow(stringManager.getString("lbl.hierarchy.duplicate"), inputMappings.hierarchyDuplicate.keyboardKey, "hierarchyDuplicate")
+        drawBindRow(stringManager.getString("lbl.hierarchy.rename"), inputMappings.hierarchyRename.keyboardKey, "hierarchyRename")
+        drawBindRow(stringManager.getString("lbl.hierarchy.toggle_visibility"), inputMappings.hierarchyToggleVisibility.keyboardKey, "hierarchyToggleVisibility")
+        drawBindRow(stringManager.getString("lbl.hierarchy.toggle_lock"), inputMappings.hierarchyToggleLock.keyboardKey, "hierarchyToggleLock")
+
+        separator()
+        text(stringManager.getString("lbl.keybindings.hierarchy_navigation_section"))
+        separator()
+        drawBindRow(stringManager.getString("lbl.hierarchy.navigate_up"), inputMappings.hierarchyNavigateUp.keyboardKey, "hierarchyNavigateUp")
+        drawBindRow(stringManager.getString("lbl.hierarchy.navigate_down"), inputMappings.hierarchyNavigateDown.keyboardKey, "hierarchyNavigateDown")
+        drawBindRow(stringManager.getString("lbl.hierarchy.select_first"), inputMappings.hierarchySelectFirst.keyboardKey, "hierarchySelectFirst")
+        drawBindRow(stringManager.getString("lbl.hierarchy.select_last"), inputMappings.hierarchySelectLast.keyboardKey, "hierarchySelectLast")
+        drawBindRow(stringManager.getString("lbl.hierarchy.deselect"), inputMappings.hierarchyDeselect.keyboardKey, "hierarchyDeselect")
+    }
+
     private fun drawBindRow(label: String, currentKey: Int, bindAction: String) {
         text(label)
         sameLine(200f)
@@ -185,6 +207,18 @@ class KeyBindingsWindow(
             "pause" -> inputMappings.pause.keyboardKey = key
             "reset" -> inputMappings.reset.keyboardKey = key
             "stanceChange" -> inputMappings.stanceChange.keyboardKey = key
+            // Hierarchy
+            "hierarchyCreateNew" -> inputMappings.hierarchyCreateNew.keyboardKey = key
+            "hierarchyDelete" -> inputMappings.hierarchyDelete.keyboardKey = key
+            "hierarchySelectFirst" -> inputMappings.hierarchySelectFirst.keyboardKey = key
+            "hierarchySelectLast" -> inputMappings.hierarchySelectLast.keyboardKey = key
+            "hierarchyNavigateUp" -> inputMappings.hierarchyNavigateUp.keyboardKey = key
+            "hierarchyNavigateDown" -> inputMappings.hierarchyNavigateDown.keyboardKey = key
+            "hierarchyToggleVisibility" -> inputMappings.hierarchyToggleVisibility.keyboardKey = key
+            "hierarchyToggleLock" -> inputMappings.hierarchyToggleLock.keyboardKey = key
+            "hierarchyDuplicate" -> inputMappings.hierarchyDuplicate.keyboardKey = key
+            "hierarchyRename" -> inputMappings.hierarchyRename.keyboardKey = key
+            "hierarchyDeselect" -> inputMappings.hierarchyDeselect.keyboardKey = key
         }
     }
 

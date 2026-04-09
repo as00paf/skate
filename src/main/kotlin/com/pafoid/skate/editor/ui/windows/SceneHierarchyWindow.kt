@@ -2,10 +2,16 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.commands.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
+import com.pafoid.skate.editor.commands.LockToggleCommand
+import com.pafoid.skate.editor.commands.ReparentGameObjectCommand
+import com.pafoid.skate.editor.commands.RenameGameObjectCommand
+import com.pafoid.skate.editor.commands.VisibilityToggleCommand
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.GameObject
@@ -28,9 +34,7 @@ import imgui.type.ImString
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE
-import org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE
-import org.lwjgl.glfw.GLFW.GLFW_KEY_F2
+import org.lwjgl.glfw.GLFW.*
 
 class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
@@ -40,17 +44,22 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
     private val clipboardService: ClipboardService by inject()
     private val logger: LoggerService by inject()
     private val eventSystem: EventSystem by inject()
+    private val editorInputHandler: EditorInputHandler by inject()
 
     private val searchQuery = ImString(256)
     private var isLinked = false
-    
+
     private var editingObjUid: Int? = null
     private val editNameStr = ImString(128)
     private var focusEditInput = false
 
+    private var navigationIndex = -1
+    private val expandedNodes = mutableSetOf<Int>()
+    private var flatObjectList: List<GameObject> = emptyList()
+
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.hierarchy"))
-        
+
         // Toolbar
         ImGui.pushItemWidth(ImGui.getContentRegionAvailX() - 60f)
         ImGui.inputTextWithHint("##Search", "${Icons.SEARCH} ${stringManager.getString("lbl.hierarchy.search")}", searchQuery)
@@ -62,6 +71,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             scene.gameObjectManager.addGameObject(newObj)
             scene.setSelectedGameObject(newObj)
             eventSystem.publish(GameObjectSelected(newObj))
+            rebuildFlatList(scene)
+            navigationIndex = flatObjectList.indexOf(newObj).coerceAtLeast(0)
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.add_gameobject"))
@@ -80,43 +91,125 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.link_selection"))
         }
-        
+
         ImGui.separator()
 
+        // Check for pending rename from global shortcut (F2 in EditorInputHandler)
+        val pendingRenameUid = editorInputHandler.consumePendingRename()
+        if (pendingRenameUid != null && editingObjUid == null) {
+            val go = scene.gameObjectManager.getGameObject(pendingRenameUid)
+            if (go != null) {
+                startRename(go)
+            }
+        }
+
+        // Navigation-only shortcuts (window-focused)
+        handleWindowNavigation(scene)
+
         val filter = searchQuery.get()
+
+        rebuildFlatList(scene)
 
         if (ImGui.beginTable("HierarchyTable", 3, ImGuiTableFlags.BordersInnerH or ImGuiTableFlags.Resizable or ImGuiTableFlags.ScrollY)) {
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.name"), ImGuiTableColumnFlags.WidthStretch)
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.visibility"), ImGuiTableColumnFlags.WidthFixed, 24f)
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.lock"), ImGuiTableColumnFlags.WidthFixed, 24f)
 
-            // Use toList() to snapshot the list — deleting objects during iteration causes ConcurrentModificationException
             scene.gameObjectManager.gameObjects.toList().forEach { obj ->
-                if (obj.parent == null) { // Only draw root objects
+                if (obj.parent == null) {
                     doTreeNode(obj, filter)
                 }
             }
             ImGui.endTable()
         }
 
-        if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_DELETE)) {
-            sceneManager.currentScene?.let { scn ->
-                scn.getSelectedGameObject()?.let { go ->
-                    undoRedoManager.executeCommand(DeleteGameObjectCommand(go, scn))
-                    eventSystem.publish(SelectionCleared)
-                }
-            }
-        }
-
-        if (ImGui.isWindowFocused() && ImGui.isKeyPressed(GLFW_KEY_F2)) {
-            sceneManager.currentScene?.getSelectedGameObject()?.let { go ->
-                editingObjUid = go.getUid()
-                editNameStr.set(go.name)
-                focusEditInput = true
-            }
-        }
-
         ImGui.end()
+    }
+
+    /**
+     * Handle navigation-only keyboard shortcuts (window-focused).
+     * These only work when the hierarchy window is focused and are for tree navigation.
+     */
+    private fun handleWindowNavigation(scene: Scene) {
+        if (!ImGui.isWindowFocused()) return
+
+        val ctrlDown = ImGui.isKeyDown(GLFW_KEY_LEFT_CONTROL) || ImGui.isKeyDown(GLFW_KEY_RIGHT_CONTROL)
+
+        // Navigate Up (only if not in Ctrl combination)
+        if (ImGui.isKeyPressed(GLFW_KEY_UP) && !ctrlDown) {
+            navigationIndex = (navigationIndex - 1).coerceAtLeast(0)
+            selectObjectAtIndex(navigationIndex, scene)
+        }
+
+        // Navigate Down (only if not in Ctrl combination)
+        if (ImGui.isKeyPressed(GLFW_KEY_DOWN) && !ctrlDown) {
+            val maxIndex = flatObjectList.size - 1
+            navigationIndex = (navigationIndex + 1).coerceAtMost(maxIndex)
+            selectObjectAtIndex(navigationIndex, scene)
+        }
+
+        // Select First (Home)
+        if (ImGui.isKeyPressed(GLFW_KEY_HOME)) {
+            navigationIndex = 0
+            selectObjectAtIndex(0, scene)
+        }
+
+        // Select Last (End)
+        if (ImGui.isKeyPressed(GLFW_KEY_END)) {
+            val maxIndex = flatObjectList.size - 1
+            navigationIndex = maxIndex.coerceAtLeast(0)
+            selectObjectAtIndex(navigationIndex, scene)
+        }
+    }
+
+    private fun rebuildFlatList(scene: Scene) {
+        flatObjectList = buildFlatList(scene)
+    }
+
+    private fun buildFlatList(scene: Scene): List<GameObject> {
+        val result = mutableListOf<GameObject>()
+        scene.gameObjectManager.gameObjects.toList().forEach { obj ->
+            if (obj.parent == null) {
+                flattenTreeNode(obj, result)
+            }
+        }
+        return result
+    }
+
+    private fun flattenTreeNode(obj: GameObject, result: MutableList<GameObject>) {
+        result.add(obj)
+        if (expandedNodes.contains(obj.getUid()) || obj.children.isEmpty()) {
+            obj.children.toList().forEach { child ->
+                flattenTreeNode(child, result)
+            }
+        }
+    }
+
+    private fun selectObjectAtIndex(index: Int, scene: Scene) {
+        if (index in flatObjectList.indices) {
+            val go = flatObjectList[index]
+            scene.setSelectedGameObject(go)
+            eventSystem.publish(GameObjectSelected(go))
+        }
+    }
+
+    private fun startRename(go: GameObject) {
+        editingObjUid = go.getUid()
+        editNameStr.set(go.name)
+        focusEditInput = true
+    }
+
+    private fun cloneGameObject(go: GameObject): GameObject {
+        val cloned = GameObject("${go.name}_clone")
+        val originalTransform = go.getComponent<Transform>()
+        val newTransform = Transform()
+        originalTransform?.let { orig ->
+            newTransform.copyFrom(orig)
+        }
+        newTransform.translation.x += 0.5f
+        newTransform.translation.z += 0.5f
+        cloned.addComponent(newTransform)
+        return cloned
     }
 
     private fun doTreeNode(obj: GameObject, filter: String) {
@@ -124,6 +217,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         val hasMatchingChild = hasMatchingChild(obj, filter)
 
         if (!matchesFilter && !hasMatchingChild) return
+
+        val currentIndex = flatObjectList.indexOf(obj)
 
         ImGui.pushID(obj.getUid())
         ImGui.tableNextRow()
@@ -136,7 +231,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         if (obj == sceneManager.currentScene?.getSelectedGameObject()) {
             flags = flags or ImGuiTreeNodeFlags.Selected
         }
-        
+
         if (filter.isNotEmpty() && hasMatchingChild) {
             ImGui.setNextItemOpen(true, ImGuiCond.Always)
         }
@@ -146,7 +241,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             val isOpen = ImGui.treeNodeEx("##${obj.getUid()}", flags)
             ImGui.sameLine()
             ImGui.pushItemWidth(-1f)
-            
+
             if (focusEditInput) {
                 ImGui.setKeyboardFocusHere()
                 focusEditInput = false
@@ -157,19 +252,27 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                 editNameStr,
                 ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
             )
-            
+
             if (enterPressed) {
-                obj.name = editNameStr.get()
+                val newName = editNameStr.get()
+                val oldName = obj.name
+                if (newName != oldName) {
+                    undoRedoManager.executeCommand(RenameGameObjectCommand(obj, newName, oldName))
+                }
                 editingObjUid = null
             } else if (ImGui.isItemDeactivated()) {
                 if (ImGui.isKeyPressed(GLFW_KEY_ESCAPE)) {
                     editingObjUid = null
                 } else {
-                    obj.name = editNameStr.get()
+                    val newName = editNameStr.get()
+                    val oldName = obj.name
+                    if (newName != oldName) {
+                        undoRedoManager.executeCommand(RenameGameObjectCommand(obj, newName, oldName))
+                    }
                     editingObjUid = null
                 }
             }
-            
+
             ImGui.popItemWidth()
             isOpen
         } else {
@@ -178,24 +281,21 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
         if (!isEditing) {
             if (ImGui.isItemHovered() && ImGui.isMouseDoubleClicked(0)) {
-                editingObjUid = obj.getUid()
-                editNameStr.set(obj.name)
-                focusEditInput = true
+                startRename(obj)
                 sceneManager.currentScene?.setSelectedGameObject(obj)
                 eventSystem.publish(GameObjectSelected(obj))
             } else if (ImGui.isItemClicked()) {
                 sceneManager.currentScene?.setSelectedGameObject(obj)
                 eventSystem.publish(GameObjectSelected(obj))
+                navigationIndex = flatObjectList.indexOf(obj)
             }
-            
-            // Drag and Drop Source - allow dragging GameObject to reparent
+
             if (ImGui.beginDragDropSource()) {
                 ImGui.setDragDropPayload("GAMEOBJECT_UID", obj.getUid() as Any)
                 ImGui.text(obj.name)
                 ImGui.endDragDropSource()
             }
-            
-            // Drag and Drop Target - allow dropping GameObjects to reparent
+
             if (ImGui.beginDragDropTarget()) {
                 val payload = ImGui.acceptDragDropPayload<Int>("GAMEOBJECT_UID")
                 if (payload != null) {
@@ -203,7 +303,6 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                     val scene = sceneManager.currentScene
                     if (scene != null) {
                         val draggedObject = scene.gameObjectManager.getGameObject(draggedUid)
-                        // Don't allow dropping on self or children
                         if (draggedObject != null && draggedObject != obj && !isChildOf(obj, draggedObject)) {
                             reparentGameObject(draggedObject, obj)
                         }
@@ -212,30 +311,28 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                 ImGui.endDragDropTarget()
             }
         }
-        
+
         if (ImGui.beginPopupContextItem()) {
-            // Create Empty Child
             if (ImGui.beginMenu("${Icons.PLUS} ${stringManager.getString("context.hierarchy.create_empty_child")}")) {
                 if (ImGui.menuItem(stringManager.getString("lbl.gameobject.empty"))) {
                     val childObj = GameObject(stringManager.getString("lbl.gameobject.default"))
-                    val parentTransform = obj.getComponent<Transform>()
                     childObj.addComponent(Transform())
                     childObj.parent = obj
                     sceneManager.currentScene?.let { scn ->
                         undoRedoManager.executeCommand(CreateGameObjectCommand(childObj, scn))
+                        rebuildFlatList(scn)
                     }
                 }
                 ImGui.endMenu()
             }
-            
+
             ImGui.separator()
-            
-            // Duplicate
+
             if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.duplicate")}")) {
                 duplicateGameObject(obj)
+                rebuildFlatList(sceneManager.currentScene ?: return)
             }
-            
-            // Copy/Cut/Paste
+
             if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.copy")}")) {
                 clipboardService.copy(obj)
             }
@@ -243,103 +340,111 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                 clipboardService.copy(obj)
                 sceneManager.currentScene?.let { scn ->
                     undoRedoManager.executeCommand(DeleteGameObjectCommand(obj, scn))
+                    rebuildFlatList(scn)
                 }
             }
             if (ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("context.hierarchy.paste_as_child")}")) {
                 pasteAsChild(obj)
+                rebuildFlatList(sceneManager.currentScene ?: return)
             }
-            
+
             ImGui.separator()
-            
-            // Delete
+
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.hierarchy.delete")}")) {
                 sceneManager.currentScene?.let { scn ->
                     undoRedoManager.executeCommand(DeleteGameObjectCommand(obj, scn))
+                    rebuildFlatList(scn)
                 }
             }
-            
-            // Rename
+
             if (ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.hierarchy.rename")}")) {
-                editingObjUid = obj.getUid()
-                editNameStr.set(obj.name)
-                focusEditInput = true
+                startRename(obj)
             }
-            
+
             ImGui.separator()
-            
-            // Focus in Viewport
+
             if (ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.hierarchy.focus_in_viewport")}")) {
                 focusOnGameObject(obj)
             }
-            
+
             ImGui.separator()
-            
-            // Lock/Unlock toggle
-            val lockLabel = if (obj.isLocked) 
-                "${Icons.UNLOCK} ${stringManager.getString("context.hierarchy.lock_unlock")}" 
-            else 
+
+            if (ImGui.menuItem("${stringManager.getString("context.hierarchy.expand_all")}")) {
+                expandAll(sceneManager.currentScene ?: return)
+            }
+            if (ImGui.menuItem("${stringManager.getString("context.hierarchy.collapse_all")}")) {
+                collapseAll(sceneManager.currentScene ?: return)
+            }
+
+            ImGui.separator()
+
+            val lockLabel = if (obj.isLocked)
+                "${Icons.UNLOCK} ${stringManager.getString("context.hierarchy.lock_unlock")}"
+            else
                 "${Icons.LOCK} ${stringManager.getString("context.hierarchy.lock_unlock")}"
             if (ImGui.menuItem(lockLabel)) {
-                obj.isLocked = !obj.isLocked
+                val newLock = !obj.isLocked
+                undoRedoManager.executeCommand(LockToggleCommand(obj, newLock))
             }
-            
-            // Visible/Hidden toggle
-            val visLabel = if (obj.isVisible) 
-                "${Icons.EYE_SLASH} ${stringManager.getString("context.hierarchy.visible_hidden")}" 
-            else 
+
+            val visLabel = if (obj.isVisible)
+                "${Icons.EYE_SLASH} ${stringManager.getString("context.hierarchy.visible_hidden")}"
+            else
                 "${Icons.EYE} ${stringManager.getString("context.hierarchy.visible_hidden")}"
             if (ImGui.menuItem(visLabel)) {
-                obj.isVisible = !obj.isVisible
+                val newVis = !obj.isVisible
+                undoRedoManager.executeCommand(VisibilityToggleCommand(obj, newVis))
             }
-            
+
             ImGui.endPopup()
         }
 
         ImGui.tableNextColumn()
-        
-        // Visibility toggle
+
         val visIcon = if (obj.isVisible) Icons.EYE else Icons.EYE_SLASH
         val visColor = if (obj.isVisible) ImGui.getColorU32(ImGuiCol.Text) else ImGui.getColorU32(ImGuiCol.TextDisabled)
         ImGui.pushStyleColor(ImGuiCol.Text, visColor)
-        
-        // Transparent button background
+
         ImGui.pushStyleColor(ImGuiCol.Button, 0)
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, ImGui.getColorU32(ImGuiCol.FrameBgHovered))
         ImGui.pushStyleColor(ImGuiCol.ButtonActive, ImGui.getColorU32(ImGuiCol.FrameBgActive))
-        
+
         if (ImGui.button("$visIcon##vis_${obj.getUid()}")) {
-            obj.isVisible = !obj.isVisible
+            val newVis = !obj.isVisible
+            undoRedoManager.executeCommand(VisibilityToggleCommand(obj, newVis))
         }
         if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.toggle_visibility"))
         ImGui.popStyleColor(4)
-        
+
         ImGui.tableNextColumn()
-        
-        // Lock toggle
+
         val lockIcon = if (obj.isLocked) Icons.LOCK else Icons.UNLOCK
         val lockColor = if (obj.isLocked) ImGui.getColorU32(ImGuiCol.Text) else ImGui.getColorU32(ImGuiCol.TextDisabled)
         ImGui.pushStyleColor(ImGuiCol.Text, lockColor)
         ImGui.pushStyleColor(ImGuiCol.Button, 0)
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, ImGui.getColorU32(ImGuiCol.FrameBgHovered))
         ImGui.pushStyleColor(ImGuiCol.ButtonActive, ImGui.getColorU32(ImGuiCol.FrameBgActive))
-        
+
         if (ImGui.button("$lockIcon##lock_${obj.getUid()}")) {
-            obj.isLocked = !obj.isLocked
+            val newLock = !obj.isLocked
+            undoRedoManager.executeCommand(LockToggleCommand(obj, newLock))
         }
         if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.toggle_lock"))
         ImGui.popStyleColor(4)
 
         if (nodeOpen) {
-            // Use toList() to snapshot the list — deleting objects during iteration causes ConcurrentModificationException
+            expandedNodes.add(obj.getUid())
             obj.children.toList().forEach { child ->
                 doTreeNode(child, filter)
             }
             ImGui.treePop()
+        } else if (!isEditing) {
+            expandedNodes.remove(obj.getUid())
         }
-        
+
         ImGui.popID()
     }
-    
+
     private fun hasMatchingChild(obj: GameObject, filter: String): Boolean {
         if (filter.isEmpty()) return true
         for (child in obj.children) {
@@ -348,10 +453,25 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         }
         return false
     }
-    
+
+    private fun expandAll(scene: Scene?) {
+        scene ?: return
+        scene.gameObjectManager.gameObjects.toList().forEach { obj ->
+            if (obj.children.isNotEmpty()) {
+                expandedNodes.add(obj.getUid())
+            }
+        }
+        rebuildFlatList(scene)
+    }
+
+    private fun collapseAll(scene: Scene?) {
+        scene ?: return
+        expandedNodes.clear()
+        rebuildFlatList(scene)
+    }
+
     private fun duplicateGameObject(gameObject: GameObject) {
         val scene = sceneManager.currentScene ?: return
-        // Create a new GameObject with copied transform
         val duplicated = GameObject("${gameObject.name}_clone")
         val originalTransform = gameObject.getComponent<Transform>()
         val newTransform = Transform()
@@ -363,6 +483,10 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
         duplicated.addComponent(newTransform)
         undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
+        scene.setSelectedGameObject(duplicated)
+        eventSystem.publish(GameObjectSelected(duplicated))
+        rebuildFlatList(scene)
+        navigationIndex = flatObjectList.indexOf(duplicated).coerceAtLeast(0)
     }
 
     private fun pasteAsChild(parentObject: GameObject) {
@@ -372,34 +496,33 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         cloned.parent = parentObject
         cloned.getComponent<Transform>()?.translation?.set(0f, 0f, 0f)
         undoRedoManager.executeCommand(CreateGameObjectCommand(cloned, scene))
+        rebuildFlatList(scene)
     }
-    
+
     private fun focusOnGameObject(gameObject: GameObject) {
         val scene = sceneManager.currentScene ?: return
         val transform = gameObject.getComponent<Transform>() ?: return
         val pos = transform.translation
-        
-        // Move camera to look at the object from a reasonable distance
+
         val offset = Vector3f(5f, 5f, 5f)
         scene.camera.position.set(Vector3f(pos).add(offset))
         scene.camera.lookAt(pos)
     }
-    
+
     private fun reparentGameObject(child: GameObject, newParent: GameObject) {
         val oldParent = child.parent
-        child.parent = newParent
-        
-        // Update transform to maintain world space
+        undoRedoManager.executeCommand(ReparentGameObjectCommand(child, newParent))
+
         val childTransform = child.getComponent<Transform>()
         val parentTransform = newParent.getComponent<Transform>()
         if (childTransform != null && parentTransform != null) {
-            // Adjust child's local transform to maintain world position
             childTransform.translation.sub(parentTransform.translation)
         }
-        
+
         logger.logEditor("Reparented ${child.name} to ${newParent.name}")
+        sceneManager.currentScene?.let { rebuildFlatList(it) }
     }
-    
+
     private fun isChildOf(potentialParent: GameObject, child: GameObject): Boolean {
         var current = child.parent
         while (current != null) {

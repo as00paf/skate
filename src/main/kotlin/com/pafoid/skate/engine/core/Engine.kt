@@ -15,8 +15,6 @@ class Engine : KoinComponent {
 
     private val sceneManager: SceneManager by inject()
     private val renderer: Renderer by inject()
-    private val logger: LoggerService by inject()
-    private val editorInputHandler: EditorInputHandler by inject()
     private val splashScreen: SplashScreen by inject()
 
     // Engine State
@@ -44,7 +42,6 @@ class Engine : KoinComponent {
                 scene.updateScene(dt)
             } else {
                 scene.editorUpdateScene(dt)
-                editorInputHandler.update(scene)
             }
 
             // Render Scene

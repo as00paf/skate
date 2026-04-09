@@ -2,12 +2,22 @@ package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.commands.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
+import com.pafoid.skate.editor.commands.LockToggleCommand
+import com.pafoid.skate.editor.commands.RenameGameObjectCommand
+import com.pafoid.skate.editor.commands.VisibilityToggleCommand
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
+import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
+import com.pafoid.skate.engine.ecs.systems.EventSystem
+import com.pafoid.skate.engine.events.GameObjectSelected
+import com.pafoid.skate.engine.events.SelectionCleared
+import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 
 class EditorInputHandler(
@@ -17,14 +27,100 @@ class EditorInputHandler(
     private val logger: LoggerService
 ) : KoinComponent {
 
+    private val settingsManager: SettingsManager by inject()
+    private val eventSystem: EventSystem by inject()
+
+    private var pendingRenameUid: Int? = null
+    private var renameInputMappings: InputMappings? = null
+
     fun update(currentScene: Scene?) {
         if (currentScene == null) return
 
+        val inputMappings = getInputMappings()
+        val selected = currentScene.getSelectedGameObject()
+
+        // Global hierarchy actions (work regardless of window focus)
+        handleGlobalHierarchyActions(currentScene, selected, inputMappings)
+
+        // Standard clipboard/undo operations
+        handleClipboardAndUndo(currentScene, selected, inputMappings)
+    }
+
+    /**
+     * Handle global hierarchy action shortcuts.
+     * These work regardless of which window is focused, but require a selected GameObject for some actions.
+     */
+    private fun handleGlobalHierarchyActions(scene: Scene, selected: GameObject?, inputMappings: InputMappings) {
+        val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
+
+        // Delete selected object
+        if (keyListener.keyBeginPress(inputMappings.hierarchyDelete.keyboardKey) && selected != null) {
+            undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene))
+            eventSystem.publish(SelectionCleared)
+            logger.logEditor("Deleted GameObject: ${selected.name}")
+        }
+
+        // Create new GameObject (Insert)
+        if (keyListener.keyBeginPress(inputMappings.hierarchyCreateNew.keyboardKey)) {
+            val newObj = GameObject("GameObject")
+            undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene))
+            scene.setSelectedGameObject(newObj)
+            eventSystem.publish(GameObjectSelected(newObj))
+            logger.logEditor("Created new GameObject: ${newObj.name}")
+        }
+
+        // Duplicate (D without Ctrl)
+        if (keyListener.keyBeginPress(inputMappings.hierarchyDuplicate.keyboardKey) &&
+            !ctrlDown && selected != null
+        ) {
+            val clone = cloneGameObject(selected)
+            undoRedoManager.executeCommand(CreateGameObjectCommand(clone, scene))
+            scene.setSelectedGameObject(clone)
+            eventSystem.publish(GameObjectSelected(clone))
+            logger.logEditor("Duplicated GameObject: ${selected.name} -> ${clone.name}")
+        }
+
+        // Toggle Visibility (V without Ctrl)
+        if (keyListener.keyBeginPress(inputMappings.hierarchyToggleVisibility.keyboardKey) &&
+            !ctrlDown && selected != null
+        ) {
+            val newVis = !selected.isVisible
+            undoRedoManager.executeCommand(VisibilityToggleCommand(selected, newVis))
+            logger.logEditor("Toggled visibility for ${selected.name}: $newVis")
+        }
+
+        // Toggle Lock (L without Ctrl)
+        if (keyListener.keyBeginPress(inputMappings.hierarchyToggleLock.keyboardKey) &&
+            !ctrlDown && selected != null
+        ) {
+            val newLock = !selected.isLocked
+            undoRedoManager.executeCommand(LockToggleCommand(selected, newLock))
+            logger.logEditor("Toggled lock for ${selected.name}: $newLock")
+        }
+
+        // Rename (F2)
+        if (keyListener.keyBeginPress(inputMappings.hierarchyRename.keyboardKey) && selected != null) {
+            // Signal to SceneHierarchyWindow that rename should start
+            pendingRenameUid = selected.getUid()
+            renameInputMappings = inputMappings
+        }
+
+        // Deselect (Escape) - only if not already handling something else
+        if (keyListener.keyBeginPress(inputMappings.hierarchyDeselect.keyboardKey)) {
+            scene.setSelectedGameObject(null)
+            eventSystem.publish(SelectionCleared)
+            logger.logEditor("Deselected GameObject")
+        }
+    }
+
+    /**
+     * Handle clipboard operations and undo/redo.
+     */
+    private fun handleClipboardAndUndo(currentScene: Scene, selected: GameObject?, inputMappings: InputMappings) {
         val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
         if (ctrlDown) {
             // Copy
             if (keyListener.keyBeginPress(GLFW.GLFW_KEY_C)) {
-                val selected = currentScene.getSelectedGameObject()
                 if (selected != null) {
                     clipboardService.copy(selected)
                     logger.logEditor("Copied GameObject: ${selected.name}")
@@ -32,10 +128,8 @@ class EditorInputHandler(
             }
             // Cut
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
-                val selected = currentScene.getSelectedGameObject()
                 if (selected != null) {
-                    val cloned = clipboardService.paste() ?: return // paste here returns the copied object from cut
-                    clipboardService.copy(selected) // Redundant but following old logic
+                    clipboardService.copy(selected)
                     undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, currentScene))
                     logger.logEditor("Cut GameObject: ${selected.name}")
                 }
@@ -66,5 +160,35 @@ class EditorInputHandler(
                 logger.logEditor("Redo")
             }
         }
+    }
+
+    private fun getInputMappings(): InputMappings {
+        return settingsManager.loadInputMappings() ?: InputMappings()
+    }
+
+    /**
+     * Deep clone a GameObject with its transform.
+     */
+    private fun cloneGameObject(go: GameObject): GameObject {
+        val cloned = GameObject("${go.name}_clone")
+        val originalTransform = go.getComponent<Transform>()
+        val newTransform = Transform()
+        originalTransform?.let { orig ->
+            newTransform.copyFrom(orig)
+        }
+        newTransform.translation.x += 0.5f
+        newTransform.translation.z += 0.5f
+        cloned.addComponent(newTransform)
+        return cloned
+    }
+
+    /**
+     * Check if there's a pending rename request and return the GameObject UID.
+     * Called by SceneHierarchyWindow during its render loop.
+     */
+    fun consumePendingRename(): Int? {
+        val uid = pendingRenameUid
+        pendingRenameUid = null
+        return uid
     }
 }
