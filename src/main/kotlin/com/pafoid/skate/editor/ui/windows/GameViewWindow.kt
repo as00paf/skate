@@ -23,7 +23,6 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -39,7 +38,6 @@ import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import imgui.ImVec2
@@ -59,8 +57,6 @@ class GameViewWindow : IWindow, KoinComponent {
     private val settingsManager: SettingsManager by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val stringManager: StringManager by inject()
-    private val renderer: Renderer by inject()
-    private val engine: Engine by inject()
     private val undoRedoManager: UndoRedoManager by inject()
     private val resourceManager: ResourceManager by inject()
     private val eventSystem: EventSystem by inject()
