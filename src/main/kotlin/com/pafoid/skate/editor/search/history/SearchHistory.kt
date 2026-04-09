@@ -1,10 +1,9 @@
 package com.pafoid.skate.editor.search.history
 
 import com.pafoid.skate.editor.search.SearchResult
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.io.File
 
 /**
@@ -21,11 +20,11 @@ import java.io.File
  */
 class SearchHistory(
     private val historyFile: File = File("search_history.json"),
-    private val maxEntries: Int = DEFAULT_MAX_ENTRIES
+    private val maxEntries: Int = DEFAULT_MAX_ENTRIES,
+    private val serializer: Serializer
 ) {
     companion object {
         private const val DEFAULT_MAX_ENTRIES = 20
-        private val json = Json { prettyPrint = true }
     }
 
     private val mutex = Mutex()
@@ -110,7 +109,7 @@ class SearchHistory(
     private fun save() {
         try {
             val data = SearchHistoryData(entries = entries)
-            val jsonString = json.encodeToString(data)
+            val jsonString = serializer.encode(data)
             historyFile.writeText(jsonString)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -126,7 +125,7 @@ class SearchHistory(
         try {
             if (historyFile.exists()) {
                 val jsonString = historyFile.readText()
-                val data = json.decodeFromString<SearchHistoryData>(jsonString)
+                val data = serializer.decode<SearchHistoryData>(jsonString)
                 entries.clear()
                 entries.addAll(data.entries.take(maxEntries))
             }

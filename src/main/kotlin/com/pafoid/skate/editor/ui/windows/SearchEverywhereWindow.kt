@@ -36,10 +36,9 @@ import org.koin.core.component.inject
  * - Select with Enter or click
  * - Close with Esc or X button
  */
-class SearchEverywhereWindow : IWindow, KoinComponent {
+class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow, KoinComponent {
 
     private val searchEngine: SearchEngine by inject()
-    private val searchHistory: SearchHistory by inject()
     private val stringManager: StringManager by inject()
 
     private var isOpen = false

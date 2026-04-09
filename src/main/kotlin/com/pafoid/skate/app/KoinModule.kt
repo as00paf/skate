@@ -138,7 +138,7 @@ val appModule = module {
     // FileSystem service
     single { FileSystemScanner(get(), get(), get()) }
 
-    // Window registry (20 windows)
+    // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
@@ -161,12 +161,11 @@ val appModule = module {
             registerProvider(get<ActionSearchProvider>())
         }
     }
-    single { SearchHistory() }
     single { GameObjectSearchProvider() }
     single { AssetSearchProvider() }
     single { ComponentSearchProvider() }
     single { ActionSearchProvider() }
-    single { SearchEverywhereWindow() }
+    single { SearchEverywhereWindow(SearchHistory(serializer = get())) }
 }
 
 val inputModule = module {
