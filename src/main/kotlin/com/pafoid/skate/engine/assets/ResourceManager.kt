@@ -453,6 +453,21 @@ class ResourceManager(
         }
     }
 
+    fun loadAnimationSync(path: String, skeleton: Skeleton): Animation {
+        val file = File(path)
+        val absolutePath = file.absolutePath
+
+        animations[absolutePath]?.let { return it }
+        return try {
+            val loadedAnimation = assimpLoader.loadAnimations(path, skeleton)[0]
+            animations[absolutePath] = loadedAnimation
+            loadedAnimation
+        } catch (e: Exception) {
+            logger.logEngine("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
+            throw e
+        }
+    }
+
     fun getAnimation(filePath: String): Animation? {
         val absolutePath = File(filePath).absolutePath
         return animations[absolutePath]

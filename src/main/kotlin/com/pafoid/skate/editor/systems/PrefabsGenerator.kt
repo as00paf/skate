@@ -145,14 +145,13 @@ class PrefabsGenerator(
             ?: resourceManager.loadModelSync(modelPath) as CharacterModel
         val skater = Skater("Skater", model, skate)
 
-        // Load animations synchronously for default scene
+        val skeleton = skater.skeletonComponent.pose.skeleton
+
         animations.forEach { path ->
             try {
                 val animPath = resolveAnimationPath(path)
-                val animation = resourceManager.getAnimation(animPath)
-                if (animation != null) {
-                    skater.animator.addAnimation(animation)
-                }
+                val animation = resourceManager.loadAnimationSync(animPath, skeleton)
+                skater.animator.addAnimation(animation)
             } catch (e: Exception) {
                 // Skip missing animations during scene creation
             }

@@ -8,11 +8,14 @@ import com.pafoid.skate.engine.assets.database.AssetGuid
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.scene.addGameObjectImmediate
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
+import java.io.File
+import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -49,7 +52,7 @@ class LevelManager(
     fun saveToFile(scene: Scene, path: String) {
         try {
             // Ensure parent directory exists
-            java.io.File(path).parentFile?.mkdirs()
+            File(path).parentFile?.mkdirs()
 
             val data = LevelData(
                 gameObjects = scene.gameObjectManager.gameObjects.filter { it.doSerialization() },
@@ -57,7 +60,7 @@ class LevelManager(
                 levelPath = path
             )
 
-            java.io.FileWriter(path).use { writer ->
+            FileWriter(path).use { writer ->
                 writer.write(serializer.encode(data))
             }
 
@@ -153,6 +156,9 @@ class LevelManager(
             migrateLegacyModels(scene)
         }
 
+        // Resolve animation references for Animator components
+        resolveAnimationReferences(scene)
+
         logger.logEditor("Level loaded from $path")
 
         scene.gameObjectManager.gameObjects.forEach { go ->
@@ -186,7 +192,7 @@ class LevelManager(
                 } catch (e: IllegalArgumentException) {
                     // Not a valid GUID — treat as raw file path (engine-bundled asset)
                     val path = rc.modelGuid
-                    val file = java.io.File(path)
+                    val file = File(path)
                     if (file.exists()) {
                         rc.model = resourceManager.loadModelSync(path)
                     } else {
@@ -261,7 +267,7 @@ class LevelManager(
             } else null
         } catch (e: IllegalArgumentException) {
             // Not a valid GUID — treat as raw file path
-            val file = java.io.File(guidOrPath)
+            val file = File(guidOrPath)
             if (file.exists()) {
                 resourceManager.loadTextureSync(guidOrPath)
             } else null
@@ -302,7 +308,7 @@ class LevelManager(
             ?: model.mesh.firstOrNull()?.material?.baseColorPath
             ?: return null
 
-        val sourceFile = java.io.File(modelPath)
+        val sourceFile = File(modelPath)
         if (!sourceFile.exists()) return null
 
         // Try to find existing asset by path
@@ -322,5 +328,24 @@ class LevelManager(
         }
 
         return null
+    }
+
+    /**
+     * Resolve animation references for Animator components after scene deserialization.
+     * Loads animations from serialized paths.
+     */
+    private fun resolveAnimationReferences(scene: Scene) {
+        scene.gameObjectManager.gameObjects.forEach { obj ->
+            resolveAnimatorAnimations(obj)
+            obj.children.forEach { child -> resolveAnimatorAnimations(child) }
+        }
+    }
+
+    private fun resolveAnimatorAnimations(obj: GameObject) {
+        val animator = obj.getComponent<Animator>() ?: return
+        if (animator.animationPaths.isEmpty()) return
+
+        animator.loadAnimationsFromPaths(resourceManager)
+        logger.logEditor("Loaded ${animator.animationPaths.size} animations for ${obj.name}")
     }
 }

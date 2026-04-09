@@ -20,6 +20,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.io.File
 
 /**
  * Component responsible for managing and playing skeletal animations.
@@ -48,6 +49,7 @@ class Animator : Component(), KoinComponent {
     @Transient
     private val sceneManager: SceneManager by inject()
 
+    @Transient
     var currentAnimation: Animation? = null
         get() {
             if (field == null) return animations.firstOrNull()
@@ -59,11 +61,9 @@ class Animator : Component(), KoinComponent {
     var isPlaying = false
     var blendTime = 0f
     var blendDuration = 0.2f
+    @Transient
     var previousAnimation: Animation? = null
     var previousTime = 0f
-
-    // Serializable animation paths — restored after deserialization
-    var animationPaths: List<String> = emptyList()
 
     // Event-driven state
     private var isMoving = false
@@ -76,26 +76,19 @@ class Animator : Component(), KoinComponent {
     @Transient
     private val animations: MutableList<Animation> = mutableListOf()
 
-    /**
-     * Reloads animation references from saved paths.
-     * Called manually after scene deserialization to restore animations.
-     */
-    fun reloadAnimations() {
-        if (animationPaths.isNotEmpty()) {
-            animationPaths.forEach { path ->
-                try {
-                    val anim = resourceManager.getAnimation(path)
-                    if (anim != null) {
-                        animations.add(anim)
-                    }
-                } catch (e: Exception) {
-                    logger.logEngine("Failed to load animation '$path': ${e.message}", LogLevel.WARN)
-                }
-            }
-        }
-    }
+    /** File paths for animations — serialized so they can be reloaded from disk */
+    var animationPaths: MutableList<String> = mutableListOf()
 
-    fun addAnimation(animation: Animation, path: String? = null) {
+    val normalizedTime: Float
+        get() {
+            val anim = currentAnimation ?: return 0f
+            return (currentTime % anim.duration) / anim.duration
+        }
+
+    val duration: Float
+        get() = currentAnimation?.duration ?: 0f
+
+    fun addAnimation(animation: Animation) {
         val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton
         val isValid = validateSkeletonCompatibility(skeleton, animation)
         val alreadyHasAnimation = animations.any { it.name == animation.name }
@@ -118,19 +111,44 @@ class Animator : Component(), KoinComponent {
 
             else -> {
                 animations.add(animation)
+                if (animation.path.isNotBlank() && !animationPaths.contains(animation.path)) {
+                    animationPaths.add(animation.path)
+                }
                 logger.logEngine("Animation '${animation.name}' added successfully!", LogLevel.ACTION)
             }
         }
     }
 
-    val normalizedTime: Float
-        get() {
-            val anim = currentAnimation ?: return 0f
-            return (currentTime % anim.duration) / anim.duration
+    /**
+     * Rebuilds the animations list from serialized file paths.
+     * Called by LevelManager after scene deserialization.
+     */
+    fun loadAnimationsFromPaths(resourceManager: ResourceManager) {
+        animations.clear()
+        currentAnimation = null
+        val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return
+
+        for (path in animationPaths) {
+            val file = File(path)
+            if (file.exists()) {
+                try {
+                    val animation = resourceManager.loadAnimationSync(path, skeleton)
+                    animations.add(animation)
+                } catch (e: Exception) {
+                    logger.logEngine("Failed to load animation from path: $path - ${e.message}", LogLevel.ERROR)
+                }
+            }
         }
 
-    val duration: Float
-        get() = currentAnimation?.duration ?: 0f
+        if (animations.isNotEmpty()) {
+            currentAnimation = animations.first()
+        }
+    }
+
+    /**
+     * Returns the list of loaded animations (for serialization of paths).
+     */
+    fun getLoadedAnimations(): List<Animation> = animations
 
     /**
      * Starts playing a new animation with an optional [blend] time for smooth transitions.

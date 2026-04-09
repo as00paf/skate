@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.settings.ProjectSettings
 import com.pafoid.skate.engine.settings.RecentProjectInfo
@@ -123,7 +124,7 @@ class ProjectManager(
 
         // Spawn prefabs synchronously — uses addGameObjectImmediate so they go into gameObjects
         prefabsGenerator.spawnSkateboardSync(scene)
-        prefabsGenerator.spawnSkaterSync(scene = scene)
+        prefabsGenerator.spawnSkaterSync(scene)
         prefabsGenerator.spawnFloorSync(scene)
 
         logger.logEditor("Spawned ${scene.gameObjectManager.gameObjects.size} objects")
@@ -132,6 +133,9 @@ class ProjectManager(
         // model is @Transient and won't be serialized — without modelGuid,
         // models won't reload when the scene is opened later.
         resolveModelGuidsInScene(scene)
+
+        // Resolve animation paths for Animator components before saving
+        resolveAnimationPathsInScene(scene)
 
         // Set the level path and save
         scene.sceneData.levelPath = defaultSceneFile.absolutePath
@@ -220,6 +224,33 @@ class ProjectManager(
                     rc.metallicRoughnessGuid = texAsset?.guid?.value ?: texAbsolutePath
                 }
             }
+        }
+    }
+
+    /**
+     * Walk all Animator components in the scene and populate animationPaths from loaded animations.
+     * This is called before saving the default scene to ensure animations can be
+     * reloaded when the scene is opened later.
+     */
+    private fun resolveAnimationPathsInScene(scene: Scene) {
+        scene.gameObjectManager.gameObjects.forEach { obj ->
+            resolveAnimatorPathsForObject(obj)
+            obj.children.forEach { child -> resolveAnimatorPathsForObject(child) }
+        }
+    }
+
+    private fun resolveAnimatorPathsForObject(obj: GameObject) {
+        val animator = obj.getComponent<Animator>() ?: return
+        if (animator.animationPaths.isNotEmpty()) return
+
+        animator.getLoadedAnimations().forEach { anim ->
+            if (anim.path.isNotBlank()) {
+                animator.animationPaths.add(anim.path)
+            }
+        }
+
+        if (animator.animationPaths.isNotEmpty()) {
+            logger.logEditor("Resolved ${animator.animationPaths.size} animation paths for ${obj.name}")
         }
     }
 

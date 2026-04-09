@@ -13,6 +13,7 @@ class Animation(
     val name: String,
     val channels: List<AnimationChannel>,
     val duration: Float,
+    val path: String
 ) {
     /**
      * Updates the [skeleton] based on the specified [time].

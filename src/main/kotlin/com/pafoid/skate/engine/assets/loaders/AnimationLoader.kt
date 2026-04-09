@@ -169,7 +169,7 @@ class AnimationLoader {
             }
         }
 
-        return Animation(name, channels, durationInSeconds)
+        return Animation(name, channels, durationInSeconds, path)
     }
 
 }
