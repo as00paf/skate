@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
-import com.pafoid.skate.editor.data.PrefabConfig
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
@@ -46,22 +45,26 @@ class PrefabsTab(
         val availableWidth = ImGui.getContentRegionAvailX()
         val numColumns = Math.max(1, (availableWidth / ITEM_WIDTH).toInt())
 
-        val items = listOf(
-            PrefabConfig(
+        val templates = listOf(
+            PrefabData.createTemplate(
                 "Skateboard",
                 PrefabType.SKATEBOARD,
                 Assets.Models.SKATEBOARD_GLB,
-                "PREFAB_SKATEBOARD",
-                listOf()
+                PrefabData.PAYLOAD_SKATEBOARD
             ),
         ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
+
+        val items = templates.flatMap { template ->
+            PrefabData.expandToVariants(template, listOf())
+                .ifEmpty { listOf(template) }
+        }
 
         if (items.isNotEmpty()) {
             ImGui.pushID("PlayerPrefabs")
             if (ImGui.beginTable("SimulationTable", numColumns, ImGuiTableFlags.SizingFixedFit)) {
                 for (item in items) {
                     ImGui.tableNextColumn()
-                    renderPrefabItem(PrefabData(item.name, item.type, item.modelPath, item.dragDropPayload))
+                    renderPrefabItem(item)
                 }
                 ImGui.endTable()
             }
@@ -82,36 +85,26 @@ class PrefabsTab(
             MaterialType.WOOD_DARK
         )
 
-        val configs = listOf(
-            PrefabConfig("Rail", PrefabType.RAIL, Assets.Models.RAIL, "PREFAB_RAIL", metalOnly),
-            PrefabConfig("Ledge", PrefabType.LEDGE, Assets.Models.LEDGE, "PREFAB_LEDGE", woodOrConcrete),
-            PrefabConfig("Kicker", PrefabType.KICKER, Assets.Models.KICKER, "PREFAB_KICKER", woodOrConcrete),
-            PrefabConfig(
-                "Manual Pad",
-                PrefabType.MANUAL_PAD,
-                Assets.Models.MANUAL_PAD,
-                "PREFAB_MANUAL_PAD",
-                woodOrConcrete
-            ),
-            PrefabConfig("Bank", PrefabType.BANK, Assets.Models.BANK, "PREFAB_BANK", woodOrConcrete),
-            PrefabConfig(
-                "Quarter Pipe",
-                PrefabType.QUARTER_PIPE,
-                Assets.Models.QUARTER_PIPE,
-                "PREFAB_QUARTER_PIPE",
-                woodOrConcrete
-            ),
+        val templates = listOf(
+            PrefabData.createTemplate("Rail", PrefabType.RAIL, Assets.Models.RAIL, PrefabData.PAYLOAD_RAIL),
+            PrefabData.createTemplate("Ledge", PrefabType.LEDGE, Assets.Models.LEDGE, PrefabData.PAYLOAD_LEDGE),
+            PrefabData.createTemplate("Kicker", PrefabType.KICKER, Assets.Models.KICKER, PrefabData.PAYLOAD_KICKER),
+            PrefabData.createTemplate("Manual Pad", PrefabType.MANUAL_PAD, Assets.Models.MANUAL_PAD, PrefabData.PAYLOAD_MANUAL_PAD),
+            PrefabData.createTemplate("Bank", PrefabType.BANK, Assets.Models.BANK, PrefabData.PAYLOAD_BANK),
+            PrefabData.createTemplate("Quarter Pipe", PrefabType.QUARTER_PIPE, Assets.Models.QUARTER_PIPE, PrefabData.PAYLOAD_QUARTER_PIPE),
         ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
-        if (configs.isNotEmpty()) {
+        if (templates.isNotEmpty()) {
             ImGui.pushID("ObstaclePrefabs")
             if (ImGui.beginTable("ObstacleTable", numColumns, ImGuiTableFlags.SizingFixedFit)) {
-                for (config in configs) {
-                    for (material in config.allowedMaterials) {
+                for (template in templates) {
+                    val materials = when (template.type) {
+                        PrefabType.RAIL -> metalOnly
+                        else -> woodOrConcrete
+                    }
+                    val variants = PrefabData.expandToVariants(template, materials)
+                    for (data in variants) {
                         ImGui.tableNextColumn()
-                        val variantName = "${config.name} (${material.displayName})"
-                        val data =
-                            PrefabData(variantName, config.type, config.modelPath, config.dragDropPayload, material)
                         renderPrefabItem(data)
                     }
                 }
@@ -185,8 +178,8 @@ class PrefabsTab(
             ImGui.endPopup()
         }
         
-        if (data.dragDropPayload != null && ImGui.beginDragDropSource()) {
-            ImGui.setDragDropPayload(data.dragDropPayload, data)
+        if (data.dragDropPayloadType != null && ImGui.beginDragDropSource()) {
+            ImGui.setDragDropPayload(data.dragDropPayloadType, data)
             ImGui.image(texId.toLong(), size*1.2f, size*1.2f, 0f, 1f, 1f, 0f)
             ImGui.text(data.name)
             if (data.material != null) {
