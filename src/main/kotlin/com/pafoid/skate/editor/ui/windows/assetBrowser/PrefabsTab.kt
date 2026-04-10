@@ -52,17 +52,18 @@ class PrefabsTab(
                 Assets.Models.SKATEBOARD_GLB,
                 PrefabData.PAYLOAD_SKATEBOARD
             ),
+            PrefabData.createTemplate(
+                "Skater",
+                PrefabType.SKATER,
+                Assets.Models.JAMES,
+                PrefabData.PAYLOAD_SKATER
+            ),
         ).filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
-        val items = templates.flatMap { template ->
-            PrefabData.expandToVariants(template, listOf())
-                .ifEmpty { listOf(template) }
-        }
-
-        if (items.isNotEmpty()) {
+        if (templates.isNotEmpty()) {
             ImGui.pushID("PlayerPrefabs")
             if (ImGui.beginTable("SimulationTable", numColumns, ImGuiTableFlags.SizingFixedFit)) {
-                for (item in items) {
+                for (item in templates) {
                     ImGui.tableNextColumn()
                     renderPrefabItem(item)
                 }
