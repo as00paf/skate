@@ -123,7 +123,7 @@ class PrefabsTab(
         val texId = if (data.modelPath != null) {
             val baseModel = resourceManager.loadModelSync(data.modelPath)
             val rawModel = baseModel.mesh[0].rawModel
-            val texture = resourceManager.loadTextureSync(data.material?.texturePath)
+            val texture = resourceManager.loadTextureSync(data.material?.texturePath ?: Assets.Textures.DEFAULT)
             val model = TexturedModel(rawModel, texture)
             val cacheId = "${data.modelPath}_${data.material?.name}"
             thumbnailCache.getThumbnail(cacheId, model)
