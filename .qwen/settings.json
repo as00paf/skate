@@ -2,8 +2,19 @@
   "permissions": {
     "defaultMode": "auto-edit",
     "allow": [
-      "Bash(.\\\\gradlew\\\\.bat .*)",
+      "Bash(.*/gradlew\\\\.bat .*)",
+      "Bash(.*/gradlew.bat.*)",
+      "Bash(\\\\.\\\\\\\\gradlew\\\\\\\\.bat .*)",
+      "Bash(.*gradlew\\\\.bat .*)",
+      "Bash(.*gradlew.bat.*)",
       "Bash(git .*)",
+      "Bash(powershell .*)",
+      "Bash(pwsh .*)",
+      "Bash(select-string .*)",
+      "Bash(Remove-Item .*)",
+      "Bash(Copy-Item .*)",
+      "Bash(Get-ChildItem .*)",
+      "Bash(Get-Content .*)",
       "read_file",
       "edit",
       "write_file",
@@ -13,9 +24,7 @@
       "read_many_files",
       "todo_write",
       "save_memory",
-      "ask_user_question",
-      "Bash(.\\gradlew.bat *)",
-      "Bash(select-string *)"
+      "ask_user_question"
     ]
   },
   "$version": 3

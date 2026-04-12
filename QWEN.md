@@ -5,7 +5,7 @@
 **SkateSim** is a sophisticated 3D skateboarding simulation engine built in Kotlin using the LWJGL3 framework. It combines realistic physics simulation with advanced rendering capabilities, a full-featured editor ("Skate Lab"), and an Entity-Component-System (ECS) architecture. The engine targets production-grade tooling comparable to Godot/Unity, specialized for skateboarding game development.
 
 ### Current Version
-**v0.46.0.9** (2026-04-05) — Project Management & Settings Overhaul
+**v0.50.0.0** (2026-04-12) — Full Event-Driven Architecture & Scene Management Overhaul
 
 ### Tech Stack
 | Category       | Technology                                    |
@@ -34,12 +34,39 @@ These are **HARD RULES** that must always be followed. Violating any of these is
 ### Dependency Injection
 - **Koin only** for all engine dependencies. Never use manual singletons, companion object `Instance` patterns, or static accessors.
 - If a class needs a dependency, add it to the constructor and define it in a Koin `module`.
-- All editor windows, systems, services, and managers must be registered in `app/KoinModule.kt`.
+- All editor windows, systems, services, managers, and handlers must be registered in `app/KoinModule.kt`.
 
-### Localization
-- **NO hardcoded user-facing strings** in ImGui windows, menus, or UI logic.
+### Localization (MANDATORY)
+- **NO hardcoded user-facing strings** — ever. This includes ImGui windows, menus, tooltips, context menus, and UI logic.
 - All UI strings must be keys in `resources/values/strings.properties`, accessed via `StringManager.getString("key")`.
-- String keys follow pattern: `lbl.window_name.element_name`, `btn.action_name`, `component.ComponentName.property`.
+- String keys follow pattern: `lbl.window_name.element_name`, `btn.action_name`, `context.menu_item`, `tooltip.element`.
+- **When adding new UI:** Always add the string key to `strings.properties` first, then use it in code.
+
+### Event-Driven Architecture (MANDATORY)
+- **NEVER use callbacks** for UI actions. Use the `EventSystem` to publish typed events.
+- Events are sealed classes with top-level subclasses (e.g., `SceneAction`, `ViewportAction` — each in its own file).
+- Create dedicated `*ActionHandler` classes that subscribe to events and execute commands.
+- Register handlers in KoinModule with `.also { it.init() }` for auto-subscription.
+- Example flow: `UI publishes Event → EventSystem delivers → Handler executes Command → UndoRedoManager tracks`.
+
+### Commands & Undo (MANDATORY)
+- **ALL state-changing operations must use commands** — not direct method calls.
+- Each command is a class implementing `Command` interface with `execute()`, `undo()`, `getDisplayName()`, `getTargetName()`.
+- Commands live in `editor/commands/` — **one command per file**.
+- Execute via `UndoRedoManager.executeCommand(command)`.
+- If undo is too complex, mark as execute-only with comment explaining why.
+
+### Dead Code Removal (MANDATORY)
+- **NEVER leave dead code behind** when refactoring. If a method/class/callback is no longer called, delete it.
+- After changing architecture (e.g., callbacks → events), immediately search for and remove the old pattern's code.
+- Common dead code sources: old callback interfaces, unused helper methods, duplicate classes, deprecated fields.
+- When in doubt, use `grep_search` to verify if a method/class is still referenced before deciding to keep it.
+
+### Agent Usage (MANDATORY)
+- **ALWAYS use specialized agents** when available: `software-engineer` for code changes, `reviewer` for code review, `tech-lead` for architecture decisions, `qa-engineer` for testing, `documentation-engineer` for docs.
+- **ALWAYS provide agents with full context**: reference relevant files, explain the problem, specify expected outcomes.
+- **NEVER skip agent usage** for complex multi-file changes. Use agents proactively.
+- The `general-purpose` agent is for research/search tasks; `software-engineer` is for actual code changes.
 
 ### File Paths
 - **Always use absolute Windows paths**: `C:\workspace\kotlin_workspace\skate\src\main\kotlin\...`
@@ -51,6 +78,7 @@ These are **HARD RULES** that must always be followed. Violating any of these is
 - Use `gradlew.bat` — never `./gradlew`.
 - Use PowerShell cmdlets: `Remove-Item`, `Copy-Item`, `Get-ChildItem`, `Select-String`, `Expand-Archive`.
 - **NEVER** use Linux utilities: `find`, `grep`, `tar -xvf`, `ls`, `cat`, `sed`, `awk`.
+- **Build verification is always required**: Run `.\gradlew.bat compileKotlin` after code changes.
 
 ### Code Style
 - Use explicit top-level `import` statements for all classes. Never use fully qualified names (FQN) within code body unless resolving a naming conflict.
@@ -168,17 +196,38 @@ Systems use `ExecutionPriority` enum for ordering:
 
 ### Event-Driven Architecture
 
-Systems communicate via an **EventSystem** (type-safe event bus using reified generics):
+Systems communicate via an **EventSystem** (type-safe event bus using reified generics).
 
+**Event Pattern:**
+Events are sealed classes with top-level subclasses, each in its own file:
 ```kotlin
-// Subscribe (type-safe)
-eventSystem.subscribe<Landing> { event -> handleLanding(event.velocity) }
+// SceneEvents.kt — one event per line, top-level
+sealed class SceneEvent(eventName: String) : Event(eventName)
+data class SceneOpened(val scene: Scene) : SceneEvent("editor.scene_opened")
+data class SceneRenamed(val scene: Scene, val oldName: String, val newName: String) : SceneEvent("editor.scene_renamed")
 
-// Subscribe (string-based, for scripting)
-eventSystem.subscribe("physics.landing") { event -> ... }
+// SceneAction.kt — domain actions for scene operations
+sealed class SceneAction(eventName: String) : Event(eventName)
+data class SceneRenameRequested(val sceneIndex: Int, val newName: String) : SceneAction("scene.action.rename_requested")
+data class SceneSaveRequested(val sceneIndex: Int) : SceneAction("scene.action.save_requested")
 
-// Publish
-eventSystem.publish(Landing(velocity, impactForce))
+// ViewportAction.kt — domain actions for viewport operations
+sealed class ViewportAction(eventName: String) : Event(eventName)
+data class ViewportSpawnPrefab(val prefabType: PrefabType, val position: Vector3f? = null) : ViewportAction("viewport.spawn_prefab")
+data class ViewportDropTexture(val texturePath: String, val targetObject: GameObject? = null) : ViewportAction("viewport.drop_texture")
+```
+
+**ActionHandler Pattern:**
+Dedicated handler classes subscribe to events and execute commands:
+```kotlin
+// Registered in KoinModule with auto-init
+single { SceneActionHandler().also { it.init() } }
+single { ViewportActionHandler().also { it.init() } }
+```
+
+**Event Flow:**
+```
+UI publishes Event → EventSystem delivers → ActionHandler executes Command → UndoRedoManager tracks
 ```
 
 **Event Categories:**
@@ -188,17 +237,22 @@ eventSystem.publish(Landing(velocity, impactForce))
 | `physics.*`   | `Landing`, `Takeoff`, `GroundedChanged`, `Collision` |
 | `trick.*`     | `TrickDetected`, `TrickCompleted`, `TrickCancelled` |
 | `game.*`      | `StateChanged`, `ScoreChanged`              |
-| `ui.*`        | `GameObjectSelected`, `SelectionCleared`, `SceneOpened`, `SceneChanged`, `SceneClosed` |
+| `ui.*`        | `GameObjectSelected`, `SelectionCleared`    |
+| `editor.scene.*` | `SceneOpened`, `SceneClosed`, `SceneChanged`, `SceneRenamed` |
+| `scene.action.*` | `SceneRenameRequested`, `SceneSaveRequested`, `SceneCloseRequested` |
+| `viewport.*`  | `ViewportSpawnPrefab`, `ViewportDropTexture`, `ViewportDropSound`, `ViewportDropAnimation` |
 | `editor.*`    | `TextureApplied`, `AnimationApplied`, `AnimationRemoved` |
 | `filesystem.*`| `FileSystemChangedEvent`, `OpenSceneFileEvent` |
+| `editor.project.*` | `ProjectOpened`, `ProjectClosed`, `ProjectCreated`, `ProjectSaved` |
 
 ### ViewModel Pattern for UI State
 
 UI windows use ViewModels for decoupled state management:
 - **SelectionViewModel**: Tracks currently selected GameObject, publishes selection events
-- **SceneViewModel**: Tracks current scene lifecycle, publishes scene events
 
 Windows subscribe to ViewModels instead of querying the Scene directly.
+
+**Note:** `SceneViewModel` was removed (dead code with fragile reflection). Scene state is now managed directly via `SceneManager` and `SceneActionHandler`.
 
 ### Data Flow Patterns
 
@@ -264,7 +318,7 @@ C:\workspace\kotlin_workspace\skate\
 │   │   │   │   ├── KoinModule.kt           # DI module definitions
 │   │   │   │   └── Main.kt                 # Application entry point
 │   │   │   ├── editor\
-│   │   │   │   ├── commands\               # Undoable commands (TransformCommand, CreateGameObjectCommand, etc.)
+│   │   │   │   ├── commands\               # Undoable commands (one per file: TransformCommand, CreateGameObjectCommand, RenameSceneCommand, SpawnPrefabCommand, etc.)
 │   │   │   │   ├── data\                   # Editor data classes (PrefabData, InputSettings, etc.)
 │   │   │   │   ├── gizmos\                 # Gizmo implementations (TranslateGizmo, RotationGizmo, ScaleGizmo, etc.)
 │   │   │   │   ├── imgui\                  # ImGui components, menus, themes
@@ -275,10 +329,11 @@ C:\workspace\kotlin_workspace\skate\
 │   │   │   │   ├── search\                 # Search Everywhere system
 │   │   │   │   │   ├── history\            # Search history persistence
 │   │   │   │   │   └── providers\          # Search providers (GameObject, Asset, Component, Action)
-│   │   │   │   ├── systems\                # Editor services (SettingsManager, UndoRedoManager, StringManager, etc.)
+│   │   │   │   ├── systems\                # Editor services (SettingsManager, UndoRedoManager, StringManager, PrefabsGenerator, etc.)
 │   │   │   │   ├── ui\                     # UI infrastructure
 │   │   │   │   │   ├── interfaces\         # IWindowLifecycle interface
-│   │   │   │   │   ├── viewmodels\         # SelectionViewModel, SceneViewModel
+│   │   │   │   │   ├── viewmodels\         # SelectionViewModel
+│   │   │   │   │   ├── handlers\           # Event handlers (SceneActionHandler, ViewportActionHandler)
 │   │   │   │   │   └── WindowRegistry.kt   # Central window registry
 │   │   │   │   ├── windows\                # Editor windows (20 total)
 │   │   │   │   │   ├── assetBrowser\       # Asset browser tabs (Textures, Models, Sounds, Animations, Prefabs)
