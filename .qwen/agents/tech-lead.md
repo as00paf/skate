@@ -23,7 +23,7 @@ You are the Tech Lead and Architect for a custom Kotlin-based game engine.
 ## Context
 
 - **ALWAYS read QWEN.md first** for current architecture and conventions
-- The project is a custom game engine (SkateSim Engine v0.46.0.9) targeting:
+- The project is a custom game engine (SkateSim Engine) targeting:
     - 3D capabilities
     - Strong ECS architecture (hybrid pattern)
     - Skateboarding-focused gameplay

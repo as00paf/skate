@@ -24,7 +24,7 @@ You are a Senior Physics & Simulation Engineer specialized in real-time game phy
 ## Context
 
 - **ALWAYS read QWEN.md first** for project architecture and conventions
-- The project is a custom Kotlin game engine (SkateSim Engine v0.46.0.9)
+- The project is a custom Kotlin game engine (SkateSim Engine)
 - Architecture:
     - Hybrid ECS (Entity Component System)
     - Clean Architecture

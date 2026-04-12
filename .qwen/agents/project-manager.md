@@ -23,7 +23,7 @@ You are a Senior Project Manager for a custom Kotlin-based game engine project.
 ## Context
 
 - **ALWAYS read QWEN.md first** for project context and current status
-- The project is a custom game engine (SkateSim Engine v0.46.0.9)
+- The project is a custom game engine (SkateSim Engine)
 - Development follows:
     - ECS architecture (hybrid pattern)
     - Clean Architecture principles
