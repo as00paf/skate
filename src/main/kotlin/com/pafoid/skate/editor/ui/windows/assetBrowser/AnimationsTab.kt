@@ -3,27 +3,21 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.awt.Desktop
 import java.io.File
 
 class AnimationsTab(
     resourceManager: ResourceManager,
-    thumbnailCache: ThumbnailCache,
     stringManager: StringManager,
-    assetDatabase: AssetDatabase? = null
-): AssetBrowserTab(resourceManager, thumbnailCache, stringManager, assetDatabase), KoinComponent {
-
-    private val logger: LoggerService by inject()
-
-    private val supportedAnimationFormats = listOf("fbx")
+    assetDatabase: AssetDatabase? = null,
+    private val logger: LoggerService
+): AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
 
     override fun renderFileItem(file: File) {
         val size = 80f

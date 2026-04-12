@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
@@ -22,13 +23,14 @@ class AssetBrowserWindow : IWindow, KoinComponent {
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val stringManager: StringManager by inject()
     private val assetDatabase: AssetDatabase by inject()
+    private val logger: LoggerService by inject()
 
     private var searchText = ImString(256)
 
-    private val animationsTab by lazy { AnimationsTab(resourceManager, thumbnailCache, stringManager, assetDatabase) }
-    private val texturesTab by lazy { TexturesTab(resourceManager, thumbnailCache, stringManager, assetDatabase) }
-    private val prefabsTab by lazy { PrefabsTab(resourceManager, thumbnailCache, stringManager, prefabsGenerator) }
-    private val soundsTab by lazy { SoundsTab(resourceManager, thumbnailCache, stringManager, assetDatabase) }
+    private val animationsTab by lazy { AnimationsTab(resourceManager, stringManager, assetDatabase, logger) }
+    private val texturesTab by lazy { TexturesTab(resourceManager, stringManager, assetDatabase) }
+    private val prefabsTab by lazy { PrefabsTab(resourceManager, stringManager, thumbnailCache, prefabsGenerator) }
+    private val soundsTab by lazy { SoundsTab(resourceManager, stringManager, assetDatabase) }
 
     init {
         prefabsTab.refreshAssets()

@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.SoundSource
@@ -21,16 +20,15 @@ import java.io.File
 
 /**
  * Asset browser tab for sound files.
- * 
+ *
  * Displays audio files in a list (table) with playback controls.
  * Supports WAV and OGG formats.
  */
 class SoundsTab(
     resourceManager: ResourceManager,
-    thumbnailCache: ThumbnailCache,
     stringManager: StringManager,
     assetDatabase: AssetDatabase? = null
-) : AssetBrowserTab(resourceManager, thumbnailCache, stringManager, assetDatabase), KoinComponent {
+) : AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
 
     private val logger: LoggerService by inject()
     private var playingSource: SoundSource? = null

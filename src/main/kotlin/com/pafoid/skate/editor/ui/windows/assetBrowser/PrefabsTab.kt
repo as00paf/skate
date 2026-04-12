@@ -22,10 +22,10 @@ import java.io.File
 
 class PrefabsTab(
     resourceManager: ResourceManager,
-    thumbnailCache: ThumbnailCache,
     stringManager: StringManager,
+    private val thumbnailCache: ThumbnailCache,
     private val prefabsGenerator: PrefabsGenerator
-): AssetBrowserTab(resourceManager, thumbnailCache, stringManager), KoinComponent {
+): AssetBrowserTab(resourceManager, stringManager), KoinComponent {
 
     private val logger: LoggerService by inject()
 

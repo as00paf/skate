@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
@@ -20,10 +19,9 @@ import java.io.File
 
 class TexturesTab(
     resourceManager: ResourceManager,
-    thumbnailCache: ThumbnailCache,
     stringManager: StringManager,
     assetDatabase: AssetDatabase? = null
-    ): AssetBrowserTab(resourceManager, thumbnailCache, stringManager, assetDatabase), KoinComponent {
+    ): AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
 
     private val logger: LoggerService by inject()
     private val sceneManager: SceneManager by inject()

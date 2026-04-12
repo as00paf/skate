@@ -40,7 +40,8 @@ class RenderResourcesFactory(
     private val sceneManager: SceneManager,
     private val logger: LoggerService,
     private val vaoLoader: VAOLoader,
-    private val debugRenderer: DebugRenderer
+    private val debugRenderer: DebugRenderer,
+    private val modelRenderer: ModelRenderer
 ) {
     /**
      * Creates all rendering resources.
@@ -192,7 +193,6 @@ class RenderResourcesFactory(
     ): Renderers {
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
         val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, resourceManager)
-        val modelRenderer = ModelRenderer(resourceManager, debugRenderer)
         val shadowRenderer = ShadowRenderer(shaders.shadow, resourceManager)
 
         return Renderers(

@@ -2,7 +2,6 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetInfo
@@ -14,7 +13,6 @@ import java.io.File
 
 abstract class AssetBrowserTab(
     protected val resourceManager: ResourceManager,
-    protected val thumbnailCache: ThumbnailCache,
     protected val stringManager: StringManager,
     protected val assetDatabase: AssetDatabase? = null) {
 
