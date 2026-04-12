@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.scene
 import com.pafoid.skate.engine.render.data.DirectionalLight
 import com.pafoid.skate.engine.render.data.Light
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
@@ -17,11 +18,12 @@ import org.joml.Vector3f
  *
  * @property light Ambient point light at camera position (legacy)
  * @property sun Directional light configuration
- * @property levelPath Path to the level save file
+ * @property levelPath Path to the scene save file
  */
 @Serializable
 data class SceneData(
     @Contextual var light: Light = Light(Vector3f(0f, 0f, 20f)),
     var sun: DirectionalLight = DirectionalLight(),
-    var levelPath: String = "level.json",
+    @SerialName("levelPath")
+    var levelPath: String = "",
 )

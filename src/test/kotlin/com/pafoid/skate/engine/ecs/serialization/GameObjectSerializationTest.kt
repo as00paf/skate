@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test
 import java.io.File
 
 /**
- * Unit tests for GameObject serialization (used by LevelManager and ClipboardService).
- * 
- * Note: Scene/Level persistence is handled by LevelManager which uses LevelData.
+ * Unit tests for GameObject serialization (used by SceneSerializer and ClipboardService).
+ *
+ * Note: Scene persistence is handled by SceneSerializer which uses SceneSaveData.
  * These tests focus on GameObject-level serialization for clipboard and prefab operations.
  */
 class GameObjectSerializationTest {

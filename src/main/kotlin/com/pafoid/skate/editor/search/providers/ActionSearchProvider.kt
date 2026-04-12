@@ -15,7 +15,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.editor.project.SceneSerializer
 import org.koin.core.component.KoinComponent
 
 /**
@@ -26,7 +26,7 @@ import org.koin.core.component.KoinComponent
  */
 class ActionSearchProvider(
     private val sceneManager: SceneManager,
-    private val levelManager: LevelManager,
+    private val sceneSerializer: SceneSerializer,
     private val undoRedoManager: UndoRedoManager,
     private val serializer: Serializer,
     private val logger: LoggerService,
@@ -175,7 +175,7 @@ class ActionSearchProvider(
 
     private fun saveScene() {
         val scene = sceneManager.currentScene ?: return
-        levelManager.save(scene)
+        sceneSerializer.save(scene)
     }
 
     private fun startSimulation() {

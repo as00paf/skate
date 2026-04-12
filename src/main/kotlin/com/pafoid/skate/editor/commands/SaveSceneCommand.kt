@@ -1,14 +1,14 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.editor.project.SceneSerializer
 
 class SaveSceneCommand(
     private val scene: Scene,
-    private val levelManager: LevelManager
+    private val sceneSerializer: SceneSerializer
 ) : Command {
     override fun execute() {
-        levelManager.save(scene)
+        sceneSerializer.save(scene)
     }
 
     override fun undo() {

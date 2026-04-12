@@ -2,11 +2,11 @@ package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.game.level.LevelManager
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem
@@ -15,20 +15,20 @@ import org.lwjgl.glfw.GLFW
 
 /**
  * Builds the File menu with scene management and application options.
- * 
+ *
  * This component handles:
  * - New Scene creation
  * - Save/Save As operations
  * - Open Scene dialog
  * - Quit application
- * 
+ *
  * @param stringManager For localized menu strings
- * @param levelManager For scene save/load operations
+ * @param sceneSerializer For scene save/load operations
  * @param sceneManager For opening new scenes
  */
 class FileMenuBuilder(
     private val stringManager: StringManager,
-    private val levelManager: LevelManager,
+    private val sceneSerializer: SceneSerializer,
     private val sceneManager: SceneManager,
     private val glfwWindow: Long,
     private val sceneInitializer: LevelEditorSceneInitializer
@@ -62,20 +62,20 @@ class FileMenuBuilder(
     
     private fun renderSaveItems(currentScene: Scene) {
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
-            levelManager.save(currentScene)
+            sceneSerializer.save(currentScene)
         }
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_as")}")) {
-            levelManager.saveAs(currentScene)
+            sceneSerializer.saveAs(currentScene)
         }
     }
-    
+
     private fun renderOpenItem() {
         if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open")}", "Ctrl+O")) {
             JobSystem.runOnMain {
                 val newScene = Scene("Loaded Scene", sceneInitializer)
                 newScene.init()
                 sceneManager.openScene(newScene)
-                levelManager.open(newScene)
+                sceneSerializer.open(newScene)
             }
         }
     }

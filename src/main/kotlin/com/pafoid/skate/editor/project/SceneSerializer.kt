@@ -1,4 +1,4 @@
-package com.pafoid.skate.game.level
+package com.pafoid.skate.editor.project
 
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.scene.addGameObjectImmediate
+import kotlinx.serialization.Serializable
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.File
@@ -20,7 +21,16 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 
-class LevelManager(
+/**
+ * Handles scene serialization — saving and loading .scene files.
+ *
+ * Responsible for:
+ * - Saving scene state (GameObjects + SceneData) to disk
+ * - Loading scene state from disk with atomic deserialization
+ * - Resolving asset GUID references for RenderComponents
+ * - Resolving animation references for Animator components
+ */
+class SceneSerializer(
     private val serializer: Serializer,
     private val logger: LoggerService,
     private val resourceManager: ResourceManager,
@@ -37,7 +47,7 @@ class LevelManager(
         filters.put(0, filter)
 
         val path = try {
-            TinyFileDialogs.tinyfd_saveFileDialog(scene.sceneData.levelPath, "Save Level", filters, "Scene Files")
+            TinyFileDialogs.tinyfd_saveFileDialog(scene.sceneData.levelPath, "Save Scene", filters, "Scene Files")
         } finally {
             MemoryUtil.memFree(filter)
             MemoryUtil.memFree(filters)
@@ -51,13 +61,12 @@ class LevelManager(
 
     fun saveToFile(scene: Scene, path: String) {
         try {
-            // Ensure parent directory exists
             File(path).parentFile?.mkdirs()
 
-            val data = LevelData(
+            val data = SceneSaveData(
                 gameObjects = scene.gameObjectManager.gameObjects.filter { it.doSerialization() },
                 sceneData = scene.sceneData,
-                levelPath = path
+                scenePath = path
             )
 
             FileWriter(path).use { writer ->
@@ -65,9 +74,9 @@ class LevelManager(
             }
 
             scene.isDirty = false
-            logger.logEditor("Level saved to $path")
+            logger.logEditor("Scene saved to $path")
         } catch (e: IOException) {
-            logger.logEngine("Failed to save level to $path: ${e.message}", LogLevel.ERROR)
+            logger.logEngine("Failed to save scene to $path: ${e.message}", LogLevel.ERROR)
         }
     }
 
@@ -81,7 +90,7 @@ class LevelManager(
         filters.put(0, filter)
 
         val path = try {
-            TinyFileDialogs.tinyfd_openFileDialog("Open Level", scene.sceneData.levelPath, filters, "Scene Files", false)
+            TinyFileDialogs.tinyfd_openFileDialog("Open Scene", scene.sceneData.levelPath, filters, "Scene Files", false)
         } finally {
             MemoryUtil.memFree(filter)
             MemoryUtil.memFree(filters)
@@ -104,15 +113,13 @@ class LevelManager(
 
         if (inFile.isBlank()) return
 
-        // Deserialize to temporary data structure first (atomic load)
-        val data: LevelData = try {
+        val data: SceneSaveData = try {
             serializer.decode(inFile)
         } catch (e: Exception) {
             logger.logEngine("Failed to deserialize scene from $path: ${e.message}", LogLevel.ERROR)
             return
         }
 
-        // Only clear the scene after successful deserialization
         scene.gameObjectManager.gameObjects.forEach { it.destroy() }
         scene.gameObjectManager.gameObjects.clear()
         scene.gameObjectManager.pendingObjects.clear()
@@ -124,13 +131,8 @@ class LevelManager(
         var maxCompId = -1
 
         data.gameObjects.forEach { obj ->
-            // Initialize deserialized components with their parent object
-            // (JSON deserialization creates components without calling init)
             obj.getAllComponents().forEach { it.init(obj) }
 
-            // Add objects directly to gameObjects (not pendingObjects) so that
-            // resolveAssetReferences() can find them immediately.
-            // addGameObjectToScene() would defer to pendingObjects since isRunning=true.
             scene.addGameObjectImmediate(obj)
 
             obj.getAllComponents().forEach { component ->
@@ -149,15 +151,13 @@ class LevelManager(
         GameObject.init(maxGoId)
         Component.init(maxCompId)
 
-        // Resolve GUID references for RenderComponents
         if (assetDatabase != null) {
             resolveAssetReferences(scene)
         }
 
-        // Resolve animation references for Animator components
         resolveAnimationReferences(scene)
 
-        logger.logEditor("Level loaded from $path")
+        logger.logEditor("Scene loaded from $path")
 
         scene.gameObjectManager.gameObjects.forEach { go ->
             val compCount = go.getAllComponents().size
@@ -165,10 +165,6 @@ class LevelManager(
         }
     }
 
-    /**
-     * Resolve GUID references in RenderComponents after scene deserialization.
-     * Loads models by GUID and assigns them to the RenderComponent's model field.
-     */
     private fun resolveAssetReferences(scene: Scene) {
         scene.gameObjectManager.gameObjects.forEach { obj ->
             resolveObjectReferences(obj)
@@ -188,7 +184,6 @@ class LevelManager(
                         logger.logEditor("Asset not found for GUID: ${rc.modelGuid} on ${obj.name}")
                     }
                 } catch (e: IllegalArgumentException) {
-                    // Not a valid GUID — treat as raw file path (engine-bundled asset)
                     val path = rc.modelGuid
                     val file = File(path)
                     if (file.exists()) {
@@ -200,7 +195,6 @@ class LevelManager(
                     logger.logEditor("Failed to resolve model ${rc.modelGuid} on ${obj.name}: ${e.message}")
                 }
 
-                // Apply texture GUIDs after loading the model
                 if (rc.model != null) {
                     applyTextureGuidsToObject(obj)
                 }
@@ -208,9 +202,6 @@ class LevelManager(
         }
     }
 
-    /**
-     * Load textures from saved GUIDs/paths and apply them to the model's materials.
-     */
     private fun applyTextureGuidsToObject(obj: GameObject) {
         val rc = obj.getComponent<RenderComponent>() ?: return
         val model = rc.model ?: return
@@ -218,35 +209,30 @@ class LevelManager(
         model.mesh.forEach { meshPart ->
             val mat = meshPart.material
 
-            // Albedo
             if (rc.albedoTextureGuid.isNotBlank() && mat.baseColorTexture == null) {
                 loadTextureFromGuidOrPath(rc.albedoTextureGuid)?.let { tex ->
                     mat.baseColorTexture = tex
                     mat.baseColorPath = tex.filePath
                 }
             }
-            // Normal map
             if (rc.normalMapGuid.isNotBlank() && mat.normalMap == null) {
                 loadTextureFromGuidOrPath(rc.normalMapGuid)?.let { tex ->
                     mat.normalMap = tex
                     mat.normalMapPath = tex.filePath
                 }
             }
-            // Metallic/roughness
             if (rc.metallicRoughnessGuid.isNotBlank() && mat.metallicRoughnessTexture == null) {
                 loadTextureFromGuidOrPath(rc.metallicRoughnessGuid)?.let { tex ->
                     mat.metallicRoughnessTexture = tex
                     mat.metallicRoughnessPath = tex.filePath
                 }
             }
-            // AO
             if (rc.aoGuid.isNotBlank() && mat.aoTexture == null) {
                 loadTextureFromGuidOrPath(rc.aoGuid)?.let { tex ->
                     mat.aoTexture = tex
                     mat.aoPath = tex.filePath
                 }
             }
-            // Emissive
             if (rc.emissiveGuid.isNotBlank() && mat.emissiveTexture == null) {
                 loadTextureFromGuidOrPath(rc.emissiveGuid)?.let { tex ->
                     mat.emissiveTexture = tex
@@ -264,7 +250,6 @@ class LevelManager(
                 resourceManager.loadTextureSync(asset.absoluteSourcePath)
             } else null
         } catch (e: IllegalArgumentException) {
-            // Not a valid GUID — treat as raw file path
             val file = File(guidOrPath)
             if (file.exists()) {
                 resourceManager.loadTextureSync(guidOrPath)
@@ -274,10 +259,6 @@ class LevelManager(
         }
     }
 
-    /**
-     * Resolve animation references for Animator components after scene deserialization.
-     * Loads animations from serialized paths.
-     */
     private fun resolveAnimationReferences(scene: Scene) {
         scene.gameObjectManager.gameObjects.forEach { obj ->
             resolveAnimatorAnimations(obj)
@@ -293,3 +274,17 @@ class LevelManager(
         logger.logEditor("Loaded ${animator.animationPaths.size} animations for ${obj.name}")
     }
 }
+
+/**
+ * Serializable scene save data for save/load operations.
+ *
+ * Replaces the old LevelData class. Stores the full scene state
+ * including all GameObjects and scene-wide configuration.
+ */
+@Serializable
+data class SceneSaveData(
+    val gameObjects: List<GameObject>,
+    val sceneData: com.pafoid.skate.engine.ecs.scene.SceneData,
+    @kotlinx.serialization.SerialName("levelPath")
+    var scenePath: String = ""
+)

@@ -121,7 +121,7 @@ class Animator : Component(), KoinComponent {
 
     /**
      * Rebuilds the animations list from serialized file paths.
-     * Called by LevelManager after scene deserialization.
+     * Called by SceneSerializer after scene deserialization.
      */
     fun loadAnimationsFromPaths(resourceManager: ResourceManager) {
         animations.clear()

@@ -85,7 +85,7 @@ import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
-import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
@@ -95,7 +95,7 @@ val appModule = module {
     single { Serializer() }
     single { LoggerService() }
     single { AudioEngine(get()) }
-    single { LevelManager(get(), get(), get(), get()) }
+    single { SceneSerializer(get(), get(), get(), get()) }
     single { ClipboardService(get()) }
     single { UndoRedoManager() }
     single { EditorInputHandler(get(), get(), get(), get()) }

@@ -16,7 +16,7 @@ import com.pafoid.skate.engine.events.ProjectClosed
 import com.pafoid.skate.engine.events.ProjectCreated
 import com.pafoid.skate.engine.events.ProjectOpened
 import com.pafoid.skate.engine.events.ProjectSaved
-import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.editor.project.SceneSerializer
 import java.io.File
 
 class ProjectManager(
@@ -26,7 +26,7 @@ class ProjectManager(
     private val engineAssetCopier: EngineAssetCopier,
     private val sceneManager: SceneManager,
     private val prefabsGenerator: PrefabsGenerator,
-    private val levelManager: LevelManager,
+    private val sceneSerializer: SceneSerializer,
     private val eventSystem: EventSystem
 ) {
 
@@ -110,7 +110,8 @@ class ProjectManager(
             logger.logEditor("No project directory, cannot create default scene")
             return
         }
-        val defaultSceneFile = File(projectDir, "Scenes/main.scene")
+        val sceneFileName = currentProject?.defaultScene?.takeIf { it.isNotBlank() } ?: "Scenes/main.scene"
+        val defaultSceneFile = File(projectDir, sceneFileName)
 
         // Already exists — nothing to do
         if (defaultSceneFile.exists()) {
@@ -145,7 +146,7 @@ class ProjectManager(
 
         // Set the level path and save
         scene.sceneData.levelPath = defaultSceneFile.absolutePath
-        levelManager.saveToFile(scene, defaultSceneFile.absolutePath)
+        sceneSerializer.saveToFile(scene, defaultSceneFile.absolutePath)
 
         logger.logEditor("Default scene saved to ${defaultSceneFile.absolutePath}")
     }
@@ -353,7 +354,8 @@ class ProjectManager(
      */
     private fun loadDefaultScene() {
         val projectDir = getProjectDirectory() ?: return
-        val defaultSceneFile = File(projectDir, "Scenes/main.scene")
+        val sceneFileName = currentProject?.defaultScene?.takeIf { it.isNotBlank() } ?: "Scenes/main.scene"
+        val defaultSceneFile = File(projectDir, sceneFileName)
 
         if (!defaultSceneFile.exists()) {
             logger.logEditor("No default scene found at ${defaultSceneFile.absolutePath}")
@@ -365,7 +367,7 @@ class ProjectManager(
             return
         }
 
-        levelManager.loadFromFile(scene, defaultSceneFile.absolutePath)
+        sceneSerializer.loadFromFile(scene, defaultSceneFile.absolutePath)
 
         logger.logEditor("Loaded default scene from ${defaultSceneFile.absolutePath}")
     }

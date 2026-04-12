@@ -1,15 +1,15 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.editor.project.SceneSerializer
 
 class OpenSceneCommand(
     private val scene: Scene,
-    private val levelManager: LevelManager,
+    private val sceneSerializer: SceneSerializer,
     private val filePath: String
 ) : Command {
     override fun execute() {
-        levelManager.loadFromFile(scene, filePath)
+        sceneSerializer.loadFromFile(scene, filePath)
     }
 
     override fun undo() {

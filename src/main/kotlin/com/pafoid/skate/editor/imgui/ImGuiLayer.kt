@@ -20,7 +20,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.game.level.LevelManager
+import com.pafoid.skate.editor.project.SceneSerializer
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
@@ -71,7 +71,7 @@ class ImGuiLayer(
     private val stringManager: StringManager,
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
-    private val levelManager: LevelManager,
+    private val sceneSerializer: SceneSerializer,
     private val resourceManager: ResourceManager,
     private val windowRegistry: WindowRegistry,
 ): KoinComponent {
@@ -138,7 +138,7 @@ class ImGuiLayer(
         val projectSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.project_settings" }?.showFlag ?: ImBoolean(false)
 
         menuBar = EditorMenuBar(
-            fileMenu = FileMenuBuilder(stringManager, levelManager, sceneManager, glfwWindow, sceneInitializer),
+            fileMenu = FileMenuBuilder(stringManager, sceneSerializer, sceneManager, glfwWindow, sceneInitializer),
             editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
             settingsMenu = SettingsMenuBuilder(
                 stringManager, settingsManager,
