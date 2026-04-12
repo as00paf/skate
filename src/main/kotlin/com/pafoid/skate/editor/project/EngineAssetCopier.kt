@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.project
+package com.pafoid.skate.editor.project
 
 import com.pafoid.skate.engine.assets.Assets
 import java.io.File

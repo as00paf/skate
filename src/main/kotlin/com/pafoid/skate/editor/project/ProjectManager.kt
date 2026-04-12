@@ -1,6 +1,7 @@
-package com.pafoid.skate.engine.project
+package com.pafoid.skate.editor.project
 
 import com.pafoid.skate.editor.data.LogLevel
+import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
@@ -10,8 +11,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.engine.settings.ProjectSettings
-import com.pafoid.skate.engine.settings.RecentProjectInfo
 import com.pafoid.skate.game.level.LevelManager
 import java.io.File
 

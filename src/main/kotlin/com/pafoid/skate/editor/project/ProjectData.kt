@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.project
+package com.pafoid.skate.editor.project
 
 import java.time.Instant
 import java.time.ZoneId

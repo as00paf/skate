@@ -2,14 +2,14 @@ package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.data.LogLevel
+import com.pafoid.skate.editor.project.ProjectSettings
+import com.pafoid.skate.editor.settings.EngineSettings
+import com.pafoid.skate.editor.settings.HardwareSettings
+import com.pafoid.skate.editor.settings.RecentProjectInfo
+import com.pafoid.skate.editor.settings.SettingsData
+import com.pafoid.skate.editor.settings.SettingsSerializer
+import com.pafoid.skate.editor.settings.UserSettings
 import com.pafoid.skate.engine.assets.serialization.Serializer
-import com.pafoid.skate.engine.settings.EngineSettings
-import com.pafoid.skate.engine.settings.HardwareSettings
-import com.pafoid.skate.engine.settings.ProjectSettings
-import com.pafoid.skate.engine.settings.RecentProjectInfo
-import com.pafoid.skate.engine.settings.SettingsData
-import com.pafoid.skate.engine.settings.SettingsSerializer
-import com.pafoid.skate.engine.settings.UserSettings
 import java.io.File
 
 class SettingsManager(
@@ -166,7 +166,7 @@ class SettingsManager(
      * Called when closing a project to persist the registry in the project file.
      */
     fun updateProjectAssetRegistry(
-        project: com.pafoid.skate.engine.settings.ProjectSettings,
+        project: ProjectSettings,
         registryData: com.pafoid.skate.engine.assets.database.AssetRegistryData
     ) {
         val updated = project.copy(assetRegistry = registryData)

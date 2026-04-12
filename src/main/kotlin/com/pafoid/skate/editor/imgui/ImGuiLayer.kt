@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.SettingsManager
@@ -18,7 +19,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.input.IInputProvider
-import com.pafoid.skate.engine.project.ProjectManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.game.level.LevelManager
 import imgui.ImVec2

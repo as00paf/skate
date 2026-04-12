@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.ui.windows.project.FileSystemItem
 import com.pafoid.skate.editor.ui.windows.project.FileTypeResolver
-import com.pafoid.skate.engine.project.ProjectManager
 import java.io.File
 
 /**

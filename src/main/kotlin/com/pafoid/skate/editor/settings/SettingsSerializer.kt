@@ -1,5 +1,7 @@
-package com.pafoid.skate.engine.settings
+package com.pafoid.skate.editor.settings
 
+import com.pafoid.skate.editor.project.ProjectMetadata
+import com.pafoid.skate.editor.project.ProjectSettings
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import java.io.File
 

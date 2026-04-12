@@ -2,6 +2,8 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.data.EditorInputMappings
+import com.pafoid.skate.editor.settings.GameplaySettings
+import com.pafoid.skate.editor.settings.HardwareSettings
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -15,8 +17,6 @@ import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.settings.GameplaySettings
-import com.pafoid.skate.engine.settings.HardwareSettings
 import com.pafoid.skate.game.skateboard.TrickType
 import imgui.ImGui
 import org.joml.Vector2f

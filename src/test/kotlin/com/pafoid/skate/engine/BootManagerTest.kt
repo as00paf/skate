@@ -3,13 +3,13 @@ package com.pafoid.skate.engine
 import com.pafoid.skate.app.SplashScreen
 import com.pafoid.skate.editor.DefaultSceneContentSpawner
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
+import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.project.ProjectManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.game.level.LevelManager
 import io.mockk.Runs

@@ -3,6 +3,9 @@ package com.pafoid.skate.app
 import com.pafoid.skate.editor.EditorSystemFactory
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.imgui.ImGuiLayer
+import com.pafoid.skate.editor.project.EngineAssetCopier
+import com.pafoid.skate.editor.project.ProjectManager
+import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.search.SearchEngine
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.providers.ActionSearchProvider
@@ -75,9 +78,6 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.project.EngineAssetCopier
-import com.pafoid.skate.engine.project.ProjectManager
-import com.pafoid.skate.engine.project.ProjectWizard
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer

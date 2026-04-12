@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.commands.DeleteFileCommand
 import com.pafoid.skate.editor.commands.RenameFileCommand
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.systems.FileSystemScanner
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
@@ -16,7 +17,6 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.FileSystemChangedEvent
 import com.pafoid.skate.engine.events.OpenSceneFileEvent
-import com.pafoid.skate.engine.project.ProjectManager
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin

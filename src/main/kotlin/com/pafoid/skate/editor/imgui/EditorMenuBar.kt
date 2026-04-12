@@ -2,6 +2,8 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.project.ProjectManager
+import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
@@ -13,8 +15,6 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.project.ProjectManager
-import com.pafoid.skate.engine.project.ProjectWizard
 import imgui.ImGui
 import imgui.internal.ImGui.image
 
