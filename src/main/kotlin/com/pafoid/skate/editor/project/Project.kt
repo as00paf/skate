@@ -1,12 +1,11 @@
 package com.pafoid.skate.editor.project
 
-import com.pafoid.skate.editor.settings.GameplaySettings
 import com.pafoid.skate.engine.assets.database.AssetRegistryData
 import kotlinx.serialization.Serializable
 import java.io.File
 
 @Serializable
-data class ProjectSettings(
+data class Project(
     val metadata: ProjectMetadata,
     val defaultScene: String = "",
     val assetPaths: List<String> = listOf("Assets"),

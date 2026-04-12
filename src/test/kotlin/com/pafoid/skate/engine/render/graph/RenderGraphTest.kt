@@ -20,9 +20,11 @@ class RenderGraphTest {
         
         val pass1 = mockk<RenderPass>(relaxed = true) {
             io.mockk.every { name } returns "Pass1"
+            io.mockk.every { isEnabled } returns true
         }
         val pass2 = mockk<RenderPass>(relaxed = true) {
             io.mockk.every { name } returns "Pass2"
+            io.mockk.every { isEnabled } returns true
         }
         
         val graph = RenderGraphBuilder()
@@ -48,7 +50,9 @@ class RenderGraphTest {
         val pass = object : RenderPass {
             override val name = "TestPass"
             override val inputs = setOf("ShadowMap")
-            
+            override var executionTimeNs: Long = 0
+            override var isEnabled: Boolean = true
+
             override fun execute(context: RenderContext) {
                 receivedId = context.getTexture("ShadowMap")
             }

@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor.settings
+package com.pafoid.skate.editor.project
 
 import kotlinx.serialization.Serializable
 

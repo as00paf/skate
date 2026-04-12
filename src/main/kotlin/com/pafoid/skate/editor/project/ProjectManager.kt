@@ -11,6 +11,11 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.systems.EventSystem
+import com.pafoid.skate.engine.events.ProjectClosed
+import com.pafoid.skate.engine.events.ProjectCreated
+import com.pafoid.skate.engine.events.ProjectOpened
+import com.pafoid.skate.engine.events.ProjectSaved
 import com.pafoid.skate.game.level.LevelManager
 import java.io.File
 
@@ -21,10 +26,11 @@ class ProjectManager(
     private val engineAssetCopier: EngineAssetCopier,
     private val sceneManager: SceneManager,
     private val prefabsGenerator: PrefabsGenerator,
-    private val levelManager: LevelManager
+    private val levelManager: LevelManager,
+    private val eventSystem: EventSystem
 ) {
 
-    var currentProject: ProjectSettings? = null
+    var currentProject: Project? = null
         private set
 
     fun hasProject(): Boolean = currentProject != null
@@ -42,7 +48,7 @@ class ProjectManager(
         return openProject(projectFile)
     }
 
-    fun createProject(name: String, folder: File, engineVersion: String = "v0.46.0.1.19"): Result<ProjectSettings> {
+    fun createProject(name: String, folder: File, engineVersion: String = "v0.46.0.1.19"): Result<Project> {
         return try {
             logger.logEditor("Creating project: $name in ${folder.absolutePath}")
 
@@ -50,6 +56,7 @@ class ProjectManager(
 
             result.onSuccess { project ->
                 currentProject = project
+                eventSystem.publish(ProjectCreated(project))
                 logger.logEditor("Project created successfully: ${project.metadata.name}")
 
                 // Initialize asset database for this new project
@@ -269,10 +276,11 @@ class ProjectManager(
                 return false
             }
 
-            val success = settingsManager.loadProject(projectFile)
+            val loadedProject = settingsManager.loadProject(projectFile)
 
-            if (success) {
-                currentProject = settingsManager.project
+            if (loadedProject != null) {
+                currentProject = loadedProject
+                eventSystem.publish(ProjectOpened(loadedProject))
 
                 // Load asset registry from project file if present
                 currentProject?.assetRegistry?.let { registryData ->
@@ -300,11 +308,11 @@ class ProjectManager(
 
                 // Load the default scene if it exists
                 loadDefaultScene()
+                true
             } else {
                 logger.logEngine("Failed to load project: ${projectFile.absolutePath}", LogLevel.ERROR)
+                false
             }
-
-            success
         } catch (e: Exception) {
             logger.logEngine("Error opening project: ${e.message}", LogLevel.ERROR)
             false
@@ -313,37 +321,32 @@ class ProjectManager(
 
     fun closeProject() {
         val path = currentProject?.getProjectFile()?.absolutePath
-        logger.logEditor("Closing project: ${getProjectName()}")
+        val projectName = getProjectName()
+        logger.logEditor("Closing project: $projectName")
 
         // Export registry and embed in project file before closing
         currentProject?.let { project ->
             val registryData = assetDatabase.exportRegistryData()
-            // Update the project settings with the registry
             settingsManager.updateProjectAssetRegistry(project, registryData)
         }
 
         // Destroy all game objects from open scenes and clean up physics
         sceneManager.openScenes.toList().forEach { scene ->
-            // Remove physics bodies BEFORE destroying game objects
             scene.gameObjectManager.gameObjects.forEach { go ->
                 scene.physics3d.remove(go)
             }
             scene.gameObjectManager.gameObjects.forEach { it.destroy() }
             scene.gameObjectManager.gameObjects.clear()
             scene.gameObjectManager.pendingObjects.clear()
-
-            // Reset system caches so they rebuild with new objects
             scene.systemManager.resetSystemCaches()
         }
 
+        eventSystem.publish(ProjectClosed(projectName))
         currentProject = null
         assetDatabase.shutdown()
         settingsManager.setLastClosedProjectPath(path)
         settingsManager.closeProject()
-        onProjectClosed?.invoke()
     }
-
-    var onProjectClosed: (() -> Unit)? = null
 
     /**
      * Load the project's default scene if it exists.
@@ -374,7 +377,11 @@ class ProjectManager(
         }
 
         logger.logEditor("Saving project: ${project.metadata.name}")
-        return settingsManager.saveProject(project)
+        val result = settingsManager.saveProject(project)
+        if (result) {
+            eventSystem.publish(ProjectSaved(project))
+        }
+        return result
     }
 
     fun getProjectDirectory(): File? {

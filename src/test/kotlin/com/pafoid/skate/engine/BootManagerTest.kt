@@ -1,9 +1,7 @@
 package com.pafoid.skate.engine
 
 import com.pafoid.skate.app.SplashScreen
-import com.pafoid.skate.editor.DefaultSceneContentSpawner
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
-import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.BootManager
@@ -11,7 +9,6 @@ import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.game.level.LevelManager
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -39,12 +36,9 @@ class BootManagerTest : KoinTest {
     private val splashScreen = mockk<SplashScreen>(relaxed = true)
     private val audioEngine = mockk<AudioEngine>(relaxed = true)
     private val sceneInitializer = mockk<LevelEditorSceneInitializer>(relaxed = true)
-    private val projectManager = mockk<ProjectManager>(relaxed = true)
-    private val defaultSceneSpawner = mockk<DefaultSceneContentSpawner>(relaxed = true)
-    private val levelManager = mockk<LevelManager>(relaxed = true)
 
     private val bootManager =
-        BootManager(sceneManager, renderer, mockLogger, splashScreen, audioEngine, sceneInitializer, projectManager, defaultSceneSpawner, levelManager, Dispatchers.Unconfined)
+        BootManager(sceneManager, renderer, mockLogger, splashScreen, audioEngine, sceneInitializer, Dispatchers.Unconfined)
 
     @BeforeEach
     fun setup() {
@@ -57,9 +51,6 @@ class BootManagerTest : KoinTest {
                 single<SplashScreen> { splashScreen }
                 single<AudioEngine> { audioEngine }
                 single<LevelEditorSceneInitializer> { sceneInitializer }
-                single<ProjectManager> { projectManager }
-                single<DefaultSceneContentSpawner> { defaultSceneSpawner }
-                single<LevelManager> { levelManager }
             })
         }
     }

@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.settings
 
 import com.pafoid.skate.editor.project.ProjectMetadata
-import com.pafoid.skate.editor.project.ProjectSettings
+import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import java.io.File
 
@@ -43,10 +43,10 @@ class SettingsSerializer(private val serializer: Serializer) {
         file.writeText(serializer.encode(settings))
     }
 
-    fun loadProjectSettings(projectFile: File): ProjectSettings? {
+    fun loadProjectSettings(projectFile: File): Project? {
         return if (projectFile.exists() && projectFile.extension == "skateproject") {
             try {
-                serializer.decode<ProjectSettings>(projectFile.readText())
+                serializer.decode<Project>(projectFile.readText())
             } catch (e: Exception) {
                 null
             }
@@ -55,7 +55,7 @@ class SettingsSerializer(private val serializer: Serializer) {
         }
     }
 
-    fun saveProjectSettings(project: ProjectSettings): Boolean {
+    fun saveProjectSettings(project: Project): Boolean {
         return try {
             val file = project.getProjectFile()
             file.writeText(serializer.encode(project))
@@ -69,7 +69,7 @@ class SettingsSerializer(private val serializer: Serializer) {
         name: String,
         folder: File,
         engineVersion: String
-    ): Result<ProjectSettings> {
+    ): Result<Project> {
         return try {
             val projectFile = File(folder, "$name.skateproject")
             if (projectFile.exists()) {
@@ -91,7 +91,7 @@ class SettingsSerializer(private val serializer: Serializer) {
                 projectPath = File(projectDir, "$name.skateproject").absolutePath
             )
 
-            val project = ProjectSettings(
+            val project = Project(
                 metadata = metadata,
                 defaultScene = "Scenes/main.scene",
                 assetPaths = listOf("Assets"),

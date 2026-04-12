@@ -130,7 +130,7 @@ val appModule = module {
     factory { InputTestingWindow(get(), get(), get()) }
     factory { SystemsWindow() }
     factory { EditorSettingsWindow(get(), get()) }
-    factory { ProjectSettingsWindow(get(), get(), get(), get()) }
+    factory { ProjectSettingsWindow(get(), get(), get(), get(), get()) }
     factory { KeyBindingsWindow(get(), get()) }
     factory { CommandHistoryWindow() }
     factory { RenderGraphWindow() }
@@ -145,7 +145,7 @@ val appModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectWizardWindow() }
     single { ProjectSwitcherDialog() }
@@ -215,7 +215,7 @@ val engineModule = module {
     single { BootManager(get(), get(), get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection
-    single { InputSystem(get(), get(), get(), get()) }
+    single { InputSystem(get(), get(), get(), get(), get()) }
     single { MouseControls(get(), get(), get(), get(), get(), get()) }
     single { GizmoSystem(get(), get(), get(), get(), get(), get(), get()) }
     single { AudioSystem(get(), get()) }

@@ -152,8 +152,6 @@ class LevelManager(
         // Resolve GUID references for RenderComponents
         if (assetDatabase != null) {
             resolveAssetReferences(scene)
-            // Migrate legacy scenes: create GUIDs for models that don't have them
-            migrateLegacyModels(scene)
         }
 
         // Resolve animation references for Animator components
@@ -274,60 +272,6 @@ class LevelManager(
         } catch (e: Exception) {
             null
         }
-    }
-
-    /**
-     * Migrate legacy scene models to GUID-based references.
-     *
-     * For any RenderComponent that has a model but no modelGuid,
-     * this method attempts to find the model's source path via
-     * material texture paths and create/find the corresponding GUID.
-     * The scene is marked dirty so it gets re-saved with GUID references.
-     */
-    private fun migrateLegacyModels(scene: Scene) {
-        var migrationCount = 0
-        scene.gameObjectManager.gameObjects.forEach { obj ->
-            migrateObjectModels(obj)?.let { migrationCount += it }
-            obj.children.forEach { child ->
-                migrateObjectModels(child)?.let { migrationCount += it }
-            }
-        }
-        if (migrationCount > 0) {
-            logger.logEditor("Migrated $migrationCount legacy model(s) to GUID references in ${scene.sceneData.levelPath}")
-            scene.isDirty = true
-        }
-    }
-
-    private fun migrateObjectModels(obj: GameObject): Int? {
-        val rc = obj.getComponent<RenderComponent>() ?: return null
-        val model = rc.model ?: return null
-        if (rc.modelGuid.isNotBlank()) return null
-
-        // Try to find model path from material texture paths
-        val modelPath = model.mesh.firstOrNull()?.material?.baseColorTexture?.filePath
-            ?: model.mesh.firstOrNull()?.material?.baseColorPath
-            ?: return null
-
-        val sourceFile = File(modelPath)
-        if (!sourceFile.exists()) return null
-
-        // Try to find existing asset by path
-        val absolutePath = sourceFile.absolutePath
-        var asset = assetDatabase?.getByAbsolutePath(absolutePath)
-
-        if (asset == null) {
-            // Create .meta file for this model
-            assetDatabase?.createMeta(sourceFile)?.getOrNull()?.let { guid ->
-                asset = assetDatabase?.getByGuid(guid)
-            }
-        }
-
-        if (asset != null) {
-            rc.modelGuid = asset.guid.value
-            return 1
-        }
-
-        return null
     }
 
     /**

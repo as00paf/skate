@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor
 
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -94,6 +95,7 @@ class EditorSystemFactory : KoinComponent {
     private val mouseListener: MouseListener by inject()
     private val serializer: Serializer by inject()
     private val settingsManager: SettingsManager by inject()
+    private val projectManager: ProjectManager by inject()
     private val stringManager: StringManager by inject()
     private val undoRedoManager: UndoRedoManager by inject()
     private val debugRenderer: DebugRenderer by inject()
@@ -108,7 +110,7 @@ class EditorSystemFactory : KoinComponent {
      * Add all editor input, gameplay, and utility systems to the scene.
      */
     fun addEditorSystems(scene: Scene) {
-        val inputSystem = InputSystem(inputProvider, mouseListener, settingsManager, stringManager)
+        val inputSystem = InputSystem(inputProvider, mouseListener, settingsManager, stringManager, projectManager)
         scene.addSystem(inputSystem)
         scene.addSystem(EventSystem())
         scene.addSystem(EditorCamera(scene.camera, EditorInputStateComponent()))

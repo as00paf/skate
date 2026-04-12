@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Test
 
 class UndoRedoManagerTest {
 
-    class MockCommand(private val state: MutableList<String>, private val value: String) : Command {
+    class MockCommand(
+        private val state: MutableList<String>, 
+        private val value: String
+    ) : Command {
         override fun execute() {
             state.add(value)
         }
@@ -15,6 +18,9 @@ class UndoRedoManagerTest {
         override fun undo() {
             state.remove(value)
         }
+
+        override fun getDisplayName(): String = "Mock Command"
+        override fun getTargetName(): String? = null
     }
 
     @Test

@@ -2,8 +2,9 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.data.EditorInputMappings
-import com.pafoid.skate.editor.settings.GameplaySettings
-import com.pafoid.skate.editor.settings.HardwareSettings
+import com.pafoid.skate.editor.project.GameplaySettings
+import com.pafoid.skate.editor.project.ProjectManager
+import com.pafoid.skate.editor.settings.EngineSettings
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -44,17 +45,18 @@ class InputSystem(
     private val inputProvider: IInputProvider,
     private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager,
-    private val stringManager: StringManager
+    private val stringManager: StringManager,
+    private val projectManager: ProjectManager
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val mappings: InputMappings
-        get() = InputMappings()
+        get() = settingsManager.loadInputMappings() ?: InputMappings()
     private val editorMappings: EditorInputMappings
-        get() = EditorInputMappings()
+        get() = settingsManager.engine.editor.editorInputMappings
     private val gameplaySettings: GameplaySettings
-        get() = GameplaySettings()
-    private val hardwareSettings: HardwareSettings
-        get() = HardwareSettings()
+        get() = projectManager.currentProject?.gameplaySettings ?: GameplaySettings()
+    private val engineSettings: EngineSettings
+        get() = settingsManager.engine
 
     private var jumpButtonWasPressed = false
     private var previousButtons: BooleanArray? = null
@@ -347,10 +349,6 @@ class InputSystem(
      * - Current input state debugging
      */
     override fun imgui() {
-        // TODO Phase 5: Update imgui to use new immutable settings structure with updateEditorSettings
-        val hSettings = hardwareSettings
-        val gSettings = gameplaySettings
-
         ImGui.separator()
         ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Input settings configuration will be available after Phase 5 completion")
         ImGui.separator()

@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.project.ProjectSettings
+import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.settings.EngineSettings
 import com.pafoid.skate.editor.settings.HardwareSettings
 import com.pafoid.skate.editor.settings.RecentProjectInfo
@@ -26,9 +26,6 @@ class SettingsManager(
         private set
 
     var hardware: HardwareSettings = HardwareSettings()
-        private set
-
-    var project: ProjectSettings? = null
         private set
 
     private var cachedRecentProjects: List<RecentProjectInfo>? = null
@@ -90,7 +87,6 @@ class SettingsManager(
         saveEngine()
         saveUser()
         saveHardware()
-        project?.let { saveProject(it) }
     }
 
     fun saveEngine() {
@@ -121,38 +117,35 @@ class SettingsManager(
         }
     }
 
-    fun loadProject(projectFile: File): Boolean {
+    fun loadProject(projectFile: File): Project? {
         return try {
             val loadedProject = settingsSerializer.loadProjectSettings(projectFile)
             if (loadedProject != null) {
-                project = loadedProject
                 val updatedMetadata = loadedProject.metadata.copy(
                     lastOpenedDate = System.currentTimeMillis()
                 )
                 val updatedProject = loadedProject.copy(metadata = updatedMetadata)
                 saveProject(updatedProject)
-
                 addToRecentProjects(projectFile.absolutePath)
-
                 logger.logEditor("Project loaded: ${loadedProject.metadata.name}")
-                true
+                updatedProject
             } else {
                 logger.logEngine("Failed to load project: $projectFile", LogLevel.ERROR)
-                false
+                null
             }
         } catch (e: Exception) {
             logger.logEngine("Error loading project: ${e.message}", LogLevel.ERROR)
-            false
+            null
         }
     }
 
-    fun saveProject(projectSettings: ProjectSettings): Boolean {
+    fun saveProject(project: Project): Boolean {
         return try {
-            val result = settingsSerializer.saveProjectSettings(projectSettings)
+            val result = settingsSerializer.saveProjectSettings(project)
             if (result) {
-                logger.logEditor("Project saved: ${projectSettings.metadata.name}")
+                logger.logEditor("Project saved: ${project.metadata.name}")
             } else {
-                logger.logEngine("Failed to save project: ${projectSettings.metadata.name}", LogLevel.ERROR)
+                logger.logEngine("Failed to save project: ${project.metadata.name}", LogLevel.ERROR)
             }
             result
         } catch (e: Exception) {
@@ -166,21 +159,19 @@ class SettingsManager(
      * Called when closing a project to persist the registry in the project file.
      */
     fun updateProjectAssetRegistry(
-        project: ProjectSettings,
+        project: Project,
         registryData: com.pafoid.skate.engine.assets.database.AssetRegistryData
     ) {
         val updated = project.copy(assetRegistry = registryData)
         saveProject(updated)
     }
 
-    fun createProject(name: String, folder: File, engineVersion: String): Result<ProjectSettings> {
+    fun createProject(name: String, folder: File, engineVersion: String): Result<Project> {
         return settingsSerializer.createProject(name, folder, engineVersion)
-            .onSuccess { project = it }
             .onSuccess { addToRecentProjects(it.getProjectFile().absolutePath) }
     }
 
     fun closeProject() {
-        project = null
         logger.logEditor("Project closed")
     }
 
@@ -266,9 +257,9 @@ class SettingsManager(
         }
     }
 
-    fun hasProject(): Boolean = project != null
+    fun hasProject(project: Project?): Boolean = project != null
 
-    fun getProjectName(): String = project?.metadata?.name ?: "No Project"
+    fun getProjectName(project: Project?): String = project?.metadata?.name ?: "No Project"
 
     // ─── Display callbacks (set at app init, called from settings windows) ───
     private var vsyncCallback: ((Boolean) -> Unit)? = null

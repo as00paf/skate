@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
@@ -32,6 +33,7 @@ import java.time.format.DateTimeFormatter
 class ProjectSettingsWindow(
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
+    private val projectManager: ProjectManager,
     private val projectSwitcher: ProjectSwitcherDialog,
     private val logger: LoggerService
 ) : IWindow {
@@ -67,7 +69,7 @@ class ProjectSettingsWindow(
         setNextWindowSize(defaultWidth, 550f, ImGuiCond.FirstUseEver)
 
         if (begin(stringManager.getString("window.project_settings"), pOpen, ImGuiWindowFlags.NoDocking)) {
-            if (!settingsManager.hasProject()) {
+            if (!settingsManager.hasProject(projectManager.currentProject)) {
                 ImGui.text(stringManager.getString("settings.project.no_project"))
                 MImGui.textDisabled(stringManager.getString("settings.project.no_project_description"))
                 ImGui.spacing()
@@ -133,14 +135,14 @@ class ProjectSettingsWindow(
     }
 
     private fun syncTempSettings() {
-        val project = settingsManager.project
+        val project = projectManager.currentProject
         tempPhysicsFPS = project?.gameplaySettings?.physicsFPS ?: 60
         tempGravity = project?.gameplaySettings?.gravity ?: -9.81f
         tempTimeScale = project?.gameplaySettings?.timeScale ?: 1.0f
     }
 
     private fun renderGeneral() {
-        val project = settingsManager.project ?: return
+        val project = projectManager.currentProject ?: return
         val meta = project.metadata
         MImGui.propertyRowReadOnly(stringManager.getString("settings.project.name"), meta.name)
         MImGui.propertyRowReadOnly(stringManager.getString("settings.project.version"), meta.version)

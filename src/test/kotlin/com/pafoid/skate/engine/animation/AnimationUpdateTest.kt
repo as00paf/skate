@@ -57,7 +57,7 @@ class AnimationUpdateTest {
         val scaleChannel = AnimationChannel(scaleSampler, boneName, AnimationPath.SCALE)
 
         // 4. Create Animation
-        val animation = Animation("TestAnim", listOf(translationChannel, rotationChannel, scaleChannel), 1.0f)
+        val animation = Animation("TestAnim", listOf(translationChannel, rotationChannel, scaleChannel), 1.0f, "path/to/anim")
 
         // 5. Update Animation at t=0
         animation.update(0f, skeleton)
