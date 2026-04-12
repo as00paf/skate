@@ -86,6 +86,7 @@ import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
+import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
@@ -115,8 +116,11 @@ val appModule = module {
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get(), get()) }
     factory { ViewportToolbar(get(), get(), get(), get()) }
-    factory { ViewportContextMenu(get()) }
+    factory { ViewportContextMenu(get(), get()) }
     factory { ViewportOverlays(get(), get()) }
+
+    // Viewport action handler for event-driven viewport operations
+    single { ViewportActionHandler().also { it.init() } }
 
     // Editor windows
     factory { SceneHierarchyWindow() }
