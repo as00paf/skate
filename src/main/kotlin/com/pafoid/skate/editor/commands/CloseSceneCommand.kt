@@ -1,0 +1,26 @@
+package com.pafoid.skate.editor.commands
+
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
+
+/**
+ * Command for closing a scene.
+ * This is execute-only as undoing a close operation is complex
+ * (would require reinitializing the scene's physics, systems, and game objects).
+ */
+class CloseSceneCommand(
+    private val scene: Scene,
+    private val index: Int,
+    private val sceneManager: SceneManager
+) : Command {
+    override fun execute() {
+        sceneManager.closeScene(index)
+    }
+
+    override fun undo() {
+        // Not supported - reinitializing a closed scene is complex
+    }
+
+    override fun getDisplayName(): String = "Close Scene"
+    override fun getTargetName(): String? = scene.name
+}

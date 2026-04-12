@@ -16,7 +16,6 @@ import com.pafoid.skate.engine.events.ProjectClosed
 import com.pafoid.skate.engine.events.ProjectCreated
 import com.pafoid.skate.engine.events.ProjectOpened
 import com.pafoid.skate.engine.events.ProjectSaved
-import com.pafoid.skate.editor.project.SceneSerializer
 import java.io.File
 
 class ProjectManager(
@@ -388,17 +387,5 @@ class ProjectManager(
 
     fun getProjectDirectory(): File? {
         return currentProject?.getProjectDirectory()
-    }
-
-    fun getAssetsDirectory(): File? {
-        return getProjectDirectory()?.let { projectDir ->
-            File(projectDir, "Assets")
-        }
-    }
-
-    fun getScenesDirectory(): File? {
-        return getProjectDirectory()?.let { projectDir ->
-            File(projectDir, "Scenes")
-        }
     }
 }

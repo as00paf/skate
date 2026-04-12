@@ -12,7 +12,7 @@ import org.joml.Vector3f
 
 /**
  * Renders the viewport context menu with creation and manipulation options.
- * 
+ *
  * This component handles:
  * - Create Empty GameObject
  * - Create 3D Objects (Cube, Sphere, Cylinder, Plane)
@@ -21,20 +21,24 @@ import org.joml.Vector3f
  * - Create Skateboard Obstacles (Rail, Ledge, Kicker, etc.)
  * - Object manipulation (Duplicate, Delete)
  * - Focus and Reset Camera
- * 
+ *
  * @param stringManager For localized menu strings
  */
 class ViewportContextMenu(
     private val stringManager: StringManager
 ) {
-    
+
     companion object {
+        private const val TAB_BAR_HEIGHT = 25f
         private const val TOOLBAR_HEIGHT = 40f
+        private const val CONTENT_AREA_START_Y = TAB_BAR_HEIGHT + TOOLBAR_HEIGHT
     }
-    
+
     /**
      * Renders the context menu.
-     * 
+     *
+     * Only triggers when right-clicking in the viewport content area (below tab bar + toolbar).
+     *
      * @param windowPos The window position for calculating menu position
      * @param scene The current scene for object creation
      * @param callbacks Callbacks for menu actions
@@ -44,16 +48,22 @@ class ViewportContextMenu(
         scene: Scene?,
         callbacks: ViewportContextMenuCallbacks
     ) {
+        // Only trigger context menu when clicking below the tab bar + toolbar area
+        val mousePos = ImGui.getMousePos()
+        val relativeMouseY = mousePos.y - windowPos.y
+
+        if (relativeMouseY < CONTENT_AREA_START_Y) return
+
         ImGui.setCursorPos(windowPos.x, windowPos.y + TOOLBAR_HEIGHT)
-        
+
         if (ImGui.beginPopupContextWindow("ViewportContextMenu")) {
             ImGui.text(stringManager.getString("context.viewport.title"))
             ImGui.separator()
-            
+
             renderCreateMenu(scene, callbacks)
             renderObjectManipulationMenu(scene, callbacks)
             renderCameraMenu(scene, callbacks)
-            
+
             ImGui.endPopup()
         }
     }

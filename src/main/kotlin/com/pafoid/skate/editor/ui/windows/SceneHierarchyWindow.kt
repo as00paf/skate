@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.LockToggleCommand
 import com.pafoid.skate.editor.commands.ReparentGameObjectCommand
 import com.pafoid.skate.editor.commands.RenameGameObjectCommand
+import com.pafoid.skate.editor.commands.RenameSceneCommand
 import com.pafoid.skate.editor.commands.VisibilityToggleCommand
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -22,6 +23,7 @@ import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.GameObjectSelected
+import com.pafoid.skate.engine.events.SceneRenamed
 import com.pafoid.skate.engine.events.SelectionCleared
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -35,6 +37,11 @@ import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.*
+
+/**
+ * Special UID constant for scene rename editing (negative to avoid collision with real GameObject UIDs).
+ */
+private const val SPECIAL_UID_SCENE_RENAME = -999
 
 class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
@@ -59,6 +66,36 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.hierarchy"))
+
+        // Scene name header with rename button
+        val sceneName = scene.name
+        val headerLabel = "${Icons.FOLDER_OPEN} ${stringManager.getString("lbl.hierarchy.scene")}: $sceneName"
+        ImGui.text(headerLabel)
+        ImGui.sameLine(ImGui.getContentRegionAvailX() - 30f)
+        if (ImGui.button("${Icons.EDIT}##RenameScene")) {
+            startSceneRename(scene)
+        }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.rename_scene"))
+        }
+
+        // Inline scene rename input
+        if (editingObjUid == SPECIAL_UID_SCENE_RENAME) {
+            ImGui.setKeyboardFocusHere()
+            ImGui.inputText("##RenameSceneInput", editNameStr, ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll)
+            if (ImGui.isItemFocused() || focusEditInput) {
+                ImGui.setKeyboardFocusHere()
+                focusEditInput = false
+            }
+            if (ImGui.isKeyPressed(GLFW_KEY_ESCAPE)) {
+                editingObjUid = null
+            }
+            if (ImGui.isKeyPressed(GLFW_KEY_ENTER) || ImGui.isItemActivated()) {
+                finishSceneRename(scene)
+            }
+        }
+
+        ImGui.separator()
 
         // Toolbar
         ImGui.pushItemWidth(ImGui.getContentRegionAvailX() - 60f)
@@ -530,5 +567,29 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             current = current.parent
         }
         return false
+    }
+
+    // Scene rename helpers
+    private fun startSceneRename(scene: Scene) {
+        editingObjUid = SPECIAL_UID_SCENE_RENAME
+        editNameStr.set(scene.name)
+        focusEditInput = true
+    }
+
+    private fun finishSceneRename(scene: Scene) {
+        val newName = editNameStr.get().trim()
+        if (newName.isNotBlank() && newName != scene.name) {
+            val oldName = scene.name
+            val command = RenameSceneCommand(scene, newName, oldName, sceneManager, eventSystem)
+            undoRedoManager.executeCommand(command)
+        }
+        editingObjUid = null
+    }
+
+    init {
+        // Subscribe to SceneRenamed to update UI if needed
+        eventSystem.subscribe<SceneRenamed> { event ->
+            logger.logEditor("Scene renamed: '${event.oldName}' -> '${event.newName}'")
+        }
     }
 }

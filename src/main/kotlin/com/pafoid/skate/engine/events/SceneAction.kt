@@ -1,0 +1,16 @@
+package com.pafoid.skate.engine.events
+
+/**
+ * Domain actions for scene management operations.
+ * These are published when the user requests a scene operation
+ * (e.g., from UI context menu, keyboard shortcut, or search).
+ */
+sealed class SceneAction(eventName: String) : Event(eventName)
+
+data class SceneRenameRequested(val sceneIndex: Int, val newName: String) : SceneAction("scene.action.rename_requested")
+data class SceneSaveRequested(val sceneIndex: Int) : SceneAction("scene.action.save_requested")
+data class SceneSaveAsRequested(val sceneIndex: Int) : SceneAction("scene.action.save_as_requested")
+data class SceneCloseRequested(val sceneIndex: Int) : SceneAction("scene.action.close_requested")
+data class SceneCloseOthersRequested(val keepIndex: Int) : SceneAction("scene.action.close_others_requested")
+object SceneCloseAllRequested : SceneAction("scene.action.close_all_requested")
+object SceneCreateRequested : SceneAction("scene.action.create_requested")

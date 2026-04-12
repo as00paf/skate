@@ -24,7 +24,6 @@ import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.WindowRegistry
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
-import com.pafoid.skate.editor.ui.viewmodels.SceneViewModel
 import com.pafoid.skate.editor.ui.viewmodels.SelectionViewModel
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
@@ -86,6 +85,7 @@ import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
@@ -110,7 +110,7 @@ val appModule = module {
 
     // ViewModels for UI state management
     factory { SelectionViewModel(get(), get()) }
-    factory { SceneViewModel(get(), get()) }
+    single { SceneActionHandler().also { it.init() } }
 
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get(), get()) }

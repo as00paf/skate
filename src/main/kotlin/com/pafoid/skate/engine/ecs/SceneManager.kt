@@ -1,11 +1,13 @@
 package com.pafoid.skate.engine.ecs
 
+import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.SceneChanged
 import com.pafoid.skate.engine.events.SceneClosed
 import com.pafoid.skate.engine.events.SceneOpened
+import com.pafoid.skate.engine.events.SceneRenamed
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -81,5 +83,59 @@ class SceneManager : KoinComponent {
         openScenes.clear()
         activeSceneIndex = -1
         resourceManager.clear()
+    }
+
+    /**
+     * Renames a scene at the given index.
+     * @return true if rename was successful, false if index is invalid
+     */
+    fun renameScene(index: Int, newName: String): Boolean {
+        val scene = openScenes.getOrNull(index) ?: return false
+        if (newName.isBlank()) return false
+
+        scene.name = newName
+        logger.logEditor("Scene renamed: '${scene.name}'")
+        return true
+    }
+
+    /**
+     * Closes all scenes except the one at [keepIndex].
+     */
+    fun closeOtherScenes(keepIndex: Int) {
+        if (keepIndex !in 0 until openScenes.size) return
+
+        // Iterate in reverse to avoid index shifting issues
+        for (i in openScenes.indices.reversed()) {
+            if (i != keepIndex) {
+                closeScene(i)
+            }
+        }
+        // After closing others, the kept scene may have shifted to index 0
+        if (openScenes.isNotEmpty()) {
+            switchScene(0)
+        }
+    }
+
+    /**
+     * Closes all open scenes.
+     */
+    fun closeAllScenes() {
+        // Iterate in reverse to avoid index shifting issues
+        for (i in openScenes.indices.reversed()) {
+            closeScene(i)
+        }
+    }
+
+    /**
+     * Creates a new scene with the given name and opens it.
+     * @param name The name for the new scene
+     * @param initializer The scene initializer to use for setup
+     */
+    suspend fun createScene(name: String, initializer: LevelEditorSceneInitializer): Scene? {
+        val newScene = Scene(name, initializer)
+        newScene.init()
+        openScene(newScene)
+        logger.logEditor("Scene created: '$name'")
+        return newScene
     }
 }

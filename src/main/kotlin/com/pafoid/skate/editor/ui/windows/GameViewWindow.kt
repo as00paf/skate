@@ -70,7 +70,7 @@ class GameViewWindow : IWindow, KoinComponent {
     // Gamepad overlay and scene tab bar (not extracted yet)
     private val gamepadOverlay = GamepadOverlay()
     private val sceneInitializer: LevelEditorSceneInitializer by inject()
-    private val scenesTabBar by lazy { EditorScenesTabBar(sceneInitializer) }
+    private val scenesTabBar by lazy { EditorScenesTabBar(sceneInitializer, eventSystem, stringManager) }
 
     // Reusable buffers to avoid per-frame allocations
     private val tempVec2 = ImVec2()

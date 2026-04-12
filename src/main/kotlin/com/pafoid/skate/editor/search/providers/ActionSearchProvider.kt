@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.search.providers
 
+import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.TransformCommand
@@ -16,7 +17,10 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.engine.ecs.systems.EventSystem
+import com.pafoid.skate.engine.events.*
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
  * Search provider for editor actions and commands.
@@ -31,6 +35,9 @@ class ActionSearchProvider(
     private val serializer: Serializer,
     private val logger: LoggerService,
 ) : BaseSearchProvider(), KoinComponent {
+    
+    private val eventSystem: EventSystem by inject()
+    private val sceneInitializer: LevelEditorSceneInitializer by inject()
 
     override val category: SearchCategory = SearchCategory.ACTION
 
@@ -90,6 +97,46 @@ class ActionSearchProvider(
             description = "Duplicate the selected object",
             icon = Icons.COPY,
             execute = { duplicateSelected() }
+        ),
+        EditorAction(
+            actionId = "rename_scene",
+            displayName = "Rename Scene",
+            keywords = listOf("rename", "scene", "name", "title"),
+            description = "Rename the current scene",
+            icon = Icons.EDIT,
+            execute = { renameScene() }
+        ),
+        EditorAction(
+            actionId = "save_scene_as",
+            displayName = "Save Scene As",
+            keywords = listOf("save", "as", "scene", "export", "copy"),
+            description = "Save the current scene to a new file",
+            icon = Icons.FOLDER_OPEN,
+            execute = { saveSceneAs() }
+        ),
+        EditorAction(
+            actionId = "close_scene",
+            displayName = "Close Scene",
+            keywords = listOf("close", "scene", "remove", "exit"),
+            description = "Close the current scene",
+            icon = Icons.TRASH,
+            execute = { closeScene() }
+        ),
+        EditorAction(
+            actionId = "close_other_scenes",
+            displayName = "Close Other Scenes",
+            keywords = listOf("close", "others", "scenes", "remove"),
+            description = "Close all scenes except the current one",
+            icon = Icons.TRASH,
+            execute = { closeOtherScenes() }
+        ),
+        EditorAction(
+            actionId = "create_scene",
+            displayName = "Create Scene",
+            keywords = listOf("create", "new", "scene", "add", "empty"),
+            description = "Create a new empty scene",
+            icon = Icons.PLUS,
+            execute = { createScene() }
         )
     )
 
@@ -227,6 +274,42 @@ class ActionSearchProvider(
 
         undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
         logger.logEditor("Duplicated GameObject: ${selected.name} -> ${duplicated.name}")
+    }
+
+    // Scene-related actions
+    private fun renameScene() {
+        val currentIndex = sceneManager.activeSceneIndex
+        if (currentIndex < 0) return
+        // Publish event to trigger SceneActionHandler which will show rename UI
+        eventSystem.publish(SceneRenameRequested(currentIndex, sceneManager.currentScene?.name ?: ""))
+        logger.logEditor("Scene rename requested")
+    }
+
+    private fun saveSceneAs() {
+        val scene = sceneManager.currentScene ?: return
+        sceneSerializer.saveAs(scene)
+        logger.logEditor("Save Scene As executed")
+    }
+
+    private fun closeScene() {
+        val currentIndex = sceneManager.activeSceneIndex
+        if (currentIndex < 0 || sceneManager.openScenes.size <= 1) return
+        sceneManager.closeScene(currentIndex)
+        logger.logEditor("Scene closed")
+    }
+
+    private fun closeOtherScenes() {
+        val currentIndex = sceneManager.activeSceneIndex
+        if (currentIndex < 0) return
+        sceneManager.closeOtherScenes(currentIndex)
+        logger.logEditor("Other scenes closed")
+    }
+
+    private fun createScene() {
+        kotlinx.coroutines.runBlocking {
+            sceneManager.createScene("New Scene", sceneInitializer)
+        }
+        logger.logEditor("New scene created")
     }
 }
 
