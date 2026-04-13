@@ -137,6 +137,54 @@ class ActionSearchProvider(
             description = "Create a new empty scene",
             icon = Icons.PLUS,
             execute = { createScene() }
+        ),
+        EditorAction(
+            actionId = "create_primitive",
+            displayName = "Create Primitive",
+            keywords = listOf("create", "primitive", "cube", "sphere", "box", "cylinder", "plane", "3d", "object"),
+            description = "Create a 3D primitive object",
+            icon = Icons.CUBE,
+            execute = { createPrimitive() }
+        ),
+        EditorAction(
+            actionId = "create_light",
+            displayName = "Create Light",
+            keywords = listOf("create", "light", "directional", "point", "spot", "lamp"),
+            description = "Create a light object",
+            icon = Icons.SUN,
+            execute = { createLight() }
+        ),
+        EditorAction(
+            actionId = "spawn_prefab",
+            displayName = "Spawn Prefab",
+            keywords = listOf("spawn", "prefab", "ledge", "rail", "kicker", "ramp", "obstacle"),
+            description = "Spawn a prefab obstacle",
+            icon = Icons.GEAR,
+            execute = { spawnPrefab() }
+        ),
+        EditorAction(
+            actionId = "open_scene",
+            displayName = "Open Scene",
+            keywords = listOf("open", "load", "scene", "file", "read"),
+            description = "Open a scene from file",
+            icon = Icons.FOLDER_OPEN,
+            execute = { openScene() }
+        ),
+        EditorAction(
+            actionId = "rename_gameobject",
+            displayName = "Rename GameObject",
+            keywords = listOf("rename", "object", "gameobject", "name", "title"),
+            description = "Rename the selected GameObject",
+            icon = Icons.EDIT,
+            execute = { renameGameObject() }
+        ),
+        EditorAction(
+            actionId = "delete_scene",
+            displayName = "Delete Scene",
+            keywords = listOf("delete", "scene", "remove", "destroy", "file"),
+            description = "Delete the current scene and its file",
+            icon = Icons.TRASH,
+            execute = { deleteScene() }
         )
     )
 
@@ -310,6 +358,50 @@ class ActionSearchProvider(
             sceneManager.createScene("New Scene", sceneInitializer)
         }
         logger.logEditor("New scene created")
+    }
+
+    private fun createPrimitive() {
+        eventSystem.publish(ViewportCreatePrimitive("Cube", org.joml.Vector3f(0.5f, 0.5f, 0.5f)))
+        logger.logEditor("Create primitive executed")
+    }
+
+    private fun createLight() {
+        eventSystem.publish(ViewportCreateLight("DirectionalLight", com.pafoid.skate.editor.ui.windows.LightType.DIRECTIONAL))
+        logger.logEditor("Create light executed")
+    }
+
+    private fun spawnPrefab() {
+        eventSystem.publish(ViewportSpawnPrefab(com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType.LEDGE))
+        logger.logEditor("Spawn prefab executed")
+    }
+
+    private fun openScene() {
+        val scene = sceneManager.currentScene ?: return
+        sceneSerializer.open(scene)
+        logger.logEditor("Open scene executed")
+    }
+
+    private fun renameGameObject() {
+        val scene = sceneManager.currentScene ?: return
+        val selected = scene.getSelectedGameObject() ?: return
+        val newName = javax.swing.JOptionPane.showInputDialog(
+            null,
+            "Enter new name:",
+            selected.name
+        )
+        if (!newName.isNullOrBlank() && newName != selected.name) {
+            undoRedoManager.executeCommand(
+                com.pafoid.skate.editor.commands.RenameGameObjectCommand(selected, newName, selected.name)
+            )
+            logger.logEditor("GameObject renamed: '${selected.name}' -> '$newName'")
+        }
+    }
+
+    private fun deleteScene() {
+        val currentIndex = sceneManager.activeSceneIndex
+        if (currentIndex < 0 || sceneManager.openScenes.size <= 1) return
+        eventSystem.publish(SceneDeleteRequested(currentIndex))
+        logger.logEditor("Delete scene executed")
     }
 }
 

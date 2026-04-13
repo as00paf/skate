@@ -24,7 +24,8 @@
       "read_many_files",
       "todo_write",
       "save_memory",
-      "ask_user_question"
+      "ask_user_question",
+      "Bash(.\\gradlew.bat *)"
     ]
   },
   "$version": 3

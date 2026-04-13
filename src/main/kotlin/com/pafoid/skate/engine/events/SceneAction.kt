@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.events
 
+import com.pafoid.skate.engine.ecs.Scene
+
 /**
  * Domain actions for scene management operations.
  * These are published when the user requests a scene operation
@@ -14,3 +16,6 @@ data class SceneCloseRequested(val sceneIndex: Int) : SceneAction("scene.action.
 data class SceneCloseOthersRequested(val keepIndex: Int) : SceneAction("scene.action.close_others_requested")
 object SceneCloseAllRequested : SceneAction("scene.action.close_all_requested")
 object SceneCreateRequested : SceneAction("scene.action.create_requested")
+data class SceneCreated(val scene: Scene) : SceneAction("scene.action.created")
+data class SceneTabSelected(val index: Int) : SceneAction("scene.action.tab_selected")
+data class SceneDeleteRequested(val sceneIndex: Int) : SceneAction("scene.action.delete_requested")

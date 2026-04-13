@@ -53,7 +53,7 @@ class BootManager(
         sceneInitializer.onProgress = { progress, message ->
             splashScreen.increaseLoadingProgress(message, progress)
         }
-        val scene = Scene("LevelEditorScene", sceneInitializer)
+        val scene = Scene("SplashScene", sceneInitializer)
         scene.init()
         return scene
     }

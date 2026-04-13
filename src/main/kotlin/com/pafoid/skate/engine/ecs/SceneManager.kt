@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.SceneChanged
@@ -16,6 +17,7 @@ class SceneManager : KoinComponent {
     private val logger: LoggerService by inject()
     private val resourceManager: ResourceManager by inject()
     private val eventSystem: EventSystem by inject()
+    private val sceneActionHandler = SceneActionHandler()
 
     val openScenes = mutableListOf<Scene>()
     var activeSceneIndex: Int = -1
@@ -23,7 +25,15 @@ class SceneManager : KoinComponent {
     val currentScene: Scene?
         get() = openScenes.getOrNull(activeSceneIndex)
 
+    init {
+        sceneActionHandler.init()
+    }
+
     suspend fun openScene(scene: Scene, forceSingle: Boolean = false) {
+        openSceneBlocking(scene, forceSingle)
+    }
+
+    fun openSceneBlocking(scene: Scene, forceSingle: Boolean = false) {
         if (forceSingle) {
             openScenes.forEach { it.destroyScene() }
             openScenes.clear()
@@ -35,11 +45,11 @@ class SceneManager : KoinComponent {
 
         logger.logEngine("Loading scene: ${scene.name}")
         scene.startScene()
-        
+
         // Publish scene opened event
         eventSystem.publish(SceneOpened(scene))
         eventSystem.publish(SceneChanged)
-        
+
         logger.logEngine("Scene ${scene.initializer::class.simpleName} loaded and started.")
     }
 
@@ -57,7 +67,7 @@ class SceneManager : KoinComponent {
         val sceneToClose = openScenes[index]
         if (sceneToClose.isDirty) {
             logger.logEditor("Warning: Closing unsaved scene ${sceneToClose.name}")
-            // MVP: We just log a warning and close it anyway. A proper implementation would prompt the user.
+            // TODO: Prompt the user for confirmation.
         }
 
         logger.logEditor("Destroying scene: ${sceneToClose.name}")
@@ -130,9 +140,13 @@ class SceneManager : KoinComponent {
      * Creates a new scene with the given name and opens it.
      * @param name The name for the new scene
      * @param initializer The scene initializer to use for setup
+     * @param filePath Optional file path to back the scene. Sets sceneData.levelPath when provided.
      */
-    suspend fun createScene(name: String, initializer: LevelEditorSceneInitializer): Scene? {
+    suspend fun createScene(name: String, initializer: LevelEditorSceneInitializer, filePath: String? = null): Scene? {
         val newScene = Scene(name, initializer)
+        if (filePath != null) {
+            newScene.sceneData.levelPath = filePath
+        }
         newScene.init()
         openScene(newScene)
         logger.logEditor("Scene created: '$name'")
