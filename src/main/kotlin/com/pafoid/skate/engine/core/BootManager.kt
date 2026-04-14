@@ -34,7 +34,7 @@ class BootManager(
 
         engineState.set(EngineState.RUNNING)
         splashScreen.loadingProgress.set(1.0f)
-        logger.logEngine("Engine initialization complete.")
+        logger.logEngine("Engine initialization complete")
 
         sceneManager.openScene(scene, forceSingle = true)
     }
