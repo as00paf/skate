@@ -32,10 +32,9 @@ import com.pafoid.skate.engine.events.SelectionCleared
  */
 class SelectionViewModel(
     private val sceneManager: SceneManager,
-    private val eventSystem: EventSystem
+    private val eventSystem: EventSystem,
+    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace
 ) {
-    private var _selectedGameObject: GameObject? = null
-    
     /**
      * The currently selected GameObject.
      * 
@@ -45,7 +44,7 @@ class SelectionViewModel(
      * - A [GameObjectSelected] event is received
      * - A [SelectionCleared] event is received
      */
-    val selectedGameObject: GameObject? get() = _selectedGameObject
+    val selectedGameObject: GameObject? get() = workspace.getSelectedGameObject()
     
     /**
      * Initialize the ViewModel by subscribing to selection events.
@@ -55,11 +54,11 @@ class SelectionViewModel(
     fun init() {
         // Subscribe to selection events
         eventSystem.subscribe<GameObjectSelected> { event ->
-            _selectedGameObject = event.gameObject
+            workspace.setSelectedGameObject(event.gameObject)
         }
         
         eventSystem.subscribe<SelectionCleared> {
-            _selectedGameObject = null
+            workspace.setSelectedGameObject(null)
         }
     }
     
@@ -72,7 +71,7 @@ class SelectionViewModel(
      * @param gameObject The GameObject to select, or null to clear
      */
     fun select(gameObject: GameObject?) {
-        _selectedGameObject = gameObject
+        workspace.setSelectedGameObject(gameObject)
         if (gameObject != null) {
             eventSystem.publish(GameObjectSelected(gameObject))
         } else {
@@ -90,23 +89,15 @@ class SelectionViewModel(
     }
     
     /**
-     * Get the selected GameObject from the scene manager.
+     * Get the selected GameObject from the workspace.
      * 
-     * This is a convenience method that queries the scene manager directly.
+     * This is a convenience method that queries the workspace directly.
      * Prefer using [selectedGameObject] for most cases.
      * 
-     * @return The selected GameObject from the current scene
+     * @return The selected GameObject from the workspace
      */
-    fun getFromScene(): GameObject? {
-        return sceneManager.currentScene?.let { scene ->
-            // This assumes the scene has a getSelectedGameObject extension
-            // You may need to adjust based on your actual API
-            try {
-                scene.javaClass.getMethod("getSelectedGameObject").invoke(scene) as? GameObject
-            } catch (e: Exception) {
-                null
-            }
-        }
+    fun getFromWorkspace(): GameObject? {
+        return workspace.getSelectedGameObject()
     }
     
     /**
@@ -116,6 +107,6 @@ class SelectionViewModel(
      * The EventSystem will automatically remove listeners on destroy.
      */
     fun destroy() {
-        _selectedGameObject = null
+        workspace.setSelectedGameObject(null)
     }
 }

@@ -144,6 +144,7 @@ class ProjectManager(
         resolveAnimationPathsInScene(scene)
 
         // Set the level path and save
+        scene.name = defaultSceneFile.name
         scene.sceneData.levelPath = defaultSceneFile.absolutePath
         sceneSerializer.saveToFile(scene, defaultSceneFile.absolutePath)
 

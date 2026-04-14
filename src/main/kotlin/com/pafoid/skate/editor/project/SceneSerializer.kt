@@ -124,6 +124,7 @@ class SceneSerializer(
         scene.gameObjectManager.gameObjects.clear()
         scene.gameObjectManager.pendingObjects.clear()
 
+        scene.name = File(path).name
         scene.sceneData = data.sceneData
         scene.sceneData.levelPath = path
 

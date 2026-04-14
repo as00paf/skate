@@ -34,6 +34,7 @@ class GameViewWindow : IWindow, KoinComponent {
     private val settingsManager: SettingsManager by inject()
     private val stringManager: StringManager by inject()
     private val eventSystem: EventSystem by inject()
+    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace by inject()
 
     private val viewportRenderer: ViewportRenderer by inject()
     private val viewportToolbar: ViewportToolbar by inject()
@@ -86,8 +87,7 @@ class GameViewWindow : IWindow, KoinComponent {
         mouseListener.setGameViewportPos(Vector2f(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY))
         mouseListener.setGameViewportSize(Vector2f(viewportRenderer.imageSizeX, viewportRenderer.imageSizeY))
 
-        val editorInput = sceneManager.currentScene?.systemManager?.getSystem<EditorCamera>()?.editorInput
-        editorInput?.isFocused = ImGui.isWindowFocused()
+        workspace.editorInputState.isFocused = ImGui.isWindowFocused()
 
         val hovered = getHoveredObject()
         if (hovered != null) {
@@ -105,7 +105,7 @@ class GameViewWindow : IWindow, KoinComponent {
     }
 
     fun getHoveredObject(): GameObject? {
-        return sceneManager.currentScene?.systemManager?.getSystem<GizmoSystem>()?.getHoveredGameObject()
+        return workspace.getGizmoSystem().getHoveredGameObject()
     }
 
     private fun getLargestSizeForViewport(): ImVec2 {

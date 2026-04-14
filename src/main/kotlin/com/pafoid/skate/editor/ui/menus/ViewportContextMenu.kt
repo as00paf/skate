@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.ViewportCreateCamera
 import com.pafoid.skate.engine.events.ViewportCreateEmpty
@@ -27,10 +26,12 @@ import imgui.ImVec2
  *
  * @param stringManager For localized menu strings
  * @param eventSystem Event system for publishing viewport actions
+ * @param workspace Editor workspace for selection state
  */
 class ViewportContextMenu(
     private val stringManager: StringManager,
-    private val eventSystem: EventSystem
+    private val eventSystem: EventSystem,
+    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace
 ) {
 
     companion object {
@@ -139,7 +140,7 @@ class ViewportContextMenu(
     }
 
     private fun renderObjectManipulationMenu(scene: Scene?) {
-        val selectedObject = scene?.getSelectedGameObject()
+        val selectedObject = workspace.getSelectedGameObject()
         if (selectedObject != null) {
             if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.viewport.duplicate")}")) {
                 eventSystem.publish(ViewportDuplicate(selectedObject))
