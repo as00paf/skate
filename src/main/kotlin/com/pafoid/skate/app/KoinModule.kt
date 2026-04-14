@@ -62,6 +62,7 @@ import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
+import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -113,7 +114,7 @@ val appModule = module {
 
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get(), get()) }
-    factory { ViewportToolbar(get(), get(), get(), get()) }
+    factory { ViewportToolbar(get(), get(), get(), get(), get()) }
     factory { ViewportContextMenu(get(), get()) }
     factory { ViewportOverlays(get(), get()) }
     factory { ViewportDragDropHandler(get(), get()) }
@@ -140,9 +141,12 @@ val appModule = module {
     // FileSystem service
     single { FileSystemScanner(get(), get(), get()) }
 
+    // Editor Workspace
+    single { EditorWorkspace(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -212,11 +216,11 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { BootManager(get(), get(), get(), get(), get(), get()) }
+    single { BootManager(get(), get(), get(), get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection
-    single { InputSystem(get(), get(), get(), get(), get()) }
-    single { MouseControls(get(), get(), get(), get(), get(), get()) }
-    single { GizmoSystem(get(), get(), get(), get(), get(), get(), get()) }
+    single { InputSystem(get(), get(), get(), get(), get(), get()) }
+    single { MouseControls(get(), get(), get(), get(), get(), get(), get()) }
+    single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { AudioSystem(get(), get()) }
 }

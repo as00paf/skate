@@ -1,12 +1,12 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.project.GameplaySettings
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.settings.EngineSettings
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
@@ -46,7 +46,8 @@ class InputSystem(
     private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
-    private val projectManager: ProjectManager
+    private val projectManager: ProjectManager,
+    private val editorWorkspace: EditorWorkspace
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val mappings: InputMappings
@@ -71,7 +72,7 @@ class InputSystem(
         val isCursorEnabled = !inputProvider.isCursorDisabled()
 
         if (isCursorEnabled) {
-            val editorInput = scene.systemManager.getSystem<EditorCamera>()?.editorInput ?: return
+            val editorInput = editorWorkspace.editorInputState
 
             editorInput.reset()
             pollEditorKeyboardInput(editorInput)
@@ -92,7 +93,7 @@ class InputSystem(
     }
 
     override fun editorUpdate(dt: Float) {
-        val editorInput = scene.systemManager.getSystem<EditorCamera>()?.editorInput ?: return
+        val editorInput = editorWorkspace.editorInputState
 
         editorInput.reset()
 

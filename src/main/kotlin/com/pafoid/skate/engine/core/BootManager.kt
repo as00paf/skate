@@ -19,6 +19,7 @@ class BootManager(
     private val splashScreen: SplashScreen,
     private val audioEngine: AudioEngine,
     private val sceneInitializer: LevelEditorSceneInitializer,
+    private val workspace: EditorWorkspace,
     private val mainDispatcher: CoroutineDispatcher = JobSystem.Main
 ) {
 
@@ -31,6 +32,9 @@ class BootManager(
         initRenderSystem()
 
         val scene = initScene()
+
+        logger.logEngine("Initializing editor workspace...")
+        workspace.initSystems()
 
         engineState.set(EngineState.RUNNING)
         splashScreen.loadingProgress.set(1.0f)

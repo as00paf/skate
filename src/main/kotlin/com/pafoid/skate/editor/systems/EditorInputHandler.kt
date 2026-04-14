@@ -33,24 +33,24 @@ class EditorInputHandler(
     private var pendingRenameUid: Int? = null
     private var renameInputMappings: InputMappings? = null
 
-    fun update(currentScene: Scene?) {
-        if (currentScene == null) return
+    fun update(scene: Scene?, workspace: com.pafoid.skate.engine.core.EditorWorkspace) {
+        if (scene == null) return
 
         val inputMappings = getInputMappings()
-        val selected = currentScene.getSelectedGameObject()
+        val selected = workspace.getSelectedGameObject()
 
         // Global hierarchy actions (work regardless of window focus)
-        handleGlobalHierarchyActions(currentScene, selected, inputMappings)
+        handleGlobalHierarchyActions(scene, workspace, selected, inputMappings)
 
         // Standard clipboard/undo operations
-        handleClipboardAndUndo(currentScene, selected, inputMappings)
+        handleClipboardAndUndo(scene, selected, inputMappings)
     }
 
     /**
      * Handle global hierarchy action shortcuts.
      * These work regardless of which window is focused, but require a selected GameObject for some actions.
      */
-    private fun handleGlobalHierarchyActions(scene: Scene, selected: GameObject?, inputMappings: InputMappings) {
+    private fun handleGlobalHierarchyActions(scene: Scene, workspace: com.pafoid.skate.engine.core.EditorWorkspace, selected: GameObject?, inputMappings: InputMappings) {
         val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
         // Delete selected object
@@ -64,7 +64,7 @@ class EditorInputHandler(
         if (keyListener.keyBeginPress(inputMappings.hierarchyCreateNew.keyboardKey)) {
             val newObj = GameObject("GameObject")
             undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene))
-            scene.setSelectedGameObject(newObj)
+            workspace.setSelectedGameObject(newObj)
             eventSystem.publish(GameObjectSelected(newObj))
             logger.logEditor("Created new GameObject: ${newObj.name}")
         }
@@ -75,7 +75,7 @@ class EditorInputHandler(
         ) {
             val clone = cloneGameObject(selected)
             undoRedoManager.executeCommand(CreateGameObjectCommand(clone, scene))
-            scene.setSelectedGameObject(clone)
+            workspace.setSelectedGameObject(clone)
             eventSystem.publish(GameObjectSelected(clone))
             logger.logEditor("Duplicated GameObject: ${selected.name} -> ${clone.name}")
         }
@@ -107,7 +107,7 @@ class EditorInputHandler(
 
         // Deselect (Escape) - only if not already handling something else
         if (keyListener.keyBeginPress(inputMappings.hierarchyDeselect.keyboardKey)) {
-            scene.setSelectedGameObject(null)
+            workspace.setSelectedGameObject(null)
             eventSystem.publish(SelectionCleared)
             logger.logEditor("Deselected GameObject")
         }

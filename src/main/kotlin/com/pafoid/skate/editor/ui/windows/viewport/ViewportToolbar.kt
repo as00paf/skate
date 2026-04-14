@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -34,7 +35,8 @@ class ViewportToolbar(
     private val sceneManager: SceneManager,
     private val engine: Engine,
     private val logger: LoggerService,
-    private val stringManager: StringManager
+    private val stringManager: StringManager,
+    private val workspace: EditorWorkspace
 ) {
     
     companion object {
@@ -59,10 +61,9 @@ class ViewportToolbar(
     
     private fun buildButtons(scene: Scene?, isPlaying: Boolean): List<() -> Unit> {
         val buttons = mutableListOf<() -> Unit>()
-        val gizmoSystem = scene?.systemManager?.getSystem<GizmoSystem>()
         
-        if (gizmoSystem != null && !isPlaying) {
-            addGizmoButtons(buttons, gizmoSystem, scene)
+        if (!isPlaying) {
+            addGizmoButtons(buttons)
         }
         
         addPlaybackButtons(buttons, scene, isPlaying)
@@ -72,10 +73,9 @@ class ViewportToolbar(
     }
     
     private fun addGizmoButtons(
-        buttons: MutableList<() -> Unit>,
-        gizmoSystem: GizmoSystem,
-        scene: Scene
+        buttons: MutableList<() -> Unit>
     ) {
+        val gizmoSystem = workspace.getGizmoSystem()
         // Select Tool
         buttons.add {
             val isActive = gizmoSystem.usingGizmo == GizmoSystem.SELECTION_GIZMO
@@ -129,7 +129,7 @@ class ViewportToolbar(
             }
             if (isActive) {
                 ImGui.popStyleColor()
-                scene.systemManager.getSystem<MeasureTool>()?.let { tool ->
+                workspace.getSystem<MeasureTool>()?.let { tool ->
                     tool.measurementText?.let { text ->
                         tool.measurementPos?.let { pos ->
                             ImGui.setNextWindowPos(pos.x, pos.y)

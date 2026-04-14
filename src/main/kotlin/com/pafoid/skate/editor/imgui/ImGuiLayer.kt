@@ -14,6 +14,7 @@ import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -74,6 +75,7 @@ class ImGuiLayer(
     private val sceneSerializer: SceneSerializer,
     private val resourceManager: ResourceManager,
     private val windowRegistry: WindowRegistry,
+    private val editorWorkspace: EditorWorkspace
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -216,7 +218,7 @@ class ImGuiLayer(
 
         startFrame()
 
-        editorInputHandler.update(currentScene)
+        editorInputHandler.update(currentScene, editorWorkspace)
 
         setupDockSpace(currentScene)
 

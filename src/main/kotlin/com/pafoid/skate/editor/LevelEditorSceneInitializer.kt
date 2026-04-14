@@ -25,12 +25,7 @@ import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
-import com.pafoid.skate.engine.ecs.systems.EventSystem
-import com.pafoid.skate.engine.ecs.systems.GizmoSystem
-import com.pafoid.skate.engine.ecs.systems.GridConfig
-import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
-import com.pafoid.skate.engine.ecs.systems.MouseControls
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.input.IInputProvider
@@ -65,9 +60,9 @@ class LevelEditorSceneInitializer : SceneInitializer(), KoinComponent {
         scene.camera.position.set(0f, 5f, 20f)
         scene.camera.yaw = 0f
 
-        reportProgress(0.5f, "Setting up Editor Tools...")
+        reportProgress(0.5f, "Setting up Gameplay Systems...")
 
-        editorSystemFactory.addEditorSystems(scene)
+        editorSystemFactory.addGameplaySystems(scene)
 
         scene.addComponent(EnvironmentComponent())
         scene.addComponent(TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f))
@@ -89,6 +84,10 @@ class LevelEditorSceneInitializer : SceneInitializer(), KoinComponent {
  *
  * Encapsulates all system dependencies and construction logic,
  * keeping the scene initializer clean and focused on orchestration.
+ *
+ * Note: Editor systems (EditorCamera, MouseControls, GizmoSystem, GridLines)
+ * are now created by EditorWorkspace, not this factory. This factory only
+ * creates gameplay systems that belong on the Scene.
  */
 class EditorSystemFactory : KoinComponent {
     private val keyListener: KeyListener by inject()
@@ -105,28 +104,15 @@ class EditorSystemFactory : KoinComponent {
     private val audioEngine: AudioEngine by inject()
     private val sceneManager: SceneManager by inject()
     private val logger: LoggerService by inject()
+    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace by inject()
 
     /**
-     * Add all editor input, gameplay, and utility systems to the scene.
+     * Add gameplay and utility systems to the scene.
+     * Editor systems are now created by EditorWorkspace.createEditorSystems().
      */
-    fun addEditorSystems(scene: Scene) {
-        val inputSystem = InputSystem(inputProvider, mouseListener, settingsManager, stringManager, projectManager)
+    fun addGameplaySystems(scene: Scene) {
+        val inputSystem = InputSystem(inputProvider, mouseListener, settingsManager, stringManager, projectManager, workspace)
         scene.addSystem(inputSystem)
-        scene.addSystem(EventSystem())
-        scene.addSystem(EditorCamera(scene.camera, EditorInputStateComponent()))
-        scene.addSystem(MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine))
-        scene.addSystem(
-            GizmoSystem(
-                keyListener,
-                mouseListener,
-                settingsManager,
-                undoRedoManager,
-                renderer,
-                engine,
-                debugRenderer,
-            )
-        )
-        scene.addSystem(GridLines(debugRenderer, sceneManager, GridConfig(), stringManager))
         scene.addSystem(AnimationSystem(stringManager))
         scene.addSystem(AudioSystem(audioEngine, logger))
         scene.addSystem(EnvironmentSystem(stringManager = stringManager))

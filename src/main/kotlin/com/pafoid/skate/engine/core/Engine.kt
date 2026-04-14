@@ -2,8 +2,6 @@ package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.app.SplashScreen
 import com.pafoid.skate.editor.imgui.ImGuiLayer
-import com.pafoid.skate.editor.systems.EditorInputHandler
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.render.renderer.Renderer
@@ -16,6 +14,7 @@ class Engine : KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val renderer: Renderer by inject()
     private val splashScreen: SplashScreen by inject()
+    private val editorWorkspace: EditorWorkspace by inject()
 
     // Engine State
     val engineState = AtomicReference(EngineState.BOOTING)
@@ -41,6 +40,8 @@ class Engine : KoinComponent {
                 // Update scene with the actual delta time
                 scene.updateScene(dt)
             } else {
+                // Editor mode: update editor workspace first, then gameplay systems
+                editorWorkspace.editorUpdate(dt, scene)
                 scene.editorUpdateScene(dt)
             }
 

@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
@@ -37,6 +38,7 @@ import org.koin.core.component.inject
  */
 class SystemsWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
+    private val workspace: EditorWorkspace by inject()
 
     /**
      * Renders the systems window.
@@ -46,50 +48,56 @@ class SystemsWindow : IWindowWithScene, KoinComponent {
     override fun imgui(currentScene: Scene) {
         ImGui.begin(stringManager.getString("window.systems"))
 
-        val systemManager = currentScene.systemManager
-        val systems = systemManager.systems
+        // Section 1: Editor Systems (from Workspace)
+        if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.editor_systems"))) {
+            renderSystemsList(workspace.systemManager.systems)
+        }
 
-        if (systems.isEmpty()) {
-            ImGui.text(stringManager.getString("lbl.systems.no_systems"))
-        } else {
-            ImGui.text(stringManager.getString("lbl.systems.count", systems.size))
-            ImGui.separator()
+        ImGui.separator()
 
-            systems.forEach { system ->
-                val headerLabel = system.displayName
-                val isDisabled = !system.enabled  // Capture state before checkbox can change it
-
-                // Color code based on enabled status
-                if (isDisabled) {
-                    ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
-                }
-
-                if (ImGui.collapsingHeader(headerLabel)) {
-                    // Enabled toggle checkbox
-                    val enabled = ImBoolean(system.enabled)
-                    if (ImGui.checkbox(stringManager.getString("lbl.systems.enabled"), enabled)) {
-                        system.enabled = enabled.get()
-                    }
-
-                    ImGui.separator()
-
-                    system.imgui()
-                }
-
-                if (isDisabled) {
-                    ImGui.popStyleColor()
-                }
-
-                if (ImGui.beginPopupContextItem("${system.displayName}_context")) {
-                    val contextEnabled = ImBoolean(system.enabled)
-                    if (ImGui.checkbox(stringManager.getString("lbl.systems.toggle_enabled"), contextEnabled)) {
-                        system.enabled = contextEnabled.get()
-                    }
-                    ImGui.endPopup()
-                }
+        // Section 2: Gameplay Systems (from Scene)
+        if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.gameplay_systems"))) {
+            val systems = currentScene.systemManager.systems
+            if (systems.isEmpty()) {
+                ImGui.text(stringManager.getString("lbl.systems.no_systems"))
+            } else {
+                renderSystemsList(systems)
             }
         }
 
         ImGui.end()
+    }
+
+    private fun renderSystemsList(systems: List<System>) {
+        systems.forEach { system ->
+            val headerLabel = system.displayName
+            val isDisabled = !system.enabled
+
+            if (isDisabled) {
+                ImGui.pushStyleColor(ImGuiCol.Text, 0.5f, 0.5f, 0.5f, 1f)
+            }
+
+            if (ImGui.collapsingHeader(headerLabel)) {
+                val enabled = ImBoolean(system.enabled)
+                if (ImGui.checkbox(stringManager.getString("lbl.systems.enabled"), enabled)) {
+                    system.enabled = enabled.get()
+                }
+
+                ImGui.separator()
+                system.imgui()
+            }
+
+            if (isDisabled) {
+                ImGui.popStyleColor()
+            }
+
+            if (ImGui.beginPopupContextItem("${system.displayName}_context")) {
+                val contextEnabled = ImBoolean(system.enabled)
+                if (ImGui.checkbox(stringManager.getString("lbl.systems.toggle_enabled"), contextEnabled)) {
+                    system.enabled = contextEnabled.get()
+                }
+                ImGui.endPopup()
+            }
+        }
     }
 }

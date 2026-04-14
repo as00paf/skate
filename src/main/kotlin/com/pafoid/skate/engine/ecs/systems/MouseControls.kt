@@ -25,7 +25,8 @@ class MouseControls(
     private val serializer: Serializer,
     private val logger: LoggerService,
     private val renderer: Renderer,
-    private val engine: Engine
+    private val engine: Engine,
+    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace
 ) : System(priority = ExecutionPriority.EARLY) {  // Early system - runs first for input
 
     private var holdingObject: GameObject? = null
@@ -56,9 +57,9 @@ class MouseControls(
             val selectedObject = getObjectById(pickedId)
 
             if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
-                scene.setSelectedGameObject(selectedObject)
+                workspace.setSelectedGameObject(selectedObject)
             } else {
-                scene.setSelectedGameObject(null)
+                workspace.setSelectedGameObject(null)
             }
 
             debounce = debounceTime

@@ -46,6 +46,7 @@ class GizmoSystem(
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
     private val engine: Engine,
+    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace,
     debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.LATE) {  // Late system - runs after input/physics
 
@@ -99,7 +100,7 @@ class GizmoSystem(
         }
 
         if (keyListener.keyBeginPress(bindings.deselectAll.keyboardKey)) {
-            scene.setSelectedGameObject(null)
+            workspace.setSelectedGameObject(null)
         }
 
         // Update only the active gizmo
