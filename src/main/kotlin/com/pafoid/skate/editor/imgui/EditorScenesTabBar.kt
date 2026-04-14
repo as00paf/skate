@@ -24,7 +24,10 @@ class EditorScenesTabBar(
                 if (scene.isDirty) flags = flags or ImGuiTabItemFlags.UnsavedDocument
                 if (sceneManager.activeSceneIndex == index) flags = flags or ImGuiTabItemFlags.SetSelected
 
-                if (ImGui.beginTabItem("${scene.name}###${scene.hashCode()}", open, flags)) {
+                val displayName = scene.name.replace(".scene", "", ignoreCase = true)
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+
+                if (ImGui.beginTabItem("$displayName###${scene.hashCode()}", open, flags)) {
                     eventSystem.publish(SceneTabSelected(index))
 
                     // Scene tab context menu
