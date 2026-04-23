@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
@@ -34,7 +33,6 @@ import org.lwjgl.glfw.GLFW.glfwFocusWindow
 import org.lwjgl.glfw.GLFW.glfwGetFramebufferSize
 import org.lwjgl.glfw.GLFW.glfwGetMonitorPos
 import org.lwjgl.glfw.GLFW.glfwGetMonitors
-import org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor
 import org.lwjgl.glfw.GLFW.glfwGetVideoMode
 import org.lwjgl.glfw.GLFW.glfwInit
 import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
@@ -46,7 +44,6 @@ import org.lwjgl.glfw.GLFW.glfwSetKeyCallback
 import org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback
 import org.lwjgl.glfw.GLFW.glfwSetScrollCallback
 import org.lwjgl.glfw.GLFW.glfwSetWindowIcon
-import org.lwjgl.glfw.GLFW.glfwSetWindowMonitor
 import org.lwjgl.glfw.GLFW.glfwSetWindowPos
 import org.lwjgl.glfw.GLFW.glfwShowWindow
 import org.lwjgl.glfw.GLFW.glfwSwapBuffers
@@ -82,7 +79,6 @@ class Window(
     private val mouseListener: MouseListener by inject()
     private val settingsManager: SettingsManager by inject()
     private val engine: Engine by inject()
-    private val imGuiLayer: ImGuiLayer by inject()
     private val logger: LoggerService by inject()
 
     private var glfwWindow: Long = -1L
@@ -94,7 +90,6 @@ class Window(
         private set
 
     private val openGLDebug = GLFW_FALSE
-    private var isFixingMaximize = false
 
     init {
         settingsManager.load()
@@ -151,19 +146,6 @@ class Window(
         // Maximize window on startup
         windowController.maximize()
 
-        GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
-            if (isFixingMaximize) return@glfwSetWindowMaximizeCallback
-
-            windowController.setLogicallyMaximized(maximized)
-            if (maximized) {
-                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
-                isFixingMaximize = true
-            } else {
-                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
-                imGuiLayer.onWindowDecorationChanged()
-            }
-        }
-
         // Get the maximized framebuffer size
         val fbSizeWidth = IntArray(1)
         val fbSizeHeight = IntArray(1)
@@ -197,8 +179,6 @@ class Window(
         glViewport(0, 0, windowWidth, windowHeight)
 
         installCallbacks()
-        joystickListener.init()
-        imGuiLayer.init(glfwWindow, windowController, ::setFullscreen, ::setVSync)
     }
 
     private fun setWindowIcon(iconPath: String) {
@@ -236,6 +216,7 @@ class Window(
         glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
         glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
         glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
+        joystickListener.init()
     }
 
     private fun loop() {
@@ -246,11 +227,12 @@ class Window(
         while (!glfwWindowShouldClose(glfwWindow)) {
             glfwPollEvents()
 
-            if (isFixingMaximize) {
+            if (windowController.isFixingMaximize) {
                 windowController.fixMaximizeBounds()
-                isFixingMaximize = false
+                windowController.isFixingMaximize = false
             }
 
+            // TODO: move
             joystickListener.update()
             JobSystem.update()
 
@@ -272,7 +254,7 @@ class Window(
                 isFirstDraw = false
             }
 
-            engine.update(dt, imGuiLayer)
+            engine.update(dt)
             glfwSwapBuffers(glfwWindow)
 
             keyListener.endFrame()
@@ -293,22 +275,7 @@ class Window(
         loop()
     }
 
-    fun setFullscreen(enabled: Boolean) {
-        val monitor = glfwGetPrimaryMonitor()
-        val vidMode = glfwGetVideoMode(monitor) ?: return
-        if (enabled) {
-            glfwSetWindowMonitor(glfwWindow, monitor, 0, 0, vidMode.width(), vidMode.height(), vidMode.refreshRate())
-        } else {
-            glfwSetWindowMonitor(glfwWindow, NULL, 100, 100, width, height, GLFW_DONT_CARE)
-        }
-    }
-
-    fun setVSync(enabled: Boolean) {
-        glfwSwapInterval(if (enabled) 1 else 0)
-    }
-
     private fun destroy() {
-        imGuiLayer.destroy()
         engine.destroy()
 
         glfwFreeCallbacks(glfwWindow)

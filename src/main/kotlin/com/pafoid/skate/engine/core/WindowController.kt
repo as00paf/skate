@@ -13,15 +13,20 @@ import org.lwjgl.glfw.GLFW.glfwGetWindowSize
 import org.lwjgl.glfw.GLFW.glfwIconifyWindow
 import org.lwjgl.glfw.GLFW.glfwMaximizeWindow
 import org.lwjgl.glfw.GLFW.glfwRestoreWindow
+import org.lwjgl.glfw.GLFW.glfwSetWindowMonitor
 import org.lwjgl.glfw.GLFW.glfwSetWindowPos
 import org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose
 import org.lwjgl.glfw.GLFW.glfwSetWindowSize
+import org.lwjgl.glfw.GLFW.glfwSwapInterval
+import org.lwjgl.system.MemoryUtil.NULL
 
 /**
  * Handles custom window operations.
  * Provides functionality for minimizing, maximizing, restoring, and closing the window.
  */
-class WindowController(private val glfwWindow: Long) {
+class WindowController(val glfwWindow: Long) {
+
+    var isFixingMaximize = false
 
     // Store window size before maximizing for proper restore
     private var preMaximizeWidth = 1920
@@ -136,6 +141,21 @@ class WindowController(private val glfwWindow: Long) {
             }
         }
         return glfwGetPrimaryMonitor()
+    }
+
+    fun setFullscreen(enabled: Boolean) {
+        val monitor = glfwGetPrimaryMonitor()
+        val vidMode = glfwGetVideoMode(monitor) ?: return
+        if (enabled) {
+            glfwSetWindowMonitor(glfwWindow, monitor, 0, 0, vidMode.width(), vidMode.height(), vidMode.refreshRate())
+        } else {
+            // TODO: check if still works
+            glfwSetWindowMonitor(glfwWindow, NULL, 100, 100, vidMode.width(), vidMode.height(), vidMode.refreshRate())
+        }
+    }
+
+    fun setVSync(enabled: Boolean) {
+        glfwSwapInterval(if (enabled) 1 else 0)
     }
 }
 

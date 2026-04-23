@@ -14,11 +14,11 @@ import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiWindowFlags
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
-import org.lwjgl.glfw.GLFW
 import java.util.concurrent.atomic.AtomicReference
 
 class SplashScreen : KoinComponent {
@@ -68,7 +68,7 @@ class SplashScreen : KoinComponent {
         }
     }
 
-    fun render(dt: Float, imguiLayer: ImGuiLayer, engineState: EngineState) {
+    fun render(dt: Float, imGuiLayer: ImGuiLayer, engineState: EngineState) {
         if(engineState != EngineState.RUNNING) {
             GL11.glClearColor(0f, 0f, 0f, 0.0f)
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
@@ -82,10 +82,7 @@ class SplashScreen : KoinComponent {
         GL11.glViewport(0, 0, fbWidth[0], fbHeight[0])
 
         renderSplashQuad()
-
-        if (engineState != EngineState.RUNNING) {
-            showImGui(imguiLayer)
-        }
+        showImGui(imGuiLayer)
     }
 
     private fun renderSplashQuad() {
@@ -120,8 +117,8 @@ class SplashScreen : KoinComponent {
         }
     }
 
-    private fun showImGui(imguiLayer: ImGuiLayer) {
-        imguiLayer.startFrame()
+    private fun showImGui(imGuiLayer: ImGuiLayer) {
+        imGuiLayer.startFrame()
 
         val viewport = ImGui.getMainViewport()
         ImGui.setNextWindowPos(viewport.getCenter().x, viewport.getCenter().y + 200f, ImGuiCond.Always, 0.5f, 0.5f)
@@ -137,7 +134,7 @@ class SplashScreen : KoinComponent {
             ImGui.end()
         }
 
-        imguiLayer.endFrame()
+        imGuiLayer.endFrame()
     }
 
     fun increaseLoadingProgress(message: String = "...", progress:Float = 0.1f) {

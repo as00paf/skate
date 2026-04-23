@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.project.ProjectManager
+import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.SettingsManager
@@ -21,7 +22,6 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.editor.project.SceneSerializer
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
@@ -62,6 +62,9 @@ import imgui.type.ImInt
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
+import org.lwjgl.glfw.GLFW.GLFW_DECORATED
+import org.lwjgl.glfw.GLFW.GLFW_FALSE
+import org.lwjgl.glfw.GLFW.GLFW_TRUE
 import java.io.File
 
 class ImGuiLayer(
@@ -81,7 +84,6 @@ class ImGuiLayer(
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"
-    private var glfwWindow: Long = 0
 
     private val eventSystem: EventSystem by inject()
     private val editorInputHandler: EditorInputHandler by inject()
@@ -97,8 +99,6 @@ class ImGuiLayer(
     private var needsWizardReset = false
     private var hasAttemptedAutoLoad = false
 
-    private lateinit var setFullscreen: (Boolean) -> Unit
-    private lateinit var setVSync: (Boolean) -> Unit
     private lateinit var windowController: WindowController
 
     private var needsDecorationUpdate = false
@@ -109,18 +109,23 @@ class ImGuiLayer(
     }
 
     fun init(
-        glfwWindow: Long,
-        windowController: WindowController,
-        fullScreenCallback: (Boolean) -> Unit,
-        vSyncCallback: (Boolean) -> Unit
+        windowController: WindowController
     ) {
-        this.glfwWindow = glfwWindow
         this.windowController = windowController
-        this.setFullscreen = fullScreenCallback
-        this.setVSync = vSyncCallback
+        val glfwWindow = windowController.glfwWindow
 
-        // Wire display callbacks to SettingsManager so settings windows can change V-Sync/Fullscreen
-        settingsManager.setDisplayCallbacks(setVSync, setFullscreen)
+        GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
+            if (windowController.isFixingMaximize) return@glfwSetWindowMaximizeCallback
+
+            windowController.setLogicallyMaximized(maximized)
+            if (maximized) {
+                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
+                windowController.isFixingMaximize = true
+            } else {
+                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
+                onWindowDecorationChanged()
+            }
+        }
 
         createContext()
 
@@ -131,7 +136,7 @@ class ImGuiLayer(
             loadFonts(Assets.Fonts.fontsFile)
         }
 
-        imGuiGlfw.init(glfwWindow, true)
+        imGuiGlfw.init(windowController.glfwWindow, true)
         imGuiGl3.init(glslVersion)
 
         ImGuiStyleManager.setupStyle()
@@ -140,7 +145,13 @@ class ImGuiLayer(
         val projectSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.project_settings" }?.showFlag ?: ImBoolean(false)
 
         menuBar = EditorMenuBar(
-            fileMenu = FileMenuBuilder(stringManager, sceneSerializer, sceneManager, glfwWindow, sceneInitializer),
+            fileMenu = FileMenuBuilder(
+                stringManager,
+                sceneSerializer,
+                sceneManager,
+                windowController.glfwWindow,
+                sceneInitializer
+            ),
             editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
             settingsMenu = SettingsMenuBuilder(
                 stringManager, settingsManager,

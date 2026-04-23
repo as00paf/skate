@@ -257,22 +257,7 @@ class SettingsManager(
         }
     }
 
+    // TODO: Should be in project manager
     fun hasProject(project: Project?): Boolean = project != null
-
-    fun getProjectName(project: Project?): String = project?.metadata?.name ?: "No Project"
-
-    // ─── Display callbacks (set at app init, called from settings windows) ───
-    private var vsyncCallback: ((Boolean) -> Unit)? = null
-
-    fun setDisplayCallbacks(vsync: (Boolean) -> Unit, fullscreen: (Boolean) -> Unit) {
-        vsyncCallback = vsync
-        // fullscreen callback kept for future use
-    }
-
-    fun applyVSync(enabled: Boolean) {
-        hardware = hardware.copy(display = hardware.display.copy(vsync = enabled))
-        vsyncCallback?.invoke(enabled)
-    }
-
     fun getCurrentHardware() = hardware
 }

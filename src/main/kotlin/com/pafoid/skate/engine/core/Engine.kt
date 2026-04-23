@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.core
 
-import com.pafoid.skate.app.SplashScreen
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
@@ -15,7 +14,7 @@ class Engine : KoinComponent {
     private val bootManager: BootManager by inject()
     private val sceneManager: SceneManager by inject()
     private val renderer: Renderer by inject()
-    private val splashScreen: SplashScreen by inject()
+    private val imguiLayer: ImGuiLayer by inject()
     private val editorWorkspace: EditorWorkspace by inject()
 
     val engineState = AtomicReference(EngineState.BOOTING)
@@ -24,23 +23,20 @@ class Engine : KoinComponent {
     fun start() {
         val window = Window(width = 512, height = 512, title = "PAFSK8")
         runOnMain { bootManager.boot(engineState) }
+        imguiLayer.init(window.windowController)
         window.show()
     }
 
-    fun update(dt: Float, imguiLayer: ImGuiLayer) {
+    fun update(dt: Float) {
         val state = engineState.get()
-
         if (state == EngineState.RUNNING) {
-            updateRunningState(dt, imguiLayer)
-        }
-
-        if (!splashScreen.isDestroyed) {
-            splashScreen.update(dt, state)
-            splashScreen.render(dt, imguiLayer, state)
+            updateRunningState(dt)
+        } else {
+            bootManager.update(dt, imguiLayer, engineState)
         }
     }
 
-    private fun updateRunningState(dt: Float, imguiLayer: ImGuiLayer) {
+    private fun updateRunningState(dt: Float) {
         val scene = sceneManager.currentScene
         if (dt >= 0 && scene != null) {
             if (runtimePlaying) {
@@ -52,16 +48,14 @@ class Engine : KoinComponent {
                 scene.editorUpdateScene(dt)
             }
 
-            // Render Scene
             renderer.render(scene, scene.getSelectedGameObject(), imguiLayer.getHoveredGameObject())
-
-            // Update ImGui Layer
             imguiLayer.update(dt)
         }
     }
 
     fun destroy() {
         if (engineState.get() != EngineState.RUNNING) return
+        imguiLayer.destroy()
         renderer.destroy()
         sceneManager.destroy()
     }
