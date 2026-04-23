@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.ProjectWizard
+import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.search.SearchEngine
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.providers.ActionSearchProvider
@@ -23,6 +24,7 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.WindowRegistry
+import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.viewmodels.SelectionViewModel
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
@@ -62,8 +64,8 @@ import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
-import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.BootManager
+import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
@@ -85,8 +87,6 @@ import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
-import com.pafoid.skate.editor.project.SceneSerializer
-import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
@@ -216,7 +216,7 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { BootManager(get(), get(), get(), get(), get(), get(), get()) }
+    single { BootManager(get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection
     single { InputSystem(get(), get(), get(), get(), get(), get()) }

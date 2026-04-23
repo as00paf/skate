@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.JobSystem.runOnMain
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -34,6 +35,9 @@ class Engine : KoinComponent {
         } else {
             bootManager.update(dt, imguiLayer, engineState)
         }
+
+        //TODO: should be injected
+        JobSystem.update()
     }
 
     private fun updateRunningState(dt: Float) {

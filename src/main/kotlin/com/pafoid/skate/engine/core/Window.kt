@@ -2,13 +2,11 @@ package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.Time
 import org.joml.Vector2f
 import org.koin.core.component.KoinComponent
@@ -77,7 +75,6 @@ class Window(
     private val joystickListener: GamepadListener by inject()
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
-    private val settingsManager: SettingsManager by inject()
     private val engine: Engine by inject()
     private val logger: LoggerService by inject()
 
@@ -86,14 +83,12 @@ class Window(
     private var windowWidth: Int = 1920
     private var windowHeight: Int = 1080
 
-    lateinit var windowController: WindowController
+    var windowController: WindowController
         private set
 
     private val openGLDebug = GLFW_FALSE
 
     init {
-        settingsManager.load()
-
         // Error callback
         GLFWErrorCallback.createPrint(System.err).set()
 
@@ -234,7 +229,6 @@ class Window(
 
             // TODO: move
             joystickListener.update()
-            JobSystem.update()
 
             // Record high-frequency input
             inputBuffer.push(
