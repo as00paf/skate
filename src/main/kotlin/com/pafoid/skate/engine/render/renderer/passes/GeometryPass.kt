@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.render.renderer.passes
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
@@ -87,7 +88,7 @@ class GeometryPass(
         }
 
         // Clear with sky color from EnvironmentComponent
-        val environmentComponent = scene.getComponent<com.pafoid.skate.engine.ecs.components.EnvironmentComponent>()
+        val environmentComponent = scene.getComponent<EnvironmentComponent>()
         val renderSky = environmentComponent?.renderSky ?: true
         // Use sky color if renderSky is true, otherwise use fallback gray
         val skyColor = if (renderSky) {

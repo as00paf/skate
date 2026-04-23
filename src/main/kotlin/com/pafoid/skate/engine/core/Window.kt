@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.utils.JobSystem
-import com.pafoid.skate.engine.utils.JobSystem.runOnMain
 import com.pafoid.skate.engine.utils.Time
 import org.joml.Vector2f
 import org.koin.core.component.KoinComponent
@@ -77,7 +76,6 @@ class Window(
     val title: String
 ): KoinComponent {
 
-    private val bootManager: BootManager by inject()
     private val inputBuffer: IInputBuffer by inject()
     private val joystickListener: GamepadListener by inject()
     private val keyListener: KeyListener by inject()
@@ -99,11 +97,6 @@ class Window(
     private var isFixingMaximize = false
 
     init {
-        init()
-        loop()
-    }
-
-    private fun init() {
         settingsManager.load()
 
         // Error callback
@@ -276,10 +269,6 @@ class Window(
                 windowWidth = fbWidth[0]
                 windowHeight = fbHeight[0]
                 glViewport(0, 0, windowWidth, windowHeight)
-                runOnMain {
-                    show()
-                    bootManager.boot(engine.engineState)
-                }
                 isFirstDraw = false
             }
 
@@ -297,10 +286,11 @@ class Window(
         destroy()
     }
 
-    private fun show() {
+    fun show() {
         glfwShowWindow(glfwWindow)
         glfwFocusWindow(glfwWindow)
         glfwRequestWindowAttention(glfwWindow)
+        loop()
     }
 
     fun setFullscreen(enabled: Boolean) {

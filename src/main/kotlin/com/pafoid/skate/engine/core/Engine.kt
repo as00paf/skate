@@ -5,20 +5,27 @@ import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.utils.JobSystem.runOnMain
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.atomic.AtomicReference
 
 class Engine : KoinComponent {
 
+    private val bootManager: BootManager by inject()
     private val sceneManager: SceneManager by inject()
     private val renderer: Renderer by inject()
     private val splashScreen: SplashScreen by inject()
     private val editorWorkspace: EditorWorkspace by inject()
 
-    // Engine State
     val engineState = AtomicReference(EngineState.BOOTING)
     var runtimePlaying = false
+
+    fun start() {
+        val window = Window(width = 512, height = 512, title = "PAFSK8")
+        runOnMain { bootManager.boot(engineState) }
+        window.show()
+    }
 
     fun update(dt: Float, imguiLayer: ImGuiLayer) {
         val state = engineState.get()
