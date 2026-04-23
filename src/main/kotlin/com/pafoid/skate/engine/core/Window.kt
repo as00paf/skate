@@ -98,7 +98,7 @@ class Window(
     private val openGLDebug = GLFW_FALSE
     private var isFixingMaximize = false
 
-    fun run() {
+    init {
         init()
         loop()
     }

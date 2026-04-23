@@ -16,5 +16,4 @@ fun main(args:Array<String>){
         height = 512,
         title ="PAFSK8"
     )
-    window.run()
 }
