@@ -25,7 +25,7 @@ class Engine : KoinComponent {
         val window = Window(width = 512, height = 512, title = "PAFSK8")
         runOnMain { bootManager.boot(engineState) }
         imguiLayer.init(window.windowController)
-        window.show()
+        window.show(::update)
     }
 
     fun update(dt: Float) {

@@ -75,7 +75,6 @@ class Window(
     private val joystickListener: GamepadListener by inject()
     private val keyListener: KeyListener by inject()
     private val mouseListener: MouseListener by inject()
-    private val engine: Engine by inject()
     private val logger: LoggerService by inject()
 
     private var glfwWindow: Long = -1L
@@ -214,7 +213,7 @@ class Window(
         joystickListener.init()
     }
 
-    private fun loop() {
+    private fun loop(updateCallback: (Float) -> Unit) {
         var beginTime = Time.getTime()
         var endTime: Float
         var dt = 0.0f
@@ -248,7 +247,7 @@ class Window(
                 isFirstDraw = false
             }
 
-            engine.update(dt)
+            updateCallback(dt)
             glfwSwapBuffers(glfwWindow)
 
             keyListener.endFrame()
@@ -262,16 +261,14 @@ class Window(
         destroy()
     }
 
-    fun show() {
+    fun show(updateCallback: (Float) -> Unit) {
         glfwShowWindow(glfwWindow)
         glfwFocusWindow(glfwWindow)
         glfwRequestWindowAttention(glfwWindow)
-        loop()
+        loop(updateCallback)
     }
 
     private fun destroy() {
-        engine.destroy()
-
         glfwFreeCallbacks(glfwWindow)
         glfwDestroyWindow(glfwWindow)
 
