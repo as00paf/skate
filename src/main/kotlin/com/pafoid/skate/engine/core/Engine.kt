@@ -16,7 +16,7 @@ class Engine : KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val renderer: Renderer by inject()
     private val imguiLayer: ImGuiLayer by inject()
-    private val editorWorkspace: EditorWorkspace by inject()
+    private val workspace: EditorWorkspace by inject()
 
     val engineState = AtomicReference(EngineState.BOOTING)
     var runtimePlaying = false
@@ -24,13 +24,16 @@ class Engine : KoinComponent {
     fun start() {
         val window = Window(width = 512, height = 512, title = "PAFSK8")
         runOnMain { bootManager.boot(engineState) }
+        workspace.init(window.glfwWindow)
         imguiLayer.init(window.windowController)
+
         window.show(::update)
     }
 
     fun update(dt: Float) {
         val state = engineState.get()
         if (state == EngineState.RUNNING) {
+            workspace.handleInputs()
             updateRunningState(dt)
         } else {
             bootManager.update(dt, imguiLayer, engineState)
@@ -48,7 +51,7 @@ class Engine : KoinComponent {
                 scene.updateScene(dt)
             } else {
                 // Editor mode: update editor workspace first, then gameplay systems
-                editorWorkspace.editorUpdate(dt, scene)
+                workspace.update(dt)
                 scene.editorUpdateScene(dt)
             }
 

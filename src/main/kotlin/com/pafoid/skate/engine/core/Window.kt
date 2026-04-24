@@ -3,12 +3,7 @@ package com.pafoid.skate.engine.core
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.input.IInputBuffer
-import com.pafoid.skate.engine.input.listeners.GamepadListener
-import com.pafoid.skate.engine.input.listeners.KeyListener
-import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.utils.Time
-import org.joml.Vector2f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
@@ -18,7 +13,6 @@ import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR
 import org.lwjgl.glfw.GLFW.GLFW_DECORATED
 import org.lwjgl.glfw.GLFW.GLFW_DONT_CARE
 import org.lwjgl.glfw.GLFW.GLFW_FALSE
-import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
 import org.lwjgl.glfw.GLFW.GLFW_OPENGL_DEBUG_CONTEXT
 import org.lwjgl.glfw.GLFW.GLFW_RESIZABLE
 import org.lwjgl.glfw.GLFW.GLFW_SAMPLES
@@ -36,11 +30,7 @@ import org.lwjgl.glfw.GLFW.glfwInit
 import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
 import org.lwjgl.glfw.GLFW.glfwPollEvents
 import org.lwjgl.glfw.GLFW.glfwRequestWindowAttention
-import org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback
 import org.lwjgl.glfw.GLFW.glfwSetErrorCallback
-import org.lwjgl.glfw.GLFW.glfwSetKeyCallback
-import org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback
-import org.lwjgl.glfw.GLFW.glfwSetScrollCallback
 import org.lwjgl.glfw.GLFW.glfwSetWindowIcon
 import org.lwjgl.glfw.GLFW.glfwSetWindowPos
 import org.lwjgl.glfw.GLFW.glfwShowWindow
@@ -58,6 +48,7 @@ import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
 import org.lwjgl.opengl.GL11.glBlendFunc
 import org.lwjgl.opengl.GL11.glEnable
 import org.lwjgl.opengl.GL11.glViewport
+import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GLUtil
 import org.lwjgl.stb.STBImage
@@ -71,13 +62,9 @@ class Window(
     val title: String
 ): KoinComponent {
 
-    private val inputBuffer: IInputBuffer by inject()
-    private val joystickListener: GamepadListener by inject()
-    private val keyListener: KeyListener by inject()
-    private val mouseListener: MouseListener by inject()
     private val logger: LoggerService by inject()
 
-    private var glfwWindow: Long = -1L
+    var glfwWindow: Long = -1L
     private var isFirstDraw = true
     private var windowWidth: Int = 1920
     private var windowHeight: Int = 1080
@@ -167,12 +154,10 @@ class Window(
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
 
         // Enable MSAA if configured
-        glEnable(org.lwjgl.opengl.GL13.GL_MULTISAMPLE)
+        glEnable(GL13.GL_MULTISAMPLE)
 
         // Set initial viewport for maximized window
         glViewport(0, 0, windowWidth, windowHeight)
-
-        installCallbacks()
     }
 
     private fun setWindowIcon(iconPath: String) {
@@ -205,14 +190,6 @@ class Window(
         }
     }
 
-    private fun installCallbacks() {
-        glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
-        glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
-        glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
-        glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
-        joystickListener.init()
-    }
-
     private fun loop(updateCallback: (Float) -> Unit) {
         var beginTime = Time.getTime()
         var endTime: Float
@@ -225,16 +202,6 @@ class Window(
                 windowController.fixMaximizeBounds()
                 windowController.isFixingMaximize = false
             }
-
-            // TODO: move
-            joystickListener.update()
-
-            // Record high-frequency input
-            inputBuffer.push(
-                Time.getTime(),
-                Vector2f(mouseListener.getX(), mouseListener.getY()),
-                joystickListener.getAxes(GLFW_JOYSTICK_1)
-            )
 
             if (isFirstDraw) {
                 // Set viewport if not already initialized
@@ -249,9 +216,6 @@ class Window(
 
             updateCallback(dt)
             glfwSwapBuffers(glfwWindow)
-
-            keyListener.endFrame()
-            mouseListener.endFrame()
 
             endTime = Time.getTime()
             dt = endTime - beginTime

@@ -142,7 +142,24 @@ val appModule = module {
     single { FileSystemScanner(get(), get(), get()) }
 
     // Editor Workspace
-    single { EditorWorkspace(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single {
+        EditorWorkspace(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get()
+        )
+    }
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

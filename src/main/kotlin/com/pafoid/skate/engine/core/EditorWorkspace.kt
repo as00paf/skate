@@ -1,68 +1,43 @@
 package com.pafoid.skate.engine.core
 
+import com.pafoid.skate.app.Workspace
 import com.pafoid.skate.editor.EditorCamera
-import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
-import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
-import com.pafoid.skate.engine.ecs.systems.GizmoSystem
-import com.pafoid.skate.engine.ecs.systems.GridConfig
-import com.pafoid.skate.engine.ecs.systems.GridLines
-import com.pafoid.skate.engine.ecs.systems.MouseControls
-import com.pafoid.skate.engine.ecs.systems.System
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
+import com.pafoid.skate.engine.ecs.systems.GizmoSystem
+import com.pafoid.skate.engine.ecs.systems.GridConfig
+import com.pafoid.skate.engine.ecs.systems.GridLines
+import com.pafoid.skate.engine.ecs.systems.MouseControls
+import com.pafoid.skate.engine.ecs.systems.System
+import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.input.IInputBuffer
+import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.utils.Time
+import org.joml.Vector2f
+import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
+import org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback
+import org.lwjgl.glfw.GLFW.glfwSetKeyCallback
+import org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback
+import org.lwjgl.glfw.GLFW.glfwSetScrollCallback
 
-/**
- * EditorWorkspace owns editor-only systems and state that are independent of any specific game scene.
- *
- * ## Design Philosophy
- *
- * The editor is an application that hosts game scenes. They are not the same thing:
- * - **EditorWorkspace** = the application shell (camera, gizmos, grid, selection, editor input)
- * - **Scene** = a single game level (GameObjects, physics, gameplay systems, serialization unit)
- *
- * ## Ownership
- *
- * EditorWorkspace owns:
- * - Editor camera (Camera instance for editor navigation)
- * - Editor selection state (selectedGameObject)
- * - EditorInputStateComponent (editor input state)
- * - Editor systems: EditorCamera, MouseControls, GizmoSystem, GridLines
- *
- * Scene owns:
- * - All GameObjects
- * - Physics3D
- * - Gameplay systems: InputSystem, AnimationSystem, PhysicsSystem, AudioSystem, RagdollSystem,
- *   EnvironmentSystem, DayNightCycleSystem, DirectionalLightSystem
- *
- * ## Lifecycle
- *
- * EditorWorkspace is created AFTER Scene.init() completes. The boot sequence is:
- * 1. Scene created + init() called
- * 2. EditorWorkspace created
- * 3. Scene.startScene() called
- * 4. Engine enters update loop: workspace.editorUpdate(dt) then scene.editorUpdateScene(dt)
- *
- * ## Editor Systems and Scene
- *
- * Editor systems do NOT store Scene references in their init(). They receive Scene as a parameter
- * to their update() methods where needed. This keeps the workspace independent of any specific scene.
- */
 class EditorWorkspace(
-    private val keyListener: KeyListener,
-    private val mouseListener: MouseListener,
+    val keyListener: KeyListener,
+    val mouseListener: MouseListener,
+    val joystickListener: GamepadListener,
+    val inputBuffer: IInputBuffer,
     private val serializer: Serializer,
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
@@ -73,38 +48,28 @@ class EditorWorkspace(
     private val logger: LoggerService,
     private val stringManager: StringManager,
     private val editorInputHandler: EditorInputHandler
-) {
+) : Workspace {
 
-    /**
-     * The editor camera for viewport navigation.
-     */
-    val camera: Camera = Camera()
-
-    /**
-     * Editor input state component populated by InputSystem.
-     */
     val editorInputState: EditorInputStateComponent = EditorInputStateComponent()
-
-    /**
-     * SystemManager holding only editor systems.
-     */
     val systemManager: SystemManager = SystemManager()
 
-    /**
-     * Editor systems owned by this workspace.
-     */
+    private var systemsInitialized = false
+
     private lateinit var editorCameraSystem: EditorCamera
     private lateinit var mouseControls: MouseControls
     private lateinit var gizmoSystem: GizmoSystem
     private lateinit var gridLines: GridLines
 
-    /**
-     * Initializes the workspace by creating and registering editor systems.
-     *
-     * This should be called AFTER Scene.init() completes, but BEFORE Scene.startScene().
-     */
+    override fun init(glfwWindow: Long) {
+        glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
+        glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
+        glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
+        glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
+        joystickListener.init()
+    }
+
     fun initSystems() {
-        editorCameraSystem = EditorCamera(camera, editorInputState)
+        editorCameraSystem = EditorCamera(Camera(), editorInputState)
         mouseControls = MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine, this)
         gizmoSystem = GizmoSystem(
             keyListener,
@@ -124,17 +89,21 @@ class EditorWorkspace(
         systemManager.addSystem(gridLines)
     }
 
-    /**
-     * Updates all editor systems.
-     *
-     * Called by Engine every frame before scene.editorUpdateScene(dt).
-     * Editor systems receive the current scene as a parameter where needed.
-     *
-     * @param dt Delta time
-     * @param scene Current active scene (may be null during loading)
-     */
-    fun editorUpdate(dt: Float, scene: Scene?) {
-        if (scene == null) return
+    override fun handleInputs() {
+        joystickListener.update()
+
+        // Record high-frequency input
+        inputBuffer.push(
+            Time.getTime(),
+            Vector2f(mouseListener.getX(), mouseListener.getY()),
+            joystickListener.getAxes(GLFW_JOYSTICK_1)
+        )
+        keyListener.endFrame()
+        mouseListener.endFrame()
+    }
+
+    override fun update(dt: Float) {
+        val scene = sceneManager.currentScene ?: return
 
         // Initialize editor systems with scene on first update
         // This is done lazily because systems are created before scene.startScene()
@@ -145,8 +114,6 @@ class EditorWorkspace(
 
         systemManager.editorUpdate(dt)
     }
-
-    private var systemsInitialized = false
 
     private fun initializeEditorSystems(scene: Scene) {
         // Editor systems need scene reference for their init()
@@ -162,50 +129,27 @@ class EditorWorkspace(
         }
     }
 
-    /**
-     * Gets the currently selected GameObject.
-     */
     fun getSelectedGameObject(): GameObject? = _selectedGameObject
 
-    /**
-     * Sets the currently selected GameObject.
-     */
+
     fun setSelectedGameObject(gameObject: GameObject?) {
         _selectedGameObject = gameObject
     }
 
     private var _selectedGameObject: GameObject? = null
 
-    /**
-     * Gets the EditorCamera system.
-     */
     fun getEditorCamera(): EditorCamera = editorCameraSystem
 
-    /**
-     * Gets the MouseControls system.
-     */
     fun getMouseControls(): MouseControls = mouseControls
 
-    /**
-     * Gets the GizmoSystem.
-     */
     fun getGizmoSystem(): GizmoSystem = gizmoSystem
 
-    /**
-     * Gets the GridLines system.
-     */
     fun getGridLines(): GridLines = gridLines
 
-    /**
-     * Gets an editor system by type.
-     */
     inline fun <reified T : System> getSystem(): T? {
         return systemManager.systems.filterIsInstance<T>().firstOrNull()
     }
 
-    /**
-     * Destroys the workspace and all editor systems.
-     */
     fun destroy() {
         systemManager.destroy()
         _selectedGameObject = null
