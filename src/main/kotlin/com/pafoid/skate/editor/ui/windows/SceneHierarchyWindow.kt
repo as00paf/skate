@@ -20,7 +20,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SceneRenamed
 import imgui.ImGui
@@ -111,7 +110,6 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         if (ImGui.button(Icons.PLUS)) {
             val newObj = GameObject(stringManager.getString("lbl.gameobject.new"))
             scene.gameObjectManager.addGameObject(newObj)
-            scene.setSelectedGameObject(newObj)
             eventSystem.publish(GameObjectSelected(newObj))
             rebuildFlatList(scene)
             navigationIndex = flatObjectList.indexOf(newObj).coerceAtLeast(0)
@@ -180,27 +178,27 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         // Navigate Up (only if not in Ctrl combination)
         if (ImGui.isKeyPressed(GLFW_KEY_UP) && !ctrlDown) {
             navigationIndex = (navigationIndex - 1).coerceAtLeast(0)
-            selectObjectAtIndex(navigationIndex, scene)
+            selectObjectAtIndex(navigationIndex)
         }
 
         // Navigate Down (only if not in Ctrl combination)
         if (ImGui.isKeyPressed(GLFW_KEY_DOWN) && !ctrlDown) {
             val maxIndex = flatObjectList.size - 1
             navigationIndex = (navigationIndex + 1).coerceAtMost(maxIndex)
-            selectObjectAtIndex(navigationIndex, scene)
+            selectObjectAtIndex(navigationIndex)
         }
 
         // Select First (Home)
         if (ImGui.isKeyPressed(GLFW_KEY_HOME)) {
             navigationIndex = 0
-            selectObjectAtIndex(0, scene)
+            selectObjectAtIndex(0)
         }
 
         // Select Last (End)
         if (ImGui.isKeyPressed(GLFW_KEY_END)) {
             val maxIndex = flatObjectList.size - 1
             navigationIndex = maxIndex.coerceAtLeast(0)
-            selectObjectAtIndex(navigationIndex, scene)
+            selectObjectAtIndex(navigationIndex)
         }
     }
 
@@ -227,10 +225,9 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         }
     }
 
-    private fun selectObjectAtIndex(index: Int, scene: Scene) {
+    private fun selectObjectAtIndex(index: Int) {
         if (index in flatObjectList.indices) {
             val go = flatObjectList[index]
-            scene.setSelectedGameObject(go)
             eventSystem.publish(GameObjectSelected(go))
         }
     }
@@ -324,10 +321,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         if (!isEditing) {
             if (ImGui.isItemHovered() && ImGui.isMouseDoubleClicked(0)) {
                 startRename(obj)
-                sceneManager.currentScene?.setSelectedGameObject(obj)
                 eventSystem.publish(GameObjectSelected(obj))
             } else if (ImGui.isItemClicked()) {
-                sceneManager.currentScene?.setSelectedGameObject(obj)
                 eventSystem.publish(GameObjectSelected(obj))
                 navigationIndex = flatObjectList.indexOf(obj)
             }
@@ -525,7 +520,6 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
         duplicated.addComponent(newTransform)
         undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
-        scene.setSelectedGameObject(duplicated)
         eventSystem.publish(GameObjectSelected(duplicated))
         rebuildFlatList(scene)
         navigationIndex = flatObjectList.indexOf(duplicated).coerceAtLeast(0)

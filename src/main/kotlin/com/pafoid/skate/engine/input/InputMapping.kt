@@ -59,7 +59,6 @@ class InputMappings(
     var hierarchyToggleLock: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_L),
     var hierarchyDuplicate: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_D),
     var hierarchyRename: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_F2),
-    var hierarchyDeselect: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_ESCAPE)
 ) {
 
     fun resetToDefaults() {
@@ -112,6 +111,5 @@ class InputMappings(
         hierarchyToggleLock = InputBinding(keyboardKey = GLFW.GLFW_KEY_L)
         hierarchyDuplicate = InputBinding(keyboardKey = GLFW.GLFW_KEY_D)
         hierarchyRename = InputBinding(keyboardKey = GLFW.GLFW_KEY_F2)
-        hierarchyDeselect = InputBinding(keyboardKey = GLFW.GLFW_KEY_ESCAPE)
     }
 }

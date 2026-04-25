@@ -70,7 +70,6 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
-import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
@@ -238,6 +237,5 @@ val engineModule = module {
 
     // ECS Systems with constructor injection
     single { InputSystem(get(), get(), get(), get(), get(), get()) }
-    single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { AudioSystem(get(), get()) }
 }

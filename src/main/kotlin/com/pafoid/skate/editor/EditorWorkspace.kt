@@ -64,6 +64,7 @@ class EditorWorkspace(
         renderer,
         engine,
         sceneManager,
+        eventSystem,
         debugRenderer
     )
     private val gridLines: GridLines = GridLines(debugRenderer, sceneManager, GridConfig(), stringManager)

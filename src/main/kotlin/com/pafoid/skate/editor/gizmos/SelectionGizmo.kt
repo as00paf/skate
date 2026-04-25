@@ -2,22 +2,24 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EngineState
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.scene.getGameObject
-import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
+import com.pafoid.skate.engine.events.GameObjectSelected
+import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
+import org.lwjgl.glfw.GLFW
 
 class SelectionGizmo(
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
     private val engine: Engine,
+    private val eventSystem: EventSystem,
 ) : Gizmo(mouseListener, undoRedoManager) {
 
     fun getHoveredObject(x: Float, y: Float): GameObject? {
-        if (engine.engineState.get() != EngineState.RUNNING) return null
         val id = renderer.readPixel(x, y)
         return scene.getGameObject(id)
     }
@@ -43,8 +45,9 @@ class SelectionGizmo(
             hoveredGameObject = hovered
             hoveredGameObjectUid = hovered?.getUid() ?: -1
 
-            if (mouseListener.mouseButtonBeginPress(0)) {
-                scene.setSelectedGameObject(hovered)
+            if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT, true)) {
+                val event = if (hovered != null) GameObjectSelected(hovered) else SelectionCleared
+                eventSystem.publish(event)
             }
         } else {
             hoveredGameObjectUid = -1

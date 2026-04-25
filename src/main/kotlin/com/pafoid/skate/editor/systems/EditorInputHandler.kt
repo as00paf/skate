@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.input.InputMappings
@@ -67,7 +66,6 @@ class EditorInputHandler(
         if (keyListener.keyBeginPress(inputMappings.hierarchyCreateNew.keyboardKey)) {
             val newObj = GameObject("GameObject")
             undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene))
-            scene.setSelectedGameObject(newObj)
             eventSystem.publish(GameObjectSelected(newObj))
             logger.logEditor("Created new GameObject: ${newObj.name}")
         }
@@ -78,7 +76,6 @@ class EditorInputHandler(
         ) {
             val clone = cloneGameObject(selected)
             undoRedoManager.executeCommand(CreateGameObjectCommand(clone, scene))
-            scene.setSelectedGameObject(clone)
             eventSystem.publish(GameObjectSelected(clone))
             logger.logEditor("Duplicated GameObject: ${selected.name} -> ${clone.name}")
         }
@@ -101,16 +98,15 @@ class EditorInputHandler(
             logger.logEditor("Toggled lock for ${selected.name}: $newLock")
         }
 
-        // Rename (F2)
+        // Rename
         if (keyListener.keyBeginPress(inputMappings.hierarchyRename.keyboardKey) && selected != null) {
             // Signal to SceneHierarchyWindow that rename should start
             pendingRenameUid = selected.getUid()
             renameInputMappings = inputMappings
         }
 
-        // Deselect (Escape) - only if not already handling something else
-        if (keyListener.keyBeginPress(inputMappings.hierarchyDeselect.keyboardKey)) {
-            scene.setSelectedGameObject(null)
+        // Deselect
+        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_ESCAPE)) {
             eventSystem.publish(SelectionCleared)
             logger.logEditor("Deselected GameObject")
         }

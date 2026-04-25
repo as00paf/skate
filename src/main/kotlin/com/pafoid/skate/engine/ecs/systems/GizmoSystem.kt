@@ -8,10 +8,10 @@ import com.pafoid.skate.editor.gizmos.TranslateGizmo
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -25,6 +25,7 @@ class GizmoSystem(
     private val renderer: Renderer,
     private val engine: Engine,
     private val sceneManager: SceneManager,
+    private val eventSystem: EventSystem,
     debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.LATE) {  // Late system - runs after input/physics
 
@@ -34,7 +35,7 @@ class GizmoSystem(
     private val translateGizmo = TranslateGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val rotationGizmo = RotationGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val scaleGizmo = ScaleGizmo(mouseListener, undoRedoManager, debugRenderer)
-    private val selectionGizmo = SelectionGizmo(mouseListener, undoRedoManager, renderer, engine)
+    private val selectionGizmo = SelectionGizmo(mouseListener, undoRedoManager, renderer, engine, eventSystem)
     private val measureGizmo = MeasureTool(mouseListener, undoRedoManager, debugRenderer, settingsManager)
 
     override fun init(scene: Scene) {
@@ -75,11 +76,6 @@ class GizmoSystem(
             usingGizmo = SELECTION_GIZMO
         } else if (keyListener.isKeyPressed(bindings.measureTool.keyboardKey)) {
             usingGizmo = MEASURE_GIZMO
-        }
-
-        // TODO: move
-        if (keyListener.keyBeginPress(bindings.deselectAll.keyboardKey)) {
-            sceneManager.currentScene?.setSelectedGameObject(null)
         }
 
         // Update only the active gizmo

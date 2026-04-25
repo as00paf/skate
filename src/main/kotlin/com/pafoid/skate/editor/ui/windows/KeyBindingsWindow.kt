@@ -176,7 +176,11 @@ class KeyBindingsWindow(
         drawBindRow(stringManager.getString("lbl.hierarchy.navigate_down"), inputMappings.hierarchyNavigateDown.keyboardKey, "hierarchyNavigateDown")
         drawBindRow(stringManager.getString("lbl.hierarchy.select_first"), inputMappings.hierarchySelectFirst.keyboardKey, "hierarchySelectFirst")
         drawBindRow(stringManager.getString("lbl.hierarchy.select_last"), inputMappings.hierarchySelectLast.keyboardKey, "hierarchySelectLast")
-        drawBindRow(stringManager.getString("lbl.hierarchy.deselect"), inputMappings.hierarchyDeselect.keyboardKey, "hierarchyDeselect")
+        drawBindRow(
+            stringManager.getString("lbl.hierarchy.deselect"),
+            inputMappings.editorDeselect.keyboardKey,
+            "hierarchyDeselect"
+        )
     }
 
     private fun drawBindRow(label: String, currentKey: Int, bindAction: String) {
@@ -218,7 +222,6 @@ class KeyBindingsWindow(
             "hierarchyToggleLock" -> inputMappings.hierarchyToggleLock.keyboardKey = key
             "hierarchyDuplicate" -> inputMappings.hierarchyDuplicate.keyboardKey = key
             "hierarchyRename" -> inputMappings.hierarchyRename.keyboardKey = key
-            "hierarchyDeselect" -> inputMappings.hierarchyDeselect.keyboardKey = key
         }
     }
 
