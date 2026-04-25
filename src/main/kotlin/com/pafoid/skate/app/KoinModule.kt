@@ -70,6 +70,7 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
+import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
@@ -97,7 +98,7 @@ val appModule = module {
     single { SceneSerializer(get(), get(), get(), get()) }
     single { ClipboardService(get()) }
     single { UndoRedoManager() }
-    single { EditorInputHandler(get(), get(), get(), get()) }
+    single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get()) }
     single { StringManager() }
     single { SettingsManager(get(), get(), get()) }
     single { DisplayService() }
@@ -142,20 +143,14 @@ val appModule = module {
     // Editor Workspace
     single {
         EditorWorkspace(
+            GizmoSystem(
+                get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            ),
             get(),
             get(),
             get(),
             get(),
             get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get()
         )
     }
 

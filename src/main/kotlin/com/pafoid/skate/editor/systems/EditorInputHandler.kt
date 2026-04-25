@@ -11,8 +11,13 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SelectionCleared
+import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.InputMappings
+import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
+import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.utils.Time
+import org.joml.Vector2f
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -20,6 +25,9 @@ import org.lwjgl.glfw.GLFW
 
 class EditorInputHandler(
     private val keyListener: KeyListener,
+    private val mouseListener: MouseListener,
+    private val joystickListener: GamepadListener,
+    private val inputBuffer: IInputBuffer,
     private val clipboardService: ClipboardService,
     private val undoRedoManager: UndoRedoManager,
     private val logger: LoggerService
@@ -30,6 +38,15 @@ class EditorInputHandler(
 
     private var pendingRenameUid: Int? = null
     private var renameInputMappings: InputMappings? = null
+
+    fun init(glfwWindow: Long) {
+        GLFW.glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
+        GLFW.glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
+        GLFW.glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
+        GLFW.glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
+
+        joystickListener.init()
+    }
 
     fun update(scene: Scene?) {
         if (scene == null) return
@@ -42,6 +59,21 @@ class EditorInputHandler(
 
         // Standard clipboard/undo operations
         handleClipboardAndUndo(scene, selected, inputMappings)
+
+        handleInputs()
+    }
+
+    private fun handleInputs() {
+        joystickListener.update()
+
+        // Record high-frequency input
+        inputBuffer.push(
+            Time.getTime(),
+            Vector2f(mouseListener.getX(), mouseListener.getY()),
+            joystickListener.getAxes(GLFW.GLFW_JOYSTICK_1)
+        )
+        keyListener.endFrame()
+        mouseListener.endFrame()
     }
 
     /**

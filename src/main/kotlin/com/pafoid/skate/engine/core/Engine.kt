@@ -32,9 +32,7 @@ class Engine : KoinComponent {
     }
 
     fun update(dt: Float) {
-        val state = engineState.get()
-        if (state == EngineState.RUNNING) {
-            workspace.handleInputs()
+        if (engineState.get() == EngineState.RUNNING) {
             updateRunningState(dt)
         } else {
             bootManager.update(dt, imguiLayer, engineState)
