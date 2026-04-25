@@ -234,7 +234,7 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { BootManager(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { BootManager(get(), get(), get(), get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection
     single { InputSystem(get(), get(), get(), get(), get(), get()) }

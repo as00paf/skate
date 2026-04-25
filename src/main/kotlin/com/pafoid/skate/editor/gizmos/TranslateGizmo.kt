@@ -29,8 +29,6 @@ class TranslateGizmo(
     private var yAxisHot = false
     private var zAxisHot = false
 
-    override fun start() {}
-
     override fun update(dt: Float) {}
 
     override fun editorUpdate(dt: Float) {

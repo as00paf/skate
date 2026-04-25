@@ -53,10 +53,20 @@ class EditorWorkspace(
 
     private var systemsInitialized = false
 
-    private lateinit var editorCameraSystem: EditorCamera
-    private lateinit var mouseControls: MouseControls
-    private lateinit var gizmoSystem: GizmoSystem
-    private lateinit var gridLines: GridLines
+    private val editorCamera: EditorCamera = EditorCamera(Camera(), editorInputState)
+    private val mouseControls: MouseControls =
+        MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine, eventSystem)
+    private val gizmoSystem: GizmoSystem = GizmoSystem(
+        keyListener,
+        mouseListener,
+        settingsManager,
+        undoRedoManager,
+        renderer,
+        engine,
+        sceneManager,
+        debugRenderer
+    )
+    private val gridLines: GridLines = GridLines(debugRenderer, sceneManager, GridConfig(), stringManager)
 
     override fun init(glfwWindow: Long) {
         GLFW.glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
@@ -64,29 +74,6 @@ class EditorWorkspace(
         GLFW.glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
         GLFW.glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
         joystickListener.init()
-
-        initSystems()
-    }
-
-    private fun initSystems() {
-        editorCameraSystem = EditorCamera(Camera(), editorInputState)
-        mouseControls = MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine, eventSystem)
-        gizmoSystem = GizmoSystem(
-            keyListener,
-            mouseListener,
-            settingsManager,
-            undoRedoManager,
-            renderer,
-            engine,
-            sceneManager,
-            debugRenderer
-        )
-        gridLines = GridLines(debugRenderer, sceneManager, GridConfig(), stringManager)
-
-        systemManager.addSystem(editorCameraSystem)
-        systemManager.addSystem(mouseControls)
-        systemManager.addSystem(gizmoSystem)
-        systemManager.addSystem(gridLines)
 
         editorEventHandler.init()
     }
@@ -110,24 +97,17 @@ class EditorWorkspace(
         // Initialize editor systems with scene on first update
         // This is done lazily because systems are created before scene.startScene()
         if (!systemsInitialized) {
-            initializeEditorSystems(scene)
+            initializeSystems(scene)
             systemsInitialized = true
         }
 
         systemManager.editorUpdate(dt)
     }
 
-    private fun initializeEditorSystems(scene: Scene) {
-        // Editor systems need scene reference for their init()
-        // But they don't store it permanently - they use it for setup
-        editorCameraSystem.init(scene)
-        mouseControls.init(scene)
-        gizmoSystem.init(scene)
-        gridLines.init(scene)
-
-        // Start all editor systems
-        systemManager.systems.forEach { system ->
-            system.start()
+    private fun initializeSystems(scene: Scene) {
+        listOf(editorCamera, mouseControls, gizmoSystem, gridLines).forEach {
+            systemManager.addSystem(it)
+            it.init(scene)
         }
     }
 
