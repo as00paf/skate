@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.AnimationApplied
 import com.pafoid.skate.engine.events.AnimationRemoved
 

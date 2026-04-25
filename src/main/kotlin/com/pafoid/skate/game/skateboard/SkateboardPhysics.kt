@@ -1,10 +1,10 @@
 package com.pafoid.skate.game.skateboard
 
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.GroundedStateChanged
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.Takeoff

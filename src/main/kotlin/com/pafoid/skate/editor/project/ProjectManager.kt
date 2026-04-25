@@ -6,12 +6,12 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.ProjectClosed
 import com.pafoid.skate.engine.events.ProjectCreated
 import com.pafoid.skate.engine.events.ProjectOpened

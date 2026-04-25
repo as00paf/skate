@@ -1,5 +1,7 @@
-package com.pafoid.skate.engine.ecs.systems
+package com.pafoid.skate.engine.core
 
+import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
+import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.events.Event
 import kotlin.reflect.KClass
 

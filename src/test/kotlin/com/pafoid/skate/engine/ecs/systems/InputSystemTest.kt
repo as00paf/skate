@@ -3,10 +3,11 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.project.GameplaySettings
-import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer

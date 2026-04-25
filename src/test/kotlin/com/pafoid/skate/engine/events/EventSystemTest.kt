@@ -1,9 +1,9 @@
 package com.pafoid.skate.engine.events
 
+import com.pafoid.skate.engine.core.EventListener
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
-import com.pafoid.skate.engine.ecs.systems.EventListener
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals

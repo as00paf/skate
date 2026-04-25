@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.TrickCompleted
 import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags

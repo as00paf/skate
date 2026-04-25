@@ -13,8 +13,8 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.project.FileSystemItem
 import com.pafoid.skate.editor.ui.windows.project.FileType
 import com.pafoid.skate.editor.ui.windows.project.FileTypeResolver
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.FileSystemChangedEvent
 import com.pafoid.skate.engine.events.OpenSceneFileEvent
 import imgui.flag.ImGuiSelectableFlags

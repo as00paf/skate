@@ -4,12 +4,12 @@ import com.pafoid.skate.editor.commands.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.LockToggleCommand
 import com.pafoid.skate.editor.commands.VisibilityToggleCommand
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.input.InputMappings

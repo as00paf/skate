@@ -3,8 +3,8 @@ package com.pafoid.skate.engine.ecs.components
 import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.MovementInput

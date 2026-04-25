@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.app.SplashScreen
-import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.LoggerService
@@ -20,9 +19,8 @@ class BootManager(
     private val renderer: Renderer,
     private val logger: LoggerService,
     private val splashScreen: SplashScreen,
-    private val audioEngine: AudioEngine,
+    private val audioEngine: AudioEngine, //TODO: should be initialized here
     private val sceneInitializer: LevelEditorSceneInitializer,
-    private val workspace: EditorWorkspace,
     private val settingsManager: SettingsManager,
     private val mainDispatcher: CoroutineDispatcher = JobSystem.Main
 ) {
@@ -37,9 +35,6 @@ class BootManager(
         initRenderSystem()
 
         val scene = initScene()
-
-        logger.logEngine("Initializing editor workspace...")
-        workspace.initSystems()
 
         engineState.set(EngineState.RUNNING)
         splashScreen.loadingProgress.set(1.0f)

@@ -7,11 +7,11 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.Workspace
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridConfig
 import com.pafoid.skate.engine.ecs.systems.GridLines
@@ -64,9 +64,11 @@ class EditorWorkspace(
         GLFW.glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
         GLFW.glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
         joystickListener.init()
+
+        initSystems()
     }
 
-    fun initSystems() {
+    private fun initSystems() {
         editorCameraSystem = EditorCamera(Camera(), editorInputState)
         mouseControls = MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine, eventSystem)
         gizmoSystem = GizmoSystem(

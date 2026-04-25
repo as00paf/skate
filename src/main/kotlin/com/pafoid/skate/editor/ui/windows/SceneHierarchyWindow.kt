@@ -3,28 +3,26 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.commands.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.LockToggleCommand
-import com.pafoid.skate.editor.commands.ReparentGameObjectCommand
 import com.pafoid.skate.editor.commands.RenameGameObjectCommand
 import com.pafoid.skate.editor.commands.RenameSceneCommand
+import com.pafoid.skate.editor.commands.ReparentGameObjectCommand
 import com.pafoid.skate.editor.commands.VisibilityToggleCommand
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SceneRenamed
-import com.pafoid.skate.engine.events.SelectionCleared
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
@@ -36,7 +34,14 @@ import imgui.type.ImString
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN
+import org.lwjgl.glfw.GLFW.GLFW_KEY_END
+import org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
+import org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE
+import org.lwjgl.glfw.GLFW.GLFW_KEY_HOME
+import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL
+import org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL
+import org.lwjgl.glfw.GLFW.GLFW_KEY_UP
 
 /**
  * Special UID constant for scene rename editing (negative to avoid collision with real GameObject UIDs).

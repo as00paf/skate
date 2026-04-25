@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.events.TrickCompleted

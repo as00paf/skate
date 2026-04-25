@@ -10,9 +10,9 @@ import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.SceneChanged
 import com.pafoid.skate.engine.events.SceneCreateRequested
 import com.pafoid.skate.engine.events.SceneCreated

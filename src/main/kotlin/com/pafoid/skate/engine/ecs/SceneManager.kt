@@ -4,11 +4,10 @@ import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.ecs.systems.EventSystem
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.events.SceneChanged
 import com.pafoid.skate.engine.events.SceneClosed
 import com.pafoid.skate.engine.events.SceneOpened
-import com.pafoid.skate.engine.events.SceneRenamed
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 

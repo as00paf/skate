@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.commands
 
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneRenamed
-import com.pafoid.skate.engine.ecs.systems.EventSystem
 
 /**
  * Undoable command for renaming a scene.

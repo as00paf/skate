@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.handlers
 
-import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.CloseSceneCommand
 import com.pafoid.skate.editor.commands.CreateSceneCommand
@@ -8,15 +7,26 @@ import com.pafoid.skate.editor.commands.DeleteSceneCommand
 import com.pafoid.skate.editor.commands.RenameSceneCommand
 import com.pafoid.skate.editor.commands.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.SaveSceneCommand
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.EventSystem
-import com.pafoid.skate.engine.events.*
+import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.events.SceneChanged
+import com.pafoid.skate.engine.events.SceneCloseAllRequested
+import com.pafoid.skate.engine.events.SceneCloseOthersRequested
+import com.pafoid.skate.engine.events.SceneCloseRequested
+import com.pafoid.skate.engine.events.SceneCreateRequested
+import com.pafoid.skate.engine.events.SceneCreated
+import com.pafoid.skate.engine.events.SceneDeleteRequested
+import com.pafoid.skate.engine.events.SceneRenameRequested
+import com.pafoid.skate.engine.events.SceneSaveAsRequested
+import com.pafoid.skate.engine.events.SceneSaveRequested
+import com.pafoid.skate.engine.events.SceneTabSelected
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File

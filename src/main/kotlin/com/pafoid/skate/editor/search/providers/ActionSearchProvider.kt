@@ -6,19 +6,23 @@ import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.TransformCommand
 import com.pafoid.skate.editor.data.EditorAction
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.SearchCategory
 import com.pafoid.skate.editor.search.SearchResult
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.editor.project.SceneSerializer
-import com.pafoid.skate.engine.ecs.systems.EventSystem
-import com.pafoid.skate.engine.events.*
+import com.pafoid.skate.engine.events.SceneDeleteRequested
+import com.pafoid.skate.engine.events.SceneRenameRequested
+import com.pafoid.skate.engine.events.ViewportCreateLight
+import com.pafoid.skate.engine.events.ViewportCreatePrimitive
+import com.pafoid.skate.engine.events.ViewportSpawnPrefab
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
