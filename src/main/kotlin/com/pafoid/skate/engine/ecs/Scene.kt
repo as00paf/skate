@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs
 
+import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
@@ -43,16 +44,16 @@ open class Scene(
      * Gets the time scale from TimeComponent if available, otherwise returns 1.0f.
      */
     fun getTimeScale(): Float {
-        return getComponent<com.pafoid.skate.engine.ecs.components.TimeComponent>()?.timeScale ?: 1.0f
+        return getComponent<TimeComponent>()?.timeScale ?: 1.0f
     }
 
     /**
      * Sets the time scale on TimeComponent, creating one if needed.
      */
     fun setTimeScale(scale: Float) {
-        var timeComponent = getComponent<com.pafoid.skate.engine.ecs.components.TimeComponent>()
+        var timeComponent = getComponent<TimeComponent>()
         if (timeComponent == null) {
-            timeComponent = com.pafoid.skate.engine.ecs.components.TimeComponent()
+            timeComponent = TimeComponent()
             addComponent(timeComponent)
         }
         timeComponent.timeScale = scale
@@ -62,16 +63,16 @@ open class Scene(
      * Gets the time of day from TimeComponent if available, otherwise returns 12.0f.
      */
     fun getTimeOfDay(): Float {
-        return getComponent<com.pafoid.skate.engine.ecs.components.TimeComponent>()?.timeOfDay ?: 12.0f
+        return getComponent<TimeComponent>()?.timeOfDay ?: 12.0f
     }
 
     /**
      * Sets the time of day on TimeComponent, creating one if needed.
      */
     fun setTimeOfDay(time: Float) {
-        var timeComponent = getComponent<com.pafoid.skate.engine.ecs.components.TimeComponent>()
+        var timeComponent = getComponent<TimeComponent>()
         if (timeComponent == null) {
-            timeComponent = com.pafoid.skate.engine.ecs.components.TimeComponent()
+            timeComponent = TimeComponent()
             addComponent(timeComponent)
         }
         timeComponent.timeOfDay = time

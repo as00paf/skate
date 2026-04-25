@@ -5,13 +5,10 @@ import imgui.ImGui
 import org.joml.Vector2f
 import org.joml.Vector4f
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
-class MouseListener: KoinComponent {
-    private val sceneManager: SceneManager by inject()
-
+class MouseListener(private val sceneManager: SceneManager) : KoinComponent {
     private var scrollX: Double = 0.0
     private var scrollY: Double = 0.0
     private var xPos: Double = 0.0

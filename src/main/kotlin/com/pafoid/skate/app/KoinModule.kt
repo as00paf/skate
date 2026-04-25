@@ -109,7 +109,6 @@ val appModule = module {
     // EventSystem for editor event bus
     single { EventSystem() }
 
-    // ViewModels for UI state management
     factory { EditorEventHandler(get(), get()) }
 
     // Viewport components for GameViewWindow
@@ -185,7 +184,7 @@ val appModule = module {
 val inputModule = module {
     single { GamepadListener(get()) }
     single { KeyListener() }
-    single { MouseListener() }
+    single { MouseListener(get()) }
     single<IInputProvider> { InputProvider(get(), get()) }
 }
 
