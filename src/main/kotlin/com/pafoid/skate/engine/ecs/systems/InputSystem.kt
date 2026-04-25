@@ -289,25 +289,6 @@ class InputSystem(
         if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_HOME)) {
             editorInput.resetPressed = true
         }
-
-        if (inputProvider.keyBeginPress(editorMappings.gizmoTranslate.keyboardKey)) {
-            editorInput.gizmoTranslatePressed = true
-        }
-        if (inputProvider.keyBeginPress(editorMappings.gizmoRotate.keyboardKey)) {
-            editorInput.gizmoRotatePressed = true
-        }
-        if (inputProvider.keyBeginPress(editorMappings.gizmoScale.keyboardKey)) {
-            editorInput.gizmoScalePressed = true
-        }
-        if (inputProvider.keyBeginPress(editorMappings.gizmoSelect.keyboardKey)) {
-            editorInput.gizmoSelectPressed = true
-        }
-        if (inputProvider.keyBeginPress(editorMappings.measureTool.keyboardKey)) {
-            editorInput.measureToolPressed = true
-        }
-        if (inputProvider.keyBeginPress(editorMappings.deselectAll.keyboardKey)) {
-            editorInput.deselectAllPressed = true
-        }
     }
 
     private fun pollEditorMouseInput(editorInput: EditorInputStateComponent) {
