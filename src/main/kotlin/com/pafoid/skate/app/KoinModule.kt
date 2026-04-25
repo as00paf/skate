@@ -110,12 +110,12 @@ val appModule = module {
     single { EventSystem() }
 
     // ViewModels for UI state management
-    factory { EditorEventHandler(get(), get(), get()) }
+    factory { EditorEventHandler(get(), get()) }
 
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get(), get()) }
     factory { ViewportToolbar(get(), get(), get(), get(), get()) }
-    factory { ViewportContextMenu(get(), get(), get()) }
+    factory { ViewportContextMenu(get(), get()) }
     factory { ViewportOverlays(get(), get()) }
     factory { ViewportDragDropHandler(get(), get()) }
 
@@ -144,6 +144,8 @@ val appModule = module {
     // Editor Workspace
     single {
         EditorWorkspace(
+            get(),
+            get(),
             get(),
             get(),
             get(),

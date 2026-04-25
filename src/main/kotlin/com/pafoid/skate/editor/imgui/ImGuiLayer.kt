@@ -229,7 +229,7 @@ class ImGuiLayer(
 
         startFrame()
 
-        editorInputHandler.update(currentScene, editorWorkspace)
+        editorInputHandler.update(currentScene)
 
         setupDockSpace(currentScene)
 

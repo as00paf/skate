@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.gizmos.RotationGizmo
 import com.pafoid.skate.editor.gizmos.ScaleGizmo
@@ -11,6 +10,8 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -23,7 +24,7 @@ class GizmoSystem(
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
     private val engine: Engine,
-    private val workspace: EditorWorkspace,
+    private val sceneManager: SceneManager,
     debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.LATE) {  // Late system - runs after input/physics
 
@@ -76,8 +77,9 @@ class GizmoSystem(
             usingGizmo = MEASURE_GIZMO
         }
 
+        // TODO: move
         if (keyListener.keyBeginPress(bindings.deselectAll.keyboardKey)) {
-            workspace.setSelectedGameObject(null)
+            sceneManager.currentScene?.setSelectedGameObject(null)
         }
 
         // Update only the active gizmo

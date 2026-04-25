@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -12,6 +11,8 @@ import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
+import com.pafoid.skate.engine.events.GameObjectSelected
+import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
@@ -26,7 +27,7 @@ class MouseControls(
     private val logger: LoggerService,
     private val renderer: Renderer,
     private val engine: Engine,
-    private val workspace: EditorWorkspace
+    private val eventSystem: EventSystem
 ) : System(priority = ExecutionPriority.EARLY) {  // Early system - runs first for input
 
     private var holdingObject: GameObject? = null
@@ -57,9 +58,9 @@ class MouseControls(
             val selectedObject = getObjectById(pickedId)
 
             if (selectedObject != null && selectedObject.getComponent<NonPickable>() == null) {
-                workspace.setSelectedGameObject(selectedObject)
+                eventSystem.publish(GameObjectSelected(selectedObject))
             } else {
-                workspace.setSelectedGameObject(null)
+                eventSystem.publish(SelectionCleared)
             }
 
             debounce = debounceTime

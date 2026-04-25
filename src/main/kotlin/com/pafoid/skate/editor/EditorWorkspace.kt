@@ -8,10 +8,10 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Workspace
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
+import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridConfig
 import com.pafoid.skate.engine.ecs.systems.GridLines
@@ -43,7 +43,9 @@ class EditorWorkspace(
     private val sceneManager: SceneManager,
     private val logger: LoggerService,
     private val stringManager: StringManager,
-    private val editorInputHandler: EditorInputHandler
+    private val editorInputHandler: EditorInputHandler,
+    private val editorEventHandler: EditorEventHandler,
+    private val eventSystem: EventSystem
 ) : Workspace {
 
     val editorInputState: EditorInputStateComponent = EditorInputStateComponent()
@@ -66,7 +68,7 @@ class EditorWorkspace(
 
     fun initSystems() {
         editorCameraSystem = EditorCamera(Camera(), editorInputState)
-        mouseControls = MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine, this)
+        mouseControls = MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine, eventSystem)
         gizmoSystem = GizmoSystem(
             keyListener,
             mouseListener,
@@ -74,7 +76,7 @@ class EditorWorkspace(
             undoRedoManager,
             renderer,
             engine,
-            this,
+            sceneManager,
             debugRenderer
         )
         gridLines = GridLines(debugRenderer, sceneManager, GridConfig(), stringManager)
@@ -83,6 +85,8 @@ class EditorWorkspace(
         systemManager.addSystem(mouseControls)
         systemManager.addSystem(gizmoSystem)
         systemManager.addSystem(gridLines)
+
+        editorEventHandler.init()
     }
 
     override fun handleInputs() {
@@ -125,15 +129,6 @@ class EditorWorkspace(
         }
     }
 
-    fun getSelectedGameObject(): GameObject? = _selectedGameObject
-
-
-    fun setSelectedGameObject(gameObject: GameObject?) {
-        _selectedGameObject = gameObject
-    }
-
-    private var _selectedGameObject: GameObject? = null
-
     fun getGizmoSystem(): GizmoSystem = gizmoSystem
 
     inline fun <reified T : System> getSystem(): T? {
@@ -142,6 +137,5 @@ class EditorWorkspace(
 
     fun destroy() {
         systemManager.destroy()
-        _selectedGameObject = null
     }
 }
