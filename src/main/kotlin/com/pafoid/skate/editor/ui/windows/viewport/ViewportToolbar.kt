@@ -1,10 +1,10 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager

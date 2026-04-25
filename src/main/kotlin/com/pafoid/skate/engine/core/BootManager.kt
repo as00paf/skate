@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.app.SplashScreen
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.LoggerService

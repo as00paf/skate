@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -11,7 +12,6 @@ import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.engine.ecs.scene.getGameObject
-import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
@@ -26,7 +26,7 @@ class MouseControls(
     private val logger: LoggerService,
     private val renderer: Renderer,
     private val engine: Engine,
-    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace
+    private val workspace: EditorWorkspace
 ) : System(priority = ExecutionPriority.EARLY) {  // Early system - runs first for input
 
     private var holdingObject: GameObject? = null

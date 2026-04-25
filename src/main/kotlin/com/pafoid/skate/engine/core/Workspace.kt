@@ -1,4 +1,4 @@
-package com.pafoid.skate.app
+package com.pafoid.skate.engine.core
 
 interface Workspace {
     fun init(glfwWindow: Long)

@@ -1,6 +1,8 @@
 package com.pafoid.skate.app
 
+import com.pafoid.skate.editor.EditorEventHandler
 import com.pafoid.skate.editor.EditorSystemFactory
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.project.EngineAssetCopier
@@ -26,7 +28,6 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.WindowRegistry
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
-import com.pafoid.skate.editor.ui.viewmodels.SelectionViewModel
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
@@ -65,7 +66,6 @@ import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.BootManager
-import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
@@ -110,7 +110,7 @@ val appModule = module {
     single { EventSystem() }
 
     // ViewModels for UI state management
-    factory { SelectionViewModel(get(), get(), get()) }
+    factory { EditorEventHandler(get(), get(), get()) }
 
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get(), get()) }

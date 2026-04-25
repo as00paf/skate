@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.ClipboardService
@@ -15,7 +16,6 @@ import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager

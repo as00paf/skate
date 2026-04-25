@@ -1,15 +1,13 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.commands.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.LockToggleCommand
-import com.pafoid.skate.editor.commands.RenameGameObjectCommand
 import com.pafoid.skate.editor.commands.VisibilityToggleCommand
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
-import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.ecs.systems.EventSystem
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SelectionCleared
@@ -33,7 +31,7 @@ class EditorInputHandler(
     private var pendingRenameUid: Int? = null
     private var renameInputMappings: InputMappings? = null
 
-    fun update(scene: Scene?, workspace: com.pafoid.skate.engine.core.EditorWorkspace) {
+    fun update(scene: Scene?, workspace: EditorWorkspace) {
         if (scene == null) return
 
         val inputMappings = getInputMappings()
@@ -50,7 +48,12 @@ class EditorInputHandler(
      * Handle global hierarchy action shortcuts.
      * These work regardless of which window is focused, but require a selected GameObject for some actions.
      */
-    private fun handleGlobalHierarchyActions(scene: Scene, workspace: com.pafoid.skate.engine.core.EditorWorkspace, selected: GameObject?, inputMappings: InputMappings) {
+    private fun handleGlobalHierarchyActions(
+        scene: Scene,
+        workspace: EditorWorkspace,
+        selected: GameObject?,
+        inputMappings: InputMappings
+    ) {
         val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
         // Delete selected object

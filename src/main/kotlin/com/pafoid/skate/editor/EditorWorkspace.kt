@@ -1,13 +1,13 @@
-package com.pafoid.skate.engine.core
+package com.pafoid.skate.editor
 
-import com.pafoid.skate.app.Workspace
-import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.Workspace
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -27,11 +27,7 @@ import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.Time
 import org.joml.Vector2f
-import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
-import org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback
-import org.lwjgl.glfw.GLFW.glfwSetKeyCallback
-import org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback
-import org.lwjgl.glfw.GLFW.glfwSetScrollCallback
+import org.lwjgl.glfw.GLFW
 
 class EditorWorkspace(
     val keyListener: KeyListener,
@@ -61,10 +57,10 @@ class EditorWorkspace(
     private lateinit var gridLines: GridLines
 
     override fun init(glfwWindow: Long) {
-        glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
-        glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
-        glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
-        glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
+        GLFW.glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
+        GLFW.glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
+        GLFW.glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
+        GLFW.glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
         joystickListener.init()
     }
 
@@ -96,7 +92,7 @@ class EditorWorkspace(
         inputBuffer.push(
             Time.getTime(),
             Vector2f(mouseListener.getX(), mouseListener.getY()),
-            joystickListener.getAxes(GLFW_JOYSTICK_1)
+            joystickListener.getAxes(GLFW.GLFW_JOYSTICK_1)
         )
         keyListener.endFrame()
         mouseListener.endFrame()

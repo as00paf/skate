@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.EditorEventHandler
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.ui.viewmodels.SelectionViewModel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Component
@@ -22,7 +22,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
 class PropertiesWindow : IWindow, KoinComponent {
-    private val selectionViewModel: SelectionViewModel by inject()
+    private val editorEventHandler: EditorEventHandler by inject()
     private val stringManager: StringManager by inject()
     
     private val searchString = ImString(128)
@@ -30,12 +30,12 @@ class PropertiesWindow : IWindow, KoinComponent {
 
     init {
         // Subscribe to selection events
-        selectionViewModel.init()
+        editorEventHandler.init()
     }
 
     override fun imgui(pOpen: ImBoolean?) {
         // Get selected object from ViewModel instead of direct scene query
-        selectedGameObject = selectionViewModel.selectedGameObject
+        selectedGameObject = editorEventHandler.selectedGameObject
         
         ImGui.begin(stringManager.getString("window.properties"), pOpen)
         selectedGameObject?.let { go ->

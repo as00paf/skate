@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.gizmos.RotationGizmo
 import com.pafoid.skate.editor.gizmos.ScaleGizmo
@@ -7,7 +8,6 @@ import com.pafoid.skate.editor.gizmos.SelectionGizmo
 import com.pafoid.skate.editor.gizmos.TranslateGizmo
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene

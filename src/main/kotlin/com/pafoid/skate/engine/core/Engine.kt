@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.core
 
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject

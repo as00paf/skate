@@ -89,7 +89,7 @@ class EditorSystemFactory : KoinComponent {
     private val inputProvider: IInputProvider by inject()
     private val audioEngine: AudioEngine by inject()
     private val logger: LoggerService by inject()
-    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace by inject()
+    private val workspace: EditorWorkspace by inject()
 
     /**
      * Add gameplay and utility systems to the scene.

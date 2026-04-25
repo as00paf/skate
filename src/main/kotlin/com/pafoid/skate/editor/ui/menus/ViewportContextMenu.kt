@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
@@ -31,7 +32,7 @@ import imgui.ImVec2
 class ViewportContextMenu(
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
-    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace
+    private val workspace: EditorWorkspace
 ) {
 
     companion object {
