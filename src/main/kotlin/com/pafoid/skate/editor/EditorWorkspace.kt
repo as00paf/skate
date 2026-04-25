@@ -1,11 +1,9 @@
 package com.pafoid.skate.editor
 
 import com.pafoid.skate.editor.systems.EditorInputHandler
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.Workspace
@@ -15,7 +13,6 @@ import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridConfig
 import com.pafoid.skate.engine.ecs.systems.GridLines
-import com.pafoid.skate.engine.ecs.systems.MouseControls
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.IInputBuffer
@@ -34,14 +31,12 @@ class EditorWorkspace(
     val mouseListener: MouseListener,
     val joystickListener: GamepadListener,
     val inputBuffer: IInputBuffer,
-    private val serializer: Serializer,
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
     private val renderer: Renderer,
     private val engine: Engine,
     private val sceneManager: SceneManager,
-    private val logger: LoggerService,
     private val stringManager: StringManager,
     private val editorInputHandler: EditorInputHandler,
     private val editorEventHandler: EditorEventHandler,
@@ -54,8 +49,6 @@ class EditorWorkspace(
     private var systemsInitialized = false
 
     private val editorCamera: EditorCamera = EditorCamera(Camera(), editorInputState)
-    private val mouseControls: MouseControls =
-        MouseControls(keyListener, mouseListener, serializer, logger, renderer, engine, eventSystem)
     private val gizmoSystem: GizmoSystem = GizmoSystem(
         keyListener,
         mouseListener,
@@ -106,7 +99,7 @@ class EditorWorkspace(
     }
 
     private fun initializeSystems(scene: Scene) {
-        listOf(editorCamera, mouseControls, gizmoSystem, gridLines).forEach {
+        listOf(editorCamera, gizmoSystem, gridLines).forEach {
             systemManager.addSystem(it)
             it.init(scene)
         }
