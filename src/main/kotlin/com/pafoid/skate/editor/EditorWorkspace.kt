@@ -96,6 +96,7 @@ class EditorWorkspace(
         }
 
         systemManager.editorUpdate(dt)
+        editorInputHandler.update(scene)
     }
 
     private fun initializeSystems(scene: Scene) {

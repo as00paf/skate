@@ -1,10 +1,8 @@
 package com.pafoid.skate.editor.imgui
 
-import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -18,6 +16,7 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.WindowController
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputProvider
@@ -78,7 +77,6 @@ class ImGuiLayer(
     private val sceneSerializer: SceneSerializer,
     private val resourceManager: ResourceManager,
     private val windowRegistry: WindowRegistry,
-    private val editorWorkspace: EditorWorkspace
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -86,7 +84,6 @@ class ImGuiLayer(
     private val glslVersion = "#version 330"
 
     private val eventSystem: EventSystem by inject()
-    private val editorInputHandler: EditorInputHandler by inject()
     private val projectManager: ProjectManager by inject()
     private val sceneInitializer: com.pafoid.skate.editor.LevelEditorSceneInitializer by inject()
     private val statusBar = EditorStatusBar()
@@ -229,8 +226,6 @@ class ImGuiLayer(
 
         startFrame()
 
-        editorInputHandler.update(currentScene)
-
         setupDockSpace(currentScene)
 
         if (isViewportMaximized) {
@@ -362,7 +357,7 @@ class ImGuiLayer(
         needsDecorationUpdate = true
     }
 
-    fun getHoveredGameObject(): com.pafoid.skate.engine.ecs.GameObject? {
+    fun getHoveredGameObject(): GameObject? {
         return windowRegistry.gameViewWindow.getHoveredObject()
     }
 

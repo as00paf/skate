@@ -106,7 +106,7 @@ class EditorInputHandler(
         }
 
         // Deselect
-        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_ESCAPE)) {
+        if (keyListener.isKeyPressed(inputMappings.editorDeselect.keyboardKey) && selected != null) {
             eventSystem.publish(SelectionCleared)
             logger.logEditor("Deselected GameObject")
         }
