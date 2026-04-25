@@ -71,6 +71,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
+import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
@@ -143,11 +144,8 @@ val appModule = module {
     // Editor Workspace
     single {
         EditorWorkspace(
-            GizmoSystem(
-                get(), get(), get(), get(), get(), get(), get(), get(), get(),
-            ),
-            get(),
-            get(),
+            GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()),
+            GridLines(get(), get(), get()),
             get(),
             get(),
             get(),

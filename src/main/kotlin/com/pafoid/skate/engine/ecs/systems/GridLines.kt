@@ -112,9 +112,10 @@ data class GridConfig(
 class GridLines(
     private val debugRenderer: DebugRenderer,
     private val sceneManager: SceneManager,
-    private val config: GridConfig = GridConfig(),
-    private val stringManager: StringManager
+    private val stringManager: StringManager,
 ) : System(priority = ExecutionPriority.LATE) {
+
+    private val config: GridConfig = GridConfig()
 
     // Cached vectors to reduce allocations
     private val tempVec1 = Vector3f()
