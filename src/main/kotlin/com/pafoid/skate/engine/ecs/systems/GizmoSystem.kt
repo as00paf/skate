@@ -7,38 +7,15 @@ import com.pafoid.skate.editor.gizmos.SelectionGizmo
 import com.pafoid.skate.editor.gizmos.TranslateGizmo
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.EditorWorkspace
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 
-/**
- * System responsible for managing and updating editor gizmos.
- *
- * Owns all gizmo instances directly and updates only the active gizmo each frame.
- * This is more efficient than registering each gizmo as a separate system.
- *
- * ## Input Handling
- *
- * Gizmo selection uses editor-specific key bindings from [SettingsManager.engine.editor.editorInputMappings]:
- * - **Translate**: W key (default)
- * - **Rotate**: E key (default)
- * - **Scale**: R key (default)
- * - **Select**: Q key (default)
- * - **Measure**: M key (default)
- * - **Deselect**: Escape key (default)
- *
- * ## Execution Order
- *
- * This system runs at [ExecutionPriority.LATE] to ensure:
- * - Input systems have processed all input
- * - Physics systems have updated all objects
- * - Gizmos can respond to the final state of the scene
- */
 class GizmoSystem(
     private val keyListener: KeyListener,
     private val mouseListener: MouseListener,
@@ -46,7 +23,7 @@ class GizmoSystem(
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
     private val engine: Engine,
-    private val workspace: com.pafoid.skate.engine.core.EditorWorkspace,
+    private val workspace: EditorWorkspace,
     debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.LATE) {  // Late system - runs after input/physics
 

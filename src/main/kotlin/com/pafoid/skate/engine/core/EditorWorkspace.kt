@@ -138,13 +138,7 @@ class EditorWorkspace(
 
     private var _selectedGameObject: GameObject? = null
 
-    fun getEditorCamera(): EditorCamera = editorCameraSystem
-
-    fun getMouseControls(): MouseControls = mouseControls
-
     fun getGizmoSystem(): GizmoSystem = gizmoSystem
-
-    fun getGridLines(): GridLines = gridLines
 
     inline fun <reified T : System> getSystem(): T? {
         return systemManager.systems.filterIsInstance<T>().firstOrNull()

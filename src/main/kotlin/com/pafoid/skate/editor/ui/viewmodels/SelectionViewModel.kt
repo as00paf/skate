@@ -87,19 +87,8 @@ class SelectionViewModel(
     fun clear() {
         select(null)
     }
-    
-    /**
-     * Get the selected GameObject from the workspace.
-     * 
-     * This is a convenience method that queries the workspace directly.
-     * Prefer using [selectedGameObject] for most cases.
-     * 
-     * @return The selected GameObject from the workspace
-     */
-    fun getFromWorkspace(): GameObject? {
-        return workspace.getSelectedGameObject()
-    }
-    
+
+
     /**
      * Cleanup the ViewModel.
      * 
