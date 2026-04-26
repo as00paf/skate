@@ -85,6 +85,7 @@ import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.render.renderer.SplashRenderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
@@ -208,6 +209,7 @@ val engineModule = module {
 
     single { DebugRenderer(get(), get(), get()) }
     single { PickingRenderer(get(), get(), get()) }
+    single { SplashRenderer(get()) }
     single { ModelRenderer(get(), get()) }
     single { ThumbnailRenderer(get(), get(), get()) }
     single { ThumbnailCache(get()) }
@@ -216,7 +218,7 @@ val engineModule = module {
     single { SplashScreen() }
 
     // Render resources factory - created lazily when Renderer is requested
-    single { RenderResourcesFactory(get(), get(), get(), get(), get(), get()) }
+    single { RenderResourcesFactory(get(), get(), get(), get(), get(), get(), get<SplashRenderer>()) }
 
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }

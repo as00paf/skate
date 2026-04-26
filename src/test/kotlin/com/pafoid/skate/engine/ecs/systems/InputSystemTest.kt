@@ -1,10 +1,10 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.EditorCamera
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.project.GameplaySettings
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -46,7 +46,7 @@ class InputSystemTest {
     private lateinit var mouseListener: MouseListener
     private lateinit var settingsManager: SettingsManager
     private lateinit var stringManager: StringManager
-    private lateinit var projectManager: ProjectManager
+    private lateinit var editorWorkspace: EditorWorkspace
     private lateinit var sceneInitializer: SceneInitializer
     private lateinit var scene: Scene
 
@@ -65,7 +65,7 @@ class InputSystemTest {
         mouseListener = mockk(relaxed = true)
         stringManager = mockk(relaxed = true)
         settingsManager = mockk(relaxed = true)
-        projectManager = mockk(relaxed = true)
+        editorWorkspace = mockk(relaxed = true)
         sceneInitializer = mockk(relaxed = true)
 
         // Create test scene
@@ -94,11 +94,6 @@ class InputSystemTest {
         every { settingsManager.engine } returns mockEngineSettings
         every { settingsManager.loadInputMappings() } returns inputMappings
 
-        // Setup project manager mock
-        val mockProject = mockk<Project>(relaxed = true)
-        every { mockProject.gameplaySettings } returns this@InputSystemTest.gameplaySettings
-        every { projectManager.currentProject } returns mockProject
-
         // Ensure game input is processed by default
         every { inputProvider.isCursorDisabled() } returns true
 
@@ -108,7 +103,7 @@ class InputSystemTest {
             mouseListener = mouseListener,
             settingsManager = settingsManager,
             stringManager = stringManager,
-            projectManager = projectManager
+            editorWorkspace = editorWorkspace
         )
 
         // Initialize system

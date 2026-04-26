@@ -75,7 +75,7 @@ class EngineFixedTimestepTest : KoinTest {
 
         // Engine now passes the actual delta time to the scene
         // Physics stepping is handled internally by the scene's physics system
-        engine.update(deltaTime, mockImGui)
+        engine.update(deltaTime)
 
         verify(exactly = 1) { mockScene.updateScene(deltaTime) }
     }
@@ -96,11 +96,11 @@ class EngineFixedTimestepTest : KoinTest {
         val deltaTime2 = 0.032f
 
         // First update
-        engine.update(deltaTime1, mockImGui)
+        engine.update(deltaTime1)
         verify(exactly = 1) { mockScene.updateScene(deltaTime1) }
 
         // Second update with different delta time
-        engine.update(deltaTime2, mockImGui)
+        engine.update(deltaTime2)
         verify(exactly = 1) { mockScene.updateScene(deltaTime2) }
     }
 }

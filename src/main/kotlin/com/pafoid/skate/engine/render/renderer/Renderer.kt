@@ -33,7 +33,7 @@ class Renderer(
     private val initialHeight: Int = 1080
 ) : IRenderer {
 
-    private lateinit var renderResources: RenderResources
+    lateinit var renderResources: RenderResources
     private var isInitialized = false
 
     override var useFbo: Boolean = true

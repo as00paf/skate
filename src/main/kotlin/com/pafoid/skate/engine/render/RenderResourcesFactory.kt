@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.renderer.SkyboxRenderer
+import com.pafoid.skate.engine.render.renderer.SplashRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
@@ -41,7 +42,8 @@ class RenderResourcesFactory(
     private val logger: LoggerService,
     private val vaoLoader: VAOLoader,
     private val debugRenderer: DebugRenderer,
-    private val modelRenderer: ModelRenderer
+    private val modelRenderer: ModelRenderer,
+    private val splashRenderer: SplashRenderer
 ) {
     /**
      * Creates all rendering resources.
@@ -78,6 +80,9 @@ class RenderResourcesFactory(
 
         logger.logEngine("Creating renderer instances...")
         val renderers = createRenderers(shaders, resourceManager)
+
+        logger.logEngine("Initializing splash renderer...")
+        splashRenderer.initialize()
 
         logger.logEngine("Creating render passes...")
         // Create shadow map with highest supported resolution up to 4096x4096
@@ -146,31 +151,35 @@ class RenderResourcesFactory(
             { resourceManager.loadShader(Assets.Shaders.SKYBOX) },
             { resourceManager.loadShader(Assets.Shaders.SKY_DOME) },
             { resourceManager.loadShader(Assets.Shaders.SHADOW) },
+            { resourceManager.loadShader(Assets.Shaders.SPLASH) },
         )
 
-        logger.logEngine("Loading shader 1/8: Debug")
+        logger.logEngine("Loading shader 1/9: Debug")
         val debugShader = shaders[0].invoke()
 
-        logger.logEngine("Loading shader 2/8: Default 3D")
+        logger.logEngine("Loading shader 2/9: Default 3D")
         val defaultShader = shaders[1].invoke()
 
-        logger.logEngine("Loading shader 3/8: 2D Batch")
+        logger.logEngine("Loading shader 3/9: 2D Batch")
         val batchShader = shaders[2].invoke()
 
-        logger.logEngine("Loading shader 4/8: Picking")
+        logger.logEngine("Loading shader 4/9: Picking")
         val pickingShader = shaders[3].invoke()
 
-        logger.logEngine("Loading shader 5/8: Picking 3D")
+        logger.logEngine("Loading shader 5/9: Picking 3D")
         val picking3DShader = shaders[4].invoke()
 
-        logger.logEngine("Loading shader 6/8: Skybox")
+        logger.logEngine("Loading shader 6/9: Skybox")
         val skyboxShader = shaders[5].invoke()
 
-        logger.logEngine("Loading shader 7/8: Sky Dome")
+        logger.logEngine("Loading shader 7/9: Sky Dome")
         val skyDomeShader = shaders[6].invoke()
 
-        logger.logEngine("Loading shader 8/8: Shadow")
+        logger.logEngine("Loading shader 8/9: Shadow")
         val shadowShader = shaders[7].invoke()
+
+        logger.logEngine("Loading shader 9/9: Splash")
+        val splashShader = shaders[8].invoke()
 
         return Shaders(
             default = defaultShader,
@@ -180,7 +189,8 @@ class RenderResourcesFactory(
             picking3D = picking3DShader,
             skybox = skyboxShader,
             skyDome = skyDomeShader,
-            shadow = shadowShader
+            shadow = shadowShader,
+            splash = splashShader
         )
     }
 
@@ -199,7 +209,8 @@ class RenderResourcesFactory(
             skybox = skyboxRenderer,
             skyDome = skyDomeRenderer,
             model = modelRenderer,
-            shadow = shadowRenderer
+            shadow = shadowRenderer,
+            splash = splashRenderer
         )
     }
 

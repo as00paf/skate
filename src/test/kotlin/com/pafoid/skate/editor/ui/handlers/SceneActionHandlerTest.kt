@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.core.logger.Level
 import org.koin.dsl.module
 import java.io.File
 import java.nio.file.Files
@@ -337,13 +338,13 @@ class SceneActionHandlerTest {
     private fun startKoinForTest() {
         stopKoin()
         startKoin {
-            printLogger(org.koin.core.logger.Level.ERROR)
+            printLogger(Level.ERROR)
             modules(module {
                 single<SceneManager> { sceneManager }
                 single<SceneSerializer> { sceneSerializer }
                 single<UndoRedoManager> { undoRedoManager }
                 single<EventSystem> { eventSystem }
-                single<com.pafoid.skate.editor.systems.LoggerService> { testLogger }
+                single<LoggerService> { testLogger }
                 single<LevelEditorSceneInitializer> { sceneInitializer }
                 single<ProjectManager> { projectManager }
             })
