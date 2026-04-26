@@ -137,10 +137,6 @@ open class Scene(
         super.update(scaledDt)
     }
 
-    fun imguiScene() {
-        initializer.imgui()
-    }
-
     fun destroyScene() {
         gameObjectManager.destroy()
         systemManager.destroy()

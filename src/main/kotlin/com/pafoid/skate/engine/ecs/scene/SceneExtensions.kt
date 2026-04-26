@@ -55,6 +55,7 @@ fun Scene.getGameObject(name: String): GameObject? {
  */
 fun Scene.addSystem(system: System) {
     systemManager.addSystem(system, isRunning)
+    system.init(this)
 }
 
 /**

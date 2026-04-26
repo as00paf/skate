@@ -245,9 +245,6 @@ class ImGuiLayer(
             end()
             popStyleVar()
         } else if (projectManager.hasProject()) {
-            val initialScene = sceneManager.currentScene
-            initialScene?.imguiScene()
-
             windowRegistry.windows.forEach { window ->
                 if (window.showFlag.get()) {
                     // Re-read current scene in case it was switched during the frame (e.g., tab bar click)

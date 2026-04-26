@@ -8,7 +8,6 @@ abstract class SceneInitializer {
 
     abstract suspend fun init(scene: Scene)
     abstract suspend fun loadResources(scene: Scene)
-    abstract fun imgui()
 
     protected fun reportProgress(progress: Float, message: String) {
         onProgress?.invoke(progress, message)

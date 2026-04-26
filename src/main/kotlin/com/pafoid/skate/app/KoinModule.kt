@@ -1,7 +1,6 @@
 package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.EditorEventHandler
-import com.pafoid.skate.editor.EditorSystemFactory
 import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.imgui.ImGuiLayer
@@ -156,14 +155,13 @@ val appModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectWizardWindow() }
     single { ProjectSwitcherDialog() }
 
     // Scene initialization components
     factory { LevelEditorSceneInitializer() }
-    factory { EditorSystemFactory() }
 
     // Search infrastructure
     single {
@@ -226,6 +224,6 @@ val engineModule = module {
     single { BootManager(get(), get(), get(), get(), get(), get(), get()) }
 
     // ECS Systems with constructor injection
-    single { InputSystem(get(), get(), get(), get(), get(), get()) }
+    single { InputSystem(get(), get(), get(), get(), get()) }
     single { AudioSystem(get(), get()) }
 }

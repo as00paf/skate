@@ -1,10 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.EditorWorkspace
-import com.pafoid.skate.editor.data.EditorInputMappings
-import com.pafoid.skate.editor.project.GameplaySettings
-import com.pafoid.skate.editor.project.ProjectManager
-import com.pafoid.skate.editor.settings.EngineSettings
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -47,18 +43,11 @@ class InputSystem(
     private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
-    private val projectManager: ProjectManager,
     private val editorWorkspace: EditorWorkspace
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val mappings: InputMappings
         get() = settingsManager.loadInputMappings() ?: InputMappings()
-    private val editorMappings: EditorInputMappings
-        get() = settingsManager.engine.editor.editorInputMappings
-    private val gameplaySettings: GameplaySettings
-        get() = projectManager.currentProject?.gameplaySettings ?: GameplaySettings()
-    private val engineSettings: EngineSettings
-        get() = settingsManager.engine
 
     private var jumpButtonWasPressed = false
     private var previousButtons: BooleanArray? = null

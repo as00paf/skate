@@ -5,13 +5,28 @@ import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.TimeComponent
+import com.pafoid.skate.engine.ecs.config.DayNightCycleConfig
+import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
+import com.pafoid.skate.engine.ecs.scene.addSystem
+import com.pafoid.skate.engine.ecs.systems.AnimationSystem
+import com.pafoid.skate.engine.ecs.systems.AudioSystem
+import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
+import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
+import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
+import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.events.ProjectClosed
 import com.pafoid.skate.engine.events.ProjectCreated
 import com.pafoid.skate.engine.events.ProjectOpened
@@ -26,7 +41,10 @@ class ProjectManager(
     private val sceneManager: SceneManager,
     private val prefabsGenerator: PrefabsGenerator,
     private val sceneSerializer: SceneSerializer,
-    private val eventSystem: EventSystem
+    private val eventSystem: EventSystem,
+    private val stringManager: StringManager,
+    private val audioSystem: AudioSystem,
+    private val inputSystem: InputSystem,
 ) {
 
     var currentProject: Project? = null
@@ -142,6 +160,45 @@ class ProjectManager(
 
         // Resolve animation paths for Animator components before saving
         resolveAnimationPathsInScene(scene)
+
+        // Add scene components
+        scene.addComponent(EnvironmentComponent())
+        scene.addComponent(TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f))
+        scene.addComponent(LightingStateComponent())
+
+        // Add systems
+        scene.addSystem(inputSystem)
+        scene.addSystem(AnimationSystem(stringManager))
+        scene.addSystem(audioSystem)
+        scene.addSystem(EnvironmentSystem(stringManager = stringManager))
+        scene.addSystem(PhysicsSystem())
+        scene.addSystem(RagdollSystem())
+
+        val dayNightCycleSystem = DayNightCycleSystem(
+            DayNightCycleConfig().apply {
+                cycleTime = scene.getTimeOfDay()
+                dayDuration = 300f
+            },
+            stringManager = stringManager
+        )
+        scene.addSystem(dayNightCycleSystem)
+
+        val directionalLightSystem = DirectionalLightSystem(
+            DirectionalLightConfig().apply {
+                direction.set(0f, -1f, 0f)
+                color.set(1f, 0.95f, 0.8f)
+                intensity = 1f
+                shadowDistance = 50f
+                autoCalculateBounds = true
+                stabilizeProjection = true
+                depthBias = 0.0f
+                slopeScaledBias = 0.0f
+                castShadows = true
+            },
+            stringManager = stringManager
+        )
+        directionalLightSystem.setAutoAdjustBounds(true)
+        scene.addSystem(directionalLightSystem)
 
         // Set the level path and save
         scene.name = defaultSceneFile.name
