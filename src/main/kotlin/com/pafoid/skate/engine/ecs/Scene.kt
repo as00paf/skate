@@ -40,44 +40,6 @@ open class Scene(
     var isRunning: Boolean = false
     var isDirty: Boolean = false
 
-    /**
-     * Gets the time scale from TimeComponent if available, otherwise returns 1.0f.
-     */
-    fun getTimeScale(): Float {
-        return getComponent<TimeComponent>()?.timeScale ?: 1.0f
-    }
-
-    /**
-     * Sets the time scale on TimeComponent, creating one if needed.
-     */
-    fun setTimeScale(scale: Float) {
-        var timeComponent = getComponent<TimeComponent>()
-        if (timeComponent == null) {
-            timeComponent = TimeComponent()
-            addComponent(timeComponent)
-        }
-        timeComponent.timeScale = scale
-    }
-
-    /**
-     * Gets the time of day from TimeComponent if available, otherwise returns 12.0f.
-     */
-    fun getTimeOfDay(): Float {
-        return getComponent<TimeComponent>()?.timeOfDay ?: 12.0f
-    }
-
-    /**
-     * Sets the time of day on TimeComponent, creating one if needed.
-     */
-    fun setTimeOfDay(time: Float) {
-        var timeComponent = getComponent<TimeComponent>()
-        if (timeComponent == null) {
-            timeComponent = TimeComponent()
-            addComponent(timeComponent)
-        }
-        timeComponent.timeOfDay = time
-    }
-
     suspend fun init() {
         initializer.loadResources(this)
         initializer.init(this)
@@ -116,7 +78,8 @@ open class Scene(
     }
 
     fun editorUpdateScene(dt: Float) {
-        val scaledDt = dt * getTimeScale()
+        val timeScale = getComponent<TimeComponent>()?.timeScale ?: 1.0f
+        val scaledDt = dt * timeScale
         camera.update(dt)
         physics3d.update(scaledDt)
         gameObjectManager.editorUpdate(dt)
@@ -127,7 +90,8 @@ open class Scene(
     }
 
     fun updateScene(dt: Float) {
-        val scaledDt = dt * getTimeScale()
+        val timeScale = getComponent<TimeComponent>()?.timeScale ?: 1.0f
+        val scaledDt = dt * timeScale
         camera.update(scaledDt)
         physics3d.update(scaledDt)
         gameObjectManager.update(scaledDt)

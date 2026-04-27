@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
@@ -152,16 +153,16 @@ class ViewportToolbar(
         if (isPlaying) {
             // Pause/Resume button
             buttons.add {
-                val timeScale = scene?.getTimeScale() ?: 1.0f
+                val timeScale = scene?.getComponent<TimeComponent>()?.timeScale ?: 1.0f
                 if (timeScale == 1.0f) {
                     if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene?.setTimeScale(0.0f)
+                        scene?.getComponent<TimeComponent>()?.timeScale = 0.0f
                         logger.logEditor("Simulation paused")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.pause_simulation"))
                 } else {
                     if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene?.setTimeScale(1.0f)
+                        scene?.getComponent<TimeComponent>()?.timeScale = 1.0f
                         logger.logEditor("Simulation resumed")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.resume_simulation"))
@@ -171,7 +172,7 @@ class ViewportToolbar(
             buttons.add {
                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                     engine.runtimePlaying = false
-                    scene?.setTimeScale(1.0f)
+                    scene?.getComponent<TimeComponent>()?.timeScale = 1.0f
                     logger.logEditor("Simulation stopped")
                 }
                 if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.stop_simulation"))
