@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -43,7 +42,6 @@ class InputSystem(
     private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
-    private val editorWorkspace: EditorWorkspace
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val mappings: InputMappings
@@ -62,11 +60,11 @@ class InputSystem(
         val isCursorEnabled = !inputProvider.isCursorDisabled()
 
         if (isCursorEnabled) {
-            val editorInput = editorWorkspace.editorInputState
+            /*val editorInput = editorWorkspace.editorInputState
 
             editorInput.reset()
             pollEditorKeyboardInput(editorInput)
-            pollEditorMouseInput(editorInput)
+            pollEditorMouseInput(editorInput)*/
         }
 
         scene.gameObjectManager.gameObjects.forEach { go ->
@@ -83,12 +81,12 @@ class InputSystem(
     }
 
     override fun editorUpdate(dt: Float) {
-        val editorInput = editorWorkspace.editorInputState
+        /*val editorInput = editorWorkspace.editorInputState
 
         editorInput.reset()
 
         pollEditorKeyboardInput(editorInput)
-        pollEditorMouseInput(editorInput)
+        pollEditorMouseInput(editorInput)*/
     }
 
     /**

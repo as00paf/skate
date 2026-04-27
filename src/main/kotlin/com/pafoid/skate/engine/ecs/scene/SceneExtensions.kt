@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.ecs.scene
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.System
 
 /**
  * Extension methods for Scene to provide convenient access to GameObjectManager functionality.
@@ -47,20 +46,4 @@ fun Scene.getGameObject(id: Int): GameObject? {
 
 fun Scene.getGameObject(name: String): GameObject? {
     return gameObjectManager.getGameObject(name)
-}
-
-/**
- * Adds a System to the scene. If the scene is running, adds it to pending systems
- * to be processed in the next update cycle.
- */
-fun Scene.addSystem(system: System) {
-    systemManager.addSystem(system, isRunning)
-    system.init(this)
-}
-
-/**
- * Removes a System from the scene.
- */
-fun Scene.removeSystem(system: System) {
-    systemManager.removeSystem(system)
 }

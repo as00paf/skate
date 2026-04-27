@@ -5,8 +5,16 @@ import com.pafoid.skate.engine.core.Workspace
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
+import com.pafoid.skate.engine.ecs.systems.AnimationSystem
+import com.pafoid.skate.engine.ecs.systems.AudioSystem
+import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
+import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
+import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
+import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.render.Camera
@@ -17,6 +25,14 @@ class EditorWorkspace(
     private val sceneManager: SceneManager,
     private val editorInputHandler: EditorInputHandler,
     private val editorEventHandler: EditorEventHandler,
+    private val audioSystem: AudioSystem,
+    private val inputSystem: InputSystem,
+    private val animationSystem: AnimationSystem,
+    private val physicsSystem: PhysicsSystem,
+    private val ragdollSystem: RagdollSystem,
+    private val dayNightCycleSystem: DayNightCycleSystem,
+    private val environmentSystem: EnvironmentSystem,
+    private val directionalLightSystem: DirectionalLightSystem
 ) : Workspace {
 
     val editorInputState: EditorInputStateComponent = EditorInputStateComponent()
@@ -46,7 +62,20 @@ class EditorWorkspace(
     }
 
     private fun initializeSystems(scene: Scene) {
-        listOf(editorCamera, gizmoSystem, gridLines).forEach {
+        listOf(
+            audioSystem, // Core
+            inputSystem,
+            environmentSystem,
+            animationSystem,
+            ragdollSystem,
+            physicsSystem,
+            directionalLightSystem,
+            dayNightCycleSystem,
+            editorCamera, // Editor
+            gizmoSystem,
+            gridLines,
+        )
+            .forEach {
             systemManager.addSystem(it)
             it.init(scene)
         }

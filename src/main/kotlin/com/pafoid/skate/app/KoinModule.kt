@@ -68,10 +68,16 @@ import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
+import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
+import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
+import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBuffer
@@ -99,17 +105,13 @@ val appModule = module {
     single { SceneSerializer(get(), get(), get(), get()) }
     single { ClipboardService(get()) }
     single { UndoRedoManager() }
-    single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get()) }
     single { StringManager() }
     single { SettingsManager(get(), get(), get()) }
     single { DisplayService() }
     single { TrickManager() }
-    single { TrickUIWindow() }
 
     // EventSystem for editor event bus
     single { EventSystem() }
-
-    factory { EditorEventHandler(get(), get()) }
 
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get(), get()) }
@@ -136,6 +138,7 @@ val appModule = module {
     factory { RenderGraphWindow() }
     factory { AudioInspectorWindow() }
     factory { ProjectWindow() }
+    single { TrickUIWindow() }
 
     // FileSystem service
     single { FileSystemScanner(get(), get(), get()) }
@@ -143,11 +146,19 @@ val appModule = module {
     // Editor Workspace
     single {
         EditorWorkspace(
-            GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()),
+            GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()),
             GridLines(get(), get(), get()),
             get(),
-            get(),
-            get(),
+            EditorInputHandler(get(), get(), get(), get(), get(), get(), get()),
+            EditorEventHandler(get(), get()),
+            AudioSystem(get(), get()),
+            InputSystem(get(), get(), get(), get()),
+            AnimationSystem(get()),
+            PhysicsSystem(),
+            RagdollSystem(),
+            DayNightCycleSystem(null, get()),
+            EnvironmentSystem(get()),
+            DirectionalLightSystem(get()),
         )
     }
 
@@ -156,7 +167,7 @@ val appModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectWizardWindow() }
     single { ProjectSwitcherDialog() }
@@ -224,8 +235,4 @@ val engineModule = module {
     single { Renderer(get()) }
 
     single { BootManager(get(), get(), get(), get(), get(), get(), get()) }
-
-    // ECS Systems with constructor injection
-    single { InputSystem(get(), get(), get(), get(), get()) }
-    single { AudioSystem(get(), get()) }
 }

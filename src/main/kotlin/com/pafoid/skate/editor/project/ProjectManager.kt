@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
@@ -17,15 +16,6 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.ecs.scene.addSystem
-import com.pafoid.skate.engine.ecs.systems.AnimationSystem
-import com.pafoid.skate.engine.ecs.systems.AudioSystem
-import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
-import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
-import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
-import com.pafoid.skate.engine.ecs.systems.InputSystem
-import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
-import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.events.ProjectClosed
 import com.pafoid.skate.engine.events.ProjectCreated
 import com.pafoid.skate.engine.events.ProjectOpened
@@ -41,9 +31,6 @@ class ProjectManager(
     private val prefabsGenerator: PrefabsGenerator,
     private val sceneSerializer: SceneSerializer,
     private val eventSystem: EventSystem,
-    private val stringManager: StringManager,
-    private val audioSystem: AudioSystem,
-    private val inputSystem: InputSystem,
 ) {
 
     var currentProject: Project? = null
@@ -166,18 +153,6 @@ class ProjectManager(
         scene.addComponent(timeComponent)
         scene.addComponent(LightingStateComponent())
         scene.addComponent(DayNightCycleComponent(cycleTime = timeComponent.timeOfDay, dayDuration = 300f))
-
-        // Add systems
-        scene.addSystem(inputSystem)
-        scene.addSystem(AnimationSystem(stringManager))
-        scene.addSystem(audioSystem)
-        scene.addSystem(EnvironmentSystem(stringManager = stringManager))
-        scene.addSystem(PhysicsSystem())
-        scene.addSystem(RagdollSystem())
-        scene.addSystem(DayNightCycleSystem(stringManager = stringManager))
-
-        val directionalLightSystem = DirectionalLightSystem(stringManager)
-        scene.addSystem(directionalLightSystem)
 
         // Set the level path and save
         scene.name = defaultSceneFile.name

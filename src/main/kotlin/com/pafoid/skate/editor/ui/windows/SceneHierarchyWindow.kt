@@ -10,7 +10,6 @@ import com.pafoid.skate.editor.commands.VisibilityToggleCommand
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -55,7 +54,6 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
     private val clipboardService: ClipboardService by inject()
     private val logger: LoggerService by inject()
     private val eventSystem: EventSystem by inject()
-    private val editorInputHandler: EditorInputHandler by inject()
 
     private val searchQuery = ImString(256)
     private var isLinked = false
@@ -134,14 +132,15 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
         ImGui.separator()
 
+        // TODO: fix
         // Check for pending rename from global shortcut (F2 in EditorInputHandler)
-        val pendingRenameUid = editorInputHandler.consumePendingRename()
+        /*val pendingRenameUid = editorInputHandler.consumePendingRename()
         if (pendingRenameUid != null && editingObjUid == null) {
             val go = scene.gameObjectManager.getGameObject(pendingRenameUid)
             if (go != null) {
                 startRename(go)
             }
-        }
+        }*/
 
         // Navigation-only shortcuts (window-focused)
         handleWindowNavigation(scene)

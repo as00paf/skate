@@ -11,7 +11,6 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -24,7 +23,6 @@ class GizmoSystem(
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
     private val engine: Engine,
-    private val sceneManager: SceneManager,
     private val eventSystem: EventSystem,
     debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.LATE) {  // Late system - runs after input/physics
