@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.ecs.config
+package com.pafoid.skate.engine.ecs.components
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -25,7 +25,7 @@ import org.joml.Vector3f
  * - [isDaytime]: True when sun is above horizon
  */
 @Serializable
-data class DayNightCycleConfig(
+data class DayNightCycleComponent(
     // =========================================================================
     // CYCLE CONFIGURATION
     // =========================================================================
@@ -111,12 +111,8 @@ data class DayNightCycleConfig(
      * Default: true (automatic)
      */
     var autoAmbient: Boolean = true
-) {
-    /**
-     * Resets all computed values to defaults.
-     * Configuration values (cycleTime, dayDuration) are preserved.
-     * Called by DayNightCycleSystem when cycle needs to be reset.
-     */
+) : Component() {
+
     fun resetComputedValues() {
         sunDirection.set(0f, -1f, 0f)
         sunColor.set(1f, 1f, 1f)
@@ -127,9 +123,6 @@ data class DayNightCycleConfig(
         ambientIntensity = 1.0f
     }
 
-    /**
-     * Resets all properties to defaults.
-     */
     fun reset() {
         cycleTime = 12f
         dayDuration = 300f

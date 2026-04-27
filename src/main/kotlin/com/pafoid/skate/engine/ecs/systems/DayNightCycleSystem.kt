@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.ecs.config.DayNightCycleConfig
 import imgui.ImGui
 import org.joml.Vector3f
 import kotlin.math.cos
@@ -16,7 +16,7 @@ import kotlin.math.sin
  *
  * ## Responsibilities
  *
- * - Advances [DayNightCycleConfig.cycleTime] based on delta time
+ * - Advances [DayNightCycleComponent.cycleTime] based on delta time
  * - Computes sun direction from cycle time using trigonometry
  * - Interpolates sun color through day phases (daylight → dusk → night → dawn)
  * - Computes ambient color and shadow intensity
@@ -43,13 +43,9 @@ import kotlin.math.sin
  * @param stringManager String manager for localized UI strings
  */
 class DayNightCycleSystem(
-    initialConfig: DayNightCycleConfig = DayNightCycleConfig(),
     private val dayDurationOverride: Float? = null,
     private val stringManager: StringManager
 ) : System(priority = ExecutionPriority.EARLY) {
-
-    // System-owned configuration
-    val config = initialConfig
 
     // Color constants for interpolation
     private val noonColor = Vector3f(1.0f, 0.95f, 0.8f)  // Warm sunlight
@@ -59,24 +55,9 @@ class DayNightCycleSystem(
     private val nightAmbient = Vector3f(0.05f, 0.05f, 0.1f)
     private val dayAmbient = Vector3f(0.3f, 0.3f, 0.35f)
 
-    // Temporary vectors for interpolation
-    private val tempColor = Vector3f()
-
-    /**
-     * Gets the current cycle time in hours (0-24).
-     * @return Current time of day in hours
-     */
-    fun getCycleTime(): Float = config.cycleTime
-
-    /**
-     * Sets the cycle time in hours (0-24).
-     * @param time Time of day in hours
-     */
-    fun setCycleTime(time: Float) {
-        config.cycleTime = time
-    }
-
     override fun update(dt: Float) {
+        val config = scene.getComponent<DayNightCycleComponent>() ?: return
+
         // Get day duration (use override if provided)
         val dayDuration = dayDurationOverride ?: config.dayDuration
 
@@ -85,10 +66,10 @@ class DayNightCycleSystem(
         config.cycleTime = (config.cycleTime + dt * hoursPerSecond) % 24f
 
         // Compute sun direction from cycle time
-        updateSunDirection()
+        updateSunDirection(config)
 
         // Interpolate sun color based on time of day
-        updateSunColor()
+        updateSunColor(config)
 
         // Update derived values
         config.isDaytime = config.cycleTime in 6f..18f
@@ -96,7 +77,7 @@ class DayNightCycleSystem(
 
         // Update scene ambient light if auto mode is enabled
         if (config.autoAmbient) {
-            updateSceneAmbient()
+            updateSceneAmbient(config)
         }
     }
 
@@ -109,7 +90,7 @@ class DayNightCycleSystem(
      * Updates LightingStateComponent with computed ambient color and intensity.
      * Only called when autoAmbient is enabled.
      */
-    private fun updateSceneAmbient() {
+    private fun updateSceneAmbient(config: DayNightCycleComponent) {
         val lightingStateComponent = scene.getComponent<LightingStateComponent>()
             ?: LightingStateComponent()
         lightingStateComponent.ambientLight.set(config.ambientColor).mul(config.ambientIntensity)
@@ -127,7 +108,7 @@ class DayNightCycleSystem(
      * - Angle +90° at dusk (sun sets in west)
      * - Angle ±180° at midnight (sun below)
      */
-    private fun updateSunDirection() {
+    private fun updateSunDirection(config: DayNightCycleComponent) {
         // Convert cycle time to angle (0-24 hours → 0-360 degrees)
         // Offset by 6 hours so noon = 0° (sun at zenith)
         val hoursFromNoon = config.cycleTime - 12f
@@ -147,7 +128,7 @@ class DayNightCycleSystem(
      * Blends between dawn, noon, dusk, and night colors
      * to create smooth transitions through day phases.
      */
-    private fun updateSunColor() {
+    private fun updateSunColor(config: DayNightCycleComponent) {
         val time = config.cycleTime
 
         // Determine current phase and interpolation factor
@@ -211,7 +192,7 @@ class DayNightCycleSystem(
      * Gets the current day phase name based on cycle time.
      * @return Phase name (Night, Dawn, Day, or Dusk)
      */
-    private fun getCurrentPhase(): String {
+    private fun getCurrentPhase(config: DayNightCycleComponent): String {
         return when (config.cycleTime) {
             in 0f..5f -> "Night"
             in 5f..7f -> "Dawn"
@@ -233,8 +214,10 @@ class DayNightCycleSystem(
      * - Sun direction, color, and intensity (read-only)
      */
     override fun imgui() {
+        val config = scene.getComponent<DayNightCycleComponent>() ?: return
+
         // Current phase display
-        val currentPhase = getCurrentPhase()
+        val currentPhase = getCurrentPhase(config)
         ImGui.text(stringManager.getString("lbl.day_night_cycle.current_phase", currentPhase))
         ImGui.text(stringManager.getString("lbl.day_night_cycle.time", config.cycleTime))
 

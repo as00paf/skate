@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.render.Camera
 import imgui.ImGui
@@ -37,9 +38,8 @@ class DirectionalLightSystem(
     }
 
     override fun update(dt: Float) {
-        // Find day/night cycle system
-        val dayNightSystem = scene.systemManager.getSystem<DayNightCycleSystem>()
-        val dayNight = dayNightSystem?.config
+        // Find day/night cycle component
+        val dayNight = scene.getComponent<DayNightCycleComponent>()
 
         // Update light from day/night cycle
         if (dayNight != null) {

@@ -12,11 +12,11 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.ecs.config.DayNightCycleConfig
 import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
@@ -165,6 +165,7 @@ class ProjectManager(
         scene.addComponent(EnvironmentComponent())
         scene.addComponent(TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f))
         scene.addComponent(LightingStateComponent())
+        scene.addComponent(DayNightCycleComponent(cycleTime = scene.getTimeOfDay(), dayDuration = 300f))
 
         // Add systems
         scene.addSystem(inputSystem)
@@ -173,15 +174,7 @@ class ProjectManager(
         scene.addSystem(EnvironmentSystem(stringManager = stringManager))
         scene.addSystem(PhysicsSystem())
         scene.addSystem(RagdollSystem())
-
-        val dayNightCycleSystem = DayNightCycleSystem(
-            DayNightCycleConfig().apply {
-                cycleTime = scene.getTimeOfDay()
-                dayDuration = 300f
-            },
-            stringManager = stringManager
-        )
-        scene.addSystem(dayNightCycleSystem)
+        scene.addSystem(DayNightCycleSystem(stringManager = stringManager))
 
         val directionalLightSystem = DirectionalLightSystem(
             DirectionalLightConfig().apply {
