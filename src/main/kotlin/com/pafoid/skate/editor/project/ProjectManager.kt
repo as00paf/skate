@@ -163,9 +163,10 @@ class ProjectManager(
 
         // Add scene components
         scene.addComponent(EnvironmentComponent())
-        scene.addComponent(TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f))
+        val timeComponent = TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f)
+        scene.addComponent(timeComponent)
         scene.addComponent(LightingStateComponent())
-        scene.addComponent(DayNightCycleComponent(cycleTime = scene.getTimeOfDay(), dayDuration = 300f))
+        scene.addComponent(DayNightCycleComponent(cycleTime = timeComponent.timeOfDay, dayDuration = 300f))
 
         // Add systems
         scene.addSystem(inputSystem)
