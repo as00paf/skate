@@ -42,7 +42,7 @@ class ShadowPass(
         val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
 
         // Skip if shadows are disabled or no light system
-        if (lightSystem == null || !lightSystem.config.castShadows) {
+        if (lightSystem == null || lightSystem.config?.castShadows == false) {
             logger.logEngine("[ShadowPass] Skipped: lightSystem=${lightSystem != null}, castShadows=${lightSystem?.config?.castShadows}")
             return
         }
@@ -54,13 +54,15 @@ class ShadowPass(
         shadowMap.clear()
 
         // Get light space matrix from directional light config
-        val lightSpaceMatrix = lightSystem.config.lightSpaceMatrix
+        val lightSpaceMatrix = lightSystem.config?.lightSpaceMatrix
 
         // Render all shadow casters
-        shadowRenderer.render(
-            gameObjects = scene.gameObjectManager.gameObjects.filter { it.isVisible },
-            lightSpaceMatrix = lightSpaceMatrix,
-        )
+        lightSpaceMatrix?.let {
+            shadowRenderer.render(
+                gameObjects = scene.gameObjectManager.gameObjects.filter { it.isVisible },
+                lightSpaceMatrix = lightSpaceMatrix,
+            )
+        }
 
         // Unbind shadow map
         shadowMap.unbind()

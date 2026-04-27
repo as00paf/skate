@@ -17,7 +17,6 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.ecs.scene.addSystem
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
@@ -177,21 +176,7 @@ class ProjectManager(
         scene.addSystem(RagdollSystem())
         scene.addSystem(DayNightCycleSystem(stringManager = stringManager))
 
-        val directionalLightSystem = DirectionalLightSystem(
-            DirectionalLightConfig().apply {
-                direction.set(0f, -1f, 0f)
-                color.set(1f, 0.95f, 0.8f)
-                intensity = 1f
-                shadowDistance = 50f
-                autoCalculateBounds = true
-                stabilizeProjection = true
-                depthBias = 0.0f
-                slopeScaledBias = 0.0f
-                castShadows = true
-            },
-            stringManager = stringManager
-        )
-        directionalLightSystem.setAutoAdjustBounds(true)
+        val directionalLightSystem = DirectionalLightSystem(stringManager)
         scene.addSystem(directionalLightSystem)
 
         // Set the level path and save

@@ -66,9 +66,8 @@ class EnvironmentWindow : IWindowWithScene, KoinComponent {
             }
         }
 
-        if (lightSystem != null && ImGui.collapsingHeader("${Icons.SUN} ${stringManager.getString("lbl.environment.sun")}")) {
-            val config = lightSystem.config
-
+        val config = lightSystem?.config
+        if (config != null && ImGui.collapsingHeader("${Icons.SUN} ${stringManager.getString("lbl.environment.sun")}")) {
             val sunDir = floatArrayOf(config.direction.x, config.direction.y, config.direction.z)
             if (MImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f)) {
                 config.direction.set(sunDir[0], sunDir[1], sunDir[2]).normalize()

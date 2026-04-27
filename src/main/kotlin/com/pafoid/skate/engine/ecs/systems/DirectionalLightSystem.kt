@@ -18,12 +18,21 @@ import org.joml.Vector4f
  * @param stringManager String manager for localized UI strings
  */
 class DirectionalLightSystem(
-    initialConfig: DirectionalLightConfig = DirectionalLightConfig(),
     private val stringManager: StringManager
 ) : System(priority = ExecutionPriority.EARLY) {
 
     // System-owned configuration
-    val config = initialConfig
+    var config: DirectionalLightConfig? = DirectionalLightConfig(
+        direction = Vector3f(0f, -1f, 0f),
+        color = Vector3f(1f, 0.95f, 0.8f),
+        intensity = 1f,
+        shadowDistance = 50f,
+        autoCalculateBounds = true,
+        stabilizeProjection = true,
+        depthBias = 0.0f,
+        slopeScaledBias = 0.0f,
+        castShadows = true,
+    )
 
     private val lightView = Matrix4f()
     private val lightProjection = Matrix4f()
@@ -31,22 +40,15 @@ class DirectionalLightSystem(
     private val lightUp = Vector3f(0f, 1f, 0f)
     private val lightPosition = Vector3f()
 
-    // Keep these methods to prevent compilation errors from LevelEditorSceneInitializer,
-    // though the bounding sphere math handles everything now.
-    fun setAutoAdjustBounds(enabled: Boolean) {
-        // No-op, bounding spheres replace this logic
-    }
-
     override fun update(dt: Float) {
-        // Find day/night cycle component
-        val dayNight = scene.getComponent<DayNightCycleComponent>()
+        // Find day/night cycle system
+        val dayNight = scene.getComponent<DayNightCycleComponent>() ?: return
+        val config = config ?: return
 
         // Update light from day/night cycle
-        if (dayNight != null) {
-            config.direction.set(dayNight.sunDirection)
-            config.color.set(dayNight.sunColor)
-            config.intensity = dayNight.sunIntensity
-        }
+        config.direction.set(dayNight.sunDirection)
+        config.color.set(dayNight.sunColor)
+        config.intensity = dayNight.sunIntensity
 
         // Compute light space matrix for shadow mapping
         if (config.castShadows) {
@@ -63,8 +65,8 @@ class DirectionalLightSystem(
      * Computes the light space matrix for shadow mapping.
      */
     private fun updateLightSpaceMatrix(camera: Camera? = null) {
-        // A29.0.6: Fix High-Noon Light Up-Vector Failure
         // Choose up vector based on light direction to prevent lookAt failure (high noon)
+        val config = config ?: return
         if (Math.abs(config.direction.y) > 0.99f) {
             lightUp.set(0f, 0f, 1f)
         } else {
@@ -72,8 +74,7 @@ class DirectionalLightSystem(
         }
 
         if (camera != null && config.autoCalculateBounds) {
-            // A29.0.4: Implement Robust Shadow Frustum Fitting (Bounding Spheres)
-            // 1. Calculate the camera's view frustum corners limited by shadowDistance
+            // Calculate the camera's view frustum corners limited by shadowDistance
             val tempProj = Matrix4f()
             val aspectRatio =
                 if (camera.viewportHeight > 0) camera.viewportWidth.toFloat() / camera.viewportHeight else 16f / 9f
@@ -109,7 +110,7 @@ class DirectionalLightSystem(
             }
             frustumCenter.div(8f)
 
-            // 2. Find the bounding sphere radius
+            // Find the bounding sphere radius
             var radius = 0f
             for (corner in worldCorners) {
                 val dist = corner.distance(frustumCenter)
@@ -129,7 +130,6 @@ class DirectionalLightSystem(
             // Set target
             lightTarget.set(frustumCenter)
 
-            // A29.0.5: Fix Shadow Stabilization Logic (Texel snapping)
             if (config.stabilizeProjection) {
                 val shadowMapSize = 4096f // Assuming 4096x4096 shadow map
                 val texelSize = (radius * 2f) / shadowMapSize
@@ -153,8 +153,6 @@ class DirectionalLightSystem(
             lightPosition.set(config.direction).mul(-distance).add(lightTarget)
             lightView.setLookAt(lightPosition, lightTarget, lightUp)
 
-            // A30.0.6: Fix Orthographic Projection Clipping Planes
-            // A30.0.4: Optimize Light Ortho Near/Far Planes
             // Keep the depth range tight (~150m) so that depth bias precision is maintained.
             val zNear = 0.1f
             val zFar = distance + radius + 10f
@@ -213,6 +211,8 @@ class DirectionalLightSystem(
      * Renders ImGui interface for debugging and tuning.
      */
     override fun imgui() {
+        val config = config ?: return
+
         ImGui.separator()
         ImGui.text(stringManager.getString("lbl.directional_light.shadow_distance"))
 
