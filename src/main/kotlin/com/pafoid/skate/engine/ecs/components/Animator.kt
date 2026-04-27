@@ -8,7 +8,6 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.MovementInput
@@ -47,7 +46,7 @@ class Animator : Component(), KoinComponent {
     @Transient
     private val stringManager: StringManager by inject()
     @Transient
-    private val sceneManager: SceneManager by inject()
+    private val eventSystem: EventSystem by inject()
 
     @Transient
     var currentAnimation: Animation? = null
@@ -70,8 +69,6 @@ class Animator : Component(), KoinComponent {
     private var isSprinting = false
     private var isInAir = false
     private var isGrounded = true
-    @Transient
-    private var eventSystem: EventSystem? = null
 
     @Transient
     private val animations: MutableList<Animation> = mutableListOf()
@@ -175,14 +172,10 @@ class Animator : Component(), KoinComponent {
     }
 
     override fun start() {
-        // Get event system and subscribe to events
-        val scene = sceneManager.currentScene
-        eventSystem = scene?.systemManager?.getSystem<EventSystem>()
-
-        eventSystem?.subscribe<MovementInput> { onMovementInput(it) }
-        eventSystem?.subscribe<JumpPressed> { onJumpPressed(it) }
-        eventSystem?.subscribe<Landing> { onLanding(it) }
-        eventSystem?.subscribe<Takeoff> { onTakeoff(it) }
+        eventSystem.subscribe<MovementInput> { onMovementInput(it) }
+        eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
+        eventSystem.subscribe<Landing> { onLanding(it) }
+        eventSystem.subscribe<Takeoff> { onTakeoff(it) }
     }
 
     /**
@@ -237,30 +230,26 @@ class Animator : Component(), KoinComponent {
         LANDING
     }
 
+    // TODO: fix double implementation
     override fun update(dt: Float) {
-        // Use event-driven state if available (set by event subscriptions)
-        // Event-driven state takes priority over PlayerStateManager
-        if (eventSystem != null) {
-            // Determine target state based on event-driven state
-            val targetState = when {
-                isInAir && !isGrounded -> AnimationState.FALLING
-                isSprinting -> AnimationState.RUN
-                isMoving -> AnimationState.WALK
-                else -> AnimationState.IDLE
-            }
+        // Determine target state based on event-driven state
+        val targetState = when {
+            isInAir && !isGrounded -> AnimationState.FALLING
+            isSprinting -> AnimationState.RUN
+            isMoving -> AnimationState.WALK
+            else -> AnimationState.IDLE
+        }
 
-            // Only play animation if state changed
-            if (targetState != currentState) {
-                currentState = targetState
-                when (currentState) {
-                    AnimationState.FALLING -> play("falling idle")
-                    AnimationState.RUN -> play("running")
-                    AnimationState.WALK -> play("walking")
-                    AnimationState.IDLE -> play("idle")
-                    else -> {} // JUMP and LANDING are triggered by events
-                }
+        // Only play animation if state changed
+        if (targetState != currentState) {
+            currentState = targetState
+            when (currentState) {
+                AnimationState.FALLING -> play("falling idle")
+                AnimationState.RUN -> play("running")
+                AnimationState.WALK -> play("walking")
+                AnimationState.IDLE -> play("idle")
+                else -> {} // JUMP and LANDING are triggered by events
             }
-            return
         }
 
         // Fallback to PlayerStateManager if event system not available

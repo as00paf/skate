@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.render.ShadowMap
 import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
@@ -39,11 +39,11 @@ class ShadowPass(
     override fun execute(context: RenderContext) {
         val scene = context.scene
         // Get directional light system from scene
-        val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
+        val lightComponent = scene.getComponent<DirectionalLightComponent>()
 
         // Skip if shadows are disabled or no light system
-        if (lightSystem == null || lightSystem.config?.castShadows == false) {
-            logger.logEngine("[ShadowPass] Skipped: lightSystem=${lightSystem != null}, castShadows=${lightSystem?.config?.castShadows}")
+        if (lightComponent?.castShadows == false) {
+            logger.logEngine("[ShadowPass] Skipped: castShadows=${lightComponent.castShadows}")
             return
         }
 
@@ -54,7 +54,7 @@ class ShadowPass(
         shadowMap.clear()
 
         // Get light space matrix from directional light config
-        val lightSpaceMatrix = lightSystem.config?.lightSpaceMatrix
+        val lightSpaceMatrix = lightComponent?.lightSpaceMatrix
 
         // Render all shadow casters
         lightSpaceMatrix?.let {

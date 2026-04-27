@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.ClipboardService
@@ -85,7 +86,7 @@ class ImGuiLayer(
 
     private val eventSystem: EventSystem by inject()
     private val projectManager: ProjectManager by inject()
-    private val sceneInitializer: com.pafoid.skate.editor.LevelEditorSceneInitializer by inject()
+    private val sceneInitializer: LevelEditorSceneInitializer by inject()
     private val statusBar = EditorStatusBar()
     private lateinit var menuBar: EditorMenuBar
 

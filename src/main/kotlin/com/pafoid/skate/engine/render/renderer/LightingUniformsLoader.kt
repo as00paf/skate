@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -29,7 +29,7 @@ class LightingUniformsLoader {
         camera: Camera,
         sceneData: SceneData,
         lightingStateComponent: LightingStateComponent?,
-        directionalLight: DirectionalLightConfig?,
+        directionalLight: DirectionalLightComponent?,
         environmentComponent: com.pafoid.skate.engine.ecs.components.EnvironmentComponent? = null,
         shadowMapTextureId: Int = 0
     ) {

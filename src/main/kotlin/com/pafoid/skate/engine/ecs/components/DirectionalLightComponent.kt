@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.ecs.config
+package com.pafoid.skate.engine.ecs.components
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -35,7 +35,7 @@ import org.joml.Vector3f
  * - [castShadows]: Whether this light casts shadows
  */
 @Serializable
-data class DirectionalLightConfig(
+data class DirectionalLightComponent(
     // =========================================================================
     // LIGHT PROPERTIES
     // =========================================================================
@@ -136,7 +136,7 @@ data class DirectionalLightConfig(
      * Default: true
      */
     var castShadows: Boolean = true
-) {
+) : Component() {
     /**
      * Resets all properties to defaults.
      */

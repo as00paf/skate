@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.render.Camera
 import io.mockk.every
 import io.mockk.mockk
@@ -18,7 +18,7 @@ class DirectionalLightSystemTest {
     @Test
     fun updateLightSpaceMatrix_FrustumCalculated_LightSpaceMatrixIsUpdated() {
         // Arrange
-        val system = DirectionalLightSystem(DirectionalLightConfig().apply {
+        val system = DirectionalLightSystem(DirectionalLightComponent().apply {
             castShadows = true
             autoCalculateBounds = true
         }, stringManager)
@@ -64,7 +64,7 @@ class DirectionalLightSystemTest {
     @Test
     fun updateLightSpaceMatrix_HighNoon_UpVectorIsDynamic() {
         // Arrange
-        val system = DirectionalLightSystem(DirectionalLightConfig().apply {
+        val system = DirectionalLightSystem(DirectionalLightComponent().apply {
             castShadows = true
             autoCalculateBounds = true
             direction = Vector3f(0f, -1f, 0f) // High noon

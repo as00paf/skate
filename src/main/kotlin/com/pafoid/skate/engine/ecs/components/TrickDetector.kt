@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.events.TrickCompleted
@@ -10,7 +9,6 @@ import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.skateboard.Stance
 import com.pafoid.skate.game.trick.TrickManager
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -41,7 +39,7 @@ import kotlin.math.abs
 class TrickDetector : Component(), KoinComponent {
 
     private val trickManager: TrickManager by inject()
-    private val sceneManager: SceneManager by inject()
+    private val eventSystem: EventSystem by inject()
 
     var accumulatedRotationX = 0f
     var accumulatedRotationY = 0f
@@ -53,20 +51,14 @@ class TrickDetector : Component(), KoinComponent {
 
     private var physicsComponent: PhysicsComponent? = null
     private var skateboardPhysics: SkateboardPhysics? = null
-    @Transient
-    private var eventSystem: EventSystem? = null
 
     override fun start() {
         physicsComponent = gameObject.getComponent<PhysicsComponent>()
         skateboardPhysics = gameObject.getComponent<SkateboardPhysics>()
 
-        // Get event system for subscribing to events
-        val scene = sceneManager.currentScene
-        eventSystem = scene?.systemManager?.getSystem<EventSystem>()
-
         // Subscribe to physics events
-        eventSystem?.subscribe<Takeoff> { onTakeoff(it) }
-        eventSystem?.subscribe<Landing> { onLanding(it) }
+        eventSystem.subscribe<Takeoff> { onTakeoff(it) }
+        eventSystem.subscribe<Landing> { onLanding(it) }
     }
 
     /**

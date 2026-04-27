@@ -42,6 +42,7 @@ class InputSystem(
     private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
+    private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val mappings: InputMappings
@@ -89,19 +90,11 @@ class InputSystem(
         pollEditorMouseInput(editorInput)*/
     }
 
-    /**
-     * Gets the EventSystem from the scene for publishing events.
-     */
-    private fun getEventSystem(): EventSystem? {
-        return scene.systemManager.getSystem<EventSystem>()
-    }
-
     private fun pollGamepadInput(inputState: InputStateComponent) {
         if (!inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) return
 
         val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) ?: return
         val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
-        val eventSystem = getEventSystem()
 
         val moveAxis = getAxisFromBinding(mappings.moveUp, mappings.moveDown, axes, 0.15f)
         val moveStrafe =
@@ -111,7 +104,7 @@ class InputSystem(
             inputState.moveDirection.set(moveStrafe, moveAxis)
             // Publish movement event
             val magnitude = kotlin.math.sqrt(moveAxis * moveAxis + moveStrafe * moveStrafe)
-            eventSystem?.publish(MovementInput(inputState.moveDirection, magnitude))
+            eventSystem.publish(MovementInput(inputState.moveDirection, magnitude))
         }
 
         val lookX = getAxisFromBinding(mappings.cameraLookX, null, axes, 0.1f)
@@ -130,9 +123,9 @@ class InputSystem(
 
             // Publish jump events
             if (jumpPressed && !jumpButtonWasPressed) {
-                eventSystem?.publish(JumpPressed(1.0f))
+                eventSystem.publish(JumpPressed(1.0f))
             } else if (!jumpPressed && jumpButtonWasPressed) {
-                eventSystem?.publish(JumpReleased)
+                eventSystem.publish(JumpReleased)
             }
         }
 
@@ -147,12 +140,12 @@ class InputSystem(
         val grabPressed = checkButtonBindingActive(mappings.grab, buttons)
         val manualPressed = checkButtonBindingActive(mappings.manual, buttons)
 
-        if (flipLeftPressed) eventSystem?.publish(TrickInput(TrickType.FLIP_LEFT, true))
-        if (flipRightPressed) eventSystem?.publish(TrickInput(TrickType.FLIP_RIGHT, true))
-        if (kickflipPressed) eventSystem?.publish(TrickInput(TrickType.KICKFLIP, true))
-        if (heelflipPressed) eventSystem?.publish(TrickInput(TrickType.HEELFLIP, true))
-        if (grabPressed) eventSystem?.publish(TrickInput(TrickType.GRAB, true))
-        if (manualPressed) eventSystem?.publish(TrickInput(TrickType.MANUAL, true))
+        if (flipLeftPressed) eventSystem.publish(TrickInput(TrickType.FLIP_LEFT, true))
+        if (flipRightPressed) eventSystem.publish(TrickInput(TrickType.FLIP_RIGHT, true))
+        if (kickflipPressed) eventSystem.publish(TrickInput(TrickType.KICKFLIP, true))
+        if (heelflipPressed) eventSystem.publish(TrickInput(TrickType.HEELFLIP, true))
+        if (grabPressed) eventSystem.publish(TrickInput(TrickType.GRAB, true))
+        if (manualPressed) eventSystem.publish(TrickInput(TrickType.MANUAL, true))
 
         inputState.flipLeftPressed = flipLeftPressed
         inputState.flipRightPressed = flipRightPressed
@@ -180,14 +173,12 @@ class InputSystem(
     }
 
     private fun updateJumpState(inputState: InputStateComponent) {
-        val eventSystem = getEventSystem()
-        
         if (inputState.jumpHeld && !jumpButtonWasPressed) {
             inputState.jumpPressed = true
             // Jump pressed event already published in pollGamepadInput
         } else if (!inputState.jumpHeld && jumpButtonWasPressed) {
             // Jump released
-            eventSystem?.publish(JumpReleased)
+            eventSystem.publish(JumpReleased)
         }
 
         jumpButtonWasPressed = inputState.jumpHeld

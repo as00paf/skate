@@ -39,6 +39,7 @@ import org.koin.core.component.inject
 class SystemsWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
     private val workspace: EditorWorkspace by inject()
+    private val systemManager: SystemManager by inject()
 
     /**
      * Renders the systems window.
@@ -57,7 +58,7 @@ class SystemsWindow : IWindowWithScene, KoinComponent {
 
         // Section 2: Gameplay Systems (from Scene)
         if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.gameplay_systems"))) {
-            val systems = currentScene.systemManager.systems
+            val systems = systemManager.systems
             if (systems.isEmpty()) {
                 ImGui.text(stringManager.getString("lbl.systems.no_systems"))
             } else {

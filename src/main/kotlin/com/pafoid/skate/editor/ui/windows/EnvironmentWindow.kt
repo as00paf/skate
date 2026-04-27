@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
@@ -21,13 +22,14 @@ import org.koin.core.component.inject
 class EnvironmentWindow : IWindowWithScene, KoinComponent {
     private val stringManager: StringManager by inject()
     private val undoRedoManager: UndoRedoManager by inject()
+    private val systemManager: SystemManager by inject()
 
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.environment"))
 
         val dayNight = scene.getComponent<DayNightCycleComponent>()
-        val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
-        val environmentSystem = scene.systemManager.getSystem<EnvironmentSystem>()
+        val lightSystem = systemManager.getSystem<DirectionalLightSystem>()
+        val environmentSystem = systemManager.getSystem<EnvironmentSystem>()
 
         val timeComponent = scene.getComponent<TimeComponent>() ?: TimeComponent()
         val lightingStateComponent = scene.getComponent<LightingStateComponent>() ?: LightingStateComponent()

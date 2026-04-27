@@ -3,13 +3,13 @@ package com.pafoid.skate.engine.render.renderer.passes
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
@@ -109,8 +109,7 @@ class GeometryPass(
         defaultShader.uploadMat4f(Attribs.VIEW_MATRIX, camera.createViewMatrix())
 
         // Upload lighting uniforms
-        val lightSystem = scene.systemManager.getSystem<DirectionalLightSystem>()
-        val directionalLight = lightSystem?.config
+        val directionalLight = scene.getComponent<DirectionalLightComponent>()
         val environmentConfig = environmentComponent
         val lightingStateComponent = scene.getComponent<LightingStateComponent>()
         lightingUniformsLoader.loadLightingUniforms(

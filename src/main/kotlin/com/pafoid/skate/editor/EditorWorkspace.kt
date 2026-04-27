@@ -32,11 +32,11 @@ class EditorWorkspace(
     private val ragdollSystem: RagdollSystem,
     private val dayNightCycleSystem: DayNightCycleSystem,
     private val environmentSystem: EnvironmentSystem,
-    private val directionalLightSystem: DirectionalLightSystem
+    private val directionalLightSystem: DirectionalLightSystem,
+    val systemManager: SystemManager = SystemManager()
 ) : Workspace {
 
     val editorInputState: EditorInputStateComponent = EditorInputStateComponent()
-    val systemManager: SystemManager = SystemManager()
 
     private var systemsInitialized = false
 

@@ -60,6 +60,7 @@ import kotlin.math.atan2
 class PlayerController : Component(), KoinComponent {
     @Transient private val sceneManager: SceneManager by inject()
     @Transient private val logger: LoggerService by inject()
+    private val eventSystem: EventSystem by inject()
 
     // Physics values - can be overridden or loaded from InputSettings
     var jumpImpulse = 300.0f
@@ -91,7 +92,6 @@ class PlayerController : Component(), KoinComponent {
 
     @Transient private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
     @Transient private val physics3d: IPhysics3D? by lazy { sceneManager.currentScene?.physics3d }
-    @Transient private var eventSystem: EventSystem? = null
 
     // Exposed for PlayerStateManager to read player intent
     @Transient val desiredMoveDirection = Vector3f()
@@ -101,14 +101,10 @@ class PlayerController : Component(), KoinComponent {
         rb ?: run { logger.logEngine("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }
         stateManager ?: run { logger.logEngine("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
 
-        // Get event system and subscribe to events
-        val scene = sceneManager.currentScene
-        eventSystem = scene?.systemManager?.getSystem<EventSystem>()
-
-        eventSystem?.subscribe<JumpPressed> { onJumpPressed(it) }
-        eventSystem?.subscribe<Landing> { onLanding(it) }
-        eventSystem?.subscribe<Takeoff> { onTakeoff(it) }
-        eventSystem?.subscribe<MovementInput> { onMovementInput(it) }
+        eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
+        eventSystem.subscribe<Landing> { onLanding(it) }
+        eventSystem.subscribe<Takeoff> { onTakeoff(it) }
+        eventSystem.subscribe<MovementInput> { onMovementInput(it) }
     }
 
     /**

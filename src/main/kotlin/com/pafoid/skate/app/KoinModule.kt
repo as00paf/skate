@@ -78,6 +78,7 @@ import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBuffer
@@ -98,6 +99,7 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { Engine() }
+    single { SystemManager() }
     single { SceneManager() }
     single { Serializer() }
     single { LoggerService() }
@@ -118,7 +120,7 @@ val appModule = module {
     factory { ViewportToolbar(get(), get(), get(), get(), get()) }
     factory { ViewportContextMenu(get(), get()) }
     factory { ViewportOverlays(get(), get()) }
-    factory { ViewportDragDropHandler(get(), get()) }
+    factory { ViewportDragDropHandler(get(), get(), get()) }
 
     // Editor windows
     factory { SceneHierarchyWindow() }
@@ -152,13 +154,14 @@ val appModule = module {
             EditorInputHandler(get(), get(), get(), get(), get(), get(), get()),
             EditorEventHandler(get(), get()),
             AudioSystem(get(), get()),
-            InputSystem(get(), get(), get(), get()),
+            InputSystem(get(), get(), get(), get(), get()),
             AnimationSystem(get()),
             PhysicsSystem(),
             RagdollSystem(),
             DayNightCycleSystem(null, get()),
             EnvironmentSystem(get()),
             DirectionalLightSystem(get()),
+            get()
         )
     }
 
@@ -167,7 +170,7 @@ val appModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectWizardWindow() }
     single { ProjectSwitcherDialog() }

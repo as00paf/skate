@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.render.Camera
@@ -35,7 +34,7 @@ open class Scene(
     // Scene-level managers (not components, these are infrastructure)
     val physics3d: IPhysics3D = BulletPhysics3D()
     val gameObjectManager: GameObjectManager = GameObjectManager(physics3d)
-    val systemManager: SystemManager = SystemManager()
+    //val systemManager: SystemManager = SystemManager()
 
     var isRunning: Boolean = false
     var isDirty: Boolean = false
@@ -69,12 +68,6 @@ open class Scene(
                 physics3d.add(go)
             }
         }
-
-        // Initialize and start systems
-        systemManager.systems.forEach { system ->
-            system.init(this)
-            system.start()
-        }
     }
 
     fun editorUpdateScene(dt: Float) {
@@ -83,7 +76,6 @@ open class Scene(
         camera.update(dt)
         physics3d.update(scaledDt)
         gameObjectManager.editorUpdate(dt)
-        systemManager.editorUpdate(dt)
 
         // Update Scene components
         super.editorUpdate(scaledDt)
@@ -95,7 +87,6 @@ open class Scene(
         camera.update(scaledDt)
         physics3d.update(scaledDt)
         gameObjectManager.update(scaledDt)
-        systemManager.update(dt)
 
         // Update Scene components
         super.update(scaledDt)
@@ -103,7 +94,6 @@ open class Scene(
 
     fun destroyScene() {
         gameObjectManager.destroy()
-        systemManager.destroy()
         super.destroy()
     }
 }

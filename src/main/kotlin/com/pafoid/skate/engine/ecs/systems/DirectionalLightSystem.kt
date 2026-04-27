@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
-import com.pafoid.skate.engine.ecs.config.DirectionalLightConfig
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.render.Camera
 import imgui.ImGui
 import org.joml.Matrix4f
@@ -22,17 +22,7 @@ class DirectionalLightSystem(
 ) : System(priority = ExecutionPriority.EARLY) {
 
     // System-owned configuration
-    var config: DirectionalLightConfig? = DirectionalLightConfig(
-        direction = Vector3f(0f, -1f, 0f),
-        color = Vector3f(1f, 0.95f, 0.8f),
-        intensity = 1f,
-        shadowDistance = 50f,
-        autoCalculateBounds = true,
-        stabilizeProjection = true,
-        depthBias = 0.0f,
-        slopeScaledBias = 0.0f,
-        castShadows = true,
-    )
+    var config: DirectionalLightComponent? = null
 
     private val lightView = Matrix4f()
     private val lightProjection = Matrix4f()
@@ -43,15 +33,15 @@ class DirectionalLightSystem(
     override fun update(dt: Float) {
         // Find day/night cycle system
         val dayNight = scene.getComponent<DayNightCycleComponent>() ?: return
-        val config = config ?: return
+        config = scene.getComponent<DirectionalLightComponent>() ?: return
 
         // Update light from day/night cycle
-        config.direction.set(dayNight.sunDirection)
-        config.color.set(dayNight.sunColor)
-        config.intensity = dayNight.sunIntensity
+        config?.direction?.set(dayNight.sunDirection)
+        config?.color?.set(dayNight.sunColor)
+        config?.intensity = dayNight.sunIntensity
 
         // Compute light space matrix for shadow mapping
-        if (config.castShadows) {
+        if (config?.castShadows == true) {
             updateLightSpaceMatrix(scene.camera)
         }
     }

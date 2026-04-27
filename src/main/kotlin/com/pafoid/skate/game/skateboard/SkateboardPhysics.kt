@@ -40,6 +40,7 @@ import kotlin.math.abs
 class SkateboardPhysics : Component(), KoinComponent {
 
     private val sceneManager: SceneManager by inject()
+    private val eventSystem: EventSystem by inject()
 
     // Suspension parameters (Real-world Meters)
     var suspensionRestLength = 0.08f // 8cm total height
@@ -111,18 +112,17 @@ class SkateboardPhysics : Component(), KoinComponent {
 
         // Publish events on grounded state change
         if (isGrounded != wasGrounded) {
-            val eventSystem = getEventSystem()
-            eventSystem?.publish(GroundedStateChanged(isGrounded))
+            eventSystem.publish(GroundedStateChanged(isGrounded))
 
             if (isGrounded) {
                 // Landing - calculate impact force from velocity
                 val velocity = rb.linearVelocity
                 val impactForce = kotlin.math.abs(velocity.y) * 10f // Simplified impact calculation
-                eventSystem?.publish(Landing(velocity, impactForce))
+                eventSystem.publish(Landing(velocity, impactForce))
             } else {
                 // Takeoff
                 val velocity = rb.linearVelocity
-                eventSystem?.publish(Takeoff(velocity))
+                eventSystem.publish(Takeoff(velocity))
             }
 
             wasGrounded = isGrounded
@@ -219,11 +219,4 @@ class SkateboardPhysics : Component(), KoinComponent {
         rb.applyForce(worldForce, rayStartVec)
     }
 
-    /**
-     * Gets the EventSystem from the scene for publishing events.
-     */
-    private fun getEventSystem(): EventSystem? {
-        val scene = sceneManager.currentScene ?: return null
-        return scene.systemManager.getSystem<EventSystem>()
-    }
 }

@@ -12,14 +12,17 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.ProjectClosed
 import com.pafoid.skate.engine.events.ProjectCreated
 import com.pafoid.skate.engine.events.ProjectOpened
 import com.pafoid.skate.engine.events.ProjectSaved
+import org.joml.Vector3f
 import java.io.File
 
 class ProjectManager(
@@ -31,6 +34,7 @@ class ProjectManager(
     private val prefabsGenerator: PrefabsGenerator,
     private val sceneSerializer: SceneSerializer,
     private val eventSystem: EventSystem,
+    private val systemManager: SystemManager,
 ) {
 
     var currentProject: Project? = null
@@ -153,6 +157,19 @@ class ProjectManager(
         scene.addComponent(timeComponent)
         scene.addComponent(LightingStateComponent())
         scene.addComponent(DayNightCycleComponent(cycleTime = timeComponent.timeOfDay, dayDuration = 300f))
+        scene.addComponent(
+            DirectionalLightComponent(
+                direction = Vector3f(0f, -1f, 0f),
+                color = Vector3f(1f, 0.95f, 0.8f),
+                intensity = 1f,
+                shadowDistance = 50f,
+                autoCalculateBounds = true,
+                stabilizeProjection = true,
+                depthBias = 0.0f,
+                slopeScaledBias = 0.0f,
+                castShadows = true,
+            )
+        )
 
         // Set the level path and save
         scene.name = defaultSceneFile.name
@@ -350,7 +367,7 @@ class ProjectManager(
             scene.gameObjectManager.gameObjects.forEach { it.destroy() }
             scene.gameObjectManager.gameObjects.clear()
             scene.gameObjectManager.pendingObjects.clear()
-            scene.systemManager.resetSystemCaches()
+            systemManager.resetSystemCaches()
         }
 
         eventSystem.publish(ProjectClosed(projectName))
