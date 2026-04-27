@@ -1,9 +1,8 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
-import com.pafoid.skate.engine.ecs.components.EnvironmentPreset
+import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
 import imgui.ImGui
 import imgui.type.ImBoolean
 
@@ -41,52 +40,17 @@ class EnvironmentSystem(
     // Reference to Scene's EnvironmentComponent (updated each frame)
     private var environmentComponent: EnvironmentComponent? = null
 
-    /**
-     * Gets or creates EnvironmentComponent on the Scene.
-     * @return The Scene's EnvironmentComponent
-     */
-    private fun getOrCreateEnvironmentComponent(): EnvironmentComponent {
-        val scene = scene as? Scene
-        if (scene == null) {
-            // Fallback: create temporary component (shouldn't happen in normal operation)
-            return EnvironmentComponent()
-        }
-
-        var component = scene.getComponent<EnvironmentComponent>()
-        if (component == null) {
-            component = EnvironmentComponent()
-            scene.addComponent(component)
-        }
-        environmentComponent = component
-        return component
-    }
-
-    /**
-     * Gets the current EnvironmentComponent from Scene.
-     * Updates cached reference for ImGui access.
-     */
-    private fun getEnvironmentComponent(): EnvironmentComponent? {
-        val scene = scene as? Scene ?: return null
-        environmentComponent = scene.getComponent<EnvironmentComponent>()
-        return environmentComponent
-    }
-
-    /**
-     * Applies an environment preset to the Scene's EnvironmentComponent.
-     *
-     * @param preset The preset to apply
-     */
     fun applyPreset(preset: EnvironmentPreset) {
-        val component = getOrCreateEnvironmentComponent()
-        component.applyPreset(preset)
+        environmentComponent?.applyPreset(preset)
     }
 
-    /**
-     * Resets the Scene's EnvironmentComponent to defaults.
-     */
     fun reset() {
-        val component = getEnvironmentComponent()
-        component?.reset()
+        environmentComponent?.reset()
+    }
+
+    override fun update(dt: Float) {
+        environmentComponent = scene.getComponent<EnvironmentComponent>()
+        environmentComponent?.update(dt)
     }
 
     override fun imgui() {
@@ -94,7 +58,7 @@ class EnvironmentSystem(
         ImGui.separator()
 
         // Get component for ImGui (create if needed)
-        val component = getOrCreateEnvironmentComponent()
+        val component = environmentComponent ?: return
 
         // Preset section
         ImGui.text(stringManager.getString("lbl.environment_system.presets"))
@@ -233,5 +197,9 @@ class EnvironmentSystem(
         if (ImGui.button(stringManager.getString("lbl.environment_system.reset_to_defaults"))) {
             reset()
         }
+    }
+
+    override fun invalidateCaches() {
+        environmentComponent = null
     }
 }
