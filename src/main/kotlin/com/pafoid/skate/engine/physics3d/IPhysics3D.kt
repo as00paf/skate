@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.physics3d
 
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import org.joml.Vector3f
 
 interface IPhysics3D {
@@ -11,8 +12,8 @@ interface IPhysics3D {
     fun add(go: GameObject)
     fun update(go: GameObject)
     fun remove(go: GameObject)
-    fun addConstraint(constraint: com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint)
-    fun removeConstraint(constraint: com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint)
+    fun addConstraint(constraint: IPhysicsConstraint)
+    fun removeConstraint(constraint: IPhysicsConstraint)
     fun update(dt: Float)
     fun destroy()
 }
