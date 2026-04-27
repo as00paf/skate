@@ -34,7 +34,6 @@ open class Scene(
     // Scene-level managers (not components, these are infrastructure)
     val physics3d: IPhysics3D = BulletPhysics3D()
     val gameObjectManager: GameObjectManager = GameObjectManager(physics3d)
-    //val systemManager: SystemManager = SystemManager()
 
     var isRunning: Boolean = false
     var isDirty: Boolean = false
