@@ -74,11 +74,11 @@ open class GameObject(
         return this
     }
 
-    fun start(){
+    open fun start() {
         components.forEach { it.start() }
     }
 
-    fun update(dt: Float) {
+    open fun update(dt: Float) {
         if (!isEnabled) return
         components.forEach {
             if (it.enabled) it.update(dt)

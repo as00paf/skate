@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetType
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.utils.JobSystem
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
@@ -84,7 +83,7 @@ class TexturesTab(
     
     private fun applyTextureToSelected(texturePath: String) {
         val scene = sceneManager.currentScene ?: return
-        val selectedObject = scene.getSelectedGameObject() ?: run {
+        val selectedObject = scene.selectedGameObject ?: run {
             logger.logEditor("No object selected")
             return
         }

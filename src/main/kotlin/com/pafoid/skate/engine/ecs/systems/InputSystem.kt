@@ -68,7 +68,7 @@ class InputSystem(
             pollEditorMouseInput(editorInput)*/
         }
 
-        scene.gameObjectManager.gameObjects.forEach { go ->
+        scene.gameObjects.forEach { go ->
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
 
             inputState.reset()

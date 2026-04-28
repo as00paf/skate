@@ -140,7 +140,7 @@ class GeometryPass(
         }
 
         // Render all 3D game objects
-        scene.gameObjectManager.gameObjects.forEach { go ->
+        scene.gameObjects.forEach { go ->
             if (!go.isVisible) return@forEach
             val renderComponent = go.getComponent<RenderComponent>()
             val transformComponent = go.getComponent<Transform>()
@@ -179,7 +179,7 @@ class GeometryPass(
         renderer2D.bindShader(shader)
         renderer2D.bindCamera(scene.camera)
 
-        scene.gameObjectManager.gameObjects.forEach { go ->
+        scene.gameObjects.forEach { go ->
             if (!go.isVisible) return@forEach
             go.getComponent<SpriteRenderer>()?.let { sprite ->
                 renderer2D.add(go)

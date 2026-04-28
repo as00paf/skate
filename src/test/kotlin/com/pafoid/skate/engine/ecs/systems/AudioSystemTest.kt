@@ -38,7 +38,7 @@ class AudioSystemTest : KoinTest {
         }
 
         every { scene.camera } returns camera
-        every { scene.gameObjectManager } returns gameObjectManager
+        every { scene.gameObjectSystem } returns gameObjectManager
         every { camera.position } returns Vector3f(0f, 0f, 0f)
         every { camera.yaw } returns 0f
         every { camera.pitch } returns 0f

@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.ecs
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.render.Camera
@@ -31,9 +30,12 @@ open class Scene(
     // Camera remains a special property (not a component for now)
     val camera: Camera = Camera()
 
-    // Scene-level managers (not components, these are infrastructure)
     val physics3d: IPhysics3D = BulletPhysics3D()
-    val gameObjectManager: GameObjectManager = GameObjectManager(physics3d)
+
+    val gameObjects = mutableListOf<GameObject>()
+    val pendingObjects = mutableListOf<GameObject>()
+    var hoveredGameObject: GameObject? = null
+    var selectedGameObject: GameObject? = null
 
     var isRunning: Boolean = false
     var isDirty: Boolean = false
@@ -43,56 +45,21 @@ open class Scene(
         initializer.init(this)
     }
 
-    fun startScene() {
+    override fun start() {
         isRunning = true
-
-        // Start this GameObject (Scene) components first
         super.start()
-
-        // Then start all child game objects
-        gameObjectManager.gameObjects.forEach { go ->
-            go.start()
-            physics3d.add(go)
-        }
-
-        // Flush any objects added during startup
-        while (gameObjectManager.pendingObjects.isNotEmpty()) {
-            val toAdd = mutableListOf<GameObject>()
-            toAdd.addAll(gameObjectManager.pendingObjects)
-            gameObjectManager.pendingObjects.clear()
-
-            toAdd.forEach { go ->
-                gameObjectManager.gameObjects.add(go)
-                go.start()
-                physics3d.add(go)
-            }
-        }
     }
 
-    fun editorUpdateScene(dt: Float) {
-        val timeScale = getComponent<TimeComponent>()?.timeScale ?: 1.0f
-        val scaledDt = dt * timeScale
-        camera.update(dt)
-        physics3d.update(scaledDt)
-        gameObjectManager.editorUpdate(dt)
-
-        // Update Scene components
-        super.editorUpdate(scaledDt)
-    }
-
-    fun updateScene(dt: Float) {
+    override fun update(dt: Float) {
         val timeScale = getComponent<TimeComponent>()?.timeScale ?: 1.0f
         val scaledDt = dt * timeScale
         camera.update(scaledDt)
         physics3d.update(scaledDt)
-        gameObjectManager.update(scaledDt)
 
-        // Update Scene components
         super.update(scaledDt)
     }
 
     fun destroyScene() {
-        gameObjectManager.destroy()
         super.destroy()
     }
 }

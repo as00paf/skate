@@ -2,22 +2,22 @@ package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
-import com.pafoid.skate.engine.ecs.scene.removeGameObject
-import com.pafoid.skate.engine.ecs.scene.setSelectedGameObject
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 
 class DeleteGameObjectCommand(
     private val gameObject: GameObject,
     private val scene: Scene,
+    private val gameObjectManager: GameObjectManager,
 ) : Command {
+
     override fun execute() {
-        scene.removeGameObject(gameObject)
-        scene.setSelectedGameObject(null)
+        gameObjectManager.removeGameObject(gameObject)
+        scene.selectedGameObject = null
     }
 
     override fun undo() {
-        scene.addGameObjectToScene(gameObject)
-        scene.setSelectedGameObject(gameObject)
+        gameObjectManager.addGameObject(gameObject)
+        scene.selectedGameObject = gameObject
     }
 
     override fun getDisplayName(): String = "Delete GameObject"

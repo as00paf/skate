@@ -4,12 +4,14 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import org.joml.Vector3f
 
 class CreatePrimitiveCommand(
     private val name: String,
     private val halfExtents: Vector3f,
-    private val scene: Scene
+    private val scene: Scene,
+    private val gameObjectManager: GameObjectManager,
 ) : Command {
     override fun execute() {
         val primitive = GameObject(name)
@@ -21,8 +23,8 @@ class CreatePrimitiveCommand(
         val renderComponent = RenderComponent()
         primitive.addComponent(renderComponent)
 
-        scene.gameObjectManager.addGameObject(primitive)
-        scene.gameObjectManager.setSelectedGameObject(primitive)
+        gameObjectManager.addGameObject(primitive)
+        scene.selectedGameObject = primitive
     }
 
     override fun undo() {

@@ -123,7 +123,7 @@ class AudioSystem(
     private fun updateAudioSources() {
         val currentEntities = mutableSetOf<Int>()
 
-        scene.gameObjectManager.gameObjects.forEach { gameObject ->
+        scene.gameObjects.forEach { gameObject ->
             val audioComponent = gameObject.getComponent<AudioComponent>()
             val transform = gameObject.getComponent<Transform>()
 

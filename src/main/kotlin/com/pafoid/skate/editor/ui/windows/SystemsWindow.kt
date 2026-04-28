@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -10,7 +9,6 @@ import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Centralized window for displaying and interacting with all system ImGui interfaces.
@@ -36,27 +34,27 @@ import org.koin.core.component.inject
  * @see System
  * @see SystemManager
  */
-class SystemsWindow : IWindowWithScene, KoinComponent {
-    private val stringManager: StringManager by inject()
-    private val workspace: EditorWorkspace by inject()
-    private val systemManager: SystemManager by inject()
+class SystemsWindow(
+    private val stringManager: StringManager,
+    private val systemManager: SystemManager,
+) : IWindowWithScene, KoinComponent {
 
     /**
      * Renders the systems window.
      *
-     * @param currentScene The current scene to get systems from
+     * @param scene The current scene to get systems from
      */
-    override fun imgui(currentScene: Scene) {
+    override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.systems"))
 
-        // Section 1: Editor Systems (from Workspace)
+        // Editor Systems (from Workspace)
         if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.editor_systems"))) {
-            renderSystemsList(workspace.systemManager.systems)
+            renderSystemsList(systemManager.systems)
         }
 
         ImGui.separator()
 
-        // Section 2: Gameplay Systems (from Scene)
+        // Gameplay Systems (from Scene)
         if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.gameplay_systems"))) {
             val systems = systemManager.systems
             if (systems.isEmpty()) {

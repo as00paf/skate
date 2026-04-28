@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AudioComponent
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import imgui.ImGui
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
@@ -37,7 +36,7 @@ class AudioInspectorWindow : IWindowWithScene, KoinComponent {
      */
     private fun renderAudioComponentInspector(scene: Scene) {
         if (ImGui.collapsingHeader(stringManager.getString("lbl.audio.selected_object"))) {
-            val selectedObject = scene.getSelectedGameObject()
+            val selectedObject = scene.selectedGameObject
 
             if (selectedObject == null) {
                 MImGui.textDisabled("No object selected")

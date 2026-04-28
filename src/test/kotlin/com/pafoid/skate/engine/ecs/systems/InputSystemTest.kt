@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.project.GameplaySettings
-import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -128,9 +127,9 @@ class InputSystemTest {
     @Test
     fun `JumpPressed event published when jump button pressed`() {
         // Arrange
-        val player = scene.gameObjectManager.createGameObject("TestPlayer")
+        val player = scene.gameObjectSystem.createGameObject("TestPlayer")
         player.addComponent(InputStateComponent())
-        scene.gameObjectManager.addGameObject(player)
+        scene.gameObjectSystem.addGameObject(player)
 
         // Add EventSystem to scene
         val eventSystem = EventSystem()
@@ -159,7 +158,7 @@ class InputSystemTest {
         // Arrange
         val player = scene.createGameObject("TestPlayer")
         player.addComponent(InputStateComponent())
-        scene.gameObjectManager.addGameObject(player)
+        scene.gameObjectSystem.addGameObject(player)
 
         val eventSystem = EventSystem()
         eventSystem.init(scene)
@@ -194,7 +193,7 @@ class InputSystemTest {
         // Arrange
         val player = scene.createGameObject("TestPlayer")
         player.addComponent(InputStateComponent())
-        scene.gameObjectManager.addGameObject(player)
+        scene.gameObjectSystem.addGameObject(player)
 
         val eventSystem = EventSystem()
         eventSystem.init(scene)
@@ -226,7 +225,7 @@ class InputSystemTest {
     @Test
     fun `InputStateComponent is created for game objects`() {
         // Arrange
-        val gameObject = scene.gameObjectManager.createGameObject("TestPlayer")
+        val gameObject = scene.gameObjectSystem.createGameObject("TestPlayer")
         val inputState = gameObject.addComponent(InputStateComponent())
 
         // Assert
@@ -236,8 +235,8 @@ class InputSystemTest {
     @Test
     fun `Multiple game objects can have input state`() {
         // Arrange
-        val player1 = scene.gameObjectManager.createGameObject("Player1")
-        val player2 = scene.gameObjectManager.createGameObject("Player2")
+        val player1 = scene.gameObjectSystem.createGameObject("Player1")
+        val player2 = scene.gameObjectSystem.createGameObject("Player2")
         val inputState1 = player1.addComponent(InputStateComponent())
         val inputState2 = player2.addComponent(InputStateComponent())
 
@@ -289,7 +288,7 @@ class InputSystemTest {
     @Test
     fun `system handles missing joystick gracefully`() {
         // Arrange
-        scene.gameObjectManager.createGameObject("TestPlayer").addComponent(InputStateComponent())
+        scene.gameObjectSystem.createGameObject("TestPlayer").addComponent(InputStateComponent())
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
 
         // Act & Assert - should not crash

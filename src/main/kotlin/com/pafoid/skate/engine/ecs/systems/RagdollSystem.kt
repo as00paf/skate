@@ -25,7 +25,7 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
     private val tempMat = Matrix4f()
 
     override fun update(dt: Float) {
-        scene.gameObjectManager.gameObjects.forEach { go ->
+        scene.gameObjects.forEach { go ->
             val ragdoll = go.getComponent<RagdollComponent>() ?: return@forEach
             val skeletonComp = go.getComponent<SkeletonComponent>() ?: return@forEach
             val goTransform = go.getComponent<Transform>() ?: return@forEach

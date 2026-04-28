@@ -1,17 +1,16 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.systems.PrefabsGenerator
-import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import org.joml.Vector3f
 
 class SpawnPrefabCommand(
     private val prefabType: PrefabType,
     private val position: Vector3f?,
     private val prefabsGenerator: PrefabsGenerator,
-    private val scene: Scene
+    private val gameObjectManager: GameObjectManager,
 ) : Command {
     private var createdObject: GameObject? = null
 
@@ -40,7 +39,7 @@ class SpawnPrefabCommand(
 
     override fun undo() {
         createdObject?.let { obj ->
-            scene.gameObjectManager.removeGameObject(obj)
+            gameObjectManager.removeGameObject(obj)
         }
     }
 

@@ -10,19 +10,21 @@ import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
-import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.render.Camera
 
 class EditorWorkspace(
+    private val systemManager: SystemManager = SystemManager(),
+    private val sceneManager: SceneManager,
+    private val gameObjectManager: GameObjectManager,
     private val gizmoSystem: GizmoSystem,
     private val gridLines: GridLines,
-    private val sceneManager: SceneManager,
     private val editorInputHandler: EditorInputHandler,
     private val editorEventHandler: EditorEventHandler,
     private val audioSystem: AudioSystem,
@@ -33,7 +35,6 @@ class EditorWorkspace(
     private val dayNightCycleSystem: DayNightCycleSystem,
     private val environmentSystem: EnvironmentSystem,
     private val directionalLightSystem: DirectionalLightSystem,
-    val systemManager: SystemManager = SystemManager()
 ) : Workspace {
 
     val editorInputState: EditorInputStateComponent = EditorInputStateComponent()
@@ -64,6 +65,7 @@ class EditorWorkspace(
     private fun initializeSystems(scene: Scene) {
         listOf(
             audioSystem, // Core
+            gameObjectManager,
             inputSystem,
             environmentSystem,
             animationSystem,
@@ -82,10 +84,6 @@ class EditorWorkspace(
     }
 
     fun getGizmoSystem(): GizmoSystem = gizmoSystem
-
-    inline fun <reified T : System> getSystem(): T? {
-        return systemManager.systems.filterIsInstance<T>().firstOrNull()
-    }
 
     fun destroy() {
         systemManager.destroy()

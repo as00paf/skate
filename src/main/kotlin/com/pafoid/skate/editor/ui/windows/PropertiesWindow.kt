@@ -30,7 +30,7 @@ class PropertiesWindow : IWindow, KoinComponent {
 
     override fun imgui(pOpen: ImBoolean?) {
         // Get selected object from ViewModel instead of direct scene query
-        selectedGameObject = sceneManager.currentScene?.gameObjectManager?.getSelectedGameObject()
+        selectedGameObject = sceneManager.currentScene?.selectedGameObject
         
         ImGui.begin(stringManager.getString("window.properties"), pOpen)
         selectedGameObject?.let { go ->

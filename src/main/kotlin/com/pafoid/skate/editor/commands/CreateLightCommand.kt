@@ -1,15 +1,16 @@
 package com.pafoid.skate.editor.commands
 
+import com.pafoid.skate.editor.ui.windows.LightType
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.editor.ui.windows.LightType
-import org.joml.Vector3f
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 
 class CreateLightCommand(
     private val name: String,
     private val type: LightType,
-    private val scene: Scene
+    private val scene: Scene,
+    private val gameObjectManager: GameObjectManager,
 ) : Command {
     override fun execute() {
         val lightObj = GameObject(name)
@@ -31,8 +32,8 @@ class CreateLightCommand(
         }
         lightObj.addComponent(transform)
 
-        scene.gameObjectManager.addGameObject(lightObj)
-        scene.gameObjectManager.setSelectedGameObject(lightObj)
+        gameObjectManager.addGameObject(lightObj)
+        scene.selectedGameObject = lightObj
     }
 
     override fun undo() {

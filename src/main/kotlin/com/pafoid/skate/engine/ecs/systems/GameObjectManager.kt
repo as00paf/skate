@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 
 /**
@@ -10,23 +9,77 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
  * This class centralizes all GameObject management responsibilities to reduce
  * the burden on the Scene class and improve separation of concerns.
  */
-class GameObjectManager(
-    private val physics3d: IPhysics3D
-) {
-    val gameObjects = mutableListOf<GameObject>()
-    val pendingObjects = mutableListOf<GameObject>()
+class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
 
-    private var selectedGameObject: GameObject? = null
+    override fun start() {
+        scene.gameObjects.forEach { go ->
+            go.start()
+            scene.physics3d.add(go)
+        }
 
-    /**
-     * Adds a GameObject to the scene. If the scene is running, adds it to pending objects
-     * to be processed in the next update cycle.
-     */
+        while (scene.pendingObjects.isNotEmpty()) {
+            val toAdd = mutableListOf<GameObject>()
+            toAdd.addAll(scene.pendingObjects)
+            scene.pendingObjects.clear()
+
+            toAdd.forEach { go ->
+                scene.gameObjects.add(go)
+                go.start()
+                scene.physics3d.add(go)
+            }
+        }
+    }
+
+    override fun editorUpdate(dt: Float) {
+        val iterator = scene.gameObjects.iterator()
+        while (iterator.hasNext()) {
+            val go = iterator.next()
+            if (go.isDead()) {
+                scene.physics3d.remove(go)
+                iterator.remove()
+                continue
+            }
+            go.editorUpdate(dt)
+            val rb = go.getComponent<RigidBody3D>()
+            if (rb?.physicsDirty == true) {
+                scene.physics3d.update(go)
+                rb.physicsDirty = false
+            }
+        }
+
+        processPendingObjects()
+    }
+
+    override fun update(dt: Float) {
+        val iterator = scene.gameObjects.iterator()
+        while (iterator.hasNext()) {
+            val go = iterator.next()
+            if (go.isDead()) {
+                scene.physics3d.remove(go)
+                iterator.remove()
+                continue
+            }
+            go.update(dt)
+        }
+
+        processPendingObjects()
+    }
+
+    private fun processPendingObjects() {
+        scene.pendingObjects.forEach { gameObject ->
+            scene.gameObjects.add(gameObject)
+            gameObject.start()
+            scene.physics3d.add(gameObject)
+        }
+
+        scene.pendingObjects.clear()
+    }
+
     fun addGameObject(gameObject: GameObject, isRunning: Boolean = false) {
         if (!isRunning) {
-            gameObjects.add(gameObject)
+            scene.gameObjects.add(gameObject)
         } else {
-            pendingObjects.add(gameObject)
+            scene.pendingObjects.add(gameObject)
         }
     }
 
@@ -37,117 +90,36 @@ class GameObjectManager(
      * If the scene is not running, start()/physics will happen in startScene().
      */
     fun addGameObjectImmediate(gameObject: GameObject, isRunning: Boolean = false) {
-        gameObjects.add(gameObject)
+        scene.gameObjects.add(gameObject)
         if (isRunning) {
             gameObject.start()
-            physics3d.add(gameObject)
+            scene.physics3d.add(gameObject)
         }
     }
 
-    /**
-     * Removes a GameObject from the scene and the physics system.
-     */
     fun removeGameObject(gameObject: GameObject) {
-        gameObjects.remove(gameObject)
-        pendingObjects.remove(gameObject)
-        physics3d.remove(gameObject)
+        scene.gameObjects.remove(gameObject)
+        scene.pendingObjects.remove(gameObject)
+        scene.physics3d.remove(gameObject)
     }
 
-    /**
-     * Gets a GameObject by its unique ID.
-     */
     fun getGameObject(id: Int): GameObject? {
-        return gameObjects.firstOrNull { it.getUid() == id }
+        return scene.gameObjects.firstOrNull { it.getUid() == id }
     }
 
-    /**
-     * Gets a GameObject by its name.
-     */
     fun getGameObject(name: String): GameObject? {
-        return gameObjects.firstOrNull { it.name == name }
+        return scene.gameObjects.firstOrNull { it.name == name }
     }
 
-    /**
-     * Updates all GameObjects in the scene during editor mode.
-     */
-    fun editorUpdate(dt: Float) {
-        val iterator = gameObjects.iterator()
-        while (iterator.hasNext()) {
-            val go = iterator.next()
-            if (go.isDead()) {
-                physics3d.remove(go)
-                iterator.remove()
-                continue
-            }
-            go.editorUpdate(dt)
-            val rb = go.getComponent<RigidBody3D>()
-            if (rb?.physicsDirty == true) {
-                physics3d.update(go)
-                rb.physicsDirty = false
-            }
-        }
-
-        processPendingObjects()
-    }
-
-    /**
-     * Updates all GameObjects in the scene during runtime.
-     */
-    fun update(dt: Float) {
-        val iterator = gameObjects.iterator()
-        while (iterator.hasNext()) {
-            val go = iterator.next()
-            if (go.isDead()) {
-                physics3d.remove(go)
-                iterator.remove()
-                continue
-            }
-            go.update(dt)
-        }
-
-        processPendingObjects()
-    }
-
-    /**
-     * Processes any pending GameObjects that need to be added to the scene.
-     */
-    private fun processPendingObjects() {
-        pendingObjects.forEach { gameObject ->
-            gameObjects.add(gameObject)
-            gameObject.start()
-            physics3d.add(gameObject)
-        }
-
-        pendingObjects.clear()
-    }
-
-    /**
-     * Creates a new GameObject with the given name and adds a default Transform component.
-     */
     fun createGameObject(name: String): GameObject {
         val go = GameObject(name)
         go.addComponent(Transform())
         return go
     }
 
-    /**
-     * Sets the currently selected GameObject for editor purposes.
-     */
-    fun setSelectedGameObject(gameObject: GameObject?) {
-        selectedGameObject = gameObject
-    }
-
-    /**
-     * Gets the currently selected GameObject.
-     */
-    fun getSelectedGameObject(): GameObject? = selectedGameObject
-
-    /**
-     * Destroys all GameObjects managed by this manager.
-     */
-    fun destroy() {
-        gameObjects.forEach { it.destroy() }
-        gameObjects.clear()
-        pendingObjects.clear()
+    override fun destroy() {
+        scene.gameObjects.forEach { it.destroy() }
+        scene.gameObjects.clear()
+        scene.pendingObjects.clear()
     }
 }

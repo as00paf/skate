@@ -84,7 +84,7 @@ class AnimationSystem(
     private fun rebuildCache() {
         animatedObjects.clear()
 
-        for (go in scene.gameObjectManager.gameObjects) {
+        for (go in scene.gameObjects) {
             if (go.hasComponent<SkeletonComponent>() && go.hasComponent<Animator>()) {
                 animatedObjects.add(go)
             }

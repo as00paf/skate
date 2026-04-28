@@ -73,6 +73,7 @@ import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
@@ -100,11 +101,12 @@ import org.koin.dsl.module
 val appModule = module {
     single { Engine() }
     single { SystemManager() }
+    single { GameObjectManager() }
     single { SceneManager() }
     single { Serializer() }
     single { LoggerService() }
     single { AudioEngine(get()) }
-    single { SceneSerializer(get(), get(), get(), get()) }
+    single { SceneSerializer(get(), get(), get(), get(), get()) }
     single { ClipboardService(get()) }
     single { UndoRedoManager() }
     single { StringManager() }
@@ -130,9 +132,9 @@ val appModule = module {
     factory { EnvironmentWindow() }
     factory { ProfilerWindow() }
     factory { ConsoleWindow() }
-    factory { PhysicsTunerWindow() }
+    factory { PhysicsTunerWindow(get(), get()) }
     factory { InputTestingWindow(get(), get(), get()) }
-    factory { SystemsWindow() }
+    factory { SystemsWindow(get(), get()) }
     factory { EditorSettingsWindow(get(), get()) }
     factory { ProjectSettingsWindow(get(), get(), get(), get(), get()) }
     factory { KeyBindingsWindow(get(), get()) }
@@ -148,10 +150,12 @@ val appModule = module {
     // Editor Workspace
     single {
         EditorWorkspace(
-            GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()),
-            GridLines(get(), get(), get()),
             get(),
-            EditorInputHandler(get(), get(), get(), get(), get(), get(), get()),
+            get(),
+            get(),
+            GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()),
+            GridLines(get(), get(), get()),
+            EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get()),
             EditorEventHandler(get(), get()),
             AudioSystem(get(), get()),
             InputSystem(get(), get(), get(), get(), get()),
@@ -161,13 +165,12 @@ val appModule = module {
             DayNightCycleSystem(null, get()),
             EnvironmentSystem(get()),
             DirectionalLightSystem(get()),
-            get()
         )
     }
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -187,10 +190,10 @@ val appModule = module {
             registerProvider(get<ActionSearchProvider>())
         }
     }
-    single { GameObjectSearchProvider(get(), get()) }
+    single { GameObjectSearchProvider(get(), get(), get()) }
     single { AssetSearchProvider(get()) }
-    single { ComponentSearchProvider(get(), get()) }
-    single { ActionSearchProvider(get(), get(), get(), get(), get()) }
+    single { ComponentSearchProvider(get(), get(), get()) }
+    single { ActionSearchProvider(get(), get(), get(), get(), get(), get()) }
     single { SearchEverywhereWindow(SearchHistory(serializer = get())) }
 }
 
@@ -227,7 +230,7 @@ val engineModule = module {
     single { ModelRenderer(get(), get()) }
     single { ThumbnailRenderer(get(), get(), get()) }
     single { ThumbnailCache(get()) }
-    single { PrefabsGenerator(get(), get()) }
+    single { PrefabsGenerator(get(), get(), get()) }
     single { EngineAssetCopier() }
     single { SplashScreen() }
 

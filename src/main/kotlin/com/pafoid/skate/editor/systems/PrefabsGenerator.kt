@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.systems
 
-import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Sprite
@@ -12,9 +11,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.scene.addGameObjectImmediate
-import com.pafoid.skate.engine.ecs.scene.addGameObjectToScene
-import com.pafoid.skate.engine.ecs.scene.createGameObject
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
@@ -33,6 +30,7 @@ import java.io.File
 class PrefabsGenerator(
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
+    private val gameObjectManager: GameObjectManager,
 ) {
     /** Root path for engine-bundled assets copied into the project (null = use engine paths) */
     private var engineDefaultsRoot: String? = null
@@ -85,8 +83,7 @@ class PrefabsGenerator(
         return result
     }
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
-        val scene = sceneManager.currentScene ?: throw IllegalStateException("No active scene")
-        val go = scene.createGameObject(name)
+        val go = gameObjectManager.createGameObject(name)
         go.getComponent<Transform>()?.scale?.set(sizeX, sizeY, 1f)
 
         val renderer = SpriteRenderer()
@@ -101,7 +98,7 @@ class PrefabsGenerator(
             val model = resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
             JobSystem.runOnMain {
                 val skate = Skateboard(model as TexturedModel)
-                sceneManager.currentScene?.addGameObjectToScene(skate)
+                gameObjectManager.addGameObject(skate)
             }
         }
     }
@@ -114,8 +111,7 @@ class PrefabsGenerator(
         val modelPath = resolveModelPath(Assets.Models.SKATEBOARD_GLB)
         val model = resourceManager.loadModelSync(modelPath)
         val skate = Skateboard(model as TexturedModel)
-        val targetScene = scene ?: sceneManager.currentScene
-        targetScene?.addGameObjectImmediate(skate)
+        gameObjectManager.addGameObjectImmediate(skate)
     }
 
     fun spawnSkater(skate: GameObject? = null) {
@@ -129,7 +125,7 @@ class PrefabsGenerator(
             }
 
             JobSystem.runOnMain {
-                sceneManager.currentScene?.addGameObjectToScene(skater)
+                gameObjectManager.addGameObject(skater)
             }
         }
     }
@@ -157,8 +153,7 @@ class PrefabsGenerator(
             }
         }
 
-        val targetScene = scene ?: sceneManager.currentScene
-        targetScene?.addGameObjectImmediate(skater)
+        gameObjectManager.addGameObjectImmediate(skater)
     }
 
     fun spawnFloor() {
@@ -170,7 +165,7 @@ class PrefabsGenerator(
 
             JobSystem.runOnMain {
                 val tile = Tile("Tile", texturedModel)
-                sceneManager.currentScene?.addGameObjectToScene(tile)
+                gameObjectManager.addGameObject(tile)
             }
         }
     }
@@ -189,13 +184,12 @@ class PrefabsGenerator(
         texturedModel.mesh[0].material.baseColorPath = texturePath
 
         val tile = Tile("Tile", texturedModel)
-        val targetScene = scene ?: sceneManager.currentScene
-        targetScene?.addGameObjectImmediate(tile)
+        gameObjectManager.addGameObjectImmediate(tile)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?): GameObject? {
         val scene = sceneManager.currentScene ?: return null
-        val rail = GameObject("Rail_${scene.gameObjectManager.gameObjects.size}")
+        val rail = GameObject("Rail_${scene.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         transformComponent.scale.set(1f, 1f, 1f)
@@ -215,14 +209,14 @@ class PrefabsGenerator(
         )
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0))
-        scene.addGameObjectToScene(rail)
+        gameObjectManager.addGameObject(rail)
         return rail
     }
 
     fun spawnLedge(position: Vector3f = Vector3f(0f, 0.25f, 0f), material: MaterialType?): GameObject? {
         val scene = sceneManager.currentScene ?: return null
         val mat = material ?: MaterialType.CONCRETE
-        val ledge = GameObject("${mat.displayName}_Ledge_${scene.gameObjectManager.gameObjects.size}")
+        val ledge = GameObject("${mat.displayName}_Ledge_${scene.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         transformComponent.scale.set(1f, 1f, 1f)
@@ -241,13 +235,13 @@ class PrefabsGenerator(
         )
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
-        scene.addGameObjectToScene(ledge)
+        gameObjectManager.addGameObject(ledge)
         return ledge
     }
 
     fun spawnKicker(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject? {
         val scene = sceneManager.currentScene ?: return null
-        val kicker = GameObject("Kicker_${scene.gameObjectManager.gameObjects.size}")
+        val kicker = GameObject("Kicker_${scene.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         transformComponent.scale.set(1f, 1f, 1f)
@@ -284,13 +278,13 @@ class PrefabsGenerator(
             kicker.addComponent(CustomCollider3D(hullPoints))
         }
 
-        scene.addGameObjectToScene(kicker)
+        gameObjectManager.addGameObject(kicker)
         return kicker
     }
 
     fun spawnManualPad(position: Vector3f = Vector3f(0f, 0.1f, 0f), material: MaterialType?): GameObject? {
         val scene = sceneManager.currentScene ?: return null
-        val go = GameObject("ManualPad_${scene.gameObjectManager.gameObjects.size}")
+        val go = GameObject("ManualPad_${scene.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         go.addComponent(transformComponent)
@@ -309,14 +303,14 @@ class PrefabsGenerator(
         )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
-        scene.addGameObjectToScene(go)
+        gameObjectManager.addGameObject(go)
         return go
     }
 
 
     fun spawnBank(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject? {
         val scene = sceneManager.currentScene ?: return null
-        val go = GameObject("Bank_${scene.gameObjectManager.gameObjects.size}")
+        val go = GameObject("Bank_${scene.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         go.addComponent(transformComponent)
@@ -348,14 +342,14 @@ class PrefabsGenerator(
         }
         go.addComponent(CustomCollider3D(jmeVertices.map { Vector3f(it.x, it.y, it.z) }))
 
-        scene.addGameObjectToScene(go)
+        gameObjectManager.addGameObject(go)
         return go
     }
 
 
     fun spawnQuarterPipe(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject? {
         val scene = sceneManager.currentScene ?: return null
-        val go = GameObject("QuarterPipe_${scene.gameObjectManager.gameObjects.size}")
+        val go = GameObject("QuarterPipe_${scene.gameObjects.size}")
         val transformComponent = Transform()
         transformComponent.translation.set(position)
         go.addComponent(transformComponent)
@@ -387,7 +381,7 @@ class PrefabsGenerator(
         }
         go.addComponent(CustomCollider3D(jmeVertices.map { Vector3f(it.x, it.y, it.z) }))
 
-        scene.addGameObjectToScene(go)
+        gameObjectManager.addGameObject(go)
         return go
     }
 

@@ -2,11 +2,10 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
-import com.pafoid.skate.engine.ecs.scene.getGameObject
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.input.IInputProvider
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -26,13 +25,12 @@ import kotlin.math.sqrt
  * - Current input settings (deadzones, thresholds, sensitivities)
  *
  * @param inputProvider Provider for raw hardware inputs
- * @param settingsManager Settings manager for input configuration
  * @param stringManager String manager for localization
  */
 class InputTestingWindow(
     private val inputProvider: IInputProvider,
-    private val settingsManager: SettingsManager,
-    private val stringManager: StringManager
+    private val stringManager: StringManager,
+    private val gameObjectManager: GameObjectManager
 ) : IWindowWithScene, KoinComponent {
 
     private var showRawAxes = true
@@ -56,7 +54,7 @@ class InputTestingWindow(
 
         showProcessedState = ImGui.collapsingHeader(stringManager.getString("lbl.input_testing.processed_state"), ImGuiWindowFlags.None)
         if (showProcessedState) {
-            renderProcessedStateSection(currentScene)
+            renderProcessedStateSection()
         }
 
         showSettings = ImGui.collapsingHeader(stringManager.getString("lbl.input_testing.settings"), ImGuiWindowFlags.None)
@@ -246,10 +244,10 @@ class InputTestingWindow(
      * Renders the processed input state section.
      * Shows values from InputStateComponent.
      */
-    private fun renderProcessedStateSection(currentScene: Scene) {
+    private fun renderProcessedStateSection() {
         ImGui.indent()
 
-        val skater = currentScene.getGameObject("Skater")
+        val skater = gameObjectManager.getGameObject("Skater")
         val inputState = skater?.getComponent<InputStateComponent>()
 
         if (inputState == null) {

@@ -24,6 +24,7 @@ class GizmoSystem(
     private val renderer: Renderer,
     private val engine: Engine,
     private val eventSystem: EventSystem,
+    private val gameObjectManager: GameObjectManager,
     debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.LATE) {  // Late system - runs after input/physics
 
@@ -33,7 +34,8 @@ class GizmoSystem(
     private val translateGizmo = TranslateGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val rotationGizmo = RotationGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val scaleGizmo = ScaleGizmo(mouseListener, undoRedoManager, debugRenderer)
-    private val selectionGizmo = SelectionGizmo(mouseListener, undoRedoManager, renderer, engine, eventSystem)
+    private val selectionGizmo =
+        SelectionGizmo(mouseListener, undoRedoManager, renderer, engine, eventSystem, gameObjectManager)
     private val measureGizmo = MeasureTool(mouseListener, undoRedoManager, debugRenderer, settingsManager)
 
     override fun init(scene: Scene) {

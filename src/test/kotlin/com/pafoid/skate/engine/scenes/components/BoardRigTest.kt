@@ -101,7 +101,7 @@ class BoardRigTest {
     @Test
     fun `test suspension force application when grounded`() {
         // Add the skateboard to the scene so it can be processed
-        every { scene.gameObjectManager.gameObjects } returns mutableListOf(skateboard)
+        every { scene.gameObjectSystem.gameObjects } returns mutableListOf(skateboard)
         
         // Mock a hit result for the raycasts
         val hit = mockk<RayTestResult>()

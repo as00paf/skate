@@ -20,6 +20,7 @@ import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 import imgui.ImVec2
@@ -78,6 +79,7 @@ class ImGuiLayer(
     private val sceneSerializer: SceneSerializer,
     private val resourceManager: ResourceManager,
     private val windowRegistry: WindowRegistry,
+    private val gameObjectManager: GameObjectManager,
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -150,7 +152,14 @@ class ImGuiLayer(
                 windowController.glfwWindow,
                 sceneInitializer
             ),
-            editMenu = EditMenuBuilder(stringManager, undoRedoManager, clipboardService, sceneManager, eventSystem),
+            editMenu = EditMenuBuilder(
+                stringManager,
+                undoRedoManager,
+                clipboardService,
+                sceneManager,
+                eventSystem,
+                gameObjectManager
+            ),
             settingsMenu = SettingsMenuBuilder(
                 stringManager, settingsManager,
                 keyBindingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.keybindings" }?.showFlag ?: ImBoolean(false),

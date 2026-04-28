@@ -81,7 +81,7 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
     private fun rebuildCache() {
         rigidBodies.clear()
 
-        for (go in scene.gameObjectManager.gameObjects) {
+        for (go in scene.gameObjects) {
             if (go.hasComponent<RigidBody3D>()) {
                 rigidBodies.add(go)
             }

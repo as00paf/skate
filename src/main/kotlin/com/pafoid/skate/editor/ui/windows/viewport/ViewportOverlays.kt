@@ -75,7 +75,7 @@ class ViewportOverlays(
     
     private fun renderSpeedometerOverlay(windowPos: ImVec2, windowSize: ImVec2, scene: Scene?) {
         // Speedometer Overlay (Bottom Left)
-        val skateGo = scene?.gameObjectManager?.gameObjects?.find { it.name == "Skateboard" }
+        val skateGo = scene?.gameObjects?.find { it.name == "Skateboard" }
         val rb = skateGo?.getComponent<RigidBody3D>()
         val velocity = rb?.linearVelocity
 

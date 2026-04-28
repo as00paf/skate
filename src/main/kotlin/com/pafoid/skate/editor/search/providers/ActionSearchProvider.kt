@@ -17,7 +17,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.events.SceneDeleteRequested
 import com.pafoid.skate.engine.events.SceneRenameRequested
 import com.pafoid.skate.engine.events.ViewportCreateLight
@@ -37,6 +37,7 @@ class ActionSearchProvider(
     private val sceneSerializer: SceneSerializer,
     private val undoRedoManager: UndoRedoManager,
     private val serializer: Serializer,
+    private val gameObjectManager: GameObjectManager,
     private val logger: LoggerService,
 ) : BaseSearchProvider(), KoinComponent {
     
@@ -268,7 +269,7 @@ class ActionSearchProvider(
         val scene = sceneManager.currentScene ?: return
         val newGameObject = GameObject("Empty GameObject")
         newGameObject.addComponent(Transform())
-        undoRedoManager.executeCommand(CreateGameObjectCommand(newGameObject, scene))
+        undoRedoManager.executeCommand(CreateGameObjectCommand(newGameObject, scene, gameObjectManager))
         logger.logEditor("Created empty GameObject: ${newGameObject.name}")
     }
 
@@ -295,7 +296,7 @@ class ActionSearchProvider(
 
     private fun resetTransform() {
         val scene = sceneManager.currentScene ?: return
-        val selected = scene.getSelectedGameObject() ?: return
+        val selected = scene.selectedGameObject ?: return
         val transform = selected.getComponent<Transform>() ?: return
 
         val oldTransform = Transform().apply { copyFrom(transform) }
@@ -310,21 +311,21 @@ class ActionSearchProvider(
 
     private fun deleteSelected() {
         val scene = sceneManager.currentScene ?: return
-        val selected = scene.getSelectedGameObject() ?: return
-        undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene))
+        val selected = scene.selectedGameObject ?: return
+        undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene, gameObjectManager))
         logger.logEditor("Deleted GameObject: ${selected.name}")
     }
 
     private fun duplicateSelected() {
         val scene = sceneManager.currentScene ?: return
-        val selected = scene.getSelectedGameObject() ?: return
+        val selected = scene.selectedGameObject ?: return
 
         val duplicated = selected.copy(serializer)
         duplicated.name = "${selected.name} (Copy)"
 
         duplicated.getComponent<Transform>()?.translation?.add(1f, 0f, 0f)
 
-        undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene))
+        undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene, gameObjectManager))
         logger.logEditor("Duplicated GameObject: ${selected.name} -> ${duplicated.name}")
     }
 
@@ -387,7 +388,7 @@ class ActionSearchProvider(
 
     private fun renameGameObject() {
         val scene = sceneManager.currentScene ?: return
-        val selected = scene.getSelectedGameObject() ?: return
+        val selected = scene.selectedGameObject ?: return
         val newName = javax.swing.JOptionPane.showInputDialog(
             null,
             "Enter new name:",

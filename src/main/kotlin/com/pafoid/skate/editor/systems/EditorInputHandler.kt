@@ -8,7 +8,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.input.IInputBuffer
@@ -30,7 +30,8 @@ class EditorInputHandler(
     private val inputBuffer: IInputBuffer,
     private val clipboardService: ClipboardService,
     private val undoRedoManager: UndoRedoManager,
-    private val logger: LoggerService
+    private val gameObjectManager: GameObjectManager,
+    private val logger: LoggerService,
 ) : KoinComponent {
 
     private val settingsManager: SettingsManager by inject()
@@ -52,7 +53,7 @@ class EditorInputHandler(
         if (scene == null) return
 
         val inputMappings = settingsManager.loadInputMappings() ?: InputMappings()
-        val selected = scene.getSelectedGameObject()
+        val selected = scene.selectedGameObject
 
         // Global hierarchy actions (work regardless of window focus)
         handleGlobalHierarchyActions(scene, selected, inputMappings)
@@ -89,7 +90,7 @@ class EditorInputHandler(
 
         // Delete selected object
         if (keyListener.keyBeginPress(inputMappings.hierarchyDelete.keyboardKey) && selected != null) {
-            undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene))
+            undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene, gameObjectManager))
             eventSystem.publish(SelectionCleared)
             logger.logEditor("Deleted GameObject: ${selected.name}")
         }
@@ -97,7 +98,7 @@ class EditorInputHandler(
         // Create new GameObject (Insert)
         if (keyListener.keyBeginPress(inputMappings.hierarchyCreateNew.keyboardKey)) {
             val newObj = GameObject("GameObject")
-            undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene))
+            undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene, gameObjectManager))
             eventSystem.publish(GameObjectSelected(newObj))
             logger.logEditor("Created new GameObject: ${newObj.name}")
         }
@@ -107,7 +108,7 @@ class EditorInputHandler(
             !ctrlDown && selected != null
         ) {
             val clone = cloneGameObject(selected)
-            undoRedoManager.executeCommand(CreateGameObjectCommand(clone, scene))
+            undoRedoManager.executeCommand(CreateGameObjectCommand(clone, scene, gameObjectManager))
             eventSystem.publish(GameObjectSelected(clone))
             logger.logEditor("Duplicated GameObject: ${selected.name} -> ${clone.name}")
         }
@@ -161,7 +162,7 @@ class EditorInputHandler(
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
                 if (selected != null) {
                     clipboardService.copy(selected)
-                    undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, currentScene))
+                    undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, currentScene, gameObjectManager))
                     logger.logEditor("Cut GameObject: ${selected.name}")
                 }
             }
@@ -176,7 +177,13 @@ class EditorInputHandler(
                     // Set parent to null, as it's being pasted as a root object
                     clonedGameObject.parent = null
 
-                    undoRedoManager.executeCommand(CreateGameObjectCommand(clonedGameObject, currentScene))
+                    undoRedoManager.executeCommand(
+                        CreateGameObjectCommand(
+                            clonedGameObject,
+                            currentScene,
+                            gameObjectManager
+                        )
+                    )
                     logger.logEditor("Pasted GameObject: ${clonedGameObject.name}")
                 }
             }

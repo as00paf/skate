@@ -4,7 +4,7 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.scene.getGameObject
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.input.listeners.MouseListener
@@ -17,11 +17,12 @@ class SelectionGizmo(
     private val renderer: Renderer,
     private val engine: Engine,
     private val eventSystem: EventSystem,
+    private val gameObjectManager: GameObjectManager,
 ) : Gizmo(mouseListener, undoRedoManager) {
 
     fun getHoveredObject(x: Float, y: Float): GameObject? {
         val id = renderer.readPixel(x, y)
-        return scene.getGameObject(id)
+        return gameObjectManager.getGameObject(id)
     }
 
     var hoveredGameObjectUid: Int = -1

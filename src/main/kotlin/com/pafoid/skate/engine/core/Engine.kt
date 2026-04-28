@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.core
 import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.engine.utils.JobSystem.runOnMain
@@ -47,14 +46,14 @@ class Engine : KoinComponent {
         if (dt >= 0 && scene != null) {
             if (runtimePlaying) {
                 // Update scene with the actual delta time
-                scene.updateScene(dt)
+                scene.update(dt)
             } else {
                 // Editor mode: update editor workspace first, then gameplay systems
                 workspace.update(dt)
-                scene.editorUpdateScene(dt)
+                scene.update(dt)
             }
 
-            renderer.render(scene, scene.getSelectedGameObject(), imguiLayer.getHoveredGameObject())
+            renderer.render(scene, scene.selectedGameObject, imguiLayer.getHoveredGameObject())
             imguiLayer.update(dt)
         }
     }

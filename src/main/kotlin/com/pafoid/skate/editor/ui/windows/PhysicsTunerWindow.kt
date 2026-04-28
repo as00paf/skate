@@ -5,22 +5,21 @@ import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
-import com.pafoid.skate.engine.ecs.scene.getGameObject
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
-class PhysicsTunerWindow : IWindowWithScene, KoinComponent {
-    private val stringManager: StringManager by inject()
+class PhysicsTunerWindow(
+    private val stringManager: StringManager,
+    private val gameObjectManager: GameObjectManager,
+) : IWindowWithScene, KoinComponent {
 
-    override fun imgui(currentScene: Scene) {
-        val physics: IPhysics3D = currentScene.physics3d
-
-
+    override fun imgui(scene: Scene) {
+        val physics: IPhysics3D = scene.physics3d
 
         ImGui.begin(stringManager.getString("window.physics_tuner"))
         
@@ -38,7 +37,7 @@ class PhysicsTunerWindow : IWindowWithScene, KoinComponent {
             }
         }
 
-        val skater = currentScene.getGameObject("Skater") ?: run {
+        val skater = gameObjectManager.getGameObject("Skater") ?: run {
             ImGui.end()
             return
         }
@@ -61,7 +60,7 @@ class PhysicsTunerWindow : IWindowWithScene, KoinComponent {
             }
         }
 
-        val skate = currentScene.getGameObject("Skate") ?: run {
+        val skate = gameObjectManager.getGameObject("Skate") ?: run {
             ImGui.end()
             return
         }

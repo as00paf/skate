@@ -8,7 +8,6 @@ import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
 import com.pafoid.skate.engine.utils.SkeletonMath
 import imgui.ImGui
 import imgui.flag.ImGuiTreeNodeFlags
@@ -49,7 +48,7 @@ class SkeletonComponent(
     override fun imgui() {
         val skeleton = pose.skeleton
         val go = gameObject
-        if (go != sceneManager.currentScene?.getSelectedGameObject()) return
+        if (go != sceneManager.currentScene?.selectedGameObject) return
 
         ImGui.inputText(stringManager.getString("lbl.bone_tree.pose_file_name"), poseFileName)
 

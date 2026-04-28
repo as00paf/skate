@@ -43,7 +43,7 @@ class SceneManager : KoinComponent {
         activeSceneIndex = openScenes.size - 1
 
         logger.logEngine("Loading scene: ${scene.name}")
-        scene.startScene()
+        scene.start()
 
         // Publish scene opened event
         eventSystem.publish(SceneOpened(scene))

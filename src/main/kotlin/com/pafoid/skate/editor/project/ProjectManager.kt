@@ -141,7 +141,7 @@ class ProjectManager(
         prefabsGenerator.spawnSkaterSync(scene)
         prefabsGenerator.spawnFloorSync(scene)
 
-        logger.logEditor("Spawned ${scene.gameObjectManager.gameObjects.size} objects")
+        logger.logEditor("Spawned ${scene.gameObjects.size} objects")
 
         // CRITICAL: Populate modelGuid on all RenderComponents before saving.
         // model is @Transient and won't be serialized — without modelGuid,
@@ -185,7 +185,7 @@ class ProjectManager(
      * reloaded when the scene is opened later.
      */
     private fun resolveModelGuidsInScene(scene: Scene) {
-        scene.gameObjectManager.gameObjects.forEach { obj ->
+        scene.gameObjects.forEach { obj ->
             resolveModelGuidForObject(obj)
             obj.children.forEach { child -> resolveModelGuidForObject(child) }
         }
@@ -268,7 +268,7 @@ class ProjectManager(
      * reloaded when the scene is opened later.
      */
     private fun resolveAnimationPathsInScene(scene: Scene) {
-        scene.gameObjectManager.gameObjects.forEach { obj ->
+        scene.gameObjects.forEach { obj ->
             resolveAnimatorPathsForObject(obj)
             obj.children.forEach { child -> resolveAnimatorPathsForObject(child) }
         }
@@ -361,12 +361,12 @@ class ProjectManager(
 
         // Destroy all game objects from open scenes and clean up physics
         sceneManager.openScenes.toList().forEach { scene ->
-            scene.gameObjectManager.gameObjects.forEach { go ->
+            scene.gameObjects.forEach { go ->
                 scene.physics3d.remove(go)
             }
-            scene.gameObjectManager.gameObjects.forEach { it.destroy() }
-            scene.gameObjectManager.gameObjects.clear()
-            scene.gameObjectManager.pendingObjects.clear()
+            scene.gameObjects.forEach { it.destroy() }
+            scene.gameObjects.clear()
+            scene.pendingObjects.clear()
             systemManager.resetSystemCaches()
         }
 

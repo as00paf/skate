@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
-import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
@@ -11,6 +10,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import imgui.ImGui
 import imgui.ImVec2
@@ -37,7 +37,7 @@ class ViewportToolbar(
     private val engine: Engine,
     private val logger: LoggerService,
     private val stringManager: StringManager,
-    private val workspace: EditorWorkspace
+    private val systemManager: SystemManager,
 ) {
     
     companion object {
@@ -76,13 +76,13 @@ class ViewportToolbar(
     private fun addGizmoButtons(
         buttons: MutableList<() -> Unit>
     ) {
-        val gizmoSystem = workspace.getGizmoSystem()
+        val gizmoSystem = systemManager.getSystem<GizmoSystem>()
         // Select Tool
         buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.SELECTION_GIZMO
+            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.SELECTION_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.MOUSE_POINTER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem.toggleGizmo(GizmoSystem.SELECTION_GIZMO)
+                gizmoSystem?.toggleGizmo(GizmoSystem.SELECTION_GIZMO)
             }
             if (isActive) ImGui.popStyleColor()
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.select_tool"))
@@ -90,10 +90,10 @@ class ViewportToolbar(
 
         // Translate Tool
         buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
+            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.MOVE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem.toggleGizmo(GizmoSystem.TRANSLATE_GIZMO)
+                gizmoSystem?.toggleGizmo(GizmoSystem.TRANSLATE_GIZMO)
             }
             if (isActive) ImGui.popStyleColor()
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.translate_tool"))
@@ -101,10 +101,10 @@ class ViewportToolbar(
 
         // Rotate Tool
         buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.ROTATION_GIZMO
+            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.ROTATION_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.ROTATE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem.toggleGizmo(GizmoSystem.ROTATION_GIZMO)
+                gizmoSystem?.toggleGizmo(GizmoSystem.ROTATION_GIZMO)
             }
             if (isActive) ImGui.popStyleColor()
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.rotate_tool"))
@@ -112,10 +112,10 @@ class ViewportToolbar(
 
         // Scale Tool
         buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.SCALE_GIZMO
+            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.SCALE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.SCALE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem.toggleGizmo(GizmoSystem.SCALE_GIZMO)
+                gizmoSystem?.toggleGizmo(GizmoSystem.SCALE_GIZMO)
             }
             if (isActive) ImGui.popStyleColor()
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.scale_tool"))
@@ -123,14 +123,14 @@ class ViewportToolbar(
 
         // Measure Tool
         buttons.add {
-            val isActive = gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO
+            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.MEASURE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem.toggleGizmo(GizmoSystem.MEASURE_GIZMO)
+                gizmoSystem?.toggleGizmo(GizmoSystem.MEASURE_GIZMO)
             }
             if (isActive) {
                 ImGui.popStyleColor()
-                workspace.getSystem<MeasureTool>()?.let { tool ->
+                systemManager.getSystem<MeasureTool>()?.let { tool ->
                     tool.measurementText?.let { text ->
                         tool.measurementPos?.let { pos ->
                             ImGui.setNextWindowPos(pos.x, pos.y)
@@ -197,7 +197,7 @@ class ViewportToolbar(
         buttons.add {
             if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 scene?.let {
-                    it.gameObjectManager.gameObjects.find { obj -> obj.name == "Skateboard" }?.let { skate ->
+                    it.gameObjects.find { obj -> obj.name == "Skateboard" }?.let { skate ->
                         skate.getComponent<Transform>()?.translation?.set(0f, 0.5f, 0f)
                         skate.getComponent<Transform>()?.rotation?.set(0f, 0f, 0f)
                         val rb = skate.getComponent<RigidBody3D>()

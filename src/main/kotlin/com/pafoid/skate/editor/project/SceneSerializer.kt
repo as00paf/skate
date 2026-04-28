@@ -11,7 +11,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.engine.ecs.scene.addGameObjectImmediate
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import kotlinx.serialization.Serializable
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
@@ -34,7 +34,8 @@ class SceneSerializer(
     private val serializer: Serializer,
     private val logger: LoggerService,
     private val resourceManager: ResourceManager,
-    private val assetDatabase: AssetDatabase? = null
+    private val assetDatabase: AssetDatabase? = null,
+    private val gameObjectManager: GameObjectManager,
 ) {
 
     fun save(scene: Scene) {
@@ -64,7 +65,7 @@ class SceneSerializer(
             File(path).parentFile?.mkdirs()
 
             val data = SceneSaveData(
-                gameObjects = scene.gameObjectManager.gameObjects.filter { it.doSerialization() },
+                gameObjects = scene.gameObjects.filter { it.doSerialization() },
                 sceneData = scene.sceneData,
                 scenePath = path
             )
@@ -120,9 +121,8 @@ class SceneSerializer(
             return
         }
 
-        scene.gameObjectManager.gameObjects.forEach { it.destroy() }
-        scene.gameObjectManager.gameObjects.clear()
-        scene.gameObjectManager.pendingObjects.clear()
+        scene.gameObjects.forEach { it.destroy() }
+        scene.gameObjects.clear()
 
         scene.name = File(path).name
         scene.sceneData = data.sceneData
@@ -134,7 +134,7 @@ class SceneSerializer(
         data.gameObjects.forEach { obj ->
             obj.getAllComponents().forEach { it.init(obj) }
 
-            scene.addGameObjectImmediate(obj)
+            gameObjectManager.addGameObjectImmediate(obj)
 
             obj.getAllComponents().forEach { component ->
                 if (component.getUid() > maxCompId) {
@@ -160,14 +160,14 @@ class SceneSerializer(
 
         logger.logEditor("Scene loaded from $path")
 
-        scene.gameObjectManager.gameObjects.forEach { go ->
+        scene.gameObjects.forEach { go ->
             val compCount = go.getAllComponents().size
             logger.logEditor("[DIAG]   - ${go.name}: $compCount components")
         }
     }
 
     private fun resolveAssetReferences(scene: Scene) {
-        scene.gameObjectManager.gameObjects.forEach { obj ->
+        scene.gameObjects.forEach { obj ->
             resolveObjectReferences(obj)
             obj.children.forEach { child -> resolveObjectReferences(child) }
         }
@@ -261,7 +261,7 @@ class SceneSerializer(
     }
 
     private fun resolveAnimationReferences(scene: Scene) {
-        scene.gameObjectManager.gameObjects.forEach { obj ->
+        scene.gameObjects.forEach { obj ->
             resolveAnimatorAnimations(obj)
             obj.children.forEach { child -> resolveAnimatorAnimations(child) }
         }

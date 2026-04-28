@@ -4,10 +4,12 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 
 class DuplicateGameObjectCommand(
     private val gameObject: GameObject,
-    private val scene: Scene
+    private val scene: Scene,
+    private val gameObjectManager: GameObjectManager,
 ) : Command {
     override fun execute() {
         val duplicated = GameObject("${gameObject.name} (Copy)")
@@ -28,8 +30,8 @@ class DuplicateGameObjectCommand(
             duplicated.addComponent(newRender)
         }
 
-        scene.gameObjectManager.addGameObject(duplicated)
-        scene.gameObjectManager.setSelectedGameObject(duplicated)
+        gameObjectManager.addGameObject(duplicated)
+        scene.selectedGameObject = duplicated
     }
 
     override fun undo() {

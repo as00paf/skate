@@ -12,6 +12,7 @@ import com.pafoid.skate.editor.commands.SpawnPrefabCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
@@ -23,7 +24,7 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.scene.getSelectedGameObject
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.events.ViewportCreateCamera
 import com.pafoid.skate.engine.events.ViewportCreateEmpty
@@ -52,6 +53,7 @@ class ViewportActionHandler : KoinComponent {
     private val logger: LoggerService by inject()
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val resourceManager: ResourceManager by inject()
+    private val gameObjectManager: GameObjectManager by inject()
 
     fun init() {
         eventSystem.subscribe<ViewportCreateEmpty> { event ->
@@ -98,40 +100,38 @@ class ViewportActionHandler : KoinComponent {
 
     private fun handleCreateEmpty(scene: Scene) {
         val newObj = GameObject("GameObject")
-        undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene))
+        undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene, gameObjectManager))
         logger.logEditor("Created empty GameObject: ${newObj.name}")
     }
 
     private fun handleCreatePrimitive(name: String, halfExtents: Vector3f) {
         val scene = sceneManager.currentScene ?: return
-        val command = CreatePrimitiveCommand(name, halfExtents, scene)
+        val command = CreatePrimitiveCommand(name, halfExtents, scene, gameObjectManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Created primitive: $name")
     }
 
     private fun handleCreateLight(name: String, type: com.pafoid.skate.editor.ui.windows.LightType) {
         val scene = sceneManager.currentScene ?: return
-        val command = CreateLightCommand(name, type, scene)
+        val command = CreateLightCommand(name, type, scene, gameObjectManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Created light: $name")
     }
 
     private fun handleCreateCamera(scene: Scene) {
         val cameraObj = GameObject("Camera")
-        undoRedoManager.executeCommand(CreateGameObjectCommand(cameraObj, scene))
+        undoRedoManager.executeCommand(CreateGameObjectCommand(cameraObj, scene, gameObjectManager))
         logger.logEditor("Created camera: ${cameraObj.name}")
     }
 
-    private fun handleSpawnPrefab(prefabType: com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType, position: Vector3f?) {
-        val scene = sceneManager.currentScene ?: return
-
-        if (prefabType == com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType.SKATEBOARD) {
+    private fun handleSpawnPrefab(prefabType: PrefabType, position: Vector3f?) {
+        if (prefabType == PrefabType.SKATEBOARD) {
             prefabsGenerator.spawnSkateboard()
             logger.logEditor("Spawned skateboard")
             return
         }
 
-        val command = SpawnPrefabCommand(prefabType, position, prefabsGenerator, scene)
+        val command = SpawnPrefabCommand(prefabType, position, prefabsGenerator, gameObjectManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Spawned prefab: ${prefabType.name}")
     }
@@ -156,20 +156,20 @@ class ViewportActionHandler : KoinComponent {
 
     private fun handleDuplicate(gameObject: GameObject) {
         val scene = sceneManager.currentScene ?: return
-        val command = DuplicateGameObjectCommand(gameObject, scene)
+        val command = DuplicateGameObjectCommand(gameObject, scene, gameObjectManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Duplicated GameObject: ${gameObject.name}")
     }
 
     private fun handleDelete(gameObject: GameObject, scene: Scene) {
-        undoRedoManager.executeCommand(DeleteGameObjectCommand(gameObject, scene))
+        undoRedoManager.executeCommand(DeleteGameObjectCommand(gameObject, scene, gameObjectManager))
         eventSystem.publish(SelectionCleared)
         logger.logEditor("Deleted GameObject: ${gameObject.name}")
     }
 
     private fun handleFocusSelected() {
         val scene = sceneManager.currentScene ?: return
-        val selected = scene.getSelectedGameObject() ?: return
+        val selected = scene.selectedGameObject ?: return
         val transform = selected.getComponent<Transform>() ?: return
         val pos = transform.translation
 
@@ -219,7 +219,7 @@ class ViewportActionHandler : KoinComponent {
                 planeObj.addComponent(RenderComponent(model = texturedModel, castShadow = false, receiveShadow = true))
                 planeObj.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
                 planeObj.addComponent(BoxCollider3D(Vector3f(5f, 0.05f, 5f)))
-                undoRedoManager.executeCommand(CreateGameObjectCommand(planeObj, scene))
+                undoRedoManager.executeCommand(CreateGameObjectCommand(planeObj, scene, gameObjectManager))
                 logger.logEditor("Created textured plane at ${position.x}, ${position.y}, ${position.z}")
             }
         }
