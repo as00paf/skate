@@ -46,11 +46,6 @@ class DirectionalLightSystem(
         }
     }
 
-    override fun editorUpdate(dt: Float) {
-        // Update light in editor mode too (shadows should work in editor)
-        update(0f)
-    }
-
     /**
      * Computes the light space matrix for shadow mapping.
      */

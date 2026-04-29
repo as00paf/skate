@@ -1,5 +1,6 @@
 package com.pafoid.skate.app
 
+import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.EditorEventHandler
 import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
@@ -87,6 +88,7 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -165,6 +167,7 @@ val appModule = module {
             DayNightCycleSystem(null, get()),
             EnvironmentSystem(get()),
             DirectionalLightSystem(get()),
+            EditorCamera(Camera(), get(), get()),
         )
     }
 

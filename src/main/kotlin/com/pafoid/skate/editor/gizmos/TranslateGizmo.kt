@@ -29,10 +29,7 @@ class TranslateGizmo(
     private var yAxisHot = false
     private var zAxisHot = false
 
-    override fun update(dt: Float) {}
-
-    override fun editorUpdate(dt: Float) {
-        super.editorUpdate(dt)
+    override fun update(dt: Float) {
         val go = activeGameObject ?: return
         go.getComponent<Transform>()?.let{ transform ->
             val pos = transform.translation

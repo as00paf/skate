@@ -23,8 +23,7 @@ class RotationGizmo(
     private var yAxisHot = false
     private var zAxisHot = false
 
-    override fun editorUpdate(dt: Float) {
-        super.editorUpdate(dt)
+    override fun update(dt: Float) {
         activeGameObject?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
 

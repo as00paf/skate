@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.EditorWorkspace
+import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.LoggerService
@@ -13,8 +13,8 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import imgui.ImGui
 import imgui.ImVec2
@@ -32,7 +32,7 @@ class GameViewWindow : IWindow, KoinComponent {
     private val settingsManager: SettingsManager by inject()
     private val stringManager: StringManager by inject()
     private val eventSystem: EventSystem by inject()
-    private val workspace: EditorWorkspace by inject()
+    private val systemManager: SystemManager by inject()
 
     private val viewportRenderer: ViewportRenderer by inject()
     private val viewportToolbar: ViewportToolbar by inject()
@@ -85,9 +85,9 @@ class GameViewWindow : IWindow, KoinComponent {
         mouseListener.setGameViewportPos(Vector2f(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY))
         mouseListener.setGameViewportSize(Vector2f(viewportRenderer.imageSizeX, viewportRenderer.imageSizeY))
 
-        workspace.editorInputState.isFocused = ImGui.isWindowFocused()
+        systemManager.getSystem<EditorCamera>()?.editorState?.isFocused = ImGui.isWindowFocused()
 
-        val hovered = getHoveredObject()
+        val hovered = sceneManager.currentScene?.hoveredGameObject
         if (hovered != null) {
             ImGui.setCursorPos(windowPos.x + 10f, windowPos.y + 20f)
             ImGui.textColored(
@@ -100,10 +100,6 @@ class GameViewWindow : IWindow, KoinComponent {
         }
 
         ImGui.end()
-    }
-
-    fun getHoveredObject(): GameObject? {
-        return workspace.getGizmoSystem().getHoveredGameObject()
     }
 
     private fun getLargestSizeForViewport(): ImVec2 {

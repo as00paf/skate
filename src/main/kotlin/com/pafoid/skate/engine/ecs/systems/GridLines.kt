@@ -91,24 +91,6 @@ data class GridConfig(
     }
 }
 
-/**
- * System responsible for rendering a 3D grid in the editor viewport.
- *
- * This system renders a horizontal grid plane (X-Z) that follows the camera
- * with an infinite scrolling effect, similar to Godot Engine's 3D editor grid.
- *
- * Features:
- * - Dynamic grid extent based on camera distance
- * - Major/minor line distinction for visual clarity
- * - Origin axes (X=red, Y=green, Z=blue) at world origin
- * - LOD system to hide minor lines when camera is far
- * - ImGui configuration panel for real-time tuning
- *
- * @param debugRenderer Renderer for debug lines
- * @param sceneManager Manager for accessing current scene and camera
- * @param config Grid configuration (optional, uses defaults if not provided)
- * @param stringManager String manager for localization
- */
 class GridLines(
     private val debugRenderer: DebugRenderer,
     private val sceneManager: SceneManager,
@@ -139,7 +121,7 @@ class GridLines(
     // Snap visualization marker (cached)
     private val snapMarkerColorCached = Vector3f(0f, 1f, 0f)
 
-    override fun editorUpdate(dt: Float) {
+    override fun update(dt: Float) {
         if (!config.showGrid) return
 
         val scene = sceneManager.currentScene ?: return

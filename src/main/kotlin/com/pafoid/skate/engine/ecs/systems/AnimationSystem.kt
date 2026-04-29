@@ -61,22 +61,6 @@ class AnimationSystem(
         }
     }
 
-    override fun editorUpdate(dt: Float) {
-        if (cacheDirty) rebuildCache()
-
-        for (go in animatedObjects) {
-            val animator = go.getComponent<Animator>()
-            val skeletonComponent = go.getComponent<SkeletonComponent>()
-
-            if (animator != null && skeletonComponent != null) {
-                // Update animator state first (selects animation based on state)
-                animator.update(dt)
-                // Then update the animation
-                updateAnimation(animator, skeletonComponent, dt)
-            }
-        }
-    }
-
     /**
      * Rebuilds the cache of animated GameObjects.
      * This is an O(n) operation but only called when the cache is dirty.

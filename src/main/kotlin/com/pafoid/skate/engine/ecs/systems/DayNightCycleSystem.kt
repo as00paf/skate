@@ -81,11 +81,6 @@ class DayNightCycleSystem(
         }
     }
 
-    override fun editorUpdate(dt: Float) {
-        // Update day/night cycle in editor mode too (use small dt to avoid rapid cycling)
-        update(0f)  // Don't advance time, just compute sun direction/color from current cycleTime
-    }
-
     /**
      * Updates LightingStateComponent with computed ambient color and intensity.
      * Only called when autoAmbient is enabled.

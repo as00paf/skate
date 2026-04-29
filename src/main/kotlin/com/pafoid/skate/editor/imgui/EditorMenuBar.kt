@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImGui
 import imgui.internal.ImGui.image
+import java.io.File
 
 class EditorMenuBar(
     private val fileMenu: FileMenuBuilder,
@@ -89,7 +90,7 @@ class EditorMenuBar(
                 if (filteredProjects.isNotEmpty()) {
                     for (project in filteredProjects) {
                         if (ImGui.menuItem(project.name)) {
-                            projectManager.openProject(java.io.File(project.path))
+                            projectManager.openProject(File(project.path))
                         }
                     }
                 } else {

@@ -261,7 +261,7 @@ class InputSystemTest {
         inputSystem.editorUpdate(0.016f)
 
         // Assert
-        verify { editorCamera.editorInput.reset() }
+        verify { editorCamera.editorState.reset() }
     }
 
     @Test
@@ -278,7 +278,7 @@ class InputSystemTest {
         inputSystem.editorUpdate(0.016f)
 
         // Assert
-        verify { editorCamera.editorInput.reset() }
+        verify { editorCamera.editorState.reset() }
     }
 
     // =========================================================================

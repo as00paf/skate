@@ -28,7 +28,7 @@ class MeasureTool(
     var measurementPos: Vector2f? = null
         private set
 
-    override fun editorUpdate(dt: Float) {
+    override fun update(dt: Float) {
         // Reset if not in use
         if (!isInUse()) {
             startPoint = null

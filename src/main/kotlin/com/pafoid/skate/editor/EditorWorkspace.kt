@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.engine.core.Workspace
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
@@ -17,7 +16,6 @@ import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.render.Camera
 
 class EditorWorkspace(
     private val systemManager: SystemManager = SystemManager(),
@@ -35,13 +33,10 @@ class EditorWorkspace(
     private val dayNightCycleSystem: DayNightCycleSystem,
     private val environmentSystem: EnvironmentSystem,
     private val directionalLightSystem: DirectionalLightSystem,
+    private val editorCamera: EditorCamera,
 ) : Workspace {
 
-    val editorInputState: EditorInputStateComponent = EditorInputStateComponent()
-
     private var systemsInitialized = false
-
-    private val editorCamera: EditorCamera = EditorCamera(Camera(), editorInputState)
 
     override fun init(glfwWindow: Long) {
         editorInputHandler.init(glfwWindow)
@@ -58,14 +53,14 @@ class EditorWorkspace(
             systemsInitialized = true
         }
 
-        systemManager.editorUpdate(dt)
+        systemManager.update(dt)
         editorInputHandler.update(scene)
     }
 
     private fun initializeSystems(scene: Scene) {
         listOf(
-            audioSystem, // Core
             gameObjectManager,
+            audioSystem, // Core
             inputSystem,
             environmentSystem,
             animationSystem,
@@ -82,8 +77,6 @@ class EditorWorkspace(
             it.init(scene)
         }
     }
-
-    fun getGizmoSystem(): GizmoSystem = gizmoSystem
 
     fun destroy() {
         systemManager.destroy()

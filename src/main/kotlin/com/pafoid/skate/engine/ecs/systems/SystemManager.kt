@@ -16,54 +16,10 @@ class SystemManager {
     // Public read-only view of systems
     val systems: List<System> get() = _systems
 
-    /**
-     * Adds a System to the scene. If the scene is running, adds it to pending systems
-     * to be processed in the next update cycle.
-     */
-    fun addSystem(system: System, isRunning: Boolean = false) {
-        if (!isRunning) {
-            _systems.add(system)
-            systemsNeedSort = true
-        } else {
-            pendingSystems.add(system)
-        }
+    fun start() {
+        systems.forEach { it.start() }
     }
 
-    /**
-     * Removes a System from the scene.
-     */
-    fun removeSystem(system: System) {
-        _systems.remove(system)
-        pendingSystems.remove(system)
-        systemsNeedSort = true
-    }
-
-    /**
-     * Gets a System by its class type.
-     */
-    inline fun <reified T : System> getSystem(): T? {
-        return systems.filterIsInstance<T>().firstOrNull()
-    }
-
-    /**
-     * Updates all systems in the scene during editor mode.
-     * Systems are executed in priority order (lowest first).
-     */
-    fun editorUpdate(dt: Float) {
-        sortSystemsIfNeeded()
-        _systems.forEach { system ->
-            if (system.enabled) {
-                system.editorUpdate(dt)
-            }
-        }
-
-        processPendingSystems()
-    }
-
-    /**
-     * Updates all systems in the scene during runtime.
-     * Systems are executed in priority order (lowest first).
-     */
     fun update(dt: Float) {
         sortSystemsIfNeeded()
         _systems.forEach { system ->
@@ -75,11 +31,25 @@ class SystemManager {
         processPendingSystems()
     }
 
-    /**
-     * Sorts systems by priority if needed.
-     * Called before each update cycle when systems have been added/removed.
-     * Priority order: EARLY → DEFAULT → LATE
-     */
+    fun addSystem(system: System, isRunning: Boolean = false) {
+        if (!isRunning) {
+            _systems.add(system)
+            systemsNeedSort = true
+        } else {
+            pendingSystems.add(system)
+        }
+    }
+
+    fun removeSystem(system: System) {
+        _systems.remove(system)
+        pendingSystems.remove(system)
+        systemsNeedSort = true
+    }
+
+    inline fun <reified T : System> getSystem(): T? {
+        return systems.filterIsInstance<T>().firstOrNull()
+    }
+
     private fun sortSystemsIfNeeded() {
         if (systemsNeedSort) {
             _systems.sortBy { it.priority.ordinal }
@@ -87,9 +57,6 @@ class SystemManager {
         }
     }
 
-    /**
-     * Processes any pending systems that need to be added to the scene.
-     */
     private fun processPendingSystems() {
         pendingSystems.forEach { system ->
             _systems.add(system)
@@ -100,11 +67,6 @@ class SystemManager {
         pendingSystems.clear()
     }
 
-    /**
-     * Resets all system caches.
-     * Call this when the scene's GameObject list changes (e.g. after reload)
-     * so that systems rebuild their cached references.
-     */
     fun resetSystemCaches() {
         _systems.forEach { system ->
             system.invalidateCaches()
@@ -114,9 +76,6 @@ class SystemManager {
         }
     }
 
-    /**
-     * Destroys all systems managed by this manager.
-     */
     fun destroy() {
         _systems.forEach { it.destroy() }
         _systems.clear()

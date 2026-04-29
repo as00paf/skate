@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 
 /**
  * Manages the lifecycle and operations of GameObjects within a scene.
@@ -10,6 +10,11 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
  * the burden on the Scene class and improve separation of concerns.
  */
 class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
+
+    override fun init(scene: Scene) {
+        super.init(scene)
+        scene.gameObjects.forEach { it.start() }
+    }
 
     override fun start() {
         scene.gameObjects.forEach { go ->
@@ -28,26 +33,6 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
                 scene.physics3d.add(go)
             }
         }
-    }
-
-    override fun editorUpdate(dt: Float) {
-        val iterator = scene.gameObjects.iterator()
-        while (iterator.hasNext()) {
-            val go = iterator.next()
-            if (go.isDead()) {
-                scene.physics3d.remove(go)
-                iterator.remove()
-                continue
-            }
-            go.editorUpdate(dt)
-            val rb = go.getComponent<RigidBody3D>()
-            if (rb?.physicsDirty == true) {
-                scene.physics3d.update(go)
-                rb.physicsDirty = false
-            }
-        }
-
-        processPendingObjects()
     }
 
     override fun update(dt: Float) {

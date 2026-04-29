@@ -74,10 +74,6 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
         }
     }
 
-    override fun editorUpdate(dt: Float) {
-        update(dt)
-    }
-
     private fun rebuildCache() {
         rigidBodies.clear()
 

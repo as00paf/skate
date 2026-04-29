@@ -48,10 +48,6 @@ class AudioSystem(
         updateAudioSources()
     }
 
-    override fun editorUpdate(dt: Float) {
-        update(dt)
-    }
-
     override fun imgui() {
         // Master Volume
         val volumeArray = floatArrayOf(1.0f)

@@ -17,7 +17,6 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.WindowController
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
@@ -362,10 +361,6 @@ class ImGuiLayer(
 
     fun onWindowDecorationChanged() {
         needsDecorationUpdate = true
-    }
-
-    fun getHoveredGameObject(): GameObject? {
-        return windowRegistry.gameViewWindow.getHoveredObject()
     }
 
     fun destroy() {

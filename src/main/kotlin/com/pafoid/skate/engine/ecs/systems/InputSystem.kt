@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
@@ -16,27 +15,9 @@ import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.game.skateboard.TrickType
 import imgui.ImGui
-import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 
-/**
- * System responsible for polling raw hardware inputs and converting them to gameplay state.
- *
- * This system runs at [ExecutionPriority.EARLY] to ensure input state is ready before
- * gameplay systems like [PlayerController] read from [InputStateComponent].
- *
- * Publishes events:
- * - [JumpPressed] when jump button is pressed
- * - [JumpReleased] when jump button is released
- * - [MovementInput] when movement input changes
- * - [TrickInput] for trick input buttons
- *
- * @param inputProvider Provider for raw hardware inputs
- * @param mouseListener Mouse listener for camera control
- * @param settingsManager Settings manager for input mappings and configuration
- * @param stringManager String manager for localized UI strings
- */
 class InputSystem(
     private val inputProvider: IInputProvider,
     private val mouseListener: MouseListener,
@@ -79,15 +60,6 @@ class InputSystem(
         if (inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) {
             previousButtons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)?.clone()
         }
-    }
-
-    override fun editorUpdate(dt: Float) {
-        /*val editorInput = editorWorkspace.editorInputState
-
-        editorInput.reset()
-
-        pollEditorKeyboardInput(editorInput)
-        pollEditorMouseInput(editorInput)*/
     }
 
     private fun pollGamepadInput(inputState: InputStateComponent) {
@@ -241,61 +213,6 @@ class InputSystem(
         }
 
         return false
-    }
-
-    private fun pollEditorKeyboardInput(editorInput: EditorInputStateComponent) {
-        if (!editorInput.isFocused) return
-
-        val moveInput = Vector2f()
-
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_W)) moveInput.y += 1f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_S)) moveInput.y -= 1f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_A)) moveInput.x -= 1f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_D)) moveInput.x += 1f
-
-        if (moveInput.lengthSquared() > 1f) {
-            moveInput.normalize()
-        }
-
-        editorInput.moveDirection.set(moveInput)
-
-        var verticalInput = 0f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_SPACE)) verticalInput += 1f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) verticalInput -= 1f
-
-        editorInput.verticalMovement = verticalInput
-
-        if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_HOME)) {
-            editorInput.resetPressed = true
-        }
-    }
-
-    private fun pollEditorMouseInput(editorInput: EditorInputStateComponent) {
-        editorInput.isInsideViewport = mouseListener.isInsideViewport()
-
-        val dx = mouseListener.getDx()
-        val dy = mouseListener.getDy()
-
-        if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && editorInput.isInsideViewport) {
-            editorInput.mouseLook.set(dx, dy)
-        } else if (mouseListener.isMouseButtonDown(
-                GLFW.GLFW_MOUSE_BUTTON_MIDDLE,
-                true
-            ) && editorInput.isInsideViewport
-        ) {
-            editorInput.mouseLook.set(dx, dy)
-        } else {
-            editorInput.mouseLook.set(0f, 0f)
-        }
-
-        editorInput.orbitPressed =
-            mouseListener.mouseButtonBeginPress(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && editorInput.isInsideViewport
-        editorInput.orbitHeld =
-            mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE, true) && editorInput.isInsideViewport
-
-        if (editorInput.isInsideViewport) {
-            editorInput.mouseScroll = mouseListener.getScrollY()
-        }
     }
 
     /**

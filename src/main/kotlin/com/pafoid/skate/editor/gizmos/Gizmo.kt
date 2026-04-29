@@ -20,15 +20,6 @@ open class Gizmo(
     protected var oldTransform: Transform? = null
     private var inUse = false
 
-    override fun update(dt: Float) {
-        if (inUse) setInactive()
-    }
-
-    override fun editorUpdate(dt: Float) {
-        if (!inUse) return
-        activeGameObject = scene.selectedGameObject
-    }
-
     fun setActive() {}
     fun setInactive() { activeGameObject = null }
 

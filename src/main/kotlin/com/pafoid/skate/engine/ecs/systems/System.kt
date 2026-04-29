@@ -53,11 +53,6 @@ abstract class System(
     open fun update(dt: Float) {}
 
     /**
-     * Updates the system during editor mode.
-     */
-    open fun editorUpdate(dt: Float) {}
-
-    /**
      * Renders ImGui interface for the system (if applicable).
      */
     open fun imgui() {}

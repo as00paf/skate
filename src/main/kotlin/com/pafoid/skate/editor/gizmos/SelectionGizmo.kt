@@ -31,7 +31,7 @@ class SelectionGizmo(
     var hoveredGameObject: GameObject? = null
         private set
 
-    override fun editorUpdate(dt: Float) {
+    override fun update(dt: Float) {
         if (!isInUse() || engine.runtimePlaying) {
             hoveredGameObjectUid = -1
             hoveredGameObject = null

@@ -46,7 +46,7 @@ class GizmoSystem(
         }
     }
 
-    override fun editorUpdate(dt: Float) {
+    override fun update(dt: Float) {
         // Reset all gizmos to inactive state
         translateGizmo.setNotInUse()
         rotationGizmo.setNotInUse()
@@ -80,11 +80,11 @@ class GizmoSystem(
 
         // Update only the active gizmo
         when (usingGizmo) {
-            TRANSLATE_GIZMO -> translateGizmo.editorUpdate(dt)
-            ROTATION_GIZMO -> rotationGizmo.editorUpdate(dt)
-            SCALE_GIZMO -> scaleGizmo.editorUpdate(dt)
-            SELECTION_GIZMO -> selectionGizmo.editorUpdate(dt)
-            MEASURE_GIZMO -> measureGizmo.editorUpdate(dt)
+            TRANSLATE_GIZMO -> translateGizmo.update(dt)
+            ROTATION_GIZMO -> rotationGizmo.update(dt)
+            SCALE_GIZMO -> scaleGizmo.update(dt)
+            SELECTION_GIZMO -> selectionGizmo.update(dt)
+            MEASURE_GIZMO -> measureGizmo.update(dt)
         }
     }
 

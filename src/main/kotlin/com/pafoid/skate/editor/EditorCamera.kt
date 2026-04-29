@@ -1,33 +1,24 @@
 package com.pafoid.skate.editor
 
-import com.pafoid.skate.engine.ecs.components.EditorInputStateComponent
+import com.pafoid.skate.engine.ecs.components.EditorInputState
 import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
+import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
+import org.joml.Vector2f
 import org.joml.Vector3f
+import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sign
 import kotlin.math.sin
 
-/**
- * Editor free-fly camera system.
- *
- * This system provides editor camera navigation with 6DOF movement:
- * - WASD: Horizontal movement (forward/back/strafe)
- * - Space/Shift: Vertical movement (up/down)
- * - RMB + Mouse: Camera look rotation
- * - MMB: Orbit rotation
- * - Scroll: Camera zoom
- * - Home: Reset camera position
- *
- * This system reads input from [EditorInputStateComponent] which is populated by
- * [com.pafoid.skate.engine.ecs.systems.InputSystem]. It does NOT poll hardware directly.
- */
 class EditorCamera(
     private val camera: Camera,
-    val editorInput: EditorInputStateComponent
+    private val mouseListener: MouseListener,
+    private val inputProvider: IInputProvider,
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val scrollSensitivity = 0.1f
@@ -37,27 +28,24 @@ class EditorCamera(
     private var reset = false
     private var isRotating: Boolean = false
 
-    override fun update(dt: Float) {
-        editorUpdate(dt)
-    }
+    val editorState: EditorInputState = EditorInputState()
 
-    override fun editorUpdate(dt: Float) {
+    override fun update(dt: Float) {
+        pollEditorKeyboardInput()
+        pollEditorMouseInput()
+
         handleFreeFlyMovement()
         handleRotation()
         handleZoom()
         handleReset(dt)
     }
 
-    /**
-     * Handles free-fly camera movement (WASD + Space/Shift).
-     * This is the editor's primary navigation mode.
-     */
     private fun handleFreeFlyMovement() {
         // Mouse look (RMB) - only when inside viewport
-        if (editorInput.mouseLook.lengthSquared() > 0f && editorInput.isInsideViewport) {
+        if (editorState.mouseLook.lengthSquared() > 0f && editorState.isInsideViewport) {
             val sensitivity = 0.1f
-            val dx = editorInput.mouseLook.x
-            val dy = editorInput.mouseLook.y
+            val dx = editorState.mouseLook.x
+            val dy = editorState.mouseLook.y
 
             if (abs(dx) > 0.01f || abs(dy) > 0.01f) {
                 camera.yaw += dx * sensitivity
@@ -83,7 +71,7 @@ class EditorCamera(
         ).normalize()
 
         // WASD horizontal movement
-        val moveDir = editorInput.moveDirection
+        val moveDir = editorState.moveDirection
         if (moveDir.y > 0f) { // Forward (W)
             camera.position.add(Vector3f(forward).mul(moveSpeed))
         }
@@ -98,7 +86,7 @@ class EditorCamera(
         }
 
         // Vertical movement (Space/Shift)
-        val verticalInput = editorInput.verticalMovement
+        val verticalInput = editorState.verticalMovement
         if (verticalInput > 0f) { // Up (Space)
             camera.position.y += moveSpeed
         }
@@ -110,7 +98,7 @@ class EditorCamera(
     private fun handleReset(dt: Float) {
         // Reset is triggered via EditorInputStateComponent.resetPressed
         // This method handles the actual reset animation
-        if (editorInput.resetPressed) {
+        if (editorState.resetPressed) {
             reset = true
         }
 
@@ -132,19 +120,19 @@ class EditorCamera(
      */
     private fun handleRotation() {
         // Start orbit on MMB press
-        if (editorInput.orbitPressed && editorInput.isInsideViewport) {
+        if (editorState.orbitPressed && editorState.isInsideViewport) {
             isRotating = true
         }
 
         // Stop orbit on MMB release
-        if (!editorInput.orbitHeld && isRotating) {
+        if (!editorState.orbitHeld && isRotating) {
             isRotating = false
         }
 
         // Apply rotation while orbiting
-        if (isRotating && editorInput.mouseLook.lengthSquared() > 0f) {
-            val dx = editorInput.mouseLook.x
-            val dy = editorInput.mouseLook.y
+        if (isRotating && editorState.mouseLook.lengthSquared() > 0f) {
+            val dx = editorState.mouseLook.x
+            val dy = editorState.mouseLook.y
 
             if (abs(dx) > 0.01f || abs(dy) > 0.01f) {
                 camera.yaw += dx * rotationSensitivity
@@ -161,14 +149,62 @@ class EditorCamera(
      * Handles camera zoom via scroll wheel.
      */
     private fun handleZoom() {
-        val scroll = editorInput.mouseScroll
-        if (scroll != 0f && editorInput.isInsideViewport) {
+        val scroll = editorState.mouseScroll
+        if (scroll != 0f && editorState.isInsideViewport) {
             val addValue = abs(scroll * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
             camera.addZoom((addValue.toFloat() * -sign(scroll)))
         }
     }
 
-    override fun imgui() {
+    private fun pollEditorKeyboardInput() {
+        if (!editorState.isFocused) return
 
+        val moveInput = Vector2f()
+
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_W)) moveInput.y += 1f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_S)) moveInput.y -= 1f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_A)) moveInput.x -= 1f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_D)) moveInput.x += 1f
+
+        if (moveInput.lengthSquared() > 1f) {
+            moveInput.normalize()
+        }
+
+        editorState.moveDirection.set(moveInput)
+
+        var verticalInput = 0f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_SPACE)) verticalInput += 1f
+        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) verticalInput -= 1f
+
+        editorState.verticalMovement = verticalInput
+
+        if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_HOME)) {
+            editorState.resetPressed = true
+        }
+    }
+
+    private fun pollEditorMouseInput() {
+        editorState.isInsideViewport = mouseListener.isInsideViewport()
+
+        val dx = mouseListener.getDx()
+        val dy = mouseListener.getDy()
+
+        if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && editorState.isInsideViewport) {
+            editorState.mouseLook.set(dx, dy)
+        } else if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE, true) && editorState.isInsideViewport
+        ) {
+            editorState.mouseLook.set(dx, dy)
+        } else {
+            editorState.mouseLook.set(0f, 0f)
+        }
+
+        editorState.orbitPressed =
+            mouseListener.mouseButtonBeginPress(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && editorState.isInsideViewport
+        editorState.orbitHeld =
+            mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE, true) && editorState.isInsideViewport
+
+        if (editorState.isInsideViewport) {
+            editorState.mouseScroll = mouseListener.getScrollY()
+        }
     }
 }
