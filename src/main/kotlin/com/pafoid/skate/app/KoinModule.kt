@@ -90,6 +90,7 @@ import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -119,9 +120,10 @@ val appModule = module {
 
     // EventSystem for editor event bus
     single { EventSystem() }
+    single { CameraManager(get(), get(), get()) }
 
     // Viewport components for GameViewWindow
-    factory { ViewportRenderer(get(), get()) }
+    factory { ViewportRenderer(get()) }
     factory { ViewportToolbar(get(), get(), get(), get(), get()) }
     factory { ViewportContextMenu(get(), get()) }
     factory { ViewportOverlays(get(), get()) }
@@ -152,6 +154,7 @@ val appModule = module {
 
     // Editor Workspace
     single { EditorInputState() }
+    single { EditorCamera(Camera(), get()) }
     single {
         EditorWorkspace(
             get(),
@@ -169,7 +172,7 @@ val appModule = module {
             DayNightCycleSystem(null, get()),
             EnvironmentSystem(get()),
             DirectionalLightSystem(get()),
-            EditorCamera(Camera(), get()),
+            get(),
         )
     }
 

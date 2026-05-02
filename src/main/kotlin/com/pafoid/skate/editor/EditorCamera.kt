@@ -12,7 +12,7 @@ import kotlin.math.sign
 import kotlin.math.sin
 
 class EditorCamera(
-    private val camera: Camera,
+    val camera: Camera,
     private val editorState: EditorInputState,
 ) : System(priority = ExecutionPriority.EARLY) {
 

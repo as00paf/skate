@@ -1,32 +1,28 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
-import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import imgui.ImGui
 import imgui.ImVec2
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
  * Renders the game viewport image and manages framebuffer synchronization.
  * 
- * This component handles:
- * - Rendering the framebuffer texture to the ImGui window
- * - Tracking viewport screen position and size
- * - Synchronizing framebuffer and camera dimensions
- * 
  * @param renderer The renderer providing the framebuffer texture
- * @param sceneManager For accessing current scene and camera
  */
 class ViewportRenderer(
-    private val renderer: Renderer,
-    private val sceneManager: SceneManager
-) {
+    private val renderer: Renderer
+) : KoinComponent {
+    private val cameraManager: CameraManager by inject()
+    
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
     var imageSizeX = 0f
     var imageSizeY = 0f
-    
-    // Reusable buffer to avoid per-frame allocations
-    private val tempScreenPos = ImVec2()
+
+    // ... (rest of class)
     
     /**
      * Renders the framebuffer texture as an ImGui image.
@@ -36,6 +32,7 @@ class ViewportRenderer(
      * @param windowSize The available window size for the viewport
      */
     fun render(windowSize: ImVec2) {
+        val tempScreenPos = ImVec2()
         ImGui.getCursorScreenPos(tempScreenPos)
         imageScreenPosX = tempScreenPos.x
         imageScreenPosY = tempScreenPos.y
@@ -45,12 +42,7 @@ class ViewportRenderer(
         val texId = renderer.frameBuffer.getTextureId()
         ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
     }
-    
-    /**
-     * Updates the framebuffer and camera to match the current viewport dimensions.
-     * 
-     * Must be called every frame to handle window resizing.
-     */
+
     fun updateFramebuffer() {
         val fbWidth = imageSizeX.toInt()
         val fbHeight = imageSizeY.toInt()
@@ -64,7 +56,7 @@ class ViewportRenderer(
         }
         
         // Sync camera viewport dimensions for correct aspect ratio
-        sceneManager.currentScene?.camera?.let { camera ->
+        cameraManager.getActiveCamera()?.let { camera ->
             camera.viewportWidth = fbWidth
             camera.viewportHeight = fbHeight
         }
