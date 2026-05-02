@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
@@ -60,6 +61,7 @@ class GeometryPass(
     private val lightingUniformsLoader: LightingUniformsLoader,
     private val getUseFbo: () -> Boolean,
     private val sceneManager: SceneManager,
+    private val cameraManager: CameraManager,
     private val shadowMapTextureId: Int = 0,
     private val shadowMapResolution: Float = 2048f
 ) : BaseRenderPass() {
@@ -98,7 +100,7 @@ class GeometryPass(
         }
         clearColor(skyColor)
 
-        val camera = scene.camera
+        val camera = cameraManager.getActiveCamera() ?: scene.camera
 
         // 2D Rendering Setup
         renderer2D.bindCamera(camera)
@@ -107,6 +109,7 @@ class GeometryPass(
         defaultShader.start()
         defaultShader.uploadMat4f(Attribs.PROJECTION_MATRIX, camera.createProjectionMatrix())
         defaultShader.uploadMat4f(Attribs.VIEW_MATRIX, camera.createViewMatrix())
+        lightingUniformsLoader.loadCameraPosition(defaultShader, camera) // New call
 
         // Upload lighting uniforms
         val directionalLight = scene.getComponent<DirectionalLightComponent>()

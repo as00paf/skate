@@ -23,18 +23,10 @@ import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.utils.GLStateTracker
+import org.koin.core.component.KoinComponent
 
 /**
  * Factory for creating all rendering resources.
- *
- * This factory centralizes the initialization logic for the entire rendering pipeline,
- * ensuring proper initialization order and dependency injection.
- *
- * @param resourceManager Loads and manages shader and texture assets
- * @param sceneManager Provides access to the current scene
- * @param logger Logs initialization progress and errors
- * @param vaoLoader Loads vertex array objects for GPU rendering
- * @param debugRenderer Shared debug renderer for physics and other debug visualization
  */
 class RenderResourcesFactory(
     private val resourceManager: ResourceManager,
@@ -43,28 +35,10 @@ class RenderResourcesFactory(
     private val vaoLoader: VAOLoader,
     private val debugRenderer: DebugRenderer,
     private val modelRenderer: ModelRenderer,
-    private val splashRenderer: SplashRenderer
-) {
-    /**
-     * Creates all rendering resources.
-     *
-     * **Important**: This method requires an active OpenGL context to be current on the
-     * calling thread. It will crash if called before the OpenGL context is created.
-     *
-     * ## Initialization Order
-     *
-     * This method performs the following initialization in order:
-     * 1. Initializes OpenGL state tracker (queries GL state - requires context)
-     * 2. Creates framebuffer and picking texture (allocates GL resources)
-     * 3. Loads all shaders (compiles GLSL programs)
-     * 4. Creates all renderer instances
-     * 5. Creates all render passes
-     *
-     * @param width Initial viewport width
-     * @param height Initial viewport height
-     * @return Fully initialized RenderResources container
-     * @throws IllegalStateException if called without an active OpenGL context
-     */
+    private val splashRenderer: SplashRenderer,
+    private val cameraManager: CameraManager
+) : KoinComponent {
+
     suspend fun create(width: Int, height: Int): RenderResources {
         logger.logEngine("Initializing OpenGL state tracker...")
         GLStateTracker.initialize()
@@ -85,7 +59,6 @@ class RenderResourcesFactory(
         splashRenderer.initialize()
 
         logger.logEngine("Creating render passes...")
-        // Create shadow map with highest supported resolution up to 4096x4096
         val shadowMap = ShadowMap.createWithBestResolution(4096)
         logger.logEngine("Shadow map resolution: ${shadowMap.width}x${shadowMap.height}")
         shadowMap.initialize()
@@ -115,32 +88,22 @@ class RenderResourcesFactory(
         )
     }
 
-    /**
-     * Builds the render graph by connecting passes and registering resources.
-     */
     private fun buildRenderGraph(
         passes: RenderPasses,
         shadowMap: ShadowMap?
     ): RenderGraph {
         val builder = RenderGraphBuilder()
-        
-        // Register shadow map if available
         if (shadowMap != null) {
             builder.withResources(RenderResource.Texture("ShadowMap", shadowMap.getDepthTextureId()))
         }
-        
-        // Build the execution chain in the correct order
         return builder
-            .addPass(passes.shadow)   // 1. Shadows first
-            .addPass(passes.picking)  // 2. Picking
-            .addPass(passes.geometry) // 3. Full geometry with lighting
-            .addPass(passes.debug)    // 4. Debug overlay
+            .addPass(passes.shadow)
+            .addPass(passes.picking)
+            .addPass(passes.geometry)
+            .addPass(passes.debug)
             .build()
     }
 
-    /**
-     * Loads all shader programs.
-     */
     private suspend fun loadShaders(): Shaders {
         val shaders = listOf<suspend () -> Shader>(
             { resourceManager.loadShader(Assets.Shaders.DEBUG) },
@@ -154,49 +117,19 @@ class RenderResourcesFactory(
             { resourceManager.loadShader(Assets.Shaders.SPLASH) },
         )
 
-        logger.logEngine("Loading shader 1/9: Debug")
-        val debugShader = shaders[0].invoke()
-
-        logger.logEngine("Loading shader 2/9: Default 3D")
-        val defaultShader = shaders[1].invoke()
-
-        logger.logEngine("Loading shader 3/9: 2D Batch")
-        val batchShader = shaders[2].invoke()
-
-        logger.logEngine("Loading shader 4/9: Picking")
-        val pickingShader = shaders[3].invoke()
-
-        logger.logEngine("Loading shader 5/9: Picking 3D")
-        val picking3DShader = shaders[4].invoke()
-
-        logger.logEngine("Loading shader 6/9: Skybox")
-        val skyboxShader = shaders[5].invoke()
-
-        logger.logEngine("Loading shader 7/9: Sky Dome")
-        val skyDomeShader = shaders[6].invoke()
-
-        logger.logEngine("Loading shader 8/9: Shadow")
-        val shadowShader = shaders[7].invoke()
-
-        logger.logEngine("Loading shader 9/9: Splash")
-        val splashShader = shaders[8].invoke()
-
         return Shaders(
-            default = defaultShader,
-            debug = debugShader,
-            batch = batchShader,
-            picking = pickingShader,
-            picking3D = picking3DShader,
-            skybox = skyboxShader,
-            skyDome = skyDomeShader,
-            shadow = shadowShader,
-            splash = splashShader
+            default = shaders[1].invoke(),
+            debug = shaders[0].invoke(),
+            batch = shaders[2].invoke(),
+            picking = shaders[3].invoke(),
+            picking3D = shaders[4].invoke(),
+            skybox = shaders[5].invoke(),
+            skyDome = shaders[6].invoke(),
+            shadow = shaders[7].invoke(),
+            splash = shaders[8].invoke()
         )
     }
 
-    /**
-     * Creates all renderer instances.
-     */
     private fun createRenderers(
         shaders: Shaders,
         resourceManager: ResourceManager
@@ -214,9 +147,6 @@ class RenderResourcesFactory(
         )
     }
 
-    /**
-     * Creates all render passes with their dependencies.
-     */
     private fun createRenderPasses(
         shaders: Shaders,
         renderers: Renderers,
@@ -230,8 +160,6 @@ class RenderResourcesFactory(
         val pickingRenderer = PickingRenderer(resourceManager, logger, sceneManager)
         val lightingUniformsLoader = LightingUniformsLoader()
 
-        // Bind initial shader and camera for renderer2D
-        // (will be rebound each frame)
         renderer2D.bindShader(shaders.batch)
 
         val pickingPass = PickingPass(
@@ -253,15 +181,14 @@ class RenderResourcesFactory(
             skyDomeRenderer = renderers.skyDome,
             frameBuffer = frameBuffer,
             lightingUniformsLoader = lightingUniformsLoader,
-            getUseFbo = { true }, // Default to FBO, can be made configurable
+            getUseFbo = { true },
             sceneManager = sceneManager,
+            cameraManager = cameraManager,
             shadowMapTextureId = shadowMapTextureId,
             shadowMapResolution = shadowMapRes
         )
-
         val debugPass = DebugPass(debugRenderer)
 
-        // Create shadow pass (requires shadow map)
         val shadowPass = if (shadowMap != null) {
             ShadowPass(
                 shadowRenderer = renderers.shadow,
@@ -269,7 +196,6 @@ class RenderResourcesFactory(
                 logger = logger
             )
         } else {
-            // Fallback pass that does nothing if no shadow map
             object : RenderPass {
                 override var executionTimeNs: Long = 0
                 override var isEnabled: Boolean = true
