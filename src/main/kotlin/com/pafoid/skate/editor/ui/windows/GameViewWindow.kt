@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.LoggerService
@@ -14,6 +13,7 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.EditorInputState
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import imgui.ImGui
@@ -33,6 +33,7 @@ class GameViewWindow : IWindow, KoinComponent {
     private val stringManager: StringManager by inject()
     private val eventSystem: EventSystem by inject()
     private val systemManager: SystemManager by inject()
+    private val editorState: EditorInputState by inject()
 
     private val viewportRenderer: ViewportRenderer by inject()
     private val viewportToolbar: ViewportToolbar by inject()
@@ -85,7 +86,7 @@ class GameViewWindow : IWindow, KoinComponent {
         mouseListener.setGameViewportPos(Vector2f(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY))
         mouseListener.setGameViewportSize(Vector2f(viewportRenderer.imageSizeX, viewportRenderer.imageSizeY))
 
-        systemManager.getSystem<EditorCamera>()?.editorState?.isFocused = ImGui.isWindowFocused()
+        editorState.isFocused = ImGui.isWindowFocused()
 
         val hovered = sceneManager.currentScene?.hoveredGameObject
         if (hovered != null) {

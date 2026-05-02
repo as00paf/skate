@@ -19,6 +19,7 @@ class EditorCamera(
     private val camera: Camera,
     private val mouseListener: MouseListener,
     private val inputProvider: IInputProvider,
+    private val editorState: EditorInputState,
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val scrollSensitivity = 0.1f
@@ -27,8 +28,6 @@ class EditorCamera(
     private var lerpTime = 0.0f
     private var reset = false
     private var isRotating: Boolean = false
-
-    val editorState: EditorInputState = EditorInputState()
 
     override fun update(dt: Float) {
         pollEditorKeyboardInput()

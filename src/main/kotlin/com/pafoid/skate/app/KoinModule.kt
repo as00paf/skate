@@ -69,6 +69,7 @@ import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.EditorInputState
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
@@ -150,6 +151,7 @@ val appModule = module {
     single { FileSystemScanner(get(), get(), get()) }
 
     // Editor Workspace
+    single { EditorInputState() }
     single {
         EditorWorkspace(
             get(),
@@ -167,7 +169,7 @@ val appModule = module {
             DayNightCycleSystem(null, get()),
             EnvironmentSystem(get()),
             DirectionalLightSystem(get()),
-            EditorCamera(Camera(), get(), get()),
+            EditorCamera(Camera(), get(), get(), get()),
         )
     }
 
