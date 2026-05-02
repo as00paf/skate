@@ -41,6 +41,7 @@ import com.pafoid.skate.engine.events.ViewportSpawnPrefab
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.utils.JobSystem
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -54,6 +55,7 @@ class ViewportActionHandler : KoinComponent {
     private val prefabsGenerator: PrefabsGenerator by inject()
     private val resourceManager: ResourceManager by inject()
     private val gameObjectManager: GameObjectManager by inject()
+    private val cameraManager: CameraManager by inject()
 
     fun init() {
         eventSystem.subscribe<ViewportCreateEmpty> { event ->
@@ -168,21 +170,21 @@ class ViewportActionHandler : KoinComponent {
     }
 
     private fun handleFocusSelected() {
-        val scene = sceneManager.currentScene ?: return
-        val selected = scene.selectedGameObject ?: return
+        val selected = sceneManager.currentScene?.selectedGameObject ?: return
         val transform = selected.getComponent<Transform>() ?: return
         val pos = transform.translation
 
+        val camera = cameraManager.getActiveCamera() ?: return
         val offset = Vector3f(5f, 5f, 5f)
-        scene.camera.position.set(Vector3f(pos).add(offset))
-        scene.camera.lookAt(pos)
+        camera.position.set(Vector3f(pos).add(offset))
+        camera.lookAt(pos)
         logger.logEditor("Focused on: ${selected.name}")
     }
 
     private fun handleResetCamera() {
-        val scene = sceneManager.currentScene ?: return
-        scene.camera.position.set(0f, 5f, 20f)
-        scene.camera.yaw = 0f
+        val camera = cameraManager.getActiveCamera() ?: return
+        camera.position.set(0f, 5f, 20f)
+        camera.yaw = 0f
         logger.logEditor("Reset camera")
     }
 

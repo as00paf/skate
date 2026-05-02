@@ -156,7 +156,7 @@ class GeometryPass(
                 defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
 
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
-                val cameraPosition = sceneManager.currentScene?.camera?.position ?: Vector3f(0f, 0f, 0f)
+                val cameraPosition = camera.position
 
                 modelRenderer.render(
                     go = go,
