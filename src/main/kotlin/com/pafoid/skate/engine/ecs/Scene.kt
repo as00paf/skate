@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.render.Camera
+import org.joml.Vector3f
 
 /**
  * Scene represents the root of the ECS hierarchy and manages all game objects and systems.
@@ -28,7 +29,7 @@ open class Scene(
     var sceneData: SceneData = SceneData()
 
     // Camera remains a special property (not a component for now)
-    val camera: Camera = Camera()
+    val camera: Camera = Camera(Vector3f(0f, 5f, 20f))
 
     val physics3d: IPhysics3D = BulletPhysics3D()
 

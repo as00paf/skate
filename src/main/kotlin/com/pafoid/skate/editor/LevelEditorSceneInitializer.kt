@@ -19,8 +19,5 @@ class LevelEditorSceneInitializer : SceneInitializer(), KoinComponent {
         reportProgress(1f, "Resources Loaded.")
     }
 
-    override suspend fun init(scene: Scene) {
-        scene.camera.position.set(0f, 5f, 20f)
-        scene.camera.yaw = 0f
-    }
+    override suspend fun init(scene: Scene) {}
 }

@@ -161,7 +161,7 @@ val appModule = module {
             get(),
             get(),
             GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()),
-            GridLines(get(), get(), get()),
+            GridLines(get(), get(), get(), get()),
             EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()),
             EditorEventHandler(get(), get()),
             AudioSystem(get(), get()),

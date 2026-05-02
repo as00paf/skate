@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor
 
 import com.pafoid.skate.editor.data.EditorInputState
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.render.Camera
@@ -22,6 +23,16 @@ class EditorCamera(
     private var lerpTime = 0.0f
     private var reset = false
     private var isRotating: Boolean = false
+
+    override fun init(scene: Scene) {
+        super.init(scene)
+
+        camera.position.set(scene.camera.position)
+        camera.yaw = scene.camera.yaw
+        camera.pitch = scene.camera.pitch
+        camera.roll = scene.camera.roll
+        camera.isOrthographic = scene.camera.isOrthographic
+    }
 
     override fun update(dt: Float) {
         handleFreeFlyMovement()
