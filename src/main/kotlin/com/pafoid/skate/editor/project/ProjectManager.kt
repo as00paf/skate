@@ -17,7 +17,6 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.ProjectClosed
 import com.pafoid.skate.engine.events.ProjectCreated
@@ -397,7 +396,7 @@ class ProjectManager(
         }
 
         sceneSerializer.loadFromFile(scene, defaultSceneFile.absolutePath)
-        systemManager.getSystem<GameObjectManager>()?.init(scene)
+        systemManager.loadScene(scene)
 
         logger.logEditor("Loaded default scene from ${defaultSceneFile.absolutePath}")
     }

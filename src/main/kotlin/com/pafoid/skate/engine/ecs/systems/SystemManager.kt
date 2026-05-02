@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.ecs.Scene
+
 /**
  * Manages the lifecycle and operations of Systems within a scene.
  * This class centralizes all System management responsibilities to reduce
@@ -18,6 +20,12 @@ class SystemManager {
 
     fun start() {
         systems.forEach { it.start() }
+    }
+
+    fun loadScene(scene: Scene) {
+        systems.forEach {
+            it.init(scene)
+        }
     }
 
     fun update(dt: Float) {

@@ -18,7 +18,7 @@ import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 
 class EditorWorkspace(
-    private val systemManager: SystemManager = SystemManager(),
+    private val systemManager: SystemManager,
     private val sceneManager: SceneManager,
     private val gameObjectManager: GameObjectManager,
     private val gizmoSystem: GizmoSystem,
@@ -67,8 +67,8 @@ class EditorWorkspace(
             physicsSystem,
             directionalLightSystem,
             dayNightCycleSystem,
-            editorInputHandler, // Editor input processed first
-            editorCamera,       // Editor camera processed second
+            editorInputHandler, // Editor
+            editorCamera,
             gizmoSystem,
             gridLines,
         )
