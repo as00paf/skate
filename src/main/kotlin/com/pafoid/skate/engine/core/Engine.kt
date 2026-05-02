@@ -44,14 +44,8 @@ class Engine : KoinComponent {
     private fun updateRunningState(dt: Float) {
         val scene = sceneManager.currentScene
         if (dt >= 0 && scene != null) {
-            if (runtimePlaying) {
-                // Update scene with the actual delta time
-                scene.update(dt)
-            } else {
-                // Editor mode: update editor workspace first, then gameplay systems
-                workspace.update(dt)
-                scene.update(dt)
-            }
+            workspace.update(dt)
+            scene.update(dt)
 
             renderer.render(scene, scene.selectedGameObject, scene.hoveredGameObject)
             imguiLayer.update(dt)
