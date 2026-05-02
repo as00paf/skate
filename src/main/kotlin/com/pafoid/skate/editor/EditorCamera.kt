@@ -1,14 +1,10 @@
 package com.pafoid.skate.editor
 
-import com.pafoid.skate.engine.ecs.components.EditorInputState
+import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
-import com.pafoid.skate.engine.input.IInputProvider
-import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
-import org.joml.Vector2f
 import org.joml.Vector3f
-import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.pow
@@ -17,8 +13,6 @@ import kotlin.math.sin
 
 class EditorCamera(
     private val camera: Camera,
-    private val mouseListener: MouseListener,
-    private val inputProvider: IInputProvider,
     private val editorState: EditorInputState,
 ) : System(priority = ExecutionPriority.EARLY) {
 
@@ -30,9 +24,6 @@ class EditorCamera(
     private var isRotating: Boolean = false
 
     override fun update(dt: Float) {
-        pollEditorKeyboardInput()
-        pollEditorMouseInput()
-
         handleFreeFlyMovement()
         handleRotation()
         handleZoom()
@@ -95,8 +86,6 @@ class EditorCamera(
     }
 
     private fun handleReset(dt: Float) {
-        // Reset is triggered via EditorInputStateComponent.resetPressed
-        // This method handles the actual reset animation
         if (editorState.resetPressed) {
             reset = true
         }
@@ -114,21 +103,15 @@ class EditorCamera(
         }
     }
 
-    /**
-     * Handles orbit rotation (MMB).
-     */
     private fun handleRotation() {
-        // Start orbit on MMB press
         if (editorState.orbitPressed && editorState.isInsideViewport) {
             isRotating = true
         }
 
-        // Stop orbit on MMB release
         if (!editorState.orbitHeld && isRotating) {
             isRotating = false
         }
 
-        // Apply rotation while orbiting
         if (isRotating && editorState.mouseLook.lengthSquared() > 0f) {
             val dx = editorState.mouseLook.x
             val dy = editorState.mouseLook.y
@@ -137,73 +120,17 @@ class EditorCamera(
                 camera.yaw += dx * rotationSensitivity
                 camera.pitch += dy * rotationSensitivity
 
-                // Clamp pitch to avoid flipping
                 if (camera.pitch > 89f) camera.pitch = 89f
                 if (camera.pitch < -89f) camera.pitch = -89f
             }
         }
     }
 
-    /**
-     * Handles camera zoom via scroll wheel.
-     */
     private fun handleZoom() {
         val scroll = editorState.mouseScroll
         if (scroll != 0f && editorState.isInsideViewport) {
             val addValue = abs(scroll * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
             camera.addZoom((addValue.toFloat() * -sign(scroll)))
-        }
-    }
-
-    private fun pollEditorKeyboardInput() {
-        if (!editorState.isFocused) return
-
-        val moveInput = Vector2f()
-
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_W)) moveInput.y += 1f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_S)) moveInput.y -= 1f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_A)) moveInput.x -= 1f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_D)) moveInput.x += 1f
-
-        if (moveInput.lengthSquared() > 1f) {
-            moveInput.normalize()
-        }
-
-        editorState.moveDirection.set(moveInput)
-
-        var verticalInput = 0f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_SPACE)) verticalInput += 1f
-        if (inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) verticalInput -= 1f
-
-        editorState.verticalMovement = verticalInput
-
-        if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_HOME)) {
-            editorState.resetPressed = true
-        }
-    }
-
-    private fun pollEditorMouseInput() {
-        editorState.isInsideViewport = mouseListener.isInsideViewport()
-
-        val dx = mouseListener.getDx()
-        val dy = mouseListener.getDy()
-
-        if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && editorState.isInsideViewport) {
-            editorState.mouseLook.set(dx, dy)
-        } else if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE, true) && editorState.isInsideViewport
-        ) {
-            editorState.mouseLook.set(dx, dy)
-        } else {
-            editorState.mouseLook.set(0f, 0f)
-        }
-
-        editorState.orbitPressed =
-            mouseListener.mouseButtonBeginPress(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && editorState.isInsideViewport
-        editorState.orbitHeld =
-            mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE, true) && editorState.isInsideViewport
-
-        if (editorState.isInsideViewport) {
-            editorState.mouseScroll = mouseListener.getScrollY()
         }
     }
 }

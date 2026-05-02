@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.EditorEventHandler
 import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
+import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.ProjectManager
@@ -69,7 +70,6 @@ import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.EditorInputState
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
@@ -159,7 +159,7 @@ val appModule = module {
             get(),
             GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()),
             GridLines(get(), get(), get()),
-            EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get()),
+            EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()),
             EditorEventHandler(get(), get()),
             AudioSystem(get(), get()),
             InputSystem(get(), get(), get(), get(), get()),
@@ -169,7 +169,7 @@ val appModule = module {
             DayNightCycleSystem(null, get()),
             EnvironmentSystem(get()),
             DirectionalLightSystem(get()),
-            EditorCamera(Camera(), get(), get(), get()),
+            EditorCamera(Camera(), get()),
         )
     }
 

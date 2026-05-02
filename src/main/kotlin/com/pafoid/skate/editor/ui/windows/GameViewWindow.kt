@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
@@ -13,8 +13,6 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.EditorInputState
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import imgui.ImGui
 import imgui.ImVec2
@@ -26,13 +24,11 @@ import org.koin.core.component.inject
 
 class GameViewWindow : IWindow, KoinComponent {
 
-    private val logger: LoggerService by inject()
     private val mouseListener: MouseListener by inject()
     private val sceneManager: SceneManager by inject()
     private val settingsManager: SettingsManager by inject()
     private val stringManager: StringManager by inject()
     private val eventSystem: EventSystem by inject()
-    private val systemManager: SystemManager by inject()
     private val editorState: EditorInputState by inject()
 
     private val viewportRenderer: ViewportRenderer by inject()

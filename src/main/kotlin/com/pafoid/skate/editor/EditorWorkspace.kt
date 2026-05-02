@@ -53,7 +53,6 @@ class EditorWorkspace(
             systemsInitialized = true
         }
 
-        editorInputHandler.update(scene)
         systemManager.update(dt)
     }
 
@@ -68,7 +67,8 @@ class EditorWorkspace(
             physicsSystem,
             directionalLightSystem,
             dayNightCycleSystem,
-            editorCamera, // Editor
+            editorInputHandler, // Editor input processed first
+            editorCamera,       // Editor camera processed second
             gizmoSystem,
             gridLines,
         )

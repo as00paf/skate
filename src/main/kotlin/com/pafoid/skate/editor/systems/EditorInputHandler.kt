@@ -4,11 +4,15 @@ import com.pafoid.skate.editor.commands.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.LockToggleCommand
 import com.pafoid.skate.editor.commands.VisibilityToggleCommand
+import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.events.GameObjectSelected
 import com.pafoid.skate.engine.events.SelectionCleared
 import com.pafoid.skate.engine.input.IInputBuffer
@@ -32,7 +36,9 @@ class EditorInputHandler(
     private val undoRedoManager: UndoRedoManager,
     private val gameObjectManager: GameObjectManager,
     private val logger: LoggerService,
-) : KoinComponent {
+    private val editorInputState: EditorInputState,
+    private val sceneManager: SceneManager,
+) : System(ExecutionPriority.EARLY), KoinComponent {
 
     private val settingsManager: SettingsManager by inject()
     private val eventSystem: EventSystem by inject()
@@ -49,8 +55,10 @@ class EditorInputHandler(
         joystickListener.init()
     }
 
-    fun update(scene: Scene?) {
-        if (scene == null) return
+    override fun update(dt: Float) {
+        editorInputState.reset()
+        pollEditorInput()
+        val scene = sceneManager.currentScene ?: return
 
         val inputMappings = settingsManager.loadInputMappings() ?: InputMappings()
         val selected = scene.selectedGameObject
@@ -62,6 +70,53 @@ class EditorInputHandler(
         handleClipboardAndUndo(scene, selected, inputMappings)
 
         handleInputs()
+    }
+
+    private fun pollEditorInput() {
+        editorInputState.isInsideViewport = mouseListener.isInsideViewport()
+        editorInputState.isFocused = true // Simplify focus for now
+
+        // Polling Keyboard
+        val moveInput = Vector2f()
+        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_W)) moveInput.y += 1f
+        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_S)) moveInput.y -= 1f
+        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_A)) moveInput.x -= 1f
+        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_D)) moveInput.x += 1f
+        if (moveInput.lengthSquared() > 1f) moveInput.normalize()
+        editorInputState.moveDirection.set(moveInput)
+
+        var verticalInput = 0f
+        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_SPACE)) verticalInput += 1f
+        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) verticalInput -= 1f
+        editorInputState.verticalMovement = verticalInput
+
+        // Polling Mouse
+        val dx = mouseListener.getDx()
+        val dy = mouseListener.getDy()
+        if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && editorInputState.isInsideViewport) {
+            editorInputState.mouseLook.set(dx, dy)
+        } else if (mouseListener.isMouseButtonDown(
+                GLFW.GLFW_MOUSE_BUTTON_MIDDLE,
+                true
+            ) && editorInputState.isInsideViewport
+        ) {
+            editorInputState.mouseLook.set(dx, dy)
+        } else {
+            editorInputState.mouseLook.set(0f, 0f)
+        }
+
+        editorInputState.orbitPressed =
+            mouseListener.mouseButtonBeginPress(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && editorInputState.isInsideViewport
+        editorInputState.orbitHeld =
+            mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE, true) && editorInputState.isInsideViewport
+
+        if (editorInputState.isInsideViewport) {
+            editorInputState.mouseScroll = mouseListener.getScrollY()
+        }
+
+        if (keyListener.keyBeginPress(GLFW.GLFW_KEY_HOME)) {
+            editorInputState.resetPressed = true
+        }
     }
 
     private fun handleInputs() {
