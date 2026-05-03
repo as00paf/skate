@@ -114,7 +114,7 @@ class AudioComponentTest {
         assertFalse(audioComponent.playRequested)
         assertFalse(audioComponent.stopRequested)
 
-        audioComponent.stop()
+        audioComponent.stopPlayback()
         assertTrue(audioComponent.stopRequested)
         assertFalse(audioComponent.playRequested)
         assertFalse(audioComponent.pauseRequested)

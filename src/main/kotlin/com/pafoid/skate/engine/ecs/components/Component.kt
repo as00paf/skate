@@ -54,9 +54,8 @@ abstract class Component: KoinComponent {
         this.gameObject = gameObject
         uId = ID_COUNTER++
     }
-    open fun start() {}
+
     open fun update(dt: Float) {}
-    open fun editorUpdate(dt: Float) {}
 
     open fun imgui() {
         try {

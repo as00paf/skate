@@ -101,7 +101,7 @@ class AudioInspectorWindow : IWindowWithScene, KoinComponent {
                 }
             } else {
                 if (ImGui.button(stringManager.getString("btn.audio.stop"))) {
-                    audioComponent.stop()
+                    audioComponent.stopPlayback()
                 }
             }
 

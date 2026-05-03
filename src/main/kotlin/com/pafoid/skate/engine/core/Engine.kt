@@ -45,7 +45,12 @@ class Engine : KoinComponent {
         val scene = sceneManager.currentScene
         if (dt >= 0 && scene != null) {
             workspace.update(dt)
-            scene.update(dt)
+            if (runtimePlaying) {
+                scene.update(dt)
+                scene.isRunning = true
+            } else {
+                scene.isRunning = false
+            }
 
             renderer.render(scene, scene.selectedGameObject, scene.hoveredGameObject)
             imguiLayer.update(dt)

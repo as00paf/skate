@@ -54,8 +54,13 @@ open class Scene(
     override fun update(dt: Float) {
         val timeScale = getComponent<TimeComponent>()?.timeScale ?: 1.0f
         val scaledDt = dt * timeScale
+        // TODO: move ?
         camera.update(scaledDt)
-        physics3d.update(scaledDt)
+
+        // TODO: move ?
+        if (isRunning) {
+            physics3d.update(scaledDt)
+        }
 
         super.update(scaledDt)
     }

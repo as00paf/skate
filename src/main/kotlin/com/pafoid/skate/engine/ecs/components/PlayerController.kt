@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
@@ -97,7 +98,8 @@ class PlayerController : Component(), KoinComponent {
     @Transient val desiredMoveDirection = Vector3f()
     @Transient private val desiredRotation = Quaternionf()
 
-    override fun start() {
+    override fun init(gameObject: GameObject) {
+        super.init(gameObject)
         rb ?: run { logger.logEngine("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }
         stateManager ?: run { logger.logEngine("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
 

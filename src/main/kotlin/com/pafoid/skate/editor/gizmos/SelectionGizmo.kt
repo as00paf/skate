@@ -34,7 +34,7 @@ class SelectionGizmo(
     override fun update(dt: Float) {
         if (!isInUse() || engine.runtimePlaying) {
             hoveredGameObjectUid = -1
-            hoveredGameObject = null
+            scene.hoveredGameObject = null
             return
         }
 
@@ -43,7 +43,7 @@ class SelectionGizmo(
             val pickingY = mouseListener.getNormalizedY()
 
             val hovered = getHoveredObject(pickingX, pickingY)
-            hoveredGameObject = hovered
+            scene.hoveredGameObject = hovered
             hoveredGameObjectUid = hovered?.getUid() ?: -1
 
             if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT, true)) {

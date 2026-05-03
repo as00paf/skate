@@ -4,9 +4,7 @@ import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.ViewportDropAnimation
 import com.pafoid.skate.engine.events.ViewportDropSound
@@ -72,20 +70,20 @@ class ViewportDragDropHandler(
             }
 
             if (payloadTexture != null) {
-                val hoveredObject = getHoveredObject(scene)
+                val hoveredObject = scene.hoveredGameObject
                 val dropPosition = computeDropPosition(scene, tempMousePos.x, tempMousePos.y)
                 eventSystem.publish(ViewportDropTexture(payloadTexture, hoveredObject, dropPosition))
             }
 
             if (payloadSound != null) {
-                val hoveredObject = getHoveredObject(scene)
+                val hoveredObject = scene.hoveredGameObject
                 if (hoveredObject != null) {
                     eventSystem.publish(ViewportDropSound(payloadSound, hoveredObject))
                 }
             }
 
             if (payloadAnimation != null) {
-                val hoveredObject = getHoveredObject(scene)
+                val hoveredObject = scene.hoveredGameObject
                 if (hoveredObject != null) {
                     eventSystem.publish(ViewportDropAnimation(payloadAnimation, hoveredObject))
                 }
@@ -107,9 +105,5 @@ class ViewportDragDropHandler(
             }
         }
         return null
-    }
-
-    private fun getHoveredObject(scene: Scene): GameObject? {
-        return systemManager.getSystem<GizmoSystem>()?.getHoveredGameObject()
     }
 }

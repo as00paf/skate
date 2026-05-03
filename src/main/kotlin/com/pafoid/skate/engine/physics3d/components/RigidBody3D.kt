@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.physics3d.components
 
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.BodyType
@@ -80,7 +81,8 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
      */
     var physicsDirty = false
 
-    override fun start() {
+    override fun init(gameObject: GameObject) {
+        super.init(gameObject)
         rawBody?.setAngularFactor(JmeVector3f(0f, 1f, 0f))
     }
 
@@ -109,14 +111,6 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
                 Math.toDegrees(tempEuler.y.toDouble()).toFloat(),
                 Math.toDegrees(tempEuler.z.toDouble()).toFloat()
             )
-        }
-    }
-
-    override fun editorUpdate(dt: Float) {
-        rawBody?.let { body ->
-            // Zero out velocity in editor to prevent drifting while editing properties
-            body.setLinearVelocity(JmeVector3f.ZERO)
-            body.setAngularVelocity(JmeVector3f.ZERO)
         }
     }
 

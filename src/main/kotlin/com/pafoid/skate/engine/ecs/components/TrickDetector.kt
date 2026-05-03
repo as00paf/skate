@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.events.TrickCompleted
@@ -52,7 +53,8 @@ class TrickDetector : Component(), KoinComponent {
     private var physicsComponent: PhysicsComponent? = null
     private var skateboardPhysics: SkateboardPhysics? = null
 
-    override fun start() {
+    override fun init(gameObject: GameObject) {
+        super.init(gameObject)
         physicsComponent = gameObject.getComponent<PhysicsComponent>()
         skateboardPhysics = gameObject.getComponent<SkateboardPhysics>()
 

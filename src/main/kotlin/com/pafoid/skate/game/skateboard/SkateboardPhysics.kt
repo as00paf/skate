@@ -1,6 +1,7 @@
 package com.pafoid.skate.game.skateboard
 
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -82,7 +83,8 @@ class SkateboardPhysics : Component(), KoinComponent {
     private var updateAccumulator = 0f
     private val updateTimestep = 1f / 120f
 
-    override fun start() {
+    override fun init(gameObject: GameObject) {
+        super.init(gameObject)
         rb = gameObject.getComponent<RigidBody3D>() ?: throw IllegalStateException("SkateboardPhysics requires RigidBody3D")
         cachedTransform = gameObject.getComponent<Transform>() ?: throw IllegalStateException("SkateboardPhysics requires Transform")
         wasGrounded = false

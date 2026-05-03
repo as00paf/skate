@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.MovementInput
@@ -171,7 +172,8 @@ class Animator : Component(), KoinComponent {
         play(anim, blend)
     }
 
-    override fun start() {
+    override fun init(gameObject: GameObject) {
+        super.init(gameObject)
         eventSystem.subscribe<MovementInput> { onMovementInput(it) }
         eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
         eventSystem.subscribe<Landing> { onLanding(it) }

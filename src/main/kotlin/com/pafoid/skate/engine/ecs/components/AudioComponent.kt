@@ -35,7 +35,7 @@ class AudioComponent(
         pauseRequested = false
     }
 
-    fun stop() {
+    fun stopPlayback() {
         stopRequested = true
         playRequested = false
         pauseRequested = false

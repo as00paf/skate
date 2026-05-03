@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.Texture
+import com.pafoid.skate.engine.ecs.GameObject
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -20,18 +21,12 @@ class SpriteRenderer(
     @Transient
     private var isDirty = true
 
-    override fun start() {
+    override fun init(gameObject: GameObject) {
+        super.init(gameObject)
         gameObject.getComponent<Transform>()?.let { this.lastTransform.copyFrom(it) }
     }
 
     override fun update(dt: Float) {
-        if (this.lastTransform != this.gameObject.getComponent<Transform>()) {
-            this.gameObject.getComponent<Transform>()?.let { this.lastTransform.copyFrom(it) }
-            isDirty = true
-        }
-    }
-
-    override fun editorUpdate(dt: Float) {
         if (this.lastTransform != this.gameObject.getComponent<Transform>()) {
             this.gameObject.getComponent<Transform>()?.let { this.lastTransform.copyFrom(it) }
             isDirty = true

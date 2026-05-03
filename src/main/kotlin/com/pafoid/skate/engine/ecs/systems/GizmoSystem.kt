@@ -9,7 +9,6 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
@@ -93,8 +92,6 @@ class GizmoSystem(
                 rotationGizmo.isHot() || rotationGizmo.anyAxisActive() ||
                 scaleGizmo.isHot() || scaleGizmo.anyAxisActive()
     }
-
-    fun getHoveredGameObject(): GameObject? = selectionGizmo.hoveredGameObject
 
     fun toggleGizmo(gizmo: Int) {
         if (usingGizmo == gizmo) {
