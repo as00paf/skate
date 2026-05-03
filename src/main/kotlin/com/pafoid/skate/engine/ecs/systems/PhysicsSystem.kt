@@ -50,6 +50,7 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
     }
 
     override fun update(dt: Float) {
+        if (!scene.isRunning) return
         if (cacheDirty) rebuildCache()
 
         for (go in rigidBodies) {

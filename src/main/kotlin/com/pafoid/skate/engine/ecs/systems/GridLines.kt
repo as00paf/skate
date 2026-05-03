@@ -44,7 +44,7 @@ class GridLines(
     private val snapMarkerColorCached = Vector3f(0f, 1f, 0f)
 
     override fun update(dt: Float) {
-        if (!config.showGrid) return
+        if (!config.showGrid || scene.isRunning) return
 
         val camPos =
             cameraManager.getActiveCamera()?.position ?: sceneManager.currentScene?.camera?.position ?: Vector3f()

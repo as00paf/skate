@@ -46,6 +46,7 @@ class AnimationSystem(
     }
 
     override fun update(dt: Float) {
+        if (!scene.isRunning) return
         if (cacheDirty) rebuildCache()
 
         for (go in animatedObjects) {

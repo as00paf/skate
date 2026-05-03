@@ -36,6 +36,7 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
     }
 
     override fun update(dt: Float) {
+        if (!scene.isRunning) return
         val iterator = scene.gameObjects.iterator()
         while (iterator.hasNext()) {
             val go = iterator.next()

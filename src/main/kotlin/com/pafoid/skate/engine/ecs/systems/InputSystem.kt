@@ -39,15 +39,7 @@ class InputSystem(
     }
 
     override fun update(dt: Float) {
-        val isCursorEnabled = !inputProvider.isCursorDisabled()
-
-        if (isCursorEnabled) {
-            /*val editorInput = editorWorkspace.editorInputState
-
-            editorInput.reset()
-            pollEditorKeyboardInput(editorInput)
-            pollEditorMouseInput(editorInput)*/
-        }
+        if (!scene.isRunning) return
 
         scene.gameObjects.forEach { go ->
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
