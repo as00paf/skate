@@ -276,9 +276,8 @@ class ActionSearchProvider(
     }
 
     private fun saveScene() {
-        val currentIndex = sceneManager.activeSceneIndex
-        if (currentIndex < 0) return
-        eventSystem.publish(SceneSaveRequested(currentIndex))
+        val scene = sceneManager.currentScene ?: return
+        eventSystem.publish(SceneSaveRequested(scene))
         logger.logEditor("Save scene requested")
     }
 
@@ -335,31 +334,28 @@ class ActionSearchProvider(
 
     // Scene-related actions
     private fun renameScene() {
-        val currentIndex = sceneManager.activeSceneIndex
-        if (currentIndex < 0) return
+        val scene = sceneManager.currentScene ?: return
         // Publish event to trigger SceneActionHandler which will show rename UI
-        eventSystem.publish(SceneRenameRequested(currentIndex, sceneManager.currentScene?.name ?: ""))
+        eventSystem.publish(SceneRenameRequested(scene, scene.name))
         logger.logEditor("Scene rename requested")
     }
 
     private fun saveSceneAs() {
-        val currentIndex = sceneManager.activeSceneIndex
-        if (currentIndex < 0) return
-        eventSystem.publish(SceneSaveAsRequested(currentIndex))
+        val scene = sceneManager.currentScene ?: return
+        eventSystem.publish(SceneSaveAsRequested(scene))
         logger.logEditor("Save scene as requested")
     }
 
     private fun closeScene() {
-        val currentIndex = sceneManager.activeSceneIndex
-        if (currentIndex < 0 || sceneManager.openScenes.size <= 1) return
-        eventSystem.publish(SceneCloseRequested(currentIndex))
+        val scene = sceneManager.currentScene ?: return
+        if (sceneManager.openScenes.size <= 1) return
+        eventSystem.publish(SceneCloseRequested(scene))
         logger.logEditor("Close scene requested")
     }
 
     private fun closeOtherScenes() {
-        val currentIndex = sceneManager.activeSceneIndex
-        if (currentIndex < 0) return
-        eventSystem.publish(SceneCloseOthersRequested(currentIndex))
+        val scene = sceneManager.currentScene ?: return
+        eventSystem.publish(SceneCloseOthersRequested(scene))
         logger.logEditor("Close other scenes requested")
     }
 
@@ -405,9 +401,9 @@ class ActionSearchProvider(
     }
 
     private fun deleteScene() {
-        val currentIndex = sceneManager.activeSceneIndex
-        if (currentIndex < 0 || sceneManager.openScenes.size <= 1) return
-        eventSystem.publish(SceneDeleteRequested(currentIndex))
+        val scene = sceneManager.currentScene ?: return
+        if (sceneManager.openScenes.size <= 1) return
+        eventSystem.publish(SceneDeleteRequested(scene))
         logger.logEditor("Delete scene executed")
     }
 }

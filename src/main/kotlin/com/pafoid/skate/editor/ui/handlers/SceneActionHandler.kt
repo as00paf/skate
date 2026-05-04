@@ -52,19 +52,19 @@ class SceneActionHandler : KoinComponent {
 
     fun init() {
         eventSystem.subscribe<SceneRenameRequested> { event ->
-            handleRenameRequested(event.sceneIndex, event.newName)
+            handleRenameRequested(event.scene, event.newName)
         }
         eventSystem.subscribe<SceneSaveRequested> { event ->
-            handleSaveRequested(event.sceneIndex)
+            handleSaveRequested(event.scene)
         }
         eventSystem.subscribe<SceneSaveAsRequested> { event ->
-            handleSaveAsRequested(event.sceneIndex)
+            handleSaveAsRequested(event.scene)
         }
         eventSystem.subscribe<SceneCloseRequested> { event ->
-            handleCloseRequested(event.sceneIndex)
+            handleCloseRequested(event.scene)
         }
         eventSystem.subscribe<SceneCloseOthersRequested> { event ->
-            handleCloseOthersRequested(event.keepIndex)
+            handleCloseOthersRequested(event.keepScene)
         }
         eventSystem.subscribe<SceneCloseAllRequested> {
             handleCloseAllRequested()
@@ -79,15 +79,14 @@ class SceneActionHandler : KoinComponent {
             handleSceneCreated(event.scene)
         }
         eventSystem.subscribe<SceneTabSelected> { event ->
-            handleTabSelected(event.index)
+            handleTabSelected(event.scene)
         }
         eventSystem.subscribe<SceneDeleteRequested> { event ->
-            handleDeleteRequested(event.sceneIndex)
+            handleDeleteRequested(event.scene)
         }
     }
 
-    private fun handleRenameRequested(index: Int, newName: String) {
-        val scene = sceneManager.openScenes.getOrNull(index) ?: return
+    private fun handleRenameRequested(scene: Scene, newName: String) {
         val oldName = scene.name
         if (newName.isBlank() || newName == oldName) return
 
@@ -96,31 +95,28 @@ class SceneActionHandler : KoinComponent {
         logger.logEditor("Scene rename requested: '$oldName' -> '$newName'")
     }
 
-    private fun handleSaveRequested(index: Int) {
-        val scene = sceneManager.openScenes.getOrNull(index) ?: return
+    private fun handleSaveRequested(scene: Scene) {
         val command = SaveSceneCommand(scene, sceneSerializer)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene save requested: ${scene.name}")
     }
 
-    private fun handleSaveAsRequested(index: Int) {
-        val scene = sceneManager.openScenes.getOrNull(index) ?: return
+    private fun handleSaveAsRequested(scene: Scene) {
         val command = SaveSceneAsCommand(scene, sceneSerializer)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene save-as requested: ${scene.name}")
     }
 
-    private fun handleCloseRequested(index: Int) {
-        val scene = sceneManager.openScenes.getOrNull(index) ?: return
-        val command = CloseSceneCommand(scene, index, sceneManager)
+    private fun handleCloseRequested(scene: Scene) {
+        val command = CloseSceneCommand(scene, sceneManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene close requested: ${scene.name}")
     }
 
-    private fun handleCloseOthersRequested(keepIndex: Int) {
-        val command = CloseOtherScenesCommand(keepIndex, sceneManager)
+    private fun handleCloseOthersRequested(keepScene: Scene) {
+        val command = CloseOtherScenesCommand(keepScene, sceneManager)
         undoRedoManager.executeCommand(command)
-        logger.logEditor("Close other scenes requested, keeping index $keepIndex")
+        logger.logEditor("Close other scenes requested, keeping ${keepScene.name}")
     }
 
     private fun handleCloseAllRequested() {
@@ -180,19 +176,18 @@ class SceneActionHandler : KoinComponent {
         return candidate.absolutePath
     }
 
-    private fun handleTabSelected(index: Int) {
-        val command = SwitchSceneCommand(index, sceneManager)
+    private fun handleTabSelected(scene: Scene) {
+        val command = SwitchSceneCommand(scene, sceneManager)
         undoRedoManager.executeCommand(command)
     }
 
-    private fun handleDeleteRequested(index: Int) {
-        val scene = sceneManager.openScenes.getOrNull(index) ?: return
+    private fun handleDeleteRequested(scene: Scene) {
         // Cannot delete if it's the only scene
         if (sceneManager.openScenes.size <= 1) {
             logger.logEditor("Cannot delete the last remaining scene")
             return
         }
-        val command = DeleteSceneCommand(scene, index, sceneManager, sceneSerializer, logger)
+        val command = DeleteSceneCommand(scene, sceneManager, logger)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene delete requested: ${scene.name}")
     }

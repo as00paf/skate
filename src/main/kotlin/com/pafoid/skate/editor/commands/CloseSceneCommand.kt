@@ -10,11 +10,11 @@ import com.pafoid.skate.engine.ecs.SceneManager
  */
 class CloseSceneCommand(
     private val scene: Scene,
-    private val index: Int,
     private val sceneManager: SceneManager
 ) : Command {
+
     override fun execute() {
-        sceneManager.closeScene(index)
+        sceneManager.closeScene(scene)
     }
 
     override fun undo() {

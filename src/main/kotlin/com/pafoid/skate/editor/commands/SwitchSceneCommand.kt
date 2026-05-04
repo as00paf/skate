@@ -1,13 +1,15 @@
 package com.pafoid.skate.editor.commands
 
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 
 class SwitchSceneCommand(
-    private val index: Int,
+    private val scene: Scene?,
     private val sceneManager: SceneManager
 ) : Command {
+
     override fun execute() {
-        sceneManager.switchScene(index)
+        scene?.let { sceneManager.switchScene(it) }
     }
 
     override fun undo() {
@@ -15,5 +17,5 @@ class SwitchSceneCommand(
     }
 
     override fun getDisplayName(): String = "Switch Scene"
-    override fun getTargetName(): String? = index.toString()
+    override fun getTargetName(): String? = scene?.name
 }

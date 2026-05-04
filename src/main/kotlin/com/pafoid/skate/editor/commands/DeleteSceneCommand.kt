@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.commands
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.project.SceneSerializer
 import java.io.File
 
 /**
@@ -12,17 +11,14 @@ import java.io.File
  */
 class DeleteSceneCommand(
     private val scene: Scene,
-    private val index: Int,
     private val sceneManager: SceneManager,
-    private val sceneSerializer: SceneSerializer,
     private val logger: LoggerService
 ) : Command {
-    private var wasSaved = false
+
     private var filePath: String? = null
 
     override fun execute() {
         filePath = scene.sceneData.levelPath.takeIf { it.isNotEmpty() }
-        wasSaved = scene.isDirty
 
         // If scene has a file, delete it
         filePath?.let { path ->
@@ -33,7 +29,7 @@ class DeleteSceneCommand(
             }
         }
 
-        sceneManager.closeScene(index)
+        sceneManager.closeScene(scene)
         logger.logEditor("Deleted scene: ${scene.name}")
     }
 

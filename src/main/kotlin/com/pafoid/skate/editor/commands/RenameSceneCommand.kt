@@ -18,9 +18,8 @@ class RenameSceneCommand(
 ) : Command {
 
     override fun execute() {
-        val index = sceneManager.openScenes.indexOf(scene)
-        if (index >= 0) {
-            sceneManager.renameScene(index, newName)
+        if (sceneManager.openScenes.contains(scene)) {
+            sceneManager.renameScene(scene, newName)
         } else {
             scene.name = newName
         }
@@ -28,9 +27,8 @@ class RenameSceneCommand(
     }
 
     override fun undo() {
-        val index = sceneManager.openScenes.indexOf(scene)
-        if (index >= 0) {
-            sceneManager.renameScene(index, oldName)
+        if (sceneManager.openScenes.contains(scene)) {
+            sceneManager.renameScene(scene, oldName)
         } else {
             scene.name = oldName
         }

@@ -1,13 +1,15 @@
 package com.pafoid.skate.editor.commands
 
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 
 class CloseOtherScenesCommand(
-    private val keepIndex: Int,
+    private val keepScene: Scene?,
     private val sceneManager: SceneManager
 ) : Command {
+
     override fun execute() {
-        sceneManager.closeOtherScenes(keepIndex)
+        keepScene?.let { sceneManager.closeOtherScenes(it) }
     }
 
     override fun undo() {
@@ -15,5 +17,5 @@ class CloseOtherScenesCommand(
     }
 
     override fun getDisplayName(): String = "Close Other Scenes"
-    override fun getTargetName(): String? = keepIndex.toString()
+    override fun getTargetName(): String? = keepScene?.name
 }

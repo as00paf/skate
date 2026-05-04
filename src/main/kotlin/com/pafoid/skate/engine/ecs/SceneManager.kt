@@ -46,16 +46,23 @@ class SceneManager : KoinComponent {
         logger.logEngine("Scene ${scene.initializer::class.simpleName} loaded and started.")
     }
 
-    fun switchScene(index: Int) {
-        if (index in 0 until openScenes.size) {
-            activeSceneIndex = index
-            logger.logEditor("Switched to scene: ${currentScene?.name}")
-            eventSystem.publish(SceneChanged)
-        }
+    fun switchScene(scene: Scene) {
+        val sceneIndex = openScenes.indexOf(scene)
+        if (sceneIndex < 0) return
+
+        activeSceneIndex = sceneIndex
+        logger.logEditor("Switched to scene: ${currentScene?.name}")
+        eventSystem.publish(SceneChanged)
     }
 
-    fun closeScene(index: Int) {
-        if (index !in 0 until openScenes.size) return
+    fun switchScene(index: Int) {
+        val scene = openScenes.getOrNull(index) ?: return
+        switchScene(scene)
+    }
+
+    fun closeScene(scene: Scene) {
+        val index = openScenes.indexOf(scene)
+        if (index < 0) return
 
         val sceneToClose = openScenes[index]
         if (sceneToClose.isDirty) {
@@ -82,6 +89,11 @@ class SceneManager : KoinComponent {
         eventSystem.publish(SceneChanged)
     }
 
+    fun closeScene(index: Int) {
+        val scene = openScenes.getOrNull(index) ?: return
+        closeScene(scene)
+    }
+
     fun destroy() {
         openScenes.forEach { it.destroyScene() }
         openScenes.clear()
@@ -90,11 +102,11 @@ class SceneManager : KoinComponent {
     }
 
     /**
-     * Renames a scene at the given index.
-     * @return true if rename was successful, false if index is invalid
+     * Renames a scene.
+     * @return true if rename was successful, false if scene is not open
      */
-    fun renameScene(index: Int, newName: String): Boolean {
-        val scene = openScenes.getOrNull(index) ?: return false
+    fun renameScene(scene: Scene, newName: String): Boolean {
+        if (!openScenes.contains(scene)) return false
         if (newName.isBlank()) return false
 
         scene.name = newName
@@ -102,32 +114,33 @@ class SceneManager : KoinComponent {
         return true
     }
 
-    /**
-     * Closes all scenes except the one at [keepIndex].
-     */
-    fun closeOtherScenes(keepIndex: Int) {
-        if (keepIndex !in 0 until openScenes.size) return
+    fun renameScene(index: Int, newName: String): Boolean {
+        val scene = openScenes.getOrNull(index) ?: return false
+        return renameScene(scene, newName)
+    }
 
-        // Iterate in reverse to avoid index shifting issues
-        for (i in openScenes.indices.reversed()) {
-            if (i != keepIndex) {
-                closeScene(i)
-            }
-        }
-        // After closing others, the kept scene may have shifted to index 0
-        if (openScenes.isNotEmpty()) {
-            switchScene(0)
-        }
+    /**
+     * Closes all scenes except [keepScene].
+     */
+    fun closeOtherScenes(keepScene: Scene) {
+        if (!openScenes.contains(keepScene)) return
+
+        val scenesToClose = openScenes.filter { it != keepScene }
+        scenesToClose.forEach { closeScene(it) }
+        switchScene(keepScene)
+    }
+
+    fun closeOtherScenes(keepIndex: Int) {
+        val keepScene = openScenes.getOrNull(keepIndex) ?: return
+        closeOtherScenes(keepScene)
     }
 
     /**
      * Closes all open scenes.
      */
     fun closeAllScenes() {
-        // Iterate in reverse to avoid index shifting issues
-        for (i in openScenes.indices.reversed()) {
-            closeScene(i)
-        }
+        val scenesToClose = openScenes.toList()
+        scenesToClose.forEach { closeScene(it) }
     }
 
     /**

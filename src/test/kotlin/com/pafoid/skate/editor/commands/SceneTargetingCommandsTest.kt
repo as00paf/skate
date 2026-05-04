@@ -1,0 +1,55 @@
+package com.pafoid.skate.editor.commands
+
+import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.scene.SceneData
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.junit.jupiter.api.Test
+
+class SceneTargetingCommandsTest {
+
+    @Test
+    fun `switch scene command uses scene reference`() {
+        val scene = mockk<Scene>(relaxed = true)
+        val sceneManager = mockk<SceneManager>(relaxed = true)
+
+        SwitchSceneCommand(scene, sceneManager).execute()
+
+        verify(exactly = 1) { sceneManager.switchScene(scene) }
+    }
+
+    @Test
+    fun `close scene command uses scene reference`() {
+        val scene = mockk<Scene>(relaxed = true)
+        val sceneManager = mockk<SceneManager>(relaxed = true)
+
+        CloseSceneCommand(scene, sceneManager).execute()
+
+        verify(exactly = 1) { sceneManager.closeScene(scene) }
+    }
+
+    @Test
+    fun `close other scenes command uses keep scene reference`() {
+        val keepScene = mockk<Scene>(relaxed = true)
+        val sceneManager = mockk<SceneManager>(relaxed = true)
+
+        CloseOtherScenesCommand(keepScene, sceneManager).execute()
+
+        verify(exactly = 1) { sceneManager.closeOtherScenes(keepScene) }
+    }
+
+    @Test
+    fun `delete scene command closes targeted scene reference`() {
+        val scene = mockk<Scene>(relaxed = true)
+        val sceneManager = mockk<SceneManager>(relaxed = true)
+        val logger = mockk<LoggerService>(relaxed = true)
+        every { scene.sceneData } returns SceneData(levelPath = "")
+
+        DeleteSceneCommand(scene, sceneManager, logger).execute()
+
+        verify(exactly = 1) { sceneManager.closeScene(scene) }
+    }
+}

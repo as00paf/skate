@@ -56,14 +56,13 @@ class FileMenuBuilder(
     }
     
     private fun renderSaveItems(currentScene: Scene) {
-        val sceneIndex = sceneManager.openScenes.indexOf(currentScene)
-        if (sceneIndex < 0) return
+        if (!sceneManager.openScenes.contains(currentScene)) return
 
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
-            eventSystem.publish(SceneSaveRequested(sceneIndex))
+            eventSystem.publish(SceneSaveRequested(currentScene))
         }
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_as")}")) {
-            eventSystem.publish(SceneSaveAsRequested(sceneIndex))
+            eventSystem.publish(SceneSaveAsRequested(currentScene))
         }
     }
 

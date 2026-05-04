@@ -34,35 +34,35 @@ class EditorScenesTabBar(
                 val displayName = scene.name.replace(".scene", "", ignoreCase = true)
                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 
-                if (ImGui.beginTabItem("$displayName###${scene.hashCode()}", open, flags)) {
-                    eventSystem.publish(SceneTabSelected(index))
+                if (ImGui.beginTabItem("$displayName###sceneTab_${scene.getUid()}", open, flags)) {
+                    eventSystem.publish(SceneTabSelected(scene))
 
                     // Scene tab context menu
                     if (ImGui.beginPopupContextItem()) {
                         if (ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.scene_tab.rename")}")) {
-                            eventSystem.publish(SceneRenameRequested(index, scene.name))
+                            eventSystem.publish(SceneRenameRequested(scene, scene.name))
                         }
                         ImGui.separator()
                         if (ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("context.scene_tab.save")}")) {
-                            eventSystem.publish(SceneSaveRequested(index))
+                            eventSystem.publish(SceneSaveRequested(scene))
                         }
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.save_as"))) {
-                            eventSystem.publish(SceneSaveAsRequested(index))
+                            eventSystem.publish(SceneSaveAsRequested(scene))
                         }
                         ImGui.separator()
                         val canClose = sceneManager.openScenes.size > 1
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close"), null, false, canClose)) {
-                            eventSystem.publish(SceneCloseRequested(index))
+                            eventSystem.publish(SceneCloseRequested(scene))
                         }
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close_others"), null, false, canClose)) {
-                            eventSystem.publish(SceneCloseOthersRequested(index))
+                            eventSystem.publish(SceneCloseOthersRequested(scene))
                         }
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close_all"), null, false, canClose)) {
                             eventSystem.publish(SceneCloseAllRequested)
                         }
                         ImGui.separator()
                         if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.scene_tab.delete")}")) {
-                            eventSystem.publish(SceneDeleteRequested(index))
+                            eventSystem.publish(SceneDeleteRequested(scene))
                         }
                         ImGui.endPopup()
                     }
@@ -71,7 +71,7 @@ class EditorScenesTabBar(
                 }
 
                 if (!open.get()) {
-                    eventSystem.publish(SceneCloseRequested(index))
+                    eventSystem.publish(SceneCloseRequested(scene))
                 }
             }
 
