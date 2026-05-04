@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
@@ -39,13 +38,8 @@ class GameViewWindow : IWindow, KoinComponent {
 
     private val gamepadOverlay = GamepadOverlay()
     private val scenesTabBar by lazy { EditorScenesTabBar(eventSystem, stringManager) }
-    private val viewportActionHandler = ViewportActionHandler()
 
     private val tempVec2 = ImVec2()
-
-    init {
-        viewportActionHandler.init()
-    }
 
     override fun imgui(pOpen: ImBoolean?) {
         val noTabItem = 1 shl 23
@@ -66,9 +60,10 @@ class GameViewWindow : IWindow, KoinComponent {
         viewportRenderer.render(windowSize)
         viewportRenderer.updateFramebuffer()
 
-        viewportContextMenu.render(windowPos, sceneManager.currentScene)
-
-        viewportDragDropHandler.renderDragDropTarget(sceneManager.currentScene)
+        if (sceneManager.currentScene?.isRunning != true) {
+            viewportContextMenu.render(windowPos, sceneManager.currentScene)
+            viewportDragDropHandler.renderDragDropTarget(sceneManager.currentScene)
+        }
 
         viewportOverlays.render(windowPos, windowSize, sceneManager.currentScene)
 

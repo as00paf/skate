@@ -35,6 +35,8 @@ open class Scene(
 
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()
+    var objectSetVersion: Long = 0
+        private set
     var hoveredGameObject: GameObject? = null
     var selectedGameObject: GameObject? = null
 
@@ -57,15 +59,14 @@ open class Scene(
         // TODO: move ?
         camera.update(scaledDt)
 
-        // TODO: move ?
-        if (isRunning) {
-            physics3d.update(scaledDt)
-        }
-
         super.update(scaledDt)
     }
 
     fun destroyScene() {
         super.destroy()
+    }
+
+    fun markObjectSetChanged() {
+        objectSetVersion++
     }
 }

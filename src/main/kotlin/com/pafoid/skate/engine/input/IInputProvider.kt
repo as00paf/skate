@@ -1,6 +1,8 @@
 package com.pafoid.skate.engine.input
 
 interface IInputProvider {
+    fun initializeGamepad()
+    fun refreshGamepadState()
     fun isKeyPressed(key: Int): Boolean
     fun keyBeginPress(key: Int): Boolean
     fun isJoystickPresent(jid: Int): Boolean

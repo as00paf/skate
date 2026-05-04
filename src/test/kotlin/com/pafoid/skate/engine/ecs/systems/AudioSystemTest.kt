@@ -25,7 +25,6 @@ class AudioSystemTest : KoinTest {
     private val resourceManager = mockk<ResourceManager>(relaxed = true)
     private val scene = mockk<Scene>(relaxed = true)
     private val camera = mockk<Camera>(relaxed = true)
-    private val gameObjectManager = mockk<GameObjectManager>(relaxed = true)
 
     private lateinit var audioSystem: AudioSystem
 
@@ -38,7 +37,7 @@ class AudioSystemTest : KoinTest {
         }
 
         every { scene.camera } returns camera
-        every { scene.gameObjectSystem } returns gameObjectManager
+        every { scene.gameObjects } returns mutableListOf()
         every { camera.position } returns Vector3f(0f, 0f, 0f)
         every { camera.yaw } returns 0f
         every { camera.pitch } returns 0f
@@ -58,7 +57,6 @@ class AudioSystemTest : KoinTest {
         // Arrange
         every { audioEngine.init() } returns true
         every { audioEngine.isInitialized } returns true
-        every { gameObjectManager.gameObjects } returns mutableListOf()
 
         // Act
         audioSystem.update(0.16f)
@@ -72,7 +70,6 @@ class AudioSystemTest : KoinTest {
     fun `update - stops if initialization fails`() {
         // Arrange
         every { audioEngine.init() } returns false
-        every { gameObjectManager.gameObjects } returns mutableListOf()
 
         // Act
         audioSystem.update(0.16f)

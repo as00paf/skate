@@ -14,15 +14,23 @@ class SystemManager {
     private val _systems = mutableListOf<System>()
     private val pendingSystems = mutableListOf<System>()
     private var systemsNeedSort = true
+    private var loadedScene: Scene? = null
+    private var hasStarted = false
+    private var lastObjectSetVersion: Long = -1
 
     // Public read-only view of systems
     val systems: List<System> get() = _systems
 
     fun start() {
+        sortSystemsIfNeeded()
         systems.forEach { it.start() }
+        hasStarted = true
     }
 
     fun loadScene(scene: Scene) {
+        sortSystemsIfNeeded()
+        loadedScene = scene
+        lastObjectSetVersion = scene.objectSetVersion
         systems.forEach {
             it.init(scene)
         }
@@ -30,6 +38,7 @@ class SystemManager {
 
     fun update(dt: Float) {
         sortSystemsIfNeeded()
+        refreshCachesIfSceneChanged()
         _systems.forEach { system ->
             if (system.enabled) {
                 system.update(dt)
@@ -43,6 +52,12 @@ class SystemManager {
         if (!isRunning) {
             _systems.add(system)
             systemsNeedSort = true
+            loadedScene?.let { scene ->
+                system.init(scene)
+                if (hasStarted) {
+                    system.start()
+                }
+            }
         } else {
             pendingSystems.add(system)
         }
@@ -66,13 +81,26 @@ class SystemManager {
     }
 
     private fun processPendingSystems() {
+        val scene = loadedScene
         pendingSystems.forEach { system ->
             _systems.add(system)
-            system.start()
+            if (scene != null) {
+                system.init(scene)
+            }
+            if (hasStarted) {
+                system.start()
+            }
             systemsNeedSort = true
         }
 
         pendingSystems.clear()
+    }
+
+    private fun refreshCachesIfSceneChanged() {
+        val scene = loadedScene ?: return
+        if (scene.objectSetVersion == lastObjectSetVersion) return
+        resetSystemCaches()
+        lastObjectSetVersion = scene.objectSetVersion
     }
 
     fun resetSystemCaches() {
@@ -88,6 +116,9 @@ class SystemManager {
         _systems.forEach { it.destroy() }
         _systems.clear()
         pendingSystems.clear()
+        loadedScene = null
+        hasStarted = false
+        lastObjectSetVersion = -1
         systemsNeedSort = false
     }
 }

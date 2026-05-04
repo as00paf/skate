@@ -74,7 +74,6 @@ class PlayerControllerTest {
 
         // PlayerController is now on the Skater, not the skateboard
         controller = skater.getComponent<PlayerController>()!!
-        controller.start()
     }
 
     @AfterEach

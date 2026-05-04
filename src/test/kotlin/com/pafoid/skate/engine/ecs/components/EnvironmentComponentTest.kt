@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse

@@ -44,12 +44,10 @@ class Engine : KoinComponent {
     private fun updateRunningState(dt: Float) {
         val scene = sceneManager.currentScene
         if (dt >= 0 && scene != null) {
+            scene.isRunning = runtimePlaying
             workspace.update(dt)
             if (runtimePlaying) {
                 scene.update(dt)
-                scene.isRunning = true
-            } else {
-                scene.isRunning = false
             }
 
             renderer.render(scene, scene.selectedGameObject, scene.hoveredGameObject)

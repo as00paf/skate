@@ -146,20 +146,20 @@ class PlayerController : Component(), KoinComponent {
         val physics3d = physics3d ?: return
         val inputState = gameObject.getComponent<InputStateComponent>() ?: return
 
-        // Update grounded state from physics (for backward compatibility with InputStateComponent)
+        // Update grounded state from physics
         isGrounded = checkIfGrounded(physics3d)
         inputState.isGrounded = isGrounded
 
-        // Use event-driven movement state (updated by MovementInput events)
-        // Fall back to InputStateComponent polling if events not received
-        val inputDirection = if (movementMagnitude > 0.15f) {
+        // PRIORITIZE event-driven movement state; fallback to InputStateComponent polling
+        val useEvents = movementMagnitude > 0.15f
+        val inputDirection = if (useEvents) {
             movementDirection
         } else {
             inputState.moveDirection
         }
 
         val isSprinting =
-            inputState.sprintPressed || movementMagnitude > 0.65f || inputDirection.lengthSquared() > 0.42f
+            inputState.sprintPressed || (useEvents && movementMagnitude > 0.65f) || (!useEvents && inputState.moveDirection.lengthSquared() > 0.42f)
 
         // Move if input is above threshold
         if (inputDirection.lengthSquared() > 0.0225f) { // 0.15^2

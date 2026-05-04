@@ -27,6 +27,8 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.WindowRegistry
+import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
+import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
@@ -120,6 +122,8 @@ val appModule = module {
 
     // EventSystem for editor event bus
     single { EventSystem() }
+    single(createdAtStart = true) { SceneActionHandler().also { it.init() } }
+    single(createdAtStart = true) { ViewportActionHandler().also { it.init() } }
     single { CameraManager(get(), get(), get()) }
 
     // Viewport components for GameViewWindow
@@ -154,13 +158,13 @@ val appModule = module {
 
     // Editor Workspace
     single { EditorInputState() }
-    single { EditorCamera(Camera(), get()) }
+    single { EditorCamera(Camera(), get(), get()) }
     single {
         EditorWorkspace(
             get(),
             get(),
             get(),
-            GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()),
+            GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()),
             GridLines(get(), get(), get(), get()),
             EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()),
             EditorEventHandler(get(), get()),
@@ -201,7 +205,7 @@ val appModule = module {
     single { GameObjectSearchProvider(get(), get(), get()) }
     single { AssetSearchProvider(get()) }
     single { ComponentSearchProvider(get(), get(), get()) }
-    single { ActionSearchProvider(get(), get(), get(), get(), get(), get()) }
+    single { ActionSearchProvider(get(), get(), get(), get(), get()) }
     single { SearchEverywhereWindow(SearchHistory(serializer = get())) }
 }
 

@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor
 
 import com.pafoid.skate.editor.data.EditorInputState
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
@@ -15,6 +16,7 @@ import kotlin.math.sin
 class EditorCamera(
     val camera: Camera,
     private val editorState: EditorInputState,
+    private val engine: Engine,
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val scrollSensitivity = 0.1f
@@ -35,6 +37,8 @@ class EditorCamera(
     }
 
     override fun update(dt: Float) {
+        if (engine.runtimePlaying) return
+
         handleFreeFlyMovement()
         handleRotation()
         handleZoom()

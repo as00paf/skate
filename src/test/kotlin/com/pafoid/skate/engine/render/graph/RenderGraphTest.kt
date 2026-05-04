@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import io.mockk.mockk
-import io.mockk.verify
 import io.mockk.verifyOrder
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -35,8 +34,8 @@ class RenderGraphTest {
         graph.execute(scene, go, null)
         
         verifyOrder {
-            pass1.execute(any())
-            pass2.execute(any())
+            pass1.executeWithTiming(any())
+            pass2.executeWithTiming(any())
         }
     }
     

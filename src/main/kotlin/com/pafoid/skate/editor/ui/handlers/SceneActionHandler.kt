@@ -1,12 +1,16 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
+import com.pafoid.skate.editor.commands.CloseAllScenesCommand
+import com.pafoid.skate.editor.commands.CloseOtherScenesCommand
 import com.pafoid.skate.editor.commands.CloseSceneCommand
 import com.pafoid.skate.editor.commands.CreateSceneCommand
 import com.pafoid.skate.editor.commands.DeleteSceneCommand
+import com.pafoid.skate.editor.commands.OpenSceneCommand
 import com.pafoid.skate.editor.commands.RenameSceneCommand
 import com.pafoid.skate.editor.commands.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.SaveSceneCommand
+import com.pafoid.skate.editor.commands.SwitchSceneCommand
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.SceneSerializer
@@ -16,13 +20,13 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction
-import com.pafoid.skate.engine.events.SceneChanged
 import com.pafoid.skate.engine.events.SceneCloseAllRequested
 import com.pafoid.skate.engine.events.SceneCloseOthersRequested
 import com.pafoid.skate.engine.events.SceneCloseRequested
 import com.pafoid.skate.engine.events.SceneCreateRequested
 import com.pafoid.skate.engine.events.SceneCreated
 import com.pafoid.skate.engine.events.SceneDeleteRequested
+import com.pafoid.skate.engine.events.SceneOpenRequested
 import com.pafoid.skate.engine.events.SceneRenameRequested
 import com.pafoid.skate.engine.events.SceneSaveAsRequested
 import com.pafoid.skate.engine.events.SceneSaveRequested
@@ -68,6 +72,9 @@ class SceneActionHandler : KoinComponent {
         eventSystem.subscribe<SceneCreateRequested> {
             handleCreateRequested()
         }
+        eventSystem.subscribe<SceneOpenRequested> {
+            handleOpenRequested()
+        }
         eventSystem.subscribe<SceneCreated> { event ->
             handleSceneCreated(event.scene)
         }
@@ -111,13 +118,14 @@ class SceneActionHandler : KoinComponent {
     }
 
     private fun handleCloseOthersRequested(keepIndex: Int) {
-        sceneManager.closeOtherScenes(keepIndex)
-        eventSystem.publish(SceneChanged)
+        val command = CloseOtherScenesCommand(keepIndex, sceneManager)
+        undoRedoManager.executeCommand(command)
         logger.logEditor("Close other scenes requested, keeping index $keepIndex")
     }
 
     private fun handleCloseAllRequested() {
-        sceneManager.closeAllScenes()
+        val command = CloseAllScenesCommand(sceneManager)
+        undoRedoManager.executeCommand(command)
         logger.logEditor("Close all scenes requested")
     }
 
@@ -131,7 +139,7 @@ class SceneActionHandler : KoinComponent {
         val fullPath = generateUniqueScenePath(projectDir)
         val sceneName = File(fullPath).nameWithoutExtension
 
-        val command = CreateSceneCommand(sceneName, sceneInitializer, sceneManager, sceneSerializer, fullPath)
+        val command = CreateSceneCommand(sceneName, sceneInitializer, sceneSerializer, fullPath)
         undoRedoManager.executeCommand(command)
 
         val createdScene = command.createdScene
@@ -148,6 +156,17 @@ class SceneActionHandler : KoinComponent {
         logger.logEditor("Scene opened: ${scene.name}")
     }
 
+    private fun handleOpenRequested() {
+        val command = OpenSceneCommand(sceneInitializer, sceneSerializer, sceneManager)
+        undoRedoManager.executeCommand(command)
+        val openedScene = command.openedScene
+        if (openedScene != null) {
+            logger.logEditor("Scene opened from file: ${openedScene.name}")
+        } else {
+            logger.logEditor("Scene open cancelled")
+        }
+    }
+
     private fun generateUniqueScenePath(projectDir: File): String {
         val scenesDir = File(projectDir, "Scenes")
         scenesDir.mkdirs()
@@ -162,7 +181,8 @@ class SceneActionHandler : KoinComponent {
     }
 
     private fun handleTabSelected(index: Int) {
-        sceneManager.switchScene(index)
+        val command = SwitchSceneCommand(index, sceneManager)
+        undoRedoManager.executeCommand(command)
     }
 
     private fun handleDeleteRequested(index: Int) {

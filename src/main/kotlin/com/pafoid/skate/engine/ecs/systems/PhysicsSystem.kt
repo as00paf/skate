@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
+import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.toVector3f
 
@@ -53,6 +54,10 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
         if (!scene.isRunning) return
         if (cacheDirty) rebuildCache()
 
+        // Step Bullet at deterministic fixed-step first so downstream ECS reads current frame data.
+        val timeScale = scene.getComponent<TimeComponent>()?.timeScale ?: 1.0f
+        scene.physics3d.update(dt * timeScale)
+
         for (go in rigidBodies) {
             val rigidBody = go.getComponent<RigidBody3D>() ?: continue
 
@@ -64,6 +69,8 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
 
             rigidBody.rawBody?.let { body ->
                 try {
+                    rigidBody.update(0f)
+
                     physicsComponent.updateFromPhysics(
                         body.getLinearVelocity(null).toVector3f(),
                         body.getAngularVelocity(null).toVector3f()

@@ -40,25 +40,40 @@ class EnvironmentSystem(
     // Reference to Scene's EnvironmentComponent (updated each frame)
     private var environmentComponent: EnvironmentComponent? = null
 
+    private fun getEnvironmentComponent(): EnvironmentComponent? {
+        return scene.getComponent<EnvironmentComponent>()
+    }
+
+    private fun getOrCreateEnvironmentComponent(): EnvironmentComponent {
+        val existingComponent = getEnvironmentComponent()
+        if (existingComponent != null) {
+            environmentComponent = existingComponent
+            return existingComponent
+        }
+
+        val createdComponent = EnvironmentComponent()
+        scene.addComponent(createdComponent)
+        environmentComponent = createdComponent
+        return createdComponent
+    }
+
     fun applyPreset(preset: EnvironmentPreset) {
-        environmentComponent?.applyPreset(preset)
+        getOrCreateEnvironmentComponent().applyPreset(preset)
     }
 
     fun reset() {
-        environmentComponent?.reset()
+        getEnvironmentComponent()?.reset()
     }
 
     override fun update(dt: Float) {
-        environmentComponent = scene.getComponent<EnvironmentComponent>()
-        environmentComponent?.update(dt)
+        getEnvironmentComponent()?.update(dt)
     }
 
     override fun imgui() {
+        val component = getEnvironmentComponent() ?: return
+
         ImGui.text(stringManager.getString("lbl.environment_system.header"))
         ImGui.separator()
-
-        // Get component for ImGui (create if needed)
-        val component = environmentComponent ?: return
 
         // Preset section
         ImGui.text(stringManager.getString("lbl.environment_system.presets"))

@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.imgui
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.ClipboardService
@@ -87,7 +86,6 @@ class ImGuiLayer(
 
     private val eventSystem: EventSystem by inject()
     private val projectManager: ProjectManager by inject()
-    private val sceneInitializer: LevelEditorSceneInitializer by inject()
     private val statusBar = EditorStatusBar()
     private lateinit var menuBar: EditorMenuBar
 
@@ -146,10 +144,9 @@ class ImGuiLayer(
         menuBar = EditorMenuBar(
             fileMenu = FileMenuBuilder(
                 stringManager,
-                sceneSerializer,
+                eventSystem,
                 sceneManager,
-                windowController.glfwWindow,
-                sceneInitializer
+                windowController.glfwWindow
             ),
             editMenu = EditMenuBuilder(
                 stringManager,
@@ -168,6 +165,7 @@ class ImGuiLayer(
             windowControls = WindowControlsRenderer(
                 windowRegistry.searchEverywhereWindow,
                 windowController,
+                stringManager,
                 editorSettingsShowFlag,
                 projectSettingsShowFlag
             ),
@@ -242,7 +240,10 @@ class ImGuiLayer(
             setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY, ImGuiCond.Always)
             pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
             begin(
-                stringManager.getString("window.game_viewport") + " Maximized",
+                stringManager.getString(
+                    "window.game_viewport.maximized",
+                    stringManager.getString("window.game_viewport")
+                ),
                 ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoDecoration
             )
 

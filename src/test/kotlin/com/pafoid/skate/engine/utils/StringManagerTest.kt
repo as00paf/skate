@@ -1,10 +1,14 @@
 package com.pafoid.skate.engine.utils
 
+import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 
 class StringManagerTest {
 
@@ -12,12 +16,20 @@ class StringManagerTest {
 
     @BeforeEach
     fun setup() {
+        stopKoin()
+        startKoin {
+            modules(
+                module {
+                    single { LoggerService() }
+                }
+            )
+        }
         stringManager = StringManager("test_strings", "en") // Start with English
     }
 
     @AfterEach
     fun teardown() {
-        // No cleanup needed
+        stopKoin()
     }
 
     @Test

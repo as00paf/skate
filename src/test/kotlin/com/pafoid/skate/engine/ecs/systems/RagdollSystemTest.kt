@@ -28,6 +28,7 @@ class RagdollSystemTest {
     @BeforeEach
     fun setup() {
         scene = mockk(relaxed = true)
+        every { scene.isRunning } returns true
         ragdollSystem = RagdollSystem()
         ragdollSystem.init(scene)
     }
@@ -63,7 +64,7 @@ class RagdollSystemTest {
         gameObject.addComponent(skeletonComponent)
         gameObject.addComponent(transform)
 
-        every { scene.gameObjectSystem.gameObjects } returns mutableListOf(gameObject)
+        every { scene.gameObjects } returns mutableListOf(gameObject)
 
         // Act
         ragdollSystem.update(0.016f)
@@ -105,7 +106,7 @@ class RagdollSystemTest {
         gameObject.addComponent(skeletonComponent)
         gameObject.addComponent(transform)
 
-        every { scene.gameObjectSystem.gameObjects } returns mutableListOf(gameObject)
+        every { scene.gameObjects } returns mutableListOf(gameObject)
 
         // Act
         ragdollSystem.update(0.016f)

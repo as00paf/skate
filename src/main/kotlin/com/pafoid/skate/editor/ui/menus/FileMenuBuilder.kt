@@ -1,12 +1,14 @@
 package com.pafoid.skate.editor.ui.menus
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.utils.JobSystem
+import com.pafoid.skate.engine.events.SceneCreateRequested
+import com.pafoid.skate.engine.events.SceneOpenRequested
+import com.pafoid.skate.engine.events.SceneSaveAsRequested
+import com.pafoid.skate.engine.events.SceneSaveRequested
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem
@@ -17,21 +19,18 @@ import org.lwjgl.glfw.GLFW
  * Builds the File menu with scene management and application options.
  *
  * This component handles:
- * - New Scene creation
- * - Save/Save As operations
- * - Open Scene dialog
+ * - Scene action event publication
  * - Quit application
  *
  * @param stringManager For localized menu strings
- * @param sceneSerializer For scene save/load operations
- * @param sceneManager For opening new scenes
+ * @param eventSystem For publishing scene actions
+ * @param sceneManager For active scene index lookup
  */
 class FileMenuBuilder(
     private val stringManager: StringManager,
-    private val sceneSerializer: SceneSerializer,
+    private val eventSystem: EventSystem,
     private val sceneManager: SceneManager,
-    private val glfwWindow: Long,
-    private val sceneInitializer: LevelEditorSceneInitializer
+    private val glfwWindow: Long
 ) {
     
     /**
@@ -51,32 +50,26 @@ class FileMenuBuilder(
     }
     
     private fun renderNewSceneItem() {
-        if (menuItem("${Icons.PLUS} New Scene", "Ctrl+N")) {
-            JobSystem.runOnMain {
-                val newScene = Scene("New Scene", sceneInitializer)
-                newScene.init()
-                sceneManager.openScene(newScene)
-            }
+        if (menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_scene")}", "Ctrl+N")) {
+            eventSystem.publish(SceneCreateRequested)
         }
     }
     
     private fun renderSaveItems(currentScene: Scene) {
+        val sceneIndex = sceneManager.openScenes.indexOf(currentScene)
+        if (sceneIndex < 0) return
+
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
-            sceneSerializer.save(currentScene)
+            eventSystem.publish(SceneSaveRequested(sceneIndex))
         }
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_as")}")) {
-            sceneSerializer.saveAs(currentScene)
+            eventSystem.publish(SceneSaveAsRequested(sceneIndex))
         }
     }
 
     private fun renderOpenItem() {
         if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open")}", "Ctrl+O")) {
-            JobSystem.runOnMain {
-                val newScene = Scene("Loaded Scene", sceneInitializer)
-                newScene.init()
-                sceneManager.openScene(newScene)
-                sceneSerializer.open(newScene)
-            }
+            eventSystem.publish(SceneOpenRequested)
         }
     }
     

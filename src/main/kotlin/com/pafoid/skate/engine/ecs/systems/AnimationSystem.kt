@@ -21,7 +21,7 @@ import org.joml.Vector3f
  */
 class AnimationSystem(
     private val stringManager: StringManager
-) : System() {
+) : System(priority = ExecutionPriority.DEFAULT) {
 
     // Cached list of GameObjects eligible for animation updates
     private val animatedObjects = mutableListOf<GameObject>()

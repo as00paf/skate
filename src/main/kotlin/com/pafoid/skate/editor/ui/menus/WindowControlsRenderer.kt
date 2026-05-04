@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.engine.core.WindowController
 import imgui.ImGui
@@ -31,6 +32,7 @@ import imgui.type.ImBoolean
 class WindowControlsRenderer(
     private val searchEverywhereWindow: SearchEverywhereWindow,
     private val windowController: WindowController,
+    private val stringManager: StringManager,
     private val editorSettingsShowFlag: ImBoolean,
     private val projectSettingsShowFlag: ImBoolean
 ) {
@@ -72,14 +74,14 @@ class WindowControlsRenderer(
             ImGui.openPopup("##SettingsPopup")
         }
         if (ImGui.isItemHovered()) {
-            ImGui.setTooltip("Settings")
+            ImGui.setTooltip(stringManager.getString("tooltip.settings"))
         }
 
         if (ImGui.beginPopup("##SettingsPopup")) {
-            if (ImGui.menuItem("Editor Settings")) {
+            if (ImGui.menuItem(stringManager.getString("window.editor_settings"))) {
                 editorSettingsShowFlag.set(true)
             }
-            if (ImGui.menuItem("Project Settings")) {
+            if (ImGui.menuItem(stringManager.getString("window.project_settings"))) {
                 projectSettingsShowFlag.set(true)
             }
             ImGui.endPopup()
@@ -91,7 +93,7 @@ class WindowControlsRenderer(
             searchEverywhereWindow.open()
         }
         if (ImGui.isItemHovered()) {
-            ImGui.setTooltip("Search Everywhere (Ctrl+P)")
+            ImGui.setTooltip(stringManager.getString("tooltip.search_everywhere_shortcut"))
         }
     }
 

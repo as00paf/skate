@@ -16,6 +16,7 @@ data class SceneCloseRequested(val sceneIndex: Int) : SceneAction("scene.action.
 data class SceneCloseOthersRequested(val keepIndex: Int) : SceneAction("scene.action.close_others_requested")
 object SceneCloseAllRequested : SceneAction("scene.action.close_all_requested")
 object SceneCreateRequested : SceneAction("scene.action.create_requested")
+object SceneOpenRequested : SceneAction("scene.action.open_requested")
 data class SceneCreated(val scene: Scene) : SceneAction("scene.action.created")
 data class SceneTabSelected(val index: Int) : SceneAction("scene.action.tab_selected")
 data class SceneDeleteRequested(val sceneIndex: Int) : SceneAction("scene.action.delete_requested")

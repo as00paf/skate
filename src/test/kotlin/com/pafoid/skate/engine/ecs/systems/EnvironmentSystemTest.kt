@@ -3,7 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
-import com.pafoid.skate.engine.ecs.components.EnvironmentPreset
+import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -64,24 +64,23 @@ class EnvironmentSystemTest {
     // =========================================================================
 
     @Test
-    fun `getOrCreateEnvironmentComponent creates component on Scene`() {
+    fun `update when Scene has no environment component creates component on Scene`() {
         // Arrange
         val system = EnvironmentSystem(stringManager = stringManager)
         val scene = createTestScene()
         system.init(scene)
 
-        // Act - use reflection to access private method
-        val method = EnvironmentSystem::class.java.getDeclaredMethod("getOrCreateEnvironmentComponent")
-        method.isAccessible = true
-        val component = method.invoke(system) as EnvironmentComponent
+        // Act
+        system.update(0.016f)
 
         // Assert
-        assertNotNull(component, "Component should be created")
+        val component = scene.getComponent<EnvironmentComponent>()
+        assertNotNull(component, "Component should be created during update")
         assertTrue(scene.hasComponent<EnvironmentComponent>(), "Scene should have component")
     }
 
     @Test
-    fun `getEnvironmentComponent returns existing component from Scene`() {
+    fun `applyPreset uses existing component from Scene`() {
         // Arrange
         val system = EnvironmentSystem(stringManager = stringManager)
         val scene = createTestScene()
@@ -89,13 +88,13 @@ class EnvironmentSystemTest {
         scene.addComponent(existingComponent)
         system.init(scene)
 
-        // Act - use reflection to access private method
-        val method = EnvironmentSystem::class.java.getDeclaredMethod("getEnvironmentComponent")
-        method.isAccessible = true
-        val component = method.invoke(system) as EnvironmentComponent?
+        // Act
+        system.applyPreset(EnvironmentPreset.NO_FOG)
 
         // Assert
-        assertSame(existingComponent, component, "Should return existing component")
+        val component = scene.getComponent<EnvironmentComponent>()
+        assertSame(existingComponent, component, "Should use existing component")
+        assertEquals(0.0f, existingComponent.fogDensity, 0.0001f)
     }
 
     // =========================================================================

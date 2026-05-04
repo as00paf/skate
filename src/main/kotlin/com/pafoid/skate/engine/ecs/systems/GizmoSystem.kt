@@ -7,7 +7,6 @@ import com.pafoid.skate.editor.gizmos.SelectionGizmo
 import com.pafoid.skate.editor.gizmos.TranslateGizmo
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.input.listeners.KeyListener
@@ -21,7 +20,6 @@ class GizmoSystem(
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
-    private val engine: Engine,
     private val eventSystem: EventSystem,
     private val gameObjectManager: GameObjectManager,
     debugRenderer: DebugRenderer
@@ -34,7 +32,7 @@ class GizmoSystem(
     private val rotationGizmo = RotationGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val scaleGizmo = ScaleGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val selectionGizmo =
-        SelectionGizmo(mouseListener, undoRedoManager, renderer, engine, eventSystem, gameObjectManager)
+        SelectionGizmo(mouseListener, undoRedoManager, renderer, eventSystem, gameObjectManager)
     private val measureGizmo = MeasureTool(mouseListener, undoRedoManager, debugRenderer, settingsManager)
 
     override fun init(scene: Scene) {
@@ -52,6 +50,10 @@ class GizmoSystem(
         scaleGizmo.setNotInUse()
         selectionGizmo.setNotInUse()
         measureGizmo.setNotInUse()
+
+        if (scene.isRunning) {
+            return
+        }
 
         // Activate the selected gizmo
         when (usingGizmo) {

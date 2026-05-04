@@ -16,9 +16,6 @@ class PlayerStateManager : Component() {
     @Transient private val logger: LoggerService by inject()
     @Transient private val stringManager: StringManager by inject()
 
-    @Transient private val playerController: PlayerController? by lazy { gameObject.getComponent<PlayerController>() }
-    @Transient private val physicsComponent: PhysicsComponent? by lazy { gameObject.getComponent<PhysicsComponent>() }
-
     var currentState: PlayerState = PlayerState.IDLE
         private set
     var isSwitch = false
@@ -40,8 +37,8 @@ class PlayerStateManager : Component() {
     }
 
     private fun handleOffBoardControls(dt: Float) {
-        val controller = playerController ?: return
-        val physics = physicsComponent ?: return
+        val controller = gameObject.getComponent<PlayerController>() ?: return
+        val physics = gameObject.getComponent<PhysicsComponent>() ?: return
 
         val intent = controller.desiredMoveDirection.length()
         val hasIntent = intent > 0.15f
@@ -52,6 +49,8 @@ class PlayerStateManager : Component() {
         val newState =
             if (controller.isJumping) {
                 PlayerState.JUMPING
+            } else if (!controller.isGrounded) {
+                PlayerState.FALLING
             } else if (speed > 0.1f && hasIntent) {
                 if (speed > 5f) {
                     PlayerState.RUNNING

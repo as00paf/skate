@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.physics3d
 
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -41,6 +42,7 @@ class SkateboardPhysicsTest {
                     single<Engine> { engine }
                     single<SceneManager> { sceneManager }
                     single<DebugRenderer> { debugRenderer }
+                    single<EventSystem> { mockk(relaxed = true) }
                     single { mockk<com.pafoid.skate.editor.systems.StringManager>(relaxed = true) }
                     single { mockk<com.pafoid.skate.editor.systems.LoggerService>(relaxed = true) }
                 })
@@ -64,7 +66,6 @@ class SkateboardPhysicsTest {
         val mockScene = mockk<Scene>()
         every { sceneManager.currentScene } returns mockScene
         every { mockScene.physics3d } returns physics
-        every { mockScene.systemManager } returns mockk(relaxed = true)
     }
 
     @AfterEach
@@ -190,8 +191,6 @@ class SkateboardPhysicsTest {
         skateTransform.translation.set(0f, 0.1f, 0f) // Slightly above ground, suspension holds it
         physics.add(skateGo)
 
-        skatePhysics.start()
-
         // Give initial push
         val initialSpeed = 5.0f
         rb.linearVelocity = Vector3f(initialSpeed, 0f, 0f)
@@ -203,11 +202,14 @@ class SkateboardPhysicsTest {
             rb.update(1/60f)
         }
 
-        val finalSpeed = rb.linearVelocity.length()
+        val finalHorizontalSpeed = kotlin.math.abs(rb.linearVelocity.x)
 
         // Assert
-        assertTrue(finalSpeed < initialSpeed, "Velocity should decay due to resistance. Initial: $initialSpeed, Final: $finalSpeed")
-        assertTrue(finalSpeed > 0f, "Should not stop instantly")
+        assertTrue(
+            finalHorizontalSpeed < initialSpeed,
+            "Horizontal velocity should decay due to resistance. Initial: $initialSpeed, Final: $finalHorizontalSpeed"
+        )
+        assertTrue(finalHorizontalSpeed > 0f, "Should not stop instantly")
     }
 
     @Test
@@ -236,8 +238,6 @@ class SkateboardPhysicsTest {
         skateTransform.translation.set(0f, 0f, 0f)
 
         physics.add(skateGo)
-        skatePhysics.start()
-
         // Act
         // SkateboardPhysics applies force.
         // Physics update integrates force -> velocity.
@@ -273,8 +273,6 @@ class SkateboardPhysicsTest {
         skateTransform.rotation.set(15f, 0f, 0f)
 
         physics.add(skateGo)
-        skatePhysics.start()
-
         // Move forward
         rb.linearVelocity = Vector3f(5f, 0f, 0f)
 

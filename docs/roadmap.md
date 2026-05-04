@@ -565,3 +565,45 @@ architecture, state synchronization, and handling network latency.
 
 *Last Updated: 2026-03-25*
 *Roadmap Version: 1.6*
+## 2026-05-03 Roadmap Activation: Skater Runtime Recovery
+
+- **Current active task (single-task mode):** `REG-018`
+- **Objective:** Reproduce and isolate why the skater is not affected by gravity and is not moving/animating from gamepad input in Play mode.
+- **Owner:** `qa-engineer`
+- **Status:** `in_progress`
+- **Completion evidence required:** deterministic repro steps + expected vs actual behavior table.
+- **Next tasks (queued, not started):** `REG-019` -> `REG-020` -> `REG-021` -> `REG-022`
+## 2026-05-03 Execution Update (Skater Runtime)
+
+Single-task execution remains enforced:
+
+1. `REG-018` (`qa-engineer`) - **in_progress**
+2. `REG-019` (`physics-engineer`) - pending
+3. `REG-020` (`software-engineer`) - pending
+4. `REG-021` (`software-engineer`) - pending
+5. `REG-022` (`qa-engineer`) - pending
+
+No parallel execution is authorized for this track.
+### REG-018 Active Execution Note
+
+- QA execution brief created at `docs/REG-018_QA_EXECUTION.md`.
+- Owner: `qa-engineer`.
+- Task remains the only active item until deterministic repro evidence is delivered.
+### Remaining Recovery Tasks - Definition Complete
+
+Execution briefs are now available for all queued work:
+
+- REG-019: `docs/REG-019_PHYSICS_EXECUTION.md` (`physics-engineer`)
+- REG-020: `docs/REG-020_INPUT_EXECUTION.md` (`software-engineer`)
+- REG-021: `docs/REG-021_ANIMATION_EXECUTION.md` (`software-engineer`)
+- REG-022: `docs/REG-022_QA_VALIDATION_EXECUTION.md` (`qa-engineer`)
+
+Queue order remains unchanged and sequential.
+### Execution Blocker Notice (REG-018)
+
+- `REG-018` is currently `blocked` due to missing runtime/test execution and delegation tooling in this session.
+- Recovery sequence remains paused until tooling is restored.
+
+### 2026-05-04 Recovery Progress Update
+
+- REG-018 through REG-022 have been executed with their predefined owner agents and are now marked resolved in `docs/REGRESSION_LOG.md`.

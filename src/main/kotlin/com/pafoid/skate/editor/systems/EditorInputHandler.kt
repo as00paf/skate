@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.LockToggleCommand
 import com.pafoid.skate.editor.commands.VisibilityToggleCommand
 import com.pafoid.skate.editor.data.EditorInputState
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -42,6 +43,7 @@ class EditorInputHandler(
 
     private val settingsManager: SettingsManager by inject()
     private val eventSystem: EventSystem by inject()
+    private val engine: Engine by inject()
 
     private var pendingRenameUid: Int? = null
     private var renameInputMappings: InputMappings? = null
@@ -51,12 +53,15 @@ class EditorInputHandler(
         GLFW.glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
         GLFW.glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
         GLFW.glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
-
-        joystickListener.init()
     }
 
     override fun update(dt: Float) {
         editorInputState.reset()
+        if (engine.runtimePlaying) {
+            handleInputs()
+            return
+        }
+
         pollEditorInput()
         val scene = sceneManager.currentScene ?: return
 
@@ -120,8 +125,6 @@ class EditorInputHandler(
     }
 
     private fun handleInputs() {
-        joystickListener.update()
-
         // Record high-frequency input
         inputBuffer.push(
             Time.getTime(),

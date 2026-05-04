@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine
 
 import com.pafoid.skate.app.SplashScreen
+import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
@@ -26,6 +27,8 @@ class EngineFixedTimestepTest : KoinTest {
     private lateinit var engine: Engine
     private lateinit var mockSceneManager: SceneManager
     private lateinit var mockRenderer: Renderer
+    private lateinit var mockImGuiLayer: ImGuiLayer
+    private lateinit var mockEditorWorkspace: EditorWorkspace
     private lateinit var mockLogger: LoggerService
     private lateinit var mockEditorInputHandler: EditorInputHandler
     private lateinit var mockBootManager: BootManager
@@ -35,6 +38,8 @@ class EngineFixedTimestepTest : KoinTest {
     fun setup() {
         mockSceneManager = mockk(relaxed = true)
         mockRenderer = mockk(relaxed = true)
+        mockImGuiLayer = mockk(relaxed = true)
+        mockEditorWorkspace = mockk(relaxed = true)
         mockLogger = mockk(relaxed = true)
         mockEditorInputHandler = mockk(relaxed = true)
         mockBootManager = mockk(relaxed = true)
@@ -44,6 +49,8 @@ class EngineFixedTimestepTest : KoinTest {
             modules(module {
                 single { mockSceneManager }
                 single { mockRenderer }
+                single { mockImGuiLayer }
+                single { mockEditorWorkspace }
                 single { mockLogger }
                 single { mockEditorInputHandler }
                 single { mockBootManager }
@@ -62,7 +69,6 @@ class EngineFixedTimestepTest : KoinTest {
     @Test
     fun `update should call scene update with actual delta time`() {
         val mockScene = mockk<Scene>(relaxed = true)
-        val mockImGui = mockk<ImGuiLayer>(relaxed = true)
 
         every { mockSceneManager.currentScene } returns mockScene
         // TODO: Fix test - gameViewWindow is now private
@@ -77,13 +83,12 @@ class EngineFixedTimestepTest : KoinTest {
         // Physics stepping is handled internally by the scene's physics system
         engine.update(deltaTime)
 
-        verify(exactly = 1) { mockScene.updateScene(deltaTime) }
+        verify(exactly = 1) { mockScene.update(deltaTime) }
     }
 
     @Test
     fun `update should pass accumulated time to scene`() {
         val mockScene = mockk<Scene>(relaxed = true)
-        val mockImGui = mockk<ImGuiLayer>(relaxed = true)
 
         every { mockSceneManager.currentScene } returns mockScene
         // TODO: Fix test - gameViewWindow is now private
@@ -97,10 +102,10 @@ class EngineFixedTimestepTest : KoinTest {
 
         // First update
         engine.update(deltaTime1)
-        verify(exactly = 1) { mockScene.updateScene(deltaTime1) }
+        verify(exactly = 1) { mockScene.update(deltaTime1) }
 
         // Second update with different delta time
         engine.update(deltaTime2)
-        verify(exactly = 1) { mockScene.updateScene(deltaTime2) }
+        verify(exactly = 1) { mockScene.update(deltaTime2) }
     }
 }

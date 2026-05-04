@@ -11,6 +11,14 @@ class InputProvider(
     private val gamepadListener: GamepadListener,
     private val keyListener: KeyListener,
 ) : IInputProvider {
+    override fun initializeGamepad() {
+        gamepadListener.init()
+    }
+
+    override fun refreshGamepadState() {
+        gamepadListener.update()
+    }
+
     override fun isKeyPressed(key: Int): Boolean = keyListener.isKeyPressed(key)
     override fun keyBeginPress(key: Int): Boolean = keyListener.keyBeginPress(key)
     override fun isJoystickPresent(jid: Int): Boolean = gamepadListener.isGamepadPresent(jid)

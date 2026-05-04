@@ -66,6 +66,7 @@ class SceneSerializer(
 
             val data = SceneSaveData(
                 gameObjects = scene.gameObjects.filter { it.doSerialization() },
+                sceneComponents = scene.components,
                 sceneData = scene.sceneData,
                 scenePath = path
             )
@@ -123,6 +124,7 @@ class SceneSerializer(
 
         scene.gameObjects.forEach { it.destroy() }
         scene.gameObjects.clear()
+        scene.markObjectSetChanged()
 
         scene.name = File(path).name
         scene.sceneData = data.sceneData
@@ -130,6 +132,22 @@ class SceneSerializer(
 
         var maxGoId = -1
         var maxCompId = -1
+
+        if (data.sceneComponents.isNotEmpty()) {
+            scene.getAllComponents().forEach { it.destroy() }
+            scene.components.clear()
+
+            data.sceneComponents.forEach { component ->
+                component.init(scene)
+                scene.components.add(component)
+            }
+        }
+
+        scene.getAllComponents().forEach { component ->
+            if (component.getUid() > maxCompId) {
+                maxCompId = component.getUid()
+            }
+        }
 
         data.gameObjects.forEach { obj ->
             obj.getAllComponents().forEach { it.init(obj) }
@@ -285,6 +303,7 @@ class SceneSerializer(
 @Serializable
 data class SceneSaveData(
     val gameObjects: List<GameObject>,
+    val sceneComponents: List<Component> = emptyList(),
     val sceneData: com.pafoid.skate.engine.ecs.scene.SceneData,
     @kotlinx.serialization.SerialName("levelPath")
     var scenePath: String = ""

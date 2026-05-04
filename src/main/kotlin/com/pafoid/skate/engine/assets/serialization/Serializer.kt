@@ -8,6 +8,8 @@ import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
@@ -66,6 +68,8 @@ class Serializer {
             subclass(TimeComponent::class)
             subclass(LightingStateComponent::class)
             subclass(LightingComponent::class)
+            subclass(DayNightCycleComponent::class)
+            subclass(DirectionalLightComponent::class)
 
             // Editor components
             subclass(NonPickable::class)

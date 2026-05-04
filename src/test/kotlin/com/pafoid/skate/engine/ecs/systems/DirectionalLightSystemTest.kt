@@ -2,61 +2,46 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
-import com.pafoid.skate.engine.render.Camera
-import io.mockk.every
+import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import io.mockk.mockk
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
 class DirectionalLightSystemTest {
 
     private val stringManager: StringManager = mockk(relaxed = true)
+    private val sceneInitializer = object : SceneInitializer() {
+        override suspend fun init(scene: Scene) {}
+        override suspend fun loadResources(scene: Scene) {}
+    }
 
     @Test
     fun updateLightSpaceMatrix_FrustumCalculated_LightSpaceMatrixIsUpdated() {
         // Arrange
-        val system = DirectionalLightSystem(DirectionalLightComponent().apply {
-            castShadows = true
-            autoCalculateBounds = true
-        }, stringManager)
-
-        val mockScene = mockk<Scene>()
-        val mockSystemManager = mockk<SystemManager>()
-        val mockCamera = mockk<Camera>(relaxed = true)
-
-        every { mockScene.systemManager } returns mockSystemManager
-        every { mockSystemManager.systems } returns mutableListOf()
-        every { mockScene.camera } returns mockCamera
-
-        every { mockCamera.viewportWidth } returns 1920
-        every { mockCamera.viewportHeight } returns 1080
-        every { mockCamera.fov } returns 45f
-        every { mockCamera.nearPlane } returns 0.1f
-        every { mockCamera.farPlane } returns 1000f
-        every { mockCamera.zoom } returns 1f
-        every { mockCamera.position } returns Vector3f(0f, 10f, 0f)
-        every { mockCamera.createViewMatrix() } returns Matrix4f().lookAt(
-            Vector3f(0f, 10f, 0f),
-            Vector3f(0f, 10f, -1f),
-            Vector3f(0f, 1f, 0f)
-        )
-
-        system.init(mockScene)
+        val system = DirectionalLightSystem(stringManager)
+        val scene = Scene("TestScene", sceneInitializer)
+        scene.addComponent(DayNightCycleComponent())
+        scene.addComponent(DirectionalLightComponent(castShadows = true, autoCalculateBounds = true))
+        scene.camera.viewportWidth = 1920
+        scene.camera.viewportHeight = 1080
+        scene.camera.fov = 45f
+        scene.camera.nearPlane = 0.1f
+        scene.camera.farPlane = 1000f
+        scene.camera.zoom = 1f
+        scene.camera.position.set(Vector3f(0f, 10f, 0f))
+        system.init(scene)
 
         // Act
-        try {
-            system.editorUpdate(0f)
-        } catch (e: Exception) {
-            e.printStackTrace(); throw e
-        }
+        system.update(0f)
 
         // Assert
-        // We just want to check that the light space matrix was actually updated and has valid data
-        // For the new bounding sphere implementation, the matrix will be populated
-        val matrix = system.config.lightSpaceMatrix
+        val matrix = system.config?.lightSpaceMatrix
+        assertNotNull(matrix)
         val isIdentity = Matrix4f().equals(matrix)
         assertFalse(isIdentity, "Light space matrix should have been calculated and not be the identity matrix.")
     }
@@ -64,44 +49,31 @@ class DirectionalLightSystemTest {
     @Test
     fun updateLightSpaceMatrix_HighNoon_UpVectorIsDynamic() {
         // Arrange
-        val system = DirectionalLightSystem(DirectionalLightComponent().apply {
-            castShadows = true
-            autoCalculateBounds = true
-            direction = Vector3f(0f, -1f, 0f) // High noon
-        }, stringManager)
-
-        val mockScene = mockk<Scene>()
-        val mockSystemManager = mockk<SystemManager>()
-        val mockCamera = mockk<Camera>(relaxed = true)
-
-        every { mockScene.systemManager } returns mockSystemManager
-        every { mockSystemManager.systems } returns mutableListOf()
-        every { mockScene.camera } returns mockCamera
-
-        every { mockCamera.viewportWidth } returns 1920
-        every { mockCamera.viewportHeight } returns 1080
-        every { mockCamera.fov } returns 45f
-        every { mockCamera.nearPlane } returns 0.1f
-        every { mockCamera.farPlane } returns 1000f
-        every { mockCamera.zoom } returns 1f
-        every { mockCamera.position } returns Vector3f(0f, 10f, 0f)
-        every { mockCamera.createViewMatrix() } returns Matrix4f().lookAt(
-            Vector3f(0f, 10f, 0f),
-            Vector3f(0f, 10f, -1f),
-            Vector3f(0f, 1f, 0f)
+        val system = DirectionalLightSystem(stringManager)
+        val scene = Scene("TestScene", sceneInitializer)
+        scene.addComponent(
+            DayNightCycleComponent(
+                sunDirection = Vector3f(0f, -1f, 0f),
+                sunColor = Vector3f(1f, 1f, 1f),
+                sunIntensity = 1f
+            )
         )
-
-        system.init(mockScene)
+        scene.addComponent(DirectionalLightComponent(castShadows = true, autoCalculateBounds = true))
+        scene.camera.viewportWidth = 1920
+        scene.camera.viewportHeight = 1080
+        scene.camera.fov = 45f
+        scene.camera.nearPlane = 0.1f
+        scene.camera.farPlane = 1000f
+        scene.camera.zoom = 1f
+        scene.camera.position.set(Vector3f(0f, 10f, 0f))
+        system.init(scene)
 
         // Act
-        try {
-            system.editorUpdate(0f)
-        } catch (e: Exception) {
-            e.printStackTrace(); throw e
-        }
+        system.update(0f)
 
         // Assert
-        val matrix = system.config.lightSpaceMatrix
+        val matrix = system.config?.lightSpaceMatrix
+        assertNotNull(matrix)
         val isIdentity = Matrix4f().equals(matrix)
         assertFalse(isIdentity, "Matrix should not be identity, even at high noon.")
     }

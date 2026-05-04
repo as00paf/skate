@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
@@ -15,7 +14,6 @@ class SelectionGizmo(
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
-    private val engine: Engine,
     private val eventSystem: EventSystem,
     private val gameObjectManager: GameObjectManager,
 ) : Gizmo(mouseListener, undoRedoManager) {
@@ -32,7 +30,7 @@ class SelectionGizmo(
         private set
 
     override fun update(dt: Float) {
-        if (!isInUse() || engine.runtimePlaying) {
+        if (!isInUse() || scene.isRunning) {
             hoveredGameObjectUid = -1
             scene.hoveredGameObject = null
             return

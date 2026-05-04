@@ -2,11 +2,11 @@ package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.events.SceneChanged
 import com.pafoid.skate.engine.events.SceneClosed
+import com.pafoid.skate.engine.events.SceneClosing
 import com.pafoid.skate.engine.events.SceneOpened
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -16,7 +16,6 @@ class SceneManager : KoinComponent {
     private val logger: LoggerService by inject()
     private val resourceManager: ResourceManager by inject()
     private val eventSystem: EventSystem by inject()
-    private val sceneActionHandler = SceneActionHandler()
 
     val openScenes = mutableListOf<Scene>()
     var activeSceneIndex: Int = -1
@@ -24,18 +23,13 @@ class SceneManager : KoinComponent {
     val currentScene: Scene?
         get() = openScenes.getOrNull(activeSceneIndex)
 
-    init {
-        sceneActionHandler.init()
-    }
-
     suspend fun openScene(scene: Scene, forceSingle: Boolean = false) {
         openSceneBlocking(scene, forceSingle)
     }
 
     fun openSceneBlocking(scene: Scene, forceSingle: Boolean = false) {
         if (forceSingle) {
-            openScenes.forEach { it.destroyScene() }
-            openScenes.clear()
+            closeAllScenes()
         }
 
         // Add the new scene and set it as active
@@ -70,12 +64,11 @@ class SceneManager : KoinComponent {
         }
 
         logger.logEditor("Destroying scene: ${sceneToClose.name}")
-        
-        // Publish scene closing event
-        eventSystem.publish(SceneClosed(sceneToClose))
-        
+
+        eventSystem.publish(SceneClosing(sceneToClose))
         sceneToClose.destroyScene()
         openScenes.removeAt(index)
+        eventSystem.publish(SceneClosed(sceneToClose))
 
         // Adjust active index
         if (openScenes.isEmpty()) {
@@ -85,6 +78,8 @@ class SceneManager : KoinComponent {
         } else if (activeSceneIndex >= index) {
             activeSceneIndex = (activeSceneIndex - 1).coerceAtLeast(0)
         }
+
+        eventSystem.publish(SceneChanged)
     }
 
     fun destroy() {

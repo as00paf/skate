@@ -52,7 +52,9 @@ abstract class Component: KoinComponent {
     open fun init(gameObject: GameObject) {
         if (::gameObject.isInitialized) return
         this.gameObject = gameObject
-        uId = ID_COUNTER++
+        if (uId == -1) {
+            uId = ID_COUNTER++
+        }
     }
 
     open fun update(dt: Float) {}

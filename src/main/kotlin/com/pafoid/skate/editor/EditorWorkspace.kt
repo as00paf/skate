@@ -37,6 +37,7 @@ class EditorWorkspace(
 ) : Workspace {
 
     private var systemsInitialized = false
+    private var activeSystemScene: Scene? = null
 
     override fun init(glfwWindow: Long) {
         editorInputHandler.init(glfwWindow)
@@ -46,39 +47,50 @@ class EditorWorkspace(
     override fun update(dt: Float) {
         val scene = sceneManager.currentScene ?: return
 
-        // Initialize editor systems with scene on first update
-        // This is done lazily because systems are created before scene.startScene()
         if (!systemsInitialized) {
-            initializeSystems(scene)
+            initializeSystems()
             systemsInitialized = true
+        }
+
+        if (activeSystemScene !== scene) {
+            systemManager.loadScene(scene)
+            activeSystemScene = scene
+        }
+
+        if (!systemManagerStarted) {
+            systemManager.start()
+            systemManagerStarted = true
         }
 
         systemManager.update(dt)
     }
 
-    private fun initializeSystems(scene: Scene) {
+    private var systemManagerStarted = false
+
+    private fun initializeSystems() {
         listOf(
-            gameObjectManager,
-            audioSystem, // Core
+            gameObjectManager, // Core
             inputSystem,
-            environmentSystem,
+            audioSystem,
+            environmentSystem, // Engine
+            physicsSystem,
+            dayNightCycleSystem,
+            directionalLightSystem,
             animationSystem,
             ragdollSystem,
-            physicsSystem,
-            directionalLightSystem,
-            dayNightCycleSystem,
             editorInputHandler, // Editor
             editorCamera,
             gizmoSystem,
             gridLines,
-        )
-            .forEach {
+        ).forEach {
             systemManager.addSystem(it)
-            it.init(scene)
         }
     }
 
     fun destroy() {
         systemManager.destroy()
+        systemsInitialized = false
+        systemManagerStarted = false
+        activeSystemScene = null
     }
 }

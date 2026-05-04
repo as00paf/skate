@@ -1,11 +1,9 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
-import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.engine.ecs.Scene
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.unmockkAll
@@ -17,17 +15,14 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.File
 
 class CreateSceneCommandTest {
 
-    private lateinit var sceneManager: SceneManager
     private lateinit var sceneInitializer: LevelEditorSceneInitializer
     private lateinit var sceneSerializer: SceneSerializer
 
     @BeforeEach
     fun setup() {
-        sceneManager = mockk(relaxed = true)
         sceneSerializer = mockk(relaxed = true)
         sceneInitializer = mockk(relaxed = true)
         coEvery { sceneInitializer.loadResources(any()) } returns Unit
@@ -46,7 +41,6 @@ class CreateSceneCommandTest {
         val command = CreateSceneCommand(
             name = "TestScene",
             sceneInitializer = sceneInitializer,
-            sceneManager = sceneManager,
             sceneSerializer = sceneSerializer,
             filePath = expectedPath
         )
@@ -68,7 +62,6 @@ class CreateSceneCommandTest {
         val command = CreateSceneCommand(
             name = "TestScene",
             sceneInitializer = sceneInitializer,
-            sceneManager = sceneManager,
             sceneSerializer = sceneSerializer,
             filePath = expectedPath
         )
@@ -100,7 +93,6 @@ class CreateSceneCommandTest {
         val command = CreateSceneCommand(
             name = "TestScene",
             sceneInitializer = sceneInitializer,
-            sceneManager = sceneManager,
             sceneSerializer = sceneSerializer,
             filePath = "test.scene"
         )
@@ -119,7 +111,6 @@ class CreateSceneCommandTest {
         val command = CreateSceneCommand(
             name = "TestScene",
             sceneInitializer = sceneInitializer,
-            sceneManager = sceneManager,
             sceneSerializer = sceneSerializer,
             filePath = "test.scene"
         )
@@ -141,7 +132,6 @@ class CreateSceneCommandTest {
         val command = CreateSceneCommand(
             name = "TestScene",
             sceneInitializer = sceneInitializer,
-            sceneManager = sceneManager,
             sceneSerializer = sceneSerializer,
             filePath = "test.scene"
         )
@@ -160,7 +150,6 @@ class CreateSceneCommandTest {
         val command = CreateSceneCommand(
             name = "TestScene",
             sceneInitializer = mockk(),
-            sceneManager = mockk(),
             sceneSerializer = mockk(),
             filePath = "test.scene"
         )
@@ -175,7 +164,6 @@ class CreateSceneCommandTest {
         val command = CreateSceneCommand(
             name = "MyCustomScene",
             sceneInitializer = mockk(),
-            sceneManager = mockk(),
             sceneSerializer = mockk(),
             filePath = "test.scene"
         )

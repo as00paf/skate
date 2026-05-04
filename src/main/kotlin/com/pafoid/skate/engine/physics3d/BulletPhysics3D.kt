@@ -33,6 +33,10 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
     private val nativeLibraryLoader: NativeLibraryLoader = NativeLibraryLoader()
     private val physicsSpace: PhysicsSpace
 
+    private var accumulatorSeconds = 0.0
+    private val fixedTimestepSeconds = 1.0 / 60.0
+    private val maxFrameDeltaSeconds = 0.25
+
     /**
      * Toggles the rendering of debug wireframes for physics colliders.
      */
@@ -232,9 +236,6 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
         }
     }
 
-    private var accumulator = 0f
-    private val fixedTimestep = 1.0f / 60.0f
-
     /**
      * Steps the physics simulation forward by the given delta time.
      * It uses a fixed timestep accumulator to ensure deterministic physics behavior
@@ -243,13 +244,16 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
      * @param dt The time elapsed since the last frame in seconds.
      */
     override fun update(dt: Float) {
-        accumulator += dt
-        while (accumulator >= fixedTimestep) {
+        if (!dt.isFinite() || dt <= 0f) return
+
+        val clampedDtSeconds = dt.coerceAtMost(maxFrameDeltaSeconds.toFloat()).toDouble()
+        accumulatorSeconds += clampedDtSeconds
+        while (accumulatorSeconds >= fixedTimestepSeconds) {
             val startTime = System.nanoTime()
-            physicsSpace.update(fixedTimestep, 0)
+            physicsSpace.update(fixedTimestepSeconds.toFloat(), 0)
             val endTime = System.nanoTime()
             EngineStats.physicsStepTime.set(endTime - startTime)
-            accumulator -= fixedTimestep
+            accumulatorSeconds -= fixedTimestepSeconds
         }
 
         if (debugEnabled) {

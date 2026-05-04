@@ -80,7 +80,6 @@ class SkateboardStressTest {
         // Start slightly above ground
         skateTransform.translation.set(0f, 0.1f, 0f)
         physics.add(skateGo)
-        skatePhysics.start()
 
         // Set high velocity downwards? Or horizontal?
         // "Verify raycast wheels do not tunnel through the floor" implies suspension test?
@@ -151,7 +150,6 @@ class SkateboardStressTest {
 
         skateTransform.translation.set(offset).add(0f, 0.1f, 0f)
         physics.add(skateGo)
-        skatePhysics.start()
 
         rb.linearVelocity = Vector3f(10f, 0f, 0f)
 

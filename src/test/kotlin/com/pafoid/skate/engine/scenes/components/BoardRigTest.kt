@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -65,6 +66,7 @@ class BoardRigTest {
                 single<IInputBuffer> { inputBuffer }
                 single { mockk<PrefabsGenerator>(relaxed = true) }
                 single { mockk<DebugRenderer>(relaxed = true) }
+                single<EventSystem> { mockk(relaxed = true) }
                 single { TrickManager("/values/test_tricks.properties") }
                 single { mockk<StringManager>(relaxed = true) }
                 single { mockk<LoggerService>(relaxed = true) }
@@ -101,7 +103,7 @@ class BoardRigTest {
     @Test
     fun `test suspension force application when grounded`() {
         // Add the skateboard to the scene so it can be processed
-        every { scene.gameObjectSystem.gameObjects } returns mutableListOf(skateboard)
+        every { scene.gameObjects } returns mutableListOf(skateboard)
         
         // Mock a hit result for the raycasts
         val hit = mockk<RayTestResult>()
@@ -112,7 +114,6 @@ class BoardRigTest {
         // Mock the applyForce method to track calls
         every { rb3d.applyForce(any(), any()) } returns Unit
 
-        physics.start()
         physics.update(0.016f)
 
         // Verify that applyForce was called on the rb3d (interface method)
@@ -124,7 +125,6 @@ class BoardRigTest {
     fun `test no suspension force when in air`() {
         every { physics3d.raycastClosest(any(), any()) } returns null
         
-        physics.start()
         physics.update(0.016f)
         
         verify(exactly = 0) { rb3d.applyForce(any(), any()) }
@@ -136,6 +136,7 @@ class BoardRigTest {
         val board = GameObject("Board")
         val controller = PlayerController()
         val stateManager = PlayerStateManager()
+        board.addComponent(Transform())
         board.addComponent(controller)
         board.addComponent(stateManager)
         board.addComponent(rb3d)
@@ -143,7 +144,6 @@ class BoardRigTest {
 
         inputBuffer.flickVelocity = Vector2f(10f, 0f)
 
-        controller.start()
         stateManager.transitionToState(PlayerState.RIDING)
         controller.update(0.016f)
 

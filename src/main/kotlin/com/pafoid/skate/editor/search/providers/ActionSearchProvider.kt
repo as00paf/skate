@@ -1,12 +1,10 @@
 package com.pafoid.skate.editor.search.providers
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.TransformCommand
 import com.pafoid.skate.editor.data.EditorAction
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.SearchCategory
 import com.pafoid.skate.editor.search.SearchResult
@@ -18,8 +16,14 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.events.SceneCloseOthersRequested
+import com.pafoid.skate.engine.events.SceneCloseRequested
+import com.pafoid.skate.engine.events.SceneCreateRequested
 import com.pafoid.skate.engine.events.SceneDeleteRequested
+import com.pafoid.skate.engine.events.SceneOpenRequested
 import com.pafoid.skate.engine.events.SceneRenameRequested
+import com.pafoid.skate.engine.events.SceneSaveAsRequested
+import com.pafoid.skate.engine.events.SceneSaveRequested
 import com.pafoid.skate.engine.events.ViewportCreateLight
 import com.pafoid.skate.engine.events.ViewportCreatePrimitive
 import com.pafoid.skate.engine.events.ViewportSpawnPrefab
@@ -34,7 +38,6 @@ import org.koin.core.component.inject
  */
 class ActionSearchProvider(
     private val sceneManager: SceneManager,
-    private val sceneSerializer: SceneSerializer,
     private val undoRedoManager: UndoRedoManager,
     private val serializer: Serializer,
     private val gameObjectManager: GameObjectManager,
@@ -42,7 +45,6 @@ class ActionSearchProvider(
 ) : BaseSearchProvider(), KoinComponent {
     
     private val eventSystem: EventSystem by inject()
-    private val sceneInitializer: LevelEditorSceneInitializer by inject()
 
     override val category: SearchCategory = SearchCategory.ACTION
 
@@ -274,8 +276,10 @@ class ActionSearchProvider(
     }
 
     private fun saveScene() {
-        val scene = sceneManager.currentScene ?: return
-        sceneSerializer.save(scene)
+        val currentIndex = sceneManager.activeSceneIndex
+        if (currentIndex < 0) return
+        eventSystem.publish(SceneSaveRequested(currentIndex))
+        logger.logEditor("Save scene requested")
     }
 
     private fun startSimulation() {
@@ -339,30 +343,29 @@ class ActionSearchProvider(
     }
 
     private fun saveSceneAs() {
-        val scene = sceneManager.currentScene ?: return
-        sceneSerializer.saveAs(scene)
-        logger.logEditor("Save Scene As executed")
+        val currentIndex = sceneManager.activeSceneIndex
+        if (currentIndex < 0) return
+        eventSystem.publish(SceneSaveAsRequested(currentIndex))
+        logger.logEditor("Save scene as requested")
     }
 
     private fun closeScene() {
         val currentIndex = sceneManager.activeSceneIndex
         if (currentIndex < 0 || sceneManager.openScenes.size <= 1) return
-        sceneManager.closeScene(currentIndex)
-        logger.logEditor("Scene closed")
+        eventSystem.publish(SceneCloseRequested(currentIndex))
+        logger.logEditor("Close scene requested")
     }
 
     private fun closeOtherScenes() {
         val currentIndex = sceneManager.activeSceneIndex
         if (currentIndex < 0) return
-        sceneManager.closeOtherScenes(currentIndex)
-        logger.logEditor("Other scenes closed")
+        eventSystem.publish(SceneCloseOthersRequested(currentIndex))
+        logger.logEditor("Close other scenes requested")
     }
 
     private fun createScene() {
-        kotlinx.coroutines.runBlocking {
-            sceneManager.createScene("New Scene", sceneInitializer)
-        }
-        logger.logEditor("New scene created")
+        eventSystem.publish(SceneCreateRequested)
+        logger.logEditor("Create scene requested")
     }
 
     private fun createPrimitive() {
@@ -381,9 +384,8 @@ class ActionSearchProvider(
     }
 
     private fun openScene() {
-        val scene = sceneManager.currentScene ?: return
-        sceneSerializer.open(scene)
-        logger.logEditor("Open scene executed")
+        eventSystem.publish(SceneOpenRequested)
+        logger.logEditor("Open scene requested")
     }
 
     private fun renameGameObject() {
@@ -409,4 +411,3 @@ class ActionSearchProvider(
         logger.logEditor("Delete scene executed")
     }
 }
-

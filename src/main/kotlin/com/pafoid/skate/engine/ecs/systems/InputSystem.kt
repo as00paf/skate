@@ -30,15 +30,19 @@ class InputSystem(
         get() = settingsManager.loadInputMappings() ?: InputMappings()
 
     private var jumpButtonWasPressed = false
+    private var movementWasActive = false
     private var previousButtons: BooleanArray? = null
 
     override fun init(scene: Scene) {
         super.init(scene)
+        inputProvider.initializeGamepad()
         jumpButtonWasPressed = false
+        movementWasActive = false
         previousButtons = null
     }
 
     override fun update(dt: Float) {
+        inputProvider.refreshGamepadState()
         if (!scene.isRunning) return
 
         scene.gameObjects.forEach { go ->
@@ -55,9 +59,15 @@ class InputSystem(
     }
 
     private fun pollGamepadInput(inputState: InputStateComponent) {
-        if (!inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) return
+        if (!inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) {
+            publishNeutralMovementIfNeeded(inputState)
+            return
+        }
 
-        val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) ?: return
+        val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) ?: run {
+            publishNeutralMovementIfNeeded(inputState)
+            return
+        }
         val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
 
         val moveAxis = getAxisFromBinding(mappings.moveUp, mappings.moveDown, axes, 0.15f)
@@ -69,6 +79,9 @@ class InputSystem(
             // Publish movement event
             val magnitude = kotlin.math.sqrt(moveAxis * moveAxis + moveStrafe * moveStrafe)
             eventSystem.publish(MovementInput(inputState.moveDirection, magnitude))
+            movementWasActive = true
+        } else {
+            publishNeutralMovementIfNeeded(inputState)
         }
 
         val lookX = getAxisFromBinding(mappings.cameraLookX, null, axes, 0.1f)
@@ -85,12 +98,6 @@ class InputSystem(
             val jumpPressed = buttons.getOrNull(mappings.jump.gamepadButton) ?: false
             inputState.jumpHeld = jumpPressed
 
-            // Publish jump events
-            if (jumpPressed && !jumpButtonWasPressed) {
-                eventSystem.publish(JumpPressed(1.0f))
-            } else if (!jumpPressed && jumpButtonWasPressed) {
-                eventSystem.publish(JumpReleased)
-            }
         }
 
         inputState.sprintPressed = checkBindingActive(mappings.sprint, axes, buttons, 0.5f)
@@ -139,13 +146,19 @@ class InputSystem(
     private fun updateJumpState(inputState: InputStateComponent) {
         if (inputState.jumpHeld && !jumpButtonWasPressed) {
             inputState.jumpPressed = true
-            // Jump pressed event already published in pollGamepadInput
+            eventSystem.publish(JumpPressed(1.0f))
         } else if (!inputState.jumpHeld && jumpButtonWasPressed) {
-            // Jump released
             eventSystem.publish(JumpReleased)
         }
 
         jumpButtonWasPressed = inputState.jumpHeld
+    }
+
+    private fun publishNeutralMovementIfNeeded(inputState: InputStateComponent) {
+        if (!movementWasActive) return
+        inputState.moveDirection.set(0f, 0f)
+        eventSystem.publish(MovementInput(inputState.moveDirection, 0f))
+        movementWasActive = false
     }
 
     private fun getAxisFromBinding(

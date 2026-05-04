@@ -1,18 +1,16 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.EditorCamera
-import com.pafoid.skate.editor.EditorWorkspace
-import com.pafoid.skate.editor.data.EditorInputMappings
-import com.pafoid.skate.editor.project.GameplaySettings
+import com.pafoid.skate.editor.settings.EngineSettings
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
-import com.pafoid.skate.engine.ecs.scene.createGameObject
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
+import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.events.TrickInput
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
@@ -22,6 +20,7 @@ import com.pafoid.skate.game.skateboard.TrickType
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -29,269 +28,166 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.lwjgl.glfw.GLFW
 
-/**
- * Unit tests for InputSystem with event-driven architecture.
- *
- * Tests cover:
- * - System initialization
- * - Event publishing (JumpPressed, JumpReleased, TrickInput)
- * - Editor input handling
- * - Joystick absence handling
- */
 class InputSystemTest {
 
-    // Mock dependencies
     private lateinit var inputProvider: IInputProvider
     private lateinit var mouseListener: MouseListener
     private lateinit var settingsManager: SettingsManager
     private lateinit var stringManager: StringManager
-    private lateinit var editorWorkspace: EditorWorkspace
-    private lateinit var sceneInitializer: SceneInitializer
+    private lateinit var eventSystem: EventSystem
     private lateinit var scene: Scene
-
-    // Test subject
     private lateinit var inputSystem: InputSystem
-
-    // Test settings
-    private lateinit var gameplaySettings: GameplaySettings
-    private lateinit var inputMappings: InputMappings
-    private lateinit var editorInputMappings: EditorInputMappings
 
     @BeforeEach
     fun setup() {
-        // Create mocks
         inputProvider = mockk(relaxed = true)
         mouseListener = mockk(relaxed = true)
-        stringManager = mockk(relaxed = true)
         settingsManager = mockk(relaxed = true)
-        editorWorkspace = mockk(relaxed = true)
-        sceneInitializer = mockk(relaxed = true)
+        stringManager = mockk(relaxed = true)
+        eventSystem = EventSystem()
 
-        // Create test scene
+        val sceneInitializer = object : SceneInitializer() {
+            override suspend fun init(scene: Scene) {}
+            override suspend fun loadResources(scene: Scene) {}
+        }
         scene = Scene("TestScene", sceneInitializer)
+        scene.isRunning = true
 
-        // Setup settings with defaults
-        gameplaySettings = GameplaySettings()
-
-        // Setup input mappings
-        inputMappings = InputMappings().apply {
+        val inputMappings = InputMappings().apply {
             jump = InputBinding(gamepadButton = 0, keyboardKey = GLFW.GLFW_KEY_SPACE)
             kickflip = InputBinding(gamepadButton = 2, keyboardKey = GLFW.GLFW_KEY_W)
             moveUp = InputBinding(gamepadAxis = 1)
-            moveDown = InputBinding(gamepadAxis = -1)
-            moveLeft = InputBinding(gamepadAxis = -1)
-            moveRight = InputBinding(gamepadAxis = -1)
+            moveDown = InputBinding(gamepadAxis = 1)
+            moveLeft = InputBinding(gamepadAxis = 0)
+            moveRight = InputBinding(gamepadAxis = 0)
         }
 
-        editorInputMappings = EditorInputMappings()
-
-        // Setup settings manager mock
-        val mockEngineSettings = mockk<com.pafoid.skate.editor.settings.EngineSettings>(relaxed = true)
-        every { mockEngineSettings.editor } returns mockk {
-            every { editorInputMappings } returns this@InputSystemTest.editorInputMappings
-        }
-        every { settingsManager.engine } returns mockEngineSettings
+        every { settingsManager.engine } returns EngineSettings()
         every { settingsManager.loadInputMappings() } returns inputMappings
-
-        // Ensure game input is processed by default
         every { inputProvider.isCursorDisabled() } returns true
 
-        // Create input system
         inputSystem = InputSystem(
             inputProvider = inputProvider,
             mouseListener = mouseListener,
             settingsManager = settingsManager,
             stringManager = stringManager,
-            editorWorkspace = editorWorkspace
+            eventSystem = eventSystem
         )
-
-        // Initialize system
         inputSystem.init(scene)
     }
 
-    // =========================================================================
-    // INITIALIZATION TESTS
-    // =========================================================================
-
     @Test
     fun `InputSystem initializes correctly`() {
-        // Assert
-        assertNotNull(inputSystem, "System should be created")
-        assertEquals(ExecutionPriority.EARLY, inputSystem.priority, "System should run EARLY")
+        assertNotNull(inputSystem)
+        assertEquals(ExecutionPriority.EARLY, inputSystem.priority)
+        verify(exactly = 1) { inputProvider.initializeGamepad() }
     }
 
-    // =========================================================================
-    // EVENT PUBLISHING TESTS
-    // =========================================================================
+    @Test
+    fun `gamepad state refresh runs before polling`() {
+        val player = GameObject("TestPlayer").addComponent(InputStateComponent())
+        scene.gameObjects.add(player)
+
+        every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
+
+        inputSystem.update(0.016f)
+
+        verifyOrder {
+            inputProvider.refreshGamepadState()
+            inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)
+        }
+    }
 
     @Test
     fun `JumpPressed event published when jump button pressed`() {
-        // Arrange
-        val player = scene.gameObjectSystem.createGameObject("TestPlayer")
-        player.addComponent(InputStateComponent())
-        scene.gameObjectSystem.addGameObject(player)
+        val player = GameObject("TestPlayer").addComponent(InputStateComponent())
+        scene.gameObjects.add(player)
 
-        // Add EventSystem to scene
-        val eventSystem = EventSystem()
-        eventSystem.init(scene)
-        scene.systemManager.addSystem(eventSystem)
-
-        // Mock jump button press
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns true
         every { inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) } returns FloatArray(6)
         val buttons = BooleanArray(10)
-        buttons[0] = true // Jump button pressed
+        buttons[0] = true
         every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns buttons
 
         var jumpPressedReceived = false
         eventSystem.subscribe<JumpPressed> { jumpPressedReceived = true }
 
-        // Act
         inputSystem.update(0.016f)
 
-        // Assert - verify event was published
-        assertTrue(jumpPressedReceived, "JumpPressed event should be published on first press")
+        assertTrue(jumpPressedReceived)
     }
 
     @Test
     fun `JumpReleased event published when jump button released`() {
-        // Arrange
-        val player = scene.createGameObject("TestPlayer")
-        player.addComponent(InputStateComponent())
-        scene.gameObjectSystem.addGameObject(player)
+        val player = GameObject("TestPlayer").addComponent(InputStateComponent())
+        scene.gameObjects.add(player)
 
-        val eventSystem = EventSystem()
-        eventSystem.init(scene)
-        scene.systemManager.addSystem(eventSystem)
-
-        // First press
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns true
         every { inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) } returns FloatArray(6)
+
         val buttonsPressed = BooleanArray(10)
         buttonsPressed[0] = true
         every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns buttonsPressed
-
-        // First update (press)
         inputSystem.update(0.016f)
 
-        // Now prepare to release
-        val buttonsReleased = BooleanArray(10)
-        every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns buttonsReleased
+        every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns BooleanArray(10)
 
-        var jumpReleasedReceived = false
-        eventSystem.subscribe<JumpReleased> { jumpReleasedReceived = true }
+        var jumpReleasedCount = 0
+        eventSystem.subscribe<JumpReleased> { jumpReleasedCount++ }
 
-        // Act - release update
         inputSystem.update(0.016f)
 
-        // Assert
-        assertTrue(jumpReleasedReceived, "JumpReleased event should be published on release")
+        assertEquals(1, jumpReleasedCount)
+    }
+
+    @Test
+    fun `movement emits neutral input once on stick release`() {
+        val player = GameObject("TestPlayer").addComponent(InputStateComponent())
+        scene.gameObjects.add(player)
+
+        every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns true
+        every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns BooleanArray(10)
+
+        val activeAxes = FloatArray(6)
+        activeAxes[0] = 0.8f
+        every { inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) } returns activeAxes andThen FloatArray(6)
+
+        val movementMagnitudes = mutableListOf<Float>()
+        eventSystem.subscribe<MovementInput> { movementMagnitudes.add(it.magnitude) }
+
+        inputSystem.update(0.016f)
+        inputSystem.update(0.016f)
+
+        assertEquals(2, movementMagnitudes.size)
+        assertTrue(movementMagnitudes[0] > 0f)
+        assertEquals(0f, movementMagnitudes[1])
     }
 
     @Test
     fun `TrickInput events published for trick buttons`() {
-        // Arrange
-        val player = scene.createGameObject("TestPlayer")
-        player.addComponent(InputStateComponent())
-        scene.gameObjectSystem.addGameObject(player)
-
-        val eventSystem = EventSystem()
-        eventSystem.init(scene)
-        scene.systemManager.addSystem(eventSystem)
+        val player = GameObject("TestPlayer").addComponent(InputStateComponent())
+        scene.gameObjects.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns true
         every { inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) } returns FloatArray(6)
         val buttons = BooleanArray(10)
-        buttons[2] = true // Kickflip button
+        buttons[2] = true
         every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns buttons
 
         val receivedTricks = mutableListOf<TrickInput>()
         eventSystem.subscribe<TrickInput> { receivedTricks.add(it) }
 
-        // Act
         inputSystem.update(0.016f)
 
-        // Assert
-        assertTrue(
-            receivedTricks.any { it.trickType == TrickType.KICKFLIP && it.isPressed },
-            "Kickflip TrickInput event should be published"
-        )
+        assertTrue(receivedTricks.any { it.trickType == TrickType.KICKFLIP && it.isPressed })
     }
-
-    // =========================================================================
-    // INPUT STATE TESTS
-    // =========================================================================
-
-    @Test
-    fun `InputStateComponent is created for game objects`() {
-        // Arrange
-        val gameObject = scene.gameObjectSystem.createGameObject("TestPlayer")
-        val inputState = gameObject.addComponent(InputStateComponent())
-
-        // Assert
-        assertNotNull(inputState, "InputStateComponent should be created")
-    }
-
-    @Test
-    fun `Multiple game objects can have input state`() {
-        // Arrange
-        val player1 = scene.gameObjectSystem.createGameObject("Player1")
-        val player2 = scene.gameObjectSystem.createGameObject("Player2")
-        val inputState1 = player1.addComponent(InputStateComponent())
-        val inputState2 = player2.addComponent(InputStateComponent())
-
-        // Assert
-        assertNotNull(inputState1, "Player1 should have input state")
-        assertNotNull(inputState2, "Player2 should have input state")
-    }
-
-    // =========================================================================
-    // EDITOR INPUT TESTS
-    // =========================================================================
-
-    @Test
-    fun `editorUpdate polls editor keyboard input`() {
-        // Arrange
-        val editorCamera = mockk<EditorCamera>(relaxed = true)
-        scene.systemManager.addSystem(editorCamera)
-
-        every { inputProvider.isKeyPressed(GLFW.GLFW_KEY_W) } returns true
-
-        // Act
-        inputSystem.editorUpdate(0.016f)
-
-        // Assert
-        verify { editorCamera.editorState.reset() }
-    }
-
-    @Test
-    fun `editorUpdate polls editor mouse input`() {
-        // Arrange
-        val editorCamera = mockk<EditorCamera>(relaxed = true)
-        scene.systemManager.addSystem(editorCamera)
-
-        every { mouseListener.isInsideViewport() } returns true
-        every { mouseListener.getDx() } returns 10f
-        every { mouseListener.getDy() } returns 5f
-
-        // Act
-        inputSystem.editorUpdate(0.016f)
-
-        // Assert
-        verify { editorCamera.editorState.reset() }
-    }
-
-    // =========================================================================
-    // JOYSTICK HANDLING TESTS
-    // =========================================================================
 
     @Test
     fun `system handles missing joystick gracefully`() {
-        // Arrange
-        scene.gameObjectSystem.createGameObject("TestPlayer").addComponent(InputStateComponent())
+        val player = GameObject("TestPlayer").addComponent(InputStateComponent())
+        scene.gameObjects.add(player)
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
 
-        // Act & Assert - should not crash
         inputSystem.update(0.016f)
     }
 }

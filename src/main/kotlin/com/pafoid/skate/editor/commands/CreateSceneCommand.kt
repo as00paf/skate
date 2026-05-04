@@ -1,9 +1,8 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
-import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.engine.ecs.Scene
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -13,14 +12,12 @@ import kotlinx.coroutines.runBlocking
  *
  * @param name The name for the new scene
  * @param sceneInitializer The initializer to set up the scene
- * @param sceneManager The scene manager to open the scene with
  * @param sceneSerializer The serializer to persist the scene to disk
  * @param filePath The file path where the scene will be saved
  */
 class CreateSceneCommand(
     private val name: String,
     private val sceneInitializer: LevelEditorSceneInitializer,
-    private val sceneManager: SceneManager,
     private val sceneSerializer: SceneSerializer,
     private val filePath: String
 ) : Command {
