@@ -5,10 +5,10 @@ import com.pafoid.skate.editor.data.LogEntry
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene

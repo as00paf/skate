@@ -1,7 +1,4 @@
-package com.pafoid.skate.editor.ui.windows
-
-import com.pafoid.skate.editor.search.SearchCategory
-import com.pafoid.skate.editor.search.SearchResult
+package com.pafoid.skate.editor.search.data
 
 /**
  * Helper data class to hold result with its category for flattened list.

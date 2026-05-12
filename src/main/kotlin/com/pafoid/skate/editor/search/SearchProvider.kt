@@ -1,5 +1,8 @@
 package com.pafoid.skate.editor.search
 
+import com.pafoid.skate.editor.search.data.SearchCategory
+import com.pafoid.skate.editor.search.data.SearchResult
+
 /**
  * Provider interface for searchable data sources in the editor.
  *
@@ -23,7 +26,7 @@ interface SearchProvider {
      * Results should include relevance scores for proper sorting.
      *
      * @param query The search query string
-     * @return List of [SearchResult] objects matching the query
+     * @return List of [com.pafoid.skate.editor.search.data.SearchResult] objects matching the query
      */
     suspend fun search(query: String): List<SearchResult>
 

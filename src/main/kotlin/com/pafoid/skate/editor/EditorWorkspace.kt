@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor
 
-import com.pafoid.skate.editor.systems.EditorInputHandler
+import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
+import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.engine.core.Workspace
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager

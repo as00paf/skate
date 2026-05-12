@@ -2,9 +2,10 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.search.SearchCategory
 import com.pafoid.skate.editor.search.SearchEngine
-import com.pafoid.skate.editor.search.SearchResult
+import com.pafoid.skate.editor.search.data.SearchCategory
+import com.pafoid.skate.editor.search.data.SearchResult
+import com.pafoid.skate.editor.search.data.SearchResultWithCategory
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.history.SearchHistoryEntry
 import com.pafoid.skate.editor.systems.StringManager

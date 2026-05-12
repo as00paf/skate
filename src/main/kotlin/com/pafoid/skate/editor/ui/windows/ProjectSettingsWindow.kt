@@ -2,8 +2,8 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
-import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import imgui.ImGui

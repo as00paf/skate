@@ -1,9 +1,9 @@
 package com.pafoid.skate.engine.events
 
+import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.editor.ui.windows.LightType
-import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
+import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
 
 sealed class ViewportAction(eventName: String) : Event(eventName)

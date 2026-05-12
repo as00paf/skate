@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor.ui.windows
+package com.pafoid.skate.engine.render.data
 
 enum class LightType {
     DIRECTIONAL,

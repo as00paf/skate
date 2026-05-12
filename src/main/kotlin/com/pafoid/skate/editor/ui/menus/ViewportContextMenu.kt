@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.events.ViewportDuplicate
 import com.pafoid.skate.engine.events.ViewportFocusSelected
 import com.pafoid.skate.engine.events.ViewportResetCamera
 import com.pafoid.skate.engine.events.ViewportSpawnPrefab
+import com.pafoid.skate.engine.render.data.LightType
 import imgui.ImGui
 import imgui.ImVec2
 
@@ -93,13 +94,13 @@ class ViewportContextMenu(
         // Create Light submenu
         if (ImGui.beginMenu("${Icons.SUN} ${stringManager.getString("context.viewport.create_light")}")) {
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.directional"))) {
-                eventSystem.publish(ViewportCreateLight("DirectionalLight", com.pafoid.skate.editor.ui.windows.LightType.DIRECTIONAL))
+                eventSystem.publish(ViewportCreateLight("DirectionalLight", LightType.DIRECTIONAL))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.point"))) {
-                eventSystem.publish(ViewportCreateLight("PointLight", com.pafoid.skate.editor.ui.windows.LightType.POINT))
+                eventSystem.publish(ViewportCreateLight("PointLight", LightType.POINT))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.spot"))) {
-                eventSystem.publish(ViewportCreateLight("SpotLight", com.pafoid.skate.editor.ui.windows.LightType.SPOT))
+                eventSystem.publish(ViewportCreateLight("SpotLight", LightType.SPOT))
             }
             ImGui.endMenu()
         }

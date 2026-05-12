@@ -1,12 +1,11 @@
 package com.pafoid.skate.editor.imgui
 
-import com.pafoid.skate.editor.project.ProjectManager
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.editor.ui.WindowRegistry
+import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
@@ -74,7 +73,6 @@ class ImGuiLayer(
     private val stringManager: StringManager,
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
-    private val sceneSerializer: SceneSerializer,
     private val resourceManager: ResourceManager,
     private val windowRegistry: WindowRegistry,
     private val gameObjectManager: GameObjectManager,

@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor.ui
+package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.imgui.data.EditorWindow
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow

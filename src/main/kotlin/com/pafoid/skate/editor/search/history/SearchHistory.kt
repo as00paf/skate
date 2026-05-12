@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.search.history
 
-import com.pafoid.skate.editor.search.SearchResult
+import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

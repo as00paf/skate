@@ -2,8 +2,8 @@ package com.pafoid.skate.editor.search.providers
 
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
-import com.pafoid.skate.editor.search.SearchCategory
-import com.pafoid.skate.editor.search.SearchResult
+import com.pafoid.skate.editor.search.data.SearchCategory
+import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager

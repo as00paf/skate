@@ -1,10 +1,10 @@
-package com.pafoid.skate.editor.project
+package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.LogLevel
+import com.pafoid.skate.editor.project.EngineAssetCopier
+import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.settings.RecentProjectInfo
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.PrefabsGenerator
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject

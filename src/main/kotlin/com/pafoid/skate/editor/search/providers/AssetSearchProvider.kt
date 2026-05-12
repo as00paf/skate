@@ -1,12 +1,12 @@
 package com.pafoid.skate.editor.search.providers
 
 import com.pafoid.skate.editor.data.PrefabData
-import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
-import com.pafoid.skate.editor.search.SearchCategory
-import com.pafoid.skate.editor.search.SearchResult
+import com.pafoid.skate.editor.search.data.SearchCategory
+import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.assets.Assets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

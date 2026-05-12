@@ -2,8 +2,8 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.ProjectWizard
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder

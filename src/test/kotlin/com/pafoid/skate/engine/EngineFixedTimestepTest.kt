@@ -3,8 +3,8 @@ package com.pafoid.skate.engine
 import com.pafoid.skate.app.SplashScreen
 import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.imgui.ImGuiLayer
-import com.pafoid.skate.editor.systems.EditorInputHandler
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState

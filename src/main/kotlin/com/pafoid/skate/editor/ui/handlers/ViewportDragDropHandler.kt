@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.ViewportDropAnimation
 import com.pafoid.skate.engine.events.ViewportDropSound
 import com.pafoid.skate.engine.events.ViewportDropTexture
@@ -22,7 +21,6 @@ import kotlin.math.abs
 class ViewportDragDropHandler(
     private val viewportRenderer: ViewportRenderer,
     private val eventSystem: EventSystem,
-    private val systemManager: SystemManager
 ) {
 
     // Reusable buffers

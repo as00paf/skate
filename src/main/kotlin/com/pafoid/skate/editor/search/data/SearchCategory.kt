@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor.search
+package com.pafoid.skate.editor.search.data
 
 /**
  * Categories of searchable items in the editor.

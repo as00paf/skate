@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.Command
-import com.pafoid.skate.editor.project.ProjectManager
+import com.pafoid.skate.editor.systems.ProjectManager
 import java.io.File
 
 class OpenProjectCommand(

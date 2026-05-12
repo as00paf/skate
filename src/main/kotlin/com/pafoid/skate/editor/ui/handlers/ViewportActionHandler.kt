@@ -42,6 +42,7 @@ import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.CameraManager
+import com.pafoid.skate.engine.render.data.LightType
 import com.pafoid.skate.engine.utils.JobSystem
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -113,7 +114,7 @@ class ViewportActionHandler : KoinComponent {
         logger.logEditor("Created primitive: $name")
     }
 
-    private fun handleCreateLight(name: String, type: com.pafoid.skate.editor.ui.windows.LightType) {
+    private fun handleCreateLight(name: String, type: LightType) {
         val scene = sceneManager.currentScene ?: return
         val command = CreateLightCommand(name, type, scene, gameObjectManager)
         undoRedoManager.executeCommand(command)

@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor
+package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager

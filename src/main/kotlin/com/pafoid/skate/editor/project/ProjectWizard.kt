@@ -3,16 +3,6 @@ package com.pafoid.skate.editor.project
 import imgui.type.ImBoolean
 import java.io.File
 
-data class ProjectStructureItem(
-    val name: String,
-    val type: ItemType
-)
-
-enum class ItemType {
-    DIRECTORY,
-    FILE
-}
-
 class ProjectWizard {
 
     companion object {

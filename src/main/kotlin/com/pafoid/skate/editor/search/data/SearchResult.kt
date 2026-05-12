@@ -1,7 +1,7 @@
-package com.pafoid.skate.editor.search
+package com.pafoid.skate.editor.search.data
 
 /**
- * Represents a single search result from any [SearchProvider].
+ * Represents a single search result from any [com.pafoid.skate.editor.search.SearchProvider].
  *
  * This data class encapsulates all information needed to display a search result
  * in the UI and navigate to the corresponding resource. Results are scored and

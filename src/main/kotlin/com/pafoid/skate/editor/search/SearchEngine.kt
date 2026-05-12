@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.search
 
+import com.pafoid.skate.editor.search.data.SearchCategory
+import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.engine.ecs.SceneManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope

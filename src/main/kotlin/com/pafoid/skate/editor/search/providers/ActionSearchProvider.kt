@@ -7,8 +7,8 @@ import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.data.EditorAction
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
-import com.pafoid.skate.editor.search.SearchCategory
-import com.pafoid.skate.editor.search.SearchResult
+import com.pafoid.skate.editor.search.data.SearchCategory
+import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -28,6 +28,7 @@ import com.pafoid.skate.engine.events.SceneSaveRequested
 import com.pafoid.skate.engine.events.ViewportCreateLight
 import com.pafoid.skate.engine.events.ViewportCreatePrimitive
 import com.pafoid.skate.engine.events.ViewportSpawnPrefab
+import com.pafoid.skate.engine.render.data.LightType
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -371,7 +372,7 @@ class ActionSearchProvider(
     }
 
     private fun createLight() {
-        eventSystem.publish(ViewportCreateLight("DirectionalLight", com.pafoid.skate.editor.ui.windows.LightType.DIRECTIONAL))
+        eventSystem.publish(ViewportCreateLight("DirectionalLight", LightType.DIRECTIONAL))
         logger.logEditor("Create light executed")
     }
 
