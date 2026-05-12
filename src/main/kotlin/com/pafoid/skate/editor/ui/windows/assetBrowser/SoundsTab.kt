@@ -14,7 +14,6 @@ import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiTableFlags
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.awt.Desktop
 import java.io.File
 
@@ -27,10 +26,10 @@ import java.io.File
 class SoundsTab(
     resourceManager: ResourceManager,
     stringManager: StringManager,
-    assetDatabase: AssetDatabase? = null
+    assetDatabase: AssetDatabase? = null,
+    private val logger: LoggerService
 ) : AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
 
-    private val logger: LoggerService by inject()
     private var playingSource: SoundSource? = null
     private var currentPlayingFile: File? = null
 

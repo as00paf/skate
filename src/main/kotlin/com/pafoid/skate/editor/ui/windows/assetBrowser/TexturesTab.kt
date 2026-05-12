@@ -12,21 +12,21 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.awt.Desktop
 import java.io.File
 
 class TexturesTab(
     resourceManager: ResourceManager,
     stringManager: StringManager,
-    assetDatabase: AssetDatabase? = null
+    assetDatabase: AssetDatabase? = null,
+    private val logger: LoggerService,
+    private val sceneManager: SceneManager,
+    private val jobSystem: IJobSystem,
     ): AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
 
-    private val logger: LoggerService by inject()
-    private val sceneManager: SceneManager by inject()
-    private val jobSystem: IJobSystem by inject()
-
-    private val supportedTextureFormats = listOf("png", "jpg", "jpeg")
+    init {
+        refreshAssets()
+    }
 
     override fun renderFileItem(file: File) {
         val size = 80f

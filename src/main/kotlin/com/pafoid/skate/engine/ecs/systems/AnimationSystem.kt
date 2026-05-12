@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
+import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.utils.SkeletonMath
 import imgui.ImGui
 import org.joml.Matrix4f

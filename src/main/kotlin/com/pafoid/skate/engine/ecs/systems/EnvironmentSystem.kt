@@ -3,13 +3,14 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
+import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import imgui.ImGui
 import imgui.type.ImBoolean
 
 /**
  * System responsible for managing environment settings via components.
  *
- * This system runs at [ExecutionPriority.EARLY] to ensure environment state
+ * This system runs at [com.pafoid.skate.engine.ecs.config.ExecutionPriority.EARLY] to ensure environment state
  * is ready before rendering systems read from EnvironmentComponent.
  *
  * ## Responsibilities

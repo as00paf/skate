@@ -1,16 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.Scene
-
-/**
- * Execution priority for ECS systems.
- * Systems are updated in priority order (EARLY first, LATE last).
- */
-enum class ExecutionPriority {
-    EARLY,      // Input, timing systems
-    DEFAULT,    // Physics, animation systems
-    LATE        // Rendering, UI systems
-}
+import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 
 /**
  * Abstract base class for systems in the ECS architecture.

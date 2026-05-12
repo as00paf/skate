@@ -1,38 +1,31 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.database.AssetDatabase
 import imgui.ImGui
 import imgui.type.ImBoolean
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
-class AssetBrowserWindow : IWindow, KoinComponent {
-    private val thumbnailCache: ThumbnailCache by inject()
-    private val resourceManager: ResourceManager by inject()
-    private val prefabsGenerator: PrefabsGenerator by inject()
-    private val stringManager: StringManager by inject()
-    private val assetDatabase: AssetDatabase by inject()
-    private val logger: LoggerService by inject()
+class AssetBrowserWindow(
+    private val stringManager: StringManager,
+    private val animationsTab: AnimationsTab,
+    private val texturesTab: TexturesTab,
+    private val prefabsTab: PrefabsTab,
+    private val soundsTab: SoundsTab,
+) : IWindow, KoinComponent {
 
     private var searchText = ImString(256)
 
-    private val animationsTab by lazy { AnimationsTab(resourceManager, stringManager, assetDatabase, logger) }
-    private val texturesTab by lazy { TexturesTab(resourceManager, stringManager, assetDatabase) }
-    private val prefabsTab by lazy { PrefabsTab(resourceManager, stringManager, thumbnailCache, prefabsGenerator) }
-    private val soundsTab by lazy { SoundsTab(resourceManager, stringManager, assetDatabase) }
-
     init {
+        refreshAssets()
+    }
+
+    fun refreshAssets() {
         prefabsTab.refreshAssets()
         animationsTab.refreshAssets()
         texturesTab.refreshAssets()

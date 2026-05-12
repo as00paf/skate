@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
+import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals

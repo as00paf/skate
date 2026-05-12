@@ -23,10 +23,6 @@ abstract class AssetBrowserTab(
     protected val items = mutableListOf<File>()
     protected val assetItems = mutableListOf<AssetInfo>()
 
-    init {
-        refreshAssets()
-    }
-
     open fun imgui(label:String, searchText: ImString) {
         renderHeader(label, searchText)
 

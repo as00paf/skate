@@ -4,13 +4,14 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
+import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.toVector3f
 
 /**
  * System responsible for syncing physics state to PhysicsComponent.
  *
- * This system runs at [ExecutionPriority.EARLY] to ensure physics state is ready before
+ * This system runs at [com.pafoid.skate.engine.ecs.config.ExecutionPriority.EARLY] to ensure physics state is ready before
  * gameplay systems like [TrickDetector] and [PlayerController] read from [PhysicsComponent].
  *
  * Auto-creates PhysicsComponent on GameObjects that have RigidBody3D but no PhysicsComponent.

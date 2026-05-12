@@ -16,7 +16,6 @@ import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.awt.Desktop
 import java.io.File
 
@@ -24,11 +23,11 @@ class PrefabsTab(
     resourceManager: ResourceManager,
     stringManager: StringManager,
     private val thumbnailCache: ThumbnailCache,
-    private val prefabsGenerator: PrefabsGenerator
+    private val prefabsGenerator: PrefabsGenerator,
+    private val logger: LoggerService,
+    private val jobSystem: IJobSystem,
 ): AssetBrowserTab(resourceManager, stringManager), KoinComponent {
 
-    private val logger: LoggerService by inject()
-    private val jobSystem: IJobSystem by inject()
 
     override fun imgui(label: String, searchText: ImString) {
         renderHeader(label, searchText)

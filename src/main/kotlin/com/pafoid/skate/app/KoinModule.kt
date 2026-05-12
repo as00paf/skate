@@ -52,6 +52,10 @@ import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.SystemsWindow
 import com.pafoid.skate.editor.ui.windows.TrickUIWindow
+import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
+import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
+import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
+import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
@@ -136,23 +140,27 @@ val appModule = module {
     factory { ViewportDragDropHandler(get(), get()) }
 
     // Editor windows
-    factory { SceneHierarchyWindow() }
-    factory { PropertiesWindow() }
-    factory { GameViewWindow() }
-    factory { AssetBrowserWindow() }
-    factory { EnvironmentWindow() }
-    factory { ProfilerWindow() }
-    factory { ConsoleWindow() }
-    factory { PhysicsTunerWindow(get(), get()) }
-    factory { InputTestingWindow(get(), get(), get()) }
-    factory { SystemsWindow(get(), get()) }
-    factory { EditorSettingsWindow(get(), get()) }
-    factory { ProjectSettingsWindow(get(), get(), get(), get(), get()) }
-    factory { KeyBindingsWindow(get(), get()) }
-    factory { CommandHistoryWindow() }
-    factory { RenderGraphWindow() }
-    factory { AudioInspectorWindow() }
-    factory { ProjectWindow() }
+    single { SceneHierarchyWindow() }
+    single { PropertiesWindow() }
+    single { GameViewWindow() }
+    single { AnimationsTab(get(), get(), get(), get(), get()) }
+    single { TexturesTab(get(), get(), get(), get(), get(), get()) }
+    single { PrefabsTab(get(), get(), get(), get(), get(), get()) }
+    single { SoundsTab(get(), get(), get(), get()) }
+    single { AssetBrowserWindow(get(), get(), get(), get(), get()) }
+    single { EnvironmentWindow() }
+    single { ProfilerWindow() }
+    single { ConsoleWindow() }
+    single { PhysicsTunerWindow(get(), get()) }
+    single { InputTestingWindow(get(), get(), get()) }
+    single { SystemsWindow(get(), get()) }
+    single { EditorSettingsWindow(get(), get()) }
+    single { ProjectSettingsWindow(get(), get(), get(), get(), get()) }
+    single { KeyBindingsWindow(get(), get()) }
+    single { CommandHistoryWindow() }
+    single { RenderGraphWindow() }
+    single { AudioInspectorWindow() }
+    single { ProjectWindow() }
     single { TrickUIWindow() }
 
     // FileSystem service
@@ -245,7 +253,7 @@ val engineModule = module {
     single { ModelRenderer(get(), get()) }
     single { ThumbnailRenderer(get(), get(), get()) }
     single { ThumbnailCache(get()) }
-    single { PrefabsGenerator(get(), get(), get()) }
+    single { PrefabsGenerator(get(), get(), get(), get()) }
     single { EngineAssetCopier() }
     single { SplashScreen() }
 

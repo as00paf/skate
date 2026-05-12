@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.awt.Desktop
 import java.io.File
 
@@ -17,10 +16,13 @@ class AnimationsTab(
     resourceManager: ResourceManager,
     stringManager: StringManager,
     assetDatabase: AssetDatabase? = null,
+    private val jobSystem: IJobSystem,
     private val logger: LoggerService
 ): AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
 
-    private val jobSystem: IJobSystem by inject()
+    init {
+        refreshAssets()
+    }
 
     override fun renderFileItem(file: File) {
         val size = 80f
