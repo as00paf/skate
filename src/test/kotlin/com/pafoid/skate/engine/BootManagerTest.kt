@@ -17,13 +17,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
-import com.pafoid.skate.engine.utils.JobSystem
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Runnable
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -34,7 +28,6 @@ import org.koin.core.context.stopKoin
 import org.koin.core.logger.Level
 import org.koin.dsl.module
 import org.koin.test.KoinTest
-import java.lang.instrument.Instrumentation
 import java.util.concurrent.atomic.AtomicReference
 
 class BootManagerTest : KoinTest {

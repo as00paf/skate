@@ -6,9 +6,10 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.utils.JobSystem
+import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.awt.Desktop
 import java.io.File
 
@@ -18,6 +19,8 @@ class AnimationsTab(
     assetDatabase: AssetDatabase? = null,
     private val logger: LoggerService
 ): AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
+
+    private val jobSystem: IJobSystem by inject()
 
     override fun renderFileItem(file: File) {
         val size = 80f
@@ -77,7 +80,7 @@ class AnimationsTab(
     }
 
     override fun refreshAssets() {
-        JobSystem.runIO {
+        jobSystem.runIO {
             // Animation assets not yet in AssetDatabase — use directory fallback
             refreshFromDirectory(setOf("fbx"))
         }

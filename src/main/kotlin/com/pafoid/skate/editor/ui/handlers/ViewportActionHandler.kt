@@ -43,7 +43,7 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.data.LightType
-import com.pafoid.skate.engine.utils.JobSystem
+import com.pafoid.skate.engine.utils.IJobSystem
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -57,6 +57,7 @@ class ViewportActionHandler : KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val gameObjectManager: GameObjectManager by inject()
     private val cameraManager: CameraManager by inject()
+    private val jobSystem: IJobSystem by inject()
 
     fun init() {
         eventSystem.subscribe<ViewportCreateEmpty> { event ->
@@ -204,7 +205,7 @@ class ViewportActionHandler : KoinComponent {
     private fun createTexturedPlane(position: Vector3f, texturePath: String) {
         val scene = sceneManager.currentScene ?: return
 
-        JobSystem.runAsync {
+        jobSystem.runAsync {
             val planeObj = GameObject("TexturedPlane")
             val transform = Transform()
             transform.translation.set(position)
@@ -218,7 +219,7 @@ class ViewportActionHandler : KoinComponent {
                 texture
             )
 
-            JobSystem.runOnMain {
+            jobSystem.runOnMain {
                 planeObj.addComponent(RenderComponent(model = texturedModel, castShadow = false, receiveShadow = true))
                 planeObj.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
                 planeObj.addComponent(BoxCollider3D(Vector3f(5f, 0.05f, 5f)))

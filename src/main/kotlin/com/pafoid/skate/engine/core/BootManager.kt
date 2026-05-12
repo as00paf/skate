@@ -9,9 +9,6 @@ import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.engine.utils.JobSystem
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicReference
 
 class BootManager(

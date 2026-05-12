@@ -17,8 +17,8 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.engine.utils.JmeVector3f
-import com.pafoid.skate.engine.utils.JobSystem
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
@@ -28,6 +28,7 @@ import org.joml.Vector3f
 import java.io.File
 
 class PrefabsGenerator(
+    private val jobSystem: IJobSystem,
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
     private val gameObjectManager: GameObjectManager,
@@ -94,9 +95,9 @@ class PrefabsGenerator(
     }
 
     fun spawnSkateboard() {
-        JobSystem.runAsync {
+        jobSystem.runAsync {
             val model = resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
-            JobSystem.runOnMain {
+            jobSystem.runOnMain {
                 val skate = Skateboard(model as TexturedModel)
                 gameObjectManager.addGameObject(skate)
             }
@@ -115,7 +116,7 @@ class PrefabsGenerator(
     }
 
     fun spawnSkater(skate: GameObject? = null) {
-        JobSystem.runAsync {
+        jobSystem.runAsync {
             val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
             val skater = Skater("Skater", model, skate)
 
@@ -124,7 +125,7 @@ class PrefabsGenerator(
                 skater.animator.addAnimation(animation)
             }
 
-            JobSystem.runOnMain {
+            jobSystem.runOnMain {
                 gameObjectManager.addGameObject(skater)
             }
         }
@@ -157,13 +158,13 @@ class PrefabsGenerator(
     }
 
     fun spawnFloor() {
-        JobSystem.runAsync {
+        jobSystem.runAsync {
             val texture = resourceManager.loadTexture(Assets.Textures.ASPHALT)
             val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
             val texturedModel = TexturedModel(baseModel.mesh[0].rawModel, texture)
             texturedModel.mesh[0].material.baseColorPath = Assets.Textures.ASPHALT
 
-            JobSystem.runOnMain {
+            jobSystem.runOnMain {
                 val tile = Tile("Tile", texturedModel)
                 gameObjectManager.addGameObject(tile)
             }

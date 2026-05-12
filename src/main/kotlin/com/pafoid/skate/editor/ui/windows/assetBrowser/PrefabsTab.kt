@@ -9,7 +9,7 @@ import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
-import com.pafoid.skate.engine.utils.JobSystem
+import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.game.prefabs.MaterialType
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
@@ -28,6 +28,7 @@ class PrefabsTab(
 ): AssetBrowserTab(resourceManager, stringManager), KoinComponent {
 
     private val logger: LoggerService by inject()
+    private val jobSystem: IJobSystem by inject()
 
     override fun imgui(label: String, searchText: ImString) {
         renderHeader(label, searchText)
@@ -134,7 +135,7 @@ class PrefabsTab(
 
         ImGui.pushID(data.name)
         if (ImGui.imageButton("PrefabItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
-            JobSystem.runOnMain {
+            jobSystem.runOnMain {
                 when (data.type) {
                     PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
                     PrefabType.SKATER -> prefabsGenerator.spawnSkater()
@@ -151,7 +152,7 @@ class PrefabsTab(
 
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.spawn_in_scene")}")) {
-                JobSystem.runOnMain {
+                jobSystem.runOnMain {
                     when (data.type) {
                         PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
                         PrefabType.SKATER -> prefabsGenerator.spawnSkater()

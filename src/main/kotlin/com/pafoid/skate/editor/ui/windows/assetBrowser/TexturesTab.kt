@@ -9,7 +9,7 @@ import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetType
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.engine.utils.JobSystem
+import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -24,6 +24,7 @@ class TexturesTab(
 
     private val logger: LoggerService by inject()
     private val sceneManager: SceneManager by inject()
+    private val jobSystem: IJobSystem by inject()
 
     private val supportedTextureFormats = listOf("png", "jpg", "jpeg")
 
@@ -98,7 +99,7 @@ class TexturesTab(
     }
 
     override fun refreshAssets() {
-        JobSystem.runIO {
+        jobSystem.runIO {
             refreshFromDatabase(AssetType.TEXTURE, setOf("png", "jpg", "jpeg"))
         }
     }

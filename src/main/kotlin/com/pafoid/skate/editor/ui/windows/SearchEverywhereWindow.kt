@@ -9,7 +9,7 @@ import com.pafoid.skate.editor.search.data.SearchResultWithCategory
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.history.SearchHistoryEntry
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.engine.utils.JobSystem
+import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import imgui.ImVec4
 import imgui.flag.ImGuiCol
@@ -41,6 +41,7 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
 
     private val searchEngine: SearchEngine by inject()
     private val stringManager: StringManager by inject()
+    private val jobSystem: IJobSystem by inject()
 
     private var isOpen = false
     private val searchQuery = ImString(256)
@@ -66,7 +67,7 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
         selectedResultIndex = 0
         currentResults = emptyMap()
         lastQueriedText = ""
-        JobSystem.runOnMain {
+        jobSystem.runOnMain {
             loadRecentSearches()
         }
     }
@@ -214,7 +215,7 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
         searchJob?.cancel()
 
         isSearching = true
-        searchJob = JobSystem.runAsync {
+        searchJob = jobSystem.runAsync {
             Thread.sleep(debounceDelayMs)
             if (searchQuery.get().trim() != query) {
                 return@runAsync
@@ -222,7 +223,7 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
 
             val results = searchEngine.search(query)
 
-            JobSystem.runOnMain {
+            jobSystem.runOnMain {
                 currentResults = results
                 flattenedResults = flattenResults(results)
                 selectedResultIndex = 0
@@ -347,7 +348,7 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
     }
 
     private fun selectResult(result: SearchResult) {
-        JobSystem.runAsync {
+        jobSystem.runAsync {
             searchHistory.add(searchQuery.get().trim(), result)
         }
 
