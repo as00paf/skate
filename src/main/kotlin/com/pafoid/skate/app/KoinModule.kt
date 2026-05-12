@@ -101,6 +101,8 @@ import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.SplashRenderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
+import com.pafoid.skate.engine.utils.DefaultJobSystem
+import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
@@ -217,6 +219,7 @@ val inputModule = module {
 }
 
 val engineModule = module {
+    single<IJobSystem> { DefaultJobSystem() }
     single<IInputBuffer> { InputBuffer() }
     single { ShaderLoader(false) }
     single { VAOLoader() }
@@ -233,7 +236,7 @@ val engineModule = module {
     }
     single { AssetDatabaseImpl(get(), get(), get()) as AssetDatabase }
 
-    single { ResourceManager(get(), get(), get(), get(), assetDatabase = get()) }
+    single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
     single { PoseSerializer() }
 
     single { DebugRenderer(get(), get(), get()) }

@@ -26,11 +26,15 @@ import com.pafoid.skate.engine.events.SceneCloseRequested
 import com.pafoid.skate.engine.events.SceneCreateRequested
 import com.pafoid.skate.engine.events.SceneCreated
 import com.pafoid.skate.engine.events.SceneDeleteRequested
+import com.pafoid.skate.engine.events.SceneOpenCancelled
+import com.pafoid.skate.engine.events.SceneOpenFailed
 import com.pafoid.skate.engine.events.SceneOpenRequested
+import com.pafoid.skate.engine.events.SceneOpenSucceeded
 import com.pafoid.skate.engine.events.SceneRenameRequested
 import com.pafoid.skate.engine.events.SceneSaveAsRequested
 import com.pafoid.skate.engine.events.SceneSaveRequested
 import com.pafoid.skate.engine.events.SceneTabSelected
+import com.pafoid.skate.engine.utils.IJobSystem
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
@@ -49,6 +53,7 @@ class SceneActionHandler : KoinComponent {
     private val logger: LoggerService by inject()
     private val sceneInitializer: LevelEditorSceneInitializer by inject()
     private val projectManager: ProjectManager by inject()
+    private val jobSystem: IJobSystem by inject()
 
     fun init() {
         eventSystem.subscribe<SceneRenameRequested> { event ->
@@ -83,6 +88,15 @@ class SceneActionHandler : KoinComponent {
         }
         eventSystem.subscribe<SceneDeleteRequested> { event ->
             handleDeleteRequested(event.scene)
+        }
+        eventSystem.subscribe<SceneOpenSucceeded> { event ->
+            handleOpenSucceeded(event.scene)
+        }
+        eventSystem.subscribe<SceneOpenCancelled> {
+            handleOpenCancelled()
+        }
+        eventSystem.subscribe<SceneOpenFailed> { event ->
+            handleOpenFailed(event.reason)
         }
     }
 
@@ -135,32 +149,32 @@ class SceneActionHandler : KoinComponent {
         val fullPath = generateUniqueScenePath(projectDir)
         val sceneName = File(fullPath).nameWithoutExtension
 
-        val command = CreateSceneCommand(sceneName, sceneInitializer, sceneSerializer, fullPath)
+        val command = CreateSceneCommand(sceneName, sceneInitializer, sceneSerializer, fullPath, jobSystem, eventSystem)
         undoRedoManager.executeCommand(command)
-
-        val createdScene = command.createdScene
-        if (createdScene != null) {
-            eventSystem.publish(SceneCreated(createdScene))
-            logger.logEditor("New scene created and saved: $sceneName -> $fullPath")
-        } else {
-            logger.logEditor("Scene create failed: command did not produce a scene", LogLevel.ERROR)
-        }
+        logger.logEditor("Scene create requested: $sceneName -> $fullPath")
     }
 
     private fun handleSceneCreated(scene: Scene) {
         sceneManager.openSceneBlocking(scene)
-        logger.logEditor("Scene opened: ${scene.name}")
+        logger.logEditor("New scene created and saved: ${scene.name} -> ${scene.sceneData.levelPath}")
     }
 
     private fun handleOpenRequested() {
-        val command = OpenSceneCommand(sceneInitializer, sceneSerializer, sceneManager)
+        val command = OpenSceneCommand(sceneInitializer, sceneSerializer, sceneManager, jobSystem, eventSystem)
         undoRedoManager.executeCommand(command)
-        val openedScene = command.openedScene
-        if (openedScene != null) {
-            logger.logEditor("Scene opened from file: ${openedScene.name}")
-        } else {
-            logger.logEditor("Scene open cancelled")
-        }
+        logger.logEditor("Scene open requested")
+    }
+
+    private fun handleOpenSucceeded(scene: Scene) {
+        logger.logEditor("Scene opened from file: ${scene.name}")
+    }
+
+    private fun handleOpenCancelled() {
+        logger.logEditor("Scene open cancelled")
+    }
+
+    private fun handleOpenFailed(reason: String) {
+        logger.logEditor("Scene open failed: $reason", LogLevel.ERROR)
     }
 
     private fun generateUniqueScenePath(projectDir: File): String {

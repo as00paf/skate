@@ -12,10 +12,19 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneCloseOthersRequested
 import com.pafoid.skate.engine.events.SceneCloseRequested
 import com.pafoid.skate.engine.events.SceneTabSelected
+import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -31,6 +40,7 @@ class SceneActionHandlerTargetingTest {
     private val loggerService = mockk<LoggerService>(relaxed = true)
     private val sceneInitializer = mockk<LevelEditorSceneInitializer>(relaxed = true)
     private val projectManager = mockk<ProjectManager>(relaxed = true)
+    private val jobSystem: IJobSystem = ImmediateJobSystem()
     private val openScenes = mutableListOf<Scene>()
 
     @BeforeEach
@@ -54,6 +64,7 @@ class SceneActionHandlerTargetingTest {
                     single { loggerService }
                     single { sceneInitializer }
                     single { projectManager }
+                    single<IJobSystem> { jobSystem }
                 }
             )
         }
@@ -61,6 +72,7 @@ class SceneActionHandlerTargetingTest {
 
     @AfterEach
     fun teardown() {
+        jobSystem.destroy()
         stopKoin()
     }
 
@@ -101,5 +113,26 @@ class SceneActionHandlerTargetingTest {
         every { scene.getUid() } returns uid
         every { scene.name } returns name
         return scene
+    }
+
+    private class ImmediateJobSystem : IJobSystem {
+        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+
+        override val mainDispatcher: CoroutineDispatcher = Dispatchers.Unconfined
+
+        override fun update() = Unit
+
+        override fun runAsync(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
+
+        override fun runOnMain(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
+
+        override fun <T> runAsyncDeferred(block: suspend CoroutineScope.() -> T): Deferred<T> =
+            scope.async(block = block)
+
+        override fun runIO(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
+
+        override fun destroy() {
+            scope.coroutineContext[Job]?.cancel()
+        }
     }
 }

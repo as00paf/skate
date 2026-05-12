@@ -1,16 +1,17 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
+import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.scene.SceneData
-import com.pafoid.skate.engine.events.SceneCreated
+import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.SceneOpenCancelled
+import com.pafoid.skate.engine.events.SceneOpenFailed
+import com.pafoid.skate.engine.events.SceneOpenSucceeded
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,27 +26,29 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class CreateSceneCommandTest {
+class OpenSceneCommandTest {
     private lateinit var sceneInitializer: LevelEditorSceneInitializer
     private lateinit var sceneSerializer: SceneSerializer
+    private lateinit var sceneManager: SceneManager
     private lateinit var eventSystem: EventSystem
     private lateinit var jobSystem: IJobSystem
-    private lateinit var createdSceneInstance: Scene
+    private lateinit var loadedSceneInstance: com.pafoid.skate.engine.ecs.Scene
 
     @BeforeEach
     fun setup() {
-        sceneSerializer = mockk(relaxed = true)
         sceneInitializer = mockk(relaxed = true)
+        sceneSerializer = mockk(relaxed = true)
+        sceneManager = mockk(relaxed = true)
         eventSystem = EventSystem()
         jobSystem = ImmediateJobSystem()
-        createdSceneInstance = mockk(relaxed = true)
-        every { createdSceneInstance.sceneData } returns SceneData()
-        every { createdSceneInstance.name } returns "TestScene"
-        coEvery { createdSceneInstance.init() } returns Unit
+        loadedSceneInstance = mockk(relaxed = true)
+        every { loadedSceneInstance.name } returns "Loaded Scene"
+        coEvery { loadedSceneInstance.init() } returns Unit
+        every { loadedSceneInstance.destroyScene() } returns Unit
+
         coEvery { sceneInitializer.loadResources(any()) } returns Unit
         coEvery { sceneInitializer.init(any()) } returns Unit
     }
@@ -57,74 +60,56 @@ class CreateSceneCommandTest {
     }
 
     @Test
-    fun `execute_createsSceneAndSetsFilePath`() {
-        val expectedPath = "C:\\workspace\\Scenes\\TestScene.scene"
-        val command = createCommand(expectedPath)
+    fun `execute_doesNotOpenScene_whenDialogCancelled`() {
+        every { sceneSerializer.open(any()) } returns SceneOpenResult.Cancelled
+        var cancelled = false
+        eventSystem.subscribe<SceneOpenCancelled> { cancelled = true }
 
+        val command = createCommand()
         command.execute()
 
-        val createdScene = command.createdScene
-        assertNotNull(createdScene)
-        val scene = createdScene ?: return
-        assertEquals("TestScene", scene.name)
-        assertEquals(expectedPath, scene.sceneData.levelPath)
+        verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
+        assertNull(command.openedScene)
+        assertEquals(true, cancelled)
     }
 
     @Test
-    fun `execute_callsSceneSerializer_saveToFile`() {
-        val expectedPath = "C:\\workspace\\Scenes\\TestScene.scene"
-        val command = createCommand(expectedPath)
+    fun `execute_doesNotOpenScene_whenLoadFails`() {
+        every { sceneSerializer.open(any()) } returns SceneOpenResult.Failed("broken.scene", "deserialize failure")
+        var failureReason: String? = null
+        eventSystem.subscribe<SceneOpenFailed> { event -> failureReason = event.reason }
 
+        val command = createCommand()
         command.execute()
 
-        val savedSceneSlot = slot<Scene>()
-        val savedPathSlot = slot<String>()
-        verify { sceneSerializer.saveToFile(capture(savedSceneSlot), capture(savedPathSlot)) }
-        assertEquals(expectedPath, savedPathSlot.captured)
-        assertEquals(createdSceneInstance, savedSceneSlot.captured)
+        verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
+        assertNull(command.openedScene)
+        assertEquals("deserialize failure", failureReason)
     }
 
     @Test
-    fun `execute_publishesSceneCreatedEvent`() {
-        val command = createCommand("test.scene")
-        var createdEvent: SceneCreated? = null
-        eventSystem.subscribe<SceneCreated> { event -> createdEvent = event }
+    fun `execute_opensScene_whenLoadSucceeds`() {
+        every { sceneSerializer.open(any()) } returns SceneOpenResult.Loaded("good.scene")
+        var openedEvent: SceneOpenSucceeded? = null
+        eventSystem.subscribe<SceneOpenSucceeded> { event -> openedEvent = event }
 
+        val command = createCommand()
         command.execute()
 
-        assertNotNull(createdEvent)
-        assertTrue(createdEvent?.scene?.name?.startsWith("TestScene") == true)
+        verify(exactly = 1) { sceneManager.openSceneBlocking(any(), any()) }
+        assertEquals(loadedSceneInstance, command.openedScene)
+        assertNotNull(openedEvent)
+        assertEquals(loadedSceneInstance, openedEvent?.scene)
     }
 
-    @Test
-    fun `execute_setsCreatedSceneProperty`() {
-        val command = createCommand("test.scene")
-
-        assertNull(command.createdScene)
-        command.execute()
-
-        assertNotNull(command.createdScene)
-    }
-
-    @Test
-    fun `undo_isNoOp`() {
-        val command = createCommand("test.scene")
-
-        command.execute()
-        command.undo()
-
-        verify(exactly = 1) { sceneSerializer.saveToFile(any<Scene>(), any<String>()) }
-    }
-
-    private fun createCommand(path: String): CreateSceneCommand {
-        return CreateSceneCommand(
-            name = "TestScene",
+    private fun createCommand(): OpenSceneCommand {
+        return OpenSceneCommand(
             sceneInitializer = sceneInitializer,
             sceneSerializer = sceneSerializer,
-            filePath = path,
+            sceneManager = sceneManager,
             jobSystem = jobSystem,
             eventSystem = eventSystem,
-            sceneFactory = { _, _ -> createdSceneInstance }
+            sceneFactory = { _, _ -> loadedSceneInstance }
         )
     }
 

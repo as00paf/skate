@@ -2,8 +2,10 @@ package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import kotlinx.coroutines.runBlocking
+import com.pafoid.skate.engine.events.SceneCreated
+import com.pafoid.skate.engine.utils.IJobSystem
 
 /**
  * Command for creating a new scene and persisting it to disk.
@@ -19,27 +21,29 @@ class CreateSceneCommand(
     private val name: String,
     private val sceneInitializer: LevelEditorSceneInitializer,
     private val sceneSerializer: SceneSerializer,
-    private val filePath: String
+    private val filePath: String,
+    private val jobSystem: IJobSystem,
+    private val eventSystem: EventSystem,
+    private val sceneFactory: (String, LevelEditorSceneInitializer) -> Scene = { sceneName, initializer ->
+        Scene(sceneName, initializer)
+    }
 ) : Command {
 
-    /** The created scene instance, available after execute() completes successfully. */
+    /** The created scene instance, available after the scheduled create job completes successfully. */
     var createdScene: Scene? = null
         private set
 
     override fun execute() {
-        val newScene = Scene(name, sceneInitializer)
-        newScene.sceneData.levelPath = filePath
-
-        // Initialize the scene (loads resources, sets up systems)
-        runBlocking {
+        jobSystem.runOnMain {
+            val newScene = sceneFactory(name, sceneInitializer)
+            newScene.sceneData.levelPath = filePath
             newScene.init()
+
+            sceneSerializer.saveToFile(newScene, filePath)
+
+            createdScene = newScene
+            eventSystem.publish(SceneCreated(newScene))
         }
-
-        // Persist to disk
-        sceneSerializer.saveToFile(newScene, filePath)
-
-        // Store for post-execution access
-        createdScene = newScene
     }
 
     override fun undo() {

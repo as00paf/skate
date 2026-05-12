@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
-import com.pafoid.skate.editor.commands.CreateSceneCommand
 import com.pafoid.skate.editor.data.LogEntry
 import com.pafoid.skate.editor.data.LogLevel
+import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.ProjectMetadata
@@ -16,13 +16,23 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneChanged
 import com.pafoid.skate.engine.events.SceneCreateRequested
 import com.pafoid.skate.engine.events.SceneCreated
+import com.pafoid.skate.engine.events.SceneOpenRequested
 import com.pafoid.skate.engine.events.SceneOpened
+import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -45,6 +55,7 @@ class SceneActionHandlerTest {
     private lateinit var testLogger: LoggerService
     private lateinit var projectManager: ProjectManager
     private lateinit var sceneInitializer: LevelEditorSceneInitializer
+    private lateinit var jobSystem: IJobSystem
 
     private lateinit var tempProjectDir: File
 
@@ -61,6 +72,7 @@ class SceneActionHandlerTest {
         undoRedoManager = mockk(relaxed = true)
         projectManager = mockk(relaxed = true)
         sceneInitializer = mockk(relaxed = true)
+        jobSystem = ImmediateJobSystem()
         coEvery { sceneInitializer.loadResources(any()) } returns Unit
         coEvery { sceneInitializer.init(any()) } returns Unit
 
@@ -91,7 +103,7 @@ class SceneActionHandlerTest {
 
         // When undoRedoManager.executeCommand is called, just execute the command
         every { undoRedoManager.executeCommand(any()) } answers {
-            val cmd = firstArg<CreateSceneCommand>()
+            val cmd = firstArg<com.pafoid.skate.editor.commands.Command>()
             cmd.execute()
         }
 
@@ -122,6 +134,7 @@ class SceneActionHandlerTest {
     fun teardown() {
         stopKoin()
         unmockkAll()
+        jobSystem.destroy()
         // Clean up temp directory
         if (tempProjectDir.exists()) {
             tempProjectDir.deleteRecursively()
@@ -212,7 +225,7 @@ class SceneActionHandlerTest {
         // Assert
         assertTrue(sceneCreatedReceived, "SceneCreated event should be published")
         assertNotNull(createdScene)
-        assertTrue(createdScene!!.name.startsWith("NewScene_"))
+        assertTrue(createdScene?.name?.startsWith("NewScene_") == true)
     }
 
     @Test
@@ -335,6 +348,21 @@ class SceneActionHandlerTest {
         assertTrue(successLogs.isNotEmpty(), "Success log should be written")
     }
 
+    @Test
+    fun `handleOpenRequested_logsCancellationFromCompletionEvent`() {
+        val handler = SceneActionHandler()
+        handler.init()
+        every { sceneSerializer.open(any()) } returns SceneOpenResult.Cancelled
+
+        eventSystem.publish(SceneOpenRequested)
+
+        verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
+        val cancelLogs = capturedEditorLogs.filter {
+            it.message.contains("Scene open cancelled", ignoreCase = true)
+        }
+        assertTrue(cancelLogs.isNotEmpty(), "Cancellation should be logged after async completion event")
+    }
+
     private fun startKoinForTest() {
         stopKoin()
         startKoin {
@@ -347,7 +375,29 @@ class SceneActionHandlerTest {
                 single<LoggerService> { testLogger }
                 single<LevelEditorSceneInitializer> { sceneInitializer }
                 single<ProjectManager> { projectManager }
+                single<IJobSystem> { jobSystem }
             })
+        }
+    }
+
+    private class ImmediateJobSystem : IJobSystem {
+        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+
+        override val mainDispatcher: CoroutineDispatcher = Dispatchers.Unconfined
+
+        override fun update() = Unit
+
+        override fun runAsync(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
+
+        override fun runOnMain(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
+
+        override fun <T> runAsyncDeferred(block: suspend CoroutineScope.() -> T): Deferred<T> =
+            scope.async(block = block)
+
+        override fun runIO(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
+
+        override fun destroy() {
+            scope.coroutineContext[Job]?.cancel()
         }
     }
 }

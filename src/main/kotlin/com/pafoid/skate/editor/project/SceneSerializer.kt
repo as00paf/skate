@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.project
 
 import com.pafoid.skate.editor.data.LogLevel
+import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
@@ -86,7 +87,7 @@ class SceneSerializer(
         loadFromFile(scene, scene.sceneData.levelPath)
     }
 
-    fun open(scene: Scene) {
+    fun open(scene: Scene): SceneOpenResult {
         val filter = MemoryUtil.memUTF8("*.scene")
         val filters = MemoryUtil.memAllocPointer(1)
         filters.put(0, filter)
@@ -98,28 +99,34 @@ class SceneSerializer(
             MemoryUtil.memFree(filters)
         }
 
-        if (path != null) {
-            scene.sceneData.levelPath = path
-            loadFromFile(scene, path)
+        if (path == null) {
+            return SceneOpenResult.Cancelled
+        }
+
+        scene.sceneData.levelPath = path
+        return if (loadFromFile(scene, path)) {
+            SceneOpenResult.Loaded(path)
+        } else {
+            SceneOpenResult.Failed(path, "Could not load scene from file")
         }
     }
 
-    fun loadFromFile(scene: Scene, path: String) {
+    fun loadFromFile(scene: Scene, path: String): Boolean {
         var inFile = ""
         try {
             inFile = String(Files.readAllBytes(Paths.get(path)))
         } catch (e: IOException) {
             logger.logEngine("Could not find $path", LogLevel.ERROR)
-            return
+            return false
         }
 
-        if (inFile.isBlank()) return
+        if (inFile.isBlank()) return false
 
         val data: SceneSaveData = try {
             serializer.decode(inFile)
         } catch (e: Exception) {
             logger.logEngine("Failed to deserialize scene from $path: ${e.message}", LogLevel.ERROR)
-            return
+            return false
         }
 
         scene.gameObjects.forEach { it.destroy() }
@@ -182,6 +189,8 @@ class SceneSerializer(
             val compCount = go.getAllComponents().size
             logger.logEditor("[DIAG]   - ${go.name}: $compCount components")
         }
+
+        return true
     }
 
     private fun resolveAssetReferences(scene: Scene) {

@@ -17,7 +17,8 @@ import com.pafoid.skate.engine.assets.database.AssetGuid
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.render.VAOLoader
-import com.pafoid.skate.engine.utils.JobSystem
+import com.pafoid.skate.engine.utils.DefaultJobSystem
+import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -54,7 +55,8 @@ class ResourceManager(
     private val logger: LoggerService,
     private val maxMemoryBytes: Long = 256 * 1024 * 1024,
     private val enableHotReload: Boolean = false,
-    private val assetDatabase: AssetDatabase? = null
+    private val assetDatabase: AssetDatabase? = null,
+    private val jobSystem: IJobSystem = DefaultJobSystem()
 ) {
 
     private val textures = ConcurrentHashMap<String, Texture>()
@@ -93,7 +95,7 @@ class ResourceManager(
             return loadTexture(Assets.Textures.DEFAULT)
         }
 
-        return withContext(JobSystem.Main) {
+        return withContext(jobSystem.mainDispatcher) {
             while (currentTextureMemory.get() > maxMemoryBytes && lruQueue.isNotEmpty()) {
                 val oldestPath = lruQueue.firstOrNull() ?: break
                 evictTexture(oldestPath)
@@ -162,7 +164,7 @@ class ResourceManager(
         textures.remove(path)?.let {
             val estimatedMemory = it.width * it.height * 4L * 4 / 3
             currentTextureMemory.addAndGet(-estimatedMemory)
-            JobSystem.runOnMain {
+            jobSystem.runOnMain {
                 it.destroy()
             }
             logger.logEngine("Evicted texture from LRU cache: $path", LogLevel.INFO)
@@ -225,7 +227,7 @@ class ResourceManager(
         textures.remove(absolutePath)?.let {
             val estimatedMemory = it.width * it.height * 4L * 4 / 3
             currentTextureMemory.addAndGet(-estimatedMemory)
-            JobSystem.runOnMain { it.destroy() }
+            jobSystem.runOnMain { it.destroy() }
             lruQueue.remove(absolutePath)
         }
         
@@ -239,7 +241,7 @@ class ResourceManager(
         shaders[absolutePath]?.let { return it }
 
         return try {
-            withContext(JobSystem.Main) {
+            withContext(jobSystem.mainDispatcher) {
                 val shader = shaderLoader.loadShader(path)
                 shaders[absolutePath] = shader
                 shader
@@ -328,7 +330,7 @@ class ResourceManager(
                      }
                  }
 
-                 withContext(JobSystem.Main) {
+            withContext(jobSystem.mainDispatcher) {
                      val parts = preLoaded.parts.map { p ->
                          val model = vaoLoader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
 
@@ -491,7 +493,7 @@ class ResourceManager(
         }
         
         textures.remove(absolutePath)?.let {
-             JobSystem.runOnMain {
+            jobSystem.runOnMain {
                  it.destroy()
              }
         }
@@ -501,8 +503,8 @@ class ResourceManager(
         val absolutePath = File(path).absolutePath
         models.remove(absolutePath)?.let { model ->
             modelDependencies.remove(absolutePath)
-             
-             JobSystem.runOnMain {
+
+            jobSystem.runOnMain {
                  model.mesh.forEach { part ->
                      vaoLoader.deleteVAO(part.rawModel.vaoId)
                  }
@@ -513,7 +515,7 @@ class ResourceManager(
     fun unloadShader(path: String) {
         val absolutePath = File(path).absolutePath
         shaders.remove(absolutePath)?.let {
-            JobSystem.runOnMain {
+            jobSystem.runOnMain {
                 it.destroy()
             }
         }
