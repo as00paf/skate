@@ -1,14 +1,14 @@
 package com.pafoid.skate.editor.ui.handlers
 
-import com.pafoid.skate.editor.commands.AddAudioComponentCommand
-import com.pafoid.skate.editor.commands.ApplyAnimationCommand
-import com.pafoid.skate.editor.commands.ApplyTextureCommand
-import com.pafoid.skate.editor.commands.CreateGameObjectCommand
-import com.pafoid.skate.editor.commands.CreateLightCommand
-import com.pafoid.skate.editor.commands.CreatePrimitiveCommand
-import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
-import com.pafoid.skate.editor.commands.DuplicateGameObjectCommand
-import com.pafoid.skate.editor.commands.SpawnPrefabCommand
+import com.pafoid.skate.editor.commands.`object`.AddAudioComponentCommand
+import com.pafoid.skate.editor.commands.`object`.ApplyAnimationCommand
+import com.pafoid.skate.editor.commands.`object`.ApplyTextureCommand
+import com.pafoid.skate.editor.commands.scene.CreateGameObjectCommand
+import com.pafoid.skate.editor.commands.scene.CreateLightCommand
+import com.pafoid.skate.editor.commands.scene.CreatePrimitiveCommand
+import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
+import com.pafoid.skate.editor.commands.scene.DuplicateGameObjectCommand
+import com.pafoid.skate.editor.commands.scene.SpawnPrefabCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager

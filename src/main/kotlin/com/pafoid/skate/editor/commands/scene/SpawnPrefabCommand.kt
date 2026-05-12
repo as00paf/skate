@@ -1,5 +1,6 @@
-package com.pafoid.skate.editor.commands
+package com.pafoid.skate.editor.commands.scene
 
+import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.ecs.GameObject

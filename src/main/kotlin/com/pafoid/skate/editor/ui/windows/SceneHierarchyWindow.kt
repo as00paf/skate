@@ -1,12 +1,12 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.commands.CreateGameObjectCommand
-import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
-import com.pafoid.skate.editor.commands.LockToggleCommand
-import com.pafoid.skate.editor.commands.RenameGameObjectCommand
-import com.pafoid.skate.editor.commands.RenameSceneCommand
-import com.pafoid.skate.editor.commands.ReparentGameObjectCommand
-import com.pafoid.skate.editor.commands.VisibilityToggleCommand
+import com.pafoid.skate.editor.commands.`object`.LockToggleCommand
+import com.pafoid.skate.editor.commands.`object`.RenameGameObjectCommand
+import com.pafoid.skate.editor.commands.`object`.ReparentGameObjectCommand
+import com.pafoid.skate.editor.commands.`object`.VisibilityToggleCommand
+import com.pafoid.skate.editor.commands.project.RenameSceneCommand
+import com.pafoid.skate.editor.commands.scene.CreateGameObjectCommand
+import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService

@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.menus
 
-import com.pafoid.skate.editor.commands.CreateGameObjectCommand
-import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
+import com.pafoid.skate.editor.commands.scene.CreateGameObjectCommand
+import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.StringManager

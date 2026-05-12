@@ -1,5 +1,6 @@
-package com.pafoid.skate.editor.commands
+package com.pafoid.skate.editor.commands.`object`
 
+import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.engine.ecs.GameObject
 
 class LockToggleCommand(

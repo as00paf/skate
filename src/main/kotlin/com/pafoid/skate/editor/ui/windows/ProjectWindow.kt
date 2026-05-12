@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.commands.CreateFileCommand
-import com.pafoid.skate.editor.commands.DeleteFileCommand
-import com.pafoid.skate.editor.commands.RenameFileCommand
+import com.pafoid.skate.editor.commands.project.CreateFileCommand
+import com.pafoid.skate.editor.commands.project.DeleteFileCommand
+import com.pafoid.skate.editor.commands.project.RenameFileCommand
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.project.ProjectManager

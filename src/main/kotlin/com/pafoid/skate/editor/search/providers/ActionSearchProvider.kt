@@ -1,8 +1,9 @@
 package com.pafoid.skate.editor.search.providers
 
-import com.pafoid.skate.editor.commands.CreateGameObjectCommand
-import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
-import com.pafoid.skate.editor.commands.TransformCommand
+import com.pafoid.skate.editor.commands.`object`.RenameGameObjectCommand
+import com.pafoid.skate.editor.commands.`object`.TransformCommand
+import com.pafoid.skate.editor.commands.scene.CreateGameObjectCommand
+import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.data.EditorAction
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
@@ -394,7 +395,7 @@ class ActionSearchProvider(
         )
         if (!newName.isNullOrBlank() && newName != selected.name) {
             undoRedoManager.executeCommand(
-                com.pafoid.skate.editor.commands.RenameGameObjectCommand(selected, newName, selected.name)
+                RenameGameObjectCommand(selected, newName, selected.name)
             )
             logger.logEditor("GameObject renamed: '${selected.name}' -> '$newName'")
         }

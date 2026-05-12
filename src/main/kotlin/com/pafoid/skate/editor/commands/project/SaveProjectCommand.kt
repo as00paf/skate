@@ -1,5 +1,6 @@
-package com.pafoid.skate.editor.commands
+package com.pafoid.skate.editor.commands.project
 
+import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.project.ProjectManager
 
 class SaveProjectCommand(

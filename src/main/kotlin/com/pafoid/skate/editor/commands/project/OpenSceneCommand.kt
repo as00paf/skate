@@ -1,6 +1,7 @@
-package com.pafoid.skate.editor.commands
+package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
+import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem

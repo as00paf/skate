@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.systems
 
-import com.pafoid.skate.editor.commands.CreateGameObjectCommand
-import com.pafoid.skate.editor.commands.DeleteGameObjectCommand
-import com.pafoid.skate.editor.commands.LockToggleCommand
-import com.pafoid.skate.editor.commands.VisibilityToggleCommand
+import com.pafoid.skate.editor.commands.`object`.LockToggleCommand
+import com.pafoid.skate.editor.commands.`object`.VisibilityToggleCommand
+import com.pafoid.skate.editor.commands.scene.CreateGameObjectCommand
+import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem

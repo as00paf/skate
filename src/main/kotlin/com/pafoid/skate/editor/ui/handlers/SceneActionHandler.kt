@@ -1,16 +1,16 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
-import com.pafoid.skate.editor.commands.CloseAllScenesCommand
-import com.pafoid.skate.editor.commands.CloseOtherScenesCommand
-import com.pafoid.skate.editor.commands.CloseSceneCommand
-import com.pafoid.skate.editor.commands.CreateSceneCommand
-import com.pafoid.skate.editor.commands.DeleteSceneCommand
-import com.pafoid.skate.editor.commands.OpenSceneCommand
-import com.pafoid.skate.editor.commands.RenameSceneCommand
-import com.pafoid.skate.editor.commands.SaveSceneAsCommand
-import com.pafoid.skate.editor.commands.SaveSceneCommand
-import com.pafoid.skate.editor.commands.SwitchSceneCommand
+import com.pafoid.skate.editor.commands.project.CloseAllScenesCommand
+import com.pafoid.skate.editor.commands.project.CloseOtherScenesCommand
+import com.pafoid.skate.editor.commands.project.CloseSceneCommand
+import com.pafoid.skate.editor.commands.project.CreateSceneCommand
+import com.pafoid.skate.editor.commands.project.DeleteSceneCommand
+import com.pafoid.skate.editor.commands.project.OpenSceneCommand
+import com.pafoid.skate.editor.commands.project.RenameSceneCommand
+import com.pafoid.skate.editor.commands.project.SaveSceneAsCommand
+import com.pafoid.skate.editor.commands.project.SaveSceneCommand
+import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.project.ProjectManager
 import com.pafoid.skate.editor.project.SceneSerializer

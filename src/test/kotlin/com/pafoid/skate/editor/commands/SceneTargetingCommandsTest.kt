@@ -1,5 +1,9 @@
 package com.pafoid.skate.editor.commands
 
+import com.pafoid.skate.editor.commands.project.CloseOtherScenesCommand
+import com.pafoid.skate.editor.commands.project.CloseSceneCommand
+import com.pafoid.skate.editor.commands.project.DeleteSceneCommand
+import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
