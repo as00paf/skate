@@ -54,8 +54,8 @@ abstract class System(
     open fun destroy() {}
 
     /**
-     * Called when the scene's GameObject list changes (e.g. after reload).
-     * Subsystems that cache GameObject references should clear them here.
+     * Called when scene structure changes (GameObject add/remove or component composition mutation).
+     * Subsystems that cache GameObject eligibility should clear/rebuild their cache from source data.
      * Default implementation does nothing.
      */
     open fun invalidateCaches() {}

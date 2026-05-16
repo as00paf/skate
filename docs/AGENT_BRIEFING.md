@@ -82,8 +82,8 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-009 | Retrofit sync command semantics | software-engineer | done |
 | ARCH-010 | Async command lifecycle hardening | software-engineer | done |
 | ARCH-011 | QA Gate 2 (undo + async) | qa-engineer | done |
-| ARCH-012 | Reviewer architecture gate | reviewer | pending |
-| ARCH-013 | ECS invalidation implementation | physics-engineer | pending |
+| ARCH-012 | Reviewer architecture gate | reviewer | done |
+| ARCH-013 | ECS invalidation implementation | physics-engineer | done |
 | ARCH-014 | QA Gate 3 (ECS invalidation) | qa-engineer | pending |
 | ARCH-015 | Duplicate-object flow consolidation | software-engineer | pending |
 | ARCH-016 | Scene traversal consolidation | software-engineer | pending |
@@ -109,6 +109,8 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-009 | software-engineer | pending -> in_progress -> done |
 | ARCH-010 | software-engineer | pending -> in_progress -> blocked (pending implementation); blocked -> in_progress -> done |
 | ARCH-011 | qa-engineer | pending -> in_progress -> blocked (depends on ARCH-010; ready for scoped QA execution); blocked -> in_progress -> done (2026-05-16: compile + targeted ARCH-011 tests passed) |
+| ARCH-012 | reviewer | pending -> in_progress -> done (2026-05-16: reviewer gate passed; no blocking ARCH-008..011 architecture violations) |
+| ARCH-013 | physics-engineer | pending -> in_progress -> done (2026-05-16: component-mutation versioning added; SystemManager cache invalidation extended to component composition changes; compile and SystemManagerInvalidationTest passed) |
 
 ## Build and Test Commands (WSL in this repo)
 

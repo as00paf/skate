@@ -22,18 +22,19 @@ open class GameObject(
         fun getIdCounter(): Int = ID_COUNTER
     }
 
+    private var uId = ID_COUNTER++
     private var isDead: Boolean = false
     private var doSerialization = true
+
+    var componentMutationVersion: Long = 0
     var isEnabled = true
     var isVisible = true
     var isLocked = false
-    private var uId = ID_COUNTER++
 
     val components = mutableListOf<Component>()
 
     @Transient
     var parent: GameObject? = null
-    @Transient
     val children = mutableListOf<GameObject>()
 
     fun addChild(child: GameObject) {
@@ -55,26 +56,31 @@ open class GameObject(
         return components.find { componentClass.isInstance(it) } as? T
     }
 
-    inline fun <reified T> removeComponent() {
-        components.removeIf { it is T }
+    fun <T : Component> removeComponent(componentClass: KClass<T>) {
+        val removed = components.removeAll { componentClass.isInstance(it) }
+        if (removed) {
+            componentMutationVersion++
+        }
     }
+
+    inline fun <reified T : Component> removeComponent() = removeComponent(T::class)
 
     inline fun <reified T> hasComponent(): Boolean {
         return components.filterIsInstance<T>().isNotEmpty()
     }
 
-    inline fun <reified T: Component> addComponent(component: T): GameObject{
-        // Replace
-        if (hasComponent<T>()) {
-            removeComponent<T>()
-        }
+    fun <T : Component> addComponent(componentClass: KClass<T>, component: T): GameObject {
+        components.removeAll { componentClass.isInstance(it) }
         component.generateId()
         components.add(component)
         component.init(this)
+        componentMutationVersion++
         return this
     }
 
     open fun start() {}
+
+    inline fun <reified T: Component> addComponent(component: T): GameObject = addComponent(T::class, component)
 
     open fun update(dt: Float) {
         if (!isEnabled) return

@@ -36,8 +36,7 @@ class AnimationSystem(
     }
 
     override fun start() {
-        // Listen for GameObject additions/removals to invalidate cache
-        // Note: For a more robust solution, we'd listen for component additions too
+        // Force first runtime pass to rebuild from current scene state.
         cacheDirty = true
     }
 

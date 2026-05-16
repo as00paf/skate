@@ -17,6 +17,8 @@ class SystemManager {
     private var loadedScene: Scene? = null
     private var hasStarted = false
     private var lastObjectSetVersion: Long = -1
+    private var lastSceneComponentVersion: Long = -1
+    private val lastObjectComponentVersions = mutableMapOf<Int, Long>()
 
     // Public read-only view of systems
     val systems: List<System> get() = _systems
@@ -31,6 +33,7 @@ class SystemManager {
         sortSystemsIfNeeded()
         loadedScene = scene
         lastObjectSetVersion = scene.objectSetVersion
+        snapshotComponentVersions(scene)
         systems.forEach {
             it.init(scene)
         }
@@ -98,9 +101,40 @@ class SystemManager {
 
     private fun refreshCachesIfSceneChanged() {
         val scene = loadedScene ?: return
-        if (scene.objectSetVersion == lastObjectSetVersion) return
-        resetSystemCaches()
-        lastObjectSetVersion = scene.objectSetVersion
+        if (scene.objectSetVersion != lastObjectSetVersion || hasComponentMutation(scene)) {
+            resetSystemCaches()
+            lastObjectSetVersion = scene.objectSetVersion
+            snapshotComponentVersions(scene)
+        }
+    }
+
+    private fun hasComponentMutation(scene: Scene): Boolean {
+        if (scene.componentMutationVersion != lastSceneComponentVersion) {
+            return true
+        }
+
+        if (scene.gameObjects.size != lastObjectComponentVersions.size) {
+            return true
+        }
+
+        for (gameObject in scene.gameObjects) {
+            val uid = gameObject.getUid()
+            val currentVersion = gameObject.componentMutationVersion
+            val previousVersion = lastObjectComponentVersions[uid]
+            if (previousVersion == null || previousVersion != currentVersion) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun snapshotComponentVersions(scene: Scene) {
+        lastSceneComponentVersion = scene.componentMutationVersion
+        lastObjectComponentVersions.clear()
+        scene.gameObjects.forEach { gameObject ->
+            lastObjectComponentVersions[gameObject.getUid()] = gameObject.componentMutationVersion
+        }
     }
 
     fun resetSystemCaches() {
@@ -119,6 +153,8 @@ class SystemManager {
         loadedScene = null
         hasStarted = false
         lastObjectSetVersion = -1
+        lastSceneComponentVersion = -1
+        lastObjectComponentVersions.clear()
         systemsNeedSort = false
     }
 }
