@@ -19,12 +19,19 @@ import com.pafoid.skate.editor.commands.Command
  *
  * Thread safety: This class is NOT thread-safe. All operations should be performed on the main thread.
  */
-class UndoRedoManager {
+class UndoRedoManager(
+    private val mutationGate: EditorMutationGate? = null,
+    private val logger: LoggerService? = null,
+) {
     private val undoStack = mutableListOf<Command>()
     private val redoStack = mutableListOf<Command>()
     private val maxStackSize = 100
 
     fun executeCommand(command: Command) {
+        if (mutationGate?.canExecute(command) == false) {
+            logger?.logEditor("Command blocked in play mode: ${command.getDisplayName()}")
+            return
+        }
         command.execute()
         pushCommand(command)
     }

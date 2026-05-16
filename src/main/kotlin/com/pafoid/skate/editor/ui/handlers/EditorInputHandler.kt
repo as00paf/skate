@@ -18,8 +18,8 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.System
-import com.pafoid.skate.engine.events.GameObjectSelected
-import com.pafoid.skate.engine.events.SelectionCleared
+import com.pafoid.skate.editor.events.GameObjectSelected
+import com.pafoid.skate.editor.events.SelectionCleared
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.GamepadListener

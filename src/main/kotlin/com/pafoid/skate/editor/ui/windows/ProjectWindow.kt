@@ -15,8 +15,8 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.events.FileSystemChangedEvent
-import com.pafoid.skate.engine.events.OpenSceneFileEvent
+import com.pafoid.skate.editor.events.FileSystemChangedEvent
+import com.pafoid.skate.editor.events.OpenSceneFileEvent
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin

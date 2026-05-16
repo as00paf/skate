@@ -147,7 +147,7 @@ class MouseListener(private val sceneManager: SceneManager) : KoinComponent {
     fun getDx(): Float = (xPos - lastX).toFloat()
     fun getDy(): Float = (yPos - lastY).toFloat()
     fun getScrollX(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()
-    fun getScrollY(): Float = if (!ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
+    fun getScrollY(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
     fun isDragging() = isDragging
     fun isMouseButtonDown(button: Int, ignoreImGui: Boolean = false): Boolean {
         val down = if (button < mouseButtonPressed.size) mouseButtonPressed[button] else false

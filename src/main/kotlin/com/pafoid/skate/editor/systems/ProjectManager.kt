@@ -18,10 +18,10 @@ import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.events.ProjectClosed
-import com.pafoid.skate.engine.events.ProjectCreated
-import com.pafoid.skate.engine.events.ProjectOpened
-import com.pafoid.skate.engine.events.ProjectSaved
+import com.pafoid.skate.editor.events.ProjectClosed
+import com.pafoid.skate.editor.events.ProjectCreated
+import com.pafoid.skate.editor.events.ProjectOpened
+import com.pafoid.skate.editor.events.ProjectSaved
 import org.joml.Vector3f
 import java.io.File
 

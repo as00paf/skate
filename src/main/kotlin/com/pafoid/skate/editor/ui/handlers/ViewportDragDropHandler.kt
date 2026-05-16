@@ -5,10 +5,10 @@ import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.events.ViewportDropAnimation
-import com.pafoid.skate.engine.events.ViewportDropSound
-import com.pafoid.skate.engine.events.ViewportDropTexture
-import com.pafoid.skate.engine.events.ViewportSpawnPrefab
+import com.pafoid.skate.editor.events.ViewportDropAnimation
+import com.pafoid.skate.editor.events.ViewportDropSound
+import com.pafoid.skate.editor.events.ViewportDropTexture
+import com.pafoid.skate.editor.events.ViewportSpawnPrefab
 import imgui.ImGui
 import imgui.ImVec2
 import org.joml.Vector3f

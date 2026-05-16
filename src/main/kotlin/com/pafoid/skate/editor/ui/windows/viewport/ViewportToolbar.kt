@@ -5,18 +5,21 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.editor.events.ViewportResetScene
+import com.pafoid.skate.editor.events.ViewportSetRuntimePlaying
+import com.pafoid.skate.editor.events.ViewportSetSimulationTimeScale
+import com.pafoid.skate.editor.events.ViewportToggleGizmo
+import com.pafoid.skate.editor.events.ViewportTogglePhysicsDebug
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
-import org.joml.Vector3f
 
 /**
  * Renders the viewport toolbar with gizmo, play, and utility buttons.
@@ -38,6 +41,7 @@ class ViewportToolbar(
     private val logger: LoggerService,
     private val stringManager: StringManager,
     private val systemManager: SystemManager,
+    private val eventSystem: EventSystem,
 ) {
     
     companion object {
@@ -82,7 +86,7 @@ class ViewportToolbar(
             val isActive = gizmoSystem?.usingGizmo == GizmoSystem.SELECTION_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.MOUSE_POINTER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem?.toggleGizmo(GizmoSystem.SELECTION_GIZMO)
+                eventSystem.publish(ViewportToggleGizmo(GizmoSystem.SELECTION_GIZMO))
             }
             if (isActive) ImGui.popStyleColor()
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.select_tool"))
@@ -93,7 +97,7 @@ class ViewportToolbar(
             val isActive = gizmoSystem?.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.MOVE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem?.toggleGizmo(GizmoSystem.TRANSLATE_GIZMO)
+                eventSystem.publish(ViewportToggleGizmo(GizmoSystem.TRANSLATE_GIZMO))
             }
             if (isActive) ImGui.popStyleColor()
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.translate_tool"))
@@ -104,7 +108,7 @@ class ViewportToolbar(
             val isActive = gizmoSystem?.usingGizmo == GizmoSystem.ROTATION_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.ROTATE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem?.toggleGizmo(GizmoSystem.ROTATION_GIZMO)
+                eventSystem.publish(ViewportToggleGizmo(GizmoSystem.ROTATION_GIZMO))
             }
             if (isActive) ImGui.popStyleColor()
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.rotate_tool"))
@@ -115,7 +119,7 @@ class ViewportToolbar(
             val isActive = gizmoSystem?.usingGizmo == GizmoSystem.SCALE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.SCALE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem?.toggleGizmo(GizmoSystem.SCALE_GIZMO)
+                eventSystem.publish(ViewportToggleGizmo(GizmoSystem.SCALE_GIZMO))
             }
             if (isActive) ImGui.popStyleColor()
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.scale_tool"))
@@ -126,7 +130,7 @@ class ViewportToolbar(
             val isActive = gizmoSystem?.usingGizmo == GizmoSystem.MEASURE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                gizmoSystem?.toggleGizmo(GizmoSystem.MEASURE_GIZMO)
+                eventSystem.publish(ViewportToggleGizmo(GizmoSystem.MEASURE_GIZMO))
             }
             if (isActive) {
                 ImGui.popStyleColor()
@@ -156,13 +160,13 @@ class ViewportToolbar(
                 val timeScale = scene?.getComponent<TimeComponent>()?.timeScale ?: 1.0f
                 if (timeScale == 1.0f) {
                     if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene?.getComponent<TimeComponent>()?.timeScale = 0.0f
+                        eventSystem.publish(ViewportSetSimulationTimeScale(0.0f))
                         logger.logEditor("Simulation paused")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.pause_simulation"))
                 } else {
                     if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        scene?.getComponent<TimeComponent>()?.timeScale = 1.0f
+                        eventSystem.publish(ViewportSetSimulationTimeScale(1.0f))
                         logger.logEditor("Simulation resumed")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.resume_simulation"))
@@ -171,8 +175,7 @@ class ViewportToolbar(
             // Stop button
             buttons.add {
                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    engine.runtimePlaying = false
-                    scene?.getComponent<TimeComponent>()?.timeScale = 1.0f
+                    eventSystem.publish(ViewportSetRuntimePlaying(false))
                     logger.logEditor("Simulation stopped")
                 }
                 if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.stop_simulation"))
@@ -181,7 +184,7 @@ class ViewportToolbar(
             // Play button
             buttons.add {
                 if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    engine.runtimePlaying = true
+                    eventSystem.publish(ViewportSetRuntimePlaying(true))
                     logger.logEditor("Simulation started")
                 }
                 if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.play_simulation"))
@@ -196,18 +199,8 @@ class ViewportToolbar(
         // Reset Scene button
         buttons.add {
             if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                scene?.let {
-                    it.gameObjects.find { obj -> obj.name == "Skateboard" }?.let { skate ->
-                        skate.getComponent<Transform>()?.translation?.set(0f, 0.5f, 0f)
-                        skate.getComponent<Transform>()?.rotation?.set(0f, 0f, 0f)
-                        val rb = skate.getComponent<RigidBody3D>()
-                        rb?.linearVelocity = Vector3f(0f, 0f, 0f)
-                        rb?.angularVelocity = Vector3f(0f, 0f, 0f)
-                        logger.logEditor("Scene reset")
-                    }
-                    it.camera.position.set(0f, 5f, 20f)
-                    it.camera.yaw = 0f
-                }
+                eventSystem.publish(ViewportResetScene)
+                logger.logEditor("Scene reset")
             }
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.reset_scene"))
         }
@@ -219,7 +212,7 @@ class ViewportToolbar(
                 ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             }
             if (ImGui.button(Icons.ATOM, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                scene?.physics3d?.debugEnabled = !physicsDebugEnabled
+                eventSystem.publish(ViewportTogglePhysicsDebug)
                 logger.logEditor("Physics debug toggled")
             }
             if (physicsDebugEnabled) {

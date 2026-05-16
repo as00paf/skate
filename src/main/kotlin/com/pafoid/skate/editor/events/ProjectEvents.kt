@@ -1,6 +1,7 @@
-package com.pafoid.skate.engine.events
+package com.pafoid.skate.editor.events
 
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.events.Event
 
 sealed class ProjectEvent(eventName: String) : Event(eventName)
 

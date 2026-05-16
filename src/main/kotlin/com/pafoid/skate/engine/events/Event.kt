@@ -29,4 +29,4 @@ package com.pafoid.skate.engine.events
  * }
  * ```
  */
-sealed class Event(val eventName: String)
+open class Event(val eventName: String)

@@ -13,11 +13,11 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.events.SceneChanged
-import com.pafoid.skate.engine.events.SceneCreateRequested
-import com.pafoid.skate.engine.events.SceneCreated
-import com.pafoid.skate.engine.events.SceneOpenRequested
-import com.pafoid.skate.engine.events.SceneOpened
+import com.pafoid.skate.editor.events.SceneChanged
+import com.pafoid.skate.editor.events.SceneCreateRequested
+import com.pafoid.skate.editor.events.SceneCreated
+import com.pafoid.skate.editor.events.SceneOpenRequested
+import com.pafoid.skate.editor.events.SceneOpened
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every

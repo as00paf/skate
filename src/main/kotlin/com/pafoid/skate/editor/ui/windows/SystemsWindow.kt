@@ -3,6 +3,8 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.systems.GizmoSystem
+import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import imgui.ImGui
@@ -49,14 +51,15 @@ class SystemsWindow(
 
         // Editor Systems (from Workspace)
         if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.editor_systems"))) {
-            renderSystemsList(systemManager.systems)
+            val editorSystems = systemManager.systems.filter { it is GizmoSystem || it is GridLines }
+            renderSystemsList(editorSystems)
         }
 
         ImGui.separator()
 
         // Gameplay Systems (from Scene)
         if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.gameplay_systems"))) {
-            val systems = systemManager.systems
+            val systems = systemManager.systems.filterNot { it is GizmoSystem || it is GridLines }
             if (systems.isEmpty()) {
                 ImGui.text(stringManager.getString("lbl.systems.no_systems"))
             } else {

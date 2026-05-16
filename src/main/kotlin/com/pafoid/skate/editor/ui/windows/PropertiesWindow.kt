@@ -12,18 +12,23 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.editor.events.ViewportAddComponent
+import com.pafoid.skate.engine.ecs.components.ComponentType
+import com.pafoid.skate.editor.events.ViewportRemoveComponent
+import com.pafoid.skate.editor.events.ViewportRenameGameObject
+import com.pafoid.skate.editor.events.ViewportSetGameObjectEnabled
 import imgui.ImGui
 import imgui.flag.ImGuiInputTextFlags
 import imgui.type.ImBoolean
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.reflect.KClass
-import kotlin.reflect.full.createInstance
 
 class PropertiesWindow : IWindow, KoinComponent {
     private val stringManager: StringManager by inject()
     private val sceneManager: SceneManager by inject()
+    private val eventSystem: EventSystem by inject()
     
     private val searchString = ImString(128)
     private var selectedGameObject: GameObject? = null
@@ -69,8 +74,9 @@ class PropertiesWindow : IWindow, KoinComponent {
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.properties.remove_component")}")) {
                 // Don't allow removing Transform component (core component)
                 if (component !is Transform) {
-                    // Remove by finding the component type and using inline function
-                    removeComponentByType(go, component)
+                    componentTypeOf(component)?.let { componentType ->
+                        eventSystem.publish(ViewportRemoveComponent(go, componentType))
+                    }
                 }
             }
             ImGui.separator()
@@ -81,23 +87,10 @@ class PropertiesWindow : IWindow, KoinComponent {
         }
     }
     
-    private fun removeComponentByType(go: GameObject, component: Component) {
-        // Use the component's class to remove it
-        when (component) {
-            is AudioComponent -> go.removeComponent<AudioComponent>()
-            is BoxCollider3D -> go.removeComponent<BoxCollider3D>()
-            is CylinderCollider3D -> go.removeComponent<CylinderCollider3D>()
-            is RenderComponent -> go.removeComponent<RenderComponent>()
-            is RigidBody3D -> go.removeComponent<RigidBody3D>()
-            // Transform cannot be removed
-            else -> go.components.remove(component)
-        }
-    }
-
     private fun enabledCheckbox(go: GameObject) {
         val isEnabled = ImBoolean(go.isEnabled)
         if (ImGui.checkbox("##enabled_checkbox", isEnabled)) {
-            go.isEnabled = isEnabled.get()
+            eventSystem.publish(ViewportSetGameObjectEnabled(go, isEnabled.get()))
         }
 
         ImGui.sameLine()
@@ -112,7 +105,7 @@ class PropertiesWindow : IWindow, KoinComponent {
         val name = ImString(go.name, 128)
         val flags = ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
         if (ImGui.inputText("##name_input", name, flags)) {
-            go.name = name.get()
+            eventSystem.publish(ViewportRenameGameObject(go, name.get()))
         }
         ImGui.popItemWidth()
     }
@@ -150,8 +143,9 @@ class PropertiesWindow : IWindow, KoinComponent {
                 if (searchString.get().isEmpty() || name.contains(searchString.get(), ignoreCase = true)) {
                     if (go.getComponent(type) == null) {
                         if (ImGui.menuItem(name)) {
-                            val component = createComponent(type)
-                            go.addComponent(component)
+                            componentTypeOf(type)?.let { componentType ->
+                                eventSystem.publish(ViewportAddComponent(go, componentType))
+                            }
                             ImGui.closeCurrentPopup()
                         }
                     }
@@ -161,11 +155,23 @@ class PropertiesWindow : IWindow, KoinComponent {
         }
     }
 
-    private fun <T : Component> createComponent(type: KClass<T>): T {
-        return try {
-            type.createInstance()
-        } catch (e: Exception) {
-            throw IllegalArgumentException("Failed to create component of type: ${type.simpleName}", e)
-        }
+    private fun componentTypeOf(component: Component): ComponentType? = when (component) {
+        is AudioComponent -> ComponentType.AUDIO
+        is BoxCollider3D -> ComponentType.BOX_COLLIDER_3D
+        is CylinderCollider3D -> ComponentType.CYLINDER_COLLIDER_3D
+        is RenderComponent -> ComponentType.RENDER
+        is RigidBody3D -> ComponentType.RIGID_BODY_3D
+        is Transform -> ComponentType.TRANSFORM
+        else -> null
+    }
+
+    private fun componentTypeOf(type: kotlin.reflect.KClass<out Component>): ComponentType? = when (type) {
+        AudioComponent::class -> ComponentType.AUDIO
+        BoxCollider3D::class -> ComponentType.BOX_COLLIDER_3D
+        CylinderCollider3D::class -> ComponentType.CYLINDER_COLLIDER_3D
+        RenderComponent::class -> ComponentType.RENDER
+        RigidBody3D::class -> ComponentType.RIGID_BODY_3D
+        Transform::class -> ComponentType.TRANSFORM
+        else -> null
     }
 }

@@ -8,7 +8,7 @@ import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.engine.events.TextureApplied
+import com.pafoid.skate.editor.events.TextureApplied
 
 class ApplyTextureCommand(
     private val gameObject: GameObject,

@@ -1,34 +1,33 @@
 package com.pafoid.skate.editor.search.providers
 
-import com.pafoid.skate.editor.commands.`object`.RenameGameObjectCommand
-import com.pafoid.skate.editor.commands.`object`.TransformCommand
-import com.pafoid.skate.editor.commands.scene.CreateGameObjectCommand
-import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.data.EditorAction
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.events.SceneCloseOthersRequested
-import com.pafoid.skate.engine.events.SceneCloseRequested
-import com.pafoid.skate.engine.events.SceneCreateRequested
-import com.pafoid.skate.engine.events.SceneDeleteRequested
-import com.pafoid.skate.engine.events.SceneOpenRequested
-import com.pafoid.skate.engine.events.SceneRenameRequested
-import com.pafoid.skate.engine.events.SceneSaveAsRequested
-import com.pafoid.skate.engine.events.SceneSaveRequested
-import com.pafoid.skate.engine.events.ViewportCreateLight
-import com.pafoid.skate.engine.events.ViewportCreatePrimitive
-import com.pafoid.skate.engine.events.ViewportSpawnPrefab
+import com.pafoid.skate.editor.events.SceneCloseOthersRequested
+import com.pafoid.skate.editor.events.SceneCloseRequested
+import com.pafoid.skate.editor.events.SceneCreateRequested
+import com.pafoid.skate.editor.events.SceneDeleteRequested
+import com.pafoid.skate.editor.events.SceneOpenRequested
+import com.pafoid.skate.editor.events.SceneRenameRequested
+import com.pafoid.skate.editor.events.SceneSaveAsRequested
+import com.pafoid.skate.editor.events.SceneSaveRequested
+import com.pafoid.skate.editor.events.ViewportCreateLight
+import com.pafoid.skate.editor.events.ViewportCreateEmpty
+import com.pafoid.skate.editor.events.ViewportCreatePrimitive
+import com.pafoid.skate.editor.events.ViewportDelete
+import com.pafoid.skate.editor.events.ViewportDuplicate
+import com.pafoid.skate.editor.events.ViewportRenameGameObject
+import com.pafoid.skate.editor.events.ViewportResetTransform
+import com.pafoid.skate.editor.events.ViewportSetRuntimePlaying
+import com.pafoid.skate.editor.events.ViewportSpawnPrefab
+import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.render.data.LightType
+import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -40,9 +39,6 @@ import org.koin.core.component.inject
  */
 class ActionSearchProvider(
     private val sceneManager: SceneManager,
-    private val undoRedoManager: UndoRedoManager,
-    private val serializer: Serializer,
-    private val gameObjectManager: GameObjectManager,
     private val logger: LoggerService,
 ) : BaseSearchProvider(), KoinComponent {
     
@@ -271,10 +267,8 @@ class ActionSearchProvider(
 
     private fun createEmptyGameObject() {
         val scene = sceneManager.currentScene ?: return
-        val newGameObject = GameObject("Empty GameObject")
-        newGameObject.addComponent(Transform())
-        undoRedoManager.executeCommand(CreateGameObjectCommand(newGameObject, scene, gameObjectManager))
-        logger.logEditor("Created empty GameObject: ${newGameObject.name}")
+        eventSystem.publish(ViewportCreateEmpty(scene))
+        logger.logEditor("Create empty GameObject requested")
     }
 
     private fun saveScene() {
@@ -284,54 +278,32 @@ class ActionSearchProvider(
     }
 
     private fun startSimulation() {
-        val scene = sceneManager.currentScene ?: return
-        if (!scene.isRunning) {
-            scene.isRunning = true
-            logger.logEditor("Simulation started")
-        }
+        eventSystem.publish(ViewportSetRuntimePlaying(true))
+        logger.logEditor("Simulation start requested")
     }
 
     private fun stopSimulation() {
-        val scene = sceneManager.currentScene ?: return
-        if (scene.isRunning) {
-            scene.isRunning = false
-            logger.logEditor("Simulation stopped")
-        }
+        eventSystem.publish(ViewportSetRuntimePlaying(false))
+        logger.logEditor("Simulation stop requested")
     }
 
     private fun resetTransform() {
-        val scene = sceneManager.currentScene ?: return
-        val selected = scene.selectedGameObject ?: return
-        val transform = selected.getComponent<Transform>() ?: return
-
-        val oldTransform = Transform().apply { copyFrom(transform) }
-        val newTransform = Transform()
-        newTransform.translation.set(0f, 0f, 0f)
-        newTransform.rotation.set(0f, 0f, 0f)
-        newTransform.scale.set(1f, 1f, 1f)
-
-        undoRedoManager.executeCommand(TransformCommand(selected, oldTransform, newTransform))
-        logger.logEditor("Reset transform for: ${selected.name}")
+        val selected = sceneManager.currentScene?.selectedGameObject ?: return
+        eventSystem.publish(ViewportResetTransform(selected))
+        logger.logEditor("Reset transform requested for: ${selected.name}")
     }
 
     private fun deleteSelected() {
         val scene = sceneManager.currentScene ?: return
         val selected = scene.selectedGameObject ?: return
-        undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene, gameObjectManager))
-        logger.logEditor("Deleted GameObject: ${selected.name}")
+        eventSystem.publish(ViewportDelete(selected, scene))
+        logger.logEditor("Delete GameObject requested: ${selected.name}")
     }
 
     private fun duplicateSelected() {
-        val scene = sceneManager.currentScene ?: return
-        val selected = scene.selectedGameObject ?: return
-
-        val duplicated = selected.copy(serializer)
-        duplicated.name = "${selected.name} (Copy)"
-
-        duplicated.getComponent<Transform>()?.translation?.add(1f, 0f, 0f)
-
-        undoRedoManager.executeCommand(CreateGameObjectCommand(duplicated, scene, gameObjectManager))
-        logger.logEditor("Duplicated GameObject: ${selected.name} -> ${duplicated.name}")
+        val selected = sceneManager.currentScene?.selectedGameObject ?: return
+        eventSystem.publish(ViewportDuplicate(selected))
+        logger.logEditor("Duplicate GameObject requested: ${selected.name}")
     }
 
     // Scene-related actions
@@ -367,7 +339,7 @@ class ActionSearchProvider(
     }
 
     private fun createPrimitive() {
-        eventSystem.publish(ViewportCreatePrimitive("Cube", org.joml.Vector3f(0.5f, 0.5f, 0.5f)))
+        eventSystem.publish(ViewportCreatePrimitive("Cube", Vector3f(0.5f, 0.5f, 0.5f)))
         logger.logEditor("Create primitive executed")
     }
 
@@ -377,7 +349,7 @@ class ActionSearchProvider(
     }
 
     private fun spawnPrefab() {
-        eventSystem.publish(ViewportSpawnPrefab(com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType.LEDGE))
+        eventSystem.publish(ViewportSpawnPrefab(PrefabType.LEDGE))
         logger.logEditor("Spawn prefab executed")
     }
 
@@ -395,10 +367,8 @@ class ActionSearchProvider(
             selected.name
         )
         if (!newName.isNullOrBlank() && newName != selected.name) {
-            undoRedoManager.executeCommand(
-                RenameGameObjectCommand(selected, newName, selected.name)
-            )
-            logger.logEditor("GameObject renamed: '${selected.name}' -> '$newName'")
+            eventSystem.publish(ViewportRenameGameObject(selected, newName))
+            logger.logEditor("GameObject rename requested: '${selected.name}' -> '$newName'")
         }
     }
 

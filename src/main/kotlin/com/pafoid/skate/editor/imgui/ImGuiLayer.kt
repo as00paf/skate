@@ -151,8 +151,7 @@ class ImGuiLayer(
                 undoRedoManager,
                 clipboardService,
                 sceneManager,
-                eventSystem,
-                gameObjectManager
+                eventSystem
             ),
             settingsMenu = SettingsMenuBuilder(
                 stringManager, settingsManager,

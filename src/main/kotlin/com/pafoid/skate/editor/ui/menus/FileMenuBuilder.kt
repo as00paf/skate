@@ -5,10 +5,10 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.events.SceneCreateRequested
-import com.pafoid.skate.engine.events.SceneOpenRequested
-import com.pafoid.skate.engine.events.SceneSaveAsRequested
-import com.pafoid.skate.engine.events.SceneSaveRequested
+import com.pafoid.skate.editor.events.SceneCreateRequested
+import com.pafoid.skate.editor.events.SceneOpenRequested
+import com.pafoid.skate.editor.events.SceneSaveAsRequested
+import com.pafoid.skate.editor.events.SceneSaveRequested
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem

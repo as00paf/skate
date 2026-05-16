@@ -533,6 +533,76 @@ architecture, state synchronization, and handling network latency.
 
 ---
 
+## ARCH Program (Architecture Remediation)
+
+Reference: `docs/ARCH_REMEDIATION_PLAN.md` (canonical ARCH plan).
+Core contracts ADR: `docs/ADR-ARCH-002-core-contracts.md`.
+QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
+
+### Execution Policy
+
+- Default policy: **single active ARCH task at a time**.
+- Parallel execution is allowed only for tasks marked parallel-safe in the remediation plan.
+
+### Milestone Gates
+
+- **M1 Stabilization:** through ARCH-007
+- **M2 Undo/Async correctness:** through ARCH-012
+- **M3 ECS + consolidation:** through ARCH-016 and ARCH-014
+- **M4 DI/layer + localization + guardrails:** through ARCH-020
+- **M5 Release readiness + closure:** ARCH-021 to ARCH-023
+
+### Dependency / Order Summary
+
+1. ARCH-001 -> ARCH-002
+2. ARCH-003 + ARCH-004 -> ARCH-005 -> ARCH-007
+3. ARCH-008 -> (ARCH-009 + ARCH-010) -> ARCH-011 -> ARCH-012
+4. ARCH-020 -> ARCH-021 -> ARCH-022 -> ARCH-023
+5. Additional prerequisite chain: ARCH-012 -> ARCH-013/015/016; ARCH-017 -> ARCH-018/019
+
+### ARCH Task Status Registry (ARCH-001..ARCH-023)
+
+| ID | Title | Owner | Status |
+|---|---|---|---|
+| ARCH-001 | Bootstrap ARCH tracking in docs | documentation-engineer | done |
+| ARCH-002 | ADR pack for core contracts | tech-lead | done |
+| ARCH-003 | UI conformance pass A | software-engineer | done |
+| ARCH-004 | UI conformance pass B | software-engineer | done |
+| ARCH-005 | Play-mode mutation gate integration | software-engineer | done |
+| ARCH-006 | Quick consistency fixes | software-engineer | done |
+| ARCH-007 | QA Gate 1 (UI + play boundary) | qa-engineer | blocked (compile passed; full test suite failing with 14 failures) |
+| ARCH-008 | UndoRedo core refactor | software-engineer | pending |
+| ARCH-009 | Retrofit sync command semantics | software-engineer | pending |
+| ARCH-010 | Async command lifecycle hardening | software-engineer | pending |
+| ARCH-011 | QA Gate 2 (undo + async) | qa-engineer | pending |
+| ARCH-012 | Reviewer architecture gate | reviewer | pending |
+| ARCH-013 | ECS invalidation implementation | physics-engineer | pending |
+| ARCH-014 | QA Gate 3 (ECS invalidation) | qa-engineer | pending |
+| ARCH-015 | Duplicate-object flow consolidation | software-engineer | pending |
+| ARCH-016 | Scene traversal consolidation | software-engineer | pending |
+| ARCH-017 | DI/layering decision checkpoint | tech-lead | pending |
+| ARCH-018 | DI/layering implementation | software-engineer | pending |
+| ARCH-019 | Localization completion sweep | software-engineer | pending |
+| ARCH-020 | Guard tests + async test fixtures | qa-engineer | pending |
+| ARCH-021 | QA Gate 4 full checkpoint | qa-engineer | pending |
+| ARCH-022 | Final reviewer gate | reviewer | pending |
+| ARCH-023 | Documentation closure | documentation-engineer | pending |
+
+---
+
+### ARCH Status Transition Log (M1 run 2026-05-12)
+
+| ID | Owner | Transition |
+|---|---|---|
+| ARCH-002 | tech-lead | pending -> in_progress -> done |
+| ARCH-003 | software-engineer | pending -> in_progress -> done |
+| ARCH-004 | software-engineer | pending -> in_progress -> done |
+| ARCH-005 | software-engineer | pending -> in_progress -> done |
+| ARCH-006 | software-engineer | pending -> in_progress -> done |
+| ARCH-007 | qa-engineer | pending -> in_progress -> blocked (compile passed; full test suite failed: 252 run, 14 failed) |
+
+---
+
 ## Risk Assessment
 
 | Risk                                     | Likelihood | Impact | Mitigation                                                                                                                                       |

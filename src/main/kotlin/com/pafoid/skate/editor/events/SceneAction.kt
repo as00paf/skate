@@ -1,6 +1,7 @@
-package com.pafoid.skate.engine.events
+package com.pafoid.skate.editor.events
 
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.events.Event
 
 /**
  * Domain actions for scene management operations.

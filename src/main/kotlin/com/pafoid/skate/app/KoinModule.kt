@@ -16,6 +16,7 @@ import com.pafoid.skate.editor.search.providers.ComponentSearchProvider
 import com.pafoid.skate.editor.search.providers.GameObjectSearchProvider
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.DisplayService
+import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.FileSystemScanner
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
@@ -120,7 +121,8 @@ val appModule = module {
     single { AudioEngine(get()) }
     single { SceneSerializer(get(), get(), get(), get(), get()) }
     single { ClipboardService(get()) }
-    single { UndoRedoManager() }
+    single { EditorMutationGate(get(), get()) }
+    single { UndoRedoManager(get(), get()) }
     single { StringManager() }
     single { SettingsManager(get(), get(), get()) }
     single { DisplayService() }
@@ -134,7 +136,7 @@ val appModule = module {
 
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get()) }
-    factory { ViewportToolbar(get(), get(), get(), get(), get()) }
+    factory { ViewportToolbar(get(), get(), get(), get(), get(), get()) }
     factory { ViewportContextMenu(get(), get()) }
     factory { ViewportOverlays(get(), get()) }
     factory { ViewportDragDropHandler(get(), get()) }
@@ -215,7 +217,7 @@ val appModule = module {
     single { GameObjectSearchProvider(get(), get(), get()) }
     single { AssetSearchProvider(get()) }
     single { ComponentSearchProvider(get(), get(), get()) }
-    single { ActionSearchProvider(get(), get(), get(), get(), get()) }
+    single { ActionSearchProvider(get(), get()) }
     single { SearchEverywhereWindow(SearchHistory(serializer = get())) }
 }
 

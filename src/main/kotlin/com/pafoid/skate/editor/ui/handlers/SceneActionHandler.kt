@@ -14,26 +14,27 @@ import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.events.SceneAction
-import com.pafoid.skate.engine.events.SceneCloseAllRequested
-import com.pafoid.skate.engine.events.SceneCloseOthersRequested
-import com.pafoid.skate.engine.events.SceneCloseRequested
-import com.pafoid.skate.engine.events.SceneCreateRequested
-import com.pafoid.skate.engine.events.SceneCreated
-import com.pafoid.skate.engine.events.SceneDeleteRequested
-import com.pafoid.skate.engine.events.SceneOpenCancelled
-import com.pafoid.skate.engine.events.SceneOpenFailed
-import com.pafoid.skate.engine.events.SceneOpenRequested
-import com.pafoid.skate.engine.events.SceneOpenSucceeded
-import com.pafoid.skate.engine.events.SceneRenameRequested
-import com.pafoid.skate.engine.events.SceneSaveAsRequested
-import com.pafoid.skate.engine.events.SceneSaveRequested
-import com.pafoid.skate.engine.events.SceneTabSelected
+import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.events.SceneCloseAllRequested
+import com.pafoid.skate.editor.events.SceneCloseOthersRequested
+import com.pafoid.skate.editor.events.SceneCloseRequested
+import com.pafoid.skate.editor.events.SceneCreateRequested
+import com.pafoid.skate.editor.events.SceneCreated
+import com.pafoid.skate.editor.events.SceneDeleteRequested
+import com.pafoid.skate.editor.events.SceneOpenCancelled
+import com.pafoid.skate.editor.events.SceneOpenFailed
+import com.pafoid.skate.editor.events.SceneOpenRequested
+import com.pafoid.skate.editor.events.SceneOpenSucceeded
+import com.pafoid.skate.editor.events.SceneRenameRequested
+import com.pafoid.skate.editor.events.SceneSaveAsRequested
+import com.pafoid.skate.editor.events.SceneSaveRequested
+import com.pafoid.skate.editor.events.SceneTabSelected
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -54,6 +55,7 @@ class SceneActionHandler : KoinComponent {
     private val sceneInitializer: LevelEditorSceneInitializer by inject()
     private val projectManager: ProjectManager by inject()
     private val jobSystem: IJobSystem by inject()
+    private val mutationGate: EditorMutationGate by inject()
 
     fun init() {
         eventSystem.subscribe<SceneRenameRequested> { event ->
@@ -101,6 +103,7 @@ class SceneActionHandler : KoinComponent {
     }
 
     private fun handleRenameRequested(scene: Scene, newName: String) {
+        if (mutationGate.blockIfPlaying("rename scene")) return
         val oldName = scene.name
         if (newName.isBlank() || newName == oldName) return
 
@@ -122,24 +125,28 @@ class SceneActionHandler : KoinComponent {
     }
 
     private fun handleCloseRequested(scene: Scene) {
+        if (mutationGate.blockIfPlaying("close scene")) return
         val command = CloseSceneCommand(scene, sceneManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene close requested: ${scene.name}")
     }
 
     private fun handleCloseOthersRequested(keepScene: Scene) {
+        if (mutationGate.blockIfPlaying("close other scenes")) return
         val command = CloseOtherScenesCommand(keepScene, sceneManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Close other scenes requested, keeping ${keepScene.name}")
     }
 
     private fun handleCloseAllRequested() {
+        if (mutationGate.blockIfPlaying("close all scenes")) return
         val command = CloseAllScenesCommand(sceneManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Close all scenes requested")
     }
 
     private fun handleCreateRequested() {
+        if (mutationGate.blockIfPlaying("create scene")) return
         val projectDir = projectManager.getProjectDirectory()
         if (projectDir == null) {
             logger.logEditor("Cannot create scene: no project directory", LogLevel.WARN)
@@ -160,6 +167,7 @@ class SceneActionHandler : KoinComponent {
     }
 
     private fun handleOpenRequested() {
+        if (mutationGate.blockIfPlaying("open scene")) return
         val command = OpenSceneCommand(sceneInitializer, sceneSerializer, sceneManager, jobSystem, eventSystem)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene open requested")
@@ -191,11 +199,13 @@ class SceneActionHandler : KoinComponent {
     }
 
     private fun handleTabSelected(scene: Scene) {
+        if (mutationGate.blockIfPlaying("switch scene tab")) return
         val command = SwitchSceneCommand(scene, sceneManager)
         undoRedoManager.executeCommand(command)
     }
 
     private fun handleDeleteRequested(scene: Scene) {
+        if (mutationGate.blockIfPlaying("delete scene")) return
         // Cannot delete if it's the only scene
         if (sceneManager.openScenes.size <= 1) {
             logger.logEditor("Cannot delete the last remaining scene")

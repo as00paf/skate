@@ -6,7 +6,7 @@ import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.SceneData
-import com.pafoid.skate.engine.events.SceneCreated
+import com.pafoid.skate.editor.events.SceneCreated
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every

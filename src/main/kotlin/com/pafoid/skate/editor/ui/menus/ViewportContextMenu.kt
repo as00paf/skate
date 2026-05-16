@@ -5,18 +5,19 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.events.ViewportCreateCamera
-import com.pafoid.skate.engine.events.ViewportCreateEmpty
-import com.pafoid.skate.engine.events.ViewportCreateLight
-import com.pafoid.skate.engine.events.ViewportCreatePrimitive
-import com.pafoid.skate.engine.events.ViewportDelete
-import com.pafoid.skate.engine.events.ViewportDuplicate
-import com.pafoid.skate.engine.events.ViewportFocusSelected
-import com.pafoid.skate.engine.events.ViewportResetCamera
-import com.pafoid.skate.engine.events.ViewportSpawnPrefab
+import com.pafoid.skate.editor.events.ViewportCreateCamera
+import com.pafoid.skate.editor.events.ViewportCreateEmpty
+import com.pafoid.skate.editor.events.ViewportCreateLight
+import com.pafoid.skate.editor.events.ViewportCreatePrimitive
+import com.pafoid.skate.editor.events.ViewportDelete
+import com.pafoid.skate.editor.events.ViewportDuplicate
+import com.pafoid.skate.editor.events.ViewportFocusSelected
+import com.pafoid.skate.editor.events.ViewportResetCamera
+import com.pafoid.skate.editor.events.ViewportSpawnPrefab
 import com.pafoid.skate.engine.render.data.LightType
 import imgui.ImGui
 import imgui.ImVec2
+import org.joml.Vector3f
 
 /**
  * Renders the viewport context menu with creation and manipulation options.
@@ -77,16 +78,16 @@ class ViewportContextMenu(
         // Create 3D Object submenu
         if (ImGui.beginMenu("${Icons.CUBE} ${stringManager.getString("context.viewport.create_3d_object")}")) {
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cube"))) {
-                eventSystem.publish(ViewportCreatePrimitive("Cube", org.joml.Vector3f(0.5f, 0.5f, 0.5f)))
+                eventSystem.publish(ViewportCreatePrimitive("Cube", Vector3f(0.5f, 0.5f, 0.5f)))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.sphere"))) {
-                eventSystem.publish(ViewportCreatePrimitive("Sphere", org.joml.Vector3f(0.5f, 0.5f, 0.5f)))
+                eventSystem.publish(ViewportCreatePrimitive("Sphere", Vector3f(0.5f, 0.5f, 0.5f)))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cylinder"))) {
-                eventSystem.publish(ViewportCreatePrimitive("Cylinder", org.joml.Vector3f(0.5f, 1f, 0.5f)))
+                eventSystem.publish(ViewportCreatePrimitive("Cylinder", Vector3f(0.5f, 1f, 0.5f)))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.plane"))) {
-                eventSystem.publish(ViewportCreatePrimitive("Plane", org.joml.Vector3f(5f, 0f, 5f)))
+                eventSystem.publish(ViewportCreatePrimitive("Plane", Vector3f(5f, 0f, 5f)))
             }
             ImGui.endMenu()
         }

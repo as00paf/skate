@@ -7,9 +7,9 @@ import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.events.SceneOpenCancelled
-import com.pafoid.skate.engine.events.SceneOpenFailed
-import com.pafoid.skate.engine.events.SceneOpenSucceeded
+import com.pafoid.skate.editor.events.SceneOpenCancelled
+import com.pafoid.skate.editor.events.SceneOpenFailed
+import com.pafoid.skate.editor.events.SceneOpenSucceeded
 import com.pafoid.skate.engine.utils.IJobSystem
 
 class OpenSceneCommand(

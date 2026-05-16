@@ -9,9 +9,9 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.events.SceneCloseOthersRequested
-import com.pafoid.skate.engine.events.SceneCloseRequested
-import com.pafoid.skate.engine.events.SceneTabSelected
+import com.pafoid.skate.editor.events.SceneCloseOthersRequested
+import com.pafoid.skate.editor.events.SceneCloseRequested
+import com.pafoid.skate.editor.events.SceneTabSelected
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every
