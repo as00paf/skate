@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.commands.scene
 
-import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -13,7 +13,7 @@ class CreatePrimitiveCommand(
     private val halfExtents: Vector3f,
     private val scene: Scene,
     private val gameObjectManager: GameObjectManager,
-) : Command {
+) : ExecuteOnlyCommand {
     override fun execute() {
         val primitive = GameObject(name)
         val transform = Transform()

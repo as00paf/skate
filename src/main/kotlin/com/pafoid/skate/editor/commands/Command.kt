@@ -5,4 +5,6 @@ interface Command {
     fun undo()
     fun getDisplayName(): String
     fun getTargetName(): String?
+    fun getCategory(): CommandCategory = CommandCategory.UNDOABLE
 }
+

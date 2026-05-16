@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.gizmos
 
-import com.pafoid.skate.editor.commands.`object`.TransformCommand
+import com.pafoid.skate.editor.commands.objects.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.components.ModularTile
 import com.pafoid.skate.engine.ecs.components.Transform

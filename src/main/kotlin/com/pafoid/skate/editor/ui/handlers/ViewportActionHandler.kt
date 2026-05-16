@@ -1,16 +1,16 @@
 package com.pafoid.skate.editor.ui.handlers
 
-import com.pafoid.skate.editor.commands.`object`.AddAudioComponentCommand
-import com.pafoid.skate.editor.commands.`object`.AddComponentCommand
-import com.pafoid.skate.editor.commands.`object`.ApplyAnimationCommand
-import com.pafoid.skate.editor.commands.`object`.ApplyTextureCommand
-import com.pafoid.skate.editor.commands.`object`.LockToggleCommand
-import com.pafoid.skate.editor.commands.`object`.RemoveComponentCommand
-import com.pafoid.skate.editor.commands.`object`.RenameGameObjectCommand
-import com.pafoid.skate.editor.commands.`object`.ReparentGameObjectCommand
-import com.pafoid.skate.editor.commands.`object`.SetGameObjectEnabledCommand
-import com.pafoid.skate.editor.commands.`object`.TransformCommand
-import com.pafoid.skate.editor.commands.`object`.VisibilityToggleCommand
+import com.pafoid.skate.editor.commands.objects.AddAudioComponentCommand
+import com.pafoid.skate.editor.commands.objects.AddComponentCommand
+import com.pafoid.skate.editor.commands.objects.ApplyAnimationCommand
+import com.pafoid.skate.editor.commands.objects.ApplyTextureCommand
+import com.pafoid.skate.editor.commands.objects.LockToggleCommand
+import com.pafoid.skate.editor.commands.objects.RemoveComponentCommand
+import com.pafoid.skate.editor.commands.objects.RenameGameObjectCommand
+import com.pafoid.skate.editor.commands.objects.ReparentGameObjectCommand
+import com.pafoid.skate.editor.commands.objects.SetGameObjectEnabledCommand
+import com.pafoid.skate.editor.commands.objects.TransformCommand
+import com.pafoid.skate.editor.commands.objects.VisibilityToggleCommand
 import com.pafoid.skate.editor.commands.scene.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.CreateLightCommand
 import com.pafoid.skate.editor.commands.scene.CreatePrimitiveCommand
@@ -70,6 +70,7 @@ import com.pafoid.skate.editor.events.ViewportTogglePhysicsDebug
 import com.pafoid.skate.editor.events.ViewportToggleVisibility
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
+import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.data.LightType
@@ -276,6 +277,7 @@ class ViewportActionHandler : KoinComponent {
 
     private fun handleRemoveComponent(gameObject: GameObject, componentType: ComponentType) {
         if (mutationGate.blockIfPlaying("remove component")) return
+        if (!hasRemovableComponent(gameObject, componentType)) return
         undoRedoManager.executeCommand(RemoveComponentCommand(gameObject, componentType))
     }
 
@@ -379,13 +381,13 @@ class ViewportActionHandler : KoinComponent {
     }
 
     private fun applyTextureToObject(gameObject: GameObject, texturePath: String) {
-        val renderComponent = gameObject.getComponent<RenderComponent>() ?: run {
+        if (gameObject.getComponent<RenderComponent>() == null) {
             logger.logEditor("Object has no RenderComponent")
             return
         }
 
         undoRedoManager.executeCommand(
-            ApplyTextureCommand(gameObject, null, texturePath, resourceManager, eventSystem)
+            ApplyTextureCommand(gameObject, texturePath, resourceManager, eventSystem)
         )
         logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
     }
@@ -419,16 +421,27 @@ class ViewportActionHandler : KoinComponent {
 
     private fun addSoundToObject(gameObject: GameObject, soundPath: String) {
         val audioComponent = gameObject.getComponent<AudioComponent>()
-        val hadAudioComponent = audioComponent != null
+        if (audioComponent?.soundFilePath == soundPath) return
 
         undoRedoManager.executeCommand(
-            AddAudioComponentCommand(gameObject, soundPath, hadAudioComponent)
+            AddAudioComponentCommand(gameObject, soundPath)
         )
 
-        if (hadAudioComponent) {
+        if (audioComponent != null) {
             logger.logEditor("Updated sound for ${gameObject.name}: $soundPath")
         } else {
             logger.logEditor("Added AudioComponent to ${gameObject.name}: $soundPath")
+        }
+    }
+
+    private fun hasRemovableComponent(gameObject: GameObject, componentType: ComponentType): Boolean {
+        return when (componentType) {
+            ComponentType.AUDIO -> gameObject.getComponent<AudioComponent>() != null
+            ComponentType.BOX_COLLIDER_3D -> gameObject.getComponent<BoxCollider3D>() != null
+            ComponentType.CYLINDER_COLLIDER_3D -> gameObject.getComponent<CylinderCollider3D>() != null
+            ComponentType.RENDER -> gameObject.getComponent<RenderComponent>() != null
+            ComponentType.RIGID_BODY_3D -> gameObject.getComponent<RigidBody3D>() != null
+            ComponentType.TRANSFORM -> false
         }
     }
 

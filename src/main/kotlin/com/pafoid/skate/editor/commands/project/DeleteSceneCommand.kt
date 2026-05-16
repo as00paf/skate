@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.commands.project
 
-import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -14,7 +14,7 @@ class DeleteSceneCommand(
     private val scene: Scene,
     private val sceneManager: SceneManager,
     private val logger: LoggerService
-) : Command {
+) : ExecuteOnlyCommand {
 
     private var filePath: String? = null
 

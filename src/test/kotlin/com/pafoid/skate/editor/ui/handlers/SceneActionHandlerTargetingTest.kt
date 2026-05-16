@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.handlers
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -40,6 +41,7 @@ class SceneActionHandlerTargetingTest {
     private val loggerService = mockk<LoggerService>(relaxed = true)
     private val sceneInitializer = mockk<LevelEditorSceneInitializer>(relaxed = true)
     private val projectManager = mockk<ProjectManager>(relaxed = true)
+    private val mutationGate = mockk<EditorMutationGate>(relaxed = true)
     private val jobSystem: IJobSystem = ImmediateJobSystem()
     private val openScenes = mutableListOf<Scene>()
 
@@ -50,6 +52,7 @@ class SceneActionHandlerTargetingTest {
         coEvery { sceneInitializer.init(any()) } returns Unit
 
         every { sceneManager.openScenes } returns openScenes
+        every { mutationGate.blockIfPlaying(any()) } returns false
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
@@ -65,6 +68,7 @@ class SceneActionHandlerTargetingTest {
                     single { sceneInitializer }
                     single { projectManager }
                     single<IJobSystem> { jobSystem }
+                    single { mutationGate }
                 }
             )
         }

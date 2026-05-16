@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -56,6 +57,7 @@ class SceneActionHandlerTest {
     private lateinit var projectManager: ProjectManager
     private lateinit var sceneInitializer: LevelEditorSceneInitializer
     private lateinit var jobSystem: IJobSystem
+    private lateinit var mutationGate: EditorMutationGate
 
     private lateinit var tempProjectDir: File
 
@@ -73,8 +75,10 @@ class SceneActionHandlerTest {
         projectManager = mockk(relaxed = true)
         sceneInitializer = mockk(relaxed = true)
         jobSystem = ImmediateJobSystem()
+        mutationGate = mockk(relaxed = true)
         coEvery { sceneInitializer.loadResources(any()) } returns Unit
         coEvery { sceneInitializer.init(any()) } returns Unit
+        every { mutationGate.blockIfPlaying(any()) } returns false
 
         // Create a real SceneManager that tracks openScenes
         sceneManager = mockk(relaxed = true)
@@ -376,6 +380,7 @@ class SceneActionHandlerTest {
                 single<LevelEditorSceneInitializer> { sceneInitializer }
                 single<ProjectManager> { projectManager }
                 single<IJobSystem> { jobSystem }
+                single<EditorMutationGate> { mutationGate }
             })
         }
     }

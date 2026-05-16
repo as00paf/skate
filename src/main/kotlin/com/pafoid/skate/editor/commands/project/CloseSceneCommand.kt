@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.commands.project
 
-import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 
@@ -12,7 +12,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 class CloseSceneCommand(
     private val scene: Scene,
     private val sceneManager: SceneManager
-) : Command {
+) : ExecuteOnlyCommand {
 
     override fun execute() {
         sceneManager.closeScene(scene)

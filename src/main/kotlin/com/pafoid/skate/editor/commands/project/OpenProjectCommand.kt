@@ -1,13 +1,13 @@
 package com.pafoid.skate.editor.commands.project
 
-import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.systems.ProjectManager
 import java.io.File
 
 class OpenProjectCommand(
     private val projectManager: ProjectManager,
     private val projectFile: File
-) : Command {
+) : ExecuteOnlyCommand {
     override fun execute() {
         projectManager.openProject(projectFile)
     }

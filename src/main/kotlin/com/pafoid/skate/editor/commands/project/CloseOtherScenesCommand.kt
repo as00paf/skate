@@ -1,13 +1,13 @@
 package com.pafoid.skate.editor.commands.project
 
-import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 
 class CloseOtherScenesCommand(
     private val keepScene: Scene?,
     private val sceneManager: SceneManager
-) : Command {
+) : ExecuteOnlyCommand {
 
     override fun execute() {
         keepScene?.let { sceneManager.closeOtherScenes(it) }

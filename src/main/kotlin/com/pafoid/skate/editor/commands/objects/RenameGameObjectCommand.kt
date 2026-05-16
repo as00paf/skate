@@ -1,4 +1,4 @@
-package com.pafoid.skate.editor.commands.`object`
+package com.pafoid.skate.editor.commands.objects
 
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.engine.ecs.GameObject

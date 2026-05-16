@@ -1,6 +1,6 @@
-package com.pafoid.skate.editor.commands.`object`
+package com.pafoid.skate.editor.commands.objects
 
-import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
@@ -14,7 +14,7 @@ class ApplyAnimationCommand(
     private val newAnimationPath: String,
     private val resourceManager: ResourceManager,
     private val eventSystem: EventSystem
-) : Command {
+) : ExecuteOnlyCommand {
     override fun execute() {
         val animator = gameObject.getComponent<Animator>()
         animator?.let { anim ->
@@ -27,8 +27,7 @@ class ApplyAnimationCommand(
     }
 
     override fun undo() {
-        // Animation undo is complex - for now we just log
-        // A full implementation would require tracking which animation was added
+        // Not supported for now - animation stack restoration is not yet implemented.
         eventSystem.publish(AnimationRemoved(gameObject, newAnimationPath))
     }
 

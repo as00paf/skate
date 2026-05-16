@@ -25,6 +25,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
@@ -72,6 +73,10 @@ class OpenSceneCommandTest {
         verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
         assertNull(command.openedScene)
         assertEquals(true, cancelled)
+        assertEquals(CommandCategory.ASYNC, command.getCategory())
+        assertNotNull(command.getCompletionJob())
+        assertEquals(false, command.didCompleteSuccessfully())
+        assertEquals(false, command.shouldPushToHistoryOnSuccess())
     }
 
     @Test
@@ -101,6 +106,25 @@ class OpenSceneCommandTest {
         assertEquals(loadedSceneInstance, command.openedScene)
         assertNotNull(openedEvent)
         assertEquals(loadedSceneInstance, openedEvent?.scene)
+        assertEquals(CommandCategory.ASYNC, command.getCategory())
+        assertNotNull(command.getCompletionJob())
+        assertEquals(true, command.didCompleteSuccessfully())
+        assertEquals(false, command.shouldPushToHistoryOnSuccess())
+    }
+
+    @Test
+    fun `execute_publishesFailureEvent_whenUnexpectedExceptionOccurs`() {
+        every { sceneSerializer.open(any()) } throws IllegalStateException("io failure")
+        var failureReason: String? = null
+        eventSystem.subscribe<SceneOpenFailed> { event -> failureReason = event.reason }
+
+        val command = createCommand()
+        command.execute()
+
+        verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
+        assertNull(command.openedScene)
+        assertFalse(command.didCompleteSuccessfully())
+        assertEquals("io failure", failureReason)
     }
 
     private fun createCommand(): OpenSceneCommand {

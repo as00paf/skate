@@ -24,6 +24,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -115,6 +116,33 @@ class CreateSceneCommandTest {
         command.undo()
 
         verify(exactly = 1) { sceneSerializer.saveToFile(any<Scene>(), any<String>()) }
+    }
+
+    @Test
+    fun `execute_usesAsyncExecuteOnlyLifecycleContract`() {
+        val command = createCommand("test.scene")
+
+        assertEquals(CommandCategory.ASYNC, command.getCategory())
+        command.execute()
+
+        assertNotNull(command.getCompletionJob())
+        assertTrue(command.didCompleteSuccessfully())
+        assertEquals(false, command.shouldPushToHistoryOnSuccess())
+    }
+
+    @Test
+    fun `execute_resetsCreatedScene_whenSubsequentExecutionFails`() {
+        val command = createCommand("test.scene")
+        command.execute()
+        assertNotNull(command.createdScene)
+        assertTrue(command.didCompleteSuccessfully())
+
+        every { sceneSerializer.saveToFile(any(), any()) } throws IllegalStateException("disk write failed")
+
+        command.execute()
+
+        assertNull(command.createdScene)
+        assertFalse(command.didCompleteSuccessfully())
     }
 
     private fun createCommand(path: String): CreateSceneCommand {

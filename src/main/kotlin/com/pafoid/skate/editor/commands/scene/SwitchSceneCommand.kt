@@ -1,13 +1,13 @@
 package com.pafoid.skate.editor.commands.scene
 
-import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 
 class SwitchSceneCommand(
     private val scene: Scene?,
     private val sceneManager: SceneManager
-) : Command {
+) : ExecuteOnlyCommand {
 
     override fun execute() {
         scene?.let { sceneManager.switchScene(it) }

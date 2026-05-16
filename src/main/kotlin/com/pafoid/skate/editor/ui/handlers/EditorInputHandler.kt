@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
-import com.pafoid.skate.editor.commands.`object`.LockToggleCommand
-import com.pafoid.skate.editor.commands.`object`.VisibilityToggleCommand
+import com.pafoid.skate.editor.commands.objects.LockToggleCommand
+import com.pafoid.skate.editor.commands.objects.VisibilityToggleCommand
 import com.pafoid.skate.editor.commands.scene.CreateGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.data.EditorInputState

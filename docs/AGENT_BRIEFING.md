@@ -78,10 +78,10 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-005 | Play-mode mutation gate integration | software-engineer | done |
 | ARCH-006 | Quick consistency fixes | software-engineer | done |
 | ARCH-007 | QA Gate 1 (UI + play boundary) | qa-engineer | blocked (compile passed; full test suite failing with 14 failures) |
-| ARCH-008 | UndoRedo core refactor | software-engineer | pending |
-| ARCH-009 | Retrofit sync command semantics | software-engineer | pending |
-| ARCH-010 | Async command lifecycle hardening | software-engineer | pending |
-| ARCH-011 | QA Gate 2 (undo + async) | qa-engineer | pending |
+| ARCH-008 | UndoRedo core refactor | software-engineer | done |
+| ARCH-009 | Retrofit sync command semantics | software-engineer | done |
+| ARCH-010 | Async command lifecycle hardening | software-engineer | done |
+| ARCH-011 | QA Gate 2 (undo + async) | qa-engineer | done |
 | ARCH-012 | Reviewer architecture gate | reviewer | pending |
 | ARCH-013 | ECS invalidation implementation | physics-engineer | pending |
 | ARCH-014 | QA Gate 3 (ECS invalidation) | qa-engineer | pending |
@@ -105,6 +105,10 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-005 | software-engineer | pending -> in_progress -> done |
 | ARCH-006 | software-engineer | pending -> in_progress -> done |
 | ARCH-007 | qa-engineer | pending -> in_progress -> blocked (compile passed; full test suite failed: 252 run, 14 failed) |
+| ARCH-008 | software-engineer | pending -> in_progress -> done |
+| ARCH-009 | software-engineer | pending -> in_progress -> done |
+| ARCH-010 | software-engineer | pending -> in_progress -> blocked (pending implementation); blocked -> in_progress -> done |
+| ARCH-011 | qa-engineer | pending -> in_progress -> blocked (depends on ARCH-010; ready for scoped QA execution); blocked -> in_progress -> done (2026-05-16: compile + targeted ARCH-011 tests passed) |
 
 ## Build and Test Commands (WSL in this repo)
 

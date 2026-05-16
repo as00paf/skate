@@ -1,6 +1,6 @@
-package com.pafoid.skate.editor.commands.`object`
+package com.pafoid.skate.editor.commands.objects
 
-import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.MeshPart
@@ -12,11 +12,10 @@ import com.pafoid.skate.editor.events.TextureApplied
 
 class ApplyTextureCommand(
     private val gameObject: GameObject,
-    private val oldTexturePath: String?,
     private val newTexturePath: String,
     private val resourceManager: ResourceManager,
     private val eventSystem: EventSystem
-) : Command {
+) : ExecuteOnlyCommand {
     override fun execute() {
         val renderComponent = gameObject.getComponent<RenderComponent>()
         renderComponent?.let { component ->
@@ -47,32 +46,7 @@ class ApplyTextureCommand(
     }
 
     override fun undo() {
-        // Restore old texture
-        if (oldTexturePath != null) {
-            val renderComponent = gameObject.getComponent<RenderComponent>()
-            renderComponent?.let { component ->
-                val oldModel = component.model ?: return@let
-                val texture = resourceManager.loadTextureSync(oldTexturePath)
-                val meshPart = oldModel.mesh[0]
-                val newMaterial = Material(baseColorTexture = texture)
-                val newMeshPart = MeshPart(meshPart.rawModel, newMaterial, meshPart.inverseBindMatrices)
-                val newModel = TexturedModel(listOf(newMeshPart))
-
-                val newRenderComponent = RenderComponent(
-                    newModel,
-                    component.shininess,
-                    component.reflectivity,
-                    component.textureScale,
-                    component.renderMode,
-                    component.castShadow,
-                    component.receiveShadow
-                )
-
-                gameObject.removeComponent<RenderComponent>()
-                gameObject.addComponent(newRenderComponent)
-            }
-            eventSystem.publish(TextureApplied(gameObject, oldTexturePath))
-        }
+        // Execute-only: restoring prior material stack is not reliably supported yet.
     }
 
     override fun getDisplayName(): String = "Apply Texture"
