@@ -116,7 +116,7 @@ class SystemManagerInvalidationTest {
         val scene = mockk<Scene>(relaxed = true)
         every { scene.gameObjects } returns gameObjects
         every { scene.objectSetVersion } answers { objectSetVersion }
-        every { scene.getComponentMutationVersion() } returns 0L
+        every { scene.componentMutationVersion } returns 0L
 
         val cacheSystem = EligibilityCacheSystem()
         val systemManager = SystemManager()
@@ -135,7 +135,7 @@ class SystemManagerInvalidationTest {
         val scene = mockk<Scene>(relaxed = true)
         every { scene.gameObjects } returns gameObjects
         every { scene.objectSetVersion } returns 0L
-        every { scene.getComponentMutationVersion() } returns 0L
+        every { scene.componentMutationVersion } returns 0L
         return scene
     }
 }

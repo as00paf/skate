@@ -84,7 +84,7 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-011 | QA Gate 2 (undo + async) | qa-engineer | done |
 | ARCH-012 | Reviewer architecture gate | reviewer | done |
 | ARCH-013 | ECS invalidation implementation | physics-engineer | done |
-| ARCH-014 | QA Gate 3 (ECS invalidation) | qa-engineer | pending |
+| ARCH-014 | QA Gate 3 (ECS invalidation) | qa-engineer | done |
 | ARCH-015 | Duplicate-object flow consolidation | software-engineer | pending |
 | ARCH-016 | Scene traversal consolidation | software-engineer | pending |
 | ARCH-017 | DI/layering decision checkpoint | tech-lead | pending |
@@ -111,6 +111,7 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-011 | qa-engineer | pending -> in_progress -> blocked (depends on ARCH-010; ready for scoped QA execution); blocked -> in_progress -> done (2026-05-16: compile + targeted ARCH-011 tests passed) |
 | ARCH-012 | reviewer | pending -> in_progress -> done (2026-05-16: reviewer gate passed; no blocking ARCH-008..011 architecture violations) |
 | ARCH-013 | physics-engineer | pending -> in_progress -> done (2026-05-16: component-mutation versioning added; SystemManager cache invalidation extended to component composition changes; compile and SystemManagerInvalidationTest passed) |
+| ARCH-014 | qa-engineer | pending -> in_progress -> blocked (2026-05-16: could not execute required compile/targeted-adjacent Gradle commands in current environment; existing SystemManagerInvalidationTest artifact indicates 4/4 pass from prior run); blocked -> in_progress -> done (2026-05-16: compile and targeted+adjacent ARCH-014 tests passed) |
 
 ## Build and Test Commands (WSL in this repo)
 

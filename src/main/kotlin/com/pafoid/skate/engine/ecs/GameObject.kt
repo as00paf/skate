@@ -26,6 +26,7 @@ open class GameObject(
     private var isDead: Boolean = false
     private var doSerialization = true
 
+    @Transient
     var componentMutationVersion: Long = 0
     var isEnabled = true
     var isVisible = true
