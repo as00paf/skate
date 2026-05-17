@@ -6,7 +6,6 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.SelectionCleared
 import com.pafoid.skate.editor.events.ViewportAction
 import imgui.ImGui
 import imgui.internal.ImGui.beginMenu
@@ -60,7 +59,7 @@ class EditMenuBuilder(
             if (selected != null && scene != null) {
                 clipboardService.copy(selected)
                 eventSystem.publish(ViewportAction.Delete(selected, scene))
-                eventSystem.publish(SelectionCleared)
+                eventSystem.publish(ViewportAction.SelectionCleared)
             }
         }
         if (menuItem("${Icons.COPY} ${stringManager.getString("menu.edit.copy")}", "Ctrl+C")) {

@@ -2,10 +2,10 @@ package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.AsyncCommand
+import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.editor.events.SceneCreated
 import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.Job
 
@@ -50,7 +50,7 @@ class CreateSceneCommand(
                 sceneSerializer.saveToFile(newScene, filePath)
 
                 createdScene = newScene
-                eventSystem.publish(SceneCreated(newScene))
+                eventSystem.publish(SceneAction.Created(newScene))
                 completedSuccessfully = true
             }.onFailure {
                 createdScene = null

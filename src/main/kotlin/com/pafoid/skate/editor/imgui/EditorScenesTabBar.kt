@@ -1,18 +1,12 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.events.SceneAction.*
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.SceneCloseAllRequested
-import com.pafoid.skate.editor.events.SceneCloseOthersRequested
-import com.pafoid.skate.editor.events.SceneCloseRequested
-import com.pafoid.skate.editor.events.SceneCreateRequested
-import com.pafoid.skate.editor.events.SceneDeleteRequested
-import com.pafoid.skate.editor.events.SceneRenameRequested
-import com.pafoid.skate.editor.events.SceneSaveAsRequested
-import com.pafoid.skate.editor.events.SceneSaveRequested
-import com.pafoid.skate.editor.events.SceneTabSelected
 import imgui.ImGui
 import imgui.flag.ImGuiTabBarFlags
 import imgui.flag.ImGuiTabItemFlags
@@ -35,34 +29,34 @@ class EditorScenesTabBar(
                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 
                 if (ImGui.beginTabItem("$displayName###sceneTab_${scene.getUid()}", open, flags)) {
-                    eventSystem.publish(SceneTabSelected(scene))
+                    eventSystem.publish(ViewportAction.TabSelected(scene))
 
                     // Scene tab context menu
                     if (ImGui.beginPopupContextItem()) {
                         if (ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.scene_tab.rename")}")) {
-                            eventSystem.publish(SceneRenameRequested(scene, scene.name))
+                            eventSystem.publish(RenameRequested(scene, scene.name))
                         }
                         ImGui.separator()
                         if (ImGui.menuItem("${Icons.SAVE} ${stringManager.getString("context.scene_tab.save")}")) {
-                            eventSystem.publish(SceneSaveRequested(scene))
+                            eventSystem.publish(SaveRequested(scene))
                         }
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.save_as"))) {
-                            eventSystem.publish(SceneSaveAsRequested(scene))
+                            eventSystem.publish(SaveAsRequested(scene))
                         }
                         ImGui.separator()
                         val canClose = sceneManager.openScenes.size > 1
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close"), null, false, canClose)) {
-                            eventSystem.publish(SceneCloseRequested(scene))
+                            eventSystem.publish(CloseRequested(scene))
                         }
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close_others"), null, false, canClose)) {
-                            eventSystem.publish(SceneCloseOthersRequested(scene))
+                            eventSystem.publish(CloseOthersRequested(scene))
                         }
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close_all"), null, false, canClose)) {
-                            eventSystem.publish(SceneCloseAllRequested)
+                            eventSystem.publish(CloseAllRequested)
                         }
                         ImGui.separator()
                         if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.scene_tab.delete")}")) {
-                            eventSystem.publish(SceneDeleteRequested(scene))
+                            eventSystem.publish(DeleteRequested(scene))
                         }
                         ImGui.endPopup()
                     }
@@ -71,13 +65,13 @@ class EditorScenesTabBar(
                 }
 
                 if (!open.get()) {
-                    eventSystem.publish(SceneCloseRequested(scene))
+                    eventSystem.publish(CloseRequested(scene))
                 }
             }
 
             val addTabFlags = ImGuiTabItemFlags.Trailing or ImGuiTabItemFlags.NoTooltip
             if (ImGui.beginTabItem(Icons.PLUS, addTabFlags)) {
-                eventSystem.publish(SceneCreateRequested)
+                eventSystem.publish(CreateRequested)
                 ImGui.endTabItem()
             }
 

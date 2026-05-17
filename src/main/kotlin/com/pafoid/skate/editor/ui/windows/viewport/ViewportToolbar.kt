@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
+import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.ViewportAction.*
 import com.pafoid.skate.editor.gizmos.MeasureTool
@@ -196,7 +197,7 @@ class ViewportToolbar(
         // Reset Scene button
         buttons.add {
             if (ImGui.button(Icons.GEAR, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                eventSystem.publish(ResetScene)
+                eventSystem.publish(SceneAction.ResetScene)
                 logger.logEditor("Scene reset")
             }
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.reset_scene"))

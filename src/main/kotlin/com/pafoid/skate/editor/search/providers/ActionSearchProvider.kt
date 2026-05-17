@@ -1,6 +1,8 @@
 package com.pafoid.skate.editor.search.providers
 
 import com.pafoid.skate.editor.data.EditorAction
+import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.events.SceneAction.OpenRequested
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.SearchCategory
@@ -8,15 +10,6 @@ import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.SceneCloseOthersRequested
-import com.pafoid.skate.editor.events.SceneCloseRequested
-import com.pafoid.skate.editor.events.SceneCreateRequested
-import com.pafoid.skate.editor.events.SceneDeleteRequested
-import com.pafoid.skate.editor.events.SceneOpenRequested
-import com.pafoid.skate.editor.events.SceneRenameRequested
-import com.pafoid.skate.editor.events.SceneSaveAsRequested
-import com.pafoid.skate.editor.events.SceneSaveRequested
-import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.ViewportAction.*
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.render.data.LightType
@@ -266,7 +259,7 @@ class ActionSearchProvider(
 
     private fun saveScene() {
         val scene = sceneManager.currentScene ?: return
-        eventSystem.publish(SceneSaveRequested(scene))
+        eventSystem.publish(SceneAction.SaveRequested(scene))
         logger.logEditor("Save scene requested")
     }
 
@@ -303,31 +296,31 @@ class ActionSearchProvider(
     private fun renameScene() {
         val scene = sceneManager.currentScene ?: return
         // Publish event to trigger SceneActionHandler which will show rename UI
-        eventSystem.publish(SceneRenameRequested(scene, scene.name))
+        eventSystem.publish(SceneAction.RenameRequested(scene, scene.name))
         logger.logEditor("Scene rename requested")
     }
 
     private fun saveSceneAs() {
         val scene = sceneManager.currentScene ?: return
-        eventSystem.publish(SceneSaveAsRequested(scene))
+        eventSystem.publish(SceneAction.SaveAsRequested(scene))
         logger.logEditor("Save scene as requested")
     }
 
     private fun closeScene() {
         val scene = sceneManager.currentScene ?: return
         if (sceneManager.openScenes.size <= 1) return
-        eventSystem.publish(SceneCloseRequested(scene))
+        eventSystem.publish(SceneAction.CloseRequested(scene))
         logger.logEditor("Close scene requested")
     }
 
     private fun closeOtherScenes() {
         val scene = sceneManager.currentScene ?: return
-        eventSystem.publish(SceneCloseOthersRequested(scene))
+        eventSystem.publish(SceneAction.CloseOthersRequested(scene))
         logger.logEditor("Close other scenes requested")
     }
 
     private fun createScene() {
-        eventSystem.publish(SceneCreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
         logger.logEditor("Create scene requested")
     }
 
@@ -347,7 +340,7 @@ class ActionSearchProvider(
     }
 
     private fun openScene() {
-        eventSystem.publish(SceneOpenRequested)
+        eventSystem.publish(OpenRequested)
         logger.logEditor("Open scene requested")
     }
 
@@ -368,7 +361,7 @@ class ActionSearchProvider(
     private fun deleteScene() {
         val scene = sceneManager.currentScene ?: return
         if (sceneManager.openScenes.size <= 1) return
-        eventSystem.publish(SceneDeleteRequested(scene))
+        eventSystem.publish(SceneAction.DeleteRequested(scene))
         logger.logEditor("Delete scene executed")
     }
 }

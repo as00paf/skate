@@ -17,6 +17,8 @@ import com.pafoid.skate.editor.commands.scene.CreatePrimitiveCommand
 import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.DuplicateGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.SpawnPrefabCommand
+import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.events.SceneAction.*
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.LoggerService
@@ -40,8 +42,6 @@ import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.ecs.components.ComponentType
-import com.pafoid.skate.editor.events.SelectionCleared
-import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.ViewportAction.*
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D

@@ -10,10 +10,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.editor.events.GameObjectSelected
-import com.pafoid.skate.editor.events.SceneRenameRequested
-import com.pafoid.skate.editor.events.SceneRenamed
-import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.ViewportAction.*
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -58,6 +55,13 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
     private var navigationIndex = -1
     private val expandedNodes = mutableSetOf<Int>()
     private var flatObjectList: List<GameObject> = emptyList()
+
+    init {
+        // Subscribe to SceneRenamed to update UI if needed
+        eventSystem.subscribe<SceneAction.Renamed> { event ->
+            logger.logEditor("Scene renamed: '${event.oldName}' -> '${event.newName}'")
+        }
+    }
 
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.hierarchy"))
@@ -485,15 +489,8 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
     private fun finishSceneRename(scene: Scene) {
         val newName = editNameStr.get().trim()
         if (newName.isNotBlank() && newName != scene.name) {
-            eventSystem.publish(SceneRenameRequested(scene, newName))
+            eventSystem.publish(SceneAction.RenameRequested(scene, newName))
         }
         editingObjUid = null
-    }
-
-    init {
-        // Subscribe to SceneRenamed to update UI if needed
-        eventSystem.subscribe<SceneRenamed> { event ->
-            logger.logEditor("Scene renamed: '${event.oldName}' -> '${event.newName}'")
-        }
     }
 }

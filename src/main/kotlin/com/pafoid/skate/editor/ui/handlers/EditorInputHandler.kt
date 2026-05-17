@@ -18,8 +18,6 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.System
-import com.pafoid.skate.editor.events.GameObjectSelected
-import com.pafoid.skate.editor.events.SelectionCleared
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.InputMappings
@@ -154,7 +152,7 @@ class EditorInputHandler(
         // Delete selected object
         if (keyListener.keyBeginPress(inputMappings.hierarchyDelete.keyboardKey) && selected != null) {
             undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene, gameObjectManager))
-            eventSystem.publish(SelectionCleared)
+            eventSystem.publish(ViewportAction.SelectionCleared)
             logger.logEditor("Deleted GameObject: ${selected.name}")
         }
 
@@ -162,7 +160,7 @@ class EditorInputHandler(
         if (keyListener.keyBeginPress(inputMappings.hierarchyCreateNew.keyboardKey)) {
             val newObj = GameObject("GameObject")
             undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene, gameObjectManager))
-            eventSystem.publish(GameObjectSelected(newObj))
+            eventSystem.publish(ViewportAction.GameObjectSelected(newObj))
             logger.logEditor("Created new GameObject: ${newObj.name}")
         }
 
@@ -201,7 +199,7 @@ class EditorInputHandler(
 
         // Deselect
         if (keyListener.isKeyPressed(inputMappings.editorDeselect.keyboardKey) && selected != null) {
-            eventSystem.publish(SelectionCleared)
+            eventSystem.publish(ViewportAction.SelectionCleared)
             logger.logEditor("Deselected GameObject")
         }
     }

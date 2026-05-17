@@ -1,11 +1,10 @@
 package com.pafoid.skate.editor.gizmos
 
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.editor.events.GameObjectSelected
-import com.pafoid.skate.editor.events.SelectionCleared
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
 import org.lwjgl.glfw.GLFW
@@ -45,7 +44,7 @@ class SelectionGizmo(
             hoveredGameObjectUid = hovered?.getUid() ?: -1
 
             if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT, true)) {
-                val event = if (hovered != null) GameObjectSelected(hovered) else SelectionCleared
+                val event = if (hovered != null) ViewportAction.GameObjectSelected(hovered) else ViewportAction.SelectionCleared
                 eventSystem.publish(event)
             }
         } else {

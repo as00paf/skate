@@ -1,13 +1,10 @@
 package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
+import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.editor.events.SceneChanged
-import com.pafoid.skate.editor.events.SceneClosed
-import com.pafoid.skate.editor.events.SceneClosing
-import com.pafoid.skate.editor.events.SceneOpened
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -40,8 +37,8 @@ class SceneManager : KoinComponent {
         scene.start()
 
         // Publish scene opened event
-        eventSystem.publish(SceneOpened(scene))
-        eventSystem.publish(SceneChanged)
+        eventSystem.publish(SceneAction.Opened(scene))
+        eventSystem.publish(SceneAction.Changed)
 
         logger.logEngine("Scene ${scene.initializer::class.simpleName} loaded and started.")
     }
@@ -52,7 +49,7 @@ class SceneManager : KoinComponent {
 
         activeSceneIndex = sceneIndex
         logger.logEditor("Switched to scene: ${currentScene?.name}")
-        eventSystem.publish(SceneChanged)
+        eventSystem.publish(SceneAction.Changed)
     }
 
     fun switchScene(index: Int) {
@@ -72,10 +69,10 @@ class SceneManager : KoinComponent {
 
         logger.logEditor("Destroying scene: ${sceneToClose.name}")
 
-        eventSystem.publish(SceneClosing(sceneToClose))
+        eventSystem.publish(SceneAction.Closing(sceneToClose))
         sceneToClose.destroyScene()
         openScenes.removeAt(index)
-        eventSystem.publish(SceneClosed(sceneToClose))
+        eventSystem.publish(SceneAction.Closed(sceneToClose))
 
         // Adjust active index
         if (openScenes.isEmpty()) {
@@ -86,7 +83,7 @@ class SceneManager : KoinComponent {
             activeSceneIndex = (activeSceneIndex - 1).coerceAtLeast(0)
         }
 
-        eventSystem.publish(SceneChanged)
+        eventSystem.publish(SceneAction.Changed)
     }
 
     fun closeScene(index: Int) {

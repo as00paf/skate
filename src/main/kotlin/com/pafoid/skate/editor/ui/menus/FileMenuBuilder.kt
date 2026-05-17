@@ -1,14 +1,12 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.events.SceneAction.*
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.SceneCreateRequested
-import com.pafoid.skate.editor.events.SceneOpenRequested
-import com.pafoid.skate.editor.events.SceneSaveAsRequested
-import com.pafoid.skate.editor.events.SceneSaveRequested
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem
@@ -51,7 +49,7 @@ class FileMenuBuilder(
     
     private fun renderNewSceneItem() {
         if (menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_scene")}", "Ctrl+N")) {
-            eventSystem.publish(SceneCreateRequested)
+            eventSystem.publish(CreateRequested)
         }
     }
     
@@ -59,16 +57,16 @@ class FileMenuBuilder(
         if (!sceneManager.openScenes.contains(currentScene)) return
 
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
-            eventSystem.publish(SceneSaveRequested(currentScene))
+            eventSystem.publish(SaveRequested(currentScene))
         }
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_as")}")) {
-            eventSystem.publish(SceneSaveAsRequested(currentScene))
+            eventSystem.publish(SaveAsRequested(currentScene))
         }
     }
 
     private fun renderOpenItem() {
         if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open")}", "Ctrl+O")) {
-            eventSystem.publish(SceneOpenRequested)
+            eventSystem.publish(OpenRequested)
         }
     }
     

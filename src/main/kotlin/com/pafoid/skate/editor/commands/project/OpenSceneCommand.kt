@@ -3,13 +3,12 @@ package com.pafoid.skate.editor.commands.project
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.AsyncCommand
 import com.pafoid.skate.editor.data.SceneOpenResult
+import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.events.SceneAction.*
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.SceneOpenCancelled
-import com.pafoid.skate.editor.events.SceneOpenFailed
-import com.pafoid.skate.editor.events.SceneOpenSucceeded
 import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.Job
 
@@ -40,21 +39,21 @@ class OpenSceneCommand(
                     is SceneOpenResult.Loaded -> {
                         sceneManager.openSceneBlocking(loadedScene)
                         openedScene = loadedScene
-                        eventSystem.publish(SceneOpenSucceeded(loadedScene))
+                        eventSystem.publish(OpenSucceeded(loadedScene))
                         completedSuccessfully = true
                     }
 
                     SceneOpenResult.Cancelled -> {
                         loadedScene.destroyScene()
                         openedScene = null
-                        eventSystem.publish(SceneOpenCancelled)
+                        eventSystem.publish(OpenCancelled)
                         completedSuccessfully = false
                     }
 
                     is SceneOpenResult.Failed -> {
                         loadedScene.destroyScene()
                         openedScene = null
-                        eventSystem.publish(SceneOpenFailed(openResult.reason))
+                        eventSystem.publish(OpenFailed(openResult.reason))
                         completedSuccessfully = false
                     }
                 }
@@ -62,7 +61,7 @@ class OpenSceneCommand(
                 openedScene = null
                 completedSuccessfully = false
                 val reason = it.message ?: "Unknown scene open error"
-                eventSystem.publish(SceneOpenFailed(reason))
+                eventSystem.publish(OpenFailed(reason))
             }
         }
     }

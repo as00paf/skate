@@ -1,10 +1,10 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.SceneRenamed
 
 /**
  * Undoable command for renaming a scene.
@@ -24,7 +24,7 @@ class RenameSceneCommand(
         } else {
             scene.name = newName
         }
-        eventSystem.publish(SceneRenamed(scene, oldName, newName))
+        eventSystem.publish(SceneAction.Renamed(scene, oldName, newName))
     }
 
     override fun undo() {
@@ -33,7 +33,7 @@ class RenameSceneCommand(
         } else {
             scene.name = oldName
         }
-        eventSystem.publish(SceneRenamed(scene, newName, oldName))
+        eventSystem.publish(SceneAction.Renamed(scene, newName, oldName))
     }
 
     override fun getDisplayName(): String = "Rename Scene"

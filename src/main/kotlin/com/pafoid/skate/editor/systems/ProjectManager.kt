@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.LogLevel
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.SceneSerializer
@@ -18,10 +19,6 @@ import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.editor.events.ProjectClosed
-import com.pafoid.skate.editor.events.ProjectCreated
-import com.pafoid.skate.editor.events.ProjectOpened
-import com.pafoid.skate.editor.events.ProjectSaved
 import org.joml.Vector3f
 import java.io.File
 
@@ -63,7 +60,7 @@ class ProjectManager(
 
             result.onSuccess { project ->
                 currentProject = project
-                eventSystem.publish(ProjectCreated(project))
+                eventSystem.publish(ProjectEvent.Created(project))
                 logger.logEditor("Project created successfully: ${project.metadata.name}")
 
                 // Initialize asset database for this new project
@@ -309,7 +306,7 @@ class ProjectManager(
 
             if (loadedProject != null) {
                 currentProject = loadedProject
-                eventSystem.publish(ProjectOpened(loadedProject))
+                eventSystem.publish(ProjectEvent.Opened(loadedProject))
 
                 // Load asset registry from project file if present
                 currentProject?.assetRegistry?.let { registryData ->
@@ -370,7 +367,7 @@ class ProjectManager(
             systemManager.resetSystemCaches()
         }
 
-        eventSystem.publish(ProjectClosed(projectName))
+        eventSystem.publish(ProjectEvent.Closed(projectName))
         currentProject = null
         assetDatabase.shutdown()
         settingsManager.setLastClosedProjectPath(path)
@@ -410,7 +407,7 @@ class ProjectManager(
         logger.logEditor("Saving project: ${project.metadata.name}")
         val result = settingsManager.saveProject(project)
         if (result) {
-            eventSystem.publish(ProjectSaved(project))
+            eventSystem.publish(ProjectEvent.Saved(project))
         }
         return result
     }

@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.commands.project.DeleteFileCommand
 import com.pafoid.skate.editor.commands.project.RenameFileCommand
 import com.pafoid.skate.editor.data.FileSystemItem
 import com.pafoid.skate.editor.data.FileType
+import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.FileSystemScanner
@@ -15,8 +16,6 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.FileSystemChangedEvent
-import com.pafoid.skate.editor.events.OpenSceneFileEvent
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
@@ -244,7 +243,7 @@ class ProjectWindow : IWindow, KoinComponent {
         when (item.type) {
             FileType.SCENE -> {
                 logger.logEditor("Opening scene: ${item.file.name}")
-                eventSystem.publish(OpenSceneFileEvent(item.path))
+                eventSystem.publish(FileSystemEvent.OpenSceneFileEvent(item.path))
             }
             FileType.SCRIPT_KOTLIN, FileType.SCRIPT_JAVA, FileType.JSON,
             FileType.CONFIG, FileType.TEXT, FileType.SHADER, FileType.UNKNOWN -> {
@@ -272,9 +271,6 @@ class ProjectWindow : IWindow, KoinComponent {
         }
     }
 
-    // ─────────────────────────────────────────────────────────
-    // Context Menu
-    // ─────────────────────────────────────────────────────────
     private fun renderContextMenu() {
         if (beginPopupContextWindow("ProjectWindowContextMenu")) {
             val target = contextTargetItem
@@ -365,9 +361,6 @@ class ProjectWindow : IWindow, KoinComponent {
         }
     }
 
-    // ─────────────────────────────────────────────────────────
-    // Actions
-    // ─────────────────────────────────────────────────────────
     private fun showCreateDialog(isDirectory: Boolean, parent: FileSystemItem? = null) {
         val targetDir = parent?.file ?: projectManager.getProjectDirectory() ?: return
         creatingInPath = targetDir.absolutePath
@@ -385,7 +378,7 @@ class ProjectWindow : IWindow, KoinComponent {
         undoRedoManager.executeCommand(
             DeleteFileCommand(item.path, logger)
         )
-        eventSystem.publish(FileSystemChangedEvent(item.path))
+        eventSystem.publish(FileSystemEvent.FileSystemChangedEvent(item.path))
         needsRefresh = true
     }
 
@@ -433,7 +426,7 @@ class ProjectWindow : IWindow, KoinComponent {
                     undoRedoManager.executeCommand(
                         CreateFileCommand(newFile.absolutePath, creatingIsDir, logger)
                     )
-                    eventSystem.publish(FileSystemChangedEvent(newFile.absolutePath))
+                    eventSystem.publish(FileSystemEvent.FileSystemChangedEvent(newFile.absolutePath))
                     needsRefresh = true
                 }
                 creatingInPath = null
@@ -459,7 +452,7 @@ class ProjectWindow : IWindow, KoinComponent {
                         undoRedoManager.executeCommand(
                             RenameFileCommand(path, newName, logger)
                         )
-                        eventSystem.publish(FileSystemChangedEvent(path))
+                        eventSystem.publish(FileSystemEvent.FileSystemChangedEvent(path))
                         needsRefresh = true
                     }
                     renamingItemPath = null
@@ -475,9 +468,6 @@ class ProjectWindow : IWindow, KoinComponent {
         }
     }
 
-    // ─────────────────────────────────────────────────────────
-    // Status Bar
-    // ─────────────────────────────────────────────────────────
     private fun renderStatusBar() {
         // Only recalculate when tree changes (avoids O(n) traversals every frame)
         val currentVersion = statusTreeVersion

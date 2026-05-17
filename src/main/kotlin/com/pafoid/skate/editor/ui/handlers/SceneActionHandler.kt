@@ -21,20 +21,9 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.editor.events.SceneAction
-import com.pafoid.skate.editor.events.SceneCloseAllRequested
-import com.pafoid.skate.editor.events.SceneCloseOthersRequested
-import com.pafoid.skate.editor.events.SceneCloseRequested
-import com.pafoid.skate.editor.events.SceneCreateRequested
-import com.pafoid.skate.editor.events.SceneCreated
-import com.pafoid.skate.editor.events.SceneDeleteRequested
-import com.pafoid.skate.editor.events.SceneOpenCancelled
-import com.pafoid.skate.editor.events.SceneOpenFailed
-import com.pafoid.skate.editor.events.SceneOpenRequested
-import com.pafoid.skate.editor.events.SceneOpenSucceeded
-import com.pafoid.skate.editor.events.SceneRenameRequested
-import com.pafoid.skate.editor.events.SceneSaveAsRequested
-import com.pafoid.skate.editor.events.SceneSaveRequested
-import com.pafoid.skate.editor.events.SceneTabSelected
+import com.pafoid.skate.editor.events.SceneAction.*
+import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.events.ViewportAction.*
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -58,46 +47,46 @@ class SceneActionHandler : KoinComponent {
     private val mutationGate: EditorMutationGate by inject()
 
     fun init() {
-        eventSystem.subscribe<SceneRenameRequested> { event ->
+        eventSystem.subscribe<RenameRequested> { event ->
             handleRenameRequested(event.scene, event.newName)
         }
-        eventSystem.subscribe<SceneSaveRequested> { event ->
+        eventSystem.subscribe<SaveRequested> { event ->
             handleSaveRequested(event.scene)
         }
-        eventSystem.subscribe<SceneSaveAsRequested> { event ->
+        eventSystem.subscribe<SaveAsRequested> { event ->
             handleSaveAsRequested(event.scene)
         }
-        eventSystem.subscribe<SceneCloseRequested> { event ->
+        eventSystem.subscribe<CloseRequested> { event ->
             handleCloseRequested(event.scene)
         }
-        eventSystem.subscribe<SceneCloseOthersRequested> { event ->
+        eventSystem.subscribe<CloseOthersRequested> { event ->
             handleCloseOthersRequested(event.keepScene)
         }
-        eventSystem.subscribe<SceneCloseAllRequested> {
+        eventSystem.subscribe<CloseAllRequested> {
             handleCloseAllRequested()
         }
-        eventSystem.subscribe<SceneCreateRequested> {
+        eventSystem.subscribe<CreateRequested> {
             handleCreateRequested()
         }
-        eventSystem.subscribe<SceneOpenRequested> {
+        eventSystem.subscribe<OpenRequested> {
             handleOpenRequested()
         }
-        eventSystem.subscribe<SceneCreated> { event ->
+        eventSystem.subscribe<Created> { event ->
             handleSceneCreated(event.scene)
         }
-        eventSystem.subscribe<SceneTabSelected> { event ->
+        eventSystem.subscribe<TabSelected> { event ->
             handleTabSelected(event.scene)
         }
-        eventSystem.subscribe<SceneDeleteRequested> { event ->
+        eventSystem.subscribe<DeleteRequested> { event ->
             handleDeleteRequested(event.scene)
         }
-        eventSystem.subscribe<SceneOpenSucceeded> { event ->
+        eventSystem.subscribe<OpenSucceeded> { event ->
             handleOpenSucceeded(event.scene)
         }
-        eventSystem.subscribe<SceneOpenCancelled> {
+        eventSystem.subscribe<OpenCancelled> {
             handleOpenCancelled()
         }
-        eventSystem.subscribe<SceneOpenFailed> { event ->
+        eventSystem.subscribe<OpenFailed> { event ->
             handleOpenFailed(event.reason)
         }
     }
