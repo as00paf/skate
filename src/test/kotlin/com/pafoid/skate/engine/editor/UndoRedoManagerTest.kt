@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
+import kotlinx.coroutines.CompletableJob
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import kotlinx.coroutines.Job
@@ -91,6 +92,36 @@ class UndoRedoManagerTest {
 
         override fun getDisplayName(): String = "Async mock"
         override fun getTargetName(): String? = null
+    }
+
+    class ReentrantAsyncMockCommand : AsyncCommand {
+        private var completionJob: CompletableJob? = null
+        @Volatile
+        private var completedSuccessfully = false
+
+        override fun execute() {
+            completedSuccessfully = false
+            completionJob = Job()
+        }
+
+        override fun undo() = Unit
+
+        override fun getCompletionJob(): Job? = completionJob
+
+        override fun didCompleteSuccessfully(): Boolean = completedSuccessfully
+
+        override fun shouldPushToHistoryOnSuccess(): Boolean = true
+
+        override fun getDisplayName(): String = "Reentrant async mock"
+
+        override fun getTargetName(): String? = null
+
+        fun latestJob(): CompletableJob = completionJob ?: error("Completion job not initialized")
+
+        fun complete(job: CompletableJob, success: Boolean) {
+            completedSuccessfully = success
+            job.complete()
+        }
     }
 
     @Test
@@ -206,5 +237,23 @@ class UndoRedoManagerTest {
         assertEquals(emptyList<String>(), state)
         assertEquals(0, manager.getUndoCount())
         assertEquals(1, manager.getRedoCount())
+    }
+
+    @Test
+    fun `async command ignores stale completion from previous execution`() {
+        val manager = UndoRedoManager()
+        val command = ReentrantAsyncMockCommand()
+
+        manager.executeCommand(command)
+        val firstJob = command.latestJob()
+
+        manager.executeCommand(command)
+        val secondJob = command.latestJob()
+
+        command.complete(firstJob, success = true)
+        assertEquals(0, manager.getUndoCount())
+
+        command.complete(secondJob, success = true)
+        assertEquals(1, manager.getUndoCount())
     }
 }

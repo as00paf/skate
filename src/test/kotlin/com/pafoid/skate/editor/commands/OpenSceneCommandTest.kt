@@ -9,19 +9,12 @@ import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.utils.IJobSystem
+import com.pafoid.skate.testfixtures.ImmediateJobSystem
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -135,26 +128,5 @@ class OpenSceneCommandTest {
             eventSystem = eventSystem,
             sceneFactory = { _, _ -> loadedSceneInstance }
         )
-    }
-
-    private class ImmediateJobSystem : IJobSystem {
-        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-
-        override val mainDispatcher: CoroutineDispatcher = Dispatchers.Unconfined
-
-        override fun update() = Unit
-
-        override fun runAsync(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
-
-        override fun runOnMain(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
-
-        override fun <T> runAsyncDeferred(block: suspend CoroutineScope.() -> T): Deferred<T> =
-            scope.async(block = block)
-
-        override fun runIO(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
-
-        override fun destroy() {
-            scope.coroutineContext[Job]?.cancel()
-        }
     }
 }
