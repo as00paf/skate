@@ -2,31 +2,39 @@
 
 ## Overview
 
-This document describes the ECS (Entity-Component-System) architecture used in SkateSim Engine, the hybrid pattern
-employed, and the migration strategy from global state to component-based architecture.
+This document describes the implemented ECS (Entity-Component-System) architecture used in SkateSim Engine, including
+the hybrid ECS model, event-driven editor mutation pipeline, and engine/editor boundary contracts currently enforced.
 
 ---
 
-## Current Architecture (v0.38)
+## Current Architecture (ARCH-023)
 
 ### Hybrid Pattern
 
-The SkateSim Engine uses a **hybrid ECS pattern** combining traditional ECS with pragmatic design choices:
+The SkateSim Engine uses a **hybrid ECS pattern** combining ECS data-oriented composition with explicit subsystem
+contracts:
 
-1. **ECS Pattern** ✅
-    - Scene extends GameObject and can have components
-    - Components store pure data (no logic)
-    - Some systems iterate components (AnimationSystem, InputSystem)
+1. **Hybrid ECS core** ✅
+     - Scene extends GameObject and can have components
+     - Components store pure data (no logic)
+     - Systems consume component state (for example `AnimationSystem`, `InputSystem`)
 
-2. **Component-based Data Flow** ✅
-    - Renderers read from components instead of SceneData
-    - DayNightCycleSystem writes to LightingStateComponent
-    - Clean separation: components for state, SceneData for serialization metadata
+2. **Component-based runtime data flow** ✅
+     - Renderers read from components instead of SceneData
+     - DayNightCycleSystem writes to LightingStateComponent
+     - Clean separation: components for state, SceneData for serialization metadata
 
-3. **Systems Still Own Config** ⏳ (To be refactored in v0.39)
-    - EnvironmentSystem owns EnvironmentConfig directly
-    - DayNightCycleSystem owns DayNightCycleConfig (acceptable - cycle parameters)
-    - DirectionalLightSystem owns DirectionalLightConfig (acceptable - light settings)
+3. **Editor mutation pipeline contract** ✅
+     - Editor UI mutation requests publish typed events/actions
+     - Action handlers execute commands
+     - `UndoRedoManager` tracks command history
+     - Canonical flow: `UI -> Event -> Handler -> CommandExecutor -> UndoRedoManager`
+
+4. **Engine/editor boundary contracts** ✅
+     - Engine code paths do not import editor packages
+     - Engine systems use engine-owned interfaces (`InputMappingsProvider`, `LocalizationProvider`,
+       `EngineLogger`, `SceneEventPublisher`)
+     - Editor/application adapters are bound through DI (Koin)
 
 ### Why Hybrid?
 
@@ -70,7 +78,7 @@ Scene (extends GameObject)
 | **EnvironmentComponent**   | skyColor, skyTint, skyExposure, skyRotation, fogColor, fogDensity, fogGradient, renderSky, renderFog | Sky and fog rendering settings         | EnvironmentWindow, LevelEditorSceneInitializer                 | SkyDomeRenderer, LightingUniformsLoader              |
 | **TimeComponent**          | timeOfDay, timeScale                                                                                 | Time state and simulation speed        | EnvironmentWindow, GameViewWindow, LevelEditorSceneInitializer | DayNightCycleSystem, SkyDomeRenderer, Scene.update() |
 | **LightingStateComponent** | ambientLight, useAmbient                                                                             | Ambient lighting state                 | DayNightCycleSystem, EnvironmentWindow                         | LightingUniformsLoader, EnvironmentWindow            |
-| **LightingComponent**      | sunDirection, sunColor, sunIntensity, shadowIntensity, isDaytime                                     | Computed lighting from day/night cycle | (Future: DayNightCycleSystem)                                  | (Future: rendering systems)                          |
+| **LightingComponent**      | sunDirection, sunColor, sunIntensity, shadowIntensity, isDaytime                                     | Computed lighting from day/night cycle | DayNightCycleSystem                                             | Rendering pipeline consumers                         |
 | **InputStateComponent**    | moveVector, lookVector, buttons                                                                      | Input state per GameObject             | InputSystem                                                    | PlayerController, SkateboardPhysics                  |
 | **SkeletonComponent**      | boneMatrices, skeletonData                                                                           | Skeletal animation data                | AnimationLoader                                                | AnimationSystem, ModelRenderer                       |
 | **Animator**               | animations, currentTime, playing                                                                     | Animation controller                   | AnimationLoader                                                | AnimationSystem                                      |
@@ -78,6 +86,19 @@ Scene (extends GameObject)
 ---
 
 ## Data Flow
+
+### Editor Mutation & Undo Data Flow (Implemented)
+
+```
+Editor UI (windows/menus/search/toolbar/project) 
+  -> publish typed action event
+  -> ActionHandler receives event
+  -> ActionHandler executes command
+  -> UndoRedoManager records undoable command history
+```
+
+This is the required editor mutation entry path. Direct UI mutation and direct UI command execution were removed during
+ARCH remediation.
 
 ### Environment Data Flow
 
@@ -240,29 +261,10 @@ val timeOfDay = timeComponent?.timeOfDay ?: 12.0f
 
 ---
 
-## Future Work (v0.39+)
+## Follow-ups (Non-Blocking)
 
-### Pending Refactors
-
-1. **EnvironmentSystem Iteration** (v0.39)
-    - Remove direct config ownership
-    - Iterate GameObjects with EnvironmentComponent
-    - ImGui reads/writes component directly
-
-2. **InputComponent** (v0.40)
-    - Replace InputStateComponent with proper InputComponent
-    - InputSystem writes to component
-
-3. **PhysicsComponent** (v0.40)
-    - Consolidate physics state
-    - Integrate with BulletPhysics3D
-
-### Long-term Goals
-
-- Complete migration to pure ECS pattern
-- All systems iterate components
-- Eliminate Service Locator pattern where possible
-- Comprehensive unit tests for all components
+- Extend async command lifecycle coverage for `UndoRedoManager.clear()` while async completion is still in-flight
+  (tracked as a post-ARCH follow-up from ARCH-022 review gate).
 
 ---
 
@@ -284,7 +286,7 @@ val timeOfDay = timeComponent?.timeOfDay ?: 12.0f
 ### Modified Systems
 
 - `engine/ecs/systems/DayNightCycleSystem.kt`
-- `engine/ecs/systems/EnvironmentSystem.kt` (pending refactor)
+- `engine/ecs/systems/EnvironmentSystem.kt`
 
 ### Modified Renderers
 

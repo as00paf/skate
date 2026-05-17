@@ -4,6 +4,24 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.50.0.1] - 2026-05-17: Architecture Closure & Roadmap Realignment
+
+### Summary
+
+Recorded completed architecture/refactor milestones in the changelog and realigned planning docs so the roadmap tracks only future-facing work.
+
+### Completed Milestones Captured
+
+- **ARCH program closure completed:** `ARCH-022` (final reviewer gate) and `ARCH-023` (documentation closure).
+- **Render graph migration milestone completed:** `A45.0.6 Refactor Renderer to Render Graph System`.
+- **Editor revamp completed sub-milestones captured:** `A46.0.1.7` (Scene Hierarchy), `A46.0.1.8` (Asset Browser), and `A46.0.1.11` (Viewport Toolbar) under the broader `A46.0.1` stream.
+
+### Documentation/Planning Changes
+
+- `docs/roadmap.md` was trimmed to future developments and in-progress scope only.
+
+---
+
 ## [v0.46.0.9] - 2026-04-05: Project Management & Settings Overhaul
 
 ### Summary

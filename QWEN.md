@@ -7,6 +7,9 @@
 ### Current Version
 **v0.50.0.0** (2026-04-12) — Full Event-Driven Architecture & Scene Management Overhaul
 
+### Documentation Navigation
+Use `docs/DOCS_INDEX.md` as the canonical documentation map (living docs, archive, and update routing).
+
 ### Tech Stack
 | Category       | Technology                                    |
 |----------------|-----------------------------------------------|
@@ -472,29 +475,16 @@ C:\workspace\kotlin_workspace\skate\
 
 ## 9. Current Project Status
 
-### Active Phase
-**Phase 2: Core Systems** — Advanced rendering, core gameplay mechanics, and core tooling
+Status is maintained in living docs:
 
-### Latest Version: v0.46.0.9 (2026-04-05)
-**Project Management & Settings Overhaul**
-- Implemented ProjectWizardWindow, ProjectSwitcherDialog, ProjectManager
-- Replaced monolithic SettingsWindow with EditorSettingsWindow and ProjectSettingsWindow
-- Split layout following IntelliJ-style patterns
-- Added auto-save, key rebinding, unit system selector
-- Fixed KeyBindingsWindow race condition, PrefabsGenerator return types, Project Wizard cancel loop
+- Active work queue: `docs/TODO.md`
+- Forward roadmap: `docs/roadmap.md`
+- Architecture contracts/guardrails: `docs/DEVELOPMENT_GUARDRAILS.md`
+- Documentation map: `docs/DOCS_INDEX.md`
 
-### Known Issues & Technical Debt
-- **Remaining `!!` operators** — scattered throughout codebase, need replacement with proper null handling
-- **Resource management** — potential memory leaks in asset loading/unloading
-- **Animation blending** — timing issues in crossfade transitions under certain conditions
-- **Renderer centralization** — `Renderer.kt` trending monolithic; render graph refactoring completed (A45.0.6)
-- **Settings separation** — Engine vs Project settings separation in progress (A46.0.10)
+ARCH remediation history is closed and reflected in:
 
-### Pending Refactors
-- **EnvironmentSystem iteration** — remove direct config ownership, iterate EnvironmentComponent (planned v0.39+)
-- **InputComponent** — consolidate InputStateComponent with proper InputComponent
-- **PhysicsComponent** — consolidate physics state, integrate with BulletPhysics3D
-- **Complete ECS migration** — all systems iterate components, eliminate Service Locator pattern
+- `docs/CHANGELOG.md`
 
 ---
 
