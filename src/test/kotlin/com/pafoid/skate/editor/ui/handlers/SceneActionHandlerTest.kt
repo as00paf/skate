@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.data.LogEntry
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.data.SceneOpenResult
+import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.project.SceneSerializer
@@ -14,11 +15,6 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.SceneChanged
-import com.pafoid.skate.editor.events.SceneCreateRequested
-import com.pafoid.skate.editor.events.SceneCreated
-import com.pafoid.skate.editor.events.SceneOpenRequested
-import com.pafoid.skate.editor.events.SceneOpened
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every
@@ -88,8 +84,8 @@ class SceneActionHandlerTest {
         every { sceneManager.currentScene } answers { openScenesList.lastOrNull() }
         every { sceneManager.openSceneBlocking(capture(openScenesList), any()) } answers {
             val scene = openScenesList.last()
-            eventSystem.publish(SceneOpened(scene))
-            eventSystem.publish(SceneChanged)
+            eventSystem.publish(SceneAction.Opened(scene))
+            eventSystem.publish(SceneAction.Changed)
             true
         }
 
@@ -159,7 +155,7 @@ class SceneActionHandlerTest {
         }
 
         // Act
-        eventSystem.publish(SceneCreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
 
         // Assert
         assertTrue(capturedSavePath.isCaptured)
@@ -176,7 +172,7 @@ class SceneActionHandlerTest {
         handler.init()
 
         // Act
-        eventSystem.publish(SceneCreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
 
         // Assert — verify openSceneBlocking was called with a scene that has the correct name
         val capturedScenes = mutableListOf<Scene>()
@@ -191,18 +187,18 @@ class SceneActionHandlerTest {
         val handler = SceneActionHandler()
         handler.init()
 
-        val sceneOpenedEvents = mutableListOf<SceneOpened>()
+        val sceneOpenedEvents = mutableListOf<SceneAction.Opened>()
         var sceneChangedReceived = false
 
-        eventSystem.subscribe<SceneOpened> { event ->
+        eventSystem.subscribe<SceneAction.Opened> { event ->
             sceneOpenedEvents.add(event)
         }
-        eventSystem.subscribe<SceneChanged> {
+        eventSystem.subscribe<SceneAction.Changed> {
             sceneChangedReceived = true
         }
 
         // Act
-        eventSystem.publish(SceneCreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
 
         // Assert
         assertEquals(1, sceneOpenedEvents.size)
@@ -218,13 +214,13 @@ class SceneActionHandlerTest {
         var sceneCreatedReceived = false
         var createdScene: Scene? = null
 
-        eventSystem.subscribe<SceneCreated> { event ->
+        eventSystem.subscribe<SceneAction.Created> { event ->
             sceneCreatedReceived = true
             createdScene = event.scene
         }
 
         // Act
-        eventSystem.publish(SceneCreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
 
         // Assert
         assertTrue(sceneCreatedReceived, "SceneCreated event should be published")
@@ -242,7 +238,7 @@ class SceneActionHandlerTest {
         every { mockScene.name } returns "TestScene"
 
         // Act
-        eventSystem.publish(SceneCreated(mockScene))
+        eventSystem.publish(SceneAction.Created(mockScene))
 
         // Assert
         val capturedScenes = mutableListOf<Scene>()
@@ -260,7 +256,7 @@ class SceneActionHandlerTest {
         every { projectManager.getProjectDirectory() } returns null
 
         // Act
-        eventSystem.publish(SceneCreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
 
         // Assert - no command should have been executed
         verify(exactly = 0) { undoRedoManager.executeCommand(any()) }
@@ -290,9 +286,9 @@ class SceneActionHandlerTest {
         }
 
         // Act - create three scenes
-        eventSystem.publish(SceneCreateRequested)
-        eventSystem.publish(SceneCreateRequested)
-        eventSystem.publish(SceneCreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
 
         // Assert
         assertEquals(3, savedPaths.size)
@@ -326,7 +322,7 @@ class SceneActionHandlerTest {
         }
 
         // Act
-        eventSystem.publish(SceneCreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
 
         // Assert - should skip NewScene_1 and use NewScene_2
         assertEquals(1, savedPaths.size)
@@ -343,7 +339,7 @@ class SceneActionHandlerTest {
         handler.init()
 
         // Act
-        eventSystem.publish(SceneCreateRequested)
+        eventSystem.publish(SceneAction.CreateRequested)
 
         // Assert
         val successLogs = capturedEditorLogs.filter {
@@ -358,7 +354,7 @@ class SceneActionHandlerTest {
         handler.init()
         every { sceneSerializer.open(any()) } returns SceneOpenResult.Cancelled
 
-        eventSystem.publish(SceneOpenRequested)
+        eventSystem.publish(SceneAction.OpenRequested)
 
         verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
         val cancelLogs = capturedEditorLogs.filter {

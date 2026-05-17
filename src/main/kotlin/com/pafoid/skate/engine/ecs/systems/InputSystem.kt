@@ -230,7 +230,13 @@ class InputSystem(
      */
     override fun imgui() {
         ImGui.separator()
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, "Input settings configuration will be available after Phase 5 completion")
+        ImGui.textColored(
+            0.5f,
+            0.5f,
+            0.5f,
+            1f,
+            stringManager.getString("lbl.input_system.configuration_pending")
+        )
         ImGui.separator()
         
         ImGui.text(stringManager.getString("lbl.input_system.debug"))
@@ -240,7 +246,12 @@ class InputSystem(
             val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1)
             val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
 
-            ImGui.text(stringManager.getString("lbl.input_system.gamepad_connected", "Yes"))
+            ImGui.text(
+                stringManager.getString(
+                    "lbl.input_system.gamepad_connected",
+                    stringManager.getString("lbl.input_system.yes")
+                )
+            )
 
             if (axes != null) {
                 ImGui.text(stringManager.getString("lbl.input_system.left_stick", axes[0], axes[1]))
@@ -261,7 +272,12 @@ class InputSystem(
                 )
             }
         } else {
-            ImGui.text(stringManager.getString("lbl.input_system.gamepad_connected", "No"))
+            ImGui.text(
+                stringManager.getString(
+                    "lbl.input_system.gamepad_connected",
+                    stringManager.getString("lbl.input_system.no")
+                )
+            )
         }
     }
 }

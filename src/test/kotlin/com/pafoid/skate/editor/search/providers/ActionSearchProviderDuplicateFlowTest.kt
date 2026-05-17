@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.search.providers
 
-import com.pafoid.skate.editor.events.ViewportDuplicate
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
@@ -44,8 +44,8 @@ class ActionSearchProviderDuplicateFlowTest {
             )
         }
 
-        var received: ViewportDuplicate? = null
-        eventSystem.subscribe<ViewportDuplicate> { received = it }
+        var received: ViewportAction.Duplicate? = null
+        eventSystem.subscribe<ViewportAction.Duplicate> { received = it }
 
         val provider = ActionSearchProvider(sceneManager, logger)
         val duplicateResult = provider.search("duplicate")

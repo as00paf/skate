@@ -87,7 +87,7 @@ class GameViewWindow : IWindow, KoinComponent {
                 1f,
                 1f,
                 0.5f,
-                "Picked ID: ${hovered.getUid()}"
+                stringManager.getString("lbl.gameview.picked_id", hovered.getUid())
             )
         }
 

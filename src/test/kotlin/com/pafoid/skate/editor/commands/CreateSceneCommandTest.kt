@@ -2,11 +2,11 @@ package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.project.CreateSceneCommand
+import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.SceneData
-import com.pafoid.skate.editor.events.SceneCreated
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every
@@ -89,8 +89,8 @@ class CreateSceneCommandTest {
     @Test
     fun `execute_publishesSceneCreatedEvent`() {
         val command = createCommand("test.scene")
-        var createdEvent: SceneCreated? = null
-        eventSystem.subscribe<SceneCreated> { event -> createdEvent = event }
+        var createdEvent: SceneAction.Created? = null
+        eventSystem.subscribe<SceneAction.Created> { event -> createdEvent = event }
 
         command.execute()
 

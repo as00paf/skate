@@ -3,12 +3,11 @@ package com.pafoid.skate.editor.commands
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.project.OpenSceneCommand
 import com.pafoid.skate.editor.data.SceneOpenResult
+import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.events.SceneAction.*
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.SceneOpenCancelled
-import com.pafoid.skate.editor.events.SceneOpenFailed
-import com.pafoid.skate.editor.events.SceneOpenSucceeded
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every
@@ -65,7 +64,7 @@ class OpenSceneCommandTest {
     fun `execute_doesNotOpenScene_whenDialogCancelled`() {
         every { sceneSerializer.open(any()) } returns SceneOpenResult.Cancelled
         var cancelled = false
-        eventSystem.subscribe<SceneOpenCancelled> { cancelled = true }
+        eventSystem.subscribe<OpenCancelled> { cancelled = true }
 
         val command = createCommand()
         command.execute()
@@ -83,7 +82,7 @@ class OpenSceneCommandTest {
     fun `execute_doesNotOpenScene_whenLoadFails`() {
         every { sceneSerializer.open(any()) } returns SceneOpenResult.Failed("broken.scene", "deserialize failure")
         var failureReason: String? = null
-        eventSystem.subscribe<SceneOpenFailed> { event -> failureReason = event.reason }
+        eventSystem.subscribe<OpenFailed> { event -> failureReason = event.reason }
 
         val command = createCommand()
         command.execute()
@@ -96,8 +95,8 @@ class OpenSceneCommandTest {
     @Test
     fun `execute_opensScene_whenLoadSucceeds`() {
         every { sceneSerializer.open(any()) } returns SceneOpenResult.Loaded("good.scene")
-        var openedEvent: SceneOpenSucceeded? = null
-        eventSystem.subscribe<SceneOpenSucceeded> { event -> openedEvent = event }
+        var openedEvent: OpenSucceeded? = null
+        eventSystem.subscribe<OpenSucceeded> { event -> openedEvent = event }
 
         val command = createCommand()
         command.execute()
@@ -116,7 +115,7 @@ class OpenSceneCommandTest {
     fun `execute_publishesFailureEvent_whenUnexpectedExceptionOccurs`() {
         every { sceneSerializer.open(any()) } throws IllegalStateException("io failure")
         var failureReason: String? = null
-        eventSystem.subscribe<SceneOpenFailed> { event -> failureReason = event.reason }
+        eventSystem.subscribe<OpenFailed> { event -> failureReason = event.reason }
 
         val command = createCommand()
         command.execute()

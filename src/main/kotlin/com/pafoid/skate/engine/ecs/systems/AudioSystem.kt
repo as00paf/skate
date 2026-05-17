@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
@@ -25,10 +26,11 @@ import kotlin.math.sin
  */
 class AudioSystem(
     private val audioEngine: AudioEngine,
-    private val logger: LoggerService
+    private val logger: LoggerService,
+    private val stringManager: StringManager,
+    private val resourceManager: ResourceManager,
 ) : System(priority = ExecutionPriority.LATE), KoinComponent {
 
-    private val resourceManager: ResourceManager by inject()
     private var isInitialized = false
 
     // Maps Entity ID to its active SoundSource
@@ -52,13 +54,13 @@ class AudioSystem(
     override fun imgui() {
         // Master Volume
         val volumeArray = floatArrayOf(1.0f)
-        if (ImGui.dragFloat("Master Volume", volumeArray, 0.01f, 0f, 1f)) {
+        if (ImGui.dragFloat(stringManager.getString("lbl.audio.master_volume"), volumeArray, 0.01f, 0f, 1f)) {
             audioEngine.setMasterVolume(volumeArray[0])
         }
 
         // Mute toggle
         val isMuted = volumeArray[0] <= 0.001f
-        if (ImGui.button(if (isMuted) "Unmute" else "Mute")) {
+        if (ImGui.button(if (isMuted) stringManager.getString("btn.audio.unmute") else stringManager.getString("btn.audio.mute"))) {
             val newVolume = if (isMuted) 1.0f else 0.0f
             audioEngine.setMasterVolume(newVolume)
         }
@@ -66,15 +68,19 @@ class AudioSystem(
         ImGui.separator()
 
         // Status
-        val status = if (audioEngine.isInitialized) "Initialized" else "Not Initialized"
+        val status = if (audioEngine.isInitialized) {
+            stringManager.getString("lbl.audio.status.initialized")
+        } else {
+            stringManager.getString("lbl.audio.status.not_initialized")
+        }
         val color = if (audioEngine.isInitialized) floatArrayOf(0f, 1f, 0f, 1f) else floatArrayOf(0.5f, 0.5f, 0.5f, 1f)
-        ImGui.textColored(color[0], color[1], color[2], color[3], "Status: $status")
+        ImGui.textColored(color[0], color[1], color[2], color[3], stringManager.getString("lbl.audio.status", status))
 
         ImGui.separator()
 
         // Listener info
-        ImGui.text("Listener Information")
-        ImGui.text("Volume: %.2f".format(volumeArray[0]))
+        ImGui.text(stringManager.getString("lbl.audio.listener_information"))
+        ImGui.text(stringManager.getString("lbl.audio.volume", volumeArray[0]))
     }
 
     private fun updateListener() {

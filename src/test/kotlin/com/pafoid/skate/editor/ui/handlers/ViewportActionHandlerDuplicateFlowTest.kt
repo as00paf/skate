@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.commands.Command
-import com.pafoid.skate.editor.events.ViewportDuplicate
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.LoggerService
@@ -92,7 +92,7 @@ class ViewportActionHandlerDuplicateFlowTest {
         )
         handler.init()
 
-        eventSystem.publish(ViewportDuplicate(original))
+        eventSystem.publish(ViewportAction.Duplicate(original))
 
         assertNotNull(addedObject.captured.getComponent<Transform>())
         assertEquals("Crate (Copy)", addedObject.captured.name)

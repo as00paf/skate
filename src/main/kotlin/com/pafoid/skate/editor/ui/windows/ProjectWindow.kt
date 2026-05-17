@@ -318,7 +318,7 @@ class ProjectWindow : IWindow, KoinComponent {
                         // File context menu
                         // Show GUID if asset has one
                         if (target.assetGuid != null) {
-                            if (menuItem("${Icons.COPY} Copy GUID")) {
+                            if (menuItem("${Icons.COPY} ${stringManager.getString("context.project.copy_guid")}")) {
                                 copyPathToClipboard(target.assetGuid)
                                 logger.logEditor("Copied GUID: ${target.assetGuid}")
                             }
@@ -335,7 +335,7 @@ class ProjectWindow : IWindow, KoinComponent {
                             startRename(target)
                         }
                         if (target.assetGuid != null) {
-                            if (menuItem("${Icons.ARROW_ROTATE} Reimport")) {
+                            if (menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.project.reimport")}")) {
                                 reimportAsset(target)
                             }
                             separator()
@@ -365,7 +365,13 @@ class ProjectWindow : IWindow, KoinComponent {
         val targetDir = parent?.file ?: projectManager.getProjectDirectory() ?: return
         creatingInPath = targetDir.absolutePath
         creatingIsDir = isDirectory
-        createInput.set(if (isDirectory) "NewFolder" else "NewFile.txt")
+        createInput.set(
+            if (isDirectory) {
+                stringManager.getString("context.project.default_new_folder")
+            } else {
+                stringManager.getString("context.project.default_new_file")
+            }
+        )
     }
 
     private fun startRename(item: FileSystemItem) {
@@ -415,7 +421,13 @@ class ProjectWindow : IWindow, KoinComponent {
         // Handle create input
         creatingInPath?.let { path ->
             pushID("inline_create")
-            text(if (creatingIsDir) "New Folder:" else "New File:")
+            text(
+                if (creatingIsDir) {
+                    stringManager.getString("lbl.project.inline_new_folder")
+                } else {
+                    stringManager.getString("lbl.project.inline_new_file")
+                }
+            )
             sameLine()
             pushItemWidth(150f)
             val enterPressed = inputText("##create_input", createInput)
@@ -442,7 +454,7 @@ class ProjectWindow : IWindow, KoinComponent {
         renamingItemPath?.let { path ->
             if (!renameFinished) {
                 pushID("inline_rename")
-                text("Rename:")
+                text(stringManager.getString("lbl.project.inline_rename"))
                 sameLine()
                 pushItemWidth(150f)
                 val enterPressed = inputText("##rename_input", renameInput)
@@ -482,8 +494,20 @@ class ProjectWindow : IWindow, KoinComponent {
         val filter = searchText.get().trim()
         val filterInfo = if (filter.isNotEmpty()) " (${stringManager.getString("lbl.filtered")})" else ""
 
-        textColored(0.5f, 0.5f, 0.5f, 1.0f,
-            "${Icons.FOLDER} $statusFolderCount  ${Icons.PLUS} $statusFileCount$filterInfo  │  $sizeStr"
+        textColored(
+            0.5f,
+            0.5f,
+            0.5f,
+            1.0f,
+            stringManager.getString(
+                "lbl.project.status_bar",
+                Icons.FOLDER.toString(),
+                statusFolderCount,
+                Icons.PLUS.toString(),
+                statusFileCount,
+                filterInfo,
+                sizeStr
+            )
         )
     }
 
@@ -496,9 +520,9 @@ class ProjectWindow : IWindow, KoinComponent {
         items.sumOf { if (it.type == FileType.FOLDER) 1 + countFolders(it.children) else countFolders(it.children) }
 
     private fun formatFileSize(bytes: Long): String = when {
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-        else -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
+        bytes < 1024 -> stringManager.getString("lbl.project.size.bytes", bytes)
+        bytes < 1024 * 1024 -> stringManager.getString("lbl.project.size.kb", bytes / 1024)
+        else -> stringManager.getString("lbl.project.size.mb", bytes / (1024.0 * 1024.0))
     }
 
     /**

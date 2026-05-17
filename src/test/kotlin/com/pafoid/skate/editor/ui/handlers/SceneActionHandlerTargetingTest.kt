@@ -2,6 +2,8 @@ package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.LoggerService
@@ -10,9 +12,6 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.SceneCloseOthersRequested
-import com.pafoid.skate.editor.events.SceneCloseRequested
-import com.pafoid.skate.editor.events.SceneTabSelected
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.coEvery
 import io.mockk.every
@@ -91,7 +90,7 @@ class SceneActionHandlerTargetingTest {
 
         SceneActionHandler().apply { init() }
 
-        eventSystem.publish(SceneCloseRequested(sceneB))
+        eventSystem.publish(SceneAction.CloseRequested(sceneB))
 
         verify(exactly = 1) { sceneManager.closeScene(sceneB) }
     }
@@ -105,8 +104,8 @@ class SceneActionHandlerTargetingTest {
 
         SceneActionHandler().apply { init() }
 
-        eventSystem.publish(SceneTabSelected(sceneA))
-        eventSystem.publish(SceneCloseOthersRequested(sceneC))
+        eventSystem.publish(ViewportAction.TabSelected(sceneA))
+        eventSystem.publish(SceneAction.CloseOthersRequested(sceneC))
 
         verify(exactly = 1) { sceneManager.switchScene(sceneA) }
         verify(exactly = 1) { sceneManager.closeOtherScenes(sceneC) }
