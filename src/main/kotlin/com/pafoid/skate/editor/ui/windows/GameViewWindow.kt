@@ -35,7 +35,7 @@ class GameViewWindow(
     private val viewportContextMenu: ViewportContextMenu,
     private val viewportOverlays: ViewportOverlays,
     private val viewportDragDropHandler: ViewportDragDropHandler,
-) : IWindow, KoinComponent {
+) : IWindow {
 
     private val gamepadOverlay = GamepadOverlay()
     private val scenesTabBar by lazy { EditorScenesTabBar(eventSystem, stringManager) }

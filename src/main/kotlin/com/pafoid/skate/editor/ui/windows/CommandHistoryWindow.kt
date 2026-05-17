@@ -29,7 +29,7 @@ import kotlin.getValue
 class CommandHistoryWindow(
     private val undoRedoManager: UndoRedoManager,
     private val stringManager: StringManager,
-) : IWindow, KoinComponent {
+) : IWindow {
 
     private var scrollToBottom = false
     private val undoStackHeight = 250f

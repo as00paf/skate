@@ -33,7 +33,7 @@ import kotlin.getValue
 class RenderGraphWindow(
     private val stringManager: StringManager,
     private val renderer: Renderer,
-) : IWindow, KoinComponent {
+) : IWindow {
 
     private var autoUpdate = true
     private var showPerformance = true

@@ -2,14 +2,9 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.events.Event
 import com.pafoid.skate.engine.events.TrickCompleted
 import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-
 /**
  * UI window for displaying trick information.
  *
@@ -26,7 +21,7 @@ import org.koin.core.component.inject
  * trickUIWindow.imgui(xPos, yPos, width, height)
  * ```
  */
-class TrickUIWindow(private val eventSystem: EventSystem) : KoinComponent {
+class TrickUIWindow(private val eventSystem: EventSystem) {
 
     private var lastCompletedTrick: String? = null
     private var lastScore: Int = 0

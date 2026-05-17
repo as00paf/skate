@@ -45,7 +45,7 @@ class SceneHierarchyWindow(
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
     private val gameObjectManager: GameObjectManager,
-) : IWindowWithScene, KoinComponent {
+) : IWindowWithScene {
     private val searchQuery = ImString(256)
     private var isLinked = false
 

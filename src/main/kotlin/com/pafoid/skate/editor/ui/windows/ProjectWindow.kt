@@ -1,11 +1,11 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.commands.project.CreateFileCommand
-import com.pafoid.skate.editor.commands.project.DeleteFileCommand
-import com.pafoid.skate.editor.commands.project.RenameFileCommand
+import com.pafoid.skate.editor.events.CreateFileRequested
+import com.pafoid.skate.editor.events.DeleteFileRequested
 import com.pafoid.skate.editor.data.FileSystemItem
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.FileSystemEvent
+import com.pafoid.skate.editor.events.RenameFileRequested
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.FileSystemScanner
@@ -13,9 +13,7 @@ import com.pafoid.skate.editor.systems.FileTypeResolver
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.SceneManager
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
@@ -44,15 +42,12 @@ import imgui.internal.ImGui.treeNodeEx
 import imgui.internal.ImGui.treePop
 import imgui.type.ImBoolean
 import imgui.type.ImString
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.io.IOException
-import kotlin.getValue
 
 /**
  * Project file system browser window.
@@ -70,10 +65,9 @@ class ProjectWindow(
     private val stringManager: StringManager,
     private val logger: LoggerService,
     private val projectManager: ProjectManager,
-    private val undoRedoManager: UndoRedoManager,
     private val eventSystem: EventSystem,
     private val fileSystemScanner: FileSystemScanner,
-) : IWindow, KoinComponent {
+) : IWindow {
 
     private val searchText = ImString("", 256)
     private var treeCache: List<FileSystemItem> = emptyList()
@@ -381,17 +375,12 @@ class ProjectWindow(
     }
 
     private fun deleteItem(item: FileSystemItem) {
-        undoRedoManager.executeCommand(
-            DeleteFileCommand(item.path, logger)
-        )
-        eventSystem.publish(FileSystemEvent.FileSystemChangedEvent(item.path))
+        eventSystem.publish(DeleteFileRequested(item.path))
         needsRefresh = true
     }
 
     private fun reimportAsset(item: FileSystemItem) {
         val guid = item.assetGuid ?: return
-        val root = projectManager.getProjectDirectory() ?: return
-        val sourceFile = File(root, item.name)
         // For now, just log — actual reimport would go through ImportPipeline
         logger.logEditor("Reimport requested for: ${item.name} (GUID: ${guid.take(8)}...)")
         needsRefresh = true
@@ -435,10 +424,7 @@ class ProjectWindow(
                 val name = createInput.get().trim()
                 if (name.isNotEmpty()) {
                     val newFile = File(path, name)
-                    undoRedoManager.executeCommand(
-                        CreateFileCommand(newFile.absolutePath, creatingIsDir, logger)
-                    )
-                    eventSystem.publish(FileSystemEvent.FileSystemChangedEvent(newFile.absolutePath))
+                    eventSystem.publish(CreateFileRequested(newFile.absolutePath, creatingIsDir))
                     needsRefresh = true
                 }
                 creatingInPath = null
@@ -461,10 +447,7 @@ class ProjectWindow(
                 if (isKeyPressed(GLFW.GLFW_KEY_ENTER) || enterPressed) {
                     val newName = renameInput.get().trim()
                     if (newName.isNotEmpty()) {
-                        undoRedoManager.executeCommand(
-                            RenameFileCommand(path, newName, logger)
-                        )
-                        eventSystem.publish(FileSystemEvent.FileSystemChangedEvent(path))
+                        eventSystem.publish(RenameFileRequested(path, newName))
                         needsRefresh = true
                     }
                     renamingItemPath = null

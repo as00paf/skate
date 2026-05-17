@@ -10,13 +10,14 @@ import com.pafoid.skate.editor.settings.SettingsData
 import com.pafoid.skate.editor.settings.SettingsSerializer
 import com.pafoid.skate.editor.settings.UserSettings
 import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.contracts.InputMappingsProvider
 import java.io.File
 
 class SettingsManager(
     private val serializer: Serializer,
     private val logger: LoggerService,
     private val stringManager: StringManager
-) {
+) : InputMappingsProvider {
     private val settingsSerializer: SettingsSerializer = SettingsSerializer(serializer)
 
     var engine: EngineSettings = EngineSettings()
@@ -245,7 +246,7 @@ class SettingsManager(
         }
     }
 
-    fun loadInputMappings(): com.pafoid.skate.engine.input.InputMappings? {
+    override fun loadInputMappings(): com.pafoid.skate.engine.input.InputMappings? {
         return try {
             val file = SettingsData.getSettingsDirectory().resolve("input_mappings.json")
             if (file.exists()) {

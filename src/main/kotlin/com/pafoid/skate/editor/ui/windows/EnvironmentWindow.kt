@@ -1,12 +1,11 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.commands.EnvironmentPropertyCommand
-import com.pafoid.skate.editor.commands.EnvironmentToggleCommand
+import com.pafoid.skate.editor.events.EnvironmentAction
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
@@ -16,15 +15,12 @@ import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import imgui.ImGui
 import imgui.type.ImBoolean
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import kotlin.getValue
 
 class EnvironmentWindow(
     private val stringManager: StringManager,
-    private val undoRedoManager: UndoRedoManager,
+    private val eventSystem: EventSystem,
     private val systemManager: SystemManager,
-) : IWindowWithScene, KoinComponent {
+) : IWindowWithScene {
 
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.environment"))
@@ -46,21 +42,15 @@ class EnvironmentWindow(
             if (ImGui.sliderFloat(stringManager.getString("lbl.environment.time"), time, 0f, 24f, timeString)) {
                 val oldTime = timeComponent.timeOfDay
                 val newTime = time[0]
-                undoRedoManager.executeCommand(
-                    EnvironmentPropertyCommand(
-                        displayName = "Set Time of Day",
-                        targetName = null,
-                        setter = { t -> 
-                            timeComponent.timeOfDay = t
-                            dayNight?.cycleTime = t
-                        },
-                        oldValue = oldTime,
-                        newValue = newTime
+                eventSystem.publish(
+                    EnvironmentAction.SetTimeOfDayRequested(
+                        scene = scene,
+                        timeComponent = timeComponent,
+                        dayNightCycle = dayNight,
+                        oldTime = oldTime,
+                        newTime = newTime
                     )
                 )
-                if (!scene.hasComponent<TimeComponent>()) {
-                    scene.addComponent(timeComponent)
-                }
             }
         }
 
@@ -121,17 +111,14 @@ class EnvironmentWindow(
             if (ImGui.checkbox(stringManager.getString("lbl.environment.use_ambient"), useAmbient)) {
                 val oldVal = lightingStateComponent.useAmbient
                 val newVal = useAmbient.get()
-                undoRedoManager.executeCommand(
-                    EnvironmentToggleCommand(
-                        displayName = "Toggle Use Ambient",
-                        setter = { v -> lightingStateComponent.useAmbient = v },
+                eventSystem.publish(
+                    EnvironmentAction.SetUseAmbientRequested(
+                        scene = scene,
+                        lightingStateComponent = lightingStateComponent,
                         oldValue = oldVal,
                         newValue = newVal
                     )
                 )
-                if (!scene.hasComponent<LightingStateComponent>()) {
-                    scene.addComponent(lightingStateComponent)
-                }
             }
 
             dayNight?.let { dayNight ->
@@ -139,10 +126,9 @@ class EnvironmentWindow(
                 if (ImGui.checkbox(stringManager.getString("lbl.environment.auto_ambient"), autoAmbient)) {
                     val oldVal = dayNight.autoAmbient
                     val newVal = autoAmbient.get()
-                    undoRedoManager.executeCommand(
-                        EnvironmentToggleCommand(
-                            displayName = "Toggle Auto Ambient",
-                            setter = { v -> dayNight.autoAmbient = v },
+                    eventSystem.publish(
+                        EnvironmentAction.SetAutoAmbientRequested(
+                            dayNightCycle = dayNight,
                             oldValue = oldVal,
                             newValue = newVal
                         )

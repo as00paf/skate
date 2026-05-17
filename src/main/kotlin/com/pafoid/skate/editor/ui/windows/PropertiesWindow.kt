@@ -29,7 +29,7 @@ class PropertiesWindow(
     private val stringManager: StringManager,
     private val sceneManager: SceneManager,
     private val eventSystem: EventSystem,
-) : IWindow, KoinComponent {
+) : IWindow {
     private val searchString = ImString(128)
     private var selectedGameObject: GameObject? = null
 

@@ -31,7 +31,7 @@ class InputTestingWindow(
     private val inputProvider: IInputProvider,
     private val stringManager: StringManager,
     private val gameObjectManager: GameObjectManager
-) : IWindowWithScene, KoinComponent {
+) : IWindowWithScene {
 
     private var showRawAxes = true
     private var showProcessedState = true

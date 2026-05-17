@@ -116,12 +116,12 @@ class SceneActionHandlerTest {
 
         // Create a mock LoggerService that captures log entries
         testLogger = mockk(relaxed = true)
-        every { testLogger.logEditor(any(), any()) } answers {
+        every { testLogger.logEditor(any<String>(), any<LogLevel>()) } answers {
             val message = firstArg<String>()
             val level = secondArg<LogLevel>()
             capturedEditorLogs.add(LogEntry(message, level))
         }
-        every { testLogger.logEngine(any(), any()) } answers {
+        every { testLogger.logEngine(any<String>(), any<LogLevel>()) } answers {
             val message = firstArg<String>()
             val level = secondArg<LogLevel>()
             capturedEditorLogs.add(LogEntry(message, level))

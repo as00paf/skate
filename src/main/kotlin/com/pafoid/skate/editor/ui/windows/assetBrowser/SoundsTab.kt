@@ -28,7 +28,7 @@ class SoundsTab(
     stringManager: StringManager,
     assetDatabase: AssetDatabase? = null,
     private val logger: LoggerService
-) : AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
+) : AssetBrowserTab(resourceManager, stringManager, assetDatabase) {
 
     private var playingSource: SoundSource? = null
     private var currentPlayingFile: File? = null

@@ -39,7 +39,7 @@ import org.koin.core.component.KoinComponent
 class SystemsWindow(
     private val stringManager: StringManager,
     private val systemManager: SystemManager,
-) : IWindowWithScene, KoinComponent {
+) : IWindowWithScene {
 
     /**
      * Renders the systems window.

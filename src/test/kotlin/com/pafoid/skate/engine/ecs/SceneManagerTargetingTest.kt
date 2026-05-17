@@ -1,8 +1,7 @@
 package com.pafoid.skate.engine.ecs
 
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.contracts.EngineLogger
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import io.mockk.every
 import io.mockk.mockk
@@ -30,9 +29,9 @@ class SceneManagerTargetingTest {
 
     private fun createSceneManager(): SceneManager {
         return SceneManager(
-            logger = mockk<LoggerService>(relaxed = true),
+            logger = mockk<EngineLogger>(relaxed = true),
             resourceManager = mockk<ResourceManager>(relaxed = true),
-            eventSystem = EventSystem(),
+            sceneEventPublisher = mockk<SceneEventPublisher>(relaxed = true),
             physics3DFactory = mockk<Physics3DFactory>(relaxed = true)
         )
     }

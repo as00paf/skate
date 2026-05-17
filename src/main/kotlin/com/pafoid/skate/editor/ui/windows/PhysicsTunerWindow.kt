@@ -16,7 +16,7 @@ import org.koin.core.component.KoinComponent
 class PhysicsTunerWindow(
     private val stringManager: StringManager,
     private val gameObjectManager: GameObjectManager,
-) : IWindowWithScene, KoinComponent {
+) : IWindowWithScene {
 
     override fun imgui(scene: Scene) {
         val physics: IPhysics3D = scene.physics3d

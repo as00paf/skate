@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.imgui.ImGuiLayer
+import com.pafoid.skate.editor.events.SceneActionEventPublisher
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.project.SceneSerializer
@@ -27,8 +28,10 @@ import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
+import com.pafoid.skate.editor.ui.handlers.EnvironmentActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
+import com.pafoid.skate.editor.ui.handlers.ProjectActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
@@ -76,6 +79,10 @@ import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.contracts.EngineLogger
+import com.pafoid.skate.engine.contracts.InputMappingsProvider
+import com.pafoid.skate.engine.contracts.IStringManager
+import com.pafoid.skate.engine.ecs.SceneEventPublisher
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
@@ -118,6 +125,10 @@ val appModule = module {
     single { Engine() }
     single { SystemManager() }
     single { GameObjectManager() }
+    single<EngineLogger> { get<LoggerService>() }
+    single<IStringManager> { get<StringManager>() }
+    single<InputMappingsProvider> { get<SettingsManager>() }
+    single<SceneEventPublisher> { SceneActionEventPublisher(get()) }
     single<Physics3DFactory> { BulletPhysics3DFactory(get(), { get() }) }
     single { SceneManager(get(), get(), get(), get()) }
     single { Serializer() }
@@ -135,6 +146,8 @@ val appModule = module {
     // EventSystem for editor event bus
     single { EventSystem() }
     single(createdAtStart = true) { SceneActionHandler().also { it.init() } }
+    single(createdAtStart = true) { ProjectActionHandler(get(), get(), get()).also { it.init() } }
+    single(createdAtStart = true) { EnvironmentActionHandler(get(), get()).also { it.init() } }
     single(createdAtStart = true) {
         ViewportActionHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
             .also { it.init() }
@@ -169,7 +182,7 @@ val appModule = module {
     single { CommandHistoryWindow(get(), get(), ) }
     single { RenderGraphWindow(get(), get()) }
     single { AudioInspectorWindow(get()) }
-    single { ProjectWindow(get(), get(), get(), get(), get(), get(),  ) }
+    single { ProjectWindow(get(), get(), get(), get(), get()) }
     single { TrickUIWindow(get()) }
 
     // FileSystem service

@@ -27,7 +27,7 @@ class PrefabsTab(
     private val prefabsGenerator: PrefabsGenerator,
     private val logger: LoggerService,
     private val jobSystem: IJobSystem,
-): AssetBrowserTab(resourceManager, stringManager), KoinComponent {
+): AssetBrowserTab(resourceManager, stringManager){
 
 
     override fun imgui(label: String, searchText: ImString) {

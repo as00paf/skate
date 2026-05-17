@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.contracts.InputMappingsProvider
+import com.pafoid.skate.engine.contracts.IStringManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
@@ -22,13 +22,13 @@ import kotlin.math.abs
 class InputSystem(
     private val inputProvider: IInputProvider,
     private val mouseListener: MouseListener,
-    private val settingsManager: SettingsManager,
-    private val stringManager: StringManager,
+    private val inputMappingsProvider: InputMappingsProvider,
+    private val stringManager: IStringManager,
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val mappings: InputMappings
-        get() = settingsManager.loadInputMappings() ?: InputMappings()
+        get() = inputMappingsProvider.loadInputMappings() ?: InputMappings()
 
     private var jumpButtonWasPressed = false
     private var movementWasActive = false

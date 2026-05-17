@@ -18,7 +18,7 @@ import org.koin.core.component.inject
  * - Play/stop controls
  * - Volume and 3D settings
  */
-class AudioInspectorWindow(private val stringManager: StringManager) : IWindowWithScene, KoinComponent {
+class AudioInspectorWindow(private val stringManager: StringManager) : IWindowWithScene {
 
     /**
      * Renders the audio inspector window.

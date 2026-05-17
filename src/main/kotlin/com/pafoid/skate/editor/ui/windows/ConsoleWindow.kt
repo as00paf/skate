@@ -20,9 +20,7 @@ import kotlin.getValue
 class ConsoleWindow(
     private val logger: LoggerService,
     private val stringManager: StringManager,
-) : IWindow, KoinComponent {
-
-
+) : IWindow {
     private val searchText = ImString(256)
     
     private val selectedLogs = mutableSetOf<LogEntry>()

@@ -1,16 +1,15 @@
 package com.pafoid.skate.engine.ecs
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
-import com.pafoid.skate.editor.events.SceneAction
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.contracts.EngineLogger
+import com.pafoid.skate.engine.contracts.EngineLogLevel
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
 
 class SceneManager(
-    private val logger: LoggerService,
+    private val logger: EngineLogger,
     private val resourceManager: ResourceManager,
-    private val eventSystem: EventSystem,
+    private val sceneEventPublisher: SceneEventPublisher,
     private val physics3DFactory: Physics3DFactory,
 ) {
 
@@ -33,14 +32,14 @@ class SceneManager(
         openScenes.add(scene)
         activeSceneIndex = openScenes.size - 1
 
-        logger.logEngine("Loading scene: ${scene.name}")
+        logger.logEngine("Loading scene: ${scene.name}", EngineLogLevel.INFO)
         scene.start()
 
         // Publish scene opened event
-        eventSystem.publish(SceneAction.Opened(scene))
-        eventSystem.publish(SceneAction.Changed)
+        sceneEventPublisher.publishOpened(scene)
+        sceneEventPublisher.publishChanged()
 
-        logger.logEngine("Scene ${scene.initializer::class.simpleName} loaded and started.")
+        logger.logEngine("Scene ${scene.initializer::class.simpleName} loaded and started.", EngineLogLevel.INFO)
     }
 
     fun switchScene(scene: Scene) {
@@ -48,8 +47,8 @@ class SceneManager(
         if (sceneIndex < 0) return
 
         activeSceneIndex = sceneIndex
-        logger.logEditor("Switched to scene: ${currentScene?.name}")
-        eventSystem.publish(SceneAction.Changed)
+        logger.logEditor("Switched to scene: ${currentScene?.name}", EngineLogLevel.ACTION)
+        sceneEventPublisher.publishChanged()
     }
 
     fun switchScene(index: Int) {
@@ -63,27 +62,27 @@ class SceneManager(
 
         val sceneToClose = openScenes[index]
         if (sceneToClose.isDirty) {
-            logger.logEditor("Warning: Closing unsaved scene ${sceneToClose.name}")
+            logger.logEditor("Warning: Closing unsaved scene ${sceneToClose.name}", EngineLogLevel.WARN)
             // TODO: Prompt the user for confirmation.
         }
 
-        logger.logEditor("Destroying scene: ${sceneToClose.name}")
+        logger.logEditor("Destroying scene: ${sceneToClose.name}", EngineLogLevel.ACTION)
 
-        eventSystem.publish(SceneAction.Closing(sceneToClose))
+        sceneEventPublisher.publishClosing(sceneToClose)
         sceneToClose.destroyScene()
         openScenes.removeAt(index)
-        eventSystem.publish(SceneAction.Closed(sceneToClose))
+        sceneEventPublisher.publishClosed(sceneToClose)
 
         // Adjust active index
         if (openScenes.isEmpty()) {
             activeSceneIndex = -1
-            logger.logEngine("All scenes closed. Clearing resource cache.")
+            logger.logEngine("All scenes closed. Clearing resource cache.", EngineLogLevel.INFO)
             resourceManager.clear() // Clear resources only when all scenes are closed
         } else if (activeSceneIndex >= index) {
             activeSceneIndex = (activeSceneIndex - 1).coerceAtLeast(0)
         }
 
-        eventSystem.publish(SceneAction.Changed)
+        sceneEventPublisher.publishChanged()
     }
 
     fun closeScene(index: Int) {
@@ -107,7 +106,7 @@ class SceneManager(
         if (newName.isBlank()) return false
 
         scene.name = newName
-        logger.logEditor("Scene renamed: '${scene.name}'")
+        logger.logEditor("Scene renamed: '${scene.name}'", EngineLogLevel.ACTION)
         return true
     }
 
@@ -146,14 +145,14 @@ class SceneManager(
      * @param initializer The scene initializer to use for setup
      * @param filePath Optional file path to back the scene. Sets sceneData.levelPath when provided.
      */
-    suspend fun createScene(name: String, initializer: LevelEditorSceneInitializer, filePath: String? = null): Scene? {
+    suspend fun createScene(name: String, initializer: SceneInitializer, filePath: String? = null): Scene? {
         val newScene = Scene(name, initializer, physics3DFactory)
         if (filePath != null) {
             newScene.sceneData.levelPath = filePath
         }
         newScene.init()
         openScene(newScene)
-        logger.logEditor("Scene created: '$name'")
+        logger.logEditor("Scene created: '$name'", EngineLogLevel.ACTION)
         return newScene
     }
 }

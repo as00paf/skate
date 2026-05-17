@@ -18,7 +18,7 @@ class AnimationsTab(
     assetDatabase: AssetDatabase? = null,
     private val jobSystem: IJobSystem,
     private val logger: LoggerService
-): AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
+): AssetBrowserTab(resourceManager, stringManager, assetDatabase) {
 
     init {
         refreshAssets()

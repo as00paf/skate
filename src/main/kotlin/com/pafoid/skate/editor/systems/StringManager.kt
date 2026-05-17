@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.LogLevel
+import com.pafoid.skate.engine.contracts.IStringManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.InputStream
@@ -9,7 +10,7 @@ import java.util.*
 class StringManager(
     private val baseName: String = "strings",
     private var currentLocale: String = "en"
-) : KoinComponent {
+) : KoinComponent, IStringManager {
     private val logger: LoggerService by inject()
 
     private val properties = Properties()
@@ -50,7 +51,7 @@ class StringManager(
         }
     }
 
-    fun getString(key: String): String {
+    override fun getString(key: String): String {
         val value = properties.getProperty(key)
         if (value == null) {
             logger.logEditor("Missing string key: $key")
@@ -58,7 +59,7 @@ class StringManager(
         return value ?: "!!${key}!!"
     }
 
-    fun getString(key: String, vararg formatArgs: Any): String {
+    override fun getString(key: String, vararg formatArgs: Any): String {
         val formatString = properties.getProperty(key)
         if (formatString == null) {
             logger.logEditor("Missing string key: $key")

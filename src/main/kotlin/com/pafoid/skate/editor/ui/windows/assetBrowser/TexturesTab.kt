@@ -22,7 +22,7 @@ class TexturesTab(
     private val logger: LoggerService,
     private val sceneManager: SceneManager,
     private val jobSystem: IJobSystem,
-    ): AssetBrowserTab(resourceManager, stringManager, assetDatabase), KoinComponent {
+    ): AssetBrowserTab(resourceManager, stringManager, assetDatabase) {
 
     init {
         refreshAssets()

@@ -17,7 +17,7 @@ class AssetBrowserWindow(
     private val texturesTab: TexturesTab,
     private val prefabsTab: PrefabsTab,
     private val soundsTab: SoundsTab,
-) : IWindow, KoinComponent {
+) : IWindow {
 
     private var searchText = ImString(256)
 

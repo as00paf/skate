@@ -1,8 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.settings.EngineSettings
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.contracts.InputMappingsProvider
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -33,7 +32,7 @@ class InputSystemTest {
 
     private lateinit var inputProvider: IInputProvider
     private lateinit var mouseListener: MouseListener
-    private lateinit var settingsManager: SettingsManager
+    private lateinit var inputMappingsProvider: InputMappingsProvider
     private lateinit var stringManager: StringManager
     private lateinit var eventSystem: EventSystem
     private lateinit var scene: Scene
@@ -43,7 +42,7 @@ class InputSystemTest {
     fun setup() {
         inputProvider = mockk(relaxed = true)
         mouseListener = mockk(relaxed = true)
-        settingsManager = mockk(relaxed = true)
+        inputMappingsProvider = mockk(relaxed = true)
         stringManager = mockk(relaxed = true)
         eventSystem = EventSystem()
 
@@ -63,14 +62,13 @@ class InputSystemTest {
             moveRight = InputBinding(gamepadAxis = 0)
         }
 
-        every { settingsManager.engine } returns EngineSettings()
-        every { settingsManager.loadInputMappings() } returns inputMappings
+        every { inputMappingsProvider.loadInputMappings() } returns inputMappings
         every { inputProvider.isCursorDisabled() } returns true
 
         inputSystem = InputSystem(
             inputProvider = inputProvider,
             mouseListener = mouseListener,
-            settingsManager = settingsManager,
+            inputMappingsProvider = inputMappingsProvider,
             stringManager = stringManager,
             eventSystem = eventSystem
         )
