@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -33,6 +34,7 @@ class EngineFixedTimestepTest : KoinTest {
     private lateinit var mockEditorInputHandler: EditorInputHandler
     private lateinit var mockBootManager: BootManager
     private lateinit var mockSplashScreen: SplashScreen
+    private lateinit var mockJobSystem: IJobSystem
 
     @BeforeEach
     fun setup() {
@@ -44,6 +46,7 @@ class EngineFixedTimestepTest : KoinTest {
         mockEditorInputHandler = mockk(relaxed = true)
         mockBootManager = mockk(relaxed = true)
         mockSplashScreen = mockk(relaxed = true)
+        mockJobSystem = mockk(relaxed = true)
 
         startKoin {
             modules(module {
@@ -55,6 +58,7 @@ class EngineFixedTimestepTest : KoinTest {
                 single { mockEditorInputHandler }
                 single { mockBootManager }
                 single { mockSplashScreen }
+                single { mockJobSystem }
             })
         }
 

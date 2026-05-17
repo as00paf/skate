@@ -67,7 +67,7 @@ class EnvironmentSystem(
     }
 
     override fun update(dt: Float) {
-        getEnvironmentComponent()?.update(dt)
+        getOrCreateEnvironmentComponent().update(dt)
     }
 
     override fun imgui() {

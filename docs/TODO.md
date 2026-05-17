@@ -238,7 +238,7 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-018 | DI/layering implementation | software-engineer | done |
 | ARCH-019 | Localization completion sweep | software-engineer | done |
 | ARCH-020 | Guard tests + async test fixtures | qa-engineer | done |
-| ARCH-021 | QA Gate 4 full checkpoint | qa-engineer | pending |
+| ARCH-021 | QA Gate 4 full checkpoint | qa-engineer | done |
 | ARCH-022 | Final reviewer gate | reviewer | pending |
 | ARCH-023 | Documentation closure | documentation-engineer | pending |
 
@@ -267,6 +267,7 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-018 | software-engineer | pending -> in_progress -> done (2026-05-17: Scene physics creation moved to `Physics3DFactory` contract, `ViewportActionHandler` converted to constructor DI, `BulletPhysics3D` removed `KoinComponent` injection, and prefab payload boundary decoupled from UI-window package) |
 | ARCH-019 | software-engineer | pending -> in_progress -> done (2026-05-17: localized remaining hardcoded UI strings in `GameViewWindow`, `ProjectWindow`, `InputSystem`, and `AudioSystem`; added required keys in `strings.properties` and `strings_fr.properties`) |
 | ARCH-020 | qa-engineer | pending -> in_progress -> done (2026-05-17: added architecture guard tests for UI mutation pipeline and engine/editor layering, extracted shared async `ImmediateJobSystem` fixture for command tests, and added async stale-completion lifecycle regression coverage in `UndoRedoManagerTest`) |
+| ARCH-021 | qa-engineer | pending -> in_progress -> blocked (2026-05-17: executed Gate 4 commands; `compileKotlin` passed and targeted ARCH regression tests passed, but full `test` failed with 3 failures in `EngineFixedTimestepTest` (2) and `EnvironmentSystemTest` (1); no-go for ARCH-022); blocked -> in_progress -> done (2026-05-17: fixed `EngineFixedTimestepTest` DI setup and `EnvironmentSystem.update()` component-creation path; reran targeted failing tests and full suite with all passing) |
 
 ---
 
