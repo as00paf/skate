@@ -22,12 +22,14 @@ import imgui.type.ImBoolean
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.java.KoinJavaComponent.inject
+import kotlin.getValue
 
-class PropertiesWindow : IWindow, KoinComponent {
-    private val stringManager: StringManager by inject()
-    private val sceneManager: SceneManager by inject()
-    private val eventSystem: EventSystem by inject()
-    
+class PropertiesWindow(
+    private val stringManager: StringManager,
+    private val sceneManager: SceneManager,
+    private val eventSystem: EventSystem,
+) : IWindow, KoinComponent {
     private val searchString = ImString(128)
     private var selectedGameObject: GameObject? = null
 

@@ -13,12 +13,16 @@ import imgui.type.ImBoolean
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.java.KoinJavaComponent.inject
 import org.lwjgl.glfw.GLFW
+import kotlin.getValue
 
-class ConsoleWindow : IWindow, KoinComponent {
+class ConsoleWindow(
+    private val logger: LoggerService,
+    private val stringManager: StringManager,
+) : IWindow, KoinComponent {
 
-    private val logger: LoggerService by inject()
-    private val stringManager: StringManager by inject()
+
     private val searchText = ImString(256)
     
     private val selectedLogs = mutableSetOf<LogEntry>()

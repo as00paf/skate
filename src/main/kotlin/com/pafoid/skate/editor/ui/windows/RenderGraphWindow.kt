@@ -12,6 +12,7 @@ import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.getValue
 
 /**
  * Render Graph visualization window showing the rendering pipeline structure.
@@ -29,10 +30,10 @@ import org.koin.core.component.inject
  * - Toggle enable/disable to debug rendering issues
  * - Use auto-update for real-time metrics
  */
-class RenderGraphWindow : IWindow, KoinComponent {
-
-    private val stringManager: StringManager by inject()
-    private val renderer: Renderer by inject()
+class RenderGraphWindow(
+    private val stringManager: StringManager,
+    private val renderer: Renderer,
+) : IWindow, KoinComponent {
 
     private var autoUpdate = true
     private var showPerformance = true

@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.events.Event
 import com.pafoid.skate.engine.events.TrickCompleted
 import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
@@ -25,9 +26,7 @@ import org.koin.core.component.inject
  * trickUIWindow.imgui(xPos, yPos, width, height)
  * ```
  */
-class TrickUIWindow : KoinComponent {
-
-    private val systemManager: SystemManager by inject()
+class TrickUIWindow(private val eventSystem: EventSystem) : KoinComponent {
 
     private var lastCompletedTrick: String? = null
     private var lastScore: Int = 0
@@ -39,8 +38,6 @@ class TrickUIWindow : KoinComponent {
      * Initialize the trick UI window with event subscriptions.
      */
     fun init(scene: Scene) {
-        val eventSystem = systemManager.getSystem<EventSystem>()
-
         // Subscribe to trick completed events
         eventSystem?.subscribe<TrickCompleted> { event ->
             lastCompletedTrick = event.trickName

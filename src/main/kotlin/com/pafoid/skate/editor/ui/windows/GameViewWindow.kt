@@ -20,21 +20,22 @@ import imgui.type.ImBoolean
 import org.joml.Vector2f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.java.KoinJavaComponent.inject
+import kotlin.getValue
 
-class GameViewWindow : IWindow, KoinComponent {
-
-    private val mouseListener: MouseListener by inject()
-    private val sceneManager: SceneManager by inject()
-    private val settingsManager: SettingsManager by inject()
-    private val stringManager: StringManager by inject()
-    private val eventSystem: EventSystem by inject()
-    private val editorState: EditorInputState by inject()
-
-    private val viewportRenderer: ViewportRenderer by inject()
-    private val viewportToolbar: ViewportToolbar by inject()
-    private val viewportContextMenu: ViewportContextMenu by inject()
-    private val viewportOverlays: ViewportOverlays by inject()
-    private val viewportDragDropHandler: ViewportDragDropHandler by inject()
+class GameViewWindow(
+    private val mouseListener: MouseListener,
+    private val sceneManager: SceneManager,
+    private val settingsManager: SettingsManager,
+    private val stringManager: StringManager,
+    private val eventSystem: EventSystem,
+    private val editorState: EditorInputState,
+    private val viewportRenderer: ViewportRenderer,
+    private val viewportToolbar: ViewportToolbar,
+    private val viewportContextMenu: ViewportContextMenu,
+    private val viewportOverlays: ViewportOverlays,
+    private val viewportDragDropHandler: ViewportDragDropHandler,
+) : IWindow, KoinComponent {
 
     private val gamepadOverlay = GamepadOverlay()
     private val scenesTabBar by lazy { EditorScenesTabBar(eventSystem, stringManager) }

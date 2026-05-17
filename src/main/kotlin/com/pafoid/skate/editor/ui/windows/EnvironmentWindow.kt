@@ -18,11 +18,13 @@ import imgui.ImGui
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.getValue
 
-class EnvironmentWindow : IWindowWithScene, KoinComponent {
-    private val stringManager: StringManager by inject()
-    private val undoRedoManager: UndoRedoManager by inject()
-    private val systemManager: SystemManager by inject()
+class EnvironmentWindow(
+    private val stringManager: StringManager,
+    private val undoRedoManager: UndoRedoManager,
+    private val systemManager: SystemManager,
+) : IWindowWithScene, KoinComponent {
 
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.environment"))

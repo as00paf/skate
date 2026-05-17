@@ -52,6 +52,7 @@ import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.io.IOException
+import kotlin.getValue
 
 /**
  * Project file system browser window.
@@ -65,15 +66,14 @@ import java.io.IOException
  * - Undo support for file operations
  * - Double-click to open scenes or external files
  */
-class ProjectWindow : IWindow, KoinComponent {
-
-    private val stringManager: StringManager by inject()
-    private val logger: LoggerService by inject()
-    private val projectManager: ProjectManager by inject()
-    private val undoRedoManager: UndoRedoManager by inject()
-    private val sceneManager: SceneManager by inject()
-    private val eventSystem: EventSystem by inject()
-    private val fileSystemScanner: FileSystemScanner by inject()
+class ProjectWindow(
+    private val stringManager: StringManager,
+    private val logger: LoggerService,
+    private val projectManager: ProjectManager,
+    private val undoRedoManager: UndoRedoManager,
+    private val eventSystem: EventSystem,
+    private val fileSystemScanner: FileSystemScanner,
+) : IWindow, KoinComponent {
 
     private val searchText = ImString("", 256)
     private var treeCache: List<FileSystemItem> = emptyList()

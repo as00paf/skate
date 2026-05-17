@@ -22,6 +22,7 @@ import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.java.KoinJavaComponent.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN
 import org.lwjgl.glfw.GLFW.GLFW_KEY_END
 import org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
@@ -30,21 +31,21 @@ import org.lwjgl.glfw.GLFW.GLFW_KEY_HOME
 import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL
 import org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL
 import org.lwjgl.glfw.GLFW.GLFW_KEY_UP
+import kotlin.getValue
 
 /**
  * Special UID constant for scene rename editing (negative to avoid collision with real GameObject UIDs).
  */
 private const val SPECIAL_UID_SCENE_RENAME = -999
 
-class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
-
-    private val sceneManager: SceneManager by inject()
-    private val stringManager: StringManager by inject()
-    private val clipboardService: ClipboardService by inject()
-    private val logger: LoggerService by inject()
-    private val eventSystem: EventSystem by inject()
-    private val gameObjectManager: GameObjectManager by inject()
-
+class SceneHierarchyWindow(
+    private val sceneManager: SceneManager,
+    private val stringManager: StringManager,
+    private val clipboardService: ClipboardService,
+    private val logger: LoggerService,
+    private val eventSystem: EventSystem,
+    private val gameObjectManager: GameObjectManager,
+) : IWindowWithScene, KoinComponent {
     private val searchQuery = ImString(256)
     private var isLinked = false
 

@@ -9,6 +9,8 @@ import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.java.KoinJavaComponent.inject
+import kotlin.getValue
 
 /**
  * Command History window displaying undo/redo stack with visual feedback.
@@ -24,10 +26,10 @@ import org.koin.core.component.inject
  * - Click on any command to undo/redo to that point
  * - Use toolbar buttons for single step undo/redo
  */
-class CommandHistoryWindow : IWindow, KoinComponent {
-
-    private val undoRedoManager: UndoRedoManager by inject()
-    private val stringManager: StringManager by inject()
+class CommandHistoryWindow(
+    private val undoRedoManager: UndoRedoManager,
+    private val stringManager: StringManager,
+) : IWindow, KoinComponent {
 
     private var scrollToBottom = false
     private val undoStackHeight = 250f

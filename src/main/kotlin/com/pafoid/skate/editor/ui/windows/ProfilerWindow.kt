@@ -11,8 +11,7 @@ import org.koin.core.component.inject
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadMXBean
 
-class ProfilerWindow : IWindow, KoinComponent {
-    private val stringManager: StringManager by inject()
+class ProfilerWindow(private val stringManager: StringManager) : IWindow, KoinComponent {
     private val threadBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
     private val threadIds = mutableMapOf<String, Long>()
     private val threadCpuUsage = mutableMapOf<String, Float>()

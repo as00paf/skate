@@ -149,28 +149,28 @@ val appModule = module {
     factory { ViewportDragDropHandler(get(), get()) }
 
     // Editor windows
-    single { SceneHierarchyWindow() }
-    single { PropertiesWindow() }
-    single { GameViewWindow() }
+    single { SceneHierarchyWindow(get(), get(), get(), get(), get(), get()) }
+    single { PropertiesWindow(get(), get(), get(),) }
+    single { GameViewWindow(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { AnimationsTab(get(), get(), get(), get(), get()) }
     single { TexturesTab(get(), get(), get(), get(), get(), get()) }
     single { PrefabsTab(get(), get(), get(), get(), get(), get()) }
     single { SoundsTab(get(), get(), get(), get()) }
     single { AssetBrowserWindow(get(), get(), get(), get(), get()) }
-    single { EnvironmentWindow() }
-    single { ProfilerWindow() }
-    single { ConsoleWindow() }
+    single { EnvironmentWindow(get(), get(), get(),) }
+    single { ProfilerWindow(get()) }
+    single { ConsoleWindow(get(), get(),) }
     single { PhysicsTunerWindow(get(), get()) }
     single { InputTestingWindow(get(), get(), get()) }
     single { SystemsWindow(get(), get()) }
     single { EditorSettingsWindow(get(), get()) }
     single { ProjectSettingsWindow(get(), get(), get(), get(), get()) }
     single { KeyBindingsWindow(get(), get()) }
-    single { CommandHistoryWindow() }
-    single { RenderGraphWindow() }
-    single { AudioInspectorWindow() }
-    single { ProjectWindow() }
-    single { TrickUIWindow() }
+    single { CommandHistoryWindow(get(), get(), ) }
+    single { RenderGraphWindow(get(), get()) }
+    single { AudioInspectorWindow(get()) }
+    single { ProjectWindow(get(), get(), get(), get(), get(), get(),  ) }
+    single { TrickUIWindow(get()) }
 
     // FileSystem service
     single { FileSystemScanner(get(), get(), get()) }
