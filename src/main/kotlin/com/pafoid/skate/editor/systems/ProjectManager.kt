@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.collectGameObjectsDepthFirst
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
@@ -140,13 +141,10 @@ class ProjectManager(
 
         logger.logEditor("Spawned ${scene.gameObjects.size} objects")
 
-        // CRITICAL: Populate modelGuid on all RenderComponents before saving.
-        // model is @Transient and won't be serialized — without modelGuid,
-        // models won't reload when the scene is opened later.
-        resolveModelGuidsInScene(scene)
-
-        // Resolve animation paths for Animator components before saving
-        resolveAnimationPathsInScene(scene)
+        scene.collectGameObjectsDepthFirst().forEach { obj ->
+            resolveModelGuidForObject(obj)
+            resolveAnimatorPathsForObject(obj)
+        }
 
         // Add scene components
         scene.addComponent(EnvironmentComponent())
@@ -174,18 +172,6 @@ class ProjectManager(
         sceneSerializer.saveToFile(scene, defaultSceneFile.absolutePath)
 
         logger.logEditor("Default scene saved to ${defaultSceneFile.absolutePath}")
-    }
-
-    /**
-     * Walk all RenderComponents in the scene and populate modelGuid from the AssetDatabase.
-     * This is called before saving the default scene to ensure models can be
-     * reloaded when the scene is opened later.
-     */
-    private fun resolveModelGuidsInScene(scene: Scene) {
-        scene.gameObjects.forEach { obj ->
-            resolveModelGuidForObject(obj)
-            obj.children.forEach { child -> resolveModelGuidForObject(child) }
-        }
     }
 
     private fun resolveModelGuidForObject(obj: GameObject) {
@@ -256,18 +242,6 @@ class ProjectManager(
                     rc.metallicRoughnessGuid = texAsset?.guid?.value ?: texAbsolutePath
                 }
             }
-        }
-    }
-
-    /**
-     * Walk all Animator components in the scene and populate animationPaths from loaded animations.
-     * This is called before saving the default scene to ensure animations can be
-     * reloaded when the scene is opened later.
-     */
-    private fun resolveAnimationPathsInScene(scene: Scene) {
-        scene.gameObjects.forEach { obj ->
-            resolveAnimatorPathsForObject(obj)
-            obj.children.forEach { child -> resolveAnimatorPathsForObject(child) }
         }
     }
 

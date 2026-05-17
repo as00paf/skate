@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.assets.database.AssetGuid
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.collectGameObjectsDepthFirst
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -178,10 +179,11 @@ class SceneSerializer(
         Component.init(maxCompId)
 
         if (assetDatabase != null) {
-            resolveAssetReferences(scene)
+            scene.collectGameObjectsDepthFirst().forEach { obj ->
+                resolveObjectReferences(obj)
+                resolveAnimatorAnimations(obj)
+            }
         }
-
-        resolveAnimationReferences(scene)
 
         logger.logEditor("Scene loaded from $path")
 
@@ -193,12 +195,6 @@ class SceneSerializer(
         return true
     }
 
-    private fun resolveAssetReferences(scene: Scene) {
-        scene.gameObjects.forEach { obj ->
-            resolveObjectReferences(obj)
-            obj.children.forEach { child -> resolveObjectReferences(child) }
-        }
-    }
 
     private fun resolveObjectReferences(obj: GameObject) {
         obj.getComponent<RenderComponent>()?.let { rc ->
@@ -284,13 +280,6 @@ class SceneSerializer(
             } else null
         } catch (e: Exception) {
             null
-        }
-    }
-
-    private fun resolveAnimationReferences(scene: Scene) {
-        scene.gameObjects.forEach { obj ->
-            resolveAnimatorAnimations(obj)
-            obj.children.forEach { child -> resolveAnimatorAnimations(child) }
         }
     }
 
