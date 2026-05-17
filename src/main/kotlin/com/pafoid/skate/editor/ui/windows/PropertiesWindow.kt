@@ -1,5 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.events.ViewportAction.*
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
@@ -13,11 +15,7 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.editor.events.ViewportAddComponent
 import com.pafoid.skate.engine.ecs.components.ComponentType
-import com.pafoid.skate.editor.events.ViewportRemoveComponent
-import com.pafoid.skate.editor.events.ViewportRenameGameObject
-import com.pafoid.skate.editor.events.ViewportSetGameObjectEnabled
 import imgui.ImGui
 import imgui.flag.ImGuiInputTextFlags
 import imgui.type.ImBoolean
@@ -75,7 +73,7 @@ class PropertiesWindow : IWindow, KoinComponent {
                 // Don't allow removing Transform component (core component)
                 if (component !is Transform) {
                     componentTypeOf(component)?.let { componentType ->
-                        eventSystem.publish(ViewportRemoveComponent(go, componentType))
+                        eventSystem.publish(RemoveComponent(go, componentType))
                     }
                 }
             }
@@ -90,7 +88,7 @@ class PropertiesWindow : IWindow, KoinComponent {
     private fun enabledCheckbox(go: GameObject) {
         val isEnabled = ImBoolean(go.isEnabled)
         if (ImGui.checkbox("##enabled_checkbox", isEnabled)) {
-            eventSystem.publish(ViewportSetGameObjectEnabled(go, isEnabled.get()))
+            eventSystem.publish(SetGameObjectEnabled(go, isEnabled.get()))
         }
 
         ImGui.sameLine()
@@ -105,7 +103,7 @@ class PropertiesWindow : IWindow, KoinComponent {
         val name = ImString(go.name, 128)
         val flags = ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
         if (ImGui.inputText("##name_input", name, flags)) {
-            eventSystem.publish(ViewportRenameGameObject(go, name.get()))
+            eventSystem.publish(RenameGameObject(go, name.get()))
         }
         ImGui.popItemWidth()
     }
@@ -144,7 +142,7 @@ class PropertiesWindow : IWindow, KoinComponent {
                     if (go.getComponent(type) == null) {
                         if (ImGui.menuItem(name)) {
                             componentTypeOf(type)?.let { componentType ->
-                                eventSystem.publish(ViewportAddComponent(go, componentType))
+                                eventSystem.publish(AddComponent(go, componentType))
                             }
                             ImGui.closeCurrentPopup()
                         }

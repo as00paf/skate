@@ -41,33 +41,8 @@ import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.editor.events.SelectionCleared
-import com.pafoid.skate.editor.events.ViewportAddComponent
-import com.pafoid.skate.editor.events.ViewportCreateEmptyChild
-import com.pafoid.skate.editor.events.ViewportCreateCamera
-import com.pafoid.skate.editor.events.ViewportCreateEmpty
-import com.pafoid.skate.editor.events.ViewportCreateLight
-import com.pafoid.skate.editor.events.ViewportCreatePrimitive
-import com.pafoid.skate.editor.events.ViewportDelete
-import com.pafoid.skate.editor.events.ViewportDropAnimation
-import com.pafoid.skate.editor.events.ViewportDropSound
-import com.pafoid.skate.editor.events.ViewportDropTexture
-import com.pafoid.skate.editor.events.ViewportDuplicate
-import com.pafoid.skate.editor.events.ViewportFocusSelected
-import com.pafoid.skate.editor.events.ViewportPasteClipboard
-import com.pafoid.skate.editor.events.ViewportRemoveComponent
-import com.pafoid.skate.editor.events.ViewportRenameGameObject
-import com.pafoid.skate.editor.events.ViewportReparent
-import com.pafoid.skate.editor.events.ViewportResetScene
-import com.pafoid.skate.editor.events.ViewportResetCamera
-import com.pafoid.skate.editor.events.ViewportResetTransform
-import com.pafoid.skate.editor.events.ViewportSetGameObjectEnabled
-import com.pafoid.skate.editor.events.ViewportSetRuntimePlaying
-import com.pafoid.skate.editor.events.ViewportSetSimulationTimeScale
-import com.pafoid.skate.editor.events.ViewportSpawnPrefab
-import com.pafoid.skate.editor.events.ViewportToggleGizmo
-import com.pafoid.skate.editor.events.ViewportToggleLock
-import com.pafoid.skate.editor.events.ViewportTogglePhysicsDebug
-import com.pafoid.skate.editor.events.ViewportToggleVisibility
+import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.events.ViewportAction.*
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
@@ -95,89 +70,89 @@ class ViewportActionHandler : KoinComponent {
     private val jobSystem: IJobSystem by inject()
 
     fun init() {
-        eventSystem.subscribe<ViewportCreateEmpty> { event ->
+        eventSystem.subscribe<CreateEmpty> { event ->
             handleCreateEmpty(event.scene)
         }
-        eventSystem.subscribe<ViewportCreatePrimitive> { event ->
+        eventSystem.subscribe<CreatePrimitive> { event ->
             handleCreatePrimitive(event.name, event.halfExtents)
         }
-        eventSystem.subscribe<ViewportCreateLight> { event ->
+        eventSystem.subscribe<CreateLight> { event ->
             handleCreateLight(event.name, event.type)
         }
-        eventSystem.subscribe<ViewportCreateCamera> { event ->
+        eventSystem.subscribe<CreateCamera> { event ->
             handleCreateCamera(event.scene)
         }
 
-        eventSystem.subscribe<ViewportSpawnPrefab> { event ->
+        eventSystem.subscribe<SpawnPrefab> { event ->
             handleSpawnPrefab(event.prefabType, event.position)
         }
 
-        eventSystem.subscribe<ViewportDropTexture> { event ->
+        eventSystem.subscribe<DropTexture> { event ->
             handleDropTexture(event.texturePath, event.targetObject, event.dropPosition)
         }
-        eventSystem.subscribe<ViewportDropSound> { event ->
+        eventSystem.subscribe<DropSound> { event ->
             handleDropSound(event.soundPath, event.targetObject)
         }
-        eventSystem.subscribe<ViewportDropAnimation> { event ->
+        eventSystem.subscribe<DropAnimation> { event ->
             handleDropAnimation(event.animationPath, event.targetObject)
         }
 
-        eventSystem.subscribe<ViewportDuplicate> { event ->
+        eventSystem.subscribe<Duplicate> { event ->
             handleDuplicate(event.gameObject)
         }
-        eventSystem.subscribe<ViewportDelete> { event ->
+        eventSystem.subscribe<Delete> { event ->
             handleDelete(event.gameObject, event.scene)
         }
-        eventSystem.subscribe<ViewportRenameGameObject> { event ->
+        eventSystem.subscribe<RenameGameObject> { event ->
             handleRename(event.gameObject, event.newName)
         }
-        eventSystem.subscribe<ViewportSetGameObjectEnabled> { event ->
+        eventSystem.subscribe<SetGameObjectEnabled> { event ->
             handleSetEnabled(event.gameObject, event.enabled)
         }
-        eventSystem.subscribe<ViewportAddComponent> { event ->
+        eventSystem.subscribe<AddComponent> { event ->
             handleAddComponent(event.gameObject, event.componentType)
         }
-        eventSystem.subscribe<ViewportRemoveComponent> { event ->
+        eventSystem.subscribe<RemoveComponent> { event ->
             handleRemoveComponent(event.gameObject, event.componentType)
         }
-        eventSystem.subscribe<ViewportToggleVisibility> { event ->
+        eventSystem.subscribe<ToggleVisibility> { event ->
             handleToggleVisibility(event.gameObject, event.visible)
         }
-        eventSystem.subscribe<ViewportToggleLock> { event ->
+        eventSystem.subscribe<ToggleLock> { event ->
             handleToggleLock(event.gameObject, event.locked)
         }
-        eventSystem.subscribe<ViewportReparent> { event ->
+        eventSystem.subscribe<Reparent> { event ->
             handleReparent(event.child, event.newParent)
         }
-        eventSystem.subscribe<ViewportCreateEmptyChild> { event ->
+        eventSystem.subscribe<CreateEmptyChild> { event ->
             handleCreateEmptyChild(event.parent)
         }
-        eventSystem.subscribe<ViewportPasteClipboard> { event ->
+        eventSystem.subscribe<PasteClipboard> { event ->
             handlePasteClipboard(event.parent)
         }
-        eventSystem.subscribe<ViewportSetRuntimePlaying> { event ->
+        eventSystem.subscribe<SetRuntimePlaying> { event ->
             handleSetRuntimePlaying(event.playing)
         }
-        eventSystem.subscribe<ViewportSetSimulationTimeScale> { event ->
+        eventSystem.subscribe<SetSimulationTimeScale> { event ->
             handleSetSimulationTimeScale(event.timeScale)
         }
-        eventSystem.subscribe<ViewportResetTransform> { event ->
+        eventSystem.subscribe<ResetTransform> { event ->
             handleResetTransform(event.gameObject)
         }
-        eventSystem.subscribe<ViewportResetScene> {
+        eventSystem.subscribe<ResetScene> {
             handleResetSkateScene()
         }
-        eventSystem.subscribe<ViewportTogglePhysicsDebug> {
+        eventSystem.subscribe<TogglePhysicsDebug> {
             handleTogglePhysicsDebug()
         }
-        eventSystem.subscribe<ViewportToggleGizmo> { event ->
+        eventSystem.subscribe<ToggleGizmo> { event ->
             handleToggleGizmo(event.gizmoId)
         }
 
-        eventSystem.subscribe<ViewportFocusSelected> {
+        eventSystem.subscribe<FocusSelected> {
             handleFocusSelected()
         }
-        eventSystem.subscribe<ViewportResetCamera> {
+        eventSystem.subscribe<ResetCamera> {
             handleResetCamera()
         }
     }

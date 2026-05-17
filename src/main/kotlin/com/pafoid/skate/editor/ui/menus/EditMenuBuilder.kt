@@ -7,8 +7,7 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.editor.events.SelectionCleared
-import com.pafoid.skate.editor.events.ViewportDelete
-import com.pafoid.skate.editor.events.ViewportPasteClipboard
+import com.pafoid.skate.editor.events.ViewportAction
 import imgui.ImGui
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
@@ -60,7 +59,7 @@ class EditMenuBuilder(
             val selected = scene?.selectedGameObject
             if (selected != null && scene != null) {
                 clipboardService.copy(selected)
-                eventSystem.publish(ViewportDelete(selected, scene))
+                eventSystem.publish(ViewportAction.Delete(selected, scene))
                 eventSystem.publish(SelectionCleared)
             }
         }
@@ -70,7 +69,7 @@ class EditMenuBuilder(
             }
         }
         if (menuItem("${Icons.PASTE} ${stringManager.getString("menu.edit.paste")}", "Ctrl+V")) {
-            eventSystem.publish(ViewportPasteClipboard())
+            eventSystem.publish(ViewportAction.PasteClipboard())
         }
     }
 }

@@ -16,15 +16,8 @@ import com.pafoid.skate.editor.events.SceneOpenRequested
 import com.pafoid.skate.editor.events.SceneRenameRequested
 import com.pafoid.skate.editor.events.SceneSaveAsRequested
 import com.pafoid.skate.editor.events.SceneSaveRequested
-import com.pafoid.skate.editor.events.ViewportCreateLight
-import com.pafoid.skate.editor.events.ViewportCreateEmpty
-import com.pafoid.skate.editor.events.ViewportCreatePrimitive
-import com.pafoid.skate.editor.events.ViewportDelete
-import com.pafoid.skate.editor.events.ViewportDuplicate
-import com.pafoid.skate.editor.events.ViewportRenameGameObject
-import com.pafoid.skate.editor.events.ViewportResetTransform
-import com.pafoid.skate.editor.events.ViewportSetRuntimePlaying
-import com.pafoid.skate.editor.events.ViewportSpawnPrefab
+import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.events.ViewportAction.*
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
@@ -267,7 +260,7 @@ class ActionSearchProvider(
 
     private fun createEmptyGameObject() {
         val scene = sceneManager.currentScene ?: return
-        eventSystem.publish(ViewportCreateEmpty(scene))
+        eventSystem.publish(CreateEmpty(scene))
         logger.logEditor("Create empty GameObject requested")
     }
 
@@ -278,31 +271,31 @@ class ActionSearchProvider(
     }
 
     private fun startSimulation() {
-        eventSystem.publish(ViewportSetRuntimePlaying(true))
+        eventSystem.publish(SetRuntimePlaying(true))
         logger.logEditor("Simulation start requested")
     }
 
     private fun stopSimulation() {
-        eventSystem.publish(ViewportSetRuntimePlaying(false))
+        eventSystem.publish(SetRuntimePlaying(false))
         logger.logEditor("Simulation stop requested")
     }
 
     private fun resetTransform() {
         val selected = sceneManager.currentScene?.selectedGameObject ?: return
-        eventSystem.publish(ViewportResetTransform(selected))
+        eventSystem.publish(ResetTransform(selected))
         logger.logEditor("Reset transform requested for: ${selected.name}")
     }
 
     private fun deleteSelected() {
         val scene = sceneManager.currentScene ?: return
         val selected = scene.selectedGameObject ?: return
-        eventSystem.publish(ViewportDelete(selected, scene))
+        eventSystem.publish(Delete(selected, scene))
         logger.logEditor("Delete GameObject requested: ${selected.name}")
     }
 
     private fun duplicateSelected() {
         val selected = sceneManager.currentScene?.selectedGameObject ?: return
-        eventSystem.publish(ViewportDuplicate(selected))
+        eventSystem.publish(Duplicate(selected))
         logger.logEditor("Duplicate GameObject requested: ${selected.name}")
     }
 
@@ -339,17 +332,17 @@ class ActionSearchProvider(
     }
 
     private fun createPrimitive() {
-        eventSystem.publish(ViewportCreatePrimitive("Cube", Vector3f(0.5f, 0.5f, 0.5f)))
+        eventSystem.publish(CreatePrimitive("Cube", Vector3f(0.5f, 0.5f, 0.5f)))
         logger.logEditor("Create primitive executed")
     }
 
     private fun createLight() {
-        eventSystem.publish(ViewportCreateLight("DirectionalLight", LightType.DIRECTIONAL))
+        eventSystem.publish(CreateLight("DirectionalLight", LightType.DIRECTIONAL))
         logger.logEditor("Create light executed")
     }
 
     private fun spawnPrefab() {
-        eventSystem.publish(ViewportSpawnPrefab(PrefabType.LEDGE))
+        eventSystem.publish(SpawnPrefab(PrefabType.LEDGE))
         logger.logEditor("Spawn prefab executed")
     }
 
@@ -367,7 +360,7 @@ class ActionSearchProvider(
             selected.name
         )
         if (!newName.isNullOrBlank() && newName != selected.name) {
-            eventSystem.publish(ViewportRenameGameObject(selected, newName))
+            eventSystem.publish(RenameGameObject(selected, newName))
             logger.logEditor("GameObject rename requested: '${selected.name}' -> '$newName'")
         }
     }

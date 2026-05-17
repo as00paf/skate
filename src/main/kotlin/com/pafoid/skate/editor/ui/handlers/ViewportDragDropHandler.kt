@@ -1,14 +1,11 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.PrefabData
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.editor.events.ViewportDropAnimation
-import com.pafoid.skate.editor.events.ViewportDropSound
-import com.pafoid.skate.editor.events.ViewportDropTexture
-import com.pafoid.skate.editor.events.ViewportSpawnPrefab
 import imgui.ImGui
 import imgui.ImVec2
 import org.joml.Vector3f
@@ -62,7 +59,7 @@ class ViewportDragDropHandler(
                         else -> null
                     }
                     prefabType?.let {
-                        eventSystem.publish(ViewportSpawnPrefab(it, hitPoint))
+                        eventSystem.publish(ViewportAction.SpawnPrefab(it, hitPoint))
                     }
                 }
             }
@@ -70,20 +67,20 @@ class ViewportDragDropHandler(
             if (payloadTexture != null) {
                 val hoveredObject = scene.hoveredGameObject
                 val dropPosition = computeDropPosition(scene, tempMousePos.x, tempMousePos.y)
-                eventSystem.publish(ViewportDropTexture(payloadTexture, hoveredObject, dropPosition))
+                eventSystem.publish(ViewportAction.DropTexture(payloadTexture, hoveredObject, dropPosition))
             }
 
             if (payloadSound != null) {
                 val hoveredObject = scene.hoveredGameObject
                 if (hoveredObject != null) {
-                    eventSystem.publish(ViewportDropSound(payloadSound, hoveredObject))
+                    eventSystem.publish(ViewportAction.DropSound(payloadSound, hoveredObject))
                 }
             }
 
             if (payloadAnimation != null) {
                 val hoveredObject = scene.hoveredGameObject
                 if (hoveredObject != null) {
-                    eventSystem.publish(ViewportDropAnimation(payloadAnimation, hoveredObject))
+                    eventSystem.publish(ViewportAction.DropAnimation(payloadAnimation, hoveredObject))
                 }
             }
 

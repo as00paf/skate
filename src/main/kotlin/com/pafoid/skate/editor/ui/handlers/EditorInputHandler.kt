@@ -20,6 +20,7 @@ import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.editor.events.GameObjectSelected
 import com.pafoid.skate.editor.events.SelectionCleared
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.GamepadListener
@@ -169,10 +170,8 @@ class EditorInputHandler(
         if (keyListener.keyBeginPress(inputMappings.hierarchyDuplicate.keyboardKey) &&
             !ctrlDown && selected != null
         ) {
-            val clone = cloneGameObject(selected)
-            undoRedoManager.executeCommand(CreateGameObjectCommand(clone, scene, gameObjectManager))
-            eventSystem.publish(GameObjectSelected(clone))
-            logger.logEditor("Duplicated GameObject: ${selected.name} -> ${clone.name}")
+            eventSystem.publish(ViewportAction.Duplicate(selected))
+            logger.logEditor("Duplicate GameObject requested: ${selected.name}")
         }
 
         // Toggle Visibility (V without Ctrl)
@@ -260,22 +259,6 @@ class EditorInputHandler(
                 logger.logEditor("Redo")
             }
         }
-    }
-
-    /**
-     * Deep clone a GameObject with its transform.
-     */
-    private fun cloneGameObject(go: GameObject): GameObject {
-        val cloned = GameObject("${go.name}_clone")
-        val originalTransform = go.getComponent<Transform>()
-        val newTransform = Transform()
-        originalTransform?.let { orig ->
-            newTransform.copyFrom(orig)
-        }
-        newTransform.translation.x += 0.5f
-        newTransform.translation.z += 0.5f
-        cloned.addComponent(newTransform)
-        return cloned
     }
 
     /**

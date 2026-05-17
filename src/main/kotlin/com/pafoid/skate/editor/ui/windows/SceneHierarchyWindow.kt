@@ -13,16 +13,8 @@ import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.editor.events.GameObjectSelected
 import com.pafoid.skate.editor.events.SceneRenameRequested
 import com.pafoid.skate.editor.events.SceneRenamed
-import com.pafoid.skate.editor.events.ViewportCreateEmpty
-import com.pafoid.skate.editor.events.ViewportCreateEmptyChild
-import com.pafoid.skate.editor.events.ViewportDelete
-import com.pafoid.skate.editor.events.ViewportDuplicate
-import com.pafoid.skate.editor.events.ViewportFocusSelected
-import com.pafoid.skate.editor.events.ViewportPasteClipboard
-import com.pafoid.skate.editor.events.ViewportRenameGameObject
-import com.pafoid.skate.editor.events.ViewportReparent
-import com.pafoid.skate.editor.events.ViewportToggleLock
-import com.pafoid.skate.editor.events.ViewportToggleVisibility
+import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.events.ViewportAction.*
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
@@ -107,7 +99,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
         ImGui.sameLine()
         if (ImGui.button(Icons.PLUS)) {
-            eventSystem.publish(ViewportCreateEmpty(scene))
+            eventSystem.publish(CreateEmpty(scene))
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.add_gameobject"))
@@ -277,7 +269,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                 val newName = editNameStr.get()
                 val oldName = obj.name
                 if (newName != oldName) {
-                    eventSystem.publish(ViewportRenameGameObject(obj, newName))
+                    eventSystem.publish(RenameGameObject(obj, newName))
                 }
                 editingObjUid = null
             } else if (ImGui.isItemDeactivated()) {
@@ -287,7 +279,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                     val newName = editNameStr.get()
                     val oldName = obj.name
                     if (newName != oldName) {
-                        eventSystem.publish(ViewportRenameGameObject(obj, newName))
+                        eventSystem.publish(RenameGameObject(obj, newName))
                     }
                     editingObjUid = null
                 }
@@ -319,7 +311,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                 if (payload != null) {
                     val draggedObject = gameObjectManager.getGameObject(payload)
                     if (draggedObject != null && draggedObject != obj && !isChildOf(obj, draggedObject)) {
-                        eventSystem.publish(ViewportReparent(draggedObject, obj))
+                        eventSystem.publish(Reparent(draggedObject, obj))
                     }
                 }
                 ImGui.endDragDropTarget()
@@ -329,7 +321,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.beginMenu("${Icons.PLUS} ${stringManager.getString("context.hierarchy.create_empty_child")}")) {
                 if (ImGui.menuItem(stringManager.getString("lbl.gameobject.empty"))) {
-                    eventSystem.publish(ViewportCreateEmptyChild(obj))
+                    eventSystem.publish(CreateEmptyChild(obj))
                 }
                 ImGui.endMenu()
             }
@@ -337,7 +329,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             ImGui.separator()
 
             if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.duplicate")}")) {
-                eventSystem.publish(ViewportDuplicate(obj))
+                eventSystem.publish(Duplicate(obj))
             }
 
             if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.hierarchy.copy")}")) {
@@ -346,18 +338,18 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
             if (ImGui.menuItem("${Icons.CUT} ${stringManager.getString("context.hierarchy.cut")}")) {
                 clipboardService.copy(obj)
                 sceneManager.currentScene?.let { scn ->
-                    eventSystem.publish(ViewportDelete(obj, scn))
+                    eventSystem.publish(Delete(obj, scn))
                 }
             }
             if (ImGui.menuItem("${Icons.PASTE} ${stringManager.getString("context.hierarchy.paste_as_child")}")) {
-                eventSystem.publish(ViewportPasteClipboard(obj))
+                eventSystem.publish(PasteClipboard(obj))
             }
 
             ImGui.separator()
 
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.hierarchy.delete")}")) {
                 sceneManager.currentScene?.let { scn ->
-                    eventSystem.publish(ViewportDelete(obj, scn))
+                    eventSystem.publish(Delete(obj, scn))
                 }
             }
 
@@ -369,7 +361,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
             if (ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.hierarchy.focus_in_viewport")}")) {
                 eventSystem.publish(GameObjectSelected(obj))
-                eventSystem.publish(ViewportFocusSelected)
+                eventSystem.publish(FocusSelected)
             }
 
             ImGui.separator()
@@ -389,7 +381,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                 "${Icons.LOCK} ${stringManager.getString("context.hierarchy.lock_unlock")}"
             if (ImGui.menuItem(lockLabel)) {
                 val newLock = !obj.isLocked
-                eventSystem.publish(ViewportToggleLock(obj, newLock))
+                eventSystem.publish(ToggleLock(obj, newLock))
             }
 
             val visLabel = if (obj.isVisible)
@@ -398,7 +390,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
                 "${Icons.EYE} ${stringManager.getString("context.hierarchy.visible_hidden")}"
             if (ImGui.menuItem(visLabel)) {
                 val newVis = !obj.isVisible
-                eventSystem.publish(ViewportToggleVisibility(obj, newVis))
+                eventSystem.publish(ToggleVisibility(obj, newVis))
             }
 
             ImGui.endPopup()
@@ -416,7 +408,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
         if (ImGui.button("$visIcon##vis_${obj.getUid()}")) {
             val newVis = !obj.isVisible
-            eventSystem.publish(ViewportToggleVisibility(obj, newVis))
+            eventSystem.publish(ToggleVisibility(obj, newVis))
         }
         if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.toggle_visibility"))
         ImGui.popStyleColor(4)
@@ -432,7 +424,7 @@ class SceneHierarchyWindow : IWindowWithScene, KoinComponent {
 
         if (ImGui.button("$lockIcon##lock_${obj.getUid()}")) {
             val newLock = !obj.isLocked
-            eventSystem.publish(ViewportToggleLock(obj, newLock))
+            eventSystem.publish(ToggleLock(obj, newLock))
         }
         if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.hierarchy.toggle_lock"))
         ImGui.popStyleColor(4)

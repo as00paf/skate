@@ -1,19 +1,12 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.events.ViewportAction.*
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.editor.events.ViewportCreateCamera
-import com.pafoid.skate.editor.events.ViewportCreateEmpty
-import com.pafoid.skate.editor.events.ViewportCreateLight
-import com.pafoid.skate.editor.events.ViewportCreatePrimitive
-import com.pafoid.skate.editor.events.ViewportDelete
-import com.pafoid.skate.editor.events.ViewportDuplicate
-import com.pafoid.skate.editor.events.ViewportFocusSelected
-import com.pafoid.skate.editor.events.ViewportResetCamera
-import com.pafoid.skate.editor.events.ViewportSpawnPrefab
 import com.pafoid.skate.engine.render.data.LightType
 import imgui.ImGui
 import imgui.ImVec2
@@ -72,22 +65,22 @@ class ViewportContextMenu(
     private fun renderCreateMenu(scene: Scene?) {
         // Create Empty
         if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.viewport.create_empty")}")) {
-            scene?.let { eventSystem.publish(ViewportCreateEmpty(it)) }
+            scene?.let { eventSystem.publish(CreateEmpty(it)) }
         }
 
         // Create 3D Object submenu
         if (ImGui.beginMenu("${Icons.CUBE} ${stringManager.getString("context.viewport.create_3d_object")}")) {
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cube"))) {
-                eventSystem.publish(ViewportCreatePrimitive("Cube", Vector3f(0.5f, 0.5f, 0.5f)))
+                eventSystem.publish(CreatePrimitive("Cube", Vector3f(0.5f, 0.5f, 0.5f)))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.sphere"))) {
-                eventSystem.publish(ViewportCreatePrimitive("Sphere", Vector3f(0.5f, 0.5f, 0.5f)))
+                eventSystem.publish(CreatePrimitive("Sphere", Vector3f(0.5f, 0.5f, 0.5f)))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cylinder"))) {
-                eventSystem.publish(ViewportCreatePrimitive("Cylinder", Vector3f(0.5f, 1f, 0.5f)))
+                eventSystem.publish(CreatePrimitive("Cylinder", Vector3f(0.5f, 1f, 0.5f)))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.plane"))) {
-                eventSystem.publish(ViewportCreatePrimitive("Plane", Vector3f(5f, 0f, 5f)))
+                eventSystem.publish(CreatePrimitive("Plane", Vector3f(5f, 0f, 5f)))
             }
             ImGui.endMenu()
         }
@@ -95,20 +88,20 @@ class ViewportContextMenu(
         // Create Light submenu
         if (ImGui.beginMenu("${Icons.SUN} ${stringManager.getString("context.viewport.create_light")}")) {
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.directional"))) {
-                eventSystem.publish(ViewportCreateLight("DirectionalLight", LightType.DIRECTIONAL))
+                eventSystem.publish(CreateLight("DirectionalLight", LightType.DIRECTIONAL))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.point"))) {
-                eventSystem.publish(ViewportCreateLight("PointLight", LightType.POINT))
+                eventSystem.publish(CreateLight("PointLight", LightType.POINT))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_light.spot"))) {
-                eventSystem.publish(ViewportCreateLight("SpotLight", LightType.SPOT))
+                eventSystem.publish(CreateLight("SpotLight", LightType.SPOT))
             }
             ImGui.endMenu()
         }
 
         // Create Camera
         if (ImGui.menuItem("${Icons.CAMERA} ${stringManager.getString("context.viewport.create_camera")}")) {
-            scene?.let { eventSystem.publish(ViewportCreateCamera(it)) }
+            scene?.let { eventSystem.publish(CreateCamera(it)) }
         }
 
         ImGui.separator()
@@ -116,22 +109,22 @@ class ViewportContextMenu(
         // Create Skateboard Obstacle submenu
         if (ImGui.beginMenu("${Icons.GEAR} ${stringManager.getString("context.viewport.create_obstacle")}")) {
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.rail"))) {
-                eventSystem.publish(ViewportSpawnPrefab(PrefabType.RAIL))
+                eventSystem.publish(SpawnPrefab(PrefabType.RAIL))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.ledge"))) {
-                eventSystem.publish(ViewportSpawnPrefab(PrefabType.LEDGE))
+                eventSystem.publish(SpawnPrefab(PrefabType.LEDGE))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.kicker"))) {
-                eventSystem.publish(ViewportSpawnPrefab(PrefabType.KICKER))
+                eventSystem.publish(SpawnPrefab(PrefabType.KICKER))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.manual_pad"))) {
-                eventSystem.publish(ViewportSpawnPrefab(PrefabType.MANUAL_PAD))
+                eventSystem.publish(SpawnPrefab(PrefabType.MANUAL_PAD))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.bank"))) {
-                eventSystem.publish(ViewportSpawnPrefab(PrefabType.BANK))
+                eventSystem.publish(SpawnPrefab(PrefabType.BANK))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_obstacle.quarter_pipe"))) {
-                eventSystem.publish(ViewportSpawnPrefab(PrefabType.QUARTER_PIPE))
+                eventSystem.publish(SpawnPrefab(PrefabType.QUARTER_PIPE))
             }
             ImGui.endMenu()
         }
@@ -143,22 +136,22 @@ class ViewportContextMenu(
         val selectedObject = scene?.selectedGameObject
         if (selectedObject != null) {
             if (ImGui.menuItem("${Icons.COPY} ${stringManager.getString("context.viewport.duplicate")}")) {
-                eventSystem.publish(ViewportDuplicate(selectedObject))
+                eventSystem.publish(Duplicate(selectedObject))
             }
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.viewport.delete")}")) {
-                scene?.let { eventSystem.publish(ViewportDelete(selectedObject, it)) }
+                scene?.let { eventSystem.publish(Delete(selectedObject, it)) }
             }
             ImGui.separator()
         }
 
         // Focus Selected
         if (ImGui.menuItem("${Icons.EYE} ${stringManager.getString("context.viewport.focus_selected")}")) {
-            eventSystem.publish(ViewportFocusSelected)
+            eventSystem.publish(FocusSelected)
         }
 
         // Reset Camera
         if (ImGui.menuItem("${Icons.ROTATE} ${stringManager.getString("context.viewport.reset_camera")}")) {
-            eventSystem.publish(ViewportResetCamera)
+            eventSystem.publish(ResetCamera)
         }
     }
 
