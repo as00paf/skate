@@ -3,22 +3,14 @@ package com.pafoid.skate.engine.ecs
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
 class SceneManagerTargetingTest {
-
-    @AfterEach
-    fun teardown() {
-        stopKoin()
-    }
 
     @Test
     fun `closeOtherScenes keeps referenced scene under reordered list`() {
@@ -37,17 +29,12 @@ class SceneManagerTargetingTest {
     }
 
     private fun createSceneManager(): SceneManager {
-        stopKoin()
-        startKoin {
-            modules(
-                module {
-                    single { mockk<LoggerService>(relaxed = true) }
-                    single { mockk<ResourceManager>(relaxed = true) }
-                    single { EventSystem() }
-                }
-            )
-        }
-        return SceneManager()
+        return SceneManager(
+            logger = mockk<LoggerService>(relaxed = true),
+            resourceManager = mockk<ResourceManager>(relaxed = true),
+            eventSystem = EventSystem(),
+            physics3DFactory = mockk<Physics3DFactory>(relaxed = true)
+        )
     }
 
     private fun mockScene(uid: Int, name: String): Scene {

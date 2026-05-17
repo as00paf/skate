@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.commands.scene
 
 import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.systems.PrefabsGenerator
-import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import org.joml.Vector3f

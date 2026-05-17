@@ -87,8 +87,8 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-014 | QA Gate 3 (ECS invalidation) | qa-engineer | done |
 | ARCH-015 | Duplicate-object flow consolidation | software-engineer | done |
 | ARCH-016 | Scene traversal consolidation | software-engineer | done |
-| ARCH-017 | DI/layering decision checkpoint | tech-lead | pending |
-| ARCH-018 | DI/layering implementation | software-engineer | pending |
+| ARCH-017 | DI/layering decision checkpoint | tech-lead | done |
+| ARCH-018 | DI/layering implementation | software-engineer | done |
 | ARCH-019 | Localization completion sweep | software-engineer | pending |
 | ARCH-020 | Guard tests + async test fixtures | qa-engineer | pending |
 | ARCH-021 | QA Gate 4 full checkpoint | qa-engineer | pending |
@@ -114,6 +114,8 @@ QA Gate 1 report: `docs/ARCH-007-QA-GATE1.md`.
 | ARCH-014 | qa-engineer | pending -> in_progress -> blocked (2026-05-16: could not execute required compile/targeted-adjacent Gradle commands in current environment; existing SystemManagerInvalidationTest artifact indicates 4/4 pass from prior run); blocked -> in_progress -> done (2026-05-16: compile and targeted+adjacent ARCH-014 tests passed) |
 | ARCH-015 | software-engineer | pending -> in_progress -> done (2026-05-16: duplicate-object entry points consolidated onto ViewportDuplicate -> ViewportActionHandler -> DuplicateGameObjectCommand; divergent EditorInputHandler clone path removed; targeted duplicate-flow tests added) |
 | ARCH-016 | software-engineer | pending -> in_progress -> done (2026-05-17: scene graph traversal in serializer/project flows consolidated onto shared recursive utility; nested hierarchy traversal covered by SceneTraversalTest) |
+| ARCH-017 | tech-lead | pending -> in_progress -> done (2026-05-17: DI/layering checkpoint approved; constructor-DI and engine/editor boundary policies finalized; ARCH-018 migration map + readiness checklist published in `docs/ARCH-017-DI-LAYERING-CHECKPOINT.md`) |
+| ARCH-018 | software-engineer | pending -> in_progress -> done (2026-05-17: Scene physics creation moved to `Physics3DFactory` contract, `ViewportActionHandler` converted to constructor DI, `BulletPhysics3D` removed `KoinComponent` injection, and prefab payload boundary decoupled from UI-window package) |
 
 ## Build and Test Commands (WSL in this repo)
 

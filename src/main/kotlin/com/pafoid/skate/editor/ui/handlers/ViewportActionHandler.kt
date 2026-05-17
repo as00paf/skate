@@ -17,14 +17,13 @@ import com.pafoid.skate.editor.commands.scene.CreatePrimitiveCommand
 import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.DuplicateGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.SpawnPrefabCommand
-import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.SceneAction.*
+import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
@@ -51,23 +50,22 @@ import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.data.LightType
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
-class ViewportActionHandler : KoinComponent {
-    private val engine: Engine by inject()
-    private val sceneManager: SceneManager by inject()
-    private val undoRedoManager: UndoRedoManager by inject()
-    private val eventSystem: EventSystem by inject()
-    private val logger: LoggerService by inject()
-    private val clipboardService: ClipboardService by inject()
-    private val mutationGate: EditorMutationGate by inject()
-    private val prefabsGenerator: PrefabsGenerator by inject()
-    private val resourceManager: ResourceManager by inject()
-    private val gameObjectManager: GameObjectManager by inject()
-    private val cameraManager: CameraManager by inject()
-    private val systemManager: SystemManager by inject()
-    private val jobSystem: IJobSystem by inject()
+class ViewportActionHandler(
+    private val engine: Engine,
+    private val sceneManager: SceneManager,
+    private val undoRedoManager: UndoRedoManager,
+    private val eventSystem: EventSystem,
+    private val logger: LoggerService,
+    private val clipboardService: ClipboardService,
+    private val mutationGate: EditorMutationGate,
+    private val prefabsGenerator: PrefabsGenerator,
+    private val resourceManager: ResourceManager,
+    private val gameObjectManager: GameObjectManager,
+    private val cameraManager: CameraManager,
+    private val systemManager: SystemManager,
+    private val jobSystem: IJobSystem,
+) {
 
     fun init() {
         eventSystem.subscribe<CreateEmpty> { event ->

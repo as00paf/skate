@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.events
 
-import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
+import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.ComponentType
@@ -60,5 +60,3 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     object SelectionCleared : ViewportAction("editor.selection_cleared")
 
 }
-
-

@@ -24,13 +24,13 @@ import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
 import org.joml.Quaternionf
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
-class BulletPhysics3D : IPhysics3D, KoinComponent {
-    private val logger: LoggerService by inject()
-    private val debugRenderer: DebugRenderer by inject()
-    private val nativeLibraryLoader: NativeLibraryLoader = NativeLibraryLoader()
+class BulletPhysics3D(
+    private val nativeLibraryLoader: NativeLibraryLoader = NativeLibraryLoader(),
+    private val debugRendererProvider: (() -> DebugRenderer)? = null,
+) : IPhysics3D {
+    private val debugRenderer: DebugRenderer?
+        get() = debugRendererProvider?.invoke()
     private val physicsSpace: PhysicsSpace
 
     private var accumulatorSeconds = 0.0
@@ -98,7 +98,7 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
 
         // Draw debug line when debug is enabled
         if (debugEnabled) {
-            debugRenderer.addLine3D(from, to, JomlVector3f(1f, 0f, 1f), 1)
+            debugRenderer?.addLine3D(from, to, JomlVector3f(1f, 0f, 1f), 1)
         }
 
         val results = physicsSpace.rayTest(start, end)
@@ -304,9 +304,9 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
         color: JomlVector3f
     ) {
         // Complex shapes - just draw a small cross for now to indicate position
-        debugRenderer.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
-        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
-        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
+        debugRenderer?.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
+        debugRenderer?.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
+        debugRenderer?.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
     }
 
     /**
@@ -383,7 +383,7 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
                 height = scaledHalfExtents.y * 2f
             }
         }
-        debugRenderer.addCylinder3D(pos, rot, radius, height, axis, color)
+        debugRenderer?.addCylinder3D(pos, rot, radius, height, axis, color)
     }
 
     /**
@@ -407,7 +407,7 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
         // For debug drawing, a cylinder provides an approximate visualization of the capsule.
         // Rendering full spheres at the ends is often overkill for wireframe debug view.
         // The total height of capsule in bullet is height + 2 * radius
-        debugRenderer.addCylinder3D(pos, rot, radius, height + 2f * radius, axis, color)
+        debugRenderer?.addCylinder3D(pos, rot, radius, height + 2f * radius, axis, color)
     }
 
     /**
@@ -429,7 +429,7 @@ class BulletPhysics3D : IPhysics3D, KoinComponent {
             halfExtents.z * scale.z
         )
 
-        debugRenderer.addBox3D(pos, rot, scaledHalfExtents, color)
+        debugRenderer?.addBox3D(pos, rot, scaledHalfExtents, color)
     }
 
     override fun destroy() {

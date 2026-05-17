@@ -1,11 +1,8 @@
-package com.pafoid.skate.editor.ui.windows.assetBrowser
+package com.pafoid.skate.editor.data
 
 enum class PrefabType {
-    // General
     SKATEBOARD,
     SKATER,
-
-    // Obstacles
     LEDGE,
     RAIL,
     KICKER,

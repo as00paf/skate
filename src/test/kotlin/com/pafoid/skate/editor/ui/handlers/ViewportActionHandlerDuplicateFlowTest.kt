@@ -29,9 +29,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
 class ViewportActionHandlerDuplicateFlowTest {
 
@@ -57,25 +55,6 @@ class ViewportActionHandlerDuplicateFlowTest {
         }
 
         stopKoin()
-        startKoin {
-            modules(
-                module {
-                    single { engine }
-                    single { sceneManager }
-                    single { undoRedoManager }
-                    single { eventSystem }
-                    single { logger }
-                    single { clipboardService }
-                    single { mutationGate }
-                    single { prefabsGenerator }
-                    single { resourceManager }
-                    single { gameObjectManager }
-                    single { cameraManager }
-                    single { systemManager }
-                    single { jobSystem }
-                }
-            )
-        }
     }
 
     @AfterEach
@@ -96,7 +75,21 @@ class ViewportActionHandlerDuplicateFlowTest {
         val addedObject = slot<GameObject>()
         every { gameObjectManager.addGameObject(capture(addedObject), any()) } just runs
 
-        val handler = ViewportActionHandler()
+        val handler = ViewportActionHandler(
+            engine,
+            sceneManager,
+            undoRedoManager,
+            eventSystem,
+            logger,
+            clipboardService,
+            mutationGate,
+            prefabsGenerator,
+            resourceManager,
+            gameObjectManager,
+            cameraManager,
+            systemManager,
+            jobSystem
+        )
         handler.init()
 
         eventSystem.publish(ViewportDuplicate(original))

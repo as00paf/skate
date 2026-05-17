@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.search.providers
 
 import com.pafoid.skate.editor.data.EditorAction
+import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.SceneAction.OpenRequested
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -11,7 +12,6 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.editor.events.ViewportAction.*
-import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent

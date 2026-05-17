@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.PrefabData
+import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.ViewportAction
-import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene

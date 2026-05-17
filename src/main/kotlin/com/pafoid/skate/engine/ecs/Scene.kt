@@ -3,8 +3,9 @@ package com.pafoid.skate.engine.ecs
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.ecs.scene.SceneInitializer
-import com.pafoid.skate.engine.physics3d.BulletPhysics3D
+import com.pafoid.skate.engine.physics3d.DefaultPhysics3DFactory
 import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
 
@@ -22,7 +23,8 @@ import org.joml.Vector3f
  */
 open class Scene(
     name: String = "Scene",
-    val initializer: SceneInitializer
+    val initializer: SceneInitializer,
+    private val physicsFactory: Physics3DFactory = DefaultPhysics3DFactory(),
 ) : GameObject(name) {
 
     // SceneData for minimal serializable configuration (levelPath, etc.)
@@ -31,7 +33,7 @@ open class Scene(
     // Camera remains a special property (not a component for now)
     val camera: Camera = Camera(Vector3f(0f, 5f, 20f))
 
-    val physics3d: IPhysics3D = BulletPhysics3D()
+    val physics3d: IPhysics3D = physicsFactory.create()
 
     val gameObjects = mutableListOf<GameObject>()
     val pendingObjects = mutableListOf<GameObject>()

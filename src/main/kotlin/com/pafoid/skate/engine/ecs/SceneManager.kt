@@ -5,14 +5,14 @@ import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 
-class SceneManager : KoinComponent {
-
-    private val logger: LoggerService by inject()
-    private val resourceManager: ResourceManager by inject()
-    private val eventSystem: EventSystem by inject()
+class SceneManager(
+    private val logger: LoggerService,
+    private val resourceManager: ResourceManager,
+    private val eventSystem: EventSystem,
+    private val physics3DFactory: Physics3DFactory,
+) {
 
     val openScenes = mutableListOf<Scene>()
     var activeSceneIndex: Int = -1
@@ -147,7 +147,7 @@ class SceneManager : KoinComponent {
      * @param filePath Optional file path to back the scene. Sets sceneData.levelPath when provided.
      */
     suspend fun createScene(name: String, initializer: LevelEditorSceneInitializer, filePath: String? = null): Scene? {
-        val newScene = Scene(name, initializer)
+        val newScene = Scene(name, initializer, physics3DFactory)
         if (filePath != null) {
             newScene.sceneData.levelPath = filePath
         }

@@ -9,7 +9,10 @@ import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
+import io.mockk.every
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -39,12 +42,14 @@ class BootManagerTest : KoinTest {
     private val audioEngine = mockk<AudioEngine>(relaxed = true)
     private val sceneInitializer = mockk<LevelEditorSceneInitializer>(relaxed = true)
     private val settingsManager = mockk<SettingsManager>(relaxed = true)
+    private val physics3DFactory = mockk<Physics3DFactory>(relaxed = true)
 
     private val bootManager =
-        BootManager(sceneManager, renderer, mockLogger, splashScreen, audioEngine, sceneInitializer, settingsManager)
+        BootManager(sceneManager, renderer, mockLogger, splashScreen, audioEngine, sceneInitializer, settingsManager, physics3DFactory)
 
     @BeforeEach
     fun setup() {
+        every { physics3DFactory.create() } returns mockk<IPhysics3D>(relaxed = true)
         stopKoin()
         startKoin {
             printLogger(Level.ERROR)

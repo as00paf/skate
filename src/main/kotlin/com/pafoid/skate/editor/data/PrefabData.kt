@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.data
 
-import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabType
 import com.pafoid.skate.game.prefabs.MaterialType
 
 data class PrefabData(

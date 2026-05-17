@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import java.util.concurrent.atomic.AtomicReference
 
@@ -19,6 +20,7 @@ class BootManager(
     private val audioEngine: AudioEngine, //TODO: should be initialized here
     private val sceneInitializer: LevelEditorSceneInitializer,
     private val settingsManager: SettingsManager,
+    private val physics3DFactory: Physics3DFactory,
 ) {
     suspend fun boot(engineState: AtomicReference<EngineState>) {
         initRenderer()
@@ -60,7 +62,7 @@ class BootManager(
         sceneInitializer.onProgress = { progress, message ->
             splashScreen.increaseLoadingProgress(message, progress)
         }
-        val scene = Scene("SplashScene", sceneInitializer)
+        val scene = Scene("SplashScene", sceneInitializer, physics3DFactory)
         scene.init()
         return scene
     }

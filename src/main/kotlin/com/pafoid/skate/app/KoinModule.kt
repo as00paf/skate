@@ -96,6 +96,9 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.physics3d.BulletPhysics3DFactory
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
+import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
@@ -115,7 +118,8 @@ val appModule = module {
     single { Engine() }
     single { SystemManager() }
     single { GameObjectManager() }
-    single { SceneManager() }
+    single<Physics3DFactory> { BulletPhysics3DFactory(get(), { get() }) }
+    single { SceneManager(get(), get(), get(), get()) }
     single { Serializer() }
     single { LoggerService() }
     single { AudioEngine(get()) }
@@ -131,7 +135,10 @@ val appModule = module {
     // EventSystem for editor event bus
     single { EventSystem() }
     single(createdAtStart = true) { SceneActionHandler().also { it.init() } }
-    single(createdAtStart = true) { ViewportActionHandler().also { it.init() } }
+    single(createdAtStart = true) {
+        ViewportActionHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+            .also { it.init() }
+    }
     single { CameraManager(get(), get(), get()) }
 
     // Viewport components for GameViewWindow
@@ -231,6 +238,7 @@ val inputModule = module {
 val engineModule = module {
     single<IJobSystem> { DefaultJobSystem() }
     single<IInputBuffer> { InputBuffer() }
+    single { NativeLibraryLoader() }
     single { ShaderLoader(false) }
     single { VAOLoader() }
     single { AssimpLoader() }
@@ -265,5 +273,5 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { BootManager(get(), get(), get(), get(), get(), get(), get()) }
+    single { BootManager(get(), get(), get(), get(), get(), get(), get(), get()) }
 }
