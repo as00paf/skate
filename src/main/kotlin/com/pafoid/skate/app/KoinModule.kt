@@ -5,7 +5,7 @@ import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.imgui.ImGuiLayer
-import com.pafoid.skate.editor.events.SceneActionEventPublisher
+import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.project.SceneSerializer
@@ -82,6 +82,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.contracts.EngineLogger
 import com.pafoid.skate.engine.contracts.InputMappingsProvider
 import com.pafoid.skate.engine.contracts.IStringManager
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneEventPublisher
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
@@ -128,7 +129,27 @@ val appModule = module {
     single<EngineLogger> { get<LoggerService>() }
     single<IStringManager> { get<StringManager>() }
     single<InputMappingsProvider> { get<SettingsManager>() }
-    single<SceneEventPublisher> { SceneActionEventPublisher(get()) }
+    single<SceneEventPublisher> {
+        object : SceneEventPublisher {
+            private val eventSystem: EventSystem = get()
+
+            override fun publishOpened(scene: Scene) {
+                eventSystem.publish(SceneAction.Opened(scene))
+            }
+
+            override fun publishChanged() {
+                eventSystem.publish(SceneAction.Changed)
+            }
+
+            override fun publishClosing(scene: Scene) {
+                eventSystem.publish(SceneAction.Closing(scene))
+            }
+
+            override fun publishClosed(scene: Scene) {
+                eventSystem.publish(SceneAction.Closed(scene))
+            }
+        }
+    }
     single<Physics3DFactory> { BulletPhysics3DFactory(get(), { get() }) }
     single { SceneManager(get(), get(), get(), get()) }
     single { Serializer() }
