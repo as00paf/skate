@@ -1,6 +1,9 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.data.LogLevel
+import com.pafoid.skate.editor.events.OpenProjectFailed
+import com.pafoid.skate.editor.events.OpenProjectRequested
+import com.pafoid.skate.editor.events.OpenProjectSucceeded
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
@@ -9,6 +12,7 @@ import com.pafoid.skate.editor.project.RecentProjectDisplayInfo
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.EventSystem
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
@@ -28,12 +32,18 @@ class ProjectSwitcherDialog : KoinComponent {
     private val wizard: ProjectWizard by inject()
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
+    private val eventSystem: EventSystem by inject()
 
     private val windowOpen = ImBoolean(false)
     private var lastOpenFailed = false
     private var lastOpenErrorMessage = ""
+    private var initialized = false
 
     val isOpen: Boolean get() = windowOpen.get()
+
+    init {
+        initEventSubscriptions()
+    }
 
     fun open() {
         lastOpenFailed = false
@@ -43,6 +53,23 @@ class ProjectSwitcherDialog : KoinComponent {
 
     fun close() {
         windowOpen.set(false)
+    }
+
+    private fun initEventSubscriptions() {
+        if (initialized) return
+        initialized = true
+
+        eventSystem.subscribe<OpenProjectSucceeded> {
+            lastOpenFailed = false
+            logger.logEditor("Project opened: ${projectManager.getProjectName()}")
+            close()
+        }
+        eventSystem.subscribe<OpenProjectFailed> { event ->
+            lastOpenFailed = true
+            val projectFile = File(event.projectPath)
+            lastOpenErrorMessage =
+                stringManager.getString("lbl.switch_project.open_failed").replace("%s", projectFile.name)
+        }
     }
 
     fun render() {
@@ -170,18 +197,7 @@ class ProjectSwitcherDialog : KoinComponent {
 
     private fun openProject(projectFile: File) {
         logger.logEditor("Opening project: ${projectFile.absolutePath}")
-
-        val success = projectManager.openProject(projectFile)
-
-        if (success) {
-            logger.logEditor("Project opened: ${projectManager.getProjectName()}")
-            lastOpenFailed = false
-            close()
-        } else {
-            lastOpenFailed = true
-            lastOpenErrorMessage = stringManager.getString("lbl.switch_project.open_failed").replace("%s", projectFile.name)
-            logger.logEngine("Failed to open project: ${projectFile.absolutePath}", LogLevel.ERROR)
-        }
+        eventSystem.publish(OpenProjectRequested(projectFile.absolutePath))
     }
 
     private fun openProjectDialog() {

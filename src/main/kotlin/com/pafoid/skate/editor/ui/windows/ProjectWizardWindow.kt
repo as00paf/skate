@@ -1,6 +1,12 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.data.LogLevel
+import com.pafoid.skate.editor.events.CreateProjectFailed
+import com.pafoid.skate.editor.events.CreateProjectRequested
+import com.pafoid.skate.editor.events.CreateProjectSucceeded
+import com.pafoid.skate.editor.events.OpenProjectFailed
+import com.pafoid.skate.editor.events.OpenProjectRequested
+import com.pafoid.skate.editor.events.OpenProjectSucceeded
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -11,6 +17,7 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.BuildConfig
+import com.pafoid.skate.engine.core.EventSystem
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
@@ -39,9 +46,15 @@ class ProjectWizardWindow : IWindow, KoinComponent {
     val wizard: ProjectWizard by inject()
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
+    private val eventSystem: EventSystem by inject()
 
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
+    private var initialized = false
+
+    init {
+        initEventSubscriptions()
+    }
 
     /**
      * Render the project creation dialog.
@@ -284,14 +297,7 @@ class ProjectWizardWindow : IWindow, KoinComponent {
             if (result == JFileChooser.APPROVE_OPTION) {
                 val projectFile = fileChooser.selectedFile
                 logger.logEditor("Opening project: ${projectFile.absolutePath}")
-
-                val success = projectManager.openProject(projectFile)
-
-                if (success) {
-                    logger.logEditor("Project opened: ${projectManager.getProjectName()}")
-                } else {
-                    logger.logEngine("Failed to open project: ${projectFile.absolutePath}", LogLevel.ERROR)
-                }
+                eventSystem.publish(OpenProjectRequested(projectFile.absolutePath))
             }
         } catch (e: Exception) {
             logger.logEditor("Error opening project dialog: ${e.message}", LogLevel.ERROR)
@@ -328,15 +334,25 @@ class ProjectWizardWindow : IWindow, KoinComponent {
         val path = File(wizard.projectPath)
 
         logger.logEditor("Creating project: $name at ${path.absolutePath}")
+        eventSystem.publish(CreateProjectRequested(name, path.absolutePath, BuildConfig.ENGINE_VERSION))
+    }
 
-        val result = projectManager.createProject(name, path, BuildConfig.ENGINE_VERSION)
+    private fun initEventSubscriptions() {
+        if (initialized) return
+        initialized = true
 
-        result.onSuccess { project ->
-            logger.logEditor("Project created successfully: ${project.metadata.name}")
+        eventSystem.subscribe<OpenProjectSucceeded> {
+            logger.logEditor("Project opened: ${projectManager.getProjectName()}")
+        }
+        eventSystem.subscribe<OpenProjectFailed> { event ->
+            logger.logEngine("Failed to open project: ${event.projectPath}", LogLevel.ERROR)
         }
 
-        result.onFailure { error ->
-            logger.logEngine("Failed to create project: ${error.message}", LogLevel.ERROR)
+        eventSystem.subscribe<CreateProjectSucceeded> { event ->
+            logger.logEditor("Project created successfully: ${event.name}")
+        }
+        eventSystem.subscribe<CreateProjectFailed> { event ->
+            logger.logEngine("Failed to create project: ${event.reason}", LogLevel.ERROR)
         }
     }
 }

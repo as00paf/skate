@@ -167,7 +167,7 @@ val appModule = module {
     // EventSystem for editor event bus
     single { EventSystem() }
     single(createdAtStart = true) { SceneActionHandler().also { it.init() } }
-    single(createdAtStart = true) { ProjectActionHandler(get(), get(), get()).also { it.init() } }
+    single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get()).also { it.init() } }
     single(createdAtStart = true) { EnvironmentActionHandler(get(), get()).also { it.init() } }
     single(createdAtStart = true) {
         ViewportActionHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
