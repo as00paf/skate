@@ -96,6 +96,45 @@ class ProjectManagerLifecycleTest {
         tempDir.deleteRecursively()
     }
 
+    @Test
+    fun `openProject_InvalidExtension_ClosesExistingProjectBeforeFailing`() {
+        val settingsManager = mockk<SettingsManager>(relaxed = true)
+        val logger = mockk<LoggerService>(relaxed = true)
+        val assetDatabase = mockk<AssetDatabase>(relaxed = true)
+        val sceneManager = mockk<SceneManager>(relaxed = true)
+        val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
+        val sceneSerializer = mockk<SceneSerializer>(relaxed = true)
+        val eventSystem = mockk<EventSystem>(relaxed = true)
+        val systemManager = mockk<SystemManager>(relaxed = true)
+
+        val tempDir = Files.createTempDirectory("project-manager-open-invalid-extension").toFile()
+        val invalidProjectFile = File(tempDir, "NotAProject.txt").apply { writeText("invalid") }
+
+        every { assetDatabase.exportRegistryData() } returns AssetRegistryData(projectPath = "C:/tmp/OldProject")
+
+        val manager = ProjectManager(
+            settingsManager = settingsManager,
+            logger = logger,
+            assetDatabase = assetDatabase,
+            engineAssetCopier = EngineAssetCopier(),
+            sceneManager = sceneManager,
+            prefabsGenerator = prefabsGenerator,
+            sceneSerializer = sceneSerializer,
+            eventSystem = eventSystem,
+            systemManager = systemManager
+        )
+        setCurrentProject(manager, project("OldProject", "C:/tmp/OldProject/OldProject.skateproject"))
+
+        val opened = manager.openProject(invalidProjectFile)
+
+        assertFalse(opened)
+        assertFalse(manager.hasProject())
+        verify(exactly = 1) { sceneManager.closeAllScenes() }
+        verify(exactly = 1) { systemManager.resetSystemCaches() }
+        verify(exactly = 1) { settingsManager.closeProject() }
+        tempDir.deleteRecursively()
+    }
+
     private fun project(name: String, path: String): Project {
         return Project(
             metadata = ProjectMetadata(

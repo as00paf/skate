@@ -119,6 +119,7 @@ class ProjectActionHandlerTest {
 
         assertTrue(successReceived)
         assertFalse(failedReceived)
+        verify(exactly = 1) { undoRedoManager.executeCommand(any()) }
         verify(exactly = 1) { projectManager.openProject(any()) }
     }
 
@@ -146,6 +147,8 @@ class ProjectActionHandlerTest {
         assertEquals(0, successCount)
         assertEquals("MyProject", failureEvent?.name)
         assertTrue(failureEvent?.reason?.contains("boom") == true)
+        verify(exactly = 1) { undoRedoManager.executeCommand(any()) }
+        verify(exactly = 1) { projectManager.createProject(any(), any(), any()) }
     }
 
     @Test

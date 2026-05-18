@@ -1,9 +1,5 @@
 package com.pafoid.skate.editor.ui.handlers
 
-import com.pafoid.skate.editor.commands.objects.LockToggleCommand
-import com.pafoid.skate.editor.commands.objects.VisibilityToggleCommand
-import com.pafoid.skate.editor.commands.scene.CreateGameObjectCommand
-import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.LoggerService
@@ -14,9 +10,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.engine.input.IInputBuffer
@@ -26,7 +20,6 @@ import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.utils.Time
 import org.joml.Vector2f
-import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
@@ -38,7 +31,6 @@ class EditorInputHandler(
     private val inputBuffer: IInputBuffer,
     private val clipboardService: ClipboardService,
     private val undoRedoManager: UndoRedoManager,
-    private val gameObjectManager: GameObjectManager,
     private val logger: LoggerService,
     private val editorInputState: EditorInputState,
     private val sceneManager: SceneManager,
@@ -49,7 +41,6 @@ class EditorInputHandler(
     private val engine: Engine by inject()
 
     private var pendingRenameUid: Int? = null
-    private var renameInputMappings: InputMappings? = null
 
     fun init(glfwWindow: Long) {
         GLFW.glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
@@ -151,17 +142,14 @@ class EditorInputHandler(
 
         // Delete selected object
         if (keyListener.keyBeginPress(inputMappings.hierarchyDelete.keyboardKey) && selected != null) {
-            undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, scene, gameObjectManager))
-            eventSystem.publish(ViewportAction.SelectionCleared)
+            eventSystem.publish(ViewportAction.Delete(selected, scene))
             logger.logEditor("Deleted GameObject: ${selected.name}")
         }
 
         // Create new GameObject (Insert)
         if (keyListener.keyBeginPress(inputMappings.hierarchyCreateNew.keyboardKey)) {
-            val newObj = GameObject("GameObject")
-            undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene, gameObjectManager))
-            eventSystem.publish(ViewportAction.GameObjectSelected(newObj))
-            logger.logEditor("Created new GameObject: ${newObj.name}")
+            eventSystem.publish(ViewportAction.CreateEmpty(scene))
+            logger.logEditor("Create empty GameObject requested")
         }
 
         // Duplicate (D without Ctrl)
@@ -177,7 +165,7 @@ class EditorInputHandler(
             !ctrlDown && selected != null
         ) {
             val newVis = !selected.isVisible
-            undoRedoManager.executeCommand(VisibilityToggleCommand(selected, newVis))
+            eventSystem.publish(ViewportAction.ToggleVisibility(selected, newVis))
             logger.logEditor("Toggled visibility for ${selected.name}: $newVis")
         }
 
@@ -186,7 +174,7 @@ class EditorInputHandler(
             !ctrlDown && selected != null
         ) {
             val newLock = !selected.isLocked
-            undoRedoManager.executeCommand(LockToggleCommand(selected, newLock))
+            eventSystem.publish(ViewportAction.ToggleLock(selected, newLock))
             logger.logEditor("Toggled lock for ${selected.name}: $newLock")
         }
 
@@ -194,7 +182,6 @@ class EditorInputHandler(
         if (keyListener.keyBeginPress(inputMappings.hierarchyRename.keyboardKey) && selected != null) {
             // Signal to SceneHierarchyWindow that rename should start
             pendingRenameUid = selected.getUid()
-            renameInputMappings = inputMappings
         }
 
         // Deselect
@@ -221,30 +208,14 @@ class EditorInputHandler(
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
                 if (selected != null) {
                     clipboardService.copy(selected)
-                    undoRedoManager.executeCommand(DeleteGameObjectCommand(selected, currentScene, gameObjectManager))
+                    eventSystem.publish(ViewportAction.Delete(selected, currentScene))
                     logger.logEditor("Cut GameObject: ${selected.name}")
                 }
             }
             // Paste
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_V)) {
-                val clonedGameObject = clipboardService.paste()
-                if (clonedGameObject != null) {
-                    // Add to scene at origin for now
-                    val origin = Vector3f(0f, 0f, 0f)
-                    clonedGameObject.getComponent<Transform>()?.translation?.set(origin)
-
-                    // Set parent to null, as it's being pasted as a root object
-                    clonedGameObject.parent = null
-
-                    undoRedoManager.executeCommand(
-                        CreateGameObjectCommand(
-                            clonedGameObject,
-                            currentScene,
-                            gameObjectManager
-                        )
-                    )
-                    logger.logEditor("Pasted GameObject: ${clonedGameObject.name}")
-                }
+                eventSystem.publish(ViewportAction.PasteClipboard())
+                logger.logEditor("Paste requested")
             }
             // Undo
             else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_Z)) {
