@@ -106,4 +106,28 @@ class ImGuiLayerStartupFlowTest : KoinTest {
         verify(exactly = 1) { windowRegistry.showDefaultWindows() }
         assertFalse(wizard.isOpen.get())
     }
+
+    @Test
+    fun `process startup flow does not reopen wizard after user dismisses it`() {
+        every { projectManager.hasProject() } returns false
+        wizard.dismiss()
+
+        layer.processProjectStartupFlow()
+
+        assertFalse(wizard.isOpen.get())
+        assertTrue(wizard.userDismissed)
+    }
+
+    @Test
+    fun `process startup flow hides windows when project closes`() {
+        var hasProject = true
+        every { projectManager.hasProject() } answers { hasProject }
+
+        layer.processProjectStartupFlow()
+
+        hasProject = false
+        layer.processProjectStartupFlow()
+
+        verify(exactly = 1) { windowRegistry.hideAllWindows() }
+    }
 }
