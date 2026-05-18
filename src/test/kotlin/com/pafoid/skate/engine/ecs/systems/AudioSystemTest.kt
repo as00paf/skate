@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.contracts.EngineLogLevel
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.Camera
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
@@ -15,9 +16,7 @@ import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 import org.koin.test.KoinTest
 
 class AudioSystemTest : KoinTest {
@@ -88,5 +87,33 @@ class AudioSystemTest : KoinTest {
         // Further tests could mock activeSources if we had access to it.
         // It's internal state, so we just verify it completes.
         verify(exactly = 0) { audioEngine.destroy() } // The system doesn't destroy the engine, just itself
+    }
+
+    @Test
+    fun `setMasterVolume clamps and persists value`() {
+        audioSystem.setMasterVolume(1.5f)
+        verify { audioEngine.setMasterVolume(1.0f) }
+
+        audioSystem.setMasterVolume(-0.5f)
+        verify { audioEngine.setMasterVolume(0.0f) }
+    }
+
+    @Test
+    fun `update listener uses configured master volume instead of resetting to one`() {
+        every { audioEngine.init() } returns true
+        every { audioEngine.isInitialized } returns true
+
+        // First update initializes system.
+        audioSystem.update(0.16f)
+
+        // Set volume via system API and verify subsequent update keeps that value.
+        audioSystem.setMasterVolume(0.35f)
+        clearMocks(audioEngine, answers = false, recordedCalls = true)
+        every { audioEngine.isInitialized } returns true
+
+        audioSystem.update(0.16f)
+
+        verify { audioEngine.setMasterVolume(0.35f) }
+        verify(exactly = 0) { audioEngine.setMasterVolume(1.0f) }
     }
 }
