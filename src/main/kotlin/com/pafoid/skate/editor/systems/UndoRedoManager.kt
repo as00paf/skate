@@ -32,6 +32,7 @@ class UndoRedoManager(
     private val pendingAsyncRedoCommands = mutableSetOf<Command>()
     private val maxStackSize = 100
     private val historyLock = Any()
+    private var historyEpoch = 0L
 
     fun executeCommand(command: Command) {
         if (mutationGate?.canExecute(command) == false) {
@@ -129,6 +130,8 @@ class UndoRedoManager(
         synchronized(historyLock) {
             undoStack.clear()
             redoStack.clear()
+            pendingAsyncRedoCommands.clear()
+            historyEpoch++
         }
     }
 
@@ -152,6 +155,7 @@ class UndoRedoManager(
             logger?.logEditor("Async command category requires AsyncCommand contract: ${command.getDisplayName()}")
             return
         }
+        val commandEpoch = synchronized(historyLock) { historyEpoch }
 
         command.execute()
         val completionJob = asyncCommand.getCompletionJob()
@@ -168,6 +172,9 @@ class UndoRedoManager(
                 return@invokeOnCompletion
             }
             synchronized(historyLock) {
+                if (commandEpoch != historyEpoch) {
+                    return@synchronized
+                }
                 if (asyncCommand.shouldPushToHistoryOnSuccess()) {
                     pushCommandInternal(command)
                 } else {
@@ -186,6 +193,7 @@ class UndoRedoManager(
             }
             return
         }
+        val commandEpoch = synchronized(historyLock) { historyEpoch }
 
         command.execute()
         val completionJob = asyncCommand.getCompletionJob()
@@ -203,6 +211,9 @@ class UndoRedoManager(
             }
             synchronized(historyLock) {
                 pendingAsyncRedoCommands.remove(command)
+                if (commandEpoch != historyEpoch) {
+                    return@synchronized
+                }
             }
             if (throwable != null || !asyncCommand.didCompleteSuccessfully()) {
                 return@invokeOnCompletion

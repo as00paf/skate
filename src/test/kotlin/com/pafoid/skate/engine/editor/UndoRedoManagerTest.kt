@@ -256,4 +256,38 @@ class UndoRedoManagerTest {
         command.complete(secondJob, success = true)
         assertEquals(1, manager.getUndoCount())
     }
+
+    @Test
+    fun `clear invalidates pending async execute completion`() {
+        val manager = UndoRedoManager()
+        val command = ReentrantAsyncMockCommand()
+
+        manager.executeCommand(command)
+        val firstJob = command.latestJob()
+        manager.clear()
+
+        command.complete(firstJob, success = true)
+        assertEquals(0, manager.getUndoCount())
+        assertEquals(0, manager.getRedoCount())
+    }
+
+    @Test
+    fun `clear invalidates pending async redo completion`() {
+        val manager = UndoRedoManager()
+        val command = ReentrantAsyncMockCommand()
+
+        manager.executeCommand(command)
+        val executeJob = command.latestJob()
+        command.complete(executeJob, success = true)
+        assertEquals(1, manager.getUndoCount())
+
+        manager.undo()
+        manager.redo()
+        val redoJob = command.latestJob()
+        manager.clear()
+
+        command.complete(redoJob, success = true)
+        assertEquals(0, manager.getUndoCount())
+        assertEquals(0, manager.getRedoCount())
+    }
 }
