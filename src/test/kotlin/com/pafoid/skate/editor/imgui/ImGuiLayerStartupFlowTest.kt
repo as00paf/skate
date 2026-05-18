@@ -130,4 +130,17 @@ class ImGuiLayerStartupFlowTest : KoinTest {
 
         verify(exactly = 1) { windowRegistry.hideAllWindows() }
     }
+
+    @Test
+    fun `process startup flow does not request load-last or open wizard when project already exists`() {
+        every { projectManager.hasProject() } returns true
+
+        var loadLastRequests = 0
+        eventSystem.subscribe<ProjectEvent.LoadLastProjectRequested> { loadLastRequests++ }
+
+        layer.processProjectStartupFlow()
+
+        assertEquals(0, loadLastRequests)
+        assertFalse(wizard.isOpen.get())
+    }
 }
