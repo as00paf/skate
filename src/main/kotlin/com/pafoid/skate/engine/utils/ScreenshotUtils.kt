@@ -10,18 +10,20 @@ import org.lwjgl.stb.STBImageWrite.stbi_write_png
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.File
 import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.AtomicInteger
 
 object ScreenshotUtils {
 
     private val scope = CoroutineScope(Dispatchers.IO)
+    private val screenshotSequence = AtomicInteger(0)
+    private val screenshotTimestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss-SSS")
 
     fun takeScreenshot(width: Int, height: Int, fboId: Int) {
         val screenshotsDir = "screenshots"
         File(screenshotsDir).mkdirs()
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
-        val fileName = "screenshot_${dateFormat.format(Date())}.png"
+        val fileName = buildScreenshotFileName()
         val filePath = "$screenshotsDir/$fileName"
 
         val pixels = BufferUtils.createByteBuffer(width * height * 4)
@@ -60,5 +62,13 @@ object ScreenshotUtils {
             "info",
             true
         )
+    }
+
+    internal fun buildScreenshotFileName(
+        now: LocalDateTime = LocalDateTime.now()
+    ): String {
+        val timestamp = now.format(screenshotTimestampFormatter)
+        val sequence = screenshotSequence.getAndIncrement()
+        return "screenshot_${timestamp}_${sequence}.png"
     }
 }
