@@ -184,4 +184,19 @@ class ImGuiLayerStartupFlowTest : KoinTest {
 
         verify(exactly = 0) { windowRegistry.hideAllWindows() }
     }
+
+    @Test
+    fun `process startup flow suppresses wizard when load-last opens project immediately`() {
+        var hasProject = false
+        every { projectManager.hasProject() } answers { hasProject }
+
+        eventSystem.subscribe<ProjectEvent.LoadLastProjectRequested> {
+            hasProject = true
+        }
+
+        layer.processProjectStartupFlow()
+
+        verify(exactly = 1) { windowRegistry.showDefaultWindows() }
+        assertFalse(wizard.isOpen.get())
+    }
 }
