@@ -284,26 +284,29 @@ class ImGuiLayer(
     }
 
     internal fun processProjectStartupFlow() {
-        if (!hasAttemptedAutoLoad && !projectManager.hasProject()) {
+        var hasProject = projectManager.hasProject()
+
+        if (!hasAttemptedAutoLoad && !hasProject) {
             hasAttemptedAutoLoad = true
             eventSystem.publish(ProjectEvent.LoadLastProjectRequested)
+            hasProject = projectManager.hasProject()
         }
 
         // Detect when a project was just closed — hide all project windows
-        if (hadProjectLastFrame && !projectManager.hasProject()) {
+        if (hadProjectLastFrame && !hasProject) {
             windowRegistry.hideAllWindows()
         }
 
         // Project was just opened — show default windows and dismiss wizard
-        if (!hadProjectLastFrame && projectManager.hasProject()) {
+        if (!hadProjectLastFrame && hasProject) {
             windowRegistry.showDefaultWindows()
             if (windowRegistry.projectWizardWindow.wizard.isOpen.get()) {
                 windowRegistry.projectWizardWindow.wizard.dismiss()
             }
         }
-        hadProjectLastFrame = projectManager.hasProject()
+        hadProjectLastFrame = hasProject
 
-        if (!projectManager.hasProject() && !windowRegistry.projectWizardWindow.wizard.isOpen.get() && !windowRegistry.projectWizardWindow.wizard.userDismissed) {
+        if (!hasProject && !windowRegistry.projectWizardWindow.wizard.isOpen.get() && !windowRegistry.projectWizardWindow.wizard.userDismissed) {
             windowRegistry.projectWizardWindow.wizard.open()
         }
     }
