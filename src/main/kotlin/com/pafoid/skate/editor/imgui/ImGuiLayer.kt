@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
@@ -169,6 +170,7 @@ class ImGuiLayer(
             stringManager = stringManager,
             resourceManager = resourceManager,
             projectManager = projectManager,
+            eventSystem = eventSystem,
             projectSwitcher = windowRegistry.projectSwitcherDialog,
             windowController = windowController,
             projectWizard = windowRegistry.projectWizardWindow.wizard,
@@ -276,7 +278,7 @@ class ImGuiLayer(
 
         if (!hasAttemptedAutoLoad && !projectManager.hasProject()) {
             hasAttemptedAutoLoad = true
-            projectManager.loadLastProject()
+            eventSystem.publish(ProjectEvent.LoadLastProjectRequested)
         }
 
         // Detect when a project was just closed — hide all project windows

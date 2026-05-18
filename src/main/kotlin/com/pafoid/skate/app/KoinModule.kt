@@ -183,6 +183,7 @@ val appModule = module {
     factory { ViewportDragDropHandler(get(), get()) }
 
     // Editor windows
+    single { ProjectWizardWindow(get(), get(), get(), get(), get()) }
     single { SceneHierarchyWindow(get(), get(), get(), get(), get(), get()) }
     single { PropertiesWindow(get(), get(), get(),) }
     single { GameViewWindow(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -240,7 +241,6 @@ val appModule = module {
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
-    single { ProjectWizardWindow() }
     single { ProjectSwitcherDialog() }
 
     // Scene initialization components

@@ -5,12 +5,15 @@ import com.pafoid.skate.editor.events.CreateProjectFailed
 import com.pafoid.skate.editor.events.CreateProjectRequested
 import com.pafoid.skate.editor.events.CreateProjectSucceeded
 import com.pafoid.skate.editor.events.CreateFileRequested
+import com.pafoid.skate.editor.events.CloseProjectRequested
 import com.pafoid.skate.editor.events.DeleteFileRequested
 import com.pafoid.skate.editor.events.FileSystemEvent
+import com.pafoid.skate.editor.events.LoadLastProjectRequested
 import com.pafoid.skate.editor.events.OpenProjectFailed
 import com.pafoid.skate.editor.events.OpenProjectRequested
 import com.pafoid.skate.editor.events.OpenProjectSucceeded
 import com.pafoid.skate.editor.events.RenameFileRequested
+import com.pafoid.skate.editor.events.SaveProjectRequested
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -154,5 +157,57 @@ class ProjectActionHandlerTest {
         assertEquals(0, successCount)
         assertEquals("MyProject", failureEvent?.name)
         assertTrue(failureEvent?.reason?.contains("boom") == true)
+    }
+
+    @Test
+    fun `close project requested closes current project through handler`() {
+        val eventSystem = EventSystem()
+        val projectManager = mockk<ProjectManager>(relaxed = true)
+        val undoRedoManager = mockk<UndoRedoManager>(relaxed = true)
+        val logger = mockk<LoggerService>(relaxed = true)
+        every { projectManager.hasProject() } returns true
+
+        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
+        handler.init()
+
+        eventSystem.publish(CloseProjectRequested)
+
+        verify(exactly = 1) { projectManager.closeProject() }
+    }
+
+    @Test
+    fun `save project requested executes save command through undo manager`() {
+        val eventSystem = EventSystem()
+        val projectManager = mockk<ProjectManager>(relaxed = true)
+        val undoRedoManager = mockk<UndoRedoManager>()
+        val logger = mockk<LoggerService>(relaxed = true)
+        every { undoRedoManager.executeCommand(any()) } answers {
+            firstArg<Command>().execute()
+        }
+        every { projectManager.saveProject() } returns true
+
+        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
+        handler.init()
+
+        eventSystem.publish(SaveProjectRequested)
+
+        verify(exactly = 1) { undoRedoManager.executeCommand(any()) }
+        verify(exactly = 1) { projectManager.saveProject() }
+    }
+
+    @Test
+    fun `load last project requested delegates to project manager`() {
+        val eventSystem = EventSystem()
+        val projectManager = mockk<ProjectManager>(relaxed = true)
+        val undoRedoManager = mockk<UndoRedoManager>(relaxed = true)
+        val logger = mockk<LoggerService>(relaxed = true)
+        every { projectManager.loadLastProject() } returns false
+
+        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
+        handler.init()
+
+        eventSystem.publish(LoadLastProjectRequested)
+
+        verify(exactly = 1) { projectManager.loadLastProject() }
     }
 }

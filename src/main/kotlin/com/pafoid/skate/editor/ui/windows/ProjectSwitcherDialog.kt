@@ -1,9 +1,8 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.events.OpenProjectFailed
-import com.pafoid.skate.editor.events.OpenProjectRequested
-import com.pafoid.skate.editor.events.OpenProjectSucceeded
+import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.editor.events.ProjectEvent.*
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants

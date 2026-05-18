@@ -1,12 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.events.CreateProjectFailed
-import com.pafoid.skate.editor.events.CreateProjectRequested
-import com.pafoid.skate.editor.events.CreateProjectSucceeded
-import com.pafoid.skate.editor.events.OpenProjectFailed
-import com.pafoid.skate.editor.events.OpenProjectRequested
-import com.pafoid.skate.editor.events.OpenProjectSucceeded
+import com.pafoid.skate.editor.events.ProjectEvent.*
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -25,8 +20,6 @@ import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import imgui.type.ImString
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.UIManager
@@ -40,14 +33,13 @@ import javax.swing.filechooser.FileFilter
  * - Project location with folder browser
  * - Live preview of project structure
  */
-class ProjectWizardWindow : IWindow, KoinComponent {
-
-    private val projectManager: ProjectManager by inject()
-    val wizard: ProjectWizard by inject()
-    private val logger: LoggerService by inject()
-    private val stringManager: StringManager by inject()
-    private val eventSystem: EventSystem by inject()
-
+class ProjectWizardWindow(
+    val wizard: ProjectWizard,
+    private val projectManager: ProjectManager,
+    private val logger: LoggerService,
+    private val stringManager: StringManager,
+    private val eventSystem: EventSystem,
+) : IWindow {
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
     private var initialized = false

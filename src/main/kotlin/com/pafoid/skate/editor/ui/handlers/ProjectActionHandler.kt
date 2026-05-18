@@ -5,17 +5,10 @@ import com.pafoid.skate.editor.commands.project.CreateProjectCommand
 import com.pafoid.skate.editor.commands.project.DeleteFileCommand
 import com.pafoid.skate.editor.commands.project.OpenProjectCommand
 import com.pafoid.skate.editor.commands.project.RenameFileCommand
+import com.pafoid.skate.editor.commands.project.SaveProjectCommand
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
-import com.pafoid.skate.editor.events.CreateProjectFailed
-import com.pafoid.skate.editor.events.CreateProjectRequested
-import com.pafoid.skate.editor.events.CreateProjectSucceeded
-import com.pafoid.skate.editor.events.CreateFileRequested
-import com.pafoid.skate.editor.events.DeleteFileRequested
 import com.pafoid.skate.editor.events.FileSystemEvent
-import com.pafoid.skate.editor.events.OpenProjectFailed
-import com.pafoid.skate.editor.events.OpenProjectRequested
-import com.pafoid.skate.editor.events.OpenProjectSucceeded
-import com.pafoid.skate.editor.events.RenameFileRequested
+import com.pafoid.skate.editor.events.ProjectEvent.*
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -64,6 +57,18 @@ class ProjectActionHandler(
         eventSystem.subscribe<DeleteFileRequested> { event ->
             val command = DeleteFileCommand(event.path, logger)
             executeAndPublishOnSuccess(command, event.path)
+        }
+        eventSystem.subscribe<CloseProjectRequested> {
+            if (projectManager.hasProject()) {
+                projectManager.closeProject()
+            }
+        }
+        eventSystem.subscribe<SaveProjectRequested> {
+            val command = SaveProjectCommand(projectManager)
+            undoRedoManager.executeCommand(command)
+        }
+        eventSystem.subscribe<LoadLastProjectRequested> {
+            projectManager.loadLastProject()
         }
     }
 

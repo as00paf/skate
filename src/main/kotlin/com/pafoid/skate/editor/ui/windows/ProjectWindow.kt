@@ -1,11 +1,9 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.events.CreateFileRequested
-import com.pafoid.skate.editor.events.DeleteFileRequested
 import com.pafoid.skate.editor.data.FileSystemItem
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.FileSystemEvent
-import com.pafoid.skate.editor.events.RenameFileRequested
+import com.pafoid.skate.editor.events.ProjectEvent.*
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.FileSystemScanner
@@ -137,9 +135,6 @@ class ProjectWindow(
         popItemWidth()
     }
 
-    // ─────────────────────────────────────────────────────────
-    // Tree rendering
-    // ─────────────────────────────────────────────────────────
     private fun renderTree() {
         val filter = searchText.get().trim()
         for (item in treeCache) {
@@ -230,9 +225,6 @@ class ProjectWindow(
         return false
     }
 
-    // ─────────────────────────────────────────────────────────
-    // Double-click handler
-    // ─────────────────────────────────────────────────────────
     private fun handleDoubleClick(item: FileSystemItem) {
         when (item.type) {
             FileType.SCENE -> {

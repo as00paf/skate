@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.project.ProjectWizard
@@ -13,11 +14,11 @@ import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.ui.windows.ProjectSwitcherDialog
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImGui
 import imgui.internal.ImGui.image
-import java.io.File
 
 class EditorMenuBar(
     private val fileMenu: FileMenuBuilder,
@@ -28,6 +29,7 @@ class EditorMenuBar(
     private val stringManager: StringManager,
     private val resourceManager: ResourceManager,
     private val projectManager: ProjectManager,
+    private val eventSystem: EventSystem,
     private val projectSwitcher: ProjectSwitcherDialog,
     private val windowController: WindowController,
     private val projectWizard: ProjectWizard,
@@ -90,7 +92,7 @@ class EditorMenuBar(
                 if (filteredProjects.isNotEmpty()) {
                     for (project in filteredProjects) {
                         if (ImGui.menuItem(project.name)) {
-                            projectManager.openProject(File(project.path))
+                            eventSystem.publish(ProjectEvent.OpenProjectRequested(project.path))
                         }
                     }
                 } else {
@@ -104,7 +106,7 @@ class EditorMenuBar(
             if (projectManager.hasProject()) {
                 if (ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}")) {
                     imguiLayer.markWizardResetNeeded()
-                    projectManager.closeProject()
+                    eventSystem.publish(ProjectEvent.CloseProjectRequested)
                 }
             }
             if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}")) {
