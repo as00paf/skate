@@ -49,4 +49,20 @@ class RenameFileCommandTest {
         assertTrue(destination.exists())
         tempDir.deleteRecursively()
     }
+
+    @Test
+    fun `execute_WithSameDestinationName_SkipsRenameAndKeepsOriginalFile`() {
+        val logger = mockk<LoggerService>(relaxed = true)
+        val tempDir = Files.createTempDirectory("rename-file-command-same-name").toFile()
+        val original = tempDir.resolve("source.txt")
+        original.writeText("source")
+        val command = RenameFileCommand(original.absolutePath, original.name, logger)
+
+        command.execute()
+        command.undo()
+
+        assertFalse(command.wasSuccessful())
+        assertTrue(original.exists())
+        tempDir.deleteRecursively()
+    }
 }

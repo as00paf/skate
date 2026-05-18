@@ -48,4 +48,27 @@ class DeleteFileCommandTest {
         verify { logger.logEditor(match { it.contains("Delete skipped, file does not exist") }, any<LogLevel>()) }
         tempDir.deleteRecursively()
     }
+
+    @Test
+    fun `executeAndUndo_DirectoryTarget_RestoresNestedFiles`() {
+        val logger = mockk<LoggerService>(relaxed = true)
+        val tempDir = Files.createTempDirectory("delete-directory-command-test").toFile()
+        val directory = tempDir.resolve("folder")
+        val nestedFile = directory.resolve("child.txt")
+        directory.mkdirs()
+        nestedFile.writeText("nested")
+
+        val command = DeleteFileCommand(directory.absolutePath, logger)
+        command.execute()
+
+        assertTrue(command.wasSuccessful())
+        assertFalse(directory.exists())
+        assertTrue(tempDir.listFiles()?.any { it.name.startsWith(".trash_folder_") } == true)
+
+        command.undo()
+
+        assertTrue(directory.exists())
+        assertTrue(nestedFile.exists())
+        tempDir.deleteRecursively()
+    }
 }

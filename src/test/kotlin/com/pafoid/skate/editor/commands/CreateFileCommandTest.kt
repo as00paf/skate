@@ -60,4 +60,22 @@ class CreateFileCommandTest {
         assertTrue(file.exists())
         tempDir.deleteRecursively()
     }
+
+    @Test
+    fun `execute_WithNestedPath_CreatesMissingParentsAndUndoKeepsDirectories`() {
+        val logger = mockk<LoggerService>(relaxed = true)
+        val tempDir = Files.createTempDirectory("create-file-command-nested").toFile()
+        val nestedFile = tempDir.resolve("nested/path/new-file.txt")
+        val command = CreateFileCommand(nestedFile.absolutePath, false, logger)
+
+        command.execute()
+        assertTrue(command.wasSuccessful())
+        assertTrue(nestedFile.exists())
+        assertTrue(nestedFile.parentFile.exists())
+
+        command.undo()
+        assertFalse(nestedFile.exists())
+        assertTrue(nestedFile.parentFile.exists())
+        tempDir.deleteRecursively()
+    }
 }
