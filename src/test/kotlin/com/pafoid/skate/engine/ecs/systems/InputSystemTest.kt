@@ -189,4 +189,38 @@ class InputSystemTest {
 
         inputSystem.update(0.016f)
     }
+
+    @Test
+    fun `mouse look contributes to camera look when cursor is disabled`() {
+        val inputState = InputStateComponent()
+        val player = GameObject("TestPlayer").addComponent(inputState)
+        scene.gameObjects.add(player)
+
+        every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
+        every { mouseListener.getDx() } returns 4f
+        every { mouseListener.getDy() } returns -2f
+        every { inputProvider.isCursorDisabled() } returns true
+
+        inputSystem.update(0.016f)
+
+        assertEquals(0.4f, inputState.cameraLook.x, 0.0001f)
+        assertEquals(-0.2f, inputState.cameraLook.y, 0.0001f)
+    }
+
+    @Test
+    fun `mouse look ignored when cursor is not disabled`() {
+        val inputState = InputStateComponent()
+        val player = GameObject("TestPlayer").addComponent(inputState)
+        scene.gameObjects.add(player)
+
+        every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
+        every { mouseListener.getDx() } returns 5f
+        every { mouseListener.getDy() } returns 5f
+        every { inputProvider.isCursorDisabled() } returns false
+
+        inputSystem.update(0.016f)
+
+        assertEquals(0f, inputState.cameraLook.x, 0.0001f)
+        assertEquals(0f, inputState.cameraLook.y, 0.0001f)
+    }
 }

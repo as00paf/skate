@@ -51,6 +51,7 @@ class InputSystem(
 
             inputState.reset()
             pollGamepadInput(inputState)
+            pollMouseInput(inputState)
             updateJumpState(inputState)
         }
 
