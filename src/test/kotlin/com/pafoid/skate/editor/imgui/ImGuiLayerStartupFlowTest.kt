@@ -160,4 +160,18 @@ class ImGuiLayerStartupFlowTest : KoinTest {
 
         assertEquals(1, loadLastRequests)
     }
+
+    @Test
+    fun `process startup flow shows default windows only on no-project to project transition`() {
+        var hasProject = false
+        every { projectManager.hasProject() } answers { hasProject }
+
+        layer.processProjectStartupFlow()
+
+        hasProject = true
+        layer.processProjectStartupFlow()
+        layer.processProjectStartupFlow()
+
+        verify(exactly = 1) { windowRegistry.showDefaultWindows() }
+    }
 }
