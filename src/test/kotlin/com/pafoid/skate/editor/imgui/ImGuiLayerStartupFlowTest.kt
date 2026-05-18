@@ -174,4 +174,14 @@ class ImGuiLayerStartupFlowTest : KoinTest {
 
         verify(exactly = 1) { windowRegistry.showDefaultWindows() }
     }
+
+    @Test
+    fun `process startup flow does not hide windows when project was never open`() {
+        every { projectManager.hasProject() } returns false
+
+        layer.processProjectStartupFlow()
+        layer.processProjectStartupFlow()
+
+        verify(exactly = 0) { windowRegistry.hideAllWindows() }
+    }
 }
