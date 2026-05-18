@@ -23,6 +23,7 @@ class DeleteFileCommandTest {
         command.execute()
 
         assertFalse(file.exists())
+        assertTrue(command.wasSuccessful())
         assertTrue(tempDir.listFiles()?.any { it.name.startsWith(".trash_notes.txt_") } == true)
 
         command.undo()
@@ -40,8 +41,10 @@ class DeleteFileCommandTest {
         val tempDir = Files.createTempDirectory("delete-file-command-missing").toFile()
         val missing = tempDir.resolve("missing.txt")
 
-        DeleteFileCommand(missing.absolutePath, logger).execute()
+        val command = DeleteFileCommand(missing.absolutePath, logger)
+        command.execute()
 
+        assertFalse(command.wasSuccessful())
         verify { logger.logEditor(match { it.contains("Delete skipped, file does not exist") }, any<LogLevel>()) }
         tempDir.deleteRecursively()
     }

@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.systems
 import com.pafoid.skate.editor.commands.AsyncCommand
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.commands.CommandCategory
+import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import kotlinx.coroutines.Job
 
 /**
@@ -40,6 +41,9 @@ class UndoRedoManager(
         when (command.getCategory()) {
             CommandCategory.UNDOABLE -> {
                 command.execute()
+                if (!didCommandSucceed(command)) {
+                    return
+                }
                 synchronized(historyLock) {
                     pushCommandInternal(command)
                 }
@@ -47,6 +51,9 @@ class UndoRedoManager(
 
             CommandCategory.EXECUTE_ONLY -> {
                 command.execute()
+                if (!didCommandSucceed(command)) {
+                    return
+                }
                 synchronized(historyLock) {
                     redoStack.clear()
                 }
@@ -100,8 +107,12 @@ class UndoRedoManager(
 
         synchronized(historyLock) {
             if (redoStack.isNotEmpty()) {
-                val redoCommand = redoStack.removeAt(redoStack.size - 1)
+                val redoCommand = redoStack.last()
                 redoCommand.execute()
+                if (!didCommandSucceed(redoCommand)) {
+                    return
+                }
+                redoStack.removeAt(redoStack.size - 1)
                 pushRedoCommandToUndoInternal(redoCommand)
             }
         }
@@ -218,5 +229,10 @@ class UndoRedoManager(
         if (undoStack.size > maxStackSize) {
             undoStack.removeAt(0)
         }
+    }
+
+    private fun didCommandSucceed(command: Command): Boolean {
+        val trackedCommand = command as? ExecutionTrackedCommand ?: return true
+        return trackedCommand.wasSuccessful()
     }
 }

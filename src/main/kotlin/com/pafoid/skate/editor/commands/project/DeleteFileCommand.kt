@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.commands.project
 
-import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import java.io.File
 
@@ -11,12 +11,15 @@ import java.io.File
 class DeleteFileCommand(
     private val filePath: String,
     private val logger: LoggerService
-) : Command {
+) : ExecutionTrackedCommand {
 
     private var tempFile: File? = null
     private val originalFile = File(filePath)
+    private var executeSucceeded = false
 
     override fun execute() {
+        executeSucceeded = false
+
         if (!originalFile.exists()) {
             logger.logEditor("Delete skipped, file does not exist: ${originalFile.absolutePath}")
             return
@@ -36,6 +39,7 @@ class DeleteFileCommand(
                 return
             }
             tempFile = trashFile
+            executeSucceeded = true
             logger.logEditor("Deleted: ${originalFile.name}")
         } catch (e: Exception) {
             logger.logEditor("Failed to delete: ${originalFile.name} — ${e.message}")
@@ -43,6 +47,9 @@ class DeleteFileCommand(
     }
 
     override fun undo() {
+        if (!executeSucceeded) {
+            return
+        }
         val temp = tempFile ?: return
         if (temp.exists()) {
             if (temp.renameTo(originalFile)) {
@@ -52,6 +59,8 @@ class DeleteFileCommand(
             }
         }
     }
+
+    override fun wasSuccessful(): Boolean = executeSucceeded
 
     override fun getDisplayName(): String = "Delete ${originalFile.name}"
     override fun getTargetName(): String? = originalFile.name
