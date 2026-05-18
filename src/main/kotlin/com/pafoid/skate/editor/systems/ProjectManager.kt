@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.systems
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.EngineAssetCopier
+import com.pafoid.skate.editor.project.GameplaySettings
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.settings.RecentProjectInfo
@@ -382,6 +383,32 @@ class ProjectManager(
             eventSystem.publish(ProjectEvent.Saved(project))
         }
         return result
+    }
+
+    fun updateGameplaySettings(physicsFPS: Int, gravity: Float, timeScale: Float): Boolean {
+        val project = currentProject ?: run {
+            logger.logEditor("No project loaded, cannot update gameplay settings", LogLevel.ERROR)
+            return false
+        }
+
+        val updatedProject = project.copy(
+            gameplaySettings = GameplaySettings(
+                physicsFPS = physicsFPS,
+                gravity = gravity,
+                timeScale = timeScale
+            )
+        )
+
+        val result = settingsManager.saveProject(updatedProject)
+        if (!result) {
+            logger.logEditor("Failed to save gameplay settings for project: ${project.metadata.name}", LogLevel.ERROR)
+            return false
+        }
+
+        currentProject = updatedProject
+        eventSystem.publish(ProjectEvent.Saved(updatedProject))
+        logger.logEditor("Gameplay settings updated for project: ${updatedProject.metadata.name}")
+        return true
     }
 
     fun getProjectDirectory(): File? {

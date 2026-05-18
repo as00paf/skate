@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
@@ -223,7 +224,11 @@ class ProjectSettingsWindow(
     }
 
     private fun saveSettings() {
-        hasPendingChanges = false
+        val saved = projectManager.updateGameplaySettings(tempPhysicsFPS, tempGravity, tempTimeScale)
+        hasPendingChanges = !saved
+        if (!saved) {
+            logger.logEditor("Failed to persist project settings", LogLevel.ERROR)
+        }
     }
 
     private fun getRecentProjectsDisplayInfo() = settingsManager.recentProjects.map { r ->
