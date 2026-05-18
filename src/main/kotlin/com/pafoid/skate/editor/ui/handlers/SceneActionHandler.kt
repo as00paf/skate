@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.commands.project.CloseSceneCommand
 import com.pafoid.skate.editor.commands.project.CreateSceneCommand
 import com.pafoid.skate.editor.commands.project.DeleteSceneCommand
 import com.pafoid.skate.editor.commands.project.OpenSceneCommand
+import com.pafoid.skate.editor.commands.project.OpenSceneFileCommand
 import com.pafoid.skate.editor.commands.project.RenameSceneCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneCommand
@@ -24,6 +25,7 @@ import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.SceneAction.*
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.ViewportAction.*
+import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -70,6 +72,12 @@ class SceneActionHandler : KoinComponent {
         }
         eventSystem.subscribe<OpenRequested> {
             handleOpenRequested()
+        }
+        eventSystem.subscribe<OpenPathRequested> { event ->
+            handleOpenPathRequested(event.scenePath)
+        }
+        eventSystem.subscribe<FileSystemEvent.OpenSceneFileEvent> { event ->
+            eventSystem.publish(OpenPathRequested(event.scenePath))
         }
         eventSystem.subscribe<Created> { event ->
             handleSceneCreated(event.scene)
@@ -160,6 +168,18 @@ class SceneActionHandler : KoinComponent {
         val command = OpenSceneCommand(sceneInitializer, sceneSerializer, sceneManager, jobSystem, eventSystem)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene open requested")
+    }
+
+    private fun handleOpenPathRequested(scenePath: String) {
+        if (mutationGate.blockIfPlaying("open scene")) return
+        if (scenePath.isBlank()) {
+            logger.logEditor("Scene open failed: scene path is blank", LogLevel.ERROR)
+            return
+        }
+
+        val command = OpenSceneFileCommand(scenePath, sceneInitializer, sceneSerializer, sceneManager, jobSystem, eventSystem)
+        undoRedoManager.executeCommand(command)
+        logger.logEditor("Scene open requested for path: $scenePath")
     }
 
     private fun handleOpenSucceeded(scene: Scene) {

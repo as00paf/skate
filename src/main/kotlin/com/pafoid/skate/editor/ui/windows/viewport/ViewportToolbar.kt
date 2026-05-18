@@ -221,10 +221,9 @@ class ViewportToolbar(
 
         // Screenshot button
         buttons.add {
-            // Screenshot functionality would be called from GameViewWindow
-            // This is just the button rendering
             if (ImGui.button(Icons.CAMERA, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                // Signal to take screenshot - handled by GameViewWindow
+                eventSystem.publish(ScreenshotRequested)
+                logger.logEditor("Screenshot requested")
             }
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.screenshot"))
         }

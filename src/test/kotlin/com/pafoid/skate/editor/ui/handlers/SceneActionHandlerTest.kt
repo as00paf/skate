@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.data.LogEntry
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.data.SceneOpenResult
+import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
@@ -361,6 +362,19 @@ class SceneActionHandlerTest {
             it.message.contains("Scene open cancelled", ignoreCase = true)
         }
         assertTrue(cancelLogs.isNotEmpty(), "Cancellation should be logged after async completion event")
+    }
+
+    @Test
+    fun `open scene file event routes through scene flow and opens scene`() {
+        val handler = SceneActionHandler()
+        handler.init()
+        val scenePath = File(tempProjectDir, "Scenes/Test.scene").absolutePath
+        every { sceneSerializer.loadFromFile(any(), scenePath) } returns true
+
+        eventSystem.publish(FileSystemEvent.OpenSceneFileEvent(scenePath))
+
+        verify { sceneSerializer.loadFromFile(any(), scenePath) }
+        verify { sceneManager.openSceneBlocking(any(), any()) }
     }
 
     private fun startKoinForTest() {

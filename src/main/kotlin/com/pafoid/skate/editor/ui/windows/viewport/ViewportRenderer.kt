@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
+import com.pafoid.skate.engine.utils.ScreenshotUtils
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import imgui.ImGui
@@ -71,4 +72,12 @@ class ViewportRenderer(
      * Get the viewport size as ImVec2.
      */
     fun getSize(): ImVec2 = ImVec2(imageSizeX, imageSizeY)
+
+    fun captureScreenshot() {
+        runCatching {
+            val frameBuffer = renderer.frameBuffer
+            if (frameBuffer.width <= 0 || frameBuffer.height <= 0) return
+            ScreenshotUtils.takeScreenshot(frameBuffer.width, frameBuffer.height, frameBuffer.getFboId())
+        }
+    }
 }

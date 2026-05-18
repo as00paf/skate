@@ -44,14 +44,15 @@ This roadmap is the full **future development backlog** for SkateSim. It tracks 
 | A47.0.7 | Refine Editor Workflow & UX | 3 | Low | A46.0.1 | Planned | Polish usability, discoverability, and workflow efficiency in editor tooling. |
 | A47.0.8 | Comprehensive Documentation & Tutorials | 3 | Low | All previous milestones | Planned | Publish practical onboarding and feature tutorials aligned with shipped systems. |
 | A47.0.9 | Integrate Networking for Multiplayer | 3 | Medium | A47.0.5 | Planned | Establish multiplayer/networking foundation and initial synchronization model. |
+| A48.0.1 | Comprehensive Feature & Code Audit | 3 | High | None | In Progress | Verify implemented features against expected behavior and establish a prioritized remediation backlog. |
 
 ## Near-Term Focus (next backlog wave)
 
-1. A46.0.1 — Editor tooling revamp remaining scope
-2. A46.0.2 — Advanced Lighting Models
-3. A46.0.3 — Post-Processing Stack
-4. A46.0.4 — Advanced Material System
-5. A46.0.8 — Advanced Physics Constraints
+1. A48.0.1 — Comprehensive Feature & Code Audit
+2. A46.0.1 — Editor tooling revamp remaining scope
+3. A46.0.2 — Advanced Lighting Models
+4. A46.0.3 — Post-Processing Stack
+5. A46.0.4 — Advanced Material System
 
 ## Sequencing Risks
 

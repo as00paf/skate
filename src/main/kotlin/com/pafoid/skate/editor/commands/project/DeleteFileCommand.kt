@@ -17,10 +17,25 @@ class DeleteFileCommand(
     private val originalFile = File(filePath)
 
     override fun execute() {
-        if (!originalFile.exists()) return
-        tempFile = File(originalFile.parentFile, ".trash_${originalFile.name}_${System.currentTimeMillis()}")
+        if (!originalFile.exists()) {
+            logger.logEditor("Delete skipped, file does not exist: ${originalFile.absolutePath}")
+            return
+        }
+
+        val parent = originalFile.parentFile
+        if (parent == null) {
+            logger.logEditor("Failed to delete: ${originalFile.name} — parent directory not found")
+            return
+        }
+
+        val trashFile = File(parent, ".trash_${originalFile.name}_${System.currentTimeMillis()}")
         try {
-            originalFile.renameTo(tempFile!!)
+            val moved = originalFile.renameTo(trashFile)
+            if (!moved) {
+                logger.logEditor("Failed to delete: ${originalFile.name} — could not move to trash")
+                return
+            }
+            tempFile = trashFile
             logger.logEditor("Deleted: ${originalFile.name}")
         } catch (e: Exception) {
             logger.logEditor("Failed to delete: ${originalFile.name} — ${e.message}")
@@ -30,8 +45,11 @@ class DeleteFileCommand(
     override fun undo() {
         val temp = tempFile ?: return
         if (temp.exists()) {
-            temp.renameTo(originalFile)
-            logger.logEditor("Restored: ${originalFile.name}")
+            if (temp.renameTo(originalFile)) {
+                logger.logEditor("Restored: ${originalFile.name}")
+            } else {
+                logger.logEditor("Failed to restore: ${originalFile.name}")
+            }
         }
     }
 

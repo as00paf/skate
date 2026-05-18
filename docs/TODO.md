@@ -17,6 +17,7 @@ This file contains **near-future tasks** that are ready for execution and alread
 
 | ID | Title | Status | Why now |
 |---|---|---|---|
+| A48.0.1 | Comprehensive Feature & Code Audit | In Progress | Needed to stop regressions and align feature behavior with architecture quality expectations. |
 | A46.0.1 | Engine UI & Editor Tooling Revamp (remaining scope) | In Progress | Core usability/workflow debt still impacts daily iteration speed. |
 | A46.0.2 | Advanced Lighting Models | Planned | Next major rendering capability on Phase 2 path. |
 | A46.0.3 | Post-Processing Stack | Planned | Depends on render foundations and follows lighting work. |
@@ -25,6 +26,36 @@ This file contains **near-future tasks** that are ready for execution and alread
 ---
 
 ## Execution Plans
+
+### A48.0.1 — Comprehensive Feature & Code Audit
+
+**Description**  
+Audit implemented features and associated code paths to identify regressions, contract violations, and maintainability risks before further feature expansion.
+
+**Subtasks**
+1. Build feature inventory and owner mapping across editor/runtime systems.
+2. Execute critical-path QA verification first (project/scene lifecycle, undo/redo, filesystem, screenshot).
+3. Run reviewer high-signal code audit on architecture/logic risks.
+4. Record findings with severity, owner, repro confidence, and evidence.
+5. Define remediation backlog and re-verification gates.
+
+**Current phase status**
+- Pass 1 completed: critical-path audit produced initial findings.
+- Full audit completed: expanded QA + reviewer findings consolidated and prioritized.
+- Gate: **No-Go for release quality** until critical findings are fixed.
+
+**Current critical findings**
+1. Screenshot trigger path incomplete (toolbar button does not invoke capture).
+2. Project window scene-open event published but no subscriber path found.
+3. `DeleteFileCommand` contains unsafe `!!` usage.
+
+**Tracking artifacts**
+- `docs/FEATURE_AND_CODE_AUDIT_PLAN.md`
+- `docs/AUDIT_PASS1_REPORT.md`
+- `docs/AUDIT_FULL_REPORT.md`
+- `docs/REGRESSION_LOG.md`
+
+---
 
 ### A46.0.1 — Engine UI & Editor Tooling Revamp (remaining scope)
 

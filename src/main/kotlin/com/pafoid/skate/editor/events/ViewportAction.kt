@@ -50,6 +50,7 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     data class TabSelected(val scene: Scene) : ViewportAction("scene.action.tab_selected")
     data class ToggleGizmo(val gizmoId: Int) : ViewportAction("viewport.toggle_gizmo")
     object TogglePhysicsDebug : ViewportAction("viewport.toggle_physics_debug")
+    object ScreenshotRequested : ViewportAction("viewport.screenshot_requested")
 
     // Clipboard
     data class PasteClipboard(val parent: GameObject? = null) : ViewportAction("viewport.paste_clipboard")

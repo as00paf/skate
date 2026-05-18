@@ -18,6 +18,7 @@ sealed class SceneAction(eventName: String) : Event(eventName){
     data class OpenSucceeded(val scene: Scene) : SceneAction("scene.action.open_succeeded")
     data class OpenFailed(val reason: String) : SceneAction("scene.action.open_failed")
     object OpenRequested : SceneAction("scene.action.open_requested")
+    data class OpenPathRequested(val scenePath: String) : SceneAction("scene.action.open_path_requested")
     object OpenCancelled : SceneAction("scene.action.open_cancelled")
 
     // Close
