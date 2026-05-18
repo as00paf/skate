@@ -143,4 +143,21 @@ class ImGuiLayerStartupFlowTest : KoinTest {
         assertEquals(0, loadLastRequests)
         assertFalse(wizard.isOpen.get())
     }
+
+    @Test
+    fun `process startup flow does not re-request load-last after a project is closed`() {
+        var hasProject = false
+        every { projectManager.hasProject() } answers { hasProject }
+
+        var loadLastRequests = 0
+        eventSystem.subscribe<ProjectEvent.LoadLastProjectRequested> { loadLastRequests++ }
+
+        layer.processProjectStartupFlow()
+        hasProject = true
+        layer.processProjectStartupFlow()
+        hasProject = false
+        layer.processProjectStartupFlow()
+
+        assertEquals(1, loadLastRequests)
+    }
 }
