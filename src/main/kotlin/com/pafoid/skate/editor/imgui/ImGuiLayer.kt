@@ -276,6 +276,14 @@ class ImGuiLayer(
             needsWizardReset = false
         }
 
+        processProjectStartupFlow()
+
+        windowRegistry.projectWizardWindow.imgui(null)
+
+        endFrame()
+    }
+
+    internal fun processProjectStartupFlow() {
         if (!hasAttemptedAutoLoad && !projectManager.hasProject()) {
             hasAttemptedAutoLoad = true
             eventSystem.publish(ProjectEvent.LoadLastProjectRequested)
@@ -298,10 +306,6 @@ class ImGuiLayer(
         if (!projectManager.hasProject() && !windowRegistry.projectWizardWindow.wizard.isOpen.get() && !windowRegistry.projectWizardWindow.wizard.userDismissed) {
             windowRegistry.projectWizardWindow.wizard.open()
         }
-
-        windowRegistry.projectWizardWindow.imgui(null)
-
-        endFrame()
     }
 
     fun startFrame() {
