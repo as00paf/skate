@@ -285,18 +285,21 @@ class ImGuiLayer(
     }
 
     internal fun processProjectStartupFlow() {
-        var hasProject = projectManager.hasProject()
+        val hasProject = attemptAutoLoadIfNeeded(projectManager.hasProject())
         val wizard = windowRegistry.projectWizardWindow.wizard
-
-        if (!hasAttemptedAutoLoad && !hasProject) {
-            hasAttemptedAutoLoad = true
-            eventSystem.publish(ProjectEvent.LoadLastProjectRequested)
-            hasProject = projectManager.hasProject()
-        }
 
         handleProjectTransitions(hasProject, wizard)
         hadProjectLastFrame = hasProject
         handleProjectWizardFallback(hasProject, wizard)
+    }
+
+    private fun attemptAutoLoadIfNeeded(initialHasProject: Boolean): Boolean {
+        if (hasAttemptedAutoLoad || initialHasProject) {
+            return initialHasProject
+        }
+        hasAttemptedAutoLoad = true
+        eventSystem.publish(ProjectEvent.LoadLastProjectRequested)
+        return projectManager.hasProject()
     }
 
     private fun handleProjectTransitions(hasProject: Boolean, wizard: ProjectWizard) {
