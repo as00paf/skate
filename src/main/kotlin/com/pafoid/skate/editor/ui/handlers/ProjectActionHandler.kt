@@ -1,8 +1,10 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.commands.project.CreateFileCommand
+import com.pafoid.skate.editor.commands.project.CloseProjectCommand
 import com.pafoid.skate.editor.commands.project.CreateProjectCommand
 import com.pafoid.skate.editor.commands.project.DeleteFileCommand
+import com.pafoid.skate.editor.commands.project.LoadLastProjectCommand
 import com.pafoid.skate.editor.commands.project.OpenProjectCommand
 import com.pafoid.skate.editor.commands.project.RenameFileCommand
 import com.pafoid.skate.editor.commands.project.SaveProjectCommand
@@ -60,7 +62,8 @@ class ProjectActionHandler(
         }
         eventSystem.subscribe<CloseProjectRequested> {
             if (projectManager.hasProject()) {
-                projectManager.closeProject()
+                val command = CloseProjectCommand(projectManager)
+                undoRedoManager.executeCommand(command)
             }
         }
         eventSystem.subscribe<SaveProjectRequested> {
@@ -68,7 +71,8 @@ class ProjectActionHandler(
             undoRedoManager.executeCommand(command)
         }
         eventSystem.subscribe<LoadLastProjectRequested> {
-            projectManager.loadLastProject()
+            val command = LoadLastProjectCommand(projectManager)
+            undoRedoManager.executeCommand(command)
         }
     }
 

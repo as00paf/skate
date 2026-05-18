@@ -39,4 +39,6 @@ This log tracks active regressions and audit findings requiring verification and
 - Project startup lifecycle hardening is actively in progress (latest sequence through `f37af28c`) with expanded transition coverage in `ImGuiLayerStartupFlowTest`.
 - AUD-007 implementation update: project open now closes active project first; project close now closes all scenes through `SceneManager.closeAllScenes()` and resets system caches; lifecycle regression tests added in `ProjectManagerLifecycleTest`.
 - AUD-007 follow-up: engine runtime loop now continues `ImGuiLayer.update()` when there is no active scene, preventing editor UI lock after project close; coverage added in `EngineFixedTimestepTest`.
+- AUD-008 incremental hardening: `CloseProjectRequested` and `LoadLastProjectRequested` are now routed through execute-only commands in `ProjectActionHandler` instead of direct `ProjectManager` mutations.
+- AUD-007 UI follow-up: `EditorMenuBar` now invalidates and reloads the app icon texture after `ProjectEvent.Closed`, preventing stale GL texture IDs after `ResourceManager.clear()`.
 - Next remediation focus remains `AUD-008` to finish eliminating remaining direct-mutation bypass risks in input-driven paths.

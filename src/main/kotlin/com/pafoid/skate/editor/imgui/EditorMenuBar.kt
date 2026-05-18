@@ -39,11 +39,8 @@ class EditorMenuBar(
     private val projectIcon = Icons.CUBE
 
     init {
-        appIconTexId = try {
-            resourceManager.loadTextureSync(Assets.Textures.APP_ICON).texId
-        } catch (e: Exception) {
-            -1
-        }
+        loadAppIconTexture()
+        initEventSubscriptions()
     }
 
     fun render(currentScene: Scene?) {
@@ -60,11 +57,29 @@ class EditorMenuBar(
     }
 
     private fun renderAppIcon(barHeight: Float) {
+        if (appIconTexId == -1) {
+            loadAppIconTexture()
+        }
         if (appIconTexId != -1) {
             val iconSize = 32f
 
             ImGui.setCursorPosY((barHeight - iconSize) / 2f)
             image(appIconTexId.toLong(), iconSize, iconSize)
+        }
+    }
+
+    private fun initEventSubscriptions() {
+        eventSystem.subscribe<ProjectEvent.Closed> {
+            // Project close clears ResourceManager textures; invalidate stale GL texture id.
+            appIconTexId = -1
+        }
+    }
+
+    private fun loadAppIconTexture() {
+        appIconTexId = try {
+            resourceManager.loadTextureSync(Assets.Textures.APP_ICON).texId
+        } catch (e: Exception) {
+            -1
         }
     }
 

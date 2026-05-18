@@ -152,15 +152,19 @@ class ProjectActionHandlerTest {
     fun `close project requested closes current project through handler`() {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
-        val undoRedoManager = mockk<UndoRedoManager>(relaxed = true)
+        val undoRedoManager = mockk<UndoRedoManager>()
         val logger = mockk<LoggerService>(relaxed = true)
         every { projectManager.hasProject() } returns true
+        every { undoRedoManager.executeCommand(any()) } answers {
+            firstArg<Command>().execute()
+        }
 
         val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
         handler.init()
 
         eventSystem.publish(CloseProjectRequested)
 
+        verify(exactly = 1) { undoRedoManager.executeCommand(any()) }
         verify(exactly = 1) { projectManager.closeProject() }
     }
 
@@ -188,15 +192,19 @@ class ProjectActionHandlerTest {
     fun `load last project requested delegates to project manager`() {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
-        val undoRedoManager = mockk<UndoRedoManager>(relaxed = true)
+        val undoRedoManager = mockk<UndoRedoManager>()
         val logger = mockk<LoggerService>(relaxed = true)
         every { projectManager.loadLastProject() } returns false
+        every { undoRedoManager.executeCommand(any()) } answers {
+            firstArg<Command>().execute()
+        }
 
         val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
         handler.init()
 
         eventSystem.publish(LoadLastProjectRequested)
 
+        verify(exactly = 1) { undoRedoManager.executeCommand(any()) }
         verify(exactly = 1) { projectManager.loadLastProject() }
     }
 }
