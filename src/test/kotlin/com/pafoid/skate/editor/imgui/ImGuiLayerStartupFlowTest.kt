@@ -142,6 +142,8 @@ class ImGuiLayerStartupFlowTest : KoinTest {
 
         assertEquals(0, loadLastRequests)
         assertFalse(wizard.isOpen.get())
+        verify(exactly = 1) { windowRegistry.showDefaultWindows() }
+        verify(exactly = 0) { windowRegistry.hideAllWindows() }
     }
 
     @Test
@@ -198,5 +200,32 @@ class ImGuiLayerStartupFlowTest : KoinTest {
 
         verify(exactly = 1) { windowRegistry.showDefaultWindows() }
         assertFalse(wizard.isOpen.get())
+    }
+
+    @Test
+    fun `process startup flow opens wizard after project closes when not dismissed`() {
+        var hasProject = true
+        every { projectManager.hasProject() } answers { hasProject }
+
+        layer.processProjectStartupFlow()
+        hasProject = false
+        layer.processProjectStartupFlow()
+
+        assertTrue(wizard.isOpen.get())
+        assertFalse(wizard.userDismissed)
+    }
+
+    @Test
+    fun `process startup flow keeps wizard closed after project closes when dismissed`() {
+        var hasProject = true
+        every { projectManager.hasProject() } answers { hasProject }
+        wizard.dismiss()
+
+        layer.processProjectStartupFlow()
+        hasProject = false
+        layer.processProjectStartupFlow()
+
+        assertFalse(wizard.isOpen.get())
+        assertTrue(wizard.userDismissed)
     }
 }
