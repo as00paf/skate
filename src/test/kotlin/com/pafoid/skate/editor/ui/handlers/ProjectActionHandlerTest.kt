@@ -1,19 +1,8 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.commands.Command
-import com.pafoid.skate.editor.events.CreateProjectFailed
-import com.pafoid.skate.editor.events.CreateProjectRequested
-import com.pafoid.skate.editor.events.CreateProjectSucceeded
-import com.pafoid.skate.editor.events.CreateFileRequested
-import com.pafoid.skate.editor.events.CloseProjectRequested
-import com.pafoid.skate.editor.events.DeleteFileRequested
 import com.pafoid.skate.editor.events.FileSystemEvent
-import com.pafoid.skate.editor.events.LoadLastProjectRequested
-import com.pafoid.skate.editor.events.OpenProjectFailed
-import com.pafoid.skate.editor.events.OpenProjectRequested
-import com.pafoid.skate.editor.events.OpenProjectSucceeded
-import com.pafoid.skate.editor.events.RenameFileRequested
-import com.pafoid.skate.editor.events.SaveProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.*
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
