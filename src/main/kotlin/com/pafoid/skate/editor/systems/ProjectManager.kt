@@ -262,6 +262,9 @@ class ProjectManager(
 
     fun openProject(projectFile: File): Boolean {
         return try {
+            if (hasProject()) {
+                closeProject()
+            }
             settingsManager.setLastClosedProjectPath(null)
 
             logger.logEditor("Opening project: ${projectFile.absolutePath}")
@@ -320,26 +323,21 @@ class ProjectManager(
     }
 
     fun closeProject() {
-        val path = currentProject?.getProjectFile()?.absolutePath
-        val projectName = getProjectName()
+        val project = currentProject ?: run {
+            logger.logEditor("No project to close")
+            return
+        }
+        val path = project.getProjectFile().absolutePath
+        val projectName = project.metadata.name
         logger.logEditor("Closing project: $projectName")
 
         // Export registry and embed in project file before closing
-        currentProject?.let { project ->
-            val registryData = assetDatabase.exportRegistryData()
-            settingsManager.updateProjectAssetRegistry(project, registryData)
-        }
+        val registryData = assetDatabase.exportRegistryData()
+        settingsManager.updateProjectAssetRegistry(project, registryData)
 
-        // Destroy all game objects from open scenes and clean up physics
-        sceneManager.openScenes.toList().forEach { scene ->
-            scene.gameObjects.forEach { go ->
-                scene.physics3d.remove(go)
-            }
-            scene.gameObjects.forEach { it.destroy() }
-            scene.gameObjects.clear()
-            scene.pendingObjects.clear()
-            systemManager.resetSystemCaches()
-        }
+        // Ensure scenes/resources are fully reset before switching/closing project context.
+        sceneManager.closeAllScenes()
+        systemManager.resetSystemCaches()
 
         eventSystem.publish(ProjectEvent.Closed(projectName))
         currentProject = null

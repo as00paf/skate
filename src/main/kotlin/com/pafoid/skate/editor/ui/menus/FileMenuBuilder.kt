@@ -36,7 +36,7 @@ class FileMenuBuilder(
      * 
      * @param currentScene The current scene for save operations
      */
-    fun render(currentScene: Scene) {
+    fun render(currentScene: Scene?) {
         if (beginMenu(stringManager.getString("menu.file"))) {
             renderNewSceneItem()
             renderSaveItems(currentScene)
@@ -53,8 +53,8 @@ class FileMenuBuilder(
         }
     }
     
-    private fun renderSaveItems(currentScene: Scene) {
-        if (!sceneManager.openScenes.contains(currentScene)) return
+    private fun renderSaveItems(currentScene: Scene?) {
+        if (currentScene == null || !sceneManager.openScenes.contains(currentScene)) return
 
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
             eventSystem.publish(SaveRequested(currentScene))

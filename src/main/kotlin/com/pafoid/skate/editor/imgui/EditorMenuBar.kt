@@ -46,7 +46,7 @@ class EditorMenuBar(
         }
     }
 
-    fun render(currentScene: Scene) {
+    fun render(currentScene: Scene?) {
         if (imgui.internal.ImGui.beginMenuBar()) {
             val barHeight = 48f
 
@@ -68,7 +68,7 @@ class EditorMenuBar(
         }
     }
 
-    private fun renderHamburgerMenu(currentScene: Scene, barHeight: Float) {
+    private fun renderHamburgerMenu(currentScene: Scene?, barHeight: Float) {
         val btnSize = 30f
         val offsetY = (barHeight - btnSize) / 2f
         ImGui.setCursorPosY(offsetY)

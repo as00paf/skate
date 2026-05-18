@@ -14,7 +14,7 @@ class EditorStatusBar : KoinComponent {
     private val stringManager: StringManager by inject()
     val height = UiConstants.STATUS_BAR_HEIGHT
 
-    fun render(currentScene: Scene) {
+    fun render(currentScene: Scene?) {
         val viewport = ImGui.getMainViewport()
         ImGui.setNextWindowPos(viewport.workPosX, viewport.workPosY + viewport.workSizeY - height, ImGuiCond.Always)
         ImGui.setNextWindowSize(viewport.workSizeX, height, ImGuiCond.Always)
@@ -43,7 +43,8 @@ class EditorStatusBar : KoinComponent {
             val totalMB = rt.totalMemory() / (1024 * 1024)
             ImGui.text(stringManager.getString("lbl.status_bar.memory").format(usedMB, totalMB))
 
-            val sceneText = stringManager.getString("lbl.status_bar.scene").format(currentScene.name)
+            val sceneName = currentScene?.name ?: stringManager.getString("lbl.status_bar.no_scene")
+            val sceneText = stringManager.getString("lbl.status_bar.scene").format(sceneName)
             val textSize = ImGui.calcTextSize(sceneText)
             val windowWidth = ImGui.getWindowWidth()
 

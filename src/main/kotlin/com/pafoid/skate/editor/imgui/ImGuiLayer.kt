@@ -220,7 +220,7 @@ class ImGuiLayer(
     }
 
     fun update(dt: Float) {
-        val currentScene = sceneManager.currentScene ?: return
+        val currentScene = sceneManager.currentScene
         val ctrlDown = inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || inputProvider.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
         if (ctrlDown && inputProvider.keyBeginPress(GLFW.GLFW_KEY_P)) {
@@ -256,13 +256,13 @@ class ImGuiLayer(
             popStyleVar()
         } else if (projectManager.hasProject()) {
             windowRegistry.windows.forEach { window ->
-                if (window.showFlag.get()) {
-                    // Re-read current scene in case it was switched during the frame (e.g., tab bar click)
-                    val activeScene = sceneManager.currentScene ?: return
-                    when {
-                        window.requiresScene -> (window.instance as? IWindowWithScene)?.imgui(activeScene)
-                        else -> (window.instance as? IWindow)?.imgui(window.showFlag)
-                    }
+                if (!window.showFlag.get()) return@forEach
+
+                // Re-read current scene in case it was switched during the frame (e.g., tab bar click)
+                val activeScene = sceneManager.currentScene
+                when {
+                    window.requiresScene && activeScene != null -> (window.instance as? IWindowWithScene)?.imgui(activeScene)
+                    !window.requiresScene -> (window.instance as? IWindow)?.imgui(window.showFlag)
                 }
             }
 
@@ -356,7 +356,7 @@ class ImGuiLayer(
         needsDecorationUpdate = false
     }
 
-    private fun setupDockSpace(currentScene: Scene) {
+    private fun setupDockSpace(currentScene: Scene?) {
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
 
         val viewport = getMainViewport()

@@ -41,8 +41,10 @@ class Engine : KoinComponent {
     }
 
     private fun updateRunningState(dt: Float) {
+        if (dt < 0f) return
+
         val scene = sceneManager.currentScene
-        if (dt >= 0 && scene != null) {
+        if (scene != null) {
             scene.isRunning = runtimePlaying
             workspace.update(dt)
             if (runtimePlaying) {
@@ -50,8 +52,9 @@ class Engine : KoinComponent {
             }
 
             renderer.render(scene, scene.selectedGameObject, scene.hoveredGameObject)
-            imguiLayer.update(dt)
         }
+
+        imguiLayer.update(dt)
     }
 
     fun destroy() {

@@ -112,4 +112,19 @@ class EngineFixedTimestepTest : KoinTest {
         engine.update(deltaTime2)
         verify(exactly = 1) { mockScene.update(deltaTime2) }
     }
+
+    @Test
+    fun `update should continue imgui updates when no scene is active`() {
+        every { mockSceneManager.currentScene } returns null
+
+        engine.engineState.set(EngineState.RUNNING)
+        engine.runtimePlaying = false
+
+        val deltaTime = 0.016f
+        engine.update(deltaTime)
+
+        verify(exactly = 1) { mockImGuiLayer.update(deltaTime) }
+        verify(exactly = 0) { mockRenderer.render(any(), any(), any()) }
+        verify(exactly = 0) { mockEditorWorkspace.update(any()) }
+    }
 }
