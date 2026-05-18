@@ -292,6 +292,12 @@ class ImGuiLayer(
             hasProject = projectManager.hasProject()
         }
 
+        handleProjectTransitions(hasProject)
+        hadProjectLastFrame = hasProject
+        handleProjectWizardFallback(hasProject)
+    }
+
+    private fun handleProjectTransitions(hasProject: Boolean) {
         // Detect when a project was just closed — hide all project windows
         if (hadProjectLastFrame && !hasProject) {
             windowRegistry.hideAllWindows()
@@ -300,12 +306,17 @@ class ImGuiLayer(
         // Project was just opened — show default windows and dismiss wizard
         if (!hadProjectLastFrame && hasProject) {
             windowRegistry.showDefaultWindows()
-            if (windowRegistry.projectWizardWindow.wizard.isOpen.get()) {
-                windowRegistry.projectWizardWindow.wizard.dismiss()
-            }
+            dismissProjectWizardIfOpen()
         }
-        hadProjectLastFrame = hasProject
+    }
 
+    private fun dismissProjectWizardIfOpen() {
+        if (windowRegistry.projectWizardWindow.wizard.isOpen.get()) {
+            windowRegistry.projectWizardWindow.wizard.dismiss()
+        }
+    }
+
+    private fun handleProjectWizardFallback(hasProject: Boolean) {
         if (!hasProject && !windowRegistry.projectWizardWindow.wizard.isOpen.get() && !windowRegistry.projectWizardWindow.wizard.userDismissed) {
             windowRegistry.projectWizardWindow.wizard.open()
         }
