@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.contracts.IStringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -18,10 +18,10 @@ import org.joml.Vector3f
  * Maintains a cached list of eligible GameObjects (those with both SkeletonComponent
  * and Animator) to avoid O(n) filtering every frame.
  *
- * @param stringManager String manager for localized UI strings
+ * @param stringManager String manager abstraction for localized UI strings
  */
 class AnimationSystem(
-    private val stringManager: StringManager
+    private val stringManager: IStringManager
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     // Cached list of GameObjects eligible for animation updates
