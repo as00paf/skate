@@ -29,6 +29,8 @@ import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 class ProjectSettingsWindow(
     private val settingsManager: SettingsManager,
@@ -113,19 +115,19 @@ class ProjectSettingsWindow(
 
                 ImGui.spacing()
                 val btnW = 100f
-                if (button("OK", btnW, 0f)) {
+                if (button(stringManager.getString("btn.ok"), btnW, 0f)) {
                     saveSettings()
                     pOpen?.set(false)
                 }
                 sameLine()
-                if (button("Cancel", btnW, 0f)) {
+                if (button(stringManager.getString("btn.cancel"), btnW, 0f)) {
                     syncTempSettings()
                     hasPendingChanges = false
                     pOpen?.set(false)
                 }
                 sameLine()
                 ImGui.beginDisabled(!hasPendingChanges)
-                if (button("Apply", btnW, 0f)) {
+                if (button(stringManager.getString("btn.apply"), btnW, 0f)) {
                     saveSettings()
                 }
                 ImGui.endDisabled()
@@ -238,7 +240,9 @@ class ProjectSettingsWindow(
 data class RecentProjectDisplayInfo(val name: String, val path: String, val lastOpened: Long, val exists: Boolean) {
     fun getLastOpenedString(): String {
         val instant = Instant.ofEpochMilli(lastOpened)
-        val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy").withZone(ZoneId.systemDefault())
+        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(Locale.getDefault())
+            .withZone(ZoneId.systemDefault())
         return formatter.format(instant)
     }
 }

@@ -37,14 +37,14 @@ class AudioInspectorWindow(private val stringManager: StringManager) : IWindowWi
             val selectedObject = scene.selectedGameObject
 
             if (selectedObject == null) {
-                MImGui.textDisabled("No object selected")
+                MImGui.textDisabled(stringManager.getString("lbl.audio.no_object_selected"))
                 return
             }
 
             val audioComponent = selectedObject.getComponent<AudioComponent>()
 
             if (audioComponent == null) {
-                MImGui.textDisabled("No AudioComponent on selected object")
+                MImGui.textDisabled(stringManager.getString("lbl.audio.no_audio_component_selected"))
 
                 ImGui.separator()
 

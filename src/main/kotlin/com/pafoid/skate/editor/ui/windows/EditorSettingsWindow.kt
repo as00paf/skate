@@ -145,12 +145,12 @@ class EditorSettingsWindow(
 
             ImGui.spacing()
             val btnW = 100f
-            if (button("OK", btnW, 0f)) {
+            if (button(stringManager.getString("btn.ok"), btnW, 0f)) {
                 saveSettings()
                 pOpen?.set(false)
             }
             sameLine()
-            if (button("Cancel", btnW, 0f)) {
+            if (button(stringManager.getString("btn.cancel"), btnW, 0f)) {
                 syncTempSettings()
                 hasPendingChanges = false
                 rebindingAction = null
@@ -158,7 +158,7 @@ class EditorSettingsWindow(
             }
             sameLine()
             ImGui.beginDisabled(!hasPendingChanges)
-            if (button("Apply", btnW, 0f)) {
+            if (button(stringManager.getString("btn.apply"), btnW, 0f)) {
                 saveSettings()
             }
             ImGui.endDisabled()
