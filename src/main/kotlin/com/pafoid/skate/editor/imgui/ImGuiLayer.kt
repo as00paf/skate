@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
@@ -285,6 +286,7 @@ class ImGuiLayer(
 
     internal fun processProjectStartupFlow() {
         var hasProject = projectManager.hasProject()
+        val wizard = windowRegistry.projectWizardWindow.wizard
 
         if (!hasAttemptedAutoLoad && !hasProject) {
             hasAttemptedAutoLoad = true
@@ -292,12 +294,12 @@ class ImGuiLayer(
             hasProject = projectManager.hasProject()
         }
 
-        handleProjectTransitions(hasProject)
+        handleProjectTransitions(hasProject, wizard)
         hadProjectLastFrame = hasProject
-        handleProjectWizardFallback(hasProject)
+        handleProjectWizardFallback(hasProject, wizard)
     }
 
-    private fun handleProjectTransitions(hasProject: Boolean) {
+    private fun handleProjectTransitions(hasProject: Boolean, wizard: ProjectWizard) {
         // Detect when a project was just closed — hide all project windows
         if (hadProjectLastFrame && !hasProject) {
             windowRegistry.hideAllWindows()
@@ -306,21 +308,26 @@ class ImGuiLayer(
         // Project was just opened — show default windows and dismiss wizard
         if (!hadProjectLastFrame && hasProject) {
             windowRegistry.showDefaultWindows()
-            dismissProjectWizardIfOpen()
+            dismissProjectWizardIfOpen(wizard)
         }
     }
 
-    private fun dismissProjectWizardIfOpen() {
-        if (windowRegistry.projectWizardWindow.wizard.isOpen.get()) {
-            windowRegistry.projectWizardWindow.wizard.dismiss()
+    private fun dismissProjectWizardIfOpen(wizard: ProjectWizard) {
+        if (wizard.isOpen.get()) {
+            wizard.dismiss()
         }
     }
 
-    private fun handleProjectWizardFallback(hasProject: Boolean) {
-        if (!hasProject && !windowRegistry.projectWizardWindow.wizard.isOpen.get() && !windowRegistry.projectWizardWindow.wizard.userDismissed) {
-            windowRegistry.projectWizardWindow.wizard.open()
+    private fun handleProjectWizardFallback(hasProject: Boolean, wizard: ProjectWizard) {
+        if (shouldOpenWizard(hasProject, wizard)) {
+            wizard.open()
         }
     }
+
+    private fun shouldOpenWizard(
+        hasProject: Boolean,
+        wizard: ProjectWizard
+    ): Boolean = !hasProject && !wizard.isOpen.get() && !wizard.userDismissed
 
     fun startFrame() {
         imGuiGlfw.newFrame()
