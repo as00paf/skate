@@ -40,7 +40,7 @@ class AddComponentCommand(
 
     override fun getTargetName(): String = gameObject.name
 
-
+    // TODO: move?
     private fun createComponent(type: ComponentType): Component? =
         when (type) {
             ComponentType.AUDIO -> AudioComponent()
