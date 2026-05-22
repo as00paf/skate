@@ -3,8 +3,8 @@ package com.pafoid.skate.app
 import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.data.EditorInputState
-import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.project.SceneSerializer
@@ -27,10 +27,10 @@ import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
-import com.pafoid.skate.editor.ui.handlers.EnvironmentActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
-import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
+import com.pafoid.skate.editor.ui.handlers.EnvironmentActionHandler
 import com.pafoid.skate.editor.ui.handlers.ProjectActionHandler
+import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
@@ -75,12 +75,12 @@ import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
+import com.pafoid.skate.engine.contracts.EngineLogger
+import com.pafoid.skate.engine.contracts.IStringManager
+import com.pafoid.skate.engine.contracts.InputMappingsProvider
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.contracts.EngineLogger
-import com.pafoid.skate.engine.contracts.InputMappingsProvider
-import com.pafoid.skate.engine.contracts.IStringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneEventPublisher
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -235,7 +235,7 @@ val appModule = module {
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

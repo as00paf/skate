@@ -19,7 +19,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 import imgui.ImVec2
@@ -77,7 +76,6 @@ class ImGuiLayer(
     private val renderer: Renderer,
     private val resourceManager: ResourceManager,
     private val windowRegistry: WindowRegistry,
-    private val gameObjectManager: GameObjectManager,
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
