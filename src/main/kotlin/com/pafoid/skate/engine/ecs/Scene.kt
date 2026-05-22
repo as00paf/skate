@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.scene.SceneData
-import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.physics3d.DefaultPhysics3DFactory
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
@@ -19,11 +18,9 @@ import org.joml.Vector3f
  * Note: Scene itself is not serialized. Only its components and child GameObjects are serialized.
  *
  * @param name Scene name
- * @param initializer Scene initializer for loading scene-specific content
  */
 open class Scene(
     name: String = "Scene",
-    val initializer: SceneInitializer,
     private val physicsFactory: Physics3DFactory = DefaultPhysics3DFactory(),
 ) : GameObject(name) {
 
@@ -45,10 +42,7 @@ open class Scene(
     var isRunning: Boolean = false
     var isDirty: Boolean = false
 
-    suspend fun init() {
-        initializer.loadResources(this)
-        initializer.init(this)
-    }
+    suspend fun init() = Unit
 
     override fun start() {
         isRunning = true

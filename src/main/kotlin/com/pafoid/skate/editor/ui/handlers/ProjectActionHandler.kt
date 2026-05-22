@@ -15,6 +15,7 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.utils.IJobSystem
 import java.io.File
 
 class ProjectActionHandler(
@@ -22,15 +23,18 @@ class ProjectActionHandler(
     private val undoRedoManager: UndoRedoManager,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
+    private val jobSystem: IJobSystem? = null,
 ) {
     fun init() {
         eventSystem.subscribe<OpenProjectRequested> { event ->
-            val command = OpenProjectCommand(projectManager, File(event.projectPath))
-            undoRedoManager.executeCommand(command)
-            if (command.wasSuccessful()) {
-                eventSystem.publish(OpenProjectSucceeded(event.projectPath))
-            } else {
-                eventSystem.publish(OpenProjectFailed(event.projectPath, "Failed to open project"))
+            executeOnMainThread {
+                val command = OpenProjectCommand(projectManager, File(event.projectPath))
+                undoRedoManager.executeCommand(command)
+                if (command.wasSuccessful()) {
+                    eventSystem.publish(OpenProjectSucceeded(event.projectPath))
+                } else {
+                    eventSystem.publish(OpenProjectFailed(event.projectPath, "Failed to open project"))
+                }
             }
         }
         eventSystem.subscribe<CreateProjectRequested> { event ->
@@ -61,18 +65,24 @@ class ProjectActionHandler(
             executeAndPublishOnSuccess(command, event.path)
         }
         eventSystem.subscribe<CloseProjectRequested> {
-            if (projectManager.hasProject()) {
-                val command = CloseProjectCommand(projectManager)
-                undoRedoManager.executeCommand(command)
+            executeOnMainThread {
+                if (projectManager.hasProject()) {
+                    val command = CloseProjectCommand(projectManager)
+                    undoRedoManager.executeCommand(command)
+                }
             }
         }
         eventSystem.subscribe<SaveProjectRequested> {
-            val command = SaveProjectCommand(projectManager)
-            undoRedoManager.executeCommand(command)
+            executeOnMainThread {
+                val command = SaveProjectCommand(projectManager)
+                undoRedoManager.executeCommand(command)
+            }
         }
         eventSystem.subscribe<LoadLastProjectRequested> {
-            val command = LoadLastProjectCommand(projectManager)
-            undoRedoManager.executeCommand(command)
+            executeOnMainThread {
+                val command = LoadLastProjectCommand(projectManager)
+                undoRedoManager.executeCommand(command)
+            }
         }
     }
 
@@ -82,5 +92,16 @@ class ProjectActionHandler(
             return
         }
         eventSystem.publish(FileSystemEvent.FileSystemChangedEvent(affectedPath))
+    }
+
+    private fun executeOnMainThread(block: () -> Unit) {
+        val jobs = jobSystem
+        if (jobs == null || jobs.isMainThread()) {
+            block()
+            return
+        }
+        jobs.runOnMain {
+            block()
+        }
     }
 }

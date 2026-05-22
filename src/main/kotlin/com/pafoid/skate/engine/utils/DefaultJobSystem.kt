@@ -13,13 +13,22 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
 
-class DefaultJobSystem : IJobSystem {
+class DefaultJobSystem(
+    private val maxMainThreadTasksPerUpdate: Int = DEFAULT_MAX_MAIN_THREAD_TASKS_PER_UPDATE
+) : IJobSystem {
+    init {
+        require(maxMainThreadTasksPerUpdate > 0) {
+            "maxMainThreadTasksPerUpdate must be > 0"
+        }
+    }
+
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
         println("JobSystem Error: ${throwable.message}")
         throwable.printStackTrace()
     }
 
     private val mainThreadTasks = ConcurrentLinkedQueue<Runnable>()
+    private val mainThreadId: Long = Thread.currentThread().id
 
     override val mainDispatcher: CoroutineDispatcher = object : CoroutineDispatcher() {
         override fun dispatch(context: CoroutineContext, block: Runnable) {
@@ -27,12 +36,15 @@ class DefaultJobSystem : IJobSystem {
         }
     }
 
+    override fun isMainThread(): Boolean = Thread.currentThread().id == mainThreadId
+
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.Default + job + exceptionHandler + CoroutineName("SkateAsync"))
 
     override fun update() {
-        while (mainThreadTasks.isNotEmpty()) {
-            mainThreadTasks.poll()?.run()
+        repeat(maxMainThreadTasksPerUpdate) {
+            val task = mainThreadTasks.poll() ?: return
+            task.run()
         }
     }
 
@@ -54,5 +66,9 @@ class DefaultJobSystem : IJobSystem {
 
     override fun destroy() {
         job.cancel()
+    }
+
+    companion object {
+        private const val DEFAULT_MAX_MAIN_THREAD_TASKS_PER_UPDATE = 256
     }
 }

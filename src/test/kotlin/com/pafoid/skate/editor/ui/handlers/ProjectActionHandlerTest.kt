@@ -7,9 +7,20 @@ import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -124,6 +135,35 @@ class ProjectActionHandlerTest {
     }
 
     @Test
+    fun `open project requested from worker thread queues execution onto main job system`() {
+        val eventSystem = EventSystem()
+        val projectManager = mockk<ProjectManager>(relaxed = true)
+        val undoRedoManager = mockk<UndoRedoManager>()
+        val logger = mockk<LoggerService>(relaxed = true)
+        val jobSystem = QueuedMainJobSystem()
+        every { projectManager.openProject(any()) } returns true
+        every { undoRedoManager.executeCommand(any()) } answers {
+            firstArg<Command>().execute()
+        }
+
+        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem, jobSystem)
+        handler.init()
+
+        var successReceived = false
+        eventSystem.subscribe<OpenProjectSucceeded> { successReceived = true }
+
+        eventSystem.publish(OpenProjectRequested("C:/test/MyProject.skateproject"))
+
+        assertFalse(successReceived)
+        verify(exactly = 0) { projectManager.openProject(any()) }
+
+        jobSystem.flushMainTasks()
+
+        assertTrue(successReceived)
+        verify(exactly = 1) { projectManager.openProject(any()) }
+    }
+
+    @Test
     fun `create project requested publishes failed when create command fails`() {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
@@ -209,5 +249,40 @@ class ProjectActionHandlerTest {
 
         verify(exactly = 1) { undoRedoManager.executeCommand(any()) }
         verify(exactly = 1) { projectManager.loadLastProject() }
+    }
+
+    private class QueuedMainJobSystem : IJobSystem {
+        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        private val mainTasks = mutableListOf<suspend CoroutineScope.() -> Unit>()
+
+        override val mainDispatcher: CoroutineDispatcher = Dispatchers.Unconfined
+
+        override fun isMainThread(): Boolean = false
+
+        override fun update() = Unit
+
+        override fun runAsync(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
+
+        override fun runOnMain(block: suspend CoroutineScope.() -> Unit): Job {
+            mainTasks += block
+            return Job().apply { complete() }
+        }
+
+        override fun <T> runAsyncDeferred(block: suspend CoroutineScope.() -> T): Deferred<T> =
+            scope.async(block = block)
+
+        override fun runIO(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
+
+        override fun destroy() {
+            scope.cancel()
+        }
+
+        fun flushMainTasks() {
+            val pending = mainTasks.toList()
+            mainTasks.clear()
+            pending.forEach { task ->
+                runBlocking { scope.task() }
+            }
+        }
     }
 }

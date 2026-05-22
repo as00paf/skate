@@ -16,6 +16,7 @@ class NativeLibraryLoaderTest {
 
     @BeforeEach
     fun setup() {
+        NativeLibraryLoader.resetForTests()
         mockService = mockk<INativeLibraryLoaderService>()
         mockLoader = mockk<NativeBinaryLoader>()
         
@@ -28,7 +29,7 @@ class NativeLibraryLoaderTest {
 
     @AfterEach
     fun teardown() {
-        // Reset state if needed
+        NativeLibraryLoader.resetForTests()
     }
 
     @Test

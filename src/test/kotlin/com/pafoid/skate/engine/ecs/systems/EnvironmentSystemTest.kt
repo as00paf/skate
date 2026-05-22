@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
-import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -28,11 +27,10 @@ class EnvironmentSystemTest {
 
     // Mock dependencies
     private val stringManager: StringManager = mockk()
-    private val sceneInitializer: SceneInitializer = mockk()
 
     // Test scene for component tests
     private fun createTestScene(): Scene {
-        return Scene("TestScene", sceneInitializer)
+        return Scene("TestScene")
     }
 
     // =========================================================================

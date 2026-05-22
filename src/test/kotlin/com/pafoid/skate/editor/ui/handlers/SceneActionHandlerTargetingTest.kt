@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.handlers
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.ViewportAction
@@ -12,8 +11,8 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.utils.IJobSystem
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -38,17 +37,15 @@ class SceneActionHandlerTargetingTest {
     private val sceneSerializer = mockk<SceneSerializer>(relaxed = true)
     private val undoRedoManager = mockk<UndoRedoManager>(relaxed = true)
     private val loggerService = mockk<LoggerService>(relaxed = true)
-    private val sceneInitializer = mockk<LevelEditorSceneInitializer>(relaxed = true)
     private val projectManager = mockk<ProjectManager>(relaxed = true)
     private val mutationGate = mockk<EditorMutationGate>(relaxed = true)
+    private val physics3DFactory = mockk<Physics3DFactory>(relaxed = true)
     private val jobSystem: IJobSystem = ImmediateJobSystem()
     private val openScenes = mutableListOf<Scene>()
 
     @BeforeEach
     fun setup() {
         stopKoin()
-        coEvery { sceneInitializer.loadResources(any()) } returns Unit
-        coEvery { sceneInitializer.init(any()) } returns Unit
 
         every { sceneManager.openScenes } returns openScenes
         every { mutationGate.blockIfPlaying(any()) } returns false
@@ -64,10 +61,10 @@ class SceneActionHandlerTargetingTest {
                     single { undoRedoManager }
                     single { eventSystem }
                     single { loggerService }
-                    single { sceneInitializer }
                     single { projectManager }
                     single<IJobSystem> { jobSystem }
                     single { mutationGate }
+                    single<Physics3DFactory> { physics3DFactory }
                 }
             )
         }
@@ -122,6 +119,8 @@ class SceneActionHandlerTargetingTest {
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
 
         override val mainDispatcher: CoroutineDispatcher = Dispatchers.Unconfined
+
+        override fun isMainThread(): Boolean = true
 
         override fun update() = Unit
 

@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.commands.project
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.AsyncCommand
 import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.editor.events.SceneAction
@@ -13,13 +12,12 @@ import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.Job
 
 class OpenSceneCommand(
-    private val sceneInitializer: LevelEditorSceneInitializer,
     private val sceneSerializer: SceneSerializer,
     private val sceneManager: SceneManager,
     private val jobSystem: IJobSystem,
     private val eventSystem: EventSystem,
-    private val sceneFactory: (String, LevelEditorSceneInitializer) -> Scene = { name, initializer ->
-        Scene(name, initializer)
+    private val sceneFactory: (String) -> Scene = { name ->
+        Scene(name)
     }
 ) : AsyncCommand {
     var openedScene: Scene? = null
@@ -33,7 +31,7 @@ class OpenSceneCommand(
         openedScene = null
         completionJob = jobSystem.runOnMain {
             runCatching {
-                val loadedScene = sceneFactory("Loaded Scene", sceneInitializer)
+                val loadedScene = sceneFactory("Loaded Scene")
                 loadedScene.init()
                 when (val openResult = sceneSerializer.open(loadedScene)) {
                     is SceneOpenResult.Loaded -> {

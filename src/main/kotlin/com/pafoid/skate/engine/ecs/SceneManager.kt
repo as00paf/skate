@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.ecs
 import com.pafoid.skate.engine.contracts.EngineLogger
 import com.pafoid.skate.engine.contracts.EngineLogLevel
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
 
 class SceneManager(
@@ -39,7 +38,7 @@ class SceneManager(
         sceneEventPublisher.publishOpened(scene)
         sceneEventPublisher.publishChanged()
 
-        logger.logEngine("Scene ${scene.initializer::class.simpleName} loaded and started.", EngineLogLevel.INFO)
+        logger.logEngine("Scene ${scene.name} loaded and started.", EngineLogLevel.INFO)
     }
 
     fun switchScene(scene: Scene) {
@@ -77,7 +76,7 @@ class SceneManager(
         if (openScenes.isEmpty()) {
             activeSceneIndex = -1
             logger.logEngine("All scenes closed. Clearing resource cache.", EngineLogLevel.INFO)
-            resourceManager.clear() // Clear resources only when all scenes are closed
+            resourceManager.clear(preserveNonProjectAssets = true)
         } else if (activeSceneIndex >= index) {
             activeSceneIndex = (activeSceneIndex - 1).coerceAtLeast(0)
         }
@@ -142,16 +141,16 @@ class SceneManager(
     /**
      * Creates a new scene with the given name and opens it.
      * @param name The name for the new scene
-     * @param initializer The scene initializer to use for setup
      * @param filePath Optional file path to back the scene. Sets sceneData.levelPath when provided.
+     * @param forceSingle Whether to close all other scenes before opening this scene
      */
-    suspend fun createScene(name: String, initializer: SceneInitializer, filePath: String? = null): Scene? {
-        val newScene = Scene(name, initializer, physics3DFactory)
+    suspend fun createScene(name: String, filePath: String? = null, forceSingle: Boolean = false): Scene? {
+        val newScene = Scene(name, physics3DFactory)
         if (filePath != null) {
             newScene.sceneData.levelPath = filePath
         }
         newScene.init()
-        openScene(newScene)
+        openScene(newScene, forceSingle = forceSingle)
         logger.logEditor("Scene created: '$name'", EngineLogLevel.ACTION)
         return newScene
     }

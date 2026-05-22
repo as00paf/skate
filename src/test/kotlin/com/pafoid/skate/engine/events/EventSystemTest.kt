@@ -4,8 +4,6 @@ import com.pafoid.skate.engine.core.EventListener
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
-import com.pafoid.skate.engine.ecs.scene.SceneInitializer
-import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -31,8 +29,7 @@ class EventSystemTest {
 
     @BeforeEach
     fun setup() {
-        val sceneInitializer: SceneInitializer = mockk()
-        scene = Scene("TestScene", sceneInitializer)
+        scene = Scene("TestScene")
         eventSystem = EventSystem()
         eventSystem.init(scene)
     }

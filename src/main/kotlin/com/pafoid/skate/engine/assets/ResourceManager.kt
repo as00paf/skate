@@ -20,6 +20,7 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.DefaultJobSystem
 import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.file.FileSystems
@@ -521,31 +522,95 @@ class ResourceManager(
         }
     }
 
-    fun clear() {
-        modelDependencies.clear()
+    fun clear(preserveNonProjectAssets: Boolean = false) {
+        val preserveExternalAssets = preserveNonProjectAssets && assetDatabase?.projectRoot != null
+        val projectRoot = assetDatabase?.projectRoot
 
-        val texKeys = textures.keys.toList()
-        texKeys.forEach { unloadTexture(it) }
+        val texturesToDestroy = mutableListOf<Texture>()
+        val modelsToDestroy = mutableListOf<BaseModel>()
+        val shadersToDestroy = mutableListOf<Shader>()
 
-        val modelKeys = models.keys.toList()
-        modelKeys.forEach { unloadModel(it) }
-
-        val shaderKeys = shaders.keys.toList()
-        shaderKeys.forEach { unloadShader(it) }
-
-        animations.clear()
-
-        sounds.values.forEach {
-            it.delete()
+        textures.entries.toList().forEach { (path, texture) ->
+            if (preserveExternalAssets && !isInProject(path, projectRoot!!)) {
+                return@forEach
+            }
+            textures.remove(path)
+            texturesToDestroy.add(texture)
         }
-        sounds.clear()
 
-        lruQueue.clear()
-        currentTextureMemory.set(0L)
+        models.entries.toList().forEach { (path, model) ->
+            if (preserveExternalAssets && !isInProject(path, projectRoot!!)) {
+                return@forEach
+            }
+            models.remove(path)
+            modelsToDestroy.add(model)
+            modelDependencies.remove(path)
+        }
+
+        shaders.entries.toList().forEach { (path, shader) ->
+            if (preserveExternalAssets && !isInProject(path, projectRoot!!)) {
+                return@forEach
+            }
+            shaders.remove(path)
+            shadersToDestroy.add(shader)
+        }
+
+        sounds.entries.toList().forEach { (path, sound) ->
+            if (preserveExternalAssets && !isInProject(path, projectRoot!!)) {
+                return@forEach
+            }
+            sounds.remove(path)
+            sound.delete()
+        }
+
+        if (!preserveExternalAssets) {
+            modelDependencies.clear()
+            animations.clear()
+        } else {
+            animations.entries.toList().forEach { (path, _) ->
+                if (isInProject(path, projectRoot!!)) {
+                    animations.remove(path)
+                }
+            }
+            modelDependencies.entries.removeIf { (modelPath, _) -> !models.containsKey(modelPath) }
+        }
+
+        lruQueue.removeIf { texturePath -> !textures.containsKey(texturePath) }
+        currentTextureMemory.set(
+            textures.values.sumOf { texture ->
+                texture.width * texture.height * 4L * 4 / 3
+            }
+        )
+
+        if (texturesToDestroy.isNotEmpty() || modelsToDestroy.isNotEmpty() || shadersToDestroy.isNotEmpty()) {
+            val destroyGpuResources = suspend {
+                texturesToDestroy.forEach { it.destroy() }
+                modelsToDestroy.forEach { model ->
+                    model.mesh.forEach { part ->
+                        vaoLoader.deleteVAO(part.rawModel.vaoId)
+                    }
+                }
+                shadersToDestroy.forEach { it.destroy() }
+            }
+
+            if (jobSystem.isMainThread()) {
+                runBlocking { destroyGpuResources() }
+            } else {
+                jobSystem.runOnMain {
+                    destroyGpuResources()
+                }
+            }
+        }
 
         watchService?.close()
         watchService = null
         watchedPaths.clear()
+    }
+
+    private fun isInProject(assetPath: String, projectRoot: File): Boolean {
+        val normalizedAssetPath = File(assetPath).absolutePath.replace('\\', '/').lowercase()
+        val normalizedProjectRoot = projectRoot.absolutePath.replace('\\', '/').trimEnd('/').lowercase()
+        return normalizedAssetPath == normalizedProjectRoot || normalizedAssetPath.startsWith("$normalizedProjectRoot/")
     }
 
     // ─── GUID-Aware Loading ───────────────────────────

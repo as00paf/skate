@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.commands
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.project.OpenSceneCommand
 import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.editor.events.SceneAction
@@ -24,7 +23,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class OpenSceneCommandTest {
-    private lateinit var sceneInitializer: LevelEditorSceneInitializer
     private lateinit var sceneSerializer: SceneSerializer
     private lateinit var sceneManager: SceneManager
     private lateinit var eventSystem: EventSystem
@@ -33,7 +31,6 @@ class OpenSceneCommandTest {
 
     @BeforeEach
     fun setup() {
-        sceneInitializer = mockk(relaxed = true)
         sceneSerializer = mockk(relaxed = true)
         sceneManager = mockk(relaxed = true)
         eventSystem = EventSystem()
@@ -43,8 +40,6 @@ class OpenSceneCommandTest {
         coEvery { loadedSceneInstance.init() } returns Unit
         every { loadedSceneInstance.destroyScene() } returns Unit
 
-        coEvery { sceneInitializer.loadResources(any()) } returns Unit
-        coEvery { sceneInitializer.init(any()) } returns Unit
     }
 
     @AfterEach
@@ -121,12 +116,11 @@ class OpenSceneCommandTest {
 
     private fun createCommand(): OpenSceneCommand {
         return OpenSceneCommand(
-            sceneInitializer = sceneInitializer,
             sceneSerializer = sceneSerializer,
             sceneManager = sceneManager,
             jobSystem = jobSystem,
             eventSystem = eventSystem,
-            sceneFactory = { _, _ -> loadedSceneInstance }
+            sceneFactory = { _ -> loadedSceneInstance }
         )
     }
 }

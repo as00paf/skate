@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
-import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import io.mockk.mockk
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -15,16 +14,12 @@ import org.junit.jupiter.api.Test
 class DirectionalLightSystemTest {
 
     private val stringManager: StringManager = mockk(relaxed = true)
-    private val sceneInitializer = object : SceneInitializer() {
-        override suspend fun init(scene: Scene) {}
-        override suspend fun loadResources(scene: Scene) {}
-    }
 
     @Test
     fun updateLightSpaceMatrix_FrustumCalculated_LightSpaceMatrixIsUpdated() {
         // Arrange
         val system = DirectionalLightSystem(stringManager)
-        val scene = Scene("TestScene", sceneInitializer)
+        val scene = Scene("TestScene")
         scene.addComponent(DayNightCycleComponent())
         scene.addComponent(DirectionalLightComponent(castShadows = true, autoCalculateBounds = true))
         scene.camera.viewportWidth = 1920
@@ -50,7 +45,7 @@ class DirectionalLightSystemTest {
     fun updateLightSpaceMatrix_HighNoon_UpVectorIsDynamic() {
         // Arrange
         val system = DirectionalLightSystem(stringManager)
-        val scene = Scene("TestScene", sceneInitializer)
+        val scene = Scene("TestScene")
         scene.addComponent(
             DayNightCycleComponent(
                 sunDirection = Vector3f(0f, -1f, 0f),

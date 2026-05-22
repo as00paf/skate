@@ -15,6 +15,8 @@ class ImmediateJobSystem : IJobSystem {
 
     override val mainDispatcher: CoroutineDispatcher = Dispatchers.Unconfined
 
+    override fun isMainThread(): Boolean = true
+
     override fun update() = Unit
 
     override fun runAsync(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)

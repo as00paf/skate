@@ -107,9 +107,14 @@ class FrameBuffer(var width: Int, var height: Int) {
     fun destroy() {
         if (fboId != 0) {
             org.lwjgl.opengl.GL30.glDeleteFramebuffers(fboId)
+            fboId = 0
         }
         if (depthTexture != 0) {
             org.lwjgl.opengl.GL30.glDeleteTextures(depthTexture)
+            depthTexture = 0
+        }
+        if (::texture.isInitialized && texture.texId != 0) {
+            texture.destroy()
         }
     }
 }

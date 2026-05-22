@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.commands.project
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.AsyncCommand
 import com.pafoid.skate.editor.events.SceneAction.OpenFailed
 import com.pafoid.skate.editor.events.SceneAction.OpenSucceeded
@@ -14,13 +13,12 @@ import java.io.File
 
 class OpenSceneFileCommand(
     private val scenePath: String,
-    private val sceneInitializer: LevelEditorSceneInitializer,
     private val sceneSerializer: SceneSerializer,
     private val sceneManager: SceneManager,
     private val jobSystem: IJobSystem,
     private val eventSystem: EventSystem,
-    private val sceneFactory: (String, LevelEditorSceneInitializer) -> Scene = { name, initializer ->
-        Scene(name, initializer)
+    private val sceneFactory: (String) -> Scene = { name ->
+        Scene(name)
     }
 ) : AsyncCommand {
     var openedScene: Scene? = null
@@ -37,7 +35,7 @@ class OpenSceneFileCommand(
         completionJob = jobSystem.runOnMain {
             runCatching {
                 val sceneName = File(scenePath).nameWithoutExtension.ifBlank { "Loaded Scene" }
-                val loadedScene = sceneFactory(sceneName, sceneInitializer)
+                val loadedScene = sceneFactory(sceneName)
                 loadedScene.init()
 
                 if (sceneSerializer.loadFromFile(loadedScene, scenePath)) {

@@ -1,14 +1,16 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.app.SplashScreen
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
+import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.renderer.Renderer
 import java.util.concurrent.atomic.AtomicReference
 
@@ -18,9 +20,10 @@ class BootManager(
     private val logger: LoggerService,
     private val splashScreen: SplashScreen,
     private val audioEngine: AudioEngine, //TODO: should be initialized here
-    private val sceneInitializer: LevelEditorSceneInitializer,
+    private val resourceManager: ResourceManager,
     private val settingsManager: SettingsManager,
     private val physics3DFactory: Physics3DFactory,
+    private val nativeLibraryLoader: NativeLibraryLoader,
 ) {
     suspend fun boot(engineState: AtomicReference<EngineState>) {
         initRenderer()
@@ -30,6 +33,8 @@ class BootManager(
 
         engineState.set(EngineState.LOADING)
         settingsManager.load()
+        nativeLibraryLoader.loadNativeLibrary()
+        preloadEditorResources()
 
         val scene = initScene()
 
@@ -59,11 +64,16 @@ class BootManager(
     }
 
     private suspend fun initScene(): Scene {
-        sceneInitializer.onProgress = { progress, message ->
-            splashScreen.increaseLoadingProgress(message, progress)
-        }
-        val scene = Scene("SplashScene", sceneInitializer, physics3DFactory)
+        val scene = Scene("SplashScene", physics3DFactory)
         scene.init()
         return scene
+    }
+
+    private suspend fun preloadEditorResources() {
+        splashScreen.increaseLoadingProgress("Loading Character Model...", 0.25f)
+        resourceManager.loadModel(Assets.Models.JAMES)
+        splashScreen.increaseLoadingProgress("Loading Skateboard Model...", 0.5f)
+        resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
+        splashScreen.increaseLoadingProgress("Resources Loaded.", 1f)
     }
 }

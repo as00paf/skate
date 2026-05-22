@@ -8,6 +8,8 @@ import kotlinx.coroutines.Job
 interface IJobSystem {
     val mainDispatcher: CoroutineDispatcher
 
+    fun isMainThread(): Boolean
+
     fun update()
 
     fun runAsync(block: suspend CoroutineScope.() -> Unit): Job

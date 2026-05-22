@@ -2,7 +2,6 @@ package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.EditorCamera
 import com.pafoid.skate.editor.EditorWorkspace
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.events.SceneAction
@@ -167,7 +166,7 @@ val appModule = module {
     // EventSystem for editor event bus
     single { EventSystem() }
     single(createdAtStart = true) { SceneActionHandler().also { it.init() } }
-    single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get()).also { it.init() } }
+    single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get(), get()).also { it.init() } }
     single(createdAtStart = true) { EnvironmentActionHandler(get(), get()).also { it.init() } }
     single(createdAtStart = true) {
         ViewportActionHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
@@ -239,12 +238,9 @@ val appModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectSwitcherDialog() }
-
-    // Scene initialization components
-    factory { LevelEditorSceneInitializer() }
 
     // Search infrastructure
     single {
@@ -307,5 +303,5 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { BootManager(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { BootManager(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }

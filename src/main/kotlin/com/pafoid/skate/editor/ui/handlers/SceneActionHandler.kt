@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.handlers
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.project.CloseAllScenesCommand
 import com.pafoid.skate.editor.commands.project.CloseOtherScenesCommand
 import com.pafoid.skate.editor.commands.project.CloseSceneCommand
@@ -21,6 +20,7 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.SceneAction.*
 import com.pafoid.skate.editor.events.ViewportAction
@@ -43,10 +43,10 @@ class SceneActionHandler : KoinComponent {
     private val undoRedoManager: UndoRedoManager by inject()
     private val eventSystem: EventSystem by inject()
     private val logger: LoggerService by inject()
-    private val sceneInitializer: LevelEditorSceneInitializer by inject()
     private val projectManager: ProjectManager by inject()
     private val jobSystem: IJobSystem by inject()
     private val mutationGate: EditorMutationGate by inject()
+    private val physics3DFactory: Physics3DFactory by inject()
 
     fun init() {
         eventSystem.subscribe<RenameRequested> { event ->
@@ -153,7 +153,14 @@ class SceneActionHandler : KoinComponent {
         val fullPath = generateUniqueScenePath(projectDir)
         val sceneName = File(fullPath).nameWithoutExtension
 
-        val command = CreateSceneCommand(sceneName, sceneInitializer, sceneSerializer, fullPath, jobSystem, eventSystem)
+        val command = CreateSceneCommand(
+            sceneName,
+            sceneSerializer,
+            fullPath,
+            jobSystem,
+            eventSystem,
+            sceneFactory = { name -> Scene(name, physics3DFactory) }
+        )
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene create requested: $sceneName -> $fullPath")
     }
@@ -165,7 +172,13 @@ class SceneActionHandler : KoinComponent {
 
     private fun handleOpenRequested() {
         if (mutationGate.blockIfPlaying("open scene")) return
-        val command = OpenSceneCommand(sceneInitializer, sceneSerializer, sceneManager, jobSystem, eventSystem)
+        val command = OpenSceneCommand(
+            sceneSerializer,
+            sceneManager,
+            jobSystem,
+            eventSystem,
+            sceneFactory = { name -> Scene(name, physics3DFactory) }
+        )
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene open requested")
     }
@@ -177,7 +190,14 @@ class SceneActionHandler : KoinComponent {
             return
         }
 
-        val command = OpenSceneFileCommand(scenePath, sceneInitializer, sceneSerializer, sceneManager, jobSystem, eventSystem)
+        val command = OpenSceneFileCommand(
+            scenePath,
+            sceneSerializer,
+            sceneManager,
+            jobSystem,
+            eventSystem,
+            sceneFactory = { name -> Scene(name, physics3DFactory) }
+        )
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene open requested for path: $scenePath")
     }

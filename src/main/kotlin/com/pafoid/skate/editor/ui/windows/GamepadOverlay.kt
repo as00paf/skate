@@ -1,10 +1,12 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Texture
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import imgui.ImGui
@@ -23,12 +25,32 @@ class GamepadOverlay : KoinComponent {
     private val joystickListener: GamepadListener by inject()
     private val settingsManager: SettingsManager by inject()
     private val stringManager: StringManager by inject()
-    
-    private val controllerTexture: Texture by lazy {
-        resourceManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER)
+    private val eventSystem: EventSystem by inject()
+
+    private var controllerTexture: Texture? = null
+
+    init {
+        eventSystem.subscribe<ProjectEvent.Closed> {
+            invalidateTextureCache()
+        }
+    }
+
+    private fun resolveControllerTexture(): Texture? {
+        val cached = controllerTexture
+        if (cached != null && cached.texId > 0) return cached
+        return resourceManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER).also { loaded ->
+            controllerTexture = loaded
+        }
+    }
+
+    fun invalidateTextureCache() {
+        controllerTexture = null
     }
 
     fun imgui(gameViewPos: Vector2f, gameViewSize: Vector2f) {
+        val texture = resolveControllerTexture() ?: return
+        if (texture.texId <= 0) return
+
         val editorSettings = settingsManager.engine.editor
         val windowFlags = ImGuiWindowFlags.NoDecoration or
                          ImGuiWindowFlags.NoInputs or
@@ -40,12 +62,12 @@ class GamepadOverlay : KoinComponent {
         val maxOverlayWidth = gameViewSize.x * editorSettings.gamepadOverlaySize
         val maxOverlayHeight = gameViewSize.y * editorSettings.gamepadOverlaySize
 
-        val scaleX = maxOverlayWidth / controllerTexture.width
-        val scaleY = maxOverlayHeight / controllerTexture.height
+        val scaleX = maxOverlayWidth / texture.width
+        val scaleY = maxOverlayHeight / texture.height
         val scale = min(scaleX, scaleY)
         
-        val displayWidth = controllerTexture.width * scale
-        val displayHeight = controllerTexture.height * scale
+        val displayWidth = texture.width * scale
+        val displayHeight = texture.height * scale
 
         val paddingX = 0f
         val paddingY = 25f
@@ -60,7 +82,7 @@ class GamepadOverlay : KoinComponent {
             val drawList = ImGui.getWindowDrawList()
             val windowPos = ImGui.getWindowPos()
 
-            drawList.addImage(controllerTexture.texId.toLong(), 
+            drawList.addImage(texture.texId.toLong(), 
                 windowPos.x, windowPos.y, 
                 windowPos.x + displayWidth, windowPos.y + displayHeight,
                 0f, 0f, 1f, 1f,

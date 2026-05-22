@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.commands
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.project.CreateSceneCommand
 import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.project.SceneSerializer
@@ -25,7 +24,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class CreateSceneCommandTest {
-    private lateinit var sceneInitializer: LevelEditorSceneInitializer
     private lateinit var sceneSerializer: SceneSerializer
     private lateinit var eventSystem: EventSystem
     private lateinit var jobSystem: IJobSystem
@@ -34,15 +32,12 @@ class CreateSceneCommandTest {
     @BeforeEach
     fun setup() {
         sceneSerializer = mockk(relaxed = true)
-        sceneInitializer = mockk(relaxed = true)
         eventSystem = EventSystem()
         jobSystem = ImmediateJobSystem()
         createdSceneInstance = mockk(relaxed = true)
         every { createdSceneInstance.sceneData } returns SceneData()
         every { createdSceneInstance.name } returns "TestScene"
         coEvery { createdSceneInstance.init() } returns Unit
-        coEvery { sceneInitializer.loadResources(any()) } returns Unit
-        coEvery { sceneInitializer.init(any()) } returns Unit
     }
 
     @AfterEach
@@ -141,12 +136,11 @@ class CreateSceneCommandTest {
     private fun createCommand(path: String): CreateSceneCommand {
         return CreateSceneCommand(
             name = "TestScene",
-            sceneInitializer = sceneInitializer,
             sceneSerializer = sceneSerializer,
             filePath = path,
             jobSystem = jobSystem,
             eventSystem = eventSystem,
-            sceneFactory = { _, _ -> createdSceneInstance }
+            sceneFactory = { _ -> createdSceneInstance }
         )
     }
 }

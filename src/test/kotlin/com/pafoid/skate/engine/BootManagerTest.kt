@@ -1,9 +1,9 @@
 package com.pafoid.skate.engine
 
 import com.pafoid.skate.app.SplashScreen
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.EngineState
@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
+import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.renderer.Renderer
 import io.mockk.every
 import io.mockk.Runs
@@ -40,12 +41,13 @@ class BootManagerTest : KoinTest {
     private val mockLogger = mockk<LoggerService>(relaxed = true)
     private val splashScreen = mockk<SplashScreen>(relaxed = true)
     private val audioEngine = mockk<AudioEngine>(relaxed = true)
-    private val sceneInitializer = mockk<LevelEditorSceneInitializer>(relaxed = true)
+    private val resourceManager = mockk<ResourceManager>(relaxed = true)
     private val settingsManager = mockk<SettingsManager>(relaxed = true)
     private val physics3DFactory = mockk<Physics3DFactory>(relaxed = true)
+    private val nativeLibraryLoader = mockk<NativeLibraryLoader>(relaxed = true)
 
     private val bootManager =
-        BootManager(sceneManager, renderer, mockLogger, splashScreen, audioEngine, sceneInitializer, settingsManager, physics3DFactory)
+        BootManager(sceneManager, renderer, mockLogger, splashScreen, audioEngine, resourceManager, settingsManager, physics3DFactory, nativeLibraryLoader)
 
     @BeforeEach
     fun setup() {
@@ -60,7 +62,7 @@ class BootManagerTest : KoinTest {
                 single<SceneManager> { sceneManager }
                 single<SplashScreen> { splashScreen }
                 single<AudioEngine> { audioEngine }
-                single<LevelEditorSceneInitializer> { sceneInitializer }
+                single<ResourceManager> { resourceManager }
             })
         }
     }
@@ -77,6 +79,8 @@ class BootManagerTest : KoinTest {
 
         coEvery { splashScreen.init() } just Runs
         coEvery { renderer.initialize() } just Runs
+        coEvery { resourceManager.loadModel(any()) } returns mockk(relaxed = true)
+        every { nativeLibraryLoader.loadNativeLibrary() } just Runs
 
         bootManager.boot(engineState)
 
@@ -85,6 +89,7 @@ class BootManagerTest : KoinTest {
             renderer.initialize()
             sceneManager.openScene(any<Scene>(), true)
         }
+        verify(exactly = 1) { nativeLibraryLoader.loadNativeLibrary() }
 
         assertEquals(EngineState.RUNNING, engineState.get())
         verify { splashScreen.loadingProgress.set(1.0f) }

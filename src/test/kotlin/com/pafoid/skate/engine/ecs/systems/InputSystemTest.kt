@@ -7,7 +7,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
-import com.pafoid.skate.engine.ecs.scene.SceneInitializer
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
@@ -46,11 +45,7 @@ class InputSystemTest {
         stringManager = mockk(relaxed = true)
         eventSystem = EventSystem()
 
-        val sceneInitializer = object : SceneInitializer() {
-            override suspend fun init(scene: Scene) {}
-            override suspend fun loadResources(scene: Scene) {}
-        }
-        scene = Scene("TestScene", sceneInitializer)
+        scene = Scene("TestScene")
         scene.isRunning = true
 
         val inputMappings = InputMappings().apply {

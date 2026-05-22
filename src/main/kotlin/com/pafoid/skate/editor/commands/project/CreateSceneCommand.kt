@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.commands.project
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.AsyncCommand
 import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.project.SceneSerializer
@@ -15,19 +14,17 @@ import kotlinx.coroutines.Job
  * tracking and removing the newly created scene.
  *
  * @param name The name for the new scene
- * @param sceneInitializer The initializer to set up the scene
  * @param sceneSerializer The serializer to persist the scene to disk
  * @param filePath The file path where the scene will be saved
  */
 class CreateSceneCommand(
     private val name: String,
-    private val sceneInitializer: LevelEditorSceneInitializer,
     private val sceneSerializer: SceneSerializer,
     private val filePath: String,
     private val jobSystem: IJobSystem,
     private val eventSystem: EventSystem,
-    private val sceneFactory: (String, LevelEditorSceneInitializer) -> Scene = { sceneName, initializer ->
-        Scene(sceneName, initializer)
+    private val sceneFactory: (String) -> Scene = { sceneName ->
+        Scene(sceneName)
     }
 ) : AsyncCommand {
 
@@ -43,7 +40,7 @@ class CreateSceneCommand(
         createdScene = null
         completionJob = jobSystem.runOnMain {
             runCatching {
-                val newScene = sceneFactory(name, sceneInitializer)
+                val newScene = sceneFactory(name)
                 newScene.sceneData.levelPath = filePath
                 newScene.init()
 

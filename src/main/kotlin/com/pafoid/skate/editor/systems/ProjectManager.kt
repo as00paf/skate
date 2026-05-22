@@ -21,8 +21,11 @@ import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.utils.IJobSystem
+import kotlinx.coroutines.runBlocking
 import org.joml.Vector3f
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 
 class ProjectManager(
     private val settingsManager: SettingsManager,
@@ -34,10 +37,12 @@ class ProjectManager(
     private val sceneSerializer: SceneSerializer,
     private val eventSystem: EventSystem,
     private val systemManager: SystemManager,
+    private val jobSystem: IJobSystem,
 ) {
 
     var currentProject: Project? = null
         private set
+    private val lifecycleEpoch = AtomicLong(0)
 
     fun hasProject(): Boolean = currentProject != null
 
@@ -283,24 +288,31 @@ class ProjectManager(
             val loadedProject = settingsManager.loadProject(projectFile)
 
             if (loadedProject != null) {
+                val openEpoch = lifecycleEpoch.incrementAndGet()
                 currentProject = loadedProject
                 eventSystem.publish(ProjectEvent.Opened(loadedProject))
-
-                // Load asset registry from project file if present
-                currentProject?.assetRegistry?.let { registryData ->
-                    assetDatabase.importRegistryData(registryData)
-                    logger.logEditor("Asset registry loaded from project file (${registryData.assets.size} assets)")
-                }
 
                 // Initialize asset database for this project
                 val projectDir = getProjectDirectory()
                 if (projectDir != null) {
                     assetDatabase.initialize(projectDir).fold(
                         onSuccess = {
-                            assetDatabase.scanAll()
                             // Tell PrefabsGenerator where to find engine-bundled assets
                             prefabsGenerator.setEngineDefaultsRoot(projectDir)
-                            logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
+                            logger.logEditor("Asset database initialized for ${projectDir.name}")
+
+                            // Scan assets off the UI path; drop stale scans if project lifecycle changes.
+                            jobSystem.runIO {
+                                if (openEpoch != lifecycleEpoch.get()) return@runIO
+                                assetDatabase.scanAll().fold(
+                                    onSuccess = {
+                                        logger.logEditor("Asset scan completed for ${projectDir.name}")
+                                    },
+                                    onFailure = { e ->
+                                        logger.logEditor("Asset scan failed for ${projectDir.name}: ${e.message}")
+                                    }
+                                )
+                            }
                         },
                         onFailure = { e ->
                             logger.logEditor("Failed to initialize asset database: ${e.message}")
@@ -328,23 +340,21 @@ class ProjectManager(
             logger.logEditor("No project to close")
             return
         }
+        lifecycleEpoch.incrementAndGet()
         val path = project.getProjectFile().absolutePath
         val projectName = project.metadata.name
         logger.logEditor("Closing project: $projectName")
-
-        // Export registry and embed in project file before closing
-        val registryData = assetDatabase.exportRegistryData()
-        settingsManager.updateProjectAssetRegistry(project, registryData)
 
         // Ensure scenes/resources are fully reset before switching/closing project context.
         sceneManager.closeAllScenes()
         systemManager.resetSystemCaches()
 
-        eventSystem.publish(ProjectEvent.Closed(projectName))
         currentProject = null
         assetDatabase.shutdown()
         settingsManager.setLastClosedProjectPath(path)
         settingsManager.closeProject()
+
+        eventSystem.publish(ProjectEvent.Closed(projectName))
     }
 
     /**
@@ -361,11 +371,30 @@ class ProjectManager(
         }
 
         val scene = sceneManager.currentScene ?: run {
-            logger.logEditor("No current scene, cannot load default scene")
-            return
+            val sceneName = defaultSceneFile.nameWithoutExtension.ifBlank { "MainScene" }
+            val newScene = runCatching {
+                runBlocking { sceneManager.createScene(sceneName, defaultSceneFile.absolutePath, forceSingle = true) }
+            }.onFailure { e ->
+                logger.logEditor("Failed to bootstrap scene for default scene load: ${e.message}")
+                return
+            }.getOrNull()
+
+            if (newScene == null) {
+                logger.logEditor("Failed to bootstrap scene for default scene load")
+                return
+            }
+
+            newScene
         }
 
-        sceneSerializer.loadFromFile(scene, defaultSceneFile.absolutePath)
+        // Bind systems to the target scene before deserialization so systems used by the
+        // serializer (e.g., GameObjectManager) operate on the correct scene instance.
+        systemManager.loadScene(scene)
+        val loaded = sceneSerializer.loadFromFile(scene, defaultSceneFile.absolutePath)
+        if (!loaded) {
+            logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}")
+            return
+        }
         systemManager.loadScene(scene)
 
         logger.logEditor("Loaded default scene from ${defaultSceneFile.absolutePath}")

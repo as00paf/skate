@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.commands
 
-import com.pafoid.skate.editor.LevelEditorSceneInitializer
 import com.pafoid.skate.editor.commands.project.OpenSceneFileCommand
 import com.pafoid.skate.editor.events.SceneAction.OpenFailed
 import com.pafoid.skate.editor.events.SceneAction.OpenSucceeded
@@ -22,7 +21,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class OpenSceneFileCommandTest {
-    private lateinit var sceneInitializer: LevelEditorSceneInitializer
     private lateinit var sceneSerializer: SceneSerializer
     private lateinit var sceneManager: SceneManager
     private lateinit var eventSystem: EventSystem
@@ -31,7 +29,6 @@ class OpenSceneFileCommandTest {
 
     @BeforeEach
     fun setup() {
-        sceneInitializer = mockk(relaxed = true)
         sceneSerializer = mockk(relaxed = true)
         sceneManager = mockk(relaxed = true)
         eventSystem = EventSystem()
@@ -79,12 +76,11 @@ class OpenSceneFileCommandTest {
     private fun createCommand(scenePath: String): OpenSceneFileCommand {
         return OpenSceneFileCommand(
             scenePath = scenePath,
-            sceneInitializer = sceneInitializer,
             sceneSerializer = sceneSerializer,
             sceneManager = sceneManager,
             jobSystem = jobSystem,
             eventSystem = eventSystem,
-            sceneFactory = { _, _ -> loadedScene }
+            sceneFactory = { _ -> loadedScene }
         )
     }
 }
