@@ -12,7 +12,6 @@ import com.pafoid.skate.editor.ui.windows.ProjectWizardWindow
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 import io.mockk.every
@@ -69,7 +68,6 @@ class ImGuiLayerStartupFlowTest : KoinTest {
             renderer = mockk<Renderer>(relaxed = true),
             resourceManager = mockk<ResourceManager>(relaxed = true),
             windowRegistry = windowRegistry,
-            gameObjectManager = mockk<GameObjectManager>(relaxed = true),
         )
     }
 
