@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
@@ -14,8 +15,33 @@ import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.utils.ShaderConst
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11.*
-import org.lwjgl.opengl.GL30.*
+import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
+import org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT
+import org.lwjgl.opengl.GL11.GL_DEPTH_TEST
+import org.lwjgl.opengl.GL11.GL_LINEAR
+import org.lwjgl.opengl.GL11.GL_RGBA
+import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
+import org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER
+import org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER
+import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S
+import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
+import org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE
+import org.lwjgl.opengl.GL11.GL_VIEWPORT
+import org.lwjgl.opengl.GL11.glBindTexture
+import org.lwjgl.opengl.GL11.glClear
+import org.lwjgl.opengl.GL11.glClearColor
+import org.lwjgl.opengl.GL11.glEnable
+import org.lwjgl.opengl.GL11.glGenTextures
+import org.lwjgl.opengl.GL11.glGetInteger
+import org.lwjgl.opengl.GL11.glGetIntegerv
+import org.lwjgl.opengl.GL11.glReadPixels
+import org.lwjgl.opengl.GL11.glTexImage2D
+import org.lwjgl.opengl.GL11.glTexParameteri
+import org.lwjgl.opengl.GL11.glViewport
+import org.lwjgl.opengl.GL30.GL_CLAMP_TO_EDGE
+import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER
+import org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_BINDING
+import org.lwjgl.opengl.GL30.glBindFramebuffer
 import java.nio.ByteBuffer
 import kotlin.math.max
 

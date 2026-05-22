@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.components
 import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.player.PlayerState
 import com.pafoid.skate.game.skateboard.Stance
 import imgui.ImGui

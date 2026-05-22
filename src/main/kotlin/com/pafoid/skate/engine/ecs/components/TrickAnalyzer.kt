@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.trick.TrickManager
 import imgui.ImGui

@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.commands.scene
 
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.RenderComponent

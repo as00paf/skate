@@ -9,9 +9,9 @@ import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetType
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
-import org.koin.core.component.KoinComponent
 import java.awt.Desktop
 import java.io.File
 

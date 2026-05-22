@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.ShadowMap
 import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer

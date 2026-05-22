@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import org.koin.core.component.KoinComponent
 

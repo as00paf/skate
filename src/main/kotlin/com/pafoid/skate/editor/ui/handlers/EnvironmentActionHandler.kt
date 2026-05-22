@@ -4,9 +4,11 @@ import com.pafoid.skate.editor.commands.EnvironmentPropertyCommand
 import com.pafoid.skate.editor.commands.EnvironmentToggleCommand
 import com.pafoid.skate.editor.events.EnvironmentAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
+import com.pafoid.skate.engine.hasComponent
 import org.joml.Vector3f
 
 class EnvironmentActionHandler(

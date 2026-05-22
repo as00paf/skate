@@ -3,10 +3,10 @@ package com.pafoid.skate.engine.ecs
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlin.reflect.KClass
 
 @Serializable
 open class GameObject(
@@ -49,39 +49,7 @@ open class GameObject(
         child.parent = null
     }
 
-    inline fun <reified T> getComponent(): T? {
-        return components.filterIsInstance<T>().firstOrNull()
-    }
-
-    fun <T : Component> getComponent(componentClass: KClass<T>): T? {
-        return components.find { componentClass.isInstance(it) } as? T
-    }
-
-    fun <T : Component> removeComponent(componentClass: KClass<T>) {
-        val removed = components.removeAll { componentClass.isInstance(it) }
-        if (removed) {
-            componentMutationVersion++
-        }
-    }
-
-    inline fun <reified T : Component> removeComponent() = removeComponent(T::class)
-
-    inline fun <reified T> hasComponent(): Boolean {
-        return components.filterIsInstance<T>().isNotEmpty()
-    }
-
-    fun <T : Component> addComponent(componentClass: KClass<T>, component: T): GameObject {
-        components.removeAll { componentClass.isInstance(it) }
-        component.generateId()
-        components.add(component)
-        component.init(this)
-        componentMutationVersion++
-        return this
-    }
-
     open fun start() {}
-
-    inline fun <reified T: Component> addComponent(component: T): GameObject = addComponent(T::class, component)
 
     open fun update(dt: Float) {
         if (!isEnabled) return

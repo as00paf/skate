@@ -7,10 +7,10 @@ import com.pafoid.skate.editor.project.GameplaySettings
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.settings.RecentProjectInfo
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.collectGameObjectsDepthFirst
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -21,6 +21,7 @@ import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.runBlocking
 import org.joml.Vector3f

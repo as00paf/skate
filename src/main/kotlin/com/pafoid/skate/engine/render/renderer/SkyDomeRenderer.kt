@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.RawModel
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms

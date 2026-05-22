@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.contracts.IStringManager
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
+import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import org.joml.Vector3f
 import org.lwjgl.openal.ALC

@@ -6,11 +6,11 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.IInputProvider
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
-import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 import kotlin.math.sqrt

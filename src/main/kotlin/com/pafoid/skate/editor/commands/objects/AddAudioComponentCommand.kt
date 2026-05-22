@@ -1,8 +1,10 @@
 package com.pafoid.skate.editor.commands.objects
 
 import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.getComponent
 
 class AddAudioComponentCommand(
     private val gameObject: GameObject,

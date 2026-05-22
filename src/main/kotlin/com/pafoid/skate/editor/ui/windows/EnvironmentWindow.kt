@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.joml.Vector3f

@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.events.GroundedStateChanged
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.Takeoff
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.RayTestResult
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D

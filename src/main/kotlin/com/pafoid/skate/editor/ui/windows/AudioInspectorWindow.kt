@@ -3,12 +3,13 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.removeComponent
 import imgui.ImGui
 import imgui.type.ImString
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Editor window for audio component inspector.

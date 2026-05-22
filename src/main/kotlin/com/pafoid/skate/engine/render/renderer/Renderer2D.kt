@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.render.renderer
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.data.RenderBatch
 

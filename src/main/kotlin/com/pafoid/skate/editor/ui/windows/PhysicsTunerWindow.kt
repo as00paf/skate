@@ -6,12 +6,12 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 
 class PhysicsTunerWindow(
     private val stringManager: StringManager,

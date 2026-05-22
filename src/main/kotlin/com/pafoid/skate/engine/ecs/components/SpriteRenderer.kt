@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.components
 import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.getComponent
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient

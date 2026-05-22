@@ -1,29 +1,28 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.events.ViewportAction
-import com.pafoid.skate.editor.events.ViewportAction.*
+import com.pafoid.skate.editor.events.ViewportAction.AddComponent
+import com.pafoid.skate.editor.events.ViewportAction.RemoveComponent
+import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
+import com.pafoid.skate.editor.events.ViewportAction.SetGameObjectEnabled
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.components.ComponentType
 import imgui.ImGui
 import imgui.flag.ImGuiInputTextFlags
 import imgui.type.ImBoolean
 import imgui.type.ImString
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.java.KoinJavaComponent.inject
-import kotlin.getValue
 
 class PropertiesWindow(
     private val stringManager: StringManager,

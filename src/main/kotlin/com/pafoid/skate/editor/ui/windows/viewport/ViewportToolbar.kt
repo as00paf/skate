@@ -1,8 +1,11 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
 import com.pafoid.skate.editor.events.SceneAction
-import com.pafoid.skate.editor.events.ViewportAction
-import com.pafoid.skate.editor.events.ViewportAction.*
+import com.pafoid.skate.editor.events.ViewportAction.ScreenshotRequested
+import com.pafoid.skate.editor.events.ViewportAction.SetRuntimePlaying
+import com.pafoid.skate.editor.events.ViewportAction.SetSimulationTimeScale
+import com.pafoid.skate.editor.events.ViewportAction.ToggleGizmo
+import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.LoggerService
@@ -14,6 +17,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol

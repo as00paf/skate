@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.getComponent
 
 class ApplyAnimationCommand(
     private val gameObject: GameObject,

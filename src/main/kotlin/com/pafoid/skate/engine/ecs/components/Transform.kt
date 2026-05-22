@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.engine.getComponent
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Matrix4f

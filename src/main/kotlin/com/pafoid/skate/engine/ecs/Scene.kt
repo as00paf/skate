@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.scene.SceneData
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.DefaultPhysics3DFactory
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.Physics3DFactory

@@ -4,9 +4,10 @@ import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.ComponentType
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
@@ -20,7 +21,7 @@ class AddComponentCommand(
 
     override fun execute() {
         val component = createComponent(componentType) ?: return
-        replacedComponent = existingComponent(componentType)
+        replacedComponent = gameObject.getComponent(componentType)
         replacedComponent?.let { gameObject.components.remove(it) }
         gameObject.components.add(component)
         component.init(gameObject)
@@ -39,15 +40,6 @@ class AddComponentCommand(
 
     override fun getTargetName(): String = gameObject.name
 
-    private fun existingComponent(type: ComponentType): Component? =
-        when (type) {
-            ComponentType.AUDIO -> gameObject.getComponent<AudioComponent>()
-            ComponentType.BOX_COLLIDER_3D -> gameObject.getComponent<BoxCollider3D>()
-            ComponentType.CYLINDER_COLLIDER_3D -> gameObject.getComponent<CylinderCollider3D>()
-            ComponentType.RENDER -> gameObject.getComponent<RenderComponent>()
-            ComponentType.RIGID_BODY_3D -> gameObject.getComponent<RigidBody3D>()
-            ComponentType.TRANSFORM -> gameObject.getComponent<Transform>()
-        }
 
     private fun createComponent(type: ComponentType): Component? =
         when (type) {

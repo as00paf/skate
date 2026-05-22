@@ -1,10 +1,13 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
+import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.toVector3f
 

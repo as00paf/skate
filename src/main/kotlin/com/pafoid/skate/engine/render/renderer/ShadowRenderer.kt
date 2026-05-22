@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.utils.bindTexture
 import com.pafoid.skate.engine.render.utils.bindVAO
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
