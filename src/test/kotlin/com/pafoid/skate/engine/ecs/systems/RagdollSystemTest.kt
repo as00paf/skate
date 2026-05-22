@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
 import com.jme3.math.Vector3f
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose

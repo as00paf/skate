@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.physics3d
 
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager

@@ -5,12 +5,14 @@ import com.pafoid.skate.editor.commands.objects.ApplyTextureCommand
 import com.pafoid.skate.editor.commands.scene.CreateLightCommand
 import com.pafoid.skate.editor.commands.scene.CreatePrimitiveCommand
 import com.pafoid.skate.editor.commands.scene.DuplicateGameObjectCommand
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.data.LightType
 import io.mockk.mockk
 import org.joml.Vector3f

@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
@@ -16,6 +17,7 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.every

@@ -1,11 +1,14 @@
 package com.pafoid.skate.engine.ecs.serialization
 
+import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.Transform
-import org.joml.Vector3f
-import org.junit.jupiter.api.Assertions.*
+import com.pafoid.skate.engine.getComponent
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
