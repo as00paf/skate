@@ -45,3 +45,8 @@ Architecture drift introduced inconsistent mutation paths, weak edit/play bounda
 - ARCH-003/004: targeted UI surfaces removed direct mutation/direct command execution.
 - ARCH-005: mutation gate integrated in command executor and handler surfaces.
 - ARCH-007: QA Gate 1 verifies M1 conformance and boundary behavior.
+
+## Post-Acceptance Regression Note
+
+Subsequent audits identified regressions/remaining violations against this ADR (engine/editor layering imports,
+lifecycle coupling, and incomplete mutation-pipeline coverage). Active remediation is tracked in `A48.0.2`.

@@ -3,7 +3,8 @@
 ## Overview
 
 This document describes the implemented ECS (Entity-Component-System) architecture used in SkateSim Engine, including
-the hybrid ECS model, event-driven editor mutation pipeline, and engine/editor boundary contracts currently enforced.
+the hybrid ECS model, target event-driven editor mutation pipeline, and current engine/editor boundary remediation
+status.
 
 ---
 
@@ -24,17 +25,28 @@ contracts:
      - DayNightCycleSystem writes to LightingStateComponent
      - Clean separation: components for state, SceneData for serialization metadata
 
-3. **Editor mutation pipeline contract** ✅
+3. **Editor mutation pipeline contract** ⚠️ (partially enforced; remediation active)
      - Editor UI mutation requests publish typed events/actions
      - Action handlers execute commands
      - `UndoRedoManager` tracks command history
      - Canonical flow: `UI -> Event -> Handler -> CommandExecutor -> UndoRedoManager`
 
-4. **Engine/editor boundary contracts** ✅
-     - Engine code paths do not import editor packages
+4. **Engine/editor boundary contracts** ❌ (known violations in active remediation)
+   - Violations currently exist where engine code paths import editor packages
      - Engine systems use engine-owned interfaces (`InputMappingsProvider`, `LocalizationProvider`,
        `EngineLogger`, `SceneEventPublisher`)
      - Editor/application adapters are bound through DI (Koin)
+
+### Compliance Snapshot (A48.0.2 planning baseline)
+
+Known violations from latest audit/review:
+
+- `engine/core`, `engine/render`, and `engine/ecs` still import editor types directly in multiple paths.
+- Engine lifecycle currently wires editor constructs (`EditorWorkspace`, `ImGuiLayer`) into runtime loop.
+- ECS components/systems include editor ImGui/string/settings logic.
+- Event pipeline regressions remain in some handlers/windows (direct state mutation still present).
+- Koin composition remains monolithic and mixes runtime/editor ownership.
+- Layering guard tests are currently too narrow and do not catch all real violations.
 
 ### Why Hybrid?
 
@@ -87,7 +99,7 @@ Scene (extends GameObject)
 
 ## Data Flow
 
-### Editor Mutation & Undo Data Flow (Implemented)
+### Editor Mutation & Undo Data Flow (Target Contract)
 
 ```
 Editor UI (windows/menus/search/toolbar/project) 
@@ -97,8 +109,8 @@ Editor UI (windows/menus/search/toolbar/project)
   -> UndoRedoManager records undoable command history
 ```
 
-This is the required editor mutation entry path. Direct UI mutation and direct UI command execution were removed during
-ARCH remediation.
+This is the required editor mutation entry path. Current implementation is not fully compliant yet; remaining direct UI
+mutation and direct command-execution paths are tracked under `A48.0.2`.
 
 ### Environment Data Flow
 
@@ -261,10 +273,11 @@ val timeOfDay = timeComponent?.timeOfDay ?: 12.0f
 
 ---
 
-## Follow-ups (Non-Blocking)
+## Follow-ups (Tracked Remediation)
 
-- Extend async command lifecycle coverage for `UndoRedoManager.clear()` while async completion is still in-flight
-  (tracked as a post-ARCH follow-up from ARCH-022 review gate).
+- Complete editor/engine boundary remediation phases (bootstrap split, DI split, engine import cleanup, ECS extraction,
+  guard-test expansion) tracked under `A48.0.2`.
+- Extend async command lifecycle coverage for `UndoRedoManager.clear()` while async completion is still in-flight.
 
 ---
 

@@ -9,6 +9,17 @@
 5. **Layering:** `engine/**` must not import `editor/**`.
 6. **Localization:** no hardcoded user-facing UI strings; use string keys/resources.
 
+## Current Compliance Snapshot
+
+These guardrails remain mandatory, but current codebase compliance is **partial** and under active remediation:
+
+- Known layering violations exist (`engine/**` importing `editor/**` in real runtime paths).
+- Runtime lifecycle still includes editor construct wiring in engine startup/update loop.
+- Mutation pipeline compliance is incomplete in some windows/handlers (direct mutation paths remain).
+- Existing guard tests do not yet cover all observed violation patterns.
+
+Active remediation initiative: `A48.0.2` (editor/engine separation refactor, approval-gated).
+
 ## Allowed / Forbidden Patterns
 
 ### Allowed

@@ -15,17 +15,63 @@ This file contains **near-future tasks** that are ready for execution and alread
 
 ## Near-Term Queue
 
-| ID | Title | Status | Why now |
-|---|---|---|---|
-| A48.0.1 | Comprehensive Feature & Code Audit | In Progress | Needed to stop regressions and align feature behavior with architecture quality expectations. |
-| A46.0.1 | Engine UI & Editor Tooling Revamp (remaining scope) | In Progress | Core usability/workflow debt still impacts daily iteration speed. |
-| A46.0.2 | Advanced Lighting Models | Planned | Next major rendering capability on Phase 2 path. |
-| A46.0.3 | Post-Processing Stack | Planned | Depends on render foundations and follows lighting work. |
-| A46.0.4 | Advanced Material System | Planned | Needed for scalable shading workflows and content authoring consistency. |
+| ID      | Title                                               | Status      | Why now                                                                                                            |
+|---------|-----------------------------------------------------|-------------|--------------------------------------------------------------------------------------------------------------------|
+| A48.0.2 | Editor/Engine Separation Refactor (Main.kt-down)    | Blocked     | Critical layering and lifecycle coupling violations block safe feature work and invalidate architecture contracts. |
+| A48.0.1 | Comprehensive Feature & Code Audit                  | In Progress | Needed to stop regressions and align feature behavior with architecture quality expectations.                      |
+| A46.0.1 | Engine UI & Editor Tooling Revamp (remaining scope) | In Progress | Core usability/workflow debt still impacts daily iteration speed.                                                  |
+| A46.0.2 | Advanced Lighting Models                            | Planned     | Next major rendering capability on Phase 2 path.                                                                   |
+| A46.0.3 | Post-Processing Stack                               | Planned     | Depends on render foundations and follows lighting work.                                                           |
+| A46.0.4 | Advanced Material System                            | Planned     | Needed for scalable shading workflows and content authoring consistency.                                           |
 
 ---
 
 ## Execution Plans
+
+### A48.0.2 — Editor/Engine Separation Refactor (Main.kt-down)
+
+**Description**  
+Plan and execute a phased refactor that restores engine/editor boundaries from application entry (`Main.kt`) through
+engine lifecycle, DI composition, ECS/systems/components, and UI mutation flow.
+
+**Approval gate (mandatory before implementation)**
+
+- This initiative remains `Blocked` until the user reviews and explicitly approves the phased plan and sequencing below.
+
+**Phased implementation plan**
+
+| Phase | Scope                                                                                                | Dependencies     | Owner                  | Acceptance criteria                                                                                                                                                             |
+|-------|------------------------------------------------------------------------------------------------------|------------------|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| P0    | Baseline + architecture decisions (violation inventory, boundary target map, migration order)        | A48.0.1 findings | tech-lead              | Approved boundary map exists for `Main.kt -> app modules -> engine/core -> engine/render -> engine/ecs`; decision log resolves startup mode strategy and adapter boundaries.    |
+| P1    | Bootstrap/runtime split at entrypoint and engine loop                                                | P0               | software-engineer      | Engine runtime starts without direct editor construct wiring (`EditorWorkspace`, `ImGuiLayer`) in runtime lifecycle path; startup mode selection moved to composition boundary. |
+| P1a   | **Kickoff file tranche**: `Main.kt`, `Engine.kt`, `Window.kt`, `ImGuiLayer.kt`, `EditorWorkspace.kt` | P1               | software-engineer      | Initial decoupling lands first in these five files, with boundary ownership made explicit before widening to package-level cleanup.                                             |
+| P2    | DI decomposition (`KoinModule` split into runtime/editor composition roots)                          | P1               | software-engineer      | Monolithic module replaced by separated runtime/editor modules; engine module graph resolves without importing editor packages.                                                 |
+| P3    | Engine package decontamination (`engine/core`, `engine/render`, `engine/ecs`)                        | P2               | software-engineer      | No direct `editor/**` imports remain in targeted engine packages; editor-dependent behavior consumed via engine-owned interfaces/adapters.                                      |
+| P4    | ECS/editor concern extraction + mutation pipeline closure                                            | P3               | software-engineer      | ECS components/systems no longer contain editor ImGui/string/settings logic; remaining direct state mutations in windows/handlers replaced by `Event -> Handler -> Command`.    |
+| P5    | Guardrail verification hardening                                                                     | P4               | qa-engineer            | Layering and mutation guard tests catch known violation classes (imports, lifecycle coupling, direct mutation paths); CI gate definition updated to require new tests.          |
+| P6    | Documentation reconciliation + closure report                                                        | P5               | documentation-engineer | `ECS_ARCHITECTURE`, guardrails, roadmap, and TODO reflect actual status and closure evidence; no document claims boundary cleanliness before verification sign-off.             |
+
+**Execution tasks (single-agent, dependency-ordered)**
+
+1. Author approved boundary target map and migration sequence (`P0`) — **Owner: tech-lead**.
+2. Define runtime/editor bootstrap contract from `Main.kt` downward (`P1`) — **Owner: tech-lead**.
+3. Implement bootstrap split and lifecycle decoupling (`P1`) — **Owner: software-engineer**.
+4. Execute kickoff tranche in `Main.kt`, `Engine.kt`, `Window.kt`, `ImGuiLayer.kt`, `EditorWorkspace.kt` (`P1a`) — *
+   *Owner: software-engineer**.
+5. Split Koin composition roots and dependency graph checks (`P2`) — **Owner: software-engineer**.
+6. Remove editor imports from engine core/render/ecs using adapter interfaces (`P3`) — **Owner: software-engineer**.
+7. Extract editor-only ECS logic and complete mutation pipeline refactors (`P4`) — **Owner: software-engineer**.
+8. Expand layering/mutation guardrail tests and add regression fixtures (`P5`) — **Owner: qa-engineer**.
+9. Publish closure docs and status synchronization across planning/architecture docs (`P6`) — **Owner:
+   documentation-engineer**.
+
+**Known blockers/risks**
+
+- Startup mode ownership decision (single binary mode switch vs separate launch targets) must be finalized in `P0`.
+- DI split may expose hidden circular dependencies between editor windows and engine services.
+- Guard tests must be broadened before claiming contract compliance.
+
+---
 
 ### A48.0.1 — Comprehensive Feature & Code Audit
 

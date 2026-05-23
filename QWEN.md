@@ -482,9 +482,13 @@ Status is maintained in living docs:
 - Architecture contracts/guardrails: `docs/DEVELOPMENT_GUARDRAILS.md`
 - Documentation map: `docs/DOCS_INDEX.md`
 
-ARCH remediation history is closed and reflected in:
+ARCH remediation history is recorded in:
 
 - `docs/CHANGELOG.md`
+
+Current boundary remediation work is active in:
+
+- `docs/TODO.md` (`A48.0.2` editor/engine separation refactor)
 
 ---
 
