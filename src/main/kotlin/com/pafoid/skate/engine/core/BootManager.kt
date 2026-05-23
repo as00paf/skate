@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.app.SplashScreen
-import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
@@ -45,11 +44,11 @@ class BootManager(
         sceneManager.openScene(scene, forceSingle = true)
     }
 
-    fun update(dt: Float, imGuiLayer: ImGuiLayer, engineState: AtomicReference<EngineState>) {
+    fun update(dt: Float, engineState: AtomicReference<EngineState>) {
         if (!splashScreen.isDestroyed) {
             val state = engineState.get()
             splashScreen.update(dt, state)
-            splashScreen.render(dt, imGuiLayer, state)
+            splashScreen.render(dt, state)
         }
     }
 

@@ -1,10 +1,5 @@
 package com.pafoid.skate.engine
 
-import com.pafoid.skate.app.SplashScreen
-import com.pafoid.skate.editor.EditorWorkspace
-import com.pafoid.skate.editor.imgui.ImGuiLayer
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
@@ -28,36 +23,21 @@ class EngineFixedTimestepTest : KoinTest {
     private lateinit var engine: Engine
     private lateinit var mockSceneManager: SceneManager
     private lateinit var mockRenderer: Renderer
-    private lateinit var mockImGuiLayer: ImGuiLayer
-    private lateinit var mockEditorWorkspace: EditorWorkspace
-    private lateinit var mockLogger: LoggerService
-    private lateinit var mockEditorInputHandler: EditorInputHandler
     private lateinit var mockBootManager: BootManager
-    private lateinit var mockSplashScreen: SplashScreen
     private lateinit var mockJobSystem: IJobSystem
 
     @BeforeEach
     fun setup() {
         mockSceneManager = mockk(relaxed = true)
         mockRenderer = mockk(relaxed = true)
-        mockImGuiLayer = mockk(relaxed = true)
-        mockEditorWorkspace = mockk(relaxed = true)
-        mockLogger = mockk(relaxed = true)
-        mockEditorInputHandler = mockk(relaxed = true)
         mockBootManager = mockk(relaxed = true)
-        mockSplashScreen = mockk(relaxed = true)
         mockJobSystem = mockk(relaxed = true)
 
         startKoin {
             modules(module {
                 single { mockSceneManager }
                 single { mockRenderer }
-                single { mockImGuiLayer }
-                single { mockEditorWorkspace }
-                single { mockLogger }
-                single { mockEditorInputHandler }
                 single { mockBootManager }
-                single { mockSplashScreen }
                 single { mockJobSystem }
             })
         }
@@ -114,7 +94,7 @@ class EngineFixedTimestepTest : KoinTest {
     }
 
     @Test
-    fun `update should continue imgui updates when no scene is active`() {
+    fun `update should skip render when no scene is active`() {
         every { mockSceneManager.currentScene } returns null
 
         engine.engineState.set(EngineState.RUNNING)
@@ -123,8 +103,7 @@ class EngineFixedTimestepTest : KoinTest {
         val deltaTime = 0.016f
         engine.update(deltaTime)
 
-        verify(exactly = 1) { mockImGuiLayer.update(deltaTime) }
         verify(exactly = 0) { mockRenderer.render(any(), any(), any()) }
-        verify(exactly = 0) { mockEditorWorkspace.update(any()) }
+        verify(exactly = 1) { mockJobSystem.update() }
     }
 }

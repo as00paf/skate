@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference
 class SplashScreen : KoinComponent {
     private val resourceManager: ResourceManager by inject()
     private val renderer: Renderer by inject()
+    private val imGuiLayer: ImGuiLayer by inject()
 
     val loadingProgress = AtomicReference(0f)
     var loadingText = "Initializing Engine..."
@@ -44,7 +45,7 @@ class SplashScreen : KoinComponent {
         }
     }
 
-    fun render(dt: Float, imGuiLayer: ImGuiLayer, engineState: EngineState) {
+    fun render(dt: Float, engineState: EngineState) {
         if(engineState != EngineState.RUNNING) {
             renderer.clearColor(Vector3f(0f, 0f, 0f))
         }
@@ -57,7 +58,7 @@ class SplashScreen : KoinComponent {
         GL11.glViewport(0, 0, fbWidth[0], fbHeight[0])
 
         renderSplashQuad()
-        showImGui(imGuiLayer)
+        showImGui()
     }
 
     private fun renderSplashQuad() {
@@ -75,7 +76,7 @@ class SplashScreen : KoinComponent {
         }
     }
 
-    private fun showImGui(imGuiLayer: ImGuiLayer) {
+    private fun showImGui() {
         imGuiLayer.startFrame()
 
         val viewport = ImGui.getMainViewport()
