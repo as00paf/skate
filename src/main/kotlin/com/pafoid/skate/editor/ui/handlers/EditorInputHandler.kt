@@ -140,6 +140,16 @@ class EditorInputHandler(
     ) {
         val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
+        // Search
+        if (ctrlDown && keyListener.keyBeginPress(GLFW.GLFW_KEY_P)) {
+            eventSystem.publish(ViewportAction.OpenSearch)
+        }
+
+        // Full Screen (By passes WindowRegistry)
+        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_F12)) {
+            eventSystem.publish(ViewportAction.ToggleFullScreen)
+        }
+
         // Delete selected object
         if (keyListener.keyBeginPress(inputMappings.hierarchyDelete.keyboardKey) && selected != null) {
             eventSystem.publish(ViewportAction.Delete(selected, scene))

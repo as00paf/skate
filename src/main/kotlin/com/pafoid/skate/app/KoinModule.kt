@@ -202,7 +202,7 @@ val appModule = module {
     single { EditorCamera(Camera(), get()) }
     single { CameraManager(get(), get(), get()) }
     single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { EditorEventHandler(get(), get(), get()) }
+    single { EditorEventHandler(get(), get(), get(), get(), get()) }
     single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { GridLines(get(), get(), get(), get()) }
 

@@ -60,4 +60,8 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     data class MultiSelectionChanged(val selectedObjects: List<GameObject>) : ViewportAction("editor.multi_selection_changed")
     object SelectionCleared : ViewportAction("editor.selection_cleared")
 
+    // Windows
+    object OpenSearch : ViewportAction("editor.open_search")
+    object ToggleFullScreen : ViewportAction("editor.toggle_fullscreen")
+
 }

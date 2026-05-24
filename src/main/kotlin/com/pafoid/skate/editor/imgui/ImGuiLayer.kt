@@ -89,7 +89,7 @@ class ImGuiLayer(
 
     private val tempVec2 = ImVec2()
 
-    private var isViewportMaximized = false
+    var isViewportMaximized = false
     private var hadProjectLastFrame = false
     private var needsWizardReset = false
     private var hasAttemptedAutoLoad = false
@@ -219,15 +219,6 @@ class ImGuiLayer(
 
     fun update(dt: Float) {
         val currentScene = sceneManager.currentScene
-        val ctrlDown = inputProvider.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || inputProvider.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
-
-        if (ctrlDown && inputProvider.keyBeginPress(GLFW.GLFW_KEY_P)) {
-            windowRegistry.searchEverywhereWindow.open()
-        }
-
-        if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_F12)) {
-            isViewportMaximized = !isViewportMaximized
-        }
 
         startFrame()
 
