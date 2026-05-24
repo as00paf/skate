@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.EditorInputState
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
@@ -12,7 +13,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
-import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.GamepadListener
@@ -34,11 +34,11 @@ class EditorInputHandler(
     private val logger: LoggerService,
     private val editorInputState: EditorInputState,
     private val sceneManager: SceneManager,
+    private val engine: Engine,
 ) : System(ExecutionPriority.EARLY), KoinComponent {
 
     private val settingsManager: SettingsManager by inject()
     private val eventSystem: EventSystem by inject()
-    private val engine: Engine by inject()
 
     private var pendingRenameUid: Int? = null
 

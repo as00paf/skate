@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.ui.windows.viewport
 import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.ViewportAction.ScreenshotRequested
 import com.pafoid.skate.editor.events.ViewportAction.SetRuntimePlaying
-import com.pafoid.skate.editor.events.ViewportAction.SetSimulationTimeScale
 import com.pafoid.skate.editor.events.ViewportAction.ToggleGizmo
 import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.gizmos.MeasureTool
@@ -162,13 +161,13 @@ class ViewportToolbar(
                 val timeScale = scene?.getComponent<TimeComponent>()?.timeScale ?: 1.0f
                 if (timeScale == 1.0f) {
                     if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        eventSystem.publish(SetSimulationTimeScale(0.0f))
+                        eventSystem.publish(SetRuntimePlaying(false))
                         logger.logEditor("Simulation paused")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.pause_simulation"))
                 } else {
                     if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        eventSystem.publish(SetSimulationTimeScale(1.0f))
+                        eventSystem.publish(SetRuntimePlaying(true))
                         logger.logEditor("Simulation resumed")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.resume_simulation"))

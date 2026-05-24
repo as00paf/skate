@@ -1,9 +1,8 @@
 package com.pafoid.skate.app
 
-import com.pafoid.skate.editor.EditorCamera
-import com.pafoid.skate.editor.EditorWorkspace
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.events.SceneAction
+import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.ProjectWizard
@@ -122,12 +121,7 @@ import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
 val appModule = module {
-    single { Engine() }
-    single { SystemManager() }
-    single { GameObjectManager() }
-    single<EngineLogger> { get<LoggerService>() }
-    single<IStringManager> { get<StringManager>() }
-    single<InputMappingsProvider> { get<SettingsManager>() }
+    // TODO: Fix
     single<SceneEventPublisher> {
         object : SceneEventPublisher {
             private val eventSystem: EventSystem = get()
@@ -149,12 +143,9 @@ val appModule = module {
             }
         }
     }
-    single<Physics3DFactory> { BulletPhysics3DFactory(get(), { get() }) }
-    single { SceneManager(get(), get(), get(), get()) }
     single { Serializer() }
-    single { LoggerService() }
-    single { AudioEngine(get()) }
     single { SceneSerializer(get(), get(), get(), get(), get()) }
+    single { PoseSerializer() }
     single { ClipboardService(get()) }
     single { EditorMutationGate(get(), get()) }
     single { UndoRedoManager(get(), get()) }
@@ -163,8 +154,6 @@ val appModule = module {
     single { DisplayService() }
     single { TrickManager() }
 
-    // EventSystem for editor event bus
-    single { EventSystem() }
     single(createdAtStart = true) { SceneActionHandler().also { it.init() } }
     single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get(), get()).also { it.init() } }
     single(createdAtStart = true) { EnvironmentActionHandler(get(), get()).also { it.init() } }
@@ -172,7 +161,6 @@ val appModule = module {
         ViewportActionHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
             .also { it.init() }
     }
-    single { CameraManager(get(), get(), get()) }
 
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get()) }
@@ -211,27 +199,12 @@ val appModule = module {
 
     // Editor Workspace
     single { EditorInputState() }
-    single { EditorCamera(Camera(), get(), get()) }
-    single {
-        EditorWorkspace(
-            get(),
-            get(),
-            get(),
-            GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()),
-            GridLines(get(), get(), get(), get()),
-            EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get()),
-            EditorEventHandler(get(), get(), get()),
-            AudioSystem(get(), get(), get(), get()),
-            InputSystem(get(), get(), get(), get(), get()),
-            AnimationSystem(get()),
-            PhysicsSystem(),
-            RagdollSystem(),
-            DayNightCycleSystem(null, get()),
-            EnvironmentSystem(get()),
-            DirectionalLightSystem(get()),
-            get(),
-        )
-    }
+    single { EditorCamera(Camera(), get()) }
+    single { CameraManager(get(), get(), get()) }
+    single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { EditorEventHandler(get(), get(), get()) }
+    single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { GridLines(get(), get(), get(), get()) }
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -258,16 +231,32 @@ val appModule = module {
     single { SearchEverywhereWindow(SearchHistory(serializer = get())) }
 }
 
-val inputModule = module {
+val engineModule = module {
+    // Core
+    single<IJobSystem> { DefaultJobSystem() }
+    single { EventSystem() }
+    single { LoggerService() }
+    single<EngineLogger> { get<LoggerService>() }
+    single<IStringManager> { get<StringManager>() }
+
+    single { AudioEngine(get()) }
+
+    // Input
     single { GamepadListener(get()) }
     single { KeyListener() }
     single { MouseListener(get()) }
     single<IInputProvider> { InputProvider(get(), get()) }
-}
-
-val engineModule = module {
-    single<IJobSystem> { DefaultJobSystem() }
     single<IInputBuffer> { InputBuffer() }
+
+    // Managers
+    single { BootManager(get(), get(), get(), get()) }
+    single { SystemManager() }
+    single { SceneManager(get(), get(), get(), get()) }
+    single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
+
+    single<InputMappingsProvider> { get<SettingsManager>() }
+
+    single<Physics3DFactory> { BulletPhysics3DFactory(get(), { get() }) }
     single { NativeLibraryLoader() }
     single { ShaderLoader(false) }
     single { VAOLoader() }
@@ -284,9 +273,6 @@ val engineModule = module {
     }
     single { AssetDatabaseImpl(get(), get(), get()) as AssetDatabase }
 
-    single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
-    single { PoseSerializer() }
-
     single { DebugRenderer(get(), get(), get()) }
     single { PickingRenderer(get(), get(), get()) }
     single { SplashRenderer(get()) }
@@ -295,7 +281,6 @@ val engineModule = module {
     single { ThumbnailCache(get()) }
     single { PrefabsGenerator(get(), get(), get(), get()) }
     single { EngineAssetCopier() }
-    single { SplashScreen() }
 
     // Render resources factory - created lazily when Renderer is requested
     single { RenderResourcesFactory(get(), get(), get(), get(), get(), get(), get<SplashRenderer>(), get()) }
@@ -303,5 +288,23 @@ val engineModule = module {
     // Renderer is created with the factory, initialization happens in BootManager
     single { Renderer(get()) }
 
-    single { BootManager(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { GameObjectManager() }
+    single { InputSystem(get(), get(), get(), get(), get()) }
+    single { AudioSystem(get(), get(), get(), get()) }
+
+    single {
+        Engine(
+            get(), get(), get(), get(), get(), listOf(
+                get<GameObjectManager>(), // Core
+                get<InputSystem>(),
+                get<AudioSystem>(),
+                EnvironmentSystem(get()),
+                PhysicsSystem(),
+                DayNightCycleSystem(null, get()),
+                DirectionalLightSystem(get()),
+                AnimationSystem(get()),
+                RagdollSystem(),
+            )
+        )
+    }
 }

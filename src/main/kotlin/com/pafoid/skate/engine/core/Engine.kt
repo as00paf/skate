@@ -1,31 +1,47 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.systems.System
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.util.concurrent.atomic.AtomicReference
 
-class Engine : KoinComponent {
-
-    private val bootManager: BootManager by inject()
-    private val sceneManager: SceneManager by inject()
-    private val renderer: Renderer by inject()
-    private val jobSystem: IJobSystem by inject()
+class Engine(
+    private val bootManager: BootManager,
+    private val sceneManager: SceneManager,
+    private val renderer: Renderer,
+    private val jobSystem: IJobSystem,
+    private val systemManager: SystemManager,
+    private val engineSystems: List<System>,
+) : KoinComponent {
 
     val engineState = AtomicReference(EngineState.BOOTING)
     var runtimePlaying = false
 
+    private var systemManagerStarted = false
+
     fun start() {
-        jobSystem.runOnMain { bootManager.boot(engineState) }
+        jobSystem.runOnMain {
+            renderer.initialize()
+            renderer.useFbo = true
+
+            bootManager.boot(engineState)
+        }
+
+        initializeSystems()
+    }
+
+    private fun initializeSystems() {
+        engineSystems.forEach {
+            systemManager.addSystem(it)
+        }
     }
 
     fun update(dt: Float) {
         if (engineState.get() == EngineState.RUNNING) {
             updateRunningState(dt)
-        } else {
-            bootManager.update(dt, engineState)
         }
 
         jobSystem.update()
@@ -36,6 +52,12 @@ class Engine : KoinComponent {
 
         val scene = sceneManager.currentScene
         if (scene != null) {
+            if (!systemManagerStarted) {
+                systemManager.start()
+                systemManagerStarted = true
+            }
+
+            systemManager.update(dt)
             scene.isRunning = runtimePlaying
             if (runtimePlaying) {
                 scene.update(dt)
@@ -49,5 +71,7 @@ class Engine : KoinComponent {
         if (engineState.get() != EngineState.RUNNING) return
         renderer.destroy()
         sceneManager.destroy()
+        systemManager.destroy()
+        systemManagerStarted = false
     }
 }

@@ -24,7 +24,7 @@ import kotlin.math.atan2
  * - Forward/right vector calculation
  *
  * For gameplay third-person camera, use [com.pafoid.skate.game.camera.GameCamera]
- * For editor navigation, use [com.pafoid.skate.editor.EditorCamera]
+ * For editor navigation, use [com.pafoid.skate.editor.gizmos.EditorCamera]
  */
 class Camera(
     val position: Vector3f = Vector3f(),
