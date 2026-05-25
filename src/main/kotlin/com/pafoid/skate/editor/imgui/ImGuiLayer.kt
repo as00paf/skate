@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -60,9 +61,6 @@ import imgui.type.ImInt
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.glfw.GLFW.GLFW_DECORATED
-import org.lwjgl.glfw.GLFW.GLFW_FALSE
-import org.lwjgl.glfw.GLFW.GLFW_TRUE
 import java.io.File
 
 class ImGuiLayer(
@@ -91,30 +89,11 @@ class ImGuiLayer(
     private var hadProjectLastFrame = false
     private var hasAttemptedAutoLoad = false
 
-    private lateinit var windowController: WindowController
-
-    private var needsDecorationUpdate = false
     private var layoutInitialized = false
 
     fun init(
         windowController: WindowController
     ) {
-        this.windowController = windowController
-        val glfwWindow = windowController.glfwWindow
-
-        GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
-            if (windowController.isFixingMaximize) return@glfwSetWindowMaximizeCallback
-
-            windowController.setLogicallyMaximized(maximized)
-            if (maximized) {
-                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
-                windowController.isFixingMaximize = true
-            } else {
-                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
-                onWindowDecorationChanged()
-            }
-        }
-
         createContext()
 
         with(getIO()) {
@@ -322,20 +301,14 @@ class ImGuiLayer(
             updatePlatformWindows()
             renderPlatformWindowsDefault()
             GLFW.glfwMakeContextCurrent(backupWindowPtr)
-        } else if (needsDecorationUpdate) {
-            val backupWindowPtr = GLFW.glfwGetCurrentContext()
-            updatePlatformWindows()
-            GLFW.glfwMakeContextCurrent(backupWindowPtr)
         }
-
-        needsDecorationUpdate = false
     }
 
     private fun setupDockSpace(currentScene: Scene?) {
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
 
         val viewport = getMainViewport()
-        val statusBarHeight = com.pafoid.skate.editor.imgui.data.UiConstants.STATUS_BAR_HEIGHT
+        val statusBarHeight = UiConstants.STATUS_BAR_HEIGHT
 
         setNextWindowPos(viewport.workPosX, viewport.workPosY, ImGuiCond.Always)
         setNextWindowSize(viewport.workSizeX, viewport.workSizeY - statusBarHeight, ImGuiCond.Always)
@@ -360,10 +333,6 @@ class ImGuiLayer(
         menuBar.render(currentScene)
 
         end()
-    }
-
-    fun onWindowDecorationChanged() {
-        needsDecorationUpdate = true
     }
 
     fun destroy() {

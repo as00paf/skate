@@ -158,6 +158,20 @@ class Window(
 
         // Set initial viewport for maximized window
         glViewport(0, 0, windowWidth, windowHeight)
+
+        GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
+            if (windowController.isFixingMaximize) return@glfwSetWindowMaximizeCallback
+
+            windowController.setLogicallyMaximized(maximized)
+            if (maximized) {
+                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_FALSE)
+                windowController.isFixingMaximize = true
+            } else {
+                GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
+                val backupWindowPtr = GLFW.glfwGetCurrentContext()
+                GLFW.glfwMakeContextCurrent(backupWindowPtr)
+            }
+        }
     }
 
     private fun setWindowIcon(iconPath: String) {
