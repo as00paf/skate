@@ -1,7 +1,13 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.events.ProjectEvent.*
+import com.pafoid.skate.editor.events.ProjectEvent.CloseProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectFailed
+import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectSucceeded
+import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectFailed
+import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -345,6 +351,10 @@ class ProjectWizardWindow(
         }
         eventSystem.subscribe<CreateProjectFailed> { event ->
             logger.logEngine("Failed to create project: ${event.reason}", LogLevel.ERROR)
+        }
+
+        eventSystem.subscribe<CloseProjectRequested> { event ->
+            wizard.resetForNewProject()
         }
     }
 }

@@ -19,7 +19,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
@@ -67,7 +66,6 @@ import org.lwjgl.glfw.GLFW.GLFW_TRUE
 import java.io.File
 
 class ImGuiLayer(
-    private val inputProvider: IInputProvider,
     private val settingsManager: SettingsManager,
     private val sceneManager: SceneManager,
     private val clipboardService: ClipboardService,
@@ -91,17 +89,12 @@ class ImGuiLayer(
 
     var isViewportMaximized = false
     private var hadProjectLastFrame = false
-    private var needsWizardReset = false
     private var hasAttemptedAutoLoad = false
 
     private lateinit var windowController: WindowController
 
     private var needsDecorationUpdate = false
     private var layoutInitialized = false
-
-    fun markWizardResetNeeded() {
-        needsWizardReset = true
-    }
 
     fun init(
         windowController: WindowController
@@ -173,7 +166,6 @@ class ImGuiLayer(
             projectSwitcher = windowRegistry.projectSwitcherDialog,
             windowController = windowController,
             projectWizard = windowRegistry.projectWizardWindow.wizard,
-            imguiLayer = this
         )
     }
 
@@ -246,11 +238,10 @@ class ImGuiLayer(
         } else if (projectManager.hasProject()) {
             windowRegistry.windows.forEach { window ->
                 if (!window.showFlag.get()) return@forEach
-
-                // Re-read current scene in case it was switched during the frame (e.g., tab bar click)
-                val activeScene = sceneManager.currentScene
                 when {
-                    window.requiresScene && activeScene != null -> (window.instance as? IWindowWithScene)?.imgui(activeScene)
+                    window.requiresScene && currentScene != null -> (window.instance as? IWindowWithScene)?.imgui(
+                        currentScene
+                    )
                     !window.requiresScene -> (window.instance as? IWindow)?.imgui(window.showFlag)
                 }
             }
@@ -260,11 +251,6 @@ class ImGuiLayer(
         }
 
         statusBar.render(currentScene)
-
-        if (needsWizardReset) {
-            windowRegistry.projectWizardWindow.wizard.resetForNewProject()
-            needsWizardReset = false
-        }
 
         processProjectStartupFlow()
 

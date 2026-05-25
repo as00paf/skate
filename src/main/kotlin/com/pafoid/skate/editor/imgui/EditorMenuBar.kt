@@ -33,18 +33,16 @@ class EditorMenuBar(
     private val projectSwitcher: ProjectSwitcherDialog,
     private val windowController: WindowController,
     private val projectWizard: ProjectWizard,
-    private val imguiLayer: ImGuiLayer
 ) {
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
 
     init {
         loadAppIconTexture()
-        initEventSubscriptions()
     }
 
     fun render(currentScene: Scene?) {
-        if (imgui.internal.ImGui.beginMenuBar()) {
+        if (ImGui.beginMenuBar()) {
             val barHeight = 48f
 
             renderAppIcon(barHeight)
@@ -52,7 +50,7 @@ class EditorMenuBar(
             renderProjectInfo(barHeight)
             windowControls.render()
 
-            imgui.internal.ImGui.endMenuBar()
+            ImGui.endMenuBar()
         }
     }
 
@@ -65,13 +63,6 @@ class EditorMenuBar(
 
             ImGui.setCursorPosY((barHeight - iconSize) / 2f)
             image(appIconTexId.toLong(), iconSize, iconSize)
-        }
-    }
-
-    private fun initEventSubscriptions() {
-        eventSystem.subscribe<ProjectEvent.Closed> {
-            // Project close clears ResourceManager textures; invalidate stale GL texture id.
-            appIconTexId = -1
         }
     }
 
@@ -120,7 +111,6 @@ class EditorMenuBar(
 
             if (projectManager.hasProject()) {
                 if (ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}")) {
-                    imguiLayer.markWizardResetNeeded()
                     eventSystem.publish(ProjectEvent.CloseProjectRequested)
                 }
             }

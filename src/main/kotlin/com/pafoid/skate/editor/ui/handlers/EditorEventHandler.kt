@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
 
+// TODO: Use undoRedoManager & commands
 class EditorEventHandler(
     private val sceneManager: SceneManager,
     private val eventSystem: EventSystem,
