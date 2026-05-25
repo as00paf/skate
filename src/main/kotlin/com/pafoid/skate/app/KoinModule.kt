@@ -1,7 +1,6 @@
 package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.data.EditorInputState
-import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.project.EngineAssetCopier
@@ -80,8 +79,6 @@ import com.pafoid.skate.engine.contracts.InputMappingsProvider
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneEventPublisher
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
@@ -121,28 +118,6 @@ import com.pafoid.skate.game.trick.TrickManager
 import org.koin.dsl.module
 
 val appModule = module {
-    // TODO: Fix
-    single<SceneEventPublisher> {
-        object : SceneEventPublisher {
-            private val eventSystem: EventSystem = get()
-
-            override fun publishOpened(scene: Scene) {
-                eventSystem.publish(SceneAction.Opened(scene))
-            }
-
-            override fun publishChanged() {
-                eventSystem.publish(SceneAction.Changed)
-            }
-
-            override fun publishClosing(scene: Scene) {
-                eventSystem.publish(SceneAction.Closing(scene))
-            }
-
-            override fun publishClosed(scene: Scene) {
-                eventSystem.publish(SceneAction.Closed(scene))
-            }
-        }
-    }
     single { Serializer() }
     single { SceneSerializer(get(), get(), get(), get(), get()) }
     single { PoseSerializer() }

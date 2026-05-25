@@ -1,14 +1,16 @@
 package com.pafoid.skate.engine.ecs
 
-import com.pafoid.skate.engine.contracts.EngineLogger
-import com.pafoid.skate.engine.contracts.EngineLogLevel
+import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.contracts.EngineLogLevel
+import com.pafoid.skate.engine.contracts.EngineLogger
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
 
 class SceneManager(
     private val logger: EngineLogger,
     private val resourceManager: ResourceManager,
-    private val sceneEventPublisher: SceneEventPublisher,
+    private val eventSystem: EventSystem,
     private val physics3DFactory: Physics3DFactory,
 ) {
 
@@ -35,8 +37,8 @@ class SceneManager(
         scene.start()
 
         // Publish scene opened event
-        sceneEventPublisher.publishOpened(scene)
-        sceneEventPublisher.publishChanged()
+        eventSystem.publish(SceneAction.Opened(scene))
+        eventSystem.publish(SceneAction.Changed)
 
         logger.logEngine("Scene ${scene.name} loaded and started.", EngineLogLevel.INFO)
     }
@@ -47,12 +49,7 @@ class SceneManager(
 
         activeSceneIndex = sceneIndex
         logger.logEditor("Switched to scene: ${currentScene?.name}", EngineLogLevel.ACTION)
-        sceneEventPublisher.publishChanged()
-    }
-
-    fun switchScene(index: Int) {
-        val scene = openScenes.getOrNull(index) ?: return
-        switchScene(scene)
+        eventSystem.publish(SceneAction.Changed)
     }
 
     fun closeScene(scene: Scene) {
@@ -67,10 +64,10 @@ class SceneManager(
 
         logger.logEditor("Destroying scene: ${sceneToClose.name}", EngineLogLevel.ACTION)
 
-        sceneEventPublisher.publishClosing(sceneToClose)
+        eventSystem.publish(SceneAction.Closing(scene))
         sceneToClose.destroyScene()
         openScenes.removeAt(index)
-        sceneEventPublisher.publishClosed(sceneToClose)
+        eventSystem.publish(SceneAction.Closed(scene))
 
         // Adjust active index
         if (openScenes.isEmpty()) {
@@ -81,7 +78,7 @@ class SceneManager(
             activeSceneIndex = (activeSceneIndex - 1).coerceAtLeast(0)
         }
 
-        sceneEventPublisher.publishChanged()
+        eventSystem.publish(SceneAction.Changed)
     }
 
     fun closeScene(index: Int) {

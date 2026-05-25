@@ -34,7 +34,7 @@ contracts:
 4. **Engine/editor boundary contracts** ❌ (known violations in active remediation)
    - Violations currently exist where engine code paths import editor packages
      - Engine systems use engine-owned interfaces (`InputMappingsProvider`, `LocalizationProvider`,
-       `EngineLogger`, `SceneEventPublisher`)
+       `EngineLogger`)
      - Editor/application adapters are bound through DI (Koin)
 
 ### Compliance Snapshot (A48.0.2 planning baseline)
