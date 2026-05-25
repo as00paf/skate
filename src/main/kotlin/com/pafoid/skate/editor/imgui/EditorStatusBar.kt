@@ -7,11 +7,8 @@ import imgui.ImGui
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
-class EditorStatusBar : KoinComponent {
-    private val stringManager: StringManager by inject()
+class EditorStatusBar(private val stringManager: StringManager) {
     val height = UiConstants.STATUS_BAR_HEIGHT
 
     fun render(currentScene: Scene?) {

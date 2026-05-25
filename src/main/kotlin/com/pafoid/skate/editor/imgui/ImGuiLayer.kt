@@ -80,7 +80,7 @@ class ImGuiLayer(
 
     private val eventSystem: EventSystem by inject()
     private val projectManager: ProjectManager by inject()
-    private val statusBar = EditorStatusBar()
+    private val statusBar = EditorStatusBar(stringManager)
     private lateinit var menuBar: EditorMenuBar
 
     private val tempVec2 = ImVec2()
