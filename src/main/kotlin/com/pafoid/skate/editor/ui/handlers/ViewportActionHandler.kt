@@ -19,6 +19,7 @@ import com.pafoid.skate.editor.commands.scene.DuplicateGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.SpawnPrefabCommand
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.SceneAction.ResetScene
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.ViewportAction.AddComponent
 import com.pafoid.skate.editor.events.ViewportAction.CreateCamera
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
@@ -51,6 +52,7 @@ import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
@@ -93,9 +95,22 @@ class ViewportActionHandler(
     private val cameraManager: CameraManager,
     private val systemManager: SystemManager,
     private val jobSystem: IJobSystem,
+    private val viewportRenderer: ViewportRenderer
 ) {
 
     fun init() {
+        eventSystem.subscribe<ViewportAction.GameObjectSelected> { event ->
+            sceneManager.currentScene?.selectedGameObject = event.gameObject
+        }
+
+        eventSystem.subscribe<ViewportAction.SelectionCleared> {
+            sceneManager.currentScene?.selectedGameObject = null
+        }
+
+        eventSystem.subscribe<ViewportAction.ScreenshotRequested> {
+            viewportRenderer.captureScreenshot()
+        }
+
         eventSystem.subscribe<CreateEmpty> { event ->
             handleCreateEmpty(event.scene)
         }

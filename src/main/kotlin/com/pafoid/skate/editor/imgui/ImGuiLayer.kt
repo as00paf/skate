@@ -1,13 +1,12 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.ProjectWizard
-import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
@@ -66,9 +65,7 @@ import java.io.File
 class ImGuiLayer(
     private val settingsManager: SettingsManager,
     private val sceneManager: SceneManager,
-    private val clipboardService: ClipboardService,
     private val stringManager: StringManager,
-    private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
     private val resourceManager: ResourceManager,
     private val windowRegistry: WindowRegistry,
@@ -80,8 +77,10 @@ class ImGuiLayer(
 
     private val eventSystem: EventSystem by inject()
     private val projectManager: ProjectManager by inject()
+    private val fileMenuBuilder: FileMenuBuilder by inject()
     private val editMenuBuilder: EditMenuBuilder by inject()
     private val viewMenuBuilder: ViewMenuBuilder by inject()
+    private val settingsMenuBuilder: SettingsMenuBuilder by inject()
     private val statusBar = EditorStatusBar(stringManager)
     private lateinit var menuBar: EditorMenuBar
 
@@ -114,18 +113,9 @@ class ImGuiLayer(
         val projectSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.project_settings" }?.showFlag ?: ImBoolean(false)
 
         menuBar = EditorMenuBar(
-            fileMenu = FileMenuBuilder(
-                stringManager,
-                eventSystem,
-                sceneManager,
-                windowController.glfwWindow
-            ),
+            fileMenu = fileMenuBuilder,
             editMenu = editMenuBuilder,
-            settingsMenu = SettingsMenuBuilder(
-                stringManager, settingsManager,
-                keyBindingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.keybindings" }?.showFlag ?: ImBoolean(false),
-                settingsShowFlag = editorSettingsShowFlag
-            ),
+            settingsMenu = settingsMenuBuilder,
             viewMenu = viewMenuBuilder,
             windowControls = WindowControlsRenderer(
                 windowRegistry.searchEverywhereWindow,
@@ -142,6 +132,10 @@ class ImGuiLayer(
             windowController = windowController,
             projectWizard = windowRegistry.projectWizardWindow.wizard,
         )
+
+        eventSystem.subscribe<EditorEvent.Exit> {
+            windowController.close()
+        }
     }
 
     private fun setupLayout(dockspaceId: Int) {

@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.EditorInputState
+import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.LoggerService
@@ -142,7 +143,7 @@ class EditorInputHandler(
 
         // Search
         if (ctrlDown && keyListener.keyBeginPress(GLFW.GLFW_KEY_P)) {
-            eventSystem.publish(ViewportAction.OpenSearch)
+            eventSystem.publish(EditorEvent.OpenSearch)
         }
 
         // Full Screen (By passes WindowRegistry)

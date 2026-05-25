@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.checkbox
@@ -13,31 +14,16 @@ import imgui.internal.ImGui.sliderFloat
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 
-/**
- * Builds the Settings menu with editor configuration options.
- * 
- * This component handles:
- * - Gamepad overlay settings
- * - Unit system selection
- * - Language selection
- * - Key bindings window
- * - Settings window
- * 
- * @param stringManager For localized menu strings
- * @param settingsManager For accessing and saving settings
- * @param keyBindingsWindow To open on menu click
- * @param settingsWindow To open on menu click
- */
 class SettingsMenuBuilder(
     private val stringManager: StringManager,
     private val settingsManager: SettingsManager,
-    private val keyBindingsShowFlag: ImBoolean,
-    private val settingsShowFlag: ImBoolean
+    private val windowRegistry: WindowRegistry,
 ) {
-    
-    /**
-     * Renders the Settings menu.
-     */
+    private val keyBindingsShowFlag: ImBoolean
+        get() = windowRegistry.windows.find { it.nameKey == "window.keybindings" }?.showFlag ?: ImBoolean(false)
+    private val settingsShowFlag: ImBoolean
+        get() = windowRegistry.windows.find { it.nameKey == "window.editor_settings" }?.showFlag ?: ImBoolean(false)
+
     fun render() {
         if (beginMenu(stringManager.getString("menu.settings"))) {
             renderGamepadSettings()

@@ -61,7 +61,6 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     object SelectionCleared : ViewportAction("editor.selection_cleared")
 
     // Windows
-    object OpenSearch : ViewportAction("editor.open_search")
     object ToggleFullScreen : ViewportAction("editor.toggle_fullscreen")
 
 }

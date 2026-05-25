@@ -32,6 +32,8 @@ import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
+import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
+import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
@@ -135,7 +137,22 @@ val appModule = module {
     single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get(), get()).also { it.init() } }
     single(createdAtStart = true) { EnvironmentActionHandler(get(), get()).also { it.init() } }
     single(createdAtStart = true) {
-        ViewportActionHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+        ViewportActionHandler(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get()
+        )
             .also { it.init() }
     }
 
@@ -179,17 +196,19 @@ val appModule = module {
     single { EditorCamera(Camera(), get()) }
     single { CameraManager(get(), get(), get()) }
     single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { EditorEventHandler(get(), get(), get(), get(), get()) }
+    single { EditorEventHandler(get(), get(), get(), get()) }
     single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { GridLines(get(), get(), get(), get()) }
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get()) }
 
     // Menu
     single { EditMenuBuilder(get(), get(), get(), get(), get()) }
     single { ViewMenuBuilder(get(), get()) }
+    single { FileMenuBuilder(get(), get(), get()) }
+    single { SettingsMenuBuilder(get(), get(), get()) }
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

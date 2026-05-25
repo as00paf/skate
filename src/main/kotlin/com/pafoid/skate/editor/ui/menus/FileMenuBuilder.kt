@@ -1,7 +1,10 @@
 package com.pafoid.skate.editor.ui.menus
 
-import com.pafoid.skate.editor.events.SceneAction
-import com.pafoid.skate.editor.events.SceneAction.*
+import com.pafoid.skate.editor.events.EditorEvent
+import com.pafoid.skate.editor.events.SceneAction.CreateRequested
+import com.pafoid.skate.editor.events.SceneAction.OpenRequested
+import com.pafoid.skate.editor.events.SceneAction.SaveAsRequested
+import com.pafoid.skate.editor.events.SceneAction.SaveRequested
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -11,7 +14,6 @@ import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem
 import imgui.internal.ImGui.separator
-import org.lwjgl.glfw.GLFW
 
 /**
  * Builds the File menu with scene management and application options.
@@ -28,7 +30,6 @@ class FileMenuBuilder(
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
     private val sceneManager: SceneManager,
-    private val glfwWindow: Long
 ) {
     
     /**
@@ -72,7 +73,7 @@ class FileMenuBuilder(
     
     private fun renderQuitItem() {
         if (menuItem("${Icons.TRASH} ${stringManager.getString("menu.file.quit")}")) {
-            GLFW.glfwSetWindowShouldClose(glfwWindow, true)
+            eventSystem.publish(EditorEvent.Exit)
         }
     }
 }
