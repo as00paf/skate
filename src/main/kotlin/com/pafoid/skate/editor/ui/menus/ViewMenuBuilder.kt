@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.imgui.data.EditorWindow
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.editor.systems.WindowRegistry
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.checkbox
 import imgui.internal.ImGui.endMenu
@@ -18,9 +19,12 @@ import imgui.internal.ImGui.endMenu
  */
 class ViewMenuBuilder(
     private val stringManager: StringManager,
-    private val editorWindows: List<EditorWindow>
+    private val windowRegistry: WindowRegistry,
 ) {
-    
+
+    private val editorWindows: List<EditorWindow>
+        get() = windowRegistry.windows
+
     /**
      * Renders the View menu.
      */

@@ -31,6 +31,8 @@ import com.pafoid.skate.editor.ui.handlers.ProjectActionHandler
 import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
+import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
+import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
@@ -184,6 +186,10 @@ val appModule = module {
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get()) }
+
+    // Menu
+    single { EditMenuBuilder(get(), get(), get(), get(), get()) }
+    single { ViewMenuBuilder(get(), get()) }
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

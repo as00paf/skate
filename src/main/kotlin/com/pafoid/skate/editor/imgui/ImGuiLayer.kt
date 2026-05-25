@@ -80,6 +80,8 @@ class ImGuiLayer(
 
     private val eventSystem: EventSystem by inject()
     private val projectManager: ProjectManager by inject()
+    private val editMenuBuilder: EditMenuBuilder by inject()
+    private val viewMenuBuilder: ViewMenuBuilder by inject()
     private val statusBar = EditorStatusBar(stringManager)
     private lateinit var menuBar: EditorMenuBar
 
@@ -118,19 +120,13 @@ class ImGuiLayer(
                 sceneManager,
                 windowController.glfwWindow
             ),
-            editMenu = EditMenuBuilder(
-                stringManager,
-                undoRedoManager,
-                clipboardService,
-                sceneManager,
-                eventSystem
-            ),
+            editMenu = editMenuBuilder,
             settingsMenu = SettingsMenuBuilder(
                 stringManager, settingsManager,
                 keyBindingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.keybindings" }?.showFlag ?: ImBoolean(false),
                 settingsShowFlag = editorSettingsShowFlag
             ),
-            viewMenu = ViewMenuBuilder(stringManager, windowRegistry.windows),
+            viewMenu = viewMenuBuilder,
             windowControls = WindowControlsRenderer(
                 windowRegistry.searchEverywhereWindow,
                 windowController,
