@@ -5,16 +5,9 @@ import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.WindowRegistry
-import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
-import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
-import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
-import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
-import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
@@ -63,26 +56,20 @@ import org.lwjgl.glfw.GLFW
 import java.io.File
 
 class ImGuiLayer(
-    private val settingsManager: SettingsManager,
     private val sceneManager: SceneManager,
     private val stringManager: StringManager,
     private val renderer: Renderer,
-    private val resourceManager: ResourceManager,
     private val windowRegistry: WindowRegistry,
+    private val eventSystem: EventSystem,
+    private val projectManager: ProjectManager,
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"
 
-    private val eventSystem: EventSystem by inject()
-    private val projectManager: ProjectManager by inject()
-    private val fileMenuBuilder: FileMenuBuilder by inject()
-    private val editMenuBuilder: EditMenuBuilder by inject()
-    private val viewMenuBuilder: ViewMenuBuilder by inject()
-    private val settingsMenuBuilder: SettingsMenuBuilder by inject()
+    private val menuBar: EditorMenuBar by inject()
     private val statusBar = EditorStatusBar(stringManager)
-    private lateinit var menuBar: EditorMenuBar
 
     private val tempVec2 = ImVec2()
 
@@ -109,33 +96,10 @@ class ImGuiLayer(
 
         ImGuiStyleManager.setupStyle()
 
-        val editorSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.editor_settings" }?.showFlag ?: ImBoolean(false)
-        val projectSettingsShowFlag = windowRegistry.windows.find { it.nameKey == "window.project_settings" }?.showFlag ?: ImBoolean(false)
-
-        menuBar = EditorMenuBar(
-            fileMenu = fileMenuBuilder,
-            editMenu = editMenuBuilder,
-            settingsMenu = settingsMenuBuilder,
-            viewMenu = viewMenuBuilder,
-            windowControls = WindowControlsRenderer(
-                windowRegistry.searchEverywhereWindow,
-                windowController,
-                stringManager,
-                editorSettingsShowFlag,
-                projectSettingsShowFlag
-            ),
-            stringManager = stringManager,
-            resourceManager = resourceManager,
-            projectManager = projectManager,
-            eventSystem = eventSystem,
-            projectSwitcher = windowRegistry.projectSwitcherDialog,
-            windowController = windowController,
-            projectWizard = windowRegistry.projectWizardWindow.wizard,
-        )
-
-        eventSystem.subscribe<EditorEvent.Exit> {
-            windowController.close()
-        }
+        windowController.onToggleMaximize = { maximized -> menuBar.setMaximized(maximized) }
+        eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
+        eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
+        eventSystem.subscribe<EditorEvent.ToggleMaximize> { windowController.toggleMaximize() }
     }
 
     private fun setupLayout(dockspaceId: Int) {

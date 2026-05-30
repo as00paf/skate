@@ -2,6 +2,7 @@ package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
+import com.pafoid.skate.editor.imgui.EditorMenuBar
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.ProjectWizard
@@ -36,6 +37,7 @@ import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
+import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
@@ -209,6 +211,8 @@ val appModule = module {
     single { ViewMenuBuilder(get(), get()) }
     single { FileMenuBuilder(get(), get(), get()) }
     single { SettingsMenuBuilder(get(), get(), get()) }
+    single { WindowControlsRenderer(get(), get(), get()) }
+    single { EditorMenuBar(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

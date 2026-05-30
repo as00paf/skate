@@ -1,9 +1,10 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
-import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
-import com.pafoid.skate.engine.core.WindowController
+import com.pafoid.skate.editor.systems.WindowRegistry
+import com.pafoid.skate.engine.core.EventSystem
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiStyleVar
@@ -14,28 +15,18 @@ import imgui.internal.ImGui.pushStyleVar
 import imgui.internal.ImGui.sameLine
 import imgui.type.ImBoolean
 
-/**
- * Renders the window control buttons (Settings, Search, Minimize, Maximize/Restore, Close).
- *
- * This component handles:
- * - Settings gear button with popup menu
- * - Search Everywhere button
- * - Window minimize button
- * - Window maximize/restore button
- * - Window close button (with red hover effect)
- *
- * @param searchEverywhereWindow To open on search button click
- * @param windowController For window operations
- * @param editorSettingsShowFlag Show flag for editor settings window
- * @param projectSettingsShowFlag Show flag for project settings window
- */
 class WindowControlsRenderer(
-    private val searchEverywhereWindow: SearchEverywhereWindow,
-    private val windowController: WindowController,
+    private val eventSystem: EventSystem,
     private val stringManager: StringManager,
-    private val editorSettingsShowFlag: ImBoolean,
-    private val projectSettingsShowFlag: ImBoolean
+    private val windowRegistry: WindowRegistry,
 ) {
+    private val projectSettingsShowFlag: ImBoolean
+        get() = windowRegistry.windows.find { it.nameKey == "window.project_settings" }?.showFlag ?: ImBoolean(false)
+
+    private val editorSettingsShowFlag: ImBoolean
+        get() = windowRegistry.windows.find { it.nameKey == "window.editor_settings" }?.showFlag ?: ImBoolean(false)
+
+    var isMaximized = true
 
     companion object {
         private const val BTN_SIZE = 40f
@@ -90,7 +81,7 @@ class WindowControlsRenderer(
 
     private fun renderSearchButton() {
         if (ImGui.button("${Icons.SEARCH}", BTN_SIZE, BTN_SIZE)) {
-            searchEverywhereWindow.open()
+            windowRegistry.searchEverywhereWindow.open()
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.search_everywhere_shortcut"))
@@ -99,18 +90,18 @@ class WindowControlsRenderer(
 
     private fun renderMinimizeButton() {
         if (ImGui.button(Icons.WINDOW_MINIMIZE, BTN_SIZE, BTN_SIZE)) {
-            windowController.minimize()
+            eventSystem.publish(EditorEvent.Minimize)
         }
     }
 
     private fun renderMaximizeRestoreButton() {
-        val maxRestoreIcon = if (windowController.isMaximized()) {
+        val maxRestoreIcon = if (isMaximized) {
             Icons.WINDOW_RESTORE
         } else {
             Icons.WINDOW_MAXIMIZE
         }
         if (ImGui.button(maxRestoreIcon, BTN_SIZE, BTN_SIZE)) {
-            windowController.toggleMaximize()
+            eventSystem.publish(EditorEvent.ToggleMaximize)
         }
     }
 
@@ -118,7 +109,7 @@ class WindowControlsRenderer(
         pushStyleColor(ImGuiCol.ButtonHovered, 0.83f, 0.13f, 0.17f, 1f)
         pushStyleColor(ImGuiCol.ButtonActive, 0.93f, 0.23f, 0.27f, 1f)
         if (ImGui.button(Icons.WINDOW_CLOSE, BTN_SIZE, BTN_SIZE)) {
-            windowController.close()
+            eventSystem.publish(EditorEvent.Exit)
         }
         popStyleColor(2)
     }

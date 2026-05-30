@@ -1,11 +1,13 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
@@ -15,7 +17,6 @@ import com.pafoid.skate.editor.ui.windows.ProjectSwitcherDialog
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImGui
 import imgui.internal.ImGui.image
@@ -30,10 +31,11 @@ class EditorMenuBar(
     private val resourceManager: ResourceManager,
     private val projectManager: ProjectManager,
     private val eventSystem: EventSystem,
-    private val projectSwitcher: ProjectSwitcherDialog,
-    private val windowController: WindowController,
-    private val projectWizard: ProjectWizard,
+    private val windowRegistry: WindowRegistry,
 ) {
+    private val projectSwitcher: ProjectSwitcherDialog = windowRegistry.projectSwitcherDialog
+    private val projectWizard: ProjectWizard = windowRegistry.projectWizardWindow.wizard
+
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
 
@@ -123,7 +125,7 @@ class EditorMenuBar(
 
             ImGui.separator()
             if (ImGui.menuItem(stringManager.getString("menu.file.quit"))) {
-                windowController.close()
+                eventSystem.publish(EditorEvent.Exit)
             }
             ImGui.endPopup()
         }
@@ -152,5 +154,9 @@ class EditorMenuBar(
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.switch_projects"))
         }
+    }
+
+    fun setMaximized(maximized: Boolean) {
+        windowControls.isMaximized = maximized
     }
 }

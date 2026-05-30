@@ -27,6 +27,7 @@ import org.lwjgl.system.MemoryUtil.NULL
 class WindowController(val glfwWindow: Long) {
 
     var isFixingMaximize = false
+    var onToggleMaximize: ((Boolean) -> Unit)? = null
 
     // Store window size before maximizing for proper restore
     private var preMaximizeWidth = 1920
@@ -103,6 +104,7 @@ class WindowController(val glfwWindow: Long) {
      */
     fun setLogicallyMaximized(maximized: Boolean) {
         this.isLogicallyMaximized = maximized
+        onToggleMaximize?.invoke(isMaximized())
     }
 
     /**
