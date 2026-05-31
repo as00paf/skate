@@ -1,11 +1,7 @@
 package com.pafoid.skate.engine.core
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.utils.Time
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR
@@ -59,11 +55,9 @@ import java.nio.ByteBuffer
 class Window(
     val width: Int = 1920,
     val height: Int = 1080,
-    val title: String
-): KoinComponent {
-
-    private val logger: LoggerService by inject()
-
+    val title: String,
+    val windowIcon: String? = null
+) {
     var glfwWindow: Long = -1L
     private var isFirstDraw = true
     private var windowWidth: Int = 1920
@@ -135,7 +129,7 @@ class Window(
         windowHeight = fbSizeHeight[0]
 
         // Set the window icon
-        setWindowIcon(Assets.Textures.APP_ICON)
+        windowIcon?.let { setWindowIcon(it) }
 
         // Make OpenGL context current
         glfwMakeContextCurrent(glfwWindow)
@@ -186,8 +180,7 @@ class Window(
             STBImage.stbi_set_flip_vertically_on_load(true) // Re-enable for other textures
 
             if (pixels == null) {
-                logger.logEngine("Failed to load image at path: $iconPath", LogLevel.ERROR)
-                return
+                throw IllegalStateException("Failed to load image at path: $iconPath")
             }
 
             val icon = GLFWImage.malloc(stack)
