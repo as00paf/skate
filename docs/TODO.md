@@ -76,6 +76,8 @@ engine lifecycle, DI composition, ECS/systems/components, and UI mutation flow.
   changes needed), `ImGuiLayer.kt` (no structural changes needed), `EditorScreen.kt` (no structural changes
   needed — guarded by `Main.kt` change). Full detail in ADR-ARCH-003 §5.
 - P0 approval gate is cleared. P1 may proceed.
+- **P1 complete (2026-05-31):** `Main.kt` guarded — `EditorScreen` only instantiated when `--editor` flag passed. `runtimeAdapterModule` extracted from `engineModule` in `KoinModule.kt`; three contract bindings (`EngineLogger`, `IStringManager`, `InputMappingsProvider`) no longer couple `engineModule` to `appModule`. `Engine.kt` KDoc added. Acceptance criteria met.
+- **Next: P2** — Full `KoinModule` split; `engineModule` must resolve standalone without `appModule`.
 
 **Known blockers/risks**
 

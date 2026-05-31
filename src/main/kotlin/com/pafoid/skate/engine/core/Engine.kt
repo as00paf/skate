@@ -8,6 +8,14 @@ import com.pafoid.skate.engine.utils.IJobSystem
 import org.koin.core.component.KoinComponent
 import java.util.concurrent.atomic.AtomicReference
 
+/**
+ * Core runtime engine. Manages the engine lifecycle (boot, update, destroy) and coordinates
+ * engine-owned systems via [SystemManager].
+ *
+ * **Runtime-only:** this class must not receive editor constructs directly. Editor systems
+ * (gizmos, grid, picking, ImGui) are registered by [com.pafoid.skate.app.EditorScreen] at the
+ * app-composition layer, not injected into this class.
+ */
 class Engine(
     private val bootManager: BootManager,
     private val sceneManager: SceneManager,
