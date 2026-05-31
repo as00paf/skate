@@ -4,6 +4,13 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.50.0.6] - 2026-05-31: A46.0.1 Closed — A48.0.2 Unblocked
+
+- A46.0.1 reviewed and closed by user.
+- A48.0.2 Editor/Engine Separation Refactor unblocked and In Progress.
+
+---
+
 ## [v0.50.0.5] - 2026-05-31: A46.0.1 — Context menus and drag/drop improvements
 
 ### Summary

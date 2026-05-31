@@ -17,9 +17,9 @@ This file contains **near-future tasks** that are ready for execution and alread
 
 | ID      | Title                                               | Status      | Why now                                                                                                            |
 |---------|-----------------------------------------------------|-------------|--------------------------------------------------------------------------------------------------------------------|
-| A48.0.2 | Editor/Engine Separation Refactor (Main.kt-down)    | Blocked     | Critical layering and lifecycle coupling violations block safe feature work and invalidate architecture contracts. |
+| A48.0.2 | Editor/Engine Separation Refactor (Main.kt-down)    | In Progress | Critical layering and lifecycle coupling violations block safe feature work and invalidate architecture contracts. |
 | A48.0.1 | Comprehensive Feature & Code Audit                  | In Progress | AUD-002 remains deferred pending A48.0.2; all other findings resolved or verified.                                |
-| A46.0.1 | Engine UI & Editor Tooling Revamp (remaining scope) | In Progress | Core usability/workflow debt still impacts daily iteration speed.                                                  |
+| A46.0.1 | Engine UI & Editor Tooling Revamp (remaining scope) | ✅ Closed   | All subtasks complete and reviewed.                                                                               |
 | A46.0.2 | Advanced Lighting Models                            | Planned     | Next major rendering capability on Phase 2 path.                                                                   |
 | A46.0.3 | Post-Processing Stack                               | Planned     | Depends on render foundations and follows lighting work.                                                           |
 | A46.0.4 | Advanced Material System                            | Planned     | Needed for scalable shading workflows and content authoring consistency.                                           |
@@ -65,10 +65,22 @@ engine lifecycle, DI composition, ECS/systems/components, and UI mutation flow.
 9. Publish closure docs and status synchronization across planning/architecture docs (`P6`) — **Owner:
    documentation-engineer**.
 
+**P0 output (completed 2026-05-29)**
+
+- Boundary target map, violation inventory, and migration sequence: `docs/ADR-ARCH-003-engine-editor-boundary.md`
+- **Startup mode decision:** Single binary with `--editor` mode flag. Runtime-only is the default; editor
+  composition (`appModule`, `EditorScreen`, `ImGuiLayer`) is only loaded when `--editor` is passed to `main()`.
+  See ADR-ARCH-003 §3 for full rationale.
+- 15 concrete violations inventoried (V-01 – V-15): 4 Critical, 8 High, 3 misclassification.
+- P1a kickoff tranche defined: `Main.kt` (flag + guard), `Engine.kt` (no changes needed), `Window.kt` (no
+  changes needed), `ImGuiLayer.kt` (no structural changes needed), `EditorScreen.kt` (no structural changes
+  needed — guarded by `Main.kt` change). Full detail in ADR-ARCH-003 §5.
+- P0 approval gate is cleared. P1 may proceed.
+
 **Known blockers/risks**
 
-- Startup mode ownership decision (single binary mode switch vs separate launch targets) must be finalized in `P0`.
-- DI split may expose hidden circular dependencies between editor windows and engine services.
+- ~~Startup mode ownership decision~~ — resolved: single binary with `--editor` flag (ADR-ARCH-003 §3).
+- DI split (P2) may expose hidden circular dependencies between editor windows and engine services.
 - Guard tests must be broadened before claiming contract compliance.
 
 ---
