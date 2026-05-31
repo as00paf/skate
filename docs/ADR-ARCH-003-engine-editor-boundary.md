@@ -112,67 +112,22 @@ editor/render/ (after P3/P4 migration)
 
 ## 3. Startup Mode Decision
 
-### Decision: **Single binary with `--editor` mode flag**
+### Decision: **Separate entry points — DEFERRED**
 
-Runtime-only is the **default**. Passing `--editor` at launch enables the full editor composition.
+The chosen approach is separate entry point files (`Main.kt` for the exported game/runtime, a dedicated editor entry point for the editor). This is cleaner than a runtime flag and avoids shipping editor code in the game binary.
 
-### Rationale
+**Deferral rationale:** Entry point separation is not needed until the engine feature set is complete. All engine/editor boundary violations (V-01 through V-15) can be fixed independently of entry point structure. Entry point split will be implemented as a separate task once all features are shipped.
 
-1. **Minimal P1 footprint.** The only structural change is a flag check in `Main.kt` and conditional Koin module
-   loading. No new build targets, no second `main()`, no abstraction layers added before the boundary is clean.
+**Impact on P1:** P1 scope is reduced. `Main.kt` is **not touched** in the current refactor. The entry point remains editor-only for now. P1 is replaced by jumping directly to P2 (DI decomposition) and P3 (import decontamination), which fix the actual violation root causes regardless of how entry points are eventually structured.
 
-2. **Correct default.** Shipped games run without an editor. Runtime-only should be the zero-overhead path.
+### What P2–P4 must still achieve
 
-3. **Single binary model matches industry precedent** (Godot, Unity Player vs Editor). Both modes coexist in
-   one artifact; the deployment context controls the mode.
+Even without the entry point split, the following must be true:
+- `engineModule` must be able to resolve its own bindings without depending on `appModule` (P2)
+- No `editor/**` imports in `engine/**` packages (P3)
+- Editor-only systems live in `editor/` packages (P4)
 
-4. **DI composition is the natural selection point.** `main()` inspects args, loads `engineModule` (always) and
-   `appModule` (editor mode only). This makes the module boundary the authority, not a runtime flag scattered
-   across systems.
-
-5. **Against "separate composition roots":** Would require two build targets and duplicate entry points.
-   The current single-binary lifecycle is correct; only the composition needs to be guarded.
-
-6. **Against "abstract bootstrap / IStartupProfile":** Over-engineered for the current violation scope. The
-   `IStartupProfile` pattern is valuable when there are 3+ startup profiles; right now there are two. Add it
-   in a future ADR if a third profile (headless server, test harness) emerges.
-
-### Concrete implementation contract for P1
-
-```kotlin
-// Main.kt — after P1a
-fun main(args: Array<String>) {
-    val editorMode = "--editor" in args
-
-    val modules = if (editorMode) listOf(engineModule, appModule) else listOf(engineModule)
-    val app = startKoin { modules(modules) }
-
-    val engine = app.koin.get<Engine>()
-    val window = Window(title = "PAFSK8", windowIcon = Assets.Textures.APP_ICON)
-
-    engine.start()
-
-    if (editorMode) {
-        val editorScreen = EditorScreen(window)
-        editorScreen.init()
-        window.show { dt ->
-            engine.update(dt)
-            editorScreen.update(dt)
-        }
-        editorScreen.destroy()
-    } else {
-        window.show { dt -> engine.update(dt) }
-    }
-
-    engine.destroy()
-}
-```
-
-> **Note:** The `appModule` and `engineModule` split in `KoinModule.kt` (P2) must ensure `engineModule`
-> can resolve all its own bindings (`EngineLogger`, `IStringManager`, `InputMappingsProvider`) without
-> requiring `appModule` to be present. This means the engine must either: (a) provide no-op/default
-> runtime implementations of these contracts in `engineModule`, or (b) bind them via a dedicated
-> `runtimeAdapterModule` included in both modes. Decision for P2 execution.
+These are the violations that matter for code quality and maintainability, independent of deployment topology.
 
 ---
 

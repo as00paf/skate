@@ -42,28 +42,23 @@ engine lifecycle, DI composition, ECS/systems/components, and UI mutation flow.
 
 | Phase | Scope                                                                                                | Dependencies     | Owner                  | Acceptance criteria                                                                                                                                                             |
 |-------|------------------------------------------------------------------------------------------------------|------------------|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| P0    | Baseline + architecture decisions (violation inventory, boundary target map, migration order)        | A48.0.1 findings | tech-lead              | Approved boundary map exists for `Main.kt -> app modules -> engine/core -> engine/render -> engine/ecs`; decision log resolves startup mode strategy and adapter boundaries.    |
-| P1    | Bootstrap/runtime split at entrypoint and engine loop                                                | P0               | software-engineer      | Engine runtime starts without direct editor construct wiring (`EditorWorkspace`, `ImGuiLayer`) in runtime lifecycle path; startup mode selection moved to composition boundary. |
-| P1a   | **Kickoff file tranche**: `Main.kt`, `Engine.kt`, `Window.kt`, `ImGuiLayer.kt`, `EditorWorkspace.kt` | P1               | software-engineer      | Initial decoupling lands first in these five files, with boundary ownership made explicit before widening to package-level cleanup.                                             |
-| P2    | DI decomposition (`KoinModule` split into runtime/editor composition roots)                          | P1               | software-engineer      | Monolithic module replaced by separated runtime/editor modules; engine module graph resolves without importing editor packages.                                                 |
-| P3    | Engine package decontamination (`engine/core`, `engine/render`, `engine/ecs`)                        | P2               | software-engineer      | No direct `editor/**` imports remain in targeted engine packages; editor-dependent behavior consumed via engine-owned interfaces/adapters.                                      |
-| P4    | ECS/editor concern extraction + mutation pipeline closure                                            | P3               | software-engineer      | ECS components/systems no longer contain editor ImGui/string/settings logic; remaining direct state mutations in windows/handlers replaced by `Event -> Handler -> Command`.    |
-| P5    | Guardrail verification hardening                                                                     | P4               | qa-engineer            | Layering and mutation guard tests catch known violation classes (imports, lifecycle coupling, direct mutation paths); CI gate definition updated to require new tests.          |
-| P6    | Documentation reconciliation + closure report                                                        | P5               | documentation-engineer | `ECS_ARCHITECTURE`, guardrails, roadmap, and TODO reflect actual status and closure evidence; no document claims boundary cleanliness before verification sign-off.             |
+| P0    | Baseline + architecture decisions (violation inventory, boundary target map, migration order)        | A48.0.1 findings | tech-lead              | ✅ Complete. `docs/ADR-ARCH-003-engine-editor-boundary.md` delivered.                                                                                                           |
+| P1    | ~~Bootstrap/runtime split at entrypoint~~ — **DEFERRED**                                             | —                | —                      | Entry point separation deferred until feature-complete. Separate entry files (`Main.kt` game / editor entry) to be implemented as a post-feature task.                          |
+| P2    | DI decomposition — `engineModule` resolves standalone; editor tools moved to `appModule`             | P0               | software-engineer      | `startKoin { modules(engineModule) }` starts without missing definitions; no `editor/**` type referenced in `engineModule`.                                                     |
+| P3    | Engine package decontamination (`engine/core`, `engine/render`, `engine/ecs`)                        | P2               | software-engineer      | `grep -r "import com.pafoid.skate.editor" engine/` returns zero results; new `ISettingsProvider`/`ICameraProvider` contracts in place.                                          |
+| P4    | ECS/editor concern extraction — misclassified systems moved to `editor/` packages                    | P3               | software-engineer      | `GizmoSystem`, `GridLines` in `editor/systems/`; `ThumbnailRenderer`, `PickingRenderer` in `editor/render/`; `engine/` packages contain no editor-only tools.                  |
+| P5    | Guardrail verification hardening                                                                     | P4               | qa-engineer            | Layering guard tests catch known violation classes; CI gate updated.                                                                                                            |
+| P6    | Documentation reconciliation + closure report                                                        | P5               | documentation-engineer | All architecture docs reflect actual clean state.                                                                                                                               |
 
 **Execution tasks (single-agent, dependency-ordered)**
 
-1. Author approved boundary target map and migration sequence (`P0`) — **Owner: tech-lead**.
-2. Define runtime/editor bootstrap contract from `Main.kt` downward (`P1`) — **Owner: tech-lead**.
-3. Implement bootstrap split and lifecycle decoupling (`P1`) — **Owner: software-engineer**.
-4. Execute kickoff tranche in `Main.kt`, `Engine.kt`, `Window.kt`, `ImGuiLayer.kt`, `EditorWorkspace.kt` (`P1a`) — *
-   *Owner: software-engineer**.
-5. Split Koin composition roots and dependency graph checks (`P2`) — **Owner: software-engineer**.
-6. Remove editor imports from engine core/render/ecs using adapter interfaces (`P3`) — **Owner: software-engineer**.
-7. Extract editor-only ECS logic and complete mutation pipeline refactors (`P4`) — **Owner: software-engineer**.
-8. Expand layering/mutation guardrail tests and add regression fixtures (`P5`) — **Owner: qa-engineer**.
-9. Publish closure docs and status synchronization across planning/architecture docs (`P6`) — **Owner:
-   documentation-engineer**.
+1. ✅ Author approved boundary target map and migration sequence (`P0`) — **Owner: tech-lead**.
+2. ~~Define runtime/editor bootstrap contract~~ — **P1 deferred** (separate entry points, post-feature).
+3. Split `KoinModule` — `engineModule` standalone, editor tools to `appModule` (`P2`) — **Owner: software-engineer**.
+4. Remove `editor/**` imports from `engine/` using existing + new contracts (`P3`) — **Owner: software-engineer**.
+5. Move `GizmoSystem`, `GridLines`, `ThumbnailRenderer`, `PickingRenderer` to `editor/` packages (`P4`) — **Owner: software-engineer**.
+6. Expand layering guard tests (`P5`) — **Owner: qa-engineer**.
+7. Reconcile all architecture docs (`P6`) — **Owner: documentation-engineer**.
 
 **P0 output (completed 2026-05-29)**
 
@@ -75,7 +70,9 @@ engine lifecycle, DI composition, ECS/systems/components, and UI mutation flow.
 - P1a kickoff tranche defined: `Main.kt` (flag + guard), `Engine.kt` (no changes needed), `Window.kt` (no
   changes needed), `ImGuiLayer.kt` (no structural changes needed), `EditorScreen.kt` (no structural changes
   needed — guarded by `Main.kt` change). Full detail in ADR-ARCH-003 §5.
-- P0 approval gate is cleared. P1 may proceed.
+- P0 approval gate is cleared.
+- **P1 deferred** — separate entry points (game vs editor) to be added post-feature. `Main.kt` is not touched in this refactor cycle.
+- **Next: P2** — `KoinModule` split; `engineModule` must resolve standalone without `appModule`.
 
 **Known blockers/risks**
 
