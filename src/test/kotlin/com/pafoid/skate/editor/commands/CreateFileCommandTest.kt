@@ -4,6 +4,8 @@ import com.pafoid.skate.editor.commands.project.CreateFileCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -21,6 +23,7 @@ class CreateFileCommandTest {
 
         assertTrue(file.exists())
         assertTrue(command.wasSuccessful())
+        assertNull(command.getFailureReason())
 
         command.undo()
 
@@ -57,6 +60,7 @@ class CreateFileCommandTest {
         command.execute()
 
         assertFalse(command.wasSuccessful())
+        assertNotNull(command.getFailureReason())
         assertTrue(file.exists())
         tempDir.deleteRecursively()
     }
@@ -70,6 +74,7 @@ class CreateFileCommandTest {
 
         command.execute()
         assertTrue(command.wasSuccessful())
+        assertNull(command.getFailureReason())
         assertTrue(nestedFile.exists())
         assertTrue(nestedFile.parentFile.exists())
 

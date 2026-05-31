@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -249,6 +250,97 @@ class ProjectActionHandlerTest {
 
         verify(exactly = 1) { undoRedoManager.executeCommand(any()) }
         verify(exactly = 1) { projectManager.loadLastProject() }
+    }
+
+    @Test
+    fun `create file publishes operation failed event when command fails`() {
+        val tempDir = Files.createTempDirectory("project-action-create-fail").toFile()
+        val existing = tempDir.resolve("existing.txt")
+        existing.writeText("content")
+        val eventSystem = EventSystem()
+        val projectManager = mockk<ProjectManager>(relaxed = true)
+        val undoRedoManager = mockk<UndoRedoManager>()
+        val logger = mockk<LoggerService>(relaxed = true)
+        every { undoRedoManager.executeCommand(any()) } answers {
+            firstArg<Command>().execute()
+        }
+
+        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
+        handler.init()
+        var failedEvent: FileSystemEvent.FileSystemOperationFailed? = null
+        var changedEvents = 0
+        eventSystem.subscribe<FileSystemEvent.FileSystemOperationFailed> { failedEvent = it }
+        eventSystem.subscribe<FileSystemEvent.FileSystemChangedEvent> { changedEvents++ }
+
+        eventSystem.publish(CreateFileRequested(existing.absolutePath, false))
+
+        assertNotNull(failedEvent)
+        assertEquals("create", failedEvent?.operation)
+        assertEquals(existing.absolutePath, failedEvent?.path)
+        assertNotNull(failedEvent?.reason)
+        assertEquals(0, changedEvents)
+        tempDir.deleteRecursively()
+    }
+
+    @Test
+    fun `rename file publishes operation failed event when command fails`() {
+        val tempDir = Files.createTempDirectory("project-action-rename-fail-event").toFile()
+        val source = tempDir.resolve("source.txt")
+        val existingTarget = tempDir.resolve("target.txt")
+        source.writeText("source")
+        existingTarget.writeText("target")
+        val eventSystem = EventSystem()
+        val projectManager = mockk<ProjectManager>(relaxed = true)
+        val undoRedoManager = mockk<UndoRedoManager>()
+        val logger = mockk<LoggerService>(relaxed = true)
+        every { undoRedoManager.executeCommand(any()) } answers {
+            firstArg<Command>().execute()
+        }
+
+        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
+        handler.init()
+        var failedEvent: FileSystemEvent.FileSystemOperationFailed? = null
+        var changedEvents = 0
+        eventSystem.subscribe<FileSystemEvent.FileSystemOperationFailed> { failedEvent = it }
+        eventSystem.subscribe<FileSystemEvent.FileSystemChangedEvent> { changedEvents++ }
+
+        eventSystem.publish(RenameFileRequested(source.absolutePath, existingTarget.name))
+
+        assertNotNull(failedEvent)
+        assertEquals("rename", failedEvent?.operation)
+        assertEquals(source.absolutePath, failedEvent?.path)
+        assertNotNull(failedEvent?.reason)
+        assertEquals(0, changedEvents)
+        tempDir.deleteRecursively()
+    }
+
+    @Test
+    fun `delete file publishes operation failed event when command fails`() {
+        val tempDir = Files.createTempDirectory("project-action-delete-fail-event").toFile()
+        val missing = tempDir.resolve("missing.txt")
+        val eventSystem = EventSystem()
+        val projectManager = mockk<ProjectManager>(relaxed = true)
+        val undoRedoManager = mockk<UndoRedoManager>()
+        val logger = mockk<LoggerService>(relaxed = true)
+        every { undoRedoManager.executeCommand(any()) } answers {
+            firstArg<Command>().execute()
+        }
+
+        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
+        handler.init()
+        var failedEvent: FileSystemEvent.FileSystemOperationFailed? = null
+        var changedEvents = 0
+        eventSystem.subscribe<FileSystemEvent.FileSystemOperationFailed> { failedEvent = it }
+        eventSystem.subscribe<FileSystemEvent.FileSystemChangedEvent> { changedEvents++ }
+
+        eventSystem.publish(DeleteFileRequested(missing.absolutePath))
+
+        assertNotNull(failedEvent)
+        assertEquals("delete", failedEvent?.operation)
+        assertEquals(missing.absolutePath, failedEvent?.path)
+        assertNotNull(failedEvent?.reason)
+        assertEquals(0, changedEvents)
+        tempDir.deleteRecursively()
     }
 
     private class QueuedMainJobSystem : IJobSystem {

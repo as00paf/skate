@@ -29,5 +29,5 @@ class CreateProjectCommand(
 
     override fun wasSuccessful(): Boolean = executeSucceeded
 
-    fun getFailureReason(): String? = failureReason
+    override fun getFailureReason(): String? = failureReason
 }

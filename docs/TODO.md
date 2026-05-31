@@ -88,12 +88,27 @@ Audit implemented features and associated code paths to identify regressions, co
 **Current phase status**
 - Pass 1 completed: critical-path audit produced initial findings.
 - Full audit completed: expanded QA + reviewer findings consolidated and prioritized.
-- Gate: **No-Go for release quality** until critical findings are fixed.
+- Remediation complete: all 16 original findings (AUD-001 to AUD-016) implemented.
+- QA pass completed 2026-05-30. AUD-001, AUD-003, AUD-006 verified. AUD-004, AUD-017 resolved. AUD-002 deferred.
+- Gate: **One open item** — AUD-002 (scene open architectural issue) deferred to A48.0.2. A48.0.1 otherwise complete.
 
-**Current critical findings**
-1. Screenshot trigger path incomplete (toolbar button does not invoke capture).
-2. Project window scene-open event published but no subscriber path found.
-3. `DeleteFileCommand` contains unsafe `!!` usage.
+**Open findings (block A48.0.1 closure)**
+
+| ID | Title | Severity | Decision |
+|---|---|---|---|
+| AUD-002 | Scene open from ProjectWindow not working end-to-end | Critical | Deferred — root cause requires architectural work; expected to resolve during A48.0.2 |
+
+**Resolved (2026-05-30)**
+- ~~AUD-004~~: Filesystem command errors now surface via `FileSystemOperationFailed` event → `ProjectWindow` inline error display.
+- ~~AUD-017~~: `DeleteFileCommand` now uses system temp dir; no `.trash_*` artifacts in project folder.
+
+**Verified (QA confirmed 2026-05-30)**
+- ~~AUD-001~~: Screenshot trigger wired and working end-to-end.
+- ~~AUD-003~~: `DeleteFileCommand` null-safe; no crash on delete.
+- ~~AUD-006~~: Screenshot filenames unique under rapid capture.
+
+**Deferred**
+- AUD-005: Undo of directory creation safety — low priority, moved to backlog.
 
 **Tracking artifacts**
 - `docs/FEATURE_AND_CODE_AUDIT_PLAN.md`

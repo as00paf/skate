@@ -54,15 +54,15 @@ class ProjectActionHandler(
         }
         eventSystem.subscribe<CreateFileRequested> { event ->
             val command = CreateFileCommand(event.path, event.isDirectory, logger)
-            executeAndPublishOnSuccess(command, event.path)
+            executeAndPublishOnSuccess(command, event.path, "create")
         }
         eventSystem.subscribe<RenameFileRequested> { event ->
             val command = RenameFileCommand(event.path, event.newName, logger)
-            executeAndPublishOnSuccess(command, event.path)
+            executeAndPublishOnSuccess(command, event.path, "rename")
         }
         eventSystem.subscribe<DeleteFileRequested> { event ->
             val command = DeleteFileCommand(event.path, logger)
-            executeAndPublishOnSuccess(command, event.path)
+            executeAndPublishOnSuccess(command, event.path, "delete")
         }
         eventSystem.subscribe<CloseProjectRequested> {
             executeOnMainThread {
@@ -86,9 +86,14 @@ class ProjectActionHandler(
         }
     }
 
-    private fun executeAndPublishOnSuccess(command: ExecutionTrackedCommand, affectedPath: String) {
+    private fun executeAndPublishOnSuccess(command: ExecutionTrackedCommand, affectedPath: String, operation: String) {
         undoRedoManager.executeCommand(command)
         if (!command.wasSuccessful()) {
+            eventSystem.publish(FileSystemEvent.FileSystemOperationFailed(
+                path = affectedPath,
+                operation = operation,
+                reason = command.getFailureReason() ?: "Unknown error"
+            ))
             return
         }
         eventSystem.publish(FileSystemEvent.FileSystemChangedEvent(affectedPath))

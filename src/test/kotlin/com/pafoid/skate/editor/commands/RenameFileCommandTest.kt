@@ -4,6 +4,8 @@ import com.pafoid.skate.editor.commands.project.RenameFileCommand
 import com.pafoid.skate.editor.systems.LoggerService
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -22,6 +24,7 @@ class RenameFileCommandTest {
         command.execute()
 
         assertTrue(command.wasSuccessful())
+        assertNull(command.getFailureReason())
         assertFalse(original.exists())
         assertTrue(renamed.exists())
 
@@ -45,6 +48,7 @@ class RenameFileCommandTest {
         command.execute()
 
         assertFalse(command.wasSuccessful())
+        assertNotNull(command.getFailureReason())
         assertTrue(original.exists())
         assertTrue(destination.exists())
         tempDir.deleteRecursively()
@@ -62,6 +66,7 @@ class RenameFileCommandTest {
         command.undo()
 
         assertFalse(command.wasSuccessful())
+        assertNotNull(command.getFailureReason())
         assertTrue(original.exists())
         tempDir.deleteRecursively()
     }

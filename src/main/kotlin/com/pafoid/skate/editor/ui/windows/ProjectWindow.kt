@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ProjectEvent.*
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.FileSystemScanner
 import com.pafoid.skate.editor.systems.FileTypeResolver
@@ -71,6 +72,18 @@ class ProjectWindow(
     private var treeCache: List<FileSystemItem> = emptyList()
     private var needsRefresh = true
 
+    // Last filesystem operation error — cleared when a successful operation completes
+    private var lastOperationError: String? = null
+
+    init {
+        eventSystem.subscribe<FileSystemEvent.FileSystemOperationFailed> { event ->
+            lastOperationError = stringManager.getString("lbl.project.filesystem_error", event.operation, event.reason)
+        }
+        eventSystem.subscribe<FileSystemEvent.FileSystemChangedEvent> {
+            lastOperationError = null
+        }
+    }
+
     // Cached status bar counts — only recalculate when treeCache changes
     private var statusFileCount = 0
     private var statusFolderCount = 0
@@ -102,6 +115,12 @@ class ProjectWindow(
                 treeCache = fileSystemScanner.scanProject()
                 needsRefresh = false
                 statusTreeVersion++  // Invalidate status cache
+            }
+
+            // ── Error Display ──
+            lastOperationError?.let { errorMsg ->
+                MImGui.errorText("${Icons.WINDOW_CLOSE} $errorMsg")
+                separator()
             }
 
             // ── Search ──

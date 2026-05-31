@@ -16,12 +16,15 @@ class CreateFileCommand(
     private val file = File(filePath)
     private var wasCreated = false
     private var executeSucceeded = false
+    private var failureReason: String? = null
 
     override fun execute() {
         executeSucceeded = false
         wasCreated = false
+        failureReason = null
 
         if (file.exists()) {
+            failureReason = "path already exists: ${file.name}"
             logger.logEditor("Create skipped, path already exists: ${file.absolutePath}")
             return
         }
@@ -34,12 +37,14 @@ class CreateFileCommand(
                 if (parent != null && !parent.exists()) {
                     val parentCreated = parent.mkdirs()
                     if (!parentCreated && !parent.exists()) {
+                        failureReason = "failed to create parent directory for: ${file.name}"
                         logger.logEditor("Failed to create parent directory for: ${file.absolutePath}")
                         false
                     } else {
                         file.createNewFile()
                     }
                 } else if (parent != null && !parent.isDirectory) {
+                    failureReason = "parent is not a directory: ${file.name}"
                     logger.logEditor("Failed to create: ${file.name} — parent is not a directory")
                     false
                 } else {
@@ -48,17 +53,20 @@ class CreateFileCommand(
             }
 
             if (!wasCreated) {
+                if (failureReason == null) failureReason = "failed to create: ${file.name}"
                 logger.logEditor("Failed to create: ${file.name}")
                 return
             }
 
             if (isDirectory && !file.isDirectory) {
+                failureReason = "failed to create directory: ${file.name}"
                 logger.logEditor("Failed to create directory: ${file.name}")
                 wasCreated = false
                 return
             }
 
             if (!isDirectory && !file.isFile) {
+                failureReason = "failed to create file: ${file.name}"
                 logger.logEditor("Failed to create file: ${file.name}")
                 wasCreated = false
                 return
@@ -67,6 +75,7 @@ class CreateFileCommand(
             executeSucceeded = true
             logger.logEditor("Created: ${file.name}")
         } catch (e: Exception) {
+            failureReason = e.message ?: "unexpected error during create"
             logger.logEditor("Failed to create: ${file.name} — ${e.message}")
             wasCreated = false
             executeSucceeded = false
@@ -97,6 +106,8 @@ class CreateFileCommand(
     }
 
     override fun wasSuccessful(): Boolean = executeSucceeded
+
+    override fun getFailureReason(): String? = failureReason
 
     override fun getDisplayName(): String = "Create ${if (isDirectory) "Folder" else "File"} ${file.name}"
     override fun getTargetName(): String? = file.name

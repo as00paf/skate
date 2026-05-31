@@ -6,6 +6,8 @@ import com.pafoid.skate.editor.systems.LoggerService
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -24,7 +26,9 @@ class DeleteFileCommandTest {
 
         assertFalse(file.exists())
         assertTrue(command.wasSuccessful())
-        assertTrue(tempDir.listFiles()?.any { it.name.startsWith(".trash_notes.txt_") } == true)
+        // Trash file must NOT be created in the source directory (AUD-017)
+        assertFalse(tempDir.listFiles()?.any { it.name.startsWith(".trash_notes.txt_") } == true)
+        assertNull(command.getFailureReason())
 
         command.undo()
 
@@ -45,6 +49,7 @@ class DeleteFileCommandTest {
         command.execute()
 
         assertFalse(command.wasSuccessful())
+        assertNotNull(command.getFailureReason())
         verify { logger.logEditor(match { it.contains("Delete skipped, file does not exist") }, any<LogLevel>()) }
         tempDir.deleteRecursively()
     }
@@ -63,7 +68,9 @@ class DeleteFileCommandTest {
 
         assertTrue(command.wasSuccessful())
         assertFalse(directory.exists())
-        assertTrue(tempDir.listFiles()?.any { it.name.startsWith(".trash_folder_") } == true)
+        // Trash file must NOT be created in the source directory (AUD-017)
+        assertFalse(tempDir.listFiles()?.any { it.name.startsWith(".trash_folder_") } == true)
+        assertNull(command.getFailureReason())
 
         command.undo()
 

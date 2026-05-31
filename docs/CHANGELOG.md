@@ -4,6 +4,91 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.50.0.2] - 2026-05-30: A48.0.1 Audit Remediation — All Findings Implemented
+
+### Summary
+
+Implemented fixes for all 16 audit findings raised in the A48.0.1 Comprehensive Feature & Code Audit. All P0 critical and P1 high-severity findings are implemented. AUD-007 is QA-verified; AUD-008 through AUD-016 are resolved; AUD-001 through AUD-006 are implemented and at `ready_for_qa` status pending a final verification pass.
+
+### Fixed
+
+**P0 — Critical (implemented, pending QA verification)**
+
+- **AUD-001 Screenshot trigger path**: `ViewportToolbar` now publishes `ViewportAction.ScreenshotRequested` on camera button click. `ViewportActionHandler` subscribes and delegates to `ViewportRenderer.captureScreenshot()`, which calls `ScreenshotUtils.takeScreenshot()`. Tests: `ViewportRendererScreenshotTest`.
+- **AUD-002 Scene-open event has no subscriber**: `SceneActionHandler` now subscribes to `FileSystemEvent.OpenSceneFileEvent` and re-routes it as `SceneAction.OpenPathRequested`, which executes `OpenSceneFileCommand`.
+- **AUD-003 `DeleteFileCommand` null safety**: Removed all `!!` operator usage; `parentFile` null check and `tempFile ?: return` pattern replace unsafe assertions. Tests: `DeleteFileCommandTest`.
+
+**P1 — High (implemented, pending QA verification)**
+
+- **AUD-004 Filesystem command weak success handling**: `CreateFileCommand`, `RenameFileCommand`, and `DeleteFileCommand` now enforce operation return values before setting `executeSucceeded = true` and before emitting success-shaped state updates. Tests: `CreateFileCommandTest`, `RenameFileCommandTest`, `DeleteFileCommandTest`.
+- **AUD-005 Directory undo safety**: `CreateFileCommand.undo()` now uses `file.delete()` (only removes empty directories) instead of `deleteRecursively()`. Non-empty directories are skipped with a log entry; user-added files are not destroyed. Tests: `CreateFileCommandTest`.
+- **AUD-006 Screenshot filename collision**: `ScreenshotUtils` generates filenames with millisecond-precision timestamp (`yyyy-MM-dd_HH-mm-ss-SSS`) and an `AtomicInteger` monotonic sequence suffix, guaranteeing uniqueness under rapid capture. Tests: `ScreenshotUtilsTest`.
+
+**P1 — High (QA-verified)**
+
+- **AUD-007 Project lifecycle stale state**: Project open now closes the active project first. Project close calls `SceneManager.closeAllScenes()` and resets system caches. Engine runtime loop continues `ImGuiLayer.update()` when no active scene is present (prevents editor UI lock after project close). `ResourceManager.clear()` batches GPU destruction into a single `runOnMain` task; `DefaultJobSystem` applies a per-frame main-thread task budget to prevent task-burst frame stalls on reopen. `EditorMenuBar` invalidates and reloads the app icon texture after `ProjectEvent.Closed` to prevent stale GL texture IDs. Tests: `ProjectManagerLifecycleTest`, `EngineFixedTimestepTest`, `ImGuiLayerStartupFlowTest`, `EditorMenuBarLifecycleTest`, `ResourceManagerClearBatchingTest`, `DefaultJobSystemUpdateBudgetTest`.
+
+**P1 — High (resolved)**
+
+- **AUD-008 Mutation pipeline bypasses**: `CloseProjectRequested` and `LoadLastProjectRequested` now route through execute-only commands in `ProjectActionHandler` instead of direct `ProjectManager` mutations. `EditorInputHandler` routes delete/toggle-visibility/toggle-lock/cut/paste/create-new through typed `ViewportAction` events. Tests: `EditorInputHandlerEventRoutingTest`, `ProjectActionHandlerTest`, `ViewportActionHandlerDuplicateFlowTest`.
+- **AUD-010 Audio master volume reset**: `AudioSystem` stores and reapplies the configured master volume instead of forcing `1.0f` every listener update; mute/unmute preserves the prior non-zero volume. Tests: `AudioSystemTest`.
+- **AUD-016 Project settings non-persistent**: `ProjectSettingsWindow.saveSettings()` now persists gameplay settings through `ProjectManager.updateGameplaySettings(...)`, which writes via `SettingsManager.saveProject(...)`, updates `currentProject` on success, and emits `ProjectEvent.Saved`. Tests: `ProjectManagerLifecycleTest`.
+
+**P2 — Medium (resolved)**
+
+- **AUD-009 Environment tooling mixed mutation**: `EnvironmentWindow` now publishes environment action events for sun/shadow/ambient edits; command execution centralized in `EnvironmentActionHandler`. Tests: `EnvironmentActionHandlerTest`.
+- **AUD-011 Mouse-look path unused**: `InputSystem.update()` now executes `pollMouseInput(inputState)` in the runtime update flow; camera-look deltas apply only when cursor is disabled. Tests: `InputSystemTest`.
+- **AUD-012 Hardcoded user-facing strings**: Remaining hardcoded strings in `AudioInspectorWindow`, `ProjectSettingsWindow`, and `EditorSettingsWindow` localized; `btn.ok`/`btn.apply` and audio empty-state keys added; project recent-date formatting switched to locale-aware `DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)`.
+- **AUD-013 AnimationSystem layering breach**: `AnimationSystem` no longer imports `editor.systems.StringManager`; replaced with `engine.contracts.IStringManager` constructor injection, removing the engine → editor dependency.
+- **AUD-014 Async lifecycle risk in UndoRedoManager**: `UndoRedoManager.clear()` invalidates in-flight async operations via `historyEpoch` and clears pending async redo state; completion callbacks ignore stale pre-clear async results. Tests: `UndoRedoManagerTest`.
+- **AUD-015 Missing test coverage**: Added targeted regression tests for screenshot capture flow and filesystem command safety/undo edge paths.
+
+### Files Modified (key paths)
+
+- `editor/ui/windows/viewport/ViewportToolbar.kt` — screenshot button wired to `ScreenshotRequested` event
+- `editor/ui/handlers/ViewportActionHandler.kt` — `ScreenshotRequested` subscriber added
+- `editor/ui/handlers/SceneActionHandler.kt` — `OpenSceneFileEvent` subscriber added
+- `editor/commands/project/DeleteFileCommand.kt` — null-safe rewrite; trash-move pattern
+- `editor/commands/project/CreateFileCommand.kt` — undo safety (empty-only delete) + result enforcement
+- `editor/commands/project/RenameFileCommand.kt` — result enforcement
+- `engine/utils/ScreenshotUtils.kt` — millisecond timestamp + `AtomicInteger` sequence suffix
+- `engine/ecs/systems/AudioSystem.kt` — master volume stored and reapplied; mute preserves volume
+- `engine/ecs/systems/AnimationSystem.kt` — `IStringManager` injection replaces editor type
+- `editor/systems/UndoRedoManager.kt` — `historyEpoch` async guard
+- `editor/systems/ProjectManager.kt` — lifecycle hardening; `updateGameplaySettings` persistence path
+- `engine/ecs/SceneManager.kt` — `closeAllScenes()` on project close
+- `engine/core/Engine.kt` — no-scene update loop fix
+- `engine/assets/ResourceManager.kt` — batched GPU clear via single `runOnMain` task
+- `editor/imgui/ImGuiLayer.kt` — update loop continues without active scene
+- `editor/ui/handlers/EditorInputHandler.kt` — all mutations routed through `ViewportAction` events
+- `editor/ui/handlers/ProjectActionHandler.kt` — command routing for close/load-last
+- `editor/ui/windows/EnvironmentWindow.kt` — event-driven mutations
+- `editor/ui/handlers/EnvironmentActionHandler.kt` — centralized environment command execution
+- `editor/ui/windows/{AudioInspectorWindow,ProjectSettingsWindow,EditorSettingsWindow}.kt` — localization
+- `editor/imgui/EditorMenuBar.kt` — app icon texture reload on project close
+
+### Test Files Added
+
+- `src/test/.../viewport/ViewportRendererScreenshotTest.kt`
+- `src/test/.../engine/utils/ScreenshotUtilsTest.kt`
+- `src/test/.../commands/CreateFileCommandTest.kt`
+- `src/test/.../commands/RenameFileCommandTest.kt`
+- `src/test/.../commands/DeleteFileCommandTest.kt`
+- `src/test/.../systems/AudioSystemTest.kt`
+- `src/test/.../systems/InputSystemTest.kt`
+- `src/test/.../handlers/EnvironmentActionHandlerTest.kt`
+- `src/test/.../handlers/EditorInputHandlerEventRoutingTest.kt`
+- `src/test/.../handlers/ProjectActionHandlerTest.kt`
+- `src/test/.../imgui/ImGuiLayerStartupFlowTest.kt`
+- `src/test/.../systems/ProjectManagerLifecycleTest.kt`
+- `src/test/.../imgui/EditorMenuBarLifecycleTest.kt`
+- `src/test/.../engine/EngineFixedTimestepTest.kt`
+- `src/test/.../editor/UndoRedoManagerTest.kt` (expanded)
+- `src/test/.../assets/ResourceManagerClearBatchingTest.kt`
+- `src/test/.../engine/DefaultJobSystemUpdateBudgetTest.kt`
+
+---
+
 ## [v0.50.0.1] - 2026-05-17: Architecture Closure & Roadmap Realignment
 
 ### Summary
