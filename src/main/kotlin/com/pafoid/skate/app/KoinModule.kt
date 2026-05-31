@@ -127,6 +127,20 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { Serializer() }
+    single { LoggerService() }
+
+    // Engine contract implementations (editor-side)
+    single<EngineLogger> { get<LoggerService>() }
+    single<IStringManager> { get<StringManager>() }
+    single<InputMappingsProvider> { get<SettingsManager>() }
+
+    // Editor-only rendering tools (moved from engineModule)
+    single { PickingRenderer(get(), get(), get()) }
+    single { ThumbnailRenderer(get(), get(), get()) }
+    single { ThumbnailCache(get()) }
+    single { PrefabsGenerator(get(), get(), get(), get()) }
+    single { EngineAssetCopier() }
+
     single { SceneSerializer(get(), get(), get(), get(), get()) }
     single { PoseSerializer() }
     single { ClipboardService(get()) }
@@ -243,9 +257,6 @@ val engineModule = module {
     // Core
     single<IJobSystem> { DefaultJobSystem() }
     single { EventSystem() }
-    single { LoggerService() }
-    single<EngineLogger> { get<LoggerService>() }
-    single<IStringManager> { get<StringManager>() }
 
     single { AudioEngine(get()) }
 
@@ -282,13 +293,8 @@ val engineModule = module {
     single { AssetDatabaseImpl(get(), get(), get()) as AssetDatabase }
 
     single { DebugRenderer(get(), get(), get()) }
-    single { PickingRenderer(get(), get(), get()) }
     single { SplashRenderer(get()) }
     single { ModelRenderer(get(), get()) }
-    single { ThumbnailRenderer(get(), get(), get()) }
-    single { ThumbnailCache(get()) }
-    single { PrefabsGenerator(get(), get(), get(), get()) }
-    single { EngineAssetCopier() }
 
     // Render resources factory - created lazily when Renderer is requested
     single { RenderResourcesFactory(get(), get(), get(), get(), get(), get(), get<SplashRenderer>(), get()) }
