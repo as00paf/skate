@@ -25,11 +25,13 @@ import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.systems.WindowRegistry
+import com.pafoid.skate.editor.ui.handlers.ConsoleActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.editor.ui.handlers.EnvironmentActionHandler
 import com.pafoid.skate.editor.ui.handlers.ProjectActionHandler
 import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
+import com.pafoid.skate.editor.ui.handlers.UndoRedoActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
@@ -138,6 +140,8 @@ val appModule = module {
     single(createdAtStart = true) { SceneActionHandler().also { it.init() } }
     single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get(), get()).also { it.init() } }
     single(createdAtStart = true) { EnvironmentActionHandler(get(), get()).also { it.init() } }
+    single(createdAtStart = true) { ConsoleActionHandler().also { it.init() } }
+    single(createdAtStart = true) { UndoRedoActionHandler().also { it.init() } }
     single(createdAtStart = true) {
         ViewportActionHandler(
             get(),
@@ -177,14 +181,14 @@ val appModule = module {
     single { AssetBrowserWindow(get(), get(), get(), get(), get()) }
     single { EnvironmentWindow(get(), get(), get(),) }
     single { ProfilerWindow(get()) }
-    single { ConsoleWindow(get(), get(),) }
+    single { ConsoleWindow(get(), get(), get()) }
     single { PhysicsTunerWindow(get(), get()) }
     single { InputTestingWindow(get(), get(), get()) }
     single { SystemsWindow(get(), get()) }
     single { EditorSettingsWindow(get(), get()) }
     single { ProjectSettingsWindow(get(), get(), get(), get(), get()) }
     single { KeyBindingsWindow(get(), get()) }
-    single { CommandHistoryWindow(get(), get(), ) }
+    single { CommandHistoryWindow(get(), get(), get()) }
     single { RenderGraphWindow(get(), get()) }
     single { AudioInspectorWindow(get()) }
     single { ProjectWindow(get(), get(), get(), get(), get()) }

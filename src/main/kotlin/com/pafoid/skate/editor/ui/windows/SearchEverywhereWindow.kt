@@ -28,11 +28,12 @@ import org.koin.core.component.inject
  *
  * This modal overlay allows users to search GameObjects, assets, components, and actions
  * from a single unified interface. Features include real-time search with debouncing,
- * keyboard navigation, recent searches, and category-based result grouping.
+ * keyboard navigation, recent searches, category filter chips, and grouped result display.
  *
  * Usage:
  * - Open with Ctrl+P (handled by input handler)
- * - Type to search (150ms debounce)
+ * - Type to search (50ms debounce)
+ * - Filter by category using chips: All / GameObjects / Files / Actions
  * - Navigate with ↑↓ arrows
  * - Select with Enter or click
  * - Close with Esc or X button
@@ -50,10 +51,13 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
     private var isSearching = false
     private var searchJob: Job? = null
     private var recentSearches: List<SearchHistoryEntry> = emptyList()
-    private var debounceDelayMs = 50L  // Reduced from 150ms for faster results
+    private val debounceDelayMs = 50L
 
-    // Track last query to avoid redundant searches
     private var lastQueriedText = ""
+
+    // Category filter chips: All / GameObjects / Files / Actions
+    private enum class SearchFilter { ALL, GAMEOBJECTS, FILES, ACTIONS }
+    private var activeFilter = SearchFilter.ALL
 
     // Result flattening for keyboard navigation
     private var flattenedResults: List<SearchResultWithCategory> = emptyList()
@@ -67,6 +71,7 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
         selectedResultIndex = 0
         currentResults = emptyMap()
         lastQueriedText = ""
+        activeFilter = SearchFilter.ALL
         jobSystem.runOnMain {
             loadRecentSearches()
         }
@@ -93,7 +98,7 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
     fun isOpen(): Boolean = isOpen
 
     private suspend fun loadRecentSearches() {
-        recentSearches = searchHistory.getRecent(limit = 10)
+        recentSearches = searchHistory.getRecent(limit = 5)
     }
 
     override fun imgui(pOpen: ImBoolean?) {
@@ -103,9 +108,8 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
         val centerX = viewport.workCenterX
         val centerY = viewport.workCenterY
 
-        // Set up modal overlay window
         ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.Always, 0.5f, 0.5f)
-        ImGui.setNextWindowSize(600f, 500f)
+        ImGui.setNextWindowSize(600f, 520f)
         ImGui.setNextWindowBgAlpha(0.95f)
 
         val windowFlags = ImGuiWindowFlags.Modal or
@@ -120,7 +124,12 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
 
         ImGui.separator()
 
-        ImGui.beginChild("SearchResults", 0f, 400f)
+        // Category filter chips
+        renderFilterChips()
+
+        ImGui.separator()
+
+        ImGui.beginChild("SearchResults", 0f, 380f)
         if (searchQuery.get().isBlank()) {
             renderRecentSearches()
         } else {
@@ -179,7 +188,7 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
             searchQuery,
             flags
         )
-        val inputEdited = ImGui.isItemEdited()  // True whenever text changes (not just Enter)
+        val inputEdited = ImGui.isItemEdited()
         ImGui.popItemWidth()
         ImGui.sameLine()
 
@@ -196,6 +205,66 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
 
         if (inputEdited) {
             triggerSearch()
+        }
+    }
+
+    private fun renderFilterChips() {
+        renderFilterChip(SearchFilter.ALL,
+            stringManager.getString("lbl.search.filter.all"),
+            stringManager.getString("tooltip.search.filter.all"))
+        ImGui.sameLine()
+        renderFilterChip(SearchFilter.GAMEOBJECTS,
+            stringManager.getString("lbl.search.filter.gameobjects"),
+            stringManager.getString("tooltip.search.filter.gameobjects"))
+        ImGui.sameLine()
+        renderFilterChip(SearchFilter.FILES,
+            stringManager.getString("lbl.search.filter.assets"),
+            stringManager.getString("tooltip.search.filter.assets"))
+        ImGui.sameLine()
+        renderFilterChip(SearchFilter.ACTIONS,
+            stringManager.getString("lbl.search.filter.actions"),
+            stringManager.getString("tooltip.search.filter.actions"))
+    }
+
+    private fun renderFilterChip(filter: SearchFilter, label: String, tooltip: String) {
+        val isActive = activeFilter == filter
+        if (isActive) {
+            ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.5f, 0.8f, 1f)
+            ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.3f, 0.6f, 0.9f, 1f)
+        }
+        if (ImGui.button(label)) {
+            activeFilter = filter
+            // Re-flatten results for keyboard nav after filter change
+            flattenedResults = flattenResults(getFilteredResults())
+            selectedResultIndex = 0
+        }
+        if (isActive) {
+            ImGui.popStyleColor(2)
+        }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip(tooltip)
+        }
+    }
+
+    private fun getFilteredResults(): Map<SearchCategory, List<SearchResult>> {
+        return when (activeFilter) {
+            SearchFilter.ALL -> currentResults
+            SearchFilter.GAMEOBJECTS -> currentResults.filter { (cat, _) ->
+                cat == SearchCategory.GAMEOBJECT
+            }
+            SearchFilter.FILES -> currentResults.filter { (cat, _) ->
+                cat in setOf(
+                    SearchCategory.ASSET_TEXTURE,
+                    SearchCategory.ASSET_MODEL,
+                    SearchCategory.ASSET_ANIMATION,
+                    SearchCategory.ASSET_SOUND,
+                    SearchCategory.ASSET_PREFAB,
+                    SearchCategory.COMPONENT
+                )
+            }
+            SearchFilter.ACTIONS -> currentResults.filter { (cat, _) ->
+                cat == SearchCategory.ACTION
+            }
         }
     }
 
@@ -225,7 +294,7 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
 
             jobSystem.runOnMain {
                 currentResults = results
-                flattenedResults = flattenResults(results)
+                flattenedResults = flattenResults(getFilteredResults())
                 selectedResultIndex = 0
                 isSearching = false
             }
@@ -275,13 +344,17 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
             return
         }
 
-        if (currentResults.isEmpty()) {
-            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.search.no_results"))
+        val filtered = getFilteredResults()
+
+        if (filtered.isEmpty() || filtered.values.all { it.isEmpty() }) {
+            // Friendly "no results for '...'" message
+            ImGui.textColored(0.5f, 0.5f, 0.5f, 1f,
+                stringManager.getString("lbl.search.no_results_for", searchQuery.get().trim()))
             return
         }
 
         var globalIndex = 0
-        currentResults.forEach { (category, results) ->
+        filtered.forEach { (category, results) ->
             if (results.isEmpty()) return@forEach
 
             val categoryColor = getCategoryColor(category)
@@ -358,12 +431,11 @@ class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow
 
     private fun renderFooter() {
         ImGui.spacing()
-        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f,
+        ImGui.textColored(
+            0.5f, 0.5f, 0.5f, 1f,
             "${stringManager.getString("search.everywhere.shortcut.navigate")}  " +
-            "${stringManager.getString("search.everywhere.shortcut.open")}  " +
-            "${stringManager.getString("search.everywhere.shortcut.close")}"
+                    "${stringManager.getString("search.everywhere.shortcut.open")}  " +
+                    stringManager.getString("search.everywhere.shortcut.close")
         )
     }
-
 }
-

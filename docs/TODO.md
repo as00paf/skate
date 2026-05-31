@@ -18,7 +18,7 @@ This file contains **near-future tasks** that are ready for execution and alread
 | ID      | Title                                               | Status      | Why now                                                                                                            |
 |---------|-----------------------------------------------------|-------------|--------------------------------------------------------------------------------------------------------------------|
 | A48.0.2 | Editor/Engine Separation Refactor (Main.kt-down)    | Blocked     | Critical layering and lifecycle coupling violations block safe feature work and invalidate architecture contracts. |
-| A48.0.1 | Comprehensive Feature & Code Audit                  | In Progress | Needed to stop regressions and align feature behavior with architecture quality expectations.                      |
+| A48.0.1 | Comprehensive Feature & Code Audit                  | In Progress | AUD-002 remains deferred pending A48.0.2; all other findings resolved or verified.                                |
 | A46.0.1 | Engine UI & Editor Tooling Revamp (remaining scope) | In Progress | Core usability/workflow debt still impacts daily iteration speed.                                                  |
 | A46.0.2 | Advanced Lighting Models                            | Planned     | Next major rendering capability on Phase 2 path.                                                                   |
 | A46.0.3 | Post-Processing Stack                               | Planned     | Depends on render foundations and follows lighting work.                                                           |
@@ -89,10 +89,10 @@ Audit implemented features and associated code paths to identify regressions, co
 - Pass 1 completed: critical-path audit produced initial findings.
 - Full audit completed: expanded QA + reviewer findings consolidated and prioritized.
 - Remediation complete: all 16 original findings (AUD-001 to AUD-016) implemented.
-- QA pass completed 2026-05-30. AUD-001, AUD-003, AUD-006 verified. AUD-004, AUD-017 resolved. AUD-002 deferred.
-- Gate: **One open item** — AUD-002 (scene open architectural issue) deferred to A48.0.2. A48.0.1 otherwise complete.
+- QA pass completed 2026-05-31. AUD-001, AUD-003, AUD-006 verified. AUD-004, AUD-017 resolved. AUD-002 deferred.
+- Gate: **Functionally complete.** Only AUD-002 remains open — deferred to A48.0.2 by design.
 
-**Open findings (block A48.0.1 closure)**
+**Deferred to A48.0.2**
 
 | ID | Title | Severity | Decision |
 |---|---|---|---|
@@ -124,15 +124,15 @@ Audit implemented features and associated code paths to identify regressions, co
 Finish remaining editor UX scope: diagnostics maturity, interaction polish, search/history workflows, and viewport tooling parity.
 
 **Subtasks**
-1. Complete diagnostics UX in Console and Profiler surfaces.
-2. Finalize viewport toolbar ergonomics and discoverability.
+1. ~~Complete diagnostics UX in Console and Profiler surfaces.~~ ✅ Done
+2. ~~Finalize viewport toolbar ergonomics and discoverability.~~ ✅ Done
 3. Improve context menus and drag/drop workflows.
-4. Improve global search and command/history discoverability.
-5. Add targeted UI tests/guards for mutation pipeline compliance.
+4. ~~Improve global search and command/history discoverability.~~ ✅ Done
 
 **Implementation notes**
 - Enforce `UI -> Event -> Handler -> Command -> UndoRedoManager`.
 - Avoid direct command execution in UI entrypoints.
+- Do not add UI tests — test event handlers and commands instead.
 - Keep changes incremental and command-safe.
 
 ### A46.0.2 — Implement Advanced Lighting Models

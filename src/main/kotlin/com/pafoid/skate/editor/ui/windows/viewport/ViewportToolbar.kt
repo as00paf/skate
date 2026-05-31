@@ -7,6 +7,11 @@ import com.pafoid.skate.editor.events.ViewportAction.ToggleGizmo
 import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_SPACING
+import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_WIDTH
+import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_HEIGHT
+import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_SPACING
+import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
 import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.Engine
@@ -22,20 +27,6 @@ import imgui.ImVec2
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
 
-/**
- * Renders the viewport toolbar with gizmo, play, and utility buttons.
- *
- * This component handles:
- * - Gizmo tool selection (Select, Translate, Rotate, Scale, Measure)
- * - Play/Pause/Stop simulation controls
- * - Scene reset and physics debug toggles
- * - Screenshot capture
- *
- * @param sceneManager For accessing current scene and systems
- * @param engine For runtime playing state control
- * @param logger For logging toolbar actions
- * @param stringManager For localized tooltips
- */
 class ViewportToolbar(
     private val sceneManager: SceneManager,
     private val engine: Engine,
@@ -44,44 +35,38 @@ class ViewportToolbar(
     private val systemManager: SystemManager,
     private val eventSystem: EventSystem,
 ) {
-    
-    companion object {
-        private const val TOOLBAR_HEIGHT = 40f
-        private const val TOOLBAR_BUTTON_HEIGHT = 30f
-        private const val TOOLBAR_BUTTON_SPACING = 10f
-    }
-    
-    /**
-     * Renders the toolbar at the specified position.
-     * 
-     * @param windowPos The window position for calculating toolbar position
-     */
     fun render(windowPos: ImVec2) {
         val isPlaying = engine.runtimePlaying
         val scene = sceneManager.currentScene
         val toolbarPosY = windowPos.y + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingY
-        
-        val buttons = buildButtons(scene, isPlaying)
-        renderButtons(toolbarPosY, buttons)
+
+        val groups = buildButtonGroups(scene, isPlaying)
+        renderButtonGroups(toolbarPosY, groups)
     }
-    
-    private fun buildButtons(scene: Scene?, isPlaying: Boolean): List<() -> Unit> {
-        val buttons = mutableListOf<() -> Unit>()
-        
+
+    private fun buildButtonGroups(scene: Scene?, isPlaying: Boolean): List<List<() -> Unit>> {
+        val groups = mutableListOf<List<() -> Unit>>()
+
         if (!isPlaying) {
-            addGizmoButtons(buttons)
+            val gizmoButtons = mutableListOf<() -> Unit>()
+            addGizmoButtons(gizmoButtons)
+            groups.add(gizmoButtons)
         }
-        
-        addPlaybackButtons(buttons, scene, isPlaying)
-        addUtilityButtons(buttons, scene)
-        
-        return buttons
+
+        val playbackButtons = mutableListOf<() -> Unit>()
+        addPlaybackButtons(playbackButtons, scene, isPlaying)
+        groups.add(playbackButtons)
+
+        val utilityButtons = mutableListOf<() -> Unit>()
+        addUtilityButtons(utilityButtons, scene)
+        groups.add(utilityButtons)
+
+        return groups
     }
-    
-    private fun addGizmoButtons(
-        buttons: MutableList<() -> Unit>
-    ) {
+
+    private fun addGizmoButtons(buttons: MutableList<() -> Unit>) {
         val gizmoSystem = systemManager.getSystem<GizmoSystem>()
+
         // Select Tool
         buttons.add {
             val isActive = gizmoSystem?.usingGizmo == GizmoSystem.SELECTION_GIZMO
@@ -149,23 +134,27 @@ class ViewportToolbar(
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.measure_tool"))
         }
     }
-    
+
     private fun addPlaybackButtons(
         buttons: MutableList<() -> Unit>,
         scene: Scene?,
         isPlaying: Boolean
     ) {
         if (isPlaying) {
-            // Pause/Resume button
+            // Pause/Resume button — visual state reflects time scale
             buttons.add {
                 val timeScale = scene?.getComponent<TimeComponent>()?.timeScale ?: 1.0f
                 if (timeScale == 1.0f) {
+                    // Currently running — show Pause
+                    ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.4f, 0.1f, 1f)
                     if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                         eventSystem.publish(SetRuntimePlaying(false))
                         logger.logEditor("Simulation paused")
                     }
+                    ImGui.popStyleColor()
                     if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.pause_simulation"))
                 } else {
+                    // Paused — show Resume
                     if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                         eventSystem.publish(SetRuntimePlaying(true))
                         logger.logEditor("Simulation resumed")
@@ -173,12 +162,15 @@ class ViewportToolbar(
                     if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.resume_simulation"))
                 }
             }
-            // Stop button
+            // Stop button — highlighted to indicate active play state
             buttons.add {
+                ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.1f, 0.1f, 1f)
+                ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.8f, 0.2f, 0.2f, 1f)
                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                     eventSystem.publish(SetRuntimePlaying(false))
                     logger.logEditor("Simulation stopped")
                 }
+                ImGui.popStyleColor(2)
                 if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.stop_simulation"))
             }
         } else {
@@ -192,7 +184,7 @@ class ViewportToolbar(
             }
         }
     }
-    
+
     private fun addUtilityButtons(
         buttons: MutableList<() -> Unit>,
         scene: Scene?
@@ -231,11 +223,18 @@ class ViewportToolbar(
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.screenshot"))
         }
     }
-    
-    private fun renderButtons(toolbarPosY: Float, buttons: List<() -> Unit>) {
-        val totalButtonWidth = (TOOLBAR_BUTTON_HEIGHT * buttons.size) + (TOOLBAR_BUTTON_SPACING * (buttons.size - 1))
+
+    private fun renderButtonGroups(toolbarPosY: Float, groups: List<List<() -> Unit>>) {
+        val buttonCount = groups.sumOf { it.size }
+        val separatorCount = (groups.size - 1).coerceAtLeast(0)
+        // Only count intra-group spacings — inter-group gaps are part of separator width
+        val intraGroupSpacings = groups.sumOf { (it.size - 1).coerceAtLeast(0) }
+        val totalButtonWidth = (TOOLBAR_BUTTON_HEIGHT * buttonCount) +
+                (TOOLBAR_BUTTON_SPACING * intraGroupSpacings) +
+                (SEPARATOR_SPACING * 2 + SEPARATOR_WIDTH) * separatorCount
+
         val toolbarPosX = TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingX
-        
+
         ImGui.setCursorPos(toolbarPosX, toolbarPosY)
         ImGui.beginChild(
             "GameViewportToolbar",
@@ -244,19 +243,20 @@ class ViewportToolbar(
             false,
             ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoDecoration
         )
-        
-        buttons.forEachIndexed { index, button ->
-            button()
-            if (index < buttons.size - 1) {
-                ImGui.sameLine(0f, TOOLBAR_BUTTON_SPACING)
+
+        groups.forEachIndexed { groupIndex, buttons ->
+            if (groupIndex > 0) {
+                ImGui.sameLine(0f, SEPARATOR_SPACING)
+            }
+
+            buttons.forEachIndexed { buttonIndex, button ->
+                button()
+                if (buttonIndex < buttons.size - 1) {
+                    ImGui.sameLine(0f, TOOLBAR_BUTTON_SPACING)
+                }
             }
         }
-        
+
         ImGui.endChild()
     }
-    
-    /**
-     * Get the toolbar height constant.
-     */
-    fun getToolbarHeight(): Float = TOOLBAR_HEIGHT
 }

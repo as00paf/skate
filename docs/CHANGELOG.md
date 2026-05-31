@@ -4,6 +4,95 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.50.0.4] - 2026-05-31: A46.0.1 Editor Tooling Revamp — Diagnostics, Toolbar, Search & History
+
+### Summary
+
+Completed subtasks 1, 2, and 4 of A46.0.1. Console and Profiler diagnostics matured; viewport toolbar grouping and visual state improved; search and command history discoverability overhauled. Context menus and drag/drop (subtask 3) remain.
+
+### Added / Improved
+
+**Console (Subtask 1)**
+- Log level filter chips (`All / Info / Warn / Error / Action`) with live count badges per level
+- Auto-scroll toggle (checkbox) — pins view to latest entry when enabled
+- Copy-to-clipboard via right-click context menu + Ctrl+C, routed through `ConsoleAction.CopyToClipboard` event
+- Clear button routed through `ConsoleAction.ClearLogs` event
+- Empty state message when no logs match active filter
+- New `ConsoleActionHandler` + `ClearLogsCommand` + `CopyToClipboardCommand` registered in Koin
+
+**Profiler (Subtask 2)**
+- Freeze/Unfreeze toggle — pauses frame data capture for spike inspection; amber indicator when frozen
+- Reset Stats button — zeroes accumulated min/max/avg data
+- Guard added: graphs only render when frame history is non-empty
+
+**Viewport Toolbar (Subtask 3 partial — ergonomics)**
+- Buttons reorganized into 3 groups: Gizmo tools | Playback controls | Utility
+- Visual separator (`|`) rendered between groups
+- Play/Pause/Stop buttons reflect runtime state with amber/red highlight colors
+
+**Search Everywhere (Subtask 4)**
+- Category filter chips (`All / GameObjects / Assets / Actions`) above results
+- Improved empty state: "No results for '…'" with current query shown
+- Recent searches capped at 5 entries; filter resets to All on open
+
+**Command History (Subtask 4)**
+- Visual distinction: executed commands show `✓` (white), undone commands show `↩` (gray)
+- "Undo to here" / "Redo to here" via click, routed through `UndoRedoAction` events
+- Clear button routed through `UndoRedoAction.ClearHistory`
+- Friendly empty state when history is empty
+- New `UndoRedoActionHandler` registered in Koin
+
+### New Files
+- `editor/events/ConsoleAction.kt`
+- `editor/events/UndoRedoAction.kt`
+- `editor/commands/editor/ClearLogsCommand.kt`
+- `editor/commands/editor/CopyToClipboardCommand.kt`
+- `editor/ui/handlers/ConsoleActionHandler.kt`
+- `editor/ui/handlers/UndoRedoActionHandler.kt`
+
+### Modified Files
+- `ConsoleWindow.kt`, `ProfilerWindow.kt`, `ViewportToolbar.kt`
+- `SearchEverywhereWindow.kt`, `CommandHistoryWindow.kt`
+- `strings.properties` — 28 new keys
+- `KoinModule.kt` — new handlers + updated window constructors
+
+---
+
+## [v0.50.0.3] - 2026-05-31: A48.0.1 QA Pass — AUD-004 and AUD-017 Resolved
+
+### Summary
+
+QA pass completed on all A48.0.1 findings. AUD-001, AUD-003, AUD-006 verified working. AUD-004 and AUD-017 were found to require further fixes and are now resolved. AUD-002 deferred to A48.0.2 architectural refactor. AUD-005 deferred to backlog.
+
+### Fixed
+
+- **AUD-017 Spurious trash file in project directory**: `DeleteFileCommand` now moves deleted files to the system temp directory (`java.io.tmpdir`) instead of placing `.trash_<name>_<timestamp>` artifacts in the project folder. A `Files.move` cross-filesystem fallback handles Windows environments where temp is on a different drive. Undo continues to work by restoring from the temp location. Tests: `DeleteFileCommandTest` updated.
+- **AUD-004 Filesystem errors not surfaced to user**: Added `FileSystemEvent.FileSystemOperationFailed(path, operation, reason)` event. Added `getFailureReason(): String?` default method to `ExecutionTrackedCommand` interface. `CreateFileCommand`, `RenameFileCommand`, and `DeleteFileCommand` now capture per-branch failure reasons. `ProjectActionHandler.executeAndPublishOnSuccess` publishes `FileSystemOperationFailed` on failure instead of silently returning. `ProjectWindow` subscribes and renders an inline error via `MImGui.errorText`; error clears on next successful operation. Tests: `ProjectActionHandlerTest` updated.
+
+### Verified (QA — 2026-05-31)
+
+- **AUD-001** Screenshot trigger wired and working end-to-end.
+- **AUD-003** `DeleteFileCommand` null-safe; no crash on delete.
+- **AUD-006** Screenshot filenames unique under rapid capture.
+
+### Deferred
+
+- **AUD-002** Scene open from `ProjectWindow` does not load scene in viewport — root cause requires architectural work; deferred to A48.0.2.
+- **AUD-005** Undo of directory creation safety — low priority; moved to backlog.
+
+### Files Modified
+
+- `editor/commands/project/DeleteFileCommand.kt` — temp file moved to system temp dir; `getFailureReason()` added
+- `editor/commands/project/CreateFileCommand.kt` — `getFailureReason()` added
+- `editor/commands/project/RenameFileCommand.kt` — `getFailureReason()` added
+- `editor/commands/ExecutionTrackedCommand.kt` — `getFailureReason()` default method added
+- `editor/events/FileSystemEvents.kt` — `FileSystemOperationFailed` event added
+- `editor/ui/handlers/ProjectActionHandler.kt` — failure event published on filesystem command error
+- `editor/ui/windows/ProjectWindow.kt` — inline error display on filesystem failure
+- `src/main/resources/values/strings.properties` — `lbl.project.filesystem_error` key added
+
+---
+
 ## [v0.50.0.2] - 2026-05-30: A48.0.1 Audit Remediation — All Findings Implemented
 
 ### Summary

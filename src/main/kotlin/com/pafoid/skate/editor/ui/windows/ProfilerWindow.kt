@@ -5,9 +5,8 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.render.EngineStats
 import imgui.ImGui
+import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadMXBean
 
@@ -20,6 +19,7 @@ class ProfilerWindow(private val stringManager: StringManager) : IWindow {
 
     private val showMemoryStats = ImBoolean(true)
     private val showGraphs = ImBoolean(true)
+    private val isFrozen = ImBoolean(false)
     private val history = PerformanceHistory(200)
 
     private class PerformanceHistory(val maxSize: Int = 200) {
@@ -41,6 +41,15 @@ class ProfilerWindow(private val stringManager: StringManager) : IWindow {
             if (currentSize < maxSize) {
                 currentSize++
             }
+        }
+
+        fun reset() {
+            frameTimes.fill(0f)
+            fpsValues.fill(0f)
+            physicsStepTimes.fill(0f)
+            memoryUsage.fill(0f)
+            currentIndex = 0
+            currentSize = 0
         }
     }
 
@@ -69,10 +78,25 @@ class ProfilerWindow(private val stringManager: StringManager) : IWindow {
         val usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
         val totalMemory = runtime.totalMemory() / 1024 / 1024
 
-        history.addFrame(frameTime, fps, physicsTime, usedMemory.toFloat())
+        // Only update history when not frozen
+        if (!isFrozen.get()) {
+            history.addFrame(frameTime, fps, physicsTime, usedMemory.toFloat())
+        }
+
+        // Freeze / Unfreeze + Reset Stats toolbar
+        renderDiagnosticsToolbar()
+
+        ImGui.separator()
+
+        // Frozen indicator
+        if (isFrozen.get()) {
+            ImGui.pushStyleColor(ImGuiCol.Text, 1f, 0.8f, 0.2f, 1f)
+            ImGui.text(stringManager.getString("lbl.profiler.frozen"))
+            ImGui.popStyleColor()
+            ImGui.separator()
+        }
 
         ImGui.text(stringManager.getString("lbl.profiler.avg_ms", frameTime, fps))
-
         ImGui.text(stringManager.getString("lbl.profiler.draw_calls", EngineStats.drawCalls.get()))
         ImGui.text(stringManager.getString("lbl.profiler.physics_step", physicsTime))
         ImGui.text(stringManager.getString("lbl.profiler.ram_usage", usedMemory, totalMemory))
@@ -80,15 +104,16 @@ class ProfilerWindow(private val stringManager: StringManager) : IWindow {
         ImGui.separator()
         ImGui.checkbox(stringManager.getString("lbl.profiler.show_mem_stats"), showMemoryStats)
         if (showMemoryStats.get()) {
-            ImGui.progressBar(usedMemory.toFloat() / totalMemory.toFloat(), -1f, 0f, "%d%%".format((usedMemory.toFloat() / totalMemory.toFloat() * 100).toInt()))
+            val memRatio = usedMemory.toFloat() / totalMemory.toFloat()
+            ImGui.progressBar(memRatio, -1f, 0f, "%d%%".format((memRatio * 100).toInt()))
         }
 
         ImGui.separator()
         ImGui.text("${Icons.CHART_LINE} ${stringManager.getString("window.profiler.graphs")}")
         ImGui.checkbox(stringManager.getString("lbl.profiler.show_graphs"), showGraphs)
-        if (showGraphs.get()) {
+        if (showGraphs.get() && history.currentSize > 0) {
             val lastIdx = if (history.currentIndex == 0) history.maxSize - 1 else history.currentIndex - 1
-            
+
             // Frame Time Graph
             ImGui.plotLines(
                 "${Icons.CLOCK} ${stringManager.getString("lbl.profiler.frame_time_graph")}",
@@ -132,6 +157,11 @@ class ProfilerWindow(private val stringManager: StringManager) : IWindow {
 
         ImGui.separator()
 
+        // System timing breakdown note
+        ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.profiler.no_system_timings"))
+
+        ImGui.separator()
+
         if (!threadBean.isThreadCpuTimeSupported) {
             ImGui.text(stringManager.getString("lbl.profiler.thread_cpu_unsupported"))
             ImGui.end()
@@ -160,7 +190,7 @@ class ProfilerWindow(private val stringManager: StringManager) : IWindow {
             ImGui.nextColumn()
             ImGui.progressBar(usage / 100f, -1f, 0f, String.format("%.2f%%", usage))
             ImGui.nextColumn()
-            
+
             val id = threadIds[name]
             if (id != null) {
                 val info = threadBean.getThreadInfo(id)
@@ -175,33 +205,65 @@ class ProfilerWindow(private val stringManager: StringManager) : IWindow {
         ImGui.end()
     }
 
+    private fun renderDiagnosticsToolbar() {
+        // Freeze / Unfreeze toggle
+        if (isFrozen.get()) {
+            ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.4f, 0.1f, 1f)
+            ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.7f, 0.5f, 0.2f, 1f)
+            if (ImGui.button("${Icons.PLAY} ${stringManager.getString("btn.profiler.unfreeze")}")) {
+                isFrozen.set(false)
+            }
+            ImGui.popStyleColor(2)
+            if (ImGui.isItemHovered()) {
+                ImGui.setTooltip(stringManager.getString("tooltip.profiler.unfreeze"))
+            }
+        } else {
+            if (ImGui.button("${Icons.PAUSE} ${stringManager.getString("btn.profiler.freeze")}")) {
+                isFrozen.set(true)
+            }
+            if (ImGui.isItemHovered()) {
+                ImGui.setTooltip(stringManager.getString("tooltip.profiler.freeze"))
+            }
+        }
+
+        ImGui.sameLine()
+
+        // Reset Stats button
+        if (ImGui.button("${Icons.ARROW_ROTATE} ${stringManager.getString("btn.profiler.reset_stats")}")) {
+            history.reset()
+        }
+        if (ImGui.isItemHovered()) {
+            ImGui.setTooltip(stringManager.getString("tooltip.profiler.reset_stats"))
+        }
+    }
+
     private fun updateStats(currentTime: Long) {
         val allThreads = threadBean.allThreadIds
         val infos = threadBean.getThreadInfo(allThreads)
-        
+
         infos.forEach { info ->
             if (info == null) return@forEach
             val name = info.threadName
             val id = info.threadId
-            
+
             // Filter for interesting threads
-            if (name.contains("Main", true) || 
-                name.contains("Physics", true) || 
+            if (name.contains("Main", true) ||
+                name.contains("Physics", true) ||
                 name.contains("DefaultDispatcher", true) ||
-                name.contains("IO", true)) {
-                
+                name.contains("IO", true)
+            ) {
                 threadIds[name] = id
                 val cpuTime = threadBean.getThreadCpuTime(id)
                 val prevCpuTime = lastCpuTime[name] ?: cpuTime
-                
+
                 val cpuDelta = cpuTime - prevCpuTime
                 val timeDelta = currentTime - lastSampleTime
-                
+
                 if (timeDelta > 0) {
                     val usage = (cpuDelta.toFloat() / timeDelta.toFloat()) * 100f
                     threadCpuUsage[name] = usage
                 }
-                
+
                 lastCpuTime[name] = cpuTime
             }
         }

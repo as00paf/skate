@@ -18,4 +18,11 @@ object UiConstants {
     // -- Window defaults --
     const val DIALOG_WIDTH = 550f
     const val DIALOG_HEIGHT = 440f
+
+    // -- Viewport Toolbar --
+    const val TOOLBAR_HEIGHT = 40f
+    const val TOOLBAR_BUTTON_HEIGHT = 30f
+    const val TOOLBAR_BUTTON_SPACING = 10f
+    const val SEPARATOR_SPACING = 18f
+    const val SEPARATOR_WIDTH = 8f
 }
