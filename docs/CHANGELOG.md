@@ -4,15 +4,6 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
-## [v0.50.0.7] - 2026-05-31: A48.0.2 P1 — Bootstrap/runtime split
-
-- `Main.kt`: `--editor` flag added; `EditorScreen` and `appModule` loading now guarded — runtime mode runs without any editor construct instantiated
-- `KoinModule.kt`: `runtimeAdapterModule` extracted with `EngineLogger`, `IStringManager`, `InputMappingsProvider` bindings; `engineModule` no longer has hidden dependency on `appModule`
-- `Engine.kt`: KDoc added marking class as runtime-only
-- P1 acceptance criteria met: `main(emptyArray())` starts engine without editor constructs
-
----
-
 ## [v0.50.0.6] - 2026-05-31: A46.0.1 Closed — A48.0.2 Unblocked
 
 - A46.0.1 reviewed and closed by user.

@@ -244,6 +244,8 @@ val engineModule = module {
     single<IJobSystem> { DefaultJobSystem() }
     single { EventSystem() }
     single { LoggerService() }
+    single<EngineLogger> { get<LoggerService>() }
+    single<IStringManager> { get<StringManager>() }
 
     single { AudioEngine(get()) }
 
@@ -259,6 +261,8 @@ val engineModule = module {
     single { SystemManager() }
     single { SceneManager(get(), get(), get(), get()) }
     single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
+
+    single<InputMappingsProvider> { get<SettingsManager>() }
 
     single<Physics3DFactory> { BulletPhysics3DFactory(get(), { get() }) }
     single { NativeLibraryLoader() }
@@ -311,10 +315,4 @@ val engineModule = module {
             )
         )
     }
-}
-
-val runtimeAdapterModule = module {
-    single<EngineLogger> { get<LoggerService>() }
-    single<IStringManager> { get<StringManager>() }
-    single<InputMappingsProvider> { get<SettingsManager>() }
 }
