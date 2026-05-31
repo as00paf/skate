@@ -126,7 +126,7 @@ Finish remaining editor UX scope: diagnostics maturity, interaction polish, sear
 **Subtasks**
 1. ~~Complete diagnostics UX in Console and Profiler surfaces.~~ ✅ Done
 2. ~~Finalize viewport toolbar ergonomics and discoverability.~~ ✅ Done
-3. Improve context menus and drag/drop workflows.
+3. ~~Improve context menus and drag/drop workflows.~~ ✅ Done
 4. ~~Improve global search and command/history discoverability.~~ ✅ Done
 
 **Implementation notes**

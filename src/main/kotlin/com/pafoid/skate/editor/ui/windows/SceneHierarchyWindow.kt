@@ -307,11 +307,15 @@ class SceneHierarchyWindow(
 
             if (ImGui.beginDragDropSource()) {
                 ImGui.setDragDropPayload("GAMEOBJECT_UID", obj.getUid() as Any)
-                ImGui.text(obj.name)
+                ImGui.text(stringManager.getString("ctx.hierarchy.drag_tooltip", obj.name))
                 ImGui.endDragDropSource()
             }
 
             if (ImGui.beginDragDropTarget()) {
+                // Visual feedback: colored separator indicates the valid drop zone
+                ImGui.pushStyleColor(ImGuiCol.Separator, ImGui.getColorU32(ImGuiCol.DragDropTarget))
+                ImGui.separator()
+                ImGui.popStyleColor()
                 val payload = ImGui.acceptDragDropPayload<Int>("GAMEOBJECT_UID")
                 if (payload != null) {
                     val draggedObject = gameObjectManager.getGameObject(payload)

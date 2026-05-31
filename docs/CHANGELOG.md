@@ -4,6 +4,23 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.50.0.5] - 2026-05-31: A46.0.1 — Context menus and drag/drop improvements
+
+### Summary
+
+Completed the final subtask of A46.0.1. Context menus in `SceneHierarchyWindow`, `ProjectWindow`, and `PropertiesWindow` were audited — most were already complete. Targeted improvements made to drag/drop visual feedback and scene-open integration.
+
+### Improved
+
+- **SceneHierarchyWindow**: Drag source tooltip now shows `"Moving: <name>"` via localized format string. Drop target renders a `DragDropTarget`-colored separator for clear visual confirmation of valid drop zones.
+- **ProjectWindow**: Added `"Open"` context menu item for `.scene` files (publishes `FileSystemEvent.OpenSceneFileEvent`), matching the double-click behavior. Drag source tooltip now shows `"File: <name>"` via localized format string.
+- **PropertiesWindow**: Already complete (Remove Component, Reset to Defaults, Copy Component all present). No changes needed.
+- `strings.properties`: Added `ctx.hierarchy.drag_tooltip`, `ctx.project.drag_tooltip`, `context.project.open`
+
+### A46.0.1 Status: All 4 subtasks complete
+
+---
+
 ## [v0.50.0.4] - 2026-05-31: A46.0.1 Editor Tooling Revamp — Diagnostics, Toolbar, Search & History
 
 ### Summary

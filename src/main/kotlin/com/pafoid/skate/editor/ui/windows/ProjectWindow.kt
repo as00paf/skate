@@ -231,7 +231,7 @@ class ProjectWindow(
         // Drag-drop source for internal dragging
         if (beginDragDropSource()) {
             setDragDropPayload("FILE_PATH", item.path)
-            text("$icon ${item.name}")
+            text(stringManager.getString("ctx.project.drag_tooltip", item.name))
             endDragDropSource()
         }
     }
@@ -321,6 +321,14 @@ class ProjectWindow(
                     }
                     else -> {
                         // File context menu
+                        // Open action for scene files
+                        if (target.type == FileType.SCENE) {
+                            if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("context.project.open")}")) {
+                                logger.logEditor("Opening scene: ${target.name}")
+                                eventSystem.publish(FileSystemEvent.OpenSceneFileEvent(target.path))
+                            }
+                            separator()
+                        }
                         // Show GUID if asset has one
                         if (target.assetGuid != null) {
                             if (menuItem("${Icons.COPY} ${stringManager.getString("context.project.copy_guid")}")) {
