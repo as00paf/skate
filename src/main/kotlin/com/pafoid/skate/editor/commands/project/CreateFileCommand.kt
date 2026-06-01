@@ -1,7 +1,8 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.logEditor
 import java.io.File
 
 /**
@@ -55,6 +56,7 @@ class CreateFileCommand(
             if (!wasCreated) {
                 if (failureReason == null) failureReason = "failed to create: ${file.name}"
                 logger.logEditor("Failed to create: ${file.name}")
+                wasCreated = false
                 return
             }
 

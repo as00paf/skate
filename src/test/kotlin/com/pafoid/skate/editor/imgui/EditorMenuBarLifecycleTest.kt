@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
@@ -14,6 +13,7 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.WindowController
 import io.mockk.every
 import io.mockk.mockk

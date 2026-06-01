@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.search.providers
 
 import com.pafoid.skate.editor.events.ViewportAction
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -13,9 +13,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
 class ActionSearchProviderDuplicateFlowTest {
 
@@ -35,19 +33,10 @@ class ActionSearchProviderDuplicateFlowTest {
         every { scene.selectedGameObject } returns selected
         every { sceneManager.currentScene } returns scene
 
-        stopKoin()
-        startKoin {
-            modules(
-                module {
-                    single { eventSystem }
-                }
-            )
-        }
-
         var received: ViewportAction.Duplicate? = null
         eventSystem.subscribe<ViewportAction.Duplicate> { received = it }
 
-        val provider = ActionSearchProvider(sceneManager, logger)
+        val provider = ActionSearchProvider(sceneManager, logger, eventSystem)
         val duplicateResult = provider.search("duplicate")
             .firstOrNull { it.metadata["actionId"] == "duplicate" }
 

@@ -3,9 +3,9 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
-import com.pafoid.skate.engine.contracts.EngineLogLevel
-import com.pafoid.skate.engine.contracts.EngineLogger
-import com.pafoid.skate.engine.contracts.IStringManager
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
@@ -25,8 +25,8 @@ import kotlin.math.sin
  */
 class AudioSystem(
     private val audioEngine: AudioEngine,
-    private val logger: EngineLogger,
-    private val stringManager: IStringManager,
+    private val logger: LoggerService,
+    private val stringManager: StringManager,
     private val resourceManager: ResourceManager,
 ) : System(priority = ExecutionPriority.LATE) {
 
@@ -41,9 +41,9 @@ class AudioSystem(
         if (!isInitialized) {
             if (audioEngine.init()) {
                 isInitialized = true
-                logger.logEngine("AudioSystem: Audio initialized", EngineLogLevel.INFO)
+                logger.log("AudioSystem: Audio initialized", LogLevel.INFO)
             } else {
-                logger.logEngine("AudioSystem: Failed to initialize - audio disabled", EngineLogLevel.WARN)
+                logger.log("AudioSystem: Failed to initialize - audio disabled", LogLevel.WARN)
                 return
             }
         }

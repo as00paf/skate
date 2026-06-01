@@ -3,6 +3,8 @@ package com.pafoid.skate.engine.physics3d
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -45,8 +47,8 @@ class SkateboardPhysicsTest {
                     single<SceneManager> { sceneManager }
                     single<DebugRenderer> { debugRenderer }
                     single<EventSystem> { mockk(relaxed = true) }
-                    single { mockk<com.pafoid.skate.editor.systems.StringManager>(relaxed = true) }
-                    single { mockk<com.pafoid.skate.editor.systems.LoggerService>(relaxed = true) }
+                    single { mockk<StringManager>(relaxed = true) }
+                    single { mockk<LoggerService>(relaxed = true) }
                 })
             }
         }

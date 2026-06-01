@@ -1,6 +1,8 @@
 package com.pafoid.skate.engine.physics3d
 
 import com.pafoid.skate.engine.addComponent
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
@@ -26,8 +28,8 @@ class FrictionPropagationTest {
             startKoin {
                 modules(module {
                     single { mockk<com.pafoid.skate.engine.render.renderer.DebugRenderer>(relaxed = true) }
-                    single { mockk<com.pafoid.skate.editor.systems.StringManager>(relaxed = true) }
-                    single { mockk<com.pafoid.skate.editor.systems.LoggerService>(relaxed = true) }
+                    single { mockk<StringManager>(relaxed = true) }
+                    single { mockk<LoggerService>(relaxed = true) }
                 })
             }
             physics = BulletPhysics3D()

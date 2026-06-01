@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.input.listeners
 
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.LoggerService
 import org.lwjgl.glfw.GLFW.GLFW_CONNECTED
 import org.lwjgl.glfw.GLFW.GLFW_DISCONNECTED
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_LAST
@@ -28,11 +28,11 @@ class GamepadListener(private val logger: LoggerService) {
             if (jid !in 0..GLFW_JOYSTICK_LAST) return@glfwSetJoystickCallback
             if (event == GLFW_CONNECTED) {
                 gamepadPresent[jid] = true
-                logger.logEngine("Joystick $jid connected: ${glfwGetJoystickName(jid)}")
+                logger.log("Joystick $jid connected: ${glfwGetJoystickName(jid)}")
             } else if (event == GLFW_DISCONNECTED) {
                 gamepadPresent[jid] = false
                 clearJoystickButtons(jid)
-                logger.logEngine("Joystick $jid disconnected")
+                logger.log("Joystick $jid disconnected")
             }
         }
 

@@ -2,20 +2,28 @@ package com.pafoid.skate.editor.search.providers
 
 import com.pafoid.skate.editor.data.EditorAction
 import com.pafoid.skate.editor.data.PrefabType
-import com.pafoid.skate.editor.events.SceneAction
-import com.pafoid.skate.editor.events.SceneAction.OpenRequested
+import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
+import com.pafoid.skate.editor.events.ViewportAction.CreateLight
+import com.pafoid.skate.editor.events.ViewportAction.CreatePrimitive
+import com.pafoid.skate.editor.events.ViewportAction.Delete
+import com.pafoid.skate.editor.events.ViewportAction.Duplicate
+import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
+import com.pafoid.skate.editor.events.ViewportAction.ResetTransform
+import com.pafoid.skate.editor.events.ViewportAction.SetRuntimePlaying
+import com.pafoid.skate.editor.events.ViewportAction.SpawnPrefab
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.editor.events.ViewportAction.*
+import com.pafoid.skate.engine.events.SceneAction
+import com.pafoid.skate.engine.events.SceneAction.OpenRequested
 import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Search provider for editor actions and commands.
@@ -26,9 +34,8 @@ import org.koin.core.component.inject
 class ActionSearchProvider(
     private val sceneManager: SceneManager,
     private val logger: LoggerService,
+    private val eventSystem: EventSystem,
 ) : BaseSearchProvider(), KoinComponent {
-    
-    private val eventSystem: EventSystem by inject()
 
     override val category: SearchCategory = SearchCategory.ACTION
 

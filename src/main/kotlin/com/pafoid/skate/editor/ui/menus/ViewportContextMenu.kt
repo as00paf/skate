@@ -2,10 +2,18 @@ package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.ViewportAction
-import com.pafoid.skate.editor.events.ViewportAction.*
+import com.pafoid.skate.editor.events.ViewportAction.CreateCamera
+import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
+import com.pafoid.skate.editor.events.ViewportAction.CreateLight
+import com.pafoid.skate.editor.events.ViewportAction.CreatePrimitive
+import com.pafoid.skate.editor.events.ViewportAction.Delete
+import com.pafoid.skate.editor.events.ViewportAction.Duplicate
+import com.pafoid.skate.editor.events.ViewportAction.FocusSelected
+import com.pafoid.skate.editor.events.ViewportAction.ResetCamera
+import com.pafoid.skate.editor.events.ViewportAction.SpawnPrefab
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.data.LightType
 import imgui.ImGui

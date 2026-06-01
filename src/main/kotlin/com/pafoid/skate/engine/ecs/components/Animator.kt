@@ -1,13 +1,13 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
@@ -93,17 +93,17 @@ class Animator : Component(), KoinComponent {
         val alreadyHasAnimation = animations.any { it.name == animation.name }
 
         when {
-            skeleton == null -> logger.logEngine(
+            skeleton == null -> logger.log(
                 "Animation '${animation.name}' cannot be added because ${gameObject.name} does not currently have a skeleton.",
                 LogLevel.ERROR
             )
 
-            !isValid -> logger.logEngine(
+            !isValid -> logger.log(
                 "Animation '${animation.name}' is incompatible with the current skeleton. Skipping.",
                 LogLevel.ERROR
             )
 
-            alreadyHasAnimation -> logger.logEngine(
+            alreadyHasAnimation -> logger.log(
                 "'${gameObject.name}' already contains '${animation.name}' animation.",
                 LogLevel.ERROR
             )
@@ -113,7 +113,7 @@ class Animator : Component(), KoinComponent {
                 if (animation.path.isNotBlank() && !animationPaths.contains(animation.path)) {
                     animationPaths.add(animation.path)
                 }
-                logger.logEngine("Animation '${animation.name}' added successfully!", LogLevel.ACTION)
+                logger.log("Animation '${animation.name}' added successfully!", LogLevel.ACTION)
             }
         }
     }
@@ -134,7 +134,7 @@ class Animator : Component(), KoinComponent {
                     val animation = resourceManager.loadAnimationSync(path, skeleton)
                     animations.add(animation)
                 } catch (e: Exception) {
-                    logger.logEngine("Failed to load animation from path: $path - ${e.message}", LogLevel.ERROR)
+                    logger.log("Failed to load animation from path: $path - ${e.message}", LogLevel.ERROR)
                 }
             }
         }
@@ -382,10 +382,22 @@ class Animator : Component(), KoinComponent {
             val optionalBones = missingBones.filter { !isCriticalBone(it) }
 
             if (criticalBones.isNotEmpty()) {
-                logger.logEngine("Animation '${animation.name}' targets critical bones that do not exist in the skeleton: ${criticalBones.joinToString(", ")}.", LogLevel.ERROR)
+                logger.log(
+                    "Animation '${animation.name}' targets critical bones that do not exist in the skeleton: ${
+                        criticalBones.joinToString(
+                            ", "
+                        )
+                    }.", LogLevel.ERROR
+                )
                 return false
             } else if (optionalBones.isNotEmpty()) {
-                logger.logEngine("Animation '${animation.name}' targets optional bones that do not exist in the skeleton: ${optionalBones.joinToString(", ")}. Animation may have reduced fidelity.", LogLevel.WARN)
+                logger.log(
+                    "Animation '${animation.name}' targets optional bones that do not exist in the skeleton: ${
+                        optionalBones.joinToString(
+                            ", "
+                        )
+                    }. Animation may have reduced fidelity.", LogLevel.WARN
+                )
                 // Still return true as these are optional bones
             }
         }
@@ -397,7 +409,10 @@ class Animator : Component(), KoinComponent {
 
         // Only warn if there are many extra bones (indicating a major topology mismatch)
         if (extraSkeletonBones.size > skeletonBoneNames.size * 0.5) { // More than 50% of bones unused
-            logger.logEngine("Skeleton has many bones not targeted by animation '${animation.name}'. This may indicate a topology mismatch.", LogLevel.WARN)
+            logger.log(
+                "Skeleton has many bones not targeted by animation '${animation.name}'. This may indicate a topology mismatch.",
+                LogLevel.WARN
+            )
         }
 
         return true

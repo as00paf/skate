@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.addComponent
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority

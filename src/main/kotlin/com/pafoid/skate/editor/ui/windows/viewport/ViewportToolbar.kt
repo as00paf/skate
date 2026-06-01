@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
-import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.ViewportAction.ScreenshotRequested
 import com.pafoid.skate.editor.events.ViewportAction.SetRuntimePlaying
 import com.pafoid.skate.editor.events.ViewportAction.ToggleGizmo
@@ -12,15 +11,17 @@ import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_WIDTH
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_SPACING
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import imgui.ImVec2

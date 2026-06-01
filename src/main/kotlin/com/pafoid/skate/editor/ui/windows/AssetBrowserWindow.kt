@@ -1,15 +1,14 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
+import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.type.ImBoolean
 import imgui.type.ImString
-import org.koin.core.component.KoinComponent
 
 class AssetBrowserWindow(
     private val stringManager: StringManager,

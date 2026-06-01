@@ -1,9 +1,9 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.graph.RenderGraph
 import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
@@ -40,27 +40,27 @@ class RenderResourcesFactory(
 ) : KoinComponent {
 
     suspend fun create(width: Int, height: Int): RenderResources {
-        logger.logEngine("Initializing OpenGL state tracker...")
+        logger.log("Initializing OpenGL state tracker...")
         GLStateTracker.initialize()
 
-        logger.logEngine("Creating framebuffer and picking texture...")
+        logger.log("Creating framebuffer and picking texture...")
         val frameBuffer = FrameBuffer(width, height)
         frameBuffer.initialize()
 
         val pickingTexture = PickingTexture(width, height)
 
-        logger.logEngine("Loading shaders...")
+        logger.log("Loading shaders...")
         val shaders = loadShaders()
 
-        logger.logEngine("Creating renderer instances...")
+        logger.log("Creating renderer instances...")
         val renderers = createRenderers(shaders, resourceManager)
 
-        logger.logEngine("Initializing splash renderer...")
+        logger.log("Initializing splash renderer...")
         splashRenderer.initialize()
 
-        logger.logEngine("Creating render passes...")
+        logger.log("Creating render passes...")
         val shadowMap = ShadowMap.createWithBestResolution(4096)
-        logger.logEngine("Shadow map resolution: ${shadowMap.width}x${shadowMap.height}")
+        logger.log("Shadow map resolution: ${shadowMap.width}x${shadowMap.height}")
         shadowMap.initialize()
         val renderPasses = createRenderPasses(
             shaders = shaders,
@@ -72,10 +72,10 @@ class RenderResourcesFactory(
             shadowMap = shadowMap
         )
 
-        logger.logEngine("Building render graph...")
+        logger.log("Building render graph...")
         val renderGraph = buildRenderGraph(renderPasses, shadowMap)
 
-        logger.logEngine("Render resources initialization complete.")
+        logger.log("Render resources initialization complete.")
 
         return RenderResources(
             shaders = shaders,

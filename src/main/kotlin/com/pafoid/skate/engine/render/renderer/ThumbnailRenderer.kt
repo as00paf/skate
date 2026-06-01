@@ -1,11 +1,11 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -87,11 +87,11 @@ class ThumbnailRenderer(
         }
 
         val fbo = frameBuffer ?: run {
-            logger.logEngine("Could not create or initialize frame buffer")
+            logger.log("Could not create or initialize frame buffer")
             return -1
         }
         val shader = defaultShader ?: run {
-            logger.logEngine("Could not create or initialize default shader")
+            logger.log("Could not create or initialize default shader")
             return -1
         }
 

@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.assets.data
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lwjgl.openal.AL10.AL_FORMAT_MONO16
@@ -40,7 +40,7 @@ class SoundBuffer(val filePath: String) : KoinComponent {
     private fun load() {
         val file = File(filePath)
         if (!file.exists()) {
-            logger.logEngine("SoundBuffer: File not found '$filePath'", LogLevel.ERROR)
+            logger.log("SoundBuffer: File not found '$filePath'", LogLevel.ERROR)
             return
         }
 
@@ -49,14 +49,14 @@ class SoundBuffer(val filePath: String) : KoinComponent {
                 "ogg" -> loadOgg(file.path)
                 "wav" -> loadWav(file.path)
                 else -> {
-                    logger.logEngine(
+                    logger.log(
                         "SoundBuffer: Unsupported format '${file.extension}' for '$filePath'",
                         LogLevel.ERROR
                     )
                 }
             }
         } catch (e: Exception) {
-            logger.logEngine("SoundBuffer: Exception loading '$filePath' - ${e.message}", LogLevel.ERROR)
+            logger.log("SoundBuffer: Exception loading '$filePath' - ${e.message}", LogLevel.ERROR)
             e.printStackTrace()
         }
     }
@@ -66,16 +66,16 @@ class SoundBuffer(val filePath: String) : KoinComponent {
             val channelsBuffer = stack.mallocInt(1)
             val sampleRateBuffer = stack.mallocInt(1)
 
-            logger.logEngine("SoundBuffer: Loading OGG '$path'", LogLevel.INFO)
+            logger.log("SoundBuffer: Loading OGG '$path'", LogLevel.INFO)
             val rawAudioBuffer = stb_vorbis_decode_filename(path, channelsBuffer, sampleRateBuffer)
                 ?: run {
-                    logger.logEngine("SoundBuffer: STB Vorbis failed to load OGG '$path'", LogLevel.ERROR)
+                    logger.log("SoundBuffer: STB Vorbis failed to load OGG '$path'", LogLevel.ERROR)
                     return
                 }
 
             val channels = channelsBuffer.get()
             val sampleRate = sampleRateBuffer.get()
-            logger.logEngine("SoundBuffer: Loaded OGG '$path' - ${channels} channels, ${sampleRate}Hz", LogLevel.INFO)
+            logger.log("SoundBuffer: Loaded OGG '$path' - ${channels} channels, ${sampleRate}Hz", LogLevel.INFO)
             val format = if (channels == 1) AL_FORMAT_MONO16 else AL_FORMAT_STEREO16
 
             durationInSeconds = rawAudioBuffer.limit().toFloat() / channels / sampleRate
@@ -88,7 +88,7 @@ class SoundBuffer(val filePath: String) : KoinComponent {
     }
 
     private fun loadWav(path: String) {
-        logger.logEngine("SoundBuffer: Loading WAV '$path'", LogLevel.INFO)
+        logger.log("SoundBuffer: Loading WAV '$path'", LogLevel.INFO)
 
         val file = File(path)
         var format: AudioFormat
@@ -104,7 +104,7 @@ class SoundBuffer(val filePath: String) : KoinComponent {
 
         // Convert 24-bit or 32-bit to 16-bit for OpenAL compatibility
         if (format.sampleSizeInBits > 16) {
-            logger.logEngine("SoundBuffer: Converting ${format.sampleSizeInBits}-bit to 16-bit", LogLevel.INFO)
+            logger.log("SoundBuffer: Converting ${format.sampleSizeInBits}-bit to 16-bit", LogLevel.INFO)
             bytes = convertTo16Bit(bytes, format)
             format = AudioFormat(
                 AudioFormat.Encoding.PCM_SIGNED,
@@ -123,7 +123,7 @@ class SoundBuffer(val filePath: String) : KoinComponent {
             format.channels == 2 && format.sampleSizeInBits == 8 -> AL_FORMAT_STEREO8
             format.channels == 2 && format.sampleSizeInBits == 16 -> AL_FORMAT_STEREO16
             else -> {
-                logger.logEngine(
+                logger.log(
                     "SoundBuffer: Unsupported WAV format after conversion: ${format.channels} channels, ${format.sampleSizeInBits} bits",
                     LogLevel.ERROR
                 )
@@ -131,7 +131,7 @@ class SoundBuffer(val filePath: String) : KoinComponent {
             }
         }
 
-        logger.logEngine(
+        logger.log(
             "SoundBuffer: Loaded WAV '$path' - ${format.channels} channels, ${format.sampleRate}Hz, ${format.sampleSizeInBits} bits",
             LogLevel.INFO
         )

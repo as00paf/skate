@@ -3,16 +3,13 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImBoolean
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import kotlin.getValue
 
 /**
  * Render Graph visualization window showing the rendering pipeline structure.

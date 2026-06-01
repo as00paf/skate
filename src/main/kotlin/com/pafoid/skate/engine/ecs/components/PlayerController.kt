@@ -1,9 +1,8 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.editor.data.InputSettings
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.JumpPressed
@@ -49,14 +48,14 @@ import kotlin.math.atan2
  *
  * ## Configuration
  *
- * All thresholds and physics values are configurable via [InputSettings]:
- * - [InputSettings.movementThreshold] - Minimum input magnitude for movement
- * - [InputSettings.sprintThreshold] - Input magnitude for auto-sprint
- * - [InputSettings.jumpImpulse] - Jump force
- * - [InputSettings.walkSpeed] - Walking speed
- * - [InputSettings.runSpeed] - Running speed
- * - [InputSettings.rotationSpeed] - Character rotation speed
- * - [InputSettings.takeOffTime] - Jump charge time
+ * All thresholds and physics values are configurable via inline fields:
+ * - movementThreshold - Minimum input magnitude for movement
+ * - sprintThreshold - Input magnitude for auto-sprint
+ * - jumpImpulse - Jump force
+ * - walkSpeed - Walking speed
+ * - runSpeed - Running speed
+ * - rotationSpeed - Character rotation speed
+ * - takeOffTime - Jump charge time
  */
 @Serializable
 class PlayerController : Component(), KoinComponent {
@@ -101,8 +100,8 @@ class PlayerController : Component(), KoinComponent {
 
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
-        rb ?: run { logger.logEngine("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }
-        stateManager ?: run { logger.logEngine("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
+        rb ?: run { logger.log("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }
+        stateManager ?: run { logger.log("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
 
         eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
         eventSystem.subscribe<Landing> { onLanding(it) }
@@ -221,16 +220,16 @@ class PlayerController : Component(), KoinComponent {
 
         // Log trick inputs for debugging
         if (kickflipPressed) {
-            logger.logEngine("Kickflip input detected", LogLevel.INFO)
+            logger.log("Kickflip input detected", LogLevel.INFO)
         }
         if (heelflipPressed) {
-            logger.logEngine("Heelflip input detected", LogLevel.INFO)
+            logger.log("Heelflip input detected", LogLevel.INFO)
         }
         if (grabPressed) {
-            logger.logEngine("Grab input detected", LogLevel.INFO)
+            logger.log("Grab input detected", LogLevel.INFO)
         }
         if (manualPressed) {
-            logger.logEngine("Manual input detected", LogLevel.INFO)
+            logger.log("Manual input detected", LogLevel.INFO)
         }
     }
 
@@ -318,18 +317,18 @@ class PlayerController : Component(), KoinComponent {
 
         if (isJumping && !wasGrounded && isGrounded) { // Land
             isJumping = false
-            //logger.logEngine("LANDED!")
+            //logger.log("LANDED!")
         }
 
         if (!isJumping && isGrounded && jumpPressed) { // Crouch
             isJumping = true
             jumpTimer = takeOffTime
 
-            //logger.logEngine("JUMP TIMER STARTED!")
+            //logger.log("JUMP TIMER STARTED!")
         }
 
         if (isJumping && isGrounded && jumpTimer <= 0f) { // Jump
-            //logger.logEngine("JUMP TIMER FINISHED!")
+            //logger.log("JUMP TIMER FINISHED!")
             rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
             jumpTimer = takeOffTime
         }

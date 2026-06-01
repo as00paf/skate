@@ -4,13 +4,13 @@ import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import imgui.ImGui
@@ -18,10 +18,6 @@ import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import org.joml.Vector2f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.java.KoinJavaComponent.inject
-import kotlin.getValue
 
 class GameViewWindow(
     private val mouseListener: MouseListener,

@@ -1,7 +1,8 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import java.io.File

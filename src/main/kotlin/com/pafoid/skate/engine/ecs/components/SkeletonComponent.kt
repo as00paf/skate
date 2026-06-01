@@ -1,12 +1,12 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.BoneMirrorUtil
 import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.getComponent

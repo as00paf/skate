@@ -2,11 +2,11 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import io.mockk.every
 import io.mockk.mockk

@@ -1,10 +1,10 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.audio.AudioEngine
-import com.pafoid.skate.engine.contracts.EngineLogLevel
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.Camera
 import io.mockk.clearMocks
@@ -59,7 +59,7 @@ class AudioSystemTest : KoinTest {
 
         // Assert
         verify { audioEngine.init() }
-        verify { logger.logEngine(any<String>(), any<EngineLogLevel>()) }
+        verify { logger.log(any<String>(), any<LogLevel>(), any()) }
     }
 
     @Test
@@ -72,7 +72,7 @@ class AudioSystemTest : KoinTest {
 
         // Assert
         verify { audioEngine.init() }
-        verify { logger.logEngine("AudioSystem: Failed to initialize - audio disabled", any<EngineLogLevel>()) }
+        verify { logger.log("AudioSystem: Failed to initialize - audio disabled", any<LogLevel>(), any()) }
         // Should not try to update listener
         verify(exactly = 0) { audioEngine.setListenerPosition(any(), any(), any()) }
     }

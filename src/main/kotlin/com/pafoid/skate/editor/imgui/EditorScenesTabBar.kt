@@ -1,12 +1,18 @@
 package com.pafoid.skate.editor.imgui
 
-import com.pafoid.skate.editor.events.SceneAction
-import com.pafoid.skate.editor.events.SceneAction.*
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.SceneAction.CloseAllRequested
+import com.pafoid.skate.engine.events.SceneAction.CloseOthersRequested
+import com.pafoid.skate.engine.events.SceneAction.CloseRequested
+import com.pafoid.skate.engine.events.SceneAction.CreateRequested
+import com.pafoid.skate.engine.events.SceneAction.DeleteRequested
+import com.pafoid.skate.engine.events.SceneAction.RenameRequested
+import com.pafoid.skate.engine.events.SceneAction.SaveAsRequested
+import com.pafoid.skate.engine.events.SceneAction.SaveRequested
 import imgui.ImGui
 import imgui.flag.ImGuiTabBarFlags
 import imgui.flag.ImGuiTabItemFlags

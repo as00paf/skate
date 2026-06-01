@@ -1,12 +1,13 @@
 package com.pafoid.skate.editor.project
 
-import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.data.SceneOpenResult
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetGuid
 import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.logEditor
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.collectGameObjectsDepthFirst
@@ -81,7 +82,7 @@ class SceneSerializer(
             scene.isDirty = false
             logger.logEditor("Scene saved to $path")
         } catch (e: IOException) {
-            logger.logEngine("Failed to save scene to $path: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Failed to save scene to $path: ${e.message}", LogLevel.ERROR)
         }
     }
 
@@ -118,7 +119,7 @@ class SceneSerializer(
         try {
             inFile = String(Files.readAllBytes(Paths.get(path)))
         } catch (e: IOException) {
-            logger.logEngine("Could not find $path", LogLevel.ERROR)
+            logger.logEditor("Could not find $path", LogLevel.ERROR)
             return false
         }
 
@@ -127,7 +128,7 @@ class SceneSerializer(
         val data: SceneSaveData = try {
             serializer.decode(inFile)
         } catch (e: Exception) {
-            logger.logEngine("Failed to deserialize scene from $path: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Failed to deserialize scene from $path: ${e.message}", LogLevel.ERROR)
             return false
         }
 

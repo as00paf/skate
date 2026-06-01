@@ -1,7 +1,8 @@
 package com.pafoid.skate.game.trick
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.logGame
+import com.pafoid.skate.engine.data.LogLevel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.InputStream
@@ -22,10 +23,10 @@ class TrickManager(private val resourcePath: String = "/values/tricks.properties
             inputStream?.use {
                 properties.load(it)
             } ?: run {
-                logger.logEngine("Could not find resource file: $resourcePath", LogLevel.ERROR)
+                logger.logGame("Could not find resource file: $resourcePath", LogLevel.ERROR)
             }
         } catch (e: Exception) {
-            logger.logEngine("Failed to load tricks from $resourcePath", LogLevel.ERROR)
+            logger.logGame("Failed to load tricks from $resourcePath", LogLevel.ERROR)
             e.printStackTrace()
         }
     }

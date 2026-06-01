@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.input.InputMappings
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin

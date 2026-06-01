@@ -1,19 +1,19 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
-import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetType
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.logEditor
+import com.pafoid.skate.engine.data.LogLevel
 import imgui.ImGui
 import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiTableFlags
 import imgui.type.ImString
-import org.koin.core.component.KoinComponent
 import java.awt.Desktop
 import java.io.File
 
@@ -152,7 +152,7 @@ class SoundsTab(
                     currentPlayingFile = null
                 }
             } catch (e: Exception) {
-                logger.logEngine("SoundsTab: Failed to load sound '${file.name}' - ${e.message}", LogLevel.ERROR)
+                logger.logEditor("SoundsTab: Failed to load sound '${file.name}' - ${e.message}", LogLevel.ERROR)
                 currentPlayingFile = null
             }
         }

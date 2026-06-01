@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.events.ProjectEvent.CloseProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
@@ -14,11 +13,13 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.ItemType
 import com.pafoid.skate.editor.project.ProjectWizard
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.BuildConfig
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.logEditor
+import com.pafoid.skate.engine.data.LogLevel
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
@@ -343,14 +344,14 @@ class ProjectWizardWindow(
             logger.logEditor("Project opened: ${projectManager.getProjectName()}")
         }
         eventSystem.subscribe<OpenProjectFailed> { event ->
-            logger.logEngine("Failed to open project: ${event.projectPath}", LogLevel.ERROR)
+            logger.logEditor("Failed to open project: ${event.projectPath}", LogLevel.ERROR)
         }
 
         eventSystem.subscribe<CreateProjectSucceeded> { event ->
             logger.logEditor("Project created successfully: ${event.name}")
         }
         eventSystem.subscribe<CreateProjectFailed> { event ->
-            logger.logEngine("Failed to create project: ${event.reason}", LogLevel.ERROR)
+            logger.logEditor("Failed to create project: ${event.reason}", LogLevel.ERROR)
         }
 
         eventSystem.subscribe<CloseProjectRequested> { event ->

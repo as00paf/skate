@@ -3,11 +3,11 @@ package com.pafoid.skate.editor.ui.handlers
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.IInputBuffer
@@ -91,6 +91,7 @@ class EditorInputHandlerEventRoutingTest {
             logger = logger,
             editorInputState = editorInputState,
             sceneManager = sceneManager,
+            engine = engine
         )
 
         var createEvents = 0

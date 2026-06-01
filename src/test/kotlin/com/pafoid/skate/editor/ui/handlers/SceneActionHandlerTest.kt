@@ -1,20 +1,19 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.LogEntry
-import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.editor.events.FileSystemEvent
-import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.project.SceneSerializer
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.every
@@ -114,14 +113,9 @@ class SceneActionHandlerTest {
 
         // Create a mock LoggerService that captures log entries
         testLogger = mockk(relaxed = true)
-        every { testLogger.logEditor(any<String>(), any<LogLevel>()) } answers {
+        every { testLogger.log(any<String>(), any(), any()) } answers {
             val message = firstArg<String>()
-            val level = secondArg<LogLevel>()
-            capturedEditorLogs.add(LogEntry(message, level))
-        }
-        every { testLogger.logEngine(any<String>(), any<LogLevel>()) } answers {
-            val message = firstArg<String>()
-            val level = secondArg<LogLevel>()
+            val level = secondArg<com.pafoid.skate.engine.data.LogLevel>()
             capturedEditorLogs.add(LogEntry(message, level))
         }
 

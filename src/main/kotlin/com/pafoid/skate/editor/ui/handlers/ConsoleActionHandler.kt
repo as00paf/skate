@@ -3,9 +3,9 @@ package com.pafoid.skate.editor.ui.handlers
 import com.pafoid.skate.editor.commands.editor.ClearLogsCommand
 import com.pafoid.skate.editor.commands.editor.CopyToClipboardCommand
 import com.pafoid.skate.editor.events.ConsoleAction
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 

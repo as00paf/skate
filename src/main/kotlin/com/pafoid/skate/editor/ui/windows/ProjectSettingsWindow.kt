@@ -2,11 +2,12 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.logEditor
+import com.pafoid.skate.engine.data.LogLevel
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol
@@ -31,7 +32,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
+import java.util.*
 
 class ProjectSettingsWindow(
     private val settingsManager: SettingsManager,

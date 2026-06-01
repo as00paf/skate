@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.utils
 
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach

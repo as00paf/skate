@@ -1,10 +1,10 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.PROJECTION
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.VIEW
@@ -56,7 +56,7 @@ class DebugRenderer(
 
     fun start() {
         shader = resourceManager.getShader(Assets.Shaders.DEBUG) ?: run {
-            logger.logEngine("Could not load debug shader", LogLevel.ERROR)
+            logger.log("Could not load debug shader", LogLevel.ERROR)
             return
         }
         

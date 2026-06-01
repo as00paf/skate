@@ -1,14 +1,14 @@
 package com.pafoid.skate.engine.ecs
 
-import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.contracts.EngineLogLevel
-import com.pafoid.skate.engine.contracts.EngineLogger
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
 
 class SceneManager(
-    private val logger: EngineLogger,
+    private val logger: LoggerService,
     private val resourceManager: ResourceManager,
     private val eventSystem: EventSystem,
     private val physics3DFactory: Physics3DFactory,
@@ -33,14 +33,14 @@ class SceneManager(
         openScenes.add(scene)
         activeSceneIndex = openScenes.size - 1
 
-        logger.logEngine("Loading scene: ${scene.name}", EngineLogLevel.INFO)
+        logger.log("Loading scene: ${scene.name}", LogLevel.INFO)
         scene.start()
 
         // Publish scene opened event
         eventSystem.publish(SceneAction.Opened(scene))
         eventSystem.publish(SceneAction.Changed)
 
-        logger.logEngine("Scene ${scene.name} loaded and started.", EngineLogLevel.INFO)
+        logger.log("Scene ${scene.name} loaded and started.", LogLevel.INFO)
     }
 
     fun switchScene(scene: Scene) {
@@ -48,7 +48,7 @@ class SceneManager(
         if (sceneIndex < 0) return
 
         activeSceneIndex = sceneIndex
-        logger.logEditor("Switched to scene: ${currentScene?.name}", EngineLogLevel.ACTION)
+        logger.log("Switched to scene: ${currentScene?.name}", LogLevel.ACTION)
         eventSystem.publish(SceneAction.Changed)
     }
 
@@ -58,11 +58,11 @@ class SceneManager(
 
         val sceneToClose = openScenes[index]
         if (sceneToClose.isDirty) {
-            logger.logEditor("Warning: Closing unsaved scene ${sceneToClose.name}", EngineLogLevel.WARN)
+            logger.log("Warning: Closing unsaved scene ${sceneToClose.name}", LogLevel.WARN)
             // TODO: Prompt the user for confirmation.
         }
 
-        logger.logEditor("Destroying scene: ${sceneToClose.name}", EngineLogLevel.ACTION)
+        logger.log("Destroying scene: ${sceneToClose.name}", LogLevel.ACTION)
 
         eventSystem.publish(SceneAction.Closing(scene))
         sceneToClose.destroyScene()
@@ -72,7 +72,7 @@ class SceneManager(
         // Adjust active index
         if (openScenes.isEmpty()) {
             activeSceneIndex = -1
-            logger.logEngine("All scenes closed. Clearing resource cache.", EngineLogLevel.INFO)
+            logger.log("All scenes closed. Clearing resource cache.", LogLevel.INFO)
             resourceManager.clear(preserveNonProjectAssets = true)
         } else if (activeSceneIndex >= index) {
             activeSceneIndex = (activeSceneIndex - 1).coerceAtLeast(0)
@@ -102,7 +102,7 @@ class SceneManager(
         if (newName.isBlank()) return false
 
         scene.name = newName
-        logger.logEditor("Scene renamed: '${scene.name}'", EngineLogLevel.ACTION)
+        logger.log("Scene renamed: '${scene.name}'", LogLevel.ACTION)
         return true
     }
 
@@ -148,7 +148,7 @@ class SceneManager(
         }
         newScene.init()
         openScene(newScene, forceSingle = forceSingle)
-        logger.logEditor("Scene created: '$name'", EngineLogLevel.ACTION)
+        logger.log("Scene created: '$name'", LogLevel.ACTION)
         return newScene
     }
 }

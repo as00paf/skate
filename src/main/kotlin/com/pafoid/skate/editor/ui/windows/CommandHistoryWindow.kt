@@ -4,9 +4,9 @@ import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.UndoRedoAction
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean

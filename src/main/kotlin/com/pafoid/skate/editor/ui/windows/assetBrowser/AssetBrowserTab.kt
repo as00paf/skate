@@ -1,11 +1,11 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetInfo
 import com.pafoid.skate.engine.assets.database.AssetType
+import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.type.ImString

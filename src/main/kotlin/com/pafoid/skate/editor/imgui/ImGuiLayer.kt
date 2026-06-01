@@ -5,10 +5,10 @@ import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager

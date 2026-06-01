@@ -2,11 +2,22 @@ package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.FileSystemEvent
-import com.pafoid.skate.editor.events.ProjectEvent.*
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.editor.events.ProjectEvent.CloseProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.CreateFileRequested
+import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectFailed
+import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectSucceeded
+import com.pafoid.skate.editor.events.ProjectEvent.DeleteFileRequested
+import com.pafoid.skate.editor.events.ProjectEvent.LoadLastProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectFailed
+import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
+import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
+import com.pafoid.skate.editor.events.ProjectEvent.SaveProjectRequested
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.every
 import io.mockk.mockk

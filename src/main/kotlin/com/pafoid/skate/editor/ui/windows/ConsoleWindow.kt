@@ -1,13 +1,13 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.data.LogEntry
-import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.events.ConsoleAction
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.data.LogLevel
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
@@ -40,11 +40,11 @@ class ConsoleWindow(
 
         if (ImGui.beginTabBar("ConsoleTabs")) {
             if (ImGui.beginTabItem("${Icons.GEAR} ${stringManager.getString("tab.console.engine")}")) {
-                renderLogList(logger.engineLogs.toList(), "Engine")
+                renderLogList(logger.logs.filter { it.source == "engine" }.toList(), "Engine")
                 ImGui.endTabItem()
             }
             if (ImGui.beginTabItem("${Icons.USER} ${stringManager.getString("tab.console.editor")}")) {
-                renderLogList(logger.editorLogs.toList(), "Editor")
+                renderLogList(logger.logs.filter { it.source == "editor" }.toList(), "Editor")
                 ImGui.endTabItem()
             }
             ImGui.endTabBar()
@@ -101,7 +101,7 @@ class ConsoleWindow(
         ImGui.separator()
 
         // Row 2: log level filter buttons with per-level count badges
-        val allLogs = logger.engineLogs.toList() + logger.editorLogs.toList()
+        val allLogs = logger.logs.toList()
         val infoCount = allLogs.count { it.level == LogLevel.INFO }
         val warnCount = allLogs.count { it.level == LogLevel.WARN }
         val errorCount = allLogs.count { it.level == LogLevel.ERROR }

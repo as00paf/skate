@@ -2,9 +2,9 @@ package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiStyleVar

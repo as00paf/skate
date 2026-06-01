@@ -1,15 +1,15 @@
 package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.events.EditorEvent
-import com.pafoid.skate.editor.events.SceneAction.CreateRequested
-import com.pafoid.skate.editor.events.SceneAction.OpenRequested
-import com.pafoid.skate.editor.events.SceneAction.SaveAsRequested
-import com.pafoid.skate.editor.events.SceneAction.SaveRequested
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.SceneAction.CreateRequested
+import com.pafoid.skate.engine.events.SceneAction.OpenRequested
+import com.pafoid.skate.engine.events.SceneAction.SaveAsRequested
+import com.pafoid.skate.engine.events.SceneAction.SaveRequested
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem

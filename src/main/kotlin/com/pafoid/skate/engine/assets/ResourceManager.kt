@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.assets
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.Texture
@@ -16,6 +14,8 @@ import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetGuid
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.DefaultJobSystem
 import com.pafoid.skate.engine.utils.IJobSystem
@@ -85,13 +85,13 @@ class ResourceManager(
             try {
                 Texture.loadData(path)
             } catch (e: Exception) {
-                logger.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
+                logger.log("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
                 null
             }
         }
 
         if (data == null) {
-            logger.logEngine("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
+            logger.log("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
             if (path == Assets.Textures.DEFAULT) throw RuntimeException("Critical Error: Default texture not found!")
             return loadTexture(Assets.Textures.DEFAULT)
         }
@@ -130,13 +130,13 @@ class ResourceManager(
             try {
                 Texture.loadData(path)
             } catch (e: Exception) {
-                logger.logEngine("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
+                logger.log("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
                 null
             }
         } else null
 
         if (data == null) {
-            logger.logEngine("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
+            logger.log("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
             if (path == Assets.Textures.DEFAULT) throw RuntimeException("Critical Error: Default texture not found!")
             return loadTextureSync(Assets.Textures.DEFAULT)
         }
@@ -168,7 +168,7 @@ class ResourceManager(
             jobSystem.runOnMain {
                 it.destroy()
             }
-            logger.logEngine("Evicted texture from LRU cache: $path", LogLevel.INFO)
+            logger.log("Evicted texture from LRU cache: $path", LogLevel.INFO)
         }
         lruQueue.remove(path)
     }
@@ -177,9 +177,9 @@ class ResourceManager(
         if (watchService == null) {
             try {
                 watchService = FileSystems.getDefault().newWatchService()
-                logger.logEngine("Hot-reload watch service started", LogLevel.INFO)
+                logger.log("Hot-reload watch service started", LogLevel.INFO)
             } catch (e: Exception) {
-                logger.logEngine("Failed to create watch service: ${e.message}", LogLevel.ERROR)
+                logger.log("Failed to create watch service: ${e.message}", LogLevel.ERROR)
                 return
             }
         }
@@ -195,7 +195,7 @@ class ResourceManager(
                 )
                 watchedPaths[path] = path
             } catch (e: Exception) {
-                logger.logEngine("Failed to watch file: $path - ${e.message}", LogLevel.WARN)
+                logger.log("Failed to watch file: $path - ${e.message}", LogLevel.WARN)
             }
         }
     }
@@ -214,7 +214,7 @@ class ResourceManager(
                 
                 val watchedPath = watchedPaths.keys.find { it.endsWith(context.toString()) }
                 if (watchedPath != null) {
-                    logger.logEngine("File changed, reloading: $absolutePath", LogLevel.INFO)
+                    logger.log("File changed, reloading: $absolutePath", LogLevel.INFO)
                     invalidateAsset(absolutePath)
                 }
             }
@@ -231,8 +231,8 @@ class ResourceManager(
             jobSystem.runOnMain { it.destroy() }
             lruQueue.remove(absolutePath)
         }
-        
-        logger.logEngine("Invalidated asset: $absolutePath", LogLevel.INFO)
+
+        logger.log("Invalidated asset: $absolutePath", LogLevel.INFO)
     }
 
     suspend fun loadShader(path: String): Shader {
@@ -248,9 +248,9 @@ class ResourceManager(
                 shader
             }
         } catch (e: Exception) {
-            logger.logEngine("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.log("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Shaders.SHADER_3D_DEFAULT) throw RuntimeException("Critical Error: Default 3D shader not found!")
-            logger.logEngine("Loading default 3D shader instead of $path", LogLevel.ERROR)
+            logger.log("Loading default 3D shader instead of $path", LogLevel.ERROR)
             loadShader(Assets.Shaders.SHADER_3D_DEFAULT)
         }
     }
@@ -266,9 +266,9 @@ class ResourceManager(
             shaders[absolutePath] = shader
             shader
         } catch (e: Exception) {
-            logger.logEngine("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.log("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Shaders.SHADER_3D_DEFAULT) throw RuntimeException("Critical Error: Default 3D shader not found!")
-            logger.logEngine("Loading default 3D shader instead of $path", LogLevel.ERROR)
+            logger.log("Loading default 3D shader instead of $path", LogLevel.ERROR)
             loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
         }
     }
@@ -288,7 +288,7 @@ class ResourceManager(
             sounds[absolutePath] = sound
             sound
         } catch (e: Exception) {
-            logger.logEngine("Failed to load sound: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.log("Failed to load sound: $path. Error: ${e.message}", LogLevel.ERROR)
             throw e // Sounds might not have a good default fallback yet
         }
     }
@@ -373,9 +373,9 @@ class ResourceManager(
                      characterModel
                  }
         } catch (e: Exception) {
-            logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.log("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
-            logger.logEngine("Loading default CUBE model instead of $path", LogLevel.ERROR)
+            logger.log("Loading default CUBE model instead of $path", LogLevel.ERROR)
             loadModel(Assets.Models.CUBE)
         }
     }
@@ -430,9 +430,9 @@ class ResourceManager(
                  characterModel.sourcePath = path
                  characterModel
         } catch (e: Exception) {
-            logger.logEngine("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.log("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
             if (path == Assets.Models.CUBE) throw RuntimeException("Critical Error: Default CUBE model not found!")
-            logger.logEngine("Loading default CUBE model instead of $path", LogLevel.ERROR)
+            logger.log("Loading default CUBE model instead of $path", LogLevel.ERROR)
             loadModelSync(Assets.Models.CUBE)
         }
     }
@@ -451,7 +451,7 @@ class ResourceManager(
             animations[absolutePath] = loadedAnimation
             loadedAnimation
         } catch (e: Exception) {
-            logger.logEngine("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.log("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
             throw e
         }
     }
@@ -466,7 +466,7 @@ class ResourceManager(
             animations[absolutePath] = loadedAnimation
             loadedAnimation
         } catch (e: Exception) {
-            logger.logEngine("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
+            logger.log("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
             throw e
         }
     }

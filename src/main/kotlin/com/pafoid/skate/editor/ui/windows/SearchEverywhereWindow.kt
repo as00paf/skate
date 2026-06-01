@@ -8,7 +8,7 @@ import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.editor.search.data.SearchResultWithCategory
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.history.SearchHistoryEntry
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import imgui.ImVec4

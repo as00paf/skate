@@ -2,12 +2,13 @@ package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.AsyncCommand
 import com.pafoid.skate.editor.data.SceneOpenResult
-import com.pafoid.skate.editor.events.SceneAction
-import com.pafoid.skate.editor.events.SceneAction.*
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.SceneAction.OpenCancelled
+import com.pafoid.skate.engine.events.SceneAction.OpenFailed
+import com.pafoid.skate.engine.events.SceneAction.OpenSucceeded
 import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.Job
 

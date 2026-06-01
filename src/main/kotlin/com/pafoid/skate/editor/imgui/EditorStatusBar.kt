@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.UiConstants
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImGui
 import imgui.flag.ImGuiCond

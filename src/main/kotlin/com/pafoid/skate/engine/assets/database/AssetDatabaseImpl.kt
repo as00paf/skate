@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.assets.database
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileNotFoundException
@@ -47,10 +47,10 @@ class AssetDatabaseImpl(
             _projectRoot = projectRoot
             clearIndexes()
             loadRegistry()
-            logger.logEngine("AssetDatabase initialized for ${projectRoot.absolutePath}", LogLevel.INFO)
+            logger.log("AssetDatabase initialized for ${projectRoot.absolutePath}", LogLevel.INFO)
             Result.success(Unit)
         } catch (e: Exception) {
-            logger.logEngine("Failed to initialize AssetDatabase: ${e.message}", LogLevel.ERROR)
+            logger.log("Failed to initialize AssetDatabase: ${e.message}", LogLevel.ERROR)
             Result.failure(e)
         }
     }
@@ -67,10 +67,10 @@ class AssetDatabaseImpl(
         return try {
             walkDirectory(root, root)
             saveRegistry()
-            logger.logEngine("Asset scan complete. ${byGuid.size} assets indexed.", LogLevel.INFO)
+            logger.log("Asset scan complete. ${byGuid.size} assets indexed.", LogLevel.INFO)
             Result.success(Unit)
         } catch (e: Exception) {
-            logger.logEngine("Asset scan failed: ${e.message}", LogLevel.ERROR)
+            logger.log("Asset scan failed: ${e.message}", LogLevel.ERROR)
             Result.failure(e)
         }
     }
@@ -116,7 +116,7 @@ class AssetDatabaseImpl(
         } else {
             // No .meta — create one
             createMeta(file).onFailure { e ->
-                logger.logEngine("Failed to create meta for ${file.name}: ${e.message}", LogLevel.WARN)
+                logger.log("Failed to create meta for ${file.name}: ${e.message}", LogLevel.WARN)
             }
         }
     }
@@ -146,7 +146,7 @@ class AssetDatabaseImpl(
 
             indexAsset(info)
         } catch (e: Exception) {
-            logger.logEngine("Failed to sync meta ${metaFile.name}: ${e.message}", LogLevel.WARN)
+            logger.log("Failed to sync meta ${metaFile.name}: ${e.message}", LogLevel.WARN)
         }
     }
 
@@ -222,7 +222,7 @@ class AssetDatabaseImpl(
             )
 
             indexAsset(info)
-            logger.logEngine("Created .meta for ${sourceFile.name} (GUID: ${guid.value.take(8)}...)", LogLevel.INFO)
+            logger.log("Created .meta for ${sourceFile.name} (GUID: ${guid.value.take(8)}...)", LogLevel.INFO)
             Result.success(guid)
         } catch (e: Exception) {
             Result.failure(e)
@@ -300,7 +300,10 @@ class AssetDatabaseImpl(
             unindexAsset(info)
             indexAsset(updatedInfo)
 
-            logger.logEngine("Moved asset: $oldPath → $newPath (GUID preserved: ${info.guid.value.take(8)}...)", LogLevel.INFO)
+            logger.log(
+                "Moved asset: $oldPath → $newPath (GUID preserved: ${info.guid.value.take(8)}...)",
+                LogLevel.INFO
+            )
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -365,7 +368,7 @@ class AssetDatabaseImpl(
             )
         }
         saveRegistry()
-        logger.logEngine("Import complete: $successCount succeeded, $failCount failed", LogLevel.INFO)
+        logger.log("Import complete: $successCount succeeded, $failCount failed", LogLevel.INFO)
         return Result.success(Unit)
     }
 
@@ -381,7 +384,7 @@ class AssetDatabaseImpl(
             registryFile.writeText(serializer.encode(data))
             Result.success(Unit)
         } catch (e: Exception) {
-            logger.logEngine("Failed to save registry: ${e.message}", LogLevel.ERROR)
+            logger.log("Failed to save registry: ${e.message}", LogLevel.ERROR)
             Result.failure(e)
         }
     }
@@ -395,11 +398,11 @@ class AssetDatabaseImpl(
             if (registryFile.exists()) {
                 val data = serializer.decode<AssetRegistryData>(registryFile.readText())
                 loadRegistryFromData(data)
-                logger.logEngine("Loaded registry with ${byGuid.size} assets", LogLevel.INFO)
+                logger.log("Loaded registry with ${byGuid.size} assets", LogLevel.INFO)
             }
             Result.success(Unit)
         } catch (e: Exception) {
-            logger.logEngine("Failed to load registry: ${e.message}", LogLevel.WARN)
+            logger.log("Failed to load registry: ${e.message}", LogLevel.WARN)
             Result.success(Unit) // Start fresh on error
         }
     }
@@ -446,7 +449,7 @@ class AssetDatabaseImpl(
             )
             indexAsset(info)
         }
-        logger.logEngine("Imported registry with ${byGuid.size} assets from project file", LogLevel.INFO)
+        logger.log("Imported registry with ${byGuid.size} assets from project file", LogLevel.INFO)
     }
 
     /**
@@ -460,9 +463,9 @@ class AssetDatabaseImpl(
                 cacheDir?.mkdirs()
                 oldFile.copyTo(registryPath!!, overwrite = true)
                 oldFile.delete()
-                logger.logEngine("Migrated asset registry to .cache/ directory", LogLevel.INFO)
+                logger.log("Migrated asset registry to .cache/ directory", LogLevel.INFO)
             } catch (e: Exception) {
-                logger.logEngine("Failed to migrate old registry: ${e.message}", LogLevel.WARN)
+                logger.log("Failed to migrate old registry: ${e.message}", LogLevel.WARN)
             }
         }
     }

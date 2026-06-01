@@ -17,11 +17,9 @@ import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.FileSystemScanner
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.systems.WindowRegistry
@@ -81,12 +79,12 @@ import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
-import com.pafoid.skate.engine.contracts.EngineLogger
-import com.pafoid.skate.engine.contracts.IStringManager
 import com.pafoid.skate.engine.contracts.InputMappingsProvider
 import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
@@ -127,11 +125,8 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { Serializer() }
-    single { LoggerService() }
 
     // Engine contract implementations (editor-side)
-    single<EngineLogger> { get<LoggerService>() }
-    single<IStringManager> { get<StringManager>() }
     single<InputMappingsProvider> { get<SettingsManager>() }
 
     // Editor-only rendering tools (moved from engineModule)
@@ -146,7 +141,6 @@ val appModule = module {
     single { ClipboardService(get()) }
     single { EditorMutationGate(get(), get()) }
     single { UndoRedoManager(get(), get()) }
-    single { StringManager() }
     single { SettingsManager(get(), get(), get()) }
     single { DisplayService() }
     single { TrickManager() }
@@ -249,14 +243,16 @@ val appModule = module {
     single { GameObjectSearchProvider(get(), get(), get()) }
     single { AssetSearchProvider(get()) }
     single { ComponentSearchProvider(get(), get(), get()) }
-    single { ActionSearchProvider(get(), get()) }
+    single { ActionSearchProvider(get(), get(), get()) }
     single { SearchEverywhereWindow(SearchHistory(serializer = get())) }
 }
 
 val engineModule = module {
     // Core
     single<IJobSystem> { DefaultJobSystem() }
+    single { StringManager() }
     single { EventSystem() }
+    single { LoggerService() }
 
     single { AudioEngine(get()) }
 

@@ -1,3 +1,3 @@
 package com.pafoid.skate.editor.data
 
-data class LogEntry(val message: String, val level: LogLevel, val timestamp: Long = System.currentTimeMillis())
+typealias LogEntry = com.pafoid.skate.engine.data.LogEntry

@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.WindowRegistry
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.checkbox

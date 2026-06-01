@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.audio
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import org.lwjgl.openal.AL
 import org.lwjgl.openal.AL10
 import org.lwjgl.openal.ALC
@@ -29,13 +29,13 @@ class AudioEngine(
         try {
             device = ALC10.alcOpenDevice(null as CharSequence?)
             if (device == 0L) {
-                logger.logEngine("AudioEngine: Failed to open OpenAL device", LogLevel.ERROR)
+                logger.log("AudioEngine: Failed to open OpenAL device", LogLevel.ERROR)
                 return false
             }
 
             context = ALC10.alcCreateContext(device, null as IntBuffer?)
             if (context == 0L) {
-                logger.logEngine("AudioEngine: Failed to create OpenAL context", LogLevel.ERROR)
+                logger.log("AudioEngine: Failed to create OpenAL context", LogLevel.ERROR)
                 ALC10.alcCloseDevice(device)
                 return false
             }
@@ -45,11 +45,11 @@ class AudioEngine(
             AL.createCapabilities(deviceCaps)
 
             isInitialized = true
-            logger.logEngine("AudioEngine: Initialized successfully")
+            logger.log("AudioEngine: Initialized successfully")
             return true
 
         } catch (e: Exception) {
-            logger.logEngine("AudioEngine: Init failed - ${e.message}", LogLevel.ERROR)
+            logger.log("AudioEngine: Init failed - ${e.message}", LogLevel.ERROR)
             destroy()
             return false
         }
@@ -75,10 +75,10 @@ class AudioEngine(
             }
 
             isInitialized = false
-            logger.logEngine("AudioEngine: Destroyed")
+            logger.log("AudioEngine: Destroyed")
 
         } catch (e: Exception) {
-            logger.logEngine("AudioEngine: Cleanup failed - ${e.message}", LogLevel.ERROR)
+            logger.log("AudioEngine: Cleanup failed - ${e.message}", LogLevel.ERROR)
         }
     }
 

@@ -1,11 +1,11 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.commands.project.CreateSceneCommand
-import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.scene.SceneData
+import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.testfixtures.ImmediateJobSystem
 import io.mockk.coEvery

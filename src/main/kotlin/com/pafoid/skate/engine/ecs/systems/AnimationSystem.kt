@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.contracts.IStringManager
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -23,7 +23,7 @@ import org.joml.Vector3f
  * @param stringManager String manager abstraction for localized UI strings
  */
 class AnimationSystem(
-    private val stringManager: IStringManager
+    private val stringManager: StringManager
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     // Cached list of GameObjects eligible for animation updates

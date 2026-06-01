@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.EditorInputMappings
-import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.settings.EngineSettings
 import com.pafoid.skate.editor.settings.HardwareSettings
@@ -11,6 +10,10 @@ import com.pafoid.skate.editor.settings.SettingsSerializer
 import com.pafoid.skate.editor.settings.UserSettings
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.contracts.InputMappingsProvider
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.logEditor
+import com.pafoid.skate.engine.data.LogLevel
 import java.io.File
 
 class SettingsManager(
@@ -59,7 +62,7 @@ class SettingsManager(
             stringManager.setLocale(engine.editor.language)
             logger.logEditor("Engine settings loaded")
         } catch (e: Exception) {
-            logger.logEngine("Error loading engine settings: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error loading engine settings: ${e.message}", LogLevel.ERROR)
             engine = EngineSettings()
         }
     }
@@ -69,7 +72,7 @@ class SettingsManager(
             user = settingsSerializer.loadUserSettings().validate()
             logger.logEditor("User settings loaded")
         } catch (e: Exception) {
-            logger.logEngine("Error loading user settings: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error loading user settings: ${e.message}", LogLevel.ERROR)
             user = UserSettings()
         }
     }
@@ -79,7 +82,7 @@ class SettingsManager(
             hardware = HardwareSettings().validate()
             logger.logEditor("Hardware settings loaded (defaults)")
         } catch (e: Exception) {
-            logger.logEngine("Error loading hardware settings: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error loading hardware settings: ${e.message}", LogLevel.ERROR)
             hardware = HardwareSettings()
         }
     }
@@ -95,7 +98,7 @@ class SettingsManager(
             settingsSerializer.saveEngineSettings(engine)
             logger.logEditor("Engine settings saved")
         } catch (e: Exception) {
-            logger.logEngine("Error saving engine settings: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error saving engine settings: ${e.message}", LogLevel.ERROR)
         }
     }
 
@@ -104,7 +107,7 @@ class SettingsManager(
             settingsSerializer.saveUserSettings(user)
             logger.logEditor("User settings saved")
         } catch (e: Exception) {
-            logger.logEngine("Error saving user settings: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error saving user settings: ${e.message}", LogLevel.ERROR)
         }
     }
 
@@ -114,7 +117,7 @@ class SettingsManager(
             // Hardware save is deferred until persistence layer is implemented
             logger.logEditor("Hardware settings updated (persistence deferred)")
         } catch (e: Exception) {
-            logger.logEngine("Error saving hardware settings: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error saving hardware settings: ${e.message}", LogLevel.ERROR)
         }
     }
 
@@ -131,11 +134,11 @@ class SettingsManager(
                 logger.logEditor("Project loaded: ${loadedProject.metadata.name}")
                 updatedProject
             } else {
-                logger.logEngine("Failed to load project: $projectFile", LogLevel.ERROR)
+                logger.logEditor("Failed to load project: $projectFile", LogLevel.ERROR)
                 null
             }
         } catch (e: Exception) {
-            logger.logEngine("Error loading project: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error loading project: ${e.message}", LogLevel.ERROR)
             null
         }
     }
@@ -146,11 +149,11 @@ class SettingsManager(
             if (result) {
                 logger.logEditor("Project saved: ${project.metadata.name}")
             } else {
-                logger.logEngine("Failed to save project: ${project.metadata.name}", LogLevel.ERROR)
+                logger.logEditor("Failed to save project: ${project.metadata.name}", LogLevel.ERROR)
             }
             result
         } catch (e: Exception) {
-            logger.logEngine("Error saving project: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error saving project: ${e.message}", LogLevel.ERROR)
             false
         }
     }
@@ -242,7 +245,7 @@ class SettingsManager(
             file.writeText(serializer.encode(inputMappings))
             logger.logEditor("Input mappings saved to ${file.absolutePath}")
         } catch (e: Exception) {
-            logger.logEngine("Error saving input mappings: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error saving input mappings: ${e.message}", LogLevel.ERROR)
         }
     }
 

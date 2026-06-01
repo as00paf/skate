@@ -1,12 +1,12 @@
 package com.pafoid.skate.engine.assets.database
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.database.importers.AssetImporter
 import com.pafoid.skate.engine.assets.database.importers.AudioImporter
 import com.pafoid.skate.engine.assets.database.importers.ModelImporter
 import com.pafoid.skate.engine.assets.database.importers.ShaderImporter
 import com.pafoid.skate.engine.assets.database.importers.TextureImporter
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import java.io.File
 
 /**
@@ -59,10 +59,10 @@ class ImportPipeline(
 
         return importer.import(sourceFile, meta, projectRoot)
             .onSuccess { outputPaths ->
-                logger.logEngine("Imported ${sourceFile.name} → $outputPaths", LogLevel.INFO)
+                logger.log("Imported ${sourceFile.name} → $outputPaths", LogLevel.INFO)
             }
             .onFailure { err ->
-                logger.logEngine("Import failed for ${sourceFile.name}: ${err.message}", LogLevel.ERROR)
+                logger.log("Import failed for ${sourceFile.name}: ${err.message}", LogLevel.ERROR)
             }
     }
 

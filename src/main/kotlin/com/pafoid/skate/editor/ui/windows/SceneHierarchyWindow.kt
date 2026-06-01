@@ -1,17 +1,28 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
+import com.pafoid.skate.editor.events.ViewportAction.CreateEmptyChild
+import com.pafoid.skate.editor.events.ViewportAction.Delete
+import com.pafoid.skate.editor.events.ViewportAction.Duplicate
+import com.pafoid.skate.editor.events.ViewportAction.FocusSelected
+import com.pafoid.skate.editor.events.ViewportAction.GameObjectSelected
+import com.pafoid.skate.editor.events.ViewportAction.PasteClipboard
+import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
+import com.pafoid.skate.editor.events.ViewportAction.Reparent
+import com.pafoid.skate.editor.events.ViewportAction.ToggleLock
+import com.pafoid.skate.editor.events.ViewportAction.ToggleVisibility
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.LoggerService
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.editor.events.SceneAction
-import com.pafoid.skate.editor.events.ViewportAction.*
+import com.pafoid.skate.engine.events.SceneAction
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
@@ -20,9 +31,6 @@ import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImString
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.java.KoinJavaComponent.inject
 import org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN
 import org.lwjgl.glfw.GLFW.GLFW_KEY_END
 import org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
@@ -31,7 +39,6 @@ import org.lwjgl.glfw.GLFW.GLFW_KEY_HOME
 import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL
 import org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL
 import org.lwjgl.glfw.GLFW.GLFW_KEY_UP
-import kotlin.getValue
 
 /**
  * Special UID constant for scene rename editing (negative to avoid collision with real GameObject UIDs).

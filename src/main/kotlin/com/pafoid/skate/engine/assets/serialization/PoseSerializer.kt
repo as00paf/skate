@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.assets.serialization
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
@@ -19,7 +19,7 @@ class PoseSerializer: KoinComponent {
     fun loadPose(filePath: String): BoneOverride? {
         val file = File(filePath)
         if (!file.exists()) {
-            logger.logEngine("Warning: Pose file not found: $filePath", LogLevel.ERROR)
+            logger.log("Warning: Pose file not found: $filePath", LogLevel.ERROR)
             return null
         }
         val json = file.readText()

@@ -2,8 +2,8 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.engine.addComponent
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.getComponent

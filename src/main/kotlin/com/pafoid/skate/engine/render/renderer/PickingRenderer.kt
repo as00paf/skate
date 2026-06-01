@@ -1,10 +1,10 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.editor.data.LogLevel
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.data.PickingMesh
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -47,7 +47,7 @@ class PickingRenderer(
 
     fun start() {
         shader = resourceManager.getShader(Assets.Shaders.PICKING_3D)?: run {
-            logger.logEngine("Could not load picking shader", LogLevel.ERROR)
+            logger.log("Could not load picking shader", LogLevel.ERROR)
             return
         }
         

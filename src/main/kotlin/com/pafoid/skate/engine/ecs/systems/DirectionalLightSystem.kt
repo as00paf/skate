@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
@@ -10,6 +10,9 @@ import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
  * System responsible for updating the directional light.
@@ -54,7 +57,7 @@ class DirectionalLightSystem(
     private fun updateLightSpaceMatrix(camera: Camera? = null) {
         // Choose up vector based on light direction to prevent lookAt failure (high noon)
         val config = config ?: return
-        if (Math.abs(config.direction.y) > 0.99f) {
+        if (abs(config.direction.y) > 0.99f) {
             lightUp.set(0f, 0f, 1f)
         } else {
             lightUp.set(0f, 1f, 0f)
@@ -106,7 +109,7 @@ class DirectionalLightSystem(
                 }
             }
             // Round radius up to nearest 1 unit to stabilize projection size
-            radius = Math.ceil(radius.toDouble()).toFloat()
+            radius = ceil(radius.toDouble()).toFloat()
 
             // Set bounds based on bounding sphere (guarantees coverage regardless of rotation)
             val left = -radius
@@ -125,8 +128,8 @@ class DirectionalLightSystem(
                 val fixedView = Matrix4f().setLookAt(fixedEye, Vector3f(0f, 0f, 0f), lightUp)
 
                 val targetInLightSpace = fixedView.transform(Vector4f(lightTarget, 1.0f))
-                targetInLightSpace.x = Math.floor((targetInLightSpace.x / texelSize).toDouble()).toFloat() * texelSize
-                targetInLightSpace.y = Math.floor((targetInLightSpace.y / texelSize).toDouble()).toFloat() * texelSize
+                targetInLightSpace.x = floor((targetInLightSpace.x / texelSize).toDouble()).toFloat() * texelSize
+                targetInLightSpace.y = floor((targetInLightSpace.y / texelSize).toDouble()).toFloat() * texelSize
 
                 val snappedTarget = fixedView.invert().transform(targetInLightSpace)
                 lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)
@@ -168,8 +171,8 @@ class DirectionalLightSystem(
                 val fixedView = Matrix4f().setLookAt(fixedEye, Vector3f(0f, 0f, 0f), lightUp)
 
                 val targetInLightSpace = fixedView.transform(Vector4f(lightTarget, 1.0f))
-                targetInLightSpace.x = Math.floor((targetInLightSpace.x / texelSize).toDouble()).toFloat() * texelSize
-                targetInLightSpace.y = Math.floor((targetInLightSpace.y / texelSize).toDouble()).toFloat() * texelSize
+                targetInLightSpace.x = floor((targetInLightSpace.x / texelSize).toDouble()).toFloat() * texelSize
+                targetInLightSpace.y = floor((targetInLightSpace.y / texelSize).toDouble()).toFloat() * texelSize
 
                 val snappedTarget = fixedView.invert().transform(targetInLightSpace)
                 lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)

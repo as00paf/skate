@@ -3,20 +3,20 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.LoggerService
 import com.pafoid.skate.editor.systems.PrefabsGenerator
-import com.pafoid.skate.editor.systems.StringManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.game.prefabs.MaterialType
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImString
-import org.koin.core.component.KoinComponent
 import java.awt.Desktop
 import java.io.File
 

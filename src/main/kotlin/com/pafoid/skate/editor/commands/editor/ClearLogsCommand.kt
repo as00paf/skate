@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.commands.editor
 
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.LoggerService
 
 /**
  * Clears all engine and editor console logs.
@@ -10,7 +10,7 @@ import com.pafoid.skate.editor.systems.LoggerService
 class ClearLogsCommand(private val logger: LoggerService) : ExecuteOnlyCommand {
 
     override fun execute() {
-        logger.clearAllLogs()
+        logger.clearLogs()
     }
 
     override fun undo() {

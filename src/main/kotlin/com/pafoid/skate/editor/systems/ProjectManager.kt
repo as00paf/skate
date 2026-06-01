@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.systems
 
-import com.pafoid.skate.editor.data.LogLevel
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.GameplaySettings
@@ -10,6 +9,9 @@ import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.logEditor
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.collectGameObjectsDepthFirst
@@ -103,12 +105,12 @@ class ProjectManager(
             }
 
             result.onFailure { error ->
-                logger.logEngine("Failed to create project: ${error.message}", LogLevel.ERROR)
+                logger.logEditor("Failed to create project: ${error.message}", LogLevel.ERROR)
             }
 
             result
         } catch (e: Exception) {
-            logger.logEngine("Error creating project: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error creating project: ${e.message}", LogLevel.ERROR)
             Result.failure(e)
         }
     }
@@ -277,12 +279,12 @@ class ProjectManager(
             logger.logEditor("Opening project: ${projectFile.absolutePath}")
 
             if (!projectFile.exists()) {
-                logger.logEngine("Project file does not exist: ${projectFile.absolutePath}", LogLevel.ERROR)
+                logger.logEditor("Project file does not exist: ${projectFile.absolutePath}", LogLevel.ERROR)
                 return false
             }
 
             if (projectFile.extension != "skateproject") {
-                logger.logEngine("Invalid project file extension: ${projectFile.name}", LogLevel.ERROR)
+                logger.logEditor("Invalid project file extension: ${projectFile.name}", LogLevel.ERROR)
                 return false
             }
 
@@ -327,11 +329,11 @@ class ProjectManager(
                 loadDefaultScene()
                 true
             } else {
-                logger.logEngine("Failed to load project: ${projectFile.absolutePath}", LogLevel.ERROR)
+                logger.logEditor("Failed to load project: ${projectFile.absolutePath}", LogLevel.ERROR)
                 false
             }
         } catch (e: Exception) {
-            logger.logEngine("Error opening project: ${e.message}", LogLevel.ERROR)
+            logger.logEditor("Error opening project: ${e.message}", LogLevel.ERROR)
             false
         }
     }

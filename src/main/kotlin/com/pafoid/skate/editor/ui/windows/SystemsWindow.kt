@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
-import com.pafoid.skate.editor.systems.StringManager
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean
-import org.koin.core.component.KoinComponent
 
 /**
  * Centralized window for displaying and interacting with all system ImGui interfaces.

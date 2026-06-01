@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.commands.project.RenameFileCommand
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.LoggerService
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull

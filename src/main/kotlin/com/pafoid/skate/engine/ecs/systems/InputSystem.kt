@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.contracts.IStringManager
 import com.pafoid.skate.engine.contracts.InputMappingsProvider
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
@@ -24,7 +24,7 @@ class InputSystem(
     private val inputProvider: IInputProvider,
     private val mouseListener: MouseListener,
     private val inputMappingsProvider: InputMappingsProvider,
-    private val stringManager: IStringManager,
+    private val stringManager: StringManager,
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 

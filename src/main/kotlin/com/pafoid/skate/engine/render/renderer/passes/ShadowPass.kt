@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
-import com.pafoid.skate.editor.systems.LoggerService
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.ShadowMap
@@ -44,7 +44,7 @@ class ShadowPass(
 
         // Skip if shadows are disabled or no light system
         if (lightComponent?.castShadows == false) {
-            logger.logEngine("[ShadowPass] Skipped: castShadows=${lightComponent.castShadows}")
+            logger.log("[ShadowPass] Skipped: castShadows=${lightComponent.castShadows}")
             return
         }
 
