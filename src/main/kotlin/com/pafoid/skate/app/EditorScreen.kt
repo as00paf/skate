@@ -2,6 +2,7 @@ package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
+import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.engine.core.Window
@@ -13,6 +14,7 @@ import org.koin.core.component.inject
 
 class EditorScreen(private val window: Window) : KoinComponent {
 
+    private val settingsManager: SettingsManager by inject()
     private val editorInputHandler: EditorInputHandler by inject()
     private val editorEventHandler: EditorEventHandler by inject()
     private val imGuiLayer: ImGuiLayer by inject()
@@ -32,6 +34,7 @@ class EditorScreen(private val window: Window) : KoinComponent {
 
         imGuiLayer.init(window.windowController)
         initEditorSystems()
+        settingsManager.load()
     }
 
     private fun initEditorSystems() {

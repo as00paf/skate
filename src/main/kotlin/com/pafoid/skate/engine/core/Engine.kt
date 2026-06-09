@@ -1,19 +1,23 @@
 package com.pafoid.skate.engine.core
 
+import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.koin.core.component.KoinComponent
 import java.util.concurrent.atomic.AtomicReference
 
 class Engine(
-    private val bootManager: BootManager,
+    private val nativeLibraryLoader: NativeLibraryLoader,
+    private val audioEngine: AudioEngine,
     private val sceneManager: SceneManager,
     private val renderer: Renderer,
     private val jobSystem: IJobSystem,
     private val systemManager: SystemManager,
+    private val logger: LoggerService,
     private val engineSystems: List<System>,
 ) : KoinComponent {
 
@@ -27,10 +31,16 @@ class Engine(
             renderer.initialize()
             renderer.useFbo = true
 
-            bootManager.boot(engineState)
+            engineState.set(EngineState.LOADING)
+
+            nativeLibraryLoader.loadNativeLibrary()
+            audioEngine.init()
+
+            engineState.set(EngineState.RUNNING)
         }
 
         initializeSystems()
+        logger.log("Engine initialization complete.")
     }
 
     private fun initializeSystems() {

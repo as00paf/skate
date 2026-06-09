@@ -80,7 +80,6 @@ import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.contracts.InputMappingsProvider
-import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -180,14 +179,14 @@ val appModule = module {
     // Editor windows
     single { ProjectWizardWindow(get(), get(), get(), get(), get()) }
     single { SceneHierarchyWindow(get(), get(), get(), get(), get(), get()) }
-    single { PropertiesWindow(get(), get(), get(),) }
+    single { PropertiesWindow(get(), get(), get()) }
     single { GameViewWindow(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { AnimationsTab(get(), get(), get(), get(), get()) }
     single { TexturesTab(get(), get(), get(), get(), get(), get()) }
     single { PrefabsTab(get(), get(), get(), get(), get(), get()) }
     single { SoundsTab(get(), get(), get(), get()) }
     single { AssetBrowserWindow(get(), get(), get(), get(), get()) }
-    single { EnvironmentWindow(get(), get(), get(),) }
+    single { EnvironmentWindow(get(), get(), get()) }
     single { ProfilerWindow(get()) }
     single { ConsoleWindow(get(), get(), get()) }
     single { PhysicsTunerWindow(get(), get()) }
@@ -264,7 +263,6 @@ val engineModule = module {
     single<IInputBuffer> { InputBuffer() }
 
     // Managers
-    single { BootManager(get(), get(), get(), get()) }
     single { SystemManager() }
     single { SceneManager(get(), get(), get(), get()) }
     single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
@@ -304,7 +302,8 @@ val engineModule = module {
 
     single {
         Engine(
-            get(), get(), get(), get(), get(), listOf(
+            get(), get(), get(), get(), get(), get(), get(),
+            listOf(
                 get<GameObjectManager>(), // Core
                 get<InputSystem>(),
                 get<AudioSystem>(),
