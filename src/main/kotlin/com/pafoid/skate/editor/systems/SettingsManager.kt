@@ -9,18 +9,18 @@ import com.pafoid.skate.editor.settings.SettingsData
 import com.pafoid.skate.editor.settings.SettingsSerializer
 import com.pafoid.skate.editor.settings.UserSettings
 import com.pafoid.skate.engine.assets.serialization.Serializer
-import com.pafoid.skate.engine.contracts.InputMappingsProvider
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.input.InputMappings
 import java.io.File
 
 class SettingsManager(
     private val serializer: Serializer,
     private val logger: LoggerService,
     private val stringManager: StringManager
-) : InputMappingsProvider {
+) {
     private val settingsSerializer: SettingsSerializer = SettingsSerializer(serializer)
 
     var engine: EngineSettings = EngineSettings()
@@ -236,7 +236,7 @@ class SettingsManager(
         saveEngine()
     }
 
-    fun updateInputMappings(inputMappings: com.pafoid.skate.engine.input.InputMappings) {
+    fun updateInputMappings(inputMappings: InputMappings) {
         // Store input mappings in a dedicated file for now
         // TODO Phase 5: Integrate with proper settings persistence
         try {
@@ -249,11 +249,11 @@ class SettingsManager(
         }
     }
 
-    override fun loadInputMappings(): com.pafoid.skate.engine.input.InputMappings? {
+    fun loadInputMappings(): InputMappings? {
         return try {
             val file = SettingsData.getSettingsDirectory().resolve("input_mappings.json")
             if (file.exists()) {
-                serializer.decode<com.pafoid.skate.engine.input.InputMappings>(file.readText())
+                serializer.decode<InputMappings>(file.readText())
             } else null
         } catch (e: Exception) {
             logger.logEditor("Using default input mappings")

@@ -79,7 +79,6 @@ import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
-import com.pafoid.skate.engine.contracts.InputMappingsProvider
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -124,9 +123,6 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { Serializer() }
-
-    // Engine contract implementations (editor-side)
-    single<InputMappingsProvider> { get<SettingsManager>() }
 
     // Editor-only rendering tools (moved from engineModule)
     single { PickingRenderer(get(), get(), get()) }
@@ -266,8 +262,6 @@ val engineModule = module {
     single { SystemManager() }
     single { SceneManager(get(), get(), get(), get()) }
     single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
-
-    single<InputMappingsProvider> { get<SettingsManager>() }
 
     single<Physics3DFactory> { BulletPhysics3DFactory(get(), { get() }) }
     single { NativeLibraryLoader() }
