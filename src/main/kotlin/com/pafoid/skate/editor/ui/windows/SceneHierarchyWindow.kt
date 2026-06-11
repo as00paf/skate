@@ -22,6 +22,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.SceneAction
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -51,8 +52,12 @@ class SceneHierarchyWindow(
     private val clipboardService: ClipboardService,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
-    private val gameObjectManager: GameObjectManager,
+    private val systemManager: SystemManager,
 ) : IWindowWithScene {
+    private val gameObjectManager: GameObjectManager by lazy {
+        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
+    }
+
     private val searchQuery = ImString(256)
     private var isLinked = false
 

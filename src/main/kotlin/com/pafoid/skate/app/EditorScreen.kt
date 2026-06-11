@@ -7,7 +7,6 @@ import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.ecs.systems.GizmoSystem
-import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -21,8 +20,7 @@ class EditorScreen(private val window: Window) : KoinComponent {
 
     private val editorCamera: EditorCamera by inject()
     private val gizmoSystem: GizmoSystem by inject()
-    private val gridLines: GridLines by inject()
-    private val editorSystems = listOf(editorInputHandler, editorCamera, gizmoSystem, gridLines)
+    private val editorSystems = listOf(editorInputHandler, editorCamera, gizmoSystem)
 
     private val systemManager: SystemManager by inject()
 

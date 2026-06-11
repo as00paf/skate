@@ -349,12 +349,4 @@ class PlayerController : Component(), KoinComponent {
         // Exclude the player's own physics body from the raycast
         return physics3d.raycastClosest(rayStart, rayEnd, body) != null
     }
-
-
-    /**
-     * Displays a debug window with information about the player's state, stance, and velocity.
-     */
-    override fun imgui() {
-
-    }
 }

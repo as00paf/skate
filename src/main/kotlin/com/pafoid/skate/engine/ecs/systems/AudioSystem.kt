@@ -4,13 +4,11 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
-import imgui.ImGui
 import org.joml.Vector3f
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
@@ -24,15 +22,22 @@ import kotlin.math.sin
  * Runs at ExecutionPriority.LATE to ensure transforms are updated first.
  */
 class AudioSystem(
-    private val audioEngine: AudioEngine,
+    val audioEngine: AudioEngine,
     private val logger: LoggerService,
-    private val stringManager: StringManager,
     private val resourceManager: ResourceManager,
 ) : System(priority = ExecutionPriority.LATE) {
 
     private var isInitialized = false
-    private var masterVolume = 1.0f
-    private var lastNonMutedVolume = 1.0f
+    var masterVolume = 1.0f
+        set(volume) {
+            val clamped = volume.coerceIn(0f, 1f)
+            field = clamped
+            if (clamped > 0.001f) {
+                lastNonMutedVolume = clamped
+            }
+            audioEngine.setMasterVolume(clamped)
+        }
+    var lastNonMutedVolume = 1.0f
 
     // Maps Entity ID to its active SoundSource
     private val activeSources = mutableMapOf<Int, SoundSource>()
@@ -50,44 +55,6 @@ class AudioSystem(
 
         updateListener()
         updateAudioSources()
-    }
-
-    override fun imgui() {
-        // Master Volume
-        val volumeArray = floatArrayOf(masterVolume)
-        if (ImGui.dragFloat(stringManager.getString("lbl.audio.master_volume"), volumeArray, 0.01f, 0f, 1f)) {
-            setMasterVolume(volumeArray[0])
-        }
-
-        // Mute toggle
-        val isMuted = masterVolume <= 0.001f
-        if (ImGui.button(if (isMuted) stringManager.getString("btn.audio.unmute") else stringManager.getString("btn.audio.mute"))) {
-            if (isMuted) {
-                setMasterVolume(lastNonMutedVolume)
-            } else {
-                if (masterVolume > 0.001f) {
-                    lastNonMutedVolume = masterVolume
-                }
-                setMasterVolume(0.0f)
-            }
-        }
-
-        ImGui.separator()
-
-        // Status
-        val status = if (audioEngine.isInitialized) {
-            stringManager.getString("lbl.audio.status.initialized")
-        } else {
-            stringManager.getString("lbl.audio.status.not_initialized")
-        }
-        val color = if (audioEngine.isInitialized) floatArrayOf(0f, 1f, 0f, 1f) else floatArrayOf(0.5f, 0.5f, 0.5f, 1f)
-        ImGui.textColored(color[0], color[1], color[2], color[3], stringManager.getString("lbl.audio.status", status))
-
-        ImGui.separator()
-
-        // Listener info
-        ImGui.text(stringManager.getString("lbl.audio.listener_information"))
-        ImGui.text(stringManager.getString("lbl.audio.volume", masterVolume))
     }
 
     private fun updateListener() {
@@ -114,17 +81,6 @@ class AudioSystem(
         audioEngine.setListenerVelocity(0f, 0f, 0f)
         audioEngine.setMasterVolume(masterVolume)
     }
-
-    fun setMasterVolume(volume: Float) {
-        val clamped = volume.coerceIn(0f, 1f)
-        masterVolume = clamped
-        if (clamped > 0.001f) {
-            lastNonMutedVolume = clamped
-        }
-        audioEngine.setMasterVolume(clamped)
-    }
-
-    fun getMasterVolume(): Float = masterVolume
 
     private fun calculateForwardVector(yaw: Float, pitch: Float): Vector3f {
         val yawRad = Math.toRadians(yaw.toDouble())

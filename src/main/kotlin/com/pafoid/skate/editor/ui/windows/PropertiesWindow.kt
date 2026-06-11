@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.events.ViewportAction.RemoveComponent
 import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
 import com.pafoid.skate.editor.events.ViewportAction.SetGameObjectEnabled
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.components.imgui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
@@ -63,7 +64,7 @@ class PropertiesWindow(
         val headerLabel = component.getName()
         
         if (ImGui.collapsingHeader(headerLabel)) {
-            component.imgui()
+            component.imgui(stringManager)
         }
 
         if (ImGui.beginPopupContextItem("${component.javaClass.simpleName}_context")) {

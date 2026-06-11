@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
 import kotlinx.serialization.Serializable
 import org.lwjgl.system.MemoryUtil
@@ -39,8 +40,11 @@ class SceneSerializer(
     private val logger: LoggerService,
     private val resourceManager: ResourceManager,
     private val assetDatabase: AssetDatabase? = null,
-    private val gameObjectManager: GameObjectManager,
+    private val systemManager: SystemManager,
 ) {
+    private val gameObjectManager: GameObjectManager by lazy {
+        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
+    }
 
     fun save(scene: Scene) {
         saveToFile(scene, scene.sceneData.levelPath)

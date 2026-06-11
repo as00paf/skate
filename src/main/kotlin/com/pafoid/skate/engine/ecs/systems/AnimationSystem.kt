@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -9,7 +8,6 @@ import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.utils.SkeletonMath
-import imgui.ImGui
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -23,12 +21,11 @@ import org.joml.Vector3f
  * @param stringManager String manager abstraction for localized UI strings
  */
 class AnimationSystem(
-    private val stringManager: StringManager
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     // Cached list of GameObjects eligible for animation updates
-    private val animatedObjects = mutableListOf<GameObject>()
-    private var cacheDirty = false
+    val animatedObjects = mutableListOf<GameObject>()
+    var cacheDirty = false
 
     override fun init(scene: Scene) {
         super.init(scene)
@@ -177,81 +174,5 @@ class AnimationSystem(
         s1.lerp(s2, alpha)
 
         out.translationRotateScale(t1, r1, s1)
-    }
-
-    /**
-     * Global animation speed multiplier for all animations.
-     * Useful for slow-motion or time-scale effects.
-     */
-    var globalSpeedMultiplier: Float = 1.0f
-
-    /**
-     * Renders ImGui interface for debugging and tuning animations.
-     *
-     * ## Controls
-     *
-     * - Animated object count display
-     * - Per-object animation state (name, time, playing state)
-     * - Global speed multiplier
-     * - Cache statistics
-     */
-    override fun imgui() {
-        ImGui.text(stringManager.getString("lbl.animation_system.animated_objects", animatedObjects.size))
-        ImGui.text(stringManager.getString("lbl.animation_system.cache_dirty", cacheDirty))
-
-        ImGui.separator()
-
-        // Global speed multiplier
-        val speedArr = floatArrayOf(globalSpeedMultiplier)
-        if (ImGui.dragFloat(
-                stringManager.getString("lbl.animation_system.global_speed_multiplier"),
-                speedArr,
-                0.1f,
-                0f,
-                3f,
-                "%.2f"
-            )
-        ) {
-            globalSpeedMultiplier = speedArr[0].coerceIn(0f, 3f)
-        }
-
-        ImGui.separator()
-        ImGui.text(stringManager.getString("lbl.animation_system.per_object_state"))
-
-        // Show each animated object's state
-        animatedObjects.forEach { go ->
-            val animator = go.getComponent<Animator>()
-            val skeletonComponent = go.getComponent<SkeletonComponent>()
-
-            if (animator != null && skeletonComponent != null) {
-                val goName = go.name
-                val currentAnim = animator.currentAnimation
-                val isPlaying = animator.isPlaying
-                val currentTime = animator.currentTime
-                val duration = animator.duration
-                val blendTime = animator.blendTime
-
-                ImGui.text("$goName:")
-                ImGui.indent()
-
-                if (currentAnim != null) {
-                    ImGui.text(stringManager.getString("lbl.animation_system.animation", currentAnim.name))
-                    ImGui.text(stringManager.getString("lbl.animation_system.time", currentTime, duration))
-                    ImGui.text(stringManager.getString("lbl.animation_system.playing", isPlaying))
-
-                    if (blendTime > 0f) {
-                        ImGui.text(stringManager.getString("lbl.animation_system.blending", blendTime))
-                    }
-                } else {
-                    ImGui.text(stringManager.getString("lbl.animation_system.no_animation"))
-                }
-
-                ImGui.unindent()
-            }
-        }
-
-        if (animatedObjects.isEmpty()) {
-            ImGui.text(stringManager.getString("lbl.animation_system.no_objects"))
-        }
     }
 }

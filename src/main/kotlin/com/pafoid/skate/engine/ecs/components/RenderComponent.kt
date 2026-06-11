@@ -44,8 +44,4 @@ class RenderComponent(
         castShadow = castShadow,
         receiveShadow = receiveShadow
     )
-
-    override fun imgui() {
-        super.imgui()
-    }
 }

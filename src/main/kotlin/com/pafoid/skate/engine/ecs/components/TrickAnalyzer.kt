@@ -1,11 +1,9 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import com.pafoid.skate.game.trick.TrickManager
-import imgui.ImGui
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Vector3f
@@ -15,11 +13,10 @@ import kotlin.math.abs
 
 @Serializable
 class TrickAnalyzer : Component(), KoinComponent {
-    @Transient private val stringManager: StringManager by inject()
     @Transient private val trickManager: TrickManager by inject()
 
     private var physics: SkateboardPhysics? = null
-    private var isAirborne = false
+    var isAirborne = false
 
     @Transient private val totalRotation = Vector3f()
     @Transient private val lastRotation = Vector3f()
@@ -114,19 +111,6 @@ class TrickAnalyzer : Component(), KoinComponent {
             lastTrickName = trickManager.getTrickName("trick.ollie")
         } else {
             lastTrickName = trickParts.joinToString(" + ")
-        }
-    }
-
-    override fun imgui() {
-        ImGui.text(stringManager.getString("lbl.trick.current", lastTrickName))
-        if (isAirborne) {
-            ImGui.text(
-                "Rotation: %.1f, %.1f, %.1f".format(
-                    currentAirRotation.x,
-                    currentAirRotation.y,
-                    currentAirRotation.z
-                )
-            )
         }
     }
 }

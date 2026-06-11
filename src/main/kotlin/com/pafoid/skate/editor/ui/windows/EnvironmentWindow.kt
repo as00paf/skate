@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.events.EnvironmentAction
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.systems.imgui
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -58,7 +59,7 @@ class EnvironmentWindow(
 
         environmentSystem?.let { system ->
             if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment_system.header")}")) {
-                system.imgui()
+                system.imgui(stringManager)
             }
         }
 
