@@ -6,10 +6,10 @@ import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.player.PlayerState
 import com.pafoid.skate.game.skateboard.Stance
-import imgui.ImGui
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.koin.core.component.inject
+import org.koin.java.KoinJavaComponent.inject
 
 @Serializable
 class PlayerStateManager : Component() {
@@ -75,14 +75,4 @@ class PlayerStateManager : Component() {
         currentState = newState
     }
 
-    override fun imgui() {
-        val currentStateText = currentState::class.simpleName.orEmpty()
-
-        ImGui.text(stringManager.getString("lbl.player.state", currentStateText))
-        ImGui.text(stringManager.getString("lbl.player.current_stance", currentStance))
-        ImGui.text(stringManager.getString("lbl.player.is_switch", isSwitch))
-        if (ImGui.button(stringManager.getString("btn.player.toggle_switch"))) {
-            isSwitch = !isSwitch
-        }
-    }
 }

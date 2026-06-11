@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
@@ -16,15 +15,13 @@ import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.game.skateboard.TrickType
-import imgui.ImGui
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 
 class InputSystem(
-    private val inputProvider: IInputProvider,
+    val inputProvider: IInputProvider,
     private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager,
-    private val stringManager: StringManager,
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
@@ -221,65 +218,5 @@ class InputSystem(
         }
 
         return false
-    }
-
-    /**
-     * Renders ImGui interface for debugging and tuning input settings.
-     *
-     * ## Controls
-     *
-     * - Current input state debugging
-     */
-    override fun imgui() {
-        ImGui.separator()
-        ImGui.textColored(
-            0.5f,
-            0.5f,
-            0.5f,
-            1f,
-            stringManager.getString("lbl.input_system.configuration_pending")
-        )
-        ImGui.separator()
-        
-        ImGui.text(stringManager.getString("lbl.input_system.debug"))
-
-        // Show current gamepad state if connected
-        if (inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) {
-            val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1)
-            val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
-
-            ImGui.text(
-                stringManager.getString(
-                    "lbl.input_system.gamepad_connected",
-                    stringManager.getString("lbl.input_system.yes")
-                )
-            )
-
-            if (axes != null) {
-                ImGui.text(stringManager.getString("lbl.input_system.left_stick", axes[0], axes[1]))
-                ImGui.text(stringManager.getString("lbl.input_system.right_stick", axes[2], axes[3]))
-                ImGui.text(stringManager.getString("lbl.input_system.left_trigger", axes.getOrNull(4) ?: 0f))
-                ImGui.text(stringManager.getString("lbl.input_system.right_trigger", axes.getOrNull(5) ?: 0f))
-            }
-
-            if (buttons != null) {
-                ImGui.text(
-                    stringManager.getString(
-                        "lbl.input_system.buttons",
-                        buttons.getOrNull(0) ?: false,
-                        buttons.getOrNull(1) ?: false,
-                        buttons.getOrNull(2) ?: false,
-                        buttons.getOrNull(3) ?: false
-                    )
-                )
-            }
-        } else {
-            ImGui.text(
-                stringManager.getString(
-                    "lbl.input_system.gamepad_connected",
-                    stringManager.getString("lbl.input_system.no")
-                )
-            )
-        }
     }
 }

@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.IInputProvider
 import imgui.ImGui
@@ -30,8 +31,12 @@ import kotlin.math.sqrt
 class InputTestingWindow(
     private val inputProvider: IInputProvider,
     private val stringManager: StringManager,
-    private val gameObjectManager: GameObjectManager
+    private val systemManager: SystemManager
 ) : IWindowWithScene {
+
+    private val gameObjectManager: GameObjectManager by lazy {
+        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
+    }
 
     private var showRawAxes = true
     private var showProcessedState = true

@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
-import imgui.ImGui
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -55,13 +54,6 @@ open class GameObject(
         if (!isEnabled) return
         components.forEach {
             if (it.enabled) it.update(dt)
-        }
-    }
-
-    fun imgui() {
-        components.forEach {
-            if(ImGui.collapsingHeader(it.javaClass.simpleName))
-                it.imgui()
         }
     }
 

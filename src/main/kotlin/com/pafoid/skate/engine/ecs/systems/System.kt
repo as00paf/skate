@@ -23,8 +23,8 @@ abstract class System(
      * Defaults to the simple class name but can be overridden for custom display.
      */
     open val displayName: String get() = javaClass.simpleName
-    
-    protected lateinit var scene: Scene
+
+    lateinit var scene: Scene
 
     /**
      * Initializes the system with the scene it operates in.
@@ -42,11 +42,6 @@ abstract class System(
      * Updates the system during runtime.
      */
     open fun update(dt: Float) {}
-
-    /**
-     * Renders ImGui interface for the system (if applicable).
-     */
-    open fun imgui() {}
 
     /**
      * Called when the system is destroyed.

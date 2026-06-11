@@ -22,9 +22,13 @@ class GizmoSystem(
     private val undoRedoManager: UndoRedoManager,
     private val renderer: Renderer,
     private val eventSystem: EventSystem,
-    private val gameObjectManager: GameObjectManager,
+    private val systemManager: SystemManager,
     debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.LATE) {  // Late system - runs after input/physics
+
+    private val gameObjectManager: GameObjectManager by lazy {
+        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
+    }
 
     var usingGizmo = NONE
 

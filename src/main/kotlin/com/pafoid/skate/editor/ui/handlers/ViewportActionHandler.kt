@@ -92,12 +92,14 @@ class ViewportActionHandler(
     private val mutationGate: EditorMutationGate,
     private val prefabsGenerator: PrefabsGenerator,
     private val resourceManager: ResourceManager,
-    private val gameObjectManager: GameObjectManager,
     private val cameraManager: CameraManager,
     private val systemManager: SystemManager,
     private val jobSystem: IJobSystem,
     private val viewportRenderer: ViewportRenderer
 ) {
+    private val gameObjectManager: GameObjectManager by lazy {
+        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
+    }
 
     fun init() {
         eventSystem.subscribe<ViewportAction.GameObjectSelected> { event ->

@@ -160,7 +160,6 @@ val appModule = module {
             get(),
             get(),
             get(),
-            get()
         )
             .also { it.init() }
     }
@@ -207,7 +206,6 @@ val appModule = module {
     single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { EditorEventHandler(get(), get(), get(), get()) }
     single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { GridLines(get(), get(), get(), get()) }
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -280,33 +278,28 @@ val engineModule = module {
     }
     single { AssetDatabaseImpl(get(), get(), get()) as AssetDatabase }
 
+    // Rendering
+    single { Renderer(get()) }
     single { DebugRenderer(get(), get(), get()) }
     single { SplashRenderer(get()) }
     single { ModelRenderer(get(), get()) }
-
-    // Render resources factory - created lazily when Renderer is requested
     single { RenderResourcesFactory(get(), get(), get(), get(), get(), get(), get<SplashRenderer>(), get()) }
 
-    // Renderer is created with the factory, initialization happens in BootManager
-    single { Renderer(get()) }
-
-    single { GameObjectManager() }
-    single { InputSystem(get(), get(), get(), get(), get()) }
-    single { AudioSystem(get(), get(), get(), get()) }
-
+    //Engine
     single {
         Engine(
             get(), get(), get(), get(), get(), get(), get(),
             listOf(
-                get<GameObjectManager>(), // Core
-                get<InputSystem>(),
-                get<AudioSystem>(),
-                EnvironmentSystem(get()),
+                GameObjectManager(), // Core
+                InputSystem(get(), get(), get(), get()),
+                AudioSystem(get(), get(), get()),
+                EnvironmentSystem(),
                 PhysicsSystem(),
                 DayNightCycleSystem(null, get()),
                 DirectionalLightSystem(get()),
-                AnimationSystem(get()),
+                AnimationSystem(),
                 RagdollSystem(),
+                GridLines(get(), get(), get()),
             )
         )
     }

@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.getComponent
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -37,14 +36,9 @@ class Transform(
     override fun hashCode(): Int {
         return Objects.hash(translation, scale, rotation)
     }
-
-    override fun imgui() {
-        MImGui.drawVec3TransformControl("Position", translation)
-        MImGui.drawVec3TransformControl("Rotation", rotation, 0f, MImGui.SENSIBILITY_ROTATION)
-        MImGui.drawVec3TransformControl("Scale", scale, 1f, MImGui.SENSIBILITY_SCALE, true)
-    }
 }
 
+// TODO: move
 fun Transform.toMatrix(): Matrix4f {
     val matrix = Matrix4f()
     matrix.identity()
@@ -56,6 +50,7 @@ fun Transform.toMatrix(): Matrix4f {
     return matrix
 }
 
+// TODO: move
 fun Transform.toWorldMatrix(): Matrix4f {
     val worldMatrix = toMatrix()
     val parent = gameObject.parent

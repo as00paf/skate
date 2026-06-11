@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
@@ -33,8 +34,11 @@ class PrefabsGenerator(
     private val jobSystem: IJobSystem,
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
-    private val gameObjectManager: GameObjectManager,
+    private val systemManager: SystemManager
 ) {
+    private val gameObjectManager: GameObjectManager by lazy {
+        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
+    }
     /** Root path for engine-bundled assets copied into the project (null = use engine paths) */
     private var engineDefaultsRoot: String? = null
 
