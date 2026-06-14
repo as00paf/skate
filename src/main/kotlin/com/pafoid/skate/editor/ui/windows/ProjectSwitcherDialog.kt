@@ -1,12 +1,11 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
-import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
+import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
-import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.project.RecentProjectDisplayInfo
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -27,124 +26,12 @@ import javax.swing.JFileChooser
 import javax.swing.UIManager
 import javax.swing.filechooser.FileFilter
 
-class ProjectSwitcherDialog : KoinComponent {
+class ProjectSwitcherDialog : IWindow, KoinComponent {
 
     private val projectManager: ProjectManager by inject()
-    private val wizard: ProjectWizard by inject()
     private val logger: LoggerService by inject()
     private val stringManager: StringManager by inject()
     private val eventSystem: EventSystem by inject()
-
-    private val windowOpen = ImBoolean(false)
-    private var lastOpenFailed = false
-    private var lastOpenErrorMessage = ""
-    private var initialized = false
-
-    val isOpen: Boolean get() = windowOpen.get()
-
-    init {
-        initEventSubscriptions()
-    }
-
-    fun open() {
-        lastOpenFailed = false
-        lastOpenErrorMessage = ""
-        windowOpen.set(true)
-    }
-
-    fun close() {
-        windowOpen.set(false)
-    }
-
-    private fun initEventSubscriptions() {
-        if (initialized) return
-        initialized = true
-
-        eventSystem.subscribe<OpenProjectSucceeded> {
-            lastOpenFailed = false
-            logger.logEditor("Project opened: ${projectManager.getProjectName()}")
-            close()
-        }
-        eventSystem.subscribe<OpenProjectFailed> { event ->
-            lastOpenFailed = true
-            val projectFile = File(event.projectPath)
-            lastOpenErrorMessage =
-                stringManager.getString("lbl.switch_project.open_failed").replace("%s", projectFile.name)
-        }
-    }
-
-    fun render() {
-        if (!isOpen) return
-
-        val centerX = ImGui.getMainViewport().centerX
-        val centerY = ImGui.getMainViewport().centerY
-
-        ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.Always, 0.5f, 0.5f)
-        ImGui.setNextWindowSize(500f, 400f)
-
-        if (ImGui.begin(
-                stringManager.getString("window.switch_project"),
-                windowOpen,
-                ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
-            )
-        ) {
-            ImGui.text(stringManager.getString("lbl.switch_project.select_or_create"))
-            ImGui.spacing()
-
-            if (lastOpenFailed) {
-                MImGui.errorText("${Icons.WINDOW_CLOSE} $lastOpenErrorMessage")
-                ImGui.spacing()
-            }
-
-            val recentProjects = getRecentProjectsDisplayInfo()
-            if (recentProjects.isNotEmpty()) {
-                ImGui.text(stringManager.getString("lbl.switch_project.recent"))
-                ImGui.spacing()
-
-                for (project in recentProjects) {
-                    renderRecentProjectItem(project)
-                }
-            } else {
-                MImGui.textDisabled(stringManager.getString("lbl.no_recent_projects"))
-            }
-
-            ImGui.separator()
-            ImGui.spacing()
-
-            val buttonHeight = UiConstants.DEFAULT_BUTTON_HEIGHT
-            val newButtonWidth = 150f
-            val openButtonWidth = 130f
-            val cancelWidth = 100f
-            val spacing = UiConstants.SECTION_SPACING
-            val totalWidth = newButtonWidth + openButtonWidth + cancelWidth + (2 * spacing)
-
-            val contentRegionWidth = ImGui.getContentRegionAvailX()
-            ImGui.setCursorPosX(ImGui.getCursorPosX() + contentRegionWidth - totalWidth)
-
-            if (ImGui.button("${Icons.PLUS} ${stringManager.getString("btn.new_project")}", newButtonWidth, buttonHeight)) {
-                close()
-                wizard.open()
-            }
-
-            ImGui.sameLine(0f, spacing)
-
-            if (ImGui.button("${Icons.FOLDER_OPEN} ${stringManager.getString("btn.open_project")}", openButtonWidth, buttonHeight)) {
-                openProjectDialog()
-            }
-
-            ImGui.sameLine(0f, spacing)
-
-            if (ImGui.button(stringManager.getString("btn.cancel"), cancelWidth, buttonHeight)) {
-                close()
-            }
-
-            ImGui.end()
-        }
-
-        if (!windowOpen.get()) {
-            close()
-        }
-    }
 
     private fun renderRecentProjectItem(project: RecentProjectDisplayInfo) {
         ImGui.pushID(project.path)
@@ -224,6 +111,78 @@ class ProjectSwitcherDialog : KoinComponent {
             }
         } catch (e: Exception) {
             logger.logEditor("Error opening project dialog: ${e.message}", LogLevel.ERROR)
+        }
+    }
+
+    override fun imgui(pOpen: ImBoolean?) {
+        val centerX = ImGui.getMainViewport().centerX
+        val centerY = ImGui.getMainViewport().centerY
+
+        ImGui.setNextWindowPos(centerX, centerY, ImGuiCond.Always, 0.5f, 0.5f)
+        ImGui.setNextWindowSize(500f, 400f)
+
+        if (ImGui.begin(
+                stringManager.getString("window.switch_project"),
+                pOpen,
+                ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
+            )
+        ) {
+            ImGui.text(stringManager.getString("lbl.switch_project.select_or_create"))
+            ImGui.spacing()
+
+            val recentProjects = getRecentProjectsDisplayInfo()
+            if (recentProjects.isNotEmpty()) {
+                ImGui.text(stringManager.getString("lbl.switch_project.recent"))
+                ImGui.spacing()
+
+                for (project in recentProjects) {
+                    renderRecentProjectItem(project)
+                }
+            } else {
+                MImGui.textDisabled(stringManager.getString("lbl.no_recent_projects"))
+            }
+
+            ImGui.separator()
+            ImGui.spacing()
+
+            val buttonHeight = UiConstants.DEFAULT_BUTTON_HEIGHT
+            val newButtonWidth = 150f
+            val openButtonWidth = 130f
+            val cancelWidth = 100f
+            val spacing = UiConstants.SECTION_SPACING
+            val totalWidth = newButtonWidth + openButtonWidth + cancelWidth + (2 * spacing)
+
+            val contentRegionWidth = ImGui.getContentRegionAvailX()
+            ImGui.setCursorPosX(ImGui.getCursorPosX() + contentRegionWidth - totalWidth)
+
+            if (ImGui.button(
+                    "${Icons.PLUS} ${stringManager.getString("btn.new_project")}",
+                    newButtonWidth,
+                    buttonHeight
+                )
+            ) {
+                eventSystem.publish(WindowAction.Hide("window.project_switcher"))
+                eventSystem.publish(WindowAction.Show("window.project_wizard"))
+            }
+
+            ImGui.sameLine(0f, spacing)
+
+            if (ImGui.button(
+                    "${Icons.FOLDER_OPEN} ${stringManager.getString("btn.open_project")}",
+                    openButtonWidth,
+                    buttonHeight
+                )
+            ) {
+                openProjectDialog()
+            }
+
+            ImGui.sameLine(0f, spacing)
+
+            if (ImGui.button(stringManager.getString("btn.cancel"), cancelWidth, buttonHeight)) {
+                eventSystem.publish(WindowAction.Hide("window.project_switcher"))
+            }
+
+            ImGui.end()
         }
     }
 }

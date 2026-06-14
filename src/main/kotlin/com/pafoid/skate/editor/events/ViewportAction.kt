@@ -53,6 +53,8 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     object ScreenshotRequested : ViewportAction("viewport.screenshot_requested")
 
     // Clipboard
+    data class CutClipboard(val gameObject: GameObject) : ViewportAction("viewport.cut_clipboard")
+    data class CopyClipboard(val gameObject: GameObject) : ViewportAction("viewport.copy_clipboard")
     data class PasteClipboard(val parent: GameObject? = null) : ViewportAction("viewport.paste_clipboard")
 
     // Selection

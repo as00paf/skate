@@ -1,21 +1,12 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.player.PlayerState
 import com.pafoid.skate.game.skateboard.Stance
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import org.koin.core.component.inject
-import org.koin.java.KoinJavaComponent.inject
 
 @Serializable
 class PlayerStateManager : Component() {
-
-    @Transient private val logger: LoggerService by inject()
-    @Transient private val stringManager: StringManager by inject()
 
     var currentState: PlayerState = PlayerState.IDLE
         private set
@@ -68,10 +59,11 @@ class PlayerStateManager : Component() {
     fun transitionToState(newState: PlayerState) {
         if (currentState == newState) return
 
-        logger.log(
+        // TODO: move this to appropriate place
+        /*logger.log(
             "Transitioning from ${currentState::class.simpleName} to ${newState::class.simpleName}",
             LogLevel.ACTION
-        )
+        )*/
         currentState = newState
     }
 

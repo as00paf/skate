@@ -171,6 +171,12 @@ class ViewportActionHandler(
         eventSystem.subscribe<CreateEmptyChild> { event ->
             handleCreateEmptyChild(event.parent)
         }
+        eventSystem.subscribe<ViewportAction.CutClipboard> { event ->
+            handleCutClipboard(event.gameObject)
+        }
+        eventSystem.subscribe<ViewportAction.CopyClipboard> { event ->
+            handleCopyClipboard(event.gameObject)
+        }
         eventSystem.subscribe<PasteClipboard> { event ->
             handlePasteClipboard(event.parent)
         }
@@ -322,6 +328,16 @@ class ViewportActionHandler(
         childObj.addComponent(Transform())
         childObj.parent = parent
         undoRedoManager.executeCommand(CreateGameObjectCommand(childObj, scene, gameObjectManager))
+    }
+
+    private fun handleCutClipboard(go: GameObject) {
+        val scene = sceneManager.currentScene ?: return
+        clipboardService.cut(go)
+        undoRedoManager.executeCommand(DeleteGameObjectCommand(go, scene, gameObjectManager))
+    }
+
+    private fun handleCopyClipboard(go: GameObject) {
+        clipboardService.copy(go)
     }
 
     private fun handlePasteClipboard(parent: GameObject?) {

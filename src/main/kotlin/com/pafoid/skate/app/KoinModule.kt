@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.EditorMenuBar
 import com.pafoid.skate.editor.imgui.ImGuiLayer
+import com.pafoid.skate.editor.imgui.WindowRegistry
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.project.SceneSerializer
@@ -22,7 +23,6 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.editor.ui.handlers.ConsoleActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
@@ -204,7 +204,7 @@ val appModule = module {
     single { EditorCamera(Camera(), get()) }
     single { CameraManager(get(), get(), get()) }
     single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { EditorEventHandler(get(), get(), get(), get()) }
+    single { EditorEventHandler(get(), get(), get()) }
     single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Window registry
@@ -212,12 +212,12 @@ val appModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get()) }
 
     // Menu
-    single { EditMenuBuilder(get(), get(), get(), get(), get()) }
+    single { EditMenuBuilder(get(), get(), get()) }
     single { ViewMenuBuilder(get(), get()) }
-    single { FileMenuBuilder(get(), get(), get()) }
+    single { FileMenuBuilder(get(), get()) }
     single { SettingsMenuBuilder(get(), get(), get()) }
-    single { WindowControlsRenderer(get(), get(), get()) }
-    single { EditorMenuBar(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { WindowControlsRenderer(get(), get()) }
+    single { EditorMenuBar(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

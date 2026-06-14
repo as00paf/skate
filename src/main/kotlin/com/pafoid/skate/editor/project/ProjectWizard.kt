@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.project
 
-import imgui.type.ImBoolean
 import java.io.File
 
 class ProjectWizard {
@@ -9,28 +8,12 @@ class ProjectWizard {
         private val INVALID_NAME_CHARS = Regex("[<>:\"/\\\\|?*]")
     }
 
-    private val _isOpen = ImBoolean(false)
-    val isOpen: ImBoolean get() = _isOpen
-    val isCurrentlyOpen: Boolean get() = _isOpen.get()
-
-    var userDismissed: Boolean = false
-        private set
-
     var projectName: String = ""
         private set
 
     var projectPath: String = ""
         private set
 
-    fun open() {
-        userDismissed = false
-        _isOpen.set(true)
-    }
-
-    fun dismiss() {
-        userDismissed = true
-        _isOpen.set(false)
-    }
 
     fun setProjectName(name: String) {
         projectName = name.trim()
@@ -80,7 +63,6 @@ class ProjectWizard {
     }
 
     fun resetForNewProject() {
-        userDismissed = false
         projectName = ""
         projectPath = ""
     }

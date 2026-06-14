@@ -1,9 +1,8 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.events.UndoRedoAction
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -21,15 +20,12 @@ import imgui.internal.ImGui.menuItem
  * - Selection event publishing
  * 
  * @param stringManager For localized menu strings
- * @param undoRedoManager For undo/redo operations
  * @param clipboardService For clipboard operations
  * @param sceneManager For accessing current scene and selection
  * @param eventSystem For publishing selection events
  */
 class EditMenuBuilder(
     private val stringManager: StringManager,
-    private val undoRedoManager: UndoRedoManager,
-    private val clipboardService: ClipboardService,
     private val sceneManager: SceneManager,
     private val eventSystem: EventSystem,
 ) {
@@ -45,10 +41,10 @@ class EditMenuBuilder(
     
     private fun renderUndoRedoItems() {
         if (menuItem("${Icons.UNDO} ${stringManager.getString("menu.edit.undo")}", "Ctrl+Z")) {
-            undoRedoManager.undo()
+            eventSystem.publish(UndoRedoAction.Undo)
         }
         if (menuItem("${Icons.REDO} ${stringManager.getString("menu.edit.redo")}", "Ctrl+Y")) {
-            undoRedoManager.redo()
+            eventSystem.publish(UndoRedoAction.Redo)
         }
     }
     
@@ -57,18 +53,23 @@ class EditMenuBuilder(
             val scene = sceneManager.currentScene
             val selected = scene?.selectedGameObject
             if (selected != null && scene != null) {
-                clipboardService.copy(selected)
+                eventSystem.publish(ViewportAction.CopyClipboard(selected))
                 eventSystem.publish(ViewportAction.Delete(selected, scene))
                 eventSystem.publish(ViewportAction.SelectionCleared)
             }
         }
         if (menuItem("${Icons.COPY} ${stringManager.getString("menu.edit.copy")}", "Ctrl+C")) {
             sceneManager.currentScene?.selectedGameObject?.let {
-                clipboardService.copy(it)
+                eventSystem.publish(ViewportAction.CopyClipboard(it))
             }
         }
         if (menuItem("${Icons.PASTE} ${stringManager.getString("menu.edit.paste")}", "Ctrl+V")) {
             eventSystem.publish(ViewportAction.PasteClipboard())
+        }
+        if (menuItem("${Icons.PASTE} ${stringManager.getString("menu.edit.cut")}", "Ctrl+X")) {
+            sceneManager.currentScene?.selectedGameObject?.let {
+                eventSystem.publish(ViewportAction.CutClipboard(it))
+            }
         }
     }
 }

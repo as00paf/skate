@@ -16,25 +16,27 @@ import org.joml.Vector3f
 fun SkeletonComponent.imgui(stringManager: StringManager) {
     val skeleton = pose.skeleton
     val go = gameObject
-    if (go != sceneManager.currentScene?.selectedGameObject) return
+    //if (go != sceneManager.currentScene?.selectedGameObject) return
 
     ImGui.inputText(stringManager.getString("lbl.bone_tree.pose_file_name"), poseFileName)
 
     if (ImGui.button(stringManager.getString("btn.save_pose"))) {
         val boneOverride = go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
-        poseSerializer.savePose(boneOverride, "assets/poses/${poseFileName.get()}.json")
+        // TODO: use event system
+        //poseSerializer.savePose(boneOverride, "assets/poses/${poseFileName.get()}.json")
     }
     ImGui.sameLine()
     if (ImGui.button(stringManager.getString("btn.load_pose"))) {
-        val loadedOverride = poseSerializer.loadPose("assets/poses/${poseFileName.get()}.json")
-        loadedOverride?.let { bo ->
-            val existingOverride =
-                go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
-            // Replace existing overrides with loaded ones
-            bo.getOverrides().forEach { (boneName, rotation) ->
-                existingOverride.addOverride(boneName, rotation)
-            }
-        }
+        // TODO: use event system
+        /* val loadedOverride = poseSerializer.loadPose("assets/poses/${poseFileName.get()}.json")
+         loadedOverride?.let { bo ->
+             val existingOverride =
+                 go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
+             // Replace existing overrides with loaded ones
+             bo.getOverrides().forEach { (boneName, rotation) ->
+                 existingOverride.addOverride(boneName, rotation)
+             }
+         }*/
     }
 
     // TODO: incomplete

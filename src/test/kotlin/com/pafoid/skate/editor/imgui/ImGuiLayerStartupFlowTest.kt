@@ -2,17 +2,11 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.ProjectWizard
-import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.editor.ui.windows.ProjectWizardWindow
-import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 import io.mockk.every
 import io.mockk.mockk
@@ -59,15 +53,12 @@ class ImGuiLayerStartupFlowTest : KoinTest {
         }
 
         layer = ImGuiLayer(
-            inputProvider = mockk<IInputProvider>(relaxed = true),
-            settingsManager = mockk<SettingsManager>(relaxed = true),
             sceneManager = mockk<SceneManager>(relaxed = true),
-            clipboardService = mockk<ClipboardService>(relaxed = true),
             stringManager = mockk<StringManager>(relaxed = true),
-            undoRedoManager = mockk<UndoRedoManager>(relaxed = true),
             renderer = mockk<Renderer>(relaxed = true),
-            resourceManager = mockk<ResourceManager>(relaxed = true),
             windowRegistry = windowRegistry,
+            eventSystem = mockk<EventSystem>(relaxed = true),
+            projectManager = mockk<ProjectManager>(relaxed = true),
         )
     }
 

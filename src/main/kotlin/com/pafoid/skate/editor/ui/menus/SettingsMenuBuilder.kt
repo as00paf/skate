@@ -1,7 +1,8 @@
 package com.pafoid.skate.editor.ui.menus
 
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.WindowRegistry
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.internal.ImGui.beginMenu
@@ -17,12 +18,8 @@ import imgui.type.ImInt
 class SettingsMenuBuilder(
     private val stringManager: StringManager,
     private val settingsManager: SettingsManager,
-    private val windowRegistry: WindowRegistry,
+    private val eventSystem: EventSystem
 ) {
-    private val keyBindingsShowFlag: ImBoolean
-        get() = windowRegistry.windows.find { it.nameKey == "window.keybindings" }?.showFlag ?: ImBoolean(false)
-    private val settingsShowFlag: ImBoolean
-        get() = windowRegistry.windows.find { it.nameKey == "window.editor_settings" }?.showFlag ?: ImBoolean(false)
 
     fun render() {
         if (beginMenu(stringManager.getString("menu.settings"))) {
@@ -88,10 +85,10 @@ class SettingsMenuBuilder(
     
     private fun renderWindowItems() {
         if (menuItem(stringManager.getString("menu.settings.keybindings"))) {
-            keyBindingsShowFlag.set(true)
+            eventSystem.publish(WindowAction.Show("window.keybindings"))
         }
         if (menuItem(stringManager.getString("menu.settings.settings"))) {
-            settingsShowFlag.set(true)
+            eventSystem.publish(WindowAction.Show("window.editor_settings"))
         }
     }
 }

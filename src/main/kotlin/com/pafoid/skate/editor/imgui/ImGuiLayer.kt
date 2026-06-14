@@ -1,11 +1,8 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.events.EditorEvent
-import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants
-import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
@@ -26,7 +23,6 @@ import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.createContext
 import imgui.internal.ImGui.destroyContext
 import imgui.internal.ImGui.dockBuilderAddNode
-import imgui.internal.ImGui.dockBuilderDockWindow
 import imgui.internal.ImGui.dockBuilderFinish
 import imgui.internal.ImGui.dockBuilderRemoveNode
 import imgui.internal.ImGui.dockBuilderSetNodeSize
@@ -68,20 +64,17 @@ class ImGuiLayer(
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"
 
-    private val menuBar: EditorMenuBar by inject()
-    private val statusBar = EditorStatusBar(stringManager)
-
     private val tempVec2 = ImVec2()
 
     var isViewportMaximized = false
-    private var hadProjectLastFrame = false
-    private var hasAttemptedAutoLoad = false
 
     private var layoutInitialized = false
 
-    fun init(
-        windowController: WindowController
-    ) {
+    private val menuBar: EditorMenuBar by inject()
+    private val statusBar: EditorStatusBar = EditorStatusBar(stringManager)
+    private val windowManager = WindowManager(stringManager, windowRegistry, projectManager, eventSystem)
+
+    fun init(windowController: WindowController) {
         createContext()
 
         with(getIO()) {
@@ -96,6 +89,7 @@ class ImGuiLayer(
 
         ImGuiStyleManager.setupStyle()
 
+        windowManager.init()
         windowController.onToggleMaximize = { maximized -> menuBar.setMaximized(maximized) }
         eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
         eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
@@ -111,11 +105,7 @@ class ImGuiLayer(
 
         dockBuilderRemoveNode(dockspaceId)
         dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.PassthruCentralNode)
-        dockBuilderSetNodeSize(
-            dockspaceId,
-            getMainViewport().sizeX,
-            getMainViewport().sizeY
-        )
+        dockBuilderSetNodeSize(dockspaceId, getMainViewport().sizeX, getMainViewport().sizeY)
 
         val mainBodyId = ImInt(0)
         val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.18f, null, mainBodyId)
@@ -129,15 +119,7 @@ class ImGuiLayer(
 
         centralNode.setLocalFlags(noTabBar or noWindowMenuButton or noCloseButton)
 
-        windowRegistry.windows.filter { it.showFlag.get() }.forEach { window ->
-            val dockId = when (window.nameKey) {
-                "window.hierarchy", "window.properties", "window.systems", "window.asset_browser", "window.command_history", "window.render_graph" -> leftId
-                "window.console", "window.profiler", "window.physics_tuner", "window.environment" -> bottomId
-                "window.game_viewport" -> mainBodyId.get()
-                else -> mainBodyId.get()
-            }
-            dockBuilderDockWindow(stringManager.getString(window.nameKey), dockId)
-        }
+        windowManager.dockWindows(mainBodyId, leftId, rightId, bottomId)
 
         dockBuilderFinish(dockspaceId)
     }
@@ -168,77 +150,13 @@ class ImGuiLayer(
 
             end()
             popStyleVar()
-        } else if (projectManager.hasProject()) {
-            windowRegistry.windows.forEach { window ->
-                if (!window.showFlag.get()) return@forEach
-                when {
-                    window.requiresScene && currentScene != null -> (window.instance as? IWindowWithScene)?.imgui(
-                        currentScene
-                    )
-                    !window.requiresScene -> (window.instance as? IWindow)?.imgui(window.showFlag)
-                }
-            }
-
-            windowRegistry.searchEverywhereWindow.imgui(null)
-            windowRegistry.projectSwitcherDialog.render()
+        } else {
+            statusBar.render(currentScene)
+            windowManager.update(currentScene)
         }
-
-        statusBar.render(currentScene)
-
-        processProjectStartupFlow()
-
-        windowRegistry.projectWizardWindow.imgui(null)
 
         endFrame()
     }
-
-    internal fun processProjectStartupFlow() {
-        val hasProject = attemptAutoLoadIfNeeded(projectManager.hasProject())
-        val wizard = windowRegistry.projectWizardWindow.wizard
-
-        handleProjectTransitions(hasProject, wizard)
-        hadProjectLastFrame = hasProject
-        handleProjectWizardFallback(hasProject, wizard)
-    }
-
-    private fun attemptAutoLoadIfNeeded(initialHasProject: Boolean): Boolean {
-        if (hasAttemptedAutoLoad || initialHasProject) {
-            return initialHasProject
-        }
-        hasAttemptedAutoLoad = true
-        eventSystem.publish(ProjectEvent.LoadLastProjectRequested)
-        return projectManager.hasProject()
-    }
-
-    private fun handleProjectTransitions(hasProject: Boolean, wizard: ProjectWizard) {
-        // Detect when a project was just closed — hide all project windows
-        if (hadProjectLastFrame && !hasProject) {
-            windowRegistry.hideAllWindows()
-        }
-
-        // Project was just opened — show default windows and dismiss wizard
-        if (!hadProjectLastFrame && hasProject) {
-            windowRegistry.showDefaultWindows()
-            dismissProjectWizardIfOpen(wizard)
-        }
-    }
-
-    private fun dismissProjectWizardIfOpen(wizard: ProjectWizard) {
-        if (wizard.isOpen.get()) {
-            wizard.dismiss()
-        }
-    }
-
-    private fun handleProjectWizardFallback(hasProject: Boolean, wizard: ProjectWizard) {
-        if (shouldOpenWizard(hasProject, wizard)) {
-            wizard.open()
-        }
-    }
-
-    private fun shouldOpenWizard(
-        hasProject: Boolean,
-        wizard: ProjectWizard
-    ): Boolean = !hasProject && !wizard.isOpen.get() && !wizard.userDismissed
 
     fun startFrame() {
         imGuiGlfw.newFrame()

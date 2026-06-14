@@ -1,8 +1,8 @@
 package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.events.EditorEvent
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -13,19 +13,11 @@ import imgui.internal.ImGui.popStyleVar
 import imgui.internal.ImGui.pushStyleColor
 import imgui.internal.ImGui.pushStyleVar
 import imgui.internal.ImGui.sameLine
-import imgui.type.ImBoolean
 
 class WindowControlsRenderer(
     private val eventSystem: EventSystem,
     private val stringManager: StringManager,
-    private val windowRegistry: WindowRegistry,
 ) {
-    private val projectSettingsShowFlag: ImBoolean
-        get() = windowRegistry.windows.find { it.nameKey == "window.project_settings" }?.showFlag ?: ImBoolean(false)
-
-    private val editorSettingsShowFlag: ImBoolean
-        get() = windowRegistry.windows.find { it.nameKey == "window.editor_settings" }?.showFlag ?: ImBoolean(false)
-
     var isMaximized = true
 
     companion object {
@@ -70,10 +62,10 @@ class WindowControlsRenderer(
 
         if (ImGui.beginPopup("##SettingsPopup")) {
             if (ImGui.menuItem(stringManager.getString("window.editor_settings"))) {
-                editorSettingsShowFlag.set(true)
+                eventSystem.publish(WindowAction.Show("window.editor_settings"))
             }
             if (ImGui.menuItem(stringManager.getString("window.project_settings"))) {
-                projectSettingsShowFlag.set(true)
+                eventSystem.publish(WindowAction.Show("window.project_settings"))
             }
             ImGui.endPopup()
         }
@@ -81,7 +73,7 @@ class WindowControlsRenderer(
 
     private fun renderSearchButton() {
         if (ImGui.button("${Icons.SEARCH}", BTN_SIZE, BTN_SIZE)) {
-            windowRegistry.searchEverywhereWindow.open()
+            eventSystem.publish(WindowAction.Show("window.search"))
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.search_everywhere_shortcut"))

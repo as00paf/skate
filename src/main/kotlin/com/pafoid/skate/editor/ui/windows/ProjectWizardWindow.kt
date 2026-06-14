@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectSucceeded
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -50,6 +51,7 @@ class ProjectWizardWindow(
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
     private var initialized = false
+    var isOpen = false
 
     init {
         initEventSubscriptions()
@@ -59,8 +61,6 @@ class ProjectWizardWindow(
      * Render the project creation dialog.
      */
     override fun imgui(pOpen: ImBoolean?) {
-        if (!wizard.isOpen.get()) return
-
         val viewport = ImGui.getMainViewport()
         val centerX = if (viewport.sizeX > 0) viewport.centerX else 400f
         val centerY = if (viewport.sizeY > 0) viewport.centerY else 300f
@@ -71,7 +71,7 @@ class ProjectWizardWindow(
 
         val isOpen = ImGui.begin(
             stringManager.getString("wizard.project.title"),
-            wizard.isOpen,
+            pOpen,
             ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
         )
 
@@ -80,11 +80,6 @@ class ProjectWizardWindow(
             renderFooter()
 
             ImGui.end()
-        }
-
-        // Detect if user closed the window via the X button
-        if (!wizard.isOpen.get()) {
-            wizard.dismiss()
         }
     }
 
@@ -242,7 +237,7 @@ class ProjectWizardWindow(
 
         // Cancel button
         if (ImGui.button(stringManager.getString("wizard.project.cancel"), cancelButtonWidth, buttonHeight)) {
-            wizard.dismiss()
+            eventSystem.publish(WindowAction.Hide(""))
             wizard.reset()
             projectNameInput.set("")
             projectPathInput.set("")

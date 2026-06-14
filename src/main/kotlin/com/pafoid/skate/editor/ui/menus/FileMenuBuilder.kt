@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction.CreateRequested
 import com.pafoid.skate.engine.events.SceneAction.OpenRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveAsRequested
@@ -24,19 +23,11 @@ import imgui.internal.ImGui.separator
  *
  * @param stringManager For localized menu strings
  * @param eventSystem For publishing scene actions
- * @param sceneManager For active scene index lookup
  */
 class FileMenuBuilder(
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
-    private val sceneManager: SceneManager,
 ) {
-    
-    /**
-     * Renders the File menu.
-     * 
-     * @param currentScene The current scene for save operations
-     */
     fun render(currentScene: Scene?) {
         if (beginMenu(stringManager.getString("menu.file"))) {
             renderNewSceneItem()
@@ -55,7 +46,7 @@ class FileMenuBuilder(
     }
     
     private fun renderSaveItems(currentScene: Scene?) {
-        if (currentScene == null || !sceneManager.openScenes.contains(currentScene)) return
+        if (currentScene == null) return
 
         if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save")}", "Ctrl+S")) {
             eventSystem.publish(SaveRequested(currentScene))

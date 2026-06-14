@@ -2,17 +2,15 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.WindowRegistry
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
-import com.pafoid.skate.editor.ui.windows.ProjectSwitcherDialog
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -31,11 +29,7 @@ class EditorMenuBar(
     private val resourceManager: ResourceManager,
     private val projectManager: ProjectManager,
     private val eventSystem: EventSystem,
-    private val windowRegistry: WindowRegistry,
 ) {
-    private val projectSwitcher: ProjectSwitcherDialog = windowRegistry.projectSwitcherDialog
-    private val projectWizard: ProjectWizard = windowRegistry.projectWizardWindow.wizard
-
     private var appIconTexId = -1
     private val projectIcon = Icons.CUBE
 
@@ -117,10 +111,10 @@ class EditorMenuBar(
                 }
             }
             if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}")) {
-                projectWizard.open()
+                eventSystem.publish(WindowAction.Show("window.project_wizard"))
             }
             if (ImGui.menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}")) {
-                projectSwitcher.open()
+                eventSystem.publish(WindowAction.Show("window.project_switcher"))
             }
 
             ImGui.separator()
@@ -149,7 +143,7 @@ class EditorMenuBar(
 
         val currentProjectName = projectManager.getProjectName()
         if (ImGui.button(currentProjectName)) {
-            projectSwitcher.open()
+            eventSystem.publish(WindowAction.Show("window.project_switcher"))
         }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.switch_projects"))

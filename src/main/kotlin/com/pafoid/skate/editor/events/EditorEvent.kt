@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.events
 
 import com.pafoid.skate.engine.events.Event
 
+// TODO: move to window events
 sealed class EditorEvent(eventName: String) : Event(eventName) {
     // Windows
     object OpenSearch : EditorEvent("editor.open_search")

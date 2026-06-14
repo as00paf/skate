@@ -1,9 +1,11 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
@@ -38,10 +40,10 @@ class ProjectSettingsWindow(
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
     private val projectManager: ProjectManager,
-    private val projectSwitcher: ProjectSwitcherDialog,
+    private val eventSystem: EventSystem,
     private val logger: LoggerService
 ) : IWindow {
-
+    // TODO: extract
     private data class Category(
         val id: String,
         val labelKey: String,
@@ -78,7 +80,7 @@ class ProjectSettingsWindow(
                 MImGui.textDisabled(stringManager.getString("settings.project.no_project_description"))
                 ImGui.spacing()
                 if (button(stringManager.getString("settings.project.btn.open_project"))) {
-                    projectSwitcher.open()
+                    eventSystem.publish(WindowAction.Show("window.project_switcher"))
                 }
                 ImGui.spacing()
                 if (button(stringManager.getString("btn.close"))) {
