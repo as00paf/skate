@@ -3,7 +3,14 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
+import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
+import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
+import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
+import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.WindowController
@@ -19,6 +26,7 @@ import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
+import imgui.internal.ImGui
 import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.createContext
 import imgui.internal.ImGui.destroyContext
@@ -47,7 +55,6 @@ import imgui.internal.ImGui.updatePlatformWindows
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 import java.io.File
 
@@ -58,6 +65,8 @@ class ImGuiLayer(
     private val windowRegistry: WindowRegistry,
     private val eventSystem: EventSystem,
     private val projectManager: ProjectManager,
+    private val settingsManager: SettingsManager,
+    private val resourceManager: ResourceManager,
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -70,7 +79,17 @@ class ImGuiLayer(
 
     private var layoutInitialized = false
 
-    private val menuBar: EditorMenuBar by inject()
+    private val menuBar: EditorMenuBar = EditorMenuBar(
+        fileMenu = FileMenuBuilder(stringManager, eventSystem),
+        editMenu = EditMenuBuilder(stringManager, sceneManager, eventSystem),
+        settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem),
+        viewMenu = ViewMenuBuilder(stringManager, windowRegistry),
+        windowControls = WindowControlsRenderer(eventSystem, stringManager),
+        stringManager = stringManager,
+        resourceManager = resourceManager,
+        projectManager = projectManager,
+        eventSystem = eventSystem
+    )
     private val statusBar: EditorStatusBar = EditorStatusBar(stringManager)
     private val windowManager = WindowManager(stringManager, windowRegistry, projectManager, eventSystem)
 
@@ -112,7 +131,7 @@ class ImGuiLayer(
         val rightId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.22f, null, mainBodyId)
         val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.28f, null, mainBodyId)
 
-        val centralNode = imgui.internal.ImGui.dockBuilderGetNode(mainBodyId.get())
+        val centralNode = ImGui.dockBuilderGetNode(mainBodyId.get())
         val noTabBar = imgui.internal.flag.ImGuiDockNodeFlags.NoTabBar
         val noWindowMenuButton = 1 shl 12
         val noCloseButton = 1 shl 13

@@ -2,7 +2,6 @@ package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
-import com.pafoid.skate.editor.imgui.EditorMenuBar
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.imgui.WindowRegistry
 import com.pafoid.skate.editor.project.EngineAssetCopier
@@ -209,7 +208,7 @@ val appModule = module {
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Menu
     single { EditMenuBuilder(get(), get(), get()) }
@@ -217,7 +216,6 @@ val appModule = module {
     single { FileMenuBuilder(get(), get()) }
     single { SettingsMenuBuilder(get(), get(), get()) }
     single { WindowControlsRenderer(get(), get()) }
-    single { EditorMenuBar(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
