@@ -48,6 +48,7 @@ import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.events.ViewportAction.ToggleVisibility
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
+import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
@@ -69,7 +70,6 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.SceneAction.ResetScene
 import com.pafoid.skate.engine.getComponent
@@ -95,7 +95,8 @@ class ViewportActionHandler(
     private val cameraManager: CameraManager,
     private val systemManager: SystemManager,
     private val jobSystem: IJobSystem,
-    private val viewportRenderer: ViewportRenderer
+    private val viewportRenderer: ViewportRenderer,
+    private val gizmoSystem: GizmoSystem,
 ) {
     private val gameObjectManager: GameObjectManager by lazy {
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
@@ -381,7 +382,7 @@ class ViewportActionHandler(
 
     private fun handleToggleGizmo(gizmoId: Int) {
         if (mutationGate.blockIfPlaying("toggle gizmo")) return
-        systemManager.getSystem<GizmoSystem>()?.toggleGizmo(gizmoId)
+        gizmoSystem.toggleGizmo(gizmoId)
     }
 
     private fun handleResetTransform(gameObject: GameObject) {

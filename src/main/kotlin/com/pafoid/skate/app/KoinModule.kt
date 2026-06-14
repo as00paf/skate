@@ -17,6 +17,7 @@ import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.FileSystemScanner
+import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
@@ -89,7 +90,6 @@ import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
@@ -118,9 +118,10 @@ import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.utils.DefaultJobSystem
 import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.game.trick.TrickManager
+import org.joml.Vector3f
 import org.koin.dsl.module
 
-val appModule = module {
+val editorModule = module {
     single { Serializer() }
 
     // Editor-only rendering tools (moved from engineModule)
@@ -146,6 +147,7 @@ val appModule = module {
     single(createdAtStart = true) { UndoRedoActionHandler().also { it.init() } }
     single(createdAtStart = true) {
         ViewportActionHandler(
+            get(),
             get(),
             get(),
             get(),
@@ -200,15 +202,15 @@ val appModule = module {
 
     // Editor Workspace
     single { EditorInputState() }
-    single { EditorCamera(Camera(), get()) }
+    single { EditorCamera(Camera(Vector3f(0f, 5f, 20f)), get()) }
     single { CameraManager(get(), get(), get()) }
     single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { EditorEventHandler(get(), get(), get()) }
-    single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Menu
     single { EditMenuBuilder(get(), get(), get()) }

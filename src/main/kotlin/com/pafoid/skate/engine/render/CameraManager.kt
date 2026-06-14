@@ -11,7 +11,7 @@ import org.koin.core.component.KoinComponent
  */
 class CameraManager(
     private val sceneManager: SceneManager,
-    private val editorCamera: EditorCamera,
+    val editorCamera: EditorCamera,
     private val eventSystem: EventSystem,
 ) : KoinComponent {
 

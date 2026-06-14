@@ -4,13 +4,13 @@ import com.pafoid.skate.editor.events.ViewportAction.ScreenshotRequested
 import com.pafoid.skate.editor.events.ViewportAction.SetRuntimePlaying
 import com.pafoid.skate.editor.events.ViewportAction.ToggleGizmo
 import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
-import com.pafoid.skate.editor.gizmos.MeasureTool
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_SPACING
 import com.pafoid.skate.editor.imgui.data.UiConstants.SEPARATOR_WIDTH
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_SPACING
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
+import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -19,8 +19,6 @@ import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.ecs.systems.GizmoSystem
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
@@ -33,8 +31,8 @@ class ViewportToolbar(
     private val engine: Engine,
     private val logger: LoggerService,
     private val stringManager: StringManager,
-    private val systemManager: SystemManager,
     private val eventSystem: EventSystem,
+    private val gizmoSystem: GizmoSystem,
 ) {
     fun render(windowPos: ImVec2) {
         val isPlaying = engine.runtimePlaying
@@ -66,11 +64,9 @@ class ViewportToolbar(
     }
 
     private fun addGizmoButtons(buttons: MutableList<() -> Unit>) {
-        val gizmoSystem = systemManager.getSystem<GizmoSystem>()
-
         // Select Tool
         buttons.add {
-            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.SELECTION_GIZMO
+            val isActive = gizmoSystem.usingGizmo == GizmoSystem.SELECTION_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.MOUSE_POINTER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 eventSystem.publish(ToggleGizmo(GizmoSystem.SELECTION_GIZMO))
@@ -81,7 +77,7 @@ class ViewportToolbar(
 
         // Translate Tool
         buttons.add {
-            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
+            val isActive = gizmoSystem.usingGizmo == GizmoSystem.TRANSLATE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.MOVE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 eventSystem.publish(ToggleGizmo(GizmoSystem.TRANSLATE_GIZMO))
@@ -92,7 +88,7 @@ class ViewportToolbar(
 
         // Rotate Tool
         buttons.add {
-            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.ROTATION_GIZMO
+            val isActive = gizmoSystem.usingGizmo == GizmoSystem.ROTATION_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.ROTATE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 eventSystem.publish(ToggleGizmo(GizmoSystem.ROTATION_GIZMO))
@@ -103,7 +99,7 @@ class ViewportToolbar(
 
         // Scale Tool
         buttons.add {
-            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.SCALE_GIZMO
+            val isActive = gizmoSystem.usingGizmo == GizmoSystem.SCALE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.SCALE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 eventSystem.publish(ToggleGizmo(GizmoSystem.SCALE_GIZMO))
@@ -114,14 +110,14 @@ class ViewportToolbar(
 
         // Measure Tool
         buttons.add {
-            val isActive = gizmoSystem?.usingGizmo == GizmoSystem.MEASURE_GIZMO
+            val isActive = gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO
             if (isActive) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             if (ImGui.button(Icons.RULER, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                 eventSystem.publish(ToggleGizmo(GizmoSystem.MEASURE_GIZMO))
             }
             if (isActive) {
                 ImGui.popStyleColor()
-                systemManager.getSystem<MeasureTool>()?.let { tool ->
+                gizmoSystem.measureGizmo.let { tool ->
                     tool.measurementText?.let { text ->
                         tool.measurementPos?.let { pos ->
                             ImGui.setNextWindowPos(pos.x, pos.y)

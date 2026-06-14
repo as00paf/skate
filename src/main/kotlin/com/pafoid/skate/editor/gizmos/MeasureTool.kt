@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.gizmos
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.UnitSystem
 import com.pafoid.skate.engine.utils.UnitType
@@ -28,7 +29,7 @@ class MeasureTool(
     var measurementPos: Vector2f? = null
         private set
 
-    override fun update(dt: Float) {
+    fun update(camera: Camera) {
         // Reset if not in use
         if (!isInUse()) {
             startPoint = null
@@ -51,7 +52,7 @@ class MeasureTool(
         measurementPos = null
 
         if (relX >= 0 && relX <= viewportSize.x && relY >= 0 && relY <= viewportSize.y) {
-            val ray = scene.camera.screenToRay(relX, relY, viewportSize.x, viewportSize.y)
+            val ray = camera.screenToRay(relX, relY, viewportSize.x, viewportSize.y)
 
             if (abs(ray.direction.y) > 0.0001f) {
                 val t = -ray.origin.y / ray.direction.y

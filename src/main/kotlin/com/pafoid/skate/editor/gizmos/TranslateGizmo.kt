@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.components.ModularTile
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
 import org.joml.Matrix4f
@@ -30,25 +31,25 @@ class TranslateGizmo(
     private var yAxisHot = false
     private var zAxisHot = false
 
-    override fun update(dt: Float) {
+    fun update(camera: Camera) {
         val go = activeGameObject ?: return
         go.getComponent<Transform>()?.let{ transform ->
             val pos = transform.translation
-            val dist = Vector3f(scene.camera.position).distance(pos)
+            val dist = Vector3f(camera.position).distance(pos)
             val dynamicArrowLength = arrowLength * (dist * 0.1f)
             val dynamicConeSize = coneSize * (dist * 0.1f)
             val dynamicHitThreshold = hitThreshold * (dist * 0.1f)
 
-            checkInput(dynamicArrowLength, dynamicHitThreshold)
+            checkInput(camera, dynamicArrowLength, dynamicHitThreshold)
 
             if (xAxisActive) {
-                transform.translation.x += calculateDelta(Vector3f(1f, 0f, 0f))
+                transform.translation.x += calculateDelta(camera, Vector3f(1f, 0f, 0f))
                 if (go.getComponent<ModularTile>() != null) transform.translation.x = (transform.translation.x / 2.0f).roundToInt() * 2.0f
             } else if (yAxisActive) {
-                transform.translation.y += calculateDelta(Vector3f(0f, 1f, 0f))
+                transform.translation.y += calculateDelta(camera, Vector3f(0f, 1f, 0f))
                 if (go.getComponent<ModularTile>() != null) transform.translation.y = (transform.translation.y / 2.0f).roundToInt() * 2.0f
             } else if (zAxisActive) {
-                transform.translation.z += calculateDelta(Vector3f(0f, 0f, 1f))
+                transform.translation.z += calculateDelta(camera, Vector3f(0f, 0f, 1f))
                 if (go.getComponent<ModularTile>() != null) transform.translation.z = (transform.translation.z / 2.0f).roundToInt() * 2.0f
             }
 
@@ -81,7 +82,7 @@ class TranslateGizmo(
         debugRenderer.addTriangle3D(p1, p2, p4, color)
     }
 
-    private fun checkInput(length: Float, threshold: Float) {
+    private fun checkInput(camera: Camera, length: Float, threshold: Float) {
         val go = activeGameObject ?: return
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
@@ -89,7 +90,7 @@ class TranslateGizmo(
         val mouseX = mouseListener.getScreenX()
         val mouseY = mouseListener.getScreenY()
         val viewportSize = mouseListener.getGameViewportSize()
-        val ray = scene.camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
+        val ray = camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
 
         xAxisHot = false
         yAxisHot = false
@@ -137,8 +138,7 @@ class TranslateGizmo(
         return minDist
     }
 
-    private fun calculateDelta(axis: Vector3f): Float {
-        val camera = scene.camera
+    private fun calculateDelta(camera: Camera, axis: Vector3f): Float {
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()
         val viewportSize = mouseListener.getGameViewportSize()

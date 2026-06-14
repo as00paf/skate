@@ -157,7 +157,7 @@ class RenderResourcesFactory(
         shadowMap: ShadowMap? = null
     ): RenderPasses {
         val renderer2D = Renderer2D()
-        val pickingRenderer = PickingRenderer(resourceManager, logger, sceneManager)
+        val pickingRenderer = PickingRenderer(resourceManager, logger, cameraManager.editorCamera)
         val lightingUniformsLoader = LightingUniformsLoader()
 
         renderer2D.bindShader(shaders.batch)

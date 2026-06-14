@@ -1,13 +1,10 @@
 package com.pafoid.skate.app
 
-import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.engine.core.Window
-import com.pafoid.skate.engine.ecs.systems.GizmoSystem
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -18,12 +15,6 @@ class EditorScreen(private val window: Window) : KoinComponent {
     private val editorEventHandler: EditorEventHandler by inject()
     private val imGuiLayer: ImGuiLayer by inject()
 
-    private val editorCamera: EditorCamera by inject()
-    private val gizmoSystem: GizmoSystem by inject()
-    private val editorSystems = listOf(editorInputHandler, editorCamera, gizmoSystem)
-
-    private val systemManager: SystemManager by inject()
-
     var isDestroyed = false
 
     fun init() {
@@ -31,27 +22,16 @@ class EditorScreen(private val window: Window) : KoinComponent {
         editorEventHandler.init()
 
         imGuiLayer.init(window.windowController)
-        initEditorSystems()
         settingsManager.load()
     }
 
-    private fun initEditorSystems() {
-        editorSystems.forEach {
-            systemManager.addSystem(it)
-        }
-    }
-
     fun update(dt: Float) {
+        editorInputHandler.update()
         imGuiLayer.update(dt)
     }
 
     fun destroy() {
         isDestroyed = true
         imGuiLayer.destroy()
-        editorSystems.forEach {
-            systemManager.removeSystem(it)
-            it.destroy()
-        }
-        editorInputHandler.destroy()
     }
 }

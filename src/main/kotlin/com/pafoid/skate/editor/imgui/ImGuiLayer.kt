@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants
+import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
@@ -67,6 +68,7 @@ class ImGuiLayer(
     private val projectManager: ProjectManager,
     private val settingsManager: SettingsManager,
     private val resourceManager: ResourceManager,
+    private val gizmoSystem: GizmoSystem,
 ): KoinComponent {
 
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -170,6 +172,7 @@ class ImGuiLayer(
             end()
             popStyleVar()
         } else {
+            currentScene?.let { gizmoSystem.update(dt, it) }
             statusBar.render(currentScene)
             windowManager.update(currentScene)
         }

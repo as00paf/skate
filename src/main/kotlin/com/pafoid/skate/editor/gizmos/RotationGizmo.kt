@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
 import org.joml.Vector3f
@@ -24,15 +25,15 @@ class RotationGizmo(
     private var yAxisHot = false
     private var zAxisHot = false
 
-    override fun update(dt: Float) {
+    fun update(camera: Camera) {
         activeGameObject?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
 
-            val dist = Vector3f(scene.camera.position).distance(pos)
+            val dist = Vector3f(camera.position).distance(pos)
             val dynamicRadius = radius * (dist * 0.1f)
             val dynamicThreshold = hitThreshold * (dist * 0.1f)
 
-            checkInput(dynamicRadius, dynamicThreshold)
+            checkInput(camera, dynamicRadius, dynamicThreshold)
 
             if (xAxisActive) {
                 transform.rotation.x += mouseListener.getScreenDy()
@@ -52,7 +53,7 @@ class RotationGizmo(
 
     override fun isHot(): Boolean = xAxisHot || yAxisHot || zAxisHot
 
-    private fun checkInput(rad: Float, threshold: Float) {
+    private fun checkInput(camera: Camera, rad: Float, threshold: Float) {
         val go = activeGameObject ?: return
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
@@ -60,7 +61,7 @@ class RotationGizmo(
         val mouseX = mouseListener.getScreenX()
         val mouseY = mouseListener.getScreenY()
         val viewportSize = mouseListener.getGameViewportSize()
-        val ray = scene.camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
+        val ray = camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
 
         // Reset hover states
         xAxisHot = false

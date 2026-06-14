@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
-import com.pafoid.skate.engine.ecs.systems.GizmoSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
@@ -17,30 +16,6 @@ import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean
 
-/**
- * Centralized window for displaying and interacting with all system ImGui interfaces.
- *
- * This window auto-discovers all systems in the current scene and displays their
- * custom [System.imgui()] implementations in a collapsible header format.
- *
- * ## Features
- *
- * - Auto-discovers all systems via [SystemManager.systems]
- * - Displays system enabled status with visual indicator
- * - Shows system execution priority
- * - Calls each system's [imgui()][System.imgui] method inside collapsing headers
- * - Allows enabling/disabling systems at runtime
- *
- * ## Usage
- *
- * ```kotlin
- * val systemsWindow = SystemsWindow()
- * systemsWindow.imgui(currentScene)
- * ```
- *
- * @see System
- * @see SystemManager
- */
 class SystemsWindow(
     private val stringManager: StringManager,
     private val systemManager: SystemManager,
@@ -54,17 +29,9 @@ class SystemsWindow(
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.systems"))
 
-        // Editor Systems (from Workspace)
-        if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.editor_systems"))) {
-            val editorSystems = systemManager.systems.filter { it is GizmoSystem || it is GridLines }
-            renderSystemsList(editorSystems)
-        }
-
-        ImGui.separator()
-
-        // Gameplay Systems (from Scene)
+        // ECS Systems (from Scene)
         if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.gameplay_systems"))) {
-            val systems = systemManager.systems.filterNot { it is GizmoSystem || it is GridLines }
+            val systems = systemManager.systems
             if (systems.isEmpty()) {
                 ImGui.text(stringManager.getString("lbl.systems.no_systems"))
             } else {

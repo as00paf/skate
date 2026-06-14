@@ -1,11 +1,11 @@
 package com.pafoid.skate.engine.render.renderer
 
+import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.data.LogLevel
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.data.PickingMesh
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
@@ -30,7 +30,7 @@ private const val VERTEX_SIZE = 4 // x, y, z, id
 class PickingRenderer(
     private val resourceManager: ResourceManager,
     private val logger: LoggerService,
-    private val sceneManager: SceneManager
+    private val editorCamera: EditorCamera
 ) {
 
     private val meshes = mutableListOf<PickingMesh>()
@@ -78,7 +78,7 @@ class PickingRenderer(
         if (meshes.isEmpty()) return
 
         shader.start()
-        val camera = sceneManager.currentScene?.camera ?: return
+        val camera = editorCamera.camera
         shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
         shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
         

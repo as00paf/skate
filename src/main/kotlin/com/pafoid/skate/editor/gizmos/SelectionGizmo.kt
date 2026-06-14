@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.Renderer
@@ -28,8 +29,8 @@ class SelectionGizmo(
     var hoveredGameObject: GameObject? = null
         private set
 
-    override fun update(dt: Float) {
-        if (!isInUse() || scene.isRunning) {
+    fun update(scene: Scene) {
+        if (!isInUse()) {
             hoveredGameObjectUid = -1
             scene.hoveredGameObject = null
             return

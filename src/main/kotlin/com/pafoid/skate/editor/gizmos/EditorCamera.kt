@@ -3,8 +3,6 @@ package com.pafoid.skate.editor.gizmos
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.config.ExecutionPriority
-import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -18,7 +16,7 @@ import kotlin.math.sin
 class EditorCamera(
     val camera: Camera,
     private val editorState: EditorInputState,
-) : System(priority = ExecutionPriority.EARLY), KoinComponent {
+) : KoinComponent {
 
     private val engine: Engine by inject()
 
@@ -29,9 +27,7 @@ class EditorCamera(
     private var reset = false
     private var isRotating: Boolean = false
 
-    override fun init(scene: Scene) {
-        super.init(scene)
-
+    fun init(scene: Scene) {
         camera.position.set(scene.camera.position)
         camera.yaw = scene.camera.yaw
         camera.pitch = scene.camera.pitch
@@ -39,7 +35,7 @@ class EditorCamera(
         camera.isOrthographic = scene.camera.isOrthographic
     }
 
-    override fun update(dt: Float) {
+    fun update(dt: Float) {
         if (engine.runtimePlaying) return
 
         handleFreeFlyMovement()

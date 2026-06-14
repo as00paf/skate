@@ -13,8 +13,6 @@ import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.config.ExecutionPriority
-import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.GamepadListener
@@ -37,7 +35,7 @@ class EditorInputHandler(
     private val editorInputState: EditorInputState,
     private val sceneManager: SceneManager,
     private val engine: Engine,
-) : System(ExecutionPriority.EARLY), KoinComponent {
+) : KoinComponent {
 
     private val settingsManager: SettingsManager by inject()
     private val eventSystem: EventSystem by inject()
@@ -51,7 +49,7 @@ class EditorInputHandler(
         GLFW.glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
     }
 
-    override fun update(dt: Float) {
+    fun update() {
         editorInputState.reset()
         if (engine.runtimePlaying) {
             handleInputs()
