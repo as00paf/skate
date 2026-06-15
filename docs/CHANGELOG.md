@@ -11,6 +11,17 @@ This document tracks the development history and major milestones of the SkateSi
 
 ---
 
+## [v0.50.0.7] - 2026-06-14: A48.0.2 P2/P3 — DI split and engine decontamination
+
+- Split Koin configuration into editorModule and engineModule (editor-only bindings moved to editorModule). Engine
+  module resolves without editor types.
+- Removed editor package imports from engine/ and introduced engine-facing boundaries; editor-only systems (GizmoSystem
+  et al.) relocated to editor packages.
+- Updated docs/TODO.md to mark P2 and P3 completed.
+- Added unit tests for ProjectManager and default scene / project open paths (tests/ProjectManagerTest).
+
+---
+
 ## [v0.50.0.5] - 2026-05-31: A46.0.1 — Context menus and drag/drop improvements
 
 ### Summary
