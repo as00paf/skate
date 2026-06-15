@@ -1,12 +1,11 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
-import com.pafoid.skate.engine.utils.ScreenshotUtils
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.utils.ScreenshotUtils
 import imgui.ImGui
 import imgui.ImVec2
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Renders the game viewport image and manages framebuffer synchronization.
@@ -14,16 +13,14 @@ import org.koin.core.component.inject
  * @param renderer The renderer providing the framebuffer texture
  */
 class ViewportRenderer(
-    private val renderer: Renderer
+    private val renderer: Renderer,
+    private val cameraManager: CameraManager
 ) : KoinComponent {
-    private val cameraManager: CameraManager by inject()
-    
+
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
     var imageSizeX = 0f
     var imageSizeY = 0f
-
-    // ... (rest of class)
     
     /**
      * Renders the framebuffer texture as an ImGui image.
@@ -57,10 +54,8 @@ class ViewportRenderer(
         }
         
         // Sync camera viewport dimensions for correct aspect ratio
-        cameraManager.getActiveCamera()?.let { camera ->
-            camera.viewportWidth = fbWidth
-            camera.viewportHeight = fbHeight
-        }
+        cameraManager.camera.viewportWidth = fbWidth
+        cameraManager.camera.viewportHeight = fbHeight
     }
     
     /**

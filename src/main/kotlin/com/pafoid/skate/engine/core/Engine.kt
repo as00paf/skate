@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.IJobSystem
@@ -18,6 +19,7 @@ class Engine(
     private val jobSystem: IJobSystem,
     private val systemManager: SystemManager,
     private val logger: LoggerService,
+    private val eventSystem: EventSystem,
     private val engineSystems: List<System>,
 ) : KoinComponent {
 
@@ -40,6 +42,7 @@ class Engine(
         }
 
         initializeSystems()
+        eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event -> runtimePlaying = event.playing }
         logger.log("Engine initialization complete.")
     }
 

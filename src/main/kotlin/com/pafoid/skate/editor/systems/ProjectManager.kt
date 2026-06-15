@@ -23,6 +23,7 @@ import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.runBlocking
@@ -294,6 +295,7 @@ class ProjectManager(
                 val openEpoch = lifecycleEpoch.incrementAndGet()
                 currentProject = loadedProject
                 eventSystem.publish(ProjectEvent.Opened(loadedProject))
+                eventSystem.publish(EngineAction.ApplyMappings(loadedProject.gameplaySettings.inputMappings))
 
                 // Initialize asset database for this project
                 val projectDir = getProjectDirectory()

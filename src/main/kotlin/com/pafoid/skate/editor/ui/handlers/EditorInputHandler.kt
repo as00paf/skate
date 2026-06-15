@@ -2,9 +2,10 @@ package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.events.EditorEvent
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
@@ -21,7 +22,6 @@ import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.utils.Time
 import org.joml.Vector2f
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW
 
 class EditorInputHandler(
@@ -35,10 +35,11 @@ class EditorInputHandler(
     private val editorInputState: EditorInputState,
     private val sceneManager: SceneManager,
     private val engine: Engine,
+    private val projectManager: ProjectManager,
+    private val eventSystem: EventSystem
 ) : KoinComponent {
 
-    private val settingsManager: SettingsManager by inject()
-    private val eventSystem: EventSystem by inject()
+    private var inputMappings = projectManager.currentProject?.gameplaySettings?.inputMappings ?: InputMappings()
 
     private var pendingRenameUid: Int? = null
 
@@ -47,6 +48,10 @@ class EditorInputHandler(
         GLFW.glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
         GLFW.glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
         GLFW.glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
+
+        eventSystem.subscribe<ProjectEvent.OpenProjectSucceeded> {
+            inputMappings = projectManager.currentProject?.gameplaySettings?.inputMappings ?: InputMappings()
+        }
     }
 
     fun update() {
@@ -59,7 +64,7 @@ class EditorInputHandler(
         pollEditorInput()
         val scene = sceneManager.currentScene ?: return
 
-        val inputMappings = settingsManager.loadInputMappings() ?: InputMappings()
+
         val selected = scene.selectedGameObject
 
         // Global hierarchy actions (work regardless of window focus)

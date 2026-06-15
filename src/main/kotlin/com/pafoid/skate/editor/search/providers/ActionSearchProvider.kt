@@ -9,7 +9,6 @@ import com.pafoid.skate.editor.events.ViewportAction.Delete
 import com.pafoid.skate.editor.events.ViewportAction.Duplicate
 import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
 import com.pafoid.skate.editor.events.ViewportAction.ResetTransform
-import com.pafoid.skate.editor.events.ViewportAction.SetRuntimePlaying
 import com.pafoid.skate.editor.events.ViewportAction.SpawnPrefab
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
@@ -19,6 +18,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.events.SceneAction.OpenRequested
 import com.pafoid.skate.engine.render.data.LightType
@@ -271,12 +271,12 @@ class ActionSearchProvider(
     }
 
     private fun startSimulation() {
-        eventSystem.publish(SetRuntimePlaying(true))
+        eventSystem.publish(EngineAction.SetRuntimePlaying(true))
         logger.logEditor("Simulation start requested")
     }
 
     private fun stopSimulation() {
-        eventSystem.publish(SetRuntimePlaying(false))
+        eventSystem.publish(EngineAction.SetRuntimePlaying(false))
         logger.logEditor("Simulation stop requested")
     }
 

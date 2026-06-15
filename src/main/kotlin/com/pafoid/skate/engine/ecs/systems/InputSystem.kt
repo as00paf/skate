@@ -1,10 +1,10 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
+import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
@@ -21,12 +21,10 @@ import kotlin.math.abs
 class InputSystem(
     val inputProvider: IInputProvider,
     private val mouseListener: MouseListener,
-    private val settingsManager: SettingsManager,
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
-    private val mappings: InputMappings
-        get() = settingsManager.loadInputMappings() ?: InputMappings()
+    var mappings: InputMappings = InputMappings()
 
     private var jumpButtonWasPressed = false
     private var movementWasActive = false
@@ -38,6 +36,8 @@ class InputSystem(
         jumpButtonWasPressed = false
         movementWasActive = false
         previousButtons = null
+
+        eventSystem.subscribe<EngineAction.ApplyMappings> { event -> mappings = event.mappings }
     }
 
     override fun update(dt: Float) {

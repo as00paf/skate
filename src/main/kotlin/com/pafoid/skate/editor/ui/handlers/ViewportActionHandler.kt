@@ -39,13 +39,13 @@ import com.pafoid.skate.editor.events.ViewportAction.ResetCamera
 import com.pafoid.skate.editor.events.ViewportAction.ResetTransform
 import com.pafoid.skate.editor.events.ViewportAction.SelectionCleared
 import com.pafoid.skate.editor.events.ViewportAction.SetGameObjectEnabled
-import com.pafoid.skate.editor.events.ViewportAction.SetRuntimePlaying
 import com.pafoid.skate.editor.events.ViewportAction.SetSimulationTimeScale
 import com.pafoid.skate.editor.events.ViewportAction.SpawnPrefab
 import com.pafoid.skate.editor.events.ViewportAction.ToggleGizmo
 import com.pafoid.skate.editor.events.ViewportAction.ToggleLock
 import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.events.ViewportAction.ToggleVisibility
+import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.GizmoSystem
@@ -56,7 +56,6 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
@@ -71,19 +70,19 @@ import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.events.CameraAction
+import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction.ResetScene
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.data.LightType
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.joml.Vector3f
 
 class ViewportActionHandler(
-    private val engine: Engine,
     private val sceneManager: SceneManager,
     private val undoRedoManager: UndoRedoManager,
     private val eventSystem: EventSystem,
@@ -92,7 +91,7 @@ class ViewportActionHandler(
     private val mutationGate: EditorMutationGate,
     private val prefabsGenerator: PrefabsGenerator,
     private val resourceManager: ResourceManager,
-    private val cameraManager: CameraManager,
+    private val editorCamera: EditorCamera,
     private val systemManager: SystemManager,
     private val jobSystem: IJobSystem,
     private val viewportRenderer: ViewportRenderer,
@@ -181,7 +180,7 @@ class ViewportActionHandler(
         eventSystem.subscribe<PasteClipboard> { event ->
             handlePasteClipboard(event.parent)
         }
-        eventSystem.subscribe<SetRuntimePlaying> { event ->
+        eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event ->
             handleSetRuntimePlaying(event.playing)
         }
         eventSystem.subscribe<SetSimulationTimeScale> { event ->
@@ -351,9 +350,11 @@ class ViewportActionHandler(
     }
 
     private fun handleSetRuntimePlaying(playing: Boolean) {
-        engine.runtimePlaying = playing
         if (!playing) {
             sceneManager.currentScene?.getComponent<TimeComponent>()?.timeScale = 1.0f
+            eventSystem.publish(CameraAction.SetCamera(editorCamera.camera))
+        } else {
+            sceneManager.currentScene?.let { eventSystem.publish(CameraAction.SetCamera(it.camera)) }
         }
     }
 
@@ -402,7 +403,7 @@ class ViewportActionHandler(
         val transform = selected.getComponent<Transform>() ?: return
         val pos = transform.translation
 
-        val camera = cameraManager.getActiveCamera() ?: return
+        val camera = editorCamera.camera
         val offset = Vector3f(5f, 5f, 5f)
         camera.position.set(Vector3f(pos).add(offset))
         camera.lookAt(pos)
@@ -410,8 +411,8 @@ class ViewportActionHandler(
     }
 
     private fun handleResetCamera() {
-        val camera = cameraManager.getActiveCamera() ?: return
-        camera.position.set(0f, 5f, 20f)
+        val camera = editorCamera.camera
+        camera.position.set(0f, 5f, 20f)// Should be initial values from scene file
         camera.yaw = 0f
         logger.logEditor("Reset camera")
     }

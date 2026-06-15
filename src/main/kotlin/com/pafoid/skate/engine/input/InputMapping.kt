@@ -40,6 +40,8 @@ class InputMappings(
         keyboardKey = GLFW.GLFW_KEY_RIGHT,
         gamepadButton = 11
     ),  // BUTTON_DPAD_RIGHT
+
+    // TODO: move editor stuff
     var editorGizmoTranslate: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_W),
     var editorGizmoRotate: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_E),
     var editorGizmoScale: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_R),

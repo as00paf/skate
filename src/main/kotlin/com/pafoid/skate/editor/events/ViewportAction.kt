@@ -42,7 +42,6 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     data class DropAnimation(val animationPath: String, val targetObject: GameObject) : ViewportAction("viewport.drop_animation")
 
     // Runtime
-    data class SetRuntimePlaying(val playing: Boolean) : ViewportAction("viewport.set_runtime_playing")
     data class SetSimulationTimeScale(val timeScale: Float) : ViewportAction("viewport.set_simulation_timescale")
     data class ResetTransform(val gameObject: GameObject) : ViewportAction("viewport.reset_transform")
 

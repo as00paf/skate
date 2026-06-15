@@ -160,13 +160,12 @@ val editorModule = module {
             get(),
             get(),
             get(),
-            get(),
         )
             .also { it.init() }
     }
 
     // Viewport components for GameViewWindow
-    factory { ViewportRenderer(get()) }
+    factory { ViewportRenderer(get(), get()) }
     factory { ViewportToolbar(get(), get(), get(), get(), get(), get()) }
     factory { ViewportContextMenu(get(), get()) }
     factory { ViewportOverlays(get(), get()) }
@@ -203,8 +202,7 @@ val editorModule = module {
     // Editor Workspace
     single { EditorInputState() }
     single { EditorCamera(Camera(Vector3f(0f, 5f, 20f)), get()) }
-    single { CameraManager(get(), get(), get()) }
-    single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { EditorEventHandler(get(), get(), get()) }
     single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
@@ -257,6 +255,7 @@ val engineModule = module {
     single<IInputBuffer> { InputBuffer() }
 
     // Managers
+    single { CameraManager(get()) }
     single { SystemManager() }
     single { SceneManager(get(), get(), get(), get()) }
     single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
@@ -288,10 +287,10 @@ val engineModule = module {
     //Engine
     single {
         Engine(
-            get(), get(), get(), get(), get(), get(), get(),
+            get(), get(), get(), get(), get(), get(), get(), get(),
             listOf(
                 GameObjectManager(), // Core
-                InputSystem(get(), get(), get(), get()),
+                InputSystem(get(), get(), get()),
                 AudioSystem(get(), get(), get()),
                 EnvironmentSystem(),
                 PhysicsSystem(),

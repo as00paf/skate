@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
 import com.pafoid.skate.editor.events.ViewportAction.ScreenshotRequested
-import com.pafoid.skate.editor.events.ViewportAction.SetRuntimePlaying
 import com.pafoid.skate.editor.events.ViewportAction.ToggleGizmo
 import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -19,6 +18,7 @@ import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.TimeComponent
+import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
@@ -145,7 +145,7 @@ class ViewportToolbar(
                     // Currently running — show Pause
                     ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.4f, 0.1f, 1f)
                     if (ImGui.button(Icons.PAUSE, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        eventSystem.publish(SetRuntimePlaying(false))
+                        eventSystem.publish(EngineAction.SetRuntimePlaying(false))
                         logger.logEditor("Simulation paused")
                     }
                     ImGui.popStyleColor()
@@ -153,7 +153,7 @@ class ViewportToolbar(
                 } else {
                     // Paused — show Resume
                     if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                        eventSystem.publish(SetRuntimePlaying(true))
+                        eventSystem.publish(EngineAction.SetRuntimePlaying(true))
                         logger.logEditor("Simulation resumed")
                     }
                     if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.resume_simulation"))
@@ -164,7 +164,7 @@ class ViewportToolbar(
                 ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.1f, 0.1f, 1f)
                 ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.8f, 0.2f, 0.2f, 1f)
                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    eventSystem.publish(SetRuntimePlaying(false))
+                    eventSystem.publish(EngineAction.SetRuntimePlaying(false))
                     logger.logEditor("Simulation stopped")
                 }
                 ImGui.popStyleColor(2)
@@ -174,7 +174,7 @@ class ViewportToolbar(
             // Play button
             buttons.add {
                 if (ImGui.button(Icons.PLAY, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
-                    eventSystem.publish(SetRuntimePlaying(true))
+                    eventSystem.publish(EngineAction.SetRuntimePlaying(true))
                     logger.logEditor("Simulation started")
                 }
                 if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.play_simulation"))

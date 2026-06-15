@@ -41,8 +41,7 @@ class GridLines(
     override fun update(dt: Float) {
         if (!config.showGrid || scene.isRunning) return
 
-        val camPos =
-            cameraManager.getActiveCamera()?.position ?: sceneManager.currentScene?.camera?.position ?: Vector3f()
+        val camPos = cameraManager.camera.position
         
         val cameraDistance = abs(camPos.y)
         val extent = calculateGridExtent(cameraDistance)

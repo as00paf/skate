@@ -22,6 +22,8 @@ class EditorScenesTabBar(
     private val eventSystem: EventSystem,
     private val stringManager: StringManager
 ) {
+    private var selectedTabIndex: Int? = null
+
     fun render(sceneManager: SceneManager) {
         if (ImGui.beginTabBar("##EditorScenesTabBar", ImGuiTabBarFlags.Reorderable or ImGuiTabBarFlags.AutoSelectNewTabs)) {
             val openScenes = sceneManager.openScenes.toList()
@@ -35,7 +37,10 @@ class EditorScenesTabBar(
                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 
                 if (ImGui.beginTabItem("$displayName###sceneTab_${scene.getUid()}", open, flags)) {
-                    eventSystem.publish(ViewportAction.TabSelected(scene))
+                    if (selectedTabIndex != index) {
+                        selectedTabIndex = index
+                        eventSystem.publish(ViewportAction.TabSelected(scene))
+                    }
 
                     // Scene tab context menu
                     if (ImGui.beginPopupContextItem()) {

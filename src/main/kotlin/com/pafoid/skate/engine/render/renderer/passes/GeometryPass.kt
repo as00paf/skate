@@ -101,7 +101,7 @@ class GeometryPass(
         }
         clearColor(skyColor)
 
-        val camera = cameraManager.getActiveCamera() ?: scene.camera
+        val camera = cameraManager.camera
 
         // 2D Rendering Setup
         renderer2D.bindCamera(camera)

@@ -12,20 +12,6 @@ import org.joml.Vector4f
 import kotlin.math.asin
 import kotlin.math.atan2
 
-/**
- * Core camera component for the rendering engine.
- *
- * This is a pure engine component with NO input dependencies.
- * It provides:
- * - Projection and view matrix creation
- * - Camera state (position, pitch, yaw, roll, fov, etc.)
- * - Preset interpolation (lerp)
- * - Ray casting from screen coordinates
- * - Forward/right vector calculation
- *
- * For gameplay third-person camera, use [com.pafoid.skate.game.camera.GameCamera]
- * For editor navigation, use [com.pafoid.skate.editor.gizmos.EditorCamera]
- */
 class Camera(
     val position: Vector3f = Vector3f(),
     var pitch: Float = 0f,

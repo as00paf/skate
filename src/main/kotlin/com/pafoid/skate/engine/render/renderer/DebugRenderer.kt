@@ -100,7 +100,7 @@ class DebugRenderer(
         if (!::shader.isInitialized) return
         
         shader.start()
-        val camera = cameraManager.getActiveCamera() ?: return
+        val camera = cameraManager.camera
 
         shader.uploadMat4f(PROJECTION, camera.createProjectionMatrix())
         shader.uploadMat4f(VIEW, camera.createViewMatrix())
@@ -168,7 +168,7 @@ class DebugRenderer(
         
         val lineDir = direction.normalize()
 
-        val cameraPos = cameraManager.getActiveCamera()?.position ?: Vector3f(0f, 5f, 20f)
+        val cameraPos = cameraManager.camera.position
         val cameraToLine = Vector3f(from).sub(cameraPos).normalize()
         
         var perpendicular = Vector3f(lineDir).cross(cameraToLine).normalize()
