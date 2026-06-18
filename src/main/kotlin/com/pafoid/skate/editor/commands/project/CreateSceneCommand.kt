@@ -1,63 +1,33 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.AsyncCommand
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction
-import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.Job
 
-/**
- * Command for creating a new scene and persisting it to disk.
- * This is execute-only as undoing a create operation would require
- * tracking and removing the newly created scene.
- *
- * @param name The name for the new scene
- * @param sceneSerializer The serializer to persist the scene to disk
- * @param filePath The file path where the scene will be saved
- */
 class CreateSceneCommand(
     private val name: String,
-    private val sceneSerializer: SceneSerializer,
     private val filePath: String,
-    private val jobSystem: IJobSystem,
     private val eventSystem: EventSystem,
-    private val sceneFactory: (String) -> Scene = { sceneName ->
-        Scene(sceneName)
-    }
+    private val sceneManager: SceneManager
 ) : AsyncCommand {
 
-    /** The created scene instance, available after the scheduled create job completes successfully. */
-    var createdScene: Scene? = null
-        private set
-    @Volatile
+    private var createdScene: Scene? = null
     private var completedSuccessfully: Boolean = false
     private var completionJob: Job? = null
 
     override fun execute() {
-        completedSuccessfully = false
-        createdScene = null
-        completionJob = jobSystem.runOnMain {
-            runCatching {
-                val newScene = sceneFactory(name)
-                newScene.sceneData.levelPath = filePath
-                newScene.init()
-
-                sceneSerializer.saveToFile(newScene, filePath)
-
-                createdScene = newScene
-                eventSystem.publish(SceneAction.Created(newScene))
-                completedSuccessfully = true
-            }.onFailure {
-                createdScene = null
-                completedSuccessfully = false
-            }
+        createdScene = sceneManager.createNewScene(name, filePath)
+        completedSuccessfully = createdScene != null
+        createdScene?.let {
+            eventSystem.publish(SceneAction.Created(it))
         }
     }
 
     override fun undo() {
-        // Not supported - would require tracking and removing the new scene and deleting the file
+        createdScene?.let { eventSystem.publish(SceneAction.DeleteRequested(it)) }
     }
 
     override fun getCompletionJob(): Job? = completionJob

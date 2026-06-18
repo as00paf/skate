@@ -36,10 +36,9 @@ class OpenSceneFileCommand(
             runCatching {
                 val sceneName = File(scenePath).nameWithoutExtension.ifBlank { "Loaded Scene" }
                 val loadedScene = sceneFactory(sceneName)
-                loadedScene.init()
 
                 if (sceneSerializer.loadFromFile(loadedScene, scenePath)) {
-                    sceneManager.openSceneBlocking(loadedScene)
+                    sceneManager.openScene(loadedScene)
                     openedScene = loadedScene
                     eventSystem.publish(OpenSucceeded(loadedScene))
                     completedSuccessfully = true

@@ -2,14 +2,12 @@ package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.commands.project.OpenSceneCommand
 import com.pafoid.skate.editor.data.SceneOpenResult
-import com.pafoid.skate.editor.events.SceneAction
 import com.pafoid.skate.editor.events.SceneAction.*
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.testfixtures.ImmediateJobSystem
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
@@ -37,7 +35,6 @@ class OpenSceneCommandTest {
         jobSystem = ImmediateJobSystem()
         loadedSceneInstance = mockk(relaxed = true)
         every { loadedSceneInstance.name } returns "Loaded Scene"
-        coEvery { loadedSceneInstance.init() } returns Unit
         every { loadedSceneInstance.destroyScene() } returns Unit
 
     }
@@ -57,7 +54,7 @@ class OpenSceneCommandTest {
         val command = createCommand()
         command.execute()
 
-        verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
+        verify(exactly = 0) { sceneManager.openScene(any(), any()) }
         assertNull(command.openedScene)
         assertEquals(true, cancelled)
         assertEquals(CommandCategory.ASYNC, command.getCategory())
@@ -75,7 +72,7 @@ class OpenSceneCommandTest {
         val command = createCommand()
         command.execute()
 
-        verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
+        verify(exactly = 0) { sceneManager.openScene(any(), any()) }
         assertNull(command.openedScene)
         assertEquals("deserialize failure", failureReason)
     }
@@ -89,7 +86,7 @@ class OpenSceneCommandTest {
         val command = createCommand()
         command.execute()
 
-        verify(exactly = 1) { sceneManager.openSceneBlocking(any(), any()) }
+        verify(exactly = 1) { sceneManager.openScene(any(), any()) }
         assertEquals(loadedSceneInstance, command.openedScene)
         assertNotNull(openedEvent)
         assertEquals(loadedSceneInstance, openedEvent?.scene)
@@ -108,7 +105,7 @@ class OpenSceneCommandTest {
         val command = createCommand()
         command.execute()
 
-        verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
+        verify(exactly = 0) { sceneManager.openScene(any(), any()) }
         assertNull(command.openedScene)
         assertFalse(command.didCompleteSuccessfully())
         assertEquals("io failure", failureReason)

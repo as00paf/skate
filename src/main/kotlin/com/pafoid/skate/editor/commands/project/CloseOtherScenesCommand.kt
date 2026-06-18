@@ -1,22 +1,29 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.SceneAction
 
 class CloseOtherScenesCommand(
-    private val keepScene: Scene?,
-    private val sceneManager: SceneManager
+    private val scene: Scene,
+    private val sceneManager: SceneManager,
+    private val eventSystem: EventSystem,
 ) : ExecuteOnlyCommand {
 
+    private var otherScenes: List<Scene>? = null
+
     override fun execute() {
-        keepScene?.let { sceneManager.closeOtherScenes(it) }
+        otherScenes = sceneManager.openScenes.filter { it != scene }
+        sceneManager.closeOtherScenes(scene)
     }
 
     override fun undo() {
-        // Not supported - restoring all closed scenes is complex
+        eventSystem.publish(SceneAction.CloseRequested(scene))
+        eventSystem.publish(SceneAction.ReopenAllRequested(otherScenes.orEmpty()))
     }
 
     override fun getDisplayName(): String = "Close Other Scenes"
-    override fun getTargetName(): String? = keepScene?.name
+    override fun getTargetName(): String? = scene?.name
 }

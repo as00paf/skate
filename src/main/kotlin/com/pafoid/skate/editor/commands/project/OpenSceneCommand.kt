@@ -33,10 +33,9 @@ class OpenSceneCommand(
         completionJob = jobSystem.runOnMain {
             runCatching {
                 val loadedScene = sceneFactory("Loaded Scene")
-                loadedScene.init()
                 when (val openResult = sceneSerializer.open(loadedScene)) {
                     is SceneOpenResult.Loaded -> {
-                        sceneManager.openSceneBlocking(loadedScene)
+                        sceneManager.openScene(loadedScene)
                         openedScene = loadedScene
                         eventSystem.publish(OpenSucceeded(loadedScene))
                         completedSuccessfully = true

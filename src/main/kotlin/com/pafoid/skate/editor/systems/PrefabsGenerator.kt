@@ -7,7 +7,6 @@ import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
@@ -27,7 +26,6 @@ import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import com.pafoid.skate.game.prefabs.Tile
 import org.joml.Vector3f
-
 import java.io.File
 
 class PrefabsGenerator(
@@ -114,7 +112,7 @@ class PrefabsGenerator(
      * Synchronous version for default scene creation.
      * Blocks until the skateboard is added to the scene.
      */
-    fun spawnSkateboardSync(scene: Scene? = null) {
+    fun spawnSkateboardSync() {
         val modelPath = resolveModelPath(Assets.Models.SKATEBOARD_GLB)
         val model = resourceManager.loadModelSync(modelPath)
         val skate = Skateboard(model as TexturedModel)
@@ -142,7 +140,7 @@ class PrefabsGenerator(
      * Blocks until the skater is added to the scene.
      * Loads animations synchronously to ensure they're in the scene before serialization.
      */
-    fun spawnSkaterSync(skate: GameObject? = null, scene: Scene? = null) {
+    fun spawnSkaterSync(skate: GameObject? = null) {
         val modelPath = resolveModelPath(Assets.Models.JAMES)
         val model = resourceManager.getModel(modelPath) as CharacterModel?
             ?: resourceManager.loadModelSync(modelPath) as CharacterModel
@@ -181,7 +179,7 @@ class PrefabsGenerator(
      * Synchronous version for default scene creation.
      * Blocks until the floor tile is added to the scene.
      */
-    fun spawnFloorSync(scene: Scene? = null) {
+    fun spawnFloorSync() {
         val texturePath = resolveTexturePath(Assets.Textures.ASPHALT)
         val modelPath = resolveModelPath(Assets.Models.CUBE)
         val texture = resourceManager.loadTextureSync(texturePath)

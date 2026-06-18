@@ -21,7 +21,9 @@ class WindowManager(
     private var hasAttemptedAutoLoad = false
 
     fun init() {
-        eventSystem.subscribe<WindowAction.Show> { event -> windowRegistry.getWindow(event.name)?.showFlag?.set(true) }
+        eventSystem.subscribe<WindowAction.Show> { event ->
+            windowRegistry.getWindow(event.name)?.showFlag?.set(true)
+        }
         eventSystem.subscribe<WindowAction.Hide> { event -> windowRegistry.getWindow(event.name)?.showFlag?.set(false) }
         eventSystem.subscribe<WindowAction.ShowDefault> { windowRegistry.showDefaultWindows() }
     }
@@ -39,7 +41,7 @@ class WindowManager(
     }
 
     fun update(currentScene: Scene?) {
-        if (projectManager.hasProject()) {
+        //if (projectManager.hasProject()) {
             windowRegistry.windows.forEach { window ->
                 if (!window.showFlag.get()) return@forEach
                 when {
@@ -50,9 +52,9 @@ class WindowManager(
                     !window.requiresScene -> (window.instance as? IWindow)?.imgui(window.showFlag)
                 }
             }
-        } else {
-            processProjectStartupFlow()
-        }
+        /* } else {
+             processProjectStartupFlow()
+         }*/
     }
 
     internal fun processProjectStartupFlow() {

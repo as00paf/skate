@@ -75,7 +75,7 @@ class ProjectSettingsWindow(
         setNextWindowSize(defaultWidth, 550f, ImGuiCond.FirstUseEver)
 
         if (begin(stringManager.getString("window.project_settings"), pOpen, ImGuiWindowFlags.NoDocking)) {
-            if (!settingsManager.hasProject(projectManager.currentProject)) {
+            if (!projectManager.hasProject()) {
                 ImGui.text(stringManager.getString("settings.project.no_project"))
                 MImGui.textDisabled(stringManager.getString("settings.project.no_project_description"))
                 ImGui.spacing()

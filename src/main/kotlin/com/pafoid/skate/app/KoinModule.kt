@@ -257,7 +257,7 @@ val engineModule = module {
     // Managers
     single { CameraManager(get()) }
     single { SystemManager() }
-    single { SceneManager(get(), get(), get(), get()) }
+    single { SceneManager(get(), get(), get(), get(), get(), get()) }
     single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
 
     single<Physics3DFactory> { BulletPhysics3DFactory(get(), { get() }) }

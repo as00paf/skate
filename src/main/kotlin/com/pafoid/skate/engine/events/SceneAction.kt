@@ -19,6 +19,7 @@ sealed class SceneAction(eventName: String) : Event(eventName) {
     object OpenRequested : SceneAction("scene.action.open_requested")
     data class OpenPathRequested(val scenePath: String) : SceneAction("scene.action.open_path_requested")
     object OpenCancelled : SceneAction("scene.action.open_cancelled")
+    data class ReopenAllRequested(val scenes: List<Scene>) : SceneAction("scene.action.reopen_all_requested")
 
     // Close
     data class Closing(val scene: Scene) : SceneAction("editor.scene_closing")

@@ -51,7 +51,6 @@ class ProjectWizardWindow(
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
     private var initialized = false
-    var isOpen = false
 
     init {
         initEventSubscriptions()
@@ -69,13 +68,13 @@ class ProjectWizardWindow(
         ImGui.setNextWindowSize(UiConstants.DIALOG_WIDTH, UiConstants.DIALOG_HEIGHT)
         ImGui.setNextWindowBgAlpha(0.95f)
 
-        val isOpen = ImGui.begin(
-            stringManager.getString("wizard.project.title"),
-            pOpen,
-            ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
-        )
 
-        if (isOpen) {
+        if (ImGui.begin(
+                stringManager.getString("wizard.project.title"),
+                pOpen,
+                ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
+            )
+        ) {
             renderForm()
             renderFooter()
 

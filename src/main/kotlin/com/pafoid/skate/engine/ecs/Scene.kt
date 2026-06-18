@@ -43,8 +43,6 @@ open class Scene(
     var isRunning: Boolean = false
     var isDirty: Boolean = false
 
-    suspend fun init() = Unit
-
     override fun start() {
         isRunning = true
         super.start()

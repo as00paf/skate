@@ -1,17 +1,21 @@
 package com.pafoid.skate.engine.ecs
 
+import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
 
 class SceneManager(
-    private val logger: LoggerService,
     private val resourceManager: ResourceManager,
     private val eventSystem: EventSystem,
     private val physics3DFactory: Physics3DFactory,
+    private val sceneSerializer: SceneSerializer,
+    private val systemManager: SystemManager,
+    private val logger: LoggerService,
 ) {
 
     val openScenes = mutableListOf<Scene>()
@@ -20,27 +24,30 @@ class SceneManager(
     val currentScene: Scene?
         get() = openScenes.getOrNull(activeSceneIndex)
 
-    suspend fun openScene(scene: Scene, forceSingle: Boolean = false) {
-        openSceneBlocking(scene, forceSingle)
-    }
-
-    fun openSceneBlocking(scene: Scene, forceSingle: Boolean = false) {
+    fun openScene(scene: Scene, forceSingle: Boolean = false) {
         if (forceSingle) {
             closeAllScenes()
         }
 
-        // Add the new scene and set it as active
-        openScenes.add(scene)
-        activeSceneIndex = openScenes.size - 1
-
         logger.log("Loading scene: ${scene.name}", LogLevel.INFO)
-        scene.start()
-
-        // Publish scene opened event
+        openScenes.add(scene)
+        systemManager.loadScene(scene)
         eventSystem.publish(SceneAction.Opened(scene))
-        eventSystem.publish(SceneAction.Changed)
+        switchScene(scene)
 
         logger.log("Scene ${scene.name} loaded and started.", LogLevel.INFO)
+    }
+
+    fun openScenes(scenes: List<Scene>) {
+        scenes.forEach { scene ->
+            logger.log("Loading scenes: ${scene.name}", LogLevel.INFO)
+            openScenes.add(scene)
+        }
+        scenes.first().let { scene ->
+            systemManager.loadScene(scene)
+            eventSystem.publish(SceneAction.Opened(scene))
+            switchScene(scene)
+        }
     }
 
     fun switchScene(scene: Scene) {
@@ -76,14 +83,8 @@ class SceneManager(
             resourceManager.clear(preserveNonProjectAssets = true)
         } else if (activeSceneIndex >= index) {
             activeSceneIndex = (activeSceneIndex - 1).coerceAtLeast(0)
+            switchScene(openScenes[activeSceneIndex])
         }
-
-        eventSystem.publish(SceneAction.Changed)
-    }
-
-    fun closeScene(index: Int) {
-        val scene = openScenes.getOrNull(index) ?: return
-        closeScene(scene)
     }
 
     fun destroy() {
@@ -93,27 +94,16 @@ class SceneManager(
         resourceManager.clear()
     }
 
-    /**
-     * Renames a scene.
-     * @return true if rename was successful, false if scene is not open
-     */
     fun renameScene(scene: Scene, newName: String): Boolean {
         if (!openScenes.contains(scene)) return false
         if (newName.isBlank()) return false
 
         scene.name = newName
+        saveScene(scene)
         logger.log("Scene renamed: '${scene.name}'", LogLevel.ACTION)
         return true
     }
 
-    fun renameScene(index: Int, newName: String): Boolean {
-        val scene = openScenes.getOrNull(index) ?: return false
-        return renameScene(scene, newName)
-    }
-
-    /**
-     * Closes all scenes except [keepScene].
-     */
     fun closeOtherScenes(keepScene: Scene) {
         if (!openScenes.contains(keepScene)) return
 
@@ -122,33 +112,31 @@ class SceneManager(
         switchScene(keepScene)
     }
 
-    fun closeOtherScenes(keepIndex: Int) {
-        val keepScene = openScenes.getOrNull(keepIndex) ?: return
-        closeOtherScenes(keepScene)
-    }
-
-    /**
-     * Closes all open scenes.
-     */
     fun closeAllScenes() {
         val scenesToClose = openScenes.toList()
         scenesToClose.forEach { closeScene(it) }
     }
 
-    /**
-     * Creates a new scene with the given name and opens it.
-     * @param name The name for the new scene
-     * @param filePath Optional file path to back the scene. Sets sceneData.levelPath when provided.
-     * @param forceSingle Whether to close all other scenes before opening this scene
-     */
-    suspend fun createScene(name: String, filePath: String? = null, forceSingle: Boolean = false): Scene? {
+    fun createNewScene(name: String, filePath: String? = null): Scene? {
         val newScene = Scene(name, physics3DFactory)
         if (filePath != null) {
             newScene.sceneData.levelPath = filePath
         }
-        newScene.init()
-        openScene(newScene, forceSingle = forceSingle)
         logger.log("Scene created: '$name'", LogLevel.ACTION)
         return newScene
     }
+
+    fun saveScene(scene: Scene) {
+        sceneSerializer.saveToFile(scene, scene.sceneData.levelPath)
+    }
+
+    fun deleteScene(scene: Scene): Boolean {
+        if (!openScenes.contains(scene)) return false
+
+
+
+        return true
+    }
+
+
 }

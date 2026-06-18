@@ -8,7 +8,6 @@ import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.testfixtures.ImmediateJobSystem
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -37,7 +36,6 @@ class CreateSceneCommandTest {
         createdSceneInstance = mockk(relaxed = true)
         every { createdSceneInstance.sceneData } returns SceneData()
         every { createdSceneInstance.name } returns "TestScene"
-        coEvery { createdSceneInstance.init() } returns Unit
     }
 
     @AfterEach

@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.commands.project.DeleteSceneCommand
 import com.pafoid.skate.editor.commands.project.OpenSceneCommand
 import com.pafoid.skate.editor.commands.project.OpenSceneFileCommand
 import com.pafoid.skate.editor.commands.project.RenameSceneCommand
+import com.pafoid.skate.editor.commands.project.ReopenAllScenesCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneCommand
 import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
@@ -80,6 +81,9 @@ class SceneActionHandler : KoinComponent {
         eventSystem.subscribe<CloseAllRequested> {
             handleCloseAllRequested()
         }
+        eventSystem.subscribe<SceneAction.ReopenAllRequested> { event ->
+            handleReopenAllRequested(event.scenes)
+        }
         eventSystem.subscribe<CreateRequested> {
             handleCreateRequested()
         }
@@ -143,16 +147,22 @@ class SceneActionHandler : KoinComponent {
 
     private fun handleCloseOthersRequested(keepScene: Scene) {
         if (mutationGate.blockIfPlaying("close other scenes")) return
-        val command = CloseOtherScenesCommand(keepScene, sceneManager)
+        val command = CloseOtherScenesCommand(keepScene, sceneManager, eventSystem)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Close other scenes requested, keeping ${keepScene.name}")
     }
 
     private fun handleCloseAllRequested() {
         if (mutationGate.blockIfPlaying("close all scenes")) return
-        val command = CloseAllScenesCommand(sceneManager)
+        val command = CloseAllScenesCommand(sceneManager, eventSystem)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Close all scenes requested")
+    }
+
+    private fun handleReopenAllRequested(scenes: List<Scene>) {
+        val command = ReopenAllScenesCommand(sceneManager, eventSystem, scenes)
+        undoRedoManager.executeCommand(command)
+        logger.logEditor("Reopen all scenes requested")
     }
 
     private fun handleCreateRequested() {
@@ -166,20 +176,13 @@ class SceneActionHandler : KoinComponent {
         val fullPath = generateUniqueScenePath(projectDir)
         val sceneName = File(fullPath).nameWithoutExtension
 
-        val command = CreateSceneCommand(
-            sceneName,
-            sceneSerializer,
-            fullPath,
-            jobSystem,
-            eventSystem,
-            sceneFactory = { name -> Scene(name, physics3DFactory) }
-        )
+        val command = CreateSceneCommand(sceneName, fullPath, eventSystem, sceneManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene create requested: $sceneName -> $fullPath")
     }
 
     private fun handleSceneCreated(scene: Scene) {
-        sceneManager.openSceneBlocking(scene)
+        sceneManager.openScene(scene)
         logger.logEditor("New scene created and saved: ${scene.name} -> ${scene.sceneData.levelPath}")
     }
 

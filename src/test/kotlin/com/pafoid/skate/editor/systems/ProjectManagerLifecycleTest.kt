@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
@@ -48,6 +49,7 @@ class ProjectManagerLifecycleTest {
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
+        val serializer = mockk<Serializer>(relaxed = true)
 
         val manager = ProjectManager(
             settingsManager = settingsManager,
@@ -59,7 +61,8 @@ class ProjectManagerLifecycleTest {
             sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
-            jobSystem = jobSystem
+            jobSystem = jobSystem,
+            serializer = serializer,
         )
         setCurrentProject(manager, project("OldProject", "C:/tmp/OldProject/OldProject.skateproject"))
 
@@ -82,6 +85,7 @@ class ProjectManagerLifecycleTest {
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
+        val serializer = mockk<Serializer>(relaxed = true)
 
         val tempDir = Files.createTempDirectory("project-manager-open-lifecycle").toFile()
         val projectFile = File(tempDir, "NewProject.skateproject")
@@ -102,7 +106,8 @@ class ProjectManagerLifecycleTest {
             sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
-            jobSystem = jobSystem
+            jobSystem = jobSystem,
+            serializer = serializer
         )
         setCurrentProject(manager, project("OldProject", "C:/tmp/OldProject/OldProject.skateproject"))
 
@@ -125,6 +130,7 @@ class ProjectManagerLifecycleTest {
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
+        val serializer = mockk<Serializer>(relaxed = true)
 
         val tempDir = Files.createTempDirectory("project-manager-open-invalid-extension").toFile()
         val invalidProjectFile = File(tempDir, "NotAProject.txt").apply { writeText("invalid") }
@@ -139,7 +145,8 @@ class ProjectManagerLifecycleTest {
             sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
-            jobSystem = jobSystem
+            jobSystem = jobSystem,
+            serializer = serializer
         )
         setCurrentProject(manager, project("OldProject", "C:/tmp/OldProject/OldProject.skateproject"))
 
@@ -164,6 +171,7 @@ class ProjectManagerLifecycleTest {
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
+        val serializer = mockk<Serializer>(relaxed = true)
 
         every { settingsManager.saveProject(any()) } returns true
 
@@ -177,7 +185,8 @@ class ProjectManagerLifecycleTest {
             sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
-            jobSystem = jobSystem
+            jobSystem = jobSystem,
+            serializer = serializer
         )
         setCurrentProject(manager, project("Skate", "C:/tmp/Skate/Skate.skateproject"))
 
@@ -219,6 +228,7 @@ class ProjectManagerLifecycleTest {
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
+        val serializer = mockk<Serializer>(relaxed = true)
 
         every { settingsManager.saveProject(any()) } returns false
 
@@ -232,7 +242,8 @@ class ProjectManagerLifecycleTest {
             sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
-            jobSystem = jobSystem
+            jobSystem = jobSystem,
+            serializer = serializer
         )
         val original = project("Skate", "C:/tmp/Skate/Skate.skateproject")
         setCurrentProject(manager, original)
@@ -255,6 +266,7 @@ class ProjectManagerLifecycleTest {
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = QueuedJobSystem()
+        val serializer = mockk<Serializer>(relaxed = true)
 
         val tempDir = Files.createTempDirectory("project-manager-open-queued-scan").toFile()
         val projectFile = File(tempDir, "QueuedScan.skateproject").apply { writeText("{}") }
@@ -275,7 +287,8 @@ class ProjectManagerLifecycleTest {
             sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
-            jobSystem = jobSystem
+            jobSystem = jobSystem,
+            serializer = serializer
         )
 
         val opened = manager.openProject(projectFile)
@@ -312,8 +325,9 @@ class ProjectManagerLifecycleTest {
         every { assetDatabase.initialize(any()) } returns Result.success(Unit)
         every { assetDatabase.scanAll() } returns Result.success(Unit)
         every { sceneManager.currentScene } returns null
-        coEvery { sceneManager.createScene(any(), any(), any()) } returns bootstrapScene
+        coEvery { sceneManager.createNewScene(any(), any(), any()) } returns bootstrapScene
         every { sceneSerializer.loadFromFile(any(), sceneFile.absolutePath) } returns true
+        val serializer = mockk<Serializer>(relaxed = true)
 
         val manager = ProjectManager(
             settingsManager = settingsManager,
@@ -325,13 +339,14 @@ class ProjectManagerLifecycleTest {
             sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
-            jobSystem = jobSystem
+            jobSystem = jobSystem,
+            serializer = serializer
         )
 
         val opened = manager.openProject(projectFile)
 
         assertTrue(opened)
-        coVerify(exactly = 1) { sceneManager.createScene("main", sceneFile.absolutePath, true) }
+        coVerify(exactly = 1) { sceneManager.createNewScene("main", sceneFile.absolutePath, true) }
         verify(exactly = 1) { sceneSerializer.loadFromFile(bootstrapScene, sceneFile.absolutePath) }
         verify(exactly = 2) { systemManager.loadScene(bootstrapScene) }
         verifyOrder {

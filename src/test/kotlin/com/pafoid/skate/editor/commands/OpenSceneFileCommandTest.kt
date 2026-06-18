@@ -1,14 +1,12 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.commands.project.OpenSceneFileCommand
-import com.pafoid.skate.editor.events.SceneAction.OpenFailed
-import com.pafoid.skate.editor.events.SceneAction.OpenSucceeded
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.testfixtures.ImmediateJobSystem
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -34,7 +32,6 @@ class OpenSceneFileCommandTest {
         eventSystem = EventSystem()
         jobSystem = ImmediateJobSystem()
         loadedScene = mockk(relaxed = true)
-        coEvery { loadedScene.init() } returns Unit
     }
 
     @AfterEach
@@ -46,13 +43,13 @@ class OpenSceneFileCommandTest {
     fun `execute opens scene and publishes success when file loads`() {
         val scenePath = "C:/scene/Test.scene"
         every { sceneSerializer.loadFromFile(any(), scenePath) } returns true
-        var opened: OpenSucceeded? = null
-        eventSystem.subscribe<OpenSucceeded> { opened = it }
+        var opened: SceneAction.OpenSucceeded? = null
+        eventSystem.subscribe<SceneAction.OpenSucceeded> { opened = it }
 
         val command = createCommand(scenePath)
         command.execute()
 
-        verify { sceneManager.openSceneBlocking(any(), any()) }
+        verify { sceneManager.openScene(any(), any()) }
         assertNotNull(command.openedScene)
         assertEquals(loadedScene, opened?.scene)
     }
@@ -61,13 +58,13 @@ class OpenSceneFileCommandTest {
     fun `execute publishes failure and does not open scene when load fails`() {
         val scenePath = "C:/scene/Broken.scene"
         every { sceneSerializer.loadFromFile(any(), scenePath) } returns false
-        var failed: OpenFailed? = null
-        eventSystem.subscribe<OpenFailed> { failed = it }
+        var failed: SceneAction.OpenFailed? = null
+        eventSystem.subscribe<SceneAction.OpenFailed> { failed = it }
 
         val command = createCommand(scenePath)
         command.execute()
 
-        verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
+        verify(exactly = 0) { sceneManager.openScene(any(), any()) }
         assertNull(command.openedScene)
         assertFalse(command.didCompleteSuccessfully())
         assertNotNull(failed)

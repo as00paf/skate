@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.editor.settings.SettingsData
 import com.pafoid.skate.editor.settings.SettingsSerializer
 import com.pafoid.skate.editor.settings.UserSettings
+import com.pafoid.skate.engine.assets.database.AssetRegistryData
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
@@ -164,15 +165,10 @@ class SettingsManager(
      */
     fun updateProjectAssetRegistry(
         project: Project,
-        registryData: com.pafoid.skate.engine.assets.database.AssetRegistryData
+        registryData: AssetRegistryData
     ) {
         val updated = project.copy(assetRegistry = registryData)
         saveProject(updated)
-    }
-
-    fun createProject(name: String, folder: File, engineVersion: String): Result<Project> {
-        return settingsSerializer.createProject(name, folder, engineVersion)
-            .onSuccess { addToRecentProjects(it.getProjectFile().absolutePath) }
     }
 
     fun closeProject() {
@@ -261,7 +257,5 @@ class SettingsManager(
         }
     }
 
-    // TODO: Should be in project manager
-    fun hasProject(project: Project?): Boolean = project != null
     fun getCurrentHardware() = hardware
 }

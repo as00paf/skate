@@ -10,6 +10,7 @@ import com.pafoid.skate.editor.commands.project.OpenProjectCommand
 import com.pafoid.skate.editor.commands.project.RenameFileCommand
 import com.pafoid.skate.editor.commands.project.SaveProjectCommand
 import com.pafoid.skate.editor.events.FileSystemEvent
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.ProjectEvent.CloseProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.CreateFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectFailed
@@ -22,6 +23,7 @@ import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
 import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.SaveProjectRequested
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -34,7 +36,7 @@ class ProjectActionHandler(
     private val undoRedoManager: UndoRedoManager,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
-    private val jobSystem: IJobSystem? = null,
+    private val jobSystem: IJobSystem
 ) {
     fun init() {
         eventSystem.subscribe<OpenProjectRequested> { event ->
@@ -49,7 +51,7 @@ class ProjectActionHandler(
             }
         }
         eventSystem.subscribe<CreateProjectRequested> { event ->
-            val command = CreateProjectCommand(projectManager, event.name, event.folderPath, event.engineVersion)
+            val command = CreateProjectCommand(event, projectManager, jobSystem)
             undoRedoManager.executeCommand(command)
             if (command.wasSuccessful()) {
                 eventSystem.publish(CreateProjectSucceeded(event.name, event.folderPath))
@@ -83,9 +85,12 @@ class ProjectActionHandler(
                 }
             }
         }
+        eventSystem.subscribe<ProjectEvent.Closed> {
+            eventSystem.publish(WindowAction.Show("window.project_wizard"))
+        }
         eventSystem.subscribe<SaveProjectRequested> {
             executeOnMainThread {
-                val command = SaveProjectCommand(projectManager)
+                val command = SaveProjectCommand(projectManager, eventSystem)
                 undoRedoManager.executeCommand(command)
             }
         }

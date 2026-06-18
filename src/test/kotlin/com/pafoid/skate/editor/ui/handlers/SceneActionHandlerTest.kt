@@ -79,7 +79,7 @@ class SceneActionHandlerTest {
         every { sceneManager.openScenes } returns openScenesList
         every { sceneManager.activeSceneIndex } returns 0
         every { sceneManager.currentScene } answers { openScenesList.lastOrNull() }
-        every { sceneManager.openSceneBlocking(capture(openScenesList), any()) } answers {
+        every { sceneManager.openScene(capture(openScenesList), any()) } answers {
             val scene = openScenesList.last()
             eventSystem.publish(SceneAction.Opened(scene))
             eventSystem.publish(SceneAction.Changed)
@@ -168,7 +168,7 @@ class SceneActionHandlerTest {
 
         // Assert — verify openSceneBlocking was called with a scene that has the correct name
         val capturedScenes = mutableListOf<Scene>()
-        verify { sceneManager.openSceneBlocking(capture(capturedScenes), any()) }
+        verify { sceneManager.openScene(capture(capturedScenes), any()) }
         assertEquals(1, capturedScenes.size)
         assertTrue(capturedScenes[0].name.startsWith("NewScene_"))
     }
@@ -234,7 +234,7 @@ class SceneActionHandlerTest {
 
         // Assert
         val capturedScenes = mutableListOf<Scene>()
-        verify { sceneManager.openSceneBlocking(capture(capturedScenes), any()) }
+        verify { sceneManager.openScene(capture(capturedScenes), any()) }
         assertEquals(1, capturedScenes.size)
         assertEquals("TestScene", capturedScenes[0].name)
     }
@@ -348,7 +348,7 @@ class SceneActionHandlerTest {
 
         eventSystem.publish(SceneAction.OpenRequested)
 
-        verify(exactly = 0) { sceneManager.openSceneBlocking(any(), any()) }
+        verify(exactly = 0) { sceneManager.openScene(any(), any()) }
         val cancelLogs = capturedEditorLogs.filter {
             it.message.contains("Scene open cancelled", ignoreCase = true)
         }
@@ -365,7 +365,7 @@ class SceneActionHandlerTest {
         eventSystem.publish(FileSystemEvent.OpenSceneFileEvent(scenePath))
 
         verify { sceneSerializer.loadFromFile(any(), scenePath) }
-        verify { sceneManager.openSceneBlocking(any(), any()) }
+        verify { sceneManager.openScene(any(), any()) }
     }
 
     private fun startKoinForTest() {

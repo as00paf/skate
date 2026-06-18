@@ -1,6 +1,7 @@
 package com.pafoid.skate.app
 
 import com.pafoid.skate.editor.imgui.ImGuiLayer
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
@@ -11,6 +12,7 @@ import org.koin.core.component.inject
 class EditorScreen(private val window: Window) : KoinComponent {
 
     private val settingsManager: SettingsManager by inject()
+    private val projectManager: ProjectManager by inject()
     private val editorInputHandler: EditorInputHandler by inject()
     private val editorEventHandler: EditorEventHandler by inject()
     private val imGuiLayer: ImGuiLayer by inject()
@@ -21,8 +23,9 @@ class EditorScreen(private val window: Window) : KoinComponent {
         editorInputHandler.init(window.glfwWindow)
         editorEventHandler.init()
 
-        imGuiLayer.init(window.windowController)
         settingsManager.load()
+        projectManager.init()
+        imGuiLayer.init(window.windowController)
     }
 
     fun update(dt: Float) {

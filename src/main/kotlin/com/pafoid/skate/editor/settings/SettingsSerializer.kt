@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.settings
 
-import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import java.io.File
@@ -62,48 +61,6 @@ class SettingsSerializer(private val serializer: Serializer) {
             true
         } catch (e: Exception) {
             false
-        }
-    }
-
-    fun createProject(
-        name: String,
-        folder: File,
-        engineVersion: String
-    ): Result<Project> {
-        return try {
-            val projectFile = File(folder, "$name.skateproject")
-            if (projectFile.exists()) {
-                return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
-            }
-
-            val projectDir = File(folder, name)
-            if (!projectDir.exists()) {
-                projectDir.mkdirs()
-            }
-
-            File(projectDir, "Assets").mkdirs()
-            File(projectDir, "Scenes").mkdirs()
-            File(projectDir, "Builds").mkdirs()
-
-            val metadata = ProjectMetadata(
-                name = name,
-                engineVersion = engineVersion,
-                projectPath = File(projectDir, "$name.skateproject").absolutePath
-            )
-
-            val project = Project(
-                metadata = metadata,
-                defaultScene = "Scenes/main.scene",
-                assetPaths = listOf("Assets"),
-                scenePaths = listOf("Scenes"),
-                buildPaths = listOf("Builds")
-            )
-
-            saveProjectSettings(project)
-
-            Result.success(project)
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 }

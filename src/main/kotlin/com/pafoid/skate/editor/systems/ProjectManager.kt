@@ -1,18 +1,21 @@
 package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.GameplaySettings
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.collectGameObjectsDepthFirst
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -26,7 +29,6 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.IJobSystem
-import kotlinx.coroutines.runBlocking
 import org.joml.Vector3f
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
@@ -38,22 +40,22 @@ class ProjectManager(
     private val engineAssetCopier: EngineAssetCopier,
     private val sceneManager: SceneManager,
     private val prefabsGenerator: PrefabsGenerator,
-    private val sceneSerializer: SceneSerializer,
     private val eventSystem: EventSystem,
     private val systemManager: SystemManager,
     private val jobSystem: IJobSystem,
+    private val serializer: Serializer
 ) {
 
     var currentProject: Project? = null
         private set
     private val lifecycleEpoch = AtomicLong(0)
 
-    fun hasProject(): Boolean = currentProject != null
-
-    fun getProjectName(): String = currentProject?.metadata?.name ?: "No Project"
-
-    fun getRecentProjects(): List<RecentProjectInfo> {
-        return settingsManager.recentProjects
+    fun init() {
+        if (!loadLastProject()) {
+            eventSystem.publish(WindowAction.Show("window.project_wizard"))
+        } else {
+            eventSystem.publish(WindowAction.ShowDefault)
+        }
     }
 
     fun loadLastProject(): Boolean {
@@ -64,67 +66,58 @@ class ProjectManager(
     }
 
     fun createProject(name: String, folder: File, engineVersion: String = "v0.46.0.1.19"): Result<Project> {
+        logger.logEditor("Creating project: $name in ${folder.absolutePath}")
         return try {
-            logger.logEditor("Creating project: $name in ${folder.absolutePath}")
-
-            val result = settingsManager.createProject(name, folder, engineVersion)
-
-            result.onSuccess { project ->
-                currentProject = project
-                eventSystem.publish(ProjectEvent.Created(project))
-                logger.logEditor("Project created successfully: ${project.metadata.name}")
-
-                // Initialize asset database for this new project
-                val projectDir = getProjectDirectory()
-                if (projectDir != null) {
-                    assetDatabase.initialize(projectDir).fold(
-                        onSuccess = {
-                            // Copy engine-bundled default assets BEFORE scanning
-                            // so AssetDatabase can discover them and create .meta files with GUIDs
-                            engineAssetCopier.copyBundledAssets(projectDir).fold(
-                                onSuccess = { count ->
-                                    logger.logEditor("Copied $count engine-bundled assets to project")
-                                    // Tell PrefabsGenerator where to find the copied assets
-                                    prefabsGenerator.setEngineDefaultsRoot(projectDir)
-                                },
-                                onFailure = { e ->
-                                    logger.logEditor("Failed to copy engine assets: ${e.message}")
-                                }
-                            )
-                            // Now scan — .meta files will be created for all assets
-                            assetDatabase.scanAll()
-                            logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
-                        },
-                        onFailure = { e ->
-                            logger.logEditor("Failed to initialize asset database: ${e.message}")
-                        }
-                    )
-                }
-
-                // Create default scene with prefabs
-                createDefaultScene()
+            val projectFile = File(folder, "$name.skateproject")
+            if (projectFile.exists()) {
+                return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
             }
 
-            result.onFailure { error ->
-                logger.logEditor("Failed to create project: ${error.message}", LogLevel.ERROR)
+            val projectDir = File(folder, name)
+            if (!projectDir.exists()) {
+                projectDir.mkdirs()
             }
 
-            result
+            File(projectDir, "Assets").mkdirs()
+            File(projectDir, "Scenes").mkdirs()
+            File(projectDir, "Builds").mkdirs()
+
+            val project = Project(
+                metadata = ProjectMetadata(name, engineVersion = engineVersion, projectPath = projectFile.absolutePath),
+                defaultScene = "Scenes/main.scene",
+                assetPaths = listOf("Assets"),
+                scenePaths = listOf("Scenes"),
+                buildPaths = listOf("Builds")
+            )
+
+            // Init DB
+            assetDatabase.initialize(projectDir).onSuccess {
+                engineAssetCopier.copyBundledAssets(projectDir).onSuccess { count ->
+                    logger.logEditor("Copied $count engine-bundled assets to project")
+                    prefabsGenerator.setEngineDefaultsRoot(projectDir)
+                }.onFailure { e -> logger.logEditor("Failed to copy engine assets: ${e.message}") }
+                assetDatabase.scanAll()
+                logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
+            }.onFailure { e ->
+                logger.logEditor("Failed to initialize asset database: ${e.message}")
+            }
+
+            // Create default scene with prefabs
+            createDefaultScene(projectDir)
+
+            settingsManager.addToRecentProjects(project.getProjectFile().absolutePath) // TODO: move to settings manager
+            currentProject = project
+            saveProject()
+
+            logger.logEditor("Project created successfully: ${project.metadata.name}")
+            eventSystem.publish(ProjectEvent.Created(project))
+            Result.success(project)
         } catch (e: Exception) {
-            logger.logEditor("Error creating project: ${e.message}", LogLevel.ERROR)
             Result.failure(e)
         }
     }
 
-    /**
-     * Create the default scene with prefabs when a new project is created.
-     * This is the project manager's responsibility — it owns project lifecycle.
-     */
-    private fun createDefaultScene() {
-        val projectDir = getProjectDirectory() ?: run {
-            logger.logEditor("No project directory, cannot create default scene")
-            return
-        }
+    fun createDefaultScene(projectDir: File) {
         val sceneFileName = currentProject?.defaultScene?.takeIf { it.isNotBlank() } ?: "Scenes/main.scene"
         val defaultSceneFile = File(projectDir, sceneFileName)
 
@@ -135,19 +128,13 @@ class ProjectManager(
 
         logger.logEditor("Creating default scene with prefabs...")
 
-        // Ensure parent directory exists
         defaultSceneFile.parentFile?.mkdirs()
-
-        // Get the current scene from scene manager
-        val scene = sceneManager.currentScene ?: run {
-            logger.logEditor("No current scene, cannot create default scene")
-            return
-        }
+        val scene = Scene("MainScene")
 
         // Spawn prefabs synchronously — uses addGameObjectImmediate so they go into gameObjects
-        prefabsGenerator.spawnSkateboardSync(scene)
-        prefabsGenerator.spawnSkaterSync(scene)
-        prefabsGenerator.spawnFloorSync(scene)
+        prefabsGenerator.spawnSkateboardSync()
+        prefabsGenerator.spawnSkaterSync()
+        prefabsGenerator.spawnFloorSync()
 
         logger.logEditor("Spawned ${scene.gameObjects.size} objects")
 
@@ -179,7 +166,7 @@ class ProjectManager(
         // Set the level path and save
         scene.name = defaultSceneFile.name
         scene.sceneData.levelPath = defaultSceneFile.absolutePath
-        sceneSerializer.saveToFile(scene, defaultSceneFile.absolutePath)
+        sceneManager.saveScene(scene)
 
         logger.logEditor("Default scene saved to ${defaultSceneFile.absolutePath}")
     }
@@ -272,72 +259,60 @@ class ProjectManager(
 
     fun openProject(projectFile: File): Boolean {
         return try {
-            if (hasProject()) {
-                closeProject()
+            if (!projectFile.exists() || projectFile.extension != "skateproject") {
+                logger.logEditor(
+                    "Project file does not exist or invalid extension: ${projectFile.absolutePath}",
+                    LogLevel.ERROR
+                )
+                return false
             }
-            settingsManager.setLastClosedProjectPath(null)
+
+            if (hasProject()) closeProject()
 
             logger.logEditor("Opening project: ${projectFile.absolutePath}")
+            val loadedProject = serializer.decode<Project>(projectFile.readText()) // TODO: should be on io
+            currentProject = loadedProject
 
-            if (!projectFile.exists()) {
-                logger.logEditor("Project file does not exist: ${projectFile.absolutePath}", LogLevel.ERROR)
-                return false
-            }
+            eventSystem.publish(EngineAction.ApplyMappings(loadedProject.gameplaySettings.inputMappings))
 
-            if (projectFile.extension != "skateproject") {
-                logger.logEditor("Invalid project file extension: ${projectFile.name}", LogLevel.ERROR)
-                return false
-            }
+            getProjectDirectory()?.let { initProjectDb(it) }
+            loadDefaultScene()
 
-            val loadedProject = settingsManager.loadProject(projectFile)
+            eventSystem.publish(ProjectEvent.Opened(loadedProject))
+            logger.logEditor("Project opened successfully: ${getProjectName()}")
 
-            if (loadedProject != null) {
-                val openEpoch = lifecycleEpoch.incrementAndGet()
-                currentProject = loadedProject
-                eventSystem.publish(ProjectEvent.Opened(loadedProject))
-                eventSystem.publish(EngineAction.ApplyMappings(loadedProject.gameplaySettings.inputMappings))
-
-                // Initialize asset database for this project
-                val projectDir = getProjectDirectory()
-                if (projectDir != null) {
-                    assetDatabase.initialize(projectDir).fold(
-                        onSuccess = {
-                            // Tell PrefabsGenerator where to find engine-bundled assets
-                            prefabsGenerator.setEngineDefaultsRoot(projectDir)
-                            logger.logEditor("Asset database initialized for ${projectDir.name}")
-
-                            // Scan assets off the UI path; drop stale scans if project lifecycle changes.
-                            jobSystem.runIO {
-                                if (openEpoch != lifecycleEpoch.get()) return@runIO
-                                assetDatabase.scanAll().fold(
-                                    onSuccess = {
-                                        logger.logEditor("Asset scan completed for ${projectDir.name}")
-                                    },
-                                    onFailure = { e ->
-                                        logger.logEditor("Asset scan failed for ${projectDir.name}: ${e.message}")
-                                    }
-                                )
-                            }
-                        },
-                        onFailure = { e ->
-                            logger.logEditor("Failed to initialize asset database: ${e.message}")
-                        }
-                    )
-                }
-
-                logger.logEditor("Project opened successfully: ${getProjectName()}")
-
-                // Load the default scene if it exists
-                loadDefaultScene()
-                true
-            } else {
-                logger.logEditor("Failed to load project: ${projectFile.absolutePath}", LogLevel.ERROR)
-                false
-            }
+            true
         } catch (e: Exception) {
             logger.logEditor("Error opening project: ${e.message}", LogLevel.ERROR)
             false
         }
+    }
+
+    private fun initProjectDb(projectDir: File) {
+        val openEpoch = lifecycleEpoch.incrementAndGet()
+        assetDatabase.initialize(projectDir).fold(
+            onSuccess = {
+                // Tell PrefabsGenerator where to find engine-bundled assets
+                prefabsGenerator.setEngineDefaultsRoot(projectDir)
+                logger.logEditor("Asset database initialized for ${projectDir.name}")
+
+                // Scan assets off the UI path; drop stale scans if project lifecycle changes.
+                jobSystem.runIO {
+                    if (openEpoch != lifecycleEpoch.get()) return@runIO
+                    assetDatabase.scanAll().fold(
+                        onSuccess = {
+                            logger.logEditor("Asset scan completed for ${projectDir.name}")
+                        },
+                        onFailure = { e ->
+                            logger.logEditor("Asset scan failed for ${projectDir.name}: ${e.message}")
+                        }
+                    )
+                }
+            },
+            onFailure = { e ->
+                logger.logEditor("Failed to initialize asset database: ${e.message}")
+            }
+        )
     }
 
     fun closeProject() {
@@ -362,9 +337,6 @@ class ProjectManager(
         eventSystem.publish(ProjectEvent.Closed(projectName))
     }
 
-    /**
-     * Load the project's default scene if it exists.
-     */
     private fun loadDefaultScene() {
         val projectDir = getProjectDirectory() ?: return
         val sceneFileName = currentProject?.defaultScene?.takeIf { it.isNotBlank() } ?: "Scenes/main.scene"
@@ -375,32 +347,14 @@ class ProjectManager(
             return
         }
 
-        val scene = sceneManager.currentScene ?: run {
+        val scene = serializer.decode<Scene?>(defaultSceneFile.readText()) ?: run {
             val sceneName = defaultSceneFile.nameWithoutExtension.ifBlank { "MainScene" }
-            val newScene = runCatching {
-                runBlocking { sceneManager.createScene(sceneName, defaultSceneFile.absolutePath, forceSingle = true) }
-            }.onFailure { e ->
-                logger.logEditor("Failed to bootstrap scene for default scene load: ${e.message}")
-                return
-            }.getOrNull()
-
-            if (newScene == null) {
-                logger.logEditor("Failed to bootstrap scene for default scene load")
-                return
-            }
-
-            newScene
-        }
-
-        // Bind systems to the target scene before deserialization so systems used by the
-        // serializer (e.g., GameObjectManager) operate on the correct scene instance.
-        systemManager.loadScene(scene)
-        val loaded = sceneSerializer.loadFromFile(scene, defaultSceneFile.absolutePath)
-        if (!loaded) {
+            sceneManager.createNewScene(sceneName, defaultSceneFile.absolutePath)
+        } ?: run {
             logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}")
             return
         }
-        systemManager.loadScene(scene)
+        sceneManager.openScene(scene)
 
         logger.logEditor("Loaded default scene from ${defaultSceneFile.absolutePath}")
     }
@@ -413,6 +367,7 @@ class ProjectManager(
 
         logger.logEditor("Saving project: ${project.metadata.name}")
         val result = settingsManager.saveProject(project)
+        File(project.metadata.projectPath).writeText(serializer.encode(project))
         if (result) {
             eventSystem.publish(ProjectEvent.Saved(project))
         }
@@ -445,7 +400,15 @@ class ProjectManager(
         return true
     }
 
+    fun getProjectName(): String = currentProject?.metadata?.name ?: "No Project"
+
+    fun getRecentProjects(): List<RecentProjectInfo> {
+        return settingsManager.recentProjects
+    }
+
     fun getProjectDirectory(): File? {
         return currentProject?.getProjectDirectory()
     }
+
+    fun hasProject(): Boolean = currentProject != null
 }
