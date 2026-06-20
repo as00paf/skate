@@ -19,7 +19,6 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
@@ -29,7 +28,6 @@ import org.joml.Vector3f
 import java.io.File
 
 class PrefabsGenerator(
-    private val jobSystem: IJobSystem,
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
     private val systemManager: SystemManager
@@ -87,6 +85,7 @@ class PrefabsGenerator(
         resolvedAnimationPaths[enginePath] = result
         return result
     }
+
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
         val go = gameObjectManager.createGameObject(name)
         go.getComponent<Transform>()?.scale?.set(sizeX, sizeY, 1f)
@@ -98,49 +97,15 @@ class PrefabsGenerator(
         return go
     }
 
-    fun spawnSkateboard() {
-        jobSystem.runAsync {
-            val model = resourceManager.loadModel(Assets.Models.SKATEBOARD_GLB)
-            jobSystem.runOnMain {
-                val skate = Skateboard(model as TexturedModel)
-                gameObjectManager.addGameObject(skate)
-            }
-        }
-    }
-
-    /**
-     * Synchronous version for default scene creation.
-     * Blocks until the skateboard is added to the scene.
-     */
-    fun spawnSkateboardSync() {
+    fun spawnSkateboard(): GameObject {
         val modelPath = resolveModelPath(Assets.Models.SKATEBOARD_GLB)
         val model = resourceManager.loadModelSync(modelPath)
         val skate = Skateboard(model as TexturedModel)
         gameObjectManager.addGameObject(skate)
+        return skate
     }
 
-    fun spawnSkater(skate: GameObject? = null) {
-        jobSystem.runAsync {
-            val model = resourceManager.getModel(Assets.Models.JAMES) as CharacterModel
-            val skater = Skater("Skater", model, skate)
-
-            animations.forEach { path ->
-                val animation = resourceManager.loadAnimation(path, skater.skeletonComponent.pose.skeleton)
-                skater.animator.addAnimation(animation)
-            }
-
-            jobSystem.runOnMain {
-                gameObjectManager.addGameObject(skater)
-            }
-        }
-    }
-
-    /**
-     * Synchronous version for default scene creation.
-     * Blocks until the skater is added to the scene.
-     * Loads animations synchronously to ensure they're in the scene before serialization.
-     */
-    fun spawnSkaterSync(skate: GameObject? = null) {
+    fun spawnSkater(skate: GameObject? = null): GameObject {
         val modelPath = resolveModelPath(Assets.Models.JAMES)
         val model = resourceManager.getModel(modelPath) as CharacterModel?
             ?: resourceManager.loadModelSync(modelPath) as CharacterModel
@@ -159,27 +124,10 @@ class PrefabsGenerator(
         }
 
         gameObjectManager.addGameObject(skater)
+        return skater
     }
 
-    fun spawnFloor() {
-        jobSystem.runAsync {
-            val texture = resourceManager.loadTexture(Assets.Textures.ASPHALT)
-            val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
-            val texturedModel = TexturedModel(baseModel.mesh[0].rawModel, texture)
-            texturedModel.mesh[0].material.baseColorPath = Assets.Textures.ASPHALT
-
-            jobSystem.runOnMain {
-                val tile = Tile("Tile", texturedModel)
-                gameObjectManager.addGameObject(tile)
-            }
-        }
-    }
-
-    /**
-     * Synchronous version for default scene creation.
-     * Blocks until the floor tile is added to the scene.
-     */
-    fun spawnFloorSync() {
+    fun spawnFloor(): GameObject {
         val texturePath = resolveTexturePath(Assets.Textures.ASPHALT)
         val modelPath = resolveModelPath(Assets.Models.CUBE)
         val texture = resourceManager.loadTextureSync(texturePath)
@@ -190,6 +138,7 @@ class PrefabsGenerator(
 
         val tile = Tile("Tile", texturedModel)
         gameObjectManager.addGameObject(tile)
+        return tile
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?): GameObject? {
@@ -405,4 +354,14 @@ class PrefabsGenerator(
         Assets.Animations.RIGHT_STRAFE,
         Assets.Animations.RIGHT_STRAFE_WALKING,
     )
+
+    /** Spawn the canonical set of defaults for a new project scene synchronously.
+     * Returns the list of spawned GameObjects in order: skateboard, skater, floor
+     */
+    fun spawnDefaultsSync(): List<GameObject> {
+        val skate = spawnSkateboard()
+        val skater = spawnSkater(skate)
+        val floor = spawnFloor()
+        return listOfNotNull(skate, skater, floor)
+    }
 }

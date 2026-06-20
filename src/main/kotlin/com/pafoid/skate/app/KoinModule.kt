@@ -6,7 +6,6 @@ import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.imgui.WindowRegistry
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.ProjectWizard
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.search.SearchEngine
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.providers.ActionSearchProvider
@@ -118,16 +117,14 @@ import org.joml.Vector3f
 import org.koin.dsl.module
 
 val editorModule = module {
-    single { Serializer() }
 
     // Editor-only rendering tools (moved from engineModule)
     single { PickingRenderer(get(), get(), get()) }
     single { ThumbnailRenderer(get(), get(), get()) }
     single { ThumbnailCache(get()) }
-    single { PrefabsGenerator(get(), get(), get(), get()) }
+    single { PrefabsGenerator(get(), get(), get()) }
     single { EngineAssetCopier() }
 
-    single { SceneSerializer(get(), get(), get(), get(), get()) }
     single { PoseSerializer() }
     single { ClipboardService(get()) }
     single { EditorMutationGate(get(), get()) }
@@ -270,6 +267,8 @@ val engineModule = module {
         }
     }
     single { AssetDatabase(get(), get(), get()) }
+
+    single { Serializer() }
 
     // Rendering
     single { Renderer(get()) }

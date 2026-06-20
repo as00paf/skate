@@ -1,100 +1,112 @@
-# 🛹 SkateSim Engine TODO (Near-Term Execution Plan)
+# 🛹 SkateSim Engine TODO — Project Lifecycle Priority Plan
 
-## Scope
+Goal
 
-This TODO contains the single next, actionable task: simplify and reduce the project/scene loading code. Other backlog
-items are tracked in docs/roadmap.md.
+Make project creation/open/close rock-solid: when a user creates a project it must contain all expected default assets,
+be immediately usable, and be reliably openable/closable later. Scenes, GameObjects and Components must round-trip
+through serialization unchanged. This plan focuses exclusively on that lifecycle.
 
-## A48.0.3 — Simplify Project & Scene Loading (Next Task)
+Principles
 
-Status: Planned
-Owner: software-engineer
+- Small, testable steps that increase confidence (unit + smoke tests).
+- Explicit readiness signals: asset DB and bundled asset copy must be awaitable.
+- Clear ownership: ProjectManager owns project lifecycle; SceneManager owns scene lifecycle.
+- Keep editor-only code out of runtime engine paths.
 
-Description
-Keep orchestration simple: ProjectManager shall own project lifecycle (create/open/close) and SceneManager shall own
-scene lifecycle (create/open/close/start). Avoid adding new abstraction layers. Reduce code, remove synchronous
-blocking, eliminate duplicated responsibilities, and make flows straightforward to read, test, and maintain.
+Roadmap (JIRA-style tasks, sequential)
 
-Audit summary (key findings)
+P1 — Project format & locations (owner: software-engineer) — 0.25d
 
-- runBlocking found in ProjectManager.createDefaultScene when bootstrapping a new scene.
-- ProjectManager.loadDefaultScene calls systemManager.loadScene before and after deserialization (duplicate).
-- SceneSerializer.loadFromFile is used by ProjectManager and OpenSceneFileCommand; it performs IO + resource resolution
-  and relies on GameObjectManager (via SystemManager).
-- AssetDatabase init/scan happens in ProjectManager and can block or run off the UI thread; lifecycle tokens used but
-  sometimes duplicated.
+- Description: Define canonical project layout and file formats (project metadata file, Assets/, Scenes/, Builds/).
+  Document exact locations and file naming conventions.
+- Deliverable: project schema doc (docs/PROJECT-FORMAT.md) and code constants for paths.
+- Acceptance: ProjectManager and ProjectWizard use the same constants; no string literals elsewhere for core locations.
 
-Subtasks (minimal, ordered)
+P2 — Asset DB readiness & bundled assets provisioning (owner: software-engineer) — 0.75d
 
-1) Audit & quick fixes (0.5d) — done: located the above call sites and confirmed usage patterns.
-2) Eliminate runBlocking (0.5d) — replace runBlocking usage in ProjectManager with jobSystem.runIO or equivalent async
-   scheduling; ensure errors are logged and surfaced.
-3) Consolidate default scene creation (1.0d) — ensure ProjectManager uses SceneManager.createScene (suspend) to produce
-   a Scene, spawn prefabs into that Scene via PrefabsGenerator, resolve asset GUIDs, then call
-   SceneSerializer.saveToFile. No separate bootstrap service.
-4) Deduplicate scene-system binding (0.5d) — remove redundant systemManager.loadScene calls; define clear call-site:
-   caller (ProjectManager) must call systemManager.loadScene(scene) once before deserialization if serializer needs
-   systems, or after if serializer only mutates scene data.
-5) Make asset DB init/scan asynchronous and cancellable (1.0d) — keep jobSystem-based scanning with lifecycle epoch
-   checks; ensure ProjectManager remains orchestrator and exposes progress/failure events.
-6) Simplify SceneSerializer responsibilities (1.0d) — keep it as IO + resource resolution for components; it should NOT
-   start/stop scenes or register systems. Maintain current boolean return for success/failure and provide clearer
-   logging/exception paths.
-7) Tests & docs (1.0d) — add focused unit tests for ProjectManager.createProject/openProject/closeProject happy and
-   error paths; document the simplified flow in docs/TODO.md and update CHANGELOG.md.
+- Description: Ensure AssetDatabase.initialize(projectDir) returns an awaitable readiness (Job/Future) and that
+  bundled-engine assets are copied in a cancellable, idempotent way.
+- Subtasks:
+    * Make initialize return readiness future/status.
+    * engineAssetCopier.copyBundledAssets returns count and completes before readiness is signaled.
+- Acceptance: createProject waits on asset DB readiness before proceeding to GUID resolution or prefab spawning.
 
-Acceptance criteria
+P3 — CreateProject orchestration (owner: software-engineer) — 1.0d
 
-- No runBlocking calls remain in ProjectManager.
-- ProjectManager orchestrates project and default scene creation using SceneManager APIs; no separate loader service
-  added.
-- SceneManager owns scene creation/open/close/start responsibilities.
-- SceneSerializer is IO-only and does not manipulate SystemManager lifecycle; ProjectManager invokes
-  systemManager.loadScene exactly where needed.
-- startKoin with editorModule compiles and runtime behavior unchanged for happy paths.
+- Description: Implement a clear, suspendable createProject flow in ProjectManager that:
+    1) creates directory structure, 2) initializes asset DB (await), 3) copies bundled assets (await), 4) sets up engine
+       default roots for prefabs, 5) creates default scenes via SceneManager API, 6) saves created scene(s) to disk
+       using Serializer.
+- Acceptance: New project creation is deterministic: after createProject returns, default scene files exist on disk,
+  prefab references resolve, and the editor can open the project without additional downloads or scans.
 
-Estimate: ~5 workdays (including tests and docs).
+P4 — Default Scene + Prefab generation (owner: software-engineer) — 0.5d
 
-Deliverables
+- Description: Move default scene generation into a single, testable routine that uses PrefabsGenerator to spawn
+  defaults into a Scene obtained from SceneManager.createScene(suspend). Do not access GameObjectManager before
+  SceneManager has registered systems.
+- Acceptance: Default scene is created entirely via SceneManager + PrefabsGenerator calls; scene saved via Serializer
+  and loads back identically.
 
-- Updated ProjectManager with async asset initialization and simplified default scene creation flow.
-- Cleaned SceneManager usage with single, well-documented entry points for scene creation/opening.
-- SceneSerializer simplified to IO/resource-resolution only with clearer logging.
-- Unit tests for ProjectManager scene lifecycle paths and documentation updates.
+P5 — Scene serialization and consolidation (owner: software-engineer) — 0.75d
 
-## A48.0.4 — Extract Scene Physics into ScenePhysicsComponent (Next Task)
+- Description: Consolidate serialization responsibilities: deprecate redundant SceneSerializer usage if Serializer
+  covers all needs. Ensure polymorphic registration separation (Components vs Assets) and stable GUID-to-path resolution
+  during load.
+- Subtasks:
+    * Add round-trip tests for Scene -> JSON -> Scene.
+    * Ensure Serializer.resolveReferences (or equivalent) runs after asset DB readiness.
+- Acceptance: Scenes and components serialize/deserialize with identical logical state (transform, component data) and
+  assets resolve to the same GUIDs.
 
-Status: Planned
-Owner: physics-engineer / software-engineer
+P6 — OpenProject flow & project close (owner: software-engineer) — 0.75d
 
-Description
+- Description: Implement openProject that:
+    * reads project metadata, 2) initializes asset DB (await), 3) registers engine/editor mappings, 4) loads
+      default/opened scenes via SceneManager, and 5) restores editor state. Implement closeProject to save dirty scenes,
+      unregister systems, and release resources.
+- Acceptance: Opening a freshly created project results in the same runtime/editor state as immediately after
+  createProject. Closing then re-opening preserves scenes and assets.
 
-Remove runtime physics state from Scene and place it into a serializable ScenePhysicsComponent that the PhysicsSystem
-owns and updates. This keeps runtime native handles transient, simplifies Scene serialization, and follows ECS
-principles: scene-level systems driven by components.
+P7 — Prefab & asset mapping tests (owner: qa-engineer) — 0.5d
 
-Subtasks (minimal, ordered)
+- Description: Add tests verifying prefab GUID resolution, asset path mapping, and behavior when assets are missing (
+  graceful errors/logging).
+- Acceptance: Tests cover happy path and missing-asset path and pass locally.
 
-1) Audit & discovery (0.5d) — find all references to Scene physics runtime fields and document call sites.
-2) Create ScenePhysicsComponent (1.0d) — add a serializable config (gravity, fixedTimestep, enabled) and @Transient
-   runtime fields (native world handle, accumulator).
-3) Remove runtime physics from Scene (0.5d) — migrate persisted settings into the component config and add compatibility
-   accessors on Scene.
-4) Update Physics3DFactory & PhysicsSystem (1.0d) — provide create/destroy APIs for per-scene physics worlds; ensure
-   PhysicsSystem initializes/destroys and steps worlds using the component.
-5) Update SceneManager lifecycle & rehydration (0.5d) — ensure systems bound and ScenePhysicsComponent attached before
-   postDeserialize; migrate legacy saved settings during load.
-6) Migrate callers (0.5d) — replace direct Scene.physics usages with scene.getComponent<ScenePhysicsComponent>() and
-   update callers (PrefabsGenerator, ProjectManager, tests, commands).
-7) Tests & smoke verification (0.5d) — manual play-mode smoke test and minimal unit tests for component lifecycle.
-8) Cleanup & docs (0.25d) — remove legacy fields and update docs/TODO.md and CHANGELOG.md.
+P8 — Backwards compatibility & migration (owner: software-engineer) — 0.5d
 
-Acceptance criteria
+- Description: Provide a migration path for older projects or scenes (if serialization schema changed). Implement
+  migration helpers that convert legacy fields into the current project/scene layout during openProject.
+- Acceptance: A documented migration step that runs automatically on open and logs what was changed.
 
-- Scene no longer contains native physics runtime fields; those are only in ScenePhysicsComponent as @Transient.
-- PhysicsSystem creates, steps, and destroys per-scene physics worlds using the component.
-- SceneManager coordinates system binding and component attachment before rehydration.
-- Existing saved scenes are loadable via a compatibility conversion that migrates persisted physics settings into the
-  new component config.
+P9 — Tests & smoke verification (owner: qa-engineer) — 1.0d
 
-Estimate: ~3.75–5.25 days (iterative, includes migration and verification).
+- Description: Automated tests and local smoke verification for create/open/close, serialization round-trips, and
+  asset-provisioning idempotency.
+- Acceptance: Targeted tests run and pass locally on Windows; PR checklist includes smoke test steps.
+
+P10 — Docs & acceptance (owner: documentation-engineer) — 0.25d
+
+- Description: Update docs/TODO.md (this file), docs/PROJECT-FORMAT.md, and docs/ARCHITECTURE-AUDIT.md with references
+  to the changes and instructions for QA verification.
+- Acceptance: Docs updated and cross-referenced from PR descriptions.
+
+Acceptance criteria (overall)
+
+- createProject reliably produces a usable project folder with Assets/ and Scenes/ and default scenes that serialize and
+  deserialize identically.
+- openProject waits for asset DB readiness and loads scenes whose assets resolve.
+- closeProject saves state and releases resources cleanly.
+- Tests validate serialization round-trips and asset mapping.
+
+Workflow and approval
+
+- Each P* task is a single PR. Keep commits small and include a smoke test checklist in PR body.
+- Review and approve one P* at a time. After each PR, update docs/ARCHITECTURE-AUDIT.md with findings.
+
+Approval loop
+
+- Review this TODO.md and reply with edits or Approve. Once approved, indicate which task to start (P1..P10). The
+  assistant will then run the focused audits/tests and prepare a minimal-change PR for your review when requested.
+

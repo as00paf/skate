@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.ecs
 
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
@@ -13,7 +13,7 @@ import java.io.File
 class SceneManager(
     private val resourceManager: ResourceManager,
     private val eventSystem: EventSystem,
-    private val sceneSerializer: SceneSerializer,
+    private val serializer: Serializer,
     private val systemManager: SystemManager,
     private val logger: LoggerService,
 ) {
@@ -119,13 +119,32 @@ class SceneManager(
 
     fun createNewScene(name: String, dirPath: String): Scene {
         val newScene = Scene(name)
-        sceneSerializer.save(newScene, dirPath)
-        logger.log("Scene created: '$name'", LogLevel.ACTION)
+        // Ensure directory exists
+        val dir = File(dirPath)
+        if (!dir.exists()) dir.mkdirs()
+        val file = File(dir, "$name.scene")
+        try {
+            file.writeText(serializer.encode(newScene))
+            logger.log("Scene created: '$name'", LogLevel.ACTION)
+        } catch (e: Exception) {
+            logger.logEditor("Failed to create scene file ${file.absolutePath}: ${e.message}")
+        }
         return newScene
     }
 
     fun saveScene(scene: Scene, dirPath: String): Boolean {
-        return sceneSerializer.save(scene, dirPath)
+        val dir = File(dirPath)
+        if (!dir.exists()) dir.mkdirs()
+        val file = File(dir, "${scene.name}.scene")
+        return try {
+            file.writeText(serializer.encode(scene))
+            scene.isDirty = false
+            logger.logEditor("Scene saved to ${file.absolutePath}")
+            true
+        } catch (e: Exception) {
+            logger.logEditor("Failed to save scene to ${file.absolutePath}: ${e.message}", LogLevel.ERROR)
+            false
+        }
     }
 
     fun deleteScene(projectPath: String, scene: Scene): Boolean {

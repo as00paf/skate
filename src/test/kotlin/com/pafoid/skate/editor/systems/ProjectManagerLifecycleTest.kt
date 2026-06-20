@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.GameplaySettings
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
@@ -45,7 +44,6 @@ class ProjectManagerLifecycleTest {
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-        val sceneSerializer = mockk<SceneSerializer>(relaxed = true)
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
@@ -58,7 +56,6 @@ class ProjectManagerLifecycleTest {
             engineAssetCopier = EngineAssetCopier(),
             sceneManager = sceneManager,
             prefabsGenerator = prefabsGenerator,
-            sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
             jobSystem = jobSystem,
@@ -81,7 +78,6 @@ class ProjectManagerLifecycleTest {
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-        val sceneSerializer = mockk<SceneSerializer>(relaxed = true)
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
@@ -103,7 +99,6 @@ class ProjectManagerLifecycleTest {
             engineAssetCopier = EngineAssetCopier(),
             sceneManager = sceneManager,
             prefabsGenerator = prefabsGenerator,
-            sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
             jobSystem = jobSystem,
@@ -126,7 +121,6 @@ class ProjectManagerLifecycleTest {
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-        val sceneSerializer = mockk<SceneSerializer>(relaxed = true)
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
@@ -142,7 +136,6 @@ class ProjectManagerLifecycleTest {
             engineAssetCopier = EngineAssetCopier(),
             sceneManager = sceneManager,
             prefabsGenerator = prefabsGenerator,
-            sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
             jobSystem = jobSystem,
@@ -167,7 +160,6 @@ class ProjectManagerLifecycleTest {
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-        val sceneSerializer = mockk<SceneSerializer>(relaxed = true)
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
@@ -182,7 +174,6 @@ class ProjectManagerLifecycleTest {
             engineAssetCopier = EngineAssetCopier(),
             sceneManager = sceneManager,
             prefabsGenerator = prefabsGenerator,
-            sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
             jobSystem = jobSystem,
@@ -224,7 +215,6 @@ class ProjectManagerLifecycleTest {
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-        val sceneSerializer = mockk<SceneSerializer>(relaxed = true)
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = mockk<IJobSystem>(relaxed = true)
@@ -239,7 +229,6 @@ class ProjectManagerLifecycleTest {
             engineAssetCopier = EngineAssetCopier(),
             sceneManager = sceneManager,
             prefabsGenerator = prefabsGenerator,
-            sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
             jobSystem = jobSystem,
@@ -262,7 +251,6 @@ class ProjectManagerLifecycleTest {
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-        val sceneSerializer = mockk<SceneSerializer>(relaxed = true)
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = QueuedJobSystem()
@@ -284,7 +272,6 @@ class ProjectManagerLifecycleTest {
             engineAssetCopier = EngineAssetCopier(),
             sceneManager = sceneManager,
             prefabsGenerator = prefabsGenerator,
-            sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
             jobSystem = jobSystem,
@@ -309,7 +296,6 @@ class ProjectManagerLifecycleTest {
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-        val sceneSerializer = mockk<SceneSerializer>(relaxed = true)
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val jobSystem = QueuedJobSystem()
@@ -325,8 +311,7 @@ class ProjectManagerLifecycleTest {
         every { assetDatabase.initialize(any()) } returns Result.success(Unit)
         every { assetDatabase.scanAll() } returns Result.success(Unit)
         every { sceneManager.currentScene } returns null
-        coEvery { sceneManager.createNewScene(any(), any(), any()) } returns bootstrapScene
-        every { sceneSerializer.load(any(), sceneFile.absolutePath) } returns true
+        coEvery { sceneManager.createNewScene(any(), any()) } returns bootstrapScene
         val serializer = mockk<Serializer>(relaxed = true)
 
         val manager = ProjectManager(
@@ -336,7 +321,6 @@ class ProjectManagerLifecycleTest {
             engineAssetCopier = EngineAssetCopier(),
             sceneManager = sceneManager,
             prefabsGenerator = prefabsGenerator,
-            sceneSerializer = sceneSerializer,
             eventSystem = eventSystem,
             systemManager = systemManager,
             jobSystem = jobSystem,
@@ -346,12 +330,10 @@ class ProjectManagerLifecycleTest {
         val opened = manager.openProject(projectFile)
 
         assertTrue(opened)
-        coVerify(exactly = 1) { sceneManager.createNewScene("main", sceneFile.absolutePath, true) }
-        verify(exactly = 1) { sceneSerializer.load(bootstrapScene, sceneFile.absolutePath) }
+        coVerify(exactly = 1) { sceneManager.createNewScene("main", sceneFile.absolutePath) }
         verify(exactly = 2) { systemManager.loadScene(bootstrapScene) }
         verifyOrder {
             systemManager.loadScene(bootstrapScene)
-            sceneSerializer.load(bootstrapScene, sceneFile.absolutePath)
             systemManager.loadScene(bootstrapScene)
         }
         tempDir.deleteRecursively()

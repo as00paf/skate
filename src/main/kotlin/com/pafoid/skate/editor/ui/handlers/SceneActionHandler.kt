@@ -12,7 +12,6 @@ import com.pafoid.skate.editor.commands.project.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneCommand
 import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
 import com.pafoid.skate.editor.events.ViewportAction.TabSelected
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -48,7 +47,6 @@ import java.io.File
  */
 class SceneActionHandler : KoinComponent {
     private val sceneManager: SceneManager by inject()
-    private val sceneSerializer: SceneSerializer by inject()
     private val serializer: Serializer by inject()
     private val undoRedoManager: UndoRedoManager by inject()
     private val eventSystem: EventSystem by inject()
@@ -127,7 +125,7 @@ class SceneActionHandler : KoinComponent {
     }
 
     private fun handleSaveAsRequested(scene: Scene) {
-        val command = SaveSceneAsCommand(scene, sceneSerializer)
+        val command = SaveSceneAsCommand(scene, serializer, logger)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene save-as requested: ${scene.name}")
     }

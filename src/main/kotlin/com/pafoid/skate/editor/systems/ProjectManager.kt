@@ -17,7 +17,6 @@ import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.collectGameObjectsDepthFirst
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
@@ -92,16 +91,26 @@ class ProjectManager(
                 buildPaths = listOf("Builds")
             )
 
-            // Init DB
-            assetDatabase.initialize(projectDir).onSuccess {
-                engineAssetCopier.copyBundledAssets(projectDir).onSuccess { count ->
+            // Init DB — perform operations synchronously and check results to ensure readiness
+            val initResult = assetDatabase.initialize(projectDir)
+            if (initResult.isFailure) {
+                logger.logEditor("Failed to initialize asset database: ${initResult.exceptionOrNull()?.message}")
+            } else {
+                val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
+                if (copyResult.isSuccess) {
+                    val count = copyResult.getOrNull() ?: 0
                     logger.logEditor("Copied $count engine-bundled assets to project")
                     prefabsGenerator.setEngineDefaultsRoot(projectDir)
-                }.onFailure { e -> logger.logEditor("Failed to copy engine assets: ${e.message}") }
-                assetDatabase.scanAll()
-                logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
-            }.onFailure { e ->
-                logger.logEditor("Failed to initialize asset database: ${e.message}")
+                } else {
+                    logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}")
+                }
+
+                val scanResult = assetDatabase.scanAll()
+                if (scanResult.isFailure) {
+                    logger.logEditor("Asset database scan failed: ${scanResult.exceptionOrNull()?.message}")
+                } else {
+                    logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
+                }
             }
 
             currentProject = project
@@ -131,8 +140,11 @@ class ProjectManager(
         }
 
         logger.logEditor("Creating default scene with prefabs...")
-        val scene = Scene("MainScene")
-        // Add scene components
+
+        // Create a new scene file via SceneManager to centralize persistence behavior
+        val scene = sceneManager.createNewScene("MainScene", sceneDir.path)
+
+        // Attach desired default components
         scene.addComponent(ScenePhysicsComponent(false, Vector3f(0f, -9.81f, 0f)))
         scene.addComponent(EnvironmentComponent())
         val timeComponent = TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f)
@@ -153,20 +165,19 @@ class ProjectManager(
             )
         )
 
-        // Spawn prefabs synchronously — uses addGameObjectImmediate so they go into gameObjects
+        // Open the scene (register systems) then spawn prefabs synchronously
         sceneManager.openScene(scene)
-        prefabsGenerator.spawnSkateboardSync()
-        prefabsGenerator.spawnSkaterSync()
-        prefabsGenerator.spawnFloorSync()
+        val spawned = prefabsGenerator.spawnDefaultsSync()
 
         logger.logEditor("Spawned ${scene.gameObjects.size} objects")
 
-        scene.collectGameObjectsDepthFirst().forEach { obj ->
+        // Resolve GUIDs/paths for spawned objects
+        spawned.forEach { obj ->
             resolveModelGuidForObject(obj)
             resolveAnimatorPathsForObject(obj)
         }
 
-        // Set the level path and save
+        // Save the populated scene
         scene.name = defaultSceneFile.nameWithoutExtension
         sceneManager.saveScene(scene, sceneDir.path)
 
@@ -277,9 +288,28 @@ class ProjectManager(
 
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
-            initProjectDb(project.getProjectDirectory())
+            val projectDir = project.getProjectDirectory()
+            val initResult = assetDatabase.initialize(projectDir)
+            if (initResult.isFailure) {
+                logger.logEditor(
+                    "Failed to initialize asset database: ${initResult.exceptionOrNull()?.message}",
+                    LogLevel.ERROR
+                )
+            } else {
+                val scanResult = assetDatabase.scanAll()
+                if (scanResult.isFailure) {
+                    logger.logEditor(
+                        "Asset database scan failed: ${scanResult.exceptionOrNull()?.message}",
+                        LogLevel.WARN
+                    )
+                } else {
+                    logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
+                }
+            }
+
             loadDefaultScene(project)
 
+            settingsManager.addToRecentProjects(project.getProjectFile().absolutePath)
             eventSystem.publish(ProjectEvent.Opened(project))
             logger.logEditor("Project opened successfully: ${getProjectName()}")
 
@@ -325,7 +355,22 @@ class ProjectManager(
         val projectName = project.metadata.name
         logger.logEditor("Closing project: $projectName")
 
-        // Ensure scenes/resources are fully reset before switching/closing project context.
+        try {
+            val scenesDir = File(project.getProjectDirectory(), project.scenePaths[0])
+            val openScenesCopy = sceneManager.openScenes.toList()
+            openScenesCopy.forEach { scene ->
+                if (scene.isDirty) {
+                    val saved = sceneManager.saveScene(scene, scenesDir.path)
+                    if (!saved) logger.logEditor(
+                        "Warning: Failed to save dirty scene ${scene.name} before closing project",
+                        LogLevel.WARN
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            logger.logEditor("Error while saving open scenes during close: ${e.message}", LogLevel.WARN)
+        }
+
         sceneManager.closeAllScenes()
         systemManager.resetSystemCaches()
 
