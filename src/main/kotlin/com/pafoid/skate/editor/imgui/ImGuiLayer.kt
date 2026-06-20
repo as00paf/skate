@@ -93,7 +93,7 @@ class ImGuiLayer(
         eventSystem = eventSystem
     )
     private val statusBar: EditorStatusBar = EditorStatusBar(stringManager)
-    private val windowManager = WindowManager(stringManager, windowRegistry, projectManager, eventSystem)
+    private val windowManager = WindowManager(stringManager, windowRegistry, eventSystem)
 
     fun init(windowController: WindowController) {
         createContext()
