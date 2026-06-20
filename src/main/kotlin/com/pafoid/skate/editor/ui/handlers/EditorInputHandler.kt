@@ -2,7 +2,6 @@ package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.events.EditorEvent
-import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -48,10 +47,6 @@ class EditorInputHandler(
         GLFW.glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
         GLFW.glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
         GLFW.glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
-
-        eventSystem.subscribe<ProjectEvent.OpenProjectSucceeded> {
-            inputMappings = projectManager.currentProject?.gameplaySettings?.inputMappings ?: InputMappings()
-        }
     }
 
     fun update() {

@@ -28,26 +28,34 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.logEditor
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.utils.IJobSystem
 import java.io.File
+import javax.swing.JFileChooser
+import javax.swing.UIManager
+import javax.swing.filechooser.FileFilter
 
 class ProjectActionHandler(
     private val projectManager: ProjectManager,
     private val undoRedoManager: UndoRedoManager,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
-    private val jobSystem: IJobSystem
+    private val jobSystem: IJobSystem,
+    private val stringManager: StringManager
 ) {
-    fun init() {
+    init {
         eventSystem.subscribe<OpenProjectRequested> { event ->
-            executeOnMainThread {
-                val command = OpenProjectCommand(projectManager, File(event.projectPath))
-                undoRedoManager.executeCommand(command)
-                if (command.wasSuccessful()) {
-                    eventSystem.publish(OpenProjectSucceeded(event.projectPath))
-                } else {
-                    eventSystem.publish(OpenProjectFailed(event.projectPath, "Failed to open project"))
-                }
+            val command = OpenProjectCommand(projectManager, File(event.projectPath))
+            undoRedoManager.executeCommand(command)
+            if (command.wasSuccessful()) {
+                eventSystem.publish(WindowAction.Hide("project_switcher"))
+                eventSystem.publish(WindowAction.Hide("project_wizard"))
+                eventSystem.publish(WindowAction.ShowDefault)
+                eventSystem.publish(OpenProjectSucceeded(event.projectPath))
+            } else {
+                eventSystem.publish(OpenProjectFailed(event.projectPath, "Failed to open project"))
             }
         }
         eventSystem.subscribe<CreateProjectRequested> { event ->
@@ -101,6 +109,33 @@ class ProjectActionHandler(
             executeOnMainThread {
                 val command = LoadLastProjectCommand(projectManager)
                 undoRedoManager.executeCommand(command)
+            }
+        }
+
+        eventSystem.subscribe<ProjectEvent.OpenProjectFileRequested> { event ->
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+
+                val fileChooser = JFileChooser()
+                fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
+                fileChooser.dialogTitle = stringManager.getString("dialog.open_project")
+                fileChooser.addChoosableFileFilter(object : FileFilter() {
+                    override fun accept(file: File): Boolean {
+                        return file.isDirectory || file.extension == "skateproject"
+                    }
+
+                    override fun getDescription(): String {
+                        return stringManager.getString("dialog.skateproject_filter")
+                    }
+                })
+
+                val result = fileChooser.showOpenDialog(null)
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    val projectFile = fileChooser.selectedFile
+                    eventSystem.publish(OpenProjectRequested(projectFile.absolutePath))
+                }
+            } catch (e: Exception) {
+                logger.logEditor("Error opening project dialog: ${e.message}", LogLevel.ERROR)
             }
         }
     }

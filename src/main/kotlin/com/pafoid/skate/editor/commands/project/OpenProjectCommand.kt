@@ -16,7 +16,7 @@ class OpenProjectCommand(
     }
 
     override fun undo() {
-        // Open operations are not reversible
+        projectManager.closeProject()
     }
 
     override fun getDisplayName(): String = "Open Project"

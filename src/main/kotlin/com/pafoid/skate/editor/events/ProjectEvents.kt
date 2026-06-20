@@ -8,7 +8,8 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
     data class Closed(val projectName: String) : ProjectEvent("editor.project_closed")
     data class Created(val project: Project) : ProjectEvent("editor.project_created")
     data class Saved(val project: Project) : ProjectEvent("editor.project_saved")
-    data class OpenProjectRequested(val projectPath: String? = null) :
+    object OpenProjectFileRequested : ProjectEvent("project.action.open_project_file_requested")
+    data class OpenProjectRequested(val projectPath: String) :
         ProjectEvent("project.action.open_project_requested")
 
     data class OpenProjectSucceeded(val projectPath: String?) : ProjectEvent("project.action.open_project_succeeded")

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.IWindow
@@ -11,8 +12,6 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.core.logEditor
-import com.pafoid.skate.engine.data.LogLevel
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
@@ -22,9 +21,6 @@ import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
-import javax.swing.JFileChooser
-import javax.swing.UIManager
-import javax.swing.filechooser.FileFilter
 
 class ProjectSwitcherDialog : IWindow, KoinComponent {
 
@@ -63,7 +59,7 @@ class ProjectSwitcherDialog : IWindow, KoinComponent {
             }
 
             if (ImGui.isItemClicked()) {
-                openProject(File(project.path))
+                eventSystem.publish(OpenProjectRequested(File(project.path).absolutePath))
             }
         }
 
@@ -80,37 +76,6 @@ class ProjectSwitcherDialog : IWindow, KoinComponent {
                 lastOpened = recent.lastOpened,
                 exists = exists
             )
-        }
-    }
-
-    private fun openProject(projectFile: File) {
-        logger.logEditor("Opening project: ${projectFile.absolutePath}")
-        eventSystem.publish(OpenProjectRequested(projectFile.absolutePath))
-    }
-
-    private fun openProjectDialog() {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-
-            val fileChooser = JFileChooser()
-            fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
-            fileChooser.dialogTitle = stringManager.getString("dialog.open_project")
-            fileChooser.addChoosableFileFilter(object : FileFilter() {
-                override fun accept(file: File): Boolean {
-                    return file.isDirectory || file.extension == "skateproject"
-                }
-                override fun getDescription(): String {
-                    return stringManager.getString("dialog.skateproject_filter")
-                }
-            })
-
-            val result = fileChooser.showOpenDialog(null)
-            if (result == JFileChooser.APPROVE_OPTION) {
-                val projectFile = fileChooser.selectedFile
-                openProject(projectFile)
-            }
-        } catch (e: Exception) {
-            logger.logEditor("Error opening project dialog: ${e.message}", LogLevel.ERROR)
         }
     }
 
@@ -173,7 +138,7 @@ class ProjectSwitcherDialog : IWindow, KoinComponent {
                     buttonHeight
                 )
             ) {
-                openProjectDialog()
+                eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
             }
 
             ImGui.sameLine(0f, spacing)

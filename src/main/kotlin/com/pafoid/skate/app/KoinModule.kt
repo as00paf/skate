@@ -134,7 +134,7 @@ val editorModule = module {
     single { TrickManager() }
 
     single(createdAtStart = true) { SceneActionHandler().also { it.init() } }
-    single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get(), get()).also { it.init() } }
+    single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get(), get(), get()) }
     single(createdAtStart = true) { EnvironmentActionHandler(get(), get()).also { it.init() } }
     single(createdAtStart = true) { ConsoleActionHandler().also { it.init() } }
     single(createdAtStart = true) { UndoRedoActionHandler().also { it.init() } }
@@ -165,7 +165,7 @@ val editorModule = module {
     factory { ViewportDragDropHandler(get(), get()) }
 
     // Editor windows
-    single { ProjectWizardWindow(get(), get(), get(), get(), get()) }
+    single { ProjectWizardWindow(get(), get(), get(), get()) }
     single { SceneHierarchyWindow(get(), get(), get(), get(), get(), get()) }
     single { PropertiesWindow(get(), get(), get()) }
     single { GameViewWindow(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

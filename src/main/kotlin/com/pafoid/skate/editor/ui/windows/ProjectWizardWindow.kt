@@ -1,11 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.events.ProjectEvent.CloseProjectRequested
-import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
-import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
-import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
@@ -13,7 +9,6 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.ItemType
 import com.pafoid.skate.editor.project.ProjectWizard
-import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.BuildConfig
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -34,22 +29,13 @@ import javax.swing.filechooser.FileFilter
 
 class ProjectWizardWindow(
     val wizard: ProjectWizard,
-    private val projectManager: ProjectManager,
     private val logger: LoggerService,
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
 ) : IWindow {
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
-    private var initialized = false
 
-    init {
-        initEventSubscriptions()
-    }
-
-    /**
-     * Render the project creation dialog.
-     */
     override fun imgui(pOpen: ImBoolean?) {
         val viewport = ImGui.getMainViewport()
         val centerX = if (viewport.sizeX > 0) viewport.centerX else 400f
@@ -73,9 +59,6 @@ class ProjectWizardWindow(
         }
     }
 
-    /**
-     * Render the main form with all inputs.
-     */
     private fun renderForm() {
         ImGui.spacing()
 
@@ -138,9 +121,6 @@ class ProjectWizardWindow(
         renderProjectStructurePreview()
     }
 
-    /**
-     * Render the project structure preview in a boxed panel.
-     */
     private fun renderProjectStructurePreview() {
         // Draw boxed panel for project structure
         val structureItems = wizard.getProjectStructureItems()
@@ -189,9 +169,6 @@ class ProjectWizardWindow(
         ImGui.popStyleColor(2)
     }
 
-    /**
-     * Render footer with action buttons.
-     */
     private fun renderFooter() {
         val canCreate = wizard.canCreate()
 
@@ -260,9 +237,6 @@ class ProjectWizardWindow(
         ImGui.endDisabled()
     }
 
-    /**
-     * Open file chooser dialog to select an existing .skateproject file.
-     */
     private fun openExistingProjectDialog() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
@@ -290,9 +264,6 @@ class ProjectWizardWindow(
         }
     }
 
-    /**
-     * Browse for folder using system file chooser.
-     */
     private fun browseForFolder() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
@@ -312,34 +283,11 @@ class ProjectWizardWindow(
         }
     }
 
-    /**
-     * Create the project with current dialog settings.
-     */
     private fun createProject() {
         val name = wizard.projectName
         val path = File(wizard.projectPath)
 
         logger.logEditor("Creating project: $name at ${path.absolutePath}")
         eventSystem.publish(CreateProjectRequested(name, path.absolutePath, BuildConfig.ENGINE_VERSION))
-    }
-
-    private fun initEventSubscriptions() {
-        if (initialized) return
-        initialized = true
-
-        eventSystem.subscribe<OpenProjectSucceeded> {
-            logger.logEditor("Project opened: ${projectManager.getProjectName()}")
-        }
-        eventSystem.subscribe<OpenProjectFailed> { event ->
-            logger.logEditor("Failed to open project: ${event.projectPath}", LogLevel.ERROR)
-        }
-
-        eventSystem.subscribe<CreateProjectFailed> { event ->
-            logger.logEditor("Failed to create project: ${event.reason}", LogLevel.ERROR)
-        }
-
-        eventSystem.subscribe<CloseProjectRequested> { event ->
-            wizard.resetForNewProject()
-        }
     }
 }

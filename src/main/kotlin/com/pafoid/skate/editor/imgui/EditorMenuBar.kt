@@ -94,6 +94,7 @@ class EditorMenuBar(
                 if (filteredProjects.isNotEmpty()) {
                     for (project in filteredProjects) {
                         if (ImGui.menuItem(project.name)) {
+                            eventSystem.publish(WindowAction.Hide("window.project_wizard"))
                             eventSystem.publish(ProjectEvent.OpenProjectRequested(project.path))
                         }
                     }
@@ -109,7 +110,7 @@ class EditorMenuBar(
                 eventSystem.publish(WindowAction.Show("window.project_wizard"))
             }
             if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}")) {
-                eventSystem.publish(WindowAction.Show("window.project_switcher"))
+                eventSystem.publish(ProjectEvent.OpenProjectFileRequested)
             }
 
             if (projectManager.hasProject()) {
