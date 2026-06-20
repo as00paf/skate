@@ -67,7 +67,6 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.assets.database.AssetDatabaseImpl
 import com.pafoid.skate.engine.assets.database.ImportPipeline
 import com.pafoid.skate.engine.assets.database.importers.AudioImporter
 import com.pafoid.skate.engine.assets.database.importers.ModelImporter
@@ -270,7 +269,7 @@ val engineModule = module {
             registerImporter(ShaderImporter())
         }
     }
-    single { AssetDatabaseImpl(get(), get(), get()) as AssetDatabase }
+    single { AssetDatabase(get(), get(), get()) }
 
     // Rendering
     single { Renderer(get()) }

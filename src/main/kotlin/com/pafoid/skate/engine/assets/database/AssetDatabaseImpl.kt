@@ -7,20 +7,14 @@ import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileNotFoundException
 
-/**
- * Implementation of the AssetDatabase service.
- *
- * Manages .meta sidecar files, the in-memory asset index, and the disk registry cache.
- */
-class AssetDatabaseImpl(
+class AssetDatabase(
     private val serializer: Serializer,
     private val logger: LoggerService,
     private val importPipeline: ImportPipeline
-) : AssetDatabase {
-
+) {
     private var _projectRoot: File? = null
-    override val projectRoot: File? get() = _projectRoot
-    override val isInitialized: Boolean get() = _projectRoot != null
+    val projectRoot: File? get() = _projectRoot
+    val isInitialized: Boolean get() = _projectRoot != null
 
     // In-memory indexes
     private val byGuid = mutableMapOf<AssetGuid, AssetInfo>()
@@ -42,7 +36,7 @@ class AssetDatabaseImpl(
 
     // ─── Initialization ───────────────────────────────
 
-    override fun initialize(projectRoot: File): Result<Unit> {
+    fun initialize(projectRoot: File): Result<Unit> {
         return try {
             _projectRoot = projectRoot
             clearIndexes()
@@ -55,14 +49,14 @@ class AssetDatabaseImpl(
         }
     }
 
-    override fun shutdown() {
+    fun shutdown() {
         saveRegistry()
         _projectRoot = null
     }
 
     // ─── Scanning ─────────────────────────────────────
 
-    override fun scanAll(): Result<Unit> {
+    fun scanAll(): Result<Unit> {
         val root = _projectRoot ?: return Result.failure(IllegalStateException("Not initialized"))
         return try {
             walkDirectory(root, root)
@@ -75,7 +69,7 @@ class AssetDatabaseImpl(
         }
     }
 
-    override fun scanPath(relativePath: String): Result<Unit> {
+    fun scanPath(relativePath: String): Result<Unit> {
         val root = _projectRoot ?: return Result.failure(IllegalStateException("Not initialized"))
         val dir = File(root, relativePath)
         if (!dir.exists()) return Result.failure(FileNotFoundException("Path not found: $relativePath"))
@@ -152,30 +146,30 @@ class AssetDatabaseImpl(
 
     // ─── Lookup ───────────────────────────────────────
 
-    override fun getByGuid(guid: AssetGuid): AssetInfo? = byGuid[guid]
+    fun getByGuid(guid: AssetGuid): AssetInfo? = byGuid[guid]
 
-    override fun getBySourcePath(relativePath: String): AssetInfo? = bySourcePath[relativePath]
+    fun getBySourcePath(relativePath: String): AssetInfo? = bySourcePath[relativePath]
 
-    override fun getByAbsolutePath(absolutePath: String): AssetInfo? = byAbsolutePath[absolutePath]
+    fun getByAbsolutePath(absolutePath: String): AssetInfo? = byAbsolutePath[absolutePath]
 
-    override fun getAllByType(type: AssetType): List<AssetInfo> =
+    fun getAllByType(type: AssetType): List<AssetInfo> =
         byGuid.values.filter { it.assetType == type }
 
-    override fun getAll(): List<AssetInfo> = byGuid.values.toList()
+    fun getAll(): List<AssetInfo> = byGuid.values.toList()
 
-    override fun resolveSourcePath(guid: AssetGuid): String? = byGuid[guid]?.sourcePath
+    fun resolveSourcePath(guid: AssetGuid): String? = byGuid[guid]?.sourcePath
 
-    override fun resolveAbsolutePath(guid: AssetGuid): String? = byGuid[guid]?.absoluteSourcePath
+    fun resolveAbsolutePath(guid: AssetGuid): String? = byGuid[guid]?.absoluteSourcePath
 
     // ─── Dependency Tracking ──────────────────────────
 
-    override fun getDependencies(guid: AssetGuid): Set<AssetGuid> =
+    fun getDependencies(guid: AssetGuid): Set<AssetGuid> =
         byGuid[guid]?.dependencies ?: emptySet()
 
-    override fun getDependents(guid: AssetGuid): Set<AssetGuid> =
+    fun getDependents(guid: AssetGuid): Set<AssetGuid> =
         reverseDeps[guid]?.toSet() ?: emptySet()
 
-    override fun getDirtyAssets(): Set<AssetGuid> {
+    fun getDirtyAssets(): Set<AssetGuid> {
         val root = _projectRoot ?: return emptySet()
         return byGuid.values.filter { info ->
             val file = File(root, info.sourcePath)
@@ -185,7 +179,7 @@ class AssetDatabaseImpl(
 
     // ─── Meta File Management ─────────────────────────
 
-    override fun createMeta(sourceFile: File): Result<AssetGuid> {
+    fun createMeta(sourceFile: File): Result<AssetGuid> {
         val root = _projectRoot ?: return Result.failure(IllegalStateException("Not initialized"))
         return try {
             val guid = AssetGuid.generate()
@@ -229,7 +223,7 @@ class AssetDatabaseImpl(
         }
     }
 
-    override fun deleteMeta(guid: AssetGuid): Result<Unit> {
+    fun deleteMeta(guid: AssetGuid): Result<Unit> {
         val info = byGuid[guid] ?: return Result.failure(IllegalArgumentException("Asset not found: $guid"))
         return try {
             val root = _projectRoot ?: return Result.failure(IllegalStateException("Not initialized"))
@@ -242,7 +236,7 @@ class AssetDatabaseImpl(
         }
     }
 
-    override fun updateSettings(guid: AssetGuid, settings: ImporterSettings): Result<Unit> {
+    fun updateSettings(guid: AssetGuid, settings: ImporterSettings): Result<Unit> {
         val info = byGuid[guid] ?: return Result.failure(IllegalArgumentException("Asset not found: $guid"))
         return try {
             val root = _projectRoot ?: return Result.failure(IllegalStateException("Not initialized"))
@@ -271,7 +265,7 @@ class AssetDatabaseImpl(
 
     // ─── File Move/Rename ─────────────────────────────
 
-    override fun onFileMoved(oldPath: String, newPath: String): Result<Unit> {
+    fun onFileMoved(oldPath: String, newPath: String): Result<Unit> {
         val root = _projectRoot ?: return Result.failure(IllegalStateException("Not initialized"))
         val oldFile = File(root, oldPath)
         val newFile = File(root, newPath)
@@ -310,7 +304,7 @@ class AssetDatabaseImpl(
         }
     }
 
-    override fun importAsset(guid: AssetGuid): Result<Unit> {
+    fun importAsset(guid: AssetGuid): Result<Unit> {
         val root = _projectRoot ?: return Result.failure(IllegalStateException("Not initialized"))
         val info = byGuid[guid] ?: return Result.failure(IllegalArgumentException("Asset not found: $guid"))
         val sourceFile = File(root, info.sourcePath)
@@ -357,7 +351,7 @@ class AssetDatabaseImpl(
         }
     }
 
-    override fun importAllDirty(): Result<Unit> {
+    fun importAllDirty(): Result<Unit> {
         val dirty = getDirtyAssets()
         var successCount = 0
         var failCount = 0
@@ -374,7 +368,7 @@ class AssetDatabaseImpl(
 
     // ─── Persistence ──────────────────────────────────
 
-    override fun saveRegistry(): Result<Unit> {
+    fun saveRegistry(): Result<Unit> {
         val registryFile = registryPath ?: return Result.failure(IllegalStateException("Not initialized"))
         return try {
             // Ensure cache directory exists
@@ -389,7 +383,7 @@ class AssetDatabaseImpl(
         }
     }
 
-    override fun loadRegistry(): Result<Unit> {
+    fun loadRegistry(): Result<Unit> {
         val registryFile = registryPath ?: return Result.failure(IllegalStateException("Not initialized"))
         return try {
             // Migrate: if old root-level registry exists, move it to cache
@@ -407,7 +401,7 @@ class AssetDatabaseImpl(
         }
     }
 
-    override fun exportRegistryData(): AssetRegistryData {
+    fun exportRegistryData(): AssetRegistryData {
         return AssetRegistryData(
             projectPath = _projectRoot?.absolutePath ?: "",
             lastScanTimestamp = System.currentTimeMillis(),
@@ -430,7 +424,7 @@ class AssetDatabaseImpl(
         )
     }
 
-    override fun importRegistryData(data: AssetRegistryData) {
+    fun importRegistryData(data: AssetRegistryData) {
         clearIndexes()
         val root = File(data.projectPath)
         for ((guidStr, entry) in data.assets) {
