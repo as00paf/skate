@@ -5,10 +5,11 @@ import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import imgui.ImGui
 import imgui.type.ImBoolean
@@ -23,22 +24,25 @@ class PhysicsTunerWindow(
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
     }
 
-    override fun imgui(scene: Scene) {
-        val physics: IPhysics3D = scene.physics3d
+    private val physicsSystem: PhysicsSystem by lazy {
+        systemManager.getSystem<PhysicsSystem>() ?: throw RuntimeException("PhysicsSystem not initialized")
+    }
 
+    override fun imgui(scene: Scene) {
+        val physics = scene.getComponent<ScenePhysicsComponent>() ?: return
         ImGui.begin(stringManager.getString("window.physics_tuner"))
         
         // Gravity
         if (ImGui.collapsingHeader(stringManager.getString("lbl.physics_tuner.global_settings"))) {
-            val debugPhysics = ImBoolean(physics.debugEnabled)
+            val debugPhysics = ImBoolean(physicsSystem.isDebugEnabled())
             if (ImGui.checkbox(stringManager.getString("lbl.physics_tuner.debug_physics"), debugPhysics)) {
-                physics.debugEnabled = debugPhysics.get()
+                physicsSystem
             }
 
-            val gravity = physics.getGravity()
+            val gravity = physics.gravity
             val gVal = floatArrayOf(gravity.x, gravity.y, gravity.z)
             if (MImGui.dragFloat3(stringManager.getString("lbl.physics_tuner.gravity"), gVal)) {
-                physics.setGravity(Vector3f(gVal[0], gVal[1], gVal[2]))
+                physics.gravity = Vector3f(gVal[0], gVal[1], gVal[2])
             }
         }
 

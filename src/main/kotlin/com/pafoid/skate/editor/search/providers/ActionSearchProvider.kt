@@ -20,7 +20,6 @@ import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction
-import com.pafoid.skate.engine.events.SceneAction.OpenRequested
 import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
 import org.koin.core.component.KoinComponent
@@ -159,14 +158,6 @@ class ActionSearchProvider(
             description = "Spawn a prefab obstacle",
             icon = Icons.GEAR,
             execute = { spawnPrefab() }
-        ),
-        EditorAction(
-            actionId = "open_scene",
-            displayName = "Open Scene",
-            keywords = listOf("open", "load", "scene", "file", "read"),
-            description = "Open a scene from file",
-            icon = Icons.FOLDER_OPEN,
-            execute = { openScene() }
         ),
         EditorAction(
             actionId = "rename_gameobject",
@@ -344,11 +335,6 @@ class ActionSearchProvider(
     private fun spawnPrefab() {
         eventSystem.publish(SpawnPrefab(PrefabType.LEDGE))
         logger.logEditor("Spawn prefab executed")
-    }
-
-    private fun openScene() {
-        eventSystem.publish(OpenRequested)
-        logger.logEditor("Open scene requested")
     }
 
     private fun renameGameObject() {

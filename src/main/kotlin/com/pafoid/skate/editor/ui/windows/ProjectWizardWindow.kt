@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.events.ProjectEvent.CloseProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
-import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectSucceeded
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
@@ -33,14 +32,6 @@ import javax.swing.JFileChooser
 import javax.swing.UIManager
 import javax.swing.filechooser.FileFilter
 
-/**
- * Project creation dialog window.
- *
- * Shows a single-screen form with all project options:
- * - Project name with live validation
- * - Project location with folder browser
- * - Live preview of project structure
- */
 class ProjectWizardWindow(
     val wizard: ProjectWizard,
     private val projectManager: ProjectManager,
@@ -93,6 +84,7 @@ class ProjectWizardWindow(
         ImGui.spacing()
         ImGui.pushItemWidth(450f)
         val nameFlags = ImGuiInputTextFlags.AutoSelectAll
+        projectNameInput.set("test")
         ImGui.inputText("##ProjectName", projectNameInput, nameFlags)
         ImGui.popItemWidth()
 
@@ -114,6 +106,7 @@ class ProjectWizardWindow(
         ImGui.text(stringManager.getString("wizard.project.location"))
         ImGui.spacing()
         ImGui.pushItemWidth(350f)
+        projectPathInput.set("C:\\workspace\\skate_workspace")
         ImGui.inputText("##ProjectPath", projectPathInput, ImGuiInputTextFlags.None)
         ImGui.popItemWidth()
 
@@ -236,7 +229,7 @@ class ProjectWizardWindow(
 
         // Cancel button
         if (ImGui.button(stringManager.getString("wizard.project.cancel"), cancelButtonWidth, buttonHeight)) {
-            eventSystem.publish(WindowAction.Hide(""))
+            eventSystem.publish(WindowAction.Hide("window.project_wizard"))
             wizard.reset()
             projectNameInput.set("")
             projectPathInput.set("")
@@ -341,9 +334,6 @@ class ProjectWizardWindow(
             logger.logEditor("Failed to open project: ${event.projectPath}", LogLevel.ERROR)
         }
 
-        eventSystem.subscribe<CreateProjectSucceeded> { event ->
-            logger.logEditor("Project created successfully: ${event.name}")
-        }
         eventSystem.subscribe<CreateProjectFailed> { event ->
             logger.logEditor("Failed to create project: ${event.reason}", LogLevel.ERROR)
         }

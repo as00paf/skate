@@ -13,7 +13,7 @@ import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
 import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
-import com.pafoid.skate.editor.events.ProjectEvent.SaveProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.SaveRequested
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
@@ -237,7 +237,7 @@ class ProjectActionHandlerTest {
         val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
         handler.init()
 
-        eventSystem.publish(SaveProjectRequested)
+        eventSystem.publish(SaveRequested)
 
         verify(exactly = 1) { undoRedoManager.executeCommand(any()) }
         verify(exactly = 1) { projectManager.saveProject() }

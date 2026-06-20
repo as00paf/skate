@@ -5,19 +5,18 @@ import com.pafoid.skate.editor.commands.project.CloseOtherScenesCommand
 import com.pafoid.skate.editor.commands.project.CloseSceneCommand
 import com.pafoid.skate.editor.commands.project.CreateSceneCommand
 import com.pafoid.skate.editor.commands.project.DeleteSceneCommand
-import com.pafoid.skate.editor.commands.project.OpenSceneCommand
 import com.pafoid.skate.editor.commands.project.OpenSceneFileCommand
 import com.pafoid.skate.editor.commands.project.RenameSceneCommand
 import com.pafoid.skate.editor.commands.project.ReopenAllScenesCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneCommand
 import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
-import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ViewportAction.TabSelected
 import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
@@ -33,14 +32,10 @@ import com.pafoid.skate.engine.events.SceneAction.Created
 import com.pafoid.skate.engine.events.SceneAction.DeleteRequested
 import com.pafoid.skate.engine.events.SceneAction.OpenCancelled
 import com.pafoid.skate.engine.events.SceneAction.OpenFailed
-import com.pafoid.skate.engine.events.SceneAction.OpenPathRequested
-import com.pafoid.skate.engine.events.SceneAction.OpenRequested
 import com.pafoid.skate.engine.events.SceneAction.OpenSucceeded
 import com.pafoid.skate.engine.events.SceneAction.RenameRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveAsRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveRequested
-import com.pafoid.skate.engine.physics3d.Physics3DFactory
-import com.pafoid.skate.engine.utils.IJobSystem
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
@@ -54,13 +49,12 @@ import java.io.File
 class SceneActionHandler : KoinComponent {
     private val sceneManager: SceneManager by inject()
     private val sceneSerializer: SceneSerializer by inject()
+    private val serializer: Serializer by inject()
     private val undoRedoManager: UndoRedoManager by inject()
     private val eventSystem: EventSystem by inject()
     private val logger: LoggerService by inject()
     private val projectManager: ProjectManager by inject()
-    private val jobSystem: IJobSystem by inject()
     private val mutationGate: EditorMutationGate by inject()
-    private val physics3DFactory: Physics3DFactory by inject()
 
     fun init() {
         eventSystem.subscribe<RenameRequested> { event ->
@@ -87,15 +81,6 @@ class SceneActionHandler : KoinComponent {
         eventSystem.subscribe<CreateRequested> {
             handleCreateRequested()
         }
-        eventSystem.subscribe<OpenRequested> {
-            handleOpenRequested()
-        }
-        eventSystem.subscribe<OpenPathRequested> { event ->
-            handleOpenPathRequested(event.scenePath)
-        }
-        eventSystem.subscribe<FileSystemEvent.OpenSceneFileEvent> { event ->
-            eventSystem.publish(OpenPathRequested(event.scenePath))
-        }
         eventSystem.subscribe<Created> { event ->
             handleSceneCreated(event.scene)
         }
@@ -104,6 +89,9 @@ class SceneActionHandler : KoinComponent {
         }
         eventSystem.subscribe<DeleteRequested> { event ->
             handleDeleteRequested(event.scene)
+        }
+        eventSystem.subscribe<SceneAction.OpenSceneFile> { event ->
+            handleOpenSceneFile(event.sceneFile)
         }
         eventSystem.subscribe<OpenSucceeded> { event ->
             handleOpenSucceeded(event.scene)
@@ -116,18 +104,24 @@ class SceneActionHandler : KoinComponent {
         }
     }
 
+    private fun handleOpenSceneFile(sceneFile: File) {
+        val command = OpenSceneFileCommand(sceneFile, serializer, sceneManager, eventSystem)
+        undoRedoManager.executeCommand(command)
+        logger.logEditor("Scene file opened: ${sceneFile.name}")
+    }
+
     private fun handleRenameRequested(scene: Scene, newName: String) {
         if (mutationGate.blockIfPlaying("rename scene")) return
         val oldName = scene.name
         if (newName.isBlank() || newName == oldName) return
 
-        val command = RenameSceneCommand(scene, newName, oldName, sceneManager, eventSystem)
+        val command = RenameSceneCommand(scene, newName, oldName, projectManager, sceneManager, eventSystem)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene rename requested: '$oldName' -> '$newName'")
     }
 
     private fun handleSaveRequested(scene: Scene) {
-        val command = SaveSceneCommand(scene, sceneSerializer)
+        val command = SaveSceneCommand(scene, projectManager, sceneManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene save requested: ${scene.name}")
     }
@@ -183,39 +177,7 @@ class SceneActionHandler : KoinComponent {
 
     private fun handleSceneCreated(scene: Scene) {
         sceneManager.openScene(scene)
-        logger.logEditor("New scene created and saved: ${scene.name} -> ${scene.sceneData.levelPath}")
-    }
-
-    private fun handleOpenRequested() {
-        if (mutationGate.blockIfPlaying("open scene")) return
-        val command = OpenSceneCommand(
-            sceneSerializer,
-            sceneManager,
-            jobSystem,
-            eventSystem,
-            sceneFactory = { name -> Scene(name, physics3DFactory) }
-        )
-        undoRedoManager.executeCommand(command)
-        logger.logEditor("Scene open requested")
-    }
-
-    private fun handleOpenPathRequested(scenePath: String) {
-        if (mutationGate.blockIfPlaying("open scene")) return
-        if (scenePath.isBlank()) {
-            logger.logEditor("Scene open failed: scene path is blank", LogLevel.ERROR)
-            return
-        }
-
-        val command = OpenSceneFileCommand(
-            scenePath,
-            sceneSerializer,
-            sceneManager,
-            jobSystem,
-            eventSystem,
-            sceneFactory = { name -> Scene(name, physics3DFactory) }
-        )
-        undoRedoManager.executeCommand(command)
-        logger.logEditor("Scene open requested for path: $scenePath")
+        logger.logEditor("New scene created and saved: ${scene.name}")
     }
 
     private fun handleOpenSucceeded(scene: Scene) {
@@ -256,7 +218,7 @@ class SceneActionHandler : KoinComponent {
             logger.logEditor("Cannot delete the last remaining scene")
             return
         }
-        val command = DeleteSceneCommand(scene, sceneManager, logger)
+        val command = DeleteSceneCommand(scene, projectManager, sceneManager, logger)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene delete requested: ${scene.name}")
     }

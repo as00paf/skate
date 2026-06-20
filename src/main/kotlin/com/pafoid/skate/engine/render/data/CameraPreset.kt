@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.render.data
 
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
 /**
@@ -9,10 +11,11 @@ import org.joml.Vector3f
  * @param zoom Zoom level (1.0 = normal, < 1.0 = zoom in, > 1.0 = zoom out)
  * @param offset Camera offset from target position
  */
+@Serializable
 data class CameraPreset(
     val fov: Float,
     val zoom: Float,
-    val offset: Vector3f
+    @Contextual val offset: Vector3f
 ) {
     companion object {
         val LOW = CameraPreset(fov = 45f, zoom = 1.0f, offset = Vector3f(0f, 0.4f, 0f))

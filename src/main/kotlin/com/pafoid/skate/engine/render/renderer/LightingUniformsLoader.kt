@@ -2,9 +2,10 @@ package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.data.DirectionalLight
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 
@@ -18,7 +19,6 @@ class LightingUniformsLoader {
      *
      * @param shader The shader to upload uniforms to
      * @param camera The camera for position and view matrix
-     * @param sceneData The scene data containing sun configuration
      * @param lightingStateComponent Component containing ambient light state (optional)
      * @param directionalLight The directional light config
      * @param environmentComponent Component containing fog settings (optional)
@@ -27,10 +27,10 @@ class LightingUniformsLoader {
     fun loadLightingUniforms(
         shader: Shader,
         camera: Camera,
-        sceneData: SceneData,
+        sun: DirectionalLight,
         lightingStateComponent: LightingStateComponent?,
         directionalLight: DirectionalLightComponent?,
-        environmentComponent: com.pafoid.skate.engine.ecs.components.EnvironmentComponent? = null,
+        environmentComponent: EnvironmentComponent? = null,
         shadowMapTextureId: Int = 0
     ) {
         // Directional light (sun) - single unified light source
@@ -42,9 +42,9 @@ class LightingUniformsLoader {
             // Upload light space matrix for shadow mapping
             shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, directionalLight.lightSpaceMatrix)
         } else {
-            // Fallback to sceneData.sun for backwards compatibility
-            shader.uploadVec3f(Uniforms.SUN_DIRECTION, sceneData.sun.direction)
-            val finalSunColor = Vector3f(sceneData.sun.color).mul(sceneData.sun.intensity)
+            // Fallback to sun for backwards compatibility
+            shader.uploadVec3f(Uniforms.SUN_DIRECTION, sun.direction)
+            val finalSunColor = Vector3f(sun.color).mul(sun.intensity)
             shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
         }
 

@@ -1,12 +1,12 @@
 package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.physics3d.DefaultPhysics3DFactory
-import com.pafoid.skate.engine.physics3d.IPhysics3D
-import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.data.DirectionalLight
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Vector3f
 
 /**
@@ -16,28 +16,24 @@ import org.joml.Vector3f
  * Components like EnvironmentComponent, TimeComponent, and LightingComponent can be added
  * to the Scene to store global state.
  *
- * Note: Scene itself is not serialized. Only its components and child GameObjects are serialized.
- *
  * @param name Scene name
  */
-open class Scene(
-    name: String = "Scene",
-    private val physicsFactory: Physics3DFactory = DefaultPhysics3DFactory(),
-) : GameObject(name) {
+@Serializable
+class Scene(@SerialName("sceneName") override var name: String = "MainScene") : GameObject(name) {
 
-    // SceneData for minimal serializable configuration (levelPath, etc.)
-    var sceneData: SceneData = SceneData()
+    // TODO: this should be DirectionalLightComponent
+    var sun: DirectionalLight = DirectionalLight()
 
     // Camera remains a special property (not a component for now)
     val camera: Camera = Camera(Vector3f(0f, 5f, 20f))
 
-    val physics3d: IPhysics3D = physicsFactory.create()
-
     val gameObjects = mutableListOf<GameObject>()
-    val pendingObjects = mutableListOf<GameObject>()
     var objectSetVersion: Long = 0
         private set
+
+    @Transient
     var hoveredGameObject: GameObject? = null
+    @Transient
     var selectedGameObject: GameObject? = null
 
     var isRunning: Boolean = false

@@ -58,8 +58,8 @@ class Skater(
             margin = 0.01f
         })
         addComponent(InputStateComponent())
-        addComponent(PlayerController())
         addComponent(PlayerStateManager())
+        addComponent(PlayerController())
         addComponent(BoneOverride())
     }
 

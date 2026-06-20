@@ -24,6 +24,7 @@ import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
@@ -68,23 +69,24 @@ class ProjectManager(
     fun createProject(name: String, folder: File, engineVersion: String = "v0.46.0.1.19"): Result<Project> {
         logger.logEditor("Creating project: $name in ${folder.absolutePath}")
         return try {
-            val projectFile = File(folder, "$name.skateproject")
-            if (projectFile.exists()) {
-                return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
-            }
-
             val projectDir = File(folder, name)
             if (!projectDir.exists()) {
                 projectDir.mkdirs()
             }
 
+            val projectFile = File(projectDir, "$name.skateproject")
+            if (projectFile.exists()) {
+                return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
+            }
+
             File(projectDir, "Assets").mkdirs()
-            File(projectDir, "Scenes").mkdirs()
+            val scenesDir = File(projectDir, "Scenes")
+            scenesDir.mkdirs()
             File(projectDir, "Builds").mkdirs()
 
             val project = Project(
                 metadata = ProjectMetadata(name, engineVersion = engineVersion, projectPath = projectFile.absolutePath),
-                defaultScene = "Scenes/main.scene",
+                defaultScene = "MainScene",
                 assetPaths = listOf("Assets"),
                 scenePaths = listOf("Scenes"),
                 buildPaths = listOf("Builds")
@@ -102,11 +104,15 @@ class ProjectManager(
                 logger.logEditor("Failed to initialize asset database: ${e.message}")
             }
 
+            currentProject = project
+
             // Create default scene with prefabs
-            createDefaultScene(projectDir)
+            initProjectDb(project.getProjectDirectory())
+            createDefaultScene(scenesDir)
 
             settingsManager.addToRecentProjects(project.getProjectFile().absolutePath) // TODO: move to settings manager
-            currentProject = project
+            eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
+
             saveProject()
 
             logger.logEditor("Project created successfully: ${project.metadata.name}")
@@ -117,33 +123,17 @@ class ProjectManager(
         }
     }
 
-    fun createDefaultScene(projectDir: File) {
-        val sceneFileName = currentProject?.defaultScene?.takeIf { it.isNotBlank() } ?: "Scenes/main.scene"
-        val defaultSceneFile = File(projectDir, sceneFileName)
-
-        // Already exists — nothing to do
+    fun createDefaultScene(sceneDir: File) {
+        val defaultSceneFile = File(sceneDir, "MainScene.scene")
         if (defaultSceneFile.exists()) {
+            logger.logEditor("Main.Scene file already exists", LogLevel.ERROR)
             return
         }
 
         logger.logEditor("Creating default scene with prefabs...")
-
-        defaultSceneFile.parentFile?.mkdirs()
         val scene = Scene("MainScene")
-
-        // Spawn prefabs synchronously — uses addGameObjectImmediate so they go into gameObjects
-        prefabsGenerator.spawnSkateboardSync()
-        prefabsGenerator.spawnSkaterSync()
-        prefabsGenerator.spawnFloorSync()
-
-        logger.logEditor("Spawned ${scene.gameObjects.size} objects")
-
-        scene.collectGameObjectsDepthFirst().forEach { obj ->
-            resolveModelGuidForObject(obj)
-            resolveAnimatorPathsForObject(obj)
-        }
-
         // Add scene components
+        scene.addComponent(ScenePhysicsComponent(false, Vector3f(0f, -9.81f, 0f)))
         scene.addComponent(EnvironmentComponent())
         val timeComponent = TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f)
         scene.addComponent(timeComponent)
@@ -163,10 +153,22 @@ class ProjectManager(
             )
         )
 
+        // Spawn prefabs synchronously — uses addGameObjectImmediate so they go into gameObjects
+        sceneManager.openScene(scene)
+        prefabsGenerator.spawnSkateboardSync()
+        prefabsGenerator.spawnSkaterSync()
+        prefabsGenerator.spawnFloorSync()
+
+        logger.logEditor("Spawned ${scene.gameObjects.size} objects")
+
+        scene.collectGameObjectsDepthFirst().forEach { obj ->
+            resolveModelGuidForObject(obj)
+            resolveAnimatorPathsForObject(obj)
+        }
+
         // Set the level path and save
-        scene.name = defaultSceneFile.name
-        scene.sceneData.levelPath = defaultSceneFile.absolutePath
-        sceneManager.saveScene(scene)
+        scene.name = defaultSceneFile.nameWithoutExtension
+        sceneManager.saveScene(scene, sceneDir.path)
 
         logger.logEditor("Default scene saved to ${defaultSceneFile.absolutePath}")
     }
@@ -270,15 +272,15 @@ class ProjectManager(
             if (hasProject()) closeProject()
 
             logger.logEditor("Opening project: ${projectFile.absolutePath}")
-            val loadedProject = serializer.decode<Project>(projectFile.readText()) // TODO: should be on io
-            currentProject = loadedProject
+            val project = serializer.decode<Project>(projectFile.readText()) // TODO: should be on io
+            currentProject = project
 
-            eventSystem.publish(EngineAction.ApplyMappings(loadedProject.gameplaySettings.inputMappings))
+            eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
-            getProjectDirectory()?.let { initProjectDb(it) }
-            loadDefaultScene()
+            initProjectDb(project.getProjectDirectory())
+            loadDefaultScene(project)
 
-            eventSystem.publish(ProjectEvent.Opened(loadedProject))
+            eventSystem.publish(ProjectEvent.Opened(project))
             logger.logEditor("Project opened successfully: ${getProjectName()}")
 
             true
@@ -292,8 +294,6 @@ class ProjectManager(
         val openEpoch = lifecycleEpoch.incrementAndGet()
         assetDatabase.initialize(projectDir).fold(
             onSuccess = {
-                // Tell PrefabsGenerator where to find engine-bundled assets
-                prefabsGenerator.setEngineDefaultsRoot(projectDir)
                 logger.logEditor("Asset database initialized for ${projectDir.name}")
 
                 // Scan assets off the UI path; drop stale scans if project lifecycle changes.
@@ -337,20 +337,16 @@ class ProjectManager(
         eventSystem.publish(ProjectEvent.Closed(projectName))
     }
 
-    private fun loadDefaultScene() {
-        val projectDir = getProjectDirectory() ?: return
-        val sceneFileName = currentProject?.defaultScene?.takeIf { it.isNotBlank() } ?: "Scenes/main.scene"
-        val defaultSceneFile = File(projectDir, sceneFileName)
+    private fun loadDefaultScene(project: Project) {
+        val scenesDir = File(project.getProjectDirectory(), project.scenePaths[0])
+        val defaultSceneFile = File(scenesDir, "${project.defaultScene}.scene")
 
         if (!defaultSceneFile.exists()) {
-            logger.logEditor("No default scene found at ${defaultSceneFile.absolutePath}")
+            logger.logEditor("No default scene found at ${defaultSceneFile.absolutePath}", LogLevel.ERROR)
             return
         }
 
         val scene = serializer.decode<Scene?>(defaultSceneFile.readText()) ?: run {
-            val sceneName = defaultSceneFile.nameWithoutExtension.ifBlank { "MainScene" }
-            sceneManager.createNewScene(sceneName, defaultSceneFile.absolutePath)
-        } ?: run {
             logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}")
             return
         }

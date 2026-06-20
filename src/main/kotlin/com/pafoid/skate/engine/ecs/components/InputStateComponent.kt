@@ -158,13 +158,6 @@ class InputStateComponent : Component() {
     // =========================================================================
 
     /**
-     * True when the entity is touching the ground.
-     * This is synced from the physics system, not directly from input.
-     * Use this to determine if jumping or ground-based actions are allowed.
-     */
-    var isGrounded = false
-
-    /**
      * Resets all input state to default values.
      * Called by [InputSystem] at the start of each frame before polling new inputs.
      *

@@ -80,7 +80,8 @@ class EditorScenesTabBar(
                 }
             }
 
-            val addTabFlags = ImGuiTabItemFlags.Trailing or ImGuiTabItemFlags.NoTooltip
+            val addTabFlags =
+                ImGuiTabItemFlags.Trailing or ImGuiTabItemFlags.NoCloseWithMiddleMouseButton or ImGuiTabItemFlags.NoReorder
             if (ImGui.beginTabItem(Icons.PLUS, addTabFlags)) {
                 eventSystem.publish(CreateRequested)
                 ImGui.endTabItem()

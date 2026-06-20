@@ -9,7 +9,7 @@ import kotlinx.serialization.Transient
 
 @Serializable
 open class GameObject(
-    var name: String,
+    open var name: String,
 ) {
     companion object {
         private var ID_COUNTER: Int = 0

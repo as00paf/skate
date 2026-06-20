@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.project
 
-import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetGuid
@@ -10,21 +9,15 @@ import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.collectGameObjectsDepthFirst
 import com.pafoid.skate.engine.ecs.components.Animator
-import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
-import kotlinx.serialization.Serializable
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.File
 import java.io.FileWriter
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Paths
 
 /**
  * Handles scene serialization — saving and loading .scene files.
@@ -46,8 +39,27 @@ class SceneSerializer(
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
     }
 
-    fun save(scene: Scene) {
-        saveToFile(scene, scene.sceneData.levelPath)
+    fun save(scene: Scene, dirPath: String): Boolean {
+        val path = dirPath + "/" + scene.name + ".scene"
+        try {
+            val parentDir = File(dirPath)
+            if (!parentDir.exists()) parentDir.mkdirs()
+            else if (!parentDir.isDirectory) {
+                logger.logEditor("Failed to save scene to directory $dirPath", LogLevel.ERROR)
+                return false
+            }
+
+            FileWriter(path).use { writer ->
+                writer.write(serializer.encode(scene))
+            }
+
+            scene.isDirty = false
+            logger.logEditor("Scene saved to $path")
+        } catch (e: Exception) {
+            logger.logEditor("Failed to save scene to $path: ${e.message}", LogLevel.ERROR)
+            return false
+        }
+        return true
     }
 
     fun saveAs(scene: Scene) {
@@ -56,69 +68,19 @@ class SceneSerializer(
         filters.put(0, filter)
 
         val path = try {
-            TinyFileDialogs.tinyfd_saveFileDialog(scene.sceneData.levelPath, "Save Scene", filters, "Scene Files")
+            TinyFileDialogs.tinyfd_saveFileDialog(scene.name, "Save Scene", filters, "Scene Files")
         } finally {
             MemoryUtil.memFree(filter)
             MemoryUtil.memFree(filters)
         }
 
         if (path != null) {
-            scene.sceneData.levelPath = path
-            saveToFile(scene, path)
+            scene.name = File(path).nameWithoutExtension
+            save(scene, path)
         }
     }
 
-    fun saveToFile(scene: Scene, path: String) {
-        try {
-            File(path).parentFile?.mkdirs()
-
-            val data = SceneSaveData(
-                gameObjects = scene.gameObjects.filter { it.doSerialization() },
-                sceneComponents = scene.components,
-                sceneData = scene.sceneData,
-                scenePath = path
-            )
-
-            FileWriter(path).use { writer ->
-                writer.write(serializer.encode(data))
-            }
-
-            scene.isDirty = false
-            logger.logEditor("Scene saved to $path")
-        } catch (e: IOException) {
-            logger.logEditor("Failed to save scene to $path: ${e.message}", LogLevel.ERROR)
-        }
-    }
-
-    fun load(scene: Scene) {
-        loadFromFile(scene, scene.sceneData.levelPath)
-    }
-
-    fun open(scene: Scene): SceneOpenResult {
-        val filter = MemoryUtil.memUTF8("*.scene")
-        val filters = MemoryUtil.memAllocPointer(1)
-        filters.put(0, filter)
-
-        val path = try {
-            TinyFileDialogs.tinyfd_openFileDialog("Open Scene", scene.sceneData.levelPath, filters, "Scene Files", false)
-        } finally {
-            MemoryUtil.memFree(filter)
-            MemoryUtil.memFree(filters)
-        }
-
-        if (path == null) {
-            return SceneOpenResult.Cancelled
-        }
-
-        scene.sceneData.levelPath = path
-        return if (loadFromFile(scene, path)) {
-            SceneOpenResult.Loaded(path)
-        } else {
-            SceneOpenResult.Failed(path, "Could not load scene from file")
-        }
-    }
-
-    fun loadFromFile(scene: Scene, path: String): Boolean {
+    /*fun load(path: String): Boolean {
         var inFile = ""
         try {
             inFile = String(Files.readAllBytes(Paths.get(path)))
@@ -129,7 +91,7 @@ class SceneSerializer(
 
         if (inFile.isBlank()) return false
 
-        val data: SceneSaveData = try {
+        val scene: Scene = try {
             serializer.decode(inFile)
         } catch (e: Exception) {
             logger.logEditor("Failed to deserialize scene from $path: ${e.message}", LogLevel.ERROR)
@@ -141,8 +103,6 @@ class SceneSerializer(
         scene.markObjectSetChanged()
 
         scene.name = File(path).name
-        scene.sceneData = data.sceneData
-        scene.sceneData.levelPath = path
 
         var maxGoId = -1
         var maxCompId = -1
@@ -166,7 +126,7 @@ class SceneSerializer(
         data.gameObjects.forEach { obj ->
             obj.getAllComponents().forEach { it.init(obj) }
 
-            gameObjectManager.addGameObjectImmediate(obj)
+            gameObjectManager.addGameObject(obj)
 
             obj.getAllComponents().forEach { component ->
                 if (component.getUid() > maxCompId) {
@@ -199,7 +159,7 @@ class SceneSerializer(
         }
 
         return true
-    }
+    }*/
 
 
     private fun resolveObjectReferences(obj: GameObject) {
@@ -297,18 +257,3 @@ class SceneSerializer(
         logger.logEditor("Loaded ${animator.animationPaths.size} animations for ${obj.name}")
     }
 }
-
-/**
- * Serializable scene save data for save/load operations.
- *
- * Replaces the old LevelData class. Stores the full scene state
- * including all GameObjects and scene-wide configuration.
- */
-@Serializable
-data class SceneSaveData(
-    val gameObjects: List<GameObject>,
-    val sceneComponents: List<Component> = emptyList(),
-    val sceneData: com.pafoid.skate.engine.ecs.scene.SceneData,
-    @kotlinx.serialization.SerialName("levelPath")
-    var scenePath: String = ""
-)

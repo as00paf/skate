@@ -21,6 +21,7 @@ import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.PlayerStateManager
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.TimeComponent
@@ -78,6 +79,7 @@ class Serializer {
             subclass(RagdollComponent::class)
 
             // Physics components
+            subclass(ScenePhysicsComponent::class)
             subclass(RigidBody3D::class)
             subclass(BoxCollider3D::class)
             subclass(CylinderCollider3D::class)

@@ -116,7 +116,7 @@ class PrefabsGenerator(
         val modelPath = resolveModelPath(Assets.Models.SKATEBOARD_GLB)
         val model = resourceManager.loadModelSync(modelPath)
         val skate = Skateboard(model as TexturedModel)
-        gameObjectManager.addGameObjectImmediate(skate)
+        gameObjectManager.addGameObject(skate)
     }
 
     fun spawnSkater(skate: GameObject? = null) {
@@ -158,7 +158,7 @@ class PrefabsGenerator(
             }
         }
 
-        gameObjectManager.addGameObjectImmediate(skater)
+        gameObjectManager.addGameObject(skater)
     }
 
     fun spawnFloor() {
@@ -189,7 +189,7 @@ class PrefabsGenerator(
         texturedModel.mesh[0].material.baseColorPath = texturePath
 
         val tile = Tile("Tile", texturedModel)
-        gameObjectManager.addGameObjectImmediate(tile)
+        gameObjectManager.addGameObject(tile)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?): GameObject? {

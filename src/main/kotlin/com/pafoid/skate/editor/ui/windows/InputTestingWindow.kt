@@ -305,12 +305,12 @@ class InputTestingWindow(
         ImGui.spacing()
 
         // Physics State
-        ImGui.text(stringManager.getString("lbl.input_testing.physics_state"))
-        if (inputState.isGrounded) {
-            MImGui.successText("  " + stringManager.getString("lbl.input_testing.is_grounded").format(inputState.isGrounded))
-        } else {
-            MImGui.errorText("  " + stringManager.getString("lbl.input_testing.is_grounded").format(inputState.isGrounded))
-        }
+        /* ImGui.text(stringManager.getString("lbl.input_testing.physics_state"))
+         if (inputState.isGrounded) {
+             MImGui.successText("  " + stringManager.getString("lbl.input_testing.is_grounded").format(inputState.isGrounded))
+         } else {
+             MImGui.errorText("  " + stringManager.getString("lbl.input_testing.is_grounded").format(inputState.isGrounded))
+         }*/
 
         ImGui.unindent()
     }

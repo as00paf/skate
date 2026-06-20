@@ -92,7 +92,6 @@ class PlayerController : Component(), KoinComponent {
     @Transient private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
 
     @Transient private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
-    @Transient private val physics3d: IPhysics3D? by lazy { sceneManager.currentScene?.physics3d }
 
     // Exposed for PlayerStateManager to read player intent
     @Transient val desiredMoveDirection = Vector3f()
@@ -143,12 +142,7 @@ class PlayerController : Component(), KoinComponent {
     override fun update(dt: Float) {
         val body = rb ?: return
         val camera = camera ?: return
-        val physics3d = physics3d ?: return
         val inputState = gameObject.getComponent<InputStateComponent>() ?: return
-
-        // Update grounded state from physics
-        isGrounded = checkIfGrounded(physics3d)
-        inputState.isGrounded = isGrounded
 
         // PRIORITIZE event-driven movement state; fallback to InputStateComponent polling
         val useEvents = movementMagnitude > 0.15f
@@ -282,25 +276,6 @@ class PlayerController : Component(), KoinComponent {
     }
 
     /**
-     * Raycasts downwards to snap the skater model to the ground while in the 'WALKING' state.
-     * Prevents floating or clipping through terrain.
-     */
-    fun handleGroundSnapping() {
-        val scene = sceneManager.currentScene ?: return
-        val target = gameObject
-        val pos = target.getComponent<Transform>()?.translation ?: return
-
-        val rayStart = Vector3f(pos.x, pos.y + 1f, pos.z)
-        val rayEnd = Vector3f(pos.x, pos.y - 2f, pos.z)
-
-        val closest = scene.physics3d.raycastClosest(rayStart, rayEnd)
-        if (closest != null) {
-            val hitY = rayStart.y + (rayEnd.y - rayStart.y) * closest.hitFraction
-            pos.y = hitY
-        }
-    }
-
-    /**
      * Handles jump input, applying a vertical impulse.
      *
      * @param inputState The input state component containing jump button state
@@ -334,7 +309,8 @@ class PlayerController : Component(), KoinComponent {
         }
     }
 
-    private fun checkIfGrounded(physics3d: IPhysics3D): Boolean {
+    // TODO: move
+    fun checkIfGrounded(physics3d: IPhysics3D): Boolean {
         val body = rb as? RigidBody3D ?: return false
         val originPosition = body.getWorldPosition()
 

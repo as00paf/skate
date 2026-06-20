@@ -27,10 +27,8 @@ import org.joml.Quaternionf
 
 class BulletPhysics3D(
     private val nativeLibraryLoader: NativeLibraryLoader = NativeLibraryLoader(),
-    private val debugRendererProvider: (() -> DebugRenderer)? = null,
+    private val debugRenderer: DebugRenderer
 ) : IPhysics3D {
-    private val debugRenderer: DebugRenderer?
-        get() = debugRendererProvider?.invoke()
     private val physicsSpace: PhysicsSpace
 
     private var accumulatorSeconds = 0.0

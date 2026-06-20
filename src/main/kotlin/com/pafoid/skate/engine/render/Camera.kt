@@ -5,6 +5,9 @@ import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.engine.utils.Ray
 import com.pafoid.skate.engine.utils.toDegrees
 import com.pafoid.skate.engine.utils.toRadians
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -12,18 +15,19 @@ import org.joml.Vector4f
 import kotlin.math.asin
 import kotlin.math.atan2
 
+@Serializable
 class Camera(
-    val position: Vector3f = Vector3f(),
+    @Contextual val position: Vector3f = Vector3f(),
     var pitch: Float = 0f,
     var yaw: Float = 0f,
     var roll: Float = 0f,
     var isOrthographic: Boolean = false
 ) {
-
     var fov = 45f
     var nearPlane = 0.1f
     var farPlane = 1000f
 
+    @Contextual
     var projectionSize = Vector2f(32f, 18f) // Default 16:9 units
     var zoom = 1.0f
 
@@ -37,11 +41,17 @@ class Camera(
     private var lerpDuration = 0f
     private var startFov = 0f
     private var startDistance = 0f
-    private val startOffset = Vector3f()
 
     // Cached matrices to reduce GC pressure
+    @Transient
     private val projectionMatrix = Matrix4f()
+    @Transient
     private val viewMatrix = Matrix4f()
+
+    @Transient
+    private val camForward = Vector3f(0f, 0f, -1f)
+    @Transient
+    private val camRight = Vector3f(1f, 0f, 0f)
 
     fun addZoom(value: Float) {
         zoom += value
@@ -153,9 +163,6 @@ class Camera(
         
         return Ray(rayOrigin, rayDirection)
     }
-
-    private val camForward = Vector3f(0f, 0f, -1f)
-    private val camRight = Vector3f(1f, 0f, 0f)
 
     fun getForwardAndRight(): Pair<Vector3f, Vector3f> {
         camForward.set(Vector3f(0f, 0f, -1f))

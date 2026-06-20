@@ -69,6 +69,7 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.CameraAction
 import com.pafoid.skate.engine.events.EngineAction
@@ -193,7 +194,7 @@ class ViewportActionHandler(
             handleResetSkateScene()
         }
         eventSystem.subscribe<TogglePhysicsDebug> {
-            handleTogglePhysicsDebug()
+            systemManager.getSystem<PhysicsSystem>()?.toggleDebug()
         }
         eventSystem.subscribe<ToggleGizmo> { event ->
             handleToggleGizmo(event.gizmoId)
@@ -239,12 +240,6 @@ class ViewportActionHandler(
 
     private fun handleSpawnPrefab(prefabType: PrefabType, position: Vector3f?) {
         if (mutationGate.blockIfPlaying("spawn prefab")) return
-        if (prefabType == PrefabType.SKATEBOARD) {
-            prefabsGenerator.spawnSkateboard()
-            logger.logEditor("Spawned skateboard")
-            return
-        }
-
         val command = SpawnPrefabCommand(prefabType, position, prefabsGenerator, gameObjectManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Spawned prefab: ${prefabType.name}")
@@ -374,11 +369,6 @@ class ViewportActionHandler(
         rb?.angularVelocity = Vector3f(0f, 0f, 0f)
         scene.camera.position.set(0f, 5f, 20f)
         scene.camera.yaw = 0f
-    }
-
-    private fun handleTogglePhysicsDebug() {
-        val scene = sceneManager.currentScene ?: return
-        scene.physics3d.debugEnabled = !scene.physics3d.debugEnabled
     }
 
     private fun handleToggleGizmo(gizmoId: Int) {

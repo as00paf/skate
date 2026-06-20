@@ -119,7 +119,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, resourceMan
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, modelMatrix)
         shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
         shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
-        shader.uploadVec3f(Uniforms.SUN_COLOR, scene.sceneData.sun.color)
+        shader.uploadVec3f(Uniforms.SUN_COLOR, scene.sun.color)
 
         // Upload sky settings from EnvironmentComponent
         shader.uploadVec3f(Uniforms.SKY_TINT, environmentComponent?.skyTint ?: org.joml.Vector3f(1f, 1f, 1f))

@@ -42,7 +42,7 @@ class OpenSceneFileCommandTest {
     @Test
     fun `execute opens scene and publishes success when file loads`() {
         val scenePath = "C:/scene/Test.scene"
-        every { sceneSerializer.loadFromFile(any(), scenePath) } returns true
+        every { sceneSerializer.load(any(), scenePath) } returns true
         var opened: SceneAction.OpenSucceeded? = null
         eventSystem.subscribe<SceneAction.OpenSucceeded> { opened = it }
 
@@ -57,7 +57,7 @@ class OpenSceneFileCommandTest {
     @Test
     fun `execute publishes failure and does not open scene when load fails`() {
         val scenePath = "C:/scene/Broken.scene"
-        every { sceneSerializer.loadFromFile(any(), scenePath) } returns false
+        every { sceneSerializer.load(any(), scenePath) } returns false
         var failed: SceneAction.OpenFailed? = null
         eventSystem.subscribe<SceneAction.OpenFailed> { failed = it }
 

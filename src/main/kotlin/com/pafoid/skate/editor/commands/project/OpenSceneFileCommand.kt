@@ -1,25 +1,20 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.AsyncCommand
-import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction.OpenFailed
 import com.pafoid.skate.engine.events.SceneAction.OpenSucceeded
-import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.Job
 import java.io.File
 
 class OpenSceneFileCommand(
-    private val scenePath: String,
-    private val sceneSerializer: SceneSerializer,
+    private val sceneFile: File,
+    private val serializer: Serializer,
     private val sceneManager: SceneManager,
-    private val jobSystem: IJobSystem,
     private val eventSystem: EventSystem,
-    private val sceneFactory: (String) -> Scene = { name ->
-        Scene(name)
-    }
 ) : AsyncCommand {
     var openedScene: Scene? = null
         private set
@@ -32,29 +27,19 @@ class OpenSceneFileCommand(
         completedSuccessfully = false
         openedScene = null
 
-        completionJob = jobSystem.runOnMain {
-            runCatching {
-                val sceneName = File(scenePath).nameWithoutExtension.ifBlank { "Loaded Scene" }
-                val loadedScene = sceneFactory(sceneName)
-
-                if (sceneSerializer.loadFromFile(loadedScene, scenePath)) {
-                    sceneManager.openScene(loadedScene)
-                    openedScene = loadedScene
-                    eventSystem.publish(OpenSucceeded(loadedScene))
-                    completedSuccessfully = true
-                } else {
-                    loadedScene.destroyScene()
-                    eventSystem.publish(OpenFailed("Could not load scene from file: $scenePath"))
-                }
-            }.onFailure {
-                val reason = it.message ?: "Unknown scene open error"
-                eventSystem.publish(OpenFailed(reason))
-            }
+        val scene = serializer.decode<Scene?>(sceneFile.readText())
+        if (scene != null) {
+            sceneManager.openScene(scene)
+            openedScene = scene
+            eventSystem.publish(OpenSucceeded(scene))
+            completedSuccessfully = true
+        } else {
+            eventSystem.publish(OpenFailed("Could not load scene from file: ${sceneFile.absolutePath}"))
         }
     }
 
     override fun undo() {
-        // Open operations are not reversible — scene stack restoration is complex
+        openedScene?.let { sceneManager.closeScene(it) }
     }
 
     override fun getCompletionJob(): Job? = completionJob
@@ -64,5 +49,5 @@ class OpenSceneFileCommand(
     override fun shouldPushToHistoryOnSuccess(): Boolean = false
 
     override fun getDisplayName(): String = "Open Scene File"
-    override fun getTargetName(): String? = File(scenePath).name
+    override fun getTargetName(): String? = sceneFile.name
 }

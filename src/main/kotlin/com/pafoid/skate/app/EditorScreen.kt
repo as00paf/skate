@@ -24,8 +24,8 @@ class EditorScreen(private val window: Window) : KoinComponent {
         editorEventHandler.init()
 
         settingsManager.load()
-        projectManager.init()
         imGuiLayer.init(window.windowController)
+        projectManager.init()
     }
 
     fun update(dt: Float) {

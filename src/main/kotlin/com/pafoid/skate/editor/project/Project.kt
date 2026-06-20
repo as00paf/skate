@@ -7,7 +7,7 @@ import java.io.File
 @Serializable
 data class Project(
     val metadata: ProjectMetadata,
-    val defaultScene: String = "",
+    val defaultScene: String = "main",
     val assetPaths: List<String> = listOf("Assets"),
     val scenePaths: List<String> = listOf("Scenes"),
     val buildPaths: List<String> = listOf("Builds"),

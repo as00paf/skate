@@ -4,37 +4,28 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
+import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
+import com.pafoid.skate.engine.physics3d.BulletPhysics3D
+import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
+import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.physics3d.toVector3f
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
 
-/**
- * System responsible for syncing physics state to PhysicsComponent.
- *
- * This system runs at [com.pafoid.skate.engine.ecs.config.ExecutionPriority.EARLY] to ensure physics state is ready before
- * gameplay systems like [TrickDetector] and [PlayerController] read from [PhysicsComponent].
- *
- * Auto-creates PhysicsComponent on GameObjects that have RigidBody3D but no PhysicsComponent.
- * This prevents bugs where developers forget to add PhysicsComponent to physics-enabled objects.
- *
- * Note: Landing/Takeoff events are published by SkateboardPhysics which has accurate
- * grounded detection via raycast suspension. This system focuses on syncing physics state.
- *
- * ## Usage
- *
- * ```kotlin
- * val physicsSystem = PhysicsSystem()
- * scene.addSystem(physicsSystem)
- *
- * // PhysicsComponent will be auto-created on GameObjects with RigidBody3D
- * val physics = gameObject.getComponent<PhysicsComponent>()
- * val speed = physics?.speed ?: 0f
- * ```
- */
-class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
+class PhysicsSystem(
+    private val nativeLibraryLoader: NativeLibraryLoader,
+    private val debugRenderer: DebugRenderer
+) : System(priority = ExecutionPriority.EARLY) {
+
+    private val physics3d: IPhysics3D = BulletPhysics3D(
+        nativeLibraryLoader = nativeLibraryLoader,
+        debugRenderer = debugRenderer
+    )
 
     private val rigidBodies = mutableListOf<GameObject>()
     private var cacheDirty = true
@@ -43,10 +34,17 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
         super.init(scene)
         rebuildCache()
         cacheDirty = false
+        scene.getComponent<ScenePhysicsComponent>()?.let { component ->
+            physics3d.debugEnabled = component.debugEnabled
+            physics3d.setGravity(component.gravity)
+        }
     }
 
     override fun start() {
         cacheDirty = true
+        scene.gameObjects.forEach { go ->
+            physics3d.add(go)
+        }
     }
 
     override fun invalidateCaches() {
@@ -60,7 +58,18 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
 
         // Step Bullet at deterministic fixed-step first so downstream ECS reads current frame data.
         val timeScale = scene.getComponent<TimeComponent>()?.timeScale ?: 1.0f
-        scene.physics3d.update(dt * timeScale)
+        physics3d.update(dt * timeScale)
+
+        scene.getComponent<ScenePhysicsComponent>()?.let { component ->
+            if (physics3d.getGravity() != component.gravity) {
+                physics3d.setGravity(component.gravity)
+            }
+        }
+
+        // Remove cached items no longer in scene
+        val toRemove = rigidBodies.filter { !scene.gameObjects.filter { it.hasComponent<RigidBody3D>() }.contains(it) }
+        toRemove.forEach { physics3d.remove(it) }
+        rigidBodies.removeAll(toRemove)
 
         for (go in rigidBodies) {
             val rigidBody = go.getComponent<RigidBody3D>() ?: continue
@@ -82,9 +91,19 @@ class PhysicsSystem : System(priority = ExecutionPriority.EARLY) {
                 } catch (e: AssertionError) {
                     // Body is not yet in physics world - skip this frame
                 }
+            } ?: physics3d.add(go) // Add to physics if raw body is null
+
+            go.getComponent<PlayerController>()?.let {
+                it.isGrounded = it.checkIfGrounded(physics3d)
             }
         }
     }
+
+    fun toggleDebug() {
+        physics3d.debugEnabled = !physics3d.debugEnabled
+    }
+
+    fun isDebugEnabled(): Boolean = physics3d.debugEnabled
 
     private fun rebuildCache() {
         rigidBodies.clear()

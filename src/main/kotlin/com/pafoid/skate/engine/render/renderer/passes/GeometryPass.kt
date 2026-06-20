@@ -119,7 +119,7 @@ class GeometryPass(
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,
             camera,
-            scene.sceneData,
+            scene.sun,
             lightingStateComponent,
             directionalLight,
             environmentConfig,

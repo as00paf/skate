@@ -26,6 +26,7 @@ class WindowManager(
         }
         eventSystem.subscribe<WindowAction.Hide> { event -> windowRegistry.getWindow(event.name)?.showFlag?.set(false) }
         eventSystem.subscribe<WindowAction.ShowDefault> { windowRegistry.showDefaultWindows() }
+        eventSystem.subscribe<WindowAction.HideAll> { windowRegistry.hideAllWindows() }
     }
 
     fun dockWindows(mainBodyId: ImInt, leftId: Int, rightId: Int, bottomId: Int) {

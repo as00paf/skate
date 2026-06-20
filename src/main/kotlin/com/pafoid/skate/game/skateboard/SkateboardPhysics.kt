@@ -111,7 +111,7 @@ class SkateboardPhysics : Component(), KoinComponent {
      * Runs the physics step at fixed timestep: grounded check and event publishing.
      */
     private fun runPhysicsStep(worldMatrix: Matrix4f) {
-        checkIfGrounded(worldMatrix)
+        //checkIfGrounded(worldMatrix)
 
         // Publish events on grounded state change
         if (isGrounded != wasGrounded) {
@@ -132,7 +132,7 @@ class SkateboardPhysics : Component(), KoinComponent {
         }
     }
 
-    private fun checkIfGrounded(worldMatrix: Matrix4f) {
+    /*private fun checkIfGrounded(worldMatrix: Matrix4f) {
         // Early exit: moving upward fast and already not grounded
         if (rb.linearVelocity.y > 2.0f && !isGrounded) return
 
@@ -159,7 +159,7 @@ class SkateboardPhysics : Component(), KoinComponent {
         }
 
         isGrounded = groundedCount > 0
-    }
+    }*/
 
     private fun applySteering(dt: Float, worldMatrix: Matrix4f) {
         // Calculate Roll (Lean) relative to local forward

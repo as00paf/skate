@@ -326,7 +326,7 @@ class ProjectManagerLifecycleTest {
         every { assetDatabase.scanAll() } returns Result.success(Unit)
         every { sceneManager.currentScene } returns null
         coEvery { sceneManager.createNewScene(any(), any(), any()) } returns bootstrapScene
-        every { sceneSerializer.loadFromFile(any(), sceneFile.absolutePath) } returns true
+        every { sceneSerializer.load(any(), sceneFile.absolutePath) } returns true
         val serializer = mockk<Serializer>(relaxed = true)
 
         val manager = ProjectManager(
@@ -347,11 +347,11 @@ class ProjectManagerLifecycleTest {
 
         assertTrue(opened)
         coVerify(exactly = 1) { sceneManager.createNewScene("main", sceneFile.absolutePath, true) }
-        verify(exactly = 1) { sceneSerializer.loadFromFile(bootstrapScene, sceneFile.absolutePath) }
+        verify(exactly = 1) { sceneSerializer.load(bootstrapScene, sceneFile.absolutePath) }
         verify(exactly = 2) { systemManager.loadScene(bootstrapScene) }
         verifyOrder {
             systemManager.loadScene(bootstrapScene)
-            sceneSerializer.loadFromFile(bootstrapScene, sceneFile.absolutePath)
+            sceneSerializer.load(bootstrapScene, sceneFile.absolutePath)
             systemManager.loadScene(bootstrapScene)
         }
         tempDir.deleteRecursively()

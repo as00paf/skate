@@ -1,11 +1,11 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import java.io.File
 
 /**
  * Command for deleting a scene and its associated file.
@@ -13,31 +13,23 @@ import java.io.File
  */
 class DeleteSceneCommand(
     private val scene: Scene,
+    private val projectManager: ProjectManager,
     private val sceneManager: SceneManager,
     private val logger: LoggerService
 ) : ExecuteOnlyCommand {
 
-    private var filePath: String? = null
-
     override fun execute() {
-        filePath = scene.sceneData.levelPath.takeIf { it.isNotEmpty() }
-
-        // If scene has a file, delete it
-        filePath?.let { path ->
-            val file = File(path)
-            if (file.exists()) {
-                file.delete()
-                logger.logEditor("Deleted scene file: $path")
-            }
+        projectManager.currentProject?.let { project ->
+            sceneManager.deleteScene(project.metadata.projectPath, scene)
         }
 
-        sceneManager.closeScene(scene)
         logger.logEditor("Deleted scene: ${scene.name}")
     }
 
     override fun undo() {
-        // Cannot undo file deletion
-        logger.logEditor("Cannot undo scene deletion")
+        projectManager.currentProject?.let { project ->
+            sceneManager.saveScene(scene, project.metadata.projectPath)
+        }
     }
 
     override fun getDisplayName(): String = "Delete Scene"

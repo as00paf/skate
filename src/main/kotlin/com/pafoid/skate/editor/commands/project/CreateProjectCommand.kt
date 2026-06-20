@@ -16,11 +16,11 @@ class CreateProjectCommand(
     private var failureReason: String? = null
 
     override fun execute() {
-        jobSystem.runIO {
+        //jobSystem.runOnMain {
             val result = projectManager.createProject(event.name, File(event.folderPath), event.engineVersion)
             executeSucceeded = result.isSuccess
             failureReason = result.exceptionOrNull()?.message
-        }
+        //}
     }
 
     override fun undo() {

@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImGui
+import imgui.ImGui.menuItem
 import imgui.internal.ImGui.image
 
 class EditorMenuBar(
@@ -31,7 +32,6 @@ class EditorMenuBar(
     private val eventSystem: EventSystem,
 ) {
     private var appIconTexId = -1
-    private val projectIcon = Icons.CUBE
 
     init {
         loadAppIconTexture()
@@ -80,7 +80,7 @@ class EditorMenuBar(
         }
 
         if (ImGui.beginPopup("main_hamburger_menu")) {
-            fileMenu.render(currentScene)
+            fileMenu.render(currentScene, projectManager.currentProject)
             editMenu.render()
             settingsMenu.render()
             viewMenu.render()
@@ -105,20 +105,27 @@ class EditorMenuBar(
 
             ImGui.separator()
 
-            if (projectManager.hasProject()) {
-                if (ImGui.menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}")) {
-                    eventSystem.publish(ProjectEvent.CloseProjectRequested)
-                }
-            }
-            if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}")) {
+            if (menuItem("${Icons.PLUS} ${stringManager.getString("menu.file.new_project")}")) {
                 eventSystem.publish(WindowAction.Show("window.project_wizard"))
             }
-            if (ImGui.menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}")) {
+            if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("menu.file.open_project_menu")}")) {
                 eventSystem.publish(WindowAction.Show("window.project_switcher"))
             }
 
+            if (projectManager.hasProject()) {
+                if (menuItem("${Icons.WINDOW_CLOSE} ${stringManager.getString("menu.file.close_project")}")) {
+                    eventSystem.publish(ProjectEvent.CloseProjectRequested)
+                }
+                if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project")}", "Ctrl+S")) {
+                    eventSystem.publish(ProjectEvent.SaveRequested)
+                }
+                if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project_as")}")) {
+                    eventSystem.publish(ProjectEvent.SaveAsRequested)
+                }
+            }
             ImGui.separator()
-            if (ImGui.menuItem(stringManager.getString("menu.file.quit"))) {
+
+            if (menuItem("${Icons.TRASH} ${stringManager.getString("menu.file.quit")}")) {
                 eventSystem.publish(EditorEvent.Exit)
             }
             ImGui.endPopup()
@@ -137,7 +144,7 @@ class EditorMenuBar(
             Color.ISLAND_ACCENT_BLUE.y,
             Color.ISLAND_ACCENT_BLUE.z,
             Color.ISLAND_ACCENT_BLUE.w,
-            projectIcon
+            Icons.CUBE
         )
         ImGui.setCursorPosY(textY)
 

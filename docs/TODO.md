@@ -62,3 +62,39 @@ Deliverables
 - SceneSerializer simplified to IO/resource-resolution only with clearer logging.
 - Unit tests for ProjectManager scene lifecycle paths and documentation updates.
 
+## A48.0.4 — Extract Scene Physics into ScenePhysicsComponent (Next Task)
+
+Status: Planned
+Owner: physics-engineer / software-engineer
+
+Description
+
+Remove runtime physics state from Scene and place it into a serializable ScenePhysicsComponent that the PhysicsSystem
+owns and updates. This keeps runtime native handles transient, simplifies Scene serialization, and follows ECS
+principles: scene-level systems driven by components.
+
+Subtasks (minimal, ordered)
+
+1) Audit & discovery (0.5d) — find all references to Scene physics runtime fields and document call sites.
+2) Create ScenePhysicsComponent (1.0d) — add a serializable config (gravity, fixedTimestep, enabled) and @Transient
+   runtime fields (native world handle, accumulator).
+3) Remove runtime physics from Scene (0.5d) — migrate persisted settings into the component config and add compatibility
+   accessors on Scene.
+4) Update Physics3DFactory & PhysicsSystem (1.0d) — provide create/destroy APIs for per-scene physics worlds; ensure
+   PhysicsSystem initializes/destroys and steps worlds using the component.
+5) Update SceneManager lifecycle & rehydration (0.5d) — ensure systems bound and ScenePhysicsComponent attached before
+   postDeserialize; migrate legacy saved settings during load.
+6) Migrate callers (0.5d) — replace direct Scene.physics usages with scene.getComponent<ScenePhysicsComponent>() and
+   update callers (PrefabsGenerator, ProjectManager, tests, commands).
+7) Tests & smoke verification (0.5d) — manual play-mode smoke test and minimal unit tests for component lifecycle.
+8) Cleanup & docs (0.25d) — remove legacy fields and update docs/TODO.md and CHANGELOG.md.
+
+Acceptance criteria
+
+- Scene no longer contains native physics runtime fields; those are only in ScenePhysicsComponent as @Transient.
+- PhysicsSystem creates, steps, and destroys per-scene physics worlds using the component.
+- SceneManager coordinates system binding and component attachment before rehydration.
+- Existing saved scenes are loadable via a compatibility conversion that migrates persisted physics settings into the
+  new component config.
+
+Estimate: ~3.75–5.25 days (iterative, includes migration and verification).

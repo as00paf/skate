@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
+import com.pafoid.skate.engine.events.SceneAction
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
@@ -51,18 +52,6 @@ import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.io.IOException
 
-/**
- * Project file system browser window.
- *
- * Mimics Godot's FileSystem dock with:
- * - Recursive tree view of project directories
- * - File type icons
- * - Search/filter with real-time filtering
- * - Favorites system with persistence
- * - Context menu (create, rename, delete, show in explorer, copy path)
- * - Undo support for file operations
- * - Double-click to open scenes or external files
- */
 class ProjectWindow(
     private val stringManager: StringManager,
     private val logger: LoggerService,
@@ -251,7 +240,7 @@ class ProjectWindow(
         when (item.type) {
             FileType.SCENE -> {
                 logger.logEditor("Opening scene: ${item.file.name}")
-                eventSystem.publish(FileSystemEvent.OpenSceneFileEvent(item.path))
+                eventSystem.publish(SceneAction.OpenSceneFile(item.file))
             }
             FileType.SCRIPT_KOTLIN, FileType.SCRIPT_JAVA, FileType.JSON,
             FileType.CONFIG, FileType.TEXT, FileType.SHADER, FileType.UNKNOWN -> {
@@ -328,7 +317,7 @@ class ProjectWindow(
                         if (target.type == FileType.SCENE) {
                             if (menuItem("${Icons.FOLDER_OPEN} ${stringManager.getString("context.project.open")}")) {
                                 logger.logEditor("Opening scene: ${target.name}")
-                                eventSystem.publish(FileSystemEvent.OpenSceneFileEvent(target.path))
+                                //eventSystem.publish(SceneAction.OpenRequested(target.path))
                             }
                             separator()
                         }

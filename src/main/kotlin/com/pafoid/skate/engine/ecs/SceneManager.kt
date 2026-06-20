@@ -4,15 +4,15 @@ import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.SceneAction
-import com.pafoid.skate.engine.physics3d.Physics3DFactory
+import java.io.File
 
 class SceneManager(
     private val resourceManager: ResourceManager,
     private val eventSystem: EventSystem,
-    private val physics3DFactory: Physics3DFactory,
     private val sceneSerializer: SceneSerializer,
     private val systemManager: SystemManager,
     private val logger: LoggerService,
@@ -94,12 +94,12 @@ class SceneManager(
         resourceManager.clear()
     }
 
-    fun renameScene(scene: Scene, newName: String): Boolean {
+    fun renameScene(scene: Scene, newName: String, dirPath: String): Boolean {
         if (!openScenes.contains(scene)) return false
         if (newName.isBlank()) return false
 
         scene.name = newName
-        saveScene(scene)
+        saveScene(scene, dirPath)
         logger.log("Scene renamed: '${scene.name}'", LogLevel.ACTION)
         return true
     }
@@ -117,26 +117,27 @@ class SceneManager(
         scenesToClose.forEach { closeScene(it) }
     }
 
-    fun createNewScene(name: String, filePath: String? = null): Scene? {
-        val newScene = Scene(name, physics3DFactory)
-        if (filePath != null) {
-            newScene.sceneData.levelPath = filePath
-        }
+    fun createNewScene(name: String, dirPath: String): Scene {
+        val newScene = Scene(name)
+        sceneSerializer.save(newScene, dirPath)
         logger.log("Scene created: '$name'", LogLevel.ACTION)
         return newScene
     }
 
-    fun saveScene(scene: Scene) {
-        sceneSerializer.saveToFile(scene, scene.sceneData.levelPath)
+    fun saveScene(scene: Scene, dirPath: String): Boolean {
+        return sceneSerializer.save(scene, dirPath)
     }
 
-    fun deleteScene(scene: Scene): Boolean {
+    fun deleteScene(projectPath: String, scene: Scene): Boolean {
         if (!openScenes.contains(scene)) return false
+        val filePath = projectPath + "/" + scene.name + ".scene"
+        val file = File(filePath)
+        if (file.exists()) {
+            file.delete()
+            logger.logEditor("Deleted scene file: $filePath")
+        }
 
-
-
+        closeScene(scene)
         return true
     }
-
-
 }

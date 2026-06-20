@@ -22,7 +22,7 @@ import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
 import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
-import com.pafoid.skate.editor.events.ProjectEvent.SaveProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.SaveRequested
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -55,6 +55,8 @@ class ProjectActionHandler(
             undoRedoManager.executeCommand(command)
             if (command.wasSuccessful()) {
                 eventSystem.publish(CreateProjectSucceeded(event.name, event.folderPath))
+                eventSystem.publish(WindowAction.Hide("window.project_wizard"))
+                eventSystem.publish(WindowAction.ShowDefault)
             } else {
                 eventSystem.publish(
                     CreateProjectFailed(
@@ -86,9 +88,10 @@ class ProjectActionHandler(
             }
         }
         eventSystem.subscribe<ProjectEvent.Closed> {
+            eventSystem.publish(WindowAction.HideAll)
             eventSystem.publish(WindowAction.Show("window.project_wizard"))
         }
-        eventSystem.subscribe<SaveProjectRequested> {
+        eventSystem.subscribe<SaveRequested> {
             executeOnMainThread {
                 val command = SaveProjectCommand(projectManager, eventSystem)
                 undoRedoManager.executeCommand(command)

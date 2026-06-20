@@ -33,7 +33,6 @@ import com.pafoid.skate.editor.ui.handlers.UndoRedoActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
-import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
@@ -102,8 +101,6 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.physics3d.BulletPhysics3DFactory
-import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.CameraManager
@@ -213,7 +210,6 @@ val editorModule = module {
     // Menu
     single { EditMenuBuilder(get(), get(), get()) }
     single { ViewMenuBuilder(get(), get()) }
-    single { FileMenuBuilder(get(), get()) }
     single { SettingsMenuBuilder(get(), get(), get()) }
     single { WindowControlsRenderer(get(), get()) }
 
@@ -257,10 +253,9 @@ val engineModule = module {
     // Managers
     single { CameraManager(get()) }
     single { SystemManager() }
-    single { SceneManager(get(), get(), get(), get(), get(), get()) }
+    single { SceneManager(get(), get(), get(), get(), get()) }
     single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
 
-    single<Physics3DFactory> { BulletPhysics3DFactory(get(), { get() }) }
     single { NativeLibraryLoader() }
     single { ShaderLoader(false) }
     single { VAOLoader() }
@@ -293,7 +288,7 @@ val engineModule = module {
                 InputSystem(get(), get(), get()),
                 AudioSystem(get(), get(), get()),
                 EnvironmentSystem(),
-                PhysicsSystem(),
+                PhysicsSystem(get(), get()),
                 DayNightCycleSystem(null, get()),
                 DirectionalLightSystem(get()),
                 AnimationSystem(),

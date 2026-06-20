@@ -97,14 +97,14 @@ class GameCamera(
      */
     private fun handleClipping(from: Vector3f, to: Vector3f): Vector3f {
         val scene = sceneManager.currentScene
-        if (scene != null) {
-            val closest = scene.physics3d.raycastClosest(from, to)
-            if (closest != null && closest.hitFraction < 1.0f) {
-                // Move slightly away from the hit point to avoid near-plane clipping
-                val clippedPos = Vector3f(from).lerp(to, closest.hitFraction * 0.9f)
-                return clippedPos
-            }
-        }
+        /* if (scene != null) {
+             val closest = scene.physics3d.raycastClosest(from, to)
+             if (closest != null && closest.hitFraction < 1.0f) {
+                 // Move slightly away from the hit point to avoid near-plane clipping
+                 val clippedPos = Vector3f(from).lerp(to, closest.hitFraction * 0.9f)
+                 return clippedPos
+             }
+         }*/
         return to
     }
 

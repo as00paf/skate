@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.events
 
 import com.pafoid.skate.engine.ecs.Scene
+import java.io.File
 
 /**
  * Domain actions for scene management operations.
@@ -16,8 +17,8 @@ sealed class SceneAction(eventName: String) : Event(eventName) {
     data class Opened(val scene: Scene) : SceneAction("editor.scene_opened")
     data class OpenSucceeded(val scene: Scene) : SceneAction("scene.action.open_succeeded")
     data class OpenFailed(val reason: String) : SceneAction("scene.action.open_failed")
+    data class OpenSceneFile(val sceneFile: File) : SceneAction("scene.action.open_requested")
     object OpenRequested : SceneAction("scene.action.open_requested")
-    data class OpenPathRequested(val scenePath: String) : SceneAction("scene.action.open_path_requested")
     object OpenCancelled : SceneAction("scene.action.open_cancelled")
     data class ReopenAllRequested(val scenes: List<Scene>) : SceneAction("scene.action.reopen_all_requested")
 
@@ -36,6 +37,9 @@ sealed class SceneAction(eventName: String) : Event(eventName) {
     // Rename
     data class RenameRequested(val scene: Scene, val newName: String) : SceneAction("scene.action.rename_requested")
     data class Renamed(val scene: Scene, val oldName: String, val newName: String) : SceneAction("editor.scene_renamed")
+
+    // Import
+    object ImportRequested : SceneAction("editor.scene_import_requested")
 
     // Delete
     data class DeleteRequested(val scene: Scene) : SceneAction("scene.action.delete_requested")

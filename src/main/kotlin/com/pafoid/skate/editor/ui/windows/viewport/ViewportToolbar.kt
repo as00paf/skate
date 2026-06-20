@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction
@@ -197,7 +198,7 @@ class ViewportToolbar(
 
         // Physics Debug button
         buttons.add {
-            val physicsDebugEnabled = scene?.physics3d?.debugEnabled ?: false
+            val physicsDebugEnabled = scene?.getComponent<ScenePhysicsComponent>()?.debugEnabled ?: false
             if (physicsDebugEnabled) {
                 ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
             }

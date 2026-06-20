@@ -1,15 +1,19 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
-import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
 
 class SaveSceneCommand(
     private val scene: Scene,
-    private val sceneSerializer: SceneSerializer
+    private val projectManager: ProjectManager,
+    private val sceneManager: SceneManager
 ) : ExecuteOnlyCommand {
     override fun execute() {
-        sceneSerializer.save(scene)
+        projectManager.currentProject?.let { project ->
+            sceneManager.saveScene(scene, project.metadata.projectPath)
+        }
     }
 
     override fun undo() {
