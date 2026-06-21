@@ -395,6 +395,10 @@ class ProjectManager(
             logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}")
             return
         }
+        scene.gameObjects.forEach { obj ->
+            resolveModelGuidForObject(obj)
+            resolveAnimatorPathsForObject(obj)
+        }
         sceneManager.openScene(scene)
 
         logger.logEditor("Loaded default scene from ${defaultSceneFile.absolutePath}")
