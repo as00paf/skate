@@ -30,7 +30,7 @@ import java.io.File
 class PrefabsGenerator(
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
-    private val systemManager: SystemManager
+    private val systemManager: SystemManager,
 ) {
     private val gameObjectManager: GameObjectManager by lazy {
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")

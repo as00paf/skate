@@ -56,7 +56,7 @@ class ResourceManager(
     private val logger: LoggerService,
     private val maxMemoryBytes: Long = 256 * 1024 * 1024,
     private val enableHotReload: Boolean = false,
-    private val assetDatabase: AssetDatabase? = null,
+    private val assetDatabase: AssetDatabase,
     private val jobSystem: IJobSystem = DefaultJobSystem()
 ) {
 
