@@ -17,8 +17,6 @@ class EditorScreen(private val window: Window) : KoinComponent {
     private val editorEventHandler: EditorEventHandler by inject()
     private val imGuiLayer: ImGuiLayer by inject()
 
-    var isDestroyed = false
-
     fun init() {
         editorInputHandler.init(window.glfwWindow)
         editorEventHandler.init()
@@ -34,7 +32,6 @@ class EditorScreen(private val window: Window) : KoinComponent {
     }
 
     fun destroy() {
-        isDestroyed = true
         imGuiLayer.destroy()
     }
 }
