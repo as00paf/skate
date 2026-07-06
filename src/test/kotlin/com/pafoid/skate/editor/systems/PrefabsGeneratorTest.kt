@@ -41,7 +41,8 @@ class PrefabsGeneratorTest {
             eventSystem,
             com.pafoid.skate.engine.assets.serialization.Serializer(),
             systemManager,
-            logger
+            logger,
+            mockk(relaxed = true)
         )
         val scene = Scene("TestScene")
         systemManager.loadScene(scene)
@@ -60,7 +61,7 @@ class PrefabsGeneratorTest {
         every { resourceManager.loadAnimationSync(any(), any()) } returns animation
         every { resourceManager.loadTextureSync(any()) } returns tex
 
-        val prefabs = PrefabsGenerator(jobSystem, resourceManager, sceneManager, systemManager)
+        val prefabs = PrefabsGenerator(resourceManager, sceneManager, systemManager)
 
         val spawned = prefabs.spawnDefaultsSync()
 

@@ -14,20 +14,16 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
-import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.joml.Vector3f
 import java.io.File
@@ -171,103 +167,11 @@ class ProjectManager(
 
         logger.logEditor("Spawned ${scene.gameObjects.size} objects")
 
-        // Resolve GUIDs/paths for spawned objects
-        spawned.forEach { obj ->
-            resolveModelGuidForObject(obj)
-            resolveAnimatorPathsForObject(obj)
-        }
-
         // Save the populated scene
         scene.name = defaultSceneFile.nameWithoutExtension
         sceneManager.saveScene(scene, sceneDir.path)
 
         logger.logEditor("Default scene saved to ${defaultSceneFile.absolutePath}")
-    }
-
-    private fun resolveModelGuidForObject(obj: GameObject) {
-        val rc = obj.getComponent<RenderComponent>() ?: return
-        val model = rc.model ?: return
-        if (rc.modelGuid.isNotBlank()) return
-
-        val modelPath = model.sourcePath ?: run {
-            logger.logEditor("WARNING: model.sourcePath is null for '${obj.name}', cannot resolve modelGuid")
-            return
-        }
-        val modelFile = File(modelPath)
-
-        // Always use absolute path for reliable round-trip serialization
-        val absolutePath = if (modelFile.isAbsolute) modelFile.absolutePath else File(modelPath).absolutePath
-
-        // Try to find this model in the AssetDatabase
-        val asset = assetDatabase.getByAbsolutePath(absolutePath)
-
-        if (asset != null) {
-            rc.modelGuid = asset.guid.value
-            logger.logEditor("Resolved model GUID for ${obj.name}: ${asset.guid.value.take(8)}... (${asset.sourcePath})")
-        } else {
-            // Engine-bundled asset not in AssetDatabase — store absolute path as fallback
-            rc.modelGuid = absolutePath
-            logger.logEditor("Stored absolute path for ${obj.name}: $absolutePath (engine-bundled asset)")
-        }
-
-        // Also resolve texture GUIDs from the model's materials
-        resolveTextureGuidsForObject(obj)
-    }
-
-    /**
-     * Walk all mesh part materials in the model and store texture paths as GUIDs
-     * (or absolute paths for engine-bundled textures not in the AssetDatabase).
-     */
-    private fun resolveTextureGuidsForObject(obj: GameObject) {
-        val rc = obj.getComponent<RenderComponent>() ?: return
-        val model = rc.model ?: return
-
-        model.mesh.forEach { meshPart ->
-            val mat = meshPart.material
-            // Resolve albedo/base color texture
-            if (mat.baseColorTexture != null && rc.albedoTextureGuid.isBlank()) {
-                val texPath = mat.baseColorTexture?.filePath ?: mat.baseColorPath ?: ""
-                if (texPath.isNotBlank()) {
-                    val texFile = File(texPath)
-                    val texAbsolutePath = if (texFile.isAbsolute) texFile.absolutePath else File(texPath).absolutePath
-                    val texAsset = assetDatabase.getByAbsolutePath(texAbsolutePath)
-                    rc.albedoTextureGuid = texAsset?.guid?.value ?: texAbsolutePath
-                }
-            }
-            if (mat.normalMap != null && rc.normalMapGuid.isBlank()) {
-                val texPath = mat.normalMap?.filePath ?: mat.normalMapPath ?: ""
-                if (texPath.isNotBlank()) {
-                    val texFile = File(texPath)
-                    val texAbsolutePath = if (texFile.isAbsolute) texFile.absolutePath else File(texPath).absolutePath
-                    val texAsset = assetDatabase.getByAbsolutePath(texAbsolutePath)
-                    rc.normalMapGuid = texAsset?.guid?.value ?: texAbsolutePath
-                }
-            }
-            if (mat.metallicRoughnessTexture != null && rc.metallicRoughnessGuid.isBlank()) {
-                val texPath = mat.metallicRoughnessTexture?.filePath ?: mat.metallicRoughnessPath ?: ""
-                if (texPath.isNotBlank()) {
-                    val texFile = File(texPath)
-                    val texAbsolutePath = if (texFile.isAbsolute) texFile.absolutePath else File(texPath).absolutePath
-                    val texAsset = assetDatabase.getByAbsolutePath(texAbsolutePath)
-                    rc.metallicRoughnessGuid = texAsset?.guid?.value ?: texAbsolutePath
-                }
-            }
-        }
-    }
-
-    private fun resolveAnimatorPathsForObject(obj: GameObject) {
-        val animator = obj.getComponent<Animator>() ?: return
-        if (animator.animationPaths.isNotEmpty()) return
-
-        animator.getLoadedAnimations().forEach { anim ->
-            if (anim.path.isNotBlank()) {
-                animator.animationPaths.add(anim.path)
-            }
-        }
-
-        if (animator.animationPaths.isNotEmpty()) {
-            logger.logEditor("Resolved ${animator.animationPaths.size} animation paths for ${obj.name}")
-        }
     }
 
     fun openProject(projectFile: File): Boolean {
@@ -394,10 +298,6 @@ class ProjectManager(
         val scene = serializer.decode<Scene?>(defaultSceneFile.readText()) ?: run {
             logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}")
             return
-        }
-        scene.gameObjects.forEach { obj ->
-            resolveModelGuidForObject(obj)
-            resolveAnimatorPathsForObject(obj)
         }
         sceneManager.openScene(scene)
 

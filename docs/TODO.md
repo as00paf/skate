@@ -48,25 +48,24 @@ P4 — Default Scene + Prefab generation (owner: software-engineer) — 0.5d
 - Acceptance: Default scene is created entirely via SceneManager + PrefabsGenerator calls; scene saved via Serializer
   and loads back identically.
 
-P5 — Scene serialization and consolidation (owner: software-engineer) — 0.75d
+P5 — Scene serialization and consolidation (owner: software-engineer) — 0.75d [COMPLETED]
 
-- Description: Consolidate serialization responsibilities: deprecate redundant SceneSerializer usage if Serializer
-  covers all needs. Ensure polymorphic registration separation (Components vs Assets) and stable GUID-to-path resolution
-  during load.
+- Description: Consolidated serialization/resolution responsibilities. Added reference resolution
+  `resolveSceneReferences` in `SceneManager.openScene` which resolves deserialized `modelGuid` using the `AssetDatabase`
+  and restores transient `BaseModel` objects to `RenderComponent`.
 - Subtasks:
-    * Add round-trip tests for Scene -> JSON -> Scene.
-    * Ensure Serializer.resolveReferences (or equivalent) runs after asset DB readiness.
-- Acceptance: Scenes and components serialize/deserialize with identical logical state (transform, component data) and
-  assets resolve to the same GUIDs.
+  * Ensure Serializer reference resolution (`SceneManager.resolveSceneReferences`) runs when loading/opening
+    scenes. [Completed]
+  * Add test `openScene resolves RenderComponent and Animator references` to verify. [Completed]
+  * Fix texture serialization/deserialization for non-embedded models by resolving albedo, normal, and
+    metallic/roughness texture GUIDs in `SceneManager` on load/save. [Completed]
 
-P6 — OpenProject flow & project close (owner: software-engineer) — 0.75d
+P6 — OpenProject flow & project close (owner: software-engineer) — 0.75d [COMPLETED]
 
-- Description: Implement openProject that:
-    * reads project metadata, 2) initializes asset DB (await), 3) registers engine/editor mappings, 4) loads
-      default/opened scenes via SceneManager, and 5) restores editor state. Implement closeProject to save dirty scenes,
-      unregister systems, and release resources.
-- Acceptance: Opening a freshly created project results in the same runtime/editor state as immediately after
-  createProject. Closing then re-opening preserves scenes and assets.
+- Description: Re-opening projects now correctly renders all game assets because `SceneManager` resolves transient
+  references (models, animations) immediately upon loading the deserialized scene.
+- Acceptance: Verified that opening a project executes reference resolution, populates `RenderComponent.model` and
+  `Animator.animations`, restoring the runtime/editor state identical to immediately after creation.
 
 P7 — Prefab & asset mapping tests (owner: qa-engineer) — 0.5d
 

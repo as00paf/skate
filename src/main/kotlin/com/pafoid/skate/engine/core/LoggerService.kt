@@ -11,6 +11,7 @@ class LoggerService {
     fun log(message: String, level: LogLevel = LogLevel.INFO, source: String = "engine") {
         logs.add(LogEntry(message, level, source))
         if (logs.size > 2000) logs.poll()
+        if (level == LogLevel.ERROR) println(message)
     }
 
     fun clearLogs() = logs.clear()

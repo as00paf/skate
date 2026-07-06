@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.core
 
-import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.utils.Time
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW

@@ -12,8 +12,6 @@ class RenderComponent(
     var albedoTextureGuid: String = "",
     var normalMapGuid: String = "",
     var metallicRoughnessGuid: String = "",
-    var aoGuid: String = "",
-    var emissiveGuid: String = "",
     var shininess: Float = 10f,
     var reflectivity: Float = 1f,
     var textureScale: Float = 1.0f,
