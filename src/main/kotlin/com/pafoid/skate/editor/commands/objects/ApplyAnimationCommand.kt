@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
 import com.pafoid.skate.engine.getComponent
 
 class ApplyAnimationCommand(
@@ -13,6 +14,7 @@ class ApplyAnimationCommand(
     private val oldAnimationPath: String?,
     private val newAnimationPath: String,
     private val resourceManager: ResourceManager,
+    private val animatorHelper: AnimatorHelper,
     private val eventSystem: EventSystem
 ) : ExecuteOnlyCommand {
     override fun execute() {
@@ -20,7 +22,7 @@ class ApplyAnimationCommand(
         animator?.let { anim ->
             val animation = resourceManager.getAnimation(newAnimationPath)
             animation?.let {
-                anim.addAnimation(it)
+                animatorHelper.addAnimationWithPath(anim, it)
                 eventSystem.publish(ViewportAction.AnimationApplied(gameObject, newAnimationPath))
             }
         }
@@ -34,3 +36,4 @@ class ApplyAnimationCommand(
     override fun getDisplayName(): String = "Apply Animation"
     override fun getTargetName(): String? = gameObject.name
 }
+

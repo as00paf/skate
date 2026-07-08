@@ -264,7 +264,6 @@ class SceneManager(
         if (!dir.exists()) dir.mkdirs()
         val file = File(dir, "${scene.name}.scene")
         return try {
-            prepareSceneForSaving(scene)
             file.writeText(serializer.encode(scene))
             scene.isDirty = false
             logger.logEditor("Scene saved to ${file.absolutePath}")
@@ -272,76 +271,6 @@ class SceneManager(
         } catch (e: Exception) {
             logger.logEditor("Failed to save scene to ${file.absolutePath}: ${e.message}", LogLevel.ERROR)
             false
-        }
-    }
-
-    fun prepareSceneForSaving(scene: Scene) {
-        scene.gameObjects.forEach { obj ->
-            prepareObjectForSaving(obj)
-        }
-    }
-
-    // TODO: this should not be needed, these values should be populated at appropriate time instead
-    private fun prepareObjectForSaving(obj: GameObject) {
-        obj.getComponent<RenderComponent>()?.let { rc ->
-            val model = rc.model
-            if (model != null) {
-                // Resolve modelGuid if blank
-                if (rc.modelGuid.isBlank()) {
-                    val modelPath = model.sourcePath
-                    if (modelPath != null) {
-                        val modelFile = File(modelPath)
-                        val absolutePath =
-                            if (modelFile.isAbsolute) modelFile.absolutePath else File(modelPath).absolutePath
-                        val asset = assetDatabase.getByAbsolutePath(absolutePath)
-                        rc.modelGuid = asset?.guid?.value ?: absolutePath
-                    }
-                }
-
-                // Resolve texture GUIDs from model's materials
-                model.mesh.forEach { meshPart ->
-                    val mat = meshPart.material
-
-                    if (mat.baseColorTexture != null && rc.albedoTextureGuid.isBlank()) {
-                        val texPath = mat.baseColorTexture?.filePath ?: mat.baseColorPath ?: ""
-                        if (texPath.isNotBlank()) {
-                            val texFile = File(texPath)
-                            val texAbsolutePath =
-                                if (texFile.isAbsolute) texFile.absolutePath else File(texPath).absolutePath
-                            val texAsset = assetDatabase.getByAbsolutePath(texAbsolutePath)
-                            rc.albedoTextureGuid = texAsset?.guid?.value ?: texAbsolutePath
-                        }
-                    }
-
-                    if (mat.normalMap != null && rc.normalMapGuid.isBlank()) {
-                        val texPath = mat.normalMap?.filePath ?: mat.normalMapPath ?: ""
-                        if (texPath.isNotBlank()) {
-                            val texFile = File(texPath)
-                            val texAbsolutePath =
-                                if (texFile.isAbsolute) texFile.absolutePath else File(texPath).absolutePath
-                            val texAsset = assetDatabase.getByAbsolutePath(texAbsolutePath)
-                            rc.normalMapGuid = texAsset?.guid?.value ?: texAbsolutePath
-                        }
-                    }
-
-                    if (mat.metallicRoughnessTexture != null && rc.metallicRoughnessGuid.isBlank()) {
-                        val texPath = mat.metallicRoughnessTexture?.filePath ?: mat.metallicRoughnessPath ?: ""
-                        if (texPath.isNotBlank()) {
-                            val texFile = File(texPath)
-                            val texAbsolutePath =
-                                if (texFile.isAbsolute) texFile.absolutePath else File(texPath).absolutePath
-                            val texAsset = assetDatabase.getByAbsolutePath(texAbsolutePath)
-                            rc.metallicRoughnessGuid = texAsset?.guid?.value ?: texAbsolutePath
-                        }
-                    }
-                }
-            }
-        }
-
-        resolveAnimatorPathsForObject(obj)
-
-        obj.children.forEach { child ->
-            prepareObjectForSaving(child)
         }
     }
 

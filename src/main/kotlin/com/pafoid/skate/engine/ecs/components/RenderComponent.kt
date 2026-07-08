@@ -19,27 +19,4 @@ class RenderComponent(
     var castShadow: Boolean = true,
     var receiveShadow: Boolean = true
 ) : Component() {
-
-    /**
-     * Legacy constructor for backward compatibility.
-     * Use this when you have a direct model reference.
-     */
-    constructor(
-        model: BaseModel,
-        shininess: Float = 10f,
-        reflectivity: Float = 1f,
-        textureScale: Float = 1.0f,
-        renderMode: RenderMode = RenderMode.MESH,
-        castShadow: Boolean = true,
-        receiveShadow: Boolean = true
-    ) : this(
-        modelGuid = "",
-        model = model,
-        shininess = shininess,
-        reflectivity = reflectivity,
-        textureScale = textureScale,
-        renderMode = renderMode,
-        castShadow = castShadow,
-        receiveShadow = receiveShadow
-    )
 }

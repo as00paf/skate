@@ -6,11 +6,14 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
+import com.pafoid.skate.engine.ecs.components.helpers.RenderComponentHelper
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
@@ -31,6 +34,9 @@ class PrefabsGenerator(
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
     private val systemManager: SystemManager,
+    private val assetDatabase: AssetDatabase,
+    private val renderComponentHelper: RenderComponentHelper,
+    private val animatorHelper: AnimatorHelper,
 ) {
     private val gameObjectManager: GameObjectManager by lazy {
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
@@ -101,6 +107,12 @@ class PrefabsGenerator(
         val modelPath = resolveModelPath(Assets.Models.SKATEBOARD_GLB)
         val model = resourceManager.loadModelSync(modelPath)
         val skate = Skateboard(model as TexturedModel)
+
+        // Resolve and set GUID for the model
+        skate.getComponent<RenderComponent>()?.let { rc ->
+            renderComponentHelper.setModelWithGuid(rc, model)
+        }
+        
         gameObjectManager.addGameObject(skate)
         return skate
     }
@@ -111,13 +123,18 @@ class PrefabsGenerator(
             ?: resourceManager.loadModelSync(modelPath) as CharacterModel
         val skater = Skater("Skater", model, skate)
 
+        // Resolve and set GUID for the model
+        skater.getComponent<RenderComponent>()?.let { rc ->
+            renderComponentHelper.setModelWithGuid(rc, model)
+        }
+
         val skeleton = skater.skeletonComponent.pose.skeleton
 
         animations.forEach { path ->
             try {
                 val animPath = resolveAnimationPath(path)
                 val animation = resourceManager.loadAnimationSync(animPath, skeleton)
-                skater.animator.addAnimation(animation)
+                animatorHelper.addAnimationWithPath(skater.animator, animation)
             } catch (e: Exception) {
                 // Skip missing animations during scene creation
             }
@@ -137,6 +154,13 @@ class PrefabsGenerator(
         texturedModel.mesh[0].material.baseColorPath = texturePath
 
         val tile = Tile("Tile", texturedModel)
+
+        // Resolve and set GUIDs for model and texture
+        tile.getComponent<RenderComponent>()?.let { rc ->
+            renderComponentHelper.setModelWithGuid(rc, texturedModel)
+            renderComponentHelper.setAlbedoTextureWithGuid(rc, texturedModel.mesh[0].material, texture)
+        }
+        
         gameObjectManager.addGameObject(tile)
         return tile
     }
@@ -150,17 +174,24 @@ class PrefabsGenerator(
         rail.addComponent(transformComponent)
         val mat = material ?: MaterialType.METAL
         val baseModel = resourceManager.loadModelSync(Assets.Models.RAIL)
+        val texture = resourceManager.loadTextureSync(mat.texturePath)
         val texturedModel = TexturedModel(
             baseModel.mesh[0].rawModel,
-            resourceManager.loadTextureSync(mat.texturePath)
+            texture
         )
-        rail.addComponent(
-            RenderComponent(
-                model = texturedModel,
-                castShadow = true,
-                receiveShadow = true
-            )
+        texturedModel.sourcePath = Assets.Models.RAIL
+
+        val renderComponent = RenderComponent(
+            model = texturedModel,
+            castShadow = true,
+            receiveShadow = true
         )
+        rail.addComponent(renderComponent)
+
+        // Resolve and set GUIDs
+        renderComponentHelper.setModelWithGuid(renderComponent, texturedModel)
+        renderComponentHelper.setAlbedoTextureWithGuid(renderComponent, texturedModel.mesh[0].material, texture)
+        
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0))
         gameObjectManager.addGameObject(rail)
@@ -176,17 +207,24 @@ class PrefabsGenerator(
         transformComponent.scale.set(1f, 1f, 1f)
         ledge.addComponent(transformComponent)
         val baseModel = resourceManager.loadModelSync(Assets.Models.LEDGE)
+        val texture = resourceManager.loadTextureSync(mat.texturePath)
         val texturedModel = TexturedModel(
             baseModel.mesh[0].rawModel,
-            resourceManager.loadTextureSync(mat.texturePath)
+            texture
         )
-        ledge.addComponent(
-            RenderComponent(
-                model = texturedModel,
-                castShadow = true,
-                receiveShadow = true
-            )
+        texturedModel.sourcePath = Assets.Models.LEDGE
+
+        val renderComponent = RenderComponent(
+            model = texturedModel,
+            castShadow = true,
+            receiveShadow = true
         )
+        ledge.addComponent(renderComponent)
+
+        // Resolve and set GUIDs
+        renderComponentHelper.setModelWithGuid(renderComponent, texturedModel)
+        renderComponentHelper.setAlbedoTextureWithGuid(renderComponent, texturedModel.mesh[0].material, texture)
+        
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
         gameObjectManager.addGameObject(ledge)

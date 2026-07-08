@@ -1,15 +1,19 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.commands.objects.ApplyTextureCommand
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.database.AssetType
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.helpers.RenderComponentHelper
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
@@ -23,6 +27,9 @@ class TexturesTab(
     private val logger: LoggerService,
     private val sceneManager: SceneManager,
     private val jobSystem: IJobSystem,
+    private val undoRedoManager: UndoRedoManager,
+    private val renderComponentHelper: RenderComponentHelper,
+    private val eventSystem: EventSystem,
     ): AssetBrowserTab(resourceManager, stringManager, assetDatabase) {
 
     init {
@@ -94,8 +101,15 @@ class TexturesTab(
             logger.logEditor("Selected object has no RenderComponent")
             return
         }
-        
-        val texture = resourceManager.loadTextureSync(texturePath)
+
+        val db = assetDatabase ?: run {
+            logger.logEditor("AssetDatabase not initialized")
+            return
+        }
+
+        undoRedoManager.executeCommand(
+            ApplyTextureCommand(selectedObject, texturePath, resourceManager, db, renderComponentHelper, eventSystem)
+        )
         logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
     }
 

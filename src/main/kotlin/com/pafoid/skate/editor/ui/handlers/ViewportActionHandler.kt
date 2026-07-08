@@ -56,6 +56,7 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
@@ -68,6 +69,8 @@ import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
+import com.pafoid.skate.engine.ecs.components.helpers.RenderComponentHelper
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
@@ -92,6 +95,9 @@ class ViewportActionHandler(
     private val mutationGate: EditorMutationGate,
     private val prefabsGenerator: PrefabsGenerator,
     private val resourceManager: ResourceManager,
+    private val assetDatabase: AssetDatabase,
+    private val renderComponentHelper: RenderComponentHelper,
+    private val animatorHelper: AnimatorHelper,
     private val editorCamera: EditorCamera,
     private val systemManager: SystemManager,
     private val jobSystem: IJobSystem,
@@ -414,7 +420,14 @@ class ViewportActionHandler(
         }
 
         undoRedoManager.executeCommand(
-            ApplyTextureCommand(gameObject, texturePath, resourceManager, eventSystem)
+            ApplyTextureCommand(
+                gameObject,
+                texturePath,
+                resourceManager,
+                assetDatabase,
+                renderComponentHelper,
+                eventSystem
+            )
         )
         logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
     }
@@ -431,13 +444,17 @@ class ViewportActionHandler(
 
             val texture = resourceManager.loadTexture(texturePath)
             val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
+            baseModel.sourcePath = Assets.Models.CUBE
             val texturedModel = TexturedModel(
                 baseModel.mesh[0].rawModel,
                 texture
             )
+            texturedModel.sourcePath = Assets.Models.CUBE
 
             jobSystem.runOnMain {
-                planeObj.addComponent(RenderComponent(model = texturedModel, castShadow = false, receiveShadow = true))
+                val renderComponent = RenderComponent(model = texturedModel, castShadow = false, receiveShadow = true)
+                renderComponentHelper.setModelWithGuid(renderComponent, texturedModel)
+                planeObj.addComponent(renderComponent)
                 planeObj.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
                 planeObj.addComponent(BoxCollider3D(Vector3f(5f, 0.05f, 5f)))
                 undoRedoManager.executeCommand(CreateGameObjectCommand(planeObj, scene, gameObjectManager))
@@ -477,7 +494,7 @@ class ViewportActionHandler(
 
         if (animator != null) {
             undoRedoManager.executeCommand(
-                ApplyAnimationCommand(gameObject, null, animationPath, resourceManager, eventSystem)
+                ApplyAnimationCommand(gameObject, null, animationPath, resourceManager, animatorHelper, eventSystem)
             )
             logger.logEditor("Added animation to ${gameObject.name}: $animationPath")
         } else {
