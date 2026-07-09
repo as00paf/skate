@@ -3,14 +3,12 @@ package com.pafoid.skate.engine.assets.loaders
 import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.data.BoneInfo
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
-import com.pafoid.skate.engine.assets.data.models.LoadedMeshPart
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.PreLoadedMeshPart
 import com.pafoid.skate.engine.assets.data.models.PreLoadedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
-import com.pafoid.skate.engine.render.VAOLoader
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.assimp.AIBone
@@ -70,7 +68,7 @@ class AssimpLoader {
 
         var unitScale = 1.0f
 
-        if (filePath.contains("skateboard", ignoreCase = true)) {
+        if (filePath.contains("skateboard", ignoreCase = true)) { //TODO: remove
             unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
         }
 
@@ -354,14 +352,6 @@ class AssimpLoader {
             texturePath
         } else {
             File(modelPath).parentFile.resolve(p).path
-        }
-    }
-
-    fun loadModel(filePath: String, loader: VAOLoader): List<LoadedMeshPart> {
-        val preLoaded = preLoadModel(filePath)
-        return preLoaded.parts.map { p ->
-            val model = loader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
-            LoadedMeshPart(model, p.material, p.inverseBindMatrices)
         }
     }
 
