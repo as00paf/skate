@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.assets
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.assets.data.TextureData
 import com.pafoid.skate.engine.assets.data.models.BaseModel
 import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.MeshPart
@@ -11,7 +10,6 @@ import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.assets.database.AssetGuid
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.core.LoggerService
@@ -83,7 +81,7 @@ class ResourceManager(
 
         val data = withContext(Dispatchers.IO) {
             try {
-                Texture.loadData(path)
+                Texture.fromFile(path)
             } catch (e: Exception) {
                 logger.log("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
                 null
@@ -101,10 +99,10 @@ class ResourceManager(
                 val oldestPath = lruQueue.firstOrNull() ?: break
                 evictTexture(oldestPath)
             }
-            
-            val texture = Texture()
-            texture.uploadToGPU(data)
-            data.free()
+
+            val texture = data
+            texture.uploadToGPU()
+            texture.free()
             texture.filePath = path
             textures[absolutePath] = texture
             
@@ -120,42 +118,21 @@ class ResourceManager(
             texture
         }
     }
-    
-    fun loadTextureSync(path: String?): Texture {
-        val file = File(path.orEmpty())
+
+    fun loadTextureSync(path: String): Texture {
+        val file = File(path)
         val absolutePath = file.absolutePath
+        textures[absolutePath]?.let { return it }
 
-        val data = if(path != null) {
-            textures[absolutePath]?.let { return it }
-            try {
-                Texture.loadData(path)
-            } catch (e: Exception) {
-                logger.log("Failed to load texture data: $path. Error: ${e.message}", LogLevel.ERROR)
-                null
-            }
-        } else null
-
-        if (data == null) {
-            logger.log("Texture not found: $path. Loading default texture.", LogLevel.ERROR)
-            if (path == Assets.Textures.DEFAULT) throw RuntimeException("Critical Error: Default texture not found!")
-            return loadTextureSync(Assets.Textures.DEFAULT)
+        val texture = try {
+            Texture.fromFile(path)
+        } catch (e: Exception) {
+            logger.log("Failed to load texture : $path. Error: ${e.message}. Loading default texture.", LogLevel.ERROR)
+            Texture.fromFile(Assets.Textures.DEFAULT)
         }
-
-        val texture = Texture()
-        texture.uploadToGPU(data) // Must be called on GL thread
-        data.free()
-        texture.filePath = path
+        texture.uploadToGPU() // Must be called on GL thread
+        texture.free()
         textures[absolutePath] = texture
-        return texture
-    }
-
-    fun getTexture(path: String): Texture? {
-        val absolutePath = File(path).absolutePath
-        val texture = textures[absolutePath]
-        if (texture != null) {
-            lruQueue.remove(absolutePath)
-            lruQueue.add(absolutePath)
-        }
         return texture
     }
     
@@ -319,13 +296,13 @@ class ResourceManager(
                      part.material.emissivePath
                  ).forEach { texturePaths.add(it) }
              }
-             
-             val textureDataMap = mutableMapOf<String, TextureData>()
+
+            val textureDataMap = mutableMapOf<String, Texture>()
                  withContext(Dispatchers.IO) {
                      texturePaths.forEach { texPath ->
                         if (!textureDataMap.containsKey(texPath)) {
                             val buffer = preLoaded.parts.firstNotNullOfOrNull { it.embeddedTextures[texPath] }
-                            val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(texPath)
+                            val data = if (buffer != null) Texture.fromBuffer(buffer) else Texture.fromFile(texPath)
                             if (data != null) textureDataMap[texPath] = data
                         }
                      }
@@ -341,12 +318,10 @@ class ResourceManager(
                              val absTexPath = File(texPath).absolutePath
                              if (textures.containsKey(absTexPath)) return textures[absTexPath]
 
-                             val data = textureDataMap[texPath] ?: return null
-                             val tex = Texture()
-                             tex.uploadToGPU(data)
-                             tex.filePath = texPath
-                             textures[absTexPath] = tex
-                             return tex
+                             val texture = textureDataMap[texPath] ?: return null
+                             texture.uploadToGPU()
+                             textures[absTexPath] = texture
+                             return texture
                          }
 
                          mat.baseColorTexture = getOrCreateTex(mat.baseColorPath)
@@ -399,17 +374,12 @@ class ResourceManager(
                          if (textures.containsKey(absTexPath)) return textures[absTexPath]
                          
                          val buffer = p.embeddedTextures[texPath]
-                         val data = if (buffer != null) Texture.loadData(buffer) else Texture.loadData(texPath)
-                         
-                         if (data != null) {
-                             val tex = Texture()
-                             tex.uploadToGPU(data)
-                             tex.filePath = texPath
-                             data.free()
-                             textures[absTexPath] = tex
-                             return tex
-                         }
-                         return null
+                         val texture = if (buffer != null) Texture.fromBuffer(buffer) else Texture.fromFile(texPath)
+
+                         texture.uploadToGPU()
+                         texture.free()
+                         textures[absTexPath] = texture
+                         return texture
                      }
 
                      mat.baseColorTexture = getOrCreateTexSync(mat.baseColorPath)
@@ -441,21 +411,6 @@ class ResourceManager(
         return models[File(path).absolutePath]
     }
 
-    suspend fun loadAnimation(path: String, skeleton: Skeleton): Animation {
-        val file = File(path)
-        val absolutePath = file.absolutePath
-
-        animations[absolutePath]?.let { return it }
-        return try {
-            val loadedAnimation = assimpLoader.loadAnimations(path, skeleton)[0]
-            animations[absolutePath] = loadedAnimation
-            loadedAnimation
-        } catch (e: Exception) {
-            logger.log("Failed to load animations from: $path. Error: ${e.message}", LogLevel.ERROR)
-            throw e
-        }
-    }
-
     fun loadAnimationSync(path: String, skeleton: Skeleton): Animation {
         val file = File(path)
         val absolutePath = file.absolutePath
@@ -476,50 +431,9 @@ class ResourceManager(
         return animations[absolutePath]
     }
 
-    fun getModelDependencies(path: String): Set<String> {
-        val absolutePath = File(path).absolutePath
-        return modelDependencies[absolutePath] ?: emptySet()
-    }
-
     fun isTextureInUse(texturePath: String): Boolean {
         val absolutePath = File(texturePath).absolutePath
         return modelDependencies.values.any { it.contains(absolutePath) }
-    }
-
-    fun unloadTexture(path: String) {
-        val absolutePath = File(path).absolutePath
-        
-        if (isTextureInUse(absolutePath)) {
-            return
-        }
-        
-        textures.remove(absolutePath)?.let {
-            jobSystem.runOnMain {
-                 it.destroy()
-             }
-        }
-    }
-
-    fun unloadModel(path: String) {
-        val absolutePath = File(path).absolutePath
-        models.remove(absolutePath)?.let { model ->
-            modelDependencies.remove(absolutePath)
-
-            jobSystem.runOnMain {
-                 model.mesh.forEach { part ->
-                     vaoLoader.deleteVAO(part.rawModel.vaoId)
-                 }
-             }
-        }
-    }
-
-    fun unloadShader(path: String) {
-        val absolutePath = File(path).absolutePath
-        shaders.remove(absolutePath)?.let {
-            jobSystem.runOnMain {
-                it.destroy()
-            }
-        }
     }
 
     fun clear(preserveNonProjectAssets: Boolean = false) {
@@ -611,53 +525,5 @@ class ResourceManager(
         val normalizedAssetPath = File(assetPath).absolutePath.replace('\\', '/').lowercase()
         val normalizedProjectRoot = projectRoot.absolutePath.replace('\\', '/').trimEnd('/').lowercase()
         return normalizedAssetPath == normalizedProjectRoot || normalizedAssetPath.startsWith("$normalizedProjectRoot/")
-    }
-
-    // ─── GUID-Aware Loading ───────────────────────────
-
-    /**
-     * Load a texture by its asset GUID.
-     * Resolves the GUID through the AssetDatabase to find the source path.
-     */
-    suspend fun loadTextureByGuid(guid: AssetGuid): Texture {
-        val asset = assetDatabase?.getByGuid(guid)
-            ?: throw IllegalArgumentException("Asset not found: $guid")
-        return loadTexture(asset.absoluteSourcePath)
-    }
-
-    /**
-     * Load a texture synchronously by its asset GUID.
-     */
-    fun loadTextureSyncByGuid(guid: AssetGuid): Texture {
-        val asset = assetDatabase?.getByGuid(guid)
-            ?: throw IllegalArgumentException("Asset not found: $guid")
-        return loadTextureSync(asset.absoluteSourcePath)
-    }
-
-    /**
-     * Load a model by its asset GUID.
-     */
-    suspend fun loadModelByGuid(guid: AssetGuid): BaseModel {
-        val asset = assetDatabase?.getByGuid(guid)
-            ?: throw IllegalArgumentException("Asset not found: $guid")
-        return loadModel(asset.absoluteSourcePath)
-    }
-
-    /**
-     * Load a model synchronously by its asset GUID.
-     */
-    fun loadModelSyncByGuid(guid: AssetGuid): BaseModel {
-        val asset = assetDatabase?.getByGuid(guid)
-            ?: throw IllegalArgumentException("Asset not found: $guid")
-        return loadModelSync(asset.absoluteSourcePath)
-    }
-
-    /**
-     * Load a sound by its asset GUID.
-     */
-    fun loadSoundByGuid(guid: AssetGuid): SoundBuffer {
-        val asset = assetDatabase?.getByGuid(guid)
-            ?: throw IllegalArgumentException("Asset not found: $guid")
-        return loadSound(asset.absoluteSourcePath)
     }
 }

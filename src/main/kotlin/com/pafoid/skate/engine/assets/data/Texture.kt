@@ -30,35 +30,23 @@ import org.lwjgl.stb.STBImage.stbi_set_flip_vertically_on_load
 import java.nio.ByteBuffer
 import java.util.*
 
-class TextureData(
-    val width: Int,
-    val height: Int,
-    val channels: Int,
-    val pixels: ByteBuffer,
-    val flip: Boolean = false
-) {
-    fun free() {
-        stbi_image_free(pixels)
-    }
-}
-
 @Serializable
-class Texture: Component() {
+data class Texture(
+    var width: Int = 0,
+    var height: Int = 0,
+    var depth: Int = 1,
+    var channels: Int = 0,
+    var flip: Boolean = false,
+    var filePath: String? = null,
+    @Transient var pixels: ByteBuffer? = null
+) : Component() {
 
     @Transient var texId: Int = -1
 
-    var width: Int = 0
-    var height: Int = 0
-    @Transient private var depth: Int = 0
-    @Transient private var target: Int = GL_TEXTURE_2D
-    var filePath: String? = null
+    private var target: Int = GL_TEXTURE_2D
 
-    fun uploadToGPU(data: TextureData) {
+    fun uploadToGPU() {
         this.texId = glGenTextures()
-        this.target = GL_TEXTURE_2D
-        this.width = data.width
-        this.height = data.height
-        this.depth = 1
 
         glBindTexture(target, texId)
 
@@ -69,7 +57,7 @@ class Texture: Component() {
 
         // Always use GL_RGBA if we forced 4 channels on load
         val format = GL_RGBA
-        glTexImage2D(target, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data.pixels)
+        glTexImage2D(target, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, pixels)
         glGenerateMipmap(target)
     }
 
@@ -78,7 +66,6 @@ class Texture: Component() {
         this.width = width
         this.height = height
         this.depth = 1
-        this.target = GL_TEXTURE_2D
         this.filePath = "Generated::$texId"
 
         glBindTexture(target, texId)
@@ -142,32 +129,30 @@ class Texture: Component() {
         return Objects.hash(texId, width, height, filePath)
     }
 
+    fun free() {
+        pixels?.let {
+            stbi_image_free(it)
+        }
+    }
+
     companion object {
 
-        fun loadData(filePath: String, flipOnLoad: Boolean = false): TextureData? {
+        fun fromFile(filePath: String, flipOnLoad: Boolean = false): Texture {
             val width = BufferUtils.createIntBuffer(1)
             val height = BufferUtils.createIntBuffer(1)
             val channels = BufferUtils.createIntBuffer(1)
             stbi_set_flip_vertically_on_load(flipOnLoad)
             val image = stbi_load(filePath, width, height, channels, 4) // Force 4 channels
-            return if (image != null) {
-                TextureData(width.get(0), height.get(0), 4, image, flipOnLoad)
-            } else {
-                null
-            }
+            return Texture(width.get(0), height.get(0), 1, 4, flipOnLoad, filePath, image)
         }
 
-        fun loadData(buffer: ByteBuffer, flipOnLoad: Boolean = false): TextureData? {
+        fun fromBuffer(buffer: ByteBuffer, flipOnLoad: Boolean = false): Texture {
             val width = BufferUtils.createIntBuffer(1)
             val height = BufferUtils.createIntBuffer(1)
             val channels = BufferUtils.createIntBuffer(1)
             stbi_set_flip_vertically_on_load(flipOnLoad)
             val image = stbi_load_from_memory(buffer, width, height, channels, 4) // Force 4 channels
-            return if (image != null) {
-                TextureData(width.get(0), height.get(0), 4, image, flipOnLoad)
-            } else {
-                null
-            }
+            return Texture(width.get(0), height.get(0), 1, 4, flipOnLoad, pixels = image)
         }
     }
 
