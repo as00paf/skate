@@ -40,7 +40,7 @@ fun Animator.imgui(stringManager: StringManager) {
         val payload = ImGui.acceptDragDropPayload<String>("ANIMATION", ImGuiDragDropFlags.None)
         if (payload != null) {
             val path = payload
-            val newAnim = resourceManager.getAnimation(path)
+            val newAnim = assetsManager.getAnimation(path)
             newAnim?.let {
                 addAnimation(it)
             }

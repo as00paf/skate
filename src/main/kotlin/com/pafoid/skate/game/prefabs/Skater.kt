@@ -15,10 +15,11 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import org.joml.Vector3f
+import java.io.File
 
 class Skater(
     name: String,
-    characterModel: TexturedModel,
+    model: TexturedModel,
     skate: GameObject? = null,
     position: Vector3f = Vector3f(0f, 1.05f, 0f),
     rotation: Vector3f = Vector3f(0f, 90f, 0f),
@@ -29,7 +30,8 @@ class Skater(
 
     val transformComponent = Transform()
     val renderComponent = RenderComponent(
-        model = characterModel,
+        model = model,
+        modelGuid = File(model.path).absolutePath,
         castShadow = true,
         receiveShadow = true
     )
@@ -39,7 +41,7 @@ class Skater(
         // Parenting: Skater follows Skateboard
         //skate?.addChild(this)
 
-        val skeleton = characterModel.skeleton?.copy()
+        val skeleton = model.skeleton?.copy()
 
         transformComponent.translation.set(position)
         transformComponent.rotation.set(rotation) // Face sideways for skating

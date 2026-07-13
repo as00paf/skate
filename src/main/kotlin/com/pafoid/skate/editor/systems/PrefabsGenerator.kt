@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.MeshPart
@@ -14,7 +14,6 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
-import com.pafoid.skate.engine.ecs.components.helpers.RenderComponentHelper
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
@@ -30,10 +29,9 @@ import org.joml.Vector3f
 import java.io.File
 
 class PrefabsGenerator(
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
     private val sceneManager: SceneManager,
     private val systemManager: SystemManager,
-    private val renderComponentHelper: RenderComponentHelper,
     private val animatorHelper: AnimatorHelper,
 ) {
     private val gameObjectManager: GameObjectManager by lazy {
@@ -103,13 +101,8 @@ class PrefabsGenerator(
 
     fun spawnSkateboard(): GameObject {
         val modelPath = resolveModelPath(Assets.Models.SKATEBOARD_GLB)
-        val model = resourceManager.loadModelSync(modelPath)
-        val skate = Skateboard(model as TexturedModel)
-
-        // Resolve and set GUID for the model
-        skate.getComponent<RenderComponent>()?.let { rc ->
-            renderComponentHelper.setModelWithGuid(rc, model)
-        }
+        val model = assetsManager.loadModelSync(modelPath)
+        val skate = Skateboard(model)
         
         gameObjectManager.addGameObject(skate)
         return skate
@@ -117,21 +110,16 @@ class PrefabsGenerator(
 
     fun spawnSkater(skate: GameObject? = null): GameObject {
         val modelPath = resolveModelPath(Assets.Models.JAMES)
-        val model = resourceManager.getModel(modelPath) as TexturedModel?
-            ?: resourceManager.loadModelSync(modelPath) as TexturedModel
+        val model = assetsManager.getModel(modelPath) as TexturedModel?
+            ?: assetsManager.loadModelSync(modelPath) as TexturedModel
         val skater = Skater("Skater", model, skate)
-
-        // Resolve and set GUID for the model
-        skater.getComponent<RenderComponent>()?.let { rc ->
-            renderComponentHelper.setModelWithGuid(rc, model)
-        }
 
         val skeleton = skater.getComponent<SkeletonComponent>()?.pose?.skeleton
         if (skeleton != null) {
             animations.forEach { path ->
                 try {
                     val animPath = resolveAnimationPath(path)
-                    val animation = resourceManager.loadAnimationSync(animPath, skeleton)
+                    val animation = assetsManager.loadAnimationSync(animPath, skeleton)
                     animatorHelper.addAnimationWithPath(skater.animator, animation)
                 } catch (e: Exception) {
                     // Skip missing animations during scene creation
@@ -146,22 +134,16 @@ class PrefabsGenerator(
     fun spawnFloor(): GameObject {
         val texturePath = resolveTexturePath(Assets.Textures.ASPHALT)
         val modelPath = resolveModelPath(Assets.Models.CUBE)
-        val texture = resourceManager.loadTextureSync(texturePath)
-        val baseModel = resourceManager.loadModelSync(modelPath)
-        val texturedModel = TexturedModel(
-            modelPath,
+        val texture = assetsManager.loadTextureSync(texturePath)
+        val baseModel = assetsManager.loadModelSync(modelPath)
+        val model = TexturedModel(
+            path = modelPath,
             mesh = listOf(MeshPart(rawModel = baseModel.mesh[0].rawModel, material = Material(texture)))
         )
 
-        texturedModel.mesh[0].material.baseColorPath = texturePath
+        model.mesh[0].material.baseColorPath = texturePath
 
-        val tile = Tile("Tile", texturedModel)
-
-        // Resolve and set GUIDs for model and texture
-        tile.getComponent<RenderComponent>()?.let { rc ->
-            renderComponentHelper.setModelWithGuid(rc, texturedModel)
-            renderComponentHelper.setAlbedoTextureWithGuid(rc, texturedModel.mesh[0].material, texture)
-        }
+        val tile = Tile("Tile", model)
         
         gameObjectManager.addGameObject(tile)
         return tile
@@ -175,23 +157,21 @@ class PrefabsGenerator(
         transformComponent.scale.set(1f, 1f, 1f)
         rail.addComponent(transformComponent)
         val mat = material ?: MaterialType.METAL
-        val baseModel = resourceManager.loadModelSync(Assets.Models.RAIL)
-        val texture = resourceManager.loadTextureSync(mat.texturePath)
-        val texturedModel = TexturedModel(
+        val baseModel = assetsManager.loadModelSync(Assets.Models.RAIL)
+        val texture = assetsManager.loadTextureSync(mat.texturePath)
+        val model = TexturedModel(
             path = Assets.Models.RAIL,
             mesh = listOf(MeshPart(rawModel = baseModel.mesh[0].rawModel, material = Material(texture)))
         )
+        model.mesh[0].material.baseColorTexture = texture
         val renderComponent = RenderComponent(
-            model = texturedModel,
+            model = model,
+            modelGuid = File(model.path).absolutePath,
             castShadow = true,
-            receiveShadow = true
+            receiveShadow = true,
+
         )
         rail.addComponent(renderComponent)
-
-        // Resolve and set GUIDs
-        renderComponentHelper.setModelWithGuid(renderComponent, texturedModel)
-        renderComponentHelper.setAlbedoTextureWithGuid(renderComponent, texturedModel.mesh[0].material, texture)
-        
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0))
         gameObjectManager.addGameObject(rail)
@@ -206,23 +186,21 @@ class PrefabsGenerator(
         transformComponent.translation.set(position)
         transformComponent.scale.set(1f, 1f, 1f)
         ledge.addComponent(transformComponent)
-        val baseModel = resourceManager.loadModelSync(Assets.Models.LEDGE)
-        val texture = resourceManager.loadTextureSync(mat.texturePath)
-        val texturedModel = TexturedModel(
+        val baseModel = assetsManager.loadModelSync(Assets.Models.LEDGE)
+        val texture = assetsManager.loadTextureSync(mat.texturePath)
+        val model = TexturedModel(
             path = Assets.Models.LEDGE,
             mesh = listOf(MeshPart(rawModel = baseModel.mesh[0].rawModel, material = Material(texture)))
         )
 
+        model.mesh[0].material.baseColorTexture = texture
         val renderComponent = RenderComponent(
-            model = texturedModel,
+            model = model,
+            modelGuid = File(model.path).absolutePath,
             castShadow = true,
             receiveShadow = true
         )
         ledge.addComponent(renderComponent)
-
-        // Resolve and set GUIDs
-        renderComponentHelper.setModelWithGuid(renderComponent, texturedModel)
-        renderComponentHelper.setAlbedoTextureWithGuid(renderComponent, texturedModel.mesh[0].material, texture)
         
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
@@ -238,8 +216,8 @@ class PrefabsGenerator(
         transformComponent.scale.set(1f, 1f, 1f)
         kicker.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
-        val baseModel = resourceManager.loadModelSync(Assets.Models.KICKER)
-        val texture = resourceManager.loadTextureSync(mat.texturePath)
+        val baseModel = assetsManager.loadModelSync(Assets.Models.KICKER)
+        val texture = assetsManager.loadTextureSync(mat.texturePath)
         val texturedModel = TexturedModel(
             mesh = listOf(
                 MeshPart(
@@ -269,11 +247,11 @@ class PrefabsGenerator(
         transformComponent.translation.set(position)
         go.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
-        val baseModel = resourceManager.loadModelSync(Assets.Models.MANUAL_PAD)
+        val baseModel = assetsManager.loadModelSync(Assets.Models.MANUAL_PAD)
         val texturedModel = TexturedModel(
             path = Assets.Models.MANUAL_PAD,
             baseModel.mesh[0].rawModel,
-            Material(baseColorTexture = resourceManager.loadTextureSync(mat.texturePath))
+            Material(baseColorTexture = assetsManager.loadTextureSync(mat.texturePath))
         )
         go.addComponent(
             RenderComponent(
@@ -296,11 +274,11 @@ class PrefabsGenerator(
         transformComponent.translation.set(position)
         go.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
-        val baseModel = resourceManager.loadModelSync(Assets.Models.BANK)
+        val baseModel = assetsManager.loadModelSync(Assets.Models.BANK)
         val texturedModel = TexturedModel(
             Assets.Models.BANK,
             baseModel.mesh[0].rawModel,
-            Material(resourceManager.loadTextureSync(mat.texturePath))
+            Material(assetsManager.loadTextureSync(mat.texturePath))
         )
         go.addComponent(
             RenderComponent(
@@ -323,11 +301,11 @@ class PrefabsGenerator(
         transformComponent.translation.set(position)
         go.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
-        val baseModel = resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE)
+        val baseModel = assetsManager.loadModelSync(Assets.Models.QUARTER_PIPE)
         val texturedModel = TexturedModel(
             Assets.Models.QUARTER_PIPE,
             baseModel.mesh[0].rawModel,
-            Material(resourceManager.loadTextureSync(mat.texturePath))
+            Material(assetsManager.loadTextureSync(mat.texturePath))
         )
         go.addComponent(
             RenderComponent(

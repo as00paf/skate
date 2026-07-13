@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.data.LogLevel
@@ -34,7 +34,7 @@ private const val MAX_LINES = 3000
 private const val MAX_TRIANGLES = 1000
 
 class DebugRenderer(
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
     private val cameraManager: CameraManager,
     private val logger: LoggerService
 ) : KoinComponent {
@@ -55,7 +55,7 @@ class DebugRenderer(
     private var started = false
 
     fun start() {
-        shader = resourceManager.getShader(Assets.Shaders.DEBUG) ?: run {
+        shader = assetsManager.getShader(Assets.Shaders.DEBUG) ?: run {
             logger.log("Could not load debug shader", LogLevel.ERROR)
             return
         }

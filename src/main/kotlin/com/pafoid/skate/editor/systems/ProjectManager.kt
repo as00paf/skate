@@ -8,7 +8,6 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -24,7 +23,6 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
-import com.pafoid.skate.engine.utils.IJobSystem
 import org.joml.Vector3f
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
@@ -32,13 +30,11 @@ import java.util.concurrent.atomic.AtomicLong
 class ProjectManager(
     private val settingsManager: SettingsManager,
     private val logger: LoggerService,
-    private val assetDatabase: AssetDatabase,
     private val engineAssetCopier: EngineAssetCopier,
     private val sceneManager: SceneManager,
     private val prefabsGenerator: PrefabsGenerator,
     private val eventSystem: EventSystem,
     private val systemManager: SystemManager,
-    private val jobSystem: IJobSystem,
     private val serializer: Serializer
 ) {
 
@@ -87,32 +83,19 @@ class ProjectManager(
                 buildPaths = listOf("Builds")
             )
 
-            // Init DB — perform operations synchronously and check results to ensure readiness
-            val initResult = assetDatabase.initialize(projectDir)
-            if (initResult.isFailure) {
-                logger.logEditor("Failed to initialize asset database: ${initResult.exceptionOrNull()?.message}")
+            // Copy assets
+            val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
+            if (copyResult.isSuccess) {
+                val count = copyResult.getOrNull() ?: 0
+                logger.logEditor("Copied $count engine-bundled assets to project")
+                prefabsGenerator.setEngineDefaultsRoot(projectDir)
             } else {
-                val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
-                if (copyResult.isSuccess) {
-                    val count = copyResult.getOrNull() ?: 0
-                    logger.logEditor("Copied $count engine-bundled assets to project")
-                    prefabsGenerator.setEngineDefaultsRoot(projectDir)
-                } else {
-                    logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}")
-                }
-
-                val scanResult = assetDatabase.scanAll()
-                if (scanResult.isFailure) {
-                    logger.logEditor("Asset database scan failed: ${scanResult.exceptionOrNull()?.message}")
-                } else {
-                    logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
-                }
+                logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}")
             }
 
             currentProject = project
 
             // Create default scene with prefabs
-            initProjectDb(project.getProjectDirectory())
             createDefaultScene(scenesDir)
 
             settingsManager.addToRecentProjects(project.getProjectFile().absolutePath) // TODO: move to settings manager
@@ -192,25 +175,6 @@ class ProjectManager(
 
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
-            val projectDir = project.getProjectDirectory()
-            val initResult = assetDatabase.initialize(projectDir)
-            if (initResult.isFailure) {
-                logger.logEditor(
-                    "Failed to initialize asset database: ${initResult.exceptionOrNull()?.message}",
-                    LogLevel.ERROR
-                )
-            } else {
-                val scanResult = assetDatabase.scanAll()
-                if (scanResult.isFailure) {
-                    logger.logEditor(
-                        "Asset database scan failed: ${scanResult.exceptionOrNull()?.message}",
-                        LogLevel.WARN
-                    )
-                } else {
-                    logger.logEditor("Asset database initialized and scanned for ${projectDir.name}")
-                }
-            }
-
             loadDefaultScene(project)
 
             settingsManager.addToRecentProjects(project.getProjectFile().absolutePath)
@@ -222,31 +186,6 @@ class ProjectManager(
             logger.logEditor("Error opening project: ${e.message}", LogLevel.ERROR)
             false
         }
-    }
-
-    private fun initProjectDb(projectDir: File) {
-        val openEpoch = lifecycleEpoch.incrementAndGet()
-        assetDatabase.initialize(projectDir).fold(
-            onSuccess = {
-                logger.logEditor("Asset database initialized for ${projectDir.name}")
-
-                // Scan assets off the UI path; drop stale scans if project lifecycle changes.
-                jobSystem.runIO {
-                    if (openEpoch != lifecycleEpoch.get()) return@runIO
-                    assetDatabase.scanAll().fold(
-                        onSuccess = {
-                            logger.logEditor("Asset scan completed for ${projectDir.name}")
-                        },
-                        onFailure = { e ->
-                            logger.logEditor("Asset scan failed for ${projectDir.name}: ${e.message}")
-                        }
-                    )
-                }
-            },
-            onFailure = { e ->
-                logger.logEditor("Failed to initialize asset database: ${e.message}")
-            }
-        )
     }
 
     fun closeProject() {
@@ -279,7 +218,6 @@ class ProjectManager(
         systemManager.resetSystemCaches()
 
         currentProject = null
-        assetDatabase.shutdown()
         settingsManager.setLastClosedProjectPath(path)
         settingsManager.closeProject()
 

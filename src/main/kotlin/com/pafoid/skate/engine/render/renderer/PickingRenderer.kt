@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.data.LogLevel
@@ -28,7 +28,7 @@ private const val MAX_VERTICES = 50000
 private const val VERTEX_SIZE = 4 // x, y, z, id
 
 class PickingRenderer(
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
     private val logger: LoggerService,
     private val camera: Camera
 ) {
@@ -46,7 +46,7 @@ class PickingRenderer(
     private val identityMatrix = Matrix4f()
 
     fun start() {
-        shader = resourceManager.getShader(Assets.Shaders.PICKING_3D)?: run {
+        shader = assetsManager.getShader(Assets.Shaders.PICKING_3D) ?: run {
             logger.log("Could not load picking shader", LogLevel.ERROR)
             return
         }

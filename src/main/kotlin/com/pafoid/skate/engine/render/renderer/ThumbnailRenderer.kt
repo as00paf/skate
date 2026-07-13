@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.LoggerService
@@ -61,7 +61,7 @@ private const val THUMBNAIL_SIZE = 256
  * caching and eventually deleting the texture.
  */
 class ThumbnailRenderer(
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
     private val modelRenderer: ModelRenderer,
     private val logger: LoggerService,
 ) {
@@ -83,7 +83,7 @@ class ThumbnailRenderer(
             frameBuffer = FrameBuffer(THUMBNAIL_SIZE, THUMBNAIL_SIZE).also { it.initialize() }
         }
         if (defaultShader == null) {
-            defaultShader = resourceManager.loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
+            defaultShader = assetsManager.loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
         }
 
         val fbo = frameBuffer ?: run {

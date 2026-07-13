@@ -41,7 +41,6 @@ class ProjectManagerLifecycleTest {
     fun `closeProject closes all scenes and resets system caches`() {
         val settingsManager = mockk<SettingsManager>(relaxed = true)
         val logger = mockk<LoggerService>(relaxed = true)
-        val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
         val eventSystem = mockk<EventSystem>(relaxed = true)
@@ -52,7 +51,6 @@ class ProjectManagerLifecycleTest {
         val manager = ProjectManager(
             settingsManager = settingsManager,
             logger = logger,
-            assetDatabase = assetDatabase,
             engineAssetCopier = EngineAssetCopier(),
             sceneManager = sceneManager,
             prefabsGenerator = prefabsGenerator,

@@ -10,9 +10,10 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import org.joml.Vector3f
+import java.io.File
 
 class Skateboard(
-    texturedModel: TexturedModel,
+    model: TexturedModel,
     position: Vector3f = Vector3f(0f, 1f, 0f),
     scale: Vector3f = Vector3f(0.0017f, 0.0017f, 0.0017f),
     mass: Float = 1.8f,// 1.8kg mass
@@ -24,7 +25,12 @@ class Skateboard(
         transformComponent.translation.set(position)
         transformComponent.scale.set(scale)
         addComponent(transformComponent)
-        addComponent(RenderComponent(model = texturedModel))
+        addComponent(
+            RenderComponent(
+                model = model,
+                modelGuid = File(model.path).absolutePath
+            )
+        )
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })
         addComponent(BoxCollider3D(hitBoxSize))
         addComponent(SkateboardPhysics())

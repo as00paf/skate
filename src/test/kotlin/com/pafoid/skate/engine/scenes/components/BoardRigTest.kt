@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
@@ -63,7 +63,7 @@ class BoardRigTest {
             modules(module {
                 single { sceneManager }
                 single<IInputProvider> { mockk(relaxed = true) }
-                single { mockk<ResourceManager>(relaxed = true) }
+                single { mockk<AssetsManager>(relaxed = true) }
                 single<IInputBuffer> { inputBuffer }
                 single { mockk<PrefabsGenerator>(relaxed = true) }
                 single { mockk<DebugRenderer>(relaxed = true) }

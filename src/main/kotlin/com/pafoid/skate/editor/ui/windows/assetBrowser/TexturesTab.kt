@@ -4,16 +4,13 @@ import com.pafoid.skate.editor.commands.objects.ApplyTextureCommand
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.assets.database.AssetType
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.engine.ecs.components.helpers.RenderComponentHelper
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
@@ -21,16 +18,14 @@ import java.awt.Desktop
 import java.io.File
 
 class TexturesTab(
-    resourceManager: ResourceManager,
+    assetsManager: AssetsManager,
     stringManager: StringManager,
-    assetDatabase: AssetDatabase? = null,
     private val logger: LoggerService,
     private val sceneManager: SceneManager,
     private val jobSystem: IJobSystem,
     private val undoRedoManager: UndoRedoManager,
-    private val renderComponentHelper: RenderComponentHelper,
     private val eventSystem: EventSystem,
-    ): AssetBrowserTab(resourceManager, stringManager, assetDatabase) {
+) : AssetBrowserTab(assetsManager, stringManager) {
 
     init {
         refreshAssets()
@@ -41,7 +36,7 @@ class TexturesTab(
         val padding = 5f
 
         ImGui.beginGroup()
-        val texId: Int = resourceManager.loadTextureSync(file.path).texId
+        val texId: Int = assetsManager.loadTextureSync(file.path).texId
         ImGui.pushID(file.absolutePath)
         if (ImGui.imageButton("TextureItem", texId.toLong(), size, size, 0f, 0f, 1f, 1f)) {
             // On Click
@@ -68,7 +63,7 @@ class TexturesTab(
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
-                val tex = resourceManager.loadTextureSync(file.path)
+                val tex = assetsManager.loadTextureSync(file.path)
                 logger.logEditor("Texture: ${file.name}, Size: ${tex.width}x${tex.height}, ID: ${tex.texId}")
             }
             ImGui.endPopup()
@@ -80,7 +75,7 @@ class TexturesTab(
             ImGui.setDragDropPayload("TEXTURE", file.path)
             ImGui.image(texId.toLong(), size *1.5f, size *1.5f, 0f, 0f, 1f, 1f)
             ImGui.text(file.name)
-            val tex = resourceManager.loadTextureSync(file.path)
+            val tex = assetsManager.loadTextureSync(file.path)
             ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "${tex.width}x${tex.height}")
             ImGui.endDragDropSource()
         }
@@ -102,30 +97,22 @@ class TexturesTab(
             return
         }
 
-        val db = assetDatabase ?: run {
-            logger.logEditor("AssetDatabase not initialized")
-            return
-        }
-
         undoRedoManager.executeCommand(
-            ApplyTextureCommand(selectedObject, texturePath, resourceManager, renderComponentHelper, eventSystem)
+            ApplyTextureCommand(selectedObject, texturePath, assetsManager, eventSystem)
         )
         logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
     }
 
     override fun refreshAssets() {
         jobSystem.runIO {
-            refreshFromDatabase(AssetType.TEXTURE, setOf("png", "jpg", "jpeg"))
-        }
-    }
-
-    override fun refreshFromDirectory(fileExtensions: Set<String>) {
-        items.clear()
-        val texturesDir = File(Assets.Folders.TEXTURES)
-        if (texturesDir.exists()) {
-            items.addAll(texturesDir.walkTopDown().filter {
-                it.isFile && fileExtensions.contains(it.extension)
-            })
+            val fileExtensions = setOf("png", "jpg", "jpeg")
+            items.clear()
+            val texturesDir = File(Assets.Folders.TEXTURES)
+            if (texturesDir.exists()) {
+                items.addAll(texturesDir.walkTopDown().filter {
+                    it.isFile && fileExtensions.contains(it.extension) && assetsManager.hasTexture(it.absolutePath)
+                })
+            }
         }
     }
 }

@@ -3,7 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
@@ -21,7 +21,7 @@ import kotlin.math.min
 private const val CONTROLS_OVERLAY_BUTTON_SIZE = 50f
 
 class GamepadOverlay : KoinComponent {
-    private val resourceManager: ResourceManager by inject()
+    private val assetsManager: AssetsManager by inject()
     private val joystickListener: GamepadListener by inject()
     private val settingsManager: SettingsManager by inject()
     private val stringManager: StringManager by inject()
@@ -38,7 +38,7 @@ class GamepadOverlay : KoinComponent {
     private fun resolveControllerTexture(): Texture? {
         val cached = controllerTexture
         if (cached != null && cached.texId > 0) return cached
-        return resourceManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER).also { loaded ->
+        return assetsManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER).also { loaded ->
             controllerTexture = loaded
         }
     }

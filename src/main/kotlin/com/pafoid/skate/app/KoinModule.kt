@@ -64,13 +64,7 @@ import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.assets.database.ImportPipeline
-import com.pafoid.skate.engine.assets.database.importers.AudioImporter
-import com.pafoid.skate.engine.assets.database.importers.ModelImporter
-import com.pafoid.skate.engine.assets.database.importers.ShaderImporter
-import com.pafoid.skate.engine.assets.database.importers.TextureImporter
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
@@ -82,7 +76,6 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
-import com.pafoid.skate.engine.ecs.components.helpers.RenderComponentHelper
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
@@ -124,7 +117,7 @@ val editorModule = module {
     single { PickingRenderer(get(), get(), get()) }
     single { ThumbnailRenderer(get(), get(), get()) }
     single { ThumbnailCache(get()) }
-    single { PrefabsGenerator(get(), get(), get(), get(), get()) }
+    single { PrefabsGenerator(get(), get(), get(), get()) }
     single { EngineAssetCopier() }
 
     single { PoseSerializer() }
@@ -156,8 +149,6 @@ val editorModule = module {
             get(),
             get(),
             get(),
-            get(),
-            get(),
         )
             .also { it.init() }
     }
@@ -174,8 +165,8 @@ val editorModule = module {
     single { SceneHierarchyWindow(get(), get(), get(), get(), get(), get()) }
     single { PropertiesWindow(get(), get(), get()) }
     single { GameViewWindow(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { AnimationsTab(get(), get(), get(), get(), get()) }
-    single { TexturesTab(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { AnimationsTab(get(), get(), get(), get()) }
+    single { TexturesTab(get(), get(), get(), get(), get(), get(), get()) }
     single { PrefabsTab(get(), get(), get(), get(), get(), get()) }
     single { SoundsTab(get(), get(), get(), get()) }
     single { AssetBrowserWindow(get(), get(), get(), get(), get()) }
@@ -215,7 +206,7 @@ val editorModule = module {
     single { WindowControlsRenderer(get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectSwitcherDialog() }
 
@@ -254,27 +245,15 @@ val engineModule = module {
     // Managers
     single { CameraManager(get()) }
     single { SystemManager() }
-    single { SceneManager(get(), get(), get(), get(), get(), get()) }
-    single { ResourceManager(get(), get(), get(), get(), assetDatabase = get(), jobSystem = get()) }
+    single { SceneManager(get(), get(), get(), get(), get()) }
+    single { AssetsManager(get(), get(), get(), get(), get()) }
 
     single { NativeLibraryLoader() }
     single { ShaderLoader(false) }
     single { VAOLoader() }
     single { AssimpLoader() }
 
-    // Asset database and import pipeline
-    single {
-        ImportPipeline(get()).apply {
-            registerImporter(TextureImporter())
-            registerImporter(ModelImporter())
-            registerImporter(AudioImporter())
-            registerImporter(ShaderImporter())
-        }
-    }
-    single { AssetDatabase(get(), get(), get()) }
-
     // Component helpers for GUID assignment
-    single { RenderComponentHelper(get(), get()) }
     single { AnimatorHelper(get()) }
 
     single { Serializer() }

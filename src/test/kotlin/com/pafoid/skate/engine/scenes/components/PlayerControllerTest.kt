@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.scenes.components
 
 import com.pafoid.skate.editor.systems.PrefabsGenerator
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
@@ -46,7 +46,7 @@ class PlayerControllerTest {
 
         startKoin {
             modules(module {
-                single { mockk<ResourceManager>(relaxed = true) }
+                single { mockk<AssetsManager>(relaxed = true) }
                 single { sceneManager }
                 single<IInputProvider> { inputProvider }
                 single { mockk<IInputBuffer>(relaxed = true) }
@@ -60,7 +60,6 @@ class PlayerControllerTest {
         val camera = Camera()
         every { scene.camera } returns camera
         every { scene.gameObjects } returns mutableListOf()
-        every { scene.physics3d } returns mockk(relaxed = true)
         every { sceneManager.currentScene } returns scene
 
         every { inputProvider.keyBeginPress(any()) } returns false

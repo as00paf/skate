@@ -31,12 +31,14 @@ import com.pafoid.skate.editor.events.ViewportAction.DropSound
 import com.pafoid.skate.editor.events.ViewportAction.DropTexture
 import com.pafoid.skate.editor.events.ViewportAction.Duplicate
 import com.pafoid.skate.editor.events.ViewportAction.FocusSelected
+import com.pafoid.skate.editor.events.ViewportAction.GameObjectSelected
 import com.pafoid.skate.editor.events.ViewportAction.PasteClipboard
 import com.pafoid.skate.editor.events.ViewportAction.RemoveComponent
 import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
 import com.pafoid.skate.editor.events.ViewportAction.Reparent
 import com.pafoid.skate.editor.events.ViewportAction.ResetCamera
 import com.pafoid.skate.editor.events.ViewportAction.ResetTransform
+import com.pafoid.skate.editor.events.ViewportAction.ScreenshotRequested
 import com.pafoid.skate.editor.events.ViewportAction.SelectionCleared
 import com.pafoid.skate.editor.events.ViewportAction.SetGameObjectEnabled
 import com.pafoid.skate.editor.events.ViewportAction.SetSimulationTimeScale
@@ -54,10 +56,9 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
-import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
@@ -71,7 +72,6 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
-import com.pafoid.skate.engine.ecs.components.helpers.RenderComponentHelper
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
@@ -95,9 +95,7 @@ class ViewportActionHandler(
     private val clipboardService: ClipboardService,
     private val mutationGate: EditorMutationGate,
     private val prefabsGenerator: PrefabsGenerator,
-    private val resourceManager: ResourceManager,
-    private val assetDatabase: AssetDatabase,
-    private val renderComponentHelper: RenderComponentHelper,
+    private val assetsManager: AssetsManager,
     private val animatorHelper: AnimatorHelper,
     private val editorCamera: EditorCamera,
     private val systemManager: SystemManager,
@@ -110,15 +108,15 @@ class ViewportActionHandler(
     }
 
     fun init() {
-        eventSystem.subscribe<ViewportAction.GameObjectSelected> { event ->
+        eventSystem.subscribe<GameObjectSelected> { event ->
             sceneManager.currentScene?.selectedGameObject = event.gameObject
         }
 
-        eventSystem.subscribe<ViewportAction.SelectionCleared> {
+        eventSystem.subscribe<SelectionCleared> {
             sceneManager.currentScene?.selectedGameObject = null
         }
 
-        eventSystem.subscribe<ViewportAction.ScreenshotRequested> {
+        eventSystem.subscribe<ScreenshotRequested> {
             viewportRenderer.captureScreenshot()
         }
 
@@ -424,8 +422,7 @@ class ViewportActionHandler(
             ApplyTextureCommand(
                 gameObject,
                 texturePath,
-                resourceManager,
-                renderComponentHelper,
+                assetsManager,
                 eventSystem
             )
         )
@@ -442,17 +439,16 @@ class ViewportActionHandler(
             transform.scale.set(10f, 0.1f, 10f)
             planeObj.addComponent(transform)
 
-            val texture = resourceManager.loadTexture(texturePath)
-            val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
-            val texturedModel = TexturedModel(
+            val texture = assetsManager.loadTexture(texturePath)
+            val baseModel = assetsManager.loadModel(Assets.Models.CUBE)
+            val model = TexturedModel(
                 path = Assets.Models.CUBE,
                 rawModel = baseModel.mesh[0].rawModel,
                 Material(texture)
             )
 
             jobSystem.runOnMain {
-                val renderComponent = RenderComponent(model = texturedModel, castShadow = false, receiveShadow = true)
-                renderComponentHelper.setModelWithGuid(renderComponent, texturedModel)
+                val renderComponent = RenderComponent(model = model, castShadow = false, receiveShadow = true)
                 planeObj.addComponent(renderComponent)
                 planeObj.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
                 planeObj.addComponent(BoxCollider3D(Vector3f(5f, 0.05f, 5f)))
@@ -493,7 +489,7 @@ class ViewportActionHandler(
 
         if (animator != null) {
             undoRedoManager.executeCommand(
-                ApplyAnimationCommand(gameObject, null, animationPath, resourceManager, animatorHelper, eventSystem)
+                ApplyAnimationCommand(gameObject, animationPath, assetsManager, animatorHelper, eventSystem)
             )
             logger.logEditor("Added animation to ${gameObject.name}: $animationPath")
         } else {

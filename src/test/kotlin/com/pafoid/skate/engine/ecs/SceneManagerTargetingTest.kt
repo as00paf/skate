@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs
 
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import io.mockk.every
 import io.mockk.mockk
@@ -28,10 +28,10 @@ class SceneManagerTargetingTest {
 
     @Test
     fun `openScene resolves RenderComponent and Animator references`() {
-        val resourceManager = mockk<ResourceManager>(relaxed = true)
+        val assetsManager = mockk<AssetsManager>(relaxed = true)
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = SceneManager(
-            resourceManager = resourceManager,
+            assetsManager = assetsManager,
             eventSystem = mockk(relaxed = true),
             serializer = mockk(relaxed = true),
             systemManager = mockk(relaxed = true),
@@ -57,7 +57,7 @@ class SceneManagerTargetingTest {
         every { assetInfo.absoluteSourcePath } returns tempFile.absolutePath
 
         val expectedModel = mockk<com.pafoid.skate.engine.assets.data.models.BaseModel>()
-        every { resourceManager.loadModelSync(tempFile.absolutePath) } returns expectedModel
+        every { assetsManager.loadModelSync(tempFile.absolutePath) } returns expectedModel
 
         sceneManager.openScene(scene)
 
@@ -68,7 +68,7 @@ class SceneManagerTargetingTest {
     fun `prepareSceneForSaving resolves model and texture GUIDs`() {
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         val sceneManager = SceneManager(
-            resourceManager = mockk(relaxed = true),
+            assetsManager = mockk(relaxed = true),
             eventSystem = mockk(relaxed = true),
             serializer = mockk(relaxed = true),
             systemManager = mockk(relaxed = true),
@@ -109,7 +109,7 @@ class SceneManagerTargetingTest {
 
     private fun createSceneManager(): SceneManager {
         return SceneManager(
-            resourceManager = mockk(relaxed = true),
+            assetsManager = mockk(relaxed = true),
             eventSystem = mockk(relaxed = true),
             serializer = mockk(relaxed = true),
             systemManager = mockk(relaxed = true),

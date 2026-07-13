@@ -1,9 +1,8 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.Camera
@@ -23,8 +22,7 @@ class AudioSystemTest : KoinTest {
 
     private val audioEngine = mockk<AudioEngine>(relaxed = true)
     private val logger = mockk<LoggerService>(relaxed = true)
-    private val stringManager = mockk<StringManager>(relaxed = true)
-    private val resourceManager = mockk<ResourceManager>(relaxed = true)
+    private val assetsManager = mockk<AssetsManager>(relaxed = true)
     private val scene = mockk<Scene>(relaxed = true)
     private val camera = mockk<Camera>(relaxed = true)
 
@@ -38,7 +36,7 @@ class AudioSystemTest : KoinTest {
         every { camera.yaw } returns 0f
         every { camera.pitch } returns 0f
 
-        audioSystem = AudioSystem(audioEngine, logger, stringManager, resourceManager)
+        audioSystem = AudioSystem(audioEngine, logger, assetsManager)
         audioSystem.init(scene)
     }
 

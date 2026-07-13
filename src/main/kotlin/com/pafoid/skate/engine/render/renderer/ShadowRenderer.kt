@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.ecs.GameObject
@@ -32,11 +32,11 @@ import org.lwjgl.opengl.GL30.glEnable
  * - Depth-only rendering (no color buffer writes)
  *
  * @param shadowShader The shadow shader to use
- * @param resourceManager Resource manager for loading textures
+ * @param assetsManager Resource manager for loading textures
  */
 class ShadowRenderer(
     private val shadowShader: Shader,
-    private val resourceManager: ResourceManager
+    private val assetsManager: AssetsManager
 ) {
 
     /**
@@ -111,7 +111,7 @@ class ShadowRenderer(
 
             // Bind base color texture for alpha masking (if available)
             if (material.alphaMode == AlphaMode.MASK && material.baseColorTexture != null) {
-                bindTexture(TextureSlots.BASE_COLOR, material.baseColorTexture, resourceManager)
+                bindTexture(TextureSlots.BASE_COLOR, material.baseColorTexture, assetsManager)
                 shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
             }
 

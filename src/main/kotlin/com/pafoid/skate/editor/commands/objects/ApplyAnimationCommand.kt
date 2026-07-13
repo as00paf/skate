@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.commands.objects
 
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.events.ViewportAction
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -11,16 +11,15 @@ import com.pafoid.skate.engine.getComponent
 
 class ApplyAnimationCommand(
     private val gameObject: GameObject,
-    private val oldAnimationPath: String?,
     private val newAnimationPath: String,
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
     private val animatorHelper: AnimatorHelper,
     private val eventSystem: EventSystem
 ) : ExecuteOnlyCommand {
     override fun execute() {
         val animator = gameObject.getComponent<Animator>()
         animator?.let { anim ->
-            val animation = resourceManager.getAnimation(newAnimationPath)
+            val animation = assetsManager.getAnimation(newAnimationPath)
             animation?.let {
                 animatorHelper.addAnimationWithPath(anim, it)
                 eventSystem.publish(ViewportAction.AnimationApplied(gameObject, newAnimationPath))

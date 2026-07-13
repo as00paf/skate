@@ -6,7 +6,7 @@ import com.pafoid.skate.editor.commands.scene.CreateLightCommand
 import com.pafoid.skate.editor.commands.scene.CreatePrimitiveCommand
 import com.pafoid.skate.editor.commands.scene.DuplicateGameObjectCommand
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -59,7 +59,7 @@ class SyncCommandSemanticsTest {
         val command = ApplyTextureCommand(
             GameObject("Target"),
             "assets/textures/test.png",
-            mockk<ResourceManager>(relaxed = true),
+            mockk<AssetsManager>(relaxed = true),
             mockk<EventSystem>(relaxed = true)
         )
         assertEquals(CommandCategory.EXECUTE_ONLY, command.getCategory())

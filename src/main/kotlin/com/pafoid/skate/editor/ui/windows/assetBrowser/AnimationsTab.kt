@@ -2,8 +2,7 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.database.AssetDatabase
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
@@ -13,12 +12,11 @@ import java.awt.Desktop
 import java.io.File
 
 class AnimationsTab(
-    resourceManager: ResourceManager,
+    assetsManager: AssetsManager,
     stringManager: StringManager,
-    assetDatabase: AssetDatabase? = null,
     private val jobSystem: IJobSystem,
     private val logger: LoggerService
-): AssetBrowserTab(resourceManager, stringManager, assetDatabase) {
+) : AssetBrowserTab(assetsManager, stringManager) {
 
     init {
         refreshAssets()
@@ -32,7 +30,7 @@ class AnimationsTab(
 
         ImGui.pushID(file.absolutePath)
 
-        if (ImGui.button("${Icons.PLAY}", size, size)) {
+        if (ImGui.button(Icons.PLAY, size, size)) {
             previewAnimation(file)
         }
         if (ImGui.isItemHovered()) {
@@ -83,19 +81,15 @@ class AnimationsTab(
 
     override fun refreshAssets() {
         jobSystem.runIO {
-            // Animation assets not yet in AssetDatabase — use directory fallback
-            refreshFromDirectory(setOf("fbx"))
-        }
-    }
-
-    override fun refreshFromDirectory(fileExtensions: Set<String>) {
-        items.clear()
-        val animationsDir = File(Assets.Folders.ANIMATIONS)
-        if(animationsDir.exists()) {
-            items.addAll(
-                animationsDir.walkTopDown().filter {
-                    it.isFile && fileExtensions.contains(it.extension)
-                })
+            val fileExtensions = setOf("fbx")
+            items.clear()
+            val animationsDir = File(Assets.Folders.ANIMATIONS)
+            if (animationsDir.exists()) {
+                items.addAll(
+                    animationsDir.walkTopDown().filter {
+                        it.isFile && fileExtensions.contains(it.extension) && assetsManager.hasAnimation(it.absolutePath)
+                    })
+            }
         }
     }
 }

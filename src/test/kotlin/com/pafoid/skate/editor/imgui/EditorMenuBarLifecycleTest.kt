@@ -10,7 +10,7 @@ import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.ui.windows.ProjectSwitcherDialog
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
@@ -25,8 +25,8 @@ class EditorMenuBarLifecycleTest {
 
     @Test
     fun `appIconLifecycle_ProjectClosed_InvalidatesAndReloadsTextureId`() {
-        val resourceManager = mockk<ResourceManager>(relaxed = true)
-        every { resourceManager.loadTextureSync(Assets.Textures.APP_ICON) } returnsMany listOf(texture(101), texture(202))
+        val assetsManager = mockk<AssetsManager>(relaxed = true)
+        every { assetsManager.loadTextureSync(Assets.Textures.APP_ICON) } returnsMany listOf(texture(101), texture(202))
 
         val eventSystem = EventSystem()
         val menuBar = EditorMenuBar(
@@ -36,7 +36,7 @@ class EditorMenuBarLifecycleTest {
             viewMenu = mockk<ViewMenuBuilder>(relaxed = true),
             windowControls = mockk<WindowControlsRenderer>(relaxed = true),
             stringManager = mockk<StringManager>(relaxed = true),
-            resourceManager = resourceManager,
+            assetsManager = assetsManager,
             projectManager = mockk<ProjectManager>(relaxed = true),
             eventSystem = eventSystem,
             projectSwitcher = mockk<ProjectSwitcherDialog>(relaxed = true),
@@ -52,7 +52,7 @@ class EditorMenuBarLifecycleTest {
 
         invokeLoadAppIconTexture(menuBar)
         assertEquals(202, readAppIconTexId(menuBar))
-        verify(exactly = 2) { resourceManager.loadTextureSync(Assets.Textures.APP_ICON) }
+        verify(exactly = 2) { assetsManager.loadTextureSync(Assets.Textures.APP_ICON) }
     }
 
     private fun texture(id: Int): Texture = Texture().also { it.texId = id }

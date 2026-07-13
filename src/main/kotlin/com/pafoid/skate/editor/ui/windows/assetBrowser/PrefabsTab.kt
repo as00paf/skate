@@ -6,7 +6,7 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.LoggerService
@@ -22,13 +22,13 @@ import java.awt.Desktop
 import java.io.File
 
 class PrefabsTab(
-    resourceManager: ResourceManager,
+    assetsManager: AssetsManager,
     stringManager: StringManager,
     private val thumbnailCache: ThumbnailCache,
     private val prefabsGenerator: PrefabsGenerator,
     private val logger: LoggerService,
     private val jobSystem: IJobSystem,
-): AssetBrowserTab(resourceManager, stringManager){
+) : AssetBrowserTab(assetsManager, stringManager) {
 
 
     override fun imgui(label: String, searchText: ImString) {
@@ -124,15 +124,15 @@ class PrefabsTab(
         ImGui.beginGroup()
 
         val texId = if (data.modelPath != null) {
-            val baseModel = resourceManager.loadModelSync(data.modelPath)
+            val baseModel = assetsManager.loadModelSync(data.modelPath)
             val rawModel = baseModel.mesh[0].rawModel
-            val texture = resourceManager.loadTextureSync(data.material?.texturePath ?: Assets.Textures.DEFAULT)
+            val texture = assetsManager.loadTextureSync(data.material?.texturePath ?: Assets.Textures.DEFAULT)
             val model =
                 TexturedModel(data.material?.texturePath ?: Assets.Textures.DEFAULT, rawModel, Material(texture))
             val cacheId = "${data.modelPath}_${data.material?.name}"
             thumbnailCache.getThumbnail(cacheId, model)
         } else {
-            resourceManager.loadTextureSync(Assets.Textures.DEFAULT).texId
+            assetsManager.loadTextureSync(Assets.Textures.DEFAULT).texId
         }
 
         ImGui.pushID(data.name)

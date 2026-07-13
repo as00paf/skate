@@ -7,7 +7,7 @@ import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -43,7 +43,7 @@ class ViewportActionHandlerDuplicateFlowTest {
     private val clipboardService = mockk<ClipboardService>(relaxed = true)
     private val mutationGate = mockk<EditorMutationGate>(relaxed = true)
     private val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-    private val resourceManager = mockk<ResourceManager>(relaxed = true)
+    private val assetsManager = mockk<AssetsManager>(relaxed = true)
     private val gameObjectManager = mockk<GameObjectManager>(relaxed = true)
     private val cameraManager = mockk<CameraManager>(relaxed = true)
     private val systemManager = mockk<SystemManager>(relaxed = true)
@@ -86,7 +86,7 @@ class ViewportActionHandlerDuplicateFlowTest {
             clipboardService,
             mutationGate,
             prefabsGenerator,
-            resourceManager,
+            assetsManager,
             gameObjectManager,
             cameraManager,
             systemManager,

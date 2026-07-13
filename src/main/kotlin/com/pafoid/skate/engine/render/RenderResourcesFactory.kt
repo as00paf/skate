@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -29,7 +29,7 @@ import org.koin.core.component.KoinComponent
  * Factory for creating all rendering resources.
  */
 class RenderResourcesFactory(
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
     private val sceneManager: SceneManager,
     private val logger: LoggerService,
     private val vaoLoader: VAOLoader,
@@ -53,7 +53,7 @@ class RenderResourcesFactory(
         val shaders = loadShaders()
 
         logger.log("Creating renderer instances...")
-        val renderers = createRenderers(shaders, resourceManager)
+        val renderers = createRenderers(shaders, assetsManager)
 
         logger.log("Initializing splash renderer...")
         splashRenderer.initialize()
@@ -106,15 +106,15 @@ class RenderResourcesFactory(
 
     private suspend fun loadShaders(): Shaders {
         val shaders = listOf<suspend () -> Shader>(
-            { resourceManager.loadShader(Assets.Shaders.DEBUG) },
-            { resourceManager.loadShader(Assets.Shaders.SHADER_3D_DEFAULT) },
-            { resourceManager.loadShader(Assets.Shaders.SHADER_2D_BATCH) },
-            { resourceManager.loadShader(Assets.Shaders.PICKING) },
-            { resourceManager.loadShader(Assets.Shaders.PICKING_3D) },
-            { resourceManager.loadShader(Assets.Shaders.SKYBOX) },
-            { resourceManager.loadShader(Assets.Shaders.SKY_DOME) },
-            { resourceManager.loadShader(Assets.Shaders.SHADOW) },
-            { resourceManager.loadShader(Assets.Shaders.SPLASH) },
+            { assetsManager.loadShader(Assets.Shaders.DEBUG) },
+            { assetsManager.loadShader(Assets.Shaders.SHADER_3D_DEFAULT) },
+            { assetsManager.loadShader(Assets.Shaders.SHADER_2D_BATCH) },
+            { assetsManager.loadShader(Assets.Shaders.PICKING) },
+            { assetsManager.loadShader(Assets.Shaders.PICKING_3D) },
+            { assetsManager.loadShader(Assets.Shaders.SKYBOX) },
+            { assetsManager.loadShader(Assets.Shaders.SKY_DOME) },
+            { assetsManager.loadShader(Assets.Shaders.SHADOW) },
+            { assetsManager.loadShader(Assets.Shaders.SPLASH) },
         )
 
         return Shaders(
@@ -132,11 +132,11 @@ class RenderResourcesFactory(
 
     private fun createRenderers(
         shaders: Shaders,
-        resourceManager: ResourceManager
+        assetsManager: AssetsManager
     ): Renderers {
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
-        val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, resourceManager)
-        val shadowRenderer = ShadowRenderer(shaders.shadow, resourceManager)
+        val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, assetsManager)
+        val shadowRenderer = ShadowRenderer(shaders.shadow, assetsManager)
 
         return Renderers(
             skybox = skyboxRenderer,
@@ -157,7 +157,7 @@ class RenderResourcesFactory(
         shadowMap: ShadowMap? = null
     ): RenderPasses {
         val renderer2D = Renderer2D()
-        val pickingRenderer = PickingRenderer(resourceManager, logger, cameraManager.camera)
+        val pickingRenderer = PickingRenderer(assetsManager, logger, cameraManager.camera)
         val lightingUniformsLoader = LightingUniformsLoader()
 
         renderer2D.bindShader(shaders.batch)

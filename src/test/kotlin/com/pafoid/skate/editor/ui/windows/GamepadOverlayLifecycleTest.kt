@@ -3,7 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
@@ -28,8 +28,8 @@ class GamepadOverlayLifecycleTest {
 
     @Test
     fun `controllerTexture_ProjectClosed_InvalidatesAndReloadsTexture`() {
-        val resourceManager = mockk<ResourceManager>(relaxed = true)
-        every { resourceManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER) } returnsMany listOf(
+        val assetsManager = mockk<AssetsManager>(relaxed = true)
+        every { assetsManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER) } returnsMany listOf(
             texture(101),
             texture(202)
         )
@@ -37,7 +37,7 @@ class GamepadOverlayLifecycleTest {
         val eventSystem = EventSystem()
         startKoin {
             modules(module {
-                single { resourceManager }
+                single { assetsManager }
                 single { mockk<GamepadListener>(relaxed = true) }
                 single { mockk<SettingsManager>(relaxed = true) }
                 single { mockk<StringManager>(relaxed = true) }
@@ -52,7 +52,7 @@ class GamepadOverlayLifecycleTest {
         assertNull(readCachedControllerTexture(overlay))
 
         assertEquals(202, resolveControllerTexture(overlay).texId)
-        verify(exactly = 2) { resourceManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER) }
+        verify(exactly = 2) { assetsManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER) }
     }
 
     private fun texture(id: Int): Texture = Texture().also { it.texId = id }

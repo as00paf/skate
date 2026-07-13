@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.render.utils
 
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
@@ -28,15 +28,15 @@ fun Int.unbindVAO(attributes: List<Int>) {
  * 
  * @param slot The texture unit slot (0, 1, 2, etc.)
  * @param texture The texture to bind, or null to use the default texture
- * @param resourceManager The resource manager for loading the default texture
+ * @param assetsManager The resource manager for loading the default texture
  */
 fun bindTexture(
     slot: Int,
     texture: Texture?,
-    resourceManager: ResourceManager
+    assetsManager: AssetsManager
 ) {
     GL13.glActiveTexture(GL13.GL_TEXTURE0 + slot)
-    (texture ?: resourceManager.loadTextureSync(Assets.Textures.DEFAULT)).bind()
+    (texture ?: assetsManager.loadTextureSync(Assets.Textures.DEFAULT)).bind()
 }
 
 /**

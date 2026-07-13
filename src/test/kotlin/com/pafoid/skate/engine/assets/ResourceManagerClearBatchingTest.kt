@@ -44,7 +44,7 @@ class ResourceManagerClearBatchingTest {
         val assimpLoader = mockk<AssimpLoader>(relaxed = true)
         val jobSystem = RecordingJobSystem()
 
-        val manager = ResourceManager(
+        val manager = AssetsManager(
             shaderLoader = shaderLoader,
             assimpLoader = assimpLoader,
             vaoLoader = vaoLoader,
@@ -128,7 +128,7 @@ class ResourceManagerClearBatchingTest {
         val assetDatabase = mockk<AssetDatabase>(relaxed = true)
         every { assetDatabase.projectRoot } returns File("C:/Projects/Level01")
 
-        val manager = ResourceManager(
+        val manager = AssetsManager(
             shaderLoader = shaderLoader,
             assimpLoader = assimpLoader,
             vaoLoader = vaoLoader,

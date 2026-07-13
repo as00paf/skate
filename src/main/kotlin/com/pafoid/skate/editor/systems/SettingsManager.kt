@@ -8,7 +8,6 @@ import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.editor.settings.SettingsData
 import com.pafoid.skate.editor.settings.SettingsSerializer
 import com.pafoid.skate.editor.settings.UserSettings
-import com.pafoid.skate.engine.assets.database.AssetRegistryData
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
@@ -157,18 +156,6 @@ class SettingsManager(
             logger.logEditor("Error saving project: ${e.message}", LogLevel.ERROR)
             false
         }
-    }
-
-    /**
-     * Update the asset registry embedded in the project settings and save.
-     * Called when closing a project to persist the registry in the project file.
-     */
-    fun updateProjectAssetRegistry(
-        project: Project,
-        registryData: AssetRegistryData
-    ) {
-        val updated = project.copy(assetRegistry = registryData)
-        saveProject(updated)
     }
 
     fun closeProject() {

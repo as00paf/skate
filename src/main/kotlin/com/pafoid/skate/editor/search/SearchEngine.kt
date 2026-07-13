@@ -14,7 +14,7 @@ import org.koin.core.component.KoinComponent
  * across all providers, and aggregates results with proper scoring and sorting.
  *
  * This class is designed to be used with dependency injection (Koin) and integrates
- * with the engine's [SceneManager] and [com.pafoid.skate.engine.assets.ResourceManager].
+ * with the engine's [SceneManager] and [com.pafoid.skate.engine.assets.AssetsManager].
  *
  * Usage:
  * ```

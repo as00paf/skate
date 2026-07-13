@@ -12,7 +12,7 @@ import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -27,7 +27,7 @@ class EditorMenuBar(
     private val viewMenu: ViewMenuBuilder,
     private val windowControls: WindowControlsRenderer,
     private val stringManager: StringManager,
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
     private val projectManager: ProjectManager,
     private val eventSystem: EventSystem,
 ) {
@@ -64,7 +64,7 @@ class EditorMenuBar(
 
     private fun loadAppIconTexture() {
         appIconTexId = try {
-            resourceManager.loadTextureSync(Assets.Textures.APP_ICON).texId
+            assetsManager.loadTextureSync(Assets.Textures.APP_ICON).texId
         } catch (e: Exception) {
             -1
         }

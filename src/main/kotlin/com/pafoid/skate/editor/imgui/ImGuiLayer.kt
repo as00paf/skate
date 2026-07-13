@@ -11,7 +11,7 @@ import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.WindowController
@@ -67,7 +67,7 @@ class ImGuiLayer(
     private val eventSystem: EventSystem,
     private val projectManager: ProjectManager,
     private val settingsManager: SettingsManager,
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
     private val gizmoSystem: GizmoSystem,
 ): KoinComponent {
 
@@ -88,7 +88,7 @@ class ImGuiLayer(
         viewMenu = ViewMenuBuilder(stringManager, windowRegistry),
         windowControls = WindowControlsRenderer(eventSystem, stringManager),
         stringManager = stringManager,
-        resourceManager = resourceManager,
+        assetsManager = assetsManager,
         projectManager = projectManager,
         eventSystem = eventSystem
     )

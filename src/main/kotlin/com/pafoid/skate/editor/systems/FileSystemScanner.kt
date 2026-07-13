@@ -56,9 +56,6 @@ class FileSystemScanner(
         val type = FileTypeResolver.resolve(file)
         val isFav = _favorites.contains(file.absolutePath)
 
-        // Look up GUID from .meta file if it exists
-        val guid = resolveGuidFromFile(file)
-
         val children = if (file.isDirectory && shouldScanDirectory(file)) {
             file.listFiles()
                 ?.filter { it.name !in SKIP_NAMES }
@@ -72,21 +69,7 @@ class FileSystemScanner(
         // Pre-compute folder size from children (avoids File.length() on every access)
         val computedSize = if (file.isFile) file.length() else children.sumOf { it.computedSize }
 
-        return FileSystemItem(file, type, isFav, children, guid, computedSize)
-    }
-
-    /**
-     * Resolve the GUID for a file by checking for a .meta sidecar.
-     */
-    private fun resolveGuidFromFile(file: File): String? {
-        val metaFile = File("${file.absolutePath}.meta")
-        if (!metaFile.exists()) return null
-        return try {
-            val meta = serializer.decode<com.pafoid.skate.engine.assets.database.AssetMeta>(metaFile.readText())
-            meta.guid
-        } catch (e: Exception) {
-            null
-        }
+        return FileSystemItem(file, type, isFav, children, file.absolutePath, computedSize)
     }
 
     /**

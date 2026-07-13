@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.BoneNameMapper
-import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.core.EventSystem
@@ -39,7 +39,7 @@ import java.io.File
 @Serializable
 class Animator : Component(), KoinComponent {
     @Transient
-    val resourceManager: ResourceManager by inject()
+    val assetsManager: AssetsManager by inject()
     @Transient
     private val logger: LoggerService by inject()
     @Transient
@@ -117,7 +117,7 @@ class Animator : Component(), KoinComponent {
      * Rebuilds the animations list from serialized file paths.
      * Called by SceneSerializer after scene deserialization.
      */
-    fun loadAnimationsFromPaths(resourceManager: ResourceManager) {
+    fun loadAnimationsFromPaths(assetsManager: AssetsManager) {
         animations.clear()
         currentAnimation = null
         val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return
@@ -126,7 +126,7 @@ class Animator : Component(), KoinComponent {
             val file = File(path)
             if (file.exists()) {
                 try {
-                    val animation = resourceManager.loadAnimationSync(path, skeleton)
+                    val animation = assetsManager.loadAnimationSync(path, skeleton)
                     animations.add(animation)
                 } catch (e: Exception) {
                     logger.log("Failed to load animation from path: $path - ${e.message}", LogLevel.ERROR)

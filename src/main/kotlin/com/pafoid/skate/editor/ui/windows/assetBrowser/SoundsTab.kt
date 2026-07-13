@@ -1,15 +1,14 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.SoundSource
-import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.assets.database.AssetType
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiTableFlags
@@ -24,11 +23,11 @@ import java.io.File
  * Supports WAV and OGG formats.
  */
 class SoundsTab(
-    resourceManager: ResourceManager,
+    assetsManager: AssetsManager,
     stringManager: StringManager,
-    assetDatabase: AssetDatabase? = null,
+    private val jobSystem: IJobSystem,
     private val logger: LoggerService
-) : AssetBrowserTab(resourceManager, stringManager, assetDatabase) {
+) : AssetBrowserTab(assetsManager, stringManager) {
 
     private var playingSource: SoundSource? = null
     private var currentPlayingFile: File? = null
@@ -62,7 +61,7 @@ class SoundsTab(
     private fun renderSoundRow(file: File) {
         ImGui.pushID(file.absolutePath)
 
-        val buffer = resourceManager.getSound(file.absolutePath) ?: resourceManager.loadSound(file.absolutePath)
+        val buffer = assetsManager.getSound(file.absolutePath) ?: assetsManager.loadSound(file.absolutePath)
         val duration = buffer.durationInSeconds
         val isPlaying = currentPlayingFile == file && playingSource?.isPlaying() == true
 
@@ -159,17 +158,16 @@ class SoundsTab(
     }
 
     override fun refreshAssets() {
-        refreshFromDatabase(AssetType.AUDIO, setOf("wav", "ogg", "mp3", "flac", "aiff"))
-    }
-
-    override fun refreshFromDirectory(fileExtensions: Set<String>) {
-        items.clear()
-        val soundsDir = File("assets/sounds")
-        if (soundsDir.exists()) {
-            items.addAll(soundsDir.walkTopDown().filter { file ->
-                val ext = file.extension.lowercase()
-                ext in fileExtensions
-            })
+        jobSystem.runIO {
+            val fileExtensions = setOf("wav", "ogg", "mp3", "flac", "aiff")
+            items.clear()
+            val soundsDir = File("assets/sounds")
+            if (soundsDir.exists()) {
+                items.addAll(soundsDir.walkTopDown().filter { file ->
+                    val ext = file.extension.lowercase()
+                    ext in fileExtensions && assetsManager.hasSound(file.absolutePath)
+                })
+            }
         }
     }
 

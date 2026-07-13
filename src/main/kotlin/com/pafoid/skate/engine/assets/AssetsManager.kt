@@ -7,7 +7,6 @@ import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
-import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.core.LoggerService
@@ -16,7 +15,6 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.DefaultJobSystem
 import com.pafoid.skate.engine.utils.IJobSystem
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.file.FileSystems
@@ -42,19 +40,17 @@ import java.util.concurrent.atomic.AtomicLong
  * @param assimpLoader Model file loader via Assimp
  * @param vaoLoader Vertex array object loader
  * @param logger Logger service
- * @param maxMemoryBytes Max memory for texture cache (default 256MB)
  * @param enableHotReload Enable file watching for hot-reload (default false)
  */
-class ResourceManager(
+class AssetsManager(
     private val shaderLoader: ShaderLoader = ShaderLoader(false),
     private val assimpLoader: AssimpLoader = AssimpLoader(),
     private val vaoLoader: VAOLoader,
     private val logger: LoggerService,
-    private val maxMemoryBytes: Long = 256 * 1024 * 1024,
-    private val enableHotReload: Boolean = false,
-    private val assetDatabase: AssetDatabase,
     private val jobSystem: IJobSystem = DefaultJobSystem()
 ) {
+    private var enableHotReload: Boolean = false
+    private val maxMemoryBytes: Long = 256 * 1024 * 1024
 
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
@@ -147,7 +143,11 @@ class ResourceManager(
         }
         lruQueue.remove(path)
     }
-    
+
+    fun hasTexture(path: String): Boolean {
+        return textures[path] != null
+    }
+
     private fun watchFile(path: String) {
         if (watchService == null) {
             try {
@@ -270,6 +270,10 @@ class ResourceManager(
 
     fun getSound(path: String): SoundBuffer? {
         return sounds[File(path).absolutePath]
+    }
+
+    fun hasSound(path: String): Boolean {
+        return sounds[path] != null
     }
 
     suspend fun loadModel(path: String): TexturedModel {
@@ -417,94 +421,13 @@ class ResourceManager(
         return animations[absolutePath]
     }
 
+    fun hasAnimation(filePath: String): Boolean {
+        return animations[filePath] != null
+    }
+
     fun isTextureInUse(texturePath: String): Boolean {
         val absolutePath = File(texturePath).absolutePath
         return modelDependencies.values.any { it.contains(absolutePath) }
-    }
-
-    fun clear(preserveNonProjectAssets: Boolean = false) {
-        val preserveExternalAssets = preserveNonProjectAssets && assetDatabase.projectRoot != null
-        val projectRoot = assetDatabase.projectRoot
-
-        val texturesToDestroy = mutableListOf<Texture>()
-        val modelsToDestroy = mutableListOf<TexturedModel>()
-        val shadersToDestroy = mutableListOf<Shader>()
-
-        textures.entries.toList().forEach { (path, texture) ->
-            if (preserveExternalAssets && !isInProject(path, projectRoot!!)) {
-                return@forEach
-            }
-            textures.remove(path)
-            texturesToDestroy.add(texture)
-        }
-
-        models.entries.toList().forEach { (path, model) ->
-            if (preserveExternalAssets && !isInProject(path, projectRoot!!)) {
-                return@forEach
-            }
-            models.remove(path)
-            modelsToDestroy.add(model)
-            modelDependencies.remove(path)
-        }
-
-        shaders.entries.toList().forEach { (path, shader) ->
-            if (preserveExternalAssets && !isInProject(path, projectRoot!!)) {
-                return@forEach
-            }
-            shaders.remove(path)
-            shadersToDestroy.add(shader)
-        }
-
-        sounds.entries.toList().forEach { (path, sound) ->
-            if (preserveExternalAssets && !isInProject(path, projectRoot!!)) {
-                return@forEach
-            }
-            sounds.remove(path)
-            sound.delete()
-        }
-
-        if (!preserveExternalAssets) {
-            modelDependencies.clear()
-            animations.clear()
-        } else {
-            animations.entries.toList().forEach { (path, _) ->
-                if (isInProject(path, projectRoot!!)) {
-                    animations.remove(path)
-                }
-            }
-            modelDependencies.entries.removeIf { (modelPath, _) -> !models.containsKey(modelPath) }
-        }
-
-        lruQueue.removeIf { texturePath -> !textures.containsKey(texturePath) }
-        currentTextureMemory.set(
-            textures.values.sumOf { texture ->
-                texture.width * texture.height * 4L * 4 / 3
-            }
-        )
-
-        if (texturesToDestroy.isNotEmpty() || modelsToDestroy.isNotEmpty() || shadersToDestroy.isNotEmpty()) {
-            val destroyGpuResources = suspend {
-                texturesToDestroy.forEach { it.destroy() }
-                modelsToDestroy.forEach { model ->
-                    model.mesh.forEach { part ->
-                        part.rawModel?.let { vaoLoader.deleteVAO(it.vaoId) }
-                    }
-                }
-                shadersToDestroy.forEach { it.destroy() }
-            }
-
-            if (jobSystem.isMainThread()) {
-                runBlocking { destroyGpuResources() }
-            } else {
-                jobSystem.runOnMain {
-                    destroyGpuResources()
-                }
-            }
-        }
-
-        watchService?.close()
-        watchService = null
-        watchedPaths.clear()
     }
 
     private fun isInProject(assetPath: String, projectRoot: File): Boolean {

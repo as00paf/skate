@@ -1,8 +1,6 @@
 package com.pafoid.skate.engine.ecs
 
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.assets.database.AssetGuid
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
@@ -16,12 +14,11 @@ import com.pafoid.skate.engine.getComponent
 import java.io.File
 
 class SceneManager(
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
     private val eventSystem: EventSystem,
     private val serializer: Serializer,
     private val systemManager: SystemManager,
     private val logger: LoggerService,
-    private val assetDatabase: AssetDatabase,
 ) {
 
     val openScenes = mutableListOf<Scene>()
@@ -74,11 +71,10 @@ class SceneManager(
         obj.getComponent<RenderComponent>()?.let { rc ->
             if (rc.model == null && rc.modelGuid.isNotBlank()) {
                 try {
-                    val asset = assetDatabase.getByGuid(AssetGuid(rc.modelGuid))
-                    val modelPath = asset?.absoluteSourcePath ?: rc.modelGuid
+                    val modelPath = rc.modelGuid
                     val file = File(modelPath)
                     if (file.exists()) {
-                        rc.model = resourceManager.loadModelSync(modelPath)
+                        rc.model = assetsManager.loadModelSync(modelPath)
                         logger.log("Resolved model for '${obj.name}': $modelPath", LogLevel.INFO)
                     } else {
                         logger.log("WARNING: Model path does not exist for '${obj.name}': $modelPath", LogLevel.WARN)
@@ -88,18 +84,16 @@ class SceneManager(
                 }
             }
 
-            // Resolve texture GUIDs and apply them to the model's materials
             rc.model?.let { model ->
                 model.mesh.forEach { meshPart ->
                     val mat = meshPart.material
 
                     if (rc.albedoTextureGuid.isNotBlank()) {
                         try {
-                            val asset = assetDatabase.getByGuid(AssetGuid(rc.albedoTextureGuid))
-                            val texPath = asset?.absoluteSourcePath ?: rc.albedoTextureGuid
+                            val texPath = rc.albedoTextureGuid
                             val file = File(texPath)
                             if (file.exists()) {
-                                mat.baseColorTexture = resourceManager.loadTextureSync(texPath)
+                                mat.baseColorTexture = assetsManager.loadTextureSync(texPath)
                             } else {
                                 logger.log(
                                     "WARNING: Albedo texture path does not exist for '${obj.name}': $texPath",
@@ -113,11 +107,10 @@ class SceneManager(
 
                     if (rc.normalMapGuid.isNotBlank()) {
                         try {
-                            val asset = assetDatabase.getByGuid(AssetGuid(rc.normalMapGuid))
-                            val texPath = asset?.absoluteSourcePath ?: rc.normalMapGuid
+                            val texPath = rc.normalMapGuid
                             val file = File(texPath)
                             if (file.exists()) {
-                                mat.normalMap = resourceManager.loadTextureSync(texPath)
+                                mat.normalMap = assetsManager.loadTextureSync(texPath)
                             } else {
                                 logger.log(
                                     "WARNING: Normal map path does not exist for '${obj.name}': $texPath",
@@ -131,11 +124,10 @@ class SceneManager(
 
                     if (rc.metallicRoughnessGuid.isNotBlank()) {
                         try {
-                            val asset = assetDatabase.getByGuid(AssetGuid(rc.metallicRoughnessGuid))
-                            val texPath = asset?.absoluteSourcePath ?: rc.metallicRoughnessGuid
+                            val texPath = rc.metallicRoughnessGuid
                             val file = File(texPath)
                             if (file.exists()) {
-                                mat.metallicRoughnessTexture = resourceManager.loadTextureSync(texPath)
+                                mat.metallicRoughnessTexture = assetsManager.loadTextureSync(texPath)
                             } else {
                                 logger.log(
                                     "WARNING: Metallic roughness map path does not exist for '${obj.name}': $texPath",
@@ -153,7 +145,7 @@ class SceneManager(
             }
         }
 
-        obj.getComponent<Animator>()?.loadAnimationsFromPaths(resourceManager)
+        obj.getComponent<Animator>()?.loadAnimationsFromPaths(assetsManager)
 
         obj.children.forEach { child ->
             resolveObjectReferences(child)
@@ -205,7 +197,6 @@ class SceneManager(
         if (openScenes.isEmpty()) {
             activeSceneIndex = -1
             logger.log("All scenes closed. Clearing resource cache.", LogLevel.INFO)
-            resourceManager.clear(preserveNonProjectAssets = true)
         } else if (activeSceneIndex >= index) {
             activeSceneIndex = (activeSceneIndex - 1).coerceAtLeast(0)
             switchScene(openScenes[activeSceneIndex])
@@ -216,7 +207,6 @@ class SceneManager(
         openScenes.forEach { it.destroyScene() }
         openScenes.clear()
         activeSceneIndex = -1
-        resourceManager.clear()
     }
 
     fun renameScene(scene: Scene, newName: String, dirPath: String): Boolean {

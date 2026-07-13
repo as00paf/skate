@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.LoggerService
@@ -24,7 +24,7 @@ import kotlin.math.sin
 class AudioSystem(
     val audioEngine: AudioEngine,
     private val logger: LoggerService,
-    private val resourceManager: ResourceManager,
+    private val assetsManager: AssetsManager,
 ) : System(priority = ExecutionPriority.LATE) {
 
     private var isInitialized = false
@@ -110,7 +110,7 @@ class AudioSystem(
 
                 if (source == null && audioComponent.soundFilePath.isNotBlank()) {
                     // Try to load the sound buffer
-                    val buffer = resourceManager.loadSound(audioComponent.soundFilePath)
+                    val buffer = assetsManager.loadSound(audioComponent.soundFilePath)
                     if (buffer.bufferId != -1) {
                         source = SoundSource(audioComponent.loops, !audioComponent.is3D)
                         source.setBuffer(buffer.bufferId)

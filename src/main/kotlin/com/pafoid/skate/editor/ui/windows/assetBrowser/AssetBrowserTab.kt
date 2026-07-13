@@ -1,27 +1,25 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.engine.assets.ResourceManager
-import com.pafoid.skate.engine.assets.database.AssetDatabase
-import com.pafoid.skate.engine.assets.database.AssetInfo
-import com.pafoid.skate.engine.assets.database.AssetType
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
 import imgui.type.ImString
 import java.io.File
+import kotlin.math.max
 
 abstract class AssetBrowserTab(
-    protected val resourceManager: ResourceManager,
-    protected val stringManager: StringManager,
-    protected val assetDatabase: AssetDatabase? = null) {
+    protected val assetsManager: AssetsManager,
+    protected val stringManager: StringManager
+) {
 
     companion object {
         const val ITEM_WIDTH = 120f
     }
 
     protected val items = mutableListOf<File>()
-    protected val assetItems = mutableListOf<AssetInfo>()
+    protected val assetItems = mutableListOf<Any>()
 
     open fun imgui(label:String, searchText: ImString) {
         renderHeader(label, searchText)
@@ -29,7 +27,7 @@ abstract class AssetBrowserTab(
         val availableWidth = ImGui.getContentRegionAvailX()
         val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
-        val numColumns = Math.max(1, (availableWidth / ITEM_WIDTH).toInt())
+        val numColumns = max(1, (availableWidth / ITEM_WIDTH).toInt())
 
         if (ImGui.beginTable("$label Table", numColumns, ImGuiTableFlags.SizingFixedFit)) {
             for (file in files) {
@@ -65,32 +63,4 @@ abstract class AssetBrowserTab(
     open fun renderFileItem(file: File) {}
     open fun refreshAssets() {}
 
-    /**
-     * Refresh assets from the AssetDatabase for a given type.
-     * Falls back to directory scanning if database is not available.
-     */
-    protected fun refreshFromDatabase(type: AssetType, fileExtensions: Set<String>) {
-        items.clear()
-        assetItems.clear()
-
-        if (assetDatabase != null && assetDatabase.isInitialized) {
-            val assets = assetDatabase.getAllByType(type)
-            assetItems.addAll(assets)
-            // Also populate files for backward compat
-            val projectRoot = assetDatabase.projectRoot
-            if (projectRoot != null) {
-                items.addAll(assets.map { File(projectRoot, it.sourcePath) })
-            }
-        } else {
-            // Fallback: scan directories
-            refreshFromDirectory(fileExtensions)
-        }
-    }
-
-    /**
-     * Default directory scanning fallback.
-     */
-    protected open fun refreshFromDirectory(fileExtensions: Set<String>) {
-        // Override in subclass
-    }
 }
