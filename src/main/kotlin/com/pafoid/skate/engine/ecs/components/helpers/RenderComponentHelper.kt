@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.ecs.components.helpers
 
 import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.assets.data.models.BaseModel
 import com.pafoid.skate.engine.assets.data.models.Material
+import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.data.LogLevel
@@ -23,32 +23,23 @@ class RenderComponentHelper(
      */
     fun setModelWithGuid(
         renderComponent: RenderComponent,
-        model: BaseModel
+        model: TexturedModel
     ) {
         renderComponent.model = model
 
         // Resolve and set modelGuid
-        model.sourcePath?.let { sourcePath ->
-            val modelFile = File(sourcePath)
-            val absolutePath = if (modelFile.isAbsolute) {
-                modelFile.absolutePath
-            } else {
-                File(sourcePath).absolutePath
-            }
+        val absolutePath = File(model.path).absolutePath
 
-            val asset = assetDatabase.getByAbsolutePath(absolutePath)
-            renderComponent.modelGuid = asset?.guid?.value ?: absolutePath
+        val asset = assetDatabase.getByAbsolutePath(absolutePath)
+        renderComponent.modelGuid = asset?.guid?.value ?: absolutePath
 
-            if (asset != null) {
-                logger.log("Resolved model GUID for '${model.sourcePath}': ${asset.guid.value.take(8)}", LogLevel.INFO)
-            } else {
-                logger.log(
-                    "WARNING: Model not found in AssetDatabase, using absolute path: $absolutePath",
-                    LogLevel.WARN
-                )
-            }
-        } ?: run {
-            logger.log("WARNING: Model has no sourcePath, cannot resolve GUID", LogLevel.WARN)
+        if (asset != null) {
+            logger.log("Resolved model GUID for '${absolutePath}': ${asset.guid.value.take(8)}", LogLevel.INFO)
+        } else {
+            logger.log(
+                "WARNING: Model not found in AssetDatabase, using absolute path: $absolutePath",
+                LogLevel.WARN
+            )
         }
     }
 

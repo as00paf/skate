@@ -7,7 +7,6 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
-import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -19,7 +18,6 @@ class ApplyTextureCommand(
     private val gameObject: GameObject,
     private val newTexturePath: String,
     private val resourceManager: ResourceManager,
-    private val assetDatabase: AssetDatabase,
     private val renderComponentHelper: RenderComponentHelper,
     private val eventSystem: EventSystem
 ) : ExecuteOnlyCommand {
@@ -30,8 +28,12 @@ class ApplyTextureCommand(
             val texture = resourceManager.loadTextureSync(newTexturePath)
             val meshPart = oldModel.mesh[0]
             val newMaterial = Material(baseColorTexture = texture)
-            val newMeshPart = MeshPart(meshPart.rawModel, newMaterial, meshPart.inverseBindMatrices)
-            val newModel = TexturedModel(listOf(newMeshPart))
+            val newMeshPart = MeshPart(
+                rawModel = meshPart.rawModel,
+                material = newMaterial,
+                inverseBindMatrices = meshPart.inverseBindMatrices
+            )
+            val newModel = TexturedModel(mesh = listOf(newMeshPart))
 
             // Create new RenderComponent with updated model
             val newRenderComponent = RenderComponent(

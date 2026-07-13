@@ -202,7 +202,7 @@ class ThumbnailRenderer(
         var maxZ = -Float.MAX_VALUE
 
         for (meshPart in model.mesh) {
-            val vertices = meshPart.rawModel.vertices
+            val vertices = meshPart.rawModel?.vertices ?: continue
             var i = 0
             while (i < vertices.size) {
                 val x = vertices[i]

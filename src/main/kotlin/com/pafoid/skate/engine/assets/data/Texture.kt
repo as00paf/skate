@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.assets.data
 
-import com.pafoid.skate.engine.ecs.components.Component
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.lwjgl.BufferUtils
@@ -39,7 +38,7 @@ data class Texture(
     var flip: Boolean = false,
     var filePath: String? = null,
     @Transient var pixels: ByteBuffer? = null
-) : Component() {
+) {
 
     @Transient var texId: Int = -1
 
@@ -111,7 +110,7 @@ data class Texture(
         glBindTexture(target, 0)
     }
 
-    override fun destroy() {
+    fun destroy() {
         glDeleteTextures(texId)
     }
 

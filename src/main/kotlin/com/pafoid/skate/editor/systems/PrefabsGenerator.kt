@@ -4,12 +4,13 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Sprite
-import com.pafoid.skate.engine.assets.data.models.CharacterModel
+import com.pafoid.skate.engine.assets.data.models.Material
+import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
-import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
@@ -19,10 +20,8 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
 import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
@@ -34,7 +33,6 @@ class PrefabsGenerator(
     private val resourceManager: ResourceManager,
     private val sceneManager: SceneManager,
     private val systemManager: SystemManager,
-    private val assetDatabase: AssetDatabase,
     private val renderComponentHelper: RenderComponentHelper,
     private val animatorHelper: AnimatorHelper,
 ) {
@@ -119,8 +117,8 @@ class PrefabsGenerator(
 
     fun spawnSkater(skate: GameObject? = null): GameObject {
         val modelPath = resolveModelPath(Assets.Models.JAMES)
-        val model = resourceManager.getModel(modelPath) as CharacterModel?
-            ?: resourceManager.loadModelSync(modelPath) as CharacterModel
+        val model = resourceManager.getModel(modelPath) as TexturedModel?
+            ?: resourceManager.loadModelSync(modelPath) as TexturedModel
         val skater = Skater("Skater", model, skate)
 
         // Resolve and set GUID for the model
@@ -128,15 +126,16 @@ class PrefabsGenerator(
             renderComponentHelper.setModelWithGuid(rc, model)
         }
 
-        val skeleton = skater.skeletonComponent.pose.skeleton
-
-        animations.forEach { path ->
-            try {
-                val animPath = resolveAnimationPath(path)
-                val animation = resourceManager.loadAnimationSync(animPath, skeleton)
-                animatorHelper.addAnimationWithPath(skater.animator, animation)
-            } catch (e: Exception) {
-                // Skip missing animations during scene creation
+        val skeleton = skater.getComponent<SkeletonComponent>()?.pose?.skeleton
+        if (skeleton != null) {
+            animations.forEach { path ->
+                try {
+                    val animPath = resolveAnimationPath(path)
+                    val animation = resourceManager.loadAnimationSync(animPath, skeleton)
+                    animatorHelper.addAnimationWithPath(skater.animator, animation)
+                } catch (e: Exception) {
+                    // Skip missing animations during scene creation
+                }
             }
         }
 
@@ -149,8 +148,11 @@ class PrefabsGenerator(
         val modelPath = resolveModelPath(Assets.Models.CUBE)
         val texture = resourceManager.loadTextureSync(texturePath)
         val baseModel = resourceManager.loadModelSync(modelPath)
-        val texturedModel = TexturedModel(baseModel.mesh[0].rawModel, texture)
-        texturedModel.sourcePath = modelPath
+        val texturedModel = TexturedModel(
+            modelPath,
+            mesh = listOf(MeshPart(rawModel = baseModel.mesh[0].rawModel, material = Material(texture)))
+        )
+
         texturedModel.mesh[0].material.baseColorPath = texturePath
 
         val tile = Tile("Tile", texturedModel)
@@ -176,11 +178,9 @@ class PrefabsGenerator(
         val baseModel = resourceManager.loadModelSync(Assets.Models.RAIL)
         val texture = resourceManager.loadTextureSync(mat.texturePath)
         val texturedModel = TexturedModel(
-            baseModel.mesh[0].rawModel,
-            texture
+            path = Assets.Models.RAIL,
+            mesh = listOf(MeshPart(rawModel = baseModel.mesh[0].rawModel, material = Material(texture)))
         )
-        texturedModel.sourcePath = Assets.Models.RAIL
-
         val renderComponent = RenderComponent(
             model = texturedModel,
             castShadow = true,
@@ -209,10 +209,9 @@ class PrefabsGenerator(
         val baseModel = resourceManager.loadModelSync(Assets.Models.LEDGE)
         val texture = resourceManager.loadTextureSync(mat.texturePath)
         val texturedModel = TexturedModel(
-            baseModel.mesh[0].rawModel,
-            texture
+            path = Assets.Models.LEDGE,
+            mesh = listOf(MeshPart(rawModel = baseModel.mesh[0].rawModel, material = Material(texture)))
         )
-        texturedModel.sourcePath = Assets.Models.LEDGE
 
         val renderComponent = RenderComponent(
             model = texturedModel,
@@ -240,9 +239,15 @@ class PrefabsGenerator(
         kicker.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
         val baseModel = resourceManager.loadModelSync(Assets.Models.KICKER)
+        val texture = resourceManager.loadTextureSync(mat.texturePath)
         val texturedModel = TexturedModel(
-            baseModel.mesh[0].rawModel,
-            resourceManager.loadTextureSync(mat.texturePath)
+            mesh = listOf(
+                MeshPart(
+                    rawModel = baseModel.mesh[0].rawModel,
+                    material = Material(baseColorTexture = texture)
+                )
+            ),
+            path = Assets.Models.KICKER,
         )
         kicker.addComponent(
             RenderComponent(
@@ -252,23 +257,6 @@ class PrefabsGenerator(
             )
         )
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
-
-        val kickerRawModel = resourceManager.loadModelSync(Assets.Models.KICKER).mesh[0].rawModel
-        val jmeVertices = mutableListOf<JmeVector3f>()
-        for (i in 0 until kickerRawModel.vertices.size / 3) {
-            jmeVertices.add(
-                com.pafoid.skate.engine.utils.JmeVector3f(
-                    kickerRawModel.vertices[i * 3],
-                    kickerRawModel.vertices[i * 3 + 1],
-                    kickerRawModel.vertices[i * 3 + 2]
-                )
-            )
-        }
-
-        if (jmeVertices.isNotEmpty()) {
-            val hullPoints = jmeVertices.map { Vector3f(it.x, it.y, it.z) }
-            kicker.addComponent(CustomCollider3D(hullPoints))
-        }
 
         gameObjectManager.addGameObject(kicker)
         return kicker
@@ -283,8 +271,9 @@ class PrefabsGenerator(
         val mat = material ?: MaterialType.CONCRETE
         val baseModel = resourceManager.loadModelSync(Assets.Models.MANUAL_PAD)
         val texturedModel = TexturedModel(
+            path = Assets.Models.MANUAL_PAD,
             baseModel.mesh[0].rawModel,
-            resourceManager.loadTextureSync(mat.texturePath)
+            Material(baseColorTexture = resourceManager.loadTextureSync(mat.texturePath))
         )
         go.addComponent(
             RenderComponent(
@@ -309,8 +298,9 @@ class PrefabsGenerator(
         val mat = material ?: MaterialType.CONCRETE
         val baseModel = resourceManager.loadModelSync(Assets.Models.BANK)
         val texturedModel = TexturedModel(
+            Assets.Models.BANK,
             baseModel.mesh[0].rawModel,
-            resourceManager.loadTextureSync(mat.texturePath)
+            Material(resourceManager.loadTextureSync(mat.texturePath))
         )
         go.addComponent(
             RenderComponent(
@@ -320,19 +310,6 @@ class PrefabsGenerator(
             )
         )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
-
-        val rawModel = resourceManager.loadModelSync(Assets.Models.BANK).mesh[0].rawModel
-        val jmeVertices = mutableListOf<JmeVector3f>()
-        for (i in 0 until rawModel.vertices.size / 3) {
-            jmeVertices.add(
-                com.pafoid.skate.engine.utils.JmeVector3f(
-                    rawModel.vertices[i * 3],
-                    rawModel.vertices[i * 3 + 1],
-                    rawModel.vertices[i * 3 + 2]
-                )
-            )
-        }
-        go.addComponent(CustomCollider3D(jmeVertices.map { Vector3f(it.x, it.y, it.z) }))
 
         gameObjectManager.addGameObject(go)
         return go
@@ -348,8 +325,9 @@ class PrefabsGenerator(
         val mat = material ?: MaterialType.CONCRETE
         val baseModel = resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE)
         val texturedModel = TexturedModel(
+            Assets.Models.QUARTER_PIPE,
             baseModel.mesh[0].rawModel,
-            resourceManager.loadTextureSync(mat.texturePath)
+            Material(resourceManager.loadTextureSync(mat.texturePath))
         )
         go.addComponent(
             RenderComponent(
@@ -359,19 +337,6 @@ class PrefabsGenerator(
             )
         )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
-
-        val rawModel = resourceManager.loadModelSync(Assets.Models.QUARTER_PIPE).mesh[0].rawModel
-        val jmeVertices = mutableListOf<JmeVector3f>()
-        for (i in 0 until rawModel.vertices.size / 3) {
-            jmeVertices.add(
-                com.pafoid.skate.engine.utils.JmeVector3f(
-                    rawModel.vertices[i * 3],
-                    rawModel.vertices[i * 3 + 1],
-                    rawModel.vertices[i * 3 + 2]
-                )
-            )
-        }
-        go.addComponent(CustomCollider3D(jmeVertices.map { Vector3f(it.x, it.y, it.z) }))
 
         gameObjectManager.addGameObject(go)
         return go

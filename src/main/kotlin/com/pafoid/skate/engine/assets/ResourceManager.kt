@@ -3,8 +3,6 @@ package com.pafoid.skate.engine.assets
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.assets.data.models.BaseModel
-import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
@@ -60,7 +58,7 @@ class ResourceManager(
 
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
-    private val models = ConcurrentHashMap<String, BaseModel>()
+    private val models = ConcurrentHashMap<String, TexturedModel>()
     private val sounds = ConcurrentHashMap<String, SoundBuffer>()
     private val animations = ConcurrentHashMap<String, Animation>()
     private val modelDependencies = ConcurrentHashMap<String, Set<String>>()
@@ -274,7 +272,7 @@ class ResourceManager(
         return sounds[File(path).absolutePath]
     }
 
-    suspend fun loadModel(path: String): BaseModel {
+    suspend fun loadModel(path: String): TexturedModel {
         val file = File(path)
         val absolutePath = file.absolutePath
 
@@ -330,21 +328,14 @@ class ResourceManager(
                          mat.aoTexture = getOrCreateTex(mat.aoPath)
                          mat.emissiveTexture = getOrCreateTex(mat.emissivePath)
 
-                         MeshPart(model, mat, p.inverseBindMatrices)
+                         MeshPart(rawModel = model, material = mat, inverseBindMatrices = p.inverseBindMatrices)
                      }
 
                      textureDataMap.values.forEach { it.free() }
 
-                     val characterModel = if (preLoaded.skeleton != null) {
-                         CharacterModel(parts, preLoaded.skeleton)
-                     } else {
-                         TexturedModel(parts)
-                     }
-
+                val characterModel = TexturedModel(mesh = parts, skeleton = preLoaded.skeleton, path = path)
                      modelDependencies[absolutePath] = texturePaths.toSet()
-                     
                      models[absolutePath] = characterModel
-                     characterModel.sourcePath = path
                      characterModel
                  }
         } catch (e: Exception) {
@@ -354,12 +345,12 @@ class ResourceManager(
             loadModel(Assets.Models.CUBE)
         }
     }
-    
-    fun loadModelSync(path: String): BaseModel {
+
+    fun loadModelSync(path: String): TexturedModel {
         val file = File(path)
         val absolutePath = file.absolutePath
 
-        models[absolutePath]?.let { return it as BaseModel }
+        models[absolutePath]?.let { return it }
         
         return try {
              val preLoaded = assimpLoader.preLoadModel(path)
@@ -388,16 +379,11 @@ class ResourceManager(
                      mat.aoTexture = getOrCreateTexSync(mat.aoPath)
                      mat.emissiveTexture = getOrCreateTexSync(mat.emissivePath)
 
-                     MeshPart(model, mat, p.inverseBindMatrices)
+                 MeshPart(rawModel = model, material = mat, inverseBindMatrices = p.inverseBindMatrices)
                  }
 
-                 val characterModel = if (preLoaded.skeleton != null) {
-                     CharacterModel(parts, preLoaded.skeleton)
-                 } else {
-                     TexturedModel(parts)
-                 }
+            val characterModel = TexturedModel(mesh = parts, path = path, skeleton = preLoaded.skeleton)
                  models[absolutePath] = characterModel
-                 characterModel.sourcePath = path
                  characterModel
         } catch (e: Exception) {
             logger.log("Failed to load model: $path. Error: ${e.message}", LogLevel.ERROR)
@@ -406,8 +392,8 @@ class ResourceManager(
             loadModelSync(Assets.Models.CUBE)
         }
     }
-    
-    fun getModel(path: String): BaseModel? {
+
+    fun getModel(path: String): TexturedModel? {
         return models[File(path).absolutePath]
     }
 
@@ -437,11 +423,11 @@ class ResourceManager(
     }
 
     fun clear(preserveNonProjectAssets: Boolean = false) {
-        val preserveExternalAssets = preserveNonProjectAssets && assetDatabase?.projectRoot != null
-        val projectRoot = assetDatabase?.projectRoot
+        val preserveExternalAssets = preserveNonProjectAssets && assetDatabase.projectRoot != null
+        val projectRoot = assetDatabase.projectRoot
 
         val texturesToDestroy = mutableListOf<Texture>()
-        val modelsToDestroy = mutableListOf<BaseModel>()
+        val modelsToDestroy = mutableListOf<TexturedModel>()
         val shadersToDestroy = mutableListOf<Shader>()
 
         textures.entries.toList().forEach { (path, texture) ->
@@ -501,7 +487,7 @@ class ResourceManager(
                 texturesToDestroy.forEach { it.destroy() }
                 modelsToDestroy.forEach { model ->
                     model.mesh.forEach { part ->
-                        vaoLoader.deleteVAO(part.rawModel.vaoId)
+                        part.rawModel?.let { vaoLoader.deleteVAO(it.vaoId) }
                     }
                 }
                 shadersToDestroy.forEach { it.destroy() }

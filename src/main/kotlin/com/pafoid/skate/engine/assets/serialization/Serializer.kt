@@ -1,9 +1,5 @@
 package com.pafoid.skate.engine.assets.serialization
 
-import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.assets.data.models.BaseModel
-import com.pafoid.skate.engine.assets.data.models.CharacterModel
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
@@ -63,6 +59,9 @@ class Serializer {
             subclass(BoneOverride::class)
             subclass(SkeletonComponent::class)
             subclass(Animator::class)
+            subclass(ModularTile::class)
+            subclass(SpriteRenderer::class)
+            subclass(RagdollComponent::class)
 
             // Environment components
             subclass(EnvironmentComponent::class)
@@ -74,9 +73,6 @@ class Serializer {
 
             // Editor components
             subclass(NonPickable::class)
-            subclass(ModularTile::class)
-            subclass(SpriteRenderer::class)
-            subclass(RagdollComponent::class)
 
             // Physics components
             subclass(ScenePhysicsComponent::class)
@@ -90,15 +86,6 @@ class Serializer {
             subclass(TrickAnalyzer::class)
             subclass(PlayerController::class)
             subclass(PlayerStateManager::class)
-
-            // Asset components
-            subclass(Texture::class)
-            subclass(TexturedModel::class)
-        }
-
-        polymorphic(BaseModel::class) {
-            subclass(TexturedModel::class)
-            subclass(CharacterModel::class)
         }
     }
 

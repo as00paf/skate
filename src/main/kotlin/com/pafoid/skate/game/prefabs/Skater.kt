@@ -1,7 +1,7 @@
 package com.pafoid.skate.game.prefabs
 
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.data.models.CharacterModel
+import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.ecs.GameObject
@@ -18,7 +18,7 @@ import org.joml.Vector3f
 
 class Skater(
     name: String,
-    characterModel: CharacterModel,
+    characterModel: TexturedModel,
     skate: GameObject? = null,
     position: Vector3f = Vector3f(0f, 1.05f, 0f),
     rotation: Vector3f = Vector3f(0f, 90f, 0f),
@@ -33,19 +33,20 @@ class Skater(
         castShadow = true,
         receiveShadow = true
     )
-    val skeletonComponent = SkeletonComponent(SkeletonPose(characterModel.skeleton.copy()))
     val animator = Animator()
 
     init {
         // Parenting: Skater follows Skateboard
         //skate?.addChild(this)
 
+        val skeleton = characterModel.skeleton?.copy()
+
         transformComponent.translation.set(position)
         transformComponent.rotation.set(rotation) // Face sideways for skating
         transformComponent.scale.set(scale) // Now in Meters
         addComponent(transformComponent)
         addComponent(renderComponent)
-        addComponent(skeletonComponent)
+        skeleton?.let { addComponent(SkeletonComponent(SkeletonPose(it))) }
         addComponent(animator)
         addComponent(RigidBody3D(mass).apply {
             useCCD = true

@@ -93,7 +93,7 @@ class ShadowRenderer(
         model.mesh.forEach { part ->
             val rawModel = part.rawModel
             val material = part.material
-            val vaoId = rawModel.vaoId
+            val vaoId = rawModel?.vaoId ?: return@forEach
             if (vaoId == 0) return@forEach
 
             // Bind VAO with proper attribute enabling (critical for skinned meshes)

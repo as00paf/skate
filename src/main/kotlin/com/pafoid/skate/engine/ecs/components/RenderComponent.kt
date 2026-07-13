@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.assets.data.models.BaseModel
+import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.render.data.RenderMode
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -8,7 +8,7 @@ import kotlinx.serialization.Transient
 @Serializable
 class RenderComponent(
     var modelGuid: String = "",
-    @Transient var model: BaseModel? = null,
+    @Transient var model: TexturedModel? = null,
     var albedoTextureGuid: String = "",
     var normalMapGuid: String = "",
     var metallicRoughnessGuid: String = "",

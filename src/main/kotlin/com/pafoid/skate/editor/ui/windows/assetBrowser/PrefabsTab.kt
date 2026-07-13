@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
@@ -44,7 +45,7 @@ class PrefabsTab(
 
     private fun renderPlayerPrefabs(searchText: ImString) {
         val availableWidth = ImGui.getContentRegionAvailX()
-        val numColumns = Math.max(1, (availableWidth / ITEM_WIDTH).toInt())
+        val numColumns = 1.coerceAtLeast((availableWidth / ITEM_WIDTH).toInt())
 
         val templates = listOf(
             PrefabData.createTemplate(
@@ -76,7 +77,7 @@ class PrefabsTab(
 
     private fun renderObstaclePrefabs(searchText: ImString) {
         val availableWidth = ImGui.getContentRegionAvailX()
-        val numColumns = Math.max(1, (availableWidth / ITEM_WIDTH).toInt())
+        val numColumns = 1.coerceAtLeast((availableWidth / ITEM_WIDTH).toInt())
 
         val metalOnly = listOf(MaterialType.METAL)
         val woodOrConcrete = listOf(
@@ -126,7 +127,8 @@ class PrefabsTab(
             val baseModel = resourceManager.loadModelSync(data.modelPath)
             val rawModel = baseModel.mesh[0].rawModel
             val texture = resourceManager.loadTextureSync(data.material?.texturePath ?: Assets.Textures.DEFAULT)
-            val model = TexturedModel(rawModel, texture)
+            val model =
+                TexturedModel(data.material?.texturePath ?: Assets.Textures.DEFAULT, rawModel, Material(texture))
             val cacheId = "${data.modelPath}_${data.material?.name}"
             thumbnailCache.getThumbnail(cacheId, model)
         } else {

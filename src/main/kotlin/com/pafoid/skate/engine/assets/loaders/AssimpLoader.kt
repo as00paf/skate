@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.data.BoneInfo
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.Material
-import com.pafoid.skate.engine.assets.data.models.PreLoadedMeshPart
+import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.PreLoadedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
@@ -59,7 +59,7 @@ class AssimpLoader {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
 
-        val meshParts = mutableListOf<PreLoadedMeshPart>()
+        val meshParts = mutableListOf<MeshPart>()
         val embeddedTextures = mutableMapOf<String, ByteBuffer>()
 
         // Collect Bone Information
@@ -157,7 +157,16 @@ class AssimpLoader {
         return null
     }
 
-    private fun processNode(node: AINode, scene: AIScene, parentTransform: Matrix4f, meshParts: MutableList<PreLoadedMeshPart>, embeddedTextures: MutableMap<String, ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>, unitScale: Float) {
+    private fun processNode(
+        node: AINode,
+        scene: AIScene,
+        parentTransform: Matrix4f,
+        meshParts: MutableList<MeshPart>,
+        embeddedTextures: MutableMap<String, ByteBuffer>,
+        filePath: String,
+        boneInfoMap: Map<String, BoneInfo>,
+        unitScale: Float
+    ) {
         val nodeTransform = parentTransform.mul(node.mTransformation().toJomlMatrix(), Matrix4f())
 
         for (i in 0 until node.mNumMeshes()) {
@@ -165,7 +174,7 @@ class AssimpLoader {
             val meshIndex = nodeMeshes.get(i)
             val sceneMesh = scene.mMeshes() ?: continue
             val mesh = AIMesh.create(sceneMesh.get(meshIndex))
-            meshParts.add(processMesh(mesh, scene, nodeTransform, embeddedTextures, filePath, boneInfoMap, unitScale))
+            meshParts.add(processMesh(mesh, scene, nodeTransform, embeddedTextures, filePath, boneInfoMap))
         }
 
         for (i in 0 until node.mNumChildren()) {
@@ -175,7 +184,14 @@ class AssimpLoader {
         }
     }
 
-    private fun processMesh(mesh: AIMesh, scene: AIScene, transform: Matrix4f, embeddedTextures: MutableMap<String, ByteBuffer>, filePath: String, boneInfoMap: Map<String, BoneInfo>, unitScale: Float): PreLoadedMeshPart {
+    private fun processMesh(
+        mesh: AIMesh,
+        scene: AIScene,
+        transform: Matrix4f,
+        embeddedTextures: MutableMap<String, ByteBuffer>,
+        filePath: String,
+        boneInfoMap: Map<String, BoneInfo>
+    ): MeshPart {
         val materialData = Material()
         
         val materialIndex = mesh.mMaterialIndex()
@@ -321,7 +337,22 @@ class AssimpLoader {
             }
         }
 
-        return PreLoadedMeshPart(vertices, texCoords, texCoords1, normals, tangents, colors, joints, weights, indices, materialData, GL11.GL_TRIANGLES, embeddedTextures, inverseBindMatrices)
+        return MeshPart(
+            vertices,
+            texCoords,
+            texCoords1,
+            normals,
+            tangents,
+            colors,
+            joints,
+            weights,
+            indices,
+            materialData,
+            GL11.GL_TRIANGLES,
+            null,
+            embeddedTextures,
+            inverseBindMatrices
+        )
     }
 
     private fun loadMaterialTexture(scene: AIScene, material: AIMaterial, type: Int, modelPath: String, embeddedTextures: MutableMap<String, ByteBuffer>): String? {

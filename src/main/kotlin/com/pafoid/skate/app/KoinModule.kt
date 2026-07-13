@@ -124,7 +124,7 @@ val editorModule = module {
     single { PickingRenderer(get(), get(), get()) }
     single { ThumbnailRenderer(get(), get(), get()) }
     single { ThumbnailCache(get()) }
-    single { PrefabsGenerator(get(), get(), get(), get(), get(), get()) }
+    single { PrefabsGenerator(get(), get(), get(), get(), get()) }
     single { EngineAssetCopier() }
 
     single { PoseSerializer() }

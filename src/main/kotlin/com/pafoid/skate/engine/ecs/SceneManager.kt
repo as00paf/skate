@@ -153,9 +153,7 @@ class SceneManager(
             }
         }
 
-        obj.getComponent<Animator>()?.let { animator ->
-            animator.loadAnimationsFromPaths(resourceManager)
-        }
+        obj.getComponent<Animator>()?.loadAnimationsFromPaths(resourceManager)
 
         obj.children.forEach { child ->
             resolveObjectReferences(child)

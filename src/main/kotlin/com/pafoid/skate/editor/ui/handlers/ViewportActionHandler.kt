@@ -55,6 +55,7 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.ResourceManager
+import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.database.AssetDatabase
 import com.pafoid.skate.engine.core.EventSystem
@@ -424,7 +425,6 @@ class ViewportActionHandler(
                 gameObject,
                 texturePath,
                 resourceManager,
-                assetDatabase,
                 renderComponentHelper,
                 eventSystem
             )
@@ -444,12 +444,11 @@ class ViewportActionHandler(
 
             val texture = resourceManager.loadTexture(texturePath)
             val baseModel = resourceManager.loadModel(Assets.Models.CUBE)
-            baseModel.sourcePath = Assets.Models.CUBE
             val texturedModel = TexturedModel(
-                baseModel.mesh[0].rawModel,
-                texture
+                path = Assets.Models.CUBE,
+                rawModel = baseModel.mesh[0].rawModel,
+                Material(texture)
             )
-            texturedModel.sourcePath = Assets.Models.CUBE
 
             jobSystem.runOnMain {
                 val renderComponent = RenderComponent(model = texturedModel, castShadow = false, receiveShadow = true)

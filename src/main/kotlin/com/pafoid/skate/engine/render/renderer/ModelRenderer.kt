@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.assets.ResourceManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
-import com.pafoid.skate.engine.assets.data.models.CharacterModel
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
@@ -60,7 +59,7 @@ class ModelRenderer(
         part: MeshPart,
         shader: Shader
     ) {
-        val model = part.rawModel
+        val model = part.rawModel ?: return
         val material = part.material
 
         model.vaoId.bindVAO(model.enabledAttributes)
@@ -123,7 +122,7 @@ class ModelRenderer(
         part: MeshPart,
         shader: Shader
     ) {
-        val model = part.rawModel
+        val model = part.rawModel ?: return
         val material = part.material
 
         model.vaoId.bindVAO(model.enabledAttributes)
@@ -194,7 +193,7 @@ class ModelRenderer(
 
         // Render skeleton if requested
         if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
-            if (model is CharacterModel && skeleton != null) {
+            if (skeleton != null) {
                 renderSkeleton(skeleton, transform)
             }
         }
@@ -233,7 +232,7 @@ class ModelRenderer(
 
         // Render skeleton if requested
         if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
-            if (model is CharacterModel && skeleton != null) {
+            if (skeleton != null) {
                 renderSkeleton(skeleton, transform)
             }
         }

@@ -108,7 +108,7 @@ class TexturesTab(
         }
 
         undoRedoManager.executeCommand(
-            ApplyTextureCommand(selectedObject, texturePath, resourceManager, db, renderComponentHelper, eventSystem)
+            ApplyTextureCommand(selectedObject, texturePath, resourceManager, renderComponentHelper, eventSystem)
         )
         logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
     }
