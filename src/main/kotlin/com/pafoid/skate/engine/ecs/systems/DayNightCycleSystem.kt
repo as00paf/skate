@@ -59,6 +59,7 @@ class DayNightCycleSystem(
     private val dayAmbient = Vector3f(0.3f, 0.3f, 0.35f)
 
     override fun update(dt: Float) {
+        if (!scene.isRunning) return
         val config = scene.getComponent<DayNightCycleComponent>() ?: return
 
         // Get day duration (use override if provided)

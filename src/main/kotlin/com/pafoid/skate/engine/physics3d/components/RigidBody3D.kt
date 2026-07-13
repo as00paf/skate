@@ -80,7 +80,7 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
      * Set to true when friction, damping, or bodyType are modified.
      * Reset to false after sync in editor mode.
      */
-    var physicsDirty = false
+    private var physicsDirty = false
 
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
