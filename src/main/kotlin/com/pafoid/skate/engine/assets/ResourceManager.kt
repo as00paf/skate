@@ -285,7 +285,7 @@ class ResourceManager(
 
              // Collect texture dependencies
              val texturePaths = mutableSetOf<String>()
-             preLoaded.parts.forEach { part ->
+            preLoaded.mesh.forEach { part ->
                  listOfNotNull(
                      part.material.baseColorPath,
                      part.material.normalMapPath,
@@ -299,7 +299,7 @@ class ResourceManager(
                  withContext(Dispatchers.IO) {
                      texturePaths.forEach { texPath ->
                         if (!textureDataMap.containsKey(texPath)) {
-                            val buffer = preLoaded.parts.firstNotNullOfOrNull { it.embeddedTextures[texPath] }
+                            val buffer = preLoaded.mesh.firstNotNullOfOrNull { it.embeddedTextures[texPath] }
                             val data = if (buffer != null) Texture.fromBuffer(buffer) else Texture.fromFile(texPath)
                             if (data != null) textureDataMap[texPath] = data
                         }
@@ -307,7 +307,7 @@ class ResourceManager(
                  }
 
             withContext(jobSystem.mainDispatcher) {
-                     val parts = preLoaded.parts.map { p ->
+                val parts = preLoaded.mesh.map { p ->
                          val model = vaoLoader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
 
                          val mat = p.material
@@ -355,7 +355,7 @@ class ResourceManager(
         return try {
              val preLoaded = assimpLoader.preLoadModel(path)
 
-             val parts = preLoaded.parts.map { p ->
+            val parts = preLoaded.mesh.map { p ->
                      val model = vaoLoader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
                      
                      val mat = p.material

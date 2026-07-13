@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.assets.data.BoneInfo
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.MeshPart
-import com.pafoid.skate.engine.assets.data.models.PreLoadedModel
+import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
@@ -55,7 +55,7 @@ class AssimpLoader {
 
     private val animationLoader = AnimationLoader()
 
-    fun preLoadModel(filePath: String): PreLoadedModel {
+    fun preLoadModel(filePath: String): TexturedModel {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
 
@@ -65,12 +65,6 @@ class AssimpLoader {
         // Collect Bone Information
         val boneNames = mutableListOf<String>()
         val boneInfoMap = mutableMapOf<String, BoneInfo>()
-
-        var unitScale = 1.0f
-
-        if (filePath.contains("skateboard", ignoreCase = true)) { //TODO: remove
-            unitScale = 0.0017f // Results in ~0.8m length for skateboard_free_model.glb
-        }
 
         for (i in 0 until scene.mNumMeshes()) {
             val meshes = scene.mMeshes() ?: continue
@@ -87,12 +81,12 @@ class AssimpLoader {
             }
         }
 
-        val rootTransform = Matrix4f().scale(unitScale)
+        val rootTransform = Matrix4f()
         val rootNode = scene.mRootNode() ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
-        processNode(rootNode, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap, unitScale)
+        processNode(rootNode, scene, rootTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
 
         // Build Skeleton Hierarchy
-        val rootBone = buildHierarchy(rootNode, boneInfoMap, unitScale)
+        val rootBone = buildHierarchy(rootNode, boneInfoMap)
 
         // Recalculate Inverse Bind Matrices (IBMs) to match our modified hierarchy (Scale/Rotation)
         // This ensures the skinning equation (BoneWorld * IBM) is Identity at Bind Pose.
@@ -123,21 +117,14 @@ class AssimpLoader {
         val skeleton = if (rootBone != null) Skeleton(rootBone, boneNames.size) else null
 
         aiReleaseImport(scene)
-        return PreLoadedModel(meshParts, skeleton)
+        return TexturedModel(mesh = meshParts, skeleton = skeleton)
     }
 
-    private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>, unitScale: Float): Bone? {
+    private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>): Bone? {
         val name = BoneNameMapper.map(aiNode.mName().dataString())
         val boneInfo = boneInfoMap[name]
 
         val localTransform = aiNode.mTransformation().toJomlMatrix()
-        if (unitScale != 1.0f) {
-            // Scale translation component to Meters
-            val translation = Vector3f()
-            localTransform.getTranslation(translation)
-            translation.mul(unitScale)
-            localTransform.setTranslation(translation)
-        }
 
         val bone = Bone(boneInfo?.index ?: -1, name, localTransform)
         boneInfo?.let { bone.inverseBindMatrix.set(it.offsetMatrix) }
@@ -145,7 +132,7 @@ class AssimpLoader {
         for (i in 0 until aiNode.mNumChildren()) {
             val children = aiNode.mChildren() ?: continue
             val childAiNode = AINode.create(children.get(i))
-            val childBone = buildHierarchy(childAiNode, boneInfoMap, unitScale)
+            val childBone = buildHierarchy(childAiNode, boneInfoMap)
             if (childBone != null) {
                 bone.addChild(childBone)
             }
@@ -165,7 +152,6 @@ class AssimpLoader {
         embeddedTextures: MutableMap<String, ByteBuffer>,
         filePath: String,
         boneInfoMap: Map<String, BoneInfo>,
-        unitScale: Float
     ) {
         val nodeTransform = parentTransform.mul(node.mTransformation().toJomlMatrix(), Matrix4f())
 
@@ -180,7 +166,7 @@ class AssimpLoader {
         for (i in 0 until node.mNumChildren()) {
             val children = node.mChildren() ?: continue
             val child = AINode.create(children.get(i))
-            processNode(child, scene, nodeTransform, meshParts, embeddedTextures, filePath, boneInfoMap, unitScale)
+            processNode(child, scene, nodeTransform, meshParts, embeddedTextures, filePath, boneInfoMap)
         }
     }
 
