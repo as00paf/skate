@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
@@ -42,13 +41,8 @@ import kotlin.math.sin
  * - Dusk (18:00): sun at horizon (1, 0, 0)
  * - Midnight (0:00): sun below (0, -1, 0)
  *
- * @param dayDurationOverride Optional override for day duration in seconds
- * @param stringManager String manager for localized UI strings
  */
-class DayNightCycleSystem(
-    private val dayDurationOverride: Float? = null,
-    private val stringManager: StringManager
-) : System(priority = ExecutionPriority.EARLY) {
+class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
 
     // Color constants for interpolation
     private val noonColor = Vector3f(1.0f, 0.95f, 0.8f)  // Warm sunlight
@@ -63,7 +57,7 @@ class DayNightCycleSystem(
         val config = scene.getComponent<DayNightCycleComponent>() ?: return
 
         // Get day duration (use override if provided)
-        val dayDuration = dayDurationOverride ?: config.dayDuration
+        val dayDuration = config.dayDuration
 
         // Advance cycle time (convert dt to hours)
         val hoursPerSecond = 24f / dayDuration
