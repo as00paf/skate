@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
-import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import org.joml.Matrix4f
@@ -52,8 +51,6 @@ import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
 class AssimpLoader {
-
-    private val animationLoader = AnimationLoader()
 
     fun preLoadModel(filePath: String): TexturedModel {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
@@ -370,9 +367,5 @@ class AssimpLoader {
         } else {
             File(modelPath).parentFile.resolve(p).path
         }
-    }
-
-    fun loadAnimations(filePath: String, skeleton: Skeleton): List<Animation> {
-        return animationLoader.loadAnimations(filePath, skeleton)
     }
 }

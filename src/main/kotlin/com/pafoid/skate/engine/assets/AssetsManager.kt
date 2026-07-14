@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
+import com.pafoid.skate.engine.assets.loaders.AnimationLoader
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.loaders.TextureLoader
@@ -39,6 +40,7 @@ class AssetsManager(
     private val shaderLoader: ShaderLoader = ShaderLoader(false)
     private val assimpLoader: AssimpLoader = AssimpLoader()
     private val textureLoader = TextureLoader()
+    private val animationLoader = AnimationLoader()
 
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
@@ -234,7 +236,7 @@ class AssetsManager(
 
         animations[absolutePath]?.let { return it }
         return try {
-            val loadedAnimation = assimpLoader.loadAnimations(path, skeleton)[0]
+            val loadedAnimation = animationLoader.loadAnimations(path, skeleton)[0]
             animations[absolutePath] = loadedAnimation
             loadedAnimation
         } catch (e: Exception) {
