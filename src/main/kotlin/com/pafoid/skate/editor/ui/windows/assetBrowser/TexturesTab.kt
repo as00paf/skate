@@ -36,7 +36,7 @@ class TexturesTab(
         val padding = 5f
 
         ImGui.beginGroup()
-        val texId: Int = assetsManager.loadTextureSync(file.path).texId
+        val texId: Int = assetsManager.getTexture(file.path).texId
         ImGui.pushID(file.absolutePath)
         if (ImGui.imageButton("TextureItem", texId.toLong(), size, size, 0f, 0f, 1f, 1f)) {
             // On Click
@@ -63,7 +63,7 @@ class TexturesTab(
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
-                val tex = assetsManager.loadTextureSync(file.path)
+                val tex = assetsManager.getTexture(file.path)
                 logger.logEditor("Texture: ${file.name}, Size: ${tex.width}x${tex.height}, ID: ${tex.texId}")
             }
             ImGui.endPopup()
@@ -75,7 +75,7 @@ class TexturesTab(
             ImGui.setDragDropPayload("TEXTURE", file.path)
             ImGui.image(texId.toLong(), size *1.5f, size *1.5f, 0f, 0f, 1f, 1f)
             ImGui.text(file.name)
-            val tex = assetsManager.loadTextureSync(file.path)
+            val tex = assetsManager.getTexture(file.path)
             ImGui.textColored(0.7f, 0.7f, 0.7f, 1f, "${tex.width}x${tex.height}")
             ImGui.endDragDropSource()
         }

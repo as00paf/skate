@@ -38,7 +38,7 @@ class GamepadOverlay : KoinComponent {
     private fun resolveControllerTexture(): Texture? {
         val cached = controllerTexture
         if (cached != null && cached.texId > 0) return cached
-        return assetsManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER).also { loaded ->
+        return assetsManager.getTexture(Assets.Textures.XBOX_CONTROLLER).also { loaded ->
             controllerTexture = loaded
         }
     }

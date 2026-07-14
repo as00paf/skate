@@ -61,7 +61,7 @@ class SoundsTab(
     private fun renderSoundRow(file: File) {
         ImGui.pushID(file.absolutePath)
 
-        val buffer = assetsManager.getSound(file.absolutePath) ?: assetsManager.loadSound(file.absolutePath)
+        val buffer = assetsManager.getSound(file.absolutePath)
         val duration = buffer.durationInSeconds
         val isPlaying = currentPlayingFile == file && playingSource?.isPlaying() == true
 

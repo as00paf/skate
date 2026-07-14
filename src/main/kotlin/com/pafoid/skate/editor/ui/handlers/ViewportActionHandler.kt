@@ -439,7 +439,7 @@ class ViewportActionHandler(
             transform.scale.set(10f, 0.1f, 10f)
             planeObj.addComponent(transform)
 
-            val texture = assetsManager.loadTexture(texturePath)
+            val texture = assetsManager.getTexture(texturePath)
             val baseModel = assetsManager.loadModel(Assets.Models.CUBE)
             val model = TexturedModel(
                 path = Assets.Models.CUBE,

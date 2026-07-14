@@ -23,6 +23,8 @@ import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
+import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
 import org.lwjgl.opengl.GL30.GL_DYNAMIC_DRAW
@@ -144,7 +146,7 @@ class RenderBatch(
 
         for (i in 0 until textureSlots.size) {
             glActiveTexture(GL_TEXTURE0 + i + 1)
-            textureSlots[i].bind()
+            glBindTexture(GL_TEXTURE_2D, textureSlots[i].texId)
         }
         shader.uploadIntArray(Uniforms.TEXTURES, intArrayOf(0, 1, 2, 3, 4, 5, 6, 7))
 
@@ -164,9 +166,6 @@ class RenderBatch(
         glDisableVertexAttribArray(4)
         glBindVertexArray(0)
 
-        for (i in 0 until textureSlots.size) {
-            textureSlots[i].unbind()
-        }
         shader.stop()
     }
 

@@ -59,7 +59,7 @@ class PrefabsGeneratorTest {
         every { assetsManager.loadModelSync(any()) } returns texturedModel
         every { assetsManager.getModel(any()) } returns characterModel
         every { assetsManager.loadAnimationSync(any(), any()) } returns animation
-        every { assetsManager.loadTextureSync(any()) } returns tex
+        every { assetsManager.getTexture(any()) } returns tex
 
         val prefabs = PrefabsGenerator(assetsManager, sceneManager, systemManager)
 

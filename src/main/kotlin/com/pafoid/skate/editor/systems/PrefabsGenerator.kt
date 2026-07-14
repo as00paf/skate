@@ -134,7 +134,7 @@ class PrefabsGenerator(
     fun spawnFloor(): GameObject {
         val texturePath = resolveTexturePath(Assets.Textures.ASPHALT)
         val modelPath = resolveModelPath(Assets.Models.CUBE)
-        val texture = assetsManager.loadTextureSync(texturePath)
+        val texture = assetsManager.getTexture(texturePath)
         val baseModel = assetsManager.loadModelSync(modelPath)
         val model = TexturedModel(
             path = modelPath,
@@ -158,7 +158,7 @@ class PrefabsGenerator(
         rail.addComponent(transformComponent)
         val mat = material ?: MaterialType.METAL
         val baseModel = assetsManager.loadModelSync(Assets.Models.RAIL)
-        val texture = assetsManager.loadTextureSync(mat.texturePath)
+        val texture = assetsManager.getTexture(mat.texturePath)
         val model = TexturedModel(
             path = Assets.Models.RAIL,
             mesh = listOf(MeshPart(rawModel = baseModel.mesh[0].rawModel, material = Material(texture)))
@@ -187,7 +187,7 @@ class PrefabsGenerator(
         transformComponent.scale.set(1f, 1f, 1f)
         ledge.addComponent(transformComponent)
         val baseModel = assetsManager.loadModelSync(Assets.Models.LEDGE)
-        val texture = assetsManager.loadTextureSync(mat.texturePath)
+        val texture = assetsManager.getTexture(mat.texturePath)
         val model = TexturedModel(
             path = Assets.Models.LEDGE,
             mesh = listOf(MeshPart(rawModel = baseModel.mesh[0].rawModel, material = Material(texture)))
@@ -217,7 +217,7 @@ class PrefabsGenerator(
         kicker.addComponent(transformComponent)
         val mat = material ?: MaterialType.CONCRETE
         val baseModel = assetsManager.loadModelSync(Assets.Models.KICKER)
-        val texture = assetsManager.loadTextureSync(mat.texturePath)
+        val texture = assetsManager.getTexture(mat.texturePath)
         val texturedModel = TexturedModel(
             mesh = listOf(
                 MeshPart(
@@ -251,7 +251,7 @@ class PrefabsGenerator(
         val texturedModel = TexturedModel(
             path = Assets.Models.MANUAL_PAD,
             baseModel.mesh[0].rawModel,
-            Material(baseColorTexture = assetsManager.loadTextureSync(mat.texturePath))
+            Material(baseColorTexture = assetsManager.getTexture(mat.texturePath))
         )
         go.addComponent(
             RenderComponent(
@@ -278,7 +278,7 @@ class PrefabsGenerator(
         val texturedModel = TexturedModel(
             Assets.Models.BANK,
             baseModel.mesh[0].rawModel,
-            Material(assetsManager.loadTextureSync(mat.texturePath))
+            Material(assetsManager.getTexture(mat.texturePath))
         )
         go.addComponent(
             RenderComponent(
@@ -305,7 +305,7 @@ class PrefabsGenerator(
         val texturedModel = TexturedModel(
             Assets.Models.QUARTER_PIPE,
             baseModel.mesh[0].rawModel,
-            Material(assetsManager.loadTextureSync(mat.texturePath))
+            Material(assetsManager.getTexture(mat.texturePath))
         )
         go.addComponent(
             RenderComponent(

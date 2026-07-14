@@ -93,7 +93,7 @@ class SceneManager(
                             val texPath = rc.albedoTextureGuid
                             val file = File(texPath)
                             if (file.exists()) {
-                                mat.baseColorTexture = assetsManager.loadTextureSync(texPath)
+                                mat.baseColorTexture = assetsManager.getTexture(texPath)
                             } else {
                                 logger.log(
                                     "WARNING: Albedo texture path does not exist for '${obj.name}': $texPath",
@@ -110,7 +110,7 @@ class SceneManager(
                             val texPath = rc.normalMapGuid
                             val file = File(texPath)
                             if (file.exists()) {
-                                mat.normalMap = assetsManager.loadTextureSync(texPath)
+                                mat.normalMap = assetsManager.getTexture(texPath)
                             } else {
                                 logger.log(
                                     "WARNING: Normal map path does not exist for '${obj.name}': $texPath",
@@ -127,7 +127,7 @@ class SceneManager(
                             val texPath = rc.metallicRoughnessGuid
                             val file = File(texPath)
                             if (file.exists()) {
-                                mat.metallicRoughnessTexture = assetsManager.loadTextureSync(texPath)
+                                mat.metallicRoughnessTexture = assetsManager.getTexture(texPath)
                             } else {
                                 logger.log(
                                     "WARNING: Metallic roughness map path does not exist for '${obj.name}': $texPath",

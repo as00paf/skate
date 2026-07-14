@@ -106,15 +106,15 @@ class RenderResourcesFactory(
 
     private suspend fun loadShaders(): Shaders {
         val shaders = listOf<suspend () -> Shader>(
-            { assetsManager.loadShader(Assets.Shaders.DEBUG) },
-            { assetsManager.loadShader(Assets.Shaders.SHADER_3D_DEFAULT) },
-            { assetsManager.loadShader(Assets.Shaders.SHADER_2D_BATCH) },
-            { assetsManager.loadShader(Assets.Shaders.PICKING) },
-            { assetsManager.loadShader(Assets.Shaders.PICKING_3D) },
-            { assetsManager.loadShader(Assets.Shaders.SKYBOX) },
-            { assetsManager.loadShader(Assets.Shaders.SKY_DOME) },
-            { assetsManager.loadShader(Assets.Shaders.SHADOW) },
-            { assetsManager.loadShader(Assets.Shaders.SPLASH) },
+            { assetsManager.getShader(Assets.Shaders.DEBUG) },
+            { assetsManager.getShader(Assets.Shaders.SHADER_3D_DEFAULT) },
+            { assetsManager.getShader(Assets.Shaders.SHADER_2D_BATCH) },
+            { assetsManager.getShader(Assets.Shaders.PICKING) },
+            { assetsManager.getShader(Assets.Shaders.PICKING_3D) },
+            { assetsManager.getShader(Assets.Shaders.SKYBOX) },
+            { assetsManager.getShader(Assets.Shaders.SKY_DOME) },
+            { assetsManager.getShader(Assets.Shaders.SHADOW) },
+            { assetsManager.getShader(Assets.Shaders.SPLASH) },
         )
 
         return Shaders(

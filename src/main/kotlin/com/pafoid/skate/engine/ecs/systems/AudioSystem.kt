@@ -110,7 +110,7 @@ class AudioSystem(
 
                 if (source == null && audioComponent.soundFilePath.isNotBlank()) {
                     // Try to load the sound buffer
-                    val buffer = assetsManager.loadSound(audioComponent.soundFilePath)
+                    val buffer = assetsManager.getSound(audioComponent.soundFilePath)
                     if (buffer.bufferId != -1) {
                         source = SoundSource(audioComponent.loops, !audioComponent.is3D)
                         source.setBuffer(buffer.bufferId)

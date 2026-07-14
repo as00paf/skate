@@ -11,15 +11,6 @@ import java.nio.file.Paths
 class ShaderLoader(private var verbose:Boolean = false) {
 
     fun loadShader(filePath: String): Shader {
-        return try {
-            loadFromFile(filePath)
-        } catch(e: IOException) {
-            assert(false) { "Error: Could not open file for shader: $filePath, returning default Shader" }
-            Shader()
-        }
-    }
-
-    private fun loadFromFile(filePath: String): Shader {
         val src = String(Files.readAllBytes(Paths.get(filePath)))
         val splitSrc = src.split(ShaderConst.SPLITTER_REGEX.toRegex())
 

@@ -64,7 +64,7 @@ class EditorMenuBar(
 
     private fun loadAppIconTexture() {
         appIconTexId = try {
-            assetsManager.loadTextureSync(Assets.Textures.APP_ICON).texId
+            assetsManager.getTexture(Assets.Textures.APP_ICON).texId
         } catch (e: Exception) {
             -1
         }

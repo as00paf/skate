@@ -65,8 +65,6 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.assets.AssetsManager
-import com.pafoid.skate.engine.assets.loaders.AssimpLoader
-import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
@@ -115,7 +113,9 @@ val editorModule = module {
 
     // Editor-only rendering tools (moved from engineModule)
     single { PickingRenderer(get(), get(), get()) }
-    single { ThumbnailRenderer(get(), get(), get()) }
+    single {
+        ThumbnailRenderer(get(), get())
+    }
     single { ThumbnailCache(get()) }
     single { PrefabsGenerator(get(), get(), get(), get()) }
     single { EngineAssetCopier() }
@@ -246,12 +246,10 @@ val engineModule = module {
     single { CameraManager(get()) }
     single { SystemManager() }
     single { SceneManager(get(), get(), get(), get(), get()) }
-    single { AssetsManager(get(), get(), get(), get(), get()) }
+    single { AssetsManager(get(), get(), get()) }
 
     single { NativeLibraryLoader() }
-    single { ShaderLoader(false) }
     single { VAOLoader() }
-    single { AssimpLoader() }
 
     // Component helpers for GUID assignment
     single { AnimatorHelper(get()) }

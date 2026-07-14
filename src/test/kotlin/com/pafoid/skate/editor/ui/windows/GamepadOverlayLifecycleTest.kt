@@ -29,7 +29,7 @@ class GamepadOverlayLifecycleTest {
     @Test
     fun `controllerTexture_ProjectClosed_InvalidatesAndReloadsTexture`() {
         val assetsManager = mockk<AssetsManager>(relaxed = true)
-        every { assetsManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER) } returnsMany listOf(
+        every { assetsManager.getTexture(Assets.Textures.XBOX_CONTROLLER) } returnsMany listOf(
             texture(101),
             texture(202)
         )
@@ -52,7 +52,7 @@ class GamepadOverlayLifecycleTest {
         assertNull(readCachedControllerTexture(overlay))
 
         assertEquals(202, resolveControllerTexture(overlay).texId)
-        verify(exactly = 2) { assetsManager.loadTextureSync(Assets.Textures.XBOX_CONTROLLER) }
+        verify(exactly = 2) { assetsManager.getTexture(Assets.Textures.XBOX_CONTROLLER) }
     }
 
     private fun texture(id: Int): Texture = Texture().also { it.texId = id }

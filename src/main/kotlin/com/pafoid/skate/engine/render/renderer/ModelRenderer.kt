@@ -27,6 +27,8 @@ import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
+import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL30
 
@@ -48,7 +50,8 @@ class ModelRenderer(
         uniformName: String
     ) {
         GL13.glActiveTexture(GL13.GL_TEXTURE0 + slot)
-        (texture ?: assetsManager.loadTextureSync(Assets.Textures.DEFAULT)).bind()
+        val tex = texture ?: assetsManager.getTexture(Assets.Textures.DEFAULT)
+        glBindTexture(GL_TEXTURE_2D, tex.texId)
         shader.uploadInt(uniformName, slot)
     }
 

@@ -20,6 +20,8 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S
 import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL11.GL_UNSIGNED_INT
+import org.lwjgl.opengl.GL11.glBindTexture
+import org.lwjgl.opengl.GL11.glDeleteTextures
 import org.lwjgl.opengl.GL11.glDepthFunc
 import org.lwjgl.opengl.GL11.glDepthMask
 import org.lwjgl.opengl.GL11.glDisable
@@ -45,7 +47,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
 
     init {
         sphere = generateUVSphere(loader, 50, 50, 500f)
-        hdriTexture = assetsManager.loadTextureSync(Assets.Textures.SKY_HDRI)
+        hdriTexture = assetsManager.getTexture(Assets.Textures.SKY_HDRI)
     }
 
     private fun generateUVSphere(loader: VAOLoader, rings: Int, sectors: Int, radius: Float): RawModel {
@@ -132,7 +134,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
         shader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
 
         glActiveTexture(GL_TEXTURE0)
-        hdriTexture.bind()
+        glBindTexture(GL_TEXTURE_2D, hdriTexture.texId)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
         shader.uploadInt(Uniforms.HDRI_TEXTURE, 0)
@@ -158,6 +160,6 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
             glDeleteVertexArrays(sphere.vaoId)
         }
         // VBO and IBO are managed by VAOLoader and cleaned up with VAO
-        hdriTexture.destroy()
+        glDeleteTextures(hdriTexture.texId)
     }
 }

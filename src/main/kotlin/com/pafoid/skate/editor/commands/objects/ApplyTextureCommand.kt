@@ -23,7 +23,7 @@ class ApplyTextureCommand(
         val renderComponent = gameObject.getComponent<RenderComponent>()
         renderComponent?.let { component ->
             val oldModel = component.model ?: return@let
-            val texture = assetsManager.loadTextureSync(newTexturePath)
+            val texture = assetsManager.getTexture(newTexturePath)
             val meshPart = oldModel.mesh[0]
             val newMaterial = Material(baseColorTexture = texture)
             val newMeshPart = MeshPart(

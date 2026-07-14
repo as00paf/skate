@@ -26,7 +26,7 @@ class EditorMenuBarLifecycleTest {
     @Test
     fun `appIconLifecycle_ProjectClosed_InvalidatesAndReloadsTextureId`() {
         val assetsManager = mockk<AssetsManager>(relaxed = true)
-        every { assetsManager.loadTextureSync(Assets.Textures.APP_ICON) } returnsMany listOf(texture(101), texture(202))
+        every { assetsManager.getTexture(Assets.Textures.APP_ICON) } returnsMany listOf(texture(101), texture(202))
 
         val eventSystem = EventSystem()
         val menuBar = EditorMenuBar(
@@ -52,7 +52,7 @@ class EditorMenuBarLifecycleTest {
 
         invokeLoadAppIconTexture(menuBar)
         assertEquals(202, readAppIconTexId(menuBar))
-        verify(exactly = 2) { assetsManager.loadTextureSync(Assets.Textures.APP_ICON) }
+        verify(exactly = 2) { assetsManager.getTexture(Assets.Textures.APP_ICON) }
     }
 
     private fun texture(id: Int): Texture = Texture().also { it.texId = id }

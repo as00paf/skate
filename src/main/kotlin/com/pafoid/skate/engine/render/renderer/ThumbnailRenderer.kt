@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -63,14 +62,17 @@ private const val THUMBNAIL_SIZE = 256
 class ThumbnailRenderer(
     private val assetsManager: AssetsManager,
     private val modelRenderer: ModelRenderer,
-    private val logger: LoggerService,
 ) {
-    private var frameBuffer: FrameBuffer? = null
-    private var defaultShader: Shader? = null
+    private var shader: Shader = assetsManager.getShader(Assets.Shaders.SHADER_3D_DEFAULT)
+    private var fbo: FrameBuffer = FrameBuffer(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
 
     // Reusable temp buffers
     private val camera = Camera()
     private val transform = Transform()
+
+    init {
+        fbo.initialize()
+    }
 
     /**
      * Renders a thumbnail for the given model.
@@ -78,23 +80,6 @@ class ThumbnailRenderer(
      *         The caller must eventually delete this texture with glDeleteTextures.
      */
     fun renderThumbnail(model: TexturedModel): Int {
-        // Lazy init
-        if (frameBuffer == null) {
-            frameBuffer = FrameBuffer(THUMBNAIL_SIZE, THUMBNAIL_SIZE).also { it.initialize() }
-        }
-        if (defaultShader == null) {
-            defaultShader = assetsManager.loadShaderSync(Assets.Shaders.SHADER_3D_DEFAULT)
-        }
-
-        val fbo = frameBuffer ?: run {
-            logger.log("Could not create or initialize frame buffer")
-            return -1
-        }
-        val shader = defaultShader ?: run {
-            logger.log("Could not create or initialize default shader")
-            return -1
-        }
-
         // Save OpenGL state
         val lastFbo = glGetInteger(GL_FRAMEBUFFER_BINDING)
         val lastViewport = IntArray(4)
@@ -250,7 +235,6 @@ class ThumbnailRenderer(
      * Note: Thumbnail textures are owned by ThumbnailCache and deleted there.
      */
     fun destroy() {
-        frameBuffer?.destroy()
-        frameBuffer = null
+        fbo.destroy()
     }
 }

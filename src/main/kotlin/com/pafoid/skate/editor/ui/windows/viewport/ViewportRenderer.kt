@@ -72,7 +72,7 @@ class ViewportRenderer(
         runCatching {
             val frameBuffer = renderer.frameBuffer
             if (frameBuffer.width <= 0 || frameBuffer.height <= 0) return
-            ScreenshotUtils.takeScreenshot(frameBuffer.width, frameBuffer.height, frameBuffer.getFboId())
+            ScreenshotUtils.takeScreenshot(frameBuffer.width, frameBuffer.height, frameBuffer.fboId)
         }
     }
 }

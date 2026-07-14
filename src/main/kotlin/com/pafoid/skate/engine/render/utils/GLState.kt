@@ -3,6 +3,8 @@ package com.pafoid.skate.engine.render.utils
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
+import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
+import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
@@ -36,7 +38,8 @@ fun bindTexture(
     assetsManager: AssetsManager
 ) {
     GL13.glActiveTexture(GL13.GL_TEXTURE0 + slot)
-    (texture ?: assetsManager.loadTextureSync(Assets.Textures.DEFAULT)).bind()
+    val tex = texture ?: assetsManager.getTexture(Assets.Textures.DEFAULT)
+    glBindTexture(GL_TEXTURE_2D, tex.texId)
 }
 
 /**

@@ -6,6 +6,8 @@ import com.pafoid.skate.engine.assets.data.models.RawModel
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
+import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
@@ -58,7 +60,7 @@ class SplashRenderer(private val vaoLoader: VAOLoader) {
         shader.uploadFloat(ShaderConst.Uniforms.ALPHA, alpha)
 
         GL13.glActiveTexture(GL13.GL_TEXTURE0)
-        texture.bind()
+        glBindTexture(GL_TEXTURE_2D, texture.texId)
         shader.uploadInt(ShaderConst.Uniforms.TEXTURE, 0)
 
         GL30.glBindVertexArray(q.vaoId)
@@ -75,7 +77,6 @@ class SplashRenderer(private val vaoLoader: VAOLoader) {
         GL20.glDisableVertexAttribArray(1)
         GL30.glBindVertexArray(0)
 
-        texture.unbind()
         shader.stop()
         GL11.glDisable(GL11.GL_BLEND)
     }
