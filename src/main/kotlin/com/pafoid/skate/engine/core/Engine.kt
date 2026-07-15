@@ -63,8 +63,7 @@ class Engine(
     private fun updateRunningState(dt: Float) {
         if (dt < 0f) return
 
-        val scene = sceneManager.currentScene
-        if (scene != null) {
+        sceneManager.currentScene?.let { scene ->
             if (!systemManagerStarted) {
                 systemManager.start()
                 systemManagerStarted = true
@@ -76,7 +75,7 @@ class Engine(
                 scene.update(dt)
             }
 
-            renderer.render(scene, scene.selectedGameObject, scene.hoveredGameObject)
+            renderer.render(scene)
         }
     }
 

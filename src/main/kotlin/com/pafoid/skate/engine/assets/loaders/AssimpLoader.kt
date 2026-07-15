@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.assets.loaders
 
 import com.pafoid.skate.engine.assets.BoneNameMapper
-import com.pafoid.skate.engine.assets.data.BoneInfo
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
+import com.pafoid.skate.engine.assets.data.models.BoneInfo
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
