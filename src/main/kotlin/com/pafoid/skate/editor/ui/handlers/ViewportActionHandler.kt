@@ -71,7 +71,6 @@ import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
@@ -96,7 +95,6 @@ class ViewportActionHandler(
     private val mutationGate: EditorMutationGate,
     private val prefabsGenerator: PrefabsGenerator,
     private val assetsManager: AssetsManager,
-    private val animatorHelper: AnimatorHelper,
     private val editorCamera: EditorCamera,
     private val systemManager: SystemManager,
     private val jobSystem: IJobSystem,
@@ -489,7 +487,7 @@ class ViewportActionHandler(
 
         if (animator != null) {
             undoRedoManager.executeCommand(
-                ApplyAnimationCommand(gameObject, animationPath, assetsManager, animatorHelper, eventSystem)
+                ApplyAnimationCommand(gameObject, animationPath, assetsManager, eventSystem)
             )
             logger.logEditor("Added animation to ${gameObject.name}: $animationPath")
         } else {

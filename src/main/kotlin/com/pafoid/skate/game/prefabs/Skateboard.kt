@@ -28,7 +28,7 @@ class Skateboard(
         addComponent(
             RenderComponent(
                 model = model,
-                modelGuid = File(model.path).absolutePath
+                modelPath = File(model.path).absolutePath
             )
         )
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })

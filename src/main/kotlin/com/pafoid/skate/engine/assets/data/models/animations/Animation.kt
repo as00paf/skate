@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets.data.models.animations
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -11,7 +12,7 @@ import org.joml.Vector3f
 @Serializable
 class Animation(
     val name: String,
-    val channels: List<AnimationChannel>,
+    @Transient val channels: List<AnimationChannel> = emptyList(),
     val duration: Float,
     val path: String
 ) {

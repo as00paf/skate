@@ -26,7 +26,7 @@ class Tile(
         addComponent(
             RenderComponent(
                 model = model,
-                modelGuid = File(model.path).absolutePath,
+                modelPath = File(model.path).absolutePath,
                 albedoTextureGuid = model.mesh[0].material.baseColorPath.orEmpty(),
                 textureScale = 3f * size / 2,
                 castShadow = false,  // Floor doesn't cast shadows (too large)

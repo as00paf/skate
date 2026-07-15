@@ -35,7 +35,7 @@ class ApplyTextureCommand(
 
             // Create new RenderComponent with updated model
             val newRenderComponent = RenderComponent(
-                modelGuid = "",
+                modelPath = "",
                 model = newModel,
                 albedoTextureGuid = "",
                 normalMapGuid = "",

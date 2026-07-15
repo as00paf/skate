@@ -9,11 +9,11 @@ import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
@@ -32,7 +32,6 @@ class PrefabsGenerator(
     private val assetsManager: AssetsManager,
     private val sceneManager: SceneManager,
     private val systemManager: SystemManager,
-    private val animatorHelper: AnimatorHelper,
 ) {
     private val gameObjectManager: GameObjectManager by lazy {
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
@@ -40,10 +39,9 @@ class PrefabsGenerator(
     /** Root path for engine-bundled assets copied into the project (null = use engine paths) */
     private var engineDefaultsRoot: String? = null
 
-    /** Cache for resolved model paths to avoid repeated File.exists() syscalls */
+    // TODO: remove
     private val resolvedModelPaths = mutableMapOf<String, String>()
     private val resolvedTexturePaths = mutableMapOf<String, String>()
-    private val resolvedAnimationPaths = mutableMapOf<String, String>()
 
     /**
      * Set the root path for engine-bundled default assets.
@@ -77,17 +75,6 @@ class PrefabsGenerator(
         return result
     }
 
-    /** Resolve an animation path — use cached result, project copy, or fall back to engine path */
-    private fun resolveAnimationPath(enginePath: String): String {
-        resolvedAnimationPaths[enginePath]?.let { return it }
-        val root = engineDefaultsRoot ?: return enginePath.also { resolvedAnimationPaths[enginePath] = it }
-        val fileName = File(enginePath).name
-        val candidate = File(root, "Characters/animations/$fileName")
-        val result = if (candidate.exists()) candidate.absolutePath else enginePath
-        resolvedAnimationPaths[enginePath] = result
-        return result
-    }
-
     fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
         val go = gameObjectManager.createGameObject(name)
         go.getComponent<Transform>()?.scale?.set(sizeX, sizeY, 1f)
@@ -110,20 +97,15 @@ class PrefabsGenerator(
 
     fun spawnSkater(skate: GameObject? = null): GameObject {
         val modelPath = resolveModelPath(Assets.Models.JAMES)
-        val model = assetsManager.getModel(modelPath) as TexturedModel?
-            ?: assetsManager.loadModelSync(modelPath) as TexturedModel
+        val model = assetsManager.getModel(modelPath)
+            ?: assetsManager.loadModelSync(modelPath)
         val skater = Skater("Skater", model, skate)
-
         val skeleton = skater.getComponent<SkeletonComponent>()?.pose?.skeleton
-        if (skeleton != null) {
-            animations.forEach { path ->
-                try {
-                    val animPath = resolveAnimationPath(path)
-                    val animation = assetsManager.loadAnimationSync(animPath, skeleton)
-                    animatorHelper.addAnimationWithPath(skater.animator, animation)
-                } catch (e: Exception) {
-                    // Skip missing animations during scene creation
-                }
+        val animator = skater.getComponent<Animator>()
+
+        if (skeleton != null && animator != null) {
+            Skater.DEFAULT_ANIMATIONS.forEach { path ->
+                animator.addAnimation(assetsManager.loadAnimationSync(path, skeleton))
             }
         }
 
@@ -166,7 +148,7 @@ class PrefabsGenerator(
         model.mesh[0].material.baseColorTexture = texture
         val renderComponent = RenderComponent(
             model = model,
-            modelGuid = File(model.path).absolutePath,
+            modelPath = File(model.path).absolutePath,
             castShadow = true,
             receiveShadow = true,
 
@@ -196,7 +178,7 @@ class PrefabsGenerator(
         model.mesh[0].material.baseColorTexture = texture
         val renderComponent = RenderComponent(
             model = model,
-            modelGuid = File(model.path).absolutePath,
+            modelPath = File(model.path).absolutePath,
             castShadow = true,
             receiveShadow = true
         )
@@ -319,22 +301,6 @@ class PrefabsGenerator(
         gameObjectManager.addGameObject(go)
         return go
     }
-
-    private val animations = listOf(
-        Assets.Animations.IDLE_0,
-        Assets.Animations.IDLE_1,
-        Assets.Animations.JUMP,
-        Assets.Animations.WALKING,
-        Assets.Animations.RUNNING,
-        Assets.Animations.LEFT_TURN,
-        Assets.Animations.LEFT_TURN_90,
-        Assets.Animations.LEFT_STRAFE,
-        Assets.Animations.LEFT_STRAFE_WALKING,
-        Assets.Animations.RIGHT_TURN,
-        Assets.Animations.RIGHT_TURN_90,
-        Assets.Animations.RIGHT_STRAFE,
-        Assets.Animations.RIGHT_STRAFE_WALKING,
-    )
 
     /** Spawn the canonical set of defaults for a new project scene synchronously.
      * Returns the list of spawned GameObjects in order: skateboard, skater, floor

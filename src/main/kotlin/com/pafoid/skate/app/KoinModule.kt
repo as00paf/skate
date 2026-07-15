@@ -73,7 +73,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.helpers.AnimatorHelper
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
@@ -117,7 +116,7 @@ val editorModule = module {
         ThumbnailRenderer(get(), get())
     }
     single { ThumbnailCache(get()) }
-    single { PrefabsGenerator(get(), get(), get(), get()) }
+    single { PrefabsGenerator(get(), get(), get()) }
     single { EngineAssetCopier() }
 
     single { PoseSerializer() }
@@ -135,7 +134,6 @@ val editorModule = module {
     single(createdAtStart = true) { UndoRedoActionHandler().also { it.init() } }
     single(createdAtStart = true) {
         ViewportActionHandler(
-            get(),
             get(),
             get(),
             get(),
@@ -250,10 +248,6 @@ val engineModule = module {
 
     single { NativeLibraryLoader() }
     single { VAOLoader() }
-
-    // Component helpers for GUID assignment
-    single { AnimatorHelper(get()) }
-
     single { Serializer() }
 
     // Rendering

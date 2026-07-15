@@ -60,7 +60,6 @@ class SceneManager(
             try {
                 obj.components.forEach { it.init(obj) }
                 resolveObjectReferences(obj)
-                resolveAnimatorPathsForObject(obj)
             } catch (e: Exception) {
                 logger.log("Error while loading object: ${obj.name}. ${e.message}", LogLevel.ERROR)
             }
@@ -68,102 +67,11 @@ class SceneManager(
     }
 
     private fun resolveObjectReferences(obj: GameObject) {
-        obj.getComponent<RenderComponent>()?.let { rc ->
-            if (rc.model == null && rc.modelGuid.isNotBlank()) {
-                try {
-                    val modelPath = rc.modelGuid
-                    val file = File(modelPath)
-                    if (file.exists()) {
-                        rc.model = assetsManager.loadModelSync(modelPath)
-                        logger.log("Resolved model for '${obj.name}': $modelPath", LogLevel.INFO)
-                    } else {
-                        logger.log("WARNING: Model path does not exist for '${obj.name}': $modelPath", LogLevel.WARN)
-                    }
-                } catch (e: Exception) {
-                    logger.log("Error resolving model for '${obj.name}': ${e.message}", LogLevel.ERROR)
-                }
-            }
-
-            rc.model?.let { model ->
-                model.mesh.forEach { meshPart ->
-                    val mat = meshPart.material
-
-                    if (rc.albedoTextureGuid.isNotBlank()) {
-                        try {
-                            val texPath = rc.albedoTextureGuid
-                            val file = File(texPath)
-                            if (file.exists()) {
-                                mat.baseColorTexture = assetsManager.getTexture(texPath)
-                            } else {
-                                logger.log(
-                                    "WARNING: Albedo texture path does not exist for '${obj.name}': $texPath",
-                                    LogLevel.WARN
-                                )
-                            }
-                        } catch (e: Exception) {
-                            logger.log("Error resolving albedo texture for '${obj.name}': ${e.message}", LogLevel.ERROR)
-                        }
-                    }
-
-                    if (rc.normalMapGuid.isNotBlank()) {
-                        try {
-                            val texPath = rc.normalMapGuid
-                            val file = File(texPath)
-                            if (file.exists()) {
-                                mat.normalMap = assetsManager.getTexture(texPath)
-                            } else {
-                                logger.log(
-                                    "WARNING: Normal map path does not exist for '${obj.name}': $texPath",
-                                    LogLevel.WARN
-                                )
-                            }
-                        } catch (e: Exception) {
-                            logger.log("Error resolving normal map for '${obj.name}': ${e.message}", LogLevel.ERROR)
-                        }
-                    }
-
-                    if (rc.metallicRoughnessGuid.isNotBlank()) {
-                        try {
-                            val texPath = rc.metallicRoughnessGuid
-                            val file = File(texPath)
-                            if (file.exists()) {
-                                mat.metallicRoughnessTexture = assetsManager.getTexture(texPath)
-                            } else {
-                                logger.log(
-                                    "WARNING: Metallic roughness map path does not exist for '${obj.name}': $texPath",
-                                    LogLevel.WARN
-                                )
-                            }
-                        } catch (e: Exception) {
-                            logger.log(
-                                "Error resolving metallic roughness map for '${obj.name}': ${e.message}",
-                                LogLevel.ERROR
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        obj.getComponent<Animator>()?.loadAnimationsFromPaths(assetsManager)
+        obj.getComponent<RenderComponent>()?.resolveModelFromPath(assetsManager)
+        obj.getComponent<Animator>()?.resolveAnimationsFromPaths(assetsManager)
 
         obj.children.forEach { child ->
             resolveObjectReferences(child)
-        }
-    }
-
-    private fun resolveAnimatorPathsForObject(obj: GameObject) {
-        val animator = obj.getComponent<Animator>() ?: return
-        if (animator.animationPaths.isNotEmpty()) return
-
-        animator.getLoadedAnimations().forEach { anim ->
-            if (anim.path.isNotBlank()) {
-                animator.animationPaths.add(anim.path)
-            }
-        }
-
-        if (animator.animationPaths.isNotEmpty()) {
-            logger.logEditor("Resolved ${animator.animationPaths.size} animation paths for ${obj.name}")
         }
     }
 

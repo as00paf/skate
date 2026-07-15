@@ -67,11 +67,7 @@ class Animator : Component(), KoinComponent {
     private var isInAir = false
     private var isGrounded = true
 
-    @Transient
     val animations: MutableList<Animation> = mutableListOf()
-
-    /** File paths for animations — serialized so they can be reloaded from disk */
-    var animationPaths: MutableList<String> = mutableListOf()
 
     val normalizedTime: Float
         get() {
@@ -105,9 +101,6 @@ class Animator : Component(), KoinComponent {
 
             else -> {
                 animations.add(animation)
-                if (animation.path.isNotBlank() && !animationPaths.contains(animation.path)) {
-                    animationPaths.add(animation.path)
-                }
                 logger.log("Animation '${animation.name}' added successfully!", LogLevel.ACTION)
             }
         }
@@ -117,10 +110,11 @@ class Animator : Component(), KoinComponent {
      * Rebuilds the animations list from serialized file paths.
      * Called by SceneSerializer after scene deserialization.
      */
-    fun loadAnimationsFromPaths(assetsManager: AssetsManager) {
+    fun resolveAnimationsFromPaths(assetsManager: AssetsManager) {
+        val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return
+        val animationPaths = animations.map { it.path }
         animations.clear()
         currentAnimation = null
-        val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return
 
         for (path in animationPaths) {
             val file = File(path)
@@ -138,11 +132,6 @@ class Animator : Component(), KoinComponent {
             currentAnimation = animations.first()
         }
     }
-
-    /**
-     * Returns the list of loaded animations (for serialization of paths).
-     */
-    fun getLoadedAnimations(): List<Animation> = animations
 
     /**
      * Starts playing a new animation with an optional [blend] time for smooth transitions.
