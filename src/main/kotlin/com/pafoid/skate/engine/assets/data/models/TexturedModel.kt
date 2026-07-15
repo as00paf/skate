@@ -7,8 +7,8 @@ import kotlinx.serialization.Transient
 
 @Serializable
 data class TexturedModel (
-    var path: String = "",// TODO: fix duplicate
-    var rawModel: RawModel? = null,
+    var path: String = "",
+    @Transient var rawModel: RawModel? = null,
     var material: Material = Material(),
     @Transient var mesh: List<MeshPart> = emptyList(),
     @Contextual var skeleton: Skeleton? = null,

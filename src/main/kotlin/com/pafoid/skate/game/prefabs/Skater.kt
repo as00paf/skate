@@ -16,7 +16,6 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import org.joml.Vector3f
-import java.io.File
 
 class Skater(
     name: String,
@@ -32,7 +31,6 @@ class Skater(
     val transform = Transform(position, scale, rotation)
     val renderComponent = RenderComponent(
         model = model,
-        modelPath = File(model.path).absolutePath,
         castShadow = true,
         receiveShadow = true
     )

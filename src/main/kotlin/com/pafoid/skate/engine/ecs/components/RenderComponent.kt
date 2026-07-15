@@ -4,12 +4,10 @@ import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.render.data.RenderMode
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
 @Serializable
 class RenderComponent(
-    var modelPath: String = "",// TODO: fix duplicate
-    @Transient var model: TexturedModel? = null,
+    var model: TexturedModel? = null,
     var albedoTextureGuid: String = "",
     var normalMapGuid: String = "",
     var metallicRoughnessGuid: String = "",
@@ -22,7 +20,7 @@ class RenderComponent(
 ) : Component() {
 
     fun resolveModelFromPath(assetsManager: AssetsManager) {
-        model = assetsManager.loadModelSync(modelPath)
+        model = model?.path?.let { assetsManager.loadModelSync(it) }
         model?.let { model ->
             model.mesh.forEach { meshPart ->
                 val mat = meshPart.material

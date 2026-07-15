@@ -27,7 +27,6 @@ class DuplicateGameObjectCommand(
         val originalRender = gameObject.getComponent<RenderComponent>()
         if (originalRender != null) {
             val newRender = RenderComponent(
-                modelPath = originalRender.modelPath,
                 albedoTextureGuid = originalRender.albedoTextureGuid
             )
             duplicated.addComponent(newRender)

@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import org.joml.Vector3f
-import java.io.File
 
 class Skateboard(
     model: TexturedModel,
@@ -28,7 +27,6 @@ class Skateboard(
         addComponent(
             RenderComponent(
                 model = model,
-                modelPath = File(model.path).absolutePath
             )
         )
         addComponent(RigidBody3D(mass).apply { friction = 0.1f })

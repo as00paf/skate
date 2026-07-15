@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import org.joml.Vector3f
-import java.io.File
 
 class Tile(
     name: String,
@@ -26,7 +25,6 @@ class Tile(
         addComponent(
             RenderComponent(
                 model = model,
-                modelPath = File(model.path).absolutePath,
                 albedoTextureGuid = model.mesh[0].material.baseColorPath.orEmpty(),
                 textureScale = 3f * size / 2,
                 castShadow = false,  // Floor doesn't cast shadows (too large)

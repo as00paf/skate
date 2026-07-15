@@ -52,6 +52,7 @@ class PrefabsGenerator(
     }
 
     /** Resolve a model path — use cached result, project copy, or fall back to engine path */
+    // TODO: remove
     private fun resolveModelPath(enginePath: String): String {
         resolvedModelPaths[enginePath]?.let { return it }
         val root = engineDefaultsRoot ?: return enginePath.also { resolvedModelPaths[enginePath] = it }
@@ -148,7 +149,6 @@ class PrefabsGenerator(
         model.mesh[0].material.baseColorTexture = texture
         val renderComponent = RenderComponent(
             model = model,
-            modelPath = File(model.path).absolutePath,
             castShadow = true,
             receiveShadow = true,
 
@@ -178,7 +178,6 @@ class PrefabsGenerator(
         model.mesh[0].material.baseColorTexture = texture
         val renderComponent = RenderComponent(
             model = model,
-            modelPath = File(model.path).absolutePath,
             castShadow = true,
             receiveShadow = true
         )
