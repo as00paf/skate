@@ -108,7 +108,7 @@ class ModelRenderer(
         withBlendState(alphaInt == 2) {
             withDepthMask(alphaInt != 2) {
                 withCullFace(!material.doubleSided) {
-                    GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
+                    GL11.glDrawElements(GL11.GL_TRIANGLES, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
                     EngineStats.drawCalls.incrementAndGet()
                 }
             }
@@ -151,7 +151,7 @@ class ModelRenderer(
         shader.uploadFloat(ShaderConst.Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
 
         withCullFace(!part.material.doubleSided) {
-            GL11.glDrawElements(model.drawMode, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
+            GL11.glDrawElements(GL11.GL_TRIANGLES, model.vertexCount, GL11.GL_UNSIGNED_INT, 0)
             EngineStats.drawCalls.incrementAndGet()
         }
 

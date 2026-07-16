@@ -244,7 +244,7 @@ val engineModule = module {
     single { CameraManager(get()) }
     single { SystemManager() }
     single { SceneManager(get(), get(), get(), get(), get()) }
-    single { AssetsManager(get(), get(), get()) }
+    single { AssetsManager(get(), get()) }
 
     single { NativeLibraryLoader() }
     single { VAOLoader() }

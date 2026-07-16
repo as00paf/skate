@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.assets.data.models
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Matrix4f
-import java.nio.ByteBuffer
 
 @Serializable
 data class MeshPart(
@@ -17,9 +16,7 @@ data class MeshPart(
     val weights: FloatArray = floatArrayOf(),
     val indices: IntArray = intArrayOf(),
     val material: Material = Material(),
-    val drawMode: Int = 0,
     @Transient var rawModel: RawModel? = null,
-    @Transient var embeddedTextures: Map<String, ByteBuffer> = emptyMap(),
     @Transient var inverseBindMatrices: List<Matrix4f> = emptyList()
 ) {
     override fun equals(other: Any?): Boolean {
@@ -28,7 +25,6 @@ data class MeshPart(
 
         other as MeshPart
 
-        if (drawMode != other.drawMode) return false
         if (!vertices.contentEquals(other.vertices)) return false
         if (!texCoords.contentEquals(other.texCoords)) return false
         if (!texCoords1.contentEquals(other.texCoords1)) return false
@@ -39,14 +35,13 @@ data class MeshPart(
         if (!weights.contentEquals(other.weights)) return false
         if (!indices.contentEquals(other.indices)) return false
         if (material != other.material) return false
-        if (embeddedTextures != other.embeddedTextures) return false
         if (inverseBindMatrices != other.inverseBindMatrices) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = drawMode
+        var result = 0
         result = 31 * result + vertices.contentHashCode()
         result = 31 * result + texCoords.contentHashCode()
         result = 31 * result + texCoords1.contentHashCode()
@@ -57,7 +52,6 @@ data class MeshPart(
         result = 31 * result + weights.contentHashCode()
         result = 31 * result + indices.contentHashCode()
         result = 31 * result + material.hashCode()
-        result = 31 * result + embeddedTextures.hashCode()
         result = 31 * result + inverseBindMatrices.hashCode()
         return result
     }

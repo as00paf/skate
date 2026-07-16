@@ -124,7 +124,7 @@ class PrefabsTab(
         ImGui.beginGroup()
 
         val texId = if (data.modelPath != null) {
-            val baseModel = assetsManager.loadModelSync(data.modelPath)
+            val baseModel = assetsManager.loadModel(data.modelPath)
             val rawModel = baseModel.mesh[0].rawModel
             val texture = assetsManager.getTexture(data.material?.texturePath ?: Assets.Textures.DEFAULT)
             val model =

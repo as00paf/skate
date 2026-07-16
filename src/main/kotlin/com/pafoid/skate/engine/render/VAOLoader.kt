@@ -92,7 +92,6 @@ class VAOLoader {
         rawVertices: FloatArray = floatArrayOf(),
         tangents: FloatArray = floatArrayOf(),
         colors: FloatArray = floatArrayOf(),
-        drawMode: Int = GL_TRIANGLES,
         textureCoords1: FloatArray = floatArrayOf(),
         joints: IntArray = intArrayOf(),
         weights: FloatArray = floatArrayOf()
@@ -139,7 +138,7 @@ class VAOLoader {
         vaoVboMap[vaoId] = currentVbos
 
         val vertexCount = if (indices.isNotEmpty()) indices.size else positions.size / 3
-        return RawModel(vaoId, vertexCount, rawVertices, drawMode, enabledAttribs)
+        return RawModel(vaoId, vertexCount, rawVertices, enabledAttribs)
     }
 
     /**

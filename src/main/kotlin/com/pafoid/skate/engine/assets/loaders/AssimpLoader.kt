@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets.loaders
 
 import com.pafoid.skate.engine.assets.BoneNameMapper
+import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.BoneInfo
 import com.pafoid.skate.engine.assets.data.models.Material
@@ -8,6 +9,7 @@ import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
+import com.pafoid.skate.engine.render.VAOLoader
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.assimp.AIBone
@@ -44,20 +46,21 @@ import org.lwjgl.assimp.Assimp.aiTextureType_LIGHTMAP
 import org.lwjgl.assimp.Assimp.aiTextureType_METALNESS
 import org.lwjgl.assimp.Assimp.aiTextureType_NORMALS
 import org.lwjgl.assimp.Assimp.aiTextureType_UNKNOWN
-import org.lwjgl.opengl.GL11
 import org.lwjgl.system.MemoryUtil
-import java.io.File
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
-class AssimpLoader {
+class AssimpLoader(
+    private val textureLoader: TextureLoader,
+    private val vaoLoader: VAOLoader,
+) {
 
     fun loadModel(filePath: String): TexturedModel {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
 
         val meshParts = mutableListOf<MeshPart>()
-        val embeddedTextures = mutableMapOf<String, ByteBuffer>()
+        val embeddedTextures = mutableMapOf<String, Texture>()
 
         // Collect Bone Information
         val boneNames = mutableListOf<String>()
@@ -114,7 +117,7 @@ class AssimpLoader {
         val skeleton = if (rootBone != null) Skeleton(rootBone, boneNames.size) else null
 
         aiReleaseImport(scene)
-        return TexturedModel(mesh = meshParts, skeleton = skeleton)
+        return TexturedModel(mesh = meshParts, skeleton = skeleton, path = filePath)
     }
 
     private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>): Bone? {
@@ -146,7 +149,7 @@ class AssimpLoader {
         scene: AIScene,
         parentTransform: Matrix4f,
         meshParts: MutableList<MeshPart>,
-        embeddedTextures: MutableMap<String, ByteBuffer>,
+        embeddedTextures: MutableMap<String, Texture>,
         filePath: String,
         boneInfoMap: Map<String, BoneInfo>,
     ) {
@@ -171,7 +174,7 @@ class AssimpLoader {
         mesh: AIMesh,
         scene: AIScene,
         transform: Matrix4f,
-        embeddedTextures: MutableMap<String, ByteBuffer>,
+        embeddedTextures: MutableMap<String, Texture>,
         filePath: String,
         boneInfoMap: Map<String, BoneInfo>
     ): MeshPart {
@@ -181,19 +184,24 @@ class AssimpLoader {
         if (materialIndex >= 0) {
             val materials = scene.mMaterials() ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
             val material = AIMaterial.create(materials.get(materialIndex))
-            
-            materialData.baseColorPath = loadMaterialTexture(scene, material, aiTextureType_DIFFUSE, filePath, embeddedTextures) ?: 
+
+            materialData.baseColorTexture =
+                loadMaterialTexture(scene, material, aiTextureType_DIFFUSE, filePath, embeddedTextures) ?:
                                            loadMaterialTexture(scene, material, aiTextureType_BASE_COLOR, filePath, embeddedTextures)
-            
-            materialData.normalMapPath = loadMaterialTexture(scene, material, aiTextureType_NORMALS, filePath, embeddedTextures)
-            
-            materialData.metallicRoughnessPath = loadMaterialTexture(scene, material, aiTextureType_METALNESS, filePath, embeddedTextures) ?:
+
+            materialData.normalMap =
+                loadMaterialTexture(scene, material, aiTextureType_NORMALS, filePath, embeddedTextures)
+
+            materialData.metallicRoughnessTexture =
+                loadMaterialTexture(scene, material, aiTextureType_METALNESS, filePath, embeddedTextures) ?:
                                                    loadMaterialTexture(scene, material, aiTextureType_UNKNOWN, filePath, embeddedTextures)
-            
-            materialData.aoPath = loadMaterialTexture(scene, material, aiTextureType_AMBIENT_OCCLUSION, filePath, embeddedTextures) ?:
+
+            materialData.aoTexture =
+                loadMaterialTexture(scene, material, aiTextureType_AMBIENT_OCCLUSION, filePath, embeddedTextures) ?:
                                     loadMaterialTexture(scene, material, aiTextureType_LIGHTMAP, filePath, embeddedTextures)
-            
-            materialData.emissivePath = loadMaterialTexture(scene, material, aiTextureType_EMISSIVE, filePath, embeddedTextures)
+
+            materialData.emissiveTexture =
+                loadMaterialTexture(scene, material, aiTextureType_EMISSIVE, filePath, embeddedTextures)
             
             val color = AIColor4D.create()
             if (aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, 0, 0, color) == aiReturn_SUCCESS) {
@@ -320,6 +328,19 @@ class AssimpLoader {
             }
         }
 
+        val rawModel = vaoLoader.loadToVAO(
+            vertices,
+            texCoords,
+            normals,
+            indices,
+            vertices,
+            tangents,
+            colors,
+            texCoords1,
+            joints,
+            weights
+        )
+
         return MeshPart(
             vertices,
             texCoords,
@@ -331,14 +352,18 @@ class AssimpLoader {
             weights,
             indices,
             materialData,
-            GL11.GL_TRIANGLES,
-            null,
-            embeddedTextures,
+            rawModel,
             inverseBindMatrices
         )
     }
 
-    private fun loadMaterialTexture(scene: AIScene, material: AIMaterial, type: Int, modelPath: String, embeddedTextures: MutableMap<String, ByteBuffer>): String? {
+    private fun loadMaterialTexture(
+        scene: AIScene,
+        material: AIMaterial,
+        type: Int,
+        modelPath: String,
+        embeddedTextures: MutableMap<String, Texture>
+    ): Texture? {
         val path = AIString.calloc()
         val result = aiGetMaterialTexture(material, type, 0, path, null as IntBuffer?, null, null, null, null, null)
         if (result != aiReturn_SUCCESS) {
@@ -361,11 +386,12 @@ class AssimpLoader {
                 val copy = ByteBuffer.allocateDirect(originalBuffer.remaining())
                 copy.put(originalBuffer)
                 copy.flip()
-                embeddedTextures[texturePath] = copy
+                embeddedTextures[texturePath] = textureLoader.loadFromBuffer(copy)
             }
-            texturePath
+            embeddedTextures[texturePath]
         } else {
-            File(modelPath).parentFile.resolve(p).path
+            embeddedTextures[p] = textureLoader.loadFromFile(p)
+            embeddedTextures[p]
         }
     }
 }

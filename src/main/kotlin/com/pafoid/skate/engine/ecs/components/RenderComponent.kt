@@ -20,7 +20,7 @@ class RenderComponent(
 ) : Component() {
 
     fun resolveModelFromPath(assetsManager: AssetsManager) {
-        model = model?.path?.let { assetsManager.loadModelSync(it) }
+        model = model?.path?.let { assetsManager.loadModel(it) }
         model?.let { model ->
             model.mesh.forEach { meshPart ->
                 val mat = meshPart.material
