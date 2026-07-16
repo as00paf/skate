@@ -1,8 +1,9 @@
 package com.pafoid.skate.engine.render
 
-import com.pafoid.skate.engine.assets.data.models.RawModel
+import com.pafoid.skate.engine.assets.data.models.Material
+import com.pafoid.skate.engine.assets.data.models.MeshPart
+import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER
 import org.lwjgl.opengl.GL20.glVertexAttribPointer
 import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
@@ -70,32 +71,33 @@ class VAOLoader {
      * @param rawVertices Optional raw vertex data for custom processing. Default: empty.
      * @param tangents Optional tangent vectors for normal mapping (x, y, z triplets). Default: empty.
      * @param colors Optional vertex colors (r, g, b, a quads). Default: empty.
-     * @param drawMode OpenGL primitive type (e.g., [GL_TRIANGLES]). Default: [GL_TRIANGLES].
      * @param textureCoords1 Optional secondary UV coordinates for lightmapping, etc. Default: empty.
      * @param joints Optional bone joint indices for skeletal animation (4 joints per vertex). Default: empty.
      * @param weights Optional bone weights for skeletal animation (4 weights per vertex). Default: empty.
-     * @return A [RawModel] containing the VAO ID, vertex count, and metadata for rendering.
+     * @return A [MeshPart] containing the VAO ID, vertex count, and metadata for rendering.
      *
      * ## Vertex Count Calculation
      * - If [indices] is provided: vertex count = indices.size
      * - Otherwise: vertex count = positions.size / 3
      *
      * ## Enabled Attributes
-     * The returned [RawModel] includes a list of enabled attribute locations, which should be
+     * The returned [MeshPart] includes a list of enabled attribute locations, which should be
      * passed to VAO binding functions to minimize redundant OpenGL calls.
      */
     fun loadToVAO(
-        positions: FloatArray, 
-        textureCoords: FloatArray, 
-        normals: FloatArray, 
-        indices: IntArray, 
+        positions: FloatArray,
+        textureCoords: FloatArray,
+        normals: FloatArray,
+        indices: IntArray,
         rawVertices: FloatArray = floatArrayOf(),
         tangents: FloatArray = floatArrayOf(),
         colors: FloatArray = floatArrayOf(),
         textureCoords1: FloatArray = floatArrayOf(),
         joints: IntArray = intArrayOf(),
-        weights: FloatArray = floatArrayOf()
-    ): RawModel {
+        weights: FloatArray = floatArrayOf(),
+        material: Material = Material(),
+        inverseBindMatrices: List<Matrix4f> = emptyList(),
+    ): MeshPart {
         val vaoId = createVAO()
         val currentVbos = mutableListOf<Int>()
         val enabledAttribs = mutableListOf<Int>()
@@ -138,7 +140,19 @@ class VAOLoader {
         vaoVboMap[vaoId] = currentVbos
 
         val vertexCount = if (indices.isNotEmpty()) indices.size else positions.size / 3
-        return RawModel(vaoId, vertexCount, rawVertices, enabledAttribs)
+        return MeshPart(
+            vaoId = vaoId, vertexCount = vertexCount, vertices = rawVertices, texCoords = textureCoords,
+            texCoords1 = textureCoords1,
+            normals = normals,
+            tangents = tangents,
+            colors = colors,
+            joints = joints,
+            weights = weights,
+            indices = indices,
+            material = material,
+            inverseBindMatrices = inverseBindMatrices,
+            enabledAttributes = enabledAttribs
+        )
     }
 
     /**
@@ -174,16 +188,21 @@ class VAOLoader {
      *        components per vertex (typically 2 for 2D or 3 for 3D).
      * @param coordinateSize Number of float components per vertex (2, 3, or 4).
      * @param rawVertices Optional raw vertex data for custom processing. Default: empty.
-     * @return A [RawModel] containing the VAO ID and vertex count.
+     * @return A [MeshPart] containing the VAO ID and vertex count.
      */
-    fun loadToVAO(positions: FloatArray, coordinateSize: Int, rawVertices: FloatArray = floatArrayOf()): RawModel {
+    fun loadToVAO(positions: FloatArray, coordinateSize: Int, rawVertices: FloatArray = floatArrayOf()): MeshPart {
         val vaoId = createVAO()
         val vboId = storeDataInAttribList(0, coordinateSize, positions)
         unbindVAO()
         
         vaoVboMap[vaoId] = mutableListOf(vboId)
-        
-        return RawModel(vaoId, positions.size / coordinateSize, rawVertices, enabledAttributes = listOf(0))
+
+        return MeshPart(
+            vaoId = vaoId,
+            vertexCount = positions.size / coordinateSize,
+            vertices = rawVertices,
+            enabledAttributes = mutableListOf(0)
+        )
     }
 
     /**
@@ -288,7 +307,7 @@ class VAOLoader {
      *
      * This method should be called when shutting down the renderer or when all
      * mesh data should be released from GPU memory. After calling this method,
-     * all previously created [RawModel] instances will have invalid VAO/VBO IDs
+     * all previously created [MeshPart] instances will have invalid VAO/VBO IDs
      * and must not be used for rendering.
      *
      * **Warning**: This deletes ALL resources created by this VAOLoader instance.
@@ -309,7 +328,7 @@ class VAOLoader {
      * freeing GPU memory for that specific mesh. The VAO ID is removed from
      * internal tracking lists to prevent double-deletion.
      *
-     * @param vaoId The VAO ID to delete, typically from [RawModel.vaoId].
+     * @param vaoId The VAO ID to delete, typically from [MeshPart.vaoId].
      * **Note**: If the [vaoId] is not found in the tracked list, this method does nothing.
      */
     fun deleteVAO(vaoId: Int) {

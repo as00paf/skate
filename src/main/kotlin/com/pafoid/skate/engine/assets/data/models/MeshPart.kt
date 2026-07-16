@@ -6,6 +6,8 @@ import org.joml.Matrix4f
 
 @Serializable
 data class MeshPart(
+    var vaoId: Int = -1,
+    var vertexCount: Int = 0,
     val vertices: FloatArray = floatArrayOf(),
     val texCoords: FloatArray = floatArrayOf(),
     val texCoords1: FloatArray = floatArrayOf(),
@@ -16,8 +18,8 @@ data class MeshPart(
     val weights: FloatArray = floatArrayOf(),
     val indices: IntArray = intArrayOf(),
     val material: Material = Material(),
-    @Transient var rawModel: RawModel? = null,
-    @Transient var inverseBindMatrices: List<Matrix4f> = emptyList()
+    @Transient var inverseBindMatrices: List<Matrix4f> = emptyList(),
+    @Transient val enabledAttributes: MutableList<Int> = mutableListOf(0, 1, 2)
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -35,6 +37,8 @@ data class MeshPart(
         if (!weights.contentEquals(other.weights)) return false
         if (!indices.contentEquals(other.indices)) return false
         if (material != other.material) return false
+        if (vaoId != other.vaoId) return false
+        if (vertexCount != other.vertexCount) return false
         if (inverseBindMatrices != other.inverseBindMatrices) return false
 
         return true
@@ -42,6 +46,9 @@ data class MeshPart(
 
     override fun hashCode(): Int {
         var result = 0
+        result = 31 * result + vaoId.hashCode()
+        result = 31 * result + vertexCount.hashCode()
+        result = 31 * result + vertices.contentHashCode()
         result = 31 * result + vertices.contentHashCode()
         result = 31 * result + texCoords.contentHashCode()
         result = 31 * result + texCoords1.contentHashCode()

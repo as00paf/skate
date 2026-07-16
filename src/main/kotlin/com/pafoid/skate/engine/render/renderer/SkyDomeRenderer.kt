@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.assets.data.models.RawModel
+import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.Camera
@@ -41,7 +41,7 @@ import kotlin.math.sin
 
 class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManager: AssetsManager) {
 
-    private val sphere: RawModel
+    private val sphere: MeshPart
     private val hdriTexture: Texture
     private val modelMatrix = Matrix4f()
 
@@ -50,7 +50,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
         hdriTexture = assetsManager.getTexture(Assets.Textures.SKY_HDRI)
     }
 
-    private fun generateUVSphere(loader: VAOLoader, rings: Int, sectors: Int, radius: Float): RawModel {
+    private fun generateUVSphere(loader: VAOLoader, rings: Int, sectors: Int, radius: Float): MeshPart {
         val vertices = mutableListOf<Float>()
         val texCoords = mutableListOf<Float>()
         val normals = mutableListOf<Float>()
@@ -89,7 +89,12 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
             }
         }
 
-        return loader.loadToVAO(vertices.toFloatArray(), texCoords.toFloatArray(), normals.toFloatArray(), indices.toIntArray())
+        return loader.loadToVAO(
+            positions = vertices.toFloatArray(),
+            textureCoords = texCoords.toFloatArray(),
+            normals = normals.toFloatArray(),
+            indices = indices.toIntArray()
+        )
     }
 
     fun render(camera: Camera, scene: Scene) {

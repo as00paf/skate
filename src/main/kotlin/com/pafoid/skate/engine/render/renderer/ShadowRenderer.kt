@@ -91,13 +91,12 @@ class ShadowRenderer(
 
         // Render each mesh part
         model.mesh.forEach { part ->
-            val rawModel = part.rawModel
             val material = part.material
-            val vaoId = rawModel?.vaoId ?: return@forEach
-            if (vaoId == 0) return@forEach
+            val vaoId = part.vaoId
+            if (vaoId <= 0) return@forEach
 
             // Bind VAO with proper attribute enabling (critical for skinned meshes)
-            vaoId.bindVAO(rawModel.enabledAttributes)
+            vaoId.bindVAO(part.enabledAttributes)
 
             // Upload alpha masking uniforms
             val alphaModeInt = when (material.alphaMode) {
@@ -123,14 +122,14 @@ class ShadowRenderer(
                 shader.uploadBoolean(Uniforms.HAS_SKIN, true)
 
                 // Render with skinning
-                GL11.glDrawElements(GL11.GL_TRIANGLES, rawModel.vertexCount, GL11.GL_UNSIGNED_INT, 0)
+                GL11.glDrawElements(GL11.GL_TRIANGLES, part.vertexCount, GL11.GL_UNSIGNED_INT, 0)
             } else {
                 // Static mesh: no skinning
                 shader.uploadMat4f(Uniforms.MODEL_MATRIX, worldMatrix)
                 shader.uploadBoolean(Uniforms.HAS_SKIN, false)
 
                 // Render without skinning
-                GL11.glDrawElements(GL11.GL_TRIANGLES, rawModel.vertexCount, GL11.GL_UNSIGNED_INT, 0)
+                GL11.glDrawElements(GL11.GL_TRIANGLES, part.vertexCount, GL11.GL_UNSIGNED_INT, 0)
             }
 
             // Just unbind VAO without disabling attributes (preserves attribute state)

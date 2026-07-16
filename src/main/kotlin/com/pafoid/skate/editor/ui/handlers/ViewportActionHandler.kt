@@ -441,8 +441,8 @@ class ViewportActionHandler(
             val baseModel = assetsManager.loadModel(Assets.Models.CUBE)
             val model = TexturedModel(
                 path = Assets.Models.CUBE,
-                rawModel = baseModel.mesh[0].rawModel,
-                Material(texture)
+                mesh = baseModel.mesh,
+                material = Material(texture)
             )
 
             jobSystem.runOnMain {

@@ -22,14 +22,10 @@ class ApplyTextureCommand(
     override fun execute() {
         val renderComponent = gameObject.getComponent<RenderComponent>()
         renderComponent?.let { component ->
-            val oldModel = component.model ?: return@let
             val texture = assetsManager.getTexture(newTexturePath)
-            val meshPart = oldModel.mesh[0]
             val newMaterial = Material(baseColorTexture = texture)
             val newMeshPart = MeshPart(
-                rawModel = meshPart.rawModel,
                 material = newMaterial,
-                inverseBindMatrices = meshPart.inverseBindMatrices
             )
             val newModel = TexturedModel(mesh = listOf(newMeshPart))
 

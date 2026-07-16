@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.assets.data.models.RawModel
+import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst
 import org.lwjgl.opengl.GL11
@@ -18,7 +18,7 @@ import org.lwjgl.opengl.GL30
  */
 class SplashRenderer(private val vaoLoader: VAOLoader) {
 
-    private var quad: RawModel? = null
+    private var quad: MeshPart? = null
 
     /**
      * Initializes the splash screen quad.

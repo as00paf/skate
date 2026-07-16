@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.CubeMap
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.assets.data.models.RawModel
+import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -18,7 +18,7 @@ import org.lwjgl.opengl.GL30.glDeleteVertexArrays
 
 class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
 
-    private val cube: RawModel = loader.loadToVAO(VERTICES, 3)
+    private val cube: MeshPart = loader.loadToVAO(VERTICES, 3)
 
     fun render(camera: Camera, cubeMap: CubeMap) {
         shader.start()
@@ -44,7 +44,6 @@ class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
         if (cube.vaoId != 0) {
             glDeleteVertexArrays(cube.vaoId)
         }
-        // VBO is managed by VAOLoader and cleaned up with VAO
     }
 }
 

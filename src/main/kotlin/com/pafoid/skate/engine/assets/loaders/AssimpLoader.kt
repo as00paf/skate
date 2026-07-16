@@ -328,7 +328,7 @@ class AssimpLoader(
             }
         }
 
-        val rawModel = vaoLoader.loadToVAO(
+        return vaoLoader.loadToVAO(
             vertices,
             texCoords,
             normals,
@@ -337,23 +337,9 @@ class AssimpLoader(
             tangents,
             colors,
             texCoords1,
-            joints,
-            weights
-        )
-
-        return MeshPart(
-            vertices,
-            texCoords,
-            texCoords1,
-            normals,
-            tangents,
-            colors,
             joints,
             weights,
-            indices,
-            materialData,
-            rawModel,
-            inverseBindMatrices
+            materialData
         )
     }
 
