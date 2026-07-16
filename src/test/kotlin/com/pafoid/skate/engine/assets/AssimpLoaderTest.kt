@@ -21,9 +21,9 @@ class AssimpLoaderTest {
         val model = loader.loadModel(path)
         
         assertNotNull(model.skeleton, "Skeleton should not be null for character model")
-        assertTrue(model.parts.isNotEmpty(), "Model should have mesh parts")
-        
-        val part = model.parts[0]
+        assertTrue(model.mesh.isNotEmpty(), "Model should have mesh parts")
+
+        val part = model.mesh[0]
         
         // Verify we have weights
         // weights array size is numVertices * 4

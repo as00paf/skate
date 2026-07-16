@@ -1,10 +1,8 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.commands.project.CreateSceneCommand
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.scene.SceneData
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.testfixtures.ImmediateJobSystem
@@ -23,18 +21,15 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class CreateSceneCommandTest {
-    private lateinit var sceneSerializer: SceneSerializer
     private lateinit var eventSystem: EventSystem
     private lateinit var jobSystem: IJobSystem
     private lateinit var createdSceneInstance: Scene
 
     @BeforeEach
     fun setup() {
-        sceneSerializer = mockk(relaxed = true)
         eventSystem = EventSystem()
         jobSystem = ImmediateJobSystem()
         createdSceneInstance = mockk(relaxed = true)
-        every { createdSceneInstance.sceneData } returns SceneData()
         every { createdSceneInstance.name } returns "TestScene"
     }
 
