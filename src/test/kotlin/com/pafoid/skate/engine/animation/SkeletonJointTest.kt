@@ -10,7 +10,7 @@ class SkeletonJointTest {
         val loader = AssimpLoader()
         val filePath = "assets/characters/james.glb"
         try {
-            val preLoaded = loader.preLoadModel(filePath)
+            val preLoaded = loader.loadModel(filePath)
 
             assert(preLoaded.skeleton != null) { "Skeleton should not be null" }
             val skeleton = preLoaded.skeleton!!

@@ -52,7 +52,7 @@ import java.nio.IntBuffer
 
 class AssimpLoader {
 
-    fun preLoadModel(filePath: String): TexturedModel {
+    fun loadModel(filePath: String): TexturedModel {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
 

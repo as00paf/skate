@@ -16,7 +16,7 @@ class AssimpModelInspectionTest {
             return
         }
 
-        val preLoaded = loader.preLoadModel(filePath)
+        val preLoaded = loader.loadModel(filePath)
         println("Model: $filePath")
         
         var minX = Float.MAX_VALUE

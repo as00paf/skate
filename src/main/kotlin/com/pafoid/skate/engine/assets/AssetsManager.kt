@@ -112,7 +112,7 @@ class AssetsManager(
 
         return try {
              val preLoaded = withContext(Dispatchers.IO) {
-                 assimpLoader.preLoadModel(path)
+                 assimpLoader.loadModel(path)
              }
 
              // Collect texture dependencies
@@ -185,10 +185,22 @@ class AssetsManager(
         models[absolutePath]?.let { return it }
         
         return try {
-             val preLoaded = assimpLoader.preLoadModel(path)
+            val model = assimpLoader.loadModel(path)
 
-            val parts = preLoaded.mesh.map { p ->
-                     val model = vaoLoader.loadToVAO(p.vertices, p.texCoords, p.normals, p.indices, p.vertices, p.tangents, p.colors, p.drawMode, p.texCoords1, p.joints, p.weights)
+            val parts = model.mesh.map { p ->
+                val rawModel = vaoLoader.loadToVAO(
+                    p.vertices,
+                    p.texCoords,
+                    p.normals,
+                    p.indices,
+                    p.vertices,
+                    p.tangents,
+                    p.colors,
+                    p.drawMode,
+                    p.texCoords1,
+                    p.joints,
+                    p.weights
+                )
                      
                      val mat = p.material
                      fun getOrCreateTexSync(texPath: String?): Texture? {
@@ -212,10 +224,10 @@ class AssetsManager(
                      mat.aoTexture = getOrCreateTexSync(mat.aoPath)
                      mat.emissiveTexture = getOrCreateTexSync(mat.emissivePath)
 
-                 MeshPart(rawModel = model, material = mat, inverseBindMatrices = p.inverseBindMatrices)
+                MeshPart(rawModel = rawModel, material = mat, inverseBindMatrices = p.inverseBindMatrices)
                  }
 
-            val characterModel = TexturedModel(mesh = parts, path = path, skeleton = preLoaded.skeleton)
+            val characterModel = TexturedModel(mesh = parts, path = path, skeleton = model.skeleton)
                  models[absolutePath] = characterModel
                  characterModel
         } catch (e: Exception) {

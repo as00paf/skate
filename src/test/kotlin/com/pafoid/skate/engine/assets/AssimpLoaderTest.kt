@@ -18,7 +18,7 @@ class AssimpLoaderTest {
             return
         }
 
-        val model = loader.preLoadModel(path)
+        val model = loader.loadModel(path)
         
         assertNotNull(model.skeleton, "Skeleton should not be null for character model")
         assertTrue(model.parts.isNotEmpty(), "Model should have mesh parts")
