@@ -5,7 +5,7 @@ package com.pafoid.skate.engine.render.graph
  * 
  * Render resources are used as inputs and outputs for [RenderPass] nodes.
  */
-sealed class RenderResource {
+sealed class RenderResource { // TODO: remove and use classes from ecs
     /**
      * Unique name for this resource in the graph.
      */

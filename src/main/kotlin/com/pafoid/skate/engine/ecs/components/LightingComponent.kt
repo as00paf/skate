@@ -14,7 +14,6 @@ import org.joml.Vector3f
  * @property sunColor Current sun color (interpolated through day phases)
  * @property sunIntensity Sun intensity (0 at night, 1 at noon)
  * @property shadowIntensity Shadow intensity (lower at night)
- * @property isDaytime True if sun is above horizon
  */
 @Serializable
 class LightingComponent(
@@ -27,8 +26,6 @@ class LightingComponent(
     var sunIntensity: Float = 1f,
 
     var shadowIntensity: Float = 1f,
-
-    var isDaytime: Boolean = true
 ) : Component() {
 
     /**
@@ -39,6 +36,5 @@ class LightingComponent(
         sunColor.set(1f, 1f, 1f)
         sunIntensity = 1f
         shadowIntensity = 1f
-        isDaytime = true
     }
 }

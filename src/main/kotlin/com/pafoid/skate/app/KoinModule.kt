@@ -268,7 +268,7 @@ val engineModule = module {
                 EnvironmentSystem(),
                 PhysicsSystem(get(), get()),
                 DayNightCycleSystem(),
-                DirectionalLightSystem(get()),
+                DirectionalLightSystem(),
                 AnimationSystem(),
                 RagdollSystem(),
                 GridLines(get(), get(), get()),

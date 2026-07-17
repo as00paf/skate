@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
@@ -19,11 +18,8 @@ import kotlin.math.floor
  * This system runs at [ExecutionPriority.EARLY] after [DayNightCycleSystem]
  * to ensure day/night state is ready before computing light properties.
  *
- * @param stringManager String manager for localized UI strings
  */
-class DirectionalLightSystem(
-    private val stringManager: StringManager
-) : System(priority = ExecutionPriority.EARLY) {
+class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
 
     // System-owned configuration
     var config: DirectionalLightComponent? = null
