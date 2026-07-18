@@ -85,7 +85,6 @@ import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.VAOLoader
-import com.pafoid.skate.engine.render.renderer.PickingRenderer
 import com.pafoid.skate.engine.utils.DefaultJobSystem
 import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.game.trick.TrickManager
@@ -95,7 +94,6 @@ import org.koin.dsl.module
 val editorModule = module {
 
     // Editor-only rendering tools (moved from engineModule)
-    single { PickingRenderer(get(), get(), get()) } // TODO: move
     single { PrefabsGenerator(get(), get(), get()) }
     single { EngineAssetCopier() }
 
