@@ -13,7 +13,6 @@ import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.render.renderer.DebugRenderer
 
 class GizmoSystem(
     private val keyListener: KeyListener,
@@ -24,7 +23,6 @@ class GizmoSystem(
     private val eventSystem: EventSystem,
     private val systemManager: SystemManager,
     private val editorCamera: EditorCamera,
-    debugRenderer: DebugRenderer
 ) {
     private val gameObjectManager: GameObjectManager by lazy {
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
@@ -33,13 +31,14 @@ class GizmoSystem(
     var usingGizmo = NONE
 
     // Gizmos are owned directly by this system, not registered as separate systems
-    private val translateGizmo = TranslateGizmo(mouseListener, undoRedoManager, debugRenderer)
-    private val rotationGizmo = RotationGizmo(mouseListener, undoRedoManager, debugRenderer)
-    private val scaleGizmo = ScaleGizmo(mouseListener, undoRedoManager, debugRenderer)
+    private val debugRenderer by lazy { engine.renderer.renderResources.renderers.debug }
+    private val translateGizmo by lazy { TranslateGizmo(mouseListener, undoRedoManager, debugRenderer) }
+    private val rotationGizmo by lazy { RotationGizmo(mouseListener, undoRedoManager, debugRenderer) }
+    private val scaleGizmo by lazy { ScaleGizmo(mouseListener, undoRedoManager, debugRenderer) }
     private val selectionGizmo by lazy {
         SelectionGizmo(mouseListener, undoRedoManager, engine, eventSystem, gameObjectManager)
     }
-    val measureGizmo = MeasureTool(mouseListener, undoRedoManager, debugRenderer, settingsManager)
+    val measureGizmo by lazy { MeasureTool(mouseListener, undoRedoManager, debugRenderer, settingsManager) }
 
     fun update(dt: Float, scene: Scene) {
         editorCamera.update(dt)

@@ -1,11 +1,24 @@
 package com.pafoid.skate.engine.core
 
+import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.System
+import com.pafoid.skate.engine.ecs.systems.AnimationSystem
+import com.pafoid.skate.engine.ecs.systems.AudioSystem
+import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
+import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
+import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
+import com.pafoid.skate.engine.ecs.systems.GridLines
+import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
+import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
+import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
+import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.IJobSystem
@@ -19,9 +32,12 @@ class Engine(
     private val renderResourcesFactory: RenderResourcesFactory,
     private val jobSystem: IJobSystem,
     private val systemManager: SystemManager,
+    private val cameraManager: CameraManager,
+    private val inputProvider: IInputProvider,
+    private val mouseListener: MouseListener,
+    private val assetsManager: AssetsManager,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
-    private val engineSystems: List<System>,
 ) : KoinComponent {
 
     val engineState = AtomicReference(EngineState.BOOTING)
@@ -41,14 +57,29 @@ class Engine(
             audioEngine.init()
 
             engineState.set(EngineState.RUNNING)
+            initializeSystems()
         }
 
-        initializeSystems()
         eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event -> runtimePlaying = event.playing }
         logger.log("Engine initialization complete.")
     }
 
     private fun initializeSystems() {
+        val debugRenderer = renderer.renderResources.renderers.debug
+        val engineSystems = listOf(
+            GameObjectManager(), // Core
+            cameraManager, // TODO: move here?
+            InputSystem(inputProvider, mouseListener, eventSystem),
+            AudioSystem(audioEngine, logger, assetsManager),
+            EnvironmentSystem(),
+            PhysicsSystem(nativeLibraryLoader, debugRenderer),
+            DayNightCycleSystem(),
+            DirectionalLightSystem(),
+            AnimationSystem(),
+            RagdollSystem(),
+            GridLines(debugRenderer, sceneManager, cameraManager),
+        )
+
         engineSystems.forEach {
             systemManager.addSystem(it)
         }

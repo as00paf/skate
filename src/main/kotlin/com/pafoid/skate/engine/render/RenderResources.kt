@@ -2,11 +2,13 @@ package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.render.graph.RenderGraph
+import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.renderer.SkyboxRenderer
 import com.pafoid.skate.engine.render.renderer.SplashRenderer
+import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
@@ -51,7 +53,9 @@ data class Renderers(
     val skyDome: SkyDomeRenderer,
     val model: ModelRenderer,
     val shadow: ShadowRenderer,
-    val splash: SplashRenderer
+    val splash: SplashRenderer,
+    val debug: DebugRenderer,
+    val thumbnail: ThumbnailRenderer,
 )
 
 /**

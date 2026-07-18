@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
@@ -24,12 +25,13 @@ import java.io.File
 class PrefabsTab(
     assetsManager: AssetsManager,
     stringManager: StringManager,
-    private val thumbnailCache: ThumbnailCache,
+    private val engine: Engine,
     private val prefabsGenerator: PrefabsGenerator,
     private val logger: LoggerService,
     private val jobSystem: IJobSystem,
 ) : AssetBrowserTab(assetsManager, stringManager) {
 
+    private val thumbnailCache: ThumbnailCache by lazy { ThumbnailCache(engine.renderer.renderResources.renderers.thumbnail) }
 
     override fun imgui(label: String, searchText: ImString) {
         renderHeader(label, searchText)

@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.render.renderer.ShadowRenderer
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.renderer.SkyboxRenderer
 import com.pafoid.skate.engine.render.renderer.SplashRenderer
+import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
@@ -29,9 +30,6 @@ class RenderResourcesFactory(
     private val assetsManager: AssetsManager,
     private val logger: LoggerService,
     private val vaoLoader: VAOLoader,
-    private val debugRenderer: DebugRenderer,
-    private val modelRenderer: ModelRenderer,
-    private val splashRenderer: SplashRenderer,
     private val cameraManager: CameraManager
 ) : KoinComponent {
 
@@ -50,9 +48,6 @@ class RenderResourcesFactory(
 
         logger.log("Creating renderer instances...")
         val renderers = createRenderers(shaders, assetsManager)
-
-        logger.log("Initializing splash renderer...")
-        splashRenderer.initialize()
 
         logger.log("Creating render passes...")
         val shadowMap = ShadowMap.createWithBestResolution(4096)
@@ -120,13 +115,21 @@ class RenderResourcesFactory(
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
         val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, assetsManager)
         val shadowRenderer = ShadowRenderer(shaders.shadow, assetsManager)
+        val debugRenderer = DebugRenderer(assetsManager, cameraManager, logger)
+        val modelRenderer = ModelRenderer(assetsManager, debugRenderer)
+        val splashRenderer = SplashRenderer(vaoLoader)
+        splashRenderer.initialize()
+
+        val thumbnailRenderer = ThumbnailRenderer(assetsManager, modelRenderer)
 
         return Renderers(
             skybox = skyboxRenderer,
             skyDome = skyDomeRenderer,
             model = modelRenderer,
             shadow = shadowRenderer,
-            splash = splashRenderer
+            splash = splashRenderer,
+            debug = debugRenderer,
+            thumbnail = thumbnailRenderer
         )
     }
 
@@ -167,7 +170,7 @@ class RenderResourcesFactory(
             shadowMapTextureId = shadowMapTextureId,
             shadowMapResolution = shadowMapRes
         )
-        val debugPass = DebugPass(debugRenderer)
+        val debugPass = DebugPass(renderers.debug)
 
         val shadowPass = if (shadowMap != null) {
             ShadowPass(

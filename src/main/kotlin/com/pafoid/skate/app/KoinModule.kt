@@ -20,7 +20,6 @@ import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.handlers.ConsoleActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
@@ -73,16 +72,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.AnimationSystem
-import com.pafoid.skate.engine.ecs.systems.AudioSystem
-import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
-import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
-import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.ecs.systems.GridLines
-import com.pafoid.skate.engine.ecs.systems.InputSystem
-import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
-import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
@@ -96,11 +85,7 @@ import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.VAOLoader
-import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
-import com.pafoid.skate.engine.render.renderer.SplashRenderer
-import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.utils.DefaultJobSystem
 import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.game.trick.TrickManager
@@ -110,11 +95,7 @@ import org.koin.dsl.module
 val editorModule = module {
 
     // Editor-only rendering tools (moved from engineModule)
-    single { PickingRenderer(get(), get(), get()) }
-    single {
-        ThumbnailRenderer(get(), get())
-    }
-    single { ThumbnailCache(get()) }
+    single { PickingRenderer(get(), get(), get()) } // TODO: move
     single { PrefabsGenerator(get(), get(), get()) }
     single { EngineAssetCopier() }
 
@@ -190,7 +171,7 @@ val editorModule = module {
     single { EditorCamera(Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }, get()) }
     single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { EditorEventHandler(get(), get(), get()) }
-    single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -250,28 +231,23 @@ val engineModule = module {
     single { Serializer() }
 
     // Rendering
-    single { DebugRenderer(get(), get(), get()) }
-    single { SplashRenderer(get()) }
-    single { ModelRenderer(get(), get()) }
-    single { RenderResourcesFactory(get(), get(), get(), get(), get(), get<SplashRenderer>(), get()) }
+    single { RenderResourcesFactory(get(), get(), get(), get()) }
 
     //Engine
     single {
         Engine(
-            get(), get(), get(), get(), get(), get(), get(), get(),
-            listOf(
-                GameObjectManager(), // Core
-                get<CameraManager>(),
-                InputSystem(get(), get(), get()),
-                AudioSystem(get(), get(), get()),
-                EnvironmentSystem(),
-                PhysicsSystem(get(), get()),
-                DayNightCycleSystem(),
-                DirectionalLightSystem(),
-                AnimationSystem(),
-                RagdollSystem(),
-                GridLines(get(), get(), get()),
-            )
+            nativeLibraryLoader = get(),
+            audioEngine = get(),
+            sceneManager = get(),
+            renderResourcesFactory = get(),
+            jobSystem = get(),
+            systemManager = get(),
+            cameraManager = get(),
+            inputProvider = get(),
+            mouseListener = get(),
+            assetsManager = get(),
+            logger = get(),
+            eventSystem = get(),
         )
     }
 }
