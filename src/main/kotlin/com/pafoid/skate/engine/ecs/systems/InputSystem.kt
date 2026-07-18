@@ -10,16 +10,16 @@ import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.events.TrickInput
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.game.skateboard.TrickType
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 
 class InputSystem(
-    val inputProvider: IInputProvider,
+    val inputProvider: InputProvider,
     private val mouseListener: MouseListener,
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {

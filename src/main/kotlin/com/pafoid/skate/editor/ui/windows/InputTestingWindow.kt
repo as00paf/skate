@@ -8,7 +8,7 @@ import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.InputProvider
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
@@ -29,7 +29,7 @@ import kotlin.math.sqrt
  * @param stringManager String manager for localization
  */
 class InputTestingWindow(
-    private val inputProvider: IInputProvider,
+    private val inputProvider: InputProvider,
     private val stringManager: StringManager,
     private val systemManager: SystemManager
 ) : IWindowWithScene {

@@ -73,7 +73,6 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBuffer
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadListener
@@ -213,7 +212,7 @@ val engineModule = module {
     single { GamepadListener(get()) }
     single { KeyListener() }
     single { MouseListener(get()) }
-    single<IInputProvider> { InputProvider(get(), get()) }
+    single { InputProvider(get(), get()) }
     single { InputBuffer() }
 
     // Managers

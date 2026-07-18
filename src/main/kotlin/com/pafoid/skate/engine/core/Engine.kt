@@ -15,7 +15,7 @@ import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
-import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.CameraManager
@@ -32,7 +32,7 @@ class Engine(
     private val jobSystem: IJobSystem,
     private val systemManager: SystemManager,
     private val cameraManager: CameraManager,
-    private val inputProvider: IInputProvider,
+    private val inputProvider: InputProvider,
     private val mouseListener: MouseListener,
     private val assetsManager: AssetsManager,
     private val logger: LoggerService,
