@@ -255,7 +255,7 @@ val engineModule = module {
     single { DebugRenderer(get(), get(), get()) }
     single { SplashRenderer(get()) }
     single { ModelRenderer(get(), get()) }
-    single { RenderResourcesFactory(get(), get(), get(), get(), get(), get(), get<SplashRenderer>(), get()) }
+    single { RenderResourcesFactory(get(), get(), get(), get(), get(), get<SplashRenderer>(), get()) }
 
     //Engine
     single {

@@ -4,8 +4,6 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.render.graph.RenderGraph
 import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
@@ -29,7 +27,6 @@ import org.koin.core.component.KoinComponent
  */
 class RenderResourcesFactory(
     private val assetsManager: AssetsManager,
-    private val sceneManager: SceneManager,
     private val logger: LoggerService,
     private val vaoLoader: VAOLoader,
     private val debugRenderer: DebugRenderer,
@@ -70,7 +67,12 @@ class RenderResourcesFactory(
         )
 
         logger.log("Building render graph...")
-        val renderGraph = buildRenderGraph(renderPasses, shadowMap)
+        val renderGraph = RenderGraphBuilder()
+            .addPass(renderPasses.shadow)
+            .addPass(renderPasses.picking)
+            .addPass(renderPasses.geometry)
+            .addPass(renderPasses.debug)
+            .build()
 
         logger.log("Render resources initialization complete.")
 
@@ -83,22 +85,6 @@ class RenderResourcesFactory(
             renderGraph = renderGraph,
             shadowMap = shadowMap
         )
-    }
-
-    private fun buildRenderGraph(
-        passes: RenderPasses,
-        shadowMap: ShadowMap?
-    ): RenderGraph {
-        val builder = RenderGraphBuilder()
-        if (shadowMap != null) {
-            builder.withResources("ShadowMap", shadowMap.getDepthTextureId())
-        }
-        return builder
-            .addPass(passes.shadow)
-            .addPass(passes.picking)
-            .addPass(passes.geometry)
-            .addPass(passes.debug)
-            .build()
     }
 
     private suspend fun loadShaders(): Shaders {

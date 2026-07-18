@@ -14,7 +14,6 @@ import com.pafoid.skate.engine.render.renderer.passes.RenderPass
  */
 class RenderGraph {
     private val passes = mutableListOf<RenderPass>()
-    private val resources = mutableMapOf<String, Int>()
 
     /**
      * Adds a pass to the graph in the order it should be executed.
@@ -23,15 +22,6 @@ class RenderGraph {
      */
     fun addPass(pass: RenderPass) {
         passes.add(pass)
-    }
-
-    /**
-     * Registers a resource in the graph.
-     *
-     * @param resource The resource to register
-     */
-    fun registerResource(name: String, resourceId: Int) {
-        resources[name] = resourceId
     }
 
     /**
@@ -62,7 +52,6 @@ class RenderGraph {
             scene = scene,
             activeGameObject = activeGameObject,
             hoveredGameObject = hoveredGameObject,
-            resources = resources
         )
 
         // 1. Prepare all enabled nodes
@@ -87,6 +76,5 @@ class RenderGraph {
      */
     fun clear() {
         passes.clear()
-        resources.clear()
     }
 }

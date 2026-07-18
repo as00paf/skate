@@ -72,10 +72,7 @@ class GeometryPass(
         val scene = context.scene
         val activeGameObject = context.activeGameObject
         val hoveredGameObject = context.hoveredGameObject
-        
-        // Use shadow map from context if available, otherwise fallback to default
-        val contextShadowMap = context.getResource("ShadowMap") ?: -1
-        val currentShadowMap = if (contextShadowMap != 0) contextShadowMap else shadowMapTextureId
+        val currentShadowMap = shadowMapTextureId
 
         // Setup framebuffer
         val useFbo = getUseFbo()

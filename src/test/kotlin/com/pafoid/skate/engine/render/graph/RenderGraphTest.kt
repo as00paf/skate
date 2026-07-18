@@ -38,32 +38,4 @@ class RenderGraphTest {
             pass2.executeWithTiming(any())
         }
     }
-    
-    @Test
-    @DisplayName("should provide resources to context")
-    fun `should provide resources to context`() {
-        val scene = mockk<Scene>(relaxed = true)
-        val resourceId = 42
-        
-        var receivedId = 0
-        val pass = object : RenderPass {
-            override val name = "TestPass"
-            override val inputs = setOf("ShadowMap")
-            override var executionTimeNs: Long = 0
-            override var isEnabled: Boolean = true
-
-            override fun execute(context: RenderContext) {
-                receivedId = context.getResource("ShadowMap") ?: -1
-            }
-        }
-        
-        val graph = RenderGraphBuilder()
-            .withResources("ShadowMap", resourceId)
-            .addPass(pass)
-            .build()
-            
-        graph.execute(scene, null, null)
-        
-        assert(receivedId == 42)
-    }
 }

@@ -9,14 +9,6 @@ class RenderGraphBuilder {
     private val graph = RenderGraph()
     
     /**
-     * Registers a set of initial resources.
-     */
-    fun withResources(name: String, resourceId: Int): RenderGraphBuilder {
-        graph.registerResource(name, resourceId)
-        return this
-    }
-    
-    /**
      * Appends a render pass to the graph execution chain.
      */
     fun addPass(pass: RenderPass): RenderGraphBuilder {
