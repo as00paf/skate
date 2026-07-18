@@ -12,12 +12,12 @@ import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.render.renderer.Renderer
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
@@ -62,7 +62,7 @@ import java.io.File
 class ImGuiLayer(
     private val sceneManager: SceneManager,
     private val stringManager: StringManager,
-    private val renderer: Renderer,
+    private val engine: Engine,
     private val windowRegistry: WindowRegistry,
     private val eventSystem: EventSystem,
     private val projectManager: ProjectManager,
@@ -166,7 +166,7 @@ class ImGuiLayer(
 
             getContentRegionAvail(tempVec2)
 
-            val texId = renderer.frameBuffer.getTextureId()
+            val texId = engine.renderer.frameBuffer.getTextureId()
             image(texId.toLong(), tempVec2.x, tempVec2.y, 0f, 1f, 1f, 0f)
 
             end()

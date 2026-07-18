@@ -4,26 +4,12 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources
-import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.graph.RenderGraph
-import org.joml.Vector3f
-import org.lwjgl.opengl.GL30.GL_COLOR_BUFFER_BIT
-import org.lwjgl.opengl.GL30.GL_DEPTH_BUFFER_BIT
-import org.lwjgl.opengl.GL30.GL_DEPTH_TEST
-import org.lwjgl.opengl.GL30.glClear
-import org.lwjgl.opengl.GL30.glClearColor
-import org.lwjgl.opengl.GL30.glEnable
 import org.lwjgl.opengl.GL30.glViewport
 
 class Renderer(
-    private val factory: RenderResourcesFactory,
-    private val initialWidth: Int = 1920,
-    private val initialHeight: Int = 1080
+    var renderResources: RenderResources
 ) {
-
-    lateinit var renderResources: RenderResources
-    private var isInitialized = false
-
     var useFbo: Boolean = true
     val frameBuffer: FrameBuffer
         get() = renderResources.frameBuffer
@@ -31,22 +17,13 @@ class Renderer(
     val renderGraph: RenderGraph
         get() = renderResources.renderGraph
 
-    suspend fun initialize() {
-        if (!isInitialized) {
-            renderResources = factory.create(initialWidth, initialHeight)
-            isInitialized = true
-        }
-    }
-
     fun render(scene: Scene) {
         // Reset per-frame draw call counter
         EngineStats.resetDrawCalls()
 
         // Update camera viewport dimensions once for all passes (correct aspect ratio)
-        val width = renderResources.frameBuffer.width
-        val height = renderResources.frameBuffer.height
-        scene.camera.viewportWidth = width
-        scene.camera.viewportHeight = height
+        scene.camera.viewportWidth = renderResources.frameBuffer.width
+        scene.camera.viewportHeight = renderResources.frameBuffer.height
 
         // Execute the render graph - this handles all preparation, execution, and cleanup of passes
         renderResources.renderGraph.execute(scene)
@@ -68,17 +45,6 @@ class Renderer(
 
         // Invert Y coordinate (screen space to texture space)
         return renderResources.pickingTexture.readPixel(safeX, h - 1 - safeY)
-    }
-
-    /**
-     * Clears the screen with the specified sky color.
-     *
-     * @param sky The sky color to clear with (RGB)
-     */
-    fun clearColor(sky: Vector3f) {
-        glEnable(GL_DEPTH_TEST)
-        glClearColor(sky.x, sky.y, sky.z, 1.0f)
-        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
     }
 
     fun destroy() {

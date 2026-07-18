@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.ScreenshotUtils
@@ -9,13 +10,13 @@ import org.koin.core.component.KoinComponent
 
 /**
  * Renders the game viewport image and manages framebuffer synchronization.
- * 
- * @param renderer The renderer providing the framebuffer texture
+ *
  */
 class ViewportRenderer(
-    private val renderer: Renderer,
+    private val engine: Engine,
     private val cameraManager: CameraManager
 ) : KoinComponent {
+    private val renderer: Renderer by lazy { engine.renderer }
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f

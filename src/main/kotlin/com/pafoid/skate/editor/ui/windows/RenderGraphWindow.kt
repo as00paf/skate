@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
@@ -29,8 +30,9 @@ import imgui.type.ImBoolean
  */
 class RenderGraphWindow(
     private val stringManager: StringManager,
-    private val renderer: Renderer,
+    private val engine: Engine,
 ) : IWindow {
+    private val renderer: Renderer by lazy { engine.renderer }
 
     private var autoUpdate = true
     private var showPerformance = true

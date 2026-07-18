@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.gizmos.RotationGizmo
 import com.pafoid.skate.editor.gizmos.ScaleGizmo
 import com.pafoid.skate.editor.gizmos.SelectionGizmo
 import com.pafoid.skate.editor.gizmos.TranslateGizmo
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
@@ -13,20 +14,18 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import com.pafoid.skate.engine.render.renderer.Renderer
 
 class GizmoSystem(
     private val keyListener: KeyListener,
     private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
-    private val renderer: Renderer,
+    private val engine: Engine,
     private val eventSystem: EventSystem,
     private val systemManager: SystemManager,
     private val editorCamera: EditorCamera,
     debugRenderer: DebugRenderer
 ) {
-
     private val gameObjectManager: GameObjectManager by lazy {
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
     }
@@ -38,7 +37,7 @@ class GizmoSystem(
     private val rotationGizmo = RotationGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val scaleGizmo = ScaleGizmo(mouseListener, undoRedoManager, debugRenderer)
     private val selectionGizmo by lazy {
-        SelectionGizmo(mouseListener, undoRedoManager, renderer, eventSystem, gameObjectManager)
+        SelectionGizmo(mouseListener, undoRedoManager, engine, eventSystem, gameObjectManager)
     }
     val measureGizmo = MeasureTool(mouseListener, undoRedoManager, debugRenderer, settingsManager)
 

@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
+import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.koin.core.component.KoinComponent
@@ -15,7 +16,7 @@ class Engine(
     private val nativeLibraryLoader: NativeLibraryLoader,
     private val audioEngine: AudioEngine,
     private val sceneManager: SceneManager,
-    private val renderer: Renderer,
+    private val renderResourcesFactory: RenderResourcesFactory,
     private val jobSystem: IJobSystem,
     private val systemManager: SystemManager,
     private val logger: LoggerService,
@@ -25,12 +26,13 @@ class Engine(
 
     val engineState = AtomicReference(EngineState.BOOTING)
     var runtimePlaying = false
+    lateinit var renderer: Renderer
 
     private var systemManagerStarted = false
 
     fun start() {
         jobSystem.runOnMain {
-            renderer.initialize()
+            renderer = Renderer(renderResourcesFactory.create(1920, 1080))
             renderer.useFbo = true
 
             engineState.set(EngineState.LOADING)

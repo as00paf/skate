@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -13,10 +14,11 @@ import org.lwjgl.glfw.GLFW
 class SelectionGizmo(
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
-    private val renderer: Renderer,
+    private val engine: Engine,
     private val eventSystem: EventSystem,
     private val gameObjectManager: GameObjectManager,
 ) : Gizmo(mouseListener, undoRedoManager) {
+    private val renderer: Renderer = engine.renderer
 
     fun getHoveredObject(x: Float, y: Float): GameObject? {
         val id = renderer.readPixel(x, y)

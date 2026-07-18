@@ -99,7 +99,6 @@ import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
-import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.SplashRenderer
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.utils.DefaultJobSystem
@@ -251,7 +250,6 @@ val engineModule = module {
     single { Serializer() }
 
     // Rendering
-    single { Renderer(get()) }
     single { DebugRenderer(get(), get(), get()) }
     single { SplashRenderer(get()) }
     single { ModelRenderer(get(), get()) }
