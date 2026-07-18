@@ -13,19 +13,18 @@ import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
 import org.joml.Vector2f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
 import kotlin.math.min
 
 private const val CONTROLS_OVERLAY_BUTTON_SIZE = 50f
 
-class GamepadOverlay : KoinComponent {
-    private val assetsManager: AssetsManager by inject()
-    private val joystickListener: GamepadListener by inject()
-    private val settingsManager: SettingsManager by inject()
-    private val stringManager: StringManager by inject()
-    private val eventSystem: EventSystem by inject()
+class GamepadOverlay(
+    private val assetsManager: AssetsManager,
+    private val gamepadListener: GamepadListener,
+    private val settingsManager: SettingsManager,
+    private val stringManager: StringManager,
+    private val eventSystem: EventSystem,
+) {
 
     private var controllerTexture: Texture? = null
 
@@ -88,8 +87,8 @@ class GamepadOverlay : KoinComponent {
                 0f, 0f, 1f, 1f,
                 ImGui.getColorU32(1f, 1f, 1f, 0.7f))
 
-            val axes = joystickListener.getAxes(GLFW_JOYSTICK_1)
-            val buttons = joystickListener.getButtons(GLFW_JOYSTICK_1)
+            val axes = gamepadListener.getAxes(GLFW_JOYSTICK_1)
+            val buttons = gamepadListener.getButtons(GLFW_JOYSTICK_1)
 
             val lsPos = ImVec2(windowPos.x + displayWidth * 0.245f, windowPos.y + displayHeight * 0.305f)
             val rsPos = ImVec2(windowPos.x + displayWidth * 0.615f, windowPos.y + displayHeight * 0.518f)

@@ -9,10 +9,11 @@ import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
+import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.input.listeners.MouseListener
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -20,7 +21,8 @@ import imgui.type.ImBoolean
 import org.joml.Vector2f
 
 class GameViewWindow(
-    private val mouseListener: MouseListener,
+    private val engine: Engine,
+    private val assetsManager: AssetsManager,
     private val sceneManager: SceneManager,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
@@ -28,12 +30,14 @@ class GameViewWindow(
     private val editorState: EditorInputState,
     private val viewportRenderer: ViewportRenderer,
     private val viewportToolbar: ViewportToolbar,
-    private val viewportContextMenu: ViewportContextMenu,
     private val viewportOverlays: ViewportOverlays,
-    private val viewportDragDropHandler: ViewportDragDropHandler,
 ) : IWindow {
 
-    private val gamepadOverlay = GamepadOverlay()
+    private val viewportContextMenu = ViewportContextMenu(stringManager, eventSystem)
+    private val viewportDragDropHandler = ViewportDragDropHandler(viewportRenderer, eventSystem)
+
+    private val gamepadOverlay =
+        GamepadOverlay(assetsManager, engine.inputProvider.gamepadListener, settingsManager, stringManager, eventSystem)
     private val scenesTabBar by lazy { EditorScenesTabBar(eventSystem, stringManager) }
 
     private val tempVec2 = ImVec2()
@@ -71,8 +75,18 @@ class GameViewWindow(
             )
         }
 
-        mouseListener.setGameViewportPos(Vector2f(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY))
-        mouseListener.setGameViewportSize(Vector2f(viewportRenderer.imageSizeX, viewportRenderer.imageSizeY))
+        engine.inputProvider.mouseListener.setGameViewportPos(
+            Vector2f(
+                viewportRenderer.imageScreenPosX,
+                viewportRenderer.imageScreenPosY
+            )
+        )
+        engine.inputProvider.mouseListener.setGameViewportSize(
+            Vector2f(
+                viewportRenderer.imageSizeX,
+                viewportRenderer.imageSizeY
+            )
+        )
 
         editorState.isFocused = ImGui.isWindowFocused()
 

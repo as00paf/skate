@@ -1,24 +1,18 @@
 package com.pafoid.skate.engine.input.listeners
 
-import com.pafoid.skate.engine.ecs.SceneManager
 import imgui.ImGui
 import org.joml.Vector2f
-import org.joml.Vector4f
 import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
-class MouseListener(private val sceneManager: SceneManager) : KoinComponent {
+class MouseListener : KoinComponent {
     private var scrollX: Double = 0.0
     private var scrollY: Double = 0.0
     private var xPos: Double = 0.0
     private var yPos: Double = 0.0
     private var lastX: Double = 0.0
     private var lastY: Double = 0.0
-    private var worldX: Double = 0.0
-    private var worldY: Double = 0.0
-    private var lastWorldX: Double = 0.0
-    private var lastWorldY: Double = 0.0
     private var isDragging = false
     private var mouseButtonsDown = 0
     private var mouseButtonPressed = BooleanArray(9)
@@ -30,14 +24,8 @@ class MouseListener(private val sceneManager: SceneManager) : KoinComponent {
         isDragging = mouseButtonsDown > 0
         lastX = xPos
         lastY = yPos
-        lastWorldX = worldX
-        lastWorldY = worldY
         xPos = xpos
         yPos = ypos
-        
-        val world = getWorld()
-        worldX = world.x.toDouble()
-        worldY = world.y.toDouble()
     }
 
     fun mouseButtonCallback(window: Long, button: Int, action: Int, mods: Int) {
@@ -84,21 +72,6 @@ class MouseListener(private val sceneManager: SceneManager) : KoinComponent {
         isDragging = false
         mouseButtonPressed.fill(false)
 
-    }
-
-    fun getWorld(): Vector2f {
-        var currentX: Float = getX() - gameViewportPos.x
-        currentX = 2.0f * (currentX / gameViewportSize.x) - 1.0f
-        var currentY: Float = getY() - gameViewportPos.y
-        currentY = 2.0f * (1.0f - currentY / gameViewportSize.y) - 1
-
-        val camera = sceneManager.currentScene?.camera ?: return Vector2f()
-        val tmp = Vector4f(currentX, currentY, 0f, 1f)
-        val inverseView = camera.getInverseView()
-        val inverseProjection = camera.getInverseProjection()
-        tmp.mul(inverseProjection.mul(inverseView))
-
-        return Vector2f(tmp.x, tmp.y)
     }
 
     fun setGameViewportPos(pos: Vector2f) {

@@ -24,10 +24,6 @@ import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW
 
 class EditorInputHandler(
-    private val keyListener: KeyListener,
-    private val mouseListener: MouseListener,
-    private val joystickListener: GamepadListener,
-    private val inputBuffer: InputBuffer,
     private val clipboardService: ClipboardService,
     private val undoRedoManager: UndoRedoManager,
     private val logger: LoggerService,
@@ -37,6 +33,11 @@ class EditorInputHandler(
     private val projectManager: ProjectManager,
     private val eventSystem: EventSystem
 ) : KoinComponent {
+
+    private val inputBuffer: InputBuffer = InputBuffer()
+    private val keyListener: KeyListener = engine.inputProvider.keyListener
+    private val mouseListener: MouseListener = engine.inputProvider.mouseListener
+    private val joystickListener: GamepadListener = engine.inputProvider.gamepadListener
 
     private var inputMappings = projectManager.currentProject?.gameplaySettings?.inputMappings ?: InputMappings()
 

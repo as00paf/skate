@@ -11,12 +11,8 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.input.listeners.KeyListener
-import com.pafoid.skate.engine.input.listeners.MouseListener
 
 class GizmoSystem(
-    private val keyListener: KeyListener,
-    private val mouseListener: MouseListener,
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
     private val engine: Engine,
@@ -32,6 +28,8 @@ class GizmoSystem(
 
     // Gizmos are owned directly by this system, not registered as separate systems
     private val debugRenderer by lazy { engine.renderer.renderResources.renderers.debug }
+    private val mouseListener by lazy { engine.inputProvider.mouseListener }
+    private val keyListener by lazy { engine.inputProvider.keyListener }
     private val translateGizmo by lazy { TranslateGizmo(mouseListener, undoRedoManager, debugRenderer) }
     private val rotationGizmo by lazy { RotationGizmo(mouseListener, undoRedoManager, debugRenderer) }
     private val scaleGizmo by lazy { ScaleGizmo(mouseListener, undoRedoManager, debugRenderer) }

@@ -1,16 +1,21 @@
 package com.pafoid.skate.engine.input
 
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
+import com.pafoid.skate.engine.input.listeners.MouseListener
 import org.lwjgl.glfw.GLFW.GLFW_CURSOR
 import org.lwjgl.glfw.GLFW.GLFW_CURSOR_DISABLED
 import org.lwjgl.glfw.GLFW.glfwGetCurrentContext
 import org.lwjgl.glfw.GLFW.glfwGetInputMode
 
 class InputProvider(
-    private val gamepadListener: GamepadListener,
-    private val keyListener: KeyListener,
+    val logger: LoggerService
 ) {
+    val gamepadListener: GamepadListener = GamepadListener(logger)
+    val keyListener: KeyListener = KeyListener()
+    val mouseListener: MouseListener = MouseListener()
+
     fun initializeGamepad() {
         gamepadListener.init()
     }

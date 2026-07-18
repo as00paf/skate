@@ -16,7 +16,6 @@ import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.input.InputProvider
-import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
@@ -26,14 +25,11 @@ import org.koin.core.component.KoinComponent
 import java.util.concurrent.atomic.AtomicReference
 
 class Engine(
-    private val audioEngine: AudioEngine,
     private val sceneManager: SceneManager,
     private val renderResourcesFactory: RenderResourcesFactory,
     private val jobSystem: IJobSystem,
     private val systemManager: SystemManager,
     private val cameraManager: CameraManager,
-    private val inputProvider: InputProvider,
-    private val mouseListener: MouseListener,
     private val assetsManager: AssetsManager,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
@@ -44,6 +40,9 @@ class Engine(
     val engineState = AtomicReference(EngineState.BOOTING)
     var runtimePlaying = false
     lateinit var renderer: Renderer
+
+    val audioEngine = AudioEngine(logger)
+    val inputProvider = InputProvider(logger)
 
     private var systemManagerStarted = false
 
@@ -70,7 +69,7 @@ class Engine(
         val engineSystems = listOf(
             GameObjectManager(), // Core
             cameraManager, // TODO: move here?
-            InputSystem(inputProvider, mouseListener, eventSystem),
+            InputSystem(inputProvider, eventSystem),
             AudioSystem(audioEngine, logger, assetsManager),
             EnvironmentSystem(),
             PhysicsSystem(nativeLibraryLoader, debugRenderer),

@@ -29,11 +29,9 @@ import com.pafoid.skate.editor.ui.handlers.ProjectActionHandler
 import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.editor.ui.handlers.UndoRedoActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
-import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
-import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
@@ -66,18 +64,13 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
-import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.input.InputBuffer
 import com.pafoid.skate.engine.input.InputProvider
-import com.pafoid.skate.engine.input.listeners.GamepadListener
-import com.pafoid.skate.engine.input.listeners.KeyListener
-import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
@@ -129,15 +122,13 @@ val editorModule = module {
     // Viewport components for GameViewWindow
     factory { ViewportRenderer(get(), get()) }
     factory { ViewportToolbar(get(), get(), get(), get(), get(), get()) }
-    factory { ViewportContextMenu(get(), get()) }
     factory { ViewportOverlays(get(), get()) }
-    factory { ViewportDragDropHandler(get(), get()) }
 
     // Editor windows
     single { ProjectWizardWindow(get(), get(), get(), get()) }
     single { SceneHierarchyWindow(get(), get(), get(), get(), get(), get()) }
     single { PropertiesWindow(get(), get(), get()) }
-    single { GameViewWindow(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { GameViewWindow(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { AnimationsTab(get(), get(), get(), get()) }
     single { TexturesTab(get(), get(), get(), get(), get(), get(), get()) }
     single { PrefabsTab(get(), get(), get(), get(), get(), get()) }
@@ -164,9 +155,9 @@ val editorModule = module {
     // Editor Workspace
     single { EditorInputState() }
     single { EditorCamera(Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }, get()) }
-    single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { EditorEventHandler(get(), get(), get()) }
-    single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { GizmoSystem(get(), get(), get(), get(), get(), get()) }
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -206,14 +197,8 @@ val engineModule = module {
     single { EventSystem() }
     single { LoggerService() }
 
-    single { AudioEngine(get()) }
-
     // Input
-    single { GamepadListener(get()) }
-    single { KeyListener() }
-    single { MouseListener(get()) }
-    single { InputProvider(get(), get()) }
-    single { InputBuffer() }
+    single { InputProvider(get()) }
 
     // Managers
     single { CameraManager(get()) }
@@ -230,14 +215,11 @@ val engineModule = module {
     //Engine
     single {
         Engine(
-            audioEngine = get(),
             sceneManager = get(),
             renderResourcesFactory = get(),
             jobSystem = get(),
             systemManager = get(),
             cameraManager = get(),
-            inputProvider = get(),
-            mouseListener = get(),
             assetsManager = get(),
             logger = get(),
             eventSystem = get(),

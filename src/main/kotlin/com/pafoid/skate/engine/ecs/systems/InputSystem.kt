@@ -13,14 +13,12 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
-import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.game.skateboard.TrickType
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 
 class InputSystem(
     val inputProvider: InputProvider,
-    private val mouseListener: MouseListener,
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
@@ -134,8 +132,8 @@ class InputSystem(
     private fun pollMouseInput(inputState: InputStateComponent) {
         if (!inputProvider.isCursorDisabled()) return
 
-        val dx = mouseListener.getDx()
-        val dy = mouseListener.getDy()
+        val dx = inputProvider.mouseListener.getDx()
+        val dy = inputProvider.mouseListener.getDy()
 
         if (dx != 0f || dy != 0f) {
             inputState.cameraLook.x += dx * 0.1f
