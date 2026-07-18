@@ -26,7 +26,7 @@ import com.pafoid.skate.engine.utils.JomlVector3f
 import org.joml.Quaternionf
 
 class BulletPhysics3D(
-    private val nativeLibraryLoader: NativeLibraryLoader = NativeLibraryLoader(),
+    private val nativeLibraryLoader: NativeLibraryLoader,
     private val debugRenderer: DebugRenderer
 ) : IPhysics3D {
     private val physicsSpace: PhysicsSpace
@@ -41,7 +41,6 @@ class BulletPhysics3D(
     override var debugEnabled = false
 
     init {
-        this.nativeLibraryLoader.loadNativeLibrary()
         this.physicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
         this.physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
     }

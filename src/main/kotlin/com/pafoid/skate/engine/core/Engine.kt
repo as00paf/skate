@@ -26,7 +26,6 @@ import org.koin.core.component.KoinComponent
 import java.util.concurrent.atomic.AtomicReference
 
 class Engine(
-    private val nativeLibraryLoader: NativeLibraryLoader,
     private val audioEngine: AudioEngine,
     private val sceneManager: SceneManager,
     private val renderResourcesFactory: RenderResourcesFactory,
@@ -39,6 +38,8 @@ class Engine(
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
 ) : KoinComponent {
+
+    private val nativeLibraryLoader = NativeLibraryLoader()
 
     val engineState = AtomicReference(EngineState.BOOTING)
     var runtimePlaying = false

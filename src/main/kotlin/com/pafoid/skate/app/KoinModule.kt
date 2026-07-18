@@ -80,7 +80,6 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
@@ -224,7 +223,6 @@ val engineModule = module {
     single { SceneManager(get(), get(), get(), get(), get()) }
     single { AssetsManager(get(), get()) }
 
-    single { NativeLibraryLoader() }
     single { VAOLoader() }
     single { Serializer() }
 
@@ -234,7 +232,6 @@ val engineModule = module {
     //Engine
     single {
         Engine(
-            nativeLibraryLoader = get(),
             audioEngine = get(),
             sceneManager = get(),
             renderResourcesFactory = get(),
