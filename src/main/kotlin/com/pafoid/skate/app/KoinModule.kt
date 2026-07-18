@@ -188,7 +188,7 @@ val editorModule = module {
 
     // Editor Workspace
     single { EditorInputState() }
-    single { EditorCamera(Camera(Vector3f(0f, 5f, 20f)), get()) }
+    single { EditorCamera(Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }, get()) }
     single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { EditorEventHandler(get(), get(), get()) }
     single { GizmoSystem(get(), get(), get(), get(), get(), get(), get(), get(), get()) }

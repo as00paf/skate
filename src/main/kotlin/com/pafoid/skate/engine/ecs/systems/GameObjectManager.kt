@@ -33,7 +33,7 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
         val iterator = scene.gameObjects.iterator()
         while (iterator.hasNext()) {
             val go = iterator.next()
-            if (go.isDead()) {
+            if (go.isDead) {
                 iterator.remove()
                 continue
             }
@@ -52,7 +52,7 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
     }
 
     fun getGameObject(id: Int): GameObject? {
-        return scene.gameObjects.firstOrNull { it.getUid() == id }
+        return scene.gameObjects.firstOrNull { it.uId == id }
     }
 
     fun getGameObject(name: String): GameObject? {

@@ -191,7 +191,7 @@ class EditorInputHandler(
         // Rename
         if (keyListener.keyBeginPress(inputMappings.hierarchyRename.keyboardKey) && selected != null) {
             // Signal to SceneHierarchyWindow that rename should start
-            pendingRenameUid = selected.getUid()
+            pendingRenameUid = selected.uId
         }
 
         // Deselect

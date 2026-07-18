@@ -25,7 +25,7 @@ class Scene(@SerialName("sceneName") override var name: String = "MainScene") : 
     var sun: DirectionalLight = DirectionalLight()
 
     // Camera remains a special property (not a component for now)
-    val camera: Camera = Camera(Vector3f(0f, 5f, 20f))
+    val camera: Camera = Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }
 
     val gameObjects = mutableListOf<GameObject>()
     var objectSetVersion: Long = 0

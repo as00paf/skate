@@ -118,7 +118,7 @@ class SystemManager {
         }
 
         for (gameObject in scene.gameObjects) {
-            val uid = gameObject.getUid()
+            val uid = gameObject.uId
             val currentVersion = gameObject.componentMutationVersion
             val previousVersion = lastObjectComponentVersions[uid]
             if (previousVersion == null || previousVersion != currentVersion) {
@@ -133,7 +133,7 @@ class SystemManager {
         lastSceneComponentVersion = scene.componentMutationVersion
         lastObjectComponentVersions.clear()
         scene.gameObjects.forEach { gameObject ->
-            lastObjectComponentVersions[gameObject.getUid()] = gameObject.componentMutationVersion
+            lastObjectComponentVersions[gameObject.uId] = gameObject.componentMutationVersion
         }
     }
 

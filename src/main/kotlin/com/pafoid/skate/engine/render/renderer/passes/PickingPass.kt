@@ -125,7 +125,7 @@ class PickingPass(
             if (renderComponent != null && transform != null && go.getComponent<NonPickable>() == null) {
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
 
-                pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, EntityIdEncoder.encode(go.getUid()))
+                pickingShader3D.uploadFloat(Uniforms.ENTITY_ID, EntityIdEncoder.encode(go.uId))
                 pickingShader3D.uploadBoolean(Uniforms.USE_BATCH, false)
 
                 // Use ModelRenderer's simple render (no textures/PBR)

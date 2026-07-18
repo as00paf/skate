@@ -223,7 +223,7 @@ class SceneHierarchyWindow(
 
     private fun flattenTreeNode(obj: GameObject, result: MutableList<GameObject>) {
         result.add(obj)
-        if (expandedNodes.contains(obj.getUid()) || obj.children.isEmpty()) {
+        if (expandedNodes.contains(obj.uId) || obj.children.isEmpty()) {
             obj.children.toList().forEach { child ->
                 flattenTreeNode(child, result)
             }
@@ -238,7 +238,7 @@ class SceneHierarchyWindow(
     }
 
     private fun startRename(go: GameObject) {
-        editingObjUid = go.getUid()
+        editingObjUid = go.uId
         editNameStr.set(go.name)
         focusEditInput = true
     }
@@ -249,7 +249,7 @@ class SceneHierarchyWindow(
 
         if (!matchesFilter && !hasMatchingChild) return
 
-        ImGui.pushID(obj.getUid())
+        ImGui.pushID(obj.uId)
         ImGui.tableNextRow()
         ImGui.tableNextColumn()
 
@@ -265,9 +265,9 @@ class SceneHierarchyWindow(
             ImGui.setNextItemOpen(true, ImGuiCond.Always)
         }
 
-        val isEditing = editingObjUid == obj.getUid()
+        val isEditing = editingObjUid == obj.uId
         val nodeOpen = if (isEditing) {
-            val isOpen = ImGui.treeNodeEx("##${obj.getUid()}", flags)
+            val isOpen = ImGui.treeNodeEx("##${obj.uId}", flags)
             ImGui.sameLine()
             ImGui.pushItemWidth(-1f)
 
@@ -277,7 +277,7 @@ class SceneHierarchyWindow(
             }
 
             val enterPressed = ImGui.inputText(
-                "##rename_${obj.getUid()}",
+                "##rename_${obj.uId}",
                 editNameStr,
                 ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
             )
@@ -318,7 +318,7 @@ class SceneHierarchyWindow(
             }
 
             if (ImGui.beginDragDropSource()) {
-                ImGui.setDragDropPayload("GAMEOBJECT_UID", obj.getUid() as Any)
+                ImGui.setDragDropPayload("GAMEOBJECT_UID", obj.uId as Any)
                 ImGui.text(stringManager.getString("ctx.hierarchy.drag_tooltip", obj.name))
                 ImGui.endDragDropSource()
             }
@@ -427,7 +427,7 @@ class SceneHierarchyWindow(
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, ImGui.getColorU32(ImGuiCol.FrameBgHovered))
         ImGui.pushStyleColor(ImGuiCol.ButtonActive, ImGui.getColorU32(ImGuiCol.FrameBgActive))
 
-        if (ImGui.button("$visIcon##vis_${obj.getUid()}")) {
+        if (ImGui.button("$visIcon##vis_${obj.uId}")) {
             val newVis = !obj.isVisible
             eventSystem.publish(ToggleVisibility(obj, newVis))
         }
@@ -443,7 +443,7 @@ class SceneHierarchyWindow(
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, ImGui.getColorU32(ImGuiCol.FrameBgHovered))
         ImGui.pushStyleColor(ImGuiCol.ButtonActive, ImGui.getColorU32(ImGuiCol.FrameBgActive))
 
-        if (ImGui.button("$lockIcon##lock_${obj.getUid()}")) {
+        if (ImGui.button("$lockIcon##lock_${obj.uId}")) {
             val newLock = !obj.isLocked
             eventSystem.publish(ToggleLock(obj, newLock))
         }
@@ -451,13 +451,13 @@ class SceneHierarchyWindow(
         ImGui.popStyleColor(4)
 
         if (nodeOpen) {
-            expandedNodes.add(obj.getUid())
+            expandedNodes.add(obj.uId)
             obj.children.toList().forEach { child ->
                 doTreeNode(child, filter)
             }
             ImGui.treePop()
         } else if (!isEditing) {
-            expandedNodes.remove(obj.getUid())
+            expandedNodes.remove(obj.uId)
         }
 
         ImGui.popID()
@@ -475,7 +475,7 @@ class SceneHierarchyWindow(
     private fun expandAll(scene: Scene) {
         scene.gameObjects.toList().forEach { obj ->
             if (obj.children.isNotEmpty()) {
-                expandedNodes.add(obj.getUid())
+                expandedNodes.add(obj.uId)
             }
         }
         rebuildFlatList(scene)

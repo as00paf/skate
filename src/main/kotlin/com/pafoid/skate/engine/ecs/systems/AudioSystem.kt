@@ -105,8 +105,8 @@ class AudioSystem(
             val transform = gameObject.getComponent<Transform>()
 
             if (audioComponent != null) {
-                currentEntities.add(gameObject.getUid())
-                var source = activeSources[gameObject.getUid()]
+                currentEntities.add(gameObject.uId)
+                var source = activeSources[gameObject.uId]
 
                 if (source == null && audioComponent.soundFilePath.isNotBlank()) {
                     // Try to load the sound buffer
@@ -114,7 +114,7 @@ class AudioSystem(
                     if (buffer.bufferId != -1) {
                         source = SoundSource(audioComponent.loops, !audioComponent.is3D)
                         source.setBuffer(buffer.bufferId)
-                        activeSources[gameObject.getUid()] = source
+                        activeSources[gameObject.uId] = source
                     }
                 }
 

@@ -84,7 +84,7 @@ class GameViewWindow(
                 1f,
                 1f,
                 0.5f,
-                stringManager.getString("lbl.gameview.picked_id", hovered.getUid())
+                stringManager.getString("lbl.gameview.picked_id", hovered.uId)
             )
         }
 

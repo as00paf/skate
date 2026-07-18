@@ -21,9 +21,9 @@ open class GameObject(
         fun getIdCounter(): Int = ID_COUNTER
     }
 
-    private var uId = ID_COUNTER++
-    private var isDead: Boolean = false
-    private var doSerialization = true
+    var uId = ID_COUNTER++
+    var isDead: Boolean = false
+    var doSerialization = true
 
     @Transient
     var componentMutationVersion: Long = 0
@@ -57,7 +57,6 @@ open class GameObject(
         }
     }
 
-    fun getUid() = uId
     fun generateUid() { uId = ID_COUNTER++ }
 
     fun getAllComponents(): List<Component> = components
@@ -68,8 +67,6 @@ open class GameObject(
     fun doSerialization():Boolean {
         return doSerialization
     }
-
-    fun isDead():Boolean = isDead
 
     fun destroy() {
         this.isDead = true

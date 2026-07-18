@@ -79,7 +79,7 @@ class ComponentSearchProvider(
         val icon = determineIcon(component)
 
         return SearchResult(
-            id = "comp_${go.getUid()}_${componentType}",
+            id = "comp_${go.uId}_${componentType}",
             displayName = componentType,
             category = SearchCategory.COMPONENT,
             subcategory = "Component",
@@ -87,7 +87,7 @@ class ComponentSearchProvider(
             icon = icon,
             relevanceScore = score,
             metadata = mapOf(
-                "gameObjectUid" to go.getUid(),
+                "gameObjectUid" to go.uId,
                 "componentType" to componentType
             )
         )

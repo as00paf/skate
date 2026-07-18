@@ -78,7 +78,7 @@ class GameObjectSearchProvider(
         val icon = determineIcon(go)
 
         return SearchResult(
-            id = "go_${go.getUid()}",
+            id = "go_${go.uId}",
             displayName = go.name,
             category = SearchCategory.GAMEOBJECT,
             subcategory = subcategory,
@@ -86,7 +86,7 @@ class GameObjectSearchProvider(
             icon = icon,
             relevanceScore = score,
             metadata = mapOf(
-                "uid" to go.getUid(),
+                "uid" to go.uId,
                 "name" to go.name
             )
         )

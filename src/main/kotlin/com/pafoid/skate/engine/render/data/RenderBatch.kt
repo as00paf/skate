@@ -236,7 +236,7 @@ class RenderBatch(
         val color = sprite.getColor()
         val texCoords = sprite.getTexCoords()
         val texId = findTextureId(sprite.getTexture())
-        val entityId = EntityIdEncoder.encode(sprite.gameObject.getUid())
+        val entityId = EntityIdEncoder.encode(sprite.gameObject.uId)
 
         val isRotated = transform.rotation?.z != 0f
         if (isRotated) {

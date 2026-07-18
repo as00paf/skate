@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render
 
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.render.data.CameraPreset
 import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.engine.utils.Ray
@@ -16,13 +17,15 @@ import kotlin.math.asin
 import kotlin.math.atan2
 
 @Serializable
-class Camera(
-    @Contextual val position: Vector3f = Vector3f(),
-    var pitch: Float = 0f,
-    var yaw: Float = 0f,
-    var roll: Float = 0f,
+class Camera : GameObject("Camera") {
+
+    @Contextual
+    val position: Vector3f = Vector3f()
+    var pitch: Float = 0f
+    var yaw: Float = 0f
+    var roll: Float = 0f
     var isOrthographic: Boolean = false
-) {
+
     var fov = 45f
     var nearPlane = 0.1f
     var farPlane = 1000f
@@ -74,7 +77,7 @@ class Camera(
         startDistance = zoom
     }
 
-    fun update(dt: Float) {
+    override fun update(dt: Float) {
         handleLerp(dt)
     }
 

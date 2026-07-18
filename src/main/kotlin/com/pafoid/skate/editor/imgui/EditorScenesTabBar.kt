@@ -36,7 +36,7 @@ class EditorScenesTabBar(
                 val displayName = scene.name.replace(".scene", "", ignoreCase = true)
                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 
-                if (ImGui.beginTabItem("$displayName###sceneTab_${scene.getUid()}", open, flags)) {
+                if (ImGui.beginTabItem("$displayName###sceneTab_${scene.uId}", open, flags)) {
                     if (selectedTabIndex != index) {
                         selectedTabIndex = index
                         eventSystem.publish(ViewportAction.TabSelected(scene))
