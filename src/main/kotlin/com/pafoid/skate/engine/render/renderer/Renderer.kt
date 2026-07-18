@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
@@ -40,8 +39,6 @@ class Renderer(
     }
 
     fun render(scene: Scene) {
-        val activeGameObject: GameObject? = scene.selectedGameObject
-        val hoveredGameObject: GameObject? = scene.hoveredGameObject
         // Reset per-frame draw call counter
         EngineStats.resetDrawCalls()
 
@@ -52,7 +49,7 @@ class Renderer(
         scene.camera.viewportHeight = height
 
         // Execute the render graph - this handles all preparation, execution, and cleanup of passes
-        renderResources.renderGraph.execute(scene, activeGameObject, hoveredGameObject)
+        renderResources.renderGraph.execute(scene)
 
         // Final screen viewport reset
         glViewport(0, 0, renderResources.frameBuffer.width, renderResources.frameBuffer.height)

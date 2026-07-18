@@ -12,7 +12,6 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.FrameBuffer
-import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
@@ -68,10 +67,9 @@ class GeometryPass(
     override val description: String = "Renders all 3D geometry and sprites to the framebuffer"
     override val inputs: Set<String> = setOf("ShadowMap")
 
-    override fun execute(context: RenderContext) {
-        val scene = context.scene
-        val activeGameObject = context.activeGameObject
-        val hoveredGameObject = context.hoveredGameObject
+    override fun execute(scene: Scene) {
+        val activeGameObject = scene.selectedGameObject
+        val hoveredGameObject = scene.hoveredGameObject
         val currentShadowMap = shadowMapTextureId
 
         // Setup framebuffer

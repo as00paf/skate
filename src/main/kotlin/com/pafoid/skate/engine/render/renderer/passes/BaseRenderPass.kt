@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
-import com.pafoid.skate.engine.render.graph.RenderContext
+import com.pafoid.skate.engine.ecs.Scene
 
 /**
  * Base class for render passes providing default metadata and timing implementations.
@@ -48,13 +48,12 @@ abstract class BaseRenderPass : RenderPass {
      * Executes this render pass with performance timing.
      * Wraps execute() to measure execution time.
      *
-     * @param context Data and resource context for execution
      */
-    final override fun executeWithTiming(context: RenderContext) {
+    final override fun executeWithTiming(scene: Scene) {
         val start = System.nanoTime()
         try {
             if (isEnabled) {
-                execute(context)
+                execute(scene)
             }
         } finally {
             executionTimeNs = System.nanoTime() - start

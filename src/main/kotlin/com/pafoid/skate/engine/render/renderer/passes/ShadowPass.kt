@@ -1,10 +1,10 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.ShadowMap
-import com.pafoid.skate.engine.render.graph.RenderContext
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
 
 /**
@@ -37,8 +37,7 @@ class ShadowPass(
     override val outputs: Set<String> = setOf("ShadowMap")
     override val canDisable: Boolean = true  // Shadows can be disabled for performance
 
-    override fun execute(context: RenderContext) {
-        val scene = context.scene
+    override fun execute(scene: Scene) {
         // Get directional light system from scene
         val lightComponent = scene.getComponent<DirectionalLightComponent>()
 

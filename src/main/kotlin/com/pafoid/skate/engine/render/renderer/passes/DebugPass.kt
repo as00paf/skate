@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
-import com.pafoid.skate.engine.render.graph.RenderContext
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 
 /**
@@ -23,7 +23,7 @@ class DebugPass(
         debugRenderer.beginFrame()
     }
 
-    override fun execute(context: RenderContext) {
+    override fun execute(scene: Scene) {
         debugRenderer.draw()
     }
 }

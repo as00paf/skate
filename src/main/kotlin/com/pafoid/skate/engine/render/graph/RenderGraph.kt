@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.render.graph
 
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 
@@ -47,18 +46,12 @@ class RenderGraph {
      * @param activeGameObject Selected game object
      * @param hoveredGameObject Hovered game object
      */
-    fun execute(scene: Scene, activeGameObject: GameObject?, hoveredGameObject: GameObject?) {
-        val context = RenderContext(
-            scene = scene,
-            activeGameObject = activeGameObject,
-            hoveredGameObject = hoveredGameObject,
-        )
-
+    fun execute(scene: Scene) {
         // 1. Prepare all enabled nodes
         passes.filter { it.isEnabled }.forEach { it.prepare() }
 
         // 2. Execute all enabled nodes with timing
-        passes.filter { it.isEnabled }.forEach { it.executeWithTiming(context) }
+        passes.filter { it.isEnabled }.forEach { it.executeWithTiming(scene) }
 
         // 3. Cleanup all nodes (even disabled ones may need cleanup)
         passes.forEach { it.cleanup() }

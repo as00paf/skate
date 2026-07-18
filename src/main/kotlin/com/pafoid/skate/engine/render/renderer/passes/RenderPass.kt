@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
-import com.pafoid.skate.engine.render.graph.RenderContext
+import com.pafoid.skate.engine.ecs.Scene
 
 /**
  * Represents a single rendering pass in the rendering pipeline.
@@ -61,9 +61,8 @@ interface RenderPass {
     /**
      * Executes this render pass with a contextual data set.
      *
-     * @param context Data and resource context for execution
      */
-    fun execute(context: RenderContext) {}
+    fun execute(scene: Scene) {}
 
     /**
      * Called after the pass has finished execution for cleanup or unbinding.
@@ -74,13 +73,12 @@ interface RenderPass {
      * Executes this render pass with performance timing.
      * Wraps execute() to measure execution time.
      *
-     * @param context Data and resource context for execution
      */
-    fun executeWithTiming(context: RenderContext) {
+    fun executeWithTiming(scene: Scene) {
         val start = System.nanoTime()
         try {
             if (isEnabled) {
-                execute(context)
+                execute(scene)
             }
         } finally {
             executionTimeNs = System.nanoTime() - start
