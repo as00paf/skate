@@ -10,7 +10,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.input.IInputBuffer
+import com.pafoid.skate.engine.input.InputBuffer
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
@@ -38,7 +38,7 @@ class EditorInputHandlerEventRoutingTest {
         val keyListener = mockk<KeyListener>()
         val mouseListener = mockk<MouseListener>()
         val gamepadListener = mockk<GamepadListener>()
-        val inputBuffer = mockk<IInputBuffer>(relaxed = true)
+        val inputBuffer = mockk<InputBuffer>(relaxed = true)
         val clipboardService = mockk<ClipboardService>(relaxed = true)
         val undoRedoManager = mockk<UndoRedoManager>(relaxed = true)
         val logger = mockk<LoggerService>(relaxed = true)

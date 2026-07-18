@@ -13,7 +13,7 @@ import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.input.IInputBuffer
+import com.pafoid.skate.engine.input.InputBuffer
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
@@ -27,7 +27,7 @@ class EditorInputHandler(
     private val keyListener: KeyListener,
     private val mouseListener: MouseListener,
     private val joystickListener: GamepadListener,
-    private val inputBuffer: IInputBuffer,
+    private val inputBuffer: InputBuffer,
     private val clipboardService: ClipboardService,
     private val undoRedoManager: UndoRedoManager,
     private val logger: LoggerService,
@@ -238,15 +238,5 @@ class EditorInputHandler(
                 logger.logEditor("Redo")
             }
         }
-    }
-
-    /**
-     * Check if there's a pending rename request and return the GameObject UID.
-     * Called by SceneHierarchyWindow during its render loop.
-     */
-    fun consumePendingRename(): Int? {
-        val uid = pendingRenameUid
-        pendingRenameUid = null
-        return uid
     }
 }

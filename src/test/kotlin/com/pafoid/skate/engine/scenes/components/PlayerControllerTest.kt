@@ -9,8 +9,8 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.InputBuffer
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -49,7 +49,7 @@ class PlayerControllerTest {
                 single { mockk<AssetsManager>(relaxed = true) }
                 single { sceneManager }
                 single<IInputProvider> { inputProvider }
-                single { mockk<IInputBuffer>(relaxed = true) }
+                single { mockk<InputBuffer>(relaxed = true) }
                 single { mockk<PrefabsGenerator>(relaxed = true) }
                 single { mockk<DebugRenderer>(relaxed = true) }
                 single { mockk<StringManager>(relaxed = true) }

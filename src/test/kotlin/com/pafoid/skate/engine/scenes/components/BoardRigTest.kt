@@ -12,8 +12,8 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.PlayerStateManager
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.input.IInputBuffer
 import com.pafoid.skate.engine.input.IInputProvider
+import com.pafoid.skate.engine.input.InputBuffer
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.RayTestResult
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
@@ -41,7 +41,7 @@ class BoardRigTest {
 
     val sceneManager: SceneManager = mockk()
 
-    class FakeInputBuffer : IInputBuffer {
+    class FakeInputBuffer : InputBuffer {
         var flickVelocity = Vector2f(0f, 0f)
         override fun push(timestamp: Float, mousePos: Vector2f, joystickAxes: FloatArray?) {}
         override fun getFlickVelocity(timeWindow: Float): Vector2f = flickVelocity
@@ -64,7 +64,7 @@ class BoardRigTest {
                 single { sceneManager }
                 single<IInputProvider> { mockk(relaxed = true) }
                 single { mockk<AssetsManager>(relaxed = true) }
-                single<IInputBuffer> { inputBuffer }
+                single<InputBuffer> { inputBuffer }
                 single { mockk<PrefabsGenerator>(relaxed = true) }
                 single { mockk<DebugRenderer>(relaxed = true) }
                 single<EventSystem> { mockk(relaxed = true) }
