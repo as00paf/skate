@@ -43,7 +43,7 @@ class RenderGraphTest {
     @DisplayName("should provide resources to context")
     fun `should provide resources to context`() {
         val scene = mockk<Scene>(relaxed = true)
-        val resource = RenderResource.Texture("ShadowMap", 42)
+        val resourceId = 42
         
         var receivedId = 0
         val pass = object : RenderPass {
@@ -53,12 +53,12 @@ class RenderGraphTest {
             override var isEnabled: Boolean = true
 
             override fun execute(context: RenderContext) {
-                receivedId = context.getTexture("ShadowMap")
+                receivedId = context.getResource("ShadowMap") ?: -1
             }
         }
         
         val graph = RenderGraphBuilder()
-            .withResources(resource)
+            .withResources("ShadowMap", resourceId)
             .addPass(pass)
             .build()
             

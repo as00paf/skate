@@ -81,12 +81,6 @@ class ShadowMap(
     private var initialized = false
 
     /**
-     * Gets the OpenGL framebuffer object ID.
-     * Returns 0 if not initialized.
-     */
-    fun getFboId(): Int = fboId
-
-    /**
      * Gets the depth texture ID for sampling in shaders.
      * Returns 0 if not initialized.
      */

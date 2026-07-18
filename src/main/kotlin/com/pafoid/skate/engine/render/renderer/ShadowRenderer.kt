@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.render.utils.bindTexture
 import com.pafoid.skate.engine.render.utils.bindVAO
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import com.pafoid.skate.engine.utils.TextureSlots
+import org.joml.Matrix4f
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL30.GL_DEPTH_TEST
 import org.lwjgl.opengl.GL30.glBindVertexArray
@@ -47,7 +48,7 @@ class ShadowRenderer(
      */
     fun render(
         gameObjects: List<GameObject>,
-        lightSpaceMatrix: org.joml.Matrix4f
+        lightSpaceMatrix: Matrix4f
     ) {
         shadowShader.start()
 

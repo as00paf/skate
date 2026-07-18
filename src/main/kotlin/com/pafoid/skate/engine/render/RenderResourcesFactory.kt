@@ -7,7 +7,6 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.graph.RenderGraph
 import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
-import com.pafoid.skate.engine.render.graph.RenderResource
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
@@ -67,8 +66,6 @@ class RenderResourcesFactory(
             renderers = renderers,
             frameBuffer = frameBuffer,
             pickingTexture = pickingTexture,
-            width = width,
-            height = height,
             shadowMap = shadowMap
         )
 
@@ -94,7 +91,7 @@ class RenderResourcesFactory(
     ): RenderGraph {
         val builder = RenderGraphBuilder()
         if (shadowMap != null) {
-            builder.withResources(RenderResource.Texture("ShadowMap", shadowMap.getDepthTextureId()))
+            builder.withResources("ShadowMap", shadowMap.getDepthTextureId())
         }
         return builder
             .addPass(passes.shadow)
@@ -152,8 +149,6 @@ class RenderResourcesFactory(
         renderers: Renderers,
         frameBuffer: FrameBuffer,
         pickingTexture: PickingTexture,
-        width: Int,
-        height: Int,
         shadowMap: ShadowMap? = null
     ): RenderPasses {
         val renderer2D = Renderer2D()
@@ -182,7 +177,6 @@ class RenderResourcesFactory(
             frameBuffer = frameBuffer,
             lightingUniformsLoader = lightingUniformsLoader,
             getUseFbo = { true },
-            sceneManager = sceneManager,
             cameraManager = cameraManager,
             shadowMapTextureId = shadowMapTextureId,
             shadowMapResolution = shadowMapRes

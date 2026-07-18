@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
@@ -47,7 +46,6 @@ import org.lwjgl.opengl.GL30.glViewport
  * @param skyDomeRenderer The sky dome renderer
  * @param frameBuffer The framebuffer for FBO rendering (provides width/height)
  * @param lightingUniformsLoader Helper for uploading lighting uniforms
- * @param sceneManager The scene manager for accessing current scene
  * @param getUseFbo Lambda to get current FBO usage setting at render time
  * @param shadowMapTextureId Default shadow map texture ID
  * @param shadowMapResolution Shadow map resolution for PCF texel size calculation
@@ -61,7 +59,6 @@ class GeometryPass(
     private val frameBuffer: FrameBuffer,
     private val lightingUniformsLoader: LightingUniformsLoader,
     private val getUseFbo: () -> Boolean,
-    private val sceneManager: SceneManager,
     private val cameraManager: CameraManager,
     private val shadowMapTextureId: Int = 0,
     private val shadowMapResolution: Float = 2048f
@@ -77,7 +74,7 @@ class GeometryPass(
         val hoveredGameObject = context.hoveredGameObject
         
         // Use shadow map from context if available, otherwise fallback to default
-        val contextShadowMap = context.getTexture("ShadowMap")
+        val contextShadowMap = context.getResource("ShadowMap") ?: -1
         val currentShadowMap = if (contextShadowMap != 0) contextShadowMap else shadowMapTextureId
 
         // Setup framebuffer
@@ -127,7 +124,7 @@ class GeometryPass(
         )
 
         // Upload shadow map texel size for PCF
-        if (currentShadowMap != 0) {
+        if (currentShadowMap > 0) {
             defaultShader.uploadFloat(Uniforms.SHADOW_MAP_TEXEL_SIZE, 1.0f / shadowMapResolution)
             // Upload shadow bias uniforms
             if (directionalLight != null) {

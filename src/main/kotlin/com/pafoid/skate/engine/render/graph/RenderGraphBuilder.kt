@@ -11,8 +11,8 @@ class RenderGraphBuilder {
     /**
      * Registers a set of initial resources.
      */
-    fun withResources(vararg resources: RenderResource): RenderGraphBuilder {
-        resources.forEach { graph.registerResource(it) }
+    fun withResources(name: String, resourceId: Int): RenderGraphBuilder {
+        graph.registerResource(name, resourceId)
         return this
     }
     

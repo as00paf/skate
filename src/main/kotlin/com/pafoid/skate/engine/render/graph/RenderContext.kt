@@ -17,7 +17,7 @@ data class RenderContext(
     val scene: Scene,
     val activeGameObject: GameObject? = null,
     val hoveredGameObject: GameObject? = null,
-    private val resources: Map<String, RenderResource> = emptyMap()
+    private val resources: Map<String, Int> = emptyMap()
 ) {
     /**
      * Gets a resource from the context by name.
@@ -25,13 +25,6 @@ data class RenderContext(
      * @param name The name of the resource to retrieve
      * @return The resource if found, or null otherwise
      */
-    fun getResource(name: String): RenderResource? = resources[name]
-    
-    /**
-     * Helper to get a texture resource by name.
-     * 
-     * @param name The name of the texture resource
-     * @return The texture ID if found, or 0 if not found or not a texture
-     */
-    fun getTexture(name: String): Int = (getResource(name) as? RenderResource.Texture)?.textureId ?: 0
+    fun getResource(name: String): Int? = resources[name]
+
 }

@@ -14,7 +14,7 @@ import com.pafoid.skate.engine.render.renderer.passes.RenderPass
  */
 class RenderGraph {
     private val passes = mutableListOf<RenderPass>()
-    private val resources = mutableMapOf<String, RenderResource>()
+    private val resources = mutableMapOf<String, Int>()
 
     /**
      * Adds a pass to the graph in the order it should be executed.
@@ -30,8 +30,8 @@ class RenderGraph {
      *
      * @param resource The resource to register
      */
-    fun registerResource(resource: RenderResource) {
-        resources[resource.name] = resource
+    fun registerResource(name: String, resourceId: Int) {
+        resources[name] = resourceId
     }
 
     /**
