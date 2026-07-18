@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.ecs
 
-import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.data.DirectionalLight
 import kotlinx.serialization.SerialName
@@ -42,15 +40,6 @@ class Scene(@SerialName("sceneName") override var name: String = "MainScene") : 
     override fun start() {
         isRunning = true
         super.start()
-    }
-
-    override fun update(dt: Float) {
-        val timeScale = getComponent<TimeComponent>()?.timeScale ?: 1.0f
-        val scaledDt = dt * timeScale
-        // TODO: move ?
-        camera.update(scaledDt)
-
-        super.update(scaledDt)
     }
 
     fun destroyScene() {

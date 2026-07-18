@@ -263,6 +263,7 @@ val engineModule = module {
             get(), get(), get(), get(), get(), get(), get(), get(),
             listOf(
                 GameObjectManager(), // Core
+                get<CameraManager>(),
                 InputSystem(get(), get(), get()),
                 AudioSystem(get(), get(), get()),
                 EnvironmentSystem(),
