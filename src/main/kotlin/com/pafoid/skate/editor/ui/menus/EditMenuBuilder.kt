@@ -52,7 +52,7 @@ class EditMenuBuilder(
         if (menuItem("${Icons.CUT} ${stringManager.getString("menu.edit.cut")}", "Ctrl+X")) {
             val scene = sceneManager.currentScene
             val selected = scene?.selectedGameObject
-            if (selected != null && scene != null) {
+            if (selected != null) {
                 eventSystem.publish(ViewportAction.CopyClipboard(selected))
                 eventSystem.publish(ViewportAction.Delete(selected, scene))
                 eventSystem.publish(ViewportAction.SelectionCleared)

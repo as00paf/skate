@@ -70,7 +70,6 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.SystemManager
-import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
@@ -196,9 +195,6 @@ val engineModule = module {
     single { StringManager() }
     single { EventSystem() }
     single { LoggerService() }
-
-    // Input
-    single { InputProvider(get()) }
 
     // Managers
     single { CameraManager(get()) }

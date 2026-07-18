@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
@@ -25,14 +26,14 @@ import kotlin.math.sqrt
  * - Processed InputStateComponent values
  * - Current input settings (deadzones, thresholds, sensitivities)
  *
- * @param inputProvider Provider for raw hardware inputs
  * @param stringManager String manager for localization
  */
 class InputTestingWindow(
-    private val inputProvider: InputProvider,
+    private val engine: Engine,
     private val stringManager: StringManager,
     private val systemManager: SystemManager
 ) : IWindowWithScene {
+    private val inputProvider: InputProvider by lazy { engine.inputProvider }
 
     private val gameObjectManager: GameObjectManager by lazy {
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")

@@ -155,7 +155,7 @@ class ProjectActionHandler(
 
     private fun executeOnMainThread(block: () -> Unit) {
         val jobs = jobSystem
-        if (jobs == null || jobs.isMainThread()) {
+        if (jobs.isMainThread()) {
             block()
             return
         }
