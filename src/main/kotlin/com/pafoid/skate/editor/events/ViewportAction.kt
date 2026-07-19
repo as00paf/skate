@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.events
 
 import com.pafoid.skate.editor.data.PrefabType
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.ComponentType
@@ -23,9 +24,13 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     data class ToggleVisibility(val gameObject: GameObject, val visible: Boolean) : ViewportAction("viewport.toggle_visibility")
     data class ToggleLock(val gameObject: GameObject, val locked: Boolean) : ViewportAction("viewport.toggle_lock")
 
+    // TODO : use data classes
     data class TextureApplied(val gameObject: GameObject, val texturePath: String) : ViewportAction("editor.texture_applied")
-    data class AnimationApplied(val gameObject: GameObject, val animationPath: String) : ViewportAction("editor.animation_applied")
-    data class AnimationRemoved(val gameObject: GameObject, val animationPath: String) : ViewportAction("editor.animation_removed")
+    data class AnimationApplied(val gameObject: GameObject, val animation: Animation) :
+        ViewportAction("editor.animation_applied")
+
+    data class AnimationRemoved(val gameObject: GameObject, val animation: Animation) :
+        ViewportAction("editor.animation_removed")
 
     // Light & Camera
     data class CreateLight(val name: String, val type: LightType) : ViewportAction("viewport.create_light")
@@ -39,7 +44,8 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     // Drag and Drop
     data class DropTexture(val texturePath: String, val targetObject: GameObject? = null, val dropPosition: Vector3f? = null) : ViewportAction("viewport.drop_texture")
     data class DropSound(val soundPath: String, val targetObject: GameObject) : ViewportAction("viewport.drop_sound")
-    data class DropAnimation(val animationPath: String, val targetObject: GameObject) : ViewportAction("viewport.drop_animation")
+    data class DropAnimation(val animation: Animation, val targetObject: GameObject) :
+        ViewportAction("viewport.drop_animation")
 
     // Runtime
     data class SetSimulationTimeScale(val timeScale: Float) : ViewportAction("viewport.set_simulation_timescale")

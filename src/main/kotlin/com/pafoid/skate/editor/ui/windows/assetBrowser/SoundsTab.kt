@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.SoundSource
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
@@ -23,11 +23,11 @@ import java.io.File
  * Supports WAV and OGG formats.
  */
 class SoundsTab(
-    assetsManager: AssetsManager,
+    private val engine: Engine,
     stringManager: StringManager,
     private val jobSystem: IJobSystem,
     private val logger: LoggerService
-) : AssetBrowserTab(assetsManager, stringManager) {
+) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
     private var playingSource: SoundSource? = null
     private var currentPlayingFile: File? = null

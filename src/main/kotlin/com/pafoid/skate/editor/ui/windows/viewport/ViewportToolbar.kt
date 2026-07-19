@@ -16,7 +16,6 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.events.EngineAction
@@ -28,7 +27,6 @@ import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
 
 class ViewportToolbar(
-    private val sceneManager: SceneManager,
     private val engine: Engine,
     private val logger: LoggerService,
     private val stringManager: StringManager,
@@ -37,7 +35,7 @@ class ViewportToolbar(
 ) {
     fun render(windowPos: ImVec2) {
         val isPlaying = engine.runtimePlaying
-        val scene = sceneManager.currentScene
+        val scene = engine.sceneManager.currentScene
         val toolbarPosY = windowPos.y + TOOLBAR_BUTTON_SPACING / 2f + ImGui.getStyle().framePaddingY
 
         val groups = buildButtonGroups(scene, isPlaying)

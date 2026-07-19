@@ -8,35 +8,34 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
 import org.joml.Vector3f
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
 class ProjectManager(
+    private val engine: Engine,
     private val settingsManager: SettingsManager,
-    private val logger: LoggerService,
     private val engineAssetCopier: EngineAssetCopier,
-    private val sceneManager: SceneManager,
     private val prefabsGenerator: PrefabsGenerator,
     private val eventSystem: EventSystem,
-    private val systemManager: SystemManager,
-    private val serializer: Serializer
+    private val logger: LoggerService,
 ) {
+
+    private val sceneManager = engine.sceneManager
+    private val serializer = engine.serializer
 
     var currentProject: Project? = null
         private set
@@ -215,7 +214,7 @@ class ProjectManager(
         }
 
         sceneManager.closeAllScenes()
-        systemManager.resetSystemCaches()
+        engine.systemManager.resetSystemCaches()
 
         currentProject = null
         settingsManager.setLastClosedProjectPath(path)

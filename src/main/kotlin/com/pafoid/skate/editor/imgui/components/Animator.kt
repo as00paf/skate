@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui.components
 
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -37,13 +38,9 @@ fun Animator.imgui(stringManager: StringManager) {
     ImGui.endGroup()
 
     if (ImGui.beginDragDropTarget()) {
-        val payload = ImGui.acceptDragDropPayload<String>("ANIMATION", ImGuiDragDropFlags.None)
+        val payload = ImGui.acceptDragDropPayload<Animation>("ANIMATION", ImGuiDragDropFlags.None)
         if (payload != null) {
-            val path = payload
-            val newAnim = assetsManager.getAnimation(path)
-            newAnim?.let {
-                addAnimation(it)
-            }
+            addAnimation(payload)
         }
         ImGui.endDragDropTarget()
     }

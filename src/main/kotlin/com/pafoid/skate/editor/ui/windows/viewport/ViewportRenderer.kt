@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.ScreenshotUtils
 import imgui.ImGui
@@ -14,8 +13,8 @@ import org.koin.core.component.KoinComponent
  */
 class ViewportRenderer(
     private val engine: Engine,
-    private val cameraManager: CameraManager
 ) : KoinComponent {
+    // TODO:  remove koin component ?
     private val renderer: Renderer by lazy { engine.renderer }
 
     var imageScreenPosX = 0f
@@ -55,8 +54,8 @@ class ViewportRenderer(
         }
         
         // Sync camera viewport dimensions for correct aspect ratio
-        cameraManager.camera.viewportWidth = fbWidth
-        cameraManager.camera.viewportHeight = fbHeight
+        engine.cameraManager.camera.viewportWidth = fbWidth
+        engine.cameraManager.camera.viewportHeight = fbHeight
     }
     
     /**

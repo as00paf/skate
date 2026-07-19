@@ -14,15 +14,13 @@ import com.pafoid.skate.editor.events.ViewportAction.ToggleVisibility
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.SceneAction
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -47,16 +45,13 @@ import org.lwjgl.glfw.GLFW.GLFW_KEY_UP
 private const val SPECIAL_UID_SCENE_RENAME = -999
 
 class SceneHierarchyWindow(
-    private val sceneManager: SceneManager,
+    private val engine: Engine,
     private val stringManager: StringManager,
     private val clipboardService: ClipboardService,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
-    private val systemManager: SystemManager,
 ) : IWindowWithScene {
-    private val gameObjectManager: GameObjectManager by lazy {
-        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
-    }
+    private val sceneManager = engine.sceneManager
 
     private val searchQuery = ImString(256)
     private var isLinked = false
@@ -330,7 +325,7 @@ class SceneHierarchyWindow(
                 ImGui.popStyleColor()
                 val payload = ImGui.acceptDragDropPayload<Int>("GAMEOBJECT_UID")
                 if (payload != null) {
-                    val draggedObject = gameObjectManager.getGameObject(payload)
+                    val draggedObject = engine.gameObjectManager.getGameObject(payload)
                     if (draggedObject != null && draggedObject != obj && !isChildOf(obj, draggedObject)) {
                         eventSystem.publish(Reparent(draggedObject, obj))
                     }

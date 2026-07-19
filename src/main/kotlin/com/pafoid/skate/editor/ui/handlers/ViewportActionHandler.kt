@@ -56,24 +56,22 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.CameraAction
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction.ResetScene
@@ -87,23 +85,21 @@ import com.pafoid.skate.engine.utils.IJobSystem
 import org.joml.Vector3f
 
 class ViewportActionHandler(
-    private val sceneManager: SceneManager,
+    private val engine: Engine,
     private val undoRedoManager: UndoRedoManager,
     private val eventSystem: EventSystem,
     private val logger: LoggerService,
     private val clipboardService: ClipboardService,
     private val mutationGate: EditorMutationGate,
     private val prefabsGenerator: PrefabsGenerator,
-    private val assetsManager: AssetsManager,
     private val editorCamera: EditorCamera,
-    private val systemManager: SystemManager,
     private val jobSystem: IJobSystem,
     private val viewportRenderer: ViewportRenderer,
     private val gizmoSystem: GizmoSystem,
 ) {
-    private val gameObjectManager: GameObjectManager by lazy {
-        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
-    }
+    private val sceneManager = engine.sceneManager
+    private val gameObjectManager = engine.gameObjectManager
+    private val assetsManager = engine.assetsManager // TODO: remove, should not be needed
 
     fun init() {
         eventSystem.subscribe<GameObjectSelected> { event ->
@@ -142,7 +138,7 @@ class ViewportActionHandler(
             handleDropSound(event.soundPath, event.targetObject)
         }
         eventSystem.subscribe<DropAnimation> { event ->
-            handleDropAnimation(event.animationPath, event.targetObject)
+            handleDropAnimation(event.animation, event.targetObject)
         }
 
         eventSystem.subscribe<Duplicate> { event ->
@@ -197,7 +193,7 @@ class ViewportActionHandler(
             handleResetSkateScene()
         }
         eventSystem.subscribe<TogglePhysicsDebug> {
-            systemManager.getSystem<PhysicsSystem>()?.toggleDebug()
+            engine.systemManager.getSystem<PhysicsSystem>()?.toggleDebug()
         }
         eventSystem.subscribe<ToggleGizmo> { event ->
             handleToggleGizmo(event.gizmoId)
@@ -262,8 +258,8 @@ class ViewportActionHandler(
         addSoundToObject(targetObject, soundPath)
     }
 
-    private fun handleDropAnimation(animationPath: String, targetObject: GameObject) {
-        applyAnimationToObject(targetObject, animationPath)
+    private fun handleDropAnimation(animation: Animation, targetObject: GameObject) {
+        applyAnimationToObject(targetObject, animation)
     }
 
     private fun handleDuplicate(gameObject: GameObject) {
@@ -482,14 +478,14 @@ class ViewportActionHandler(
         }
     }
 
-    private fun applyAnimationToObject(gameObject: GameObject, animationPath: String) {
+    private fun applyAnimationToObject(gameObject: GameObject, animation: Animation) {
         val animator = gameObject.getComponent<Animator>()
 
         if (animator != null) {
             undoRedoManager.executeCommand(
-                ApplyAnimationCommand(gameObject, animationPath, assetsManager, eventSystem)
+                ApplyAnimationCommand(gameObject, animation, eventSystem)
             )
-            logger.logEditor("Added animation to ${gameObject.name}: $animationPath")
+            logger.logEditor("Added animation to ${gameObject.name}: ${animation.name}")
         } else {
             logger.logEditor("Object has no Animator component")
         }

@@ -2,7 +2,6 @@ package com.pafoid.skate.game.skateboard
 
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
@@ -41,8 +40,7 @@ import kotlin.math.abs
 @Serializable
 class SkateboardPhysics : Component(), KoinComponent {
 
-    private val sceneManager: SceneManager by inject()
-    private val eventSystem: EventSystem by inject()
+    private val eventSystem: EventSystem by inject() // TODO : remove
 
     // Suspension parameters (Real-world Meters)
     var suspensionRestLength = 0.08f // 8cm total height

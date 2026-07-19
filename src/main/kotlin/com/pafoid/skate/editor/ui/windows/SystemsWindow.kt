@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.systems.imgui
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
@@ -11,14 +12,13 @@ import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.System
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean
 
 class SystemsWindow(
     private val stringManager: StringManager,
-    private val systemManager: SystemManager,
+    private val engine: Engine
 ) : IWindowWithScene {
 
     /**
@@ -31,7 +31,7 @@ class SystemsWindow(
 
         // ECS Systems (from Scene)
         if (ImGui.collapsingHeader(stringManager.getString("lbl.systems.gameplay_systems"))) {
-            val systems = systemManager.systems
+            val systems = engine.systemManager.systems
             if (systems.isEmpty()) {
                 ImGui.text(stringManager.getString("lbl.systems.no_systems"))
             } else {

@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
@@ -12,6 +13,7 @@ import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
+import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
@@ -21,20 +23,14 @@ import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.IJobSystem
-import org.koin.core.component.KoinComponent
 import java.util.concurrent.atomic.AtomicReference
 
 class Engine(
-    private val sceneManager: SceneManager,
-    private val renderResourcesFactory: RenderResourcesFactory,
+    val serializer: Serializer,
     private val jobSystem: IJobSystem,
-    private val systemManager: SystemManager,
-    private val cameraManager: CameraManager,
-    private val assetsManager: AssetsManager,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
-) : KoinComponent {
-
+) {
     private val nativeLibraryLoader = NativeLibraryLoader()
 
     val engineState = AtomicReference(EngineState.BOOTING)
@@ -43,11 +39,17 @@ class Engine(
 
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
+    val cameraManager = CameraManager(eventSystem)
+    val assetsManager = AssetsManager(logger)
+    val systemManager = SystemManager()
+    val sceneManager = SceneManager(assetsManager, eventSystem, serializer, systemManager, logger)
+    val gameObjectManager = GameObjectManager()
 
     private var systemManagerStarted = false
 
     fun start() {
         jobSystem.runOnMain {
+            val renderResourcesFactory = RenderResourcesFactory(assetsManager, cameraManager, logger)
             renderer = Renderer(renderResourcesFactory.create(1920, 1080))
             renderer.useFbo = true
 
@@ -67,17 +69,18 @@ class Engine(
     private fun initializeSystems() {
         val debugRenderer = renderer.renderResources.renderers.debug
         val engineSystems = listOf(
-            GameObjectManager(), // Core
-            cameraManager, // TODO: move here?
+            gameObjectManager, // Core
+            cameraManager,
             InputSystem(inputProvider, eventSystem),
             AudioSystem(audioEngine, logger, assetsManager),
             EnvironmentSystem(),
             PhysicsSystem(nativeLibraryLoader, debugRenderer),
             DayNightCycleSystem(),
             DirectionalLightSystem(),
+            PlayerMotionSystem(cameraManager, eventSystem, logger),
             AnimationSystem(),
             RagdollSystem(),
-            GridLines(debugRenderer, sceneManager, cameraManager),
+            GridLines(debugRenderer, cameraManager),
         )
 
         engineSystems.forEach {

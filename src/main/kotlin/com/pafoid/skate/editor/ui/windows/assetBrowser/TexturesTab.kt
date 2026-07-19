@@ -4,12 +4,11 @@ import com.pafoid.skate.editor.commands.objects.ApplyTextureCommand
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.IJobSystem
@@ -18,14 +17,13 @@ import java.awt.Desktop
 import java.io.File
 
 class TexturesTab(
-    assetsManager: AssetsManager,
     stringManager: StringManager,
+    private val engine: Engine,
     private val logger: LoggerService,
-    private val sceneManager: SceneManager,
     private val jobSystem: IJobSystem,
     private val undoRedoManager: UndoRedoManager,
     private val eventSystem: EventSystem,
-) : AssetBrowserTab(assetsManager, stringManager) {
+) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
     init {
         refreshAssets()
@@ -86,7 +84,7 @@ class TexturesTab(
     }
     
     private fun applyTextureToSelected(texturePath: String) {
-        val scene = sceneManager.currentScene ?: return
+        val scene = engine.sceneManager.currentScene ?: return
         val selectedObject = scene.selectedGameObject ?: run {
             logger.logEditor("No object selected")
             return

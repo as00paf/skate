@@ -15,13 +15,12 @@ import com.pafoid.skate.editor.events.ViewportAction.TabSelected
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.events.SceneAction.CloseAllRequested
 import com.pafoid.skate.engine.events.SceneAction.CloseOthersRequested
@@ -36,7 +35,6 @@ import com.pafoid.skate.engine.events.SceneAction.RenameRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveAsRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveRequested
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.io.File
 
 /**
@@ -45,16 +43,18 @@ import java.io.File
  * 
  * This decouples UI components (like EditorScenesTabBar) from orchestration logic.
  */
-class SceneActionHandler : KoinComponent {
-    private val sceneManager: SceneManager by inject()
-    private val serializer: Serializer by inject()
-    private val undoRedoManager: UndoRedoManager by inject()
-    private val eventSystem: EventSystem by inject()
-    private val logger: LoggerService by inject()
-    private val projectManager: ProjectManager by inject()
-    private val mutationGate: EditorMutationGate by inject()
+class SceneActionHandler(
+    private val engine: Engine,
+    private val projectManager: ProjectManager,
+    private val undoRedoManager: UndoRedoManager,
+    private val eventSystem: EventSystem,
+    private val mutationGate: EditorMutationGate,
+    private val logger: LoggerService,
+) : KoinComponent {
+    private val sceneManager = engine.sceneManager
+    private val serializer = engine.serializer
 
-    fun init() {
+    fun init() {//TODO: this should be called from the editor
         eventSystem.subscribe<RenameRequested> { event ->
             handleRenameRequested(event.scene, event.newName)
         }

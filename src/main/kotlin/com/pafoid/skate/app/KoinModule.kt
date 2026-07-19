@@ -28,7 +28,6 @@ import com.pafoid.skate.editor.ui.handlers.EnvironmentActionHandler
 import com.pafoid.skate.editor.ui.handlers.ProjectActionHandler
 import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.editor.ui.handlers.UndoRedoActionHandler
-import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
@@ -59,21 +58,12 @@ import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
-import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
-import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
-import com.pafoid.skate.engine.assets.AssetsManager
-import com.pafoid.skate.engine.assets.serialization.PoseSerializer
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.render.Camera
-import com.pafoid.skate.engine.render.CameraManager
-import com.pafoid.skate.engine.render.RenderResourcesFactory
-import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.DefaultJobSystem
 import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.game.trick.TrickManager
@@ -83,10 +73,9 @@ import org.koin.dsl.module
 val editorModule = module {
 
     // Editor-only rendering tools (moved from engineModule)
-    single { PrefabsGenerator(get(), get(), get()) }
+    single { PrefabsGenerator(get()) }
     single { EngineAssetCopier() }
 
-    single { PoseSerializer() }
     single { ClipboardService(get()) }
     single { EditorMutationGate(get(), get()) }
     single { UndoRedoManager(get(), get()) }
@@ -94,50 +83,47 @@ val editorModule = module {
     single { DisplayService() }
     single { TrickManager() }
 
-    single(createdAtStart = true) { SceneActionHandler().also { it.init() } }
+    single(createdAtStart = true) { SceneActionHandler(get(), get(), get(), get(), get(), get()).also { it.init() } }
     single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get(), get(), get()) }
     single(createdAtStart = true) { EnvironmentActionHandler(get(), get()).also { it.init() } }
     single(createdAtStart = true) { ConsoleActionHandler().also { it.init() } }
     single(createdAtStart = true) { UndoRedoActionHandler().also { it.init() } }
-    single(createdAtStart = true) {
-        ViewportActionHandler(
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-        )
-            .also { it.init() }
-    }
 
     // Viewport components for GameViewWindow
-    factory { ViewportRenderer(get(), get()) }
-    factory { ViewportToolbar(get(), get(), get(), get(), get(), get()) }
-    factory { ViewportOverlays(get(), get()) }
+    factory { ViewportOverlays(get(), get()) }// TODO: move
 
     // Editor windows
     single { ProjectWizardWindow(get(), get(), get(), get()) }
-    single { SceneHierarchyWindow(get(), get(), get(), get(), get(), get()) }
+    single { SceneHierarchyWindow(get(), get(), get(), get(), get()) }
     single { PropertiesWindow(get(), get(), get()) }
-    single { GameViewWindow(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single {
+        GameViewWindow(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get()
+        )
+    }
     single { AnimationsTab(get(), get(), get(), get()) }
-    single { TexturesTab(get(), get(), get(), get(), get(), get(), get()) }
-    single { PrefabsTab(get(), get(), get(), get(), get(), get()) }
+    single { TexturesTab(get(), get(), get(), get(), get(), get()) }
+    single { PrefabsTab(get(), get(), get(), get(), get()) }
     single { SoundsTab(get(), get(), get(), get()) }
     single { AssetBrowserWindow(get(), get(), get(), get(), get()) }
     single { EnvironmentWindow(get(), get(), get()) }
     single { ProfilerWindow(get()) }
     single { ConsoleWindow(get(), get(), get()) }
     single { PhysicsTunerWindow(get(), get()) }
-    single { InputTestingWindow(get(), get(), get()) }
+    single { InputTestingWindow(get(), get()) }
     single { SystemsWindow(get(), get()) }
     single { EditorSettingsWindow(get(), get()) }
     single { ProjectSettingsWindow(get(), get(), get(), get(), get()) }
@@ -154,13 +140,13 @@ val editorModule = module {
     // Editor Workspace
     single { EditorInputState() }
     single { EditorCamera(Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }, get()) }
-    single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get()) }
     single { EditorEventHandler(get(), get(), get()) }
-    single { GizmoSystem(get(), get(), get(), get(), get(), get()) }
+    single { GizmoSystem(get(), get(), get(), get(), get()) }
 
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get()) }
 
     // Menu
     single { EditMenuBuilder(get(), get(), get()) }
@@ -169,11 +155,12 @@ val editorModule = module {
     single { WindowControlsRenderer(get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get(), get()) }
     single { ProjectWizard() }
     single { ProjectSwitcherDialog() }
 
     // Search infrastructure
+    // TODO: cleanup?
     single {
         SearchEngine().apply {
             registerProvider(get<GameObjectSearchProvider>())
@@ -182,9 +169,9 @@ val editorModule = module {
             registerProvider(get<ActionSearchProvider>())
         }
     }
-    single { GameObjectSearchProvider(get(), get(), get()) }
+    single { GameObjectSearchProvider(get(), get()) }
     single { AssetSearchProvider(get()) }
-    single { ComponentSearchProvider(get(), get(), get()) }
+    single { ComponentSearchProvider(get(), get()) }
     single { ActionSearchProvider(get(), get(), get()) }
     single { SearchEverywhereWindow(SearchHistory(serializer = get())) }
 }
@@ -195,28 +182,13 @@ val engineModule = module {
     single { StringManager() }
     single { EventSystem() }
     single { LoggerService() }
-
-    // Managers
-    single { CameraManager(get()) }
-    single { SystemManager() }
-    single { SceneManager(get(), get(), get(), get(), get()) }
-    single { AssetsManager(get(), get()) }
-
-    single { VAOLoader() }
     single { Serializer() }
-
-    // Rendering
-    single { RenderResourcesFactory(get(), get(), get(), get()) }
 
     //Engine
     single {
         Engine(
-            sceneManager = get(),
-            renderResourcesFactory = get(),
+            serializer = get(),
             jobSystem = get(),
-            systemManager = get(),
-            cameraManager = get(),
-            assetsManager = get(),
             logger = get(),
             eventSystem = get(),
         )

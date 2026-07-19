@@ -11,13 +11,11 @@ import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
@@ -60,14 +58,12 @@ import org.lwjgl.glfw.GLFW
 import java.io.File
 
 class ImGuiLayer(
-    private val sceneManager: SceneManager,
     private val stringManager: StringManager,
     private val engine: Engine,
     private val windowRegistry: WindowRegistry,
     private val eventSystem: EventSystem,
     private val projectManager: ProjectManager,
     private val settingsManager: SettingsManager,
-    private val assetsManager: AssetsManager,
     private val gizmoSystem: GizmoSystem,
 ): KoinComponent {
 
@@ -83,13 +79,13 @@ class ImGuiLayer(
 
     private val menuBar: EditorMenuBar = EditorMenuBar(
         fileMenu = FileMenuBuilder(stringManager, eventSystem),
-        editMenu = EditMenuBuilder(stringManager, sceneManager, eventSystem),
+        editMenu = EditMenuBuilder(stringManager, engine.sceneManager, eventSystem),
         settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem),
         viewMenu = ViewMenuBuilder(stringManager, windowRegistry),
         windowControls = WindowControlsRenderer(eventSystem, stringManager),
         stringManager = stringManager,
-        assetsManager = assetsManager,
         projectManager = projectManager,
+        assetsManager = engine.assetsManager,
         eventSystem = eventSystem
     )
     private val statusBar: EditorStatusBar = EditorStatusBar(stringManager)
@@ -146,7 +142,7 @@ class ImGuiLayer(
     }
 
     fun update(dt: Float) {
-        val currentScene = sceneManager.currentScene
+        val currentScene = engine.sceneManager.currentScene
 
         startFrame()
 

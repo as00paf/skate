@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.systems.imgui
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -13,7 +14,6 @@ import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import imgui.type.ImBoolean
@@ -22,8 +22,10 @@ import org.joml.Vector3f
 class EnvironmentWindow(
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
-    private val systemManager: SystemManager,
+    private val engine: Engine,
 ) : IWindowWithScene {
+
+    private val systemManager = engine.systemManager
 
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.environment"))

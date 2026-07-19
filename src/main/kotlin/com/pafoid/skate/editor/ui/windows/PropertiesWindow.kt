@@ -7,10 +7,10 @@ import com.pafoid.skate.editor.events.ViewportAction.SetGameObjectEnabled
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.components.imgui
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
@@ -27,15 +27,16 @@ import imgui.type.ImString
 
 class PropertiesWindow(
     private val stringManager: StringManager,
-    private val sceneManager: SceneManager,
+    private val engine: Engine,
     private val eventSystem: EventSystem,
 ) : IWindow {
+
     private val searchString = ImString(128)
     private var selectedGameObject: GameObject? = null
 
     override fun imgui(pOpen: ImBoolean?) {
         // Get selected object from ViewModel instead of direct scene query
-        selectedGameObject = sceneManager.currentScene?.selectedGameObject
+        selectedGameObject = engine.sceneManager.currentScene?.selectedGameObject
         
         ImGui.begin(stringManager.getString("window.properties"), pOpen)
         selectedGameObject?.let { go ->

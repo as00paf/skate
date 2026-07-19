@@ -4,16 +4,11 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.physics3d.IPhysics3D
-import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
-import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.game.player.MotionData
 import kotlinx.serialization.Serializable
@@ -59,8 +54,8 @@ import kotlin.math.atan2
  */
 @Serializable
 class PlayerController : Component(), KoinComponent {
-    @Transient private val sceneManager: SceneManager by inject()
-    @Transient private val logger: LoggerService by inject()
+
+    private val logger: LoggerService by inject()
     private val eventSystem: EventSystem by inject()
 
     // Physics values - can be overridden or loaded from InputSettings
@@ -89,17 +84,17 @@ class PlayerController : Component(), KoinComponent {
     private var flipRightHeld = false
 
     @Transient private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
-    @Transient private val rb: IPhysicsBody3D? by lazy { gameObject.getComponent<IPhysicsBody3D>() }
-
-    @Transient private val camera: Camera? by lazy { sceneManager.currentScene?.camera }
 
     // Exposed for PlayerStateManager to read player intent
     @Transient val desiredMoveDirection = Vector3f()
-    @Transient private val desiredRotation = Quaternionf()
+    @Transient
+    val desiredRotation = Quaternionf()
+
+    @Transient
+    var motionData = MotionData()
 
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
-        rb ?: run { logger.log("Could not find RigidBody for ${gameObject.name}", LogLevel.ERROR) }
         stateManager ?: run { logger.log("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
 
         eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
@@ -140,8 +135,6 @@ class PlayerController : Component(), KoinComponent {
     }
 
     override fun update(dt: Float) {
-        val body = rb ?: return
-        val camera = camera ?: return
         val inputState = gameObject.getComponent<InputStateComponent>() ?: return
 
         // PRIORITIZE event-driven movement state; fallback to InputStateComponent polling
@@ -158,16 +151,14 @@ class PlayerController : Component(), KoinComponent {
         // Move if input is above threshold
         if (inputDirection.lengthSquared() > 0.0225f) { // 0.15^2
             val speed = getDesiredSpeed(isSprinting, dt)
-            val motionData = MotionData(
-                direction = getDesiredMoveDirection(camera.getForwardAndRight(), inputDirection),
+            motionData = MotionData(
+                inputDirection = inputDirection,
                 speed = speed,
                 targetYaw = atan2(desiredMoveDirection.x, desiredMoveDirection.z),
                 rotationSpeed = dt * rotationSpeed,
                 isGrounded = isGrounded,
                 wasGrounded = wasGrounded
             )
-
-            applyMotion(motionData, body)
         }
 
         // Use event-driven jump state
@@ -235,36 +226,6 @@ class PlayerController : Component(), KoinComponent {
         }
     }
 
-    private fun getDesiredMoveDirection(camForwardAndRight: Pair<Vector3f, Vector3f>, input: Vector2f): Vector3f {
-        desiredMoveDirection.zero()
-        camForwardAndRight.first.mul(input.y, desiredMoveDirection)
-        val rightPart = Vector3f(camForwardAndRight.second).mul(input.x)
-        desiredMoveDirection.add(rightPart)
-
-        return desiredMoveDirection.normalize()
-    }
-
-    private fun applyMotion(data: MotionData, body: IPhysicsBody3D) {
-        val velocity = body.linearVelocity
-
-        velocity.x = data.direction.x * data.speed
-        velocity.z = data.direction.z * data.speed
-
-        body.linearVelocity = velocity
-        lastSpeed = data.speed
-
-        val rotation = body.getRotation()
-        val currentYaw = atan2(
-            2f * (rotation.w * rotation.y + rotation.x * rotation.z),
-            1f - 2f * (rotation.y * rotation.y + rotation.z * rotation.z)
-        )
-
-        val newYaw = Interpolator.lerpAngle(currentYaw, data.targetYaw, data.rotationSpeed)
-
-        desiredRotation.set(Quaternionf().rotateY(newYaw))
-        body.setRotation(desiredRotation)
-    }
-
     /**
      * Gets the current horizontal speed from PhysicsComponent.
      * Falls back to lastSpeed if component not available.
@@ -301,28 +262,6 @@ class PlayerController : Component(), KoinComponent {
 
             //logger.log("JUMP TIMER STARTED!")
         }
-
-        if (isJumping && isGrounded && jumpTimer <= 0f) { // Jump
-            //logger.log("JUMP TIMER FINISHED!")
-            rb?.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
-            jumpTimer = takeOffTime
-        }
     }
 
-    // TODO: move
-    fun checkIfGrounded(physics3d: IPhysics3D): Boolean {
-        val body = rb as? RigidBody3D ?: return false
-        val originPosition = body.getWorldPosition()
-
-        // Start the ray from the player's feet (below the collider)
-        val feetY = originPosition.y
-        val rayStart = Vector3f(originPosition.x, feetY, originPosition.z)
-
-        // Ray goes down a small distance to detect ground
-        val rayLength = 0.05f
-        val rayEnd = Vector3f(rayStart.x, rayStart.y - rayLength, rayStart.z)
-
-        // Exclude the player's own physics body from the raycast
-        return physics3d.raycastClosest(rayStart, rayEnd, body) != null
-    }
 }

@@ -2,19 +2,17 @@ package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
@@ -28,10 +26,12 @@ import org.joml.Vector3f
 import java.io.File
 
 class PrefabsGenerator(
-    private val assetsManager: AssetsManager,
-    private val sceneManager: SceneManager,
-    private val systemManager: SystemManager,
+    private val engine: Engine
 ) {
+    private val assetsManager = engine.assetsManager
+    private val sceneManager = engine.sceneManager
+    private val systemManager = engine.systemManager
+
     private val gameObjectManager: GameObjectManager by lazy {
         systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
     }

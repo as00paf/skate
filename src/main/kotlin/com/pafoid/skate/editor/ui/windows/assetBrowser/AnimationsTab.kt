@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
@@ -12,11 +12,11 @@ import java.awt.Desktop
 import java.io.File
 
 class AnimationsTab(
-    assetsManager: AssetsManager,
+    private val engine: Engine,
     stringManager: StringManager,
     private val jobSystem: IJobSystem,
     private val logger: LoggerService
-) : AssetBrowserTab(assetsManager, stringManager) {
+) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
     init {
         refreshAssets()
@@ -59,7 +59,7 @@ class AnimationsTab(
         ImGui.popID()
 
         if (ImGui.beginDragDropSource()) {
-            ImGui.setDragDropPayload("ANIMATION", file.path)
+            ImGui.setDragDropPayload("ANIMATION", assetsManager.getAnimation(file.path))
             ImGui.text("${Icons.PLAY} ${file.name}")
             ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.asset_browser.drop_animation_hint"))
             ImGui.endDragDropSource()

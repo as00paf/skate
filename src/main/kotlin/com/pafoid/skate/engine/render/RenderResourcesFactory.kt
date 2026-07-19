@@ -28,9 +28,8 @@ import org.koin.core.component.KoinComponent
  */
 class RenderResourcesFactory(
     private val assetsManager: AssetsManager,
+    private val cameraManager: CameraManager,
     private val logger: LoggerService,
-    private val vaoLoader: VAOLoader,
-    private val cameraManager: CameraManager
 ) : KoinComponent {
 
     suspend fun create(width: Int, height: Int): RenderResources {
@@ -112,6 +111,8 @@ class RenderResourcesFactory(
         shaders: Shaders,
         assetsManager: AssetsManager
     ): Renderers {
+        val vaoLoader = assetsManager.vaoLoader
+
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
         val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader, assetsManager)
         val shadowRenderer = ShadowRenderer(shaders.shadow, assetsManager)

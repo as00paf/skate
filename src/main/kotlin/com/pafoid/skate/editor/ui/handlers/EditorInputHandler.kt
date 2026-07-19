@@ -12,7 +12,6 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.InputBuffer
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.GamepadListener
@@ -28,7 +27,6 @@ class EditorInputHandler(
     private val undoRedoManager: UndoRedoManager,
     private val logger: LoggerService,
     private val editorInputState: EditorInputState,
-    private val sceneManager: SceneManager,
     private val engine: Engine,
     private val projectManager: ProjectManager,
     private val eventSystem: EventSystem
@@ -58,7 +56,7 @@ class EditorInputHandler(
         }
 
         pollEditorInput()
-        val scene = sceneManager.currentScene ?: return
+        val scene = engine.sceneManager.currentScene ?: return
 
 
         val selected = scene.selectedGameObject

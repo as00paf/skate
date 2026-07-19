@@ -18,22 +18,15 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Manages loading, caching, and unloading of engine assets.
- *
- * Features:
- * - Automatic caching by absolute path
- * - Dependency tracking between models and textures
- * - Hot-reloading via file watching (editor only)
- * - Safe resource cleanup
- *
- * @param logger Logger service
  */
 class AssetsManager(
-    private val vaoLoader: VAOLoader,
     private val logger: LoggerService,
 ) {
-    private val shaderLoader: ShaderLoader = ShaderLoader(false)
+    val vaoLoader: VAOLoader = VAOLoader()
+
+    private val shaderLoader = ShaderLoader(false)
     private val textureLoader = TextureLoader()
-    private val assimpLoader: AssimpLoader = AssimpLoader(textureLoader, vaoLoader)
+    private val assimpLoader = AssimpLoader(textureLoader, vaoLoader)
     private val animationLoader = AnimationLoader()
 
     private val textures = ConcurrentHashMap<String, Texture>()

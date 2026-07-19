@@ -2,15 +2,15 @@ package com.pafoid.skate.game.player
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import org.joml.Vector3f
+import org.joml.Vector2f
 
 @Serializable
 data class MotionData(
     @Contextual
-    val direction: Vector3f,
-    val speed: Float,
-    val targetYaw: Float,
-    val rotationSpeed: Float,
-    val isGrounded: Boolean,
-    val wasGrounded: Boolean,
+    val inputDirection: Vector2f = Vector2f(),
+    val speed: Float = 0f,
+    val targetYaw: Float = 0f,
+    val rotationSpeed: Float = 0f,
+    val isGrounded: Boolean = false,
+    val wasGrounded: Boolean = true,
 )

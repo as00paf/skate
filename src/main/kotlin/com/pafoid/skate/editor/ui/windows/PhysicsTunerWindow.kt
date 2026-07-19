@@ -2,13 +2,12 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import imgui.ImGui
@@ -17,15 +16,11 @@ import org.joml.Vector3f
 
 class PhysicsTunerWindow(
     private val stringManager: StringManager,
-    private val systemManager: SystemManager,
+    private val engine: Engine
 ) : IWindowWithScene {
-
-    private val gameObjectManager: GameObjectManager by lazy {
-        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
-    }
-
+    private val gameObjectManager = engine.gameObjectManager
     private val physicsSystem: PhysicsSystem by lazy {
-        systemManager.getSystem<PhysicsSystem>() ?: throw RuntimeException("PhysicsSystem not initialized")
+        engine.systemManager.getSystem<PhysicsSystem>() ?: throw RuntimeException("PhysicsSystem not initialized")
     }
 
     override fun imgui(scene: Scene) {

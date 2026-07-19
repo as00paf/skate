@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImGui
@@ -39,7 +40,7 @@ class ViewportDragDropHandler(
 
             val payloadTexture = ImGui.acceptDragDropPayload<String>("TEXTURE")
             val payloadSound = ImGui.acceptDragDropPayload<String>("SOUND")
-            val payloadAnimation = ImGui.acceptDragDropPayload<String>("ANIMATION")
+            val payloadAnimation = ImGui.acceptDragDropPayload<Animation>("ANIMATION")
 
             val prefabPayload = payloadRail ?: payloadLedge ?: payloadKicker ?: payloadManualPad ?: payloadBank ?: payloadQuarterPipe ?: payloadSkateboard
 

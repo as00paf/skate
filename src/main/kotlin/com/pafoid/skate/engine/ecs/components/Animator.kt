@@ -37,9 +37,8 @@ import java.io.File
  * - [Takeoff] - triggers falling animation
  */
 @Serializable
-class Animator : Component(), KoinComponent {
-    @Transient
-    val assetsManager: AssetsManager by inject()
+class Animator : Component(), KoinComponent { //TODO: remove koin component
+
     @Transient
     private val logger: LoggerService by inject()
     @Transient

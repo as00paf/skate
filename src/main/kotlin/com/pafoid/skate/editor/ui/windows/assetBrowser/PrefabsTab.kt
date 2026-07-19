@@ -6,7 +6,6 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
@@ -23,13 +22,12 @@ import java.awt.Desktop
 import java.io.File
 
 class PrefabsTab(
-    assetsManager: AssetsManager,
-    stringManager: StringManager,
     private val engine: Engine,
+    stringManager: StringManager,
     private val prefabsGenerator: PrefabsGenerator,
     private val logger: LoggerService,
     private val jobSystem: IJobSystem,
-) : AssetBrowserTab(assetsManager, stringManager) {
+) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
     private val thumbnailCache: ThumbnailCache by lazy { ThumbnailCache(engine.renderer.renderResources.renderers.thumbnail) }
 

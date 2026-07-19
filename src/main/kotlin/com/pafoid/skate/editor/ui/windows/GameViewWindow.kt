@@ -1,19 +1,26 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.data.EditorInputState
+import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.systems.ClipboardService
+import com.pafoid.skate.editor.systems.EditorMutationGate
+import com.pafoid.skate.editor.systems.GizmoSystem
+import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -22,25 +29,54 @@ import org.joml.Vector2f
 
 class GameViewWindow(
     private val engine: Engine,
-    private val assetsManager: AssetsManager,
-    private val sceneManager: SceneManager,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
     private val editorState: EditorInputState,
-    private val viewportRenderer: ViewportRenderer,
-    private val viewportToolbar: ViewportToolbar,
     private val viewportOverlays: ViewportOverlays,
+    private val undoRedoManager: UndoRedoManager,
+    private val clipboardService: ClipboardService,
+    private val mutationGate: EditorMutationGate,
+    private val prefabsGenerator: PrefabsGenerator,
+    private val editorCamera: EditorCamera,
+    private val jobSystem: IJobSystem,
+    private val gizmoSystem: GizmoSystem,
+    private val logger: LoggerService,
 ) : IWindow {
+    private val sceneManager = engine.sceneManager
 
+    private val viewportRenderer = ViewportRenderer(engine)
     private val viewportContextMenu = ViewportContextMenu(stringManager, eventSystem)
     private val viewportDragDropHandler = ViewportDragDropHandler(viewportRenderer, eventSystem)
+    private val viewportToolbar = ViewportToolbar(engine, logger, stringManager, eventSystem, gizmoSystem)
+    private val viewportActionHandler = ViewportActionHandler(
+        engine = engine,
+        undoRedoManager = undoRedoManager,
+        eventSystem = eventSystem,
+        logger = logger,
+        clipboardService = clipboardService,
+        mutationGate = mutationGate,
+        prefabsGenerator = prefabsGenerator,
+        editorCamera = editorCamera,
+        jobSystem = jobSystem,
+        viewportRenderer = viewportRenderer,
+        gizmoSystem = gizmoSystem
+    )
 
-    private val gamepadOverlay =
-        GamepadOverlay(assetsManager, engine.inputProvider.gamepadListener, settingsManager, stringManager, eventSystem)
-    private val scenesTabBar by lazy { EditorScenesTabBar(eventSystem, stringManager) }
+    private val gamepadOverlay = GamepadOverlay(
+        engine.assetsManager,
+        engine.inputProvider.gamepadListener,
+        settingsManager,
+        stringManager,
+        eventSystem
+    )
+    private val scenesTabBar = EditorScenesTabBar(eventSystem, stringManager)
 
     private val tempVec2 = ImVec2()
+
+    init {
+        viewportActionHandler.init()
+    }
 
     override fun imgui(pOpen: ImBoolean?) {
         val noTabItem = 1 shl 23

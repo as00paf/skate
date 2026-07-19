@@ -2,7 +2,6 @@ package com.pafoid.skate.editor.search
 
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
-import com.pafoid.skate.engine.ecs.SceneManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.koin.core.component.KoinComponent
@@ -12,9 +11,6 @@ import org.koin.core.component.KoinComponent
  *
  * The SearchEngine manages provider registration, executes searches asynchronously
  * across all providers, and aggregates results with proper scoring and sorting.
- *
- * This class is designed to be used with dependency injection (Koin) and integrates
- * with the engine's [SceneManager] and [com.pafoid.skate.engine.assets.AssetsManager].
  *
  * Usage:
  * ```

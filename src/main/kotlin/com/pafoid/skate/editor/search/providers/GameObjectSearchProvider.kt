@@ -4,13 +4,12 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import org.koin.core.component.KoinComponent
@@ -33,11 +32,11 @@ import org.koin.core.component.KoinComponent
  * - The selected GameObject will be focused in viewport by existing GizmoSystem
  */
 class GameObjectSearchProvider(
-    private val sceneManager: SceneManager,
+    private val engine: Engine,
     private val stringManager: StringManager,
-    private val gameObjectManager: GameObjectManager,
 ) : BaseSearchProvider(), KoinComponent {
-
+    private val sceneManager = engine.sceneManager
+    private val gameObjectManager = engine.gameObjectManager
     override val category: SearchCategory = SearchCategory.GAMEOBJECT
 
     override suspend fun search(query: String): List<SearchResult> {

@@ -9,20 +9,15 @@ import com.pafoid.skate.editor.gizmos.TranslateGizmo
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 
 class GizmoSystem(
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
     private val engine: Engine,
     private val eventSystem: EventSystem,
-    private val systemManager: SystemManager,
     private val editorCamera: EditorCamera,
 ) {
-    private val gameObjectManager: GameObjectManager by lazy {
-        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
-    }
+    private val gameObjectManager = engine.gameObjectManager
 
     var usingGizmo = NONE
 

@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.physics3d.toVector3f
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
+import org.joml.Vector3f
 
 class PhysicsSystem(
     private val nativeLibraryLoader: NativeLibraryLoader,
@@ -94,9 +95,24 @@ class PhysicsSystem(
             } ?: physics3d.add(go) // Add to physics if raw body is null
 
             go.getComponent<PlayerController>()?.let {
-                it.isGrounded = it.checkIfGrounded(physics3d)
+                it.isGrounded = checkIfGrounded(rigidBody)
             }
         }
+    }
+
+    fun checkIfGrounded(body: RigidBody3D): Boolean {
+        val originPosition = body.getWorldPosition()
+
+        // Start the ray from the player's feet (below the collider)
+        val feetY = originPosition.y
+        val rayStart = Vector3f(originPosition.x, feetY, originPosition.z)
+
+        // Ray goes down a small distance to detect ground
+        val rayLength = 0.05f
+        val rayEnd = Vector3f(rayStart.x, rayStart.y - rayLength, rayStart.z)
+
+        // Exclude the player's own physics body from the raycast
+        return physics3d.raycastClosest(rayStart, rayEnd, body) != null
     }
 
     fun toggleDebug() {
