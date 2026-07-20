@@ -6,6 +6,10 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
+import com.pafoid.skate.engine.events.JumpPressed
+import com.pafoid.skate.engine.events.Landing
+import com.pafoid.skate.engine.events.MovementInput
+import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
@@ -23,6 +27,46 @@ class PlayerMotionSystem(
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     private val gameObjects = mutableListOf<GameObject>()
+
+    init {
+        eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
+        eventSystem.subscribe<Landing> { onLanding(it) }
+        eventSystem.subscribe<Takeoff> { onTakeoff(it) }
+        eventSystem.subscribe<MovementInput> { onMovementInput(it) }
+    }
+
+    private fun onJumpPressed(event: JumpPressed) {
+        gameObjects.forEach { go ->
+            go.getComponent<PlayerController>()?.jumpPressed = true
+        }
+    }
+
+    private fun onLanding(event: Landing) {
+        gameObjects.forEach { go ->
+            go.getComponent<PlayerController>()?.let {
+                it.isGrounded = true
+                it.isJumping = false
+            }
+        }
+    }
+
+    private fun onTakeoff(event: Takeoff) {
+        gameObjects.forEach { go ->
+            go.getComponent<PlayerController>()?.let {
+                it.isGrounded = false
+                it.isJumping = true
+            }
+        }
+    }
+
+    private fun onMovementInput(event: MovementInput) {
+        gameObjects.forEach { go ->
+            go.getComponent<PlayerController>()?.let {
+                it.movementDirection.set(event.direction)
+                it.movementMagnitude = event.magnitude
+            }
+        }
+    }
 
     override fun init(scene: Scene) {
         super.init(scene)

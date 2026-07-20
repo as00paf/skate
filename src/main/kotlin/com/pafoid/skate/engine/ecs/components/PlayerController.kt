@@ -1,13 +1,5 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.data.LogLevel
-import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.events.JumpPressed
-import com.pafoid.skate.engine.events.Landing
-import com.pafoid.skate.engine.events.MovementInput
-import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.game.player.MotionData
@@ -16,47 +8,10 @@ import kotlinx.serialization.Transient
 import org.joml.Quaternionf
 import org.joml.Vector2f
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import kotlin.math.atan2
 
-/**
- * Component responsible for applying gameplay physics to the player entity.
- *
- * This component reads gameplay input state from [InputStateComponent] and applies
- * appropriate physics forces (movement, jumping, ground snapping). It does not poll
- * raw hardware inputs directly - that is the responsibility of [com.pafoid.skate.engine.ecs.systems.InputSystem].
- *
- * Subscribes to events for state changes:
- * - [JumpPressed] - to trigger jumping
- * - [Landing] - to handle landing state
- * - [Takeoff] - to handle takeoff state
- * - [MovementInput] - to update movement direction
- *
- * ## Responsibilities
- *
- * - Read movement direction from [InputStateComponent] and apply velocity
- * - Handle jumping based on [JumpPressed] events
- * - Read trick inputs from [InputStateComponent] (flip, kickflip, heelflip, grab, manual)
- * - Apply ground snapping to keep player model aligned with terrain
- * - Manage speed interpolation between walk and run states
- *
- * ## Configuration
- *
- * All thresholds and physics values are configurable via inline fields:
- * - movementThreshold - Minimum input magnitude for movement
- * - sprintThreshold - Input magnitude for auto-sprint
- * - jumpImpulse - Jump force
- * - walkSpeed - Walking speed
- * - runSpeed - Running speed
- * - rotationSpeed - Character rotation speed
- * - takeOffTime - Jump charge time
- */
 @Serializable
-class PlayerController : Component(), KoinComponent {
-
-    private val logger: LoggerService by inject()
-    private val eventSystem: EventSystem by inject()
+class PlayerController : Component() {
 
     // Physics values - can be overridden or loaded from InputSettings
     var jumpImpulse = 300.0f
@@ -68,22 +23,31 @@ class PlayerController : Component(), KoinComponent {
     var takeOffTime = 0.9f
 
     // State
+    @Transient
     var jumpTimer = 0f
+    @Transient
     var lastSpeed = 1f
+    @Transient
     var isGrounded = false
+    @Transient
     var wasGrounded = false
+    @Transient
     var isJumping = false
 
     // Event-driven state
-    private var jumpPressed = false
-    @Transient private var movementDirection: Vector2f = Vector2f(0f, 0f)
-    private var movementMagnitude: Float = 0f
+    @Transient
+    var jumpPressed = false
+    @Transient
+    var movementDirection: Vector2f = Vector2f(0f, 0f)
+    @Transient
+    var movementMagnitude: Float = 0f
 
     // Trick input state
+    //TODO: move
+    @Transient
     private var flipLeftHeld = false
+    @Transient
     private var flipRightHeld = false
-
-    @Transient private val stateManager: PlayerStateManager? by lazy { gameObject.getComponent<PlayerStateManager>() }
 
     // Exposed for PlayerStateManager to read player intent
     @Transient val desiredMoveDirection = Vector3f()
@@ -92,47 +56,6 @@ class PlayerController : Component(), KoinComponent {
 
     @Transient
     var motionData = MotionData()
-
-    override fun init(gameObject: GameObject) {
-        super.init(gameObject)
-        stateManager ?: run { logger.log("Could not find StateManager for ${gameObject.name}", LogLevel.ERROR) }
-
-        eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
-        eventSystem.subscribe<Landing> { onLanding(it) }
-        eventSystem.subscribe<Takeoff> { onTakeoff(it) }
-        eventSystem.subscribe<MovementInput> { onMovementInput(it) }
-    }
-
-    /**
-     * Called when jump button is pressed.
-     */
-    private fun onJumpPressed(event: JumpPressed) {
-        jumpPressed = true
-    }
-
-    /**
-     * Called when landing on the ground.
-     */
-    private fun onLanding(event: Landing) {
-        isGrounded = true
-        isJumping = false
-    }
-
-    /**
-     * Called when taking off from the ground.
-     */
-    private fun onTakeoff(event: Takeoff) {
-        isGrounded = false
-        isJumping = true
-    }
-
-    /**
-     * Called when movement input changes.
-     */
-    private fun onMovementInput(event: MovementInput) {
-        movementDirection.set(event.direction)
-        movementMagnitude = event.magnitude
-    }
 
     override fun update(dt: Float) {
         val inputState = gameObject.getComponent<InputStateComponent>() ?: return
@@ -176,6 +99,7 @@ class PlayerController : Component(), KoinComponent {
      * @param inputState Current input state
      * @param dt Delta time
      */
+    // TODO: move
     private fun handleTrickInputs(inputState: InputStateComponent, dt: Float) {
         // Track flip input state for combination detection
         val flipLeftPressed = inputState.flipLeftPressed
@@ -205,16 +129,16 @@ class PlayerController : Component(), KoinComponent {
 
         // Log trick inputs for debugging
         if (kickflipPressed) {
-            logger.log("Kickflip input detected", LogLevel.INFO)
+            //logger.log("Kickflip input detected", LogLevel.INFO)
         }
         if (heelflipPressed) {
-            logger.log("Heelflip input detected", LogLevel.INFO)
+            //logger.log("Heelflip input detected", LogLevel.INFO)
         }
         if (grabPressed) {
-            logger.log("Grab input detected", LogLevel.INFO)
+            //logger.log("Grab input detected", LogLevel.INFO)
         }
         if (manualPressed) {
-            logger.log("Manual input detected", LogLevel.INFO)
+            //logger.log("Manual input detected", LogLevel.INFO)
         }
     }
 
