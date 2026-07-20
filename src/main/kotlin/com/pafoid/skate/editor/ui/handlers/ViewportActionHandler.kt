@@ -67,8 +67,10 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
@@ -77,9 +79,6 @@ import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction.ResetScene
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
-import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.render.data.LightType
 import com.pafoid.skate.engine.utils.IJobSystem
 import org.joml.Vector3f
@@ -296,7 +295,6 @@ class ViewportActionHandler(
 
     private fun handleRemoveComponent(gameObject: GameObject, componentType: ComponentType) {
         if (mutationGate.blockIfPlaying("remove component")) return
-        if (!hasRemovableComponent(gameObject, componentType)) return
         undoRedoManager.executeCommand(RemoveComponentCommand(gameObject, componentType))
     }
 
@@ -464,17 +462,6 @@ class ViewportActionHandler(
             logger.logEditor("Updated sound for ${gameObject.name}: $soundPath")
         } else {
             logger.logEditor("Added AudioComponent to ${gameObject.name}: $soundPath")
-        }
-    }
-
-    private fun hasRemovableComponent(gameObject: GameObject, componentType: ComponentType): Boolean {
-        return when (componentType) {
-            ComponentType.AUDIO -> gameObject.getComponent<AudioComponent>() != null
-            ComponentType.BOX_COLLIDER_3D -> gameObject.getComponent<BoxCollider3D>() != null
-            ComponentType.CYLINDER_COLLIDER_3D -> gameObject.getComponent<CylinderCollider3D>() != null
-            ComponentType.RENDER -> gameObject.getComponent<RenderComponent>() != null
-            ComponentType.RIGID_BODY_3D -> gameObject.getComponent<RigidBody3D>() != null
-            ComponentType.TRANSFORM -> false
         }
     }
 

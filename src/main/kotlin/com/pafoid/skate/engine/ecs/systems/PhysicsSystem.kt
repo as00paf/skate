@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
@@ -12,7 +13,6 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysics3D
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.physics3d.toVector3f
 import com.pafoid.skate.engine.render.renderer.DebugRenderer

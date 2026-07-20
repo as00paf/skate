@@ -4,9 +4,9 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.BoxCollider3D
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import io.mockk.mockk
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals

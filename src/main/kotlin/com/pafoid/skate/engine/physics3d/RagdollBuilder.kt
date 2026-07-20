@@ -2,8 +2,8 @@ package com.pafoid.skate.engine.physics3d
 
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
+import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
-import com.pafoid.skate.engine.physics3d.components.CapsuleCollider3D
 import com.pafoid.skate.engine.physics3d.constraints.ConeTwistConstraint3D
 import org.joml.Matrix3f
 import org.joml.Vector3f

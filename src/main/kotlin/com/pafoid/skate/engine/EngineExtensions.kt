@@ -1,24 +1,60 @@
 package com.pafoid.skate.engine
 
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.BoxCollider3D
+import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
+import com.pafoid.skate.engine.ecs.components.CustomCollider3D
+import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.InputStateComponent
+import com.pafoid.skate.engine.ecs.components.LightingComponent
+import com.pafoid.skate.engine.ecs.components.ModularTile
+import com.pafoid.skate.engine.ecs.components.NonPickable
+import com.pafoid.skate.engine.ecs.components.PhysicsComponent
+import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.ecs.components.PlayerStateManager
+import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
+import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
+import com.pafoid.skate.engine.ecs.components.SkeletonComponent
+import com.pafoid.skate.engine.ecs.components.SpriteRenderer
+import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import kotlin.reflect.KClass
 
 fun GameObject.getComponent(type: ComponentType) =
     when (type) {
         ComponentType.AUDIO -> getComponent<AudioComponent>()
         ComponentType.BOX_COLLIDER_3D -> getComponent<BoxCollider3D>()
-        ComponentType.CYLINDER_COLLIDER_3D -> getComponent<CylinderCollider3D>()
+        ComponentType.CYLINDER_COLLIDER -> getComponent<CylinderCollider3D>()
         ComponentType.RENDER -> getComponent<RenderComponent>()
         ComponentType.RIGID_BODY_3D -> getComponent<RigidBody3D>()
         ComponentType.TRANSFORM -> getComponent<Transform>()
+        ComponentType.ANIMATOR -> getComponent<Animator>()
+        ComponentType.CAPSULE_COLLIDER -> getComponent<CapsuleCollider3D>()
+        ComponentType.CUSTOM_COLLIDER -> getComponent<CustomCollider3D>()
+        ComponentType.DAY_NIGHT_CYCLE -> getComponent<DayNightCycleComponent>()
+        ComponentType.DIRECTIONAL_LIGHT -> getComponent<DirectionalLightComponent>()
+        ComponentType.ENVIRONMENT -> getComponent<EnvironmentComponent>()
+        ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()
+        ComponentType.LIGHTING -> getComponent<LightingComponent>()
+        ComponentType.MODULAR_TILE -> getComponent<ModularTile>()
+        ComponentType.NON_PICKABLE -> getComponent<NonPickable>()
+        ComponentType.PHYSICS -> getComponent<PhysicsComponent>()
+        ComponentType.PLAYER_CONTROLLER -> getComponent<PlayerController>()
+        ComponentType.PLAYER_STATE_MANAGER -> getComponent<PlayerStateManager>()
+        ComponentType.RAGDOLL -> getComponent<RagdollComponent>()
+        ComponentType.SCENE_PHYSICS -> getComponent<ScenePhysicsComponent>()
+        ComponentType.SKELETON -> getComponent<SkeletonComponent>()
+        ComponentType.SPRITE_RENDERER -> getComponent<SpriteRenderer>()
+        ComponentType.TIME -> getComponent<TimeComponent>()
     }
 
 inline fun <reified T> GameObject.getComponent(): T? {

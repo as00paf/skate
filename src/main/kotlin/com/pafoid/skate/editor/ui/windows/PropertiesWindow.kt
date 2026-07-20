@@ -12,15 +12,10 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
-import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.physics3d.components.CylinderCollider3D
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import imgui.ImGui
 import imgui.flag.ImGuiInputTextFlags
 import imgui.type.ImBoolean
@@ -77,7 +72,7 @@ class PropertiesWindow(
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.properties.remove_component")}")) {
                 // Don't allow removing Transform component (core component)
                 if (component !is Transform) {
-                    componentTypeOf(component)?.let { componentType ->
+                    component.type?.let { componentType ->
                         eventSystem.publish(RemoveComponent(go, componentType))
                     }
                 }
@@ -133,22 +128,11 @@ class PropertiesWindow(
 
     private fun contextualMenu(go: GameObject) {
         if (ImGui.beginPopup("add_component_popup")) {
-            val componentsToAdd = listOf(
-                AudioComponent::class,
-                BoxCollider3D::class,
-                CylinderCollider3D::class,
-                RenderComponent::class,
-                RigidBody3D::class,
-                Transform::class,
-            )
-            componentsToAdd.forEach { type ->
-                val name = type.simpleName ?: ""
-                if (searchString.get().isEmpty() || name.contains(searchString.get(), ignoreCase = true)) {
+            ComponentType.entries.forEach { type ->
+                if (searchString.get().isEmpty() || type.toString().contains(searchString.get(), ignoreCase = true)) {
                     if (go.getComponent(type) == null) {
-                        if (ImGui.menuItem(name)) {
-                            componentTypeOf(type)?.let { componentType ->
-                                eventSystem.publish(AddComponent(go, componentType))
-                            }
+                        if (ImGui.menuItem(type.toString())) {
+                            eventSystem.publish(AddComponent(go, type))
                             ImGui.closeCurrentPopup()
                         }
                     }
@@ -156,25 +140,5 @@ class PropertiesWindow(
             }
             ImGui.endPopup()
         }
-    }
-
-    private fun componentTypeOf(component: Component): ComponentType? = when (component) {
-        is AudioComponent -> ComponentType.AUDIO
-        is BoxCollider3D -> ComponentType.BOX_COLLIDER_3D
-        is CylinderCollider3D -> ComponentType.CYLINDER_COLLIDER_3D
-        is RenderComponent -> ComponentType.RENDER
-        is RigidBody3D -> ComponentType.RIGID_BODY_3D
-        is Transform -> ComponentType.TRANSFORM
-        else -> null
-    }
-
-    private fun componentTypeOf(type: kotlin.reflect.KClass<out Component>): ComponentType? = when (type) {
-        AudioComponent::class -> ComponentType.AUDIO
-        BoxCollider3D::class -> ComponentType.BOX_COLLIDER_3D
-        CylinderCollider3D::class -> ComponentType.CYLINDER_COLLIDER_3D
-        RenderComponent::class -> ComponentType.RENDER
-        RigidBody3D::class -> ComponentType.RIGID_BODY_3D
-        Transform::class -> ComponentType.TRANSFORM
-        else -> null
     }
 }

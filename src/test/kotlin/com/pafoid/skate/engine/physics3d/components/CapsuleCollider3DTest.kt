@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.physics3d.components
 
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape
+import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue

@@ -3,8 +3,8 @@ package com.pafoid.skate.editor.ui.windows.viewport
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.windows.TrickUIWindow
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2

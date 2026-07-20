@@ -3,6 +3,7 @@ package com.pafoid.skate.game.skateboard
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Component
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.events.GroundedStateChanged
@@ -11,7 +12,6 @@ import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.RayTestResult
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Matrix4f

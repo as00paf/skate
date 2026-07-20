@@ -12,11 +12,11 @@ import com.jme3.bullet.collision.shapes.MeshCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.BoxCollider3D
+import com.pafoid.skate.engine.ecs.components.Collider3D
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
-import com.pafoid.skate.engine.physics3d.components.Collider3D
-import com.pafoid.skate.engine.physics3d.components.RigidBody3D
 import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.EngineStats

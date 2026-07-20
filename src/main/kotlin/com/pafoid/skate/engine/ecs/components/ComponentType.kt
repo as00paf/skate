@@ -1,11 +1,57 @@
 package com.pafoid.skate.engine.ecs.components
 
 enum class ComponentType {
-    // TODO: add missing or remove if not needed
+    ANIMATOR,
     AUDIO,
     BOX_COLLIDER_3D,
-    CYLINDER_COLLIDER_3D,
+    CAPSULE_COLLIDER,
+    CUSTOM_COLLIDER,
+    CYLINDER_COLLIDER,
+    DAY_NIGHT_CYCLE,
+    DIRECTIONAL_LIGHT,
+    ENVIRONMENT,
+    INPUT_STATE,
+    LIGHTING,
+    MODULAR_TILE,
+    NON_PICKABLE,
+    PHYSICS,
+    PLAYER_CONTROLLER,
+    PLAYER_STATE_MANAGER,
     RENDER,
     RIGID_BODY_3D,
-    TRANSFORM,
+    RAGDOLL,
+    SCENE_PHYSICS,
+    SKELETON,
+    SPRITE_RENDERER,
+    TIME,
+    TRANSFORM;
+
+    fun instantiate(): Component? {
+        return when (this) {
+            ANIMATOR -> Animator()
+            AUDIO -> AudioComponent()
+            BOX_COLLIDER_3D -> BoxCollider3D()
+            CAPSULE_COLLIDER -> CapsuleCollider3D()
+            CUSTOM_COLLIDER -> CustomCollider3D()
+            CYLINDER_COLLIDER -> CylinderCollider3D()
+            DAY_NIGHT_CYCLE -> DayNightCycleComponent()
+            DIRECTIONAL_LIGHT -> DirectionalLightComponent()
+            ENVIRONMENT -> EnvironmentComponent()
+            INPUT_STATE -> InputStateComponent()
+            LIGHTING -> LightingComponent()
+            MODULAR_TILE -> ModularTile()
+            NON_PICKABLE -> NonPickable()
+            PHYSICS -> PhysicsComponent()
+            PLAYER_CONTROLLER -> PlayerController()
+            PLAYER_STATE_MANAGER -> PlayerStateManager()
+            RENDER -> RenderComponent()
+            RIGID_BODY_3D -> RigidBody3D()
+            RAGDOLL -> RagdollComponent()
+            SCENE_PHYSICS -> ScenePhysicsComponent()
+            SKELETON -> null
+            SPRITE_RENDERER -> SpriteRenderer()
+            TIME -> TimeComponent()
+            TRANSFORM -> Transform()
+        }
+    }
 }
