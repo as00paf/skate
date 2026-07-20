@@ -22,8 +22,6 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.TrickAnalyzer
-import com.pafoid.skate.engine.ecs.components.TrickDetector
 import com.pafoid.skate.engine.physics3d.components.BoxCollider3D
 import com.pafoid.skate.engine.physics3d.components.CapsuleCollider3D
 import com.pafoid.skate.engine.physics3d.components.CustomCollider3D
@@ -82,8 +80,6 @@ class Serializer {
             subclass(CustomCollider3D::class)
             subclass(CapsuleCollider3D::class)
             subclass(SkateboardPhysics::class)
-            subclass(TrickDetector::class)
-            subclass(TrickAnalyzer::class)
             subclass(PlayerController::class)
             subclass(PlayerStateManager::class)
         }

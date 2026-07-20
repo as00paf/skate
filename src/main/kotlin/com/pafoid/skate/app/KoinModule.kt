@@ -62,7 +62,6 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.utils.DefaultJobSystem
 import com.pafoid.skate.engine.utils.IJobSystem
-import com.pafoid.skate.game.trick.TrickManager
 import org.joml.Vector3f
 import org.koin.dsl.module
 
@@ -77,7 +76,6 @@ val editorModule = module {
     single { UndoRedoManager(get(), get()) }
     single { SettingsManager(get(), get(), get()) }
     single { DisplayService() }
-    single { TrickManager() }
 
     single(createdAtStart = true) { SceneActionHandler(get(), get(), get(), get(), get(), get()).also { it.init() } }
     single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get(), get(), get()) }

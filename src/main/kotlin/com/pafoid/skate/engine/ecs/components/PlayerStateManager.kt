@@ -59,11 +59,6 @@ class PlayerStateManager : Component() {
     fun transitionToState(newState: PlayerState) {
         if (currentState == newState) return
 
-        // TODO: move this to appropriate place
-        /*logger.log(
-            "Transitioning from ${currentState::class.simpleName} to ${newState::class.simpleName}",
-            LogLevel.ACTION
-        )*/
         currentState = newState
     }
 
