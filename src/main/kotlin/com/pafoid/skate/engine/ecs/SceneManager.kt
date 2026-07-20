@@ -68,7 +68,7 @@ class SceneManager(
 
     private fun resolveObjectReferences(obj: GameObject) {
         obj.getComponent<RenderComponent>()?.resolveModelFromPath(assetsManager)
-        obj.getComponent<Animator>()?.resolveAnimationsFromPaths(assetsManager)
+        obj.getComponent<Animator>()?.resolveAnimationsFromPaths(assetsManager, logger)
 
         obj.children.forEach { child ->
             resolveObjectReferences(child)

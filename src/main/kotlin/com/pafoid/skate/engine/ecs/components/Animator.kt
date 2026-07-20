@@ -10,8 +10,6 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.player.PlayerState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.io.File
 
 /**
@@ -26,10 +24,7 @@ import java.io.File
  *
  */
 @Serializable
-class Animator : Component(), KoinComponent { //TODO: remove koin component
-
-    @Transient
-    private val logger: LoggerService by inject()
+class Animator : Component() {
 
     @Transient
     var currentAnimation: Animation? = null
@@ -55,6 +50,9 @@ class Animator : Component(), KoinComponent { //TODO: remove koin component
 
     val animations: MutableList<Animation> = mutableListOf()
 
+    // Track current animation state to avoid redundant play() calls
+    private var currentState: AnimationState = AnimationState.IDLE
+
     val normalizedTime: Float
         get() {
             val anim = currentAnimation ?: return 0f
@@ -78,7 +76,7 @@ class Animator : Component(), KoinComponent { //TODO: remove koin component
      * Rebuilds the animations list from serialized file paths.
      * Called by SceneSerializer after scene deserialization.
      */
-    fun resolveAnimationsFromPaths(assetsManager: AssetsManager) {
+    fun resolveAnimationsFromPaths(assetsManager: AssetsManager, logger: LoggerService) {
         val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return
         val animationPaths = animations.map { it.path }
         animations.clear()
@@ -124,9 +122,6 @@ class Animator : Component(), KoinComponent { //TODO: remove koin component
         val anim = animations.find { it.name.contains(name, ignoreCase = true) } ?: return
         play(anim, blend)
     }
-
-    // Track current animation state to avoid redundant play() calls
-    private var currentState: AnimationState = AnimationState.IDLE
 
     enum class AnimationState {
         IDLE,
@@ -209,41 +204,21 @@ class Animator : Component(), KoinComponent { //TODO: remove koin component
         if (missingBones.isNotEmpty()) {
             // Check if the missing bones are critical or just extra detail bones
             val criticalBones = missingBones.filter { isCriticalBone(it) }
-            val optionalBones = missingBones.filter { !isCriticalBone(it) }
 
             if (criticalBones.isNotEmpty()) {
-                logger.log(
-                    "Animation '${animation.name}' targets critical bones that do not exist in the skeleton: ${
-                        criticalBones.joinToString(
-                            ", "
-                        )
-                    }.", LogLevel.ERROR
-                )
                 return false
-            } else if (optionalBones.isNotEmpty()) {
-                logger.log(
-                    "Animation '${animation.name}' targets optional bones that do not exist in the skeleton: ${
-                        optionalBones.joinToString(
-                            ", "
-                        )
-                    }. Animation may have reduced fidelity.", LogLevel.WARN
-                )
-                // Still return true as these are optional bones
             }
         }
 
         // Check if the skeleton has significantly more bones than the animation targets
-        val skeletonBoneNames = skeleton.getAllBones().map { it.name }.toSet()
-        val animationBoneNames = animation.channels.map { BoneNameMapper.map(it.targetNodeName) }.toSet()
-        val extraSkeletonBones = skeletonBoneNames - animationBoneNames
+        //val skeletonBoneNames = skeleton.getAllBones().map { it.name }.toSet()
+        //val animationBoneNames = animation.channels.map { BoneNameMapper.map(it.targetNodeName) }.toSet()
+        //val extraSkeletonBones = skeletonBoneNames - animationBoneNames
 
         // Only warn if there are many extra bones (indicating a major topology mismatch)
-        if (extraSkeletonBones.size > skeletonBoneNames.size * 0.5) { // More than 50% of bones unused
-            logger.log(
-                "Skeleton has many bones not targeted by animation '${animation.name}'. This may indicate a topology mismatch.",
-                LogLevel.WARN
-            )
-        }
+        //if (extraSkeletonBones.size > skeletonBoneNames.size * 0.5) { // More than 50% of bones unused
+        //Skeleton has many bones not targeted by animation. This may indicate a topology mismatch.
+        //}
 
         return true
     }
