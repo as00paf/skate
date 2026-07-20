@@ -66,7 +66,7 @@ class EnvironmentSystem : System(priority = ExecutionPriority.EARLY) {
         getOrCreateEnvironmentComponent().update(dt)
     }
 
-    override fun invalidateCaches() {
+    override fun invalidateCache() {
         environmentComponent = null
     }
 }

@@ -139,10 +139,10 @@ class SystemManager {
 
     fun resetSystemCaches() {
         _systems.forEach { system ->
-            system.invalidateCaches()
+            system.invalidateCache()
         }
         pendingSystems.forEach { system ->
-            system.invalidateCaches()
+            system.invalidateCache()
         }
     }
 

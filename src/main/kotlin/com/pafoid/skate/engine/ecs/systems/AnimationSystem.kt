@@ -30,8 +30,7 @@ class AnimationSystem(
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     // Cached list of GameObjects eligible for animation updates
-    val animatedObjects = mutableListOf<GameObject>()
-    var cacheDirty = false
+    val cache = mutableListOf<GameObject>()
 
     init {
         eventSystem.subscribe<MovementInput> { onMovementInput(it) }
@@ -41,7 +40,7 @@ class AnimationSystem(
     }
 
     private fun onMovementInput(event: MovementInput) {
-        animatedObjects.forEach { go ->
+        cache.forEach { go ->
             go.getComponent<Animator>()?.let {
                 with(it) {
                     isMoving = event.magnitude > 0.15f
@@ -52,7 +51,7 @@ class AnimationSystem(
     }
 
     private fun onJumpPressed(event: JumpPressed) {
-        animatedObjects.forEach { go ->
+        cache.forEach { go ->
             go.getComponent<Animator>()?.let {
                 with(it) {
                     if (isGrounded) {
@@ -66,7 +65,7 @@ class AnimationSystem(
     }
 
     private fun onLanding(event: Landing) {
-        animatedObjects.forEach { go ->
+        cache.forEach { go ->
             go.getComponent<Animator>()?.let {
                 with(it) {
                     isInAir = false
@@ -78,7 +77,7 @@ class AnimationSystem(
     }
 
     private fun onTakeoff(event: Takeoff) {
-        animatedObjects.forEach { go ->
+        cache.forEach { go ->
             go.getComponent<Animator>()?.let {
                 with(it) {
                     isInAir = true
@@ -100,16 +99,11 @@ class AnimationSystem(
         cacheDirty = true
     }
 
-    override fun invalidateCaches() {
-        animatedObjects.clear()
-        cacheDirty = true
-    }
-
     override fun update(dt: Float) {
         if (!scene.isRunning) return
         if (cacheDirty) rebuildCache()
 
-        for (go in animatedObjects) {
+        for (go in cache) {
             val animator = go.getComponent<Animator>()
             val skeletonComponent = go.getComponent<SkeletonComponent>()
 
@@ -122,34 +116,12 @@ class AnimationSystem(
         }
     }
 
-    /**
-     * Rebuilds the cache of animated GameObjects.
-     * This is an O(n) operation but only called when the cache is dirty.
-     */
-    private fun rebuildCache() {
-        animatedObjects.clear()
-
-        for (go in scene.gameObjects) {
-            if (go.hasComponent<SkeletonComponent>() && go.hasComponent<Animator>()) {
-                animatedObjects.add(go)
-            }
-        }
-    }
-
-    /**
-     * Invalidates the animated objects cache, forcing a rebuild on next update.
-     * Call this when GameObjects or components are added/removed.
-     */
-    fun invalidateCache() {
-        cacheDirty = true
-    }
-
     private fun updateAnimation(
         animator: Animator,
         skeletonComponent: SkeletonComponent,
         dt: Float
     ) {
-        val pose = skeletonComponent.pose ?: return
+        val pose = skeletonComponent.pose
         val skeleton = pose.skeleton
 
         if (animator.isPlaying) {
@@ -235,5 +207,19 @@ class AnimationSystem(
         s1.lerp(s2, alpha)
 
         out.translationRotateScale(t1, r1, s1)
+    }
+
+    override fun invalidateCache() {
+        cache.clear()
+        cacheDirty = true
+    }
+
+    override fun rebuildCache() {
+        cache.clear()
+        scene.gameObjects.forEach { go ->
+            if (go.hasComponent<SkeletonComponent>() && go.hasComponent<Animator>()) {
+                cache.add(go)
+            }
+        }
     }
 }

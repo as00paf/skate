@@ -25,7 +25,7 @@ var globalSpeedMultiplier: Float = 1.0f
  * - Cache statistics
  */
 fun AnimationSystem.imgui(stringManager: StringManager) {
-    ImGui.text(stringManager.getString("lbl.animation_system.animated_objects", animatedObjects.size))
+    ImGui.text(stringManager.getString("lbl.animation_system.animated_objects", cache.size))
     ImGui.text(stringManager.getString("lbl.animation_system.cache_dirty", cacheDirty))
 
     ImGui.separator()
@@ -48,7 +48,7 @@ fun AnimationSystem.imgui(stringManager: StringManager) {
     ImGui.text(stringManager.getString("lbl.animation_system.per_object_state"))
 
     // Show each animated object's state
-    animatedObjects.forEach { go ->
+    cache.forEach { go ->
         val animator = go.getComponent<Animator>()
         val skeletonComponent = go.getComponent<SkeletonComponent>()
 
@@ -79,7 +79,7 @@ fun AnimationSystem.imgui(stringManager: StringManager) {
         }
     }
 
-    if (animatedObjects.isEmpty()) {
+    if (cache.isEmpty()) {
         ImGui.text(stringManager.getString("lbl.animation_system.no_objects"))
     }
 }

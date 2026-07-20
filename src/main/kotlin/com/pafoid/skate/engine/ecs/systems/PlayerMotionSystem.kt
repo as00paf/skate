@@ -26,7 +26,7 @@ class PlayerMotionSystem(
     private val logger: LoggerService
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
-    private val gameObjects = mutableListOf<GameObject>()
+    private val cache = mutableListOf<GameObject>()
 
     init {
         eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
@@ -36,13 +36,13 @@ class PlayerMotionSystem(
     }
 
     private fun onJumpPressed(event: JumpPressed) {
-        gameObjects.forEach { go ->
+        cache.forEach { go ->
             go.getComponent<PlayerController>()?.jumpPressed = true
         }
     }
 
     private fun onLanding(event: Landing) {
-        gameObjects.forEach { go ->
+        cache.forEach { go ->
             go.getComponent<PlayerController>()?.let {
                 it.isGrounded = true
                 it.isJumping = false
@@ -51,7 +51,7 @@ class PlayerMotionSystem(
     }
 
     private fun onTakeoff(event: Takeoff) {
-        gameObjects.forEach { go ->
+        cache.forEach { go ->
             go.getComponent<PlayerController>()?.let {
                 it.isGrounded = false
                 it.isJumping = true
@@ -60,7 +60,7 @@ class PlayerMotionSystem(
     }
 
     private fun onMovementInput(event: MovementInput) {
-        gameObjects.forEach { go ->
+        cache.forEach { go ->
             go.getComponent<PlayerController>()?.let {
                 it.movementDirection.set(event.direction)
                 it.movementMagnitude = event.magnitude
@@ -70,18 +70,16 @@ class PlayerMotionSystem(
 
     override fun init(scene: Scene) {
         super.init(scene)
-        gameObjects.clear()
-        gameObjects.addAll(
-            scene.gameObjects.filter { it.hasComponent<PlayerController>() && it.hasComponent<IPhysicsBody3D>() }
-        )
+        invalidateCache()
+        rebuildCache()
         // TODO: listen for component change action to update cache
     }
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        scene.gameObjects
-            .filter { it.hasComponent<PlayerController>() && it.hasComponent<IPhysicsBody3D>() }
-            .forEach {
+        if (cacheDirty) rebuildCache()
+
+        cache.forEach {
             val body = it.getComponent<IPhysicsBody3D>()
             body?.let { body -> applyMotion(it, body) }
         }
@@ -142,5 +140,17 @@ class PlayerMotionSystem(
         desiredMoveDirection.add(rightPart)
 
         return desiredMoveDirection.normalize()
+    }
+
+    override fun invalidateCache() {
+        cache.clear()
+        cacheDirty = true
+    }
+
+    override fun rebuildCache() {
+        cache.addAll(
+            scene.gameObjects.filter { it.hasComponent<PlayerController>() && it.hasComponent<IPhysicsBody3D>() }
+        )
+        cacheDirty = false
     }
 }

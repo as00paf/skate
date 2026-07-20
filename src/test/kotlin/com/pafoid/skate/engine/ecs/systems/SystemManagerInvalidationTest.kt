@@ -32,7 +32,7 @@ class SystemManagerInvalidationTest {
             cacheDirty = false
         }
 
-        override fun invalidateCaches() {
+        override fun invalidateCache() {
             cacheDirty = true
         }
 

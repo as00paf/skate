@@ -17,6 +17,7 @@ abstract class System(
     val priority: ExecutionPriority = ExecutionPriority.DEFAULT
 ) {
     var enabled = true
+    var cacheDirty = false
 
     /**
      * Display name for this system, used in UI (e.g., SystemsWindow).
@@ -53,5 +54,7 @@ abstract class System(
      * Subsystems that cache GameObject eligibility should clear/rebuild their cache from source data.
      * Default implementation does nothing.
      */
-    open fun invalidateCaches() {}// TODO :remove?
+    open fun invalidateCache() {}
+
+    open fun rebuildCache() {}
 }

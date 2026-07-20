@@ -28,8 +28,7 @@ class PhysicsSystem(
         debugRenderer = debugRenderer
     )
 
-    private val rigidBodies = mutableListOf<GameObject>()
-    private var cacheDirty = true
+    private val cache = mutableListOf<GameObject>()
 
     override fun init(scene: Scene) {
         super.init(scene)
@@ -48,11 +47,6 @@ class PhysicsSystem(
         }
     }
 
-    override fun invalidateCaches() {
-        rigidBodies.clear()
-        cacheDirty = true
-    }
-
     override fun update(dt: Float) {
         if (!scene.isRunning) return
         if (cacheDirty) rebuildCache()
@@ -68,11 +62,11 @@ class PhysicsSystem(
         }
 
         // Remove cached items no longer in scene
-        val toRemove = rigidBodies.filter { !scene.gameObjects.filter { it.hasComponent<RigidBody3D>() }.contains(it) }
+        val toRemove = cache.filter { !scene.gameObjects.filter { it.hasComponent<RigidBody3D>() }.contains(it) }
         toRemove.forEach { physics3d.remove(it) }
-        rigidBodies.removeAll(toRemove)
+        cache.removeAll(toRemove)
 
-        for (go in rigidBodies) {
+        for (go in cache) {
             val rigidBody = go.getComponent<RigidBody3D>() ?: continue
 
             var physicsComponent = go.getComponent<PhysicsComponent>()
@@ -121,12 +115,16 @@ class PhysicsSystem(
 
     fun isDebugEnabled(): Boolean = physics3d.debugEnabled
 
-    private fun rebuildCache() {
-        rigidBodies.clear()
+    override fun invalidateCache() {
+        cache.clear()
+        cacheDirty = true
+    }
 
+    override fun rebuildCache() {
+        cache.clear()
         for (go in scene.gameObjects) {
             if (go.hasComponent<RigidBody3D>()) {
-                rigidBodies.add(go)
+                cache.add(go)
             }
         }
     }

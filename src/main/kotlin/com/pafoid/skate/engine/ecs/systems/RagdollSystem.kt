@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.jme3.math.Quaternion
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
@@ -8,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.utils.SkeletonMath
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -26,14 +28,17 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
     private val tempQuatJoml = Quaternionf()
     private val tempMat = Matrix4f()
 
+    private val cache = mutableListOf<GameObject>()
+
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        scene.gameObjects.forEach { go ->
+        if (cacheDirty) rebuildCache()
+        cache.forEach { go ->
             val ragdoll = go.getComponent<RagdollComponent>() ?: return@forEach
             val skeletonComp = go.getComponent<SkeletonComponent>() ?: return@forEach
             val goTransform = go.getComponent<Transform>() ?: return@forEach
 
-            val pose = skeletonComp.pose ?: return@forEach
+            val pose = skeletonComp.pose
             val skeleton = pose.skeleton
 
             when (ragdoll.state) {
@@ -114,6 +119,20 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
                     // Simplified: just fall back to ANIMATED for now.
                     ragdoll.state = RagdollState.ANIMATED
                 }
+            }
+        }
+    }
+
+    override fun invalidateCache() {
+        cache.clear()
+        cacheDirty = true
+    }
+
+    override fun rebuildCache() {
+        cache.clear()
+        scene.gameObjects.forEach { go ->
+            if (go.hasComponent<SkeletonComponent>() && go.hasComponent<RagdollComponent>() && go.hasComponent<Transform>()) {
+                cache.add(go)
             }
         }
     }
