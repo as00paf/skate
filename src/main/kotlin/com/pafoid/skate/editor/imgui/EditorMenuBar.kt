@@ -6,6 +6,7 @@ import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
@@ -16,22 +17,28 @@ import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.SceneManager
 import imgui.ImGui
 import imgui.ImGui.menuItem
 import imgui.internal.ImGui.image
 
 class EditorMenuBar(
-    private val fileMenu: FileMenuBuilder,
-    private val editMenu: EditMenuBuilder,
-    private val settingsMenu: SettingsMenuBuilder,
-    private val viewMenu: ViewMenuBuilder,
-    private val windowControls: WindowControlsRenderer,
     private val stringManager: StringManager,
     private val assetsManager: AssetsManager,
     private val projectManager: ProjectManager,
+    private val sceneManager: SceneManager,
+    private val settingsManager: SettingsManager,
+    private val windowRegistry: WindowRegistry,
     private val eventSystem: EventSystem,
 ) {
     private var appIconTexId = -1
+
+    private val fileMenu = FileMenuBuilder(stringManager, eventSystem)
+    private val editMenu = EditMenuBuilder(stringManager, sceneManager, eventSystem)
+    private val settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem)
+    private val viewMenu = ViewMenuBuilder(stringManager, windowRegistry)
+    private val windowControls = WindowControlsRenderer(eventSystem, stringManager)
+
 
     init {
         loadAppIconTexture()

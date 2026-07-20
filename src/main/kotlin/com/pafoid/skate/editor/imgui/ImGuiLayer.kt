@@ -5,11 +5,6 @@ import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
-import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
-import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
-import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
-import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
-import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
@@ -78,15 +73,13 @@ class ImGuiLayer(
     private var layoutInitialized = false
 
     private val menuBar: EditorMenuBar = EditorMenuBar(
-        fileMenu = FileMenuBuilder(stringManager, eventSystem),
-        editMenu = EditMenuBuilder(stringManager, engine.sceneManager, eventSystem),
-        settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem),
-        viewMenu = ViewMenuBuilder(stringManager, windowRegistry),
-        windowControls = WindowControlsRenderer(eventSystem, stringManager),
         stringManager = stringManager,
         projectManager = projectManager,
         assetsManager = engine.assetsManager,
-        eventSystem = eventSystem
+        eventSystem = eventSystem,
+        sceneManager = engine.sceneManager,
+        settingsManager = settingsManager,
+        windowRegistry = windowRegistry
     )
     private val statusBar: EditorStatusBar = EditorStatusBar(stringManager)
     private val windowManager = WindowManager(stringManager, windowRegistry, eventSystem)

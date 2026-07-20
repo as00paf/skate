@@ -28,10 +28,6 @@ import com.pafoid.skate.editor.ui.handlers.EnvironmentActionHandler
 import com.pafoid.skate.editor.ui.handlers.ProjectActionHandler
 import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
 import com.pafoid.skate.editor.ui.handlers.UndoRedoActionHandler
-import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
-import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
-import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
-import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
@@ -147,12 +143,6 @@ val editorModule = module {
     // Window registry
     single { WindowRegistry(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get()) }
-
-    // Menu
-    single { EditMenuBuilder(get(), get(), get()) }
-    single { ViewMenuBuilder(get(), get()) }
-    single { SettingsMenuBuilder(get(), get(), get()) }
-    single { WindowControlsRenderer(get(), get()) }
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get()) }
