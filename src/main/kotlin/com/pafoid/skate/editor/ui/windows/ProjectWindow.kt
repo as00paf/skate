@@ -12,6 +12,7 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.FileSystemScanner
 import com.pafoid.skate.editor.systems.FileTypeResolver
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
@@ -57,9 +58,9 @@ class ProjectWindow(
     private val logger: LoggerService,
     private val projectManager: ProjectManager,
     private val eventSystem: EventSystem,
-    private val fileSystemScanner: FileSystemScanner,
+    private val serializer: Serializer
 ) : IWindow {
-
+    private val fileSystemScanner = FileSystemScanner(projectManager, logger, serializer)
     private val searchText = ImString("", 256)
     private var treeCache: List<FileSystemItem> = emptyList()
     private var needsRefresh = true

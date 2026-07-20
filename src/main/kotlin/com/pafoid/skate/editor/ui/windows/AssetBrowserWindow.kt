@@ -1,22 +1,36 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.systems.PrefabsGenerator
+import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
+import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import imgui.type.ImBoolean
 import imgui.type.ImString
 
 class AssetBrowserWindow(
+    private val engine: Engine,
     private val stringManager: StringManager,
-    private val animationsTab: AnimationsTab,
-    private val texturesTab: TexturesTab,
-    private val prefabsTab: PrefabsTab,
-    private val soundsTab: SoundsTab,
+    private val prefabsGenerator: PrefabsGenerator,
+    private val eventSystem: EventSystem,
+    private val undoRedoManager: UndoRedoManager,
+    private val jobSystem: IJobSystem,
+    private val logger: LoggerService
 ) : IWindow {
+
+    private val animationsTab: AnimationsTab = AnimationsTab(engine, stringManager, jobSystem, logger)
+    private val texturesTab: TexturesTab =
+        TexturesTab(stringManager, engine, logger, jobSystem, undoRedoManager, eventSystem)
+    private val prefabsTab: PrefabsTab = PrefabsTab(engine, stringManager, prefabsGenerator, logger, jobSystem)
+    private val soundsTab: SoundsTab = SoundsTab(engine, stringManager, jobSystem, logger)
 
     private var searchText = ImString(256)
 

@@ -33,7 +33,6 @@ class GameViewWindow(
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
     private val editorState: EditorInputState,
-    private val viewportOverlays: ViewportOverlays,
     private val undoRedoManager: UndoRedoManager,
     private val clipboardService: ClipboardService,
     private val mutationGate: EditorMutationGate,
@@ -44,6 +43,8 @@ class GameViewWindow(
     private val logger: LoggerService,
 ) : IWindow {
     private val sceneManager = engine.sceneManager
+
+    private val viewportOverlays = ViewportOverlays(TrickUIWindow(eventSystem), settingsManager)
 
     private val viewportRenderer = ViewportRenderer(engine)
     private val viewportContextMenu = ViewportContextMenu(stringManager, eventSystem)

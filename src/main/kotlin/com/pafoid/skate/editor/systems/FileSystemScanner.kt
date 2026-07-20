@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.FileSystemItem
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import java.io.File
@@ -17,7 +18,7 @@ import java.io.File
 class FileSystemScanner(
     private val projectManager: ProjectManager,
     private val logger: LoggerService,
-    private val serializer: com.pafoid.skate.engine.assets.serialization.Serializer
+    private val serializer: Serializer
 ) {
     private val favoritesFile: File?
         get() = projectManager.getProjectDirectory()?.let { File(it, ".favorites.json") }

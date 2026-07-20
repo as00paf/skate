@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.editor.search.data.SearchResultWithCategory
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.history.SearchHistoryEntry
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
@@ -21,7 +22,6 @@ import imgui.type.ImBoolean
 import imgui.type.ImString
 import kotlinx.coroutines.Job
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Search Everywhere overlay window providing global search across all editor resources.
@@ -38,11 +38,14 @@ import org.koin.core.component.inject
  * - Select with Enter or click
  * - Close with Esc or X button
  */
-class SearchEverywhereWindow(private val searchHistory: SearchHistory) : IWindow, KoinComponent {
+class SearchEverywhereWindow(
+    private val stringManager: StringManager,
+    private val jobSystem: IJobSystem,
+    serializer: Serializer
+) : IWindow, KoinComponent {
 
-    private val searchEngine: SearchEngine by inject()
-    private val stringManager: StringManager by inject()
-    private val jobSystem: IJobSystem by inject()
+    private val searchHistory: SearchHistory = SearchHistory(serializer = serializer)
+    private val searchEngine: SearchEngine = SearchEngine()
 
     private var isOpen = false
     private val searchQuery = ImString(256)

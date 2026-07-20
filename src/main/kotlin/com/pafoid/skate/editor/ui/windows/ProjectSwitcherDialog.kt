@@ -10,7 +10,6 @@ import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.RecentProjectDisplayInfo
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -19,15 +18,13 @@ import imgui.flag.ImGuiMouseCursor
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.io.File
 
-class ProjectSwitcherDialog : IWindow, KoinComponent {
-
-    private val projectManager: ProjectManager by inject()
-    private val logger: LoggerService by inject()
-    private val stringManager: StringManager by inject()
-    private val eventSystem: EventSystem by inject()
+class ProjectSwitcherDialog(
+    private val projectManager: ProjectManager,
+    private val stringManager: StringManager,
+    private val eventSystem: EventSystem,
+) : IWindow, KoinComponent {
 
     private fun renderRecentProjectItem(project: RecentProjectDisplayInfo) {
         ImGui.pushID(project.path)
