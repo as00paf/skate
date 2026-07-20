@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Component.Companion.getCachedFields
@@ -11,7 +12,7 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import java.lang.reflect.Modifier
 
-fun Component.imgui(stringManager: StringManager) {
+fun Component.imgui(stringManager: StringManager, logger: LoggerService) {
     try {
         ImGui.pushID(this.javaClass.simpleName)
         val fields = getCachedFields(this.javaClass)

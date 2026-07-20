@@ -91,7 +91,7 @@ val editorModule = module {
     // Editor windows
     single { ProjectWizardWindow(get(), get(), get(), get()) }
     single { SceneHierarchyWindow(get(), get(), get(), get(), get()) }
-    single { PropertiesWindow(get(), get(), get()) }
+    single { PropertiesWindow(get(), get(), get(), get()) }
     single {
         GameViewWindow(
             get(),

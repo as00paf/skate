@@ -1,10 +1,16 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
+import com.pafoid.skate.engine.events.JumpPressed
+import com.pafoid.skate.engine.events.Landing
+import com.pafoid.skate.engine.events.MovementInput
+import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.utils.SkeletonMath
@@ -18,14 +24,69 @@ import org.joml.Vector3f
  * Maintains a cached list of eligible GameObjects (those with both SkeletonComponent
  * and Animator) to avoid O(n) filtering every frame.
  *
- * @param stringManager String manager abstraction for localized UI strings
  */
 class AnimationSystem(
+    private val eventSystem: EventSystem, private val logger: LoggerService
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     // Cached list of GameObjects eligible for animation updates
     val animatedObjects = mutableListOf<GameObject>()
     var cacheDirty = false
+
+    init {
+        eventSystem.subscribe<MovementInput> { onMovementInput(it) }
+        eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
+        eventSystem.subscribe<Landing> { onLanding(it) }
+        eventSystem.subscribe<Takeoff> { onTakeoff(it) }
+    }
+
+    private fun onMovementInput(event: MovementInput) {
+        animatedObjects.forEach { go ->
+            go.getComponent<Animator>()?.let {
+                with(it) {
+                    isMoving = event.magnitude > 0.15f
+                    isSprinting = event.magnitude > 0.65f
+                }
+            }
+        }
+    }
+
+    private fun onJumpPressed(event: JumpPressed) {
+        animatedObjects.forEach { go ->
+            go.getComponent<Animator>()?.let {
+                with(it) {
+                    if (isGrounded) {
+                        play("jump", 0.2f)
+                        isInAir = true
+                        isGrounded = false
+                    }
+                }
+            }
+        }
+    }
+
+    private fun onLanding(event: Landing) {
+        animatedObjects.forEach { go ->
+            go.getComponent<Animator>()?.let {
+                with(it) {
+                    isInAir = false
+                    isGrounded = true
+                    play("hard landing")
+                }
+            }
+        }
+    }
+
+    private fun onTakeoff(event: Takeoff) {
+        animatedObjects.forEach { go ->
+            go.getComponent<Animator>()?.let {
+                with(it) {
+                    isInAir = true
+                    isGrounded = false
+                }
+            }
+        }
+    }
 
     override fun init(scene: Scene) {
         super.init(scene)

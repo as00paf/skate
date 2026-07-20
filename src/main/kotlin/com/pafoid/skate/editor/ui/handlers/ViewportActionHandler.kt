@@ -20,13 +20,13 @@ import com.pafoid.skate.editor.commands.scene.SpawnPrefabCommand
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.ViewportAction.AddComponent
+import com.pafoid.skate.editor.events.ViewportAction.ApplyAnimation
 import com.pafoid.skate.editor.events.ViewportAction.CreateCamera
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmptyChild
 import com.pafoid.skate.editor.events.ViewportAction.CreateLight
 import com.pafoid.skate.editor.events.ViewportAction.CreatePrimitive
 import com.pafoid.skate.editor.events.ViewportAction.Delete
-import com.pafoid.skate.editor.events.ViewportAction.DropAnimation
 import com.pafoid.skate.editor.events.ViewportAction.DropSound
 import com.pafoid.skate.editor.events.ViewportAction.DropTexture
 import com.pafoid.skate.editor.events.ViewportAction.Duplicate
@@ -137,8 +137,8 @@ class ViewportActionHandler(
         eventSystem.subscribe<DropSound> { event ->
             handleDropSound(event.soundPath, event.targetObject)
         }
-        eventSystem.subscribe<DropAnimation> { event ->
-            handleDropAnimation(event.animation, event.targetObject)
+        eventSystem.subscribe<ApplyAnimation> { event ->
+            handleApplyAnimation(event.animation, event.targetObject)
         }
 
         eventSystem.subscribe<Duplicate> { event ->
@@ -258,7 +258,7 @@ class ViewportActionHandler(
         addSoundToObject(targetObject, soundPath)
     }
 
-    private fun handleDropAnimation(animation: Animation, targetObject: GameObject) {
+    private fun handleApplyAnimation(animation: Animation, targetObject: GameObject) {
         applyAnimationToObject(targetObject, animation)
     }
 
@@ -483,7 +483,7 @@ class ViewportActionHandler(
 
         if (animator != null) {
             undoRedoManager.executeCommand(
-                ApplyAnimationCommand(gameObject, animation, eventSystem)
+                ApplyAnimationCommand(gameObject, animation, logger)
             )
             logger.logEditor("Added animation to ${gameObject.name}: ${animation.name}")
         } else {

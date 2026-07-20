@@ -78,7 +78,7 @@ class Engine(
             DayNightCycleSystem(),
             DirectionalLightSystem(),
             PlayerMotionSystem(cameraManager, eventSystem, logger),
-            AnimationSystem(),
+            AnimationSystem(eventSystem, logger),
             RagdollSystem(),
             GridLines(debugRenderer, cameraManager),
         )

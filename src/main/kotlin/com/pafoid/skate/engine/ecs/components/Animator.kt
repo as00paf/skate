@@ -4,14 +4,8 @@ import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
-import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.data.LogLevel
-import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.events.JumpPressed
-import com.pafoid.skate.engine.events.Landing
-import com.pafoid.skate.engine.events.MovementInput
-import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.player.PlayerState
 import kotlinx.serialization.Serializable
@@ -30,19 +24,12 @@ import java.io.File
  * - Skeleton hierarchy updates.
  * - Editor visualization of the bone hierarchy.
  *
- * Subscribes to events for state-driven animation:
- * - [MovementInput] - determines walk/run state based on movement magnitude
- * - [JumpPressed] - triggers jump animation
- * - [Landing] - triggers landing animation
- * - [Takeoff] - triggers falling animation
  */
 @Serializable
 class Animator : Component(), KoinComponent { //TODO: remove koin component
 
     @Transient
     private val logger: LoggerService by inject()
-    @Transient
-    private val eventSystem: EventSystem by inject()
 
     @Transient
     var currentAnimation: Animation? = null
@@ -61,10 +48,10 @@ class Animator : Component(), KoinComponent { //TODO: remove koin component
     var previousTime = 0f
 
     // Event-driven state
-    private var isMoving = false
-    private var isSprinting = false
-    private var isInAir = false
-    private var isGrounded = true
+    var isMoving = false
+    var isSprinting = false
+    var isInAir = false
+    var isGrounded = true
 
     val animations: MutableList<Animation> = mutableListOf()
 
@@ -77,32 +64,14 @@ class Animator : Component(), KoinComponent { //TODO: remove koin component
     val duration: Float
         get() = currentAnimation?.duration ?: 0f
 
-    fun addAnimation(animation: Animation) {
-        val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton
+    fun addAnimation(animation: Animation): Boolean {
+        val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return false
         val isValid = validateSkeletonCompatibility(skeleton, animation)
         val alreadyHasAnimation = animations.any { it.name == animation.name }
 
-        when {
-            skeleton == null -> logger.log(
-                "Animation '${animation.name}' cannot be added because ${gameObject.name} does not currently have a skeleton.",
-                LogLevel.ERROR
-            )
-
-            !isValid -> logger.log(
-                "Animation '${animation.name}' is incompatible with the current skeleton. Skipping.",
-                LogLevel.ERROR
-            )
-
-            alreadyHasAnimation -> logger.log(
-                "'${gameObject.name}' already contains '${animation.name}' animation.",
-                LogLevel.ERROR
-            )
-
-            else -> {
-                animations.add(animation)
-                logger.log("Animation '${animation.name}' added successfully!", LogLevel.ACTION)
-            }
-        }
+        if (!isValid || alreadyHasAnimation) return false
+        animations.add(animation)
+        return true
     }
 
     /**
@@ -154,54 +123,6 @@ class Animator : Component(), KoinComponent { //TODO: remove koin component
     fun play(name: String, blend: Float = 1f) {
         val anim = animations.find { it.name.contains(name, ignoreCase = true) } ?: return
         play(anim, blend)
-    }
-
-    override fun init(gameObject: GameObject) {
-        super.init(gameObject)
-        eventSystem.subscribe<MovementInput> { onMovementInput(it) }
-        eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
-        eventSystem.subscribe<Landing> { onLanding(it) }
-        eventSystem.subscribe<Takeoff> { onTakeoff(it) }
-    }
-
-    /**
-     * Called when movement input changes.
-     * Updates isMoving and isSprinting state for animation selection.
-     */
-    private fun onMovementInput(event: MovementInput) {
-        isMoving = event.magnitude > 0.15f
-        isSprinting = event.magnitude > 0.65f
-    }
-
-    /**
-     * Called when jump button is pressed.
-     * Triggers jump animation.
-     */
-    private fun onJumpPressed(event: JumpPressed) {
-        if (isGrounded) {
-            play("jump", 0.2f)
-            isInAir = true
-            isGrounded = false
-        }
-    }
-
-    /**
-     * Called when landing on the ground.
-     * Triggers landing animation.
-     */
-    private fun onLanding(event: Landing) {
-        isInAir = false
-        isGrounded = true
-        play("hard landing")
-    }
-
-    /**
-     * Called when taking off from the ground.
-     * Sets falling state.
-     */
-    private fun onTakeoff(event: Takeoff) {
-        isInAir = true
-        isGrounded = false
     }
 
     // Track current animation state to avoid redundant play() calls

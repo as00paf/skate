@@ -81,7 +81,7 @@ class ViewportDragDropHandler(
             if (payloadAnimation != null) {
                 val hoveredObject = scene.hoveredGameObject
                 if (hoveredObject != null) {
-                    eventSystem.publish(ViewportAction.DropAnimation(payloadAnimation, hoveredObject))
+                    eventSystem.publish(ViewportAction.ApplyAnimation(payloadAnimation, hoveredObject))
                 }
             }
 

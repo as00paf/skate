@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.imgui.components.imgui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.AudioComponent
@@ -29,6 +30,7 @@ class PropertiesWindow(
     private val stringManager: StringManager,
     private val engine: Engine,
     private val eventSystem: EventSystem,
+    private val logger: LoggerService
 ) : IWindow {
 
     private val searchString = ImString(128)
@@ -65,7 +67,7 @@ class PropertiesWindow(
         val headerLabel = component.getName()
         
         if (ImGui.collapsingHeader(headerLabel)) {
-            component.imgui(stringManager)
+            component.imgui(stringManager, logger)
         }
 
         if (ImGui.beginPopupContextItem("${component.javaClass.simpleName}_context")) {

@@ -26,11 +26,6 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
 
     // TODO : use data classes
     data class TextureApplied(val gameObject: GameObject, val texturePath: String) : ViewportAction("editor.texture_applied")
-    data class AnimationApplied(val gameObject: GameObject, val animation: Animation) :
-        ViewportAction("editor.animation_applied")
-
-    data class AnimationRemoved(val gameObject: GameObject, val animation: Animation) :
-        ViewportAction("editor.animation_removed")
 
     // Light & Camera
     data class CreateLight(val name: String, val type: LightType) : ViewportAction("viewport.create_light")
@@ -44,8 +39,8 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     // Drag and Drop
     data class DropTexture(val texturePath: String, val targetObject: GameObject? = null, val dropPosition: Vector3f? = null) : ViewportAction("viewport.drop_texture")
     data class DropSound(val soundPath: String, val targetObject: GameObject) : ViewportAction("viewport.drop_sound")
-    data class DropAnimation(val animation: Animation, val targetObject: GameObject) :
-        ViewportAction("viewport.drop_animation")
+    data class ApplyAnimation(val animation: Animation, val targetObject: GameObject) :
+        ViewportAction("viewport.apply_animation")
 
     // Runtime
     data class SetSimulationTimeScale(val timeScale: Float) : ViewportAction("viewport.set_simulation_timescale")

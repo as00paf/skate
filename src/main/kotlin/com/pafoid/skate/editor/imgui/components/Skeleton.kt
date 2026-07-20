@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.BoneMirrorUtil
 import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
@@ -13,7 +14,7 @@ import imgui.flag.ImGuiTreeNodeFlags
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
-fun SkeletonComponent.imgui(stringManager: StringManager) {
+fun SkeletonComponent.imgui(stringManager: StringManager, logger: LoggerService) {
     val skeleton = pose.skeleton
     val go = gameObject
     //if (go != sceneManager.currentScene?.selectedGameObject) return
