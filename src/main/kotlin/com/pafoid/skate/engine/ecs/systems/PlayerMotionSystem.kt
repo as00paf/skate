@@ -79,7 +79,9 @@ class PlayerMotionSystem(
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        gameObjects.forEach {
+        scene.gameObjects
+            .filter { it.hasComponent<PlayerController>() && it.hasComponent<IPhysicsBody3D>() }
+            .forEach {
             val body = it.getComponent<IPhysicsBody3D>()
             body?.let { body -> applyMotion(it, body) }
         }
@@ -96,7 +98,7 @@ class PlayerMotionSystem(
             motionData.inputDirection
         )
         if (desiredMoveDirection.x.isNaN() || desiredMoveDirection.y.isNaN() || desiredMoveDirection.z.isNaN()) {
-            logger.log("Desired move direction is NaN: $desiredMoveDirection")
+            //logger.log("Desired move direction is NaN: $desiredMoveDirection")
             return
         }
 
