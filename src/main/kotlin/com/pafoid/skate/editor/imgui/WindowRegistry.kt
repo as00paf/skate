@@ -90,7 +90,7 @@ class WindowRegistry(
     val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
     val commandHistoryWindow = CommandHistoryWindow(undoRedoManager, stringManager, eventSystem)
     val renderGraphWindow = RenderGraphWindow(stringManager, engine)
-    val searchEverywhereWindow = SearchEverywhereWindow(stringManager, jobSystem, engine.serializer)
+    val searchEverywhereWindow = SearchEverywhereWindow(engine, stringManager, jobSystem, eventSystem, logger)
     val projectWizardWindow = ProjectWizardWindow(logger, stringManager, eventSystem)
     val projectSwitcherDialog = ProjectSwitcherDialog(projectManager, stringManager, eventSystem)
     val audioInspectorWindow = AudioInspectorWindow(stringManager)

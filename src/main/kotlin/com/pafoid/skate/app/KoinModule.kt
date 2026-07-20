@@ -5,11 +5,6 @@ import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.imgui.WindowRegistry
 import com.pafoid.skate.editor.project.EngineAssetCopier
-import com.pafoid.skate.editor.search.SearchEngine
-import com.pafoid.skate.editor.search.providers.ActionSearchProvider
-import com.pafoid.skate.editor.search.providers.AssetSearchProvider
-import com.pafoid.skate.editor.search.providers.ComponentSearchProvider
-import com.pafoid.skate.editor.search.providers.GameObjectSearchProvider
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.EditorMutationGate
@@ -82,21 +77,6 @@ val editorModule = module {
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get()) }
-
-    // Search infrastructure
-    // TODO: cleanup?
-    single {
-        SearchEngine().apply {
-            registerProvider(get<GameObjectSearchProvider>())
-            registerProvider(get<AssetSearchProvider>())
-            registerProvider(get<ComponentSearchProvider>())
-            registerProvider(get<ActionSearchProvider>())
-        }
-    }
-    single { GameObjectSearchProvider(get(), get()) }
-    single { AssetSearchProvider(get()) }
-    single { ComponentSearchProvider(get(), get()) }
-    single { ActionSearchProvider(get(), get(), get()) }
 }
 
 val engineModule = module {

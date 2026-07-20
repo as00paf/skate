@@ -11,7 +11,6 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.koin.core.component.KoinComponent
 import java.io.File
 
 /**
@@ -32,7 +31,7 @@ import java.io.File
  * - Opens AssetBrowserWindow
  * - Future enhancement: Switch to the appropriate tab and highlight the asset
  */
-class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvider(), KoinComponent {
+class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvider() {
 
     override val category: SearchCategory = SearchCategory.ASSET_MODEL
 

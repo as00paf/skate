@@ -12,7 +12,6 @@ import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.game.skateboard.SkateboardPhysics
-import org.koin.core.component.KoinComponent
 
 /**
  * Search provider for GameObjects in the current scene.
@@ -34,7 +33,7 @@ import org.koin.core.component.KoinComponent
 class GameObjectSearchProvider(
     private val engine: Engine,
     private val stringManager: StringManager,
-) : BaseSearchProvider(), KoinComponent {
+) : BaseSearchProvider() {
     private val sceneManager = engine.sceneManager
     private val gameObjectManager = engine.gameObjectManager
     override val category: SearchCategory = SearchCategory.GAMEOBJECT

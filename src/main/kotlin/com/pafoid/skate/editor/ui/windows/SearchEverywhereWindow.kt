@@ -8,7 +8,9 @@ import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.editor.search.data.SearchResultWithCategory
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.history.SearchHistoryEntry
-import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
@@ -21,7 +23,6 @@ import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import imgui.type.ImString
 import kotlinx.coroutines.Job
-import org.koin.core.component.KoinComponent
 
 /**
  * Search Everywhere overlay window providing global search across all editor resources.
@@ -39,13 +40,15 @@ import org.koin.core.component.KoinComponent
  * - Close with Esc or X button
  */
 class SearchEverywhereWindow(
+    private val engine: Engine,
     private val stringManager: StringManager,
     private val jobSystem: IJobSystem,
-    serializer: Serializer
-) : IWindow, KoinComponent {
+    private val eventSystem: EventSystem,
+    private val logger: LoggerService,
+) : IWindow { // TODO: fix, not showing
 
-    private val searchHistory: SearchHistory = SearchHistory(serializer = serializer)
-    private val searchEngine: SearchEngine = SearchEngine()
+    private val searchHistory: SearchHistory = SearchHistory(serializer = engine.serializer)
+    private val searchEngine: SearchEngine = SearchEngine(engine, stringManager, eventSystem, logger)
 
     private var isOpen = false
     private val searchQuery = ImString(256)

@@ -22,7 +22,6 @@ import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 
 /**
  * Search provider for editor actions and commands.
@@ -34,7 +33,7 @@ class ActionSearchProvider(
     private val engine: Engine,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
-) : BaseSearchProvider(), KoinComponent {
+) : BaseSearchProvider() {
     private val sceneManager = engine.sceneManager
 
     override val category: SearchCategory = SearchCategory.ACTION

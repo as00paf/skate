@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
-import org.koin.core.component.KoinComponent
 
 /**
  * Search provider for components on all GameObjects in the scene.
@@ -32,7 +31,7 @@ import org.koin.core.component.KoinComponent
 class ComponentSearchProvider(
     private val engine: Engine,
     private val stringManager: StringManager,
-) : BaseSearchProvider(), KoinComponent {
+) : BaseSearchProvider() {
     override val category: SearchCategory = SearchCategory.COMPONENT
 
     override suspend fun search(query: String): List<SearchResult> {

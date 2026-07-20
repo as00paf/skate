@@ -2,9 +2,16 @@ package com.pafoid.skate.editor.search
 
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
+import com.pafoid.skate.editor.search.providers.ActionSearchProvider
+import com.pafoid.skate.editor.search.providers.AssetSearchProvider
+import com.pafoid.skate.editor.search.providers.ComponentSearchProvider
+import com.pafoid.skate.editor.search.providers.GameObjectSearchProvider
+import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.StringManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import org.koin.core.component.KoinComponent
 
 /**
  * Central search engine that aggregates results from multiple [SearchProvider]s.
@@ -19,9 +26,20 @@ import org.koin.core.component.KoinComponent
  * val results = engine.search("skateboard")
  * ```
  */
-class SearchEngine : KoinComponent {
-
+class SearchEngine(
+    private val engine: Engine,
+    private val stringManager: StringManager,
+    private val eventSystem: EventSystem,
+    private val logger: LoggerService
+) {
     private val providers = mutableListOf<SearchProvider>()
+
+    init {
+        registerProvider(GameObjectSearchProvider(engine, stringManager))
+        registerProvider(AssetSearchProvider(logger))
+        registerProvider(ComponentSearchProvider(engine, stringManager))
+        registerProvider(ActionSearchProvider(engine, logger, eventSystem))
+    }
 
     /**
      * Registers a search provider with this engine.
