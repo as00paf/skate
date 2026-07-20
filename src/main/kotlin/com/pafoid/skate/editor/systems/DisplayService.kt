@@ -6,7 +6,7 @@ import org.lwjgl.glfw.GLFW.glfwGetMonitorName
 import org.lwjgl.glfw.GLFW.glfwGetMonitors
 import org.lwjgl.glfw.GLFW.glfwGetVideoModes
 
-class DisplayService {
+class DisplayService { // TODO: check usage
 
     /**
      * Returns a list of all available monitors.

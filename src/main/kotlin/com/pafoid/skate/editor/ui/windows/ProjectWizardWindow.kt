@@ -28,11 +28,12 @@ import javax.swing.UIManager
 import javax.swing.filechooser.FileFilter
 
 class ProjectWizardWindow(
-    val wizard: ProjectWizard,
     private val logger: LoggerService,
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
 ) : IWindow {
+    val wizard: ProjectWizard = ProjectWizard()
+
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
 

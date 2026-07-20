@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.imgui.WindowRegistry
 import com.pafoid.skate.editor.project.EngineAssetCopier
-import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.editor.search.SearchEngine
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.providers.ActionSearchProvider
@@ -87,7 +86,7 @@ val editorModule = module {
     factory { ViewportOverlays(get(), get()) }// TODO: move
 
     // Editor windows
-    single { ProjectWizardWindow(get(), get(), get(), get()) }
+    single { ProjectWizardWindow(get(), get(), get()) }
     single { SceneHierarchyWindow(get(), get(), get(), get(), get()) }
     single { PropertiesWindow(get(), get(), get(), get()) }
     single {
@@ -144,7 +143,6 @@ val editorModule = module {
 
     // Project management
     single { ProjectManager(get(), get(), get(), get(), get(), get()) }
-    single { ProjectWizard() }
     single { ProjectSwitcherDialog() }
 
     // Search infrastructure
