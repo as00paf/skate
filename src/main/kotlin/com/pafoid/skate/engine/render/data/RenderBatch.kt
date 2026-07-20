@@ -105,7 +105,7 @@ class RenderBatch(
         sprites[index] = spr
         numSprites++
 
-        val texture = spr.getTexture()
+        val texture = spr.sprite.texture
         if (texture != null) {
             if (!textureSlots.contains(texture)) {
                 textureSlots.add(texture)
@@ -123,12 +123,8 @@ class RenderBatch(
     fun render(shader: Shader = renderer.shader) {
         var rebufferData = false
         for (i in 0 until numSprites) {
-            val spr = sprites[i]
-            if (spr?.isDirty() == true) {
-                loadVertexProperties(i)
-                spr.setClean()
-                rebufferData = true
-            }
+            loadVertexProperties(i)
+            rebufferData = true
         }
 
         if (rebufferData) {
@@ -233,12 +229,12 @@ class RenderBatch(
         // Find offset within array (4 vertices per sprite)
         var offset = index * 4 * VERTEX_SIZE
 
-        val color = sprite.getColor()
-        val texCoords = sprite.getTexCoords()
-        val texId = findTextureId(sprite.getTexture())
+        val color = sprite.color
+        val texCoords = sprite.sprite.texCoords
+        val texId = findTextureId(sprite.sprite.texture)
         val entityId = EntityIdEncoder.encode(sprite.gameObject.uId)
 
-        val isRotated = transform.rotation?.z != 0f
+        val isRotated = transform.rotation.z != 0f
         if (isRotated) {
             transformMatrix.identity()
             transformMatrix.translate(transform.translation.x, transform.translation.y, 0f)

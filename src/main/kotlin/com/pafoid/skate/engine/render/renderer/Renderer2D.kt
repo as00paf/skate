@@ -28,7 +28,7 @@ class Renderer2D {
         var added = false
         for (batch in batches) {
             if (batch.hasRoom()) {
-                val texture = spr.getTexture()
+                val texture = spr.sprite.texture
                 if (texture == null || (batch.hasTexture(texture) || batch.hasTextureRoom())) {
                     batch.addSprite(spr)
                     added = true

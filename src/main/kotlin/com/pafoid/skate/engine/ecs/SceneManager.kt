@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.getComponent
@@ -69,6 +70,7 @@ class SceneManager(
     private fun resolveObjectReferences(obj: GameObject) {
         obj.getComponent<RenderComponent>()?.resolveModelFromPath(assetsManager)
         obj.getComponent<Animator>()?.resolveAnimationsFromPaths(assetsManager, logger)
+        obj.getComponent<SpriteRenderer>()?.resolveTextureFromPaths(assetsManager, logger)
 
         obj.children.forEach { child ->
             resolveObjectReferences(child)

@@ -80,7 +80,7 @@ class PrefabsGenerator(
         go.getComponent<Transform>()?.scale?.set(sizeX, sizeY, 1f)
 
         val renderer = SpriteRenderer()
-        renderer.setSprite(sprite)
+        renderer.sprite = sprite
         go.addComponent(renderer)
 
         return go
