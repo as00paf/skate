@@ -4,6 +4,8 @@ import com.pafoid.skate.editor.commands.AsyncCommand
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.commands.CommandCategory
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
+import com.pafoid.skate.editor.events.UndoRedoAction
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import kotlinx.coroutines.Job
@@ -26,8 +28,9 @@ import kotlinx.coroutines.Job
  * Async command completion can finalize from a background context; history mutations are guarded internally.
  */
 class UndoRedoManager(
-    private val mutationGate: EditorMutationGate? = null,
-    private val logger: LoggerService? = null,
+    private val mutationGate: EditorMutationGate,
+    private val eventSystem: EventSystem,
+    private val logger: LoggerService,
 ) {
     private val undoStack = mutableListOf<Command>()
     private val redoStack = mutableListOf<Command>()
@@ -36,9 +39,17 @@ class UndoRedoManager(
     private val historyLock = Any()
     private var historyEpoch = 0L
 
+    init {
+        eventSystem.subscribe<UndoRedoAction.Undo> { undo() }
+        eventSystem.subscribe<UndoRedoAction.Redo> { redo() }
+        eventSystem.subscribe<UndoRedoAction.UndoTo> { event -> undoTo(event.targetSize) }
+        eventSystem.subscribe<UndoRedoAction.RedoTo> { event -> redoTo(event.targetSize) }
+        eventSystem.subscribe<UndoRedoAction.ClearHistory> { clear() }
+    }
+
     fun executeCommand(command: Command) {
-        if (mutationGate?.canExecute(command) == false) {
-            logger?.logEditor("Command blocked in play mode: ${command.getDisplayName()}")
+        if (!mutationGate.canExecute(command)) {
+            logger.logEditor("Command blocked in play mode: ${command.getDisplayName()}")
             return
         }
         when (command.getCategory()) {
@@ -154,7 +165,7 @@ class UndoRedoManager(
     private fun executeAsyncCommand(command: Command) {
         val asyncCommand = command as? AsyncCommand
         if (asyncCommand == null) {
-            logger?.logEditor("Async command category requires AsyncCommand contract: ${command.getDisplayName()}")
+            logger.logEditor("Async command category requires AsyncCommand contract: ${command.getDisplayName()}")
             return
         }
         val commandEpoch = synchronized(historyLock) { historyEpoch }
@@ -162,7 +173,7 @@ class UndoRedoManager(
         command.execute()
         val completionJob = asyncCommand.getCompletionJob()
         if (completionJob == null) {
-            logger?.logEditor("Async command did not expose completion job: ${command.getDisplayName()}")
+            logger.logEditor("Async command did not expose completion job: ${command.getDisplayName()}")
             return
         }
 
@@ -189,7 +200,7 @@ class UndoRedoManager(
     private fun executeAsyncRedoCommand(command: Command) {
         val asyncCommand = command as? AsyncCommand
         if (asyncCommand == null) {
-            logger?.logEditor("Async command category requires AsyncCommand contract: ${command.getDisplayName()}")
+            logger.logEditor("Async command category requires AsyncCommand contract: ${command.getDisplayName()}")
             synchronized(historyLock) {
                 pendingAsyncRedoCommands.remove(command)
             }
@@ -200,7 +211,7 @@ class UndoRedoManager(
         command.execute()
         val completionJob = asyncCommand.getCompletionJob()
         if (completionJob == null) {
-            logger?.logEditor("Async redo command did not expose completion job: ${command.getDisplayName()}")
+            logger.logEditor("Async redo command did not expose completion job: ${command.getDisplayName()}")
             synchronized(historyLock) {
                 pendingAsyncRedoCommands.remove(command)
             }

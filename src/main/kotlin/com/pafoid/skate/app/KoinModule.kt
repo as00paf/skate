@@ -24,7 +24,6 @@ import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.editor.ui.handlers.EnvironmentActionHandler
 import com.pafoid.skate.editor.ui.handlers.ProjectActionHandler
 import com.pafoid.skate.editor.ui.handlers.SceneActionHandler
-import com.pafoid.skate.editor.ui.handlers.UndoRedoActionHandler
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
@@ -44,7 +43,7 @@ val editorModule = module {
 
     single { ClipboardService(get()) }
     single { EditorMutationGate(get(), get()) }
-    single { UndoRedoManager(get(), get()) }
+    single { UndoRedoManager(get(), get(), get()) }
     single { SettingsManager(get(), get(), get()) }
     single { DisplayService() }
 
@@ -52,7 +51,6 @@ val editorModule = module {
     single(createdAtStart = true) { ProjectActionHandler(get(), get(), get(), get(), get(), get()) }
     single(createdAtStart = true) { EnvironmentActionHandler(get(), get()).also { it.init() } }
     single(createdAtStart = true) { ConsoleActionHandler().also { it.init() } }
-    single(createdAtStart = true) { UndoRedoActionHandler().also { it.init() } }
 
     // Editor Workspace
     single { EditorInputState() }

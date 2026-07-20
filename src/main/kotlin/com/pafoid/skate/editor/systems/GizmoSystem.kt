@@ -17,6 +17,7 @@ class GizmoSystem(
     private val eventSystem: EventSystem,
     private val editorCamera: EditorCamera,
 ) {
+    // TODO: fix, gizmos not showing anymore
     private val gameObjectManager = engine.gameObjectManager
 
     var usingGizmo = NONE
