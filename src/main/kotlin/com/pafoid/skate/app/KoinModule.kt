@@ -14,7 +14,6 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.handlers.ConsoleActionHandler
-import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.editor.ui.handlers.EnvironmentActionHandler
 import com.pafoid.skate.editor.ui.handlers.ProjectActionHandler
@@ -51,7 +50,6 @@ val editorModule = module {
     single { EditorInputState() }
     single { EditorCamera(Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }, get()) }
     single { EditorInputHandler(get(), get(), get(), get(), get(), get(), get()) }
-    single { EditorEventHandler(get(), get(), get()) }
     single { GizmoSystem(get(), get(), get(), get(), get()) }
 
     // Window registry
