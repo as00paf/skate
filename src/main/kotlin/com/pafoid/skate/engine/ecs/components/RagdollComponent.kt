@@ -5,8 +5,6 @@ import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
-enum class RagdollState { ANIMATED, RAGDOLL, BLENDING }
-
 @Serializable
 class RagdollComponent : Component() {
     var state: RagdollState = RagdollState.ANIMATED

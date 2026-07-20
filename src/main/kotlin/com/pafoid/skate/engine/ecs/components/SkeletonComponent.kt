@@ -3,8 +3,6 @@ package com.pafoid.skate.engine.ecs.components
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.utils.SkeletonMath
-import imgui.type.ImBoolean
-import imgui.type.ImString
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Matrix4f
@@ -15,10 +13,6 @@ class SkeletonComponent(
 ) : Component() {
     @Transient
     var selectedBone: Bone? = null
-    @Transient
-    val poseFileName = ImString(128)
-    @Transient
-    val mirrorPoseEnabled = ImBoolean(false)
 
     @Transient
     private val matrixPalette = Array(pose.skeleton.boneCount) { Matrix4f() }

@@ -2,7 +2,6 @@ package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
-import com.pafoid.skate.engine.assets.data.models.animations.BoneMirrorUtil
 import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
@@ -18,8 +17,6 @@ fun SkeletonComponent.imgui(stringManager: StringManager, logger: LoggerService)
     val skeleton = pose.skeleton
     val go = gameObject
     //if (go != sceneManager.currentScene?.selectedGameObject) return
-
-    ImGui.inputText(stringManager.getString("lbl.bone_tree.pose_file_name"), poseFileName)
 
     if (ImGui.button(stringManager.getString("btn.save_pose"))) {
         val boneOverride = go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
@@ -38,11 +35,6 @@ fun SkeletonComponent.imgui(stringManager: StringManager, logger: LoggerService)
                  existingOverride.addOverride(boneName, rotation)
              }
          }*/
-    }
-
-    // TODO: incomplete
-    if (ImGui.checkbox(stringManager.getString("lbl.bone_tree.mirror_pose"), mirrorPoseEnabled)) {
-        val boneOverride = go.getComponent<BoneOverride>()
     }
 
     if (ImGui.treeNodeEx(
@@ -97,20 +89,6 @@ fun SkeletonComponent.drawBoneNode(stringManager: StringManager, gameObject: Gam
                         Math.toRadians(rotationXYZ[2].toDouble()).toFloat()
                     )
                     bo.addOverride(child.name, newRotation)
-
-                    // Apply to mirrored bone if enabled
-                    if (mirrorPoseEnabled.get()) {
-                        val mirroredBoneName = BoneMirrorUtil.getMirroredBoneName(child.name)
-                        if (mirroredBoneName != child.name) {
-                            // Negate X and Z Euler angles for mirrored rotation
-                            val mirroredRotation = Quaternionf().rotationXYZ(
-                                Math.toRadians(-rotationXYZ[0].toDouble()).toFloat(),
-                                Math.toRadians(rotationXYZ[1].toDouble()).toFloat(),
-                                Math.toRadians(-rotationXYZ[2].toDouble()).toFloat()
-                            )
-                            bo.addOverride(mirroredBoneName, mirroredRotation)
-                        }
-                    }
                 }
             }
         }
