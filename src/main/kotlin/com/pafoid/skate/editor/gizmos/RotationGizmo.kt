@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.commands.objects.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.listeners.MouseListener
@@ -24,8 +25,9 @@ class RotationGizmo(
     private var xAxisHot = false
     private var yAxisHot = false
     private var zAxisHot = false
+    private var oldTransform: Transform? = null
 
-    fun update(camera: Camera) {
+    fun update(activeGameObject: GameObject?, camera: Camera) {
         activeGameObject?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
 
@@ -33,14 +35,14 @@ class RotationGizmo(
             val dynamicRadius = radius * (dist * 0.1f)
             val dynamicThreshold = hitThreshold * (dist * 0.1f)
 
-            checkInput(camera, dynamicRadius, dynamicThreshold)
+            checkInput(activeGameObject, camera, dynamicRadius, dynamicThreshold)
 
             if (xAxisActive) {
-                transform.rotation.x += mouseListener.getScreenDy()
+                transform.rotation.x += mouseListener.dy
             } else if (yAxisActive) {
-                transform.rotation.y += mouseListener.getScreenDx()
+                transform.rotation.y += mouseListener.dx
             } else if (zAxisActive) {
-                transform.rotation.z += mouseListener.getScreenDy()
+                transform.rotation.z += mouseListener.dy
             }
 
             with(debugRenderer) {
@@ -51,10 +53,7 @@ class RotationGizmo(
         }
     }
 
-    override fun isHot(): Boolean = xAxisHot || yAxisHot || zAxisHot
-
-    private fun checkInput(camera: Camera, rad: Float, threshold: Float) {
-        val go = activeGameObject ?: return
+    private fun checkInput(go: GameObject, camera: Camera, rad: Float, threshold: Float) {
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
 
