@@ -109,6 +109,7 @@ class TranslateGizmo(
 
                 if (xAxisActive || yAxisActive || zAxisActive) {
                     oldTransform = Transform().apply { copyFrom(transform) }
+                    println("Start dragging ${transform.translation}")
                 }
             }
         } else {
@@ -119,6 +120,7 @@ class TranslateGizmo(
                         undoRedoManager.pushCommand(TransformCommand(go, old, transform))
                     }
                 }
+                println("Stop dragging ${transform.translation}")
                 oldTransform = null
             }
             xAxisActive = false
