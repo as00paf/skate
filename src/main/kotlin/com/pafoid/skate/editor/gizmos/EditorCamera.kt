@@ -1,12 +1,9 @@
 package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.data.EditorInputState
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.pow
@@ -16,10 +13,7 @@ import kotlin.math.sin
 class EditorCamera(
     val camera: Camera,
     private val editorState: EditorInputState,
-) : KoinComponent {
-
-    private val engine: Engine by inject()
-
+) {
     private val scrollSensitivity = 0.1f
     private val rotationSensitivity = 0.1f
     private val moveSpeed = 0.01f
@@ -36,8 +30,6 @@ class EditorCamera(
     }
 
     fun update(dt: Float) {
-        if (engine.runtimePlaying) return
-
         handleFreeFlyMovement()
         handleRotation()
         handleZoom()

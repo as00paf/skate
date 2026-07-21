@@ -28,11 +28,8 @@ class SelectionGizmo(
     var hoveredGameObjectUid: Int = -1
         private set
 
-    var hoveredGameObject: GameObject? = null
-        private set
-
     fun update(scene: Scene) {
-        if (!isInUse()) {
+        if (!inUse) {
             hoveredGameObjectUid = -1
             scene.hoveredGameObject = null
             return

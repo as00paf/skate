@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.commands.objects.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.listeners.MouseListener
@@ -28,9 +29,10 @@ class ScaleGizmo(
     private var yAxisHot = false
     private var zAxisHot = false
 
-    fun update(camera: Camera) {
-        val go = activeGameObject ?: return
-        go.getComponent<Transform>()?.let { transform ->
+    private var oldTransform: Transform? = null
+
+    fun update(go: GameObject?, camera: Camera) {
+        go?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
 
             val dist = Vector3f(camera.position).distance(pos)
@@ -38,7 +40,7 @@ class ScaleGizmo(
             val dynamicBoxSize = boxSize * (dist * 0.1f)
             val dynamicThreshold = hitThreshold * (dist * 0.1f)
 
-            checkInput(camera, dynamicLength, dynamicThreshold)
+            checkInput(go, camera, dynamicLength, dynamicThreshold)
 
             if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, true)) {
                 if (xAxisActive || yAxisActive || zAxisActive) {
@@ -56,13 +58,13 @@ class ScaleGizmo(
             }
 
             if (xAxisActive) {
-                transform.scale.x += calculateDelta(camera, Vector3f(1f, 0f, 0f))
+                transform.scale.x += calculateDelta(transform, camera, Vector3f(1f, 0f, 0f))
                 transform.scale.x = transform.scale.x.coerceAtLeast(0.01f)
             } else if (yAxisActive) {
-                transform.scale.y += calculateDelta(camera, Vector3f(0f, 1f, 0f))
+                transform.scale.y += calculateDelta(transform, camera, Vector3f(0f, 1f, 0f))
                 transform.scale.y = transform.scale.y.coerceAtLeast(0.01f)
             } else if (zAxisActive) {
-                transform.scale.z += calculateDelta(camera, Vector3f(0f, 0f, 1f))
+                transform.scale.z += calculateDelta(transform, camera, Vector3f(0f, 0f, 1f))
                 transform.scale.z = transform.scale.z.coerceAtLeast(0.01f)
             }
 
@@ -72,10 +74,7 @@ class ScaleGizmo(
         }
     }
 
-    override fun isHot(): Boolean = xAxisHot || yAxisHot || zAxisHot
-
-    private fun checkInput(camera: Camera, length: Float, threshold: Float) {
-        val go = activeGameObject ?: return
+    private fun checkInput(go: GameObject, camera: Camera, length: Float, threshold: Float) {
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
 
@@ -153,13 +152,11 @@ class ScaleGizmo(
         return minDist
     }
 
-    private fun calculateDelta(camera: Camera, axis: Vector3f): Float {
+    private fun calculateDelta(transform: Transform, camera: Camera, axis: Vector3f): Float {
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()
         val viewportSize = mouseListener.getGameViewportSize()
 
-        val go = activeGameObject ?: return 0f
-        val transform = go.getComponent<Transform>() ?: return 0f
         val origin = Vector3f(transform.translation)
         val p2 = Vector3f(origin).add(axis)
 
@@ -171,7 +168,7 @@ class ScaleGizmo(
         if (axisScreen.lengthSquared() < 0.0001f) return 0f
 
         val axisScreenDir = axisScreen.normalize()
-        val mouseDelta = Vector2f(mouseListener.getScreenDx(), mouseListener.getScreenDy())
+        val mouseDelta = Vector2f(mouseListener.dx, mouseListener.dy)
 
         val projection = mouseDelta.dot(axisScreenDir)
         val dist = Vector3f(camera.position).distance(origin)

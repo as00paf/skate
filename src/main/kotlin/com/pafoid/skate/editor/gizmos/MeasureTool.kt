@@ -31,7 +31,7 @@ class MeasureTool(
 
     fun update(camera: Camera) {
         // Reset if not in use
-        if (!isInUse()) {
+        if (!inUse) {
             startPoint = null
             endPoint = null
             measurementText = null

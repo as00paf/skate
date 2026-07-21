@@ -13,6 +13,8 @@ class MouseListener : KoinComponent {
     private var yPos: Double = 0.0
     private var lastX: Double = 0.0
     private var lastY: Double = 0.0
+    var dx: Float = 0f
+    var dy: Float = 0f
     private var isDragging = false
     private var mouseButtonsDown = 0
     private var mouseButtonPressed = BooleanArray(9)
@@ -26,6 +28,8 @@ class MouseListener : KoinComponent {
         lastY = yPos
         xPos = xpos
         yPos = ypos
+        dx = xpos.toFloat() - lastX.toFloat()
+        dy = ypos.toFloat() - lastY.toFloat()
     }
 
     fun mouseButtonCallback(window: Long, button: Int, action: Int, mods: Int) {
@@ -109,16 +113,6 @@ class MouseListener : KoinComponent {
         return (relativeY / gameViewportSize.y).coerceIn(0f, 1f)
     }
 
-    fun getScreenDx(): Float {
-        return getDx()
-    }
-
-    fun getScreenDy(): Float {
-        return getDy()
-    }
-
-    fun getDx(): Float = (xPos - lastX).toFloat()
-    fun getDy(): Float = (yPos - lastY).toFloat()
     fun getScrollX(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()
     fun getScrollY(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
     fun isDragging() = isDragging

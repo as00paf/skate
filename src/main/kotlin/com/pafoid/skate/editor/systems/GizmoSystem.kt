@@ -11,13 +11,13 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 
 class GizmoSystem(
+// TODO: should use editor input state
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
     private val engine: Engine,
     private val eventSystem: EventSystem,
     private val editorCamera: EditorCamera,
 ) {
-    // TODO: fix, gizmos not showing anymore
     private val gameObjectManager = engine.gameObjectManager
 
     var usingGizmo = NONE
@@ -35,14 +35,14 @@ class GizmoSystem(
     val measureGizmo by lazy { MeasureTool(mouseListener, undoRedoManager, debugRenderer, settingsManager) }
 
     fun update(dt: Float, scene: Scene) {
-        editorCamera.update(dt)
+        editorCamera.update(dt)// TODO: check if done elsewhere
 
         // Reset all gizmos to inactive state
-        translateGizmo.setNotInUse()
-        rotationGizmo.setNotInUse()
-        scaleGizmo.setNotInUse()
-        selectionGizmo.setNotInUse()
-        measureGizmo.setNotInUse()
+        translateGizmo.inUse = false
+        rotationGizmo.inUse = false
+        scaleGizmo.inUse = false
+        selectionGizmo.inUse = false
+        measureGizmo.inUse = false
 
         if (scene.isRunning) {
             return
@@ -50,11 +50,11 @@ class GizmoSystem(
 
         // Activate the selected gizmo
         when (usingGizmo) {
-            TRANSLATE_GIZMO -> translateGizmo.setInUse()
-            ROTATION_GIZMO -> rotationGizmo.setInUse()
-            SCALE_GIZMO -> scaleGizmo.setInUse()
-            SELECTION_GIZMO -> selectionGizmo.setInUse()
-            MEASURE_GIZMO -> measureGizmo.setInUse()
+            TRANSLATE_GIZMO -> translateGizmo.inUse = true
+            ROTATION_GIZMO -> rotationGizmo.inUse = true
+            SCALE_GIZMO -> scaleGizmo.inUse = true
+            SELECTION_GIZMO -> selectionGizmo.inUse = true
+            MEASURE_GIZMO -> measureGizmo.inUse = true
         }
 
         // Handle gizmo selection key bindings
@@ -74,25 +74,19 @@ class GizmoSystem(
 
         // Update only the active gizmo
         when (usingGizmo) {
-            TRANSLATE_GIZMO -> translateGizmo.update(editorCamera.camera)
-            ROTATION_GIZMO -> rotationGizmo.update(editorCamera.camera)
-            SCALE_GIZMO -> scaleGizmo.update(editorCamera.camera)
             SELECTION_GIZMO -> selectionGizmo.update(scene)
+            TRANSLATE_GIZMO -> translateGizmo.update(scene.selectedGameObject, editorCamera.camera)
+            ROTATION_GIZMO -> rotationGizmo.update(scene.selectedGameObject, editorCamera.camera)
+            SCALE_GIZMO -> scaleGizmo.update(scene.selectedGameObject, editorCamera.camera)
             MEASURE_GIZMO -> measureGizmo.update(editorCamera.camera)
         }
     }
 
-    fun isInteracting(): Boolean {
-        return translateGizmo.isHot() || translateGizmo.anyAxisActive() ||
-                rotationGizmo.isHot() || rotationGizmo.anyAxisActive() ||
-                scaleGizmo.isHot() || scaleGizmo.anyAxisActive()
-    }
-
     fun toggleGizmo(gizmo: Int) {
-        if (usingGizmo == gizmo) {
-            usingGizmo = NONE
+        usingGizmo = if (usingGizmo == gizmo) {
+            NONE
         } else {
-            usingGizmo = gizmo
+            gizmo
         }
     }
 
