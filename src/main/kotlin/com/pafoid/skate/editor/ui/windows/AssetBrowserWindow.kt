@@ -19,7 +19,6 @@ class AssetBrowserWindow(
     private val prefabsGenerator: PrefabsGenerator,
     private val undoRedoManager: UndoRedoManager,
 ) : IWindow {
-    //TODO: cleanup
     private val animationsTab: AnimationsTab = AnimationsTab(engine, stringManager)
     private val texturesTab: TexturesTab = TexturesTab(stringManager, engine, undoRedoManager)
     private val prefabsTab: PrefabsTab = PrefabsTab(engine, stringManager, prefabsGenerator)

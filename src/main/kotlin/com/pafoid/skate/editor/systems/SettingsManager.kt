@@ -220,7 +220,6 @@ class SettingsManager(
 
     fun updateInputMappings(inputMappings: InputMappings) {
         // Store input mappings in a dedicated file for now
-        // TODO Phase 5: Integrate with proper settings persistence
         try {
             val file = SettingsData.getSettingsDirectory().resolve("input_mappings.json")
             file.parentFile?.mkdirs()

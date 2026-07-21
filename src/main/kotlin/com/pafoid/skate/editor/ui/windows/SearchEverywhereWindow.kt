@@ -39,11 +39,10 @@ import kotlinx.coroutines.Job
 class SearchEverywhereWindow(
     private val engine: Engine,
     private val stringManager: StringManager,
-) : IWindow { // TODO: fix, not showing
+) : IWindow {
     private val searchHistory: SearchHistory = SearchHistory(serializer = engine.serializer)
     private val searchEngine: SearchEngine = SearchEngine(engine, stringManager)
 
-    private var isOpen = false
     private val searchQuery = ImString(256)
     private var selectedResultIndex = 0
     private var currentResults: Map<SearchCategory, List<SearchResult>> = emptyMap()
@@ -65,7 +64,6 @@ class SearchEverywhereWindow(
      * Opens the search overlay.
      */
     fun open() {
-        isOpen = true
         searchQuery.set("")
         selectedResultIndex = 0
         currentResults = emptyMap()
@@ -76,33 +74,16 @@ class SearchEverywhereWindow(
         }
     }
 
-    /**
-     * Closes the search overlay.
-     */
-    fun close() {
-        isOpen = false
+    fun close(pOpen: ImBoolean?) {
+        pOpen?.set(false)
         searchJob?.cancel()
     }
-
-    /**
-     * Toggles the search overlay visibility.
-     */
-    fun toggle() {
-        if (isOpen) close() else open()
-    }
-
-    /**
-     * Checks if the window is currently open.
-     */
-    fun isOpen(): Boolean = isOpen
 
     private suspend fun loadRecentSearches() {
         recentSearches = searchHistory.getRecent(limit = 5)
     }
 
     override fun imgui(pOpen: ImBoolean?) {
-        if (!isOpen) return
-
         val viewport = ImGui.getMainViewport()
         val centerX = viewport.workCenterX
         val centerY = viewport.workCenterY
@@ -118,7 +99,7 @@ class SearchEverywhereWindow(
 
         ImGui.begin(stringManager.getString("search.everywhere.title"), null, windowFlags)
 
-        handleKeyboardInput()
+        handleKeyboardInput(pOpen)
         renderSearchInput()
 
         ImGui.separator()
@@ -132,7 +113,7 @@ class SearchEverywhereWindow(
         if (searchQuery.get().isBlank()) {
             renderRecentSearches()
         } else {
-            renderResults()
+            renderResults(pOpen)
         }
         ImGui.endChild()
 
@@ -148,9 +129,9 @@ class SearchEverywhereWindow(
         }
     }
 
-    private fun handleKeyboardInput() {
+    private fun handleKeyboardInput(pOpen: ImBoolean?) {
         if (ImGui.isKeyPressed(ImGuiKey.Escape)) {
-            close()
+            close(pOpen)
             return
         }
 
@@ -167,6 +148,7 @@ class SearchEverywhereWindow(
             if (selectedResultIndex in flattenedResults.indices) {
                 val result = flattenedResults[selectedResultIndex].result
                 selectResult(result)
+                close(pOpen)
             }
         }
     }
@@ -337,7 +319,7 @@ class SearchEverywhereWindow(
         }
     }
 
-    private fun renderResults() {
+    private fun renderResults(pOpen: ImBoolean?) {
         if (isSearching) {
             ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, stringManager.getString("lbl.search.searching"))
             return
@@ -380,6 +362,7 @@ class SearchEverywhereWindow(
 
                 if (ImGui.selectable(label, isSelected)) {
                     selectResult(result)
+                    close(pOpen)
                 }
 
                 if (isSelected) {
@@ -425,7 +408,6 @@ class SearchEverywhereWindow(
         }
 
         searchEngine.navigate(result)
-        close()
     }
 
     private fun renderFooter() {

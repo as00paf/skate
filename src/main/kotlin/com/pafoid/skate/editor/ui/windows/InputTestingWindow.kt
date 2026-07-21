@@ -99,7 +99,7 @@ class InputTestingWindow(
             // Show raw values
             ImGui.text("  " + stringManager.getString("lbl.input_testing.raw_values").format(leftStickX, leftStickY))
 
-            // Deadzone visualization (TODO Phase 5: Get from settings)
+            // Deadzone visualization
             val deadzone = 0.15f // settingsManager.engine.hardware.leftStickDeadzone
             renderDeadzoneIndicator("  ", leftStickX, leftStickY, deadzone)
 
@@ -323,7 +323,6 @@ class InputTestingWindow(
      * Renders the input bindings section.
      * Shows current keyboard and gamepad bindings for all actions.
      *
-     * TODO Phase 5: Update to use new immutable settings structure
      */
     private fun renderBindingsSection() {
         ImGui.indent()
