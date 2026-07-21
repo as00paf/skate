@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
@@ -80,7 +81,7 @@ class PlayerMotionSystem(
         if (cacheDirty) rebuildCache()
 
         cache.forEach {
-            val body = it.getComponent<IPhysicsBody3D>()
+            val body = it.getComponent<RigidBody3D>()
             body?.let { body -> applyMotion(it, body) }
         }
     }

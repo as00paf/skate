@@ -59,12 +59,8 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.TIME -> getComponent<TimeComponent>()
     }
 
-inline fun <reified T> GameObject.getComponent(): T? {
+inline fun <reified T : Component> GameObject.getComponent(): T? {
     return components.filterIsInstance<T>().firstOrNull()
-}
-
-fun <T : Component> GameObject.getComponent(componentClass: KClass<T>): T? {// TODO: check if inline fun is enough
-    return components.find { componentClass.isInstance(it) } as? T
 }
 
 inline fun <reified T : Component> GameObject.addComponent(component: T): GameObject = addComponent(T::class, component)
