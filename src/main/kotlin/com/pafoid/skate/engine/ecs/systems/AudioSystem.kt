@@ -79,7 +79,6 @@ class AudioSystem(
             floatArrayOf(0f, 1f, 0f)
         )
         audioEngine.setListenerVelocity(0f, 0f, 0f)
-        audioEngine.setMasterVolume(masterVolume)
     }
 
     private fun calculateForwardVector(yaw: Float, pitch: Float): Vector3f {
