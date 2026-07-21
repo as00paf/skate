@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
@@ -48,6 +49,7 @@ class Serializer {
             subclass(RenderComponent::class)
             subclass(PhysicsComponent::class)
             subclass(AudioComponent::class)
+            subclass(GridLines::class)
 
             // Input components
             subclass(InputStateComponent::class)

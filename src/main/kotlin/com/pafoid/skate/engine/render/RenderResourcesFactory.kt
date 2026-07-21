@@ -170,7 +170,7 @@ class RenderResourcesFactory(
             shadowMapTextureId = shadowMapTextureId,
             shadowMapResolution = shadowMapRes
         )
-        val debugPass = DebugPass(renderers.debug)
+        val debugPass = DebugPass(renderers.debug, cameraManager)
 
         val shadowPass = if (shadowMap != null) {
             ShadowPass(

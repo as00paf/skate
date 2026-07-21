@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent
@@ -122,6 +123,7 @@ class ProjectManager(
 
         // Attach desired default components
         scene.addComponent(ScenePhysicsComponent(false, Vector3f(0f, -9.81f, 0f)))
+        scene.addComponent(GridLines())
         scene.addComponent(EnvironmentComponent())
         val timeComponent = TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f)
         scene.addComponent(timeComponent)

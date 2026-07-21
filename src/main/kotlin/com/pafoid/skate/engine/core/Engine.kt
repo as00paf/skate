@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
@@ -79,7 +78,6 @@ class Engine {
             PlayerMotionSystem(cameraManager, eventSystem, logger),
             AnimationSystem(eventSystem, logger),
             RagdollSystem(),
-            GridLines(debugRenderer, cameraManager),
         )
 
         engineSystems.forEach {

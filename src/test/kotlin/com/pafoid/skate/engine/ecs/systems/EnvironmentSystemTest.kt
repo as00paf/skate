@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
-import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import io.mockk.mockk
@@ -58,7 +57,7 @@ class EnvironmentSystemTest {
         val priority = system.priority
 
         // Assert
-        assertEquals(ExecutionPriority.EARLY, priority, "System should run EARLY")
+        assertEquals(SystemManager.ExecutionPriority.EARLY, priority, "System should run EARLY")
     }
 
     // =========================================================================

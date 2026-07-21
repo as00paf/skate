@@ -11,6 +11,7 @@ enum class ComponentType {
     DAY_NIGHT_CYCLE,
     DIRECTIONAL_LIGHT,
     ENVIRONMENT,
+    GRID_LINES,
     INPUT_STATE,
     LIGHTING,
     MODULAR_TILE,
@@ -39,6 +40,7 @@ enum class ComponentType {
             DAY_NIGHT_CYCLE -> DayNightCycleComponent()
             DIRECTIONAL_LIGHT -> DirectionalLightComponent()
             ENVIRONMENT -> EnvironmentComponent()
+            GRID_LINES -> GridLines()
             INPUT_STATE -> InputStateComponent()
             LIGHTING -> LightingComponent()
             MODULAR_TILE -> ModularTile()

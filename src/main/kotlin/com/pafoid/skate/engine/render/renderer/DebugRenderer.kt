@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.PROJECTION
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.VIEW
@@ -54,10 +53,7 @@ class DebugRenderer(
     private var started = false
 
     fun start() {
-        shader = assetsManager.getShader(Assets.Shaders.DEBUG) ?: run {
-            logger.log("Could not load debug shader", LogLevel.ERROR)
-            return
-        }
+        shader = assetsManager.getShader(Assets.Shaders.DEBUG)
         
         started = true
 
@@ -272,6 +268,7 @@ class DebugRenderer(
     }
 }
 
+// TODO: extract
 class Line3D(val from: Vector3f, val to: Vector3f, val color: Vector3f, var lifetime: Int) {
     fun beginFrame(): Int = --lifetime
 }

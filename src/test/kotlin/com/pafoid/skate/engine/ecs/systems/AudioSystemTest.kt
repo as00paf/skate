@@ -3,7 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.Camera
 import io.mockk.clearMocks

@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.ModularTile
@@ -32,19 +33,17 @@ import kotlin.reflect.KClass
 
 fun GameObject.getComponent(type: ComponentType) =
     when (type) {
+        ComponentType.ANIMATOR -> getComponent<Animator>()
         ComponentType.AUDIO -> getComponent<AudioComponent>()
         ComponentType.BONE_OVERRIDE -> getComponent<BoneOverride>()
         ComponentType.BOX_COLLIDER_3D -> getComponent<BoxCollider3D>()
         ComponentType.CYLINDER_COLLIDER -> getComponent<CylinderCollider3D>()
-        ComponentType.RENDER -> getComponent<RenderComponent>()
-        ComponentType.RIGID_BODY_3D -> getComponent<RigidBody3D>()
-        ComponentType.TRANSFORM -> getComponent<Transform>()
-        ComponentType.ANIMATOR -> getComponent<Animator>()
         ComponentType.CAPSULE_COLLIDER -> getComponent<CapsuleCollider3D>()
         ComponentType.CUSTOM_COLLIDER -> getComponent<CustomCollider3D>()
         ComponentType.DAY_NIGHT_CYCLE -> getComponent<DayNightCycleComponent>()
         ComponentType.DIRECTIONAL_LIGHT -> getComponent<DirectionalLightComponent>()
         ComponentType.ENVIRONMENT -> getComponent<EnvironmentComponent>()
+        ComponentType.GRID_LINES -> getComponent<GridLines>()
         ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()
         ComponentType.LIGHTING -> getComponent<LightingComponent>()
         ComponentType.MODULAR_TILE -> getComponent<ModularTile>()
@@ -53,10 +52,13 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.PLAYER_CONTROLLER -> getComponent<PlayerController>()
         ComponentType.PLAYER_STATE_MANAGER -> getComponent<PlayerStateManager>()
         ComponentType.RAGDOLL -> getComponent<RagdollComponent>()
+        ComponentType.RENDER -> getComponent<RenderComponent>()
+        ComponentType.RIGID_BODY_3D -> getComponent<RigidBody3D>()
         ComponentType.SCENE_PHYSICS -> getComponent<ScenePhysicsComponent>()
         ComponentType.SKELETON -> getComponent<SkeletonComponent>()
         ComponentType.SPRITE_RENDERER -> getComponent<SpriteRenderer>()
         ComponentType.TIME -> getComponent<TimeComponent>()
+        ComponentType.TRANSFORM -> getComponent<Transform>()
     }
 
 inline fun <reified T : Component> GameObject.getComponent(): T? {

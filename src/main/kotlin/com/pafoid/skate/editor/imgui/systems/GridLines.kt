@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.imgui.systems
 
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.ecs.systems.GridLines
+import com.pafoid.skate.engine.ecs.components.GridLines
 import imgui.ImGui
 import imgui.type.ImBoolean
 

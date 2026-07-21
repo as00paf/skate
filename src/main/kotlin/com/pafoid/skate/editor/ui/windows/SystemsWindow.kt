@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.ecs.systems.AudioSystem
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
-import com.pafoid.skate.engine.ecs.systems.GridLines
 import com.pafoid.skate.engine.ecs.systems.System
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -64,7 +63,6 @@ class SystemsWindow(
                     is DayNightCycleSystem -> system.imgui(stringManager)
                     is DirectionalLightSystem -> system.imgui(stringManager)
                     is EnvironmentSystem -> system.imgui(stringManager)
-                    is GridLines -> system.imgui(stringManager)
                 }
             }
 

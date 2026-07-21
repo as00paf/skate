@@ -6,15 +6,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Vector3f
 
-/**
- * Scene represents the root of the ECS hierarchy and manages all game objects and systems.
- *
- * Scene extends GameObject to support component-based architecture for global scene state.
- * Components like EnvironmentComponent, TimeComponent, and LightingComponent can be added
- * to the Scene to store global state.
- *
- * @param name Scene name
- */
 @Serializable
 class Scene(@SerialName("sceneName") override var name: String = "MainScene") : GameObject(name) {
 

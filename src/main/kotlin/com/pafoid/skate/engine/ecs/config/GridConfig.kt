@@ -1,5 +1,7 @@
 package com.pafoid.skate.engine.ecs.config
 
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
 /**
@@ -30,11 +32,12 @@ import org.joml.Vector3f
  * @param snapMarkerColor Color of snap point marker (default: bright green)
  * @param originAxesThickness Thickness of origin axis lines when using quad-based rendering (default: 0.08f)
  */
+@Serializable
 data class GridConfig(
     var majorStep: Float = 10.0f,  // Godot default: 10m spacing for major lines
     var minorStep: Float = 1.0f,   // Godot default: 1m spacing for minor lines
-    var majorColor: Vector3f = Vector3f(0.25f, 0.25f, 0.25f),  // Even darker to match Godot's subtle grid
-    var minorColor: Vector3f = Vector3f(0.15f, 0.15f, 0.15f),  // Very subtle minor lines
+    @Contextual var majorColor: Vector3f = Vector3f(0.25f, 0.25f, 0.25f),  // Even darker to match Godot's subtle grid
+    @Contextual var minorColor: Vector3f = Vector3f(0.15f, 0.15f, 0.15f),  // Very subtle minor lines
     var minExtent: Float = 50.0f,  // Godot shows a very large grid by default
     var maxExtent: Float = 500.0f,  // Much larger maximum for far camera distances
     var lodCloseDistance: Float = 50.0f,  // Minor lines visible much further (Godot: ~50m)
@@ -43,15 +46,15 @@ data class GridConfig(
     var showOriginAxes: Boolean = true,
     var gridYOffset: Float = 0.0f,
     var showCenterMarker: Boolean = false,  // Disabled by default (Godot doesn't have this)
-    var centerMarkerColor: Vector3f = Vector3f(1.0f, 1.0f, 0.0f),
+    @Contextual var centerMarkerColor: Vector3f = Vector3f(1.0f, 1.0f, 0.0f),
     var centerMarkerDistance: Float = 30.0f,
     var edgeFadeEnabled: Boolean = false,  // Disabled - Godot doesn't fade grid edges
     var edgeFadeStart: Float = 0.7f,
     var secondaryGridEnabled: Boolean = false,
     var secondaryGridY: Float = 2.0f,
-    var secondaryGridColor: Vector3f = Vector3f(0.0f, 0.8f, 0.8f),
+    @Contextual var secondaryGridColor: Vector3f = Vector3f(0.0f, 0.8f, 0.8f),
     var snapVisualizationEnabled: Boolean = false,  // Disabled by default (Godot doesn't have this)
-    var snapMarkerColor: Vector3f = Vector3f(0.0f, 1.0f, 0.0f),
+    @Contextual var snapMarkerColor: Vector3f = Vector3f(0.0f, 1.0f, 0.0f),
     var originAxesThickness: Float = 0.04f  // Thickness of axis lines (quad-based rendering)
 ) {
     /**
