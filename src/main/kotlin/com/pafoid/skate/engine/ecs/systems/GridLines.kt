@@ -12,7 +12,7 @@ import kotlin.math.tan
 class GridLines(
     private val debugRenderer: DebugRenderer,
     private val cameraManager: CameraManager,
-) : System(priority = ExecutionPriority.LATE) {
+) : System(priority = ExecutionPriority.LATE) {// TODO: should be a scene component
 
     val config: GridConfig = GridConfig()
 

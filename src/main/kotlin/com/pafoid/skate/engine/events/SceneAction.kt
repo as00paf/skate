@@ -14,7 +14,7 @@ sealed class SceneAction(eventName: String) : Event(eventName) {
     object CreateRequested : SceneAction("scene.action.create_requested")
 
     // Open
-    data class Opened(val scene: Scene) : SceneAction("editor.scene_opened")
+    data class Opened(val scene: Scene) : SceneAction("scene.action.scene_opened")
     data class OpenSucceeded(val scene: Scene) : SceneAction("scene.action.open_succeeded")
     data class OpenFailed(val reason: String) : SceneAction("scene.action.open_failed")
     data class OpenSceneFile(val sceneFile: File) : SceneAction("scene.action.open_requested")
@@ -23,28 +23,29 @@ sealed class SceneAction(eventName: String) : Event(eventName) {
     data class ReopenAllRequested(val scenes: List<Scene>) : SceneAction("scene.action.reopen_all_requested")
 
     // Close
-    data class Closing(val scene: Scene) : SceneAction("editor.scene_closing")
-    data class Closed(val scene: Scene) : SceneAction("editor.scene_closed")
+    data class Closing(val scene: Scene) : SceneAction("scene.action.scene_closing")
+    data class Closed(val scene: Scene) : SceneAction("scene.action.scene_closed")
     data class CloseRequested(val scene: Scene) : SceneAction("scene.action.close_requested")
     data class CloseOthersRequested(val keepScene: Scene) : SceneAction("scene.action.close_others_requested")
     object CloseAllRequested : SceneAction("scene.action.close_all_requested")
 
     // Save
-    data class Saved(val scene: Scene) : SceneAction("editor.scene_saved")
+    data class Saved(val scene: Scene) : SceneAction("scene.action.scene_saved")
     data class SaveRequested(val scene: Scene) : SceneAction("scene.action.save_requested")
     data class SaveAsRequested(val scene: Scene) : SceneAction("scene.action.save_as_requested")
 
     // Rename
     data class RenameRequested(val scene: Scene, val newName: String) : SceneAction("scene.action.rename_requested")
-    data class Renamed(val scene: Scene, val oldName: String, val newName: String) : SceneAction("editor.scene_renamed")
+    data class Renamed(val scene: Scene, val oldName: String, val newName: String) :
+        SceneAction("scene.action.scene_renamed")
 
     // Import
-    object ImportRequested : SceneAction("editor.scene_import_requested")
+    object ImportRequested : SceneAction("scene.action.scene_import_requested")
 
     // Delete
     data class DeleteRequested(val scene: Scene) : SceneAction("scene.action.delete_requested")
 
     // Change
-    object Changed : SceneAction("editor.scene_changed")
-    object ResetScene : SceneAction("editor.reset_scene")
+    object Changed : SceneAction("scene.action.scene_changed")
+    object ResetScene : SceneAction("scene.action.reset_scene")
 }

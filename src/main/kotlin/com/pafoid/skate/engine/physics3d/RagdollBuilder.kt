@@ -12,7 +12,7 @@ import org.joml.Vector3f
  * Utility to map a humanoid skeleton (like Mixamo rig) to physics bodies and constraints
  * to build a RagdollComponent.
  */
-object RagdollBuilder {
+object RagdollBuilder {// TODO: move
 
     /**
      * Builds a ragdoll configuration for a standard mixamorig skeleton.

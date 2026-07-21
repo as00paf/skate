@@ -1,10 +1,7 @@
 package com.pafoid.skate.engine.assets.data.models
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 
-@Serializable
 data class MeshPart(
     var vaoId: Int = -1,
     var vertexCount: Int = 0,
@@ -18,8 +15,8 @@ data class MeshPart(
     val weights: FloatArray = floatArrayOf(),
     val indices: IntArray = intArrayOf(),
     val material: Material = Material(),
-    @Transient var inverseBindMatrices: List<Matrix4f> = emptyList(),
-    @Transient val enabledAttributes: MutableList<Int> = mutableListOf(0, 1, 2)
+    var inverseBindMatrices: List<Matrix4f> = emptyList(),
+    val enabledAttributes: MutableList<Int> = mutableListOf(0, 1, 2)
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

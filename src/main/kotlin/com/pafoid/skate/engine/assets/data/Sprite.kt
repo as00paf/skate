@@ -18,6 +18,4 @@ class Sprite(
     var width: Float = 0f
     var height: Float = 0f
 
-    fun getTexId() = texture?.texId ?: 0
-
 }

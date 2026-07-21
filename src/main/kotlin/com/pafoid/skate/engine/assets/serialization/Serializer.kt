@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.assets.serialization
 
-import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.Component

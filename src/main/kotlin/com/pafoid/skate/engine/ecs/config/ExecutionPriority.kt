@@ -5,6 +5,7 @@ package com.pafoid.skate.engine.ecs.config
  * Systems are updated in priority order (EARLY first, LATE last).
  */
 enum class ExecutionPriority {
+    // TODO: move back to system manager
     EARLY,      // Input, timing systems
     DEFAULT,    // Physics, animation systems
     LATE        // Rendering, UI systems

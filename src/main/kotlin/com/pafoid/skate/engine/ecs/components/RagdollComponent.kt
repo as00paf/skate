@@ -7,6 +7,7 @@ import kotlinx.serialization.Transient
 
 @Serializable
 class RagdollComponent : Component() {
+    // TODO: check Ragdoll Builder
     var state: RagdollState = RagdollState.ANIMATED
 
     @Transient // Managed manually, do not serialize raw physics objects

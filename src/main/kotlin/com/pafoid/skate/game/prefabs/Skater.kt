@@ -3,10 +3,10 @@ package com.pafoid.skate.game.prefabs
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
-import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController

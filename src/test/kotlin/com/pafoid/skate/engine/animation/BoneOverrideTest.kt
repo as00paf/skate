@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.animation
 
-import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
+import com.pafoid.skate.engine.ecs.components.BoneOverride
 import org.joml.Quaternionf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull

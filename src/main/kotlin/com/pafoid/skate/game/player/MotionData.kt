@@ -6,6 +6,7 @@ import org.joml.Vector2f
 
 @Serializable
 data class MotionData(
+//TODO: move
     @Contextual
     val inputDirection: Vector2f = Vector2f(),
     val speed: Float = 0f,

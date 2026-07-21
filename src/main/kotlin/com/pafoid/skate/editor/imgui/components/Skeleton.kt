@@ -2,10 +2,10 @@ package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
-import com.pafoid.skate.engine.assets.data.models.animations.BoneOverride
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui

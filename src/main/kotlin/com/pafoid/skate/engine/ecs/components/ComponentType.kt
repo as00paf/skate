@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.components
 enum class ComponentType {
     ANIMATOR,
     AUDIO,
+    BONE_OVERRIDE,
     BOX_COLLIDER_3D,
     CAPSULE_COLLIDER,
     CUSTOM_COLLIDER,
@@ -30,6 +31,7 @@ enum class ComponentType {
         return when (this) {
             ANIMATOR -> Animator()
             AUDIO -> AudioComponent()
+            BONE_OVERRIDE -> BoneOverride()
             BOX_COLLIDER_3D -> BoxCollider3D()
             CAPSULE_COLLIDER -> CapsuleCollider3D()
             CUSTOM_COLLIDER -> CustomCollider3D()

@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class PlayerState {
+    //TODO: move
     @Serializable object IDLE : PlayerState()
     @Serializable object WALKING : PlayerState()
     @Serializable object RUNNING : PlayerState()

@@ -168,7 +168,7 @@ class BulletPhysics3D(
 
     /**
      * Updates the physics properties of a GameObject's rigid body based on its component state.
-     * This is typically used to sync changes from the editor or game logic to the physics engine.
+     * This is typically used to sync changes from the game logic to the physics engine.
      *
      * @param go The GameObject to update.
      */
