@@ -3,8 +3,8 @@ package com.pafoid.skate.engine.render
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.ecs.config.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.System
+import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.events.CameraAction
 import com.pafoid.skate.engine.getComponent
 import org.joml.Vector3f

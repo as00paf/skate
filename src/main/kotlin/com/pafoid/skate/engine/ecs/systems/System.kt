@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.config.ExecutionPriority
+import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 
 /**
  * Abstract base class for systems in the ECS architecture.

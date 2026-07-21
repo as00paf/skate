@@ -157,4 +157,11 @@ class SystemManager {
         lastObjectComponentVersions.clear()
         systemsNeedSort = false
     }
+
+    //Execution priority for ECS systems.
+    enum class ExecutionPriority {
+        EARLY,      // Input, timing systems
+        DEFAULT,    // Physics, animation systems
+        LATE        // Rendering, UI systems
+    }
 }
