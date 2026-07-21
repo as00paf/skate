@@ -15,10 +15,8 @@ import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.koin.core.context.stopKoin
-import org.koin.test.KoinTest
 
-class AudioSystemTest : KoinTest {
+class AudioSystemTest {
 
     private val audioEngine = mockk<AudioEngine>(relaxed = true)
     private val logger = mockk<LoggerService>(relaxed = true)
@@ -42,7 +40,6 @@ class AudioSystemTest : KoinTest {
 
     @AfterEach
     fun tearDown() {
-        stopKoin()
         unmockkAll()
     }
 

@@ -38,7 +38,7 @@ import imgui.type.ImBoolean
  * Registry of all dockable editor windows.
  *
  * Centralizes window management for rendering, menus, and dock layout.
- * All windows are created via dependency injection and registered here.
+ * All windows are created and registered here.
  */
 class WindowRegistry(
     private val engine: Engine,
@@ -55,7 +55,6 @@ class WindowRegistry(
 ) {
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
-    private val jobSystem = engine.jobSystem
 
     val hierarchyWindow = SceneHierarchyWindow(engine, stringManager, clipboardService, logger, eventSystem)
     val propertiesWindow = PropertiesWindow(stringManager, engine, eventSystem, logger)

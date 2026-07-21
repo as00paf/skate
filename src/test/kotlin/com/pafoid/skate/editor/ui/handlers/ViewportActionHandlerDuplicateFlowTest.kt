@@ -21,12 +21,10 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.koin.core.context.stopKoin
 
 class ViewportActionHandlerDuplicateFlowTest {
 
@@ -45,13 +43,6 @@ class ViewportActionHandlerDuplicateFlowTest {
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
-
-        stopKoin()
-    }
-
-    @AfterEach
-    fun teardown() {
-        stopKoin()
     }
 
     @Test

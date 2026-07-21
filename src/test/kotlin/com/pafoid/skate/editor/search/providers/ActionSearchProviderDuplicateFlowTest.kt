@@ -9,18 +9,11 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
-import org.koin.core.context.stopKoin
 
 class ActionSearchProviderDuplicateFlowTest {
-
-    @AfterEach
-    fun teardown() {
-        stopKoin()
-    }
 
     @Test
     fun `duplicate action publishes viewport duplicate for selected object`() = runBlocking {

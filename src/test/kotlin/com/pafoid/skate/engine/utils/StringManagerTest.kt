@@ -1,36 +1,17 @@
 package com.pafoid.skate.engine.utils
 
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import io.mockk.mockk
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
-
 class StringManagerTest {
 
     private lateinit var stringManager: StringManager
 
     @BeforeEach
     fun setup() {
-        stopKoin()
-        startKoin {
-            modules(
-                module {
-                    single { LoggerService() }
-                }
-            )
-        }
         stringManager = StringManager(mockk(), "test_strings", "en") // Start with English
-    }
-
-    @AfterEach
-    fun teardown() {
-        stopKoin()
     }
 
     @Test

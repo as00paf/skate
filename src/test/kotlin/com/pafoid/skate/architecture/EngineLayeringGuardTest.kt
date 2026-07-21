@@ -28,22 +28,6 @@ class EngineLayeringGuardTest {
     }
 
     @Test
-    fun EngineLayering_BulletPhysicsUsesNoServiceLocatorInjection() {
-        val projectRoot = Paths.get(System.getProperty("user.dir")).toAbsolutePath()
-        val physicsFile = projectRoot.resolve("src/main/kotlin/com/pafoid/skate/engine/physics3d/BulletPhysics3D.kt")
-        val contents = physicsFile.readText()
-
-        assertFalse(
-            contents.contains("KoinComponent"),
-            "BulletPhysics3D.kt must not implement KoinComponent. Use constructor DI."
-        )
-        assertFalse(
-            contents.contains("by inject("),
-            "BulletPhysics3D.kt must not use property injection. Use constructor DI."
-        )
-    }
-
-    @Test
     fun EngineLayering_CriticalEnginePathsDoNotImportEditorPackage() {
         val projectRoot = Paths.get(System.getProperty("user.dir")).toAbsolutePath()
         val engineRoot = projectRoot.resolve("src/main/kotlin/com/pafoid/skate/engine")

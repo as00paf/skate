@@ -16,18 +16,11 @@ import com.pafoid.skate.engine.input.listeners.MouseListener
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.koin.core.context.stopKoin
 import org.lwjgl.glfw.GLFW
 
 class EditorInputHandlerEventRoutingTest {
-
-    @AfterEach
-    fun tearDown() {
-        runCatching { stopKoin() }
-    }
 
     @Test
     fun `insert shortcut publishes create empty action instead of mutating scene directly`() {

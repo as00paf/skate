@@ -1,42 +1,13 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.game.player.PlayerState
-import io.mockk.mockk
 import org.joml.Vector3f
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
 class PlayerStateManagerTest {
-
-    @BeforeEach
-    fun setup() {
-        startKoin {
-            modules(
-                module {
-                    single { mockk<LoggerService>(relaxed = true) }
-                    single { mockk<StringManager>(relaxed = true) }
-                    single { mockk<SceneManager>(relaxed = true) }
-                    single { EventSystem() }
-                }
-            )
-        }
-    }
-
-    @AfterEach
-    fun teardown() {
-        stopKoin()
-    }
 
     @Test
     fun `state manager picks up physics component added after first update`() {

@@ -81,10 +81,10 @@ class MyDoSomethingCommand(
 }
 ```
 
-### 4. Register Handler in KoinModule
+### 4. Add to EditorScreen
 
 ```kotlin
-single { MyActionHandler().also { it.init() } }
+private val newActionHandler = NewActionHandler()
 ```
 
 ### 5. UI Publishes Events

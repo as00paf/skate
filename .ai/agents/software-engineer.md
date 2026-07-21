@@ -55,7 +55,6 @@ You are a Senior Software Engineer specialized in Kotlin game engine development
 - Avoid hidden side effects
 - Write explicit and predictable code
 - NEVER use `!!` operator — use safe calls (`?.`), Elvis (`?:`), or `let`
-- Use Koin for ALL dependency injection — no manual singletons
 - NEVER hardcode UI strings — use StringManager with strings.properties
 - Minimize allocations in hot loops (onUpdate, onRender)
 - **NEVER use callbacks** — publish typed events to EventSystem instead
@@ -74,7 +73,6 @@ When implementing UI actions:
 2. Event subclasses are **top-level**, not nested inside the sealed class
 3. Create/update `*ActionHandler` that subscribes to events and executes commands
 4. Commands implement `Command` interface — **one command per file** in `editor/commands/`
-5. Register handler in `KoinModule.kt` with `.also { it.init() }`
 
 ---
 

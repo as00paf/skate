@@ -70,7 +70,6 @@ You review implementations AFTER they are written.
 ### Critical Issues (Must Fix)
 
 - [ ] No `!!` operators used (null safety violation)
-- [ ] No manual singletons or static instances (must use Koin)
 - [ ] No hardcoded UI strings (must use StringManager with strings.properties)
 - [ ] No ECS boundary violations
 - [ ] No allocations in hot loops (onUpdate, onRender)
@@ -83,7 +82,6 @@ You review implementations AFTER they are written.
 - [ ] UI publishes events → ActionHandler receives → Command executes → UndoRedoManager tracks
 - [ ] Events are sealed classes with top-level subclasses in their own file
 - [ ] Commands are one per file in `editor/commands/`
-- [ ] ActionHandlers are registered in KoinModule with `.also { it.init() }`
 
 ### Code Structure
 

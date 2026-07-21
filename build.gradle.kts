@@ -59,11 +59,6 @@ dependencies {
     // Reflection
     implementation(kotlin("reflect"))
 
-    // Koin
-    implementation(libs.koin.core)
-    testImplementation(libs.koin.test)
-    testImplementation(libs.koin.test.junit5)
-
     testImplementation(kotlin("test"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
