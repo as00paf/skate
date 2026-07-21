@@ -36,10 +36,6 @@ import org.joml.Vector3f
  */
 @Serializable
 data class DirectionalLightComponent(
-    // =========================================================================
-    // LIGHT PROPERTIES
-    // =========================================================================
-
     /**
      * Direction the light is pointing (normalized vector).
      * Points FROM the light TO the scene.

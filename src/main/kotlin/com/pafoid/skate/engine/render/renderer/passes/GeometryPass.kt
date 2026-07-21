@@ -110,8 +110,6 @@ class GeometryPass(
         val lightingStateComponent = scene.getComponent<LightingStateComponent>()
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,
-            camera,
-            scene.sun,
             lightingStateComponent,
             directionalLight,
             environmentConfig,

@@ -6,6 +6,9 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.VAOLoader
@@ -99,7 +102,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
 
     fun render(camera: Camera, scene: Scene) {
         // Get environment component for sky/fog settings
-        val environmentComponent = scene.getComponent<com.pafoid.skate.engine.ecs.components.EnvironmentComponent>()
+        val environmentComponent = scene.getComponent<EnvironmentComponent>()
         val renderSky = environmentComponent?.renderSky ?: true
 
         // Skip sky rendering if renderSky is false
@@ -114,8 +117,9 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
         shader.start()
 
         // Get time component for time of day
-        val timeComponent = scene.getComponent<com.pafoid.skate.engine.ecs.components.TimeComponent>()
+        val timeComponent = scene.getComponent<TimeComponent>()
         val timeOfDay = timeComponent?.timeOfDay ?: 12.0f
+        val sun = scene.getComponent<DirectionalLightComponent>()
 
         // Center on camera
         modelMatrix.identity().translation(camera.position)
@@ -126,7 +130,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, modelMatrix)
         shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
         shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
-        shader.uploadVec3f(Uniforms.SUN_COLOR, scene.sun.color)
+        sun?.color?.let { shader.uploadVec3f(Uniforms.SUN_COLOR, it) }
 
         // Upload sky settings from EnvironmentComponent
         shader.uploadVec3f(Uniforms.SKY_TINT, environmentComponent?.skyTint ?: org.joml.Vector3f(1f, 1f, 1f))

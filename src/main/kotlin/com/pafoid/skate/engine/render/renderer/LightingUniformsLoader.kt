@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.render.Camera
-import com.pafoid.skate.engine.render.data.DirectionalLight
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 
@@ -18,7 +17,6 @@ class LightingUniformsLoader {
      * Uploads all lighting uniforms to the specified shader.
      *
      * @param shader The shader to upload uniforms to
-     * @param camera The camera for position and view matrix
      * @param lightingStateComponent Component containing ambient light state (optional)
      * @param directionalLight The directional light config
      * @param environmentComponent Component containing fog settings (optional)
@@ -26,8 +24,6 @@ class LightingUniformsLoader {
      */
     fun loadLightingUniforms(
         shader: Shader,
-        camera: Camera,
-        sun: DirectionalLight,
         lightingStateComponent: LightingStateComponent?,
         directionalLight: DirectionalLightComponent?,
         environmentComponent: EnvironmentComponent? = null,
@@ -41,11 +37,6 @@ class LightingUniformsLoader {
 
             // Upload light space matrix for shadow mapping
             shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, directionalLight.lightSpaceMatrix)
-        } else {
-            // Fallback to sun for backwards compatibility
-            shader.uploadVec3f(Uniforms.SUN_DIRECTION, sun.direction)
-            val finalSunColor = Vector3f(sun.color).mul(sun.intensity)
-            shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
         }
 
         // Ambient light - use LightingStateComponent if available

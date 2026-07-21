@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.engine.render.Camera
-import com.pafoid.skate.engine.render.data.DirectionalLight
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -18,9 +17,6 @@ import org.joml.Vector3f
  */
 @Serializable
 class Scene(@SerialName("sceneName") override var name: String = "MainScene") : GameObject(name) {
-
-    // TODO: this should be DirectionalLightComponent
-    var sun: DirectionalLight = DirectionalLight()
 
     // Camera remains a special property (not a component for now)
     val camera: Camera = Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }
