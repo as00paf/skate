@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.imgui.WindowRegistry
-import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.DisplayService
 import com.pafoid.skate.editor.systems.EditorMutationGate
@@ -33,7 +32,6 @@ val editorModule = module {
 
     // Editor-only rendering tools (moved from engineModule)
     single { PrefabsGenerator(get()) }
-    single { EngineAssetCopier() }
 
     single { ClipboardService(get()) }
     single { EditorMutationGate(get(), get()) }
@@ -74,7 +72,7 @@ val editorModule = module {
     single { ImGuiLayer(get(), get(), get(), get(), get(), get(), get()) }
 
     // Project management
-    single { ProjectManager(get(), get(), get(), get(), get(), get()) }
+    single { ProjectManager(get(), get(), get(), get(), get()) }
 }
 
 val engineModule = module {
