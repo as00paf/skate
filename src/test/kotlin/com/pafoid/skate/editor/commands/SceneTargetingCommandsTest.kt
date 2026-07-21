@@ -4,11 +4,10 @@ import com.pafoid.skate.editor.commands.project.CloseOtherScenesCommand
 import com.pafoid.skate.editor.commands.project.CloseSceneCommand
 import com.pafoid.skate.editor.commands.project.DeleteSceneCommand
 import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
+import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.scene.SceneData
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
@@ -40,7 +39,7 @@ class SceneTargetingCommandsTest {
         val keepScene = mockk<Scene>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
 
-        CloseOtherScenesCommand(keepScene, sceneManager).execute()
+        CloseOtherScenesCommand(keepScene, sceneManager, mockk()).execute()
 
         verify(exactly = 1) { sceneManager.closeOtherScenes(keepScene) }
     }
@@ -50,9 +49,9 @@ class SceneTargetingCommandsTest {
         val scene = mockk<Scene>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val logger = mockk<LoggerService>(relaxed = true)
-        every { scene.sceneData } returns SceneData(levelPath = "")
+        val projectManager: ProjectManager = mockk()
 
-        DeleteSceneCommand(scene, sceneManager, logger).execute()
+        DeleteSceneCommand(scene, projectManager, sceneManager, logger).execute()
 
         verify(exactly = 1) { sceneManager.closeScene(scene) }
     }

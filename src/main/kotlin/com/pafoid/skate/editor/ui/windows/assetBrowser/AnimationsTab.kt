@@ -3,10 +3,8 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
-import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import java.awt.Desktop
 import java.io.File
@@ -14,8 +12,6 @@ import java.io.File
 class AnimationsTab(
     private val engine: Engine,
     stringManager: StringManager,
-    private val jobSystem: IJobSystem,
-    private val logger: LoggerService
 ) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
     init {
@@ -51,7 +47,7 @@ class AnimationsTab(
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
-                logger.logEditor("Animation: ${file.name}, Format: ${file.extension}, Path: ${file.absolutePath}")
+                engine.logger.logEditor("Animation: ${file.name}, Format: ${file.extension}, Path: ${file.absolutePath}")
             }
             ImGui.endPopup()
         }
@@ -71,16 +67,16 @@ class AnimationsTab(
     }
     
     private fun previewAnimation(file: File) {
-        logger.logEditor("Preview animation: ${file.name} (not yet implemented)")
+        engine.logger.logEditor("Preview animation: ${file.name} (not yet implemented)")
     }
     
     private fun applyAnimationToSelected(animationPath: String) {
         // Future enhancement: Apply animation to selected GameObject's Animator component
-        logger.logEditor("Apply animation to selected not yet implemented: $animationPath")
+        engine.logger.logEditor("Apply animation to selected not yet implemented: $animationPath")
     }
 
     override fun refreshAssets() {
-        jobSystem.runIO {
+        engine.jobSystem.runIO {
             val fileExtensions = setOf("fbx")
             items.clear()
             val animationsDir = File(Assets.Folders.ANIMATIONS)

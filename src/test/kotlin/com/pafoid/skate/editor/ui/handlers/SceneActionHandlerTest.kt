@@ -1,57 +1,45 @@
 package com.pafoid.skate.editor.ui.handlers
 
 import com.pafoid.skate.editor.data.LogEntry
-import com.pafoid.skate.editor.data.SceneOpenResult
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
-import com.pafoid.skate.editor.project.SceneSerializer
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction
-import com.pafoid.skate.engine.physics3d.Physics3DFactory
-import com.pafoid.skate.engine.utils.IJobSystem
+import com.pafoid.skate.engine.utils.JobSystem
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.core.logger.Level
-import org.koin.dsl.module
 import java.io.File
 import java.nio.file.Files
 
 class SceneActionHandlerTest {
 
     private lateinit var sceneManager: SceneManager
-    private lateinit var sceneSerializer: SceneSerializer
+    private lateinit var serializer: Serializer
     private lateinit var undoRedoManager: UndoRedoManager
     private lateinit var eventSystem: EventSystem
     private lateinit var testLogger: LoggerService
     private lateinit var projectManager: ProjectManager
-    private lateinit var jobSystem: IJobSystem
+    private var jobSystem = JobSystem()
     private lateinit var mutationGate: EditorMutationGate
-    private lateinit var physics3DFactory: Physics3DFactory
+    private lateinit var engine: Engine
 
     private lateinit var tempProjectDir: File
 
@@ -64,12 +52,10 @@ class SceneActionHandlerTest {
         tempProjectDir = Files.createTempDirectory("test-project").toFile()
 
         eventSystem = EventSystem()
-        sceneSerializer = mockk(relaxed = true)
+        serializer = mockk(relaxed = true)
         undoRedoManager = mockk(relaxed = true)
         projectManager = mockk(relaxed = true)
-        jobSystem = ImmediateJobSystem()
         mutationGate = mockk(relaxed = true)
-        physics3DFactory = mockk(relaxed = true)
         every { mutationGate.blockIfPlaying(any()) } returns false
 
         // Create a real SceneManager that tracks openScenes
@@ -82,7 +68,6 @@ class SceneActionHandlerTest {
             val scene = openScenesList.last()
             eventSystem.publish(SceneAction.Opened(scene))
             eventSystem.publish(SceneAction.Changed)
-            true
         }
 
         // Mock project manager to return temp directory
@@ -103,27 +88,17 @@ class SceneActionHandlerTest {
             cmd.execute()
         }
 
-        // Mock serializer to actually create files
-        every { sceneSerializer.saveToFile(any(), any()) } answers {
-            val path = secondArg<String>()
-            File(path).parentFile?.mkdirs()
-            File(path).createNewFile()
-        }
-
         // Create a mock LoggerService that captures log entries
         testLogger = mockk(relaxed = true)
         every { testLogger.log(any<String>(), any(), any()) } answers {
             val message = firstArg<String>()
-            val level = secondArg<com.pafoid.skate.engine.data.LogLevel>()
+            val level = secondArg<LogLevel>()
             capturedEditorLogs.add(LogEntry(message, level))
         }
-
-        startKoinForTest()
     }
 
     @AfterEach
     fun teardown() {
-        stopKoin()
         unmockkAll()
         jobSystem.destroy()
         // Clean up temp directory
@@ -133,17 +108,11 @@ class SceneActionHandlerTest {
     }
 
     @Test
-    fun `handleCreateRequested_createsSceneFileOnDisk`() {
+    fun handleCreateRequested_createsSceneFileOnDisk() {
         // Arrange
-        val handler = SceneActionHandler()
-        handler.init()
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         val capturedSavePath = slot<String>()
-        every { sceneSerializer.saveToFile(any(), capture(capturedSavePath)) } answers {
-            val path = secondArg<String>()
-            File(path).parentFile?.mkdirs()
-            File(path).createNewFile()
-        }
 
         // Act
         eventSystem.publish(SceneAction.CreateRequested)
@@ -157,10 +126,9 @@ class SceneActionHandlerTest {
     }
 
     @Test
-    fun `handleCreateRequested_opensSceneInSceneManager`() {
+    fun handleCreateRequested_opensSceneInSceneManager() {
         // Arrange
-        val handler = SceneActionHandler()
-        handler.init()
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         // Act
         eventSystem.publish(SceneAction.CreateRequested)
@@ -173,10 +141,9 @@ class SceneActionHandlerTest {
     }
 
     @Test
-    fun `handleCreateRequested_publishesSceneOpenedAndChangedEvents`() {
+    fun handleCreateRequested_publishesSceneOpenedAndChangedEvents() {
         // Arrange
-        val handler = SceneActionHandler()
-        handler.init()
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         val sceneOpenedEvents = mutableListOf<SceneAction.Opened>()
         var sceneChangedReceived = false
@@ -197,10 +164,9 @@ class SceneActionHandlerTest {
     }
 
     @Test
-    fun `handleCreateRequested_publishesSceneCreatedEvent`() {
+    fun handleCreateRequested_publishesSceneCreatedEvent() {
         // Arrange
-        val handler = SceneActionHandler()
-        handler.init()
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         var sceneCreatedReceived = false
         var createdScene: Scene? = null
@@ -222,8 +188,7 @@ class SceneActionHandlerTest {
     @Test
     fun `handleSceneCreated_opensScene()`() {
         // Arrange
-        val handler = SceneActionHandler()
-        handler.init()
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         val mockScene = mockk<Scene>(relaxed = true)
         every { mockScene.name } returns "TestScene"
@@ -239,10 +204,9 @@ class SceneActionHandlerTest {
     }
 
     @Test
-    fun `handleCreateRequested_failsGracefully_whenNoProjectDirectory`() {
+    fun handleCreateRequested_failsGracefully_whenNoProjectDirectory() {
         // Arrange
-        val handler = SceneActionHandler()
-        handler.init()
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         every { projectManager.getProjectDirectory() } returns null
 
@@ -262,19 +226,11 @@ class SceneActionHandlerTest {
     }
 
     @Test
-    fun `handleCreateRequested_generatesUniquePaths`() {
+    fun handleCreateRequested_generatesUniquePaths() {
         // Arrange
-        val handler = SceneActionHandler()
-        handler.init()
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         val savedPaths = mutableListOf<String>()
-        every { sceneSerializer.saveToFile(any(), any()) } answers {
-            val path = secondArg<String>()
-            savedPaths.add(path)
-            // Actually create the file so generateUniqueScenePath can detect it
-            File(path).parentFile?.mkdirs()
-            File(path).createNewFile()
-        }
 
         // Act - create three scenes
         eventSystem.publish(SceneAction.CreateRequested)
@@ -294,23 +250,16 @@ class SceneActionHandlerTest {
     }
 
     @Test
-    fun `handleCreateRequested_usesExistingFileForUniquenessCheck`() {
+    fun handleCreateRequested_usesExistingFileForUniquenessCheck() {
         // Arrange - pre-create NewScene_1.scene to test uniqueness
         val scenesDir = File(tempProjectDir, "Scenes")
         scenesDir.mkdirs()
         val existingFile = File(scenesDir, "NewScene_1.scene")
         existingFile.createNewFile()
 
-        val handler = SceneActionHandler()
-        handler.init()
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         val savedPaths = mutableListOf<String>()
-        every { sceneSerializer.saveToFile(any(), any()) } answers {
-            val path = secondArg<String>()
-            savedPaths.add(path)
-            File(path).parentFile?.mkdirs()
-            File(path).createNewFile()
-        }
 
         // Act
         eventSystem.publish(SceneAction.CreateRequested)
@@ -324,10 +273,9 @@ class SceneActionHandlerTest {
     }
 
     @Test
-    fun `handleCreateRequested_logsSuccessMessage`() {
+    fun handleCreateRequested_logsSuccessMessage() {
         // Arrange
-        val handler = SceneActionHandler()
-        handler.init()
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         // Act
         eventSystem.publish(SceneAction.CreateRequested)
@@ -340,10 +288,8 @@ class SceneActionHandlerTest {
     }
 
     @Test
-    fun `handleOpenRequested_logsCancellationFromCompletionEvent`() {
-        val handler = SceneActionHandler()
-        handler.init()
-        every { sceneSerializer.open(any()) } returns SceneOpenResult.Cancelled
+    fun handleOpenRequested_logsCancellationFromCompletionEvent() {
+        val handler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
 
         eventSystem.publish(SceneAction.OpenRequested)
 
@@ -352,46 +298,5 @@ class SceneActionHandlerTest {
             it.message.contains("Scene open cancelled", ignoreCase = true)
         }
         assertTrue(cancelLogs.isNotEmpty(), "Cancellation should be logged after async completion event")
-    }
-
-    private fun startKoinForTest() {
-        stopKoin()
-        startKoin {
-            printLogger(Level.ERROR)
-            modules(module {
-                single<SceneManager> { sceneManager }
-                single<SceneSerializer> { sceneSerializer }
-                single<UndoRedoManager> { undoRedoManager }
-                single<EventSystem> { eventSystem }
-                single<LoggerService> { testLogger }
-                single<ProjectManager> { projectManager }
-                single<IJobSystem> { jobSystem }
-                single<EditorMutationGate> { mutationGate }
-                single<Physics3DFactory> { physics3DFactory }
-            })
-        }
-    }
-
-    private class ImmediateJobSystem : IJobSystem {
-        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-
-        override val mainDispatcher: CoroutineDispatcher = Dispatchers.Unconfined
-
-        override fun isMainThread(): Boolean = true
-
-        override fun update() = Unit
-
-        override fun runAsync(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
-
-        override fun runOnMain(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
-
-        override fun <T> runAsyncDeferred(block: suspend CoroutineScope.() -> T): Deferred<T> =
-            scope.async(block = block)
-
-        override fun runIO(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
-
-        override fun destroy() {
-            scope.coroutineContext[Job]?.cancel()
-        }
     }
 }

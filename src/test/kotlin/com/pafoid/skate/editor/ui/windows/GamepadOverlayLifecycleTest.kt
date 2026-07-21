@@ -1,33 +1,21 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.ProjectEvent
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.input.listeners.GamepadListener
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
 class GamepadOverlayLifecycleTest {
 
-    @AfterEach
-    fun tearDown() {
-        runCatching { stopKoin() }
-    }
-
     @Test
-    fun `controllerTexture_ProjectClosed_InvalidatesAndReloadsTexture`() {
+    fun controllerTexture_ProjectClosed_InvalidatesAndReloadsTexture() {
         val assetsManager = mockk<AssetsManager>(relaxed = true)
         every { assetsManager.getTexture(Assets.Textures.XBOX_CONTROLLER) } returnsMany listOf(
             texture(101),
@@ -35,17 +23,13 @@ class GamepadOverlayLifecycleTest {
         )
 
         val eventSystem = EventSystem()
-        startKoin {
-            modules(module {
-                single { assetsManager }
-                single { mockk<GamepadListener>(relaxed = true) }
-                single { mockk<SettingsManager>(relaxed = true) }
-                single { mockk<StringManager>(relaxed = true) }
-                single { eventSystem }
-            })
-        }
-
-        val overlay = GamepadOverlay()
+        val overlay = GamepadOverlay(
+            assetsManager = mockk(),
+            gamepadListener = mockk(),
+            settingsManager = mockk(),
+            stringManager = mockk(),
+            eventSystem = mockk()
+        )
         assertEquals(101, resolveControllerTexture(overlay).texId)
 
         eventSystem.publish(ProjectEvent.Closed("AnyProject"))

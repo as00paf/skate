@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.assets.loaders.AnimationLoader
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
+import com.pafoid.skate.engine.assets.loaders.SoundLoader
 import com.pafoid.skate.engine.assets.loaders.TextureLoader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.data.LogLevel
@@ -28,6 +29,7 @@ class AssetsManager(
     private val textureLoader = TextureLoader()
     private val assimpLoader = AssimpLoader(textureLoader, vaoLoader)
     private val animationLoader = AnimationLoader()
+    private val soundLoader = SoundLoader(logger)
 
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
@@ -77,7 +79,7 @@ class AssetsManager(
         sounds[absolutePath]?.let { return it }
 
         return try {
-            val sound = SoundBuffer(absolutePath)
+            val sound = soundLoader.load(path)
             sounds[absolutePath] = sound
             sound
         } catch (e: Exception) {

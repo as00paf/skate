@@ -4,14 +4,14 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.hasComponent
-import com.pafoid.skate.game.skateboard.SkateboardPhysics
 
 /**
  * Search provider for GameObjects in the current scene.
@@ -31,11 +31,11 @@ import com.pafoid.skate.game.skateboard.SkateboardPhysics
  * - The selected GameObject will be focused in viewport by existing GizmoSystem
  */
 class GameObjectSearchProvider(
-    private val engine: Engine,
+    private val sceneManager: SceneManager,
+    private val gameObjectManager: GameObjectManager,
     private val stringManager: StringManager,
 ) : BaseSearchProvider() {
-    private val sceneManager = engine.sceneManager
-    private val gameObjectManager = engine.gameObjectManager
+
     override val category: SearchCategory = SearchCategory.GAMEOBJECT
 
     override suspend fun search(query: String): List<SearchResult> {
@@ -118,7 +118,6 @@ class GameObjectSearchProvider(
      */
     private fun determineSubcategory(go: GameObject): String {
         return when {
-            go.hasComponent<SkateboardPhysics>() -> "Skateboard"
             go.hasComponent<LightingComponent>() -> "Light"
             go.hasComponent<AudioComponent>() -> "Audio Source"
             go.hasComponent<RenderComponent>() -> "Mesh"
@@ -134,7 +133,6 @@ class GameObjectSearchProvider(
      */
     private fun determineIcon(go: GameObject): String {
         return when {
-            go.hasComponent<SkateboardPhysics>() -> Icons.CUBE
             go.hasComponent<LightingComponent>() -> Icons.SUN
             go.hasComponent<AudioComponent>() -> Icons.MUSIC
             go.hasComponent<RenderComponent>() -> Icons.CUBE

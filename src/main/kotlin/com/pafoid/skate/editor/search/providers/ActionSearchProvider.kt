@@ -14,10 +14,10 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.render.data.LightType
@@ -30,12 +30,10 @@ import org.joml.Vector3f
  * Results support direct execution of the action when selected.
  */
 class ActionSearchProvider(
-    private val engine: Engine,
+    private val sceneManager: SceneManager,
     private val logger: LoggerService,
     private val eventSystem: EventSystem,
 ) : BaseSearchProvider() {
-    private val sceneManager = engine.sceneManager
-
     override val category: SearchCategory = SearchCategory.ACTION
 
     private val actions = listOf(

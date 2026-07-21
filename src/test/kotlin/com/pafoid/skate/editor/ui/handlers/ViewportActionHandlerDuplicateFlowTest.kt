@@ -7,19 +7,14 @@ import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.CameraManager
-import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -39,15 +34,10 @@ class ViewportActionHandlerDuplicateFlowTest {
     private val sceneManager = mockk<SceneManager>(relaxed = true)
     private val undoRedoManager = mockk<UndoRedoManager>(relaxed = true)
     private val eventSystem = EventSystem()
-    private val logger = mockk<LoggerService>(relaxed = true)
     private val clipboardService = mockk<ClipboardService>(relaxed = true)
     private val mutationGate = mockk<EditorMutationGate>(relaxed = true)
     private val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-    private val assetsManager = mockk<AssetsManager>(relaxed = true)
     private val gameObjectManager = mockk<GameObjectManager>(relaxed = true)
-    private val cameraManager = mockk<CameraManager>(relaxed = true)
-    private val systemManager = mockk<SystemManager>(relaxed = true)
-    private val jobSystem = mockk<IJobSystem>(relaxed = true)
 
     @BeforeEach
     fun setup() {
@@ -75,22 +65,17 @@ class ViewportActionHandlerDuplicateFlowTest {
         original.addComponent(transform)
 
         val addedObject = slot<GameObject>()
-        every { gameObjectManager.addGameObject(capture(addedObject), any()) } just runs
+        every { gameObjectManager.addGameObject(capture(addedObject)) } just runs
 
         val handler = ViewportActionHandler(
             engine,
-            sceneManager,
             undoRedoManager,
-            eventSystem,
-            logger,
             clipboardService,
             mutationGate,
             prefabsGenerator,
-            assetsManager,
-            gameObjectManager,
-            cameraManager,
-            systemManager,
-            jobSystem
+            editorCamera = mockk(),
+            viewportRenderer = mockk(),
+            gizmoSystem = mockk(),
         )
         handler.init()
 

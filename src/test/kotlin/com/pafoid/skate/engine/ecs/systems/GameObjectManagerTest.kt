@@ -26,9 +26,7 @@ class GameObjectManagerTest {
         gameObjects = mutableListOf()
         pendingObjects = mutableListOf()
 
-        every { scene.physics3d } returns physics3d
         every { scene.gameObjects } returns gameObjects
-        every { scene.pendingObjects } returns pendingObjects
         every { scene.markObjectSetChanged() } returns Unit
 
         gameObjectManager = GameObjectManager()

@@ -17,10 +17,7 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -31,35 +28,29 @@ class GameViewWindow(
     private val engine: Engine,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
-    private val eventSystem: EventSystem,
     private val editorState: EditorInputState,
     private val undoRedoManager: UndoRedoManager,
     private val clipboardService: ClipboardService,
     private val mutationGate: EditorMutationGate,
     private val prefabsGenerator: PrefabsGenerator,
     private val editorCamera: EditorCamera,
-    private val jobSystem: IJobSystem,
     private val gizmoSystem: GizmoSystem,
-    private val logger: LoggerService,
 ) : IWindow {
     private val sceneManager = engine.sceneManager
 
-    private val viewportOverlays = ViewportOverlays(TrickUIWindow(eventSystem), settingsManager)
+    private val viewportOverlays = ViewportOverlays(TrickUIWindow(engine.eventSystem), settingsManager)
 
     private val viewportRenderer = ViewportRenderer(engine)
-    private val viewportContextMenu = ViewportContextMenu(stringManager, eventSystem)
-    private val viewportDragDropHandler = ViewportDragDropHandler(viewportRenderer, eventSystem)
-    private val viewportToolbar = ViewportToolbar(engine, logger, stringManager, eventSystem, gizmoSystem)
+    private val viewportContextMenu = ViewportContextMenu(stringManager, engine.eventSystem)
+    private val viewportDragDropHandler = ViewportDragDropHandler(viewportRenderer, engine.eventSystem)
+    private val viewportToolbar = ViewportToolbar(engine, stringManager, gizmoSystem)
     private val viewportActionHandler = ViewportActionHandler(
         engine = engine,
         undoRedoManager = undoRedoManager,
-        eventSystem = eventSystem,
-        logger = logger,
         clipboardService = clipboardService,
         mutationGate = mutationGate,
         prefabsGenerator = prefabsGenerator,
         editorCamera = editorCamera,
-        jobSystem = jobSystem,
         viewportRenderer = viewportRenderer,
         gizmoSystem = gizmoSystem
     )
@@ -69,9 +60,9 @@ class GameViewWindow(
         engine.inputProvider.gamepadListener,
         settingsManager,
         stringManager,
-        eventSystem
+        engine.eventSystem
     )
-    private val scenesTabBar = EditorScenesTabBar(eventSystem, stringManager)
+    private val scenesTabBar = EditorScenesTabBar(engine.eventSystem, stringManager)
 
     private val tempVec2 = ImVec2()
 

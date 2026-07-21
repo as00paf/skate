@@ -1,17 +1,14 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.engine.data.LogLevel
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.io.InputStream
 import java.util.*
 
 class StringManager(
+    private val logger: LoggerService,
     private val baseName: String = "strings",
     private var currentLocale: String = "en"
-) : KoinComponent {
-    private val logger: LoggerService by inject()
-
+) {
     private val properties = Properties()
 
     init {

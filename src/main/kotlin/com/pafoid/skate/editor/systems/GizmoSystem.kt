@@ -7,17 +7,16 @@ import com.pafoid.skate.editor.gizmos.ScaleGizmo
 import com.pafoid.skate.editor.gizmos.SelectionGizmo
 import com.pafoid.skate.editor.gizmos.TranslateGizmo
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 
 class GizmoSystem(
 // TODO: should use editor input state
+    private val engine: Engine,
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
-    private val engine: Engine,
-    private val eventSystem: EventSystem,
     private val editorCamera: EditorCamera,
 ) {
+    private val eventSystem = engine.eventSystem
     private val gameObjectManager = engine.gameObjectManager
 
     var usingGizmo = NONE

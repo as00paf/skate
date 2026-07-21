@@ -9,10 +9,7 @@ import com.pafoid.skate.editor.search.data.SearchResultWithCategory
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.history.SearchHistoryEntry
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import imgui.ImVec4
 import imgui.flag.ImGuiCol
@@ -42,13 +39,9 @@ import kotlinx.coroutines.Job
 class SearchEverywhereWindow(
     private val engine: Engine,
     private val stringManager: StringManager,
-    private val jobSystem: IJobSystem,
-    private val eventSystem: EventSystem,
-    private val logger: LoggerService,
 ) : IWindow { // TODO: fix, not showing
-
     private val searchHistory: SearchHistory = SearchHistory(serializer = engine.serializer)
-    private val searchEngine: SearchEngine = SearchEngine(engine, stringManager, eventSystem, logger)
+    private val searchEngine: SearchEngine = SearchEngine(engine, stringManager)
 
     private var isOpen = false
     private val searchQuery = ImString(256)
@@ -78,7 +71,7 @@ class SearchEverywhereWindow(
         currentResults = emptyMap()
         lastQueriedText = ""
         activeFilter = SearchFilter.ALL
-        jobSystem.runOnMain {
+        engine.jobSystem.runOnMain {
             loadRecentSearches()
         }
     }
@@ -290,7 +283,7 @@ class SearchEverywhereWindow(
         searchJob?.cancel()
 
         isSearching = true
-        searchJob = jobSystem.runAsync {
+        searchJob = engine.jobSystem.runAsync {
             Thread.sleep(debounceDelayMs)
             if (searchQuery.get().trim() != query) {
                 return@runAsync
@@ -298,7 +291,7 @@ class SearchEverywhereWindow(
 
             val results = searchEngine.search(query)
 
-            jobSystem.runOnMain {
+            engine.jobSystem.runOnMain {
                 currentResults = results
                 flattenedResults = flattenResults(getFilteredResults())
                 selectedResultIndex = 0
@@ -427,7 +420,7 @@ class SearchEverywhereWindow(
     }
 
     private fun selectResult(result: SearchResult) {
-        jobSystem.runAsync {
+        engine.jobSystem.runAsync {
             searchHistory.add(searchQuery.get().trim(), result)
         }
 

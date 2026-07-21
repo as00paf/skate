@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.ScreenshotUtils
 import imgui.ImGui
 import imgui.ImVec2
-import org.koin.core.component.KoinComponent
 
 /**
  * Renders the game viewport image and manages framebuffer synchronization.
@@ -13,9 +12,8 @@ import org.koin.core.component.KoinComponent
  */
 class ViewportRenderer(
     private val engine: Engine,
-) : KoinComponent {
-    // TODO:  remove koin component ?
-    private val renderer: Renderer by lazy { engine.renderer }
+) {
+    private val renderer: Renderer by lazy { engine.renderer }// TODO: try to make not lazy
 
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f

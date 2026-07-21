@@ -16,22 +16,13 @@ import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.SaveRequested
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.utils.IJobSystem
+import com.pafoid.skate.engine.utils.JobSystem
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -48,13 +39,13 @@ class ProjectActionHandlerTest {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
         val undoRedoManager = mockk<UndoRedoManager>()
-        val logger = mockk<LoggerService>(relaxed = true)
+        val engine: Engine = mockk()
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
 
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
+
         var changedEvents = 0
         eventSystem.subscribe<FileSystemEvent.FileSystemChangedEvent> {
             changedEvents++
@@ -76,13 +67,11 @@ class ProjectActionHandlerTest {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
         val undoRedoManager = mockk<UndoRedoManager>()
-        val logger = mockk<LoggerService>(relaxed = true)
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
-
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
         var changedEvents = 0
         eventSystem.subscribe<FileSystemEvent.FileSystemChangedEvent> {
             changedEvents++
@@ -101,13 +90,12 @@ class ProjectActionHandlerTest {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
         val undoRedoManager = mockk<UndoRedoManager>()
-        val logger = mockk<LoggerService>(relaxed = true)
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
 
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
         var changedEvents = 0
         eventSystem.subscribe<FileSystemEvent.FileSystemChangedEvent> {
             changedEvents++
@@ -129,9 +117,8 @@ class ProjectActionHandlerTest {
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
-
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
 
         var successReceived = false
         var failedReceived = false
@@ -152,14 +139,14 @@ class ProjectActionHandlerTest {
         val projectManager = mockk<ProjectManager>(relaxed = true)
         val undoRedoManager = mockk<UndoRedoManager>()
         val logger = mockk<LoggerService>(relaxed = true)
-        val jobSystem = QueuedMainJobSystem()
+        val jobSystem = JobSystem()
         every { projectManager.openProject(any()) } returns true
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
 
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem, jobSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
 
         var successReceived = false
         eventSystem.subscribe<OpenProjectSucceeded> { successReceived = true }
@@ -168,8 +155,6 @@ class ProjectActionHandlerTest {
 
         assertFalse(successReceived)
         verify(exactly = 0) { projectManager.openProject(any()) }
-
-        jobSystem.flushMainTasks()
 
         assertTrue(successReceived)
         verify(exactly = 1) { projectManager.openProject(any()) }
@@ -186,8 +171,8 @@ class ProjectActionHandlerTest {
             firstArg<Command>().execute()
         }
 
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
 
         var successCount = 0
         var failureEvent: CreateProjectFailed? = null
@@ -208,14 +193,13 @@ class ProjectActionHandlerTest {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
         val undoRedoManager = mockk<UndoRedoManager>()
-        val logger = mockk<LoggerService>(relaxed = true)
         every { projectManager.hasProject() } returns true
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
 
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
 
         eventSystem.publish(CloseProjectRequested)
 
@@ -228,14 +212,13 @@ class ProjectActionHandlerTest {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
         val undoRedoManager = mockk<UndoRedoManager>()
-        val logger = mockk<LoggerService>(relaxed = true)
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
         every { projectManager.saveProject() } returns true
 
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
 
         eventSystem.publish(SaveRequested)
 
@@ -248,14 +231,13 @@ class ProjectActionHandlerTest {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
         val undoRedoManager = mockk<UndoRedoManager>()
-        val logger = mockk<LoggerService>(relaxed = true)
         every { projectManager.loadLastProject() } returns false
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
 
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
 
         eventSystem.publish(LoadLastProjectRequested)
 
@@ -271,13 +253,11 @@ class ProjectActionHandlerTest {
         val eventSystem = EventSystem()
         val projectManager = mockk<ProjectManager>(relaxed = true)
         val undoRedoManager = mockk<UndoRedoManager>()
-        val logger = mockk<LoggerService>(relaxed = true)
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
-
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
         var failedEvent: FileSystemEvent.FileSystemOperationFailed? = null
         var changedEvents = 0
         eventSystem.subscribe<FileSystemEvent.FileSystemOperationFailed> { failedEvent = it }
@@ -307,9 +287,8 @@ class ProjectActionHandlerTest {
         every { undoRedoManager.executeCommand(any()) } answers {
             firstArg<Command>().execute()
         }
-
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
         var failedEvent: FileSystemEvent.FileSystemOperationFailed? = null
         var changedEvents = 0
         eventSystem.subscribe<FileSystemEvent.FileSystemOperationFailed> { failedEvent = it }
@@ -337,8 +316,8 @@ class ProjectActionHandlerTest {
             firstArg<Command>().execute()
         }
 
-        val handler = ProjectActionHandler(projectManager, undoRedoManager, logger, eventSystem)
-        handler.init()
+        val engine: Engine = mockk()
+        val handler = ProjectActionHandler(engine, projectManager, undoRedoManager, mockk())
         var failedEvent: FileSystemEvent.FileSystemOperationFailed? = null
         var changedEvents = 0
         eventSystem.subscribe<FileSystemEvent.FileSystemOperationFailed> { failedEvent = it }
@@ -352,40 +331,5 @@ class ProjectActionHandlerTest {
         assertNotNull(failedEvent?.reason)
         assertEquals(0, changedEvents)
         tempDir.deleteRecursively()
-    }
-
-    private class QueuedMainJobSystem : IJobSystem {
-        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        private val mainTasks = mutableListOf<suspend CoroutineScope.() -> Unit>()
-
-        override val mainDispatcher: CoroutineDispatcher = Dispatchers.Unconfined
-
-        override fun isMainThread(): Boolean = false
-
-        override fun update() = Unit
-
-        override fun runAsync(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
-
-        override fun runOnMain(block: suspend CoroutineScope.() -> Unit): Job {
-            mainTasks += block
-            return Job().apply { complete() }
-        }
-
-        override fun <T> runAsyncDeferred(block: suspend CoroutineScope.() -> T): Deferred<T> =
-            scope.async(block = block)
-
-        override fun runIO(block: suspend CoroutineScope.() -> Unit): Job = scope.launch(block = block)
-
-        override fun destroy() {
-            scope.cancel()
-        }
-
-        fun flushMainTasks() {
-            val pending = mainTasks.toList()
-            mainTasks.clear()
-            pending.forEach { task ->
-                runBlocking { scope.task() }
-            }
-        }
     }
 }

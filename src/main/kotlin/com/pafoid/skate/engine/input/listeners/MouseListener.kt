@@ -2,11 +2,10 @@ package com.pafoid.skate.engine.input.listeners
 
 import imgui.ImGui
 import org.joml.Vector2f
-import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
-class MouseListener : KoinComponent {
+class MouseListener {
     private var scrollX: Double = 0.0
     private var scrollY: Double = 0.0
     private var xPos: Double = 0.0

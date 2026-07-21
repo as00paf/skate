@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -10,7 +11,7 @@ class AssimpLoaderTest {
 
     @Test
     fun `preLoadModel should load weights and joints from FBX`() {
-        val loader = AssimpLoader()
+        val loader = AssimpLoader(mockk(), mockk())
         val path = "assets/characters/james.fbx"
         
         if (!File(path).exists()) {

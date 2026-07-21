@@ -5,13 +5,10 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import java.awt.Desktop
 import java.io.File
@@ -19,10 +16,7 @@ import java.io.File
 class TexturesTab(
     stringManager: StringManager,
     private val engine: Engine,
-    private val logger: LoggerService,
-    private val jobSystem: IJobSystem,
     private val undoRedoManager: UndoRedoManager,
-    private val eventSystem: EventSystem,
 ) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
     init {
@@ -57,12 +51,12 @@ class TexturesTab(
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.asset_browser.refresh")}")) {
-                logger.logEditor("Refresh requested for: ${file.name}")
+                engine.logger.logEditor("Refresh requested for: ${file.name}")
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
                 val tex = assetsManager.getTexture(file.path)
-                logger.logEditor("Texture: ${file.name}, Size: ${tex.width}x${tex.height}, ID: ${tex.texId}")
+                engine.logger.logEditor("Texture: ${file.name}, Size: ${tex.width}x${tex.height}, ID: ${tex.texId}")
             }
             ImGui.endPopup()
         }
@@ -86,23 +80,23 @@ class TexturesTab(
     private fun applyTextureToSelected(texturePath: String) {
         val scene = engine.sceneManager.currentScene ?: return
         val selectedObject = scene.selectedGameObject ?: run {
-            logger.logEditor("No object selected")
+            engine.logger.logEditor("No object selected")
             return
         }
         
         val renderComponent = selectedObject.getComponent<RenderComponent>() ?: run {
-            logger.logEditor("Selected object has no RenderComponent")
+            engine.logger.logEditor("Selected object has no RenderComponent")
             return
         }
 
         undoRedoManager.executeCommand(
-            ApplyTextureCommand(selectedObject, texturePath, assetsManager, eventSystem)
+            ApplyTextureCommand(selectedObject, texturePath, assetsManager, engine.eventSystem)
         )
-        logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
+        engine.logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
     }
 
     override fun refreshAssets() {
-        jobSystem.runIO {
+        engine.jobSystem.runIO {
             val fileExtensions = setOf("png", "jpg", "jpeg")
             items.clear()
             val texturesDir = File(Assets.Folders.TEXTURES)

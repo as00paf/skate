@@ -104,9 +104,6 @@ class LightingComponentsTest {
         // Assert - Intensities
         assertEquals(1.0f, component.sunIntensity, epsilon)
         assertEquals(1.0f, component.shadowIntensity, epsilon)
-
-        // Assert - Daytime flag
-        assertTrue(component.isDaytime, "isDaytime should default to true")
     }
 
     @Test
@@ -117,7 +114,6 @@ class LightingComponentsTest {
             sunColor = Vector3f(1.0f, 0.8f, 0.6f),
             sunIntensity = 0.5f,
             shadowIntensity = 0.3f,
-            isDaytime = false
         )
 
         // Assert
@@ -127,7 +123,6 @@ class LightingComponentsTest {
         assertEquals(0.6f, component.sunColor.z, epsilon)
         assertEquals(0.5f, component.sunIntensity, epsilon)
         assertEquals(0.3f, component.shadowIntensity, epsilon)
-        assertEquals(false, component.isDaytime)
     }
 
     @Test
@@ -138,7 +133,6 @@ class LightingComponentsTest {
             sunColor.set(0.0f, 0.0f, 1.0f)
             sunIntensity = 0.0f
             shadowIntensity = 0.0f
-            isDaytime = false
         }
 
         // Act
@@ -153,7 +147,6 @@ class LightingComponentsTest {
         assertEquals(1.0f, component.sunColor.z, epsilon)
         assertEquals(1.0f, component.sunIntensity, epsilon)
         assertEquals(1.0f, component.shadowIntensity, epsilon)
-        assertTrue(component.isDaytime)
     }
 
     @Test

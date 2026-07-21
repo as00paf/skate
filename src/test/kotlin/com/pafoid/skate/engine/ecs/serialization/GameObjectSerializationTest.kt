@@ -77,13 +77,13 @@ class GameObjectSerializationTest {
         val transform = Transform()
         transform.translation.set(1f, 2f, 3f)
         original.addComponent(transform)
-        val originalUid = original.getUid()
+        val originalUid = original.uId
 
         // Act
         val copy = original.copy(serializer)
 
         // Assert
-        assertNotEquals(originalUid, copy.getUid())
+        assertNotEquals(originalUid, copy.uId)
         assertEquals("Original", copy.name)
         assertNotNull(copy.getComponent<Transform>())
         assertEquals(1f, copy.getComponent<Transform>()!!.translation.x, 0.001f)

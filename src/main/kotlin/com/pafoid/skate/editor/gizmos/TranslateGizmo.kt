@@ -13,7 +13,6 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
-import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 import kotlin.math.abs
 
@@ -21,7 +20,7 @@ class TranslateGizmo(
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
-) : Gizmo(mouseListener, undoRedoManager), KoinComponent {
+) : Gizmo(mouseListener, undoRedoManager) {
     private val arrowLength = 2.0f
     private val coneSize = 0.3f
     private val hitThreshold = 0.3f

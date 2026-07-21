@@ -7,8 +7,6 @@ import com.pafoid.skate.editor.search.providers.AssetSearchProvider
 import com.pafoid.skate.editor.search.providers.ComponentSearchProvider
 import com.pafoid.skate.editor.search.providers.GameObjectSearchProvider
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -27,18 +25,16 @@ import kotlinx.coroutines.coroutineScope
  * ```
  */
 class SearchEngine(
-    private val engine: Engine,
+    engine: Engine,
     private val stringManager: StringManager,
-    private val eventSystem: EventSystem,
-    private val logger: LoggerService
 ) {
     private val providers = mutableListOf<SearchProvider>()
 
     init {
-        registerProvider(GameObjectSearchProvider(engine, stringManager))
-        registerProvider(AssetSearchProvider(logger))
-        registerProvider(ComponentSearchProvider(engine, stringManager))
-        registerProvider(ActionSearchProvider(engine, logger, eventSystem))
+        registerProvider(GameObjectSearchProvider(engine.sceneManager, engine.gameObjectManager, stringManager))
+        registerProvider(AssetSearchProvider(engine.logger))
+        registerProvider(ComponentSearchProvider(engine.sceneManager, engine.gameObjectManager, stringManager))
+        registerProvider(ActionSearchProvider(engine.sceneManager, engine.logger, engine.eventSystem))
     }
 
     /**

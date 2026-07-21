@@ -4,11 +4,12 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 
 /**
  * Search provider for components on all GameObjects in the scene.
@@ -29,13 +30,14 @@ import com.pafoid.skate.engine.ecs.components.Transform
  * - User can then expand the specific component in the UI
  */
 class ComponentSearchProvider(
-    private val engine: Engine,
+    private val sceneManager: SceneManager,
+    private val gameObjectManager: GameObjectManager,
     private val stringManager: StringManager,
 ) : BaseSearchProvider() {
     override val category: SearchCategory = SearchCategory.COMPONENT
 
     override suspend fun search(query: String): List<SearchResult> {
-        val scene = engine.sceneManager.currentScene ?: return emptyList()
+        val scene = sceneManager.currentScene ?: return emptyList()
         val gameObjects = scene.gameObjects
 
         return gameObjects
@@ -55,8 +57,8 @@ class ComponentSearchProvider(
 
     override fun navigate(result: SearchResult) {
         val gameObjectUid = result.metadata["gameObjectUid"] as? Int ?: return
-        val scene = engine.sceneManager.currentScene ?: return
-        val gameObject = engine.gameObjectManager.getGameObject(gameObjectUid)
+        val scene = sceneManager.currentScene ?: return
+        val gameObject = gameObjectManager.getGameObject(gameObjectUid)
         gameObject?.let {
             scene.selectedGameObject = it
         }

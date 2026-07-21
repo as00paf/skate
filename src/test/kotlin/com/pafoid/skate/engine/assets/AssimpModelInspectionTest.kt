@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -8,7 +9,7 @@ class AssimpModelInspectionTest {
 
     @Test
     fun `inspect james animations`() {
-        val loader = AssimpLoader()
+        val loader = AssimpLoader(mockk(), mockk())
         val filePath = "assets/characters/james.dae"
         val file = File(filePath)
         if (!file.exists()) {
@@ -25,8 +26,8 @@ class AssimpModelInspectionTest {
         var maxX = Float.MIN_VALUE
         var maxY = Float.MIN_VALUE
         var maxZ = Float.MIN_VALUE
-        
-        preLoaded.parts.forEach { part ->
+
+        preLoaded.mesh.forEach { part ->
             for (i in part.vertices.indices step 3) {
                 val x = part.vertices[i]
                 val y = part.vertices[i+1]
@@ -49,10 +50,10 @@ class AssimpModelInspectionTest {
         preLoaded.skeleton?.let {
             println("Bone count: ${it.boneCount}")
         }
-        
-        println("Mesh Parts: ${preLoaded.parts.size}")
-        preLoaded.parts.forEachIndexed { index, part ->
-            println("  - Part $index: ${part.vertices.size/3} vertices, Material: ${part.material.baseColorPath ?: "Default"}")
+
+        println("Mesh Parts: ${preLoaded.mesh.size}")
+        preLoaded.mesh.forEachIndexed { index, part ->
+            println("  - Part $index: ${part.vertices.size / 3} vertices, Material: ${part.material.baseColorTexture?.filePath ?: "Default"}")
         }
     }
 }

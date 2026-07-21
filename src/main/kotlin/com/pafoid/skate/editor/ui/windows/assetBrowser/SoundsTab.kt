@@ -4,11 +4,9 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
-import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.ImGui
 import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiTableFlags
@@ -25,8 +23,6 @@ import java.io.File
 class SoundsTab(
     private val engine: Engine,
     stringManager: StringManager,
-    private val jobSystem: IJobSystem,
-    private val logger: LoggerService
 ) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
     private var playingSource: SoundSource? = null
@@ -93,7 +89,7 @@ class SoundsTab(
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
-                logger.logEditor("Sound: ${file.name}, Duration: ${duration}s, Path: ${file.absolutePath}")
+                engine.logger.logEditor("Sound: ${file.name}, Duration: ${duration}s, Path: ${file.absolutePath}")
             }
             ImGui.endPopup()
         }
@@ -125,7 +121,7 @@ class SoundsTab(
 
     private fun addSoundToSelectedObject(soundPath: String) {
         // Future enhancement: Add AudioComponent to selected GameObject with this sound
-        logger.logEditor("Add sound to object not yet implemented: $soundPath")
+        engine.logger.logEditor("Add sound to object not yet implemented: $soundPath")
     }
 
     private fun handlePlayback(file: File, buffer: SoundBuffer) {
@@ -151,14 +147,14 @@ class SoundsTab(
                     currentPlayingFile = null
                 }
             } catch (e: Exception) {
-                logger.logEditor("SoundsTab: Failed to load sound '${file.name}' - ${e.message}", LogLevel.ERROR)
+                engine.logger.logEditor("SoundsTab: Failed to load sound '${file.name}' - ${e.message}", LogLevel.ERROR)
                 currentPlayingFile = null
             }
         }
     }
 
     override fun refreshAssets() {
-        jobSystem.runIO {
+        engine.jobSystem.runIO {
             val fileExtensions = setOf("wav", "ogg", "mp3", "flac", "aiff")
             items.clear()
             val soundsDir = File("assets/sounds")

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.ScreenshotUtils
@@ -21,18 +22,19 @@ class ViewportRendererScreenshotTest {
     }
 
     @Test
-    fun `captureScreenshot_ValidFramebuffer_DelegatesToScreenshotUtils`() {
+    fun captureScreenshot_ValidFramebuffer_DelegatesToScreenshotUtils() {
+        val engine = mockk<Engine>()
         val renderer = mockk<Renderer>()
         val frameBuffer = mockk<FrameBuffer>()
         every { renderer.frameBuffer } returns frameBuffer
         every { frameBuffer.width } returns 1920
         every { frameBuffer.height } returns 1080
-        every { frameBuffer.getFboId() } returns 77
+        every { frameBuffer.fboId } returns 77
 
         mockkObject(ScreenshotUtils)
         every { ScreenshotUtils.takeScreenshot(any(), any(), any()) } just Runs
 
-        ViewportRenderer(renderer).captureScreenshot()
+        ViewportRenderer(engine).captureScreenshot()
 
         verify(exactly = 1) {
             ScreenshotUtils.takeScreenshot(1920, 1080, 77)
@@ -40,7 +42,8 @@ class ViewportRendererScreenshotTest {
     }
 
     @Test
-    fun `captureScreenshot_InvalidFramebufferDimensions_DoesNotCallScreenshotUtils`() {
+    fun captureScreenshot_InvalidFramebufferDimensions_DoesNotCallScreenshotUtils() {
+        val engine = mockk<Engine>()
         val renderer = mockk<Renderer>()
         val frameBuffer = mockk<FrameBuffer>()
         every { renderer.frameBuffer } returns frameBuffer
@@ -50,7 +53,7 @@ class ViewportRendererScreenshotTest {
         mockkObject(ScreenshotUtils)
         every { ScreenshotUtils.takeScreenshot(any(), any(), any()) } just Runs
 
-        ViewportRenderer(renderer).captureScreenshot()
+        ViewportRenderer(engine).captureScreenshot()
 
         verify(exactly = 0) {
             ScreenshotUtils.takeScreenshot(any(), any(), any())

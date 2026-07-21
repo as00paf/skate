@@ -27,7 +27,6 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -79,7 +78,6 @@ class Serializer {
             subclass(CylinderCollider3D::class)
             subclass(CustomCollider3D::class)
             subclass(CapsuleCollider3D::class)
-            subclass(SkateboardPhysics::class)
             subclass(PlayerController::class)
             subclass(PlayerStateManager::class)
         }

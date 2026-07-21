@@ -43,7 +43,7 @@ class EnvironmentSystemTest {
     @Test
     fun `EnvironmentSystem initializes without config`() {
         // Arrange & Act
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
 
         // Assert
         assertNotNull(system, "System should be created")
@@ -52,7 +52,7 @@ class EnvironmentSystemTest {
     @Test
     fun `EnvironmentSystem has EARLY execution priority`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
 
         // Act
         val priority = system.priority
@@ -68,7 +68,7 @@ class EnvironmentSystemTest {
     @Test
     fun `update when Scene has no environment component creates component on Scene`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
         val scene = createTestScene()
         system.init(scene)
 
@@ -84,7 +84,7 @@ class EnvironmentSystemTest {
     @Test
     fun `applyPreset uses existing component from Scene`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
         val scene = createTestScene()
         val existingComponent = EnvironmentComponent()
         scene.addComponent(existingComponent)
@@ -106,7 +106,7 @@ class EnvironmentSystemTest {
     @Test
     fun `applyPreset creates component and applies preset to Scene`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
         val scene = createTestScene()
         system.init(scene)
 
@@ -122,7 +122,7 @@ class EnvironmentSystemTest {
     @Test
     fun `applyPreset CLEAR_DAY sets correct values`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
         val scene = createTestScene()
         system.init(scene)
 
@@ -140,7 +140,7 @@ class EnvironmentSystemTest {
     @Test
     fun `applyPreset SUNSET sets warm colors`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
         val scene = createTestScene()
         system.init(scene)
 
@@ -157,7 +157,7 @@ class EnvironmentSystemTest {
     @Test
     fun `applyPreset NO_FOG disables fog`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
         val scene = createTestScene()
         system.init(scene)
 
@@ -176,7 +176,7 @@ class EnvironmentSystemTest {
     @Test
     fun `reset restores Scene's component to default values`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
         val scene = createTestScene()
         system.init(scene)
         system.applyPreset(EnvironmentPreset.FOGGY)
@@ -193,7 +193,7 @@ class EnvironmentSystemTest {
     @Test
     fun `reset does nothing if Scene has no component`() {
         // Arrange
-        val system = EnvironmentSystem(stringManager = stringManager)
+        val system = EnvironmentSystem()
         val scene = createTestScene()
         system.init(scene)
 

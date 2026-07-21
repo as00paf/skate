@@ -31,10 +31,7 @@ import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.editor.ui.windows.SystemsWindow
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.utils.IJobSystem
 import imgui.type.ImBoolean
 
 /**
@@ -47,37 +44,34 @@ class WindowRegistry(
     private val engine: Engine,
     private val stringManager: StringManager,
     private val clipboardService: ClipboardService,
-    private val eventSystem: EventSystem,
     private val settingsManager: SettingsManager,
     private val undoRedoManager: UndoRedoManager,
     private val projectManager: ProjectManager,
-    private val jobSystem: IJobSystem,
     private val prefabsGenerator: PrefabsGenerator,
     private val editorInputState: EditorInputState,
     private val editorCamera: EditorCamera,
     private val gizmoSystem: GizmoSystem,
     private val mutationGate: EditorMutationGate,
-    private val logger: LoggerService
 ) {
+    private val eventSystem = engine.eventSystem
+    private val logger = engine.logger
+    private val jobSystem = engine.jobSystem
+
     val hierarchyWindow = SceneHierarchyWindow(engine, stringManager, clipboardService, logger, eventSystem)
     val propertiesWindow = PropertiesWindow(stringManager, engine, eventSystem, logger)
     val gameViewWindow = GameViewWindow(
         engine,
         settingsManager,
         stringManager,
-        eventSystem,
         editorInputState,
         undoRedoManager,
         clipboardService,
         mutationGate,
         prefabsGenerator,
         editorCamera,
-        jobSystem,
         gizmoSystem,
-        logger
     )
-    val assetBrowser =
-        AssetBrowserWindow(engine, stringManager, prefabsGenerator, eventSystem, undoRedoManager, jobSystem, logger)
+    val assetBrowser = AssetBrowserWindow(engine, stringManager, prefabsGenerator, undoRedoManager)
     val environmentWindow = EnvironmentWindow(stringManager, eventSystem, engine)
     val profilerWindow = ProfilerWindow(stringManager)
     val consoleWindow = ConsoleWindow(logger, stringManager, eventSystem)
@@ -90,7 +84,7 @@ class WindowRegistry(
     val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
     val commandHistoryWindow = CommandHistoryWindow(undoRedoManager, stringManager, eventSystem)
     val renderGraphWindow = RenderGraphWindow(stringManager, engine)
-    val searchEverywhereWindow = SearchEverywhereWindow(engine, stringManager, jobSystem, eventSystem, logger)
+    val searchEverywhereWindow = SearchEverywhereWindow(engine, stringManager)
     val projectWizardWindow = ProjectWizardWindow(logger, stringManager, eventSystem)
     val projectSwitcherDialog = ProjectSwitcherDialog(projectManager, stringManager, eventSystem)
     val audioInspectorWindow = AudioInspectorWindow(stringManager)

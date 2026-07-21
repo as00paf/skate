@@ -9,10 +9,8 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
-import com.pafoid.skate.engine.utils.IJobSystem
 import com.pafoid.skate.game.prefabs.MaterialType
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags
@@ -25,8 +23,6 @@ class PrefabsTab(
     private val engine: Engine,
     stringManager: StringManager,
     private val prefabsGenerator: PrefabsGenerator,
-    private val logger: LoggerService,
-    private val jobSystem: IJobSystem,
 ) : AssetBrowserTab(engine.assetsManager, stringManager) {
 
     private val thumbnailCache: ThumbnailCache by lazy { ThumbnailCache(engine.renderer.renderResources.renderers.thumbnail) }
@@ -141,7 +137,7 @@ class PrefabsTab(
 
         ImGui.pushID(data.name)
         if (ImGui.imageButton("PrefabItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
-            jobSystem.runOnMain {
+            engine.jobSystem.runOnMain {
                 when (data.type) {
                     PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
                     PrefabType.SKATER -> prefabsGenerator.spawnSkater()
@@ -158,7 +154,7 @@ class PrefabsTab(
 
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.spawn_in_scene")}")) {
-                jobSystem.runOnMain {
+                engine.jobSystem.runOnMain {
                     when (data.type) {
                         PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
                         PrefabType.SKATER -> prefabsGenerator.spawnSkater()
@@ -174,14 +170,14 @@ class PrefabsTab(
             ImGui.separator()
             if (ImGui.menuItem("${Icons.STAR} ${stringManager.getString("context.asset_browser.add_to_favorites")}")) {
                 // Future enhancement: Implement favorites system for quick access to prefabs
-                logger.logEditor("Add to favorites not yet implemented")
+                engine.logger.logEditor("Add to favorites not yet implemented")
             }
             if (ImGui.menuItem("${Icons.FOLDER} ${stringManager.getString("context.asset_browser.show_in_folder")}")) {
                 Desktop.getDesktop().open(File(data.modelPath ?: ".").parentFile)
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.INFO} ${stringManager.getString("context.asset_browser.properties")}")) {
-                logger.logEditor("Properties: ${data.name}, Type: ${data.type}, Material: ${data.material?.name}")
+                engine.logger.logEditor("Properties: ${data.name}, Type: ${data.type}, Material: ${data.material?.name}")
             }
             ImGui.endPopup()
         }

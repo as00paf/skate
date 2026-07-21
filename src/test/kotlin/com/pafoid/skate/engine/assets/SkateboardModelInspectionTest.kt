@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -8,7 +9,7 @@ class SkateboardModelInspectionTest {
 
     @Test
     fun `inspect skateboard dimensions`() {
-        val loader = AssimpLoader()
+        val loader = AssimpLoader(mockk(), mockk())
         val filePath = "assets/obj/skateboard_free_model.glb"
         val file = File(filePath)
         if (!file.exists()) {
@@ -25,8 +26,8 @@ class SkateboardModelInspectionTest {
         var maxX = Float.MIN_VALUE
         var maxY = Float.MIN_VALUE
         var maxZ = Float.MIN_VALUE
-        
-        preLoaded.parts.forEach { part ->
+
+        preLoaded.mesh.forEach { part ->
             for (i in part.vertices.indices step 3) {
                 val x = part.vertices[i]
                 val y = part.vertices[i+1]

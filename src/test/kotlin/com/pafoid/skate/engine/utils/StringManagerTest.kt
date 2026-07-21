@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.utils
 
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
+import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -24,7 +25,7 @@ class StringManagerTest {
                 }
             )
         }
-        stringManager = StringManager("test_strings", "en") // Start with English
+        stringManager = StringManager(mockk(), "test_strings", "en") // Start with English
     }
 
     @AfterEach

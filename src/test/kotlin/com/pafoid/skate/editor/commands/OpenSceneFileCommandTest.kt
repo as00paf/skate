@@ -1,12 +1,12 @@
 package com.pafoid.skate.editor.commands
 
 import com.pafoid.skate.editor.commands.project.OpenSceneFileCommand
-import com.pafoid.skate.editor.project.SceneSerializer
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction
-import com.pafoid.skate.testfixtures.ImmediateJobSystem
+import com.pafoid.skate.engine.utils.JobSystem
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -17,20 +17,21 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.io.File
 
 class OpenSceneFileCommandTest {
-    private lateinit var sceneSerializer: SceneSerializer
+    private lateinit var serializer: Serializer
     private lateinit var sceneManager: SceneManager
     private lateinit var eventSystem: EventSystem
-    private lateinit var jobSystem: ImmediateJobSystem
+    private lateinit var jobSystem: JobSystem
     private lateinit var loadedScene: Scene
 
     @BeforeEach
     fun setup() {
-        sceneSerializer = mockk(relaxed = true)
+        serializer = mockk(relaxed = true)
         sceneManager = mockk(relaxed = true)
         eventSystem = EventSystem()
-        jobSystem = ImmediateJobSystem()
+        jobSystem = JobSystem()
         loadedScene = mockk(relaxed = true)
     }
 
@@ -42,7 +43,8 @@ class OpenSceneFileCommandTest {
     @Test
     fun `execute opens scene and publishes success when file loads`() {
         val scenePath = "C:/scene/Test.scene"
-        every { sceneSerializer.load(any(), scenePath) } returns true
+        val sceneFile = File(scenePath)
+        every { serializer.decode<Scene?>(sceneFile.readText()) } returns mockk()
         var opened: SceneAction.OpenSucceeded? = null
         eventSystem.subscribe<SceneAction.OpenSucceeded> { opened = it }
 
@@ -57,7 +59,8 @@ class OpenSceneFileCommandTest {
     @Test
     fun `execute publishes failure and does not open scene when load fails`() {
         val scenePath = "C:/scene/Broken.scene"
-        every { sceneSerializer.load(any(), scenePath) } returns false
+        val sceneFile = File(scenePath)
+        every { serializer.decode<Scene?>(sceneFile.readText()) } returns null
         var failed: SceneAction.OpenFailed? = null
         eventSystem.subscribe<SceneAction.OpenFailed> { failed = it }
 
@@ -72,12 +75,10 @@ class OpenSceneFileCommandTest {
 
     private fun createCommand(scenePath: String): OpenSceneFileCommand {
         return OpenSceneFileCommand(
-            scenePath = scenePath,
-            sceneSerializer = sceneSerializer,
+            sceneFile = File(scenePath),
+            serializer = serializer,
             sceneManager = sceneManager,
-            jobSystem = jobSystem,
             eventSystem = eventSystem,
-            sceneFactory = { _ -> loadedScene }
         )
     }
 }

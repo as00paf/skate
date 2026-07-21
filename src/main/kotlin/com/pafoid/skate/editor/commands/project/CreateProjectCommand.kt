@@ -4,13 +4,11 @@ import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.engine.utils.IJobSystem
 import java.io.File
 
 class CreateProjectCommand(
     private val event: CreateProjectRequested,
     private val projectManager: ProjectManager,
-    private val jobSystem: IJobSystem,
 ) : ExecuteOnlyCommand, ExecutionTrackedCommand {
     private var executeSucceeded = false
     private var failureReason: String? = null

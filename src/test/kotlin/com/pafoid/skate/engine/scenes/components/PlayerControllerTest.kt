@@ -1,19 +1,13 @@
 package com.pafoid.skate.engine.scenes.components
 
-import com.pafoid.skate.editor.systems.PrefabsGenerator
-import com.pafoid.skate.engine.assets.AssetsManager
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.input.IInputProvider
-import com.pafoid.skate.engine.input.InputBuffer
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
 import com.pafoid.skate.engine.render.Camera
-import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import io.mockk.MockKAnnotations
@@ -23,9 +17,6 @@ import io.mockk.mockk
 import io.mockk.unmockkAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
 class PlayerControllerTest {
 
@@ -35,7 +26,7 @@ class PlayerControllerTest {
     private val sceneManager = mockk<SceneManager>()
     
     @MockK
-    private lateinit var inputProvider: IInputProvider
+    private lateinit var inputProvider: InputProvider
     
     @MockK
     private lateinit var scene: Scene
@@ -43,19 +34,6 @@ class PlayerControllerTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-
-        startKoin {
-            modules(module {
-                single { mockk<AssetsManager>(relaxed = true) }
-                single { sceneManager }
-                single<IInputProvider> { inputProvider }
-                single { mockk<InputBuffer>(relaxed = true) }
-                single { mockk<PrefabsGenerator>(relaxed = true) }
-                single { mockk<DebugRenderer>(relaxed = true) }
-                single { mockk<StringManager>(relaxed = true) }
-                single { mockk<LoggerService>(relaxed = true) }
-            })
-        }
 
         val camera = Camera()
         every { scene.camera } returns camera
@@ -78,7 +56,6 @@ class PlayerControllerTest {
 
     @AfterEach
     fun teardown() {
-        stopKoin()
         unmockkAll()
     }
 

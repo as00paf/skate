@@ -26,25 +26,25 @@ import com.pafoid.skate.editor.events.ProjectEvent.SaveRequested
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
-import com.pafoid.skate.engine.utils.IJobSystem
 import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.UIManager
 import javax.swing.filechooser.FileFilter
 
 class ProjectActionHandler(
+    private val engine: Engine,
     private val projectManager: ProjectManager,
     private val undoRedoManager: UndoRedoManager,
-    private val logger: LoggerService,
-    private val eventSystem: EventSystem,
-    private val jobSystem: IJobSystem,
     private val stringManager: StringManager
 ) {
+    private val jobSystem = engine.jobSystem
+    private val eventSystem = engine.eventSystem
+    private val logger = engine.logger
+
     init {
         eventSystem.subscribe<OpenProjectRequested> { event ->
             val command = OpenProjectCommand(projectManager, File(event.projectPath))
@@ -59,7 +59,7 @@ class ProjectActionHandler(
             }
         }
         eventSystem.subscribe<CreateProjectRequested> { event ->
-            val command = CreateProjectCommand(event, projectManager, jobSystem)
+            val command = CreateProjectCommand(event, projectManager)
             undoRedoManager.executeCommand(command)
             if (command.wasSuccessful()) {
                 eventSystem.publish(CreateProjectSucceeded(event.name, event.folderPath))

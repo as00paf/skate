@@ -60,8 +60,6 @@ import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -80,22 +78,21 @@ import com.pafoid.skate.engine.events.SceneAction.ResetScene
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.render.data.LightType
-import com.pafoid.skate.engine.utils.IJobSystem
 import org.joml.Vector3f
 
 class ViewportActionHandler(
     private val engine: Engine,
     private val undoRedoManager: UndoRedoManager,
-    private val eventSystem: EventSystem,
-    private val logger: LoggerService,
     private val clipboardService: ClipboardService,
     private val mutationGate: EditorMutationGate,
     private val prefabsGenerator: PrefabsGenerator,
     private val editorCamera: EditorCamera,
-    private val jobSystem: IJobSystem,
     private val viewportRenderer: ViewportRenderer,
     private val gizmoSystem: GizmoSystem,
 ) {
+    private val eventSystem = engine.eventSystem
+    private val logger = engine.logger
+    private val jobSystem = engine.jobSystem
     private val sceneManager = engine.sceneManager
     private val gameObjectManager = engine.gameObjectManager
     private val assetsManager = engine.assetsManager // TODO: remove, should not be needed

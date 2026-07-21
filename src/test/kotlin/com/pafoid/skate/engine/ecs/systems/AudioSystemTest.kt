@@ -89,10 +89,10 @@ class AudioSystemTest : KoinTest {
 
     @Test
     fun `setMasterVolume clamps and persists value`() {
-        audioSystem.setMasterVolume(1.5f)
+        audioSystem.masterVolume = 1.5f
         verify { audioEngine.setMasterVolume(1.0f) }
 
-        audioSystem.setMasterVolume(-0.5f)
+        audioSystem.masterVolume = -0.5f
         verify { audioEngine.setMasterVolume(0.0f) }
     }
 
@@ -105,7 +105,7 @@ class AudioSystemTest : KoinTest {
         audioSystem.update(0.16f)
 
         // Set volume via system API and verify subsequent update keeps that value.
-        audioSystem.setMasterVolume(0.35f)
+        audioSystem.masterVolume = 0.35f
         clearMocks(audioEngine, answers = false, recordedCalls = true)
         every { audioEngine.isInitialized } returns true
 

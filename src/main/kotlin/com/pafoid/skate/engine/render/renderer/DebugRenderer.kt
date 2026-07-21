@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.PROJECTION
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.VIEW
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 import org.lwjgl.opengl.GL11.GL_FLOAT
 import org.lwjgl.opengl.GL11.GL_LINES
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
@@ -37,7 +36,7 @@ class DebugRenderer(
     private val assetsManager: AssetsManager,
     private val cameraManager: CameraManager,
     private val logger: LoggerService
-) : KoinComponent {
+) {
 
     private val lines = mutableListOf<Line3D>()
     private val triangles = mutableListOf<Triangle3D>()

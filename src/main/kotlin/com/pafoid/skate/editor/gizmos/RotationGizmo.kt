@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 import kotlin.math.abs
 
@@ -18,7 +17,7 @@ class RotationGizmo(
     mouseListener: MouseListener,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
-) : Gizmo(mouseListener, undoRedoManager), KoinComponent {
+) : Gizmo(mouseListener, undoRedoManager) {
     private val radius = 2.0f
     private val hitThreshold = 0.4f
     

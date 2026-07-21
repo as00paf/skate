@@ -12,7 +12,6 @@ import imgui.ImGui
 import imgui.flag.ImGuiKey
 import org.joml.Vector2f
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 import kotlin.math.abs
 
 class MeasureTool(
@@ -20,7 +19,7 @@ class MeasureTool(
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
     private val settingsManager: SettingsManager,
-) : Gizmo(mouseListener, undoRedoManager), KoinComponent {
+) : Gizmo(mouseListener, undoRedoManager) {
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
 

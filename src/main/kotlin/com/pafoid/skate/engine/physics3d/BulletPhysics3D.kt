@@ -26,7 +26,7 @@ import com.pafoid.skate.engine.utils.JomlVector3f
 import org.joml.Quaternionf
 
 class BulletPhysics3D(
-    private val nativeLibraryLoader: NativeLibraryLoader,
+    private val nativeLibraryLoader: NativeLibraryLoader, // TODO: check why unused
     private val debugRenderer: DebugRenderer
 ) : IPhysics3D {
     private val physicsSpace: PhysicsSpace

@@ -22,16 +22,15 @@ import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.engine.utils.IJobSystem
+import com.pafoid.skate.engine.utils.JobSystem
 import java.util.concurrent.atomic.AtomicReference
 
-class Engine(
-    val serializer: Serializer,
-    private val jobSystem: IJobSystem,
-    private val logger: LoggerService,
-    private val eventSystem: EventSystem,
-) {
+class Engine {
     private val nativeLibraryLoader = NativeLibraryLoader()
+    val serializer = Serializer()
+    val jobSystem = JobSystem()
+    val logger = LoggerService()
+    val eventSystem = EventSystem()
 
     val engineState = AtomicReference(EngineState.BOOTING)
     var runtimePlaying = false

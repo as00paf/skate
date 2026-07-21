@@ -1,21 +1,16 @@
 package com.pafoid.skate.engine.physics3d
 
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import io.mockk.mockk
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
 class FrictionPropagationTest {
 
@@ -25,20 +20,7 @@ class FrictionPropagationTest {
         @JvmStatic
         @BeforeAll
         fun beforeAll() {
-            startKoin {
-                modules(module {
-                    single { mockk<com.pafoid.skate.engine.render.renderer.DebugRenderer>(relaxed = true) }
-                    single { mockk<StringManager>(relaxed = true) }
-                    single { mockk<LoggerService>(relaxed = true) }
-                })
-            }
-            physics = BulletPhysics3D()
-        }
-
-        @JvmStatic
-        @AfterAll
-        fun afterAll() {
-            stopKoin()
+            physics = BulletPhysics3D(NativeLibraryLoader(), mockk())
         }
     }
 

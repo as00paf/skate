@@ -19,7 +19,7 @@ class DirectionalLightSystemTest {
     @Test
     fun updateLightSpaceMatrix_FrustumCalculated_LightSpaceMatrixIsUpdated() {
         // Arrange
-        val system = DirectionalLightSystem(stringManager)
+        val system = DirectionalLightSystem()
         val scene = Scene("TestScene")
         scene.addComponent(DayNightCycleComponent())
         scene.addComponent(DirectionalLightComponent(castShadows = true, autoCalculateBounds = true))
@@ -45,7 +45,7 @@ class DirectionalLightSystemTest {
     @Test
     fun updateLightSpaceMatrix_HighNoon_UpVectorIsDynamic() {
         // Arrange
-        val system = DirectionalLightSystem(stringManager)
+        val system = DirectionalLightSystem()
         val scene = Scene("TestScene")
         scene.addComponent(
             DayNightCycleComponent(

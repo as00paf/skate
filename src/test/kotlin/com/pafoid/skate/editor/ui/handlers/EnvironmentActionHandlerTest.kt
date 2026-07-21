@@ -24,7 +24,6 @@ class EnvironmentActionHandlerTest {
             firstArg<Command>().execute()
         }
         val handler = EnvironmentActionHandler(undoRedoManager, eventSystem)
-        handler.init()
 
         val lightConfig = DirectionalLightComponent(direction = Vector3f(0f, -1f, 0f))
         eventSystem.publish(
@@ -49,7 +48,6 @@ class EnvironmentActionHandlerTest {
             firstArg<Command>().execute()
         }
         val handler = EnvironmentActionHandler(undoRedoManager, eventSystem)
-        handler.init()
 
         val lightingState = LightingStateComponent(ambientLight = Vector3f(0.2f, 0.2f, 0.2f))
         val dayNight = DayNightCycleComponent(ambientIntensity = 0.5f)

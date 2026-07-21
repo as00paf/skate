@@ -11,8 +11,6 @@ import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_BUTTON_SPACING
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.Scene
@@ -28,11 +26,12 @@ import imgui.flag.ImGuiWindowFlags
 
 class ViewportToolbar(
     private val engine: Engine,
-    private val logger: LoggerService,
     private val stringManager: StringManager,
-    private val eventSystem: EventSystem,
     private val gizmoSystem: GizmoSystem,
 ) {
+    private val eventSystem = engine.eventSystem
+    private val logger = engine.logger
+
     fun render(windowPos: ImVec2) {
         val isPlaying = engine.runtimePlaying
         val scene = engine.sceneManager.currentScene

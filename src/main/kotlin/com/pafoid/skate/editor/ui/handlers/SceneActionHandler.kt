@@ -16,8 +16,6 @@ import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.data.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
@@ -34,7 +32,6 @@ import com.pafoid.skate.engine.events.SceneAction.OpenSucceeded
 import com.pafoid.skate.engine.events.SceneAction.RenameRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveAsRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveRequested
-import org.koin.core.component.KoinComponent
 import java.io.File
 
 /**
@@ -47,10 +44,11 @@ class SceneActionHandler(
     private val engine: Engine,
     private val projectManager: ProjectManager,
     private val undoRedoManager: UndoRedoManager,
-    private val eventSystem: EventSystem,
     private val mutationGate: EditorMutationGate,
-    private val logger: LoggerService,
-) : KoinComponent {
+
+    ) {
+    private val logger = engine.logger
+    private val eventSystem = engine.eventSystem
     private val sceneManager = engine.sceneManager
     private val serializer = engine.serializer
 

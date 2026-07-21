@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.game.skateboard.SkateboardPhysics
 import imgui.ImGui
 import imgui.type.ImBoolean
 import org.joml.Vector3f
@@ -61,28 +60,6 @@ class PhysicsTunerWindow(
             val flickSensitivity = floatArrayOf(playerController.flickSensitivity)
             if (ImGui.dragFloat(stringManager.getString("lbl.physics_tuner.flick_sensitivity"), flickSensitivity, 0.1f)) {
                 playerController.flickSensitivity = flickSensitivity[0]
-            }
-        }
-
-        val skate = gameObjectManager.getGameObject("Skate") ?: run {
-            ImGui.end()
-            return
-        }
-        val skateboardPhysics = skate.getComponent<SkateboardPhysics>()
-        
-        if (skateboardPhysics != null && ImGui.collapsingHeader(stringManager.getString("lbl.physics_tuner.suspension"))) {
-            val stiffness = floatArrayOf(skateboardPhysics.stiffness)
-            if (ImGui.dragFloat(stringManager.getString("lbl.physics_tuner.stiffness"), stiffness, 1f)) {
-                skateboardPhysics.stiffness = stiffness[0]
-            }
-            
-            val damping = floatArrayOf(skateboardPhysics.damping)
-            if (ImGui.dragFloat(stringManager.getString("lbl.physics_tuner.damping"), damping, 0.1f)) {
-                skateboardPhysics.damping = damping[0]
-            }
-             val restLength = floatArrayOf(skateboardPhysics.suspensionRestLength)
-            if (ImGui.dragFloat(stringManager.getString("lbl.physics_tuner.rest_length"), restLength, 0.01f)) {
-                skateboardPhysics.suspensionRestLength = restLength[0]
             }
         }
 

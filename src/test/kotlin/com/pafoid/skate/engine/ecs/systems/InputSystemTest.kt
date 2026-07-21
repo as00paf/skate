@@ -12,9 +12,9 @@ import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.events.TrickInput
-import com.pafoid.skate.engine.input.IInputProvider
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.game.skateboard.TrickType
 import io.mockk.every
@@ -30,7 +30,7 @@ import org.lwjgl.glfw.GLFW
 
 class InputSystemTest {
 
-    private lateinit var inputProvider: IInputProvider
+    private lateinit var inputProvider: InputProvider
     private lateinit var mouseListener: MouseListener
     private lateinit var settingsManager: SettingsManager
     private lateinit var stringManager: StringManager
@@ -63,9 +63,6 @@ class InputSystemTest {
 
         inputSystem = InputSystem(
             inputProvider = inputProvider,
-            mouseListener = mouseListener,
-            settingsManager = settingsManager,
-            stringManager = stringManager,
             eventSystem = eventSystem
         )
         inputSystem.init(scene)
@@ -193,8 +190,8 @@ class InputSystemTest {
         scene.gameObjects.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
-        every { mouseListener.getDx() } returns 4f
-        every { mouseListener.getDy() } returns -2f
+        every { mouseListener.dx } returns 4f
+        every { mouseListener.dy } returns -2f
         every { inputProvider.isCursorDisabled() } returns true
 
         inputSystem.update(0.016f)
@@ -210,8 +207,8 @@ class InputSystemTest {
         scene.gameObjects.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
-        every { mouseListener.getDx() } returns 5f
-        every { mouseListener.getDy() } returns 5f
+        every { mouseListener.dx } returns 5f
+        every { mouseListener.dy } returns 5f
         every { inputProvider.isCursorDisabled() } returns false
 
         inputSystem.update(0.016f)

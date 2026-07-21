@@ -7,7 +7,6 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.WindowController
 import com.pafoid.skate.engine.ecs.Scene
@@ -48,7 +47,6 @@ import imgui.internal.ImGui.setNextWindowViewport
 import imgui.internal.ImGui.updatePlatformWindows
 import imgui.type.ImBoolean
 import imgui.type.ImInt
-import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW
 import java.io.File
 
@@ -56,11 +54,10 @@ class ImGuiLayer(
     private val stringManager: StringManager,
     private val engine: Engine,
     private val windowRegistry: WindowRegistry,
-    private val eventSystem: EventSystem,
     private val projectManager: ProjectManager,
     private val settingsManager: SettingsManager,
     private val gizmoSystem: GizmoSystem,
-): KoinComponent {
+) {
 
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
@@ -71,6 +68,7 @@ class ImGuiLayer(
     var isViewportMaximized = false
 
     private var layoutInitialized = false
+    private val eventSystem = engine.eventSystem
 
     private val menuBar: EditorMenuBar = EditorMenuBar(
         stringManager = stringManager,

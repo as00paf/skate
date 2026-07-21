@@ -17,14 +17,13 @@ import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiMouseCursor
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
-import org.koin.core.component.KoinComponent
 import java.io.File
 
 class ProjectSwitcherDialog(
     private val projectManager: ProjectManager,
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
-) : IWindow, KoinComponent {
+) : IWindow {
 
     private fun renderRecentProjectItem(project: RecentProjectDisplayInfo) {
         ImGui.pushID(project.path)

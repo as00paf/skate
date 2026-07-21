@@ -2,12 +2,13 @@ package com.pafoid.skate.engine.animation
 
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 class SkeletonJointTest {
 
     @Test
     fun `list all bones in james model`() {
-        val loader = AssimpLoader()
+        val loader = AssimpLoader(mockk(), mockk())
         val filePath = "assets/characters/james.glb"
         try {
             val preLoaded = loader.loadModel(filePath)

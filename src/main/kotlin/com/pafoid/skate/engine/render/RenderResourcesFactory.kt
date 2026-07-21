@@ -21,7 +21,6 @@ import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.utils.GLStateTracker
-import org.koin.core.component.KoinComponent
 
 /**
  * Factory for creating all rendering resources.
@@ -30,7 +29,7 @@ class RenderResourcesFactory(
     private val assetsManager: AssetsManager,
     private val cameraManager: CameraManager,
     private val logger: LoggerService,
-) : KoinComponent {
+) {
 
     suspend fun create(width: Int, height: Int): RenderResources {
         logger.log("Initializing OpenGL state tracker...")

@@ -7,8 +7,6 @@ import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -19,20 +17,18 @@ import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import com.pafoid.skate.engine.utils.Time
 import org.joml.Vector2f
-import org.koin.core.component.KoinComponent
 import org.lwjgl.glfw.GLFW
 
 class EditorInputHandler(
     private val clipboardService: ClipboardService,
     private val undoRedoManager: UndoRedoManager,
-    private val logger: LoggerService,
     private val editorInputState: EditorInputState,
     private val engine: Engine,
     private val projectManager: ProjectManager,
-    private val eventSystem: EventSystem
-) : KoinComponent {
-
+) {
     private val inputBuffer: InputBuffer = InputBuffer()
+    private val logger = engine.logger
+    private val eventSystem = engine.eventSystem
     private val keyListener: KeyListener = engine.inputProvider.keyListener
     private val mouseListener: MouseListener = engine.inputProvider.mouseListener
     private val joystickListener: GamepadListener = engine.inputProvider.gamepadListener

@@ -30,8 +30,8 @@ class RenderGraphTest {
             .addPass(pass1)
             .addPass(pass2)
             .build()
-            
-        graph.execute(scene, go, null)
+
+        graph.execute(scene)
         
         verifyOrder {
             pass1.executeWithTiming(any())

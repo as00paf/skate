@@ -1,46 +1,28 @@
 package com.pafoid.skate.engine
 
-import com.pafoid.skate.engine.core.BootManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.engine.utils.IJobSystem
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.dsl.module
-import org.koin.test.KoinTest
 
-class EngineFixedTimestepTest : KoinTest {
+class EngineFixedTimestepTest {
 
     private lateinit var engine: Engine
     private lateinit var mockSceneManager: SceneManager
     private lateinit var mockRenderer: Renderer
-    private lateinit var mockBootManager: BootManager
-    private lateinit var mockJobSystem: IJobSystem
 
     @BeforeEach
     fun setup() {
         mockSceneManager = mockk(relaxed = true)
         mockRenderer = mockk(relaxed = true)
-        mockBootManager = mockk(relaxed = true)
-        mockJobSystem = mockk(relaxed = true)
-
-        startKoin {
-            modules(module {
-                single { mockSceneManager }
-                single { mockRenderer }
-                single { mockBootManager }
-                single { mockJobSystem }
-            })
-        }
 
         engine = Engine()
     }
@@ -103,7 +85,6 @@ class EngineFixedTimestepTest : KoinTest {
         val deltaTime = 0.016f
         engine.update(deltaTime)
 
-        verify(exactly = 0) { mockRenderer.render(any(), any(), any()) }
-        verify(exactly = 1) { mockJobSystem.update() }
+        verify(exactly = 0) { mockRenderer.render(any()) }
     }
 }
