@@ -15,7 +15,6 @@ import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.game.prefabs.MaterialType
@@ -30,11 +29,8 @@ class PrefabsGenerator(
 ) {
     private val assetsManager = engine.assetsManager
     private val sceneManager = engine.sceneManager
-    private val systemManager = engine.systemManager
+    private val gameObjectManager = engine.gameObjectManager
 
-    private val gameObjectManager: GameObjectManager by lazy {
-        systemManager.getSystem<GameObjectManager>() ?: throw RuntimeException("GameObjectManager not initialized")
-    }
     /** Root path for engine-bundled assets copied into the project (null = use engine paths) */
     private var engineDefaultsRoot: String? = null
 

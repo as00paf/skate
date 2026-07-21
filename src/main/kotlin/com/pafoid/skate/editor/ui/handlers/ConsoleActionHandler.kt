@@ -6,8 +6,6 @@ import com.pafoid.skate.editor.events.ConsoleAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 /**
  * Handles [ConsoleAction] events by executing the appropriate commands.
@@ -15,13 +13,12 @@ import org.koin.core.component.inject
  * All console UI actions (clear, copy) flow through this handler
  * instead of being executed directly in the UI layer.
  */
-class ConsoleActionHandler : KoinComponent {
-
-    private val eventSystem: EventSystem by inject()
-    private val logger: LoggerService by inject()
-    private val undoRedoManager: UndoRedoManager by inject()
-
-    fun init() {
+class ConsoleActionHandler(
+    private val eventSystem: EventSystem,
+    private val logger: LoggerService,
+    private val undoRedoManager: UndoRedoManager,
+) {
+    init {
         eventSystem.subscribe<ConsoleAction.ClearLogs> {
             undoRedoManager.executeCommand(ClearLogsCommand(logger))
         }

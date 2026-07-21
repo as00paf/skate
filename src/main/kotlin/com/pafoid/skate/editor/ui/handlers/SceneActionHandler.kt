@@ -54,7 +54,7 @@ class SceneActionHandler(
     private val sceneManager = engine.sceneManager
     private val serializer = engine.serializer
 
-    fun init() {//TODO: this should be called from the editor
+    init {
         eventSystem.subscribe<RenameRequested> { event ->
             handleRenameRequested(event.scene, event.newName)
         }

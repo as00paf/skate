@@ -15,7 +15,7 @@ class EnvironmentActionHandler(
     private val undoRedoManager: UndoRedoManager,
     private val eventSystem: EventSystem,
 ) {
-    fun init() {
+    init {
         eventSystem.subscribe<EnvironmentAction.SetTimeOfDayRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentPropertyCommand(
