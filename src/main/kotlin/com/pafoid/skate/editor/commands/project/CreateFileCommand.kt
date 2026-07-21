@@ -2,7 +2,6 @@ package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.logEditor
 import java.io.File
 
 /**

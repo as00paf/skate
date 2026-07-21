@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.systems
 import com.pafoid.skate.editor.data.FileSystemItem
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.logEditor
 import java.io.File
 
 /**

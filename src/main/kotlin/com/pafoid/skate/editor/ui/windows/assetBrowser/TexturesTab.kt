@@ -6,7 +6,6 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui

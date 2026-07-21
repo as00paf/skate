@@ -12,7 +12,6 @@ import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.TimeComponent

@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.game.prefabs.MaterialType
 import imgui.ImGui
 import imgui.flag.ImGuiTableFlags

@@ -7,7 +7,6 @@ import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.events.UndoRedoAction
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.logEditor
 import kotlinx.coroutines.Job
 
 /**

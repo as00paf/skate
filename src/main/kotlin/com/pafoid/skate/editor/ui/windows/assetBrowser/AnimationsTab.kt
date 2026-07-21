@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.core.logEditor
 import imgui.ImGui
 import java.awt.Desktop
 import java.io.File

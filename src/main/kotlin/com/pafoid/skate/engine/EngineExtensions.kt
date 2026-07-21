@@ -3,6 +3,7 @@ package com.pafoid.skate.engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.Component
@@ -32,6 +33,7 @@ import kotlin.reflect.KClass
 fun GameObject.getComponent(type: ComponentType) =
     when (type) {
         ComponentType.AUDIO -> getComponent<AudioComponent>()
+        ComponentType.BONE_OVERRIDE -> getComponent<BoneOverride>()
         ComponentType.BOX_COLLIDER_3D -> getComponent<BoxCollider3D>()
         ComponentType.CYLINDER_COLLIDER -> getComponent<CylinderCollider3D>()
         ComponentType.RENDER -> getComponent<RenderComponent>()
@@ -61,7 +63,7 @@ inline fun <reified T> GameObject.getComponent(): T? {
     return components.filterIsInstance<T>().firstOrNull()
 }
 
-fun <T : Component> GameObject.getComponent(componentClass: KClass<T>): T? {
+fun <T : Component> GameObject.getComponent(componentClass: KClass<T>): T? {// TODO: check if inline fun is enough
     return components.find { componentClass.isInstance(it) } as? T
 }
 

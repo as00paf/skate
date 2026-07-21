@@ -8,7 +8,6 @@ import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.logEditor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

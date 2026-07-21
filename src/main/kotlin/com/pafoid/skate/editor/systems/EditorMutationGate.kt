@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.commands.AllowDuringPlayCommand
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.logEditor
 
 class EditorMutationGate(
     private val engine: Engine,

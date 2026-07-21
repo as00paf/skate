@@ -16,7 +16,6 @@ import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.core.logEditor
 import com.pafoid.skate.engine.events.SceneAction
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags

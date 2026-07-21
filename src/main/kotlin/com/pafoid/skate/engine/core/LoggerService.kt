@@ -15,4 +15,14 @@ class LoggerService {
     }
 
     fun clearLogs() = logs.clear()
+
+    fun logEngine(message: String, level: LogLevel = LogLevel.INFO) =
+        log(message, level, source = "engine")
+
+    fun logEditor(message: String, level: LogLevel = LogLevel.INFO) =
+        log(message, level, source = "editor")
+
+    fun logGame(message: String, level: LogLevel = LogLevel.INFO) =
+        log(message, level, source = "game")
+
 }
