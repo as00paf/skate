@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.GridLines
-import com.pafoid.skate.engine.ecs.config.GridConfig
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -53,79 +52,82 @@ class DebugPass(
     }
 
     private fun renderGridLines(scene: Scene, gridLines: GridLines) {
-        val config = gridLines.config
-        if (!config.showGrid || scene.isRunning) return
+        if (!gridLines.showGrid || scene.isRunning) return
 
         val camPos = cameraManager.camera.position
 
         val cameraDistance = abs(camPos.y)
-        val extent = calculateGridExtent(config, cameraDistance)
-        val minorLineAlpha = calculateMinorLineAlpha(config, cameraDistance)
+        val extent = calculateGridExtent(gridLines.minExtent, gridLines.maxExtent, cameraDistance)
+        val minorLineAlpha =
+            calculateMinorLineAlpha(gridLines.lodCloseDistance, gridLines.lodFarDistance, cameraDistance)
 
         // Calculate grid center (snapped to major step)
-        val centerX = floor(camPos.x / config.majorStep) * config.majorStep
-        val centerZ = floor(camPos.z / config.majorStep) * config.majorStep
-        val numLines = (extent / config.minorStep).toInt()
-
-        // Pre-calculate line endpoints for X and Z axes
-        val xMin = centerX - extent
-        val xMax = centerX + extent
-        val zMin = centerZ - extent
-        val zMax = centerZ + extent
+        val centerX = floor(camPos.x / gridLines.majorStep) * gridLines.majorStep
+        val centerZ = floor(camPos.z / gridLines.majorStep) * gridLines.majorStep
+        val numLines = (extent / gridLines.minorStep).toInt()
 
         // Get camera frustum bounds for culling (optional optimization)
         val frustumMargin = extent * 1.2f // Slightly larger than grid extent
 
         // Render primary grid
         renderGridLines(
-            config = config,
+            minorStep = gridLines.minorStep,
+            majorStep = gridLines.majorStep,
+            edgeFadeEnabled = gridLines.edgeFadeEnabled,
+            edgeFadeStart = gridLines.edgeFadeStart,
             camPos = camPos,
-            centerY = config.gridYOffset,
+            centerY = gridLines.gridYOffset,
             centerX = centerX,
             centerZ = centerZ,
             extent = extent,
             numLines = numLines,
             frustumMargin = frustumMargin,
             minorLineAlpha = minorLineAlpha,
-            lineColorMajor = config.majorColor,
-            lineColorMinor = config.minorColor
+            lineColorMajor = gridLines.majorColor,
+            lineColorMinor = gridLines.minorColor
         )
 
         // Render secondary grid if enabled
-        if (config.secondaryGridEnabled) {
+        if (gridLines.secondaryGridEnabled) {
             renderGridLines(
-                config = config,
+                minorStep = gridLines.minorStep,
+                majorStep = gridLines.majorStep,
+                edgeFadeEnabled = gridLines.edgeFadeEnabled,
+                edgeFadeStart = gridLines.edgeFadeStart,
                 camPos = camPos,
-                centerY = config.secondaryGridY,
+                centerY = gridLines.secondaryGridY,
                 centerX = centerX,
                 centerZ = centerZ,
                 extent = extent,
                 numLines = numLines,
                 frustumMargin = frustumMargin,
                 minorLineAlpha = minorLineAlpha,
-                lineColorMajor = config.secondaryGridColor,
-                lineColorMinor = config.secondaryGridColor.withAlpha(0.5f)
+                lineColorMajor = gridLines.secondaryGridColor,
+                lineColorMinor = gridLines.secondaryGridColor.withAlpha(0.5f),
             )
         }
 
         // Render snap visualization (before axes, so axes appear on top)
-        if (config.snapVisualizationEnabled) {
-            renderSnapVisualization(config, camPos, extent)
+        if (gridLines.snapVisualizationEnabled) {
+            renderSnapVisualization(gridLines.majorStep, gridLines.snapMarkerColor, camPos, extent)
         }
 
         // Render center marker at world origin (before axes, so axes appear on top)
-        if (config.showCenterMarker && cameraDistance < config.centerMarkerDistance) {
-            renderCenterMarker(config, cameraDistance)
+        if (gridLines.showCenterMarker && cameraDistance < gridLines.centerMarkerDistance) {
+            renderCenterMarker(gridLines.centerMarkerColor, gridLines.centerMarkerDistance, cameraDistance)
         }
 
         // Render origin axes LAST so they appear on top of grid lines
-        if (config.showOriginAxes && cameraDistance < 50f) {
-            renderOriginAxes(config, cameraDistance)
+        if (gridLines.showOriginAxes && cameraDistance < 50f) {
+            renderOriginAxes(gridLines.originAxesThickness, cameraDistance)
         }
     }
 
     private fun renderGridLines(
-        config: GridConfig,
+        minorStep: Float,
+        majorStep: Float,
+        edgeFadeEnabled: Boolean,
+        edgeFadeStart: Float,
         camPos: Vector3f,
         centerY: Float,
         centerX: Float,
@@ -143,11 +145,11 @@ class DebugPass(
         val zMax = centerZ + extent
 
         for (i in -numLines..numLines) {
-            val offset = i * config.minorStep
+            val offset = i * minorStep
 
             // Draw Z-aligned lines (constant Z, varying X)
             val worldZ = centerZ + offset
-            val isMajorZ = isMajorLine(worldZ, config.majorStep)
+            val isMajorZ = isMajorLine(worldZ, majorStep)
 
             // Frustum culling: skip lines far outside camera view
             if (worldZ < camPos.z - frustumMargin || worldZ > camPos.z + frustumMargin) {
@@ -158,8 +160,8 @@ class DebugPass(
                 var color = if (isMajorZ) lineColorMajor else lineColorMinor
 
                 // Apply edge fading if enabled
-                if (config.edgeFadeEnabled) {
-                    val fadeAlpha = calculateEdgeFade(config, worldZ, centerZ, extent)
+                if (edgeFadeEnabled) {
+                    val fadeAlpha = calculateEdgeFade(edgeFadeStart, worldZ, centerZ, extent)
                     color = color.withAlpha(fadeAlpha)
                 }
 
@@ -170,7 +172,7 @@ class DebugPass(
 
             // Draw X-aligned lines (constant X, varying Z)
             val worldX = centerX + offset
-            val isMajorX = isMajorLine(worldX, config.majorStep)
+            val isMajorX = isMajorLine(worldX, majorStep)
 
             // Frustum culling: skip lines far outside camera view
             if (worldX < camPos.x - frustumMargin || worldX > camPos.x + frustumMargin) {
@@ -181,8 +183,8 @@ class DebugPass(
                 var color = if (isMajorX) lineColorMajor else lineColorMinor
 
                 // Apply edge fading if enabled
-                if (config.edgeFadeEnabled) {
-                    val fadeAlpha = calculateEdgeFade(config, worldX, centerX, extent)
+                if (edgeFadeEnabled) {
+                    val fadeAlpha = calculateEdgeFade(edgeFadeStart, worldX, centerX, extent)
                     color = color.withAlpha(fadeAlpha)
                 }
 
@@ -201,16 +203,16 @@ class DebugPass(
      * @param extent Grid extent from center
      * @return Alpha value 0.0-1.0 for edge fading
      */
-    private fun calculateEdgeFade(config: GridConfig, position: Float, center: Float, extent: Float): Float {
+    private fun calculateEdgeFade(edgeFadeStart: Float, position: Float, center: Float, extent: Float): Float {
         val distanceFromCenter = abs(position - center)
         val normalizedDistance = distanceFromCenter / extent
 
         // Start fading at edgeFadeStart (0.0-1.0)
-        if (normalizedDistance <= config.edgeFadeStart) return 1.0f
+        if (normalizedDistance <= edgeFadeStart) return 1.0f
         if (normalizedDistance >= 1.0f) return 0.0f
 
         // Smooth fade from edgeFadeStart to edge
-        val fadeT = (normalizedDistance - config.edgeFadeStart) / (1.0f - config.edgeFadeStart)
+        val fadeT = (normalizedDistance - edgeFadeStart) / (1.0f - edgeFadeStart)
         return 1.0f - smoothstep(fadeT)
     }
 
@@ -219,19 +221,19 @@ class DebugPass(
      *
      * @param cameraDistance Distance from camera to grid plane
      */
-    private fun renderCenterMarker(config: GridConfig, cameraDistance: Float) {
-        val markerSize = (2.0f * (config.centerMarkerDistance - cameraDistance) / config.centerMarkerDistance)
+    private fun renderCenterMarker(centerMarkerColor: Vector3f, centerMarkerDistance: Float, cameraDistance: Float) {
+        val markerSize = (2.0f * (centerMarkerDistance - cameraDistance) / centerMarkerDistance)
             .coerceIn(0.5f, 2.0f)
 
         // X-axis crosshair (at grid level)
         lineStart.set(-markerSize, 0.0f, 0f)
         lineEnd.set(markerSize, 0.0f, 0f)
-        debugRenderer.addLine3D(lineStart, lineEnd, config.centerMarkerColor)
+        debugRenderer.addLine3D(lineStart, lineEnd, centerMarkerColor)
 
         // Z-axis crosshair (at grid level)
         lineStart.set(0f, 0.0f, -markerSize)
         lineEnd.set(0f, 0.0f, markerSize)
-        debugRenderer.addLine3D(lineStart, lineEnd, config.centerMarkerColor)
+        debugRenderer.addLine3D(lineStart, lineEnd, centerMarkerColor)
     }
 
     /**
@@ -246,9 +248,8 @@ class DebugPass(
      *
      * @param cameraDistance Distance from camera to grid plane
      */
-    private fun renderOriginAxes(config: GridConfig, cameraDistance: Float) {
+    private fun renderOriginAxes(thickness: Float, cameraDistance: Float) {
         val axisLength = (100f * (50f - cameraDistance) / 50f).coerceIn(5f, 100f)
-        val thickness = config.originAxesThickness
 
         // All axes at grid level (Y=0)
         val gridY = 0.0f
@@ -284,10 +285,10 @@ class DebugPass(
      * @param camPos Camera position
      * @param extent Grid extent
      */
-    private fun renderSnapVisualization(config: GridConfig, camPos: Vector3f, extent: Float) {
+    private fun renderSnapVisualization(majorStep: Float, snapMarkerColor: Vector3f, camPos: Vector3f, extent: Float) {
         // Calculate nearest grid intersection from camera position (projected to X-Z plane)
-        val snapX = floor(camPos.x / config.majorStep) * config.majorStep
-        val snapZ = floor(camPos.z / config.majorStep) * config.majorStep
+        val snapX = floor(camPos.x / majorStep) * majorStep
+        val snapZ = floor(camPos.z / majorStep) * majorStep
 
         // Only show snap marker when camera is close to the grid
         val cameraDistance = abs(camPos.y)
@@ -300,11 +301,11 @@ class DebugPass(
         // Draw snap point cross
         lineStart.set(snapX - snapSize, snapY, snapZ)
         lineEnd.set(snapX + snapSize, snapY, snapZ)
-        debugRenderer.addLine3D(lineStart, lineEnd, config.snapMarkerColor)
+        debugRenderer.addLine3D(lineStart, lineEnd, snapMarkerColor)
 
         lineStart.set(snapX, snapY, snapZ - snapSize)
         lineEnd.set(snapX, snapY, snapZ + snapSize)
-        debugRenderer.addLine3D(lineStart, lineEnd, config.snapMarkerColor)
+        debugRenderer.addLine3D(lineStart, lineEnd, snapMarkerColor)
     }
 
     /**
@@ -316,10 +317,10 @@ class DebugPass(
      * @param cameraDistance Distance from camera to grid plane
      * @return Calculated grid extent clamped between min and max
      */
-    private fun calculateGridExtent(config: GridConfig, cameraDistance: Float): Float {
+    private fun calculateGridExtent(minExtent: Float, maxExtent: Float, cameraDistance: Float): Float {
         val clampedDistance = cameraDistance.coerceAtLeast(0f)
         val calculatedExtent = clampedDistance * tanHalfFov * padding
-        return calculatedExtent.coerceIn(config.minExtent, config.maxExtent)
+        return calculatedExtent.coerceIn(minExtent, maxExtent)
     }
 
     /**
@@ -333,11 +334,11 @@ class DebugPass(
      * @param cameraDistance Current camera distance from grid
      * @return Alpha value 0.0-1.0 for minor line visibility
      */
-    private fun calculateMinorLineAlpha(config: GridConfig, cameraDistance: Float): Float {
-        if (cameraDistance <= config.lodCloseDistance) return 1.0f
-        if (cameraDistance >= config.lodFarDistance) return 0.0f
+    private fun calculateMinorLineAlpha(lodCloseDistance: Float, lodFarDistance: Float, cameraDistance: Float): Float {
+        if (cameraDistance <= lodCloseDistance) return 1.0f
+        if (cameraDistance >= lodFarDistance) return 0.0f
 
-        val t = (cameraDistance - config.lodCloseDistance) / (config.lodFarDistance - config.lodCloseDistance)
+        val t = (cameraDistance - lodCloseDistance) / (lodFarDistance - lodCloseDistance)
         return 1.0f - smoothstep(t)
     }
 
