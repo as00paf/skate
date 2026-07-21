@@ -4,8 +4,8 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.data.LogLevel
 import imgui.ImGui
 import imgui.flag.ImGuiTableColumnFlags
 import imgui.flag.ImGuiTableFlags

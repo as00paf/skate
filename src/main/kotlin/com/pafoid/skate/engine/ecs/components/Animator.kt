@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.player.PlayerState
 import kotlinx.serialization.Serializable

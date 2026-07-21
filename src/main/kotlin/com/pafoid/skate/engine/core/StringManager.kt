@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.core
 
-import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import java.io.InputStream
 import java.util.*
 

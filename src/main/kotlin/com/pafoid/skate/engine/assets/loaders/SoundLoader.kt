@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.assets.loaders
 
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import org.lwjgl.openal.AL10.AL_FORMAT_MONO16
 import org.lwjgl.openal.AL10.AL_FORMAT_MONO8
 import org.lwjgl.openal.AL10.AL_FORMAT_STEREO16

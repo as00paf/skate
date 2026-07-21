@@ -12,8 +12,8 @@ import com.pafoid.skate.editor.project.ProjectWizard
 import com.pafoid.skate.engine.BuildConfig
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.data.LogLevel
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond

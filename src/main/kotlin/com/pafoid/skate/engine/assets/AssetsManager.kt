@@ -12,7 +12,7 @@ import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.loaders.SoundLoader
 import com.pafoid.skate.engine.assets.loaders.TextureLoader
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.render.VAOLoader
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap

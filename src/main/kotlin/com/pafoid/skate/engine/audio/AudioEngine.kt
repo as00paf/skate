@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.audio
 
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.data.LogLevel
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import org.lwjgl.openal.AL
 import org.lwjgl.openal.AL10
 import org.lwjgl.openal.ALC

@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.core
 
-import com.pafoid.skate.engine.data.LogEntry
-import com.pafoid.skate.engine.data.LogLevel
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class LoggerService {
@@ -25,4 +23,14 @@ class LoggerService {
     fun logGame(message: String, level: LogLevel = LogLevel.INFO) =
         log(message, level, source = "game")
 
+    enum class LogLevel {
+        INFO, ACTION, WARN, ERROR
+    }
+
+    data class LogEntry(
+        val message: String,
+        val level: LogLevel = LogLevel.INFO,
+        val source: String = "engine",
+        val timestamp: Long = System.currentTimeMillis()
+    )
 }

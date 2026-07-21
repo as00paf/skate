@@ -7,8 +7,8 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.data.LogLevel
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiCol
