@@ -68,6 +68,5 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
     override fun destroy() {
         scene.gameObjects.forEach { it.destroy() }
         scene.gameObjects.clear()
-        scene.markObjectSetChanged()
     }
 }

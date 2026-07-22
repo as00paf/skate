@@ -457,7 +457,7 @@ object MImGui {
         var changed = false
         ImGui.pushID(label)
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0, DEFAULT_COLUMN_WIDTH)
+            ImGui.tableSetupColumn("Label", 0)
             ImGui.tableSetupColumn("Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
@@ -477,7 +477,7 @@ object MImGui {
         ImGui.pushID(label)
         var changed = false
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0, DEFAULT_COLUMN_WIDTH)
+            ImGui.tableSetupColumn("Label", 0)
             ImGui.tableSetupColumn("Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)

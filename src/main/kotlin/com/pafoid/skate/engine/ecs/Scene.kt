@@ -13,8 +13,6 @@ class Scene(@SerialName("sceneName") override var name: String = "MainScene") : 
     val camera: Camera = Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }
 
     val gameObjects = mutableListOf<GameObject>()
-    var objectSetVersion: Long = 0
-        private set
 
     @Transient
     var hoveredGameObject: GameObject? = null
@@ -31,9 +29,5 @@ class Scene(@SerialName("sceneName") override var name: String = "MainScene") : 
 
     fun destroyScene() {
         super.destroy()
-    }
-
-    fun markObjectSetChanged() {
-        objectSetVersion++
     }
 }

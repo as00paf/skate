@@ -62,96 +62,128 @@ class EnvironmentWindow(
         }
 
         val config = lightSystem?.config
-        if (config != null && ImGui.collapsingHeader("${Icons.SUN} ${stringManager.getString("lbl.environment.sun")}")) {
-            val sunDir = floatArrayOf(config.direction.x, config.direction.y, config.direction.z)
-            if (MImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f)) {
-                eventSystem.publish(
-                    EnvironmentAction.SetSunDirectionRequested(
-                        lightConfig = config,
-                        oldValue = Vector3f(config.direction),
-                        newValue = Vector3f(sunDir[0], sunDir[1], sunDir[2]).normalize(),
+        if (config != null) {
+            if (ImGui.collapsingHeader("${Icons.SUN} ${stringManager.getString("lbl.environment.sun")}")) {
+                val sunDir = floatArrayOf(config.direction.x, config.direction.y, config.direction.z)
+                if (MImGui.dragFloat3(stringManager.getString("lbl.environment.sun_direction"), sunDir, 0.01f)) {
+                    eventSystem.publish(
+                        EnvironmentAction.SetSunDirectionRequested(
+                            lightConfig = config,
+                            oldValue = Vector3f(config.direction),
+                            newValue = Vector3f(sunDir[0], sunDir[1], sunDir[2]).normalize(),
+                        )
                     )
-                )
-            }
+                }
 
-            val sunColor = floatArrayOf(config.color.x, config.color.y, config.color.z)
-            if (MImGui.colorEdit3(stringManager.getString("lbl.environment.sun_color"), sunColor)) {
-                eventSystem.publish(
-                    EnvironmentAction.SetSunColorRequested(
-                        lightConfig = config,
-                        oldValue = Vector3f(config.color),
-                        newValue = Vector3f(sunColor[0], sunColor[1], sunColor[2]),
+                val sunColor = floatArrayOf(config.color.x, config.color.y, config.color.z)
+                if (MImGui.colorEdit3(stringManager.getString("lbl.environment.sun_color"), sunColor)) {
+                    eventSystem.publish(
+                        EnvironmentAction.SetSunColorRequested(
+                            lightConfig = config,
+                            oldValue = Vector3f(config.color),
+                            newValue = Vector3f(sunColor[0], sunColor[1], sunColor[2]),
+                        )
                     )
-                )
-            }
+                }
 
-            val sunIntensity = floatArrayOf(config.intensity)
-            if (ImGui.dragFloat(stringManager.getString("lbl.environment.sun_intensity"), sunIntensity, 0.1f, 0f, 10f)) {
-                eventSystem.publish(
-                    EnvironmentAction.SetSunIntensityRequested(
-                        lightConfig = config,
-                        oldValue = config.intensity,
-                        newValue = sunIntensity[0],
+                val sunIntensity = floatArrayOf(config.intensity)
+                if (ImGui.dragFloat(
+                        stringManager.getString("lbl.environment.sun_intensity"),
+                        sunIntensity,
+                        0.1f,
+                        0f,
+                        10f
                     )
-                )
-            }
-
-            ImGui.separator()
-            MImGui.textDisabled(stringManager.getString("lbl.environment.shadow_settings"))
-
-            val shadowDistance = floatArrayOf(config.shadowDistance)
-            if (ImGui.dragFloat(stringManager.getString("lbl.environment.shadow_distance"), shadowDistance, 1f, 10f, 200f)) {
-                eventSystem.publish(
-                    EnvironmentAction.SetShadowDistanceRequested(
-                        lightConfig = config,
-                        oldValue = config.shadowDistance,
-                        newValue = shadowDistance[0],
+                ) {
+                    eventSystem.publish(
+                        EnvironmentAction.SetSunIntensityRequested(
+                            lightConfig = config,
+                            oldValue = config.intensity,
+                            newValue = sunIntensity[0],
+                        )
                     )
-                )
-            }
+                }
 
-            val autoBounds = ImBoolean(config.autoCalculateBounds)
-            if (ImGui.checkbox(stringManager.getString("lbl.environment.auto_calculate_bounds"), autoBounds)) {
-                eventSystem.publish(
-                    EnvironmentAction.SetAutoCalculateBoundsRequested(
-                        lightConfig = config,
-                        oldValue = config.autoCalculateBounds,
-                        newValue = autoBounds.get(),
-                    )
-                )
-            }
+                ImGui.separator()
+                MImGui.textDisabled(stringManager.getString("lbl.environment.shadow_settings"))
 
-            val stabilize = ImBoolean(config.stabilizeProjection)
-            if (ImGui.checkbox(stringManager.getString("lbl.environment.stabilize_projection"), stabilize)) {
-                eventSystem.publish(
-                    EnvironmentAction.SetStabilizeProjectionRequested(
-                        lightConfig = config,
-                        oldValue = config.stabilizeProjection,
-                        newValue = stabilize.get(),
+                val shadowDistance = floatArrayOf(config.shadowDistance)
+                if (ImGui.dragFloat(
+                        stringManager.getString("lbl.environment.shadow_distance"),
+                        shadowDistance,
+                        1f,
+                        10f,
+                        200f
                     )
-                )
-            }
+                ) {
+                    eventSystem.publish(
+                        EnvironmentAction.SetShadowDistanceRequested(
+                            lightConfig = config,
+                            oldValue = config.shadowDistance,
+                            newValue = shadowDistance[0],
+                        )
+                    )
+                }
 
-            val depthBias = floatArrayOf(config.depthBias)
-            if (ImGui.dragFloat(stringManager.getString("lbl.environment.depth_bias"), depthBias, 0.0001f, 0f, 0.1f, "%.4f")) {
-                eventSystem.publish(
-                    EnvironmentAction.SetDepthBiasRequested(
-                        lightConfig = config,
-                        oldValue = config.depthBias,
-                        newValue = depthBias[0],
+                val autoBounds = ImBoolean(config.autoCalculateBounds)
+                if (ImGui.checkbox(stringManager.getString("lbl.environment.auto_calculate_bounds"), autoBounds)) {
+                    eventSystem.publish(
+                        EnvironmentAction.SetAutoCalculateBoundsRequested(
+                            lightConfig = config,
+                            oldValue = config.autoCalculateBounds,
+                            newValue = autoBounds.get(),
+                        )
                     )
-                )
-            }
+                }
 
-            val slopeBias = floatArrayOf(config.slopeScaledBias)
-            if (ImGui.dragFloat(stringManager.getString("lbl.environment.slope_scaled_bias"), slopeBias, 0.001f, 0f, 0.1f, "%.3f")) {
-                eventSystem.publish(
-                    EnvironmentAction.SetSlopeScaledBiasRequested(
-                        lightConfig = config,
-                        oldValue = config.slopeScaledBias,
-                        newValue = slopeBias[0],
+                val stabilize = ImBoolean(config.stabilizeProjection)
+                if (ImGui.checkbox(stringManager.getString("lbl.environment.stabilize_projection"), stabilize)) {
+                    eventSystem.publish(
+                        EnvironmentAction.SetStabilizeProjectionRequested(
+                            lightConfig = config,
+                            oldValue = config.stabilizeProjection,
+                            newValue = stabilize.get(),
+                        )
                     )
-                )
+                }
+
+                val depthBias = floatArrayOf(config.depthBias)
+                if (ImGui.dragFloat(
+                        stringManager.getString("lbl.environment.depth_bias"),
+                        depthBias,
+                        0.0001f,
+                        0f,
+                        0.1f,
+                        "%.4f"
+                    )
+                ) {
+                    eventSystem.publish(
+                        EnvironmentAction.SetDepthBiasRequested(
+                            lightConfig = config,
+                            oldValue = config.depthBias,
+                            newValue = depthBias[0],
+                        )
+                    )
+                }
+
+                val slopeBias = floatArrayOf(config.slopeScaledBias)
+                if (ImGui.dragFloat(
+                        stringManager.getString("lbl.environment.slope_scaled_bias"),
+                        slopeBias,
+                        0.001f,
+                        0f,
+                        0.1f,
+                        "%.3f"
+                    )
+                ) {
+                    eventSystem.publish(
+                        EnvironmentAction.SetSlopeScaledBiasRequested(
+                            lightConfig = config,
+                            oldValue = config.slopeScaledBias,
+                            newValue = slopeBias[0],
+                        )
+                    )
+                }
             }
         }
 

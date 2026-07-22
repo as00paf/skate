@@ -27,7 +27,6 @@ class GameObjectManagerTest {
         pendingObjects = mutableListOf()
 
         every { scene.gameObjects } returns gameObjects
-        every { scene.markObjectSetChanged() } returns Unit
 
         gameObjectManager = GameObjectManager()
         gameObjectManager.init(scene)
