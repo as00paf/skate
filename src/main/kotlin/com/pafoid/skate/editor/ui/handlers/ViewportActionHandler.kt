@@ -66,9 +66,9 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.ComponentType
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
-import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.events.CameraAction
@@ -339,7 +339,7 @@ class ViewportActionHandler(
 
     private fun handleSetRuntimePlaying(playing: Boolean) {
         if (!playing) {
-            sceneManager.currentScene?.getComponent<TimeComponent>()?.timeScale = 1.0f
+            sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = 1.0f
             eventSystem.publish(CameraAction.SetCamera(editorCamera.camera))
         } else {
             sceneManager.currentScene?.let { eventSystem.publish(CameraAction.SetCamera(it.camera)) }
@@ -347,7 +347,7 @@ class ViewportActionHandler(
     }
 
     private fun handleSetSimulationTimeScale(timeScale: Float) {
-        sceneManager.currentScene?.getComponent<TimeComponent>()?.timeScale = timeScale
+        sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = timeScale
     }
 
     private fun handleResetSkateScene() {

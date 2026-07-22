@@ -3,11 +3,11 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
-import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
@@ -52,7 +52,7 @@ class PhysicsSystem(
         if (cacheDirty) rebuildCache()
 
         // Step Bullet at deterministic fixed-step first so downstream ECS reads current frame data.
-        val timeScale = scene.getComponent<TimeComponent>()?.timeScale ?: 1.0f
+        val timeScale = scene.getComponent<DayNightCycleComponent>()?.timeScale ?: 1.0f
         physics3d.update(dt * timeScale)
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->

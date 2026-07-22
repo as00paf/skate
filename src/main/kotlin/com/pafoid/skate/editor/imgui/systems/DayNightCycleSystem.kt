@@ -23,12 +23,12 @@ fun DayNightCycleSystem.imgui(stringManager: StringManager) {
     // Current phase display
     val currentPhase = getCurrentPhase(config)
     ImGui.text(stringManager.getString("lbl.day_night_cycle.current_phase", currentPhase))
-    ImGui.text(stringManager.getString("lbl.day_night_cycle.time", config.cycleTime))
+    ImGui.text(stringManager.getString("lbl.day_night_cycle.time", config.timeOfDay))
 
     ImGui.separator()
 
     // Time of day slider
-    val cycleTimeArr = floatArrayOf(config.cycleTime)
+    val cycleTimeArr = floatArrayOf(config.timeOfDay)
     if (ImGui.dragFloat(
             stringManager.getString("lbl.day_night_cycle.time_of_day"),
             cycleTimeArr,
@@ -38,7 +38,7 @@ fun DayNightCycleSystem.imgui(stringManager: StringManager) {
             "%.2f"
         )
     ) {
-        config.cycleTime = cycleTimeArr[0].coerceIn(0f, 24f)
+        config.timeOfDay = cycleTimeArr[0].coerceIn(0f, 24f)
     }
 
     // Day duration slider
@@ -111,7 +111,7 @@ fun DayNightCycleSystem.imgui(stringManager: StringManager) {
  * @return Phase name (Night, Dawn, Day, or Dusk)
  */
 fun getCurrentPhase(config: DayNightCycleComponent): String {
-    return when (config.cycleTime) {
+    return when (config.timeOfDay) {
         in 0f..5f -> "Night"
         in 5f..7f -> "Dawn"
         in 7f..17f -> "Day"

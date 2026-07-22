@@ -22,22 +22,22 @@ fun GridLines.imgui(stringManager: StringManager) {
     ImGui.separator()
 
     // Visibility toggles
-    val showGrid = ImBoolean(config.showGrid)
+    val showGrid = ImBoolean(showGrid)
     if (ImGui.checkbox(stringManager.getString("lbl.grid.show_grid"), showGrid)) {
-        config.showGrid = showGrid.get()
+        this.showGrid = showGrid.get()
     }
 
-    val showOriginAxes = ImBoolean(config.showOriginAxes)
+    val showOriginAxes = ImBoolean(showOriginAxes)
     if (ImGui.checkbox(stringManager.getString("lbl.grid.show_origin_axes"), showOriginAxes)) {
-        config.showOriginAxes = showOriginAxes.get()
+        this.showOriginAxes = showOriginAxes.get()
     }
 
     // Axis thickness slider (only if axes are enabled)
-    if (config.showOriginAxes) {
+    if (this.showOriginAxes) {
         ImGui.pushItemWidth(120f)
-        val thicknessArr = floatArrayOf(config.originAxesThickness)
+        val thicknessArr = floatArrayOf(originAxesThickness)
         if (ImGui.sliderFloat("Axis Thickness", thicknessArr, 0.02f, 0.2f, "%.3f")) {
-            config.originAxesThickness = thicknessArr[0]
+            originAxesThickness = thicknessArr[0]
         }
         ImGui.popItemWidth()
     }
@@ -48,7 +48,7 @@ fun GridLines.imgui(stringManager: StringManager) {
     ImGui.text(stringManager.getString("lbl.grid.spacing"))
     ImGui.pushItemWidth(120f)
 
-    val majorStepArr = floatArrayOf(config.majorStep)
+    val majorStepArr = floatArrayOf(majorStep)
     if (ImGui.dragFloat(
             stringManager.getString("lbl.grid.major_step"),
             majorStepArr,
@@ -58,10 +58,10 @@ fun GridLines.imgui(stringManager: StringManager) {
             "%.1f m"
         )
     ) {
-        config.majorStep = majorStepArr[0].coerceAtLeast(0.1f)
+        majorStep = majorStepArr[0].coerceAtLeast(0.1f)
     }
 
-    val minorStepArr = floatArrayOf(config.minorStep)
+    val minorStepArr = floatArrayOf(minorStep)
     if (ImGui.dragFloat(
             stringManager.getString("lbl.grid.minor_step"),
             minorStepArr,
@@ -71,7 +71,7 @@ fun GridLines.imgui(stringManager: StringManager) {
             "%.2f m"
         )
     ) {
-        config.minorStep = minorStepArr[0].coerceIn(0.01f, config.majorStep)
+        minorStep = minorStepArr[0].coerceIn(0.01f, majorStep)
     }
     ImGui.popItemWidth()
 
@@ -81,14 +81,14 @@ fun GridLines.imgui(stringManager: StringManager) {
     ImGui.text(stringManager.getString("lbl.grid.lod_settings"))
     ImGui.pushItemWidth(120f)
 
-    val lodCloseArr = floatArrayOf(config.lodCloseDistance)
+    val lodCloseArr = floatArrayOf(lodCloseDistance)
     if (ImGui.dragFloat(stringManager.getString("lbl.grid.lod_close"), lodCloseArr, 0.1f, 0.1f, 50.0f, "%.1f m")) {
-        config.lodCloseDistance = lodCloseArr[0].coerceAtMost(config.lodFarDistance)
+        lodCloseDistance = lodCloseArr[0].coerceAtMost(lodFarDistance)
     }
 
-    val lodFarArr = floatArrayOf(config.lodFarDistance)
+    val lodFarArr = floatArrayOf(lodFarDistance)
     if (ImGui.dragFloat(stringManager.getString("lbl.grid.lod_far"), lodFarArr, 0.1f, 0.1f, 50.0f, "%.1f m")) {
-        config.lodFarDistance = lodFarArr[0].coerceAtLeast(config.lodCloseDistance)
+        lodFarDistance = lodFarArr[0].coerceAtLeast(lodCloseDistance)
     }
     ImGui.popItemWidth()
 
@@ -98,7 +98,7 @@ fun GridLines.imgui(stringManager: StringManager) {
     ImGui.text(stringManager.getString("lbl.grid.extent_settings"))
     ImGui.pushItemWidth(120f)
 
-    val minExtentArr = floatArrayOf(config.minExtent)
+    val minExtentArr = floatArrayOf(minExtent)
     if (ImGui.dragFloat(
             stringManager.getString("lbl.grid.min_extent"),
             minExtentArr,
@@ -108,10 +108,10 @@ fun GridLines.imgui(stringManager: StringManager) {
             "%.1f m"
         )
     ) {
-        config.minExtent = minExtentArr[0].coerceAtMost(config.maxExtent)
+        minExtent = minExtentArr[0].coerceAtMost(maxExtent)
     }
 
-    val maxExtentArr = floatArrayOf(config.maxExtent)
+    val maxExtentArr = floatArrayOf(maxExtent)
     if (ImGui.dragFloat(
             stringManager.getString("lbl.grid.max_extent"),
             maxExtentArr,
@@ -121,7 +121,7 @@ fun GridLines.imgui(stringManager: StringManager) {
             "%.1f m"
         )
     ) {
-        config.maxExtent = maxExtentArr[0].coerceAtLeast(config.minExtent)
+        maxExtent = maxExtentArr[0].coerceAtLeast(minExtent)
     }
     ImGui.popItemWidth()
 
@@ -130,14 +130,14 @@ fun GridLines.imgui(stringManager: StringManager) {
     // Color settings
     ImGui.text(stringManager.getString("lbl.grid.colors"))
 
-    val majorColorArr = floatArrayOf(config.majorColor.x, config.majorColor.y, config.majorColor.z)
+    val majorColorArr = floatArrayOf(majorColor.x, majorColor.y, majorColor.z)
     if (ImGui.colorEdit3(stringManager.getString("lbl.grid.major_color"), majorColorArr)) {
-        config.majorColor.set(majorColorArr[0], majorColorArr[1], majorColorArr[2])
+        majorColor.set(majorColorArr[0], majorColorArr[1], majorColorArr[2])
     }
 
-    val minorColorArr = floatArrayOf(config.minorColor.x, config.minorColor.y, config.minorColor.z)
+    val minorColorArr = floatArrayOf(minorColor.x, minorColor.y, minorColor.z)
     if (ImGui.colorEdit3(stringManager.getString("lbl.grid.minor_color"), minorColorArr)) {
-        config.minorColor.set(minorColorArr[0], minorColorArr[1], minorColorArr[2])
+        minorColor.set(minorColorArr[0], minorColorArr[1], minorColorArr[2])
     }
 
     ImGui.separator()
@@ -146,9 +146,9 @@ fun GridLines.imgui(stringManager: StringManager) {
     ImGui.text(stringManager.getString("lbl.grid.z_fighting"))
     ImGui.pushItemWidth(120f)
 
-    val yOffsetArr = floatArrayOf(config.gridYOffset)
+    val yOffsetArr = floatArrayOf(gridYOffset)
     if (ImGui.dragFloat(stringManager.getString("lbl.grid.y_offset"), yOffsetArr, 0.01f, -1.0f, 0.0f, "%.2f m")) {
-        config.gridYOffset = yOffsetArr[0].coerceIn(-1.0f, 0.0f)
+        gridYOffset = yOffsetArr[0].coerceIn(-1.0f, 0.0f)
     }
     ImGui.popItemWidth()
 
@@ -158,18 +158,18 @@ fun GridLines.imgui(stringManager: StringManager) {
     ImGui.text(stringManager.getString("lbl.grid.advanced"))
 
     // Center marker
-    val showCenterMarker = ImBoolean(config.showCenterMarker)
+    val showCenterMarker = ImBoolean(showCenterMarker)
     if (ImGui.checkbox(stringManager.getString("lbl.grid.show_center_marker"), showCenterMarker)) {
-        config.showCenterMarker = showCenterMarker.get()
+        this.showCenterMarker = showCenterMarker.get()
     }
 
     val centerMarkerColorArr =
-        floatArrayOf(config.centerMarkerColor.x, config.centerMarkerColor.y, config.centerMarkerColor.z)
+        floatArrayOf(centerMarkerColor.x, centerMarkerColor.y, centerMarkerColor.z)
     if (ImGui.colorEdit3(stringManager.getString("lbl.grid.center_marker_color"), centerMarkerColorArr)) {
-        config.centerMarkerColor.set(centerMarkerColorArr[0], centerMarkerColorArr[1], centerMarkerColorArr[2])
+        centerMarkerColor.set(centerMarkerColorArr[0], centerMarkerColorArr[1], centerMarkerColorArr[2])
     }
 
-    val centerMarkerDistArr = floatArrayOf(config.centerMarkerDistance)
+    val centerMarkerDistArr = floatArrayOf(centerMarkerDistance)
     if (ImGui.dragFloat(
             stringManager.getString("lbl.grid.center_marker_distance"),
             centerMarkerDistArr,
@@ -179,18 +179,18 @@ fun GridLines.imgui(stringManager: StringManager) {
             "%.0f m"
         )
     ) {
-        config.centerMarkerDistance = centerMarkerDistArr[0].coerceAtLeast(5.0f)
+        centerMarkerDistance = centerMarkerDistArr[0].coerceAtLeast(5.0f)
     }
 
     ImGui.separator()
 
     // Edge fading
-    val edgeFadeEnabled = ImBoolean(config.edgeFadeEnabled)
+    val edgeFadeEnabled = ImBoolean(edgeFadeEnabled)
     if (ImGui.checkbox(stringManager.getString("lbl.grid.edge_fade_enabled"), edgeFadeEnabled)) {
-        config.edgeFadeEnabled = edgeFadeEnabled.get()
+        this.edgeFadeEnabled = edgeFadeEnabled.get()
     }
 
-    val edgeFadeStartArr = floatArrayOf(config.edgeFadeStart)
+    val edgeFadeStartArr = floatArrayOf(edgeFadeStart)
     ImGui.pushItemWidth(120f)
     if (ImGui.dragFloat(
             stringManager.getString("lbl.grid.edge_fade_start"),
@@ -201,19 +201,19 @@ fun GridLines.imgui(stringManager: StringManager) {
             "%.2f"
         )
     ) {
-        config.edgeFadeStart = edgeFadeStartArr[0].coerceIn(0.0f, 1.0f)
+        edgeFadeStart = edgeFadeStartArr[0].coerceIn(0.0f, 1.0f)
     }
     ImGui.popItemWidth()
 
     ImGui.separator()
 
     // Secondary grid
-    val secondaryGridEnabled = ImBoolean(config.secondaryGridEnabled)
+    val secondaryGridEnabled = ImBoolean(secondaryGridEnabled)
     if (ImGui.checkbox(stringManager.getString("lbl.grid.secondary_grid_enabled"), secondaryGridEnabled)) {
-        config.secondaryGridEnabled = secondaryGridEnabled.get()
+        this.secondaryGridEnabled = secondaryGridEnabled.get()
     }
 
-    val secondaryGridYArr = floatArrayOf(config.secondaryGridY)
+    val secondaryGridYArr = floatArrayOf(secondaryGridY)
     ImGui.pushItemWidth(120f)
     if (ImGui.dragFloat(
             stringManager.getString("lbl.grid.secondary_grid_y"),
@@ -224,34 +224,34 @@ fun GridLines.imgui(stringManager: StringManager) {
             "%.1f m"
         )
     ) {
-        config.secondaryGridY = secondaryGridYArr[0]
+        secondaryGridY = secondaryGridYArr[0]
     }
     ImGui.popItemWidth()
 
     val secondaryGridColorArr =
-        floatArrayOf(config.secondaryGridColor.x, config.secondaryGridColor.y, config.secondaryGridColor.z)
+        floatArrayOf(secondaryGridColor.x, secondaryGridColor.y, secondaryGridColor.z)
     if (ImGui.colorEdit3(stringManager.getString("lbl.grid.secondary_grid_color"), secondaryGridColorArr)) {
-        config.secondaryGridColor.set(secondaryGridColorArr[0], secondaryGridColorArr[1], secondaryGridColorArr[2])
+        secondaryGridColor.set(secondaryGridColorArr[0], secondaryGridColorArr[1], secondaryGridColorArr[2])
     }
 
     ImGui.separator()
 
     // Snap visualization
-    val snapVisEnabled = ImBoolean(config.snapVisualizationEnabled)
+    val snapVisEnabled = ImBoolean(snapVisualizationEnabled)
     if (ImGui.checkbox(stringManager.getString("lbl.grid.snap_visualization_enabled"), snapVisEnabled)) {
-        config.snapVisualizationEnabled = snapVisEnabled.get()
+        snapVisualizationEnabled = snapVisEnabled.get()
     }
 
     val snapMarkerColorArr =
-        floatArrayOf(config.snapMarkerColor.x, config.snapMarkerColor.y, config.snapMarkerColor.z)
+        floatArrayOf(snapMarkerColor.x, snapMarkerColor.y, snapMarkerColor.z)
     if (ImGui.colorEdit3(stringManager.getString("lbl.grid.snap_marker_color"), snapMarkerColorArr)) {
-        config.snapMarkerColor.set(snapMarkerColorArr[0], snapMarkerColorArr[1], snapMarkerColorArr[2])
+        snapMarkerColor.set(snapMarkerColorArr[0], snapMarkerColorArr[1], snapMarkerColorArr[2])
     }
 
     ImGui.separator()
 
     // Reset button
     if (ImGui.button(stringManager.getString("lbl.grid.reset_to_defaults"))) {
-        config.resetToDefaults()
+        resetToDefaults()
     }
 }

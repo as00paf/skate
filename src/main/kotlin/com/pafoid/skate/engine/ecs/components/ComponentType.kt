@@ -25,7 +25,6 @@ enum class ComponentType {
     SCENE_PHYSICS,
     SKELETON,
     SPRITE_RENDERER,
-    TIME,
     TRANSFORM;
 
     fun instantiate(): Component? {
@@ -54,7 +53,6 @@ enum class ComponentType {
             SCENE_PHYSICS -> ScenePhysicsComponent()
             SKELETON -> null
             SPRITE_RENDERER -> SpriteRenderer()
-            TIME -> TimeComponent()
             TRANSFORM -> Transform()
         }
     }

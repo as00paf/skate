@@ -2,7 +2,7 @@ package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.TimeComponent
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.events.CameraAction
@@ -29,7 +29,7 @@ class CameraManager(
     }
 
     override fun update(dt: Float) {
-        val timeScale = scene.getComponent<TimeComponent>()?.timeScale ?: 1.0f
+        val timeScale = scene.getComponent<DayNightCycleComponent>()?.timeScale ?: 1.0f
         val scaledDt = dt * timeScale
         camera.update(scaledDt)
     }

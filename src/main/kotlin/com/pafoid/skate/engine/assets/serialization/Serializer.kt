@@ -26,7 +26,6 @@ import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
-import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -64,7 +63,6 @@ class Serializer {
 
             // Environment components
             subclass(EnvironmentComponent::class)
-            subclass(TimeComponent::class)
             subclass(LightingStateComponent::class)
             subclass(LightingComponent::class)
             subclass(DayNightCycleComponent::class)

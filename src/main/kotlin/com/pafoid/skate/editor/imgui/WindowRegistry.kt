@@ -41,17 +41,17 @@ import imgui.type.ImBoolean
  * All windows are created and registered here.
  */
 class WindowRegistry(
-    private val engine: Engine,
-    private val stringManager: StringManager,
-    private val clipboardService: ClipboardService,
-    private val settingsManager: SettingsManager,
-    private val undoRedoManager: UndoRedoManager,
-    private val projectManager: ProjectManager,
-    private val prefabsGenerator: PrefabsGenerator,
-    private val editorInputState: EditorInputState,
-    private val editorCamera: EditorCamera,
-    private val gizmoSystem: GizmoSystem,
-    private val mutationGate: EditorMutationGate,
+    engine: Engine,
+    stringManager: StringManager,
+    clipboardService: ClipboardService,
+    settingsManager: SettingsManager,
+    undoRedoManager: UndoRedoManager,
+    projectManager: ProjectManager,
+    prefabsGenerator: PrefabsGenerator,
+    editorInputState: EditorInputState,
+    editorCamera: EditorCamera,
+    gizmoSystem: GizmoSystem,
+    mutationGate: EditorMutationGate,
 ) {
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
@@ -71,7 +71,7 @@ class WindowRegistry(
         gizmoSystem,
     )
     val assetBrowser = AssetBrowserWindow(engine, stringManager, prefabsGenerator, undoRedoManager)
-    val environmentWindow = EnvironmentWindow(stringManager, eventSystem, engine)
+    val environmentWindow = EnvironmentWindow(stringManager, eventSystem, engine.systemManager)
     val profilerWindow = ProfilerWindow(stringManager)
     val consoleWindow = ConsoleWindow(logger, stringManager, eventSystem)
     val physicsTunerWindow = PhysicsTunerWindow(stringManager, engine)
@@ -114,14 +114,6 @@ class WindowRegistry(
 
     fun getWindow(key: String): EditorWindow? {
         return windows.find { it.nameKey == key }
-    }
-
-    inline fun <reified T> getWindow(): T? {
-        return windows.find { it.instance is T }?.instance as? T
-    }
-
-    fun isOpen(key: String): Boolean {
-        return getWindow(key)?.showFlag?.get() ?: false
     }
 
     fun hideAllWindows() {

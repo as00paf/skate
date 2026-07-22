@@ -4,11 +4,7 @@ import com.pafoid.skate.editor.commands.EnvironmentPropertyCommand
 import com.pafoid.skate.editor.commands.EnvironmentToggleCommand
 import com.pafoid.skate.editor.events.EnvironmentAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.ecs.components.TimeComponent
-import com.pafoid.skate.engine.hasComponent
 import org.joml.Vector3f
 
 class EnvironmentActionHandler(
@@ -22,16 +18,12 @@ class EnvironmentActionHandler(
                     displayName = "Set Time of Day",
                     targetName = null,
                     setter = { t ->
-                        event.timeComponent.timeOfDay = t
-                        event.dayNightCycle?.cycleTime = t
+                        event.dayNightCycle?.timeOfDay = t
                     },
                     oldValue = event.oldTime,
                     newValue = event.newTime,
                 )
             )
-            ensureComponentExists(event.scene.hasComponent<TimeComponent>()) {
-                event.scene.addComponent(event.timeComponent)
-            }
         }
 
         eventSystem.subscribe<EnvironmentAction.SetUseAmbientRequested> { event ->
@@ -43,9 +35,6 @@ class EnvironmentActionHandler(
                     newValue = event.newValue,
                 )
             )
-            ensureComponentExists(event.scene.hasComponent<LightingStateComponent>()) {
-                event.scene.addComponent(event.lightingStateComponent)
-            }
         }
 
         eventSystem.subscribe<EnvironmentAction.SetAutoAmbientRequested> { event ->
@@ -191,12 +180,6 @@ class EnvironmentActionHandler(
                     newValue = event.newValue,
                 )
             )
-        }
-    }
-
-    private inline fun ensureComponentExists(exists: Boolean, addComponent: () -> Unit) {
-        if (!exists) {
-            addComponent()
         }
     }
 }

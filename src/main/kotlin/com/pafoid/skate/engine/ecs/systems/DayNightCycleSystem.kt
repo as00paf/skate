@@ -18,7 +18,7 @@ import kotlin.math.sin
  *
  * ## Responsibilities
  *
- * - Advances [DayNightCycleComponent.cycleTime] based on delta time
+ * - Advances [DayNightCycleComponent.timeOfDay] based on delta time
  * - Computes sun direction from cycle time using trigonometry
  * - Interpolates sun color through day phases (daylight → dusk → night → dawn)
  * - Computes ambient color and shadow intensity
@@ -61,7 +61,7 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
 
         // Advance cycle time (convert dt to hours)
         val hoursPerSecond = 24f / dayDuration
-        config.cycleTime = (config.cycleTime + dt * hoursPerSecond) % 24f
+        config.timeOfDay = (config.timeOfDay + dt * hoursPerSecond) % 24f
 
         // Compute sun direction from cycle time
         updateSunDirection(config)
@@ -70,7 +70,7 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
         updateSunColor(config)
 
         // Update derived values
-        config.isDaytime = config.cycleTime in 6f..18f
+        config.isDaytime = config.timeOfDay in 6f..18f
         config.shadowIntensity = if (config.isDaytime) 1f else 0.3f
 
         // Update scene ambient light if auto mode is enabled
@@ -104,7 +104,7 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
     private fun updateSunDirection(config: DayNightCycleComponent) {
         // Convert cycle time to angle (0-24 hours → 0-360 degrees)
         // Offset by 6 hours so noon = 0° (sun at zenith)
-        val hoursFromNoon = config.cycleTime - 12f
+        val hoursFromNoon = config.timeOfDay - 12f
         val angleRadians = Math.toRadians(((hoursFromNoon / 24f) * 360f - 90f).toDouble())
 
         // Sun direction: Y component is sin (height), X component is cos (horizontal)
@@ -122,7 +122,7 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
      * to create smooth transitions through day phases.
      */
     private fun updateSunColor(config: DayNightCycleComponent) {
-        val time = config.cycleTime
+        val time = config.timeOfDay
 
         // Determine current phase and interpolation factor
         when {

@@ -4,48 +4,20 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
-/**
- * Configuration and state for the day/night cycle system.
- *
- * This data class is owned by [DayNightCycleSystem] and stores both
- * configuration parameters and computed state values.
- *
- * ## Configuration Properties
- *
- * - [cycleTime]: Current time in hours (0-24)
- * - [dayDuration]: Duration of one full cycle in seconds
- *
- * ## Computed Properties (updated by DayNightCycleSystem)
- *
- * - [sunDirection]: Current sun direction vector
- * - [sunColor]: Interpolated sun color through day phases
- * - [ambientColor]: Interpolated ambient light color
- * - [sunIntensity]: Sun intensity (0 at night, 1 at noon)
- * - [shadowIntensity]: Shadow intensity (lower at night)
- * - [isDaytime]: True when sun is above horizon
- */
 @Serializable
 data class DayNightCycleComponent(
-    // =========================================================================
-    // CYCLE CONFIGURATION
-    // =========================================================================
-
     /**
      * Current time in the day/night cycle.
      * Range: 0.0 - 24.0 hours (0 = midnight, 6 = dawn, 12 = noon, 18 = dusk)
      * Default: 12f (noon)
      */
-    var cycleTime: Float = 12f,
+    var timeOfDay: Float = 12f,
 
     /**
      * Duration of one full day/night cycle in real-time seconds.
      * Default: 300 seconds (5 minutes per day)
      */
     var dayDuration: Float = 300f,
-
-    // =========================================================================
-    // COMPUTED VALUES (updated by DayNightCycleSystem each frame)
-    // =========================================================================
 
     /**
      * Computed sun direction vector based on cycleTime.
@@ -94,10 +66,6 @@ data class DayNightCycleComponent(
      */
     var isDaytime: Boolean = true,
 
-    // =========================================================================
-    // AMBIENT LIGHT CONFIGURATION
-    // =========================================================================
-
     /**
      * Base ambient light intensity multiplier.
      * Controls overall brightness of ambient lighting.
@@ -110,8 +78,16 @@ data class DayNightCycleComponent(
      * When false, ambient light is controlled manually via Environment Window.
      * Default: true (automatic)
      */
-    var autoAmbient: Boolean = true
+    var autoAmbient: Boolean = true,
+
+    var timeScale: Float = 1.0f,
 ) : Component() {
+
+    fun getFormattedTime(): String {
+        val hours = timeOfDay.toInt()
+        val minutes = ((timeOfDay - hours) * 60).toInt()
+        return String.format("%02d:%02d", hours, minutes)
+    }
 
     fun resetComputedValues() {
         sunDirection.set(0f, -1f, 0f)
@@ -124,8 +100,10 @@ data class DayNightCycleComponent(
     }
 
     fun reset() {
-        cycleTime = 12f
+        timeOfDay = 12f
         dayDuration = 300f
+        timeOfDay = 12.0f
+        timeScale = 1.0f
         resetComputedValues()
     }
 }

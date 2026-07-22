@@ -1,17 +1,15 @@
 package com.pafoid.skate.editor.events
 
-import com.pafoid.skate.engine.events.Event
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.ecs.components.TimeComponent
+import com.pafoid.skate.engine.events.Event
 import org.joml.Vector3f
 
 sealed class EnvironmentAction(eventName: String) : Event(eventName) {
     data class SetTimeOfDayRequested(
         val scene: Scene,
-        val timeComponent: TimeComponent,
         val dayNightCycle: DayNightCycleComponent?,
         val oldTime: Float,
         val newTime: Float,

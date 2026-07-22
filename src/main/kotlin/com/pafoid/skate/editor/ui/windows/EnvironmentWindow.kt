@@ -5,15 +5,14 @@ import com.pafoid.skate.editor.imgui.IWindowWithScene
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.systems.imgui
-import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
+import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import imgui.type.ImBoolean
@@ -22,42 +21,39 @@ import org.joml.Vector3f
 class EnvironmentWindow(
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
-    private val engine: Engine,
+    private val systemManager: SystemManager
 ) : IWindowWithScene {
-
-    private val systemManager = engine.systemManager
-
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.environment"))
 
         val dayNight = scene.getComponent<DayNightCycleComponent>()
         val lightSystem = systemManager.getSystem<DirectionalLightSystem>()
         val environmentSystem = systemManager.getSystem<EnvironmentSystem>()
-
-        val timeComponent = scene.getComponent<TimeComponent>() ?: TimeComponent()
         val lightingStateComponent = scene.getComponent<LightingStateComponent>() ?: LightingStateComponent()
 
-        if (ImGui.collapsingHeader("${Icons.GEAR} ${stringManager.getString("lbl.environment.time_of_day")}")) {
-            val cycleTime = dayNight?.cycleTime ?: timeComponent.timeOfDay
-            val time = floatArrayOf(cycleTime)
-            val hours = time[0].toInt()
-            val minutes = ((time[0] - hours) * 60).toInt()
-            val timeString = String.format("%02d:%02d", hours, minutes)
+        if (dayNight != null) {
+            if (ImGui.collapsingHeader("${Icons.GEAR} ${stringManager.getString("lbl.environment.time_of_day")}")) {
+                val cycleTime = dayNight.timeOfDay
+                val time = floatArrayOf(cycleTime)
+                val hours = time[0].toInt()
+                val minutes = ((time[0] - hours) * 60).toInt()
+                val timeString = String.format("%02d:%02d", hours, minutes)
 
-            if (ImGui.sliderFloat(stringManager.getString("lbl.environment.time"), time, 0f, 24f, timeString)) {
-                val oldTime = timeComponent.timeOfDay
-                val newTime = time[0]
-                eventSystem.publish(
-                    EnvironmentAction.SetTimeOfDayRequested(
-                        scene = scene,
-                        timeComponent = timeComponent,
-                        dayNightCycle = dayNight,
-                        oldTime = oldTime,
-                        newTime = newTime
+                if (ImGui.sliderFloat(stringManager.getString("lbl.environment.time"), time, 0f, 24f, timeString)) {
+                    val oldTime = dayNight.timeOfDay
+                    val newTime = time[0]
+                    eventSystem.publish(
+                        EnvironmentAction.SetTimeOfDayRequested(
+                            scene = scene,
+                            dayNightCycle = dayNight,
+                            oldTime = oldTime,
+                            newTime = newTime
+                        )
                     )
-                )
+                }
             }
         }
+
 
         environmentSystem?.let { system ->
             if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment_system.header")}")) {

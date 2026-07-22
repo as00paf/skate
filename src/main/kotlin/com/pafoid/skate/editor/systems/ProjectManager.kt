@@ -19,7 +19,6 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
-import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.events.EngineAction
 import org.joml.Vector3f
 import java.io.File
@@ -125,10 +124,8 @@ class ProjectManager(
         scene.addComponent(ScenePhysicsComponent(false, Vector3f(0f, -9.81f, 0f)))
         scene.addComponent(GridLines())
         scene.addComponent(EnvironmentComponent())
-        val timeComponent = TimeComponent(timeOfDay = 12.0f, timeScale = 1.0f)
-        scene.addComponent(timeComponent)
         scene.addComponent(LightingStateComponent())
-        scene.addComponent(DayNightCycleComponent(cycleTime = timeComponent.timeOfDay, dayDuration = 300f))
+        scene.addComponent(DayNightCycleComponent(dayDuration = 300f))
         scene.addComponent(
             DirectionalLightComponent(
                 direction = Vector3f(0f, -1f, 0f),

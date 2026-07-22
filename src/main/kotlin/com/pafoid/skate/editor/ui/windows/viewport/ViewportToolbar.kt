@@ -13,8 +13,8 @@ import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
-import com.pafoid.skate.engine.ecs.components.TimeComponent
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.getComponent
@@ -137,7 +137,7 @@ class ViewportToolbar(
         if (isPlaying) {
             // Pause/Resume button — visual state reflects time scale
             buttons.add {
-                val timeScale = scene?.getComponent<TimeComponent>()?.timeScale ?: 1.0f
+                val timeScale = scene?.getComponent<DayNightCycleComponent>()?.timeScale ?: 1.0f
                 if (timeScale == 1.0f) {
                     // Currently running — show Pause
                     ImGui.pushStyleColor(ImGuiCol.Button, 0.6f, 0.4f, 0.1f, 1f)

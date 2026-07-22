@@ -23,7 +23,6 @@ import com.pafoid.skate.engine.ecs.components.ComponentType.RIGID_BODY_3D
 import com.pafoid.skate.engine.ecs.components.ComponentType.SCENE_PHYSICS
 import com.pafoid.skate.engine.ecs.components.ComponentType.SKELETON
 import com.pafoid.skate.engine.ecs.components.ComponentType.SPRITE_RENDERER
-import com.pafoid.skate.engine.ecs.components.ComponentType.TIME
 import com.pafoid.skate.engine.ecs.components.ComponentType.TRANSFORM
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
@@ -110,7 +109,6 @@ abstract class Component {
                 is ScenePhysicsComponent -> SCENE_PHYSICS
                 is SkeletonComponent -> SKELETON
                 is SpriteRenderer -> SPRITE_RENDERER
-                is TimeComponent -> TIME
                 is Transform -> TRANSFORM
                 else -> null
             }
