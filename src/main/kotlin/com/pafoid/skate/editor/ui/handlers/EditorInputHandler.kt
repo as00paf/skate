@@ -28,10 +28,13 @@ class EditorInputHandler(
     private val inputBuffer: InputBuffer = InputBuffer()
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
+
+    // TODO: replace by input provider only ?
     private val keyListener: KeyListener = engine.inputProvider.keyListener
     private val mouseListener: MouseListener = engine.inputProvider.mouseListener
     private val joystickListener: GamepadListener = engine.inputProvider.gamepadListener
 
+    // TODO: wtf
     private var inputMappings = projectManager.currentProject?.gameplaySettings?.inputMappings ?: InputMappings()
 
     private var pendingRenameUid: Int? = null

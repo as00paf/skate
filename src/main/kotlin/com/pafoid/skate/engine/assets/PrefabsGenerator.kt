@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
@@ -12,7 +11,6 @@ import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
-import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
@@ -24,7 +22,7 @@ import org.joml.Vector3f
 import java.io.File
 
 class PrefabsGenerator(
-    private val engine: Engine
+    engine: Engine
 ) {
     private val assetsManager = engine.assetsManager
     private val sceneManager = engine.sceneManager
@@ -68,17 +66,6 @@ class PrefabsGenerator(
         val result = if (candidate.exists()) candidate.absolutePath else enginePath
         resolvedTexturePaths[enginePath] = result
         return result
-    }
-
-    fun generateSpriteObject(sprite: Sprite, sizeX: Float, sizeY: Float, name: String = "Sprite_Object_Gen"): GameObject {
-        val go = gameObjectManager.createGameObject(name)
-        go.getComponent<Transform>()?.scale?.set(sizeX, sizeY, 1f)
-
-        val renderer = SpriteRenderer()
-        renderer.sprite = sprite
-        go.addComponent(renderer)
-
-        return go
     }
 
     fun spawnSkateboard(): GameObject {

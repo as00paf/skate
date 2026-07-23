@@ -9,8 +9,6 @@ import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
@@ -27,10 +25,10 @@ import java.util.concurrent.atomic.AtomicLong
 class ProjectManager(
     private val engine: Engine,
     private val settingsManager: SettingsManager,
-    private val eventSystem: EventSystem,
-    private val logger: LoggerService,
 ) {
     private val engineAssetCopier = EngineAssetCopier()
+    private val eventSystem = engine.eventSystem
+    private val logger = engine.logger
     private val prefabsGenerator = engine.prefabsGenerator
     private val sceneManager = engine.sceneManager
     private val serializer = engine.serializer
@@ -108,6 +106,7 @@ class ProjectManager(
         }
     }
 
+    // TODO: move to prefabs generator
     fun createDefaultScene(sceneDir: File) {
         val defaultSceneFile = File(sceneDir, "MainScene.scene")
         if (defaultSceneFile.exists()) {
