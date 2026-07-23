@@ -19,7 +19,7 @@ class DeleteSceneCommand(
 
     override fun execute() {
         projectManager.currentProject?.let { project ->
-            sceneManager.deleteScene(project.metadata.projectPath, scene)
+            sceneManager.deleteScene(project.projectPath, scene)
         }
 
         logger.logEditor("Deleted scene: ${scene.name}")
@@ -27,7 +27,7 @@ class DeleteSceneCommand(
 
     override fun undo() {
         projectManager.currentProject?.let { project ->
-            sceneManager.saveScene(scene, project.metadata.projectPath)
+            sceneManager.saveScene(scene, project.projectPath)
         }
     }
 

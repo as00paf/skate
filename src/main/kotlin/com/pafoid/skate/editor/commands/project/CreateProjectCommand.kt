@@ -15,7 +15,7 @@ class CreateProjectCommand(
 
     override fun execute() {
         //jobSystem.runOnMain {
-            val result = projectManager.createProject(event.name, File(event.folderPath), event.engineVersion)
+        val result = projectManager.createProject(event.name, File(event.folderPath))
             executeSucceeded = result.isSuccess
             failureReason = result.exceptionOrNull()?.message
         //}

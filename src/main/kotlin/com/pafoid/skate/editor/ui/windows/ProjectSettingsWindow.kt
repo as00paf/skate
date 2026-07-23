@@ -148,12 +148,10 @@ class ProjectSettingsWindow(
 
     private fun renderGeneral() {
         val project = projectManager.currentProject ?: return
-        val meta = project.metadata
-        MImGui.propertyRowReadOnly(stringManager.getString("settings.project.name"), meta.name)
-        MImGui.propertyRowReadOnly(stringManager.getString("settings.project.version"), meta.version)
-        MImGui.propertyRowReadOnly(stringManager.getString("settings.project.engine_version"), meta.engineVersion)
-        MImGui.propertyRowReadOnly(stringManager.getString("settings.project.path"), truncatePath(meta.projectPath))
-        val desc = meta.description.ifBlank { stringManager.getString("settings.project.description.none") }
+        MImGui.propertyRowReadOnly(stringManager.getString("settings.project.name"), project.name)
+        MImGui.propertyRowReadOnly(stringManager.getString("settings.project.version"), project.version)
+        MImGui.propertyRowReadOnly(stringManager.getString("settings.project.path"), truncatePath(project.projectPath))
+        val desc = project.description.ifBlank { stringManager.getString("settings.project.description.none") }
         MImGui.propertyRowReadOnly(stringManager.getString("settings.project.description"), desc)
 
         ImGui.spacing()

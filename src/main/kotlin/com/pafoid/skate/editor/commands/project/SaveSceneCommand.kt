@@ -12,7 +12,7 @@ class SaveSceneCommand(
 ) : ExecuteOnlyCommand {
     override fun execute() {
         projectManager.currentProject?.let { project ->
-            sceneManager.saveScene(scene, project.metadata.projectPath)
+            sceneManager.saveScene(scene, project.projectPath)
         }
     }
 

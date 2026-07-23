@@ -9,7 +9,6 @@ import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.ItemType
 import com.pafoid.skate.editor.project.ProjectWizard
-import com.pafoid.skate.engine.BuildConfig
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
@@ -288,6 +287,6 @@ class ProjectWizardWindow(
         val path = File(wizard.projectPath)
 
         logger.logEditor("Creating project: $name at ${path.absolutePath}")
-        eventSystem.publish(CreateProjectRequested(name, path.absolutePath, BuildConfig.ENGINE_VERSION))
+        eventSystem.publish(CreateProjectRequested(name, path.absolutePath))
     }
 }

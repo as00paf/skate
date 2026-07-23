@@ -26,23 +26,17 @@ class SettingsManager(
 
     var hardware: HardwareSettings = HardwareSettings()
 
-    // TODO: cleanup
-    private var cachedRecentProjects: List<RecentProjectInfo>? = null
-
     val recentProjects: List<RecentProjectInfo>
         get() {
-            if (cachedRecentProjects == null) {
-                cachedRecentProjects = editor.recentProjects.mapNotNull { path ->
-                    val projectFile = File(path)
-                    if (projectFile.exists()) {
-                        val projectSettings = settingsSerializer.loadProjectSettings(projectFile)
-                        projectSettings?.let { RecentProjectInfo.fromProjectSettings(it) }
-                    } else {
-                        null
-                    }
-                }.take(5)
-            }
-            return cachedRecentProjects ?: emptyList()
+            return editor.recentProjects.mapNotNull { path ->
+                val projectFile = File(path)
+                if (projectFile.exists()) {
+                    val projectSettings = settingsSerializer.loadProjectSettings(projectFile)
+                    projectSettings?.let { RecentProjectInfo.fromProjectSettings(it) }
+                } else {
+                    null
+                }
+            }.take(5)
         }
 
     fun load() {
@@ -99,13 +93,10 @@ class SettingsManager(
         return try {
             val loadedProject = settingsSerializer.loadProjectSettings(projectFile)
             if (loadedProject != null) {
-                val updatedMetadata = loadedProject.metadata.copy(
-                    lastOpenedDate = System.currentTimeMillis()
-                )
-                val updatedProject = loadedProject.copy(metadata = updatedMetadata)
+                val updatedProject = loadedProject.copy(lastOpenedDate = System.currentTimeMillis())
                 saveProject(updatedProject)
                 addToRecentProjects(projectFile.absolutePath)
-                logger.logEditor("Project loaded: ${loadedProject.metadata.name}")
+                logger.logEditor("Project loaded: ${loadedProject.name}")
                 updatedProject
             } else {
                 logger.logEditor("Failed to load project: $projectFile", LogLevel.ERROR)
@@ -121,9 +112,9 @@ class SettingsManager(
         return try {
             val result = settingsSerializer.saveProjectSettings(project)
             if (result) {
-                logger.logEditor("Project saved: ${project.metadata.name}")
+                logger.logEditor("Project saved: ${project.name}")
             } else {
-                logger.logEditor("Failed to save project: ${project.metadata.name}", LogLevel.ERROR)
+                logger.logEditor("Failed to save project: ${project.name}", LogLevel.ERROR)
             }
             result
         } catch (e: Exception) {
@@ -142,7 +133,6 @@ class SettingsManager(
     }
 
     fun addToRecentProjects(projectPath: String) {
-        cachedRecentProjects = null
         editor = editor.addRecentProject(projectPath)
         saveEditorSettings()
     }

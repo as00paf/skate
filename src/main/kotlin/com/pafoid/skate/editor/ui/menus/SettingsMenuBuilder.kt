@@ -20,6 +20,7 @@ class SettingsMenuBuilder(
     private val settingsManager: SettingsManager,
     private val eventSystem: EventSystem
 ) {
+    private val editorSettings = settingsManager.editor
 
     fun render() {
         if (beginMenu(stringManager.getString("menu.settings"))) {
@@ -34,8 +35,6 @@ class SettingsMenuBuilder(
     }
     
     private fun renderGamepadSettings() {
-        val editorSettings = settingsManager.editor
-
         val overlaySize = floatArrayOf(editorSettings.gamepadOverlaySize)
         if (sliderFloat(
                 stringManager.getString("menu.settings.gamepad_overlay_size"),
@@ -54,7 +53,6 @@ class SettingsMenuBuilder(
     }
 
     private fun renderUnitSystemSetting() {
-        val editorSettings = settingsManager.editor
         val unitSystems = UnitSystem.entries.toTypedArray()
         val currentUnitIdx = ImInt(editorSettings.unitSystem.ordinal)
         if (combo(
@@ -68,7 +66,6 @@ class SettingsMenuBuilder(
     }
 
     private fun renderLanguageSetting() {
-        val editorSettings = settingsManager.editor
         val languages = arrayOf("en", "fr")
         val currentLangIdx = ImInt(languages.indexOf(editorSettings.language))
         if (combo(

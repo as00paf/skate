@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.systems
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.GameplaySettings
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
@@ -29,17 +28,13 @@ class ProjectManagerLifecycleTest {
     @Test
     fun `closeProject closes all scenes and resets system caches`() {
         val settingsManager = mockk<SettingsManager>(relaxed = true)
-        val logger = mockk<LoggerService>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
-        val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val engine = mockk<Engine>(relaxed = true)
 
         val manager = ProjectManager(
-            settingsManager = settingsManager,
             engine = engine,
-            logger = logger,
-            eventSystem = eventSystem,
+            settingsManager = settingsManager,
         )
         setCurrentProject(manager, project("OldProject", "C:/tmp/OldProject/OldProject.skateproject"))
 
@@ -65,14 +60,10 @@ class ProjectManagerLifecycleTest {
         every { settingsManager.loadProject(projectFile) } returns loadedProject
         every { sceneManager.currentScene } returns null
         val engine = mockk<Engine>(relaxed = true)
-        val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
-        val eventSystem = mockk<EventSystem>(relaxed = true)
 
         val manager = ProjectManager(
-            settingsManager = settingsManager,
-            logger = logger,
             engine = engine,
-            eventSystem = eventSystem
+            settingsManager = settingsManager,
         )
         setCurrentProject(manager, project("OldProject", "C:/tmp/OldProject/OldProject.skateproject"))
 
@@ -98,10 +89,8 @@ class ProjectManagerLifecycleTest {
         val invalidProjectFile = File(tempDir, "NotAProject.txt").apply { writeText("invalid") }
 
         val manager = ProjectManager(
-            settingsManager = settingsManager,
-            logger = logger,
-            eventSystem = eventSystem,
             engine = engine,
+            settingsManager = settingsManager,
         )
         setCurrentProject(manager, project("OldProject", "C:/tmp/OldProject/OldProject.skateproject"))
 
@@ -126,10 +115,8 @@ class ProjectManagerLifecycleTest {
         every { settingsManager.saveProject(any()) } returns true
 
         val manager = ProjectManager(
-            settingsManager = settingsManager,
-            logger = logger,
-            eventSystem = eventSystem,
             engine = engine,
+            settingsManager = settingsManager,
         )
         setCurrentProject(manager, project("Skate", "C:/tmp/Skate/Skate.skateproject"))
 
@@ -172,9 +159,7 @@ class ProjectManagerLifecycleTest {
 
         val manager = ProjectManager(
             settingsManager = settingsManager,
-            logger = logger,
             engine = engine,
-            eventSystem = eventSystem,
         )
         val original = project("Skate", "C:/tmp/Skate/Skate.skateproject")
         setCurrentProject(manager, original)
@@ -204,9 +189,7 @@ class ProjectManagerLifecycleTest {
 
         val manager = ProjectManager(
             settingsManager = settingsManager,
-            logger = logger,
             engine = engine,
-            eventSystem = eventSystem,
         )
 
         val opened = manager.openProject(projectFile)
@@ -238,9 +221,7 @@ class ProjectManagerLifecycleTest {
 
         val manager = ProjectManager(
             settingsManager = settingsManager,
-            logger = logger,
             engine = engine,
-            eventSystem = eventSystem,
         )
 
         val opened = manager.openProject(projectFile)
@@ -256,14 +237,7 @@ class ProjectManagerLifecycleTest {
     }
 
     private fun project(name: String, path: String): Project {
-        return Project(
-            metadata = ProjectMetadata(
-                name = name,
-                engineVersion = "v-test",
-                projectPath = path
-            ),
-            gameplaySettings = GameplaySettings()
-        )
+        return Project(name = name, projectPath = path, gameplaySettings = GameplaySettings())
     }
 
     private fun setCurrentProject(manager: ProjectManager, project: Project) {

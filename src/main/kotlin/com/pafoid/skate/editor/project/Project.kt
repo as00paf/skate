@@ -5,18 +5,23 @@ import java.io.File
 
 @Serializable
 data class Project(
-    val metadata: ProjectMetadata,
-    val defaultScene: String = "main",
-    val assetPaths: List<String> = listOf("Assets"),
-    val scenePaths: List<String> = listOf("Scenes"),
-    val buildPaths: List<String> = listOf("Builds"),
-    val gameplaySettings: GameplaySettings = GameplaySettings(),
+    var name: String,
+    var version: String = "1.0.0",
+    var createdDate: Long = System.currentTimeMillis(),
+    var lastOpenedDate: Long = System.currentTimeMillis(),
+    var projectPath: String,
+    var description: String = "",
+    var defaultScene: String = "main",
+    var assetPaths: List<String> = listOf("Assets"),
+    var scenePaths: List<String> = listOf("Scenes"),
+    var buildPaths: List<String> = listOf("Builds"),
+    var gameplaySettings: GameplaySettings = GameplaySettings(),
 ) {
     fun getProjectDirectory(): File {
-        return File(metadata.projectPath).parentFile
+        return File(projectPath).parentFile
     }
 
     fun getProjectFile(): File {
-        return File(metadata.projectPath)
+        return File(projectPath)
     }
 }

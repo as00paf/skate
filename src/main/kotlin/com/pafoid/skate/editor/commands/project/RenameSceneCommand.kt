@@ -22,7 +22,7 @@ class RenameSceneCommand(
 
     override fun execute() {
         if (sceneManager.openScenes.contains(scene)) {
-            sceneManager.renameScene(scene, newName, projectManager.currentProject?.metadata?.projectPath.orEmpty())
+            sceneManager.renameScene(scene, newName, projectManager.currentProject?.projectPath.orEmpty())
         } else {
             scene.name = newName
         }
@@ -31,7 +31,7 @@ class RenameSceneCommand(
 
     override fun undo() {
         if (sceneManager.openScenes.contains(scene)) {
-            sceneManager.renameScene(scene, oldName, projectManager.currentProject?.metadata?.projectPath.orEmpty())
+            sceneManager.renameScene(scene, oldName, projectManager.currentProject?.projectPath.orEmpty())
         } else {
             scene.name = oldName
         }

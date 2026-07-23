@@ -15,7 +15,8 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
     data class OpenProjectSucceeded(val projectPath: String?) : ProjectEvent("project.action.open_project_succeeded")
     data class OpenProjectFailed(val projectPath: String?, val reason: String) :
         ProjectEvent("project.action.open_project_failed")
-    data class CreateProjectRequested(val name: String, val folderPath: String, val engineVersion: String) : ProjectEvent("project.action.create_project_requested")
+    data class CreateProjectRequested(val name: String, val folderPath: String) :
+        ProjectEvent("project.action.create_project_requested")
     data class CreateProjectSucceeded(val name: String, val folderPath: String) : ProjectEvent("project.action.create_project_succeeded")
     data class CreateProjectFailed(val name: String, val folderPath: String, val reason: String) : ProjectEvent("project.action.create_project_failed")
     data class CreateFileRequested(val path: String, val isDirectory: Boolean) : ProjectEvent("project.action.create_file_requested")

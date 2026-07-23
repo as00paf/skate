@@ -8,15 +8,13 @@ data class RecentProjectInfo(
     val path: String,
     val name: String,
     val lastOpened: Long,
-    val engineVersion: String
 ) {
     companion object {
         fun fromProjectSettings(project: Project): RecentProjectInfo {
             return RecentProjectInfo(
-                path = project.metadata.projectPath,
-                name = project.metadata.name,
-                lastOpened = project.metadata.lastOpenedDate,
-                engineVersion = project.metadata.engineVersion
+                path = project.projectPath,
+                name = project.name,
+                lastOpened = project.lastOpenedDate,
             )
         }
     }

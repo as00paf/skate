@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.GameplaySettings
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.editor.project.ProjectMetadata
 import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.Engine
@@ -52,7 +51,7 @@ class ProjectManager(
         return openProject(projectFile)
     }
 
-    fun createProject(name: String, folder: File, engineVersion: String = "v0.46.0.1.19"): Result<Project> {
+    fun createProject(name: String, folder: File): Result<Project> {
         logger.logEditor("Creating project: $name in ${folder.absolutePath}")
         return try {
             val projectDir = File(folder, name)
@@ -71,7 +70,8 @@ class ProjectManager(
             File(projectDir, "Builds").mkdirs()
 
             val project = Project(
-                metadata = ProjectMetadata(name, engineVersion = engineVersion, projectPath = projectFile.absolutePath),
+                name = name,
+                projectPath = projectFile.absolutePath,
                 defaultScene = "MainScene",
                 assetPaths = listOf("Assets"),
                 scenePaths = listOf("Scenes"),
@@ -98,7 +98,7 @@ class ProjectManager(
 
             saveProject()
 
-            logger.logEditor("Project created successfully: ${project.metadata.name}")
+            logger.logEditor("Project created successfully: ${project.name}")
             eventSystem.publish(ProjectEvent.Created(project))
             Result.success(project)
         } catch (e: Exception) {
@@ -190,7 +190,7 @@ class ProjectManager(
         }
         lifecycleEpoch.incrementAndGet()
         val path = project.getProjectFile().absolutePath
-        val projectName = project.metadata.name
+        val projectName = project.name
         logger.logEditor("Closing project: $projectName")
 
         try {
@@ -243,9 +243,9 @@ class ProjectManager(
             return false
         }
 
-        logger.logEditor("Saving project: ${project.metadata.name}")
+        logger.logEditor("Saving project: ${project.name}")
         val result = settingsManager.saveProject(project)
-        File(project.metadata.projectPath).writeText(serializer.encode(project))
+        File(project.projectPath).writeText(serializer.encode(project))
         if (result) {
             eventSystem.publish(ProjectEvent.Saved(project))
         }
@@ -268,17 +268,17 @@ class ProjectManager(
 
         val result = settingsManager.saveProject(updatedProject)
         if (!result) {
-            logger.logEditor("Failed to save gameplay settings for project: ${project.metadata.name}", LogLevel.ERROR)
+            logger.logEditor("Failed to save gameplay settings for project: ${project.name}", LogLevel.ERROR)
             return false
         }
 
         currentProject = updatedProject
         eventSystem.publish(ProjectEvent.Saved(updatedProject))
-        logger.logEditor("Gameplay settings updated for project: ${updatedProject.metadata.name}")
+        logger.logEditor("Gameplay settings updated for project: ${updatedProject.name}")
         return true
     }
 
-    fun getProjectName(): String = currentProject?.metadata?.name ?: "No Project"
+    fun getProjectName(): String = currentProject?.name ?: "No Project"
 
     fun getRecentProjects(): List<RecentProjectInfo> {
         return settingsManager.recentProjects

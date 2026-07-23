@@ -86,10 +86,10 @@ class ViewportOverlays(
             val speedDisplay: Float
             val unitLabel: String
             if (unitSystem == UnitSystem.METRIC) {
-                speedDisplay = (speedMS * 3.6f).toFloat()
+                speedDisplay = speedMS * 3.6f
                 unitLabel = "km/h"
             } else {
-                speedDisplay = (speedMS * 2.23694f).toFloat()
+                speedDisplay = speedMS * 2.23694f
                 unitLabel = "mph"
             }
             
