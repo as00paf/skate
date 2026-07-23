@@ -57,7 +57,7 @@ class GizmoSystem(
         }
 
         // Handle gizmo selection key bindings
-        val bindings = settingsManager.engine.editor.editorInputMappings
+        val bindings = settingsManager.editor.editorInputMappings
 
         if (keyListener.isKeyPressed(bindings.gizmoTranslate.keyboardKey)) {
             usingGizmo = TRANSLATE_GIZMO

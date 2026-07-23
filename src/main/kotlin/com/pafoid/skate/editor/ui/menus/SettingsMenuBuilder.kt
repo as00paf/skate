@@ -5,8 +5,8 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
+import imgui.ImGui.checkbox
 import imgui.internal.ImGui.beginMenu
-import imgui.internal.ImGui.checkbox
 import imgui.internal.ImGui.combo
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem
@@ -34,7 +34,7 @@ class SettingsMenuBuilder(
     }
     
     private fun renderGamepadSettings() {
-        val editorSettings = settingsManager.engine.editor
+        val editorSettings = settingsManager.editor
 
         val overlaySize = floatArrayOf(editorSettings.gamepadOverlaySize)
         if (sliderFloat(
@@ -54,7 +54,7 @@ class SettingsMenuBuilder(
     }
 
     private fun renderUnitSystemSetting() {
-        val editorSettings = settingsManager.engine.editor
+        val editorSettings = settingsManager.editor
         val unitSystems = UnitSystem.entries.toTypedArray()
         val currentUnitIdx = ImInt(editorSettings.unitSystem.ordinal)
         if (combo(
@@ -68,7 +68,7 @@ class SettingsMenuBuilder(
     }
 
     private fun renderLanguageSetting() {
-        val editorSettings = settingsManager.engine.editor
+        val editorSettings = settingsManager.editor
         val languages = arrayOf("en", "fr")
         val currentLangIdx = ImInt(languages.indexOf(editorSettings.language))
         if (combo(

@@ -72,7 +72,7 @@ class MeasureTool(
                         debugRenderer.addLine3D(start, currentEnd, Vector3f(1f, 1f, 0f))
 
                         val distance = start.distance(currentEnd)
-                        val settings = settingsManager.engine.editor
+                        val settings = settingsManager.editor
                         val displayText = if (settings.unitSystem == UnitSystem.METRIC) {
                             String.format("%.2f m", distance)
                         } else {

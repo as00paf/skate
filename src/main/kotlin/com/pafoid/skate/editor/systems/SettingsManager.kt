@@ -2,17 +2,17 @@ package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.editor.settings.EngineSettings
+import com.pafoid.skate.editor.settings.EditorSettings
 import com.pafoid.skate.editor.settings.HardwareSettings
 import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.editor.settings.SettingsData
 import com.pafoid.skate.editor.settings.SettingsSerializer
-import com.pafoid.skate.editor.settings.UserSettings
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.input.InputMappings
+import com.pafoid.skate.engine.utils.UnitSystem
 import java.io.File
 
 class SettingsManager(
@@ -22,21 +22,17 @@ class SettingsManager(
 ) {
     private val settingsSerializer: SettingsSerializer = SettingsSerializer(serializer)
 
-    var engine: EngineSettings = EngineSettings()
-        private set
-
-    var user: UserSettings = UserSettings()
-        private set
+    var editor: EditorSettings = EditorSettings()
 
     var hardware: HardwareSettings = HardwareSettings()
-        private set
 
+    // TODO: cleanup
     private var cachedRecentProjects: List<RecentProjectInfo>? = null
 
     val recentProjects: List<RecentProjectInfo>
         get() {
             if (cachedRecentProjects == null) {
-                cachedRecentProjects = user.recentProjects.mapNotNull { path ->
+                cachedRecentProjects = editor.recentProjects.mapNotNull { path ->
                     val projectFile = File(path)
                     if (projectFile.exists()) {
                         val projectSettings = settingsSerializer.loadProjectSettings(projectFile)
@@ -51,34 +47,23 @@ class SettingsManager(
 
     fun load() {
         loadEngine()
-        loadUser()
         loadHardware()
     }
 
     fun loadEngine() {
         try {
-            engine = settingsSerializer.loadEngineSettings().validate()
-            stringManager.setLocale(engine.editor.language)
+            editor = settingsSerializer.loadEngineSettings()
+            stringManager.setLocale(editor.language)
             logger.logEditor("Engine settings loaded")
         } catch (e: Exception) {
             logger.logEditor("Error loading engine settings: ${e.message}", LogLevel.ERROR)
-            engine = EngineSettings()
-        }
-    }
-
-    fun loadUser() {
-        try {
-            user = settingsSerializer.loadUserSettings().validate()
-            logger.logEditor("User settings loaded")
-        } catch (e: Exception) {
-            logger.logEditor("Error loading user settings: ${e.message}", LogLevel.ERROR)
-            user = UserSettings()
+            editor = EditorSettings()
         }
     }
 
     fun loadHardware() {
         try {
-            hardware = HardwareSettings().validate()
+            hardware = HardwareSettings()
             logger.logEditor("Hardware settings loaded (defaults)")
         } catch (e: Exception) {
             logger.logEditor("Error loading hardware settings: ${e.message}", LogLevel.ERROR)
@@ -87,26 +72,16 @@ class SettingsManager(
     }
 
     fun save() {
-        saveEngine()
-        saveUser()
+        saveEditorSettings()
         saveHardware()
     }
 
-    fun saveEngine() {
+    fun saveEditorSettings() {
         try {
-            settingsSerializer.saveEngineSettings(engine)
+            settingsSerializer.saveEngineSettings(editor)
             logger.logEditor("Engine settings saved")
         } catch (e: Exception) {
             logger.logEditor("Error saving engine settings: ${e.message}", LogLevel.ERROR)
-        }
-    }
-
-    fun saveUser() {
-        try {
-            settingsSerializer.saveUserSettings(user)
-            logger.logEditor("User settings saved")
-        } catch (e: Exception) {
-            logger.logEditor("Error saving user settings: ${e.message}", LogLevel.ERROR)
         }
     }
 
@@ -162,60 +137,46 @@ class SettingsManager(
     }
 
     fun setLastClosedProjectPath(path: String?) {
-        user = user.copy(lastClosedProjectPath = path)
-        saveUser()
-    }
-
-    fun getLastClosedProjectPath(): String? {
-        return user.lastClosedProjectPath
+        editor.lastClosedProjectPath = path
+        saveEditorSettings()
     }
 
     fun addToRecentProjects(projectPath: String) {
         cachedRecentProjects = null
-        user = user.addRecentProject(projectPath)
-        saveUser()
+        editor = editor.addRecentProject(projectPath)
+        saveEditorSettings()
     }
 
     fun setLocale(locale: String) {
-        engine = engine.copy(
-            editor = engine.editor.copy(language = locale)
-        )
+        editor.language = locale
         stringManager.setLocale(locale)
-        saveEngine()
+        saveEditorSettings()
     }
 
     fun updateEditorSettings(
         gamepadOverlaySize: Float? = null,
         showGamepadOverlay: Boolean? = null,
-        unitSystem: com.pafoid.skate.engine.utils.UnitSystem? = null,
+        unitSystem: UnitSystem? = null,
         language: String? = null,
         theme: String? = null,
         editorInputMappings: EditorInputMappings? = null
     ) {
-        val currentEditor = engine.editor
-        engine = engine.copy(
-            editor = currentEditor.copy(
-                gamepadOverlaySize = gamepadOverlaySize ?: currentEditor.gamepadOverlaySize,
-                showGamepadOverlay = showGamepadOverlay ?: currentEditor.showGamepadOverlay,
-                unitSystem = unitSystem ?: currentEditor.unitSystem,
-                language = language ?: currentEditor.language,
-                theme = theme ?: currentEditor.theme,
-                editorInputMappings = editorInputMappings ?: currentEditor.editorInputMappings
-            )
+        editor = editor.copy(
+            gamepadOverlaySize = gamepadOverlaySize ?: editor.gamepadOverlaySize,
+            showGamepadOverlay = showGamepadOverlay ?: editor.showGamepadOverlay,
+            unitSystem = unitSystem ?: editor.unitSystem,
+            language = language ?: editor.language,
+            theme = theme ?: editor.theme,
+            editorInputMappings = editorInputMappings ?: editor.editorInputMappings
         )
         language?.let { stringManager.setLocale(it) }
-        saveEngine()
+        saveEditorSettings()
     }
 
     fun updateAutoSaveSettings(enabled: Boolean? = null, intervalMinutes: Int? = null) {
-        val current = engine.autoSave
-        engine = engine.copy(
-            autoSave = current.copy(
-                enabled = enabled ?: current.enabled,
-                intervalMinutes = intervalMinutes ?: current.intervalMinutes
-            )
-        )
-        saveEngine()
+        editor.autoSaveEnabled = enabled ?: editor.autoSaveEnabled
+        editor.autorSaveIntervalMinutes = intervalMinutes ?: editor.autorSaveIntervalMinutes
+        saveEditorSettings()
     }
 
     fun updateInputMappings(inputMappings: InputMappings) {
@@ -241,6 +202,4 @@ class SettingsManager(
             null
         }
     }
-
-    fun getCurrentHardware() = hardware
 }

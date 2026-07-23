@@ -6,39 +6,21 @@ import java.io.File
 
 class SettingsSerializer(private val serializer: Serializer) {
 
-    fun loadEngineSettings(): EngineSettings {
+    fun loadEngineSettings(): EditorSettings {
         val file = SettingsData.getEngineSettingsFile()
         return if (file.exists()) {
             try {
-                serializer.decode<EngineSettings>(file.readText())
+                serializer.decode<EditorSettings>(file.readText())
             } catch (e: Exception) {
-                EngineSettings()
+                EditorSettings()
             }
         } else {
-            EngineSettings()
+            EditorSettings()
         }
     }
 
-    fun saveEngineSettings(settings: EngineSettings) {
+    fun saveEngineSettings(settings: EditorSettings) {
         val file = SettingsData.getEngineSettingsFile()
-        file.writeText(serializer.encode(settings))
-    }
-
-    fun loadUserSettings(): UserSettings {
-        val file = SettingsData.getUserSettingsFile()
-        return if (file.exists()) {
-            try {
-                serializer.decode<UserSettings>(file.readText())
-            } catch (e: Exception) {
-                UserSettings()
-            }
-        } else {
-            UserSettings()
-        }
-    }
-
-    fun saveUserSettings(settings: UserSettings) {
-        val file = SettingsData.getUserSettingsFile()
         file.writeText(serializer.encode(settings))
     }
 

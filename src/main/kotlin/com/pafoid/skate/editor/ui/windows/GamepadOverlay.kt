@@ -50,7 +50,7 @@ class GamepadOverlay(
         val texture = resolveControllerTexture() ?: return
         if (texture.texId <= 0) return
 
-        val editorSettings = settingsManager.engine.editor
+        val editorSettings = settingsManager.editor
         val windowFlags = ImGuiWindowFlags.NoDecoration or
                          ImGuiWindowFlags.NoInputs or
                          ImGuiWindowFlags.AlwaysAutoResize or

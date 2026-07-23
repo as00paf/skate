@@ -168,16 +168,15 @@ class EditorSettingsWindow(
 
     private fun syncTempSettings() {
         if (!hasPendingChanges) {
-            val editor = settingsManager.engine.editor
-            val autoSave = settingsManager.engine.autoSave
+            val editor = settingsManager.editor
             tempLanguage = editor.language
             tempTheme = editor.theme
             tempUnitSystem = editor.unitSystem
             tempShowOverlay = editor.showGamepadOverlay
             tempShowOverlayBool.set(tempShowOverlay)
             tempOverlaySize = editor.gamepadOverlaySize
-            tempAutoSaveEnabled = autoSave.enabled
-            tempAutoSaveInterval = autoSave.intervalMinutes
+            tempAutoSaveEnabled = editor.autoSaveEnabled
+            tempAutoSaveInterval = editor.autorSaveIntervalMinutes
             // Copy input mappings
             tempMappings = editor.editorInputMappings.copy()
             // Load saved camera mappings or use defaults
@@ -352,7 +351,7 @@ class EditorSettingsWindow(
     }
 
     private fun saveSettings() {
-        if (tempLanguage != settingsManager.engine.editor.language) {
+        if (tempLanguage != settingsManager.editor.language) {
             settingsManager.updateEditorSettings(language = tempLanguage)
         }
         settingsManager.updateEditorSettings(

@@ -82,7 +82,7 @@ class ViewportOverlays(
 
         if (velocity != null) {
             val speedMS = sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z).toFloat()
-            val unitSystem = settingsManager.engine.editor.unitSystem
+            val unitSystem = settingsManager.editor.unitSystem
             val speedDisplay: Float
             val unitLabel: String
             if (unitSystem == UnitSystem.METRIC) {

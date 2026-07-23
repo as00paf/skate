@@ -3,8 +3,8 @@ package com.pafoid.skate.editor.settings
 import java.io.File
 
 object SettingsData {
+    // TODO: remove
     const val ENGINE_SETTINGS_FILE = "engine_settings.json"
-    const val USER_SETTINGS_FILE = "user_settings.json"
 
     fun getSettingsDirectory(): File {
         val userHome = System.getProperty("user.home")
@@ -19,8 +19,5 @@ object SettingsData {
         return File(getSettingsDirectory(), ENGINE_SETTINGS_FILE)
     }
 
-    fun getUserSettingsFile(): File {
-        return File(getSettingsDirectory(), USER_SETTINGS_FILE)
-    }
 }
 

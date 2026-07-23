@@ -96,7 +96,7 @@ class GameViewWindow(
 
         viewportOverlays.render(windowPos, windowSize, sceneManager.currentScene)
 
-        if (settingsManager.engine.editor.showGamepadOverlay) {
+        if (settingsManager.editor.showGamepadOverlay) {
             gamepadOverlay.imgui(
                 Vector2f(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY),
                 Vector2f(viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)
