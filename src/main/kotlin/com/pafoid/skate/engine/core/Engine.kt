@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.SceneManager
@@ -42,6 +43,7 @@ class Engine {
     val systemManager = SystemManager()
     val sceneManager = SceneManager(assetsManager, eventSystem, serializer, systemManager, logger)
     val gameObjectManager = GameObjectManager()
+    val prefabsGenerator = PrefabsGenerator(this)
 
     private var systemManagerStarted = false
 

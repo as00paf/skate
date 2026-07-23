@@ -4,9 +4,9 @@ import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
-import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.addComponent
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject

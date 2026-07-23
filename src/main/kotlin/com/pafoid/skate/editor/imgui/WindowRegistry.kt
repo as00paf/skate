@@ -6,7 +6,6 @@ import com.pafoid.skate.editor.imgui.data.EditorWindow
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.GizmoSystem
-import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -47,7 +46,6 @@ class WindowRegistry(
     settingsManager: SettingsManager,
     undoRedoManager: UndoRedoManager,
     projectManager: ProjectManager,
-    prefabsGenerator: PrefabsGenerator,
     editorInputState: EditorInputState,
     editorCamera: EditorCamera,
     gizmoSystem: GizmoSystem,
@@ -55,6 +53,7 @@ class WindowRegistry(
 ) {
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
+    private val prefabsGenerator = engine.prefabsGenerator
 
     val hierarchyWindow = SceneHierarchyWindow(engine, stringManager, clipboardService, logger, eventSystem)
     val propertiesWindow = PropertiesWindow(stringManager, engine, eventSystem, logger)

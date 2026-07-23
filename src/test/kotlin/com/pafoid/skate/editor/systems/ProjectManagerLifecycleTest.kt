@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.GameplaySettings
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.project.ProjectMetadata
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService

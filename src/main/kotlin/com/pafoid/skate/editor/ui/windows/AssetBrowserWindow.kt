@@ -1,12 +1,12 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.imgui.IWindow
-import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui

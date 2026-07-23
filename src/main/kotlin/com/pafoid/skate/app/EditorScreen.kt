@@ -7,7 +7,6 @@ import com.pafoid.skate.editor.imgui.WindowRegistry
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.GizmoSystem
-import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -30,15 +29,15 @@ class EditorScreen(private val window: Window, private val engine: Engine) {
     private val clipboardService = ClipboardService(engine.serializer)
     private val editorInputState = EditorInputState()
     private val mutationGate = EditorMutationGate(engine, engine.logger)
-    private val prefabsGenerator = PrefabsGenerator(engine)
 
     private val undoRedoManager = UndoRedoManager(mutationGate, engine.eventSystem, engine.logger)
     private val settingsManager = SettingsManager(engine.serializer, engine.logger, stringManager)
     private val projectManager =
-        ProjectManager(engine, settingsManager, prefabsGenerator, engine.eventSystem, engine.logger)
+        ProjectManager(engine, settingsManager, engine.eventSystem, engine.logger)
     private val editorInputHandler =
         EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, projectManager)
 
+    // TODO: reground into one action handler
     private val sceneActionHandler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)
     private val projectActionHandler = ProjectActionHandler(engine, projectManager, undoRedoManager, stringManager)
     private val environmentActionHandler = EnvironmentActionHandler(undoRedoManager, engine.eventSystem)
@@ -53,7 +52,6 @@ class EditorScreen(private val window: Window, private val engine: Engine) {
         settingsManager,
         undoRedoManager,
         projectManager,
-        prefabsGenerator,
         editorInputState,
         editorCamera,
         gizmoSystem,

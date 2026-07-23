@@ -7,7 +7,6 @@ import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.GizmoSystem
-import com.pafoid.skate.editor.systems.PrefabsGenerator
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
@@ -16,6 +15,7 @@ import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui

@@ -27,11 +27,11 @@ import java.util.concurrent.atomic.AtomicLong
 class ProjectManager(
     private val engine: Engine,
     private val settingsManager: SettingsManager,
-    private val prefabsGenerator: PrefabsGenerator,
     private val eventSystem: EventSystem,
     private val logger: LoggerService,
 ) {
     private val engineAssetCopier = EngineAssetCopier()
+    private val prefabsGenerator = engine.prefabsGenerator
     private val sceneManager = engine.sceneManager
     private val serializer = engine.serializer
 

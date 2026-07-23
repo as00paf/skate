@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
