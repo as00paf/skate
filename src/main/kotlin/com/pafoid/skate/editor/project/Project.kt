@@ -15,6 +15,7 @@ data class Project(
     var assetPaths: List<String> = listOf("Assets"),
     var scenePaths: List<String> = listOf("Scenes"),
     var buildPaths: List<String> = listOf("Builds"),
+    var physicsFPS: Int = 60,
     var gameplaySettings: GameplaySettings = GameplaySettings(),
 ) {
     fun getProjectDirectory(): File {

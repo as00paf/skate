@@ -78,7 +78,7 @@ class WindowRegistry(
     val systemsWindow = SystemsWindow(stringManager, engine)
     val editorSettingsWindow = EditorSettingsWindow(settingsManager, stringManager)
     val projectSettingsWindow =
-        ProjectSettingsWindow(settingsManager, stringManager, projectManager, eventSystem, logger)
+        ProjectSettingsWindow(settingsManager, stringManager, projectManager, eventSystem)
     val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
     val commandHistoryWindow = CommandHistoryWindow(undoRedoManager, stringManager, eventSystem)
     val renderGraphWindow = RenderGraphWindow(stringManager, engine)

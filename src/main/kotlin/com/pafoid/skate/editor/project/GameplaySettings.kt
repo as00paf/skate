@@ -5,8 +5,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class GameplaySettings(
-    val physicsFPS: Int = 60,
-    val gravity: Float = -9.81f,// TODO: Should be moved to scene
-    val timeScale: Float = 1.0f,
     val inputMappings: InputMappings = InputMappings()
 )

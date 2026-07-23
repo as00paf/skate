@@ -6,8 +6,6 @@ import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.ImVec2
@@ -18,8 +16,6 @@ import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.beginChild
 import imgui.internal.ImGui.button
-import imgui.internal.ImGui.dragFloat
-import imgui.internal.ImGui.dragInt
 import imgui.internal.ImGui.end
 import imgui.internal.ImGui.endChild
 import imgui.internal.ImGui.inputText
@@ -40,7 +36,6 @@ class ProjectSettingsWindow(
     private val stringManager: StringManager,
     private val projectManager: ProjectManager,
     private val eventSystem: EventSystem,
-    private val logger: LoggerService
 ) : IWindow {
     // TODO: extract
     private data class Category(
@@ -52,21 +47,15 @@ class ProjectSettingsWindow(
 
     private val searchBuffer = ImString("", 128)
     private var selectedCategoryId = "general"
-    private var hasPendingChanges = false
-    private var tempPhysicsFPS = 60
-    private var tempGravity = -9.81f
-    private var tempTimeScale = 1.0f
 
     private val categories: List<Category> by lazy {
         listOf(
             Category("general", "settings.project.metadata", arrayOf("general", "metadata", "project", "name", "version", "engine", "path", "description", "recent")) { renderGeneral() },
-            Category("gameplay", "settings.project.gameplay", arrayOf("gameplay", "physics", "fps", "gravity", "time", "scale")) { renderGameplay() }
         )
     }
 
     override fun imgui(pOpen: ImBoolean?) {
         if (pOpen?.get() == false) return
-        if (!hasPendingChanges) syncTempSettings()
 
         val viewport = ImGui.getMainViewport()
         val defaultWidth = viewport.workSizeX * 0.5f
@@ -119,31 +108,20 @@ class ProjectSettingsWindow(
                 ImGui.spacing()
                 val btnW = 100f
                 if (button(stringManager.getString("btn.ok"), btnW, 0f)) {
-                    saveSettings()
+                    projectManager.saveProject()
                     pOpen?.set(false)
                 }
                 sameLine()
                 if (button(stringManager.getString("btn.cancel"), btnW, 0f)) {
-                    syncTempSettings()
-                    hasPendingChanges = false
                     pOpen?.set(false)
                 }
                 sameLine()
-                ImGui.beginDisabled(!hasPendingChanges)
                 if (button(stringManager.getString("btn.apply"), btnW, 0f)) {
-                    saveSettings()
+                    projectManager.saveProject()
                 }
-                ImGui.endDisabled()
             }
         }
         end()
-    }
-
-    private fun syncTempSettings() {
-        val project = projectManager.currentProject
-        tempPhysicsFPS = project?.gameplaySettings?.physicsFPS ?: 60
-        tempGravity = project?.gameplaySettings?.gravity ?: -9.81f
-        tempTimeScale = project?.gameplaySettings?.timeScale ?: 1.0f
     }
 
     private fun renderGeneral() {
@@ -186,51 +164,6 @@ class ProjectSettingsWindow(
         }
     }
 
-    private fun renderGameplay() {
-        val fps = intArrayOf(tempPhysicsFPS)
-        MImGui.propertyRow(
-            label = stringManager.getString("settings.project.gameplay.physics_fps"),
-            helpTooltip = stringManager.getString("settings.project.gameplay.physics_fps.desc"),
-            onReset = { tempPhysicsFPS = 60; hasPendingChanges = true }
-        ) {
-            if (dragInt("##physics_fps", fps, 1f, 30, 240)) {
-                tempPhysicsFPS = fps[0]
-                hasPendingChanges = true
-            }
-        }
-        val grav = floatArrayOf(tempGravity)
-        MImGui.propertyRow(
-            label = stringManager.getString("settings.project.gameplay.gravity"),
-            helpTooltip = stringManager.getString("settings.project.gameplay.gravity.desc"),
-            onReset = { tempGravity = -9.81f; hasPendingChanges = true }
-        ) {
-            if (dragFloat("##gravity", grav, 0.01f, -50f, 0f)) {
-                tempGravity = grav[0]
-                hasPendingChanges = true
-            }
-        }
-        val ts = floatArrayOf(tempTimeScale)
-        MImGui.propertyRow(
-            label = stringManager.getString("settings.project.gameplay.time_scale"),
-            helpTooltip = stringManager.getString("settings.project.gameplay.time_scale.desc"),
-            onReset = { tempTimeScale = 1.0f; hasPendingChanges = true }
-        ) {
-            if (dragFloat("##time_scale", ts, 0.01f, 0.0f, 5f)) {
-                tempTimeScale = ts[0]
-                hasPendingChanges = true
-            }
-        }
-        MImGui.textDisabled(stringManager.getString("settings.stored_not_applied"))
-    }
-
-    private fun saveSettings() {
-        val saved = projectManager.updateGameplaySettings(tempPhysicsFPS, tempGravity, tempTimeScale)
-        hasPendingChanges = !saved
-        if (!saved) {
-            logger.logEditor("Failed to persist project settings", LogLevel.ERROR)
-        }
-    }
-
     private fun getRecentProjectsDisplayInfo() = settingsManager.recentProjects.map { r ->
         RecentProjectDisplayInfo(name = r.name, path = r.path, lastOpened = r.lastOpened, exists = File(r.path).exists())
     }
@@ -242,6 +175,7 @@ class ProjectSettingsWindow(
     }
 }
 
+// TODO: remove
 data class RecentProjectDisplayInfo(val name: String, val path: String, val lastOpened: Long, val exists: Boolean) {
     fun getLastOpenedString(): String {
         val instant = Instant.ofEpochMilli(lastOpened)

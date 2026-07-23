@@ -24,6 +24,7 @@ class SettingsManager(
 
     var editor: EditorSettings = EditorSettings()
 
+    // TODO: this is not used
     var hardware: HardwareSettings = HardwareSettings()
 
     val recentProjects: List<RecentProjectInfo>
@@ -86,25 +87,6 @@ class SettingsManager(
             logger.logEditor("Hardware settings updated (persistence deferred)")
         } catch (e: Exception) {
             logger.logEditor("Error saving hardware settings: ${e.message}", LogLevel.ERROR)
-        }
-    }
-
-    fun loadProject(projectFile: File): Project? {
-        return try {
-            val loadedProject = settingsSerializer.loadProjectSettings(projectFile)
-            if (loadedProject != null) {
-                val updatedProject = loadedProject.copy(lastOpenedDate = System.currentTimeMillis())
-                saveProject(updatedProject)
-                addToRecentProjects(projectFile.absolutePath)
-                logger.logEditor("Project loaded: ${loadedProject.name}")
-                updatedProject
-            } else {
-                logger.logEditor("Failed to load project: $projectFile", LogLevel.ERROR)
-                null
-            }
-        } catch (e: Exception) {
-            logger.logEditor("Error loading project: ${e.message}", LogLevel.ERROR)
-            null
         }
     }
 
