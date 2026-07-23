@@ -31,7 +31,6 @@ class ProjectManagerLifecycleTest {
         val settingsManager = mockk<SettingsManager>(relaxed = true)
         val logger = mockk<LoggerService>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
-        val prefabsGenerator = mockk<PrefabsGenerator>(relaxed = true)
         val eventSystem = mockk<EventSystem>(relaxed = true)
         val systemManager = mockk<SystemManager>(relaxed = true)
         val engine = mockk<Engine>(relaxed = true)
@@ -40,7 +39,6 @@ class ProjectManagerLifecycleTest {
             settingsManager = settingsManager,
             engine = engine,
             logger = logger,
-            prefabsGenerator = prefabsGenerator,
             eventSystem = eventSystem,
         )
         setCurrentProject(manager, project("OldProject", "C:/tmp/OldProject/OldProject.skateproject"))
@@ -74,7 +72,6 @@ class ProjectManagerLifecycleTest {
             settingsManager = settingsManager,
             logger = logger,
             engine = engine,
-            prefabsGenerator = prefabsGenerator,
             eventSystem = eventSystem
         )
         setCurrentProject(manager, project("OldProject", "C:/tmp/OldProject/OldProject.skateproject"))
@@ -103,7 +100,6 @@ class ProjectManagerLifecycleTest {
         val manager = ProjectManager(
             settingsManager = settingsManager,
             logger = logger,
-            prefabsGenerator = prefabsGenerator,
             eventSystem = eventSystem,
             engine = engine,
         )
@@ -132,7 +128,6 @@ class ProjectManagerLifecycleTest {
         val manager = ProjectManager(
             settingsManager = settingsManager,
             logger = logger,
-            prefabsGenerator = prefabsGenerator,
             eventSystem = eventSystem,
             engine = engine,
         )
@@ -179,7 +174,6 @@ class ProjectManagerLifecycleTest {
             settingsManager = settingsManager,
             logger = logger,
             engine = engine,
-            prefabsGenerator = prefabsGenerator,
             eventSystem = eventSystem,
         )
         val original = project("Skate", "C:/tmp/Skate/Skate.skateproject")
@@ -212,7 +206,6 @@ class ProjectManagerLifecycleTest {
             settingsManager = settingsManager,
             logger = logger,
             engine = engine,
-            prefabsGenerator = prefabsGenerator,
             eventSystem = eventSystem,
         )
 
@@ -247,7 +240,6 @@ class ProjectManagerLifecycleTest {
             settingsManager = settingsManager,
             logger = logger,
             engine = engine,
-            prefabsGenerator = prefabsGenerator,
             eventSystem = eventSystem,
         )
 
