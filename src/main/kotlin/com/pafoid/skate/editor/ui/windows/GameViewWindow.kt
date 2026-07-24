@@ -38,7 +38,6 @@ class GameViewWindow(
         undoRedoManager = editor.undoRedoManager,
         clipboardService = editor.clipboardService,
         mutationGate = editor.mutationGate,
-        prefabsGenerator = engine.prefabsGenerator,
         editorCamera = editor.editorCamera,
         viewportRenderer = viewportRenderer,
         gizmoSystem = editor.gizmoSystem

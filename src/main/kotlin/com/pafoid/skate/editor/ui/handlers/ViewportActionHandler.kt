@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.commands.editor.TogglePhysicsDebugCommand
 import com.pafoid.skate.editor.commands.objects.AddAudioComponentCommand
 import com.pafoid.skate.editor.commands.objects.AddComponentCommand
 import com.pafoid.skate.editor.commands.objects.ApplyAnimationCommand
@@ -55,7 +56,6 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
@@ -70,7 +70,6 @@ import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.events.CameraAction
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction.ResetScene
@@ -80,21 +79,18 @@ import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
 
 class ViewportActionHandler(
-    private val engine: Engine, // TODO: should not be val
+    private val engine: Engine,
     private val undoRedoManager: UndoRedoManager,
     private val clipboardService: ClipboardService,
     private val mutationGate: EditorMutationGate,
-    private val prefabsGenerator: PrefabsGenerator,
     private val editorCamera: EditorCamera,
     private val viewportRenderer: ViewportRenderer,
     private val gizmoSystem: GizmoSystem,
 ) {
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
-    private val jobSystem = engine.jobSystem
     private val sceneManager = engine.sceneManager
     private val gameObjectManager = engine.gameObjectManager
-    private val assetsManager = engine.assetsManager // TODO: remove, should not be needed
 
     fun init() {
         eventSystem.subscribe<GameObjectSelected> { event ->
@@ -188,7 +184,7 @@ class ViewportActionHandler(
             handleResetSkateScene()
         }
         eventSystem.subscribe<TogglePhysicsDebug> {
-            engine.systemManager.getSystem<PhysicsSystem>()?.toggleDebug()
+            undoRedoManager.executeCommand(TogglePhysicsDebugCommand(engine.systemManager))
         }
         eventSystem.subscribe<ToggleGizmo> { event ->
             handleToggleGizmo(event.gizmoId)
@@ -234,7 +230,7 @@ class ViewportActionHandler(
 
     private fun handleSpawnPrefab(prefabType: PrefabType, position: Vector3f?) {
         if (mutationGate.blockIfPlaying("spawn prefab")) return
-        val command = SpawnPrefabCommand(prefabType, position, prefabsGenerator, gameObjectManager)
+        val command = SpawnPrefabCommand(prefabType, position, engine.prefabsGenerator, gameObjectManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Spawned prefab: ${prefabType.name}")
     }
@@ -407,12 +403,7 @@ class ViewportActionHandler(
         }
 
         undoRedoManager.executeCommand(
-            ApplyTextureCommand(
-                gameObject,
-                texturePath,
-                assetsManager,
-                eventSystem
-            )
+            ApplyTextureCommand(gameObject, texturePath, engine.assetsManager, eventSystem)
         )
         logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
     }
@@ -420,22 +411,22 @@ class ViewportActionHandler(
     private fun createTexturedPlane(position: Vector3f, texturePath: String) {
         val scene = sceneManager.currentScene ?: return
 
-        jobSystem.runAsync {
+        engine.jobSystem.runAsync {
             val planeObj = GameObject("TexturedPlane")
             val transform = Transform()
             transform.translation.set(position)
             transform.scale.set(10f, 0.1f, 10f)
             planeObj.addComponent(transform)
 
-            val texture = assetsManager.getTexture(texturePath)
-            val baseModel = assetsManager.loadModel(Assets.Models.CUBE)
+            val texture = engine.assetsManager.getTexture(texturePath)
+            val baseModel = engine.assetsManager.loadModel(Assets.Models.CUBE)
             val model = TexturedModel(
                 path = Assets.Models.CUBE,
                 mesh = baseModel.mesh,
                 material = Material(texture)
             )
 
-            jobSystem.runOnMain {
+            engine.jobSystem.runOnMain {
                 val renderComponent = RenderComponent(model = model, castShadow = false, receiveShadow = true)
                 planeObj.addComponent(renderComponent)
                 planeObj.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
