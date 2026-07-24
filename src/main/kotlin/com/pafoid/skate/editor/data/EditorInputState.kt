@@ -14,7 +14,6 @@ class EditorInputState {
     var orbitHeld = false
     var resetPressed = false
     var isInsideViewport = false
-    var isFocused = true
 
     fun reset() {
         moveDirection.set(0f, 0f)

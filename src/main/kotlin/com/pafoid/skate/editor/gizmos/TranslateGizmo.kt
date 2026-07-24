@@ -5,7 +5,7 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
@@ -13,14 +13,13 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
-import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 import kotlin.math.abs
 
 class TranslateGizmo(
-    mouseListener: MouseListener,
+    inputProvider: InputProvider,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
-) : Gizmo(mouseListener, undoRedoManager) {
+) : Gizmo(inputProvider, undoRedoManager) {
     private val arrowLength = 2.0f
     private val coneSize = 0.3f
     private val hitThreshold = 0.3f
@@ -87,9 +86,9 @@ class TranslateGizmo(
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
 
-        val mouseX = mouseListener.getScreenX()
-        val mouseY = mouseListener.getScreenY()
-        val viewportSize = mouseListener.getGameViewportSize()
+        val mouseX = inputProvider.getMouseScreenX()
+        val mouseY = inputProvider.getMouseScreenY()
+        val viewportSize = inputProvider.getGameViewportSize()
         val ray = camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
 
         xAxisHot = false
@@ -100,7 +99,7 @@ class TranslateGizmo(
         else if (rayToLineDist(ray, pos, Vector3f(0f, 1f, 0f), length) < threshold) yAxisHot = true
         else if (rayToLineDist(ray, pos, Vector3f(0f, 0f, 1f), length) < threshold) zAxisHot = true
 
-        if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, true)) {
+        if (inputProvider.isLeftMouseButtonDown(true)) {
             if (!xAxisActive && !yAxisActive && !zAxisActive) {
                 if (xAxisHot) xAxisActive = true
                 else if (yAxisHot) yAxisActive = true
@@ -141,7 +140,7 @@ class TranslateGizmo(
     private fun calculateDelta(activeGameObject: GameObject?, camera: Camera, axis: Vector3f): Float {
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()
-        val viewportSize = mouseListener.getGameViewportSize()
+        val viewportSize = inputProvider.getGameViewportSize()
 
         val go = activeGameObject ?: return 0f
         val transform = go.getComponent<Transform>() ?: return 0f
@@ -155,7 +154,7 @@ class TranslateGizmo(
         if (axisScreen.lengthSquared() < 0.0001f) return 0f
 
         val axisScreenDir = axisScreen.normalize()
-        val mouseDelta = Vector2f(mouseListener.dx, mouseListener.dy)
+        val mouseDelta = Vector2f(inputProvider.getMouseDx(), inputProvider.getMouseDy())
 
         val projection = mouseDelta.dot(axisScreenDir)
         val dist = Vector3f(camera.position).distance(origin)

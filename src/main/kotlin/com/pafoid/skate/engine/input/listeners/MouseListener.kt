@@ -18,8 +18,8 @@ class MouseListener {
     private var mouseButtonsDown = 0
     private var mouseButtonPressed = BooleanArray(9)
     private var mouseButtonPressedLastFrame = BooleanArray(9)
-    private val gameViewportPos = Vector2f()
-    private val gameViewportSize = Vector2f(1920f, 1080f) // Default size
+    val gameViewportPos = Vector2f()
+    val gameViewportSize = Vector2f(1920f, 1080f) // Default size
 
     fun mousePosCallback(window: Long, xpos: Double, ypos: Double) {
         isDragging = mouseButtonsDown > 0
@@ -74,7 +74,6 @@ class MouseListener {
         mouseButtonsDown = 0
         isDragging = false
         mouseButtonPressed.fill(false)
-
     }
 
     fun setGameViewportPos(pos: Vector2f) {
@@ -100,18 +99,6 @@ class MouseListener {
         return relativeY.coerceIn(0f, gameViewportSize.y)
     }
 
-    fun getNormalizedX(): Float {
-        val mousePos = ImGui.getMousePos()
-        val relativeX = mousePos.x - gameViewportPos.x
-        return (relativeX / gameViewportSize.x).coerceIn(0f, 1f)
-    }
-
-    fun getNormalizedY(): Float {
-        val mousePos = ImGui.getMousePos()
-        val relativeY = mousePos.y - gameViewportPos.y
-        return (relativeY / gameViewportSize.y).coerceIn(0f, 1f)
-    }
-
     fun getScrollX(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()
     fun getScrollY(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
     fun isDragging() = isDragging
@@ -120,12 +107,5 @@ class MouseListener {
         return if (ignoreImGui) down else down && !ImGui.getIO().wantCaptureMouse
     }
 
-    fun getGameViewportSize(): Vector2f = gameViewportSize
-    fun getGameViewportPos(): Vector2f = gameViewportPos
 
-    fun isInsideViewport():Boolean {
-        return getX() >= getGameViewportPos().x && getX() <= (getGameViewportPos().x + getGameViewportSize().x) &&
-                getY() >= getGameViewportPos().y && getY() <= (getGameViewportPos().y + getGameViewportSize().y)
-
-    }
 }

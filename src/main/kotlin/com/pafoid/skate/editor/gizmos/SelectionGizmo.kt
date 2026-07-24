@@ -7,17 +7,17 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 import org.lwjgl.glfw.GLFW
 
 class SelectionGizmo(
-    mouseListener: MouseListener,
+    inputProvider: InputProvider,
     undoRedoManager: UndoRedoManager,
-    private val engine: Engine,
+    engine: Engine,
     private val eventSystem: EventSystem,
     private val gameObjectManager: GameObjectManager,
-) : Gizmo(mouseListener, undoRedoManager) {
+) : Gizmo(inputProvider, undoRedoManager) {
     private val renderer: Renderer = engine.renderer
 
     fun getHoveredObject(x: Float, y: Float): GameObject? {
@@ -35,15 +35,15 @@ class SelectionGizmo(
             return
         }
 
-        if (mouseListener.isInsideViewport()) {
-            val pickingX = mouseListener.getNormalizedX()
-            val pickingY = mouseListener.getNormalizedY()
+        if (inputProvider.isInsideViewport()) {
+            val pickingX = inputProvider.getMouseScreenX()
+            val pickingY = inputProvider.getMouseScreenY()
 
             val hovered = getHoveredObject(pickingX, pickingY)
             scene.hoveredGameObject = hovered
             hoveredGameObjectUid = hovered?.uId ?: -1
 
-            if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT, true)) {
+            if (inputProvider.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT, true)) {
                 val event = if (hovered != null) ViewportAction.GameObjectSelected(hovered) else ViewportAction.SelectionCleared
                 eventSystem.publish(event)
             }

@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.ui.handlers
 
-import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ViewportAction
@@ -9,11 +8,6 @@ import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.input.InputBuffer
-import com.pafoid.skate.engine.input.listeners.GamepadListener
-import com.pafoid.skate.engine.input.listeners.KeyListener
-import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.utils.Time
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 
@@ -22,65 +16,50 @@ class EditorInputHandler(
     private val undoRedoManager: UndoRedoManager,
     private val editorInputState: EditorInputState,
     private val engine: Engine,
-    private val settingsManager: SettingsManager
+    settingsManager: SettingsManager
 ) {
-    private val inputBuffer: InputBuffer = InputBuffer()
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
+    private val inputProvider = engine.inputProvider
 
-    // TODO: replace by input provider only ?
-    private val keyListener: KeyListener = engine.inputProvider.keyListener
-    private val mouseListener: MouseListener = engine.inputProvider.mouseListener
-    private val joystickListener: GamepadListener = engine.inputProvider.gamepadListener
-
-    // TODO: wtf
     private var inputMappings = settingsManager.editor.editorInputMappings
-
-    private var pendingRenameUid: Int? = null
 
     fun update() {
         editorInputState.reset()
-        if (engine.runtimePlaying) {
-            handleInputs()
-            return
-        }
 
         pollEditorInput()
         val scene = engine.sceneManager.currentScene ?: return
 
         // Global hierarchy actions (work regardless of window focus)
-        handleGlobalHierarchyActions(scene, inputMappings)
+        handleGlobalHierarchyActions(scene)
 
         // Standard clipboard/undo operations
         handleClipboardAndUndo(scene)
-
-        handleInputs()
     }
 
     private fun pollEditorInput() {
-        editorInputState.isInsideViewport = mouseListener.isInsideViewport()
-        editorInputState.isFocused = true // Simplify focus for now
+        editorInputState.isInsideViewport = inputProvider.isInsideViewport()
 
         // Polling Keyboard
         val moveInput = Vector2f()
-        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_W)) moveInput.y += 1f
-        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_S)) moveInput.y -= 1f
-        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_A)) moveInput.x -= 1f
-        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_D)) moveInput.x += 1f
+        if (inputProvider.isKeyPressed(inputMappings.moveForward.keyboardKey)) moveInput.y += 1f
+        if (inputProvider.isKeyPressed(inputMappings.moveBackward.keyboardKey)) moveInput.y -= 1f
+        if (inputProvider.isKeyPressed(inputMappings.moveLeft.keyboardKey)) moveInput.x -= 1f
+        if (inputProvider.isKeyPressed(inputMappings.moveRight.keyboardKey)) moveInput.x += 1f
         if (moveInput.lengthSquared() > 1f) moveInput.normalize()
         editorInputState.moveDirection.set(moveInput)
 
         var verticalInput = 0f
-        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_SPACE)) verticalInput += 1f
-        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) verticalInput -= 1f
+        if (inputProvider.isKeyPressed(inputMappings.moveUp.keyboardKey)) verticalInput += 1f
+        if (inputProvider.isKeyPressed(inputMappings.moveDown.keyboardKey)) verticalInput -= 1f
         editorInputState.verticalMovement = verticalInput
 
         // Polling Mouse
-        val dx = mouseListener.dx
-        val dy = mouseListener.dy
-        if (mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_RIGHT) && editorInputState.isInsideViewport) {
+        val dx = inputProvider.getMouseDx()
+        val dy = inputProvider.getMouseDy()
+        if (inputProvider.isRightMouseButtonDown() && editorInputState.isInsideViewport) {
             editorInputState.mouseLook.set(dx, dy)
-        } else if (mouseListener.isMouseButtonDown(
+        } else if (inputProvider.isMouseButtonDown(
                 GLFW.GLFW_MOUSE_BUTTON_MIDDLE,
                 true
             ) && editorInputState.isInsideViewport
@@ -91,111 +70,77 @@ class EditorInputHandler(
         }
 
         editorInputState.orbitPressed =
-            mouseListener.mouseButtonBeginPress(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && editorInputState.isInsideViewport
+            inputProvider.mouseButtonBeginPress(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && editorInputState.isInsideViewport
         editorInputState.orbitHeld =
-            mouseListener.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_MIDDLE, true) && editorInputState.isInsideViewport
+            inputProvider.isMiddleMouseButtonDown(true) && editorInputState.isInsideViewport
 
         if (editorInputState.isInsideViewport) {
-            editorInputState.mouseScroll = mouseListener.getScrollY()
+            editorInputState.mouseScroll = inputProvider.getMouseScrollY()
         }
 
-        if (keyListener.keyBeginPress(GLFW.GLFW_KEY_HOME)) {
+        if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_HOME)) {
             editorInputState.resetPressed = true
         }
     }
 
-    private fun handleInputs() {
-        // Record high-frequency input
-        inputBuffer.push(
-            Time.getTime(),
-            Vector2f(mouseListener.getX(), mouseListener.getY()),
-            joystickListener.getAxes(GLFW.GLFW_JOYSTICK_1)
-        )
-        keyListener.endFrame()
-        mouseListener.endFrame()
-    }
-
-    private fun handleGlobalHierarchyActions(
-        scene: Scene,
-        inputMappings: EditorInputMappings
-    ) {
+    private fun handleGlobalHierarchyActions(scene: Scene) {
         val selected = scene.selectedGameObject
-        val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
-
-        // Search
-        if (ctrlDown && keyListener.keyBeginPress(GLFW.GLFW_KEY_P)) {
-            eventSystem.publish(EditorEvent.OpenSearch)
-        }
-
-        // Full Screen (By passes WindowRegistry)
-        if (keyListener.isKeyPressed(GLFW.GLFW_KEY_F12)) {
-            eventSystem.publish(ViewportAction.ToggleFullScreen)
-        }
-
-        // Delete selected object
-        if (keyListener.keyBeginPress(inputMappings.hierarchyDelete.keyboardKey) && selected != null) {
-            eventSystem.publish(ViewportAction.Delete(selected, scene))
-            logger.logEditor("Deleted GameObject: ${selected.name}")
-        }
-
-        // Create new GameObject (Insert)
-        if (keyListener.keyBeginPress(inputMappings.hierarchyCreateNew.keyboardKey)) {
-            eventSystem.publish(ViewportAction.CreateEmpty(scene))
-            logger.logEditor("Create empty GameObject requested")
-        }
-
-        // Duplicate (D without Ctrl)
-        if (keyListener.keyBeginPress(inputMappings.hierarchyDuplicate.keyboardKey) &&
-            !ctrlDown && selected != null
-        ) {
-            eventSystem.publish(ViewportAction.Duplicate(selected))
-            logger.logEditor("Duplicate GameObject requested: ${selected.name}")
-        }
-
-        // Toggle Visibility (V without Ctrl)
-        if (keyListener.keyBeginPress(inputMappings.hierarchyToggleVisibility.keyboardKey) &&
-            !ctrlDown && selected != null
-        ) {
-            val newVis = !selected.isVisible
-            eventSystem.publish(ViewportAction.ToggleVisibility(selected, newVis))
-            logger.logEditor("Toggled visibility for ${selected.name}: $newVis")
-        }
-
-        // Toggle Lock (L without Ctrl)
-        if (keyListener.keyBeginPress(inputMappings.hierarchyToggleLock.keyboardKey) &&
-            !ctrlDown && selected != null
-        ) {
-            val newLock = !selected.isLocked
-            eventSystem.publish(ViewportAction.ToggleLock(selected, newLock))
-            logger.logEditor("Toggled lock for ${selected.name}: $newLock")
-        }
-
-        // Rename
-        if (keyListener.keyBeginPress(inputMappings.hierarchyRename.keyboardKey) && selected != null) {
-            // Signal to SceneHierarchyWindow that rename should start
-            pendingRenameUid = selected.uId
-        }
-
-        // Deselect
-        if (keyListener.isKeyPressed(inputMappings.deselectAll.keyboardKey) && selected != null) {
-            eventSystem.publish(ViewportAction.SelectionCleared)
-            logger.logEditor("Deselected GameObject")
+        if (inputProvider.isControlKeyDown()) {
+            if (inputProvider.keyBeginPress(inputMappings.openSearchWindow.keyboardKey)) {
+                eventSystem.publish(EditorEvent.OpenSearch)
+            }
+            if (inputProvider.keyBeginPress(inputMappings.hierarchyDuplicate.keyboardKey) && selected != null) {
+                eventSystem.publish(ViewportAction.Duplicate(selected))
+                logger.logEditor("Duplicate GameObject requested: ${selected.name}")
+            }
+        } else {
+            if (inputProvider.isKeyPressed(inputMappings.toggleFullScreen.keyboardKey)) {
+                eventSystem.publish(ViewportAction.ToggleFullScreen)
+            }
+            if (inputProvider.keyBeginPress(inputMappings.hierarchyDelete.keyboardKey) && selected != null) {
+                eventSystem.publish(ViewportAction.Delete(selected, scene))
+                logger.logEditor("Deleted GameObject: ${selected.name}")
+            }
+            if (inputProvider.keyBeginPress(inputMappings.hierarchyCreateNew.keyboardKey)) {
+                eventSystem.publish(ViewportAction.CreateEmpty(scene))
+                logger.logEditor("Create empty GameObject requested")
+            }
+            if (inputProvider.keyBeginPress(inputMappings.hierarchyToggleVisibility.keyboardKey) && selected != null
+            ) {
+                val newVis = !selected.isVisible
+                eventSystem.publish(ViewportAction.ToggleVisibility(selected, newVis))
+                logger.logEditor("Toggled visibility for ${selected.name}: $newVis")
+            }
+            if (inputProvider.keyBeginPress(inputMappings.hierarchyToggleLock.keyboardKey) && selected != null
+            ) {
+                val newLock = !selected.isLocked
+                eventSystem.publish(ViewportAction.ToggleLock(selected, newLock))
+                logger.logEditor("Toggled lock for ${selected.name}: $newLock")
+            }
+            if (inputProvider.keyBeginPress(inputMappings.hierarchyRename.keyboardKey) && selected != null) {
+                // TODO: publish rename request to focus on name in property window
+                //eventSystem.publish(ViewportAction.RenameGameObject)
+            }
+            if (inputProvider.isKeyPressed(inputMappings.deselectAll.keyboardKey) && selected != null) {
+                eventSystem.publish(ViewportAction.SelectionCleared)
+                logger.logEditor("Deselected GameObject")
+            }
         }
     }
 
     private fun handleClipboardAndUndo(currentScene: Scene) {
         val selected = currentScene.selectedGameObject
-        val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
+        val ctrlDown = inputProvider.isControlKeyDown()
         if (ctrlDown) {
             // Copy
-            if (keyListener.keyBeginPress(GLFW.GLFW_KEY_C)) {
+            if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_C)) {
                 if (selected != null) {
                     clipboardService.copy(selected)
                     logger.logEditor("Copied GameObject: ${selected.name}")
                 }
             }
             // Cut
-            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_X)) {
+            else if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_X)) {
                 if (selected != null) {
                     clipboardService.copy(selected)
                     eventSystem.publish(ViewportAction.Delete(selected, currentScene))
@@ -203,17 +148,17 @@ class EditorInputHandler(
                 }
             }
             // Paste
-            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_V)) {
+            else if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_V)) {
                 eventSystem.publish(ViewportAction.PasteClipboard())
                 logger.logEditor("Paste requested")
             }
             // Undo
-            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_Z)) {
+            else if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_Z)) {
                 undoRedoManager.undo()
                 logger.logEditor("Undo")
             }
             // Redo
-            else if (keyListener.keyBeginPress(GLFW.GLFW_KEY_Y)) {
+            else if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_Y)) {
                 undoRedoManager.redo()
                 logger.logEditor("Redo")
             }

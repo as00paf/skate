@@ -123,8 +123,12 @@ class KeyBindingsWindow(
     private fun renderCameraBindingsTab(inputMappings: EditorInputMappings) {
         text(stringManager.getString("lbl.keybindings.camera_section"))
         separator()
-        drawBindRow(stringManager.getString("lbl.keybindings.moveUp"), inputMappings.moveUp.keyboardKey, "moveUp")
-        drawBindRow(stringManager.getString("lbl.keybindings.moveDown"), inputMappings.moveDown.keyboardKey, "moveDown")
+        drawBindRow(stringManager.getString("lbl.keybindings.moveUp"), inputMappings.moveForward.keyboardKey, "moveUp")
+        drawBindRow(
+            stringManager.getString("lbl.keybindings.moveDown"),
+            inputMappings.moveBackward.keyboardKey,
+            "moveDown"
+        )
         drawBindRow(stringManager.getString("lbl.keybindings.moveLeft"), inputMappings.moveLeft.keyboardKey, "moveLeft")
         drawBindRow(
             stringManager.getString("lbl.keybindings.moveRight"),
@@ -182,8 +186,8 @@ class KeyBindingsWindow(
             "measureTool" -> inputMappings.measureTool.keyboardKey = key
             "deselectAll" -> inputMappings.deselectAll.keyboardKey = key
             // Camera
-            "moveUp" -> inputMappings.moveUp.keyboardKey = key
-            "moveDown" -> inputMappings.moveDown.keyboardKey = key
+            "moveUp" -> inputMappings.moveForward.keyboardKey = key
+            "moveDown" -> inputMappings.moveBackward.keyboardKey = key
             "moveLeft" -> inputMappings.moveLeft.keyboardKey = key
             "moveRight" -> inputMappings.moveRight.keyboardKey = key
             // Game State

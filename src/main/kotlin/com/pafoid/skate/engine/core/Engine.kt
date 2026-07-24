@@ -46,8 +46,6 @@ class Engine {
     val gameObjectManager = GameObjectManager()
     val prefabsGenerator = PrefabsGenerator(this)
 
-    private var systemManagerStarted = false
-
     fun start(glfwWindow: Long) {
         initCallbacks(glfwWindow)
         jobSystem.runOnMain {
@@ -94,6 +92,7 @@ class Engine {
         engineSystems.forEach {
             systemManager.addSystem(it)
         }
+        systemManager.start()
     }
 
     fun update(dt: Float) {
@@ -108,11 +107,6 @@ class Engine {
         if (dt < 0f) return
 
         sceneManager.currentScene?.let { scene ->
-            if (!systemManagerStarted) {
-                systemManager.start()
-                systemManagerStarted = true
-            }
-
             systemManager.update(dt)
             scene.isRunning = runtimePlaying
             if (runtimePlaying) {
@@ -121,6 +115,7 @@ class Engine {
 
             renderer.render(scene)
         }
+        inputProvider.endFrame()
     }
 
     fun destroy() {
@@ -128,6 +123,5 @@ class Engine {
         renderer.destroy()
         sceneManager.destroy()
         systemManager.destroy()
-        systemManagerStarted = false
     }
 }

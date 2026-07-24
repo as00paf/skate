@@ -1,10 +1,10 @@
 package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.input.InputProvider
 
 open class Gizmo(
-    protected val mouseListener: MouseListener,
+    protected val inputProvider: InputProvider,
     protected val undoRedoManager: UndoRedoManager,
 ) {
 

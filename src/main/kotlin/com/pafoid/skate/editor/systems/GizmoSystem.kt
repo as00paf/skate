@@ -23,15 +23,14 @@ class GizmoSystem(
 
     // Gizmos are owned directly by this system, not registered as separate systems
     private val debugRenderer by lazy { engine.renderer.renderResources.renderers.debug }
-    private val mouseListener by lazy { engine.inputProvider.mouseListener }
-    private val keyListener by lazy { engine.inputProvider.keyListener }
-    private val translateGizmo by lazy { TranslateGizmo(mouseListener, undoRedoManager, debugRenderer) }
-    private val rotationGizmo by lazy { RotationGizmo(mouseListener, undoRedoManager, debugRenderer) }
-    private val scaleGizmo by lazy { ScaleGizmo(mouseListener, undoRedoManager, debugRenderer) }
+    private val inputProvider by lazy { engine.inputProvider }
+    private val translateGizmo by lazy { TranslateGizmo(inputProvider, undoRedoManager, debugRenderer) }
+    private val rotationGizmo by lazy { RotationGizmo(inputProvider, undoRedoManager, debugRenderer) }
+    private val scaleGizmo by lazy { ScaleGizmo(inputProvider, undoRedoManager, debugRenderer) }
     private val selectionGizmo by lazy {
-        SelectionGizmo(mouseListener, undoRedoManager, engine, eventSystem, gameObjectManager)
+        SelectionGizmo(inputProvider, undoRedoManager, engine, eventSystem, gameObjectManager)
     }
-    val measureGizmo by lazy { MeasureTool(mouseListener, undoRedoManager, debugRenderer, settingsManager) }
+    val measureGizmo by lazy { MeasureTool(inputProvider, undoRedoManager, debugRenderer, settingsManager) }
 
     fun update(dt: Float, scene: Scene) {
         editorCamera.update(dt)// TODO: check if done elsewhere
@@ -59,15 +58,15 @@ class GizmoSystem(
         // Handle gizmo selection key bindings
         val bindings = settingsManager.editor.editorInputMappings
 
-        if (keyListener.isKeyPressed(bindings.gizmoTranslate.keyboardKey)) {
+        if (inputProvider.isKeyPressed(bindings.gizmoTranslate.keyboardKey)) {
             usingGizmo = TRANSLATE_GIZMO
-        } else if (keyListener.isKeyPressed(bindings.gizmoRotate.keyboardKey)) {
+        } else if (inputProvider.isKeyPressed(bindings.gizmoRotate.keyboardKey)) {
             usingGizmo = ROTATION_GIZMO
-        } else if (keyListener.isKeyPressed(bindings.gizmoScale.keyboardKey)) {
+        } else if (inputProvider.isKeyPressed(bindings.gizmoScale.keyboardKey)) {
             usingGizmo = SCALE_GIZMO
-        } else if (keyListener.isKeyPressed(bindings.gizmoSelect.keyboardKey)) {
+        } else if (inputProvider.isKeyPressed(bindings.gizmoSelect.keyboardKey)) {
             usingGizmo = SELECTION_GIZMO
-        } else if (keyListener.isKeyPressed(bindings.measureTool.keyboardKey)) {
+        } else if (inputProvider.isKeyPressed(bindings.measureTool.keyboardKey)) {
             usingGizmo = MEASURE_GIZMO
         }
 

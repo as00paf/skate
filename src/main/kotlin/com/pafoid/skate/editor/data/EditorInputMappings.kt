@@ -10,10 +10,12 @@ data class EditorInputMappings(
     var reset: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_R),
 
     // EditorCamera
-    var moveUp: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_W),
-    var moveDown: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_S),
+    var moveForward: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_W),
+    var moveBackward: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_S),
     var moveLeft: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_A),
     var moveRight: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_D),
+    var moveUp: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_SPACE),
+    var moveDown: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_LEFT_SHIFT),
 
     // Gizmos
     var gizmoSelect: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_1),
@@ -34,6 +36,10 @@ data class EditorInputMappings(
     var hierarchyToggleLock: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_L),
     var hierarchyDuplicate: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_D),
     var hierarchyRename: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_F2),
+
+    // Editor shortcuts
+    var openSearchWindow: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_P),
+    var toggleFullScreen: InputBinding = InputBinding(keyboardKey = GLFW.GLFW_KEY_F12),
 ) {
 
     fun resetToDefault() {
@@ -42,8 +48,8 @@ data class EditorInputMappings(
         reset = InputBinding(keyboardKey = GLFW.GLFW_KEY_R)
 
         // Editor Camera
-        moveUp = InputBinding(keyboardKey = GLFW.GLFW_KEY_W)
-        moveDown = InputBinding(keyboardKey = GLFW.GLFW_KEY_S)
+        moveForward = InputBinding(keyboardKey = GLFW.GLFW_KEY_W)
+        moveBackward = InputBinding(keyboardKey = GLFW.GLFW_KEY_S)
         moveLeft = InputBinding(keyboardKey = GLFW.GLFW_KEY_A)
         moveRight = InputBinding(keyboardKey = GLFW.GLFW_KEY_D)
 

@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.UnitSystem
@@ -15,11 +15,11 @@ import org.joml.Vector3f
 import kotlin.math.abs
 
 class MeasureTool(
-    mouseListener: MouseListener,
+    inputProvider: InputProvider,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
     private val settingsManager: SettingsManager,
-) : Gizmo(mouseListener, undoRedoManager) {
+) : Gizmo(inputProvider, undoRedoManager) {
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
 
@@ -38,14 +38,10 @@ class MeasureTool(
             return
         }
 
-        val viewportSize = mouseListener.getGameViewportSize()
-        val viewportPos = mouseListener.getGameViewportPos()
+        val viewportSize = inputProvider.getGameViewportSize()
 
-        val mouseX = mouseListener.getX()
-        val mouseY = mouseListener.getY()
-
-        val relX = mouseX - viewportPos.x
-        val relY = mouseY - viewportPos.y
+        val relX = inputProvider.getMouseScreenX()
+        val relY = inputProvider.getMouseScreenX()
 
         measurementText = null
         measurementPos = null
@@ -58,7 +54,7 @@ class MeasureTool(
                 if (t > 0) {
                     val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
 
-                    if (mouseListener.mouseButtonBeginPress(0)) {
+                    if (inputProvider.mouseButtonBeginPress(0)) {
                         if (startPoint == null || (startPoint != null && endPoint != null)) {
                             startPoint = Vector3f(hitPoint)
                             endPoint = null
@@ -81,7 +77,7 @@ class MeasureTool(
                         }
 
                         measurementText = "Distance: $displayText"
-                        measurementPos = Vector2f(mouseX + 20, mouseY + 20)
+                        measurementPos = Vector2f(relX + 20, relY + 20) //TODO: +20 ?!?
                     }
                 }
             }

@@ -5,19 +5,18 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.Camera
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
 import org.joml.Vector3f
-import org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
 import kotlin.math.abs
 
 class RotationGizmo(
-    mouseListener: MouseListener,
+    inputProvider: InputProvider,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
-) : Gizmo(mouseListener, undoRedoManager) {
+) : Gizmo(inputProvider, undoRedoManager) {
     private val radius = 2.0f
     private val hitThreshold = 0.4f
     
@@ -37,11 +36,11 @@ class RotationGizmo(
             checkInput(activeGameObject, camera, dynamicRadius, dynamicThreshold)
 
             if (xAxisActive) {
-                transform.rotation.x += mouseListener.dy
+                transform.rotation.x += inputProvider.getMouseDy()
             } else if (yAxisActive) {
-                transform.rotation.y += mouseListener.dx
+                transform.rotation.y += inputProvider.getMouseDx()
             } else if (zAxisActive) {
-                transform.rotation.z += mouseListener.dy
+                transform.rotation.z += inputProvider.getMouseDy()
             }
 
             with(debugRenderer) {
@@ -56,9 +55,9 @@ class RotationGizmo(
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
 
-        val mouseX = mouseListener.getScreenX()
-        val mouseY = mouseListener.getScreenY()
-        val viewportSize = mouseListener.getGameViewportSize()
+        val mouseX = inputProvider.getMouseScreenX()
+        val mouseY = inputProvider.getMouseScreenY()
+        val viewportSize = inputProvider.getGameViewportSize()
         val ray = camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
 
         // Reset hover states
@@ -70,7 +69,7 @@ class RotationGizmo(
         else if (rayToCircleDist(ray, pos, Vector3f(0f, 1f, 0f), rad) < threshold) yAxisHot = true
         else if (rayToCircleDist(ray, pos, Vector3f(0f, 0f, 1f), rad) < threshold) zAxisHot = true
 
-        if (mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, true)) {
+        if (inputProvider.isLeftMouseButtonDown(true)) {
             if (!xAxisActive && !yAxisActive && !zAxisActive) {
                 if (xAxisHot) xAxisActive = true
                 else if (yAxisHot) yAxisActive = true

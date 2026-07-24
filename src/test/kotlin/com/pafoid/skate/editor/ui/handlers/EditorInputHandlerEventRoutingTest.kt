@@ -10,8 +10,8 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.InputMappings
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadListener
-import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import io.mockk.every
 import io.mockk.mockk
@@ -24,7 +24,7 @@ class EditorInputHandlerEventRoutingTest {
 
     @Test
     fun `insert shortcut publishes create empty action instead of mutating scene directly`() {
-        val keyListener = mockk<KeyListener>()
+        val inputProvider = mockk<InputProvider>()
         val mouseListener = mockk<MouseListener>()
         val gamepadListener = mockk<GamepadListener>()
         val clipboardService = mockk<ClipboardService>(relaxed = true)
@@ -41,9 +41,9 @@ class EditorInputHandlerEventRoutingTest {
         every { sceneManager.currentScene } returns scene
         every { scene.selectedGameObject } returns null
 
-        every { keyListener.isKeyPressed(any()) } returns false
-        every { keyListener.keyBeginPress(any()) } answers { firstArg<Int>() == GLFW.GLFW_KEY_INSERT }
-        every { keyListener.endFrame() } returns Unit
+        every { inputProvider.isKeyPressed(any()) } returns false
+        every { inputProvider.keyBeginPress(any()) } answers { firstArg<Int>() == GLFW.GLFW_KEY_INSERT }
+        every { inputProvider.endFrame() } returns Unit
 
         every { mouseListener.isInsideViewport() } returns false
         every { mouseListener.dx } returns 0f
@@ -53,7 +53,6 @@ class EditorInputHandlerEventRoutingTest {
         every { mouseListener.getScrollY() } returns 0f
         every { mouseListener.getX() } returns 0f
         every { mouseListener.getY() } returns 0f
-        every { mouseListener.endFrame() } returns Unit
 
         every { gamepadListener.getAxes(any()) } returns null
 
@@ -62,7 +61,7 @@ class EditorInputHandlerEventRoutingTest {
             undoRedoManager = undoRedoManager,
             editorInputState = editorInputState,
             engine = engine,
-            projectManager = mockk(),
+            settingsManager = mockk(),
         )
 
         var createEvents = 0

@@ -91,6 +91,7 @@ class GameViewWindow(
             )
         }
 
+        // TODO: Should be done by engine
         engine.inputProvider.mouseListener.setGameViewportPos(
             Vector2f(
                 viewportRenderer.imageScreenPosX,
@@ -103,8 +104,6 @@ class GameViewWindow(
                 viewportRenderer.imageSizeY
             )
         )
-
-        editor.editorInputState.isFocused = ImGui.isWindowFocused()
 
         val hovered = sceneManager.currentScene?.hoveredGameObject
         if (hovered != null) {
