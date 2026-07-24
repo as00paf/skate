@@ -35,7 +35,7 @@ class Editor(
     val undoRedoManager = UndoRedoManager(mutationGate, engine.eventSystem, engine.logger)
 
     val editorInputHandler =
-        EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, projectManager)
+        EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, settingsManager)
 
     // TODO: regroup into one action handler
     val sceneActionHandler = SceneActionHandler(engine, projectManager, undoRedoManager, mutationGate)

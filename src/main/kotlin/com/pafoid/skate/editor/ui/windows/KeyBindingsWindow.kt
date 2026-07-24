@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.input.InputMappings
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.button
@@ -17,17 +17,6 @@ import imgui.type.ImBoolean
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
 
-/**
- * Window for configuring keyboard and gamepad input bindings.
- *
- * Provides a tabbed interface for organizing bindings by category:
- * - Editor: Gizmo selection and editor tools
- * - Camera: Camera controls and game state
- * - Gamepad: Gamepad-specific bindings
- *
- * @param settingsManager Settings manager for loading/saving bindings
- * @param stringManager String manager for localization
- */
 class KeyBindingsWindow(
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager
@@ -36,13 +25,8 @@ class KeyBindingsWindow(
     private var keyBindingAction: String? = null
     private var keyBindingTab = 0  // 0=Editor, 1=Camera, 2=Gamepad, 3=Hierarchy
 
-    // Load input mappings once from persisted storage (or defaults)
-    private var inputMappings: InputMappings =
-        settingsManager.loadInputMappings() ?: InputMappings()
+    private var inputMappings: EditorInputMappings = settingsManager.editor.editorInputMappings
 
-    /**
-     * Renders the key bindings window.
-     */
     override fun imgui(pOpen: ImBoolean?) {
         if (pOpen?.get() == false) return
 
@@ -65,8 +49,7 @@ class KeyBindingsWindow(
             when (keyBindingTab) {
                 0 -> renderEditorBindingsTab(inputMappings)
                 1 -> renderCameraBindingsTab(inputMappings)
-                2 -> renderGamepadBindingsTab(inputMappings)
-                3 -> renderHierarchyBindingsTab(inputMappings)
+                2 -> renderHierarchyBindingsTab(inputMappings)
             }
 
             separator()
@@ -77,7 +60,7 @@ class KeyBindingsWindow(
             }
             sameLine()
             if (button(stringManager.getString("btn.reset_to_defaults"))) {
-                inputMappings.resetToDefaults()
+                inputMappings.resetToDefault()
                 settingsManager.updateInputMappings(inputMappings)
             }
 
@@ -97,69 +80,62 @@ class KeyBindingsWindow(
         end()
     }
 
-    private fun renderEditorBindingsTab(inputMappings: InputMappings) {
+    private fun renderEditorBindingsTab(inputMappings: EditorInputMappings) {
         text(stringManager.getString("lbl.keybindings.editor_section"))
         separator()
         drawBindRow(
             stringManager.getString("lbl.keybindings.translate"),
-            inputMappings.editorGizmoTranslate.keyboardKey,
-            "editorGizmoTranslate"
+            inputMappings.gizmoTranslate.keyboardKey,
+            "gizmoTranslate"
         )
         drawBindRow(
             stringManager.getString("lbl.keybindings.rotate"),
-            inputMappings.editorGizmoRotate.keyboardKey,
-            "editorGizmoRotate"
+            inputMappings.gizmoRotate.keyboardKey,
+            "gizmoRotate"
         )
         drawBindRow(
             stringManager.getString("lbl.keybindings.scale"),
-            inputMappings.editorGizmoScale.keyboardKey,
-            "editorGizmoScale"
+            inputMappings.gizmoScale.keyboardKey,
+            "gizmoScale"
         )
         drawBindRow(
             stringManager.getString("lbl.keybindings.select"),
-            inputMappings.editorGizmoSelect.keyboardKey,
-            "editorGizmoSelect"
+            inputMappings.gizmoSelect.keyboardKey,
+            "gizmoSelect"
         )
         drawBindRow(
             stringManager.getString("lbl.keybindings.measure"),
-            inputMappings.editorMeasure.keyboardKey,
-            "editorMeasure"
+            inputMappings.measureTool.keyboardKey,
+            "measureTool"
         )
         drawBindRow(
             stringManager.getString("lbl.keybindings.deselect"),
-            inputMappings.editorDeselect.keyboardKey,
-            "editorDeselect"
+            inputMappings.deselectAll.keyboardKey,
+            "deselectAll"
         )
-    }
 
-    private fun renderCameraBindingsTab(inputMappings: InputMappings) {
-        text(stringManager.getString("lbl.keybindings.camera_section"))
-        separator()
-        drawBindRow(stringManager.getString("lbl.keybindings.camera_reset"), inputMappings.cameraReset.keyboardKey, "cameraReset")
-
-        separator()
         text(stringManager.getString("lbl.keybindings.game_state_section"))
         separator()
         drawBindRow(stringManager.getString("lbl.keybindings.pause"), inputMappings.pause.keyboardKey, "pause")
         drawBindRow(stringManager.getString("lbl.keybindings.reset"), inputMappings.reset.keyboardKey, "reset")
-        drawBindRow(stringManager.getString("lbl.keybindings.stance"), inputMappings.stanceChange.keyboardKey, "stanceChange")
     }
 
-    private fun renderGamepadBindingsTab(inputMappings: InputMappings) {
-        text(stringManager.getString("lbl.keybindings.gamepad_section"))
+    private fun renderCameraBindingsTab(inputMappings: EditorInputMappings) {
+        text(stringManager.getString("lbl.keybindings.camera_section"))
         separator()
-        text(stringManager.getString("lbl.keybindings.gamepad_auto"))
-        text(stringManager.getString("lbl.keybindings.keyboard_override"))
+        drawBindRow(stringManager.getString("lbl.keybindings.moveUp"), inputMappings.moveUp.keyboardKey, "moveUp")
+        drawBindRow(stringManager.getString("lbl.keybindings.moveDown"), inputMappings.moveDown.keyboardKey, "moveDown")
+        drawBindRow(stringManager.getString("lbl.keybindings.moveLeft"), inputMappings.moveLeft.keyboardKey, "moveLeft")
+        drawBindRow(
+            stringManager.getString("lbl.keybindings.moveRight"),
+            inputMappings.moveRight.keyboardKey,
+            "moveRight"
+        )
 
         separator()
-        text(stringManager.getString("lbl.keybindings.movement_section"))
-        drawBindRow(stringManager.getString("lbl.keybindings.move_axis"), inputMappings.moveUp.gamepadAxis, "gamepadMove")
-        drawBindRow(stringManager.getString("lbl.keybindings.camera_axis"), inputMappings.cameraLookX.gamepadAxis, "gamepadCamera")
-        drawBindRow(stringManager.getString("lbl.keybindings.jump"), inputMappings.jump.gamepadButton, "gamepadJump")
-        drawBindRow(stringManager.getString("lbl.keybindings.sprint_trigger"), inputMappings.sprint.gamepadAxis, "gamepadSprint")
     }
 
-    private fun renderHierarchyBindingsTab(inputMappings: InputMappings) {
+    private fun renderHierarchyBindingsTab(inputMappings: EditorInputMappings) {
         text(stringManager.getString("lbl.keybindings.hierarchy_section"))
         separator()
         drawBindRow(stringManager.getString("lbl.hierarchy.create_new"), inputMappings.hierarchyCreateNew.keyboardKey, "hierarchyCreateNew")
@@ -178,7 +154,7 @@ class KeyBindingsWindow(
         drawBindRow(stringManager.getString("lbl.hierarchy.select_last"), inputMappings.hierarchySelectLast.keyboardKey, "hierarchySelectLast")
         drawBindRow(
             stringManager.getString("lbl.hierarchy.deselect"),
-            inputMappings.editorDeselect.keyboardKey,
+            inputMappings.deselectAll.keyboardKey,
             "hierarchyDeselect"
         )
     }
@@ -199,18 +175,20 @@ class KeyBindingsWindow(
     private fun assignKeyBinding(action: String, key: Int) {
         when (action) {
             // Editor
-            "editorGizmoTranslate" -> inputMappings.editorGizmoTranslate.keyboardKey = key
-            "editorGizmoRotate" -> inputMappings.editorGizmoRotate.keyboardKey = key
-            "editorGizmoScale" -> inputMappings.editorGizmoScale.keyboardKey = key
-            "editorGizmoSelect" -> inputMappings.editorGizmoSelect.keyboardKey = key
-            "editorMeasure" -> inputMappings.editorMeasure.keyboardKey = key
-            "editorDeselect" -> inputMappings.editorDeselect.keyboardKey = key
+            "gizmoTranslate" -> inputMappings.gizmoTranslate.keyboardKey = key
+            "gizmoRotate" -> inputMappings.gizmoRotate.keyboardKey = key
+            "gizmoScale" -> inputMappings.gizmoScale.keyboardKey = key
+            "gizmoSelect" -> inputMappings.gizmoSelect.keyboardKey = key
+            "measureTool" -> inputMappings.measureTool.keyboardKey = key
+            "deselectAll" -> inputMappings.deselectAll.keyboardKey = key
             // Camera
-            "cameraReset" -> inputMappings.cameraReset.keyboardKey = key
+            "moveUp" -> inputMappings.moveUp.keyboardKey = key
+            "moveDown" -> inputMappings.moveDown.keyboardKey = key
+            "moveLeft" -> inputMappings.moveLeft.keyboardKey = key
+            "moveRight" -> inputMappings.moveRight.keyboardKey = key
             // Game State
             "pause" -> inputMappings.pause.keyboardKey = key
             "reset" -> inputMappings.reset.keyboardKey = key
-            "stanceChange" -> inputMappings.stanceChange.keyboardKey = key
             // Hierarchy
             "hierarchyCreateNew" -> inputMappings.hierarchyCreateNew.keyboardKey = key
             "hierarchyDelete" -> inputMappings.hierarchyDelete.keyboardKey = key

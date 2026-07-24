@@ -3,17 +3,6 @@ package com.pafoid.skate.engine.input
 import kotlinx.serialization.Serializable
 import org.lwjgl.glfw.GLFW
 
-/**
- * Represents a single input binding that can map to keyboard, gamepad button, or gamepad axis.
- *
- * An input binding can have multiple sources (e.g., both keyboard key AND gamepad button).
- * When any source is activated, the binding is considered active.
- *
- * @property keyboardKey GLFW key code for keyboard binding. Default: -1 (no keyboard binding)
- * @property gamepadButton Gamepad button index for gamepad binding. Default: -1 (no gamepad button binding)
- * @property gamepadAxis Gamepad axis index for analog input. Default: -1 (no gamepad axis binding)
- * @property inverted If true, invert the axis value (for axes only). Default: false
- */
 @Serializable
 data class InputBinding(
     var keyboardKey: Int = -1,
@@ -21,34 +10,11 @@ data class InputBinding(
     var gamepadAxis: Int = -1,
     var inverted: Boolean = false
 ) {
-    /**
-     * Check if this binding has any valid input source configured.
-     * @return true if at least one source (keyboard, button, or axis) is configured
-     */
+    // TODO: check if still needed
     fun isValid(): Boolean = keyboardKey >= 0 || gamepadButton >= 0 || gamepadAxis >= 0
-
-    /**
-     * Check if this binding is a keyboard-only binding.
-     * @return true if only keyboard key is configured
-     */
     fun isKeyboardOnly(): Boolean = keyboardKey >= 0 && gamepadButton < 0 && gamepadAxis < 0
-
-    /**
-     * Check if this binding is a gamepad-only binding.
-     * @return true if only gamepad button or axis is configured
-     */
     fun isGamepadOnly(): Boolean = keyboardKey < 0 && (gamepadButton >= 0 || gamepadAxis >= 0)
-
-    /**
-     * Check if this binding is for an analog axis input.
-     * @return true if gamepad axis is configured
-     */
     fun isAxisBinding(): Boolean = gamepadAxis >= 0
-
-    /**
-     * Get a human-readable description of this binding.
-     * @return String describing the bound input(s)
-     */
     fun getDescription(): String {
         val descriptions = mutableListOf<String>()
 

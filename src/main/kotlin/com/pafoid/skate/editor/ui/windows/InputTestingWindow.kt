@@ -272,21 +272,23 @@ class InputTestingWindow(
 
         ImGui.spacing()
 
+        // TODO: cleanup
+
         // Tricks
         ImGui.text(stringManager.getString("lbl.input_testing.tricks"))
-        ImGui.text("  Flip Left: ${inputState.flipLeftPressed}")
+        /*ImGui.text("  Flip Left: ${inputState.flipLeftPressed}")
         ImGui.text("  Flip Right: ${inputState.flipRightPressed}")
         ImGui.text("  Kickflip: ${inputState.kickflipPressed}")
         ImGui.text("  Heelflip: ${inputState.heelflipPressed}")
         ImGui.text("  Grab: ${inputState.grabPressed}")
-        ImGui.text("  Manual: ${inputState.manualPressed}")
+        ImGui.text("  Manual: ${inputState.manualPressed}")*/
 
         ImGui.spacing()
 
         // Camera
         ImGui.text(stringManager.getString("lbl.input_testing.camera"))
         ImGui.text("  " + stringManager.getString("lbl.input_testing.camera_look").format(inputState.cameraLook.x, inputState.cameraLook.y))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.camera_reset_val").format(if (inputState.cameraResetPressed) "true" else "false"))
+        //ImGui.text("  " + stringManager.getString("lbl.input_testing.camera_reset_val").format(if (inputState.cameraResetPressed) "true" else "false"))
 
         ImGui.spacing()
 
@@ -294,7 +296,7 @@ class InputTestingWindow(
         ImGui.text(stringManager.getString("lbl.input_testing.game_state"))
         ImGui.text("  " + stringManager.getString("lbl.input_testing.pause_val").format(if (inputState.pausePressed) "true" else "false"))
         ImGui.text("  " + stringManager.getString("lbl.input_testing.reset_val").format(if (inputState.resetPressed) "true" else "false"))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.stance_val").format(if (inputState.stanceChangePressed) "true" else "false"))
+        //ImGui.text("  " + stringManager.getString("lbl.input_testing.stance_val").format(if (inputState.stanceChangePressed) "true" else "false"))
 
         ImGui.spacing()
 

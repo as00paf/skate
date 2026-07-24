@@ -8,12 +8,10 @@ import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
-import com.pafoid.skate.engine.events.TrickInput
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
-import com.pafoid.skate.game.skateboard.TrickType
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 
@@ -95,38 +93,10 @@ class InputSystem(
         if (buttons != null && mappings.jump.gamepadButton >= 0) {
             val jumpPressed = buttons.getOrNull(mappings.jump.gamepadButton) ?: false
             inputState.jumpHeld = jumpPressed
-
         }
 
         inputState.sprintPressed = checkBindingActive(mappings.sprint, axes, buttons, 0.5f)
         inputState.crouchPressed = checkButtonBindingActive(mappings.crouch, buttons)
-
-        // Publish trick input events
-        val flipLeftPressed = checkButtonBindingBeginPress(mappings.flipLeft, buttons)
-        val flipRightPressed = checkButtonBindingBeginPress(mappings.flipRight, buttons)
-        val kickflipPressed = checkButtonBindingBeginPress(mappings.kickflip, buttons)
-        val heelflipPressed = checkButtonBindingBeginPress(mappings.heelflip, buttons)
-        val grabPressed = checkButtonBindingActive(mappings.grab, buttons)
-        val manualPressed = checkButtonBindingActive(mappings.manual, buttons)
-
-        if (flipLeftPressed) eventSystem.publish(TrickInput(TrickType.FLIP_LEFT, true))
-        if (flipRightPressed) eventSystem.publish(TrickInput(TrickType.FLIP_RIGHT, true))
-        if (kickflipPressed) eventSystem.publish(TrickInput(TrickType.KICKFLIP, true))
-        if (heelflipPressed) eventSystem.publish(TrickInput(TrickType.HEELFLIP, true))
-        if (grabPressed) eventSystem.publish(TrickInput(TrickType.GRAB, true))
-        if (manualPressed) eventSystem.publish(TrickInput(TrickType.MANUAL, true))
-
-        inputState.flipLeftPressed = flipLeftPressed
-        inputState.flipRightPressed = flipRightPressed
-        inputState.kickflipPressed = kickflipPressed
-        inputState.heelflipPressed = heelflipPressed
-        inputState.grabPressed = grabPressed
-        inputState.manualPressed = manualPressed
-        inputState.cameraResetPressed = checkButtonBindingBeginPress(mappings.cameraReset, buttons)
-        inputState.pausePressed = checkButtonBindingBeginPress(mappings.pause, buttons)
-        inputState.resetPressed = checkButtonBindingBeginPress(mappings.reset, buttons)
-        inputState.stanceChangePressed = checkButtonBindingBeginPress(mappings.stanceChange, buttons) ||
-                checkButtonBindingBeginPress(mappings.stanceChangeRight, buttons)
     }
 
     private fun pollMouseInput(inputState: InputStateComponent) {

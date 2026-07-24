@@ -42,13 +42,6 @@ class PlayerController : Component() {
     @Transient
     var movementMagnitude: Float = 0f
 
-    // Trick input state
-    //TODO: move
-    @Transient
-    private var flipLeftHeld = false
-    @Transient
-    private var flipRightHeld = false
-
     // Exposed for PlayerStateManager to read player intent
     @Transient val desiredMoveDirection = Vector3f()
     @Transient
@@ -87,59 +80,8 @@ class PlayerController : Component() {
         // Use event-driven jump state
         handleJumping(inputState, dt, jumpPressed)
         jumpPressed = false // Reset after processing
-        
-        handleTrickInputs(inputState, dt)
 
         wasGrounded = isGrounded
-    }
-
-    /**
-     * Handles trick input detection and state tracking.
-     *
-     * @param inputState Current input state
-     * @param dt Delta time
-     */
-    // TODO: move
-    private fun handleTrickInputs(inputState: InputStateComponent, dt: Float) {
-        // Track flip input state for combination detection
-        val flipLeftPressed = inputState.flipLeftPressed
-        val flipRightPressed = inputState.flipRightPressed
-        val kickflipPressed = inputState.kickflipPressed
-        val heelflipPressed = inputState.heelflipPressed
-        val grabPressed = inputState.grabPressed
-        val manualPressed = inputState.manualPressed
-
-        // Detect flip direction (hold left/right while pressing flip)
-        if (flipLeftPressed) flipLeftHeld = true
-        if (flipRightPressed) flipRightHeld = true
-
-        // Reset flip hold when flip button released
-        if (!inputState.flipLeftPressed && !inputState.flipRightPressed) {
-            flipLeftHeld = false
-            flipRightHeld = false
-        }
-
-        // Trick combination detection (to be implemented in TrickDetector)
-        // Examples:
-        // - Kickflip: kickflipPressed + flipLeftHeld
-        // - Heelflip: heelflipPressed + flipRightHeld
-        // - Pop Shove-it: flipLeftPressed + flipRightPressed (both directions)
-        // - Grab: grabPressed (while airborne)
-        // - Manual: manualPressed (while on ground)
-
-        // Log trick inputs for debugging
-        if (kickflipPressed) {
-            //logger.log("Kickflip input detected", LogLevel.INFO)
-        }
-        if (heelflipPressed) {
-            //logger.log("Heelflip input detected", LogLevel.INFO)
-        }
-        if (grabPressed) {
-            //logger.log("Grab input detected", LogLevel.INFO)
-        }
-        if (manualPressed) {
-            //logger.log("Manual input detected", LogLevel.INFO)
-        }
     }
 
     private fun getDesiredSpeed(isSprintPressed: Boolean, dt: Float): Float {
@@ -150,23 +92,6 @@ class PlayerController : Component() {
         }
     }
 
-    /**
-     * Gets the current horizontal speed from PhysicsComponent.
-     * Falls back to lastSpeed if component not available.
-     *
-     * @return Current speed in m/s
-     */
-    private fun getCurrentSpeed(): Float {
-        return gameObject.getComponent<PhysicsComponent>()?.speed ?: lastSpeed
-    }
-
-    /**
-     * Handles jump input, applying a vertical impulse.
-     *
-     * @param inputState The input state component containing jump button state
-     * @param dt Delta time since last frame
-     * @param jumpPressedFromEvent Jump pressed flag from JumpPressed event (optional)
-     */
     fun handleJumping(inputState: InputStateComponent, dt: Float, jumpPressedFromEvent: Boolean = false) {
         if (jumpTimer > 0) {
             jumpTimer -= dt
@@ -183,8 +108,6 @@ class PlayerController : Component() {
         if (!isJumping && isGrounded && jumpPressed) { // Crouch
             isJumping = true
             jumpTimer = takeOffTime
-
-            //logger.log("JUMP TIMER STARTED!")
         }
     }
 

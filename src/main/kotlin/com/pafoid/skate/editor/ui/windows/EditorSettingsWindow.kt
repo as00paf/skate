@@ -5,7 +5,6 @@ import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
@@ -57,7 +56,6 @@ class EditorSettingsWindow(
 
     // Keybinding state
     private var tempMappings = EditorInputMappings()
-    private var tempCameraMappings = InputMappings()
     private var rebindingAction: String? = null
 
     private var tempLanguage = "en"
@@ -179,8 +177,6 @@ class EditorSettingsWindow(
             tempAutoSaveInterval = editor.autorSaveIntervalMinutes
             // Copy input mappings
             tempMappings = editor.editorInputMappings.copy()
-            // Load saved camera mappings or use defaults
-            tempCameraMappings = settingsManager.loadInputMappings() ?: InputMappings()
         }
     }
 
@@ -228,7 +224,11 @@ class EditorSettingsWindow(
         // Camera section
         ImGui.text(stringManager.getString("lbl.keybindings.camera_section"))
         separator()
-        drawBindRow(stringManager.getString("lbl.keybindings.camera_reset"), tempCameraMappings.cameraReset.keyboardKey, "cameraReset")
+        drawBindRow(
+            stringManager.getString("lbl.keybindings.camera_reset"),
+            tempMappings.reset.keyboardKey,
+            "cameraReset"
+        )
         separator()
         ImGui.text(stringManager.getString("lbl.keybindings.camera_look"))
         MImGui.textDisabled(stringManager.getString("lbl.keybindings.camera_look_note"))
@@ -254,7 +254,7 @@ class EditorSettingsWindow(
             "editorGizmoSelect" -> tempMappings.gizmoSelect.keyboardKey = key
             "editorMeasure" -> tempMappings.measureTool.keyboardKey = key
             "editorDeselect" -> tempMappings.deselectAll.keyboardKey = key
-            "cameraReset" -> tempCameraMappings.cameraReset.keyboardKey = key
+            "cameraReset" -> tempMappings.reset.keyboardKey = key
         }
     }
 
@@ -363,7 +363,7 @@ class EditorSettingsWindow(
         // Save keybindings
         settingsManager.updateEditorSettings(editorInputMappings = tempMappings)
         // Save camera mappings
-        settingsManager.updateInputMappings(tempCameraMappings)
+        settingsManager.updateInputMappings(tempMappings)
         settingsManager.updateAutoSaveSettings(tempAutoSaveEnabled, tempAutoSaveInterval)
         hasPendingChanges = false
     }

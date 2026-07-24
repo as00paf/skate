@@ -1,16 +1,15 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.input.InputBuffer
-import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
@@ -23,7 +22,7 @@ class EditorInputHandler(
     private val undoRedoManager: UndoRedoManager,
     private val editorInputState: EditorInputState,
     private val engine: Engine,
-    private val projectManager: ProjectManager,
+    private val settingsManager: SettingsManager
 ) {
     private val inputBuffer: InputBuffer = InputBuffer()
     private val logger = engine.logger
@@ -35,7 +34,7 @@ class EditorInputHandler(
     private val joystickListener: GamepadListener = engine.inputProvider.gamepadListener
 
     // TODO: wtf
-    private var inputMappings = projectManager.currentProject?.gameplaySettings?.inputMappings ?: InputMappings()
+    private var inputMappings = settingsManager.editor.editorInputMappings
 
     private var pendingRenameUid: Int? = null
 
@@ -56,14 +55,11 @@ class EditorInputHandler(
         pollEditorInput()
         val scene = engine.sceneManager.currentScene ?: return
 
-
-        val selected = scene.selectedGameObject
-
         // Global hierarchy actions (work regardless of window focus)
-        handleGlobalHierarchyActions(scene, selected, inputMappings)
+        handleGlobalHierarchyActions(scene, inputMappings)
 
         // Standard clipboard/undo operations
-        handleClipboardAndUndo(scene, selected, inputMappings)
+        handleClipboardAndUndo(scene)
 
         handleInputs()
     }
@@ -126,15 +122,11 @@ class EditorInputHandler(
         mouseListener.endFrame()
     }
 
-    /**
-     * Handle global hierarchy action shortcuts.
-     * These work regardless of which window is focused, but require a selected GameObject for some actions.
-     */
     private fun handleGlobalHierarchyActions(
         scene: Scene,
-        selected: GameObject?,
-        inputMappings: InputMappings
+        inputMappings: EditorInputMappings
     ) {
+        val selected = scene.selectedGameObject
         val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 
         // Search
@@ -192,16 +184,14 @@ class EditorInputHandler(
         }
 
         // Deselect
-        if (keyListener.isKeyPressed(inputMappings.editorDeselect.keyboardKey) && selected != null) {
+        if (keyListener.isKeyPressed(inputMappings.deselectAll.keyboardKey) && selected != null) {
             eventSystem.publish(ViewportAction.SelectionCleared)
             logger.logEditor("Deselected GameObject")
         }
     }
 
-    /**
-     * Handle clipboard operations and undo/redo.
-     */
-    private fun handleClipboardAndUndo(currentScene: Scene, selected: GameObject?, inputMappings: InputMappings) {
+    private fun handleClipboardAndUndo(currentScene: Scene) {
+        val selected = currentScene.selectedGameObject
         val ctrlDown = keyListener.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || keyListener.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
         if (ctrlDown) {
             // Copy
