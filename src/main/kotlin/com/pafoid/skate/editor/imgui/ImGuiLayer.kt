@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.GizmoSystem
@@ -51,11 +52,11 @@ import org.lwjgl.glfw.GLFW
 import java.io.File
 
 class ImGuiLayer(
-    private val stringManager: StringManager,
     private val engine: Engine,
-    private val windowRegistry: WindowRegistry,
-    private val projectManager: ProjectManager,
-    private val settingsManager: SettingsManager,
+    editor: Editor,
+    private val stringManager: StringManager,
+    projectManager: ProjectManager,
+    settingsManager: SettingsManager,
     private val gizmoSystem: GizmoSystem,
 ) {
 
@@ -68,19 +69,20 @@ class ImGuiLayer(
     var isViewportMaximized = false
 
     private var layoutInitialized = false
-    private val eventSystem = engine.eventSystem
+
+    private val windowRegistry = WindowRegistry(engine, editor, projectManager, settingsManager, stringManager)
 
     private val menuBar: EditorMenuBar = EditorMenuBar(
-        stringManager = stringManager,
-        projectManager = projectManager,
-        assetsManager = engine.assetsManager,
-        eventSystem = eventSystem,
-        sceneManager = engine.sceneManager,
-        settingsManager = settingsManager,
-        windowRegistry = windowRegistry
+        stringManager,
+        engine.assetsManager,
+        projectManager,
+        engine.sceneManager,
+        settingsManager,
+        windowRegistry,
+        engine.eventSystem
     )
-    private val statusBar: EditorStatusBar = EditorStatusBar(stringManager)
-    private val windowManager = WindowManager(stringManager, windowRegistry, eventSystem)
+    private val statusBar = EditorStatusBar(stringManager)
+    private val windowManager = WindowManager(stringManager, windowRegistry, engine.eventSystem)
 
     fun init(windowController: WindowController) {
         createContext()
@@ -99,9 +101,9 @@ class ImGuiLayer(
 
         windowManager.init()
         windowController.onToggleMaximize = { maximized -> menuBar.setMaximized(maximized) }
-        eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
-        eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
-        eventSystem.subscribe<EditorEvent.ToggleMaximize> { windowController.toggleMaximize() }
+        engine.eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
+        engine.eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
+        engine.eventSystem.subscribe<EditorEvent.ToggleMaximize> { windowController.toggleMaximize() }
     }
 
     private fun setupLayout(dockspaceId: Int) {

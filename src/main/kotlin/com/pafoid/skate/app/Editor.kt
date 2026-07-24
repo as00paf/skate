@@ -3,7 +3,6 @@ package com.pafoid.skate.app
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
-import com.pafoid.skate.editor.imgui.WindowRegistry
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.GizmoSystem
@@ -45,20 +44,9 @@ class Editor(
 
     val editorCamera = EditorCamera(Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }, editorInputState)
     val gizmoSystem = GizmoSystem(engine, settingsManager, undoRedoManager, editorCamera)
-    val windowRegistry = WindowRegistry(
-        engine,
-        stringManager,
-        clipboardService,
-        settingsManager,
-        undoRedoManager,
-        projectManager,
-        editorInputState,
-        editorCamera,
-        gizmoSystem,
-        mutationGate
-    )
+
     val imGuiLayer =
-        ImGuiLayer(stringManager, engine, windowRegistry, projectManager, settingsManager, gizmoSystem)
+        ImGuiLayer(engine, this, stringManager, projectManager, settingsManager, gizmoSystem)
     val editorEventHandler = EditorEventHandler(engine.eventSystem, imGuiLayer, undoRedoManager)
 
     fun update(dt: Float) {

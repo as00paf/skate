@@ -80,7 +80,7 @@ import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
 
 class ViewportActionHandler(
-    private val engine: Engine,
+    private val engine: Engine, // TODO: should not be val
     private val undoRedoManager: UndoRedoManager,
     private val clipboardService: ClipboardService,
     private val mutationGate: EditorMutationGate,
