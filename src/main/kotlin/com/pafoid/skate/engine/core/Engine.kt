@@ -23,6 +23,7 @@ import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.JobSystem
+import org.lwjgl.glfw.GLFW
 import java.util.concurrent.atomic.AtomicReference
 
 class Engine {
@@ -47,7 +48,8 @@ class Engine {
 
     private var systemManagerStarted = false
 
-    fun start() {
+    fun start(glfwWindow: Long) {
+        initCallbacks(glfwWindow)
         jobSystem.runOnMain {
             val renderResourcesFactory = RenderResourcesFactory(assetsManager, cameraManager, logger)
             renderer = Renderer(renderResourcesFactory.create(1920, 1080))
@@ -64,6 +66,13 @@ class Engine {
 
         eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event -> runtimePlaying = event.playing }
         logger.log("Engine initialization complete.")
+    }
+
+    private fun initCallbacks(glfwWindow: Long) {
+        GLFW.glfwSetCursorPosCallback(glfwWindow, inputProvider.mouseListener::mousePosCallback)
+        GLFW.glfwSetMouseButtonCallback(glfwWindow, inputProvider.mouseListener::mouseButtonCallback)
+        GLFW.glfwSetScrollCallback(glfwWindow, inputProvider.mouseListener::mouseScrollCallback)
+        GLFW.glfwSetKeyCallback(glfwWindow, inputProvider.keyListener::keyCallback)
     }
 
     private fun initializeSystems() {

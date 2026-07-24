@@ -38,13 +38,6 @@ class EditorInputHandler(
 
     private var pendingRenameUid: Int? = null
 
-    fun init(glfwWindow: Long) {
-        GLFW.glfwSetCursorPosCallback(glfwWindow, mouseListener::mousePosCallback)
-        GLFW.glfwSetMouseButtonCallback(glfwWindow, mouseListener::mouseButtonCallback)
-        GLFW.glfwSetScrollCallback(glfwWindow, mouseListener::mouseScrollCallback)
-        GLFW.glfwSetKeyCallback(glfwWindow, keyListener::keyCallback)
-    }
-
     fun update() {
         editorInputState.reset()
         if (engine.runtimePlaying) {

@@ -71,7 +71,6 @@ class Editor(
     }
 
     fun init(window: Window) {
-        editorInputHandler.init(window.glfwWindow)
         editorEventHandler.init()
         imGuiLayer.init(window.windowController)
     }

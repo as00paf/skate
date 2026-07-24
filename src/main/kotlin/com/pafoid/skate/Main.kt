@@ -9,7 +9,7 @@ fun main(args:Array<String>){
     val engine = Engine()
     val window = Window(title = "PAFSK8", windowIcon = Assets.Textures.APP_ICON)
 
-    engine.start()
+    engine.start(window.glfwWindow)
 
     val editorScreen = EditorScreen(window, engine)
     editorScreen.init()
