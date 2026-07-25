@@ -6,10 +6,6 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 
-/**
- * Command for deleting a scene and its associated file.
- * This is execute-only as file deletion cannot be safely undone.
- */
 class DeleteSceneCommand(
     private val scene: Scene,
     private val projectManager: ProjectManager,

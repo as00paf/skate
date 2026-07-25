@@ -7,10 +7,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction
 
-/**
- * Undoable command for renaming a scene.
- * Changes the scene's display name and publishes a [SceneRenamed] event.
- */
 class RenameSceneCommand(
     private val scene: Scene,
     private val newName: String,

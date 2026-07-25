@@ -25,5 +25,5 @@ class CloseOtherScenesCommand(
     }
 
     override fun getDisplayName(): String = "Close Other Scenes"
-    override fun getTargetName(): String? = scene?.name
+    override fun getTargetName(): String = scene.name
 }

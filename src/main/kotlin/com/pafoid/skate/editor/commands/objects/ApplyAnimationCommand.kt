@@ -53,6 +53,6 @@ class ApplyAnimationCommand(
     }
 
     override fun getDisplayName(): String = "Apply Animation"
-    override fun getTargetName(): String? = gameObject.name
+    override fun getTargetName(): String = gameObject.name
 }
 

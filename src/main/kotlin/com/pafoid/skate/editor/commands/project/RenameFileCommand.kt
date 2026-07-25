@@ -4,9 +4,6 @@ import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.engine.core.LoggerService
 import java.io.File
 
-/**
- * Undoable command for file/folder renaming.
- */
 class RenameFileCommand(
     private val oldPath: String,
     private val newName: String,

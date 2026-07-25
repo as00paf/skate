@@ -6,12 +6,6 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
-/**
- * Undoable command for file/folder deletion.
- * Moves the file to the system temp directory instead of permanent delete for safety.
- * This avoids leaving visible `.trash_*` artifacts in the project folder.
- * Undo restores the file from the system temp location back to its original path.
- */
 class DeleteFileCommand(
     private val filePath: String,
     private val logger: LoggerService

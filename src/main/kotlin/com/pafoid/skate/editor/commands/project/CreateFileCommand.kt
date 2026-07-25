@@ -4,9 +4,6 @@ import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.engine.core.LoggerService
 import java.io.File
 
-/**
- * Undoable command for file or folder creation.
- */
 class CreateFileCommand(
     private val filePath: String,
     private val isDirectory: Boolean,

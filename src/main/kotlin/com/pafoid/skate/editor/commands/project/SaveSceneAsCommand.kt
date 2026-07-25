@@ -9,10 +9,6 @@ import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.tinyfd.TinyFileDialogs
 import java.io.File
 
-/**
- * Command for saving a scene to a new file path (Save As).
- * This is execute-only as save operations are not reversible.
- */
 class SaveSceneAsCommand(
     private val scene: Scene,
     private val serializer: Serializer,
