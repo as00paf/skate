@@ -51,8 +51,7 @@ class EditorCamera(
             }
         }
 
-        val forward = camera.camForward
-        val right = camera.camRight
+        val (forward, right) = camera.getForwardAndRight()
 
         // WASD horizontal movement
         val moveDir = editorState.moveDirection
