@@ -2,9 +2,6 @@ package com.pafoid.skate.editor.data
 
 import org.joml.Vector2f
 
-/**
- * Service that stores editor-specific input state.
- */
 class EditorInputState {
     var moveDirection = Vector2f(0f, 0f)
     var verticalMovement = 0f

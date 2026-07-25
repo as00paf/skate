@@ -42,15 +42,5 @@ data class PrefabData(
                 )
             }
         }
-
-        fun createVariant(
-            name: String,
-            type: PrefabType,
-            modelPath: String?,
-            payloadType: String?,
-            material: MaterialType
-        ): PrefabData {
-            return PrefabData("$name (${material.displayName})", type, modelPath, payloadType, material)
-        }
     }
 }
