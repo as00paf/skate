@@ -22,5 +22,5 @@ class DeleteGameObjectCommand(
     }
 
     override fun getDisplayName(): String = "Delete GameObject"
-    override fun getTargetName(): String? = gameObject.name
+    override fun getTargetName(): String = gameObject.name
 }

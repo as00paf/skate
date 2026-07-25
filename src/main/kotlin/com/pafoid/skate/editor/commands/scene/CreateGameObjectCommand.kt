@@ -22,5 +22,5 @@ class CreateGameObjectCommand(
     }
 
     override fun getDisplayName(): String = "Create GameObject"
-    override fun getTargetName(): String? = gameObject.name
+    override fun getTargetName(): String = gameObject.name
 }

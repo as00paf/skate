@@ -33,5 +33,5 @@ class CreatePrimitiveCommand(
     }
 
     override fun getDisplayName(): String = "Create $name"
-    override fun getTargetName(): String? = name
+    override fun getTargetName(): String = name
 }

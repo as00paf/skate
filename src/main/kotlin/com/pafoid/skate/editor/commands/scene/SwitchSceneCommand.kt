@@ -9,12 +9,15 @@ class SwitchSceneCommand(
     private val sceneManager: SceneManager
 ) : ExecuteOnlyCommand {
 
+    var backup: Scene? = null
+
     override fun execute() {
+        backup = sceneManager.currentScene
         scene?.let { sceneManager.switchScene(it) }
     }
 
     override fun undo() {
-        // Not supported - previous selection index is not tracked
+        backup?.let { sceneManager.switchScene(it) }
     }
 
     override fun getDisplayName(): String = "Switch Scene"

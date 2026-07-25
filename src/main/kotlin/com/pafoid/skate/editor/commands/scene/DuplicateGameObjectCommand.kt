@@ -40,5 +40,5 @@ class DuplicateGameObjectCommand(
     }
 
     override fun getDisplayName(): String = "Duplicate ${gameObject.name}"
-    override fun getTargetName(): String? = "${gameObject.name} (Copy)"
+    override fun getTargetName(): String = "${gameObject.name} (Copy)"
 }
