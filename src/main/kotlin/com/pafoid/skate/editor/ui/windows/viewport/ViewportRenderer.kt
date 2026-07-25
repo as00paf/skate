@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.ScreenshotUtils
 import imgui.ImGui
 import imgui.ImVec2
@@ -13,8 +12,6 @@ import imgui.ImVec2
 class ViewportRenderer(
     private val engine: Engine,
 ) {
-    private val renderer: Renderer by lazy { engine.renderer }// TODO: try to make not lazy
-
     var imageScreenPosX = 0f
     var imageScreenPosY = 0f
     var imageSizeX = 0f
@@ -34,8 +31,8 @@ class ViewportRenderer(
         imageScreenPosY = tempScreenPos.y
         imageSizeX = windowSize.x
         imageSizeY = windowSize.y
-        
-        val texId = renderer.frameBuffer.getTextureId()
+
+        val texId = engine.renderer.frameBuffer.getTextureId()
         ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
     }
 
@@ -45,30 +42,16 @@ class ViewportRenderer(
         
         // Skip if dimensions are invalid or unchanged
         if (fbWidth <= 0 || fbHeight <= 0) return
-        
-        val currentFb = renderer.frameBuffer
+
+        val currentFb = engine.renderer.frameBuffer
         if (currentFb.width != fbWidth || currentFb.height != fbHeight) {
-            renderer.resize(fbWidth, fbHeight)
+            engine.resizeFrameBuffer(fbWidth, fbHeight)
         }
-        
-        // Sync camera viewport dimensions for correct aspect ratio
-        engine.cameraManager.camera.viewportWidth = fbWidth
-        engine.cameraManager.camera.viewportHeight = fbHeight
     }
-    
-    /**
-     * Get the viewport screen position as ImVec2.
-     */
-    fun getScreenPos(): ImVec2 = ImVec2(imageScreenPosX, imageScreenPosY)
-    
-    /**
-     * Get the viewport size as ImVec2.
-     */
-    fun getSize(): ImVec2 = ImVec2(imageSizeX, imageSizeY)
 
     fun captureScreenshot() {
         runCatching {
-            val frameBuffer = renderer.frameBuffer
+            val frameBuffer = engine.renderer.frameBuffer
             if (frameBuffer.width <= 0 || frameBuffer.height <= 0) return
             ScreenshotUtils.takeScreenshot(frameBuffer.width, frameBuffer.height, frameBuffer.fboId)
         }

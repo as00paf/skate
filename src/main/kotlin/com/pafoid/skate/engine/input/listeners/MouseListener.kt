@@ -81,7 +81,9 @@ class MouseListener {
     }
 
     fun setGameViewportSize(size: Vector2f) {
-        gameViewportSize.set(size)
+        if (size.x > 0 && size.y > 0) {
+            gameViewportSize.set(size)
+        }
     }
 
     fun getX(): Float = xPos.toFloat()
@@ -97,6 +99,18 @@ class MouseListener {
         val mousePos = ImGui.getMousePos()
         val relativeY = mousePos.y - gameViewportPos.y
         return relativeY.coerceIn(0f, gameViewportSize.y)
+    }
+
+    fun getNormalizedX(): Float {
+        val mousePos = ImGui.getMousePos()
+        val relativeX = mousePos.x - gameViewportPos.x
+        return (relativeX / gameViewportSize.x).coerceIn(0f, 1f)
+    }
+
+    fun getNormalizedY(): Float {
+        val mousePos = ImGui.getMousePos()
+        val relativeY = mousePos.y - gameViewportPos.y
+        return (relativeY / gameViewportSize.y).coerceIn(0f, 1f)
     }
 
     fun getScrollX(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()

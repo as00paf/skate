@@ -23,6 +23,7 @@ import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.utils.JobSystem
+import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 import java.util.concurrent.atomic.AtomicReference
 
@@ -116,6 +117,13 @@ class Engine {
             renderer.render(scene)
         }
         inputProvider.endFrame()
+    }
+
+    fun resizeFrameBuffer(width: Int, height: Int) {
+        inputProvider.mouseListener.setGameViewportSize(Vector2f(width.toFloat(), height.toFloat()))
+        renderer.resize(width, height)
+        cameraManager.camera.viewportWidth = width
+        cameraManager.camera.viewportHeight = height
     }
 
     fun destroy() {

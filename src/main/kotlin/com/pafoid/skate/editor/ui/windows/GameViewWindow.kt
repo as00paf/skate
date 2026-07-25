@@ -45,7 +45,7 @@ class GameViewWindow(
 
     private val gamepadOverlay = GamepadOverlay(
         engine.assetsManager,
-        engine.inputProvider.gamepadListener,
+        engine.inputProvider,
         settingsManager,
         stringManager,
         engine.eventSystem

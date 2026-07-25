@@ -7,8 +7,8 @@ import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
-import com.pafoid.skate.engine.input.listeners.GamepadListener
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
@@ -20,7 +20,7 @@ private const val CONTROLS_OVERLAY_BUTTON_SIZE = 50f
 
 class GamepadOverlay(
     private val assetsManager: AssetsManager,
-    private val gamepadListener: GamepadListener,
+    private val inputProvider: InputProvider,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
@@ -87,8 +87,8 @@ class GamepadOverlay(
                 0f, 0f, 1f, 1f,
                 ImGui.getColorU32(1f, 1f, 1f, 0.7f))
 
-            val axes = gamepadListener.getAxes(GLFW_JOYSTICK_1)
-            val buttons = gamepadListener.getButtons(GLFW_JOYSTICK_1)
+            val axes = inputProvider.getAxes(GLFW_JOYSTICK_1)
+            val buttons = inputProvider.getButtons(GLFW_JOYSTICK_1)
 
             val lsPos = ImVec2(windowPos.x + displayWidth * 0.245f, windowPos.y + displayHeight * 0.305f)
             val rsPos = ImVec2(windowPos.x + displayWidth * 0.615f, windowPos.y + displayHeight * 0.518f)

@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
-import org.lwjgl.glfw.GLFW
 
 class SelectionGizmo(
     inputProvider: InputProvider,
@@ -36,14 +35,13 @@ class SelectionGizmo(
         }
 
         if (inputProvider.isInsideViewport()) {
-            val pickingX = inputProvider.getMouseScreenX()
-            val pickingY = inputProvider.getMouseScreenY()
+            val mousePos = inputProvider.getNormalizedMousePos()
 
-            val hovered = getHoveredObject(pickingX, pickingY)
+            val hovered = getHoveredObject(mousePos.x, mousePos.y)
             scene.hoveredGameObject = hovered
             hoveredGameObjectUid = hovered?.uId ?: -1
 
-            if (inputProvider.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT, true)) {
+            if (inputProvider.isLeftMouseButtonDown(true)) {
                 val event = if (hovered != null) ViewportAction.GameObjectSelected(hovered) else ViewportAction.SelectionCleared
                 eventSystem.publish(event)
             }

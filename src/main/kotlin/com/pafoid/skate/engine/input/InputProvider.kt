@@ -56,8 +56,10 @@ class InputProvider(
     fun getMouseDy() = mouseListener.dy
     fun getMouseScreenX() = mouseListener.getScreenX()
     fun getMouseScreenY() = mouseListener.getScreenY()
-    fun getGameViewportPos(): Vector2f = mouseListener.gameViewportPos
-    fun getGameViewportSize(): Vector2f = mouseListener.gameViewportSize
+    fun getMouseScreenPos() = Vector2f(getMouseScreenX(), getMouseScreenY())
+    fun getNormalizedMousePos() = Vector2f(mouseListener.getNormalizedX(), mouseListener.getNormalizedY())
+    fun getGameViewportPos() = mouseListener.gameViewportPos
+    fun getGameViewportSize() = mouseListener.gameViewportSize
 
     fun isLeftMouseButtonDown(ignoreImGui: Boolean = false) =
         mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, ignoreImGui)

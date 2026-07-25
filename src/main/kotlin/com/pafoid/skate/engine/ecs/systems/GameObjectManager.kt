@@ -1,9 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 
 /**
@@ -57,12 +55,6 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
 
     fun getGameObject(name: String): GameObject? {
         return scene.gameObjects.firstOrNull { it.name == name }
-    }
-
-    fun createGameObject(name: String): GameObject {
-        val go = GameObject(name)
-        go.addComponent(Transform())
-        return go
     }
 
     override fun destroy() {
