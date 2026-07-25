@@ -33,8 +33,6 @@ class GizmoSystem(
     val measureGizmo by lazy { MeasureTool(inputProvider, undoRedoManager, debugRenderer, settingsManager) }
 
     fun update(dt: Float, scene: Scene) {
-        editorCamera.update(dt)// TODO: check if done elsewhere
-
         // Reset all gizmos to inactive state
         translateGizmo.inUse = false
         rotationGizmo.inUse = false

@@ -102,8 +102,8 @@ class InputSystem(
     private fun pollMouseInput(inputState: InputStateComponent) {
         if (!inputProvider.isCursorDisabled()) return
 
-        val dx = inputProvider.mouseListener.dx
-        val dy = inputProvider.mouseListener.dy
+        val dx = inputProvider.getMouseDx()
+        val dy = inputProvider.getMouseDy()
         if (dx != 0f || dy != 0f) {
             inputState.cameraLook.x += dx * 0.1f
             inputState.cameraLook.y += dy * 0.1f

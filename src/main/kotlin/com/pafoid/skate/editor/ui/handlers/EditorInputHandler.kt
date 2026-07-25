@@ -57,13 +57,8 @@ class EditorInputHandler(
         // Polling Mouse
         val dx = inputProvider.getMouseDx()
         val dy = inputProvider.getMouseDy()
-        if (inputProvider.isRightMouseButtonDown() && editorInputState.isInsideViewport) {
-            editorInputState.mouseLook.set(dx, dy)
-        } else if (inputProvider.isMouseButtonDown(
-                GLFW.GLFW_MOUSE_BUTTON_MIDDLE,
-                true
-            ) && editorInputState.isInsideViewport
-        ) {
+        editorInputState.mouseLook.set(dx, dy)
+        if (inputProvider.isMiddleMouseButtonDown(true) && editorInputState.isInsideViewport) {
             editorInputState.mouseLook.set(dx, dy)
         } else {
             editorInputState.mouseLook.set(0f, 0f)

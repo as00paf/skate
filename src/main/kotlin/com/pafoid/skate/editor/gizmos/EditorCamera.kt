@@ -5,17 +5,15 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
 import kotlin.math.abs
-import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sign
-import kotlin.math.sin
 
 class EditorCamera(
     val camera: Camera,
     private val editorState: EditorInputState,
 ) {
-    private val scrollSensitivity = 0.1f
-    private val rotationSensitivity = 0.1f
+    private val scrollSensitivity = 0.01f
+    private val rotationSensitivity = 0.01f
     private val moveSpeed = 0.01f
     private var lerpTime = 0.0f
     private var reset = false
@@ -53,18 +51,8 @@ class EditorCamera(
             }
         }
 
-        // Calculate forward and right vectors based on yaw (horizontal movement only)
-        val forward = Vector3f(
-            sin(Math.toRadians(camera.yaw.toDouble())).toFloat(),
-            0f,
-            -cos(Math.toRadians(camera.yaw.toDouble())).toFloat()
-        ).normalize()
-
-        val right = Vector3f(
-            cos(Math.toRadians(camera.yaw.toDouble())).toFloat(),
-            0f,
-            sin(Math.toRadians(camera.yaw.toDouble())).toFloat()
-        ).normalize()
+        val forward = camera.camForward
+        val right = camera.camRight
 
         // WASD horizontal movement
         val moveDir = editorState.moveDirection

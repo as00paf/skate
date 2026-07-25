@@ -51,6 +51,7 @@ class Editor(
 
     fun update(dt: Float) {
         editorInputHandler.update()
+        editorCamera.update(dt)
         imGuiLayer.update(dt)
     }
 

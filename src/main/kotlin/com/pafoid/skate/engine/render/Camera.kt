@@ -52,9 +52,9 @@ class Camera : GameObject("Camera") {
     private val viewMatrix = Matrix4f()
 
     @Transient
-    private val camForward = Vector3f(0f, 0f, -1f)
+    val camForward = Vector3f(0f, 0f, -1f)
     @Transient
-    private val camRight = Vector3f(1f, 0f, 0f)
+    val camRight = Vector3f(1f, 0f, 0f)
 
     fun addZoom(value: Float) {
         zoom += value
