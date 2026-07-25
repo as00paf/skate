@@ -9,26 +9,8 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import kotlinx.coroutines.Job
 
-/**
- * Manages undo/redo operations using the command pattern.
- *
- * This class maintains two stacks:
- * - **Undo stack**: Contains executed commands that can be undone
- * - **Redo stack**: Contains undone commands that can be redone
- *
- * Usage:
- * 1. Execute commands via `executeCommand(command)` which runs the command and pushes it to the undo stack
- * 2. Undo the last command with `undo()`, which moves it to the redo stack
- * 3. Redo a command with `redo()`, which moves it back to the undo stack
- *
- * The undo stack has a maximum size of 100 entries to prevent unbounded memory growth.
- * When a new command is executed after an undo, the redo stack is cleared.
- *
- * Async command completion can finalize from a background context; history mutations are guarded internally.
- */
 class UndoRedoManager(
-    private val mutationGate: EditorMutationGate,
-    private val eventSystem: EventSystem,
+    eventSystem: EventSystem,
     private val logger: LoggerService,
 ) {
     private val undoStack = mutableListOf<Command>()
@@ -47,10 +29,6 @@ class UndoRedoManager(
     }
 
     fun executeCommand(command: Command) {
-        if (!mutationGate.canExecute(command)) {
-            logger.logEditor("Command blocked in play mode: ${command.getDisplayName()}")
-            return
-        }
         when (command.getCategory()) {
             CommandCategory.UNDOABLE -> {
                 command.execute()

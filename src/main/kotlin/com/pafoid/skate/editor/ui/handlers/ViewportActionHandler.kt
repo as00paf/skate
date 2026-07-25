@@ -50,7 +50,6 @@ import com.pafoid.skate.editor.events.ViewportAction.TogglePhysicsDebug
 import com.pafoid.skate.editor.events.ViewportAction.ToggleVisibility
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
@@ -82,7 +81,6 @@ class ViewportActionHandler(
     private val engine: Engine,
     private val undoRedoManager: UndoRedoManager,
     private val clipboardService: ClipboardService,
-    private val mutationGate: EditorMutationGate,
     private val editorCamera: EditorCamera,
     private val viewportRenderer: ViewportRenderer,
     private val gizmoSystem: GizmoSystem,
@@ -199,14 +197,12 @@ class ViewportActionHandler(
     }
 
     private fun handleCreateEmpty(scene: Scene) {
-        if (mutationGate.blockIfPlaying("create empty object")) return
         val newObj = GameObject("GameObject")
         undoRedoManager.executeCommand(CreateGameObjectCommand(newObj, scene, gameObjectManager))
         logger.logEditor("Created empty GameObject: ${newObj.name}")
     }
 
     private fun handleCreatePrimitive(name: String, halfExtents: Vector3f) {
-        if (mutationGate.blockIfPlaying("create primitive")) return
         val scene = sceneManager.currentScene ?: return
         val command = CreatePrimitiveCommand(name, halfExtents, scene, gameObjectManager)
         undoRedoManager.executeCommand(command)
@@ -214,7 +210,6 @@ class ViewportActionHandler(
     }
 
     private fun handleCreateLight(name: String, type: LightType) {
-        if (mutationGate.blockIfPlaying("create light")) return
         val scene = sceneManager.currentScene ?: return
         val command = CreateLightCommand(name, type, scene, gameObjectManager)
         undoRedoManager.executeCommand(command)
@@ -222,14 +217,12 @@ class ViewportActionHandler(
     }
 
     private fun handleCreateCamera(scene: Scene) {
-        if (mutationGate.blockIfPlaying("create camera")) return
         val cameraObj = GameObject("Camera")
         undoRedoManager.executeCommand(CreateGameObjectCommand(cameraObj, scene, gameObjectManager))
         logger.logEditor("Created camera: ${cameraObj.name}")
     }
 
     private fun handleSpawnPrefab(prefabType: PrefabType, position: Vector3f?) {
-        if (mutationGate.blockIfPlaying("spawn prefab")) return
         val command = SpawnPrefabCommand(prefabType, position, engine.prefabsGenerator, gameObjectManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Spawned prefab: ${prefabType.name}")
@@ -254,7 +247,6 @@ class ViewportActionHandler(
     }
 
     private fun handleDuplicate(gameObject: GameObject) {
-        if (mutationGate.blockIfPlaying("duplicate game object")) return
         val scene = sceneManager.currentScene ?: return
         val command = DuplicateGameObjectCommand(gameObject, scene, gameObjectManager)
         undoRedoManager.executeCommand(command)
@@ -262,51 +254,42 @@ class ViewportActionHandler(
     }
 
     private fun handleDelete(gameObject: GameObject, scene: Scene) {
-        if (mutationGate.blockIfPlaying("delete game object")) return
         undoRedoManager.executeCommand(DeleteGameObjectCommand(gameObject, scene, gameObjectManager))
         eventSystem.publish(SelectionCleared)
         logger.logEditor("Deleted GameObject: ${gameObject.name}")
     }
 
     private fun handleRename(gameObject: GameObject, newName: String) {
-        if (mutationGate.blockIfPlaying("rename game object")) return
         val oldName = gameObject.name
         if (newName.isBlank() || oldName == newName) return
         undoRedoManager.executeCommand(RenameGameObjectCommand(gameObject, newName, oldName))
     }
 
     private fun handleSetEnabled(gameObject: GameObject, enabled: Boolean) {
-        if (mutationGate.blockIfPlaying("set game object enabled")) return
         undoRedoManager.executeCommand(SetGameObjectEnabledCommand(gameObject, enabled))
     }
 
     private fun handleAddComponent(gameObject: GameObject, componentType: ComponentType) {
-        if (mutationGate.blockIfPlaying("add component")) return
         undoRedoManager.executeCommand(AddComponentCommand(gameObject, componentType))
     }
 
     private fun handleRemoveComponent(gameObject: GameObject, componentType: ComponentType) {
-        if (mutationGate.blockIfPlaying("remove component")) return
         undoRedoManager.executeCommand(RemoveComponentCommand(gameObject, componentType))
     }
 
     private fun handleToggleVisibility(gameObject: GameObject, visible: Boolean) {
-        if (mutationGate.blockIfPlaying("toggle visibility")) return
         undoRedoManager.executeCommand(VisibilityToggleCommand(gameObject, visible))
     }
 
     private fun handleToggleLock(gameObject: GameObject, locked: Boolean) {
-        if (mutationGate.blockIfPlaying("toggle lock")) return
         undoRedoManager.executeCommand(LockToggleCommand(gameObject, locked))
     }
 
     private fun handleReparent(child: GameObject, newParent: GameObject) {
-        if (mutationGate.blockIfPlaying("reparent game object")) return
         undoRedoManager.executeCommand(ReparentGameObjectCommand(child, newParent))
     }
 
     private fun handleCreateEmptyChild(parent: GameObject) {
-        if (mutationGate.blockIfPlaying("create empty child")) return
         val scene = sceneManager.currentScene ?: return
         val childObj = GameObject("GameObject")
         childObj.addComponent(Transform())
@@ -325,7 +308,6 @@ class ViewportActionHandler(
     }
 
     private fun handlePasteClipboard(parent: GameObject?) {
-        if (mutationGate.blockIfPlaying("paste game object")) return
         val scene = sceneManager.currentScene ?: return
         val cloned = clipboardService.paste() ?: return
         parent?.let { cloned.parent = it }
@@ -347,7 +329,6 @@ class ViewportActionHandler(
     }
 
     private fun handleResetSkateScene() {
-        if (mutationGate.blockIfPlaying("reset skate scene")) return
         val scene = sceneManager.currentScene ?: return
         val skate = scene.gameObjects.find { obj -> obj.name == "Skateboard" } ?: return
         val transform = skate.getComponent<Transform>() ?: return
@@ -361,12 +342,10 @@ class ViewportActionHandler(
     }
 
     private fun handleToggleGizmo(gizmoId: Int) {
-        if (mutationGate.blockIfPlaying("toggle gizmo")) return
         gizmoSystem.toggleGizmo(gizmoId)
     }
 
     private fun handleResetTransform(gameObject: GameObject) {
-        if (mutationGate.blockIfPlaying("reset transform")) return
         val transform = gameObject.getComponent<Transform>() ?: return
         val oldTransform = Transform().apply { copyFrom(transform) }
         val newTransform = Transform().apply {

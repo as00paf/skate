@@ -20,7 +20,7 @@ import org.joml.Vector2f
 
 class GameViewWindow(
     private val engine: Engine,
-    private val editor: Editor,
+    editor: Editor,
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager,
 ) : IWindow {
@@ -37,7 +37,6 @@ class GameViewWindow(
         engine = engine,
         undoRedoManager = editor.undoRedoManager,
         clipboardService = editor.clipboardService,
-        mutationGate = editor.mutationGate,
         editorCamera = editor.editorCamera,
         viewportRenderer = viewportRenderer,
         gizmoSystem = editor.gizmoSystem

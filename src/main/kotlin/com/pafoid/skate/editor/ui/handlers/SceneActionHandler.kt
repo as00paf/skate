@@ -12,7 +12,6 @@ import com.pafoid.skate.editor.commands.project.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneCommand
 import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
 import com.pafoid.skate.editor.events.ViewportAction.TabSelected
-import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
@@ -33,17 +32,10 @@ import com.pafoid.skate.engine.events.SceneAction.SaveAsRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveRequested
 import java.io.File
 
-/**
- * Handles [SceneAction] events by executing the appropriate commands
- * or calling SceneManager/SceneSerializer methods.
- * 
- * This decouples UI components (like EditorScenesTabBar) from orchestration logic.
- */
 class SceneActionHandler(
-    private val engine: Engine,
+    engine: Engine,
     private val projectManager: ProjectManager,
     private val undoRedoManager: UndoRedoManager,
-    private val mutationGate: EditorMutationGate,
 
     ) {
     private val logger = engine.logger
@@ -106,7 +98,6 @@ class SceneActionHandler(
     }
 
     private fun handleRenameRequested(scene: Scene, newName: String) {
-        if (mutationGate.blockIfPlaying("rename scene")) return
         val oldName = scene.name
         if (newName.isBlank() || newName == oldName) return
 
@@ -128,21 +119,18 @@ class SceneActionHandler(
     }
 
     private fun handleCloseRequested(scene: Scene) {
-        if (mutationGate.blockIfPlaying("close scene")) return
         val command = CloseSceneCommand(scene, sceneManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Scene close requested: ${scene.name}")
     }
 
     private fun handleCloseOthersRequested(keepScene: Scene) {
-        if (mutationGate.blockIfPlaying("close other scenes")) return
         val command = CloseOtherScenesCommand(keepScene, sceneManager, eventSystem)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Close other scenes requested, keeping ${keepScene.name}")
     }
 
     private fun handleCloseAllRequested() {
-        if (mutationGate.blockIfPlaying("close all scenes")) return
         val command = CloseAllScenesCommand(sceneManager, eventSystem)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Close all scenes requested")
@@ -155,7 +143,6 @@ class SceneActionHandler(
     }
 
     private fun handleCreateRequested() {
-        if (mutationGate.blockIfPlaying("create scene")) return
         val projectDir = projectManager.getProjectDirectory()
         if (projectDir == null) {
             logger.logEditor("Cannot create scene: no project directory", LogLevel.WARN)
@@ -201,13 +188,11 @@ class SceneActionHandler(
     }
 
     private fun handleTabSelected(scene: Scene) {
-        if (mutationGate.blockIfPlaying("switch scene tab")) return
         val command = SwitchSceneCommand(scene, sceneManager)
         undoRedoManager.executeCommand(command)
     }
 
     private fun handleDeleteRequested(scene: Scene) {
-        if (mutationGate.blockIfPlaying("delete scene")) return
         // Cannot delete if it's the only scene
         if (sceneManager.openScenes.size <= 1) {
             logger.logEditor("Cannot delete the last remaining scene")

@@ -4,7 +4,6 @@ import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.imgui.ImGuiLayer
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
@@ -26,15 +25,14 @@ class Editor(
     val settingsManager = SettingsManager(engine.serializer, engine.logger, stringManager)
     val clipboardService = ClipboardService(engine.serializer)
     val editorInputState = EditorInputState()
-    val mutationGate = EditorMutationGate(engine, engine.logger)
 
-    val undoRedoManager = UndoRedoManager(mutationGate, engine.eventSystem, engine.logger)
+    val undoRedoManager = UndoRedoManager(engine.eventSystem, engine.logger)
 
     val editorInputHandler =
         EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, settingsManager)
 
     val editorActionHandler =
-        EditorActionHandler(engine, undoRedoManager, clipboardService, mutationGate, projectManager, stringManager)
+        EditorActionHandler(engine, undoRedoManager, clipboardService, projectManager, stringManager)
 
     val editorCamera = EditorCamera(Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }, editorInputState)
     val gizmoSystem = GizmoSystem(engine, settingsManager, undoRedoManager, editorCamera)
