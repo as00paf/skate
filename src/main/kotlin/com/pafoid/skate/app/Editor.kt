@@ -49,6 +49,10 @@ class Editor(
         ImGuiLayer(engine, this, stringManager, projectManager, settingsManager, gizmoSystem)
     val editorEventHandler = EditorEventHandler(engine.eventSystem, imGuiLayer, undoRedoManager)
 
+    init {
+        engine.cameraManager.camera = editorCamera.camera
+    }
+
     fun update(dt: Float) {
         editorInputHandler.update()
         editorCamera.update(dt)
