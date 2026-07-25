@@ -11,10 +11,10 @@ class TogglePhysicsDebugCommand(private val systemManager: SystemManager) : Exec
     }
 
     override fun undo() {
-        systemManager.getSystem<PhysicsSystem>()?.toggleDebug()
+        execute()
     }
 
     override fun getDisplayName(): String = "Toggle Physics Debug"
 
-    override fun getTargetName(): String? = null
+    override fun getTargetName(): String = "Game Viewport"
 }

@@ -13,5 +13,5 @@ class ToggleFullScreenCommand(private val imGuiLayer: ImGuiLayer) : Command {
     }
 
     override fun getDisplayName(): String = "Toggle Full Screen"
-    override fun getTargetName(): String? = null
+    override fun getTargetName(): String = "GameViewport"
 }
