@@ -11,19 +11,6 @@ import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem
 
-/**
- * Builds the Edit menu with undo/redo and clipboard operations.
- * 
- * This component handles:
- * - Undo/Redo operations
- * - Cut/Copy/Paste operations
- * - Selection event publishing
- * 
- * @param stringManager For localized menu strings
- * @param clipboardService For clipboard operations
- * @param sceneManager For accessing current scene and selection
- * @param eventSystem For publishing selection events
- */
 class EditMenuBuilder(
     private val stringManager: StringManager,
     private val sceneManager: SceneManager,

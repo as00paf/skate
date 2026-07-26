@@ -58,4 +58,5 @@ object Icons {
     const val FILM = "\uf008"
     const val FILE_TEXT = "\uf15c"
     const val MAGIC = "\uf0d0"
+    const val IMPORT_FILE = "\uf56f"
 }

@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.menus
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.data.UiConstants.WINDOW_BTN_SIZE
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -20,15 +21,8 @@ class WindowControlsRenderer(
 ) {
     var isMaximized = true
 
-    companion object {
-        private const val BTN_SIZE = 40f
-    }
-
-    /**
-     * Renders the window control buttons.
-     */
     fun render() {
-        val totalW = BTN_SIZE * 5f
+        val totalW = WINDOW_BTN_SIZE * 5f
 
         val currentX = ImGui.getCursorPosX()
         val availX = ImGui.getContentRegionAvailX()
@@ -53,7 +47,7 @@ class WindowControlsRenderer(
     }
 
     private fun renderSettingsButton() {
-        if (ImGui.button(Icons.GEAR, BTN_SIZE, BTN_SIZE)) {
+        if (ImGui.button(Icons.GEAR, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
             ImGui.openPopup("##SettingsPopup")
         }
         if (ImGui.isItemHovered()) {
@@ -72,7 +66,7 @@ class WindowControlsRenderer(
     }
 
     private fun renderSearchButton() {
-        if (ImGui.button("${Icons.SEARCH}", BTN_SIZE, BTN_SIZE)) {
+        if (ImGui.button(Icons.SEARCH, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
             eventSystem.publish(WindowAction.Show("window.search"))
         }
         if (ImGui.isItemHovered()) {
@@ -81,7 +75,7 @@ class WindowControlsRenderer(
     }
 
     private fun renderMinimizeButton() {
-        if (ImGui.button(Icons.WINDOW_MINIMIZE, BTN_SIZE, BTN_SIZE)) {
+        if (ImGui.button(Icons.WINDOW_MINIMIZE, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
             eventSystem.publish(EditorEvent.Minimize)
         }
     }
@@ -92,7 +86,7 @@ class WindowControlsRenderer(
         } else {
             Icons.WINDOW_MAXIMIZE
         }
-        if (ImGui.button(maxRestoreIcon, BTN_SIZE, BTN_SIZE)) {
+        if (ImGui.button(maxRestoreIcon, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
             eventSystem.publish(EditorEvent.ToggleMaximize)
         }
     }
@@ -100,7 +94,7 @@ class WindowControlsRenderer(
     private fun renderCloseButton() {
         pushStyleColor(ImGuiCol.ButtonHovered, 0.83f, 0.13f, 0.17f, 1f)
         pushStyleColor(ImGuiCol.ButtonActive, 0.93f, 0.23f, 0.27f, 1f)
-        if (ImGui.button(Icons.WINDOW_CLOSE, BTN_SIZE, BTN_SIZE)) {
+        if (ImGui.button(Icons.WINDOW_CLOSE, WINDOW_BTN_SIZE, WINDOW_BTN_SIZE)) {
             eventSystem.publish(EditorEvent.Exit)
         }
         popStyleColor(2)

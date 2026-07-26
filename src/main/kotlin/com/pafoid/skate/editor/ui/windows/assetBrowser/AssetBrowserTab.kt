@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.data.UiConstants.ASSET_BROWSER_ITEM_WIDTH
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -13,13 +14,7 @@ abstract class AssetBrowserTab(
     protected val assetsManager: AssetsManager,
     protected val stringManager: StringManager
 ) {
-
-    companion object {
-        const val ITEM_WIDTH = 120f
-    }
-
     protected val items = mutableListOf<File>()
-    protected val assetItems = mutableListOf<Any>()
 
     open fun imgui(label:String, searchText: ImString) {
         renderHeader(label, searchText)
@@ -27,7 +22,7 @@ abstract class AssetBrowserTab(
         val availableWidth = ImGui.getContentRegionAvailX()
         val files = items.filter { it.name.contains(searchText.get(), ignoreCase = true) }
 
-        val numColumns = max(1, (availableWidth / ITEM_WIDTH).toInt())
+        val numColumns = max(1, (availableWidth / ASSET_BROWSER_ITEM_WIDTH).toInt())
 
         if (ImGui.beginTable("$label Table", numColumns, ImGuiTableFlags.SizingFixedFit)) {
             for (file in files) {

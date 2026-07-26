@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.windows.assetBrowser
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.data.UiConstants.ASSET_BROWSER_ITEM_WIDTH
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.PrefabsGenerator
@@ -40,7 +41,7 @@ class PrefabsTab(
 
     private fun renderPlayerPrefabs(searchText: ImString) {
         val availableWidth = ImGui.getContentRegionAvailX()
-        val numColumns = 1.coerceAtLeast((availableWidth / ITEM_WIDTH).toInt())
+        val numColumns = 1.coerceAtLeast((availableWidth / ASSET_BROWSER_ITEM_WIDTH).toInt())
 
         val templates = listOf(
             PrefabData.createTemplate(
@@ -72,7 +73,7 @@ class PrefabsTab(
 
     private fun renderObstaclePrefabs(searchText: ImString) {
         val availableWidth = ImGui.getContentRegionAvailX()
-        val numColumns = 1.coerceAtLeast((availableWidth / ITEM_WIDTH).toInt())
+        val numColumns = 1.coerceAtLeast((availableWidth / ASSET_BROWSER_ITEM_WIDTH).toInt())
 
         val metalOnly = listOf(MaterialType.METAL)
         val woodOrConcrete = listOf(

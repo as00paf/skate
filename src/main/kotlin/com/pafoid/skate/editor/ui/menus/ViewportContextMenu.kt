@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.data.PrefabType
-import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.ViewportAction.CreateCamera
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
 import com.pafoid.skate.editor.events.ViewportAction.CreateLight
@@ -12,6 +11,8 @@ import com.pafoid.skate.editor.events.ViewportAction.FocusSelected
 import com.pafoid.skate.editor.events.ViewportAction.ResetCamera
 import com.pafoid.skate.editor.events.ViewportAction.SpawnPrefab
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.data.UiConstants.CONTENT_AREA_START_Y
+import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -20,35 +21,10 @@ import imgui.ImGui
 import imgui.ImVec2
 import org.joml.Vector3f
 
-/**
- * Renders the viewport context menu with creation and manipulation options.
- *
- * This component publishes [ViewportAction] events when menu items are selected.
- * The [EventSystem] delivers these events to [com.pafoid.skate.editor.ui.handlers.ViewportActionHandler]
- * which executes the appropriate commands.
- *
- * @param stringManager For localized menu strings
- * @param eventSystem Event system for publishing viewport actions
- */
 class ViewportContextMenu(
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
 ) {
-
-    companion object {
-        private const val TAB_BAR_HEIGHT = 25f
-        private const val TOOLBAR_HEIGHT = 40f
-        private const val CONTENT_AREA_START_Y = TAB_BAR_HEIGHT + TOOLBAR_HEIGHT
-    }
-
-    /**
-     * Renders the context menu.
-     *
-     * Only triggers when right-clicking in the viewport content area (below tab bar + toolbar).
-     *
-     * @param windowPos The window position for calculating menu position
-     * @param scene The current scene for object creation
-     */
     fun render(windowPos: ImVec2, scene: Scene?) {
         // Only trigger context menu when clicking below the tab bar + toolbar area
         val mousePos = ImGui.getMousePos()
@@ -64,7 +40,6 @@ class ViewportContextMenu(
 
             renderCreateMenu(scene)
             renderObjectManipulationMenu(scene)
-            renderCameraMenu(scene)
 
             ImGui.endPopup()
         }
@@ -161,9 +136,5 @@ class ViewportContextMenu(
         if (ImGui.menuItem("${Icons.ROTATE} ${stringManager.getString("context.viewport.reset_camera")}")) {
             eventSystem.publish(ResetCamera)
         }
-    }
-
-    private fun renderCameraMenu(scene: Scene?) {
-        // Additional camera options can be added here
     }
 }

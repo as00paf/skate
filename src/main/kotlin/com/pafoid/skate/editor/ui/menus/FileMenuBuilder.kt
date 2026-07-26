@@ -1,7 +1,6 @@
 package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
@@ -13,21 +12,11 @@ import imgui.internal.ImGui.beginMenu
 import imgui.internal.ImGui.endMenu
 import imgui.internal.ImGui.menuItem
 
-/**
- * Builds the File menu with scene management and application options.
- *
- * This component handles:
- * - Scene action event publication
- * - Quit application
- *
- * @param stringManager For localized menu strings
- * @param eventSystem For publishing scene actions
- */
 class FileMenuBuilder(
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
 ) {
-    fun render(currentScene: Scene?, project: Project?) {
+    fun render(currentScene: Scene?) {
         if (beginMenu(stringManager.getString("menu.file"))) {
             renderNewSceneItem()
             renderSaveSceneItems(currentScene)
@@ -54,8 +43,7 @@ class FileMenuBuilder(
     }
 
     private fun renderImportSceneItem() {
-        // TODO: add import icon
-        if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.import_scene")}", "Ctrl+I")) {
+        if (menuItem("${Icons.IMPORT_FILE} ${stringManager.getString("menu.file.import_scene")}", "Ctrl+I")) {
             eventSystem.publish(SceneAction.ImportRequested)
         }
     }

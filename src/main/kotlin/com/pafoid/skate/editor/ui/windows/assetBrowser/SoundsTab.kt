@@ -13,12 +13,6 @@ import imgui.type.ImString
 import java.awt.Desktop
 import java.io.File
 
-/**
- * Asset browser tab for sound files.
- *
- * Displays audio files in a list (table) with playback controls.
- * Supports WAV and OGG formats.
- */
 class SoundsTab(
     private val engine: Engine,
     stringManager: StringManager,
@@ -154,7 +148,7 @@ class SoundsTab(
 
     override fun refreshAssets() {
         engine.jobSystem.runIO {
-            val fileExtensions = setOf("wav", "ogg", "mp3", "flac", "aiff")
+            val fileExtensions = setOf("wav", "ogg", "mp3", "flac", "aiff") // TODO: should be a constant
             items.clear()
             val soundsDir = File("assets/sounds")
             if (soundsDir.exists()) {

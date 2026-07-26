@@ -2,6 +2,9 @@ package com.pafoid.skate.editor.imgui.data
 
 object UiConstants {
 
+    // Window
+    const val WINDOW_BTN_SIZE = 40f
+
     // -- Layout heights --
     const val STATUS_BAR_HEIGHT = 30f
     const val DEFAULT_BUTTON_HEIGHT = 30f
@@ -20,4 +23,9 @@ object UiConstants {
     const val TOOLBAR_BUTTON_SPACING = 10f
     const val SEPARATOR_SPACING = 18f
     const val SEPARATOR_WIDTH = 8f
+    const val TAB_BAR_HEIGHT = 25f
+    const val CONTENT_AREA_START_Y = TAB_BAR_HEIGHT + TOOLBAR_HEIGHT
+
+    // Asset Browser Tab
+    const val ASSET_BROWSER_ITEM_WIDTH = 120f
 }

@@ -86,7 +86,7 @@ class EditorMenuBar(
         }
 
         if (ImGui.beginPopup("main_hamburger_menu")) {
-            fileMenu.render(currentScene, projectManager.currentProject)
+            fileMenu.render(currentScene)
             editMenu.render()
             settingsMenu.render()
             viewMenu.render()
