@@ -11,19 +11,6 @@ import com.pafoid.skate.engine.core.StringManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
-/**
- * Central search engine that aggregates results from multiple [SearchProvider]s.
- *
- * The SearchEngine manages provider registration, executes searches asynchronously
- * across all providers, and aggregates results with proper scoring and sorting.
- *
- * Usage:
- * ```
- * val engine: SearchEngine = get()
- * engine.registerProvider(myProvider)
- * val results = engine.search("skateboard")
- * ```
- */
 class SearchEngine(
     engine: Engine,
     private val stringManager: StringManager,
@@ -37,38 +24,14 @@ class SearchEngine(
         registerProvider(ActionSearchProvider(engine.sceneManager, engine.logger, engine.eventSystem))
     }
 
-    /**
-     * Registers a search provider with this engine.
-     *
-     * Providers are queried during search operations. Registration should be
-     * done during engine initialization.
-     *
-     * @param provider The provider to register
-     */
     fun registerProvider(provider: SearchProvider) {
         providers.add(provider)
     }
 
-    /**
-     * Unregisters a search provider from this engine.
-     *
-     * @param provider The provider to unregister
-     * @return True if the provider was registered and removed
-     */
     fun unregisterProvider(provider: SearchProvider): Boolean {
         return providers.remove(provider)
     }
 
-    /**
-     * Executes a search across all registered providers asynchronously.
-     *
-     * Results are aggregated by category and sorted by relevance score.
-     * This method uses coroutines to run all provider searches in parallel
-     * for optimal performance.
-     *
-     * @param query The search query string
-     * @return A map of categories to their respective search results
-     */
     suspend fun search(query: String): Map<SearchCategory, List<SearchResult>> = coroutineScope {
         if (query.isBlank()) {
             return@coroutineScope emptyMap()
@@ -104,15 +67,6 @@ class SearchEngine(
         resultsByCategory
     }
 
-    /**
-     * Navigates to a search result using its provider.
-     *
-     * This method finds the provider that owns the result's category and
-     * delegates navigation to it.
-     *
-     * @param result The search result to navigate to
-     * @return True if navigation was successful
-     */
     fun navigate(result: SearchResult): Boolean {
         val provider = providers.find { it.category == result.category }
         return provider?.let {
@@ -121,19 +75,8 @@ class SearchEngine(
         } ?: false
     }
 
-    /**
-     * Gets all registered providers.
-     *
-     * @return List of registered search providers
-     */
     fun getProviders(): List<SearchProvider> = providers.toList()
 
-    /**
-     * Checks if a provider for the given category is registered.
-     *
-     * @param category The category to check
-     * @return True if a provider for this category exists
-     */
     fun hasProvider(category: SearchCategory): Boolean {
         return providers.any { it.category == category }
     }

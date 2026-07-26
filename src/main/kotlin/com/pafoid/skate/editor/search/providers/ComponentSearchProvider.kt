@@ -11,24 +11,6 @@ import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 
-/**
- * Search provider for components on all GameObjects in the scene.
- *
- * This provider searches component type names using case-insensitive substring matching.
- * Results include the GameObject name and support navigation to select the GameObject
- * in the scene hierarchy with the component visible in PropertiesWindow.
- *
- * Search features:
- * - Case-insensitive component type name matching
- * - Searches all components on all GameObjects in the current scene
- * - GameObject name included in description for context
- * - Component type and GameObject UID in metadata for navigation
- *
- * Navigation:
- * - Selects the GameObject in SceneHierarchy via GameObjectManager
- * - The PropertiesWindow will display the GameObject's components
- * - User can then expand the specific component in the UI
- */
 class ComponentSearchProvider(
     private val sceneManager: SceneManager,
     private val gameObjectManager: GameObjectManager,
@@ -64,14 +46,6 @@ class ComponentSearchProvider(
         }
     }
 
-    /**
-     * Creates a SearchResult from a GameObject and Component with the given relevance score.
-     *
-     * @param go The GameObject containing the component
-     * @param component The Component to create a result for
-     * @param score The relevance score calculated during search
-     * @return A SearchResult with all necessary display and navigation data
-     */
     private fun createSearchResult(go: GameObject, component: Component, score: Float): SearchResult {
         val componentType = component.javaClass.simpleName
         val icon = determineIcon(component)
@@ -91,12 +65,6 @@ class ComponentSearchProvider(
         )
     }
 
-    /**
-     * Determines the appropriate icon for a component based on its type.
-     *
-     * @param component The component to analyze
-     * @return An icon identifier string
-     */
     private fun determineIcon(component: Component): String {
         return when (component) {
             is Transform -> Icons.CUBE

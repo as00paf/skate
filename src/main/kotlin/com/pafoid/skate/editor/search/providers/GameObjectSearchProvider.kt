@@ -13,23 +13,6 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.hasComponent
 
-/**
- * Search provider for GameObjects in the current scene.
- *
- * This provider searches GameObject names using case-insensitive substring matching
- * and fuzzy matching for abbreviated queries. Results include hierarchy information
- * and support navigation to select the GameObject in the scene hierarchy.
- *
- * Search features:
- * - Case-insensitive substring matching
- * - Fuzzy matching for abbreviated queries (e.g., "cam" matches "Camera")
- * - Parent hierarchy path in description
- * - UID in metadata for precise identification
- *
- * Navigation:
- * - Selects the GameObject in SceneHierarchy via GameObjectManager
- * - The selected GameObject will be focused in viewport by existing GizmoSystem
- */
 class GameObjectSearchProvider(
     private val sceneManager: SceneManager,
     private val gameObjectManager: GameObjectManager,
@@ -63,13 +46,6 @@ class GameObjectSearchProvider(
         }
     }
 
-    /**
-     * Creates a SearchResult from a GameObject with the given relevance score.
-     *
-     * @param go The GameObject to create a result for
-     * @param score The relevance score calculated during search
-     * @return A SearchResult with all necessary display and navigation data
-     */
     private fun createSearchResult(go: GameObject, score: Float): SearchResult {
         val hierarchyPath = buildHierarchyPath(go)
         val subcategory = determineSubcategory(go)
@@ -90,14 +66,6 @@ class GameObjectSearchProvider(
         )
     }
 
-    /**
-     * Builds the full hierarchy path for a GameObject.
-     *
-     * Example: "Parent > Child > GameObject"
-     *
-     * @param go The GameObject to build the path for
-     * @return The hierarchy path as a string
-     */
     private fun buildHierarchyPath(go: GameObject): String {
         val path = mutableListOf<String>()
         var current: GameObject? = go
@@ -110,12 +78,6 @@ class GameObjectSearchProvider(
         return path.asReversed().joinToString(" > ")
     }
 
-    /**
-     * Determines the subcategory based on the GameObject's components.
-     *
-     * @param go The GameObject to analyze
-     * @return A subcategory string (e.g., "Skateboard", "Camera", or "GameObject")
-     */
     private fun determineSubcategory(go: GameObject): String {
         return when {
             go.hasComponent<LightingComponent>() -> "Light"
@@ -125,12 +87,6 @@ class GameObjectSearchProvider(
         }
     }
 
-    /**
-     * Determines the appropriate icon for a GameObject based on its components.
-     *
-     * @param go The GameObject to analyze
-     * @return An icon identifier string
-     */
     private fun determineIcon(go: GameObject): String {
         return when {
             go.hasComponent<LightingComponent>() -> Icons.SUN

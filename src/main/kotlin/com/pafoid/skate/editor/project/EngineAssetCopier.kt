@@ -3,25 +3,8 @@ package com.pafoid.skate.editor.project
 import com.pafoid.skate.engine.assets.Assets
 import java.io.File
 
-/**
- * Copies engine-bundled default assets into a new project's Assets/EngineDefaults/ folder.
- * This ensures the AssetDatabase can discover them, generate .meta files with GUIDs,
- * and enable proper serialization/deserialization of scenes.
- *
- * Projects are fully self-contained — no dependency on engine installation paths.
- */
 class EngineAssetCopier {
-
-    /**
-     * Engine asset root — the workspace root where the engine's assets/ folder lives.
-     * Resolved from the JVM working directory (project root at runtime).
-     */
     private val engineAssetsRoot: File = File(System.getProperty("user.dir"))
-
-    /**
-     * All engine-bundled assets that should be copied into new projects.
-     * Maps destination relative path (from project/Assets/) → source relative path (from engineAssetsRoot).
-     */
     private val bundledAssets = listOf(
         // Characters
         "EngineDefaults/Characters/james.glb" to Assets.Models.JAMES,
@@ -62,12 +45,6 @@ class EngineAssetCopier {
         "EngineDefaults/Textures/wood_dark.png" to Assets.Textures.WOOD_DARK,
     )
 
-    /**
-     * Copy all engine-bundled assets into the project's Assets/ folder.
-     * Only copies files that don't already exist (safe to re-run, preserves user modifications).
-     *
-     * @return Result with count of files copied
-     */
     fun copyBundledAssets(projectDir: File): Result<Int> {
         return try {
             val assetsDir = File(projectDir, "Assets")
@@ -102,10 +79,6 @@ class EngineAssetCopier {
         }
     }
 
-    /**
-     * Returns the project-relative root path for engine default assets.
-     * e.g., "/path/to/project/Assets/EngineDefaults"
-     */
     fun getEngineDefaultsRoot(projectDir: File): String {
         return File(projectDir, "Assets/EngineDefaults").absolutePath
     }

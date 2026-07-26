@@ -22,12 +22,6 @@ import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
 
-/**
- * Search provider for editor actions and commands.
- *
- * This provider searches a hardcoded list of editor actions by display name and keywords.
- * Results support direct execution of the action when selected.
- */
 class ActionSearchProvider(
     private val sceneManager: SceneManager,
     private val logger: LoggerService,
@@ -195,16 +189,6 @@ class ActionSearchProvider(
         action.execute()
     }
 
-    /**
-     * Calculates a relevance score for an action based on the query.
-     *
-     * Scores are calculated by matching against both the display name and keywords.
-     * The highest score from any match is used.
-     *
-     * @param action The action to score
-     * @param query The search query
-     * @return A relevance score from 0.0f to 1.0f
-     */
     private fun calculateActionScore(action: EditorAction, query: String): Float {
         var bestScore = 0.0f
 
@@ -224,13 +208,6 @@ class ActionSearchProvider(
         return bestScore
     }
 
-    /**
-     * Creates a SearchResult from an EditorAction with the given relevance score.
-     *
-     * @param action The action to create a result for
-     * @param score The relevance score calculated during search
-     * @return A SearchResult with all necessary display and navigation data
-     */
     private fun createSearchResult(action: EditorAction, score: Float): SearchResult {
         return SearchResult(
             id = "action_${action.actionId}",

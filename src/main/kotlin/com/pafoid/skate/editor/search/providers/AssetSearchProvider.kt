@@ -12,28 +12,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/**
- * Search provider for all asset types in the project.
- *
- * This provider searches across textures, models, animations, sounds, and prefabs.
- * It performs case-insensitive substring matching on filenames and supports fuzzy matching
- * for abbreviated queries. Results include file paths and asset type information.
- *
- * Search features:
- * - Case-insensitive substring matching on filenames
- * - Fuzzy matching for abbreviated queries (e.g., "asph" matches "asphalt.png")
- * - File path in description for context
- * - Asset type in subcategory (Texture, Model, Animation, Sound, Prefab)
- * - Type-specific icons for visual identification
- *
- * Navigation:
- * - Opens AssetBrowserWindow
- * - Future enhancement: Switch to the appropriate tab and highlight the asset
- */
 class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvider() {
 
     override val category: SearchCategory = SearchCategory.ASSET_MODEL
 
+    // TODO: these should be constansts somewhere
     private val textureExtensions = listOf("png", "jpg", "jpeg")
     private val modelExtensions = listOf("obj", "glb", "gltf", "fbx")
     private val animationExtensions = listOf("fbx")
@@ -59,8 +42,6 @@ class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvide
         val assetPath = result.metadata["path"] as? String ?: return
         val assetType = result.metadata["type"] as? String ?: return
 
-        // AssetBrowser is always rendered in ImGuiLayer
-        // Future enhancement: switch to appropriate tab and highlight the asset
         logger.logEditor("Asset selected: $assetPath ($assetType)")
     }
 
