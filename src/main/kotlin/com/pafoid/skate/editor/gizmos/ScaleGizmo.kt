@@ -38,7 +38,7 @@ class ScaleGizmo(
             val dynamicBoxSize = boxSize * (dist * 0.1f)
             val dynamicThreshold = hitThreshold * (dist * 0.1f)
 
-            checkInput(go, camera, dynamicLength, dynamicThreshold)
+            checkInput(pos, camera, dynamicLength, dynamicThreshold)
 
             if (inputProvider.isLeftMouseButtonDown(true)) {
                 if (xAxisActive || yAxisActive || zAxisActive) {
@@ -72,10 +72,7 @@ class ScaleGizmo(
         }
     }
 
-    private fun checkInput(go: GameObject, camera: Camera, length: Float, threshold: Float) {
-        val transform = go.getComponent<Transform>() ?: return
-        val pos = transform.translation
-
+    private fun checkInput(pos: Vector3f, camera: Camera, length: Float, threshold: Float) {
         val mouseX = inputProvider.getMouseScreenX()
         val mouseY = inputProvider.getMouseScreenY()
         val viewportSize = inputProvider.getGameViewportSize()

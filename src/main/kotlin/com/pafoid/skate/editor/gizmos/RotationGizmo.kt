@@ -28,12 +28,11 @@ class RotationGizmo(
     fun update(activeGameObject: GameObject?, camera: Camera) {
         activeGameObject?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
-
             val dist = Vector3f(camera.position).distance(pos)
             val dynamicRadius = radius * (dist * 0.1f)
             val dynamicThreshold = hitThreshold * (dist * 0.1f)
 
-            checkInput(activeGameObject, camera, dynamicRadius, dynamicThreshold)
+            checkInput(activeGameObject, transform, camera, dynamicRadius, dynamicThreshold)
 
             if (xAxisActive) {
                 transform.rotation.x += inputProvider.getMouseDy()
@@ -51,10 +50,8 @@ class RotationGizmo(
         }
     }
 
-    private fun checkInput(go: GameObject, camera: Camera, rad: Float, threshold: Float) {
-        val transform = go.getComponent<Transform>() ?: return
+    private fun checkInput(go: GameObject, transform: Transform, camera: Camera, rad: Float, threshold: Float) {
         val pos = transform.translation
-
         val mouseX = inputProvider.getMouseScreenX()
         val mouseY = inputProvider.getMouseScreenY()
         val viewportSize = inputProvider.getGameViewportSize()

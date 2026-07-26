@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.search.providers
 
-import com.pafoid.skate.editor.data.EditorAction
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
 import com.pafoid.skate.editor.events.ViewportAction.CreateLight
@@ -12,6 +11,7 @@ import com.pafoid.skate.editor.events.ViewportAction.ResetTransform
 import com.pafoid.skate.editor.events.ViewportAction.SpawnPrefab
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.BaseSearchProvider
+import com.pafoid.skate.editor.search.data.EditorAction
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
 import com.pafoid.skate.engine.core.EventSystem
