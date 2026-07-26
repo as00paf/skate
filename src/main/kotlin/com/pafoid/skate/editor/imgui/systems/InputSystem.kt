@@ -5,13 +5,6 @@ import com.pafoid.skate.engine.ecs.systems.InputSystem
 import imgui.ImGui
 import org.lwjgl.glfw.GLFW
 
-/**
- * Renders ImGui interface for debugging and tuning input settings.
- *
- * ## Controls
- *
- * - Current input state debugging
- */
 fun InputSystem.imgui(stringManager: StringManager) {
     ImGui.separator()
     ImGui.textColored(

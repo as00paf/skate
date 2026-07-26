@@ -6,17 +6,6 @@ import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 
-/**
- * Renders ImGui interface for debugging and tuning the day/night cycle.
- *
- * ## Controls
- *
- * - Time of day slider (0-24 hours)
- * - Day duration slider (60-600 seconds)
- * - Auto-ambient toggle
- * - Current phase display
- * - Sun direction, color, and intensity (read-only)
- */
 fun DayNightCycleSystem.imgui(stringManager: StringManager) {
     val config = scene.getComponent<DayNightCycleComponent>() ?: return
 
@@ -105,11 +94,6 @@ fun DayNightCycleSystem.imgui(stringManager: StringManager) {
     ImGui.text(stringManager.getString("lbl.day_night_cycle.is_daytime", config.isDaytime))
 }
 
-
-/**
- * Gets the current day phase name based on cycle time.
- * @return Phase name (Night, Dawn, Day, or Dusk)
- */
 fun getCurrentPhase(config: DayNightCycleComponent): String {
     return when (config.timeOfDay) {
         in 0f..5f -> "Night"

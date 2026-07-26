@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import imgui.ImGui
 import imgui.type.ImBoolean
 
-
 fun EnvironmentSystem.imgui(stringManager: StringManager) {
     val component = getEnvironmentComponent() ?: return
 

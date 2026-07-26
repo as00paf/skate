@@ -5,18 +5,6 @@ import com.pafoid.skate.engine.ecs.components.GridLines
 import imgui.ImGui
 import imgui.type.ImBoolean
 
-
-/**
- * Renders the ImGui configuration panel for the grid system.
- *
- * Provides real-time controls for:
- * - Grid visibility and origin axes toggle
- * - Major/minor step size sliders
- * - LOD distance thresholds
- * - Color pickers for major/minor lines
- * - Grid Y offset for Z-fighting adjustment
- * - Reset to defaults button
- */
 fun GridLines.imgui(stringManager: StringManager) {
     ImGui.text(stringManager.getString("lbl.grid.header"))
     ImGui.separator()

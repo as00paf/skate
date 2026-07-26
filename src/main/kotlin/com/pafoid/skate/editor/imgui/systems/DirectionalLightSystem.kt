@@ -4,9 +4,6 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import imgui.ImGui
 
-/**
- * Renders ImGui interface for debugging and tuning.
- */
 fun DirectionalLightSystem.imgui(stringManager: StringManager) {
     val config = config ?: return
 

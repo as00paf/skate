@@ -7,23 +7,8 @@ import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 
-
-/**
- * Global animation speed multiplier for all animations.
- * Useful for slow-motion or time-scale effects.
- */
 var globalSpeedMultiplier: Float = 1.0f
 
-/**
- * Renders ImGui interface for debugging and tuning animations.
- *
- * ## Controls
- *
- * - Animated object count display
- * - Per-object animation state (name, time, playing state)
- * - Global speed multiplier
- * - Cache statistics
- */
 fun AnimationSystem.imgui(stringManager: StringManager) {
     ImGui.text(stringManager.getString("lbl.animation_system.animated_objects", cache.size))
     ImGui.text(stringManager.getString("lbl.animation_system.cache_dirty", cacheDirty))

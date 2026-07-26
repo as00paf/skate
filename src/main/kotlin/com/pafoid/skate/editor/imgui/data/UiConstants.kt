@@ -1,11 +1,5 @@
 package com.pafoid.skate.editor.imgui.data
 
-/**
- * Centralized constants for UI layout values used across the editor.
- *
- * Using these constants ensures consistency between components that need
- * to agree on sizes (e.g., dockspace layout reserving space for the status bar).
- */
 object UiConstants {
 
     // -- Layout heights --
