@@ -31,8 +31,7 @@ class Editor(
     val editorInputHandler =
         EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, settingsManager)
 
-    val editorActionHandler =
-        EditorActionHandler(engine, undoRedoManager, clipboardService, projectManager, stringManager)
+    val editorActionHandler = EditorActionHandler(engine, undoRedoManager, projectManager, stringManager)
 
     val editorCamera = EditorCamera(Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }, editorInputState)
     val gizmoSystem = GizmoSystem(engine, settingsManager, undoRedoManager, editorCamera)

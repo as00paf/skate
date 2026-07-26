@@ -12,10 +12,6 @@ import imgui.ImVec2
 import org.joml.Vector3f
 import kotlin.math.abs
 
-/**
- * Handles drag-drop operations in the viewport.
- * Publishes ViewportAction events for prefab spawning and asset drops.
- */
 class ViewportDragDropHandler(
     private val viewportRenderer: ViewportRenderer,
     private val eventSystem: EventSystem,

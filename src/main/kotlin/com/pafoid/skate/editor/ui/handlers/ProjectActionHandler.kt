@@ -35,7 +35,7 @@ import javax.swing.UIManager
 import javax.swing.filechooser.FileFilter
 
 class ProjectActionHandler(
-    private val engine: Engine,
+    engine: Engine,
     private val projectManager: ProjectManager,
     private val undoRedoManager: UndoRedoManager,
     private val stringManager: StringManager

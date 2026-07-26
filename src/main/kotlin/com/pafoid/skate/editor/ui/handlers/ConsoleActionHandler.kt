@@ -7,12 +7,6 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 
-/**
- * Handles [ConsoleAction] events by executing the appropriate commands.
- *
- * All console UI actions (clear, copy) flow through this handler
- * instead of being executed directly in the UI layer.
- */
 class ConsoleActionHandler(
     private val eventSystem: EventSystem,
     private val logger: LoggerService,
