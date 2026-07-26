@@ -26,6 +26,15 @@ object UiConstants {
     const val TAB_BAR_HEIGHT = 25f
     const val CONTENT_AREA_START_Y = TAB_BAR_HEIGHT + TOOLBAR_HEIGHT
 
-    // Asset Browser Tab
+    // -- Viewport Overlay --
+    const val OVERLAY_PADDING = 10f
+    const val FPS_OVERLAY_WIDTH = 80f
+    const val FPS_OVERLAY_HEIGHT = 30f
+    const val SPEED_OVERLAY_WIDTH = 120f
+    const val SPEED_OVERLAY_HEIGHT = 30f
+    const val TRICK_OVERLAY_WIDTH = 200f
+    const val TRICK_OVERLAY_HEIGHT = 30f
+
+    // -- Asset Browser Tab --
     const val ASSET_BROWSER_ITEM_WIDTH = 120f
 }

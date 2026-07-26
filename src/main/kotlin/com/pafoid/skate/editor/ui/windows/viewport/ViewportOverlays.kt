@@ -1,5 +1,13 @@
 package com.pafoid.skate.editor.ui.windows.viewport
 
+import com.pafoid.skate.editor.imgui.data.UiConstants.FPS_OVERLAY_HEIGHT
+import com.pafoid.skate.editor.imgui.data.UiConstants.FPS_OVERLAY_WIDTH
+import com.pafoid.skate.editor.imgui.data.UiConstants.OVERLAY_PADDING
+import com.pafoid.skate.editor.imgui.data.UiConstants.SPEED_OVERLAY_HEIGHT
+import com.pafoid.skate.editor.imgui.data.UiConstants.SPEED_OVERLAY_WIDTH
+import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
+import com.pafoid.skate.editor.imgui.data.UiConstants.TRICK_OVERLAY_HEIGHT
+import com.pafoid.skate.editor.imgui.data.UiConstants.TRICK_OVERLAY_WIDTH
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.windows.TrickUIWindow
 import com.pafoid.skate.engine.ecs.Scene
@@ -12,55 +20,25 @@ import imgui.flag.ImGuiWindowFlags
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-/**
- * Renders viewport overlays including FPS, speedometer, and trick UI.
- *
- * This component handles:
- * - FPS counter (top-left)
- * - Speedometer (bottom-left, shows speed in km/h or mph)
- * - Trick UI (bottom-left, above speedometer)
- *
- * @param trickUIWindow The trick UI window to render
- * @param settingsManager For accessing unit system settings
- */
 class ViewportOverlays(
     private val trickUIWindow: TrickUIWindow,
     private val settingsManager: SettingsManager
 ) {
-    
-    companion object {
-        private const val OVERLAY_PADDING = 10f
-        private const val FPS_OVERLAY_WIDTH = 80f
-        private const val FPS_OVERLAY_HEIGHT = 30f
-        private const val SPEED_OVERLAY_WIDTH = 120f
-        private const val SPEED_OVERLAY_HEIGHT = 30f
-        private const val TRICK_OVERLAY_WIDTH = 200f
-        private const val TRICK_OVERLAY_HEIGHT = 30f
-        private const val TOOLBAR_HEIGHT = 40f
-    }
-    
     private var trickUIInitialized = false
-    
-    /**
-     * Renders all viewport overlays.
-     * 
-     * @param windowPos The window position for overlay placement
-     * @param windowSize The window size for overlay placement
-     * @param scene The current scene for speed calculation
-     */
+
     fun render(windowPos: ImVec2, windowSize: ImVec2, scene: Scene?) {
         // Initialize TrickUIWindow with event subscriptions (once per scene)
         if (scene != null && !trickUIInitialized) {
             trickUIWindow.init(scene)
             trickUIInitialized = true
         }
-        
-        renderFpsOverlay(windowPos, windowSize)
+
+        renderFpsOverlay(windowPos)
         renderSpeedometerOverlay(windowPos, windowSize, scene)
         renderTrickOverlay(windowPos, windowSize)
     }
-    
-    private fun renderFpsOverlay(windowPos: ImVec2, windowSize: ImVec2) {
+
+    private fun renderFpsOverlay(windowPos: ImVec2) {
         // FPS Overlay (Top Left - inside game view)
         ImGui.setCursorPos(windowPos.x + OVERLAY_PADDING, windowPos.y + TOOLBAR_HEIGHT + OVERLAY_PADDING)
         ImGui.beginChild(
@@ -115,11 +93,7 @@ class ViewportOverlays(
         val trickY = windowPos.y + windowSize.y - SPEED_OVERLAY_HEIGHT - TRICK_OVERLAY_HEIGHT - (OVERLAY_PADDING * 2)
         trickUIWindow.imgui(trickX, trickY, TRICK_OVERLAY_WIDTH, TRICK_OVERLAY_HEIGHT)
     }
-    
-    /**
-     * Reset the trick UI initialization state.
-     * Call this when scene changes.
-     */
+
     fun resetTrickUI() {
         trickUIInitialized = false
     }

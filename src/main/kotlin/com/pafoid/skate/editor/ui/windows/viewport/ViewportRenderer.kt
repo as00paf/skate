@@ -5,10 +5,6 @@ import com.pafoid.skate.engine.utils.ScreenshotUtils
 import imgui.ImGui
 import imgui.ImVec2
 
-/**
- * Renders the game viewport image and manages framebuffer synchronization.
- *
- */
 class ViewportRenderer(
     private val engine: Engine,
 ) {
@@ -16,14 +12,7 @@ class ViewportRenderer(
     var imageScreenPosY = 0f
     var imageSizeX = 0f
     var imageSizeY = 0f
-    
-    /**
-     * Renders the framebuffer texture as an ImGui image.
-     * 
-     * Also captures the screen position and size for input handling.
-     * 
-     * @param windowSize The available window size for the viewport
-     */
+
     fun render(windowSize: ImVec2) {
         val tempScreenPos = ImVec2()
         ImGui.getCursorScreenPos(tempScreenPos)
