@@ -5,15 +5,6 @@ import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import java.io.File
 
-/**
- * Scans project directories and builds a FileSystemItem tree.
- *
- * Responsibilities:
- * - Recursive directory scanning
- * - File type resolution
- * - Favorite persistence (JSON file in project root)
- * - Change detection (manual refresh)
- */
 class FileSystemScanner(
     private val projectManager: ProjectManager,
     private val logger: LoggerService,
@@ -72,16 +63,11 @@ class FileSystemScanner(
         return FileSystemItem(file, type, isFav, children, file.absolutePath, computedSize)
     }
 
-    /**
-     * Skip common non-project directories.
-     */
+
     private fun shouldScanDirectory(dir: File): Boolean {
         return dir.name !in SKIP_NAMES
     }
 
-    /**
-     * Toggle favorite status for the given file path.
-     */
     fun toggleFavorite(path: String) {
         if (_favorites.contains(path)) {
             _favorites.remove(path)
