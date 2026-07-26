@@ -14,17 +14,6 @@ import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-/**
- * Debug window for testing and visualizing input state.
- *
- * Displays:
- * - Raw gamepad axis values with deadzone visualization
- * - Raw gamepad button states
- * - Processed InputStateComponent values
- * - Current input settings (deadzones, thresholds, sensitivities)
- *
- * @param stringManager String manager for localization
- */
 class InputTestingWindow(
     private val engine: Engine,
     private val stringManager: StringManager,
@@ -37,12 +26,7 @@ class InputTestingWindow(
     private var showSettings = true
     private var showBindings = false
 
-    /**
-     * Renders the input testing debug window.
-     *
-     * @param currentScene Current scene for accessing InputStateComponent
-     */
-    override fun imgui(currentScene: Scene) {
+    override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.input_testing"))
 
         // Collapsing headers for sections
@@ -69,10 +53,6 @@ class InputTestingWindow(
         ImGui.end()
     }
 
-    /**
-     * Renders the raw gamepad input section.
-     * Shows axis values, button states, and deadzone visualization.
-     */
     private fun renderRawGamepadSection() {
         ImGui.indent()
 
@@ -161,7 +141,7 @@ class InputTestingWindow(
                             if (isPressed) floatArrayOf(0.3f, 1f, 0.3f, 1f) else floatArrayOf(0.5f, 0.5f, 0.5f, 1f)
                         ImGui.colorButton("##Btn$index", color[0], color[1], color[2], color[3], 20f, 20f)
                         ImGui.sameLine()
-                        ImGui.text("${buttonNames[index] ?: "B$index"}")
+                        ImGui.text(buttonNames[index] ?: "B$index")
                     }
                 }
             }
@@ -172,9 +152,6 @@ class InputTestingWindow(
         ImGui.unindent()
     }
 
-    /**
-     * Renders a visual deadzone indicator showing current stick position relative to deadzone.
-     */
     private fun renderDeadzoneIndicator(prefix: String, x: Float, y: Float, deadzone: Float) {
         val size = 100f
         val center = size / 2
@@ -232,17 +209,10 @@ class InputTestingWindow(
         }
     }
 
-    /**
-     * Applies deadzone to a value, returning 0 if within deadzone.
-     */
     private fun applyDeadzone(value: Float, deadzone: Float): Float {
         return if (abs(value) < deadzone) 0f else value
     }
 
-    /**
-     * Renders the processed input state section.
-     * Shows values from InputStateComponent.
-     */
     private fun renderProcessedStateSection() {
         ImGui.indent()
 
@@ -311,56 +281,18 @@ class InputTestingWindow(
         ImGui.unindent()
     }
 
-    /**
-     * Renders the input settings section.
-     * Shows current deadzone, threshold, and sensitivity values.
-     */
     private fun renderSettingsSection() {
         ImGui.indent()
         MImGui.textDisabled("Input settings configuration will be available after Phase 5 completion")
         ImGui.unindent()
     }
 
-    /**
-     * Renders the input bindings section.
-     * Shows current keyboard and gamepad bindings for all actions.
-     *
-     */
     private fun renderBindingsSection() {
         ImGui.indent()
         MImGui.textDisabled("Input bindings configuration will be available after Phase 5 completion")
         ImGui.unindent()
     }
 
-    /**
-     * Gets human-readable name for a GLFW key code.
-     */
-    private fun getKeyName(keyCode: Int): String {
-        return when (keyCode) {
-            GLFW.GLFW_KEY_W -> "W"
-            GLFW.GLFW_KEY_A -> "A"
-            GLFW.GLFW_KEY_S -> "S"
-            GLFW.GLFW_KEY_D -> "D"
-            GLFW.GLFW_KEY_SPACE -> "SPACE"
-            GLFW.GLFW_KEY_LEFT_SHIFT -> "LSHIFT"
-            GLFW.GLFW_KEY_LEFT_CONTROL -> "LCTRL"
-            GLFW.GLFW_KEY_Q -> "Q"
-            GLFW.GLFW_KEY_E -> "E"
-            GLFW.GLFW_KEY_R -> "R"
-            GLFW.GLFW_KEY_ESCAPE -> "ESC"
-            GLFW.GLFW_KEY_DELETE -> "DEL"
-            GLFW.GLFW_KEY_LEFT -> "LEFT"
-            GLFW.GLFW_KEY_RIGHT -> "RIGHT"
-            GLFW.GLFW_KEY_LEFT_ALT -> "LALT"
-            GLFW.GLFW_KEY_M -> "M"
-            -1 -> "N/A"
-            else -> "Key$keyCode"
-        }
-    }
-
-    /**
-     * Gets array of gamepad button names for display.
-     */
     private fun getGamepadButtonNames(): Array<String?> {
         return arrayOf(
             "A",      // 0

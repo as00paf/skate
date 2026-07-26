@@ -20,11 +20,6 @@ class SystemsWindow(
     private val engine: Engine
 ) : IWindowWithScene {
 
-    /**
-     * Renders the systems window.
-     *
-     * @param scene The current scene to get systems from
-     */
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.systems"))
 

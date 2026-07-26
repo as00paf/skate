@@ -44,7 +44,10 @@ class ProjectSwitcherDialog(
 
         ImGui.textColored(0.5f, 0.5f, 0.5f, 1f, project.path)
 
-        ImGui.textColored(0.4f, 0.4f, 0.4f, 1f, "${stringManager.getString("lbl.switch_project.last_opened").format(project.getLastOpenedString())}")
+        ImGui.textColored(
+            0.4f, 0.4f, 0.4f, 1f,
+            stringManager.getString("lbl.switch_project.last_opened").format(project.getLastOpenedString())
+        )
 
         if (!isClickable) {
             ImGui.popStyleColor()

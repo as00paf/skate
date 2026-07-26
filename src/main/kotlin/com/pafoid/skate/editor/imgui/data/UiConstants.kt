@@ -34,6 +34,7 @@ object UiConstants {
     const val SPEED_OVERLAY_HEIGHT = 30f
     const val TRICK_OVERLAY_WIDTH = 200f
     const val TRICK_OVERLAY_HEIGHT = 30f
+    const val CONTROLS_OVERLAY_BUTTON_SIZE = 50f
 
     // -- Asset Browser Tab --
     const val ASSET_BROWSER_ITEM_WIDTH = 120f

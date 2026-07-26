@@ -5,22 +5,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.events.TrickCompleted
 import imgui.ImGui
 import imgui.flag.ImGuiWindowFlags
-/**
- * UI window for displaying trick information.
- *
- * Subscribes to [TrickCompleted] events to display completed tricks.
- * No longer polls TrickDetector directly - uses event-driven approach.
- *
- * ## Usage
- *
- * ```kotlin
- * val trickUIWindow = TrickUIWindow()
- * trickUIWindow.init(scene)
- *
- * // In ImGui rendering loop
- * trickUIWindow.imgui(xPos, yPos, width, height)
- * ```
- */
+
 class TrickUIWindow(private val eventSystem: EventSystem) {
 
     private var lastCompletedTrick: String? = null
@@ -29,12 +14,9 @@ class TrickUIWindow(private val eventSystem: EventSystem) {
     private var trickDisplayTime: Float = 0f
     private val TRICK_DISPLAY_DURATION = 3.0f // Show trick for 3 seconds
 
-    /**
-     * Initialize the trick UI window with event subscriptions.
-     */
     fun init(scene: Scene) {
         // Subscribe to trick completed events
-        eventSystem?.subscribe<TrickCompleted> { event ->
+        eventSystem.subscribe<TrickCompleted> { event ->
             lastCompletedTrick = event.trickName
             lastScore = event.score
             lastStyle = event.style
@@ -42,14 +24,6 @@ class TrickUIWindow(private val eventSystem: EventSystem) {
         }
     }
 
-    /**
-     * Renders the trick UI overlay.
-     *
-     * @param xPos X position in pixels
-     * @param yPos Y position in pixels
-     * @param width Width in pixels
-     * @param height Height in pixels
-     */
     fun imgui(xPos: Float, yPos: Float, width: Float, height: Float) {
         // Update display timer
         if (trickDisplayTime > 0f) {

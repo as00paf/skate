@@ -11,27 +11,6 @@ import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.type.ImBoolean
 
-/**
- * Command History window displaying undo/redo stack with visual feedback.
- *
- * This dockable window allows users to:
- * - View all undoable and redoable commands with color-coded distinction
- * - Click on any command entry to jump to that state (via event)
- * - Use Undo/Redo/Clear buttons
- * - See an empty-state message when history is clear
- *
- * Colors:
- * - Executed commands (undo stack): white — available to be undone
- * - Undone commands (redo stack): gray/dimmed — available to be redone
- *
- * All state-changing actions are published as [UndoRedoAction] events
- * and handled by [UndoRedoActionHandler].
- *
- * Usage:
- * - Open from View menu or with Ctrl+Shift+H
- * - Click on any command to undo/redo to that point
- * - Use toolbar buttons for single step undo/redo
- */
 class CommandHistoryWindow(
     private val undoRedoManager: UndoRedoManager,
     private val stringManager: StringManager,

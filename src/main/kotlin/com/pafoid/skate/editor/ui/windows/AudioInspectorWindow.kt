@@ -11,28 +11,14 @@ import com.pafoid.skate.engine.removeComponent
 import imgui.ImGui
 import imgui.type.ImString
 
-/**
- * Editor window for audio component inspector.
- *
- * Features:
- * - Audio component inspector for selected objects
- * - Play/stop controls
- * - Volume and 3D settings
- */
 class AudioInspectorWindow(private val stringManager: StringManager) : IWindowWithScene {
 
-    /**
-     * Renders the audio inspector window.
-     */
     override fun imgui(scene: Scene) {
         ImGui.begin(stringManager.getString("window.audio_inspector"))
         renderAudioComponentInspector(scene)
         ImGui.end()
     }
 
-    /**
-     * Renders audio component inspector for selected object.
-     */
     private fun renderAudioComponentInspector(scene: Scene) {
         if (ImGui.collapsingHeader(stringManager.getString("lbl.audio.selected_object"))) {
             val selectedObject = scene.selectedGameObject

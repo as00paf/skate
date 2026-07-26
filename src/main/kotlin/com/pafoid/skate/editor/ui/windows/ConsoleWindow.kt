@@ -25,7 +25,6 @@ class ConsoleWindow(
     private val selectedLogs = mutableSetOf<LogEntry>()
     private var lastSelectedIndex = -1
 
-    /** null = show all levels */
     private var logLevelFilter: LogLevel? = null
 
     private val autoScroll = ImBoolean(true)

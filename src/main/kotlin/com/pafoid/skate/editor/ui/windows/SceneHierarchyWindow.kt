@@ -38,9 +38,6 @@ import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL
 import org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL
 import org.lwjgl.glfw.GLFW.GLFW_KEY_UP
 
-/**
- * Special UID constant for scene rename editing (negative to avoid collision with real GameObject UIDs).
- */
 private const val SPECIAL_UID_SCENE_RENAME = -999
 
 class SceneHierarchyWindow(

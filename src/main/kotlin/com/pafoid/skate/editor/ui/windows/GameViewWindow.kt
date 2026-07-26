@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
@@ -122,9 +123,5 @@ class GameViewWindow(
     private fun getLargestSizeForViewport(): ImVec2 {
         ImGui.getContentRegionAvail(tempVec2)
         return ImVec2(tempVec2.x, tempVec2.y)
-    }
-
-    private companion object {
-        private const val TOOLBAR_HEIGHT = 40f
     }
 }

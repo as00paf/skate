@@ -12,22 +12,6 @@ import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImBoolean
 
-/**
- * Render Graph visualization window showing the rendering pipeline structure.
- *
- * This dockable window displays:
- * - All render passes in execution order
- * - Pass inputs and outputs (resource dependencies)
- * - Per-pass performance metrics (execution time)
- * - Enable/disable toggles for each pass
- * - Total frame time and statistics
- *
- * Usage:
- * - Open from View menu
- * - Click pass to see details
- * - Toggle enable/disable to debug rendering issues
- * - Use auto-update for real-time metrics
- */
 class RenderGraphWindow(
     private val stringManager: StringManager,
     private val engine: Engine,

@@ -54,7 +54,6 @@ class EnvironmentWindow(
             }
         }
 
-
         environmentSystem?.let { system ->
             if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment_system.header")}")) {
                 system.imgui(stringManager)

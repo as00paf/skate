@@ -21,21 +21,6 @@ import imgui.type.ImBoolean
 import imgui.type.ImString
 import kotlinx.coroutines.Job
 
-/**
- * Search Everywhere overlay window providing global search across all editor resources.
- *
- * This modal overlay allows users to search GameObjects, assets, components, and actions
- * from a single unified interface. Features include real-time search with debouncing,
- * keyboard navigation, recent searches, category filter chips, and grouped result display.
- *
- * Usage:
- * - Open with Ctrl+P (handled by input handler)
- * - Type to search (50ms debounce)
- * - Filter by category using chips: All / GameObjects / Files / Actions
- * - Navigate with ↑↓ arrows
- * - Select with Enter or click
- * - Close with Esc or X button
- */
 class SearchEverywhereWindow(
     private val engine: Engine,
     private val stringManager: StringManager,
@@ -53,16 +38,11 @@ class SearchEverywhereWindow(
 
     private var lastQueriedText = ""
 
-    // Category filter chips: All / GameObjects / Files / Actions
     private enum class SearchFilter { ALL, GAMEOBJECTS, FILES, ACTIONS }
     private var activeFilter = SearchFilter.ALL
 
-    // Result flattening for keyboard navigation
     private var flattenedResults: List<SearchResultWithCategory> = emptyList()
 
-    /**
-     * Opens the search overlay.
-     */
     fun open() {
         searchQuery.set("")
         selectedResultIndex = 0

@@ -32,7 +32,6 @@ class PropertiesWindow(
     private var selectedGameObject: GameObject? = null
 
     override fun imgui(pOpen: ImBoolean?) {
-        // Get selected object from ViewModel instead of direct scene query
         selectedGameObject = engine.sceneManager.currentScene?.selectedGameObject
         
         ImGui.begin(stringManager.getString("window.properties"), pOpen)

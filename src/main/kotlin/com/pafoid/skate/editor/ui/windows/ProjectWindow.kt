@@ -57,7 +57,7 @@ class ProjectWindow(
     private val logger: LoggerService,
     private val projectManager: ProjectManager,
     private val eventSystem: EventSystem,
-    private val serializer: Serializer
+    serializer: Serializer
 ) : IWindow {
     private val fileSystemScanner = FileSystemScanner(projectManager, logger, serializer)
     private val searchText = ImString("", 256)
@@ -495,9 +495,9 @@ class ProjectWindow(
             1.0f,
             stringManager.getString(
                 "lbl.project.status_bar",
-                Icons.FOLDER.toString(),
+                Icons.FOLDER,
                 statusFolderCount,
-                Icons.PLUS.toString(),
+                Icons.PLUS,
                 statusFileCount,
                 filterInfo,
                 sizeStr
@@ -517,12 +517,5 @@ class ProjectWindow(
         bytes < 1024 -> stringManager.getString("lbl.project.size.bytes", bytes)
         bytes < 1024 * 1024 -> stringManager.getString("lbl.project.size.kb", bytes / 1024)
         else -> stringManager.getString("lbl.project.size.mb", bytes / (1024.0 * 1024.0))
-    }
-
-    /**
-     * Call this when external changes occur (e.g., asset import completes).
-     */
-    fun refresh() {
-        needsRefresh = true
     }
 }

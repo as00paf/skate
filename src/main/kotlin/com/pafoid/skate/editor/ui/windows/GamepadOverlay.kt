@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.editor.imgui.data.UiConstants.CONTROLS_OVERLAY_BUTTON_SIZE
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
@@ -15,8 +16,6 @@ import imgui.flag.ImGuiWindowFlags
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_1
 import kotlin.math.min
-
-private const val CONTROLS_OVERLAY_BUTTON_SIZE = 50f
 
 class GamepadOverlay(
     private val assetsManager: AssetsManager,

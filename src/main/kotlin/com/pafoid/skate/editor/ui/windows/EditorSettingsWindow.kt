@@ -32,12 +32,6 @@ import imgui.type.ImInt
 import imgui.type.ImString
 import org.lwjgl.glfw.GLFW
 
-/**
- * Editor settings window with IntelliJ-style left/right split layout.
- *
- * Left pane: Category list with search filter
- * Right pane: Settings content for selected category
- */
 class EditorSettingsWindow(
     private val settingsManager: SettingsManager,
     private val stringManager: StringManager
