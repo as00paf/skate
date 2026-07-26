@@ -14,6 +14,7 @@ object UiConstants {
     const val DIALOG_HEIGHT = 440f
 
     // -- Viewport Toolbar --
+    const val EDITOR_MENU_BAR_HEIGHT = 48f
     const val TOOLBAR_HEIGHT = 40f
     const val TOOLBAR_BUTTON_HEIGHT = 30f
     const val TOOLBAR_BUTTON_SPACING = 10f

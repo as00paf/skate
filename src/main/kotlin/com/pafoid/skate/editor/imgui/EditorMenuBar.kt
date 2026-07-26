@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.editor.imgui.data.UiConstants.EDITOR_MENU_BAR_HEIGHT
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
@@ -26,9 +27,9 @@ class EditorMenuBar(
     private val stringManager: StringManager,
     private val assetsManager: AssetsManager,
     private val projectManager: ProjectManager,
-    private val sceneManager: SceneManager,
-    private val settingsManager: SettingsManager,
-    private val windowRegistry: WindowRegistry,
+    sceneManager: SceneManager,
+    settingsManager: SettingsManager,
+    windowRegistry: WindowRegistry,
     private val eventSystem: EventSystem,
 ) {
     private var appIconTexId = -1
@@ -46,25 +47,23 @@ class EditorMenuBar(
 
     fun render(currentScene: Scene?) {
         if (ImGui.beginMenuBar()) {
-            val barHeight = 48f
-
-            renderAppIcon(barHeight)
-            renderHamburgerMenu(currentScene, barHeight)
-            renderProjectInfo(barHeight)
+            renderAppIcon()
+            renderHamburgerMenu(currentScene)
+            renderProjectInfo()
             windowControls.render()
 
             ImGui.endMenuBar()
         }
     }
 
-    private fun renderAppIcon(barHeight: Float) {
+    private fun renderAppIcon() {
         if (appIconTexId == -1) {
             loadAppIconTexture()
         }
         if (appIconTexId != -1) {
             val iconSize = 32f
 
-            ImGui.setCursorPosY((barHeight - iconSize) / 2f)
+            ImGui.setCursorPosY((EDITOR_MENU_BAR_HEIGHT - iconSize) / 2f)
             image(appIconTexId.toLong(), iconSize, iconSize)
         }
     }
@@ -77,9 +76,9 @@ class EditorMenuBar(
         }
     }
 
-    private fun renderHamburgerMenu(currentScene: Scene?, barHeight: Float) {
+    private fun renderHamburgerMenu(currentScene: Scene?) {
         val btnSize = 30f
-        val offsetY = (barHeight - btnSize) / 2f
+        val offsetY = (EDITOR_MENU_BAR_HEIGHT - btnSize) / 2f
         ImGui.setCursorPosY(offsetY)
 
         if (ImGui.button(Icons.MENU, btnSize, btnSize)) {
@@ -100,7 +99,7 @@ class EditorMenuBar(
 
                 if (filteredProjects.isNotEmpty()) {
                     for (project in filteredProjects) {
-                        if (ImGui.menuItem(project.name)) {
+                        if (menuItem(project.name)) {
                             eventSystem.publish(WindowAction.Hide("window.project_wizard"))
                             eventSystem.publish(ProjectEvent.OpenProjectRequested(project.path))
                         }
@@ -140,9 +139,9 @@ class EditorMenuBar(
         }
     }
 
-    private fun renderProjectInfo(barHeight: Float) {
+    private fun renderProjectInfo() {
         val fontSize = ImGui.getFontSize()
-        val textY = (barHeight - fontSize) / 2f * 0.8f
+        val textY = (EDITOR_MENU_BAR_HEIGHT - fontSize) / 2f * 0.8f
         ImGui.setCursorPosY(textY)
 
         ImGui.textDisabled("|")

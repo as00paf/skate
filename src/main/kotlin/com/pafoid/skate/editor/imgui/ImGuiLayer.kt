@@ -59,7 +59,6 @@ class ImGuiLayer(
     settingsManager: SettingsManager,
     private val gizmoSystem: GizmoSystem,
 ) {
-
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"

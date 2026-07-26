@@ -8,16 +8,6 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 
-/**
- * Centralized custom ImGui widgets for the SkateSim editor.
- *
- * Provides:
- * - **Data controls**: vector editors (X/Y/Z with colored reset buttons), drag floats/ints, color pickers
- * - **Semantic text**: warning, error, success, disabled-colored text helpers
- * - **Layout helpers**: icon buttons, collapsible sections, separators, toolbar groups, help icons
- *
- * All two-column layouts use the modern `ImGui.beginTable` API (not the deprecated `ImGui.columns`).
- */
 object MImGui {
 
     private const val DEFAULT_COLUMN_WIDTH = 220f

@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
-import com.pafoid.skate.editor.imgui.data.UiConstants
+import com.pafoid.skate.editor.imgui.data.UiConstants.STATUS_BAR_HEIGHT
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImGui
@@ -9,12 +9,14 @@ import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
 
 class EditorStatusBar(private val stringManager: StringManager) {
-    val height = UiConstants.STATUS_BAR_HEIGHT
-
     fun render(currentScene: Scene?) {
         val viewport = ImGui.getMainViewport()
-        ImGui.setNextWindowPos(viewport.workPosX, viewport.workPosY + viewport.workSizeY - height, ImGuiCond.Always)
-        ImGui.setNextWindowSize(viewport.workSizeX, height, ImGuiCond.Always)
+        ImGui.setNextWindowPos(
+            viewport.workPosX,
+            viewport.workPosY + viewport.workSizeY - STATUS_BAR_HEIGHT,
+            ImGuiCond.Always
+        )
+        ImGui.setNextWindowSize(viewport.workSizeX, STATUS_BAR_HEIGHT, ImGuiCond.Always)
         ImGui.setNextWindowViewport(viewport.id)
 
         val windowFlags = ImGuiWindowFlags.NoDecoration or

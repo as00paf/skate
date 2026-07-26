@@ -28,12 +28,6 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import imgui.type.ImBoolean
 
-/**
- * Registry of all dockable editor windows.
- *
- * Centralizes window management for rendering, menus, and dock layout.
- * All windows are created and registered here.
- */
 class WindowRegistry(
     engine: Engine,
     editor: Editor,
