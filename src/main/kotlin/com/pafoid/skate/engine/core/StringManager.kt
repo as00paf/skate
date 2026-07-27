@@ -15,6 +15,7 @@ class StringManager(
         loadStrings()
     }
 
+    // TODO: allow loading from other files
     private fun loadStrings() {
         try {
             val resourcePath = "/values/${baseName}_${currentLocale}.properties"

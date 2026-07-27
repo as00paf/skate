@@ -4,17 +4,6 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
-/**
- * Component containing computed lighting state from day/night cycle.
- *
- * This component stores the computed lighting values that are updated by DayNightCycleSystem.
- * It should be added to the Scene GameObject to store dynamic lighting state.
- *
- * @property sunDirection Current sun direction vector
- * @property sunColor Current sun color (interpolated through day phases)
- * @property sunIntensity Sun intensity (0 at night, 1 at noon)
- * @property shadowIntensity Shadow intensity (lower at night)
- */
 @Serializable
 class LightingComponent(
     @Contextual

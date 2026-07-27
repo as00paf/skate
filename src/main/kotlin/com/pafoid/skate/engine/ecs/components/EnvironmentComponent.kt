@@ -5,22 +5,6 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
-/**
- * Component containing environment rendering settings.
- *
- * This component stores all sky and fog configuration for environment rendering.
- * It should be added to the Scene GameObject to control global environment settings.
- *
- * @property skyColor Clear sky color (used for clear color and sky dome)
- * @property skyTint Sky color tint multiplier
- * @property skyExposure Sky exposure/brightness
- * @property skyRotation Sky rotation in degrees
- * @property fogColor Fog color
- * @property fogDensity Fog density (0 = no fog)
- * @property fogGradient Fog gradient falloff
- * @property renderSky Toggle sky rendering independently
- * @property renderFog Toggle fog rendering independently
- */
 @Serializable
 class EnvironmentComponent(
     @Contextual
@@ -45,10 +29,6 @@ class EnvironmentComponent(
     var renderFog: Boolean = true
 ) : Component() {
 
-    /**
-     * Resets all properties to default values.
-     * Restores typical clear daytime sky and no fog settings.
-     */
     fun reset() {
         skyColor.set(0.6f, 0.7f, 0.9f)
         skyTint.set(1.0f, 1.0f, 1.0f)
@@ -61,11 +41,6 @@ class EnvironmentComponent(
         renderFog = true
     }
 
-    /**
-     * Applies an environment preset.
-     *
-     * @param preset The preset to apply
-     */
     fun applyPreset(preset: EnvironmentPreset) {
         when (preset) {
             EnvironmentPreset.CLEAR_DAY -> {

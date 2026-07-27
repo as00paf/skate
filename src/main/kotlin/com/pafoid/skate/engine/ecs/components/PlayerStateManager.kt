@@ -11,23 +11,12 @@ class PlayerStateManager : Component() {
     var currentState: PlayerState = PlayerState.IDLE
         private set
     var isSwitch = false
-    var isOnBoard = false
-        private set
 
     var currentStance = Stance.REGULAR
 
     override fun update(dt: Float) {
-        if (isOnBoard) {
-            handleOnBoardControls(dt)
-        } else {
-            handleOffBoardControls(dt)
-        }
+        handleOffBoardControls(dt)
     }
-
-    private fun handleOnBoardControls(dt: Float) {
-
-    }
-
     private fun handleOffBoardControls(dt: Float) {
         val controller = gameObject.getComponent<PlayerController>() ?: return
         val physics = gameObject.getComponent<PhysicsComponent>() ?: return

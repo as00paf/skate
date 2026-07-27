@@ -3,12 +3,6 @@ package com.pafoid.skate.engine.ecs.components
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
-/**
- * AudioComponent is a pure data container for a sound source attached to a GameObject.
- * 
- * Supports 2D and 3D audio with spatialization, looping, and volume control.
- * Playback logic and OpenAL interactions are handled by AudioSystem.
- */
 @Serializable
 class AudioComponent(
     var soundFilePath: String = "",

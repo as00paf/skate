@@ -20,10 +20,6 @@ import org.lwjgl.glfw.GLFW.glfwSetWindowSize
 import org.lwjgl.glfw.GLFW.glfwSwapInterval
 import org.lwjgl.system.MemoryUtil.NULL
 
-/**
- * Handles custom window operations.
- * Provides functionality for minimizing, maximizing, restoring, and closing the window.
- */
 class WindowController(val glfwWindow: Long) {
 
     var isFixingMaximize = false
@@ -38,16 +34,10 @@ class WindowController(val glfwWindow: Long) {
     var isLogicallyMaximized = false
         private set
 
-    /**
-     * Minimizes the window to the taskbar.
-     */
     fun minimize() {
         glfwIconifyWindow(glfwWindow)
     }
 
-    /**
-     * Toggles between maximized and restored states.
-     */
     fun toggleMaximize() {
         if (isMaximized()) {
             restore()
@@ -56,9 +46,6 @@ class WindowController(val glfwWindow: Long) {
         }
     }
 
-    /**
-     * Maximizes the window.
-     */
     fun maximize() {
         val widthBuffer = IntArray(1)
         val heightBuffer = IntArray(1)
@@ -75,9 +62,6 @@ class WindowController(val glfwWindow: Long) {
         glfwMaximizeWindow(glfwWindow)
     }
 
-    /**
-     * Restores the window.
-     */
     fun restore() {
         isLogicallyMaximized = false
         glfwRestoreWindow(glfwWindow)
@@ -85,31 +69,19 @@ class WindowController(val glfwWindow: Long) {
         glfwSetWindowSize(glfwWindow, preMaximizeWidth, preMaximizeHeight)
     }
 
-    /**
-     * Closes the window.
-     */
     fun close() {
         glfwSetWindowShouldClose(glfwWindow, true)
     }
 
-    /**
-     * Checks if the window is currently maximized.
-     */
     fun isMaximized(): Boolean {
         return isLogicallyMaximized || glfwGetWindowAttrib(glfwWindow, GLFW_MAXIMIZED) == GLFW_TRUE
     }
 
-    /**
-     * Called by the maximize callback to sync native OS maximize events.
-     */
     fun setLogicallyMaximized(maximized: Boolean) {
         this.isLogicallyMaximized = maximized
         onToggleMaximize?.invoke(isMaximized())
     }
 
-    /**
-     * Fixes the window bounds when maximized without decorations, preventing gaps.
-     */
     fun fixMaximizeBounds() {
         val monitor = getCurrentMonitor()
         val mx = IntArray(1)

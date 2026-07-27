@@ -12,17 +12,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.io.File
 
-/**
- * Component responsible for managing and playing skeletal animations.
- *
- * It handles:
- * - Playback state (isPlaying, currentTime).
- * - Cross-fading between animations (Blending).
- * - Applying bone overrides from other components.
- * - Skeleton hierarchy updates.
- * - Editor visualization of the bone hierarchy.
- *
- */
 @Serializable
 class Animator : Component() {
 

@@ -8,12 +8,6 @@ import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
 import java.nio.IntBuffer
 
-/**
- * Low-level OpenAL audio engine wrapper.
- *
- * Manages OpenAL device, context, and listener state.
- * Thread-safe context management for multi-threaded audio operations.
- */
 class AudioEngine(
     private val logger: LoggerService
 ) {
