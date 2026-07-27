@@ -1,4 +1,4 @@
-package com.pafoid.skate.engine.utils
+package com.pafoid.skate.engine.core
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler

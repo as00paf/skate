@@ -7,5 +7,9 @@ import org.joml.Vector3f
 @Serializable
 data class Light(
     @Contextual val position: Vector3f,
-    @Contextual val color: Vector3f = Vector3f(1f, 1f, 1f)
+    @Contextual val color: Vector3f = Vector3f(
+        1f,
+        1f,
+        1f
+    )//TODO: add type: com.pafoid.skate.engine.render.data.LightType
 )

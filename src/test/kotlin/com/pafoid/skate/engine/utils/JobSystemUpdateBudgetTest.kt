@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.utils
 
+import com.pafoid.skate.engine.core.JobSystem
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import kotlin.coroutines.EmptyCoroutineContext

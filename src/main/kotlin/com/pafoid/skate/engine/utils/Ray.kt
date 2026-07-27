@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.utils
 import org.joml.Vector3f
 
 class Ray(val origin: Vector3f, val direction: Vector3f) {
+    // TODO: check if duplicated
     fun distanceToPoint(point: Vector3f): Float {
         val v = Vector3f(point).sub(origin)
         val t = v.dot(direction)

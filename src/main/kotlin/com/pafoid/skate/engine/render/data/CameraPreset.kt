@@ -4,13 +4,6 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
-/**
- * Camera preset for quick camera configuration changes.
- *
- * @param fov Field of view in degrees
- * @param zoom Zoom level (1.0 = normal, < 1.0 = zoom in, > 1.0 = zoom out)
- * @param offset Camera offset from target position
- */
 @Serializable
 data class CameraPreset(
     val fov: Float,

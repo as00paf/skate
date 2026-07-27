@@ -1,10 +1,10 @@
 package com.pafoid.skate.engine.input
 
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.Time
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.engine.utils.Time
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.GLFW_CURSOR

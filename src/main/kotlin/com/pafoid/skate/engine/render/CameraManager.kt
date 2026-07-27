@@ -9,9 +9,6 @@ import com.pafoid.skate.engine.events.CameraAction
 import com.pafoid.skate.engine.getComponent
 import org.joml.Vector3f
 
-/**
- * Manages the active camera used by the renderer based on engine state.
- */
 class CameraManager(
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {

@@ -3,10 +3,10 @@ package com.pafoid.skate.editor.commands
 import com.pafoid.skate.editor.commands.project.OpenSceneFileCommand
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.JobSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction
-import com.pafoid.skate.engine.utils.JobSystem
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

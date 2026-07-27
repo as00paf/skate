@@ -22,7 +22,6 @@ import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
-import com.pafoid.skate.engine.utils.JobSystem
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 import java.util.concurrent.atomic.AtomicReference

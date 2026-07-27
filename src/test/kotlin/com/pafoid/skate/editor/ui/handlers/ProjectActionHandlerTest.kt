@@ -18,8 +18,8 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.JobSystem
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.utils.JobSystem
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
