@@ -38,7 +38,6 @@ class Transform(
     }
 }
 
-// TODO: move
 fun Transform.toMatrix(): Matrix4f {
     val matrix = Matrix4f()
     matrix.identity()
@@ -50,7 +49,6 @@ fun Transform.toMatrix(): Matrix4f {
     return matrix
 }
 
-// TODO: move
 fun Transform.toWorldMatrix(): Matrix4f {
     val worldMatrix = toMatrix()
     val parent = gameObject.parent
