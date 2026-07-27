@@ -15,12 +15,6 @@ import org.lwjgl.openal.ALC10
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- * ECS system for audio playback and 3D spatialization.
- *
- * Updates listener position from camera and manages 3D audio source positions.
- * Runs at ExecutionPriority.LATE to ensure transforms are updated first.
- */
 class AudioSystem(
     val audioEngine: AudioEngine,
     private val logger: LoggerService,

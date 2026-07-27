@@ -18,13 +18,6 @@ import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
-/**
- * System responsible for updating skeletal animations on animated GameObjects.
- *
- * Maintains a cached list of eligible GameObjects (those with both SkeletonComponent
- * and Animator) to avoid O(n) filtering every frame.
- *
- */
 class AnimationSystem(
     private val eventSystem: EventSystem, private val logger: LoggerService
 ) : System(priority = ExecutionPriority.DEFAULT) {

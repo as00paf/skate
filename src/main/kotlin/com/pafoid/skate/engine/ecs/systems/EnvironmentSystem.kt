@@ -6,32 +6,6 @@ import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 
-/**
- * System responsible for managing environment settings via components.
- *
- * This system runs at [com.pafoid.skate.engine.ecs.config.ExecutionPriority.EARLY] to ensure environment state
- * is ready before rendering systems read from EnvironmentComponent.
- *
- * ## Responsibilities
- *
- * - Ensures Scene has EnvironmentComponent
- * - Provides ImGui interface for real-time environment editing
- * - Supports environment presets for quick configuration
- * - Integrates with DayNightCycleSystem for coordinated lighting
- *
- * ## Usage
- *
- * ```kotlin
- * val environmentSystem = EnvironmentSystem(stringManager)
- * scene.addSystem(environmentSystem)
- *
- * // EnvironmentComponent is automatically added to Scene
- * // Other systems read from Scene's EnvironmentComponent
- * val envComponent = scene.getComponent<EnvironmentComponent>()
- * envComponent?.fogDensity = 0.01f
- * ```
- *
- */
 class EnvironmentSystem : System(priority = ExecutionPriority.EARLY) {
 
     // Reference to Scene's EnvironmentComponent (updated each frame)

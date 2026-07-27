@@ -15,10 +15,6 @@ import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
-/**
- * System responsible for synchronizing skeletal animation with physics rigid bodies
- * to create ragdoll effects.
- */
 class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
 
     private val tempVecJme = com.jme3.math.Vector3f()

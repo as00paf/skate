@@ -12,13 +12,6 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 
-/**
- * System responsible for updating the directional light.
- *
- * This system runs at [ExecutionPriority.EARLY] after [DayNightCycleSystem]
- * to ensure day/night state is ready before computing light properties.
- *
- */
 class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
 
     // System-owned configuration
@@ -46,9 +39,6 @@ class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
         }
     }
 
-    /**
-     * Computes the light space matrix for shadow mapping.
-     */
     private fun updateLightSpaceMatrix(camera: Camera? = null) {
         // Choose up vector based on light direction to prevent lookAt failure (high noon)
         val config = config ?: return

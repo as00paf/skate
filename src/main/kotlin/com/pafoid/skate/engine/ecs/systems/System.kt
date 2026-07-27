@@ -3,57 +3,26 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 
-/**
- * Abstract base class for systems in the ECS architecture.
- * Systems are global entities that operate on collections of GameObjects/components
- * rather than being attached to individual GameObjects like Components.
- *
- * Systems are updated in priority order (EARLY first, LATE last).
- * Use priority values to ensure systems with dependencies execute in the correct order.
- *
- * @param priority Execution priority. Default is DEFAULT.
- */
 abstract class System(
     val priority: ExecutionPriority = ExecutionPriority.DEFAULT
 ) {
     var enabled = true
     var cacheDirty = false
 
-    /**
-     * Display name for this system, used in UI (e.g., SystemsWindow).
-     * Defaults to the simple class name but can be overridden for custom display.
-     */
     open val displayName: String get() = javaClass.simpleName
 
     lateinit var scene: Scene
 
-    /**
-     * Initializes the system with the scene it operates in.
-     */
     open fun init(scene: Scene) {
         this.scene = scene
     }
 
-    /**
-     * Called once when the system starts running.
-     */
     open fun start() {}
 
-    /**
-     * Updates the system during runtime.
-     */
     open fun update(dt: Float) {}
 
-    /**
-     * Called when the system is destroyed.
-     */
     open fun destroy() {}
 
-    /**
-     * Called when scene structure changes (GameObject add/remove or component composition mutation).
-     * Subsystems that cache GameObject eligibility should clear/rebuild their cache from source data.
-     * Default implementation does nothing.
-     */
     open fun invalidateCache() {}
 
     open fun rebuildCache() {}

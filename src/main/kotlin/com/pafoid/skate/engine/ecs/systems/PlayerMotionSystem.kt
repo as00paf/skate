@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PlayerController
@@ -24,7 +23,6 @@ import kotlin.math.atan2
 class PlayerMotionSystem(
     private val cameraManager: CameraManager,
     private val eventSystem: EventSystem,
-    private val logger: LoggerService
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     private val cache = mutableListOf<GameObject>()

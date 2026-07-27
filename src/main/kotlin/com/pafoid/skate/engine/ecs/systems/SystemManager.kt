@@ -2,14 +2,6 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.Scene
 
-/**
- * Manages the lifecycle and operations of Systems within a scene.
- * This class centralizes all System management responsibilities to reduce
- * the burden on the Scene class and improve separation of concerns.
- *
- * Systems are executed in priority order (lowest priority first) to ensure
- * proper dependency ordering (e.g., input systems before physics systems).
- */
 class SystemManager {
     private val _systems = mutableListOf<System>()
     private val pendingSystems = mutableListOf<System>()

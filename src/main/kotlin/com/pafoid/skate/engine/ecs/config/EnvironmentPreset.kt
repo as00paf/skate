@@ -1,21 +1,18 @@
 package com.pafoid.skate.engine.ecs.config
 
-/**
- * Preset environment configurations for quick setup.
- */
 enum class EnvironmentPreset {
-    /** Clear daytime sky with minimal fog */
     CLEAR_DAY,
 
-    /** Overcast cloudy sky */
+    /** Clear daytime sky with minimal fog */
     CLOUDY,
 
-    /** Dense fog for atmospheric effects */
+    /** Overcast cloudy sky */
     FOGGY,
 
-    /** Warm sunset colors */
+    /** Dense fog for atmospheric effects */
     SUNSET,
 
-    /** No fog, clear visibility */
+    /** Warm sunset colors */
     NO_FOG
+    /** No fog, clear visibility */
 }

@@ -1,8 +1,5 @@
 package com.pafoid.skate.engine.ecs
 
-/**
- * Canonical recursive scene graph traversal utilities.
- */
 fun Scene.collectGameObjectsDepthFirst(): List<GameObject> {
     val allObjects = ArrayList<GameObject>(gameObjects.size)
     gameObjects.forEach { root ->

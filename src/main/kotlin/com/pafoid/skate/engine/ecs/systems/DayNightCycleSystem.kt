@@ -10,38 +10,6 @@ import org.joml.Vector3f
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- * System responsible for updating the day/night cycle.
- *
- * This system runs at [ExecutionPriority.EARLY] to ensure day/night state
- * is ready before lighting and shadow systems read from [config].
- *
- * ## Responsibilities
- *
- * - Advances [DayNightCycleComponent.timeOfDay] based on delta time
- * - Computes sun direction from cycle time using trigonometry
- * - Interpolates sun color through day phases (daylight → dusk → night → dawn)
- * - Computes ambient color and shadow intensity
- *
- * ## Day Phases
- *
- * | Time | Phase | Sun Color | Ambient |
- * |------|-------|-----------|---------|
- * | 0-5 | Night | Cool blue (0.3, 0.4, 0.6) | Dark (0.1) |
- * | 5-7 | Dawn | Pink/orange (1.0, 0.7, 0.5) | Rising |
- * | 7-17 | Day | Warm yellow (1.0, 0.95, 0.8) | Bright (0.8) |
- * | 17-19 | Dusk | Orange (1.0, 0.6, 0.3) | Falling |
- * | 19-24 | Night | Cool blue (0.3, 0.4, 0.6) | Dark (0.1) |
- *
- * ## Sun Direction Calculation
- *
- * Sun position follows a simple arc:
- * - Noon (12:00): sun at zenith (0, 1, 0)
- * - Dawn (6:00): sun at horizon (-1, 0, 0)
- * - Dusk (18:00): sun at horizon (1, 0, 0)
- * - Midnight (0:00): sun below (0, -1, 0)
- *
- */
 class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
 
     // Color constants for interpolation
@@ -79,10 +47,6 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
         }
     }
 
-    /**
-     * Updates LightingStateComponent with computed ambient color and intensity.
-     * Only called when autoAmbient is enabled.
-     */
     private fun updateSceneAmbient(config: DayNightCycleComponent) {
         val lightingStateComponent = scene.getComponent<LightingStateComponent>()
             ?: LightingStateComponent()
@@ -92,15 +56,6 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
         }
     }
 
-    /**
-     * Computes sun direction vector from cycle time.
-     *
-     * Sun follows a simple arc in the X-Y plane:
-     * - Angle 0° at noon (sun at zenith)
-     * - Angle -90° at dawn (sun rises in east)
-     * - Angle +90° at dusk (sun sets in west)
-     * - Angle ±180° at midnight (sun below)
-     */
     private fun updateSunDirection(config: DayNightCycleComponent) {
         // Convert cycle time to angle (0-24 hours → 0-360 degrees)
         // Offset by 6 hours so noon = 0° (sun at zenith)
@@ -115,12 +70,6 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
         ).normalize()
     }
 
-    /**
-     * Interpolates sun color based on time of day.
-     *
-     * Blends between dawn, noon, dusk, and night colors
-     * to create smooth transitions through day phases.
-     */
     private fun updateSunColor(config: DayNightCycleComponent) {
         val time = config.timeOfDay
 
@@ -170,9 +119,6 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
         config.ambientColor.set(nightAmbient).lerp(dayAmbient, config.sunIntensity)
     }
 
-    /**
-     * Linear interpolation between two colors.
-     */
     private fun lerpColor(from: Vector3f, to: Vector3f, t: Float, result: Vector3f) {
         result.set(
             from.x + (to.x - from.x) * t,

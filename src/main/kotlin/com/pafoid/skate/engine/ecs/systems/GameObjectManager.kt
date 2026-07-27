@@ -4,11 +4,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 
-/**
- * Manages the lifecycle and operations of GameObjects within a scene.
- * This class centralizes all GameObject management responsibilities to reduce
- * the burden on the Scene class and improve separation of concerns.
- */
 class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
 
     override fun init(scene: Scene) {
@@ -26,8 +21,7 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
     }
 
     override fun update(dt: Float) {
-        if (!scene.isRunning) return // TODO: check if still needed
-
+        if (!scene.isRunning) return
         val iterator = scene.gameObjects.iterator()
         while (iterator.hasNext()) {
             val go = iterator.next()

@@ -85,7 +85,7 @@ class Engine {
             PhysicsSystem(nativeLibraryLoader, debugRenderer),
             DayNightCycleSystem(),
             DirectionalLightSystem(),
-            PlayerMotionSystem(cameraManager, eventSystem, logger),
+            PlayerMotionSystem(cameraManager, eventSystem),
             AnimationSystem(eventSystem, logger),
             RagdollSystem(),
         )
