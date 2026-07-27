@@ -8,13 +8,10 @@ import org.joml.Matrix4f
 data class SkeletonPose(
     val skeleton: Skeleton
 ) {
-    val localTransforms: Array<@Contextual Matrix4f>
-    val globalTransforms: Array<@Contextual Matrix4f>
+    val localTransforms: Array<@Contextual Matrix4f> = Array(skeleton.boneCount) { Matrix4f() }
+    val globalTransforms: Array<@Contextual Matrix4f> = Array(skeleton.boneCount) { Matrix4f() }
 
     init {
-        localTransforms = Array(skeleton.boneCount) { Matrix4f() }
-        globalTransforms = Array(skeleton.boneCount) { Matrix4f() }
-
         // Initialize with bind pose
         populateBindPose(skeleton.rootBone)
     }

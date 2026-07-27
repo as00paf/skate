@@ -17,9 +17,6 @@ import com.pafoid.skate.engine.render.VAOLoader
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Manages loading, caching, and unloading of engine assets.
- */
 class AssetsManager(
     private val logger: LoggerService,
 ) {

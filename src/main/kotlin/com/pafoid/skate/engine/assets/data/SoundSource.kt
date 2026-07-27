@@ -19,11 +19,6 @@ import org.lwjgl.openal.AL10.alSourceStop
 import org.lwjgl.openal.AL10.alSourcef
 import org.lwjgl.openal.AL10.alSourcei
 
-/**
- * Sound source for OpenAL audio playback.
- * 
- * Manages an OpenAL source and its properties (position, volume, looping).
- */
 class SoundSource(isLooping: Boolean, isRelative: Boolean) {
 
     var sourceId: Int = -1

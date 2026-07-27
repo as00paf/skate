@@ -11,5 +11,4 @@ data class TexturedModel (
     var material: Material = Material(),
     @Transient var mesh: List<MeshPart> = emptyList(),
     @Contextual var skeleton: Skeleton? = null,
-) {
-}
+)

@@ -28,17 +28,12 @@ class PrefabsGenerator(
     private val sceneManager = engine.sceneManager
     private val gameObjectManager = engine.gameObjectManager
 
-    /** Root path for engine-bundled assets copied into the project (null = use engine paths) */
     private var engineDefaultsRoot: String? = null
 
     // TODO: remove
     private val resolvedModelPaths = mutableMapOf<String, String>()
     private val resolvedTexturePaths = mutableMapOf<String, String>()
 
-    /**
-     * Set the root path for engine-bundled default assets.
-     * Called by ProjectManager after copying assets into the project.
-     */
     fun setEngineDefaultsRoot(projectDir: File) {
         engineDefaultsRoot = File(projectDir, "Assets/EngineDefaults").absolutePath
     }

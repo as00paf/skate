@@ -43,7 +43,7 @@ object Assets {
         const val JAMES = "assets/characters/james.glb"
     }
     object Fonts {
-        const val fontsFile = "assets/fonts/Font Awesome 7 Free-Solid-900.otf"
+        const val FONTS_FILE = "assets/fonts/Font Awesome 7 Free-Solid-900.otf"
     }
     object Files {
         const val IMGUI = "imgui.ini"
