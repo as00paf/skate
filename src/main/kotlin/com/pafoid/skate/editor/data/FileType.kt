@@ -19,5 +19,7 @@ enum class FileType(val extensions: List<String>) {
     SHADER(listOf("glsl")),
     MATERIAL(listOf("mat", "material")),
     TEXT(listOf("txt", "properties")),
-    UNKNOWN(listOf())
+    UNKNOWN(listOf());
+    
+    val SUPPORTED = FileType.entries.flatMap { it.extensions }
 }
