@@ -51,11 +51,11 @@ class MeasureTool(
 
             if (abs(ray.direction.y) > 0.0001f) {
                 val t = -ray.origin.y / ray.direction.y
-                if (t > 0) {
+                if (abs(t) > 0) {
                     val hitPoint = Vector3f(ray.direction).mul(t).add(ray.origin)
 
-                    if (inputProvider.mouseButtonBeginPress(0)) {
-                        if (startPoint == null || (startPoint != null && endPoint != null)) {
+                    if (inputProvider.isLeftMouseButtonDown(true)) {
+                        if (startPoint == null) {
                             startPoint = Vector3f(hitPoint)
                             endPoint = null
                         } else {
@@ -77,7 +77,7 @@ class MeasureTool(
                         }
 
                         measurementText = "Distance: $displayText"
-                        measurementPos = Vector2f(relX + 20, relY + 20) //TODO: +20 ?!?
+                        measurementPos = Vector2f(inputProvider.getMouseX() + 20, inputProvider.getMouseY() + 20)
                     }
                 }
             }
