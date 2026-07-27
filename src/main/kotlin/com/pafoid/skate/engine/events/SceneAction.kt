@@ -3,11 +3,6 @@ package com.pafoid.skate.engine.events
 import com.pafoid.skate.engine.ecs.Scene
 import java.io.File
 
-/**
- * Domain actions for scene management operations.
- * These are published when the user requests a scene operation
- * (e.g., from UI context menu, keyboard shortcut, or search).
- */
 sealed class SceneAction(eventName: String) : Event(eventName) {
     // Create
     data class Created(val scene: Scene) : SceneAction("scene.action.created")

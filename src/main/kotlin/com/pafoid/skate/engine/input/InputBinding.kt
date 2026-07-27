@@ -46,29 +46,4 @@ data class InputBinding(
             descriptions.joinToString(" / ")
         }
     }
-
-    companion object {
-        /**
-         * Create a keyboard-only binding.
-         * @param key GLFW key code
-         * @return InputBinding bound to keyboard key only
-         */
-        fun keyboard(key: Int): InputBinding = InputBinding(keyboardKey = key)
-
-        /**
-         * Create a gamepad button-only binding.
-         * @param button Gamepad button index
-         * @return InputBinding bound to gamepad button only
-         */
-        fun gamepadButton(button: Int): InputBinding = InputBinding(gamepadButton = button)
-
-        /**
-         * Create a gamepad axis-only binding.
-         * @param axis Gamepad axis index
-         * @param inverted If true, invert the axis value
-         * @return InputBinding bound to gamepad axis
-         */
-        fun gamepadAxis(axis: Int, inverted: Boolean = false): InputBinding =
-            InputBinding(gamepadAxis = axis, inverted = inverted)
-    }
 }
