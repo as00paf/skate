@@ -66,9 +66,9 @@ class BulletPhysics3D(
      * @param excludeBody Optional body to exclude from the raycast (e.g., the player's own body).
      * @return The closest [RayTestResult], or null if no hit occurred.
      */
-    override fun raycastClosest(from: JomlVector3f, to: JomlVector3f, excludeBody: IPhysicsBody3D?): RayTestResult? {
+    override fun raycastClosest(from: JomlVector3f, to: JomlVector3f, excludeBody: IPhysicsBody3D?): Float? {
         val results = rayTest(from, to, excludeBody)
-        return if (results.isEmpty()) null else results.minByOrNull { it.hitFraction }?.toRayTestResult()
+        return if (results.isEmpty()) null else results.minByOrNull { it.hitFraction }?.hitFraction
     }
 
     /**
