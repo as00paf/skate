@@ -9,6 +9,7 @@ import com.pafoid.skate.editor.commands.project.LoadLastProjectCommand
 import com.pafoid.skate.editor.commands.project.OpenProjectCommand
 import com.pafoid.skate.editor.commands.project.RenameFileCommand
 import com.pafoid.skate.editor.commands.project.SaveProjectCommand
+import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.ProjectEvent.CloseProjectRequested
@@ -120,7 +121,7 @@ class ProjectActionHandler(
                 fileChooser.dialogTitle = stringManager.getString("dialog.open_project")
                 fileChooser.addChoosableFileFilter(object : FileFilter() {
                     override fun accept(file: File): Boolean {
-                        return file.isDirectory || file.extension == "skateproject"
+                        return file.isDirectory || file.extension in FileType.PROJECT_FILE.extensions
                     }
 
                     override fun getDescription(): String {

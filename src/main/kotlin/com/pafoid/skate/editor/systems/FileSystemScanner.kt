@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.FileSystemItem
+import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import java.io.File
@@ -33,7 +34,7 @@ class FileSystemScanner(
             ?.map { buildTree(it) }
             ?: emptyList()
 
-        val projectFileType = projectDir.listFiles { f -> f.extension == "skateproject" }
+        val projectFileType = projectDir.listFiles { f -> f.extension in FileType.PROJECT_FILE.extensions }
             ?.firstOrNull()
             ?.let { buildTree(it) }
 

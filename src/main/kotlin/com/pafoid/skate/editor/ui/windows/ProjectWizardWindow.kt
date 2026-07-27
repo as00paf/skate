@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.WindowAction
@@ -245,7 +246,7 @@ class ProjectWizardWindow(
             fileChooser.dialogTitle = "Open Existing Project"
             fileChooser.addChoosableFileFilter(object : FileFilter() {
                 override fun accept(file: File): Boolean {
-                    return file.isDirectory || file.extension == "skateproject"
+                    return file.isDirectory || file.extension in FileType.PROJECT_FILE.extensions
                 }
                 override fun getDescription(): String {
                     return "SkateSim Projects (*.skateproject)"

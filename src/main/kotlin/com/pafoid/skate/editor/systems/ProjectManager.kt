@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.project.EngineAssetCopier
@@ -153,7 +154,7 @@ class ProjectManager(
 
     fun openProject(projectFile: File): Boolean {
         return try {
-            if (!projectFile.exists() || projectFile.extension != "skateproject") {
+            if (!projectFile.exists() || !FileType.PROJECT_FILE.extensions.contains(projectFile.extension)) {
                 logger.logEditor(
                     "Project file does not exist or invalid extension: ${projectFile.absolutePath}",
                     LogLevel.ERROR

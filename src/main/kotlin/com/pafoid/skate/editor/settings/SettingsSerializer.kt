@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.settings
 
+import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import java.io.File
@@ -25,7 +26,7 @@ class SettingsSerializer(private val serializer: Serializer) {
     }
 
     fun loadProjectSettings(projectFile: File): Project? {
-        return if (projectFile.exists() && projectFile.extension == "skateproject") {
+        return if (projectFile.exists() && projectFile.extension in FileType.PROJECT_FILE.extensions) {
             try {
                 serializer.decode<Project>(projectFile.readText())
             } catch (e: Exception) {
