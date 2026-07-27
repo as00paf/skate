@@ -11,19 +11,19 @@ object FileTypeResolver {
     fun resolve(file: File): FileType {
         if (file.isDirectory) return FileType.FOLDER
         return when (file.extension.lowercase()) {
-            "skateproject" -> FileType.PROJECT_FILE
-            "scene" -> FileType.SCENE
-            "kt" -> FileType.SCRIPT_KOTLIN
-            "java" -> FileType.SCRIPT_JAVA
-            "png", "jpg", "jpeg", "tga", "bmp", "webp" -> FileType.TEXTURE
-            "glb", "gltf", "fbx", "obj", "dae" -> FileType.MODEL_3D
-            "wav", "ogg", "mp3" -> FileType.SOUND
-            "prefab" -> FileType.PREFAB
-            "json" -> FileType.JSON
-            "properties", "yml", "yaml", "toml", "cfg", "ini" -> FileType.CONFIG
-            "glsl", "vert", "frag" -> FileType.SHADER
-            "material" -> FileType.MATERIAL
-            "txt", "md" -> FileType.TEXT
+            in FileType.PROJECT_FILE.extensions -> FileType.PROJECT_FILE
+            in FileType.SCENE.extensions -> FileType.SCENE
+            in FileType.SCRIPT_KOTLIN.extensions -> FileType.SCRIPT_KOTLIN
+            in FileType.SCRIPT_JAVA.extensions -> FileType.SCRIPT_JAVA
+            in FileType.TEXTURE.extensions -> FileType.TEXTURE
+            in FileType.MODEL_3D.extensions -> FileType.MODEL_3D
+            in FileType.SOUND.extensions -> FileType.SOUND
+            in FileType.PREFAB.extensions -> FileType.PREFAB
+            in FileType.JSON.extensions -> FileType.JSON
+            in FileType.CONFIG.extensions -> FileType.CONFIG
+            in FileType.SHADER.extensions -> FileType.SHADER
+            in FileType.MATERIAL.extensions -> FileType.MATERIAL
+            in FileType.TEXT.extensions -> FileType.TEXT
             else -> FileType.UNKNOWN
         }
     }

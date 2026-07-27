@@ -1,10 +1,9 @@
 package com.pafoid.skate.editor.settings
 
+import com.pafoid.skate.engine.assets.Assets.Files.ENGINE_SETTINGS_FILE
 import java.io.File
 
 object SettingsData {
-    // TODO: remove
-    const val ENGINE_SETTINGS_FILE = "engine_settings.json"
 
     fun getSettingsDirectory(): File {
         val userHome = System.getProperty("user.home")

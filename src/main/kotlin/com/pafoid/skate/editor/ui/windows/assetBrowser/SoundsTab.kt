@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.SoundSource
@@ -148,13 +149,12 @@ class SoundsTab(
 
     override fun refreshAssets() {
         engine.jobSystem.runIO {
-            val fileExtensions = setOf("wav", "ogg", "mp3", "flac", "aiff") // TODO: should be a constant
             items.clear()
             val soundsDir = File("assets/sounds")
             if (soundsDir.exists()) {
                 items.addAll(soundsDir.walkTopDown().filter { file ->
                     val ext = file.extension.lowercase()
-                    ext in fileExtensions && assetsManager.hasSound(file.absolutePath)
+                    ext in FileType.SOUND.extensions && assetsManager.hasSound(file.absolutePath)
                 })
             }
         }

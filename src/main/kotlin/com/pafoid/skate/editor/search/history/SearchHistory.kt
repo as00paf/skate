@@ -7,7 +7,7 @@ import kotlinx.coroutines.sync.withLock
 import java.io.File
 
 class SearchHistory(
-    private val historyFile: File = File("search_history.json"),
+    private val historyFile: File = File("search_history.json"),// TODO: move
     private val maxEntries: Int = DEFAULT_MAX_ENTRIES,
     private val serializer: Serializer
 ) {

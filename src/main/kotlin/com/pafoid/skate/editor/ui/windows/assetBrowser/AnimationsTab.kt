@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
@@ -76,13 +77,14 @@ class AnimationsTab(
 
     override fun refreshAssets() {
         engine.jobSystem.runIO {
-            val fileExtensions = setOf("fbx")
             items.clear()
             val animationsDir = File(Assets.Folders.ANIMATIONS)
             if (animationsDir.exists()) {
                 items.addAll(
                     animationsDir.walkTopDown().filter {
-                        it.isFile && fileExtensions.contains(it.extension) && assetsManager.hasAnimation(it.absolutePath)
+                        it.isFile && FileType.ANIMATION.extensions.contains(it.extension) && assetsManager.hasAnimation(
+                            it.absolutePath
+                        )
                     })
             }
         }

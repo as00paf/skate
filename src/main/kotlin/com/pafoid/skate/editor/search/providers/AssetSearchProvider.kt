@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.search.providers
 
+import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -16,11 +17,10 @@ class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvide
 
     override val category: SearchCategory = SearchCategory.ASSET_MODEL
 
-    // TODO: these should be constansts somewhere
-    private val textureExtensions = listOf("png", "jpg", "jpeg")
-    private val modelExtensions = listOf("obj", "glb", "gltf", "fbx")
-    private val animationExtensions = listOf("fbx")
-    private val soundExtensions = listOf("wav", "ogg", "mp3")
+    private val textureExtensions = FileType.TEXTURE.extensions
+    private val modelExtensions = FileType.MODEL_3D.extensions
+    private val animationExtensions = FileType.ANIMATION.extensions
+    private val soundExtensions = FileType.SOUND.extensions
 
     override suspend fun search(query: String): List<SearchResult> {
         if (query.isBlank()) return emptyList()
@@ -51,7 +51,9 @@ class AssetSearchProvider(private val logger: LoggerService) : BaseSearchProvide
 
         if (texturesDir.exists()) {
             texturesDir.walkTopDown()
-                .filter { it.isFile && textureExtensions.contains(it.extension.lowercase()) }
+                .filter {
+                    it.isFile && textureExtensions.contains(it.extension.lowercase())
+                }
                 .forEach { file ->
                     val score = calculateRelevance(file.name, query)
                     if (score > 0.0f) {

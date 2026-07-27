@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.commands.objects.ApplyTextureCommand
+import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.assets.Assets
@@ -96,12 +97,11 @@ class TexturesTab(
 
     override fun refreshAssets() {
         engine.jobSystem.runIO {
-            val fileExtensions = setOf("png", "jpg", "jpeg")
             items.clear()
             val texturesDir = File(Assets.Folders.TEXTURES)
             if (texturesDir.exists()) {
                 items.addAll(texturesDir.walkTopDown().filter {
-                    it.isFile && fileExtensions.contains(it.extension) && assetsManager.hasTexture(it.absolutePath)
+                    it.isFile && FileType.TEXTURE.extensions.contains(it.extension) && assetsManager.hasTexture(it.absolutePath)
                 })
             }
         }

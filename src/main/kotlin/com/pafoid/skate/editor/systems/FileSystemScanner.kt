@@ -11,7 +11,7 @@ class FileSystemScanner(
     private val serializer: Serializer
 ) {
     private val favoritesFile: File?
-        get() = projectManager.getProjectDirectory()?.let { File(it, ".favorites.json") }
+        get() = projectManager.getProjectDirectory()?.let { File(it, ".favorites.json") }// TODO: move
 
     private var _favorites: MutableSet<String> = mutableSetOf()
     val favorites: Set<String> get() = _favorites

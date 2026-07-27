@@ -154,7 +154,7 @@ class SettingsManager(
     fun updateInputMappings(inputMappings: EditorInputMappings) {
         // Store input mappings in a dedicated file for now
         try {
-            val file = SettingsData.getSettingsDirectory().resolve("input_mappings.json")
+            val file = SettingsData.getSettingsDirectory().resolve("input_mappings.json")// TODO: const
             file.parentFile?.mkdirs()
             file.writeText(serializer.encode(inputMappings))
             logger.logEditor("Input mappings saved to ${file.absolutePath}")
@@ -165,7 +165,7 @@ class SettingsManager(
 
     fun loadInputMappings(): InputMappings? {
         return try {
-            val file = SettingsData.getSettingsDirectory().resolve("input_mappings.json")
+            val file = SettingsData.getSettingsDirectory().resolve("input_mappings.json")// TODO: const
             if (file.exists()) {
                 serializer.decode<InputMappings>(file.readText())
             } else null
