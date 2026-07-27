@@ -83,7 +83,6 @@ class ProjectManager(
             if (copyResult.isSuccess) {
                 val count = copyResult.getOrNull() ?: 0
                 logger.logEditor("Copied $count engine-bundled assets to project")
-                prefabsGenerator.setEngineDefaultsRoot(projectDir)
             } else {
                 logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}")
             }

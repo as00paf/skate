@@ -20,6 +20,6 @@ enum class FileType(val extensions: List<String>) {
     MATERIAL(listOf("mat", "material")),
     TEXT(listOf("txt", "properties")),
     UNKNOWN(listOf());
-    
-    val SUPPORTED = FileType.entries.flatMap { it.extensions }
 }
+
+val FileType.SUPPORTED by lazy { FileType.entries.flatMap { it.extensions } }

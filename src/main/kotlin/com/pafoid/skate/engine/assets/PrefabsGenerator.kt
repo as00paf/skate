@@ -19,7 +19,6 @@ import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import com.pafoid.skate.game.prefabs.Tile
 import org.joml.Vector3f
-import java.io.File
 
 class PrefabsGenerator(
     engine: Engine
@@ -28,44 +27,8 @@ class PrefabsGenerator(
     private val sceneManager = engine.sceneManager
     private val gameObjectManager = engine.gameObjectManager
 
-    private var engineDefaultsRoot: String? = null
-
-    // TODO: remove
-    private val resolvedModelPaths = mutableMapOf<String, String>()
-    private val resolvedTexturePaths = mutableMapOf<String, String>()
-
-    fun setEngineDefaultsRoot(projectDir: File) {
-        engineDefaultsRoot = File(projectDir, "Assets/EngineDefaults").absolutePath
-    }
-
-    /** Resolve a model path — use cached result, project copy, or fall back to engine path */
-    // TODO: remove
-    private fun resolveModelPath(enginePath: String): String {
-        resolvedModelPaths[enginePath]?.let { return it }
-        val root = engineDefaultsRoot ?: return enginePath.also { resolvedModelPaths[enginePath] = it }
-        val fileName = File(enginePath).name
-        val result = listOf("Models", "Characters").firstNotNullOfOrNull { dir ->
-            val candidate = File(root, "$dir/$fileName")
-            if (candidate.exists()) candidate.absolutePath else null
-        } ?: enginePath
-        resolvedModelPaths[enginePath] = result
-        return result
-    }
-
-    /** Resolve a texture path — use cached result, project copy, or fall back to engine path */
-    private fun resolveTexturePath(enginePath: String): String {
-        resolvedTexturePaths[enginePath]?.let { return it }
-        val root = engineDefaultsRoot ?: return enginePath.also { resolvedTexturePaths[enginePath] = it }
-        val fileName = File(enginePath).name
-        val candidate = File(root, "Textures/$fileName")
-        val result = if (candidate.exists()) candidate.absolutePath else enginePath
-        resolvedTexturePaths[enginePath] = result
-        return result
-    }
-
     fun spawnSkateboard(): GameObject {
-        val modelPath = resolveModelPath(Assets.Models.SKATEBOARD_GLB)
-        val model = assetsManager.loadModel(modelPath)
+        val model = assetsManager.loadModel(Assets.Models.SKATEBOARD_GLB)
         val skate = Skateboard(model)
 
         gameObjectManager.addGameObject(skate)
@@ -73,9 +36,7 @@ class PrefabsGenerator(
     }
 
     fun spawnSkater(skate: GameObject? = null): GameObject {
-        val modelPath = resolveModelPath(Assets.Models.JAMES)
-        val model = assetsManager.getModel(modelPath)
-            ?: assetsManager.loadModel(modelPath)
+        val model = assetsManager.loadModel(Assets.Models.JAMES)
         val skater = Skater("Skater", model, skate)
         val skeleton = skater.getComponent<SkeletonComponent>()?.pose?.skeleton
         val animator = skater.getComponent<Animator>()
@@ -91,12 +52,10 @@ class PrefabsGenerator(
     }
 
     fun spawnFloor(): GameObject {
-        val texturePath = resolveTexturePath(Assets.Textures.ASPHALT)
-        val modelPath = resolveModelPath(Assets.Models.CUBE)
-        val texture = assetsManager.getTexture(texturePath)
-        val baseModel = assetsManager.loadModel(modelPath)
+        val texture = assetsManager.getTexture(Assets.Textures.ASPHALT)
+        val baseModel = assetsManager.loadModel(Assets.Models.CUBE)
         val model = TexturedModel(
-            path = modelPath,
+            path = Assets.Models.CUBE,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
 
@@ -121,12 +80,7 @@ class PrefabsGenerator(
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
         model.mesh[0].material.baseColorTexture = texture
-        val renderComponent = RenderComponent(
-            model = model,
-            castShadow = true,
-            receiveShadow = true,
-
-            )
+        val renderComponent = RenderComponent(model = model, castShadow = true, receiveShadow = true)
         rail.addComponent(renderComponent)
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0))
@@ -150,11 +104,7 @@ class PrefabsGenerator(
         )
 
         model.mesh[0].material.baseColorTexture = texture
-        val renderComponent = RenderComponent(
-            model = model,
-            castShadow = true,
-            receiveShadow = true
-        )
+        val renderComponent = RenderComponent(model = model, castShadow = true, receiveShadow = true)
         ledge.addComponent(renderComponent)
 
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
@@ -178,11 +128,7 @@ class PrefabsGenerator(
             path = Assets.Models.KICKER,
         )
         kicker.addComponent(
-            RenderComponent(
-                model = texturedModel,
-                castShadow = true,
-                receiveShadow = true
-            )
+            RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true)
         )
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
@@ -204,11 +150,7 @@ class PrefabsGenerator(
             material = Material(baseColorTexture = assetsManager.getTexture(mat.texturePath))
         )
         go.addComponent(
-            RenderComponent(
-                model = texturedModel,
-                castShadow = true,
-                receiveShadow = true
-            )
+            RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true)
         )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
@@ -231,11 +173,7 @@ class PrefabsGenerator(
             material = Material(assetsManager.getTexture(mat.texturePath))
         )
         go.addComponent(
-            RenderComponent(
-                model = texturedModel,
-                castShadow = true,
-                receiveShadow = true
-            )
+            RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true)
         )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
@@ -258,11 +196,7 @@ class PrefabsGenerator(
             material = Material(assetsManager.getTexture(mat.texturePath))
         )
         go.addComponent(
-            RenderComponent(
-                model = texturedModel,
-                castShadow = true,
-                receiveShadow = true
-            )
+            RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true)
         )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
