@@ -13,18 +13,15 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysics3D
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.physics3d.toVector3f
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import org.joml.Vector3f
 
 class PhysicsSystem(
-    private val nativeLibraryLoader: NativeLibraryLoader,
     private val debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.EARLY) {
 
     private val physics3d: IPhysics3D = BulletPhysics3D(
-        nativeLibraryLoader = nativeLibraryLoader,
         debugRenderer = debugRenderer
     )
 

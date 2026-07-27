@@ -7,12 +7,6 @@ import electrostatic4j.snaploader.filesystem.DirectoryPath
 import electrostatic4j.snaploader.platform.NativeDynamicLibrary
 import electrostatic4j.snaploader.platform.util.PlatformPredicate
 
-/**
- * Responsible for loading the native Bullet Physics library (`bulletjme`) using a helper library.
- * This class ensures the native binaries are available and prevents multiple loading attempts.
- * 
- * @param nativeLibraryLoaderService Service for performing the actual library loading operations
- */
 class NativeLibraryLoader(
     private val nativeLibraryLoaderService: INativeLibraryLoaderService = DefaultNativeLibraryLoaderService()
 ) {
@@ -25,11 +19,6 @@ class NativeLibraryLoader(
         }
     }
 
-    /**
-     * Loads the native Bullet Physics library (`bulletjme`) using a helper library.
-     * This method is called once during initialization to ensure the native binaries are available.
-     * It prevents multiple loading attempts with a static flag.
-     */
     @Synchronized
     fun loadNativeLibrary() {
         if (isNativeLibraryLoaded) return

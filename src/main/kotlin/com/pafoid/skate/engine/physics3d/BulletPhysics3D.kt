@@ -18,7 +18,6 @@ import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
@@ -26,22 +25,17 @@ import com.pafoid.skate.engine.utils.JomlVector3f
 import org.joml.Quaternionf
 
 class BulletPhysics3D(
-    private val nativeLibraryLoader: NativeLibraryLoader, // TODO: check why unused
     private val debugRenderer: DebugRenderer
 ) : IPhysics3D {
-    private val physicsSpace: PhysicsSpace
+    private val physicsSpace: PhysicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
 
     private var accumulatorSeconds = 0.0
     private val fixedTimestepSeconds = 1.0 / 60.0
     private val maxFrameDeltaSeconds = 0.25
 
-    /**
-     * Toggles the rendering of debug wireframes for physics colliders.
-     */
     override var debugEnabled = false
 
     init {
-        this.physicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
         this.physicsSpace.setGravity(JmeVector3f(0f, -9.81f, 0f))
     }
 

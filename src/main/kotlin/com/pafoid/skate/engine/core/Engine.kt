@@ -82,7 +82,7 @@ class Engine {
             InputSystem(inputProvider, eventSystem),
             AudioSystem(audioEngine, logger, assetsManager),
             EnvironmentSystem(),
-            PhysicsSystem(nativeLibraryLoader, debugRenderer),
+            PhysicsSystem(debugRenderer),
             DayNightCycleSystem(),
             DirectionalLightSystem(),
             PlayerMotionSystem(cameraManager, eventSystem),
