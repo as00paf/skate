@@ -26,4 +26,6 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
     object SaveRequested : ProjectEvent("project.action.save_project_requested")
     object SaveAsRequested : ProjectEvent("project.action.save_project_as_requested")
     object LoadLastProjectRequested : ProjectEvent("project.action.load_last_project_requested")
+
+    object ExportRequested : ProjectEvent("project.action.export_project_requested")
 }

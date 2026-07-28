@@ -28,7 +28,7 @@ class ProjectManager(
         private set
     private val lifecycleEpoch = AtomicLong(0)
 
-    fun init() {
+    fun init() {// TODO: should not be done here, not its responsibility
         if (!loadLastProject()) {
             eventSystem.publish(WindowAction.Show("window.project_wizard"))
         } else {
@@ -90,7 +90,7 @@ class ProjectManager(
         }
     }
 
-    fun openProject(projectFile: File): Boolean {
+    fun openProject(projectFile: File): Boolean {// TODO: needs to take a Project instead of file
         return try {
             if (!projectFile.exists() || !FileType.PROJECT_FILE.extensions.contains(projectFile.extension)) {
                 logger.logEditor(
@@ -132,7 +132,7 @@ class ProjectManager(
         logger.logEditor("Closing project: $projectName")
 
         try {
-            val scenesDir = File(project.getProjectDirectory(), project.scenePaths[0])
+            val scenesDir = File(project.getProjectDirectory(), "Scenes\\${project.defaultScene}")
             val openScenesCopy = sceneManager.openScenes.toList()
             openScenesCopy.forEach { scene ->
                 if (scene.isDirty) {
@@ -158,7 +158,7 @@ class ProjectManager(
     }
 
     private fun loadDefaultScene(project: Project) {
-        val scenesDir = File(project.getProjectDirectory(), project.scenePaths[0])
+        val scenesDir = File(project.getProjectDirectory(), "Scenes")
         val defaultSceneFile = File(scenesDir, "${project.defaultScene}.scene")
 
         if (!defaultSceneFile.exists()) {

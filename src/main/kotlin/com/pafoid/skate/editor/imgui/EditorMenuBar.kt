@@ -129,6 +129,9 @@ class EditorMenuBar(
                 if (menuItem("${Icons.SAVE} ${stringManager.getString("menu.file.save_project_as")}")) {
                     eventSystem.publish(ProjectEvent.SaveAsRequested)
                 }
+                if (menuItem("${Icons.EXPORT} ${stringManager.getString("menu.file.export_project")}")) {
+                    eventSystem.publish(ProjectEvent.ExportRequested)
+                }
             }
             ImGui.separator()
 

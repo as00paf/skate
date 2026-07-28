@@ -30,6 +30,7 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.utils.ProjectExporter
 import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.UIManager
@@ -136,6 +137,16 @@ class ProjectActionHandler(
                 }
             } catch (e: Exception) {
                 logger.logEditor("Error opening project dialog: ${e.message}", LogLevel.ERROR)
+            }
+        }
+
+        eventSystem.subscribe<ProjectEvent.ExportRequested> { event ->
+            projectManager.currentProject?.let {
+                jobSystem.runIO {
+                    if (projectManager.saveProject()) {
+                        ProjectExporter(logger).export(it)
+                    }
+                }
             }
         }
     }

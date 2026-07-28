@@ -43,6 +43,8 @@ class EngineAssetCopier {
         "EngineDefaults/Textures/wood_light.png" to Assets.Textures.WOOD_LIGHT,
         "EngineDefaults/Textures/wood_tan.png" to Assets.Textures.WOOD_TAN,
         "EngineDefaults/Textures/wood_dark.png" to Assets.Textures.WOOD_DARK,
+        // Game
+        "..\\builds\\skate-game.jar" to "build\\libs\\skate-game.jar",
     )
 
     fun copyBundledAssets(projectDir: File): Result<Int> {

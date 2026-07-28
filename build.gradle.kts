@@ -80,3 +80,27 @@ kotlin {
 tasks.withType<Test> {
     jvmArgs("-Xverify:none")
 }
+
+// To produce game jar
+tasks.register<Jar>("gameJar") {
+    archiveClassifier.set("game")
+
+    // Include compiled output classes
+    from(sourceSets.main.get().output)
+
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get()
+            .filter { it.name.endsWith("jar") }
+            .map { zipTree(it) }
+    }) {
+        // Exclude signature files from merged JARs to avoid security exceptions
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes["Main-Class"] = "com.pafoid.skate.game.GameMainKt"
+    }
+}
