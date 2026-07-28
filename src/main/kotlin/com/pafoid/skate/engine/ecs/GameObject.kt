@@ -24,9 +24,6 @@ open class GameObject(
     var uId = ID_COUNTER++
     var isDead: Boolean = false
     var doSerialization = true
-
-    @Transient
-    var componentMutationVersion: Long = 0
     var isEnabled = true
     var isVisible = true
     var isLocked = false

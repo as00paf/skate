@@ -143,7 +143,6 @@ class SceneManager(
 
     fun createNewScene(name: String, dirPath: String): Scene {
         val newScene = Scene(name)
-        // Ensure directory exists
         val dir = File(dirPath)
         if (!dir.exists()) dir.mkdirs()
         val file = File(dir, "$name.scene")

@@ -66,10 +66,7 @@ inline fun <reified T : Component> GameObject.getComponent(): T? {
 inline fun <reified T : Component> GameObject.addComponent(component: T): GameObject = addComponent(T::class, component)
 
 fun <T : Component> GameObject.removeComponent(componentClass: KClass<T>) {
-    val removed = components.removeAll { componentClass.isInstance(it) }
-    if (removed) {
-        componentMutationVersion++
-    }
+    components.removeAll { componentClass.isInstance(it) }
 }
 
 inline fun <reified T : Component> GameObject.removeComponent() = removeComponent(T::class)
@@ -83,6 +80,5 @@ fun <T : Component> GameObject.addComponent(componentClass: KClass<T>, component
     component.generateId()
     components.add(component)
     component.init(this)
-    componentMutationVersion++
     return this
 }

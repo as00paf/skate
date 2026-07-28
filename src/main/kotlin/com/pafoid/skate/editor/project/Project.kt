@@ -11,7 +11,7 @@ data class Project(
     var lastOpenedDate: Long = System.currentTimeMillis(),
     var projectPath: String,
     var description: String = "",
-    var defaultScene: String = "main",
+    var defaultScene: String = "MainScene",
     var assetPaths: List<String> = listOf("Assets"),
     var scenePaths: List<String> = listOf("Scenes"),
     var buildPaths: List<String> = listOf("Builds"),

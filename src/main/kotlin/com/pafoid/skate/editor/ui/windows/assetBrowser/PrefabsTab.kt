@@ -137,35 +137,12 @@ class PrefabsTab(
 
         ImGui.pushID(data.name)
         if (ImGui.imageButton("PrefabItem", texId.toLong(), size, size, 0f, 1f, 1f, 0f)) {
-            engine.jobSystem.runOnMain {
-                when (data.type) {
-                    PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
-                    PrefabType.SKATER -> prefabsGenerator.spawnSkater()
-                    PrefabType.LEDGE -> prefabsGenerator.spawnLedge(material = data.material)
-                    PrefabType.RAIL -> prefabsGenerator.spawnRail(material = data.material)
-                    PrefabType.KICKER -> prefabsGenerator.spawnKicker(material = data.material)
-                    PrefabType.MANUAL_PAD -> prefabsGenerator.spawnManualPad(material = data.material)
-                    PrefabType.BANK -> prefabsGenerator.spawnBank(material = data.material)
-                    PrefabType.QUARTER_PIPE -> prefabsGenerator.spawnQuarterPipe(material = data.material)
-                }
-
-            }
+            spawnPrefab(data)
         }
 
         if (ImGui.beginPopupContextItem()) {
             if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.spawn_in_scene")}")) {
-                engine.jobSystem.runOnMain {
-                    when (data.type) {
-                        PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
-                        PrefabType.SKATER -> prefabsGenerator.spawnSkater()
-                        PrefabType.LEDGE -> prefabsGenerator.spawnLedge(material = data.material)
-                        PrefabType.RAIL -> prefabsGenerator.spawnRail(material = data.material)
-                        PrefabType.KICKER -> prefabsGenerator.spawnKicker(material = data.material)
-                        PrefabType.MANUAL_PAD -> prefabsGenerator.spawnManualPad(material = data.material)
-                        PrefabType.BANK -> prefabsGenerator.spawnBank(material = data.material)
-                        PrefabType.QUARTER_PIPE -> prefabsGenerator.spawnQuarterPipe(material = data.material)
-                    }
-                }
+                spawnPrefab(data)
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.STAR} ${stringManager.getString("context.asset_browser.add_to_favorites")}")) {
@@ -198,7 +175,23 @@ class PrefabsTab(
         ImGui.endGroup()
     }
 
+    private fun spawnPrefab(data: PrefabData) {
+        engine.jobSystem.runOnMain {
+            val go = when (data.type) {
+                PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
+                PrefabType.SKATER -> prefabsGenerator.spawnSkater()
+                PrefabType.LEDGE -> prefabsGenerator.spawnLedge(material = data.material)
+                PrefabType.RAIL -> prefabsGenerator.spawnRail(material = data.material)
+                PrefabType.KICKER -> prefabsGenerator.spawnKicker(material = data.material)
+                PrefabType.MANUAL_PAD -> prefabsGenerator.spawnManualPad(material = data.material)
+                PrefabType.BANK -> prefabsGenerator.spawnBank(material = data.material)
+                PrefabType.QUARTER_PIPE -> prefabsGenerator.spawnQuarterPipe(material = data.material)
+            }
+            engine.gameObjectManager.addGameObject(go)
+        }
+    }
+
     override fun refreshAssets() {
-        // Prefabs are static for now, no need to crawl files
+
     }
 }

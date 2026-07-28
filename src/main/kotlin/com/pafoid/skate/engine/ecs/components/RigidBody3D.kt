@@ -17,7 +17,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 
 @Serializable
-open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {
+open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {// TODO: cleanup
 
     var bodyType: BodyType = BodyType.Dynamic
         set(value) {

@@ -29,15 +29,11 @@ class Skater(
 ): GameObject(name) {
 
     val transform = Transform(position, scale, rotation)
-    val renderComponent = RenderComponent(
-        model = model,
-        castShadow = true,
-        receiveShadow = true
-    )
+    val renderComponent = RenderComponent(model)
 
     init {
         // Parenting: Skater follows Skateboard
-        //skate?.addChild(this)
+        skate?.addChild(this)
 
         val skeleton = model.skeleton?.copy()
         addComponent(transform)

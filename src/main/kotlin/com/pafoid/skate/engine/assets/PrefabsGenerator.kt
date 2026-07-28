@@ -8,8 +8,14 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
+import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.GridLines
+import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
+import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
@@ -19,20 +25,16 @@ import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import com.pafoid.skate.game.prefabs.Tile
 import org.joml.Vector3f
+import java.io.File
 
 class PrefabsGenerator(
     engine: Engine
 ) {
     private val assetsManager = engine.assetsManager
     private val sceneManager = engine.sceneManager
-    private val gameObjectManager = engine.gameObjectManager
 
     fun spawnSkateboard(): GameObject {
-        val model = assetsManager.loadModel(Assets.Models.SKATEBOARD_GLB)
-        val skate = Skateboard(model)
-
-        gameObjectManager.addGameObject(skate)
-        return skate
+        return Skateboard(assetsManager.loadModel(Assets.Models.SKATEBOARD_GLB))
     }
 
     fun spawnSkater(skate: GameObject? = null): GameObject {
@@ -40,14 +42,11 @@ class PrefabsGenerator(
         val skater = Skater("Skater", model, skate)
         val skeleton = skater.getComponent<SkeletonComponent>()?.pose?.skeleton
         val animator = skater.getComponent<Animator>()
-
         if (skeleton != null && animator != null) {
             Skater.DEFAULT_ANIMATIONS.forEach { path ->
                 animator.addAnimation(assetsManager.loadAnimationSync(path, skeleton))
             }
         }
-
-        gameObjectManager.addGameObject(skater)
         return skater
     }
 
@@ -58,113 +57,75 @@ class PrefabsGenerator(
             path = Assets.Models.CUBE,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
-
-        val tile = Tile("Tile", model)
-
-        gameObjectManager.addGameObject(tile)
-        return tile
+        return Tile("Tile", model)
     }
 
-    fun spawnRail(position: Vector3f = Vector3f(0f, 0.5f, 0f), material: MaterialType?): GameObject? {
-        val scene = sceneManager.currentScene ?: return null
-        val rail = GameObject("Rail_${scene.gameObjects.size}")
-        val transformComponent = Transform()
-        transformComponent.translation.set(position)
-        transformComponent.scale.set(1f, 1f, 1f)
-        rail.addComponent(transformComponent)
+    fun spawnRail(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {
         val mat = material ?: MaterialType.METAL
+        val rail = GameObject("Rail")
+        rail.addComponent(Transform(position))
         val baseModel = assetsManager.loadModel(Assets.Models.RAIL)
         val texture = assetsManager.getTexture(mat.texturePath)
         val model = TexturedModel(
             path = Assets.Models.RAIL,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
-        model.mesh[0].material.baseColorTexture = texture
-        val renderComponent = RenderComponent(model = model, castShadow = true, receiveShadow = true)
-        rail.addComponent(renderComponent)
+        rail.addComponent(RenderComponent(model))
         rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0))
-        gameObjectManager.addGameObject(rail)
         return rail
     }
 
-    fun spawnLedge(position: Vector3f = Vector3f(0f, 0.25f, 0f), material: MaterialType?): GameObject? {
-        val scene = sceneManager.currentScene ?: return null
+    fun spawnLedge(position: Vector3f = Vector3f(0f, 0.25f, 0f), material: MaterialType?): GameObject {
         val mat = material ?: MaterialType.CONCRETE
-        val ledge = GameObject("${mat.displayName}_Ledge_${scene.gameObjects.size}")
-        val transformComponent = Transform()
-        transformComponent.translation.set(position)
-        transformComponent.scale.set(1f, 1f, 1f)
-        ledge.addComponent(transformComponent)
+        val ledge = GameObject("${mat.displayName}_Ledge")
+        ledge.addComponent(Transform(position))
         val baseModel = assetsManager.loadModel(Assets.Models.LEDGE)
         val texture = assetsManager.getTexture(mat.texturePath)
         val model = TexturedModel(
             path = Assets.Models.LEDGE,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
-
-        model.mesh[0].material.baseColorTexture = texture
-        val renderComponent = RenderComponent(model = model, castShadow = true, receiveShadow = true)
-        ledge.addComponent(renderComponent)
-
+        ledge.addComponent(RenderComponent(model = model))
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
-        gameObjectManager.addGameObject(ledge)
         return ledge
     }
 
-    fun spawnKicker(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject? {
-        val scene = sceneManager.currentScene ?: return null
-        val kicker = GameObject("Kicker_${scene.gameObjects.size}")
-        val transformComponent = Transform()
-        transformComponent.translation.set(position)
-        transformComponent.scale.set(1f, 1f, 1f)
-        kicker.addComponent(transformComponent)
+    fun spawnKicker(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {
         val mat = material ?: MaterialType.CONCRETE
+        val kicker = GameObject("Kicker")
+        kicker.addComponent(Transform(position))
         val baseModel = assetsManager.loadModel(Assets.Models.KICKER)
         val texture = assetsManager.getTexture(mat.texturePath)
         val texturedModel = TexturedModel(
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) },
             path = Assets.Models.KICKER,
         )
-        kicker.addComponent(
-            RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true)
-        )
+        kicker.addComponent(RenderComponent(model = texturedModel))
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
-
-        gameObjectManager.addGameObject(kicker)
         return kicker
     }
 
-    fun spawnManualPad(position: Vector3f = Vector3f(0f, 0.1f, 0f), material: MaterialType?): GameObject? {
-        val scene = sceneManager.currentScene ?: return null
-        val go = GameObject("ManualPad_${scene.gameObjects.size}")
-        val transformComponent = Transform()
-        transformComponent.translation.set(position)
-        go.addComponent(transformComponent)
+    fun spawnManualPad(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {
         val mat = material ?: MaterialType.CONCRETE
+        val go = GameObject("ManualPad")
+        go.addComponent(Transform(position))
         val baseModel = assetsManager.loadModel(Assets.Models.MANUAL_PAD)
         val texturedModel = TexturedModel(
             path = Assets.Models.MANUAL_PAD,
             mesh = baseModel.mesh,
             material = Material(baseColorTexture = assetsManager.getTexture(mat.texturePath))
         )
-        go.addComponent(
-            RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true)
-        )
+        go.addComponent(RenderComponent(model = texturedModel))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
         go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
-        gameObjectManager.addGameObject(go)
         return go
     }
 
-
-    fun spawnBank(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject? {
-        val scene = sceneManager.currentScene ?: return null
-        val go = GameObject("Bank_${scene.gameObjects.size}")
-        val transformComponent = Transform()
-        transformComponent.translation.set(position)
-        go.addComponent(transformComponent)
+    fun spawnBank(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject {
+        val go = GameObject("Bank")
+        go.addComponent(Transform(position))
         val mat = material ?: MaterialType.CONCRETE
         val baseModel = assetsManager.loadModel(Assets.Models.BANK)
         val texturedModel = TexturedModel(
@@ -177,39 +138,42 @@ class PrefabsGenerator(
         )
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
-        gameObjectManager.addGameObject(go)
         return go
     }
 
 
-    fun spawnQuarterPipe(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject? {
-        val scene = sceneManager.currentScene ?: return null
-        val go = GameObject("QuarterPipe_${scene.gameObjects.size}")
-        val transformComponent = Transform()
-        transformComponent.translation.set(position)
-        go.addComponent(transformComponent)
+    fun spawnQuarterPipe(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject {
         val mat = material ?: MaterialType.CONCRETE
+        val go = GameObject("QuarterPipe")
+        go.addComponent(Transform(position))
         val baseModel = assetsManager.loadModel(Assets.Models.QUARTER_PIPE)
         val texturedModel = TexturedModel(
             path = Assets.Models.QUARTER_PIPE,
             mesh = baseModel.mesh,
             material = Material(assetsManager.getTexture(mat.texturePath))
         )
-        go.addComponent(
-            RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true)
-        )
+        go.addComponent(RenderComponent(model = texturedModel))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
-        gameObjectManager.addGameObject(go)
         return go
     }
 
-    /** Spawn the canonical set of defaults for a new project scene synchronously.
-     * Returns the list of spawned GameObjects in order: skateboard, skater, floor
-     */
+    fun createDefaultScene(sceneDir: File) {
+        val scene = sceneManager.createNewScene("MainScene", sceneDir.path)
+        scene.addComponent(ScenePhysicsComponent())
+            .addComponent(GridLines())
+            .addComponent(EnvironmentComponent())
+            .addComponent(LightingStateComponent())
+            .addComponent(DayNightCycleComponent())
+            .addComponent(DirectionalLightComponent())
+        scene.gameObjects.addAll(spawnDefaultsSync())
+        sceneManager.saveScene(scene, sceneDir.path)
+        sceneManager.openScene(scene)
+    }
+
     fun spawnDefaultsSync(): List<GameObject> {
         val skate = spawnSkateboard()
-        val skater = spawnSkater(skate)
+        val skater = spawnSkater()
         val floor = spawnFloor()
         return listOfNotNull(skate, skater, floor)
     }

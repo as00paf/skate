@@ -11,7 +11,7 @@ abstract class System(
 
     open val displayName: String get() = javaClass.simpleName
 
-    lateinit var scene: Scene
+    var scene: Scene = Scene()
 
     open fun init(scene: Scene) {
         this.scene = scene

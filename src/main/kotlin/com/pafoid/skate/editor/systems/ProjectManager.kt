@@ -6,18 +6,10 @@ import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.settings.RecentProjectInfo
-import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
-import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
-import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
-import com.pafoid.skate.engine.ecs.components.GridLines
-import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.events.EngineAction
-import org.joml.Vector3f
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
@@ -69,14 +61,7 @@ class ProjectManager(
             scenesDir.mkdirs()
             File(projectDir, "Builds").mkdirs()
 
-            val project = Project(
-                name = name,
-                projectPath = projectFile.absolutePath,
-                defaultScene = "MainScene",
-                assetPaths = listOf("Assets"),
-                scenePaths = listOf("Scenes"),
-                buildPaths = listOf("Builds")
-            )
+            val project = Project(name = name, projectPath = projectFile.absolutePath)
 
             // Copy assets
             val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
@@ -90,7 +75,7 @@ class ProjectManager(
             currentProject = project
 
             // Create default scene with prefabs
-            createDefaultScene(scenesDir)
+            prefabsGenerator.createDefaultScene(scenesDir)
 
             settingsManager.addToRecentProjects(project.getProjectFile().absolutePath) // TODO: move to settings manager
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
@@ -103,52 +88,6 @@ class ProjectManager(
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    // TODO: move to prefabs generator
-    fun createDefaultScene(sceneDir: File) {
-        val defaultSceneFile = File(sceneDir, "MainScene.scene")
-        if (defaultSceneFile.exists()) {
-            logger.logEditor("Main.Scene file already exists", LogLevel.ERROR)
-            return
-        }
-
-        logger.logEditor("Creating default scene with prefabs...")
-
-        // Create a new scene file via SceneManager to centralize persistence behavior
-        val scene = sceneManager.createNewScene("MainScene", sceneDir.path)
-
-        // Attach desired default components
-        scene.addComponent(ScenePhysicsComponent(false, Vector3f(0f, -9.81f, 0f)))
-        scene.addComponent(GridLines())
-        scene.addComponent(EnvironmentComponent())
-        scene.addComponent(LightingStateComponent())
-        scene.addComponent(DayNightCycleComponent(dayDuration = 300f))
-        scene.addComponent(
-            DirectionalLightComponent(
-                direction = Vector3f(0f, -1f, 0f),
-                color = Vector3f(1f, 0.95f, 0.8f),
-                intensity = 1f,
-                shadowDistance = 50f,
-                autoCalculateBounds = true,
-                stabilizeProjection = true,
-                depthBias = 0.0f,
-                slopeScaledBias = 0.0f,
-                castShadows = true,
-            )
-        )
-
-        // Open the scene (register systems) then spawn prefabs synchronously
-        sceneManager.openScene(scene)
-        val spawned = prefabsGenerator.spawnDefaultsSync()
-
-        logger.logEditor("Spawned ${scene.gameObjects.size} objects")
-
-        // Save the populated scene
-        scene.name = defaultSceneFile.nameWithoutExtension
-        sceneManager.saveScene(scene, sceneDir.path)
-
-        logger.logEditor("Default scene saved to ${defaultSceneFile.absolutePath}")
     }
 
     fun openProject(projectFile: File): Boolean {
