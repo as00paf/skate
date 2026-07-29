@@ -51,15 +51,15 @@ import org.lwjgl.system.MemoryUtil.NULL
 import java.nio.ByteBuffer
 
 class Window(
-    val width: Int = 1920,//TODO: should be initialWidth to avoid confusion
-    val height: Int = 1080,
+    initialWidth: Int = 1920,
+    initialHeight: Int = 1080,
     val title: String,
     val windowIcon: String? = null
 ) {
-    var glfwWindow: Long = -1L
     private var isFirstDraw = true
-    var windowWidth: Int = 1920
-    var windowHeight: Int = 1080
+    var glfwWindow: Long = -1L
+    var width: Int = 1920
+    var height: Int = 1080
 
     var windowController: WindowController
         private set
@@ -91,16 +91,12 @@ class Window(
         val monitor = monitors.get(0)
         val videoMode = glfwGetVideoMode(monitor)
 
-        // Use settings or fallback to monitor defaults
-        val winWidth = width
-        val winHeight = height
-
         // Store window dimensions
-        windowWidth = winWidth
-        windowHeight = winHeight
+        width = initialWidth
+        height = initialHeight
 
         // Create the window
-        glfwWindow = glfwCreateWindow(winWidth, winHeight, title, NULL, NULL)
+        glfwWindow = glfwCreateWindow(width, height, title, NULL, NULL)
         if (glfwWindow == NULL) throw IllegalStateException("Unable to create the GLFW window.")
 
         // Enforce Minimum Window Size Constraints
@@ -112,7 +108,7 @@ class Window(
         glfwGetMonitorPos(monitor, xPos, yPos)
         val monitorWidth = videoMode?.width() ?: 1920
         val monitorHeight = videoMode?.height() ?: 1080
-        glfwSetWindowPos(glfwWindow, xPos[0] + (monitorWidth - winWidth) / 2, yPos[0] + (monitorHeight - winHeight) / 2)
+        glfwSetWindowPos(glfwWindow, xPos[0] + (monitorWidth - width) / 2, yPos[0] + (monitorHeight - height) / 2)
 
         windowController = WindowController(glfwWindow)
 
@@ -123,8 +119,8 @@ class Window(
         val fbSizeWidth = IntArray(1)
         val fbSizeHeight = IntArray(1)
         glfwGetFramebufferSize(glfwWindow, fbSizeWidth, fbSizeHeight)
-        windowWidth = fbSizeWidth[0]
-        windowHeight = fbSizeHeight[0]
+        width = fbSizeWidth[0]
+        height = fbSizeHeight[0]
 
         // Set the window icon
         windowIcon?.let { setWindowIcon(it) }
@@ -149,7 +145,7 @@ class Window(
         glEnable(GL13.GL_MULTISAMPLE)
 
         // Set initial viewport for maximized window
-        glViewport(0, 0, windowWidth, windowHeight)
+        glViewport(0, 0, width, height)
 
         GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
             if (windowController.isFixingMaximize) return@glfwSetWindowMaximizeCallback
@@ -161,7 +157,7 @@ class Window(
             } else {
                 GLFW.glfwSetWindowAttrib(glfwWindow, GLFW_DECORATED, GLFW_TRUE)
                 val backupWindowPtr = GLFW.glfwGetCurrentContext()
-                GLFW.glfwMakeContextCurrent(backupWindowPtr)
+                glfwMakeContextCurrent(backupWindowPtr)
             }
         }
     }
@@ -213,9 +209,9 @@ class Window(
                 val fbWidth = IntArray(1)
                 val fbHeight = IntArray(1)
                 glfwGetFramebufferSize(glfwWindow, fbWidth, fbHeight)
-                windowWidth = fbWidth[0]
-                windowHeight = fbHeight[0]
-                glViewport(0, 0, windowWidth, windowHeight)
+                width = fbWidth[0]
+                height = fbHeight[0]
+                glViewport(0, 0, width, height)// TODO: investigate because its called from a lot of places
                 isFirstDraw = false
             }
 

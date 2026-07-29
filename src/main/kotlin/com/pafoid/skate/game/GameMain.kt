@@ -49,7 +49,7 @@ fun testDraw(window: Window) {// TODO : is working but needs to move
     GL30.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
     GL30.glBlitFramebuffer(
         0, 0, engine.renderer.frameBuffer.width, engine.renderer.frameBuffer.height,
-        0, 0, window.windowWidth, window.windowHeight,
+        0, 0, window.width, window.height,
         GL11.GL_COLOR_BUFFER_BIT,
         GL11.GL_LINEAR
     )
