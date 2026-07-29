@@ -51,15 +51,15 @@ import org.lwjgl.system.MemoryUtil.NULL
 import java.nio.ByteBuffer
 
 class Window(
-    val width: Int = 1920,
+    val width: Int = 1920,//TODO: should be initialWidth to avoid confusion
     val height: Int = 1080,
     val title: String,
     val windowIcon: String? = null
 ) {
     var glfwWindow: Long = -1L
     private var isFirstDraw = true
-    private var windowWidth: Int = 1920
-    private var windowHeight: Int = 1080
+    var windowWidth: Int = 1920
+    var windowHeight: Int = 1080
 
     var windowController: WindowController
         private set

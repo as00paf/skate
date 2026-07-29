@@ -52,3 +52,5 @@ project_settings.json
 # Temp files
 /screenshots/
 /nanobanana-output/
+/.idea/kotlinc.xml
+/*.log

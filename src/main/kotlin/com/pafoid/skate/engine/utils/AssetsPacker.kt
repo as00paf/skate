@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.nio.ByteBuffer
 
 typealias AssetType = String
 typealias AssetSize = Int
@@ -55,12 +56,20 @@ class AssetsPacker(private val logger: LoggerService) {
 
         val outputDir = File(project.projectPath).parentFile
         val output = File(outputDir, "builds\\${BIN_FILE}")
-        val encodedAtlas = serializer.encode(atlas).toByteArray(Charsets.UTF_8)
-        val encodedAtlasSize = encodedAtlas.size.toLong()
+        val atlasData = serializer.encode(atlas)
+        val encodedAtlas = atlasData.toByteArray(Charsets.UTF_8)
+        val encodedAtlasSize = ByteBuffer.allocate(Int.SIZE_BYTES).putInt(encodedAtlas.size).array()
 
-        output.writeBytes(byteArrayOf(encodedAtlasSize.toByte()))
-        output.writeBytes(encodedAtlas)
-        output.writeBytes(outputBuffer.toByteArray())
+        output.writeBytes(encodedAtlasSize)
+        output.appendBytes(encodedAtlas)
+        output.appendBytes(outputBuffer.toByteArray())
+
+        val atlasTable = "Packed Assets Format: \n" +
+                "Atlas size  :\t${encodedAtlas.size} written as ${encodedAtlasSize.toString(Charsets.UTF_8)}\n" +
+                "Atlas       :\t$atlasData\nWritten as bytes\n" +
+                "Binary data :\t {${outputBuffer.size()} bytes written}"
+
+        logger.logEngine(atlasTable, LoggerService.LogLevel.INFO)
 
         return true
     }

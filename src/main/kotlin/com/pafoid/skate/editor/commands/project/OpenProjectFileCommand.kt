@@ -5,21 +5,21 @@ import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
 import com.pafoid.skate.editor.systems.ProjectManager
 import java.io.File
 
-class OpenProjectCommand(
+class OpenProjectFileCommand(
     private val projectManager: ProjectManager,
     private val projectFile: File
 ) : ExecuteOnlyCommand, ExecutionTrackedCommand {
     private var executeSucceeded = false
 
     override fun execute() {
-        executeSucceeded = projectManager.openProject(projectFile)
+        executeSucceeded = projectManager.openProjectFile(projectFile)
     }
 
     override fun undo() {
         projectManager.closeProject()
     }
 
-    override fun getDisplayName(): String = "Open Project"
+    override fun getDisplayName(): String = "Open Project File"
     override fun getTargetName(): String = projectFile.name
 
     override fun wasSuccessful(): Boolean = executeSucceeded

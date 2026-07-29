@@ -29,7 +29,12 @@ class Renderer(
         renderResources.renderGraph.execute(scene)
 
         // Final screen viewport reset
-        glViewport(0, 0, renderResources.frameBuffer.width, renderResources.frameBuffer.height)
+        glViewport(
+            0,
+            0,
+            renderResources.frameBuffer.width,
+            renderResources.frameBuffer.height
+        )//TODO: I dont think this is needed
     }
 
     fun readPixel(nx: Float, ny: Float): Int {

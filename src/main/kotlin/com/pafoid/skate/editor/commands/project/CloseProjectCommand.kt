@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.commands.project
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.ProjectManager
-import java.io.File
 
 class CloseProjectCommand(
     private val projectManager: ProjectManager
@@ -17,7 +16,7 @@ class CloseProjectCommand(
     }
 
     override fun undo() {
-        backup?.let { projectManager.openProject(File(it.projectPath)) }
+        backup?.let { projectManager.openProject(it) }
     }
 
     override fun getDisplayName(): String = "Close Project"

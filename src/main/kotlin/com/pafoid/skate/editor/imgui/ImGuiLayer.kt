@@ -158,7 +158,7 @@ class ImGuiLayer(
             image(texId.toLong(), tempVec2.x, tempVec2.y, 0f, 1f, 1f, 0f)
 
             end()
-            popStyleVar()
+            popStyleVar()// TODO: wtf
         } else {
             currentScene?.let { gizmoSystem.update(dt, it) }
             statusBar.render(currentScene)
@@ -212,7 +212,7 @@ class ImGuiLayer(
         setupLayout(getID("DockSpace"))
         dockSpace(getID("DockSpace"))
 
-        menuBar.render(currentScene)
+        menuBar.render(currentScene)// TODO: move
 
         end()
     }

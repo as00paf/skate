@@ -6,7 +6,7 @@ import com.pafoid.skate.editor.commands.project.CreateFileCommand
 import com.pafoid.skate.editor.commands.project.CreateProjectCommand
 import com.pafoid.skate.editor.commands.project.DeleteFileCommand
 import com.pafoid.skate.editor.commands.project.LoadLastProjectCommand
-import com.pafoid.skate.editor.commands.project.OpenProjectCommand
+import com.pafoid.skate.editor.commands.project.OpenProjectFileCommand
 import com.pafoid.skate.editor.commands.project.RenameFileCommand
 import com.pafoid.skate.editor.commands.project.SaveProjectCommand
 import com.pafoid.skate.editor.data.FileType
@@ -48,7 +48,7 @@ class ProjectActionHandler(
 
     init {
         eventSystem.subscribe<OpenProjectRequested> { event ->
-            val command = OpenProjectCommand(projectManager, File(event.projectPath))
+            val command = OpenProjectFileCommand(projectManager, File(event.projectPath))
             undoRedoManager.executeCommand(command)
             if (command.wasSuccessful()) {
                 eventSystem.publish(WindowAction.Hide("project_switcher"))

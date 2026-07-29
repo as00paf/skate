@@ -40,7 +40,7 @@ class ProjectManager(
         val recent = settingsManager.recentProjects.firstOrNull() ?: return false
         val projectFile = File(recent.path)
         if (!projectFile.exists()) return false
-        return openProject(projectFile)
+        return openProjectFile(projectFile)
     }
 
     fun createProject(name: String, folder: File): Result<Project> {
@@ -90,20 +90,24 @@ class ProjectManager(
         }
     }
 
-    fun openProject(projectFile: File): Boolean {// TODO: needs to take a Project instead of file
-        return try {
-            if (!projectFile.exists() || !FileType.PROJECT_FILE.extensions.contains(projectFile.extension)) {
-                logger.logEditor(
-                    "Project file does not exist or invalid extension: ${projectFile.absolutePath}",
-                    LogLevel.ERROR
-                )
-                return false
-            }
+    fun openProjectFile(projectFile: File): Boolean { // TODO: should be on io
+        if (!projectFile.exists() || !FileType.PROJECT_FILE.extensions.contains(projectFile.extension)) {
+            logger.logEditor(
+                "Project file does not exist or invalid extension: ${projectFile.absolutePath}",
+                LogLevel.ERROR
+            )
+            return false
+        }
+        logger.logEditor("Opening project: ${projectFile.absolutePath}")
+        val project = serializer.decode<Project>(projectFile.readText())
 
+        return openProject(project)
+    }
+
+    fun openProject(project: Project): Boolean {
+        return try {
             if (hasProject()) closeProject()
 
-            logger.logEditor("Opening project: ${projectFile.absolutePath}")
-            val project = serializer.decode<Project>(projectFile.readText()) // TODO: should be on io
             currentProject = project
 
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
