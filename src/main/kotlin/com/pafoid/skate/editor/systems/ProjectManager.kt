@@ -38,10 +38,13 @@ class ProjectManager(
                 return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
             }
 
-            File(projectDir, "Assets").mkdirs()
-            val scenesDir = File(projectDir, "Scenes")
-            scenesDir.mkdirs()
+            val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
+            val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
             File(projectDir, "Builds").mkdirs()
+
+            // Create default strings file
+            val stringsFile = File(assetsDir, "strings.properties")
+            stringsFile.writeText("project.name=$name")
 
             val project = Project(name = name, projectPath = projectFile.absolutePath)
 

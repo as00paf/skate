@@ -25,7 +25,7 @@ class EditorSettingsManager(
         get() {
             return editorSettings.recentProjects.mapNotNull { path ->
                 val projectFile = File(path)
-                serializer.decode<Project>(projectFile.readText()).takeIf { projectFile.exists() }
+                if (projectFile.exists()) serializer.decode<Project>(projectFile.readText()) else null
             }.take(5)
         }
 
