@@ -43,6 +43,7 @@ class AssetsPacker(private val logger: LoggerService) {
                 FileType.CONFIG,
                 FileType.SHADER,
                 FileType.MATERIAL,
+                FileType.FONT,
                 FileType.TEXT -> {
                     val data = it.second.readBytes()
                     atlas[it.second.extension] = atlas[it.second.extension].orEmpty().plus(data.size)

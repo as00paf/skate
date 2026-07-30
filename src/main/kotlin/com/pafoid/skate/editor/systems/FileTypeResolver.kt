@@ -24,6 +24,7 @@ object FileTypeResolver {
             in FileType.SHADER.extensions -> FileType.SHADER
             in FileType.MATERIAL.extensions -> FileType.MATERIAL
             in FileType.TEXT.extensions -> FileType.TEXT
+            in FileType.FONT.extensions -> FileType.FONT
             else -> FileType.UNKNOWN
         }
     }
@@ -35,8 +36,8 @@ object FileTypeResolver {
         FileType.FOLDER -> Icons.FOLDER
         FileType.PROJECT_FILE -> Icons.CUBE
         FileType.SCENE -> Icons.FILM
-        FileType.SCRIPT_KOTLIN, FileType.SCRIPT_JAVA -> Icons.FILE_TEXT
-        FileType.TEXTURE -> "\uf03e"
+        FileType.SCRIPT_KOTLIN, FileType.SCRIPT_JAVA -> Icons.FILE_CODE
+        FileType.TEXTURE -> Icons.FILE_IMAGE
         FileType.MODEL_3D -> Icons.CUBE
         FileType.ANIMATION -> Icons.FILM
         FileType.SOUND -> Icons.MUSIC
@@ -44,7 +45,8 @@ object FileTypeResolver {
         FileType.JSON, FileType.CONFIG -> Icons.FILE_TEXT
         FileType.SHADER -> Icons.MAGIC
         FileType.MATERIAL -> Icons.PALETTE
+        FileType.FONT -> Icons.FILE_FONT
         FileType.TEXT -> Icons.FILE_TEXT
-        FileType.UNKNOWN -> Icons.FILE_TEXT
+        FileType.UNKNOWN -> Icons.FILE_UNKNOWN
     }
 }
