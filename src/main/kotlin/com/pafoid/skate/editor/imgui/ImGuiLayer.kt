@@ -90,7 +90,9 @@ class ImGuiLayer(
             iniFilename = Assets.Files.IMGUI
             backendPlatformName = "imgui_java_impl_glfw"
             addConfigFlags(ImGuiConfigFlags.DockingEnable or ImGuiConfigFlags.ViewportsEnable)
-            loadFonts(Assets.Fonts.FONTS_FILE)
+            val fontsByteArray =
+                this.javaClass.getResourceAsStream(Assets.Fonts.FONTS_FILE)?.readAllBytes()
+            fontsByteArray?.let { loadFonts(it) }
         }
 
         imGuiGlfw.init(windowController.glfwWindow, true)
