@@ -28,23 +28,25 @@ import java.util.concurrent.atomic.AtomicReference
 
 class Engine {
     private val nativeLibraryLoader = NativeLibraryLoader()
+
     val serializer = Serializer()
     val jobSystem = JobSystem()
     val logger = LoggerService()
     val eventSystem = EventSystem()
 
-    val engineState = AtomicReference(EngineState.BOOTING)
-    var runtimePlaying = false
-    lateinit var renderer: Renderer
-
+    val assetsManager = AssetsManager(logger)
+    val stringManager = StringManager(logger)
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
     val cameraManager = CameraManager(eventSystem)
-    val assetsManager = AssetsManager(logger)
     val systemManager = SystemManager()
     val sceneManager = SceneManager(assetsManager, eventSystem, serializer, systemManager, logger)
     val gameObjectManager = GameObjectManager()
     val prefabsGenerator = PrefabsGenerator(this)
+
+    val engineState = AtomicReference(EngineState.BOOTING)
+    var runtimePlaying = false
+    lateinit var renderer: Renderer
 
     fun start(glfwWindow: Long) {
         initCallbacks(glfwWindow)

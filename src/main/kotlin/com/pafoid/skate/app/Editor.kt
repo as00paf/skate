@@ -12,17 +12,15 @@ import com.pafoid.skate.editor.ui.handlers.EditorActionHandler
 import com.pafoid.skate.editor.ui.handlers.EditorEventHandler
 import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.render.Camera
 import org.joml.Vector3f
 
 class Editor(
     engine: Engine,
-    stringManager: StringManager,
     projectManager: ProjectManager,
 ) {
-    val settingsManager = SettingsManager(engine.serializer, engine.logger, stringManager)
+    val settingsManager = SettingsManager(engine.serializer, engine.logger, engine.stringManager)
     val clipboardService = ClipboardService(engine.serializer)
     val editorInputState = EditorInputState()
 
@@ -31,13 +29,13 @@ class Editor(
     val editorInputHandler =
         EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, settingsManager)
 
-    val editorActionHandler = EditorActionHandler(engine, undoRedoManager, projectManager, stringManager)
+    val editorActionHandler = EditorActionHandler(engine, undoRedoManager, projectManager, engine.stringManager)
 
     val editorCamera = EditorCamera(Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }, editorInputState)
     val gizmoSystem = GizmoSystem(engine, settingsManager, undoRedoManager, editorCamera)
 
     val imGuiLayer =
-        ImGuiLayer(engine, this, stringManager, projectManager, settingsManager, gizmoSystem)
+        ImGuiLayer(engine, this, engine.stringManager, projectManager, settingsManager, gizmoSystem)
     val editorEventHandler = EditorEventHandler(engine.eventSystem, imGuiLayer, undoRedoManager)
 
     init {

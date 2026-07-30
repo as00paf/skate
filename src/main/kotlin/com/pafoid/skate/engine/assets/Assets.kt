@@ -76,7 +76,9 @@ object Assets {
         const val RIGHT_TURN_90 = "assets/characters/animations/right turn 90.fbx"
         const val RIGHT_STRAFE = "assets/characters/animations/right strafe.fbx"
         const val RIGHT_STRAFE_WALKING = "assets/characters/animations/right strafe walking.fbx"
-
-
+    }
+    object Strings {
+        const val EDITOR_STRINGS_EN = "assets/strings/editor_strings.properties"
+        const val EDITOR_STRINGS_FR = "assets/strings/editor_strings_fr.properties"
     }
 }

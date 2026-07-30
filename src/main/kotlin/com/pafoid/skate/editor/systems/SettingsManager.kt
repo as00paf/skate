@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.settings.HardwareSettings
 import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.editor.settings.SettingsData
 import com.pafoid.skate.editor.settings.SettingsSerializer
+import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS_EN
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
@@ -48,6 +49,7 @@ class SettingsManager(
     fun loadEngine() {
         try {
             editor = settingsSerializer.loadEngineSettings()
+            stringManager.loadStrings(EDITOR_STRINGS_EN)
             stringManager.setLocale(editor.language)
             logger.logEditor("Engine settings loaded")
         } catch (e: Exception) {

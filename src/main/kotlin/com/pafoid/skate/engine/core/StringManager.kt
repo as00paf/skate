@@ -1,51 +1,41 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
-import java.io.InputStream
+import java.io.File
 import java.util.*
 
 class StringManager(
     private val logger: LoggerService,
-    private val baseName: String = "strings",
     private var currentLocale: String = "en"
 ) {
+    private var currentPath = ""
     private val properties = Properties()
 
-    init {
-        loadStrings()
-    }
-
-    // TODO: allow loading from other files
-    private fun loadStrings() {
+    fun loadStrings(path: String): Boolean {
+        currentPath = path
         try {
-            val resourcePath = "/values/${baseName}_${currentLocale}.properties"
-            val inputStream: InputStream? = StringManager::class.java.getResourceAsStream(resourcePath)
-            if (inputStream != null) {
-                inputStream.use {
-                    properties.load(it)
-                }
-            } else {
-                // Fallback to default if specific locale not found
-                val defaultPath = "/values/${baseName}.properties"
-                val defaultInputStream: InputStream? = StringManager::class.java.getResourceAsStream(defaultPath)
-                defaultInputStream?.use {
-                    properties.load(it)
-                } ?: run {
-                    logger.logEditor("Could not find default resource file: $defaultPath", LogLevel.ERROR)
-                }
+            val inputFile = File(path)
+            inputFile.inputStream().use {
+                properties.load(it)
             }
         } catch (e: Exception) {
-            logger.logEditor("Failed to load strings for baseName $baseName and locale $currentLocale", LogLevel.ERROR)
+            logger.logEditor("Failed to load strings for baseName $path and locale $currentLocale", LogLevel.ERROR)
             e.printStackTrace()
+            return false
         }
+        return true
     }
 
-    fun setLocale(locale: String) {
+    fun setLocale(locale: String): Boolean {
         if (currentLocale != locale) {
             currentLocale = locale
             properties.clear() // Clear existing properties before reloading
-            loadStrings()
+            val currentFile = File(currentPath)
+            val currentExt = currentFile.extension
+            val newFileName = currentFile.absolutePath.replace(".$currentExt", "_$locale.$currentExt")
+            return loadStrings(newFileName)
         }
+        return false
     }
 
     fun getString(key: String): String {
