@@ -4,7 +4,7 @@ import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
@@ -22,7 +22,7 @@ import org.joml.Vector2f
 class GameViewWindow(
     private val engine: Engine,
     editor: Editor,
-    private val settingsManager: SettingsManager,
+    private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager,
 ) : IWindow {
 
@@ -84,7 +84,7 @@ class GameViewWindow(
 
         viewportOverlays.render(windowPos, windowSize, sceneManager.currentScene)
 
-        if (settingsManager.editor.showGamepadOverlay) {
+        if (settingsManager.editorSettings.showGamepadOverlay) {
             gamepadOverlay.imgui(
                 Vector2f(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY),
                 Vector2f(viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)

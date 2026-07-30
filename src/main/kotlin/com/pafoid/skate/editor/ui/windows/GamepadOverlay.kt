@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants.CONTROLS_OVERLAY_BUTTON_SIZE
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
@@ -20,7 +20,7 @@ import kotlin.math.min
 class GamepadOverlay(
     private val assetsManager: AssetsManager,
     private val inputProvider: InputProvider,
-    private val settingsManager: SettingsManager,
+    private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
 ) {
@@ -49,7 +49,7 @@ class GamepadOverlay(
         val texture = resolveControllerTexture() ?: return
         if (texture.texId <= 0) return
 
-        val editorSettings = settingsManager.editor
+        val editorSettings = settingsManager.editorSettings
         val windowFlags = ImGuiWindowFlags.NoDecoration or
                          ImGuiWindowFlags.NoInputs or
                          ImGuiWindowFlags.AlwaysAutoResize or

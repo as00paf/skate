@@ -54,3 +54,4 @@ project_settings.json
 /nanobanana-output/
 /.idea/kotlinc.xml
 /*.log
+/editor.config

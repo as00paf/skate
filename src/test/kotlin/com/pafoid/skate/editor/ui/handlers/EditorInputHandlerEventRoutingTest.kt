@@ -3,7 +3,7 @@ package com.pafoid.skate.editor.ui.handlers
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EventSystem
@@ -32,7 +32,7 @@ class EditorInputHandlerEventRoutingTest {
         val editorInputState = EditorInputState()
         val sceneManager = mockk<SceneManager>()
         val scene = mockk<Scene>(relaxed = true)
-        val settingsManager = mockk<SettingsManager>()
+        val settingsManager = mockk<EditorSettingsManager>()
         val eventSystem = EventSystem()
         val engine = mockk<Engine>()
 

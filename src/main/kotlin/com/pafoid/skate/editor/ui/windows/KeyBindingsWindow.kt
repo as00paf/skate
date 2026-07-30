@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.IWindow
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.StringManager
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
@@ -18,14 +18,14 @@ import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
 
 class KeyBindingsWindow(
-    private val settingsManager: SettingsManager,
+    private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager
 ) : IWindow {
 
     private var keyBindingAction: String? = null
     private var keyBindingTab = 0  // 0=Editor, 1=Camera, 2=Gamepad, 3=Hierarchy
 
-    private var inputMappings: EditorInputMappings = settingsManager.editor.editorInputMappings
+    private var inputMappings: EditorInputMappings = settingsManager.editorSettings.editorInputMappings
 
     override fun imgui(pOpen: ImBoolean?) {
         if (pOpen?.get() == false) return

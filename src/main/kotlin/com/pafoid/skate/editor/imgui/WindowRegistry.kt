@@ -2,8 +2,8 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.imgui.data.EditorWindow
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
@@ -32,7 +32,7 @@ class WindowRegistry(
     engine: Engine,
     editor: Editor,
     projectManager: ProjectManager,
-    settingsManager: SettingsManager,
+    settingsManager: EditorSettingsManager,
     stringManager: StringManager
 ) {
     val hierarchyWindow =
@@ -54,7 +54,7 @@ class WindowRegistry(
     val renderGraphWindow = RenderGraphWindow(stringManager, engine)
     val searchEverywhereWindow = SearchEverywhereWindow(engine, stringManager)
     val projectWizardWindow = ProjectWizardWindow(engine.logger, stringManager, engine.eventSystem)
-    val projectSwitcherDialog = ProjectSwitcherDialog(projectManager, stringManager, engine.eventSystem)
+    val projectSwitcherDialog = ProjectSwitcherDialog(settingsManager, stringManager, engine.eventSystem)
     val audioInspectorWindow = AudioInspectorWindow(stringManager)
     val projectWindow =
         ProjectWindow(stringManager, engine.logger, projectManager, engine.eventSystem, engine.serializer)

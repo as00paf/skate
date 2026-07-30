@@ -12,7 +12,7 @@ import com.pafoid.skate.engine.ecs.Scene
 class GizmoSystem(
 // TODO: should use editor input state
     private val engine: Engine,
-    private val settingsManager: SettingsManager,
+    private val settingsManager: EditorSettingsManager,
     private val undoRedoManager: UndoRedoManager,
     private val editorCamera: EditorCamera,
 ) {
@@ -54,7 +54,7 @@ class GizmoSystem(
         }
 
         // Handle gizmo selection key bindings
-        val bindings = settingsManager.editor.editorInputMappings
+        val bindings = settingsManager.editorSettings.editorInputMappings
 
         if (inputProvider.isKeyPressed(bindings.gizmoTranslate.keyboardKey)) {
             usingGizmo = TRANSLATE_GIZMO

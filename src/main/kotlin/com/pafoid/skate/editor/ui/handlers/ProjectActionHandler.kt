@@ -25,6 +25,7 @@ import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
 import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.SaveRequested
 import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
@@ -39,6 +40,7 @@ import javax.swing.filechooser.FileFilter
 class ProjectActionHandler(
     engine: Engine,
     private val projectManager: ProjectManager,
+    private val settingsManager: EditorSettingsManager,
     private val undoRedoManager: UndoRedoManager,
     private val stringManager: StringManager
 ) {
@@ -102,13 +104,13 @@ class ProjectActionHandler(
         }
         eventSystem.subscribe<SaveRequested> {
             executeOnMainThread {
-                val command = SaveProjectCommand(projectManager, eventSystem)
+                val command = SaveProjectCommand(projectManager)
                 undoRedoManager.executeCommand(command)
             }
         }
         eventSystem.subscribe<LoadLastProjectRequested> {
             executeOnMainThread {
-                val command = LoadLastProjectCommand(projectManager)
+                val command = LoadLastProjectCommand(projectManager, settingsManager)
                 undoRedoManager.executeCommand(command)
             }
         }

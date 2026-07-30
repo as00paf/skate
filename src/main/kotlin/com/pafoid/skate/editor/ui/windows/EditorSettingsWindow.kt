@@ -3,7 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
@@ -33,7 +33,7 @@ import imgui.type.ImString
 import org.lwjgl.glfw.GLFW
 
 class EditorSettingsWindow(
-    private val settingsManager: SettingsManager,
+    private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager
 ) : IWindow {
 
@@ -160,7 +160,7 @@ class EditorSettingsWindow(
 
     private fun syncTempSettings() {
         if (!hasPendingChanges) {
-            val editor = settingsManager.editor
+            val editor = settingsManager.editorSettings
             tempLanguage = editor.language
             tempTheme = editor.theme
             tempUnitSystem = editor.unitSystem
@@ -345,7 +345,7 @@ class EditorSettingsWindow(
     }
 
     private fun saveSettings() {
-        if (tempLanguage != settingsManager.editor.language) {
+        if (tempLanguage != settingsManager.editorSettings.language) {
             settingsManager.updateEditorSettings(language = tempLanguage)
         }
         settingsManager.updateEditorSettings(

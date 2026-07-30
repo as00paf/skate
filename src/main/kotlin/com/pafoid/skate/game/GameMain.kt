@@ -3,10 +3,8 @@ package com.pafoid.skate.game
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.utils.AssetsPacker
 import com.pafoid.skate.engine.utils.Atlas
@@ -17,7 +15,7 @@ import org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER
 import java.io.File
 import java.nio.ByteBuffer
 
-val engine = Engine()
+private val engine = Engine()
 
 fun main(args: Array<String>) {
     val binFile = loadBinFile() ?: return
@@ -25,9 +23,7 @@ fun main(args: Array<String>) {
     if (header == null || headerSize <= 0) return
 
     val project = loadProject(binFile, header, headerSize) ?: return
-    val stringManager = StringManager(engine.logger)
-    val settingsManager = SettingsManager(engine.serializer, engine.logger, stringManager)
-    val projectManager = ProjectManager(engine, settingsManager)
+    val projectManager = ProjectManager(engine)
 
     val window = Window(title = project.name, windowIcon = Assets.Textures.APP_ICON)// TODO: add app icon to project
     window.windowController.setFullscreen(true)

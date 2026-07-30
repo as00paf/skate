@@ -3,9 +3,9 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
@@ -56,7 +56,7 @@ class ImGuiLayer(
     editor: Editor,
     private val stringManager: StringManager,
     projectManager: ProjectManager,
-    settingsManager: SettingsManager,
+    settingsManager: EditorSettingsManager,
     private val gizmoSystem: GizmoSystem,
 ) {
     private val imGuiGlfw = ImGuiImplGlfw()
@@ -75,8 +75,8 @@ class ImGuiLayer(
         stringManager,
         engine.assetsManager,
         projectManager,
-        engine.sceneManager,
         settingsManager,
+        engine.sceneManager,
         windowRegistry,
         engine.eventSystem
     )

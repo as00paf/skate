@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
@@ -31,7 +31,7 @@ class InputSystemTest {
 
     private lateinit var inputProvider: InputProvider
     private lateinit var mouseListener: MouseListener
-    private lateinit var settingsManager: SettingsManager
+    private lateinit var settingsManager: EditorSettingsManager
     private lateinit var stringManager: StringManager
     private lateinit var eventSystem: EventSystem
     private lateinit var scene: Scene

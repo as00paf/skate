@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.gizmos
 
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.Camera
@@ -18,7 +18,7 @@ class MeasureTool(
     inputProvider: InputProvider,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
-    private val settingsManager: SettingsManager,
+    private val settingsManager: EditorSettingsManager,
 ) : Gizmo(inputProvider, undoRedoManager) {
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
@@ -68,7 +68,7 @@ class MeasureTool(
                         debugRenderer.addLine3D(start, currentEnd, Vector3f(1f, 1f, 0f))
 
                         val distance = start.distance(currentEnd)
-                        val settings = settingsManager.editor
+                        val settings = settingsManager.editorSettings
                         val displayText = if (settings.unitSystem == UnitSystem.METRIC) {
                             String.format("%.2f m", distance)
                         } else {

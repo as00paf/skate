@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.events.WindowAction
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.utils.UnitSystem
@@ -17,10 +17,10 @@ import imgui.type.ImInt
 
 class SettingsMenuBuilder(
     private val stringManager: StringManager,
-    private val settingsManager: SettingsManager,
+    private val settingsManager: EditorSettingsManager,
     private val eventSystem: EventSystem
 ) {
-    private val editorSettings = settingsManager.editor
+    private val editorSettings = settingsManager.editorSettings
 
     fun render() {
         if (beginMenu(stringManager.getString("menu.settings"))) {

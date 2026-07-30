@@ -6,8 +6,8 @@ import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants.EDITOR_MENU_BAR_HEIGHT
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
@@ -27,8 +27,8 @@ class EditorMenuBar(
     private val stringManager: StringManager,
     private val assetsManager: AssetsManager,
     private val projectManager: ProjectManager,
+    private val settingsManager: EditorSettingsManager,
     sceneManager: SceneManager,
-    settingsManager: SettingsManager,
     windowRegistry: WindowRegistry,
     private val eventSystem: EventSystem,
 ) {
@@ -94,14 +94,14 @@ class EditorMenuBar(
 
             if (ImGui.beginMenu(stringManager.getString("menu.file.recent_projects"))) {
                 val currentPath = projectManager.currentProject?.getProjectFile()?.absolutePath
-                val recentProjects = projectManager.getRecentProjects()
-                val filteredProjects = recentProjects.filter { it.path != currentPath }
+                val recentProjects = settingsManager.recentProjects
+                val filteredProjects = recentProjects.filter { it.projectPath != currentPath }
 
                 if (filteredProjects.isNotEmpty()) {
                     for (project in filteredProjects) {
                         if (menuItem(project.name)) {
                             eventSystem.publish(WindowAction.Hide("window.project_wizard"))
-                            eventSystem.publish(ProjectEvent.OpenProjectRequested(project.path))
+                            eventSystem.publish(ProjectEvent.OpenProjectRequested(project.projectPath))
                         }
                     }
                 } else {
@@ -158,7 +158,7 @@ class EditorMenuBar(
         )
         ImGui.setCursorPosY(textY)
 
-        val currentProjectName = projectManager.getProjectName()
+        val currentProjectName = projectManager.currentProject?.name ?: "No project"
         if (ImGui.button(currentProjectName)) {
             eventSystem.publish(WindowAction.Show("window.project_switcher"))
         }

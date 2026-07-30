@@ -4,7 +4,7 @@ import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.systems.ClipboardService
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
@@ -16,13 +16,13 @@ class EditorInputHandler(
     private val undoRedoManager: UndoRedoManager,
     private val editorInputState: EditorInputState,
     private val engine: Engine,
-    settingsManager: SettingsManager
+    settingsManager: EditorSettingsManager
 ) {
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
     private val inputProvider = engine.inputProvider
 
-    private var inputMappings = settingsManager.editor.editorInputMappings
+    private var inputMappings = settingsManager.editorSettings.editorInputMappings
 
     fun update() {
         editorInputState.reset()

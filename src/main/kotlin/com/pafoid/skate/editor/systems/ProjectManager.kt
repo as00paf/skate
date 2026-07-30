@@ -2,10 +2,8 @@ package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent
-import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
-import com.pafoid.skate.editor.settings.RecentProjectInfo
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
@@ -15,7 +13,6 @@ import java.util.concurrent.atomic.AtomicLong
 
 class ProjectManager(
     private val engine: Engine,
-    private val settingsManager: SettingsManager,
 ) {
     private val engineAssetCopier = EngineAssetCopier()
     private val eventSystem = engine.eventSystem
@@ -27,21 +24,6 @@ class ProjectManager(
     var currentProject: Project? = null
         private set
     private val lifecycleEpoch = AtomicLong(0)
-
-    fun init() {// TODO: should not be done here, not its responsibility
-        if (!loadLastProject()) {
-            eventSystem.publish(WindowAction.Show("window.project_wizard"))
-        } else {
-            eventSystem.publish(WindowAction.ShowDefault)
-        }
-    }
-
-    fun loadLastProject(): Boolean {
-        val recent = settingsManager.recentProjects.firstOrNull() ?: return false
-        val projectFile = File(recent.path)
-        if (!projectFile.exists()) return false
-        return openProjectFile(projectFile)
-    }
 
     fun createProject(name: String, folder: File): Result<Project> {
         logger.logEditor("Creating project: $name in ${folder.absolutePath}")
@@ -77,7 +59,6 @@ class ProjectManager(
             // Create default scene with prefabs
             prefabsGenerator.createDefaultScene(scenesDir)
 
-            settingsManager.addToRecentProjects(project.getProjectFile().absolutePath) // TODO: move to settings manager
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
             saveProject()
@@ -114,9 +95,8 @@ class ProjectManager(
 
             loadDefaultScene(project)
 
-            settingsManager.addToRecentProjects(project.getProjectFile().absolutePath)
             eventSystem.publish(ProjectEvent.Opened(project))
-            logger.logEditor("Project opened successfully: ${getProjectName()}")
+            logger.logEditor("Project opened successfully: ${project.name}")
 
             true
         } catch (e: Exception) {
@@ -131,9 +111,7 @@ class ProjectManager(
             return
         }
         lifecycleEpoch.incrementAndGet()
-        val path = project.getProjectFile().absolutePath
-        val projectName = project.name
-        logger.logEditor("Closing project: $projectName")
+        logger.logEditor("Closing project: ${project.name}")
 
         try {
             val scenesDir = File(project.getProjectDirectory(), "Scenes\\${project.defaultScene}")
@@ -155,10 +133,8 @@ class ProjectManager(
         engine.systemManager.resetSystemCaches()
 
         currentProject = null
-        settingsManager.setLastClosedProjectPath(path)
-        settingsManager.closeProject()
 
-        eventSystem.publish(ProjectEvent.Closed(projectName))
+        eventSystem.publish(ProjectEvent.Closed(project))
     }
 
     private fun loadDefaultScene(project: Project) {
@@ -186,18 +162,15 @@ class ProjectManager(
         }
 
         logger.logEditor("Saving project: ${project.name}")
-        val result = settingsManager.saveProject(project)
-        File(project.projectPath).writeText(serializer.encode(project))
-        if (result) {
+        try {
+            File(project.projectPath).writeText(serializer.encode(project))
             eventSystem.publish(ProjectEvent.Saved(project))
+        } catch (e: Exception) {
+            logger.logEditor("Error while saving project: ${e.message}", LogLevel.ERROR)
+            return false
         }
-        return result
-    }
 
-    fun getProjectName(): String = currentProject?.name ?: "No Project"
-
-    fun getRecentProjects(): List<RecentProjectInfo> {
-        return settingsManager.recentProjects
+        return true
     }
 
     fun getProjectDirectory(): File? {

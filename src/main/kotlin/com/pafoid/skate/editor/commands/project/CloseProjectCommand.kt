@@ -20,5 +20,5 @@ class CloseProjectCommand(
     }
 
     override fun getDisplayName(): String = "Close Project"
-    override fun getTargetName(): String = projectManager.getProjectName()
+    override fun getTargetName(): String = backup?.name.orEmpty()
 }

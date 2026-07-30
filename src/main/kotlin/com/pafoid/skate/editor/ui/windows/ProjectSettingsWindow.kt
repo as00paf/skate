@@ -3,8 +3,8 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.MImGui
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.editor.systems.SettingsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -32,7 +32,7 @@ import java.time.format.FormatStyle
 import java.util.*
 
 class ProjectSettingsWindow(
-    private val settingsManager: SettingsManager,
+    private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager,
     private val projectManager: ProjectManager,
     private val eventSystem: EventSystem,
@@ -164,8 +164,13 @@ class ProjectSettingsWindow(
         }
     }
 
-    private fun getRecentProjectsDisplayInfo() = settingsManager.recentProjects.map { r ->
-        RecentProjectDisplayInfo(name = r.name, path = r.path, lastOpened = r.lastOpened, exists = File(r.path).exists())
+    private fun getRecentProjectsDisplayInfo() = settingsManager.recentProjects.map { project ->
+        RecentProjectDisplayInfo(
+            name = project.name,
+            path = project.projectPath,
+            lastOpened = project.lastOpenedDate,
+            exists = File(project.projectPath).exists()
+        )
     }
 
     private fun truncatePath(path: String) = if (path.length > 40) "\u2026${path.takeLast(37)}" else path

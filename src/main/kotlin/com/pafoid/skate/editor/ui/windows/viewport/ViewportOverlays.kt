@@ -8,7 +8,7 @@ import com.pafoid.skate.editor.imgui.data.UiConstants.SPEED_OVERLAY_WIDTH
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.TRICK_OVERLAY_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.TRICK_OVERLAY_WIDTH
-import com.pafoid.skate.editor.systems.SettingsManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.ui.windows.TrickUIWindow
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -22,7 +22,7 @@ import kotlin.math.sqrt
 
 class ViewportOverlays(
     private val trickUIWindow: TrickUIWindow,
-    private val settingsManager: SettingsManager
+    private val settingsManager: EditorSettingsManager
 ) {
     private var trickUIInitialized = false
 
@@ -60,7 +60,7 @@ class ViewportOverlays(
 
         if (velocity != null) {
             val speedMS = sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z).toFloat()
-            val unitSystem = settingsManager.editor.unitSystem
+            val unitSystem = settingsManager.editorSettings.unitSystem
             val speedDisplay: Float
             val unitLabel: String
             if (unitSystem == UnitSystem.METRIC) {

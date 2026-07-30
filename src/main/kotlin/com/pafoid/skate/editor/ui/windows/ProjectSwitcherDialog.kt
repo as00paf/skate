@@ -8,7 +8,7 @@ import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.RecentProjectDisplayInfo
-import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
@@ -20,7 +20,7 @@ import imgui.type.ImBoolean
 import java.io.File
 
 class ProjectSwitcherDialog(
-    private val projectManager: ProjectManager,
+    private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager,
     private val eventSystem: EventSystem,
 ) : IWindow {
@@ -67,12 +67,12 @@ class ProjectSwitcherDialog(
     }
 
     private fun getRecentProjectsDisplayInfo(): List<RecentProjectDisplayInfo> {
-        return projectManager.getRecentProjects().map { recent ->
-            val exists = File(recent.path).exists()
+        return settingsManager.recentProjects.map { recent ->
+            val exists = File(recent.projectPath).exists()
             RecentProjectDisplayInfo(
                 name = recent.name,
-                path = recent.path,
-                lastOpened = recent.lastOpened,
+                path = recent.projectPath,
+                lastOpened = recent.lastOpenedDate,
                 exists = exists
             )
         }
