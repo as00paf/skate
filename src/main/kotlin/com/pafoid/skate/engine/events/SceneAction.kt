@@ -10,7 +10,6 @@ sealed class SceneAction(eventName: String) : Event(eventName) {
 
     // Open
     data class Opened(val scene: Scene) : SceneAction("scene.action.scene_opened")
-    data class OpenSucceeded(val scene: Scene) : SceneAction("scene.action.open_succeeded")
     data class OpenFailed(val reason: String) : SceneAction("scene.action.open_failed")
     data class OpenSceneFile(val sceneFile: File) : SceneAction("scene.action.open_requested")
     object OpenRequested : SceneAction("scene.action.open_requested")

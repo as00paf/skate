@@ -6,7 +6,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputProvider
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
 import org.joml.Vector3f
@@ -25,7 +25,7 @@ class RotationGizmo(
     private var zAxisHot = false
     private var oldTransform: Transform? = null
 
-    fun update(activeGameObject: GameObject?, camera: Camera) {
+    fun update(activeGameObject: GameObject?, camera: CameraComponent) {
         activeGameObject?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
             val dist = Vector3f(camera.position).distance(pos)
@@ -50,7 +50,13 @@ class RotationGizmo(
         }
     }
 
-    private fun checkInput(go: GameObject, transform: Transform, camera: Camera, rad: Float, threshold: Float) {
+    private fun checkInput(
+        go: GameObject,
+        transform: Transform,
+        camera: CameraComponent,
+        rad: Float,
+        threshold: Float
+    ) {
         val pos = transform.translation
         val mouseX = inputProvider.getMouseScreenX()
         val mouseY = inputProvider.getMouseScreenY()

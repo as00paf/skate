@@ -12,6 +12,7 @@ import com.pafoid.skate.editor.commands.project.SaveSceneAsCommand
 import com.pafoid.skate.editor.commands.project.SaveSceneCommand
 import com.pafoid.skate.editor.commands.scene.SwitchSceneCommand
 import com.pafoid.skate.editor.events.ViewportAction.TabSelected
+import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
@@ -26,7 +27,6 @@ import com.pafoid.skate.engine.events.SceneAction.Created
 import com.pafoid.skate.engine.events.SceneAction.DeleteRequested
 import com.pafoid.skate.engine.events.SceneAction.OpenCancelled
 import com.pafoid.skate.engine.events.SceneAction.OpenFailed
-import com.pafoid.skate.engine.events.SceneAction.OpenSucceeded
 import com.pafoid.skate.engine.events.SceneAction.RenameRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveAsRequested
 import com.pafoid.skate.engine.events.SceneAction.SaveRequested
@@ -36,7 +36,7 @@ class SceneActionHandler(
     engine: Engine,
     private val projectManager: ProjectManager,
     private val undoRedoManager: UndoRedoManager,
-
+    private val editorCamera: EditorCamera
     ) {
     private val logger = engine.logger
     private val eventSystem = engine.eventSystem
@@ -80,7 +80,7 @@ class SceneActionHandler(
         eventSystem.subscribe<SceneAction.OpenSceneFile> { event ->
             handleOpenSceneFile(event.sceneFile)
         }
-        eventSystem.subscribe<OpenSucceeded> { event ->
+        eventSystem.subscribe<SceneAction.Opened> { event ->
             handleOpenSucceeded(event.scene)
         }
         eventSystem.subscribe<OpenCancelled> {
@@ -163,6 +163,7 @@ class SceneActionHandler(
     }
 
     private fun handleOpenSucceeded(scene: Scene) {
+        editorCamera.init(scene)
         logger.logEditor("Scene opened from file: ${scene.name}")
     }
 

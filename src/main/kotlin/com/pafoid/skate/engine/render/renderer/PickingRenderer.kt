@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.data.PickingMesh
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
@@ -30,7 +30,7 @@ private const val VERTEX_SIZE = 4 // x, y, z, id
 class PickingRenderer(
     private val assetsManager: AssetsManager,
     private val logger: LoggerService,
-    private val camera: Camera
+    private val camera: CameraComponent
 ) {
 
     private val meshes = mutableListOf<PickingMesh>()

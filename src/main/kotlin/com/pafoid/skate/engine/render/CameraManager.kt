@@ -13,7 +13,7 @@ class CameraManager(
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
-    var camera: Camera = Camera().also { it.position.set(Vector3f(0f, 5f, 20f)) }
+    var camera: CameraComponent = CameraComponent().also { it.position.set(Vector3f(0f, 5f, 20f)) }
 
     init {
         eventSystem.subscribe<CameraAction.SetCamera> { event ->

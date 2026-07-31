@@ -28,6 +28,7 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.render.CameraComponent
 import kotlin.reflect.KClass
 
 fun GameObject.getComponent(type: ComponentType) =
@@ -36,9 +37,10 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.AUDIO -> getComponent<AudioComponent>()
         ComponentType.BONE_OVERRIDE -> getComponent<BoneOverride>()
         ComponentType.BOX_COLLIDER_3D -> getComponent<BoxCollider3D>()
-        ComponentType.CYLINDER_COLLIDER -> getComponent<CylinderCollider3D>()
+        ComponentType.CAMERA -> getComponent<CameraComponent>()
         ComponentType.CAPSULE_COLLIDER -> getComponent<CapsuleCollider3D>()
         ComponentType.CUSTOM_COLLIDER -> getComponent<CustomCollider3D>()
+        ComponentType.CYLINDER_COLLIDER -> getComponent<CylinderCollider3D>()
         ComponentType.DAY_NIGHT_CYCLE -> getComponent<DayNightCycleComponent>()
         ComponentType.DIRECTIONAL_LIGHT -> getComponent<DirectionalLightComponent>()
         ComponentType.ENVIRONMENT -> getComponent<EnvironmentComponent>()
@@ -61,6 +63,10 @@ fun GameObject.getComponent(type: ComponentType) =
 
 inline fun <reified T : Component> GameObject.getComponent(): T? {
     return components.filterIsInstance<T>().firstOrNull()
+}
+
+inline fun <reified T : Component> GameObject.getAllComponents(): List<T> {
+    return components.filterIsInstance<T>()
 }
 
 inline fun <reified T : Component> GameObject.addComponent(component: T): GameObject = addComponent(T::class, component)

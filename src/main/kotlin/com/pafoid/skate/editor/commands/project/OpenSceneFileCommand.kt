@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.events.SceneAction.OpenFailed
-import com.pafoid.skate.engine.events.SceneAction.OpenSucceeded
 import kotlinx.coroutines.Job
 import java.io.File
 
@@ -31,7 +30,6 @@ class OpenSceneFileCommand(
         if (scene != null) {
             sceneManager.openScene(scene)
             openedScene = scene
-            eventSystem.publish(OpenSucceeded(scene))
             completedSuccessfully = true
         } else {
             eventSystem.publish(OpenFailed("Could not load scene from file: ${sceneFile.absolutePath}"))

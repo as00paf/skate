@@ -9,16 +9,15 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
-import org.joml.Vector3f
+import com.pafoid.skate.engine.render.CameraManager
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
-import kotlin.math.cos
-import kotlin.math.sin
 
 class AudioSystem(
     val audioEngine: AudioEngine,
     private val logger: LoggerService,
     private val assetsManager: AssetsManager,
+    private val cameraManager: CameraManager
 ) : System(priority = ExecutionPriority.LATE) {
 
     private var isInitialized = false
@@ -63,9 +62,9 @@ class AudioSystem(
             ALC.createCapabilities(audioEngine.getDevice())
         }
 
-        val camera = scene.camera
+        val camera = cameraManager.camera
         val pos = camera.position
-        val forward = calculateForwardVector(camera.yaw, camera.pitch)
+        val forward = camera.camForward
 
         audioEngine.setListenerPosition(pos.x, pos.y, pos.z)
         audioEngine.setListenerOrientation(
@@ -73,21 +72,6 @@ class AudioSystem(
             floatArrayOf(0f, 1f, 0f)
         )
         audioEngine.setListenerVelocity(0f, 0f, 0f)
-    }
-
-    private fun calculateForwardVector(yaw: Float, pitch: Float): Vector3f {
-        val yawRad = Math.toRadians(yaw.toDouble())
-        val pitchRad = Math.toRadians(pitch.toDouble())
-        val cosYaw = cos(yawRad).toFloat()
-        val sinYaw = sin(yawRad).toFloat()
-        val cosPitch = cos(pitchRad).toFloat()
-        val sinPitch = sin(pitchRad).toFloat()
-
-        return Vector3f(
-            cosYaw * cosPitch,
-            sinPitch,
-            sinYaw * cosPitch
-        ).normalize()
     }
 
     private fun updateAudioSources() {

@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -22,7 +22,7 @@ class AudioSystemTest {
     private val logger = mockk<LoggerService>(relaxed = true)
     private val assetsManager = mockk<AssetsManager>(relaxed = true)
     private val scene = mockk<Scene>(relaxed = true)
-    private val camera = mockk<Camera>(relaxed = true)
+    private val camera = mockk<CameraComponent>(relaxed = true)
 
     private lateinit var audioSystem: AudioSystem
 

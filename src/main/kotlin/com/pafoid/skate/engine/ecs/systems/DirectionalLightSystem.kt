@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraManager
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -12,7 +12,7 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 
-class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
+class DirectionalLightSystem(private val cameraManager: CameraManager) : System(priority = ExecutionPriority.EARLY) {
 
     // System-owned configuration
     var config: DirectionalLightComponent? = null
@@ -35,11 +35,12 @@ class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
 
         // Compute light space matrix for shadow mapping
         if (config?.castShadows == true) {
-            updateLightSpaceMatrix(scene.camera)
+            updateLightSpaceMatrix()
         }
     }
 
-    private fun updateLightSpaceMatrix(camera: Camera? = null) {
+    private fun updateLightSpaceMatrix() {
+        val camera = cameraManager.camera
         // Choose up vector based on light direction to prevent lookAt failure (high noon)
         val config = config ?: return
         if (abs(config.direction.y) > 0.99f) {
@@ -47,8 +48,8 @@ class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
         } else {
             lightUp.set(0f, 1f, 0f)
         }
-
-        if (camera != null && config.autoCalculateBounds) {
+        val shadowMapSize = 4096f
+        if (config.autoCalculateBounds) {
             // Calculate the camera's view frustum corners limited by shadowDistance
             val tempProj = Matrix4f()
             val aspectRatio =
@@ -105,20 +106,7 @@ class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
             // Set target
             lightTarget.set(frustumCenter)
 
-            if (config.stabilizeProjection) {
-                val shadowMapSize = 4096f // Assuming 4096x4096 shadow map
-                val texelSize = (radius * 2f) / shadowMapSize
-
-                val fixedEye = Vector3f(config.direction).mul(-1f)
-                val fixedView = Matrix4f().setLookAt(fixedEye, Vector3f(0f, 0f, 0f), lightUp)
-
-                val targetInLightSpace = fixedView.transform(Vector4f(lightTarget, 1.0f))
-                targetInLightSpace.x = floor((targetInLightSpace.x / texelSize).toDouble()).toFloat() * texelSize
-                targetInLightSpace.y = floor((targetInLightSpace.y / texelSize).toDouble()).toFloat() * texelSize
-
-                val snappedTarget = fixedView.invert().transform(targetInLightSpace)
-                lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)
-            }
+            stabilizeProjection((radius * 2f) / shadowMapSize, lightTarget, lightUp)
 
             // Create view matrix
             // For directional light, we pull the light position back along the light direction.
@@ -140,7 +128,7 @@ class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
             
         } else {
             // Manual bounds path
-            lightTarget.set(if (camera != null) camera.position else Vector3f())
+            lightTarget.set(camera.position)
 
             val left = config.orthoLeft
             val right = config.orthoRight
@@ -148,20 +136,7 @@ class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
             val top = config.orthoTop
 
             // Optional stabilization
-            if (config.stabilizeProjection && camera != null) {
-                val shadowMapSize = 4096f
-                val texelSize = (right - left) / shadowMapSize
-
-                val fixedEye = Vector3f(config.direction).mul(-1f)
-                val fixedView = Matrix4f().setLookAt(fixedEye, Vector3f(0f, 0f, 0f), lightUp)
-
-                val targetInLightSpace = fixedView.transform(Vector4f(lightTarget, 1.0f))
-                targetInLightSpace.x = floor((targetInLightSpace.x / texelSize).toDouble()).toFloat() * texelSize
-                targetInLightSpace.y = floor((targetInLightSpace.y / texelSize).toDouble()).toFloat() * texelSize
-
-                val snappedTarget = fixedView.invert().transform(targetInLightSpace)
-                lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)
-            }
+            stabilizeProjection((right - left) / shadowMapSize, lightTarget, lightUp)
 
             // Create view matrix
             val distance = 500f // Large distance for manual bounds
@@ -181,4 +156,20 @@ class DirectionalLightSystem() : System(priority = ExecutionPriority.EARLY) {
         // Combine projection and view
         config.lightSpaceMatrix.set(lightProjection).mul(lightView)
     }
+
+    private fun stabilizeProjection(texelSize: Float, lightTarget: Vector3f, lightUp: Vector3f) {
+        val config = config ?: return
+        if (config.stabilizeProjection) {
+            val fixedEye = Vector3f(config.direction).mul(-1f)
+            val fixedView = Matrix4f().setLookAt(fixedEye, Vector3f(0f, 0f, 0f), lightUp)
+
+            val targetInLightSpace = fixedView.transform(Vector4f(lightTarget, 1.0f))
+            targetInLightSpace.x = floor((targetInLightSpace.x / texelSize).toDouble()).toFloat() * texelSize
+            targetInLightSpace.y = floor((targetInLightSpace.y / texelSize).toDouble()).toFloat() * texelSize
+
+            val snappedTarget = fixedView.invert().transform(targetInLightSpace)
+            lightTarget.set(snappedTarget.x, snappedTarget.y, snappedTarget.z)
+        }
+    }
+
 }

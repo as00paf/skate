@@ -24,13 +24,14 @@ import com.pafoid.skate.engine.ecs.components.ComponentType.SCENE_PHYSICS
 import com.pafoid.skate.engine.ecs.components.ComponentType.SKELETON
 import com.pafoid.skate.engine.ecs.components.ComponentType.SPRITE_RENDERER
 import com.pafoid.skate.engine.ecs.components.ComponentType.TRANSFORM
+import com.pafoid.skate.engine.render.CameraComponent
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 @Serializable
 @Polymorphic
-abstract class Component {
+abstract class Component(open var name: String = this.javaClass.simpleName) {
 
     companion object {
         private var ID_COUNTER: Int = 0
@@ -56,10 +57,6 @@ abstract class Component {
     lateinit var gameObject: GameObject
         private set
 
-    /**
-     * Called by GameObject.addComponent() and after scene deserialization.
-     * Idempotent — safe to call multiple times.
-     */
     open fun init(gameObject: GameObject) {
         if (::gameObject.isInitialized) return
         this.gameObject = gameObject
@@ -74,14 +71,7 @@ abstract class Component {
         if (uId == -1) uId = ID_COUNTER++
     }
 
-    fun getUid() = uId
-
-    open fun getName(): String {
-        return this.javaClass.simpleName
-    }
-
-    open fun destroy() {
-    }
+    open fun destroy() {}
 
     val type: ComponentType?
         get() {
@@ -89,6 +79,7 @@ abstract class Component {
                 is Animator -> ANIMATOR
                 is AudioComponent -> AUDIO
                 is BoxCollider3D -> BOX_COLLIDER_3D
+                is CameraComponent -> ComponentType.CAMERA
                 is CapsuleCollider3D -> CAPSULE_COLLIDER
                 is CustomCollider3D -> CUSTOM_COLLIDER
                 is CylinderCollider3D -> CYLINDER_COLLIDER

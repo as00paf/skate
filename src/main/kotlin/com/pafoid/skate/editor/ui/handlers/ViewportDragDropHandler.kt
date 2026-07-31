@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.ui.handlers
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.core.EventSystem
@@ -14,6 +15,7 @@ import kotlin.math.abs
 
 class ViewportDragDropHandler(
     private val viewportRenderer: ViewportRenderer,
+    private val editorCamera: EditorCamera,
     private val eventSystem: EventSystem,
 ) {
 
@@ -42,7 +44,7 @@ class ViewportDragDropHandler(
 
             if (prefabPayload != null) {
                 ImGui.getMousePos(tempMousePos)
-                val hitPoint = computeDropPosition(scene, tempMousePos.x, tempMousePos.y)
+                val hitPoint = computeDropPosition(tempMousePos.x, tempMousePos.y)
 
                 if (hitPoint != null) {
                     val prefabType = when {
@@ -63,7 +65,7 @@ class ViewportDragDropHandler(
 
             if (payloadTexture != null) {
                 val hoveredObject = scene.hoveredGameObject
-                val dropPosition = computeDropPosition(scene, tempMousePos.x, tempMousePos.y)
+                val dropPosition = computeDropPosition(tempMousePos.x, tempMousePos.y)
                 eventSystem.publish(ViewportAction.DropTexture(payloadTexture, hoveredObject, dropPosition))
             }
 
@@ -85,10 +87,10 @@ class ViewportDragDropHandler(
         }
     }
 
-    private fun computeDropPosition(scene: Scene, mouseX: Float, mouseY: Float): Vector3f? {
+    private fun computeDropPosition(mouseX: Float, mouseY: Float): Vector3f? {
         val relX = mouseX - viewportRenderer.imageScreenPosX
         val relY = mouseY - viewportRenderer.imageScreenPosY
-        val ray = scene.camera.screenToRay(relX, relY, viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)
+        val ray = editorCamera.camera.screenToRay(relX, relY, viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)
 
         if (abs(ray.direction.y) > 0.0001f) {
             val t = -ray.origin.y / ray.direction.y

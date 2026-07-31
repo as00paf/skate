@@ -152,7 +152,8 @@ class RenderResourcesFactory(
             pickingRenderer = pickingRenderer,
             renderer2D = renderer2D,
             pickingShader = shaders.picking,
-            modelRenderer = renderers.model
+            modelRenderer = renderers.model,
+            cameraManager = cameraManager
         )
 
         val shadowMapTextureId = shadowMap?.getDepthTextureId() ?: 0

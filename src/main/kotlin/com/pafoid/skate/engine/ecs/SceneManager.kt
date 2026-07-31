@@ -36,8 +36,8 @@ class SceneManager(
         resolveSceneReferences(scene)
         openScenes.add(scene)
         systemManager.loadScene(scene)
-        eventSystem.publish(SceneAction.Opened(scene))
         switchScene(scene)
+        eventSystem.publish(SceneAction.Opened(scene))
 
         logger.log("Scene ${scene.name} loaded and started.", LogLevel.INFO)
     }

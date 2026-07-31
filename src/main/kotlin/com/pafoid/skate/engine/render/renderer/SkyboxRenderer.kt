@@ -3,7 +3,7 @@ package com.pafoid.skate.engine.render.renderer
 import com.pafoid.skate.engine.assets.data.CubeMap
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.MeshPart
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.lwjgl.opengl.GL11.GL_LEQUAL
@@ -20,7 +20,7 @@ class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
 
     private val cube: MeshPart = loader.loadToVAO(VERTICES, 3)
 
-    fun render(camera: Camera, cubeMap: CubeMap) {
+    fun render(camera: CameraComponent, cubeMap: CubeMap) {
         shader.start()
         shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
         shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())

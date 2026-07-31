@@ -81,11 +81,11 @@ class RenderPipelineTest {
     @DisplayName("Camera Projection Matrix Tests")
     inner class CameraProjectionMatrixTest {
 
-        private lateinit var camera: Camera
+        private lateinit var camera: CameraComponent
 
         @BeforeEach
         fun setup() {
-            camera = Camera()
+            camera = CameraComponent()
         }
 
         @Test

@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.data.RenderBatch
 
 class Renderer2D {
@@ -12,7 +12,7 @@ class Renderer2D {
     private val batchesByZIndex = mutableMapOf<Int, MutableList<RenderBatch>>()
 
     lateinit var shader: Shader
-    lateinit var camera: Camera
+    lateinit var camera: CameraComponent
 
     fun add(go: GameObject) {
         val spr = go.getComponent<SpriteRenderer>()
@@ -49,7 +49,7 @@ class Renderer2D {
         this.shader = shader
     }
 
-    fun bindCamera(camera: Camera) {
+    fun bindCamera(camera: CameraComponent) {
         this.camera = camera
     }
 

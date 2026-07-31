@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.handlers
 
+import com.pafoid.skate.editor.gizmos.EditorCamera
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -12,8 +13,9 @@ class EditorActionHandler(
     projectManager: ProjectManager,
     stringManager: StringManager,
     settingsManager: EditorSettingsManager,
+    editorCamera: EditorCamera
 ) {
-    val sceneActionHandler = SceneActionHandler(engine, projectManager, undoRedoManager)
+    val sceneActionHandler = SceneActionHandler(engine, projectManager, undoRedoManager, editorCamera)
     val projectActionHandler =
         ProjectActionHandler(engine, projectManager, settingsManager, undoRedoManager, stringManager)
     val environmentActionHandler = EnvironmentActionHandler(undoRedoManager, engine.eventSystem)

@@ -3,7 +3,7 @@ package com.pafoid.skate.game.camera
 import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import org.joml.Vector3f
 import kotlin.math.cos
 import kotlin.math.sin
@@ -11,7 +11,7 @@ import kotlin.math.sin
 /**
  * Third-person gameplay camera controller.
  *
- * Wraps a base [Camera] instance and handles gameplay-specific camera behavior:
+ * Wraps a base [CameraComponent] instance and handles gameplay-specific camera behavior:
  * - Camera rotation from [InputStateComponent.cameraLook] (gamepad right stick + mouse)
  * - Physics-based clipping to prevent camera from going through walls
  * - Spring arm with configurable distance and offset
@@ -24,7 +24,7 @@ import kotlin.math.sin
  * @param inputSettings Input settings for sensitivity configuration
  */
 class GameCamera(
-    private val camera: Camera,
+    private val camera: CameraComponent,
     private val sceneManager: SceneManager,
     private val inputSettings: InputSettings
 ) {
@@ -155,6 +155,5 @@ class GameCamera(
     fun screenToRay(screenX: Float, screenY: Float, width: Float, height: Float) =
         camera.screenToRay(screenX, screenY, width, height)
 
-    fun getForwardAndRight() = camera.getForwardAndRight()
     fun addZoom(value: Float) = camera.addZoom(value)
 }

@@ -106,13 +106,12 @@ class GeometryPass(
 
         // Upload lighting uniforms
         val directionalLight = scene.getComponent<DirectionalLightComponent>()
-        val environmentConfig = environmentComponent
         val lightingStateComponent = scene.getComponent<LightingStateComponent>()
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,
             lightingStateComponent,
             directionalLight,
-            environmentConfig,
+            environmentComponent,
             currentShadowMap
         )
 
@@ -147,14 +146,13 @@ class GeometryPass(
                 defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
 
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
-                val cameraPosition = camera.position
 
                 modelRenderer.render(
                     go = go,
                     transform = transformComponent,
                     renderComponent = renderComponent,
                     defaultShader = defaultShader,
-                    cameraPosition = cameraPosition,
+                    cameraPosition = camera.position,
                     skeletonComponent = skeletonComponent
                 )
             }
@@ -171,7 +169,7 @@ class GeometryPass(
 
     private fun render2D(scene: Scene, shader: Shader) {
         renderer2D.bindShader(shader)
-        renderer2D.bindCamera(scene.camera)
+        renderer2D.bindCamera(cameraManager.camera)
 
         scene.gameObjects.forEach { go ->
             if (!go.isVisible) return@forEach

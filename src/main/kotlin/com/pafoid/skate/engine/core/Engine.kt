@@ -51,8 +51,8 @@ class Engine {
     fun start(glfwWindow: Long) {
         initCallbacks(glfwWindow)
         jobSystem.runOnMain {
-            val renderResourcesFactory = RenderResourcesFactory(assetsManager, cameraManager, logger)
-            renderer = Renderer(renderResourcesFactory.create(1920, 1080))
+            val resources = RenderResourcesFactory(assetsManager, cameraManager, logger).create(1920, 1080)
+            renderer = Renderer(resources, cameraManager)
             renderer.useFbo = true
 
             engineState.set(EngineState.LOADING)
@@ -81,11 +81,11 @@ class Engine {
             gameObjectManager, // Core
             cameraManager,
             InputSystem(inputProvider, eventSystem),
-            AudioSystem(audioEngine, logger, assetsManager),
+            AudioSystem(audioEngine, logger, assetsManager, cameraManager),
             EnvironmentSystem(),
             PhysicsSystem(debugRenderer),
             DayNightCycleSystem(),
-            DirectionalLightSystem(),
+            DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager, eventSystem),
             AnimationSystem(eventSystem, logger),
             RagdollSystem(),

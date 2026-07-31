@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources
@@ -8,7 +9,8 @@ import com.pafoid.skate.engine.render.graph.RenderGraph
 import org.lwjgl.opengl.GL30.glViewport
 
 class Renderer(
-    var renderResources: RenderResources
+    var renderResources: RenderResources,
+    val cameraManager: CameraManager,
 ) {
     var useFbo: Boolean = true
     val frameBuffer: FrameBuffer
@@ -22,8 +24,8 @@ class Renderer(
         EngineStats.resetDrawCalls()
 
         // Update camera viewport dimensions once for all passes (correct aspect ratio)
-        scene.camera.viewportWidth = renderResources.frameBuffer.width
-        scene.camera.viewportHeight = renderResources.frameBuffer.height
+        cameraManager.camera.viewportWidth = renderResources.frameBuffer.width
+        cameraManager.camera.viewportHeight = renderResources.frameBuffer.height
 
         // Execute the render graph - this handles all preparation, execution, and cleanup of passes
         renderResources.renderGraph.execute(scene)

@@ -9,7 +9,7 @@ class CameraTest {
 
     @Test
     fun `test camera preset interpolation`() {
-        val camera = Camera()
+        val camera = CameraComponent()
         camera.fov = 45f
         camera.zoom = 1.0f
 

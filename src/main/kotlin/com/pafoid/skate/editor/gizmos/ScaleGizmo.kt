@@ -6,7 +6,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputProvider
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
 import org.joml.Matrix4f
@@ -29,7 +29,7 @@ class ScaleGizmo(
 
     private var oldTransform: Transform? = null
 
-    fun update(go: GameObject?, camera: Camera) {
+    fun update(go: GameObject?, camera: CameraComponent) {
         go?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
 
@@ -72,7 +72,7 @@ class ScaleGizmo(
         }
     }
 
-    private fun checkInput(pos: Vector3f, camera: Camera, length: Float, threshold: Float) {
+    private fun checkInput(pos: Vector3f, camera: CameraComponent, length: Float, threshold: Float) {
         val mouseX = inputProvider.getMouseScreenX()
         val mouseY = inputProvider.getMouseScreenY()
         val viewportSize = inputProvider.getGameViewportSize()
@@ -147,7 +147,7 @@ class ScaleGizmo(
         return minDist
     }
 
-    private fun calculateDelta(transform: Transform, camera: Camera, axis: Vector3f): Float {
+    private fun calculateDelta(transform: Transform, camera: CameraComponent, axis: Vector3f): Float {
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()
         val viewportSize = inputProvider.getGameViewportSize()

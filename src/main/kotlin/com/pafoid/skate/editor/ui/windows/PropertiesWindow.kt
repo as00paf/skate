@@ -47,7 +47,7 @@ class PropertiesWindow(
             ImGui.separator()
             ImGui.spacing()
 
-            val components = go.getAllComponents().filter { it.getName().contains(searchString.get(), true) }
+            val components = go.getAllComponents().filter { it.name.contains(searchString.get(), true) }
             components.forEachIndexed { index, component ->
                 renderComponentWithContextMenu(go, component, index)
             }
@@ -58,7 +58,7 @@ class PropertiesWindow(
     }
     
     private fun renderComponentWithContextMenu(go: GameObject, component: Component, index: Int) {
-        val headerLabel = component.getName()
+        val headerLabel = component.name
         
         if (ImGui.collapsingHeader(headerLabel)) {
             component.imgui(stringManager, logger)

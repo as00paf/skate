@@ -1,10 +1,13 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.render.CameraComponent
+
 enum class ComponentType {
     ANIMATOR,
     AUDIO,
     BONE_OVERRIDE,
     BOX_COLLIDER_3D,
+    CAMERA,
     CAPSULE_COLLIDER,
     CUSTOM_COLLIDER,
     CYLINDER_COLLIDER,
@@ -33,6 +36,7 @@ enum class ComponentType {
             AUDIO -> AudioComponent()
             BONE_OVERRIDE -> BoneOverride()
             BOX_COLLIDER_3D -> BoxCollider3D()
+            CAMERA -> CameraComponent()
             CAPSULE_COLLIDER -> CapsuleCollider3D()
             CUSTOM_COLLIDER -> CustomCollider3D()
             CYLINDER_COLLIDER -> CylinderCollider3D()

@@ -6,7 +6,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputProvider
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
 import org.joml.Matrix4f
@@ -30,7 +30,7 @@ class TranslateGizmo(
 
     private var oldTransform: Transform? = null
 
-    fun update(activeGameObject: GameObject?, camera: Camera) {
+    fun update(activeGameObject: GameObject?, camera: CameraComponent) {
         val go = activeGameObject ?: return
         go.getComponent<Transform>()?.let{ transform ->
             val pos = transform.translation
@@ -82,7 +82,7 @@ class TranslateGizmo(
         debugRenderer.addTriangle3D(p1, p2, p4, color)
     }
 
-    private fun checkInput(go: GameObject, camera: Camera, length: Float, threshold: Float) {
+    private fun checkInput(go: GameObject, camera: CameraComponent, length: Float, threshold: Float) {
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
 
@@ -137,7 +137,7 @@ class TranslateGizmo(
         return minDist
     }
 
-    private fun calculateDelta(activeGameObject: GameObject?, camera: Camera, axis: Vector3f): Float {
+    private fun calculateDelta(activeGameObject: GameObject?, camera: CameraComponent, axis: Vector3f): Float {
         val view = camera.createViewMatrix()
         val proj = camera.createProjectionMatrix()
         val viewportSize = inputProvider.getGameViewportSize()

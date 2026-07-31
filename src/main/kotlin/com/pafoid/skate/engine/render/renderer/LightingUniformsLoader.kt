@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 
@@ -68,7 +68,7 @@ class LightingUniformsLoader {
      * @param shader The shader to upload the uniform to
      * @param camera The camera providing the position
      */
-    fun loadCameraPosition(shader: Shader, camera: Camera) {
+    fun loadCameraPosition(shader: Shader, camera: CameraComponent) {
         shader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
     }
 }

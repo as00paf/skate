@@ -10,7 +10,7 @@ import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
@@ -100,7 +100,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
         )
     }
 
-    fun render(camera: Camera, scene: Scene) {
+    fun render(camera: CameraComponent, scene: Scene) {
         // Get environment component for sky/fog settings
         val environmentComponent = scene.getComponent<EnvironmentComponent>()
         val renderSky = environmentComponent?.renderSky ?: true

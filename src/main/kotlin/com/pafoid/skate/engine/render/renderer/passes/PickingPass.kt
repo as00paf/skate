@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.PickingTexture
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.PickingRenderer
@@ -62,7 +63,8 @@ class PickingPass(
     private val pickingRenderer: PickingRenderer,
     private val renderer2D: Renderer2D,
     private val pickingShader: Shader,
-    private val modelRenderer: ModelRenderer
+    private val modelRenderer: ModelRenderer,
+    private val cameraManager: CameraManager
 ) : BaseRenderPass() {
 
     override val name: String = "PickingPass"
@@ -101,7 +103,7 @@ class PickingPass(
         glViewport(0, 0, pickingTexture.width, pickingTexture.height)
 
         // Render 2D and 3D objects for picking
-        renderer2D.bindCamera(scene.camera)
+        renderer2D.bindCamera(cameraManager.camera)
         render2D(scene, pickingShader)
         render3DPicking(scene)
         pickingRenderer.draw()
@@ -110,7 +112,7 @@ class PickingPass(
     }
 
     private fun render3DPicking(scene: Scene) {
-        val camera = scene.camera
+        val camera = cameraManager.camera
 
         pickingShader3D.start()
         pickingShader3D.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
@@ -141,7 +143,7 @@ class PickingPass(
 
     private fun render2D(scene: Scene, shader: Shader) {
         renderer2D.bindShader(shader)
-        renderer2D.bindCamera(scene.camera)
+        renderer2D.bindCamera(cameraManager.camera)
 
         scene.gameObjects.forEach { go ->
             if (!go.isVisible || go.isLocked) return@forEach

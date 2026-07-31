@@ -88,10 +88,9 @@ class PlayerMotionSystem(
         val playerController = gameObject.getComponent<PlayerController>()
         val motionData = playerController?.motionData ?: return
         val velocity = body.linearVelocity
-        val camForwardAndRight = cameraManager.camera.getForwardAndRight()
         val desiredMoveDirection = getDesiredMoveDirection(
             playerController.desiredMoveDirection,
-            camForwardAndRight,
+            Pair(cameraManager.camera.camForward, cameraManager.camera.camRight),
             motionData.inputDirection
         )
         if (desiredMoveDirection.x.isNaN() || desiredMoveDirection.y.isNaN() || desiredMoveDirection.z.isNaN()) {

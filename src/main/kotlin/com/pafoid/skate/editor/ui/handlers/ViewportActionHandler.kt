@@ -74,6 +74,7 @@ import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction.ResetScene
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
 
@@ -217,8 +218,8 @@ class ViewportActionHandler(
     }
 
     private fun handleCreateCamera(scene: Scene) {
-        val cameraObj = GameObject("Camera")
-        undoRedoManager.executeCommand(CreateGameObjectCommand(cameraObj, scene, gameObjectManager))
+        val cameraObj = CameraComponent()
+        undoRedoManager.executeCommand(AddComponentCommand(scene, ComponentType.CAMERA))
         logger.logEditor("Created camera: ${cameraObj.name}")
     }
 
@@ -320,7 +321,8 @@ class ViewportActionHandler(
             sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = 1.0f
             eventSystem.publish(CameraAction.SetCamera(editorCamera.camera))
         } else {
-            sceneManager.currentScene?.let { eventSystem.publish(CameraAction.SetCamera(it.camera)) }
+            val sceneCamera = sceneManager.currentScene?.getComponent<CameraComponent>()
+            sceneCamera?.let { eventSystem.publish(CameraAction.SetCamera(it)) }
         }
     }
 
@@ -328,6 +330,7 @@ class ViewportActionHandler(
         sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = timeScale
     }
 
+    // TODO: fix
     private fun handleResetSkateScene() {
         val scene = sceneManager.currentScene ?: return
         val skate = scene.gameObjects.find { obj -> obj.name == "Skateboard" } ?: return
@@ -337,8 +340,9 @@ class ViewportActionHandler(
         val rb = skate.getComponent<RigidBody3D>()
         rb?.linearVelocity = Vector3f(0f, 0f, 0f)
         rb?.angularVelocity = Vector3f(0f, 0f, 0f)
-        scene.camera.position.set(0f, 5f, 20f)
-        scene.camera.yaw = 0f
+        val sceneCamera = sceneManager.currentScene?.getComponent<CameraComponent>() ?: return
+        sceneCamera.position.set(0f, 5f, 20f)
+        sceneCamera.yaw = 0f
     }
 
     private fun handleToggleGizmo(gizmoId: Int) {

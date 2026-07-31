@@ -20,6 +20,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
@@ -166,6 +167,7 @@ class PrefabsGenerator(
             .addComponent(LightingStateComponent())
             .addComponent(DayNightCycleComponent())
             .addComponent(DirectionalLightComponent())
+            .addComponent(CameraComponent().also { it.position.set(Vector3f(0f, 5f, 20f)) })
         scene.gameObjects.addAll(spawnDefaultsSync())
         sceneManager.saveScene(scene, sceneDir.path)
         sceneManager.openScene(scene)

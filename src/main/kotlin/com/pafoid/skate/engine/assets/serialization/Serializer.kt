@@ -27,6 +27,7 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.render.CameraComponent
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -49,6 +50,7 @@ class Serializer {
             subclass(PhysicsComponent::class)
             subclass(AudioComponent::class)
             subclass(GridLines::class)
+            subclass(CameraComponent::class)
 
             // Input components
             subclass(InputStateComponent::class)

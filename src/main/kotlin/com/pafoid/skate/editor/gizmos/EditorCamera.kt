@@ -2,16 +2,18 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.render.Camera
+import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.render.CameraComponent
 import org.joml.Vector3f
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sign
 
 class EditorCamera(
-    val camera: Camera,
     private val editorState: EditorInputState,
 ) {
+    var camera = CameraComponent()
+
     private val scrollSensitivity = 0.01f
     private val rotationSensitivity = 0.01f
     private val moveSpeed = 0.01f
@@ -20,11 +22,18 @@ class EditorCamera(
     private var isRotating: Boolean = false
 
     fun init(scene: Scene) {
-        camera.position.set(scene.camera.position)
-        camera.yaw = scene.camera.yaw
-        camera.pitch = scene.camera.pitch
-        camera.roll = scene.camera.roll
-        camera.isOrthographic = scene.camera.isOrthographic
+        val sceneCamera = scene.getComponent<CameraComponent>() ?: return
+        camera.position.set(sceneCamera.position)
+        camera.yaw = sceneCamera.yaw
+        camera.pitch = sceneCamera.pitch
+        camera.roll = sceneCamera.roll
+        camera.isOrthographic = sceneCamera.isOrthographic
+        camera.fov = sceneCamera.fov
+        camera.nearPlane = sceneCamera.nearPlane
+        camera.farPlane = sceneCamera.farPlane
+        camera.zoom = sceneCamera.zoom
+        camera.viewportWidth = sceneCamera.viewportWidth
+        camera.viewportHeight = sceneCamera.viewportHeight
     }
 
     fun update(dt: Float) {
@@ -51,7 +60,8 @@ class EditorCamera(
             }
         }
 
-        val (forward, right) = camera.getForwardAndRight()
+        val forward = camera.camForward
+        val right = camera.camRight
 
         // WASD horizontal movement
         val moveDir = editorState.moveDirection
