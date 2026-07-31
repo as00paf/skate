@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.render.CameraManager
+import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources

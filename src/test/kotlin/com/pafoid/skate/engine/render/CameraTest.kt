@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render
 
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.render.data.CameraPreset
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals

@@ -64,6 +64,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -74,7 +75,6 @@ import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction.ResetScene
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
-import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.data.LightType
 import org.joml.Vector3f
 

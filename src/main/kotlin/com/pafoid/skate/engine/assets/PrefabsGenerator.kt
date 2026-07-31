@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
@@ -20,7 +21,6 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
-import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater

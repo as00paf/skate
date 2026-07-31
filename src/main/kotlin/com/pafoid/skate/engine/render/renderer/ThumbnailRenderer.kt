@@ -6,10 +6,10 @@ import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.components.toMatrix
-import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.utils.ShaderConst
 import org.joml.Matrix4f

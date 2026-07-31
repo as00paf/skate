@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.render.CameraComponent
-
 enum class ComponentType {
     ANIMATOR,
     AUDIO,

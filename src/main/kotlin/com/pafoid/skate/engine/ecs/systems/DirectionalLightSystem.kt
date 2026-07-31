@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.CameraManager
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector4f

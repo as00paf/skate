@@ -24,7 +24,6 @@ import com.pafoid.skate.engine.ecs.components.ComponentType.SCENE_PHYSICS
 import com.pafoid.skate.engine.ecs.components.ComponentType.SKELETON
 import com.pafoid.skate.engine.ecs.components.ComponentType.SPRITE_RENDERER
 import com.pafoid.skate.engine.ecs.components.ComponentType.TRANSFORM
-import com.pafoid.skate.engine.render.CameraComponent
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient

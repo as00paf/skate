@@ -3,10 +3,10 @@ package com.pafoid.skate.editor.gizmos
 import com.pafoid.skate.editor.commands.objects.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputProvider
-import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.Ray
 import org.joml.Matrix4f

@@ -2,8 +2,8 @@ package com.pafoid.skate.game.camera
 
 import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
-import com.pafoid.skate.engine.render.CameraComponent
 import org.joml.Vector3f
 import kotlin.math.cos
 import kotlin.math.sin

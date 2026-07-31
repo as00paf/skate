@@ -3,7 +3,7 @@ package com.pafoid.skate.engine.render.renderer
 import com.pafoid.skate.engine.assets.data.CubeMap
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.MeshPart
-import com.pafoid.skate.engine.render.CameraComponent
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.lwjgl.opengl.GL11.GL_LEQUAL

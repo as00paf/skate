@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
+import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
@@ -19,7 +20,6 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
-import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import org.joml.Vector2f

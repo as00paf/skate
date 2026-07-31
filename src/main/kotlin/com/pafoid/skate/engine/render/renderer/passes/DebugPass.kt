@@ -2,8 +2,8 @@ package com.pafoid.skate.engine.render.renderer.passes
 
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.GridLines
+import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import org.joml.Vector3f
 import kotlin.math.abs

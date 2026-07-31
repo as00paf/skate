@@ -6,11 +6,11 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f

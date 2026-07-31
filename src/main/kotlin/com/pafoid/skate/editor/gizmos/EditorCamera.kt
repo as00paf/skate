@@ -2,8 +2,8 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.CameraComponent
 import org.joml.Vector3f
 import kotlin.math.abs
 import kotlin.math.pow

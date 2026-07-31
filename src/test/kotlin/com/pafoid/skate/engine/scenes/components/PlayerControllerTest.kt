@@ -3,11 +3,11 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.GamepadConstants
-import com.pafoid.skate.engine.render.CameraComponent
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import io.mockk.MockKAnnotations

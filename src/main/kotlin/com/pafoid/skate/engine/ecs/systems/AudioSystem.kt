@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.CameraManager
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
 

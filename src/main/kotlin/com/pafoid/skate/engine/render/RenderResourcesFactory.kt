@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader

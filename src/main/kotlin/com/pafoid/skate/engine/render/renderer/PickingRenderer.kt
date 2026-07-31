@@ -5,7 +5,7 @@ import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
-import com.pafoid.skate.engine.render.CameraComponent
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.render.data.PickingMesh
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f

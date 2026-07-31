@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
@@ -28,7 +29,6 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.render.CameraComponent
 import kotlin.reflect.KClass
 
 fun GameObject.getComponent(type: ComponentType) =

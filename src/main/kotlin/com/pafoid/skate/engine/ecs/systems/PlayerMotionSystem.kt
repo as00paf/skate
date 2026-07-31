@@ -13,7 +13,6 @@ import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
-import com.pafoid.skate.engine.render.CameraManager
 import com.pafoid.skate.engine.utils.Interpolator
 import org.joml.Quaternionf
 import org.joml.Vector2f

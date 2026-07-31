@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render
 
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.render.utils.GLStateTracker
 import com.pafoid.skate.engine.utils.EntityIdEncoder
 import org.junit.jupiter.api.Assertions.assertEquals

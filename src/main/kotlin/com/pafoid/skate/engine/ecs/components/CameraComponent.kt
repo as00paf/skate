@@ -1,6 +1,5 @@
-package com.pafoid.skate.engine.render
+package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.render.data.CameraPreset
 import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.engine.utils.Ray
@@ -149,22 +148,22 @@ class CameraComponent : Component() {
         // Convert screen coordinates to NDC (-1 to 1)
         val x = (2.0f * screenX) / width - 1.0f
         val y = 1.0f - (2.0f * screenY) / height
-        
+
         val projectionMatrix = createProjectionMatrix()
         val viewMatrix = createViewMatrix()
-        
+
         val invProjView = Matrix4f(projectionMatrix).mul(viewMatrix).invert()
-        
+
         // Ray start (near plane) and end (far plane) in world space
         val near = Vector4f(x, y, -1f, 1f).mul(invProjView)
         val far = Vector4f(x, y, 1f, 1f).mul(invProjView)
-        
+
         near.div(near.w)
         far.div(far.w)
-        
+
         val rayOrigin = Vector3f(near.x, near.y, near.z)
         val rayDirection = Vector3f(far.x - near.x, far.y - near.y, far.z - near.z).normalize()
-        
+
         return Ray(rayOrigin, rayDirection)
     }
 
