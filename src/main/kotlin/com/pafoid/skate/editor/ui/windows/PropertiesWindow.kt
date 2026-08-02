@@ -47,7 +47,12 @@ class PropertiesWindow(
             ImGui.separator()
             ImGui.spacing()
 
-            val components = go.getAllComponents().filter { it.name.contains(searchString.get(), true) }
+            val components = go.getAllComponents().filter {
+                it.name.contains(
+                    searchString.get(),
+                    true
+                ) || it.javaClass.simpleName.contains(searchString.get())
+            }
             components.forEachIndexed { index, component ->
                 renderComponentWithContextMenu(go, component, index)
             }

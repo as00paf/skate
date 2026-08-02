@@ -34,7 +34,6 @@ class RenderComponent(
         }
     }
 
-    // TODO: textures
     fun resolveModelFromByteArray(
         assetsManager: AssetsManager,
         binData: ByteArray,
@@ -47,7 +46,7 @@ class RenderComponent(
                 it.path == path
             }
             if (modelInfo != null) {
-                val start = modelInfo.position
+                val start = modelInfo.position + headerSize
                 val end = start + modelInfo.size
                 if (end < binData.size) {
                     val modelData = binData.copyOfRange(start, end)

@@ -30,7 +30,7 @@ import kotlinx.serialization.Transient
 
 @Serializable
 @Polymorphic
-abstract class Component(open var name: String = this.javaClass.simpleName) {
+abstract class Component {
 
     companion object {
         private var ID_COUNTER: Int = 0
@@ -51,6 +51,7 @@ abstract class Component(open var name: String = this.javaClass.simpleName) {
 
     var uId = -1
     var enabled = true
+    var name: String = ""
 
     @Transient
     lateinit var gameObject: GameObject

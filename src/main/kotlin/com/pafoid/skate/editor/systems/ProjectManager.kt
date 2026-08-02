@@ -123,6 +123,7 @@ class ProjectManager(
                     gameObject.getComponent<RenderComponent>()
                         ?.resolveModelFromByteArray(engine.assetsManager, binData, assetAtlas, headerSize)
                 }
+                sceneManager.openScene(scene)
             } ?: run {
                 logger.logEngine("Failed to load scene", LogLevel.ERROR)
                 return false
