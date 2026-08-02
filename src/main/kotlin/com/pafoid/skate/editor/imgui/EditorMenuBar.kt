@@ -56,6 +56,7 @@ class EditorMenuBar(
         }
     }
 
+    // TODO: get from assets manager
     private fun renderAppIcon() {
         if (appIconTexId == -1) {
             loadAppIconTexture()

@@ -89,6 +89,17 @@ class AssetsManager(
         return sounds[path] != null
     }
 
+    fun loadModel(modelData: ByteArray, filePath: String): TexturedModel {
+        return try {
+            val model = assimpLoader.loadModel(modelData, filePath)
+            models[model.path] = model
+            model
+        } catch (e: Exception) {
+            logger.log("Failed to load model from byte data. Error: ${e.message}", LogLevel.ERROR)
+            loadModel(Assets.Models.CUBE)
+        }
+    }
+
     fun loadModel(path: String): TexturedModel {
         val file = File(path)
         val absolutePath = file.absolutePath
@@ -96,7 +107,7 @@ class AssetsManager(
         models[absolutePath]?.let { return it }
         
         return try {
-            val model = assimpLoader.loadModel(path)
+            val model = assimpLoader.loadModel(absolutePath)
             models[absolutePath] = model
             model
         } catch (e: Exception) {

@@ -5,15 +5,16 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.FileTypeResolver
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
+import kotlinx.serialization.Serializable
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.ByteBuffer
 
 typealias AssetType = String
-typealias AssetSize = Int
-typealias AssetSizes = List<AssetSize>
-typealias Atlas = LinkedHashMap<AssetType, AssetSizes>
+typealias Atlas = LinkedHashMap<AssetType, List<AssetInfo>>
 
+@Serializable
+data class AssetInfo(val type: FileType, val path: String, var position: Int = 0, var size: Int = 0)
 private val serializer: Serializer = Serializer()
 
 class AssetsPacker(private val logger: LoggerService) {
@@ -25,11 +26,12 @@ class AssetsPacker(private val logger: LoggerService) {
 
         val projectDir = File(project.projectPath).parentFile
         val sortedFiles = projectDir.walkTopDown().filter { it.isFile }.map {
-            Pair(FileTypeResolver.resolve(it), it)
-        }.sortedBy { it.first }
+            Pair(AssetInfo(FileTypeResolver.resolve(it), it.absolutePath), it)
+        }.sortedBy { it.first.type }
 
+        var currentPosition = 0
         sortedFiles.forEach {
-            when (it.first) {
+            when (it.first.type) {
                 FileType.PROJECT_FILE,
                 FileType.SCENE,
                 FileType.SCRIPT_KOTLIN,
@@ -45,11 +47,13 @@ class AssetsPacker(private val logger: LoggerService) {
                 FileType.MATERIAL,
                 FileType.FONT,
                 FileType.TEXT -> {
-                    val data = it.second.readBytes()
-                    atlas[it.second.extension] = atlas[it.second.extension].orEmpty().plus(data.size)
-                    outputBuffer.writeBytes(data)
+                    val fileData = it.second.readBytes()
+                    val size = fileData.size
+                    val updatedInfo = it.first.copy(size = size, position = currentPosition)
+                    atlas[it.second.extension] = atlas[it.second.extension].orEmpty().minus(it.first).plus(updatedInfo)
+                    outputBuffer.writeBytes(fileData)
+                    currentPosition += size
                 }
-
                 else -> { /*Skip*/
                 }
             }
@@ -66,9 +70,12 @@ class AssetsPacker(private val logger: LoggerService) {
         output.appendBytes(outputBuffer.toByteArray())
 
         val atlasTable = "Packed Assets Format: \n" +
-                "Atlas size  :\t${encodedAtlas.size} written as ${encodedAtlasSize.toString(Charsets.UTF_8)}\n" +
+                "Atlas size  :\t${encodedAtlas.size}\n" +
                 "Atlas       :\t$atlasData\nWritten as bytes\n" +
-                "Binary data :\t {${outputBuffer.size()} bytes written}"
+                "Binary data :\t{${outputBuffer.size()} bytes written}"
+
+        val atlasReport = File(outputDir, "builds\\atlas_report.txt")
+        atlasReport.writeText(atlasTable)
 
         logger.logEngine(atlasTable, LoggerService.LogLevel.INFO)
 

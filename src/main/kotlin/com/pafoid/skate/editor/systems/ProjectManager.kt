@@ -7,7 +7,10 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.events.EngineAction
+import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.utils.Atlas
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
@@ -46,7 +49,12 @@ class ProjectManager(
             val stringsFile = File(assetsDir, "strings.properties")
             stringsFile.writeText("project.name=$name")
 
-            val project = Project(name = name, projectPath = projectFile.absolutePath)
+            val project = Project(
+                name = name,
+                projectPath = projectFile.absolutePath,
+                iconPath = assetsDir.absolutePath + "\\Textures\\app_icon.png",
+                defaultScene = scenesDir.path + "\\MainScene.scene",
+            )
 
             // Copy assets
             val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
@@ -60,6 +68,7 @@ class ProjectManager(
             currentProject = project
 
             // Create default scene with prefabs
+            prefabsGenerator.projectAssetsDir = assetsDir.absolutePath + "\\"
             prefabsGenerator.createDefaultScene(scenesDir)
 
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
@@ -88,24 +97,42 @@ class ProjectManager(
         return openProject(project)
     }
 
-    fun openProject(project: Project): Boolean {
-        return try {
-            if (hasProject()) closeProject()
+    fun openProject(
+        project: Project,
+        binData: ByteArray? = null,
+        assetAtlas: Atlas? = null,
+        headerSize: Int = 0
+    ): Boolean {
+        if (hasProject()) closeProject()
 
-            currentProject = project
+        currentProject = project
+        // TODO: should not be done here
+        eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
-            eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
-
+        if (binData == null || assetAtlas == null || headerSize <= 0) {
             loadDefaultScene(project)
-
-            eventSystem.publish(ProjectEvent.Opened(project))
-            logger.logEditor("Project opened successfully: ${project.name}")
-
-            true
-        } catch (e: Exception) {
-            logger.logEditor("Error opening project: ${e.message}", LogLevel.ERROR)
-            false
+        } else {
+            val sceneInfo = assetAtlas.get(FileType.SCENE.extensions.first())?.firstOrNull {
+                it.path == project.defaultScene
+            }
+            sceneInfo?.let { info ->
+                val sceneData = binData.copyOfRange(info.position + headerSize, info.position + info.size + headerSize)
+                    .toString(Charsets.UTF_8)
+                val scene = serializer.decode<Scene>(sceneData)
+                scene.gameObjects.forEach { gameObject ->
+                    gameObject.getComponent<RenderComponent>()
+                        ?.resolveModelFromByteArray(engine.assetsManager, binData, assetAtlas, headerSize)
+                }
+            } ?: run {
+                logger.logEngine("Failed to load scene", LogLevel.ERROR)
+                return false
+            }
         }
+
+        eventSystem.publish(ProjectEvent.Opened(project))
+        logger.logEditor("Project opened successfully: ${project.name}")
+
+        return true
     }
 
     fun closeProject() {
@@ -141,8 +168,7 @@ class ProjectManager(
     }
 
     private fun loadDefaultScene(project: Project) {
-        val scenesDir = File(project.getProjectDirectory(), "Scenes")
-        val defaultSceneFile = File(scenesDir, "${project.defaultScene}.scene")
+        val defaultSceneFile = File(project.defaultScene)
 
         if (!defaultSceneFile.exists()) {
             logger.logEditor("No default scene found at ${defaultSceneFile.absolutePath}", LogLevel.ERROR)

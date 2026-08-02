@@ -29,17 +29,21 @@ import org.joml.Vector3f
 import java.io.File
 
 class PrefabsGenerator(
-    engine: Engine
+    engine: Engine,
 ) {
     private val assetsManager = engine.assetsManager
     private val sceneManager = engine.sceneManager
 
+    var projectAssetsDir: String = ""
+
     fun spawnSkateboard(): GameObject {
-        return Skateboard(assetsManager.loadModel(Assets.Models.SKATEBOARD_GLB))
+        val path = projectAssetsDir + Assets.Bundled.SKATEBOARD_GLB
+        return Skateboard(assetsManager.loadModel(path))
     }
 
     fun spawnSkater(skate: GameObject? = null): GameObject {
-        val model = assetsManager.loadModel(Assets.Models.JAMES)
+        val path = projectAssetsDir + Assets.Bundled.JAMES
+        val model = assetsManager.loadModel(path)
         val skater = Skater("Skater", model, skate)
         val skeleton = skater.getComponent<SkeletonComponent>()?.pose?.skeleton
         val animator = skater.getComponent<Animator>()
@@ -52,23 +56,27 @@ class PrefabsGenerator(
     }
 
     fun spawnFloor(): GameObject {
-        val texture = assetsManager.getTexture(Assets.Textures.ASPHALT)
-        val baseModel = assetsManager.loadModel(Assets.Models.CUBE)
+        val texturePath = projectAssetsDir + Assets.Bundled.ASPHALT
+        val modelPath = projectAssetsDir + Assets.Bundled.CUBE
+        val texture = assetsManager.getTexture(texturePath)
+        val baseModel = assetsManager.loadModel(modelPath)
         val model = TexturedModel(
-            path = Assets.Models.CUBE,
+            path = modelPath,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
         return Tile("Tile", model)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {
+        val modelPath = projectAssetsDir + Assets.Bundled.RAIL
+
         val mat = material ?: MaterialType.METAL
         val rail = GameObject("Rail")
         rail.addComponent(Transform(position))
-        val baseModel = assetsManager.loadModel(Assets.Models.RAIL)
-        val texture = assetsManager.getTexture(mat.texturePath)
+        val baseModel = assetsManager.loadModel(modelPath)
+        val texture = assetsManager.getTexture(projectAssetsDir + mat.texturePath)
         val model = TexturedModel(
-            path = Assets.Models.RAIL,
+            path = modelPath,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
         rail.addComponent(RenderComponent(model))
@@ -78,13 +86,14 @@ class PrefabsGenerator(
     }
 
     fun spawnLedge(position: Vector3f = Vector3f(0f, 0.25f, 0f), material: MaterialType?): GameObject {
+        val modelPath = projectAssetsDir + Assets.Bundled.LEDGE
         val mat = material ?: MaterialType.CONCRETE
         val ledge = GameObject("${mat.displayName}_Ledge")
         ledge.addComponent(Transform(position))
-        val baseModel = assetsManager.loadModel(Assets.Models.LEDGE)
+        val baseModel = assetsManager.loadModel(modelPath)
         val texture = assetsManager.getTexture(mat.texturePath)
         val model = TexturedModel(
-            path = Assets.Models.LEDGE,
+            path = modelPath,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
         ledge.addComponent(RenderComponent(model = model))
@@ -94,14 +103,15 @@ class PrefabsGenerator(
     }
 
     fun spawnKicker(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {
+        val modelPath = projectAssetsDir + Assets.Bundled.KICKER
         val mat = material ?: MaterialType.CONCRETE
         val kicker = GameObject("Kicker")
         kicker.addComponent(Transform(position))
-        val baseModel = assetsManager.loadModel(Assets.Models.KICKER)
+        val baseModel = assetsManager.loadModel(modelPath)
         val texture = assetsManager.getTexture(mat.texturePath)
         val texturedModel = TexturedModel(
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) },
-            path = Assets.Models.KICKER,
+            path = modelPath,
         )
         kicker.addComponent(RenderComponent(model = texturedModel))
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
@@ -109,12 +119,13 @@ class PrefabsGenerator(
     }
 
     fun spawnManualPad(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {
+        val modelPath = projectAssetsDir + Assets.Bundled.MANUAL_PAD
         val mat = material ?: MaterialType.CONCRETE
         val go = GameObject("ManualPad")
         go.addComponent(Transform(position))
-        val baseModel = assetsManager.loadModel(Assets.Models.MANUAL_PAD)
+        val baseModel = assetsManager.loadModel(modelPath)
         val texturedModel = TexturedModel(
-            path = Assets.Models.MANUAL_PAD,
+            path = modelPath,
             mesh = baseModel.mesh,
             material = Material(baseColorTexture = assetsManager.getTexture(mat.texturePath))
         )
@@ -125,12 +136,13 @@ class PrefabsGenerator(
     }
 
     fun spawnBank(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject {
+        val modelPath = projectAssetsDir + Assets.Bundled.BANK
         val go = GameObject("Bank")
         go.addComponent(Transform(position))
         val mat = material ?: MaterialType.CONCRETE
-        val baseModel = assetsManager.loadModel(Assets.Models.BANK)
+        val baseModel = assetsManager.loadModel(modelPath)
         val texturedModel = TexturedModel(
-            path = Assets.Models.BANK,
+            path = modelPath,
             mesh = baseModel.mesh,
             material = Material(assetsManager.getTexture(mat.texturePath))
         )
@@ -142,14 +154,14 @@ class PrefabsGenerator(
         return go
     }
 
-
     fun spawnQuarterPipe(position: Vector3f = Vector3f(0f, 0f, 0f), material: MaterialType?): GameObject {
+        val modelPath = projectAssetsDir + Assets.Bundled.QUARTER_PIPE
         val mat = material ?: MaterialType.CONCRETE
         val go = GameObject("QuarterPipe")
         go.addComponent(Transform(position))
-        val baseModel = assetsManager.loadModel(Assets.Models.QUARTER_PIPE)
+        val baseModel = assetsManager.loadModel(modelPath)
         val texturedModel = TexturedModel(
-            path = Assets.Models.QUARTER_PIPE,
+            path = modelPath,
             mesh = baseModel.mesh,
             material = Material(assetsManager.getTexture(mat.texturePath))
         )

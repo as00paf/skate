@@ -31,6 +31,7 @@ import org.lwjgl.assimp.Assimp.aiGetMaterialIntegerArray
 import org.lwjgl.assimp.Assimp.aiGetMaterialString
 import org.lwjgl.assimp.Assimp.aiGetMaterialTexture
 import org.lwjgl.assimp.Assimp.aiImportFile
+import org.lwjgl.assimp.Assimp.aiImportFileFromMemory
 import org.lwjgl.assimp.Assimp.aiProcess_CalcTangentSpace
 import org.lwjgl.assimp.Assimp.aiProcess_FlipUVs
 import org.lwjgl.assimp.Assimp.aiProcess_JoinIdenticalVertices
@@ -55,10 +56,28 @@ class AssimpLoader(
     private val vaoLoader: VAOLoader,
 ) {
 
+    fun loadModel(modelData: ByteArray, filePath: String): TexturedModel {
+        val buffer = MemoryUtil.memAlloc(modelData.size)
+        try {
+            buffer.put(modelData)
+            buffer.flip()
+            val flags =
+                aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
+            val scene = aiImportFileFromMemory(buffer, flags, "")
+                ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
+            return loadModel(scene, filePath)
+        } finally {
+            MemoryUtil.memFree(buffer)
+        }
+    }
+
     fun loadModel(filePath: String): TexturedModel {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
+        return loadModel(scene, filePath)
+    }
 
+    fun loadModel(scene: AIScene, filePath: String = "*packed"): TexturedModel {
         val meshParts = mutableListOf<MeshPart>()
         val embeddedTextures = mutableMapOf<String, Texture>()
 

@@ -9,9 +9,10 @@ data class Project(
     var version: String = "1.0.0",
     var createdDate: Long = System.currentTimeMillis(),
     var lastOpenedDate: Long = System.currentTimeMillis(),
-    var projectPath: String,// TODO: make sure its not the dir anywhere
+    var iconPath: String = "",
+    var projectPath: String,
     var description: String = "",
-    var defaultScene: String = "MainScene",
+    var defaultScene: String,
     var physicsFPS: Int = 60,
     var gameplaySettings: GameplaySettings = GameplaySettings(),
 ) {

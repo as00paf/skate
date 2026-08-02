@@ -3,7 +3,6 @@ package com.pafoid.skate.game
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.utils.AssetsPacker
@@ -22,14 +21,16 @@ fun main(args: Array<String>) {
     val (header, headerSize) = readFileHeader(binFile)
     if (header == null || headerSize <= 0) return
 
-    val project = loadProject(binFile, header, headerSize) ?: return
-    val projectManager = ProjectManager(engine)
+    val (project, icon) = loadProjectAndIcon(binFile, header, headerSize)
+    if (project == null) return
 
-    val window = Window(title = project.name, windowIcon = Assets.Textures.APP_ICON)// TODO: add app icon to project
+    val projectManager = ProjectManager(engine)
+    val window = Window(title = project.name, icon = icon)
+
     window.windowController.setFullscreen(true)
     engine.start(window.glfwWindow)
 
-    if (projectManager.openProject(project)) {
+    if (projectManager.openProject(project, binFile, header, headerSize)) {
         engine.runtimePlaying = true
         window.show { dt ->
             engine.update(dt)
@@ -71,19 +72,30 @@ fun readFileHeader(binFile: ByteArray): Pair<Atlas?, Int> {
     return Pair(parsedData, headerSize)
 }
 
-fun loadProject(binFile: ByteArray, atlas: Atlas, offset: Int): Project? {
+fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Project?, ByteArray?> {
     var currentOffset = offset
     var project: Project? = null
     atlas.keys.forEach { key ->
-        atlas[key]?.forEach { end ->
-            // Skip everything but project for now
-            if (key == FileType.PROJECT_FILE.extensions[0]) {
-                val data = binFile.copyOfRange(currentOffset, currentOffset + end).toString(Charsets.UTF_8)
+        atlas[key]?.forEach { info ->
+            if (key in FileType.PROJECT_FILE.extensions) {
+                val data = binFile.copyOfRange(currentOffset, currentOffset + info.size).toString(Charsets.UTF_8)
                 project = engine.serializer.decode<Project?>(data)
             }
-            currentOffset += end
+            currentOffset += info.size
         }
     }
 
-    return project
+    val icon = project?.iconPath?.let { iconPath ->
+        val extension = iconPath.substring(iconPath.lastIndexOf('.') + 1)
+        val info = atlas.get(extension)?.firstOrNull {
+            it.path == iconPath
+        }
+        info?.let {
+            val start = info.position + offset
+            val end = start + info.size
+            binFile.copyOfRange(start, end)
+        }
+    }
+
+    return project to icon
 }

@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.core
 
+import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR
@@ -46,6 +47,7 @@ import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GLUtil
 import org.lwjgl.stb.STBImage
+import org.lwjgl.stb.STBImage.stbi_load_from_memory
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
 import java.nio.ByteBuffer
@@ -54,7 +56,8 @@ class Window(
     initialWidth: Int = 1920,
     initialHeight: Int = 1080,
     val title: String,
-    val windowIcon: String? = null
+    val iconPath: String? = null,
+    val icon: ByteArray? = null
 ) {
     private var isFirstDraw = true
     var glfwWindow: Long = -1L
@@ -123,7 +126,8 @@ class Window(
         height = fbSizeHeight[0]
 
         // Set the window icon
-        windowIcon?.let { setWindowIcon(it) }
+        //iconPath?.let { setWindowIcon(it) }
+        icon?.let { setWindowIcon(it) }
 
         // Make OpenGL context current
         glfwMakeContextCurrent(glfwWindow)
@@ -171,6 +175,38 @@ class Window(
             // Ensure flip vertical is disabled for UI images
             STBImage.stbi_set_flip_vertically_on_load(false)
             val pixels: ByteBuffer? = STBImage.stbi_load(iconPath, w, h, comp, 4) // Force 4 channels (RGBA)
+            STBImage.stbi_set_flip_vertically_on_load(true) // Re-enable for other textures
+
+            if (pixels == null) {
+                throw IllegalStateException("Failed to load image at path: $iconPath")
+            }
+
+            val icon = GLFWImage.malloc(stack)
+            icon.width(w.get(0))
+            icon.height(h.get(0))
+            icon.pixels(pixels)
+
+            val icons = GLFWImage.malloc(1, stack)
+            icons.put(0, icon)
+
+            glfwSetWindowIcon(glfwWindow, icons)
+
+            STBImage.stbi_image_free(pixels) // Free the image data
+        }
+    }
+
+    fun setWindowIcon(icon: ByteArray) {
+        MemoryStack.stackPush().use { stack ->
+            val w = stack.mallocInt(1)
+            val h = stack.mallocInt(1)
+            val channels = stack.mallocInt(1)
+
+            val data = BufferUtils.createByteBuffer(1024 * 1024 * 4)
+            data.put(icon).position(0)
+
+            // Ensure flip vertical is disabled for UI images
+            STBImage.stbi_set_flip_vertically_on_load(false)
+            val pixels: ByteBuffer? = stbi_load_from_memory(data, w, h, channels, 4)
             STBImage.stbi_set_flip_vertically_on_load(true) // Re-enable for other textures
 
             if (pixels == null) {
