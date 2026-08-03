@@ -17,6 +17,7 @@ object FileTypeResolver {
             in FileType.SCRIPT_JAVA.extensions -> FileType.SCRIPT_JAVA
             in FileType.TEXTURE.extensions -> FileType.TEXTURE
             in FileType.MODEL_3D.extensions -> FileType.MODEL_3D
+            in FileType.ANIMATION.extensions -> FileType.ANIMATION
             in FileType.SOUND.extensions -> FileType.SOUND
             in FileType.PREFAB.extensions -> FileType.PREFAB
             in FileType.JSON.extensions -> FileType.JSON

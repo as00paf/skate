@@ -25,9 +25,13 @@ class AssetsPacker(private val logger: LoggerService) {
         atlas = Atlas()
 
         val projectDir = File(project.projectPath).parentFile
-        val sortedFiles = projectDir.walkTopDown().filter { it.isFile }.map {
+        val excluded = listOf("bin", "jar", "bat")
+        val sortedFiles = projectDir.walkTopDown().filter { it.isFile && it.extension !in excluded }.map {
             Pair(AssetInfo(FileTypeResolver.resolve(it), it.absolutePath), it)
         }.sortedBy { it.first.type }
+
+        // TODO: Add shaders because they are not copied in the project's assets
+
 
         var currentPosition = 0
         sortedFiles.forEach {

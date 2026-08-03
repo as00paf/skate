@@ -67,9 +67,14 @@ fun readFileHeader(binFile: ByteArray): Pair<Atlas?, Int> {
     val headerSize = headerSizeData.int + Int.SIZE_BYTES
     val rawData = binFile.copyOfRange(Int.SIZE_BYTES, headerSize)
     val data = rawData.toString(Charsets.UTF_8)
-    val parsedData = engine.serializer.decode<Atlas?>(data)
-
-    return Pair(parsedData, headerSize)
+    try {
+        val parsedData = engine.serializer.decode<Atlas?>(data)
+        return Pair(parsedData, headerSize)
+    } catch (ex: Exception) {
+        engine.logger.logEngine("Could not load header file: $ex")
+        ex.printStackTrace()
+    }
+    return null to 0
 }
 
 fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Project?, ByteArray?> {
@@ -78,8 +83,14 @@ fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Proj
     atlas.keys.forEach { key ->
         atlas[key]?.forEach { info ->
             if (key in FileType.PROJECT_FILE.extensions) {
-                val data = binFile.copyOfRange(currentOffset, currentOffset + info.size).toString(Charsets.UTF_8)
-                project = engine.serializer.decode<Project?>(data)
+                val start = info.position + offset
+                val end = start + info.size
+                val data = binFile.copyOfRange(start, end).toString(Charsets.UTF_8)
+                try {
+                    project = engine.serializer.decode<Project?>(data)
+                } catch (e: Exception) {
+                    engine.logger.logEngine("Error loading project file: $e")
+                }
             }
             currentOffset += info.size
         }
