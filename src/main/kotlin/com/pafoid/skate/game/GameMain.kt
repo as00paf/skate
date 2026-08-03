@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
+import com.pafoid.skate.engine.fileExtension
 import com.pafoid.skate.engine.utils.AssetsPacker
 import com.pafoid.skate.engine.utils.Atlas
 import org.lwjgl.opengl.GL11
@@ -97,7 +98,7 @@ fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Proj
     }
 
     val icon = project?.iconPath?.let { iconPath ->
-        val extension = iconPath.substring(iconPath.lastIndexOf('.') + 1)
+        val extension = iconPath.fileExtension()
         val info = atlas.get(extension)?.firstOrNull {
             it.path == iconPath
         }

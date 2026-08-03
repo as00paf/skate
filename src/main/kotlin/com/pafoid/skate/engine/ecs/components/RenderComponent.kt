@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.ecs.components
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.render.data.RenderMode
-import com.pafoid.skate.engine.utils.Atlas
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -36,21 +35,17 @@ class RenderComponent(
 
     fun resolveModelFromByteArray(
         assetsManager: AssetsManager,
-        binData: ByteArray,
-        assetsAtlas: Atlas,
-        headerSize: Int = 0
     ) {
         model?.path?.let { path ->
-            val extension = path.substring(path.lastIndexOf('.') + 1)
-            val modelInfo = assetsAtlas[extension]?.firstOrNull {
-                it.path == path
-            }
-            if (modelInfo != null) {
-                val start = modelInfo.position + headerSize
-                val end = start + modelInfo.size
-                if (end < binData.size) {
-                    val modelData = binData.copyOfRange(start, end)
-                    model = assetsManager.loadModel(modelData, path)
+            model = assetsManager.resolveModel(path)
+            model?.let { model ->
+                model.mesh.forEach { meshPart ->
+                    val mat = meshPart.material
+                    albedoTextureGuid.takeIf { it.isNotBlank() }
+                        ?.let { mat.baseColorTexture = assetsManager.resolveTexture(it) }
+                    normalMapGuid.takeIf { it.isNotBlank() }?.let { mat.normalMap = assetsManager.resolveTexture(it) }
+                    metallicRoughnessGuid.takeIf { it.isNotBlank() }
+                        ?.let { mat.metallicRoughnessTexture = assetsManager.resolveTexture(it) }
                 }
             }
         }

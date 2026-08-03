@@ -88,3 +88,7 @@ fun <T : Component> GameObject.addComponent(componentClass: KClass<T>, component
     component.init(this)
     return this
 }
+
+fun String.fileExtension(): String {
+    return this.substring(this.lastIndexOf('.') + 1)
+}

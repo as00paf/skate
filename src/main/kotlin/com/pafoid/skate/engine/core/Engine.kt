@@ -34,7 +34,7 @@ class Engine {
     val logger = LoggerService()
     val eventSystem = EventSystem()
 
-    val assetsManager = AssetsManager(logger)
+    val assetsManager = AssetsManager(serializer, logger)
     val stringManager = StringManager(logger)
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)

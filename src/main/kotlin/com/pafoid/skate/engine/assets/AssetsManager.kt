@@ -11,16 +11,22 @@ import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.loaders.SoundLoader
 import com.pafoid.skate.engine.assets.loaders.TextureLoader
+import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.render.VAOLoader
+import com.pafoid.skate.engine.utils.AssetsResolver
+import com.pafoid.skate.engine.utils.Atlas
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 class AssetsManager(
-    private val logger: LoggerService,
+    private val serializer: Serializer,
+    private val logger: LoggerService
 ) {
     val vaoLoader: VAOLoader = VAOLoader()
+
+    val assetsResolver = AssetsResolver(serializer, logger)
 
     private val shaderLoader = ShaderLoader(false)
     private val textureLoader = TextureLoader()
@@ -33,6 +39,28 @@ class AssetsManager(
     private val models = ConcurrentHashMap<String, TexturedModel>()
     private val sounds = ConcurrentHashMap<String, SoundBuffer>()
     private val animations = ConcurrentHashMap<String, Animation>()
+
+    fun initAssetsResolver(assetsAtlas: Atlas, binData: ByteArray, headerOffset: Int) {
+        assetsResolver.initialize(assetsAtlas, binData, headerOffset)
+    }
+
+    inline fun <reified T> resolve(path: String): T? {
+        return assetsResolver.resolve<T>(path)
+    }
+
+    fun resolveModel(path: String): TexturedModel? {
+        val data = assetsResolver.resolveData(path) ?: return null
+        val model = assimpLoader.loadModel(data, path)
+        models[path] = model
+        return model
+    }
+
+    fun resolveTexture(path: String): Texture? {
+        val data = assetsResolver.resolveData(path) ?: return null
+        val texture = textureLoader.loadFromBuffer(data)
+        textures[path] = texture
+        return texture
+    }
 
     fun getTexture(path: String): Texture {
         val absolutePath = File(path).absolutePath

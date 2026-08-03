@@ -1,9 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -14,6 +11,7 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
+import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.GL_CULL_FACE
 import org.lwjgl.opengl.GL11.GL_LEQUAL
 import org.lwjgl.opengl.GL11.GL_LESS
@@ -24,7 +22,6 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T
 import org.lwjgl.opengl.GL11.GL_TRIANGLES
 import org.lwjgl.opengl.GL11.GL_UNSIGNED_INT
 import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL11.glDeleteTextures
 import org.lwjgl.opengl.GL11.glDepthFunc
 import org.lwjgl.opengl.GL11.glDepthMask
 import org.lwjgl.opengl.GL11.glDisable
@@ -42,15 +39,13 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManager: AssetsManager) {
+class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
 
     private val sphere: MeshPart
-    private val hdriTexture: Texture
     private val modelMatrix = Matrix4f()
 
     init {
         sphere = generateUVSphere(loader, 50, 50, 500f)
-        hdriTexture = assetsManager.getTexture(Assets.Textures.SKY_HDRI)
     }
 
     private fun generateUVSphere(loader: VAOLoader, rings: Int, sectors: Int, radius: Float): MeshPart {
@@ -104,6 +99,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
         // Get environment component for sky/fog settings
         val environmentComponent = scene.getComponent<EnvironmentComponent>()
         val renderSky = environmentComponent?.renderSky ?: true
+        val hdriTexture = environmentComponent?.skyTexture
 
         // Skip sky rendering if renderSky is false
         if (!renderSky) {
@@ -133,30 +129,35 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
         sun?.color?.let { shader.uploadVec3f(Uniforms.SUN_COLOR, it) }
 
         // Upload sky settings from EnvironmentComponent
-        shader.uploadVec3f(Uniforms.SKY_TINT, environmentComponent?.skyTint ?: org.joml.Vector3f(1f, 1f, 1f))
+        shader.uploadVec3f(Uniforms.SKY_TINT, environmentComponent?.skyTint ?: Vector3f(1f, 1f, 1f))
         shader.uploadFloat(Uniforms.SKY_EXPOSURE, environmentComponent?.skyExposure ?: 1.0f)
 
         // Upload fog settings from EnvironmentComponent
-        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentComponent?.fogColor ?: org.joml.Vector3f(0.8f, 0.8f, 0.8f))
+        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentComponent?.fogColor ?: Vector3f(0.8f, 0.8f, 0.8f))
         shader.uploadFloat(Uniforms.FOG_DENSITY, environmentComponent?.fogDensity ?: 0.0f)
         shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentComponent?.fogGradient ?: 1.5f)
         shader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
 
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, hdriTexture.texId)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-        shader.uploadInt(Uniforms.HDRI_TEXTURE, 0)
+        // Draw sky texture
+        hdriTexture?.texId?.let { texId ->
+            if (texId < 0) return@let
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, texId)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+            shader.uploadInt(Uniforms.HDRI_TEXTURE, 0)
 
-        glBindVertexArray(sphere.vaoId)
-        glEnableVertexAttribArray(0)
-        glEnableVertexAttribArray(1)
-        
-        glDrawElements(GL_TRIANGLES, sphere.vertexCount, GL_UNSIGNED_INT, 0)
-        
-        glDisableVertexAttribArray(0)
-        glDisableVertexAttribArray(1)
-        glBindVertexArray(0)
+            glBindVertexArray(sphere.vaoId)
+            glEnableVertexAttribArray(0)
+            glEnableVertexAttribArray(1)
+
+            glDrawElements(GL_TRIANGLES, sphere.vertexCount, GL_UNSIGNED_INT, 0)
+
+            glDisableVertexAttribArray(0)
+            glDisableVertexAttribArray(1)
+            glBindVertexArray(0)
+        }
+
         shader.stop()
         
         glDepthMask(true)
@@ -168,7 +169,5 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader, assetsManag
         if (sphere.vaoId != 0) {
             glDeleteVertexArrays(sphere.vaoId)
         }
-        // VBO and IBO are managed by VAOLoader and cleaned up with VAO
-        glDeleteTextures(hdriTexture.texId)
     }
 }

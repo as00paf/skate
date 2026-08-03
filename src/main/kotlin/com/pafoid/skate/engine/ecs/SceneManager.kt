@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.systems.SystemManager
@@ -56,6 +57,10 @@ class SceneManager(
     }
 
     fun resolveSceneReferences(scene: Scene) {
+        val envComponent = scene.getComponent<EnvironmentComponent>()
+        envComponent?.skyTexture?.filePath?.let { filePath ->
+            envComponent.skyTexture = assetsManager.getTexture(filePath)
+        }
         scene.gameObjects.forEach { obj ->
             try {
                 obj.components.forEach { it.init(obj) }

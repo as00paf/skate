@@ -7,26 +7,24 @@ import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.Atlas
 import java.io.File
-import java.util.concurrent.atomic.AtomicLong
 
 class ProjectManager(
     private val engine: Engine,
 ) {
     private val engineAssetCopier = EngineAssetCopier()
+
     private val eventSystem = engine.eventSystem
     private val logger = engine.logger
-    private val prefabsGenerator = engine.prefabsGenerator
     private val sceneManager = engine.sceneManager
-    private val serializer = engine.serializer
 
     var currentProject: Project? = null
         private set
-    private val lifecycleEpoch = AtomicLong(0)
 
     fun createProject(name: String, folder: File): Result<Project> {
         logger.logEditor("Creating project: $name in ${folder.absolutePath}")
@@ -68,8 +66,8 @@ class ProjectManager(
             currentProject = project
 
             // Create default scene with prefabs
-            prefabsGenerator.projectAssetsDir = assetsDir.absolutePath + "\\"
-            prefabsGenerator.createDefaultScene(scenesDir)
+            engine.prefabsGenerator.projectAssetsDir = assetsDir.absolutePath + "\\"
+            engine.prefabsGenerator.createDefaultScene(scenesDir)
 
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
@@ -92,7 +90,7 @@ class ProjectManager(
             return false
         }
         logger.logEditor("Opening project: ${projectFile.absolutePath}")
-        val project = serializer.decode<Project>(projectFile.readText())
+        val project = engine.serializer.decode<Project>(projectFile.readText())
 
         return openProject(project)
     }
@@ -112,16 +110,15 @@ class ProjectManager(
         if (binData == null || assetAtlas == null || headerSize <= 0) {
             loadDefaultScene(project)
         } else {
-            val sceneInfo = assetAtlas.get(FileType.SCENE.extensions.first())?.firstOrNull {
-                it.path == project.defaultScene
-            }
-            sceneInfo?.let { info ->
-                val sceneData = binData.copyOfRange(info.position + headerSize, info.position + info.size + headerSize)
-                    .toString(Charsets.UTF_8)
-                val scene = serializer.decode<Scene>(sceneData)
+            engine.assetsManager.initAssetsResolver(assetAtlas, binData, headerSize)
+
+            engine.assetsManager.resolve<Scene>(project.defaultScene)?.let { scene ->
+                scene.getComponent<EnvironmentComponent>()?.skyTexture?.filePath?.let { path ->
+                    scene.getComponent<EnvironmentComponent>()?.skyTexture = engine.assetsManager.resolveTexture(path)
+                }
+
                 scene.gameObjects.forEach { gameObject ->
-                    gameObject.getComponent<RenderComponent>()
-                        ?.resolveModelFromByteArray(engine.assetsManager, binData, assetAtlas, headerSize)
+                    gameObject.getComponent<RenderComponent>()?.resolveModelFromByteArray(engine.assetsManager)
                 }
                 sceneManager.openScene(scene)
             } ?: run {
@@ -141,7 +138,6 @@ class ProjectManager(
             logger.logEditor("No project to close")
             return
         }
-        lifecycleEpoch.incrementAndGet()
         logger.logEditor("Closing project: ${project.name}")
 
         try {
@@ -176,7 +172,7 @@ class ProjectManager(
             return
         }
 
-        val scene = serializer.decode<Scene?>(defaultSceneFile.readText()) ?: run {
+        val scene = engine.serializer.decode<Scene?>(defaultSceneFile.readText()) ?: run {
             logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}")
             return
         }
@@ -193,7 +189,7 @@ class ProjectManager(
 
         logger.logEditor("Saving project: ${project.name}")
         try {
-            File(project.projectPath).writeText(serializer.encode(project))
+            File(project.projectPath).writeText(engine.serializer.encode(project))
             eventSystem.publish(ProjectEvent.Saved(project))
         } catch (e: Exception) {
             logger.logEditor("Error while saving project: ${e.message}", LogLevel.ERROR)

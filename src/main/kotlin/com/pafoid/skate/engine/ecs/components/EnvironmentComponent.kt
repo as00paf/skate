@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -16,6 +17,8 @@ class EnvironmentComponent(
     var skyExposure: Float = 1.0f,
 
     var skyRotation: Float = 0.0f,
+
+    var skyTexture: Texture? = null,
 
     @Contextual
     var fogColor: Vector3f = Vector3f(0.8f, 0.8f, 0.8f),

@@ -56,6 +56,18 @@ class AssimpLoader(
     private val vaoLoader: VAOLoader,
 ) {
 
+    fun loadModel(buffer: ByteBuffer, filePath: String): TexturedModel {
+        try {
+            val flags =
+                aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
+            val scene = aiImportFileFromMemory(buffer, flags, "")
+                ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
+            return loadModel(scene, filePath)
+        } finally {
+            MemoryUtil.memFree(buffer)
+        }
+    }
+
     fun loadModel(modelData: ByteArray, filePath: String): TexturedModel {
         val buffer = MemoryUtil.memAlloc(modelData.size)
         try {

@@ -49,7 +49,7 @@ class PrefabsGenerator(
         val animator = skater.getComponent<Animator>()
         if (skeleton != null && animator != null) {
             Skater.DEFAULT_ANIMATIONS.forEach { path ->
-                animator.addAnimation(assetsManager.loadAnimationSync(path, skeleton))
+                animator.addAnimation(assetsManager.loadAnimationSync(projectAssetsDir + path, skeleton))
             }
         }
         return skater
@@ -173,9 +173,10 @@ class PrefabsGenerator(
 
     fun createDefaultScene(sceneDir: File) {
         val scene = sceneManager.createNewScene("MainScene", sceneDir.path)
+        val skyTexture = assetsManager.getTexture(projectAssetsDir + Assets.Bundled.SKY)
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
-            .addComponent(EnvironmentComponent())
+            .addComponent(EnvironmentComponent(skyTexture = skyTexture))
             .addComponent(LightingStateComponent())
             .addComponent(DayNightCycleComponent())
             .addComponent(DirectionalLightComponent())

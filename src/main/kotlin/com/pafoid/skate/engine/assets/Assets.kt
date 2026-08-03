@@ -81,43 +81,45 @@ object Assets {
     }
 
     object Bundled {
-        const val JAMES = "EngineDefaults/Characters/james.glb"
+        const val JAMES = "EngineDefaults\\Characters\\james.glb"
 
-        const val SKATEBOARD_GLB = "EngineDefaults/Models/skateboard_free_model.glb"
+        const val SKATEBOARD_GLB = "EngineDefaults\\Models\\skateboard_free_model.glb"
 
-        const val CUBE = "EngineDefaults/Models/cube.obj"
-        const val RAIL = "EngineDefaults/Models/rail.obj"
-        const val LEDGE = "EngineDefaults/Models/ledge.obj"
-        const val KICKER = "EngineDefaults/Models/kicker.obj"
-        const val MANUAL_PAD = "EngineDefaults/Models/manual_pad.obj"
-        const val BANK = "EngineDefaults/Models/bank.obj"
-        const val QUARTER_PIPE = "EngineDefaults/Models/quarter_pipe.obj"
+        const val CUBE = "EngineDefaults\\Models\\cube.obj"
+        const val RAIL = "EngineDefaults\\Models\\rail.obj"
+        const val LEDGE = "EngineDefaults\\Models\\ledge.obj"
+        const val KICKER = "EngineDefaults\\Models\\kicker.obj"
+        const val MANUAL_PAD = "EngineDefaults\\Models\\manual_pad.obj"
+        const val BANK = "EngineDefaults\\Models\\bank.obj"
+        const val QUARTER_PIPE = "EngineDefaults\\Models\\quarter_pipe.obj"
 
-        const val IDLE_0 = "EngineDefaults/Characters/animations/idle_0.fbx"
-        const val IDLE_1 = "EngineDefaults/Characters/animations/idle_1.fbx"
-        const val IDLE_PHONE = "EngineDefaults/Characters/animations/idle phone.fbx"
-        const val JUMP = "EngineDefaults/Characters/animations/jump.fbx"
-        const val FALLING = "EngineDefaults/Characters/animations/falling to roll.fbx"
-        const val FALLING_IDLE = "EngineDefaults/Characters/animations/falling idle.fbx"
-        const val LANDING = "EngineDefaults/Characters/animations/hard landing.fbx"
-        const val WALKING = "EngineDefaults/Characters/animations/walking.fbx"
-        const val RUNNING = "EngineDefaults/Characters/animations/running.fbx"
-        const val LEFT_TURN = "EngineDefaults/Characters/animations/left turn.fbx"
-        const val LEFT_TURN_90 = "EngineDefaults/Characters/animations/left turn 90.fbx"
-        const val LEFT_STRAFE = "EngineDefaults/Characters/animations/left strafe.fbx"
-        const val LEFT_STRAFE_WALKING = "EngineDefaults/Characters/animations/left strafe walking.fbx"
-        const val RIGHT_TURN = "EngineDefaults/Characters/animations/right turn.fbx"
-        const val RIGHT_TURN_90 = "EngineDefaults/Characters/animations/right turn 90.fbx"
-        const val RIGHT_STRAFE = "EngineDefaults/Characters/animations/right strafe.fbx"
-        const val RIGHT_STRAFE_WALKING = "EngineDefaults/Characters/animations/right strafe walking.fbx"
+        const val IDLE_0 = "EngineDefaults\\Characters\\animations\\idle_0.fbx"
+        const val IDLE_1 = "EngineDefaults\\Characters\\animations\\idle_1.fbx"
+        const val IDLE_PHONE = "EngineDefaults\\Characters\\animations\\idle phone.fbx"
+        const val JUMP = "EngineDefaults\\Characters\\animations\\jump.fbx"
+        const val FALLING = "EngineDefaults\\Characters\\animations\\falling to roll.fbx"
+        const val FALLING_IDLE = "EngineDefaults\\Characters\\animations\\falling idle.fbx"
+        const val LANDING = "EngineDefaults\\Characters\\animations\\hard landing.fbx"
+        const val WALKING = "EngineDefaults\\Characters\\animations\\walking.fbx"
+        const val RUNNING = "EngineDefaults\\Characters\\animations\\running.fbx"
+        const val LEFT_TURN = "EngineDefaults\\Characters\\animations\\left turn.fbx"
+        const val LEFT_TURN_90 = "EngineDefaults\\Characters\\animations\\left turn 90.fbx"
+        const val LEFT_STRAFE = "EngineDefaults\\Characters\\animations\\left strafe.fbx"
+        const val LEFT_STRAFE_WALKING = "EngineDefaults\\Characters\\animations\\left strafe walking.fbx"
+        const val RIGHT_TURN = "EngineDefaults\\Characters\\animations\\right turn.fbx"
+        const val RIGHT_TURN_90 = "EngineDefaults\\Characters\\animations\\right turn 90.fbx"
+        const val RIGHT_STRAFE = "EngineDefaults\\Characters\\animations\\right strafe.fbx"
+        const val RIGHT_STRAFE_WALKING = "EngineDefaults\\Characters\\animations\\right strafe walking.fbx"
 
-        const val ASPHALT = "EngineDefaults/Textures/asphalt.png"
-        const val CONCRETE_SIMPLE = "EngineDefaults/Textures/concrete_simple.png"
-        const val METAL = "EngineDefaults/Textures/metal.png"
-        const val WOOD_BROWN = "EngineDefaults/Textures/wood_brown.png"
-        const val WOOD_LIGHT = "EngineDefaults/Textures/wood_light.png"
-        const val WOOD_TAN = "EngineDefaults/Textures/wood_tan.png"
-        const val WOOD_DARK = "EngineDefaults/Textures/wood_dark.png"
+        const val ASPHALT = "EngineDefaults\\Textures\\asphalt.png"
+        const val CONCRETE_SIMPLE = "EngineDefaults\\Textures\\concrete_simple.png"
+        const val METAL = "EngineDefaults\\Textures\\metal.png"
+        const val WOOD_BROWN = "EngineDefaults\\Textures\\wood_brown.png"
+        const val WOOD_LIGHT = "EngineDefaults\\Textures\\wood_light.png"
+        const val WOOD_TAN = "EngineDefaults\\Textures\\wood_tan.png"
+        const val WOOD_DARK = "EngineDefaults\\Textures\\wood_dark.png"
+
+        const val SKY = "EngineDefaults\\Textures\\sky_hdri.png"
 
         val bundledAssets = listOf(
             // Characters
@@ -157,6 +159,7 @@ object Assets {
             WOOD_LIGHT to Textures.WOOD_LIGHT,
             WOOD_TAN to Textures.WOOD_TAN,
             WOOD_DARK to Textures.WOOD_DARK,
+            SKY to Textures.SKY_HDRI,
             // Game
             "..\\builds\\skate-game.jar" to "build\\libs\\skate-game.jar",
             "\\Textures\\app_icon.png" to Textures.APP_ICON,
