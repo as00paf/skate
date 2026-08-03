@@ -10,8 +10,17 @@ import java.nio.file.Paths
 
 class ShaderLoader(private var verbose:Boolean = false) {
 
-    fun loadShader(filePath: String): Shader {
+    fun loadCustomShader(filePath: String): Shader {
         val src = String(Files.readAllBytes(Paths.get(filePath)))
+        return loadShader(src, filePath)
+    }
+
+    fun loadShader(filePath: String): Shader {
+        val src = this.javaClass.getResourceAsStream(filePath)?.readAllBytes()?.toString(Charsets.UTF_8).orEmpty()
+        return loadShader(src, filePath)
+    }
+
+    private fun loadShader(src: String, filePath: String): Shader {
         val splitSrc = src.split(ShaderConst.SPLITTER_REGEX.toRegex())
 
         var index = src.indexOf(ShaderConst.TYPE_DELIMITER) + ShaderConst.TYPE_DELIMITER_COUNT
