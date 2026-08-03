@@ -140,12 +140,9 @@ class ImGuiLayer(
 
         startFrame()
 
-        setupDockSpace(currentScene)
-
         if (isViewportMaximized) {
             setNextWindowPos(getMainViewport().workPosX, getMainViewport().workPosY, ImGuiCond.Always)
             setNextWindowSize(getMainViewport().workSizeX, getMainViewport().workSizeY, ImGuiCond.Always)
-            pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
             begin(
                 stringManager.getString(
                     "window.game_viewport.maximized",
@@ -160,11 +157,9 @@ class ImGuiLayer(
             image(texId.toLong(), tempVec2.x, tempVec2.y, 0f, 1f, 1f, 0f)
 
             end()
-            popStyleVar()// TODO: wtf
         } else {
+            setupDockSpace(currentScene)
             currentScene?.let { gizmoSystem.update(dt, it) }
-            statusBar.render(currentScene)
-            windowManager.update(currentScene)
         }
 
         endFrame()
@@ -214,7 +209,9 @@ class ImGuiLayer(
         setupLayout(getID("DockSpace"))
         dockSpace(getID("DockSpace"))
 
-        menuBar.render(currentScene)// TODO: move
+        menuBar.render(currentScene)
+        statusBar.render(currentScene)
+        windowManager.update(currentScene)
 
         end()
     }
