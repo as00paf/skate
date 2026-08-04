@@ -17,10 +17,11 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 
 @Serializable
-open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {// TODO: cleanup
-
-    var bodyType: BodyType = BodyType.Dynamic
+open class RigidBody3D(
+    var mass: Float = 1.0f,
+    var bodyType: BodyType = BodyType.Dynamic,
     var useCCD: Boolean = false
+) : Component(), IPhysicsBody3D {// TODO: cleanup
 
     var friction: Float = 0.5f
         set(value) {

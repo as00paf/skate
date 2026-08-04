@@ -80,7 +80,7 @@ class PrefabsGenerator(
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
         rail.addComponent(RenderComponent(model))
-        rail.addComponent(RigidBody3D(0f).apply { friction = 0.05f; bodyType = BodyType.Static })
+        rail.addComponent(RigidBody3D(0f, bodyType = BodyType.Static).apply { friction = 0.05f })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0))
         return rail
     }

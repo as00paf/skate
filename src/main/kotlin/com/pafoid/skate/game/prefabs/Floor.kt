@@ -28,7 +28,7 @@ class Floor(
                 receiveShadow = true  // But receives shadows from objects
             )
         )
-        addComponent(RigidBody3D(0f).apply { bodyType = BodyType.Static })
+        addComponent(RigidBody3D(0f, bodyType = BodyType.Static))
         addComponent(BoxCollider3D(Vector3f(1f, 1f, 1f)))
     }
 
