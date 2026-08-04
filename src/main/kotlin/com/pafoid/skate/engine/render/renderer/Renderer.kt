@@ -6,13 +6,11 @@ import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources
 import com.pafoid.skate.engine.render.graph.RenderGraph
-import org.lwjgl.opengl.GL30.glViewport
 
 class Renderer(
     var renderResources: RenderResources,
     val cameraManager: CameraManager,
 ) {
-    var useFbo: Boolean = true
     val frameBuffer: FrameBuffer
         get() = renderResources.frameBuffer
 
@@ -29,14 +27,6 @@ class Renderer(
 
         // Execute the render graph - this handles all preparation, execution, and cleanup of passes
         renderResources.renderGraph.execute(scene)
-
-        // Final screen viewport reset
-        glViewport(
-            0,
-            0,
-            renderResources.frameBuffer.width,
-            renderResources.frameBuffer.height
-        )//TODO: I dont think this is needed
     }
 
     fun readPixel(nx: Float, ny: Float): Int {

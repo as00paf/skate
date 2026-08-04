@@ -17,7 +17,6 @@ import org.lwjgl.glfw.GLFW.glfwCreateWindow
 import org.lwjgl.glfw.GLFW.glfwDefaultWindowHints
 import org.lwjgl.glfw.GLFW.glfwDestroyWindow
 import org.lwjgl.glfw.GLFW.glfwFocusWindow
-import org.lwjgl.glfw.GLFW.glfwGetFramebufferSize
 import org.lwjgl.glfw.GLFW.glfwGetMonitorPos
 import org.lwjgl.glfw.GLFW.glfwGetMonitors
 import org.lwjgl.glfw.GLFW.glfwGetVideoMode
@@ -42,7 +41,6 @@ import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
 import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
 import org.lwjgl.opengl.GL11.glBlendFunc
 import org.lwjgl.opengl.GL11.glEnable
-import org.lwjgl.opengl.GL11.glViewport
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GLUtil
@@ -59,7 +57,6 @@ class Window(
     val iconPath: String? = null,
     val icon: ByteArray? = null
 ) {
-    private var isFirstDraw = true
     var glfwWindow: Long = -1L
     var width: Int = 1920
     var height: Int = 1080
@@ -118,15 +115,8 @@ class Window(
         // Maximize window on startup
         windowController.maximize()
 
-        // Get the maximized framebuffer size
-        val fbSizeWidth = IntArray(1)
-        val fbSizeHeight = IntArray(1)
-        glfwGetFramebufferSize(glfwWindow, fbSizeWidth, fbSizeHeight)
-        width = fbSizeWidth[0]
-        height = fbSizeHeight[0]
-
         // Set the window icon
-        //iconPath?.let { setWindowIcon(it) }
+        iconPath?.let { setWindowIcon(it) }
         icon?.let { setWindowIcon(it) }
 
         // Make OpenGL context current
@@ -147,9 +137,6 @@ class Window(
 
         // Enable MSAA if configured
         glEnable(GL13.GL_MULTISAMPLE)
-
-        // Set initial viewport for maximized window
-        glViewport(0, 0, width, height)
 
         GLFW.glfwSetWindowMaximizeCallback(glfwWindow) { _, maximized ->
             if (windowController.isFixingMaximize) return@glfwSetWindowMaximizeCallback
@@ -238,17 +225,6 @@ class Window(
             if (windowController.isFixingMaximize) {
                 windowController.fixMaximizeBounds()
                 windowController.isFixingMaximize = false
-            }
-
-            if (isFirstDraw) {
-                // Set viewport if not already initialized
-                val fbWidth = IntArray(1)
-                val fbHeight = IntArray(1)
-                glfwGetFramebufferSize(glfwWindow, fbWidth, fbHeight)
-                width = fbWidth[0]
-                height = fbHeight[0]
-                glViewport(0, 0, width, height)// TODO: investigate because its called from a lot of places
-                isFirstDraw = false
             }
 
             updateCallback(dt)

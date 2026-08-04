@@ -32,7 +32,10 @@ class RenderResourcesFactory(
     private val logger: LoggerService,
 ) {
 
-    suspend fun create(width: Int, height: Int): RenderResources {
+    private var useFbo: Boolean = true
+
+    suspend fun create(width: Int, height: Int, useFbo: Boolean = true): RenderResources {
+        this.useFbo = useFbo
         logger.log("Initializing OpenGL state tracker...")
         GLStateTracker.initialize()
 
@@ -167,7 +170,7 @@ class RenderResourcesFactory(
             skyDomeRenderer = renderers.skyDome,
             frameBuffer = frameBuffer,
             lightingUniformsLoader = lightingUniformsLoader,
-            getUseFbo = { true },
+            useFbo = useFbo,
             cameraManager = cameraManager,
             shadowMapTextureId = shadowMapTextureId,
             shadowMapResolution = shadowMapRes

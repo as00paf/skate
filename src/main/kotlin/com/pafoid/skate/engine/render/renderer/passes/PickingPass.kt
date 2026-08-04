@@ -75,11 +75,8 @@ class PickingPass(
     }
 
     override fun prepare() {
-        val width = pickingTexture.width
-        val height = pickingTexture.height
-        
         pickingTexture.enableWriting()
-        glViewport(0, 0, width, height)
+        glViewport(0, 0, pickingTexture.width, pickingTexture.height)
 
         // CRITICAL: Reset state that might have been changed by ImGui or previous passes
         glDisable(GL_SCISSOR_TEST)

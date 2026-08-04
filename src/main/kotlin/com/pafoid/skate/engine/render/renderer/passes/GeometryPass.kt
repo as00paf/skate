@@ -57,7 +57,7 @@ class GeometryPass(
     private val skyDomeRenderer: SkyDomeRenderer,
     private val frameBuffer: FrameBuffer,
     private val lightingUniformsLoader: LightingUniformsLoader,
-    private val getUseFbo: () -> Boolean,
+    private val useFbo: Boolean,
     private val cameraManager: CameraManager,
     private val shadowMapTextureId: Int = 0,
     private val shadowMapResolution: Float = 2048f
@@ -73,14 +73,12 @@ class GeometryPass(
         val currentShadowMap = shadowMapTextureId
 
         // Setup framebuffer
-        val useFbo = getUseFbo()
         if (useFbo) {
             frameBuffer.bind()
-            glViewport(0, 0, frameBuffer.width, frameBuffer.height)
         } else {
             glBindFramebuffer(GL_FRAMEBUFFER, 0)
-            glViewport(0, 0, frameBuffer.width, frameBuffer.height)
         }
+        glViewport(0, 0, frameBuffer.width, frameBuffer.height)
 
         // Clear with sky color from EnvironmentComponent
         val environmentComponent = scene.getComponent<EnvironmentComponent>()
@@ -188,7 +186,7 @@ class GeometryPass(
     }
 
     override fun cleanup() {
-        if (getUseFbo()) {
+        if (useFbo) {
             frameBuffer.unbind()
         }
         // Final state cleanup

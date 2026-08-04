@@ -53,7 +53,6 @@ class Engine {
         jobSystem.runOnMain {
             val resources = RenderResourcesFactory(assetsManager, cameraManager, logger).create(1920, 1080)
             renderer = Renderer(resources, cameraManager)
-            renderer.useFbo = true
 
             engineState.set(EngineState.LOADING)
 
