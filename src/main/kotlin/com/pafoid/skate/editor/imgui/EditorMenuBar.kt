@@ -40,9 +40,13 @@ class EditorMenuBar(
     private val viewMenu = ViewMenuBuilder(stringManager, windowRegistry)
     private val windowControls = WindowControlsRenderer(eventSystem, stringManager)
 
-
     init {
-        loadAppIconTexture()
+        eventSystem.subscribe<ProjectEvent.Opened> { event ->
+            appIconTexId = assetsManager.getTexture(event.project.iconPath).texId
+        }
+        eventSystem.subscribe<ProjectEvent.Closed> { event ->
+            appIconTexId = assetsManager.getBundledTexture(Assets.Bundled.APP_ICON)?.texId ?: -1
+        }
     }
 
     fun render(currentScene: Scene?) {
@@ -56,24 +60,12 @@ class EditorMenuBar(
         }
     }
 
-    // TODO: get from assets manager
     private fun renderAppIcon() {
-        if (appIconTexId == -1) {
-            loadAppIconTexture()
-        }
         if (appIconTexId != -1) {
             val iconSize = 32f
 
             ImGui.setCursorPosY((EDITOR_MENU_BAR_HEIGHT - iconSize) / 2f)
             image(appIconTexId.toLong(), iconSize, iconSize)
-        }
-    }
-
-    private fun loadAppIconTexture() {
-        appIconTexId = try {
-            assetsManager.getTexture(Assets.Textures.APP_ICON).texId
-        } catch (e: Exception) {
-            -1
         }
     }
 

@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.AssetsResolver
 import com.pafoid.skate.engine.utils.Atlas
+import org.lwjgl.system.MemoryUtil
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -70,9 +71,20 @@ class AssetsManager(
             textureLoader.loadFromFile(path)
         } catch (e: Exception) {
             logger.log("Failed to load texture : $path. Error: ${e.message}. Loading default texture.", LogLevel.ERROR)
-            textureLoader.loadFromFile((Assets.Textures.DEFAULT))
+            textureLoader.loadFromFile((Assets.Textures.DEFAULT))// TODO: should be bundled asset
         }
         textures[absolutePath] = texture
+        return texture
+    }
+
+    fun getBundledTexture(path: String): Texture? {
+        val result = AssetsManager::class.java.getResourceAsStream(path)?.readAllBytes() ?: return null
+        val data = MemoryUtil.memAlloc(result.size)
+        data.put(result)
+        data.flip()
+
+        val texture = textureLoader.loadFromBuffer(data)
+        textures[path] = texture
         return texture
     }
 

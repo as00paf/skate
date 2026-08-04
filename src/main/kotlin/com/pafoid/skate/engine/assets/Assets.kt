@@ -120,6 +120,7 @@ object Assets {
         const val WOOD_DARK = "EngineDefaults\\Textures\\wood_dark.png"
 
         const val SKY = "EngineDefaults\\Textures\\sky_hdri.png"
+        const val APP_ICON = "/app_icon.png"
 
         val bundledAssets = listOf(
             // Characters
@@ -162,7 +163,7 @@ object Assets {
             SKY to Textures.SKY_HDRI,
             // Game
             "..\\builds\\skate-game.jar" to "build\\libs\\skate-game.jar",
-            "\\Textures\\app_icon.png" to Textures.APP_ICON,
+            "\\Textures\\app_icon.png" to Textures.APP_ICON,// TODO: should be added by resource from input stream
         )
     }
 }
