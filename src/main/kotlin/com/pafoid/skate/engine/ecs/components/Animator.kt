@@ -22,15 +22,8 @@ data class Animator(
     var blendTime: Float = 0f,
     var blendDuration: Float = 0.2f,
     var previousTime: Float = 0f,
+    var currentState: PlayerState = PlayerState.IDLE
 ) : Component() {
-    // Event-driven state
-    var isMoving = false
-    var isSprinting = false
-    var isInAir = false
-    var isGrounded = true
-
-    // Track current animation state to avoid redundant play() calls
-    private var currentState: AnimationState = AnimationState.IDLE
 
     val normalizedTime: Float
         get() {
@@ -99,68 +92,23 @@ data class Animator(
         play(anim, blend)
     }
 
-    enum class AnimationState {
-        IDLE,
-        WALK,
-        RUN,
-        JUMP,
-        FALLING,
-        LANDING
-    }
-
-    // TODO: fix double implementation
     override fun update(dt: Float) {
-        // Determine target state based on event-driven state
-        val targetState = when {
-            isInAir && !isGrounded -> AnimationState.FALLING
-            isSprinting -> AnimationState.RUN
-            isMoving -> AnimationState.WALK
-            else -> AnimationState.IDLE
-        }
-
-        // Only play animation if state changed
-        if (targetState != currentState) {
-            currentState = targetState
-            when (currentState) {
-                AnimationState.FALLING -> play("falling idle")
-                AnimationState.RUN -> play("running")
-                AnimationState.WALK -> play("walking")
-                AnimationState.IDLE -> play("idle")
-                else -> {} // JUMP and LANDING are triggered by events
-            }
-        }
-
-        // Fallback to PlayerStateManager if event system not available
-        // This ensures animations work even if EventSystem isn't set up
         val stateManager = gameObject.getComponent<PlayerStateManager>()
         if (stateManager != null) {
-            updateFromStateManager(stateManager)
-        }
-    }
+            val targetState = stateManager.currentState
 
-    /**
-     * Updates animation based on PlayerStateManager state (fallback method).
-     */
-    private fun updateFromStateManager(stateManager: PlayerStateManager) {
-        val targetState = when (stateManager.currentState) {
-            PlayerState.WALKING -> AnimationState.WALK
-            PlayerState.RUNNING -> AnimationState.RUN
-            PlayerState.JUMPING -> AnimationState.JUMP
-            PlayerState.FALLING -> AnimationState.FALLING
-            PlayerState.LANDING -> AnimationState.LANDING
-            else -> AnimationState.IDLE
-        }
-
-        // Only play animation if state changed
-        if (targetState != currentState) {
-            currentState = targetState
-            when (currentState) {
-                AnimationState.WALK -> play("walking")
-                AnimationState.RUN -> play("running")
-                AnimationState.JUMP -> play("jump")
-                AnimationState.FALLING -> play("falling idle")
-                AnimationState.LANDING -> play("hard landing")
-                AnimationState.IDLE -> play("idle")
+            // Only play animation if state changed
+            if (targetState != currentState) {
+                currentState = targetState
+                when (currentState) {
+                    PlayerState.WALKING -> play("walking")
+                    PlayerState.RUNNING -> play("running")
+                    PlayerState.JUMPING -> play("jump")
+                    PlayerState.FALLING -> play("falling idle")
+                    PlayerState.LANDING -> play("hard landing")
+                    PlayerState.IDLE -> play("idle")
+                    else -> {}
+                }
             }
         }
     }
