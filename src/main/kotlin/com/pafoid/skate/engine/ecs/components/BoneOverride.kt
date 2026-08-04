@@ -5,8 +5,9 @@ import kotlinx.serialization.Serializable
 import org.joml.Quaternionf
 
 @Serializable
-class BoneOverride : Component() {
+data class BoneOverride(
     private val overrides:MutableMap<String, @Contextual Quaternionf> = mutableMapOf()
+) : Component() {
 
     fun addOverride(boneName: String, rotation: Quaternionf) {
         overrides[boneName] = rotation
