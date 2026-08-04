@@ -1,10 +1,7 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.editor.commands.Command
-import com.pafoid.skate.editor.systems.EditorMutationGate
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.LoggerService
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -28,7 +25,7 @@ class UndoRedoManagerTest {
 
     @Test
     fun `test undo redo`() {
-        val manager = UndoRedoManager(mockk(), mockk(), mockk())
+        val manager = UndoRedoManager(mockk(), mockk())
         val state = mutableListOf<String>()
 
         val cmd1 = MockCommand(state, "A")
@@ -54,28 +51,8 @@ class UndoRedoManagerTest {
     }
 
     @Test
-    fun `blocks command execution while runtime playing`() {
-        val engine = Engine().apply { runtimePlaying = true }
-        val manager = UndoRedoManager(EditorMutationGate(engine, LoggerService()), mockk(), mockk())
-        val state = mutableListOf<String>()
-        manager.executeCommand(MockCommand(state, "A"))
-        assertEquals(emptyList<String>(), state)
-        assertEquals(0, manager.getUndoCount())
-    }
-
-    @Test
-    fun `allows allowlisted command while runtime playing`() {
-        val engine = Engine().apply { runtimePlaying = true }
-        val manager = UndoRedoManager(EditorMutationGate(engine, LoggerService()), mockk(), mockk())
-        val state = mutableListOf<String>()
-        manager.executeCommand(MockCommand(state, "A"))
-        assertEquals(listOf("A"), state)
-        assertEquals(1, manager.getUndoCount())
-    }
-
-    @Test
     fun `execute only command is not tracked and clears redo history`() {
-        val manager = UndoRedoManager(mockk(), mockk(), mockk())
+        val manager = UndoRedoManager(mockk(), mockk())
         val state = mutableListOf<String>()
         manager.executeCommand(MockCommand(state, "A"))
         manager.executeCommand(MockCommand(state, "B"))
@@ -90,107 +67,4 @@ class UndoRedoManagerTest {
         assertEquals(1, manager.getUndoCount())
         assertEquals(0, manager.getRedoCount())
     }
-
-    // TODO: fix after undoRedoManager cleanup
-    /*@Test
-    fun `async command pushes history only after successful completion`() {
-        val manager = UndoRedoManager(mockk(), mockk(), mockk())
-        val state = mutableListOf<String>()
-
-        manager.executeCommand(MockCommand(state, "ASYNC_OK", outcomes = mutableListOf(true), pushOnSuccess = true))
-        manager.executeCommand(MockCommand(state, "ASYNC_FAIL", outcomes = mutableListOf(false), pushOnSuccess = true))
-
-        assertEquals(listOf("ASYNC_OK"), state)
-        assertEquals(1, manager.getUndoCount())
-    }
-
-    @Test
-    fun `async execute only command does not push history on success`() {
-        val manager = UndoRedoManager()
-        val state = mutableListOf<String>()
-
-        manager.executeCommand(
-            MockCommand(
-                state,
-                "ASYNC_EXECUTE_ONLY",
-                outcomes = mutableListOf(true),
-                pushOnSuccess = false
-            )
-        )
-
-        assertEquals(listOf("ASYNC_EXECUTE_ONLY"), state)
-        assertEquals(0, manager.getUndoCount())
-    }
-
-    @Test
-    fun `async redo keeps command in redo history when completion fails`() {
-        val manager = UndoRedoManager(mockk(), mockk(), mockk())
-        val state = mutableListOf<String>()
-        val command = MockCommand(
-            state = state,
-            value = "ASYNC_REDO",
-            outcomes = mutableListOf(true, false),
-            pushOnSuccess = true
-        )
-
-        manager.executeCommand(command)
-        manager.undo()
-        manager.redo()
-
-        assertEquals(emptyList<String>(), state)
-        assertEquals(0, manager.getUndoCount())
-        assertEquals(1, manager.getRedoCount())
-    }
-
-    @Test
-    fun `async command ignores stale completion from previous execution`() {
-        val manager = UndoRedoManager(mockk(), mockk(), mockk())
-        val command = MockCommand(mockk(), mockk())
-
-        manager.executeCommand(command)
-        val firstJob = command.latestJob()
-
-        manager.executeCommand(command)
-        val secondJob = command.latestJob()
-
-        command.complete(firstJob, success = true)
-        assertEquals(0, manager.getUndoCount())
-
-        command.complete(secondJob, success = true)
-        assertEquals(1, manager.getUndoCount())
-    }
-
-    @Test
-    fun `clear invalidates pending async execute completion`() {
-        val manager = UndoRedoManager(mockk(), mockk(), mockk())
-        val command = MockCommand(mockk(), mockk())
-
-        manager.executeCommand(command)
-        val firstJob = command.latestJob()
-        manager.clear()
-
-        command.complete(firstJob, success = true)
-        assertEquals(0, manager.getUndoCount())
-        assertEquals(0, manager.getRedoCount())
-    }
-
-    @Test
-    fun `clear invalidates pending async redo completion`() {
-        val manager = UndoRedoManager(mockk(), mockk(), mockk())
-        val command = MockCommand(mockk(), mockk())
-
-        manager.executeCommand(command)
-        val executeJob = command.latestJob()
-        command.complete(executeJob, success = true)
-        assertEquals(1, manager.getUndoCount())
-
-        manager.undo()
-        manager.redo()
-        val redoJob = command.latestJob()
-        manager.clear()
-
-        command.complete(redoJob, success = true)
-        assertEquals(0, manager.getUndoCount())
-        assertEquals(0, manager.getRedoCount())
-    }*/
 }
