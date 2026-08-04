@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.Atlas
@@ -81,7 +82,7 @@ class ProjectManager(
         }
     }
 
-    fun openProjectFile(projectFile: File): Boolean { // TODO: should be on io
+    fun openProjectFile(projectFile: File): Boolean {
         if (!projectFile.exists() || !FileType.PROJECT_FILE.extensions.contains(projectFile.extension)) {
             logger.logEditor(
                 "Project file does not exist or invalid extension: ${projectFile.absolutePath}",
@@ -104,8 +105,7 @@ class ProjectManager(
         if (hasProject()) closeProject()
 
         currentProject = project
-        // TODO: should not be done here
-        eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
+        engine.systemManager.getSystem<InputSystem>()?.mappings = project.gameplaySettings.inputMappings
 
         if (binData == null || assetAtlas == null || headerSize <= 0) {
             loadDefaultScene(project)

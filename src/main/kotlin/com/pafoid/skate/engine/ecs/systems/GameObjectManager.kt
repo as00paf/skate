@@ -51,6 +51,12 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
         return scene.gameObjects.firstOrNull { it.name == name }
     }
 
+    fun reset() {//TODO: still missing some stuff
+        scene.gameObjects.forEach {
+            it.reset()
+        }
+    }
+    
     override fun destroy() {
         scene.gameObjects.forEach { it.destroy() }
         scene.gameObjects.clear()

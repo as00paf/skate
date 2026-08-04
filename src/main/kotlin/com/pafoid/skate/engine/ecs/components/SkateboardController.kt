@@ -12,7 +12,7 @@ class SkateboardController : Component() {
     var manualPressed = false
     var stanceChangePressed = false
 
-    fun reset() {
+    override fun reset() {
         flipLeftPressed = false
         flipRightPressed = false
         kickflipPressed = false

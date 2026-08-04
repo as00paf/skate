@@ -20,7 +20,7 @@ class InputStateComponent : Component() {
     var pausePressed = false
     var resetPressed = false
 
-    fun reset() {
+    override fun reset() {
         // Movement
         moveDirection.set(0f, 0f)
         sprintPressed = false

@@ -47,6 +47,10 @@ open class GameObject(
 
     open fun start() {}
 
+    open fun reset() {
+        components.forEach { component -> component.reset() }
+    }
+
     open fun update(dt: Float) {
         if (!isEnabled) return
         components.forEach {

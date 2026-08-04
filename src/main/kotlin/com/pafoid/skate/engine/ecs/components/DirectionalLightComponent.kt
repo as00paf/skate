@@ -136,7 +136,7 @@ data class DirectionalLightComponent(
     /**
      * Resets all properties to defaults.
      */
-    fun reset() {
+    override fun reset() {
         direction.set(0f, -1f, 0f)
         color.set(1f, 0.95f, 0.8f)
         intensity = 1f

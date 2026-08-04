@@ -65,6 +65,8 @@ abstract class Component {
         }
     }
 
+    open fun reset() {}
+
     open fun update(dt: Float) {}
 
     fun generateId() {

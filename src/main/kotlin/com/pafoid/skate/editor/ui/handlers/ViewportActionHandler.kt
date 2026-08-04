@@ -330,19 +330,10 @@ class ViewportActionHandler(
         sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = timeScale
     }
 
-    // TODO: fix
     private fun handleResetSkateScene() {
         val scene = sceneManager.currentScene ?: return
-        val skate = scene.gameObjects.find { obj -> obj.name == "Skateboard" } ?: return
-        val transform = skate.getComponent<Transform>() ?: return
-        transform.translation.set(0f, 0.5f, 0f)
-        transform.rotation.set(0f, 0f, 0f)
-        val rb = skate.getComponent<RigidBody3D>()
-        rb?.linearVelocity = Vector3f(0f, 0f, 0f)
-        rb?.angularVelocity = Vector3f(0f, 0f, 0f)
-        val sceneCamera = sceneManager.currentScene?.getComponent<CameraComponent>() ?: return
-        sceneCamera.position.set(0f, 5f, 20f)
-        sceneCamera.yaw = 0f
+        scene.reset()
+        gameObjectManager.reset()
     }
 
     private fun handleToggleGizmo(gizmoId: Int) {

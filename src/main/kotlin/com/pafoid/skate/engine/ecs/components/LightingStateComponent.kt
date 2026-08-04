@@ -20,10 +20,7 @@ class LightingStateComponent(
     var useAmbient: Boolean = true
 ) : Component() {
 
-    /**
-     * Resets all properties to default values.
-     */
-    fun reset() {
+    override fun reset() {
         ambientLight.set(0.3f, 0.3f, 0.35f)
         useAmbient = true
     }

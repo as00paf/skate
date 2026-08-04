@@ -32,7 +32,7 @@ class EnvironmentComponent(
     var renderFog: Boolean = true
 ) : Component() {
 
-    fun reset() {
+    override fun reset() {
         skyColor.set(0.6f, 0.7f, 0.9f)
         skyTint.set(1.0f, 1.0f, 1.0f)
         skyExposure = 1.0f

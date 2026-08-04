@@ -16,6 +16,12 @@ data class SkeletonPose(
         populateBindPose(skeleton.rootBone)
     }
 
+    fun reset() {
+        localTransforms.forEach { it.set(Matrix4f()) }
+        globalTransforms.forEach { it.set(Matrix4f()) }
+        populateBindPose(skeleton.rootBone)
+    }
+
     private fun populateBindPose(bone: Bone) {
         if (bone.index in 0 until skeleton.boneCount) {
             localTransforms[bone.index].set(bone.bindLocalTransform)

@@ -20,49 +20,77 @@ import org.joml.Vector3f
 open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {// TODO: cleanup
 
     var bodyType: BodyType = BodyType.Dynamic
-        set(value) {
-            field = value
-            physicsDirty = true
-        }
-
     var useCCD: Boolean = false
 
     var friction: Float = 0.5f
         set(value) {
             field = value
-            physicsDirty = true
             rawBody?.friction = value
         }
 
     var linearDamping: Float = 0.0f
         set(value) {
             field = value
-            physicsDirty = true
             rawBody?.setDamping(value, angularDamping)
         }
 
     var angularDamping: Float = 0.0f
         set(value) {
             field = value
-            physicsDirty = true
             rawBody?.setDamping(linearDamping, value)
         }
 
-    private var physicsDirty = false
+    @Transient
+    var rawBody: PhysicsRigidBody? = null
+
+    @Transient
+    private val tempQuat = Quaternionf()
+    @Transient
+    private val tempEuler = Vector3f()
+    @Transient
+    private val position: JmeVector3f = JmeVector3f()
+    @Transient
+    private val rotation: Quaternion = Quaternion()
+
+    override var linearVelocity: JomlVector3f
+        get() {
+            val v: JmeVector3f = rawBody?.getLinearVelocity(null) ?: JmeVector3f.ZERO
+            return JomlVector3f(v.x, v.y, v.z)
+        }
+        set(value) {
+            rawBody?.setLinearVelocity(JmeVector3f(value.x, value.y, value.z))
+        }
+
+    override var angularVelocity: JomlVector3f
+        get() {
+            val v = rawBody?.getAngularVelocity(null) ?: JmeVector3f.ZERO
+            return JomlVector3f(v.x, v.y, v.z)
+        }
+        set(value) {
+            rawBody?.setAngularVelocity(JmeVector3f(value.x, value.y, value.z))
+        }
 
     override fun init(gameObject: GameObject) {
         super.init(gameObject)
         rawBody?.setAngularFactor(JmeVector3f(0f, 1f, 0f))
     }
 
-    @Transient var rawBody: PhysicsRigidBody? = null
+    override fun reset() {
+        super.reset()
+        val transform = gameObject.getComponent<Transform>()
+        val initialTranslation = transform?.translation?.let { JmeVector3f(it.x, it.y, it.z) } ?: JmeVector3f()
+        val initialRotation = transform?.rotation?.let { Quaternion(it.x, it.y, it.z, 1f) } ?: Quaternion()
+        position.set(initialTranslation)
+        rotation.set(initialRotation)
+        linearDamping = 0f
+        angularDamping = 0f
+        linearVelocity.set(JomlVector3f())
+        angularVelocity.set(JomlVector3f())
 
-    @Transient private val tempQuat = Quaternionf()
-    @Transient private val tempEuler = Vector3f()
-    @Transient
-    private val position: JmeVector3f = JmeVector3f()
-    @Transient
-    private val rotation: Quaternion = Quaternion()
+        rawBody?.setAngularFactor(JmeVector3f(0f, 1f, 0f))
+        rawBody?.setPhysicsLocation(position)
+        rawBody?.setPhysicsRotation(rotation)
+    }
 
     override fun update(dt: Float) {
         rawBody?.let { body ->
@@ -105,24 +133,6 @@ open class RigidBody3D(var mass: Float = 1.0f) : Component(), IPhysicsBody3D {//
         val vAtPoint = JomlVector3f(angularVelocity).cross(relPos).add(linearVelocity)
         return vAtPoint
     }
-
-    override var linearVelocity: JomlVector3f
-        get() {
-            val v: JmeVector3f = rawBody?.getLinearVelocity(null) ?: JmeVector3f.ZERO
-            return JomlVector3f(v.x, v.y, v.z)
-        }
-        set(value) {
-            rawBody?.setLinearVelocity(JmeVector3f(value.x, value.y, value.z))
-        }
-
-    override var angularVelocity: JomlVector3f
-        get() {
-            val v = rawBody?.getAngularVelocity(null) ?: JmeVector3f.ZERO
-            return JomlVector3f(v.x, v.y, v.z)
-        }
-        set(value) {
-            rawBody?.setAngularVelocity(JmeVector3f(value.x, value.y, value.z))
-        }
 
     override fun getRotation(): Quaternionf {
         rawBody?.getPhysicsRotation(rotation)

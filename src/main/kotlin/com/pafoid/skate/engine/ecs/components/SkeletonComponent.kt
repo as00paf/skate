@@ -22,5 +22,12 @@ class SkeletonComponent(
         SkeletonMath.buildSkinMatrices(pose, matrixPalette)
     }
 
+    override fun reset() {
+        super.reset()
+        matrixPalette.forEach { it.set(Matrix4f()) }
+        pose.reset()
+        SkeletonMath.buildSkinMatrices(pose, matrixPalette)
+    }
+
     fun getMatrixPalette(): Array<Matrix4f> = matrixPalette
 }

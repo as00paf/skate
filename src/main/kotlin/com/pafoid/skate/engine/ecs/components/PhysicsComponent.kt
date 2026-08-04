@@ -93,11 +93,7 @@ class PhysicsComponent : Component() {
         isRotating = angularSpeed > 0.01f
     }
 
-    /**
-     * Resets all state to default values.
-     * Called when component is initialized or when entity is reset.
-     */
-    fun reset() {
+    override fun reset() {
         linearVelocity.set(0f, 0f, 0f)
         angularVelocity.set(0f, 0f, 0f)
         speed = 0f

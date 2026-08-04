@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.components
 import com.pafoid.skate.engine.getComponent
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.util.*
@@ -13,7 +14,22 @@ class Transform(
     @Contextual val scale: Vector3f = Vector3f(1f, 1f, 1f),
     @Contextual val rotation: Vector3f = Vector3f()
 ): Component() {
-    
+
+    @Transient
+    private val initialTranslation = translation.clone() as Vector3f
+    @Transient
+    private val initialScale = scale.clone() as Vector3f
+    @Transient
+    private val initialRotation = rotation.clone() as Vector3f
+
+    override fun reset() {
+        super.reset()
+        translation.set(initialTranslation)
+        scale.set(initialScale)
+        rotation.set(initialRotation)
+    }
+
+    // TODO: should be removed by making this a data class
     fun copy(to: Transform) {
         to.translation.set(this.translation)
         to.scale.set(this.scale)
@@ -25,7 +41,6 @@ class Transform(
         this.scale.set(from.scale)
         this.rotation.set(from.rotation)
     }
-
     override fun equals(other: Any?): Boolean {
         if (other == null) return false
         if (other !is Transform) return false

@@ -17,10 +17,7 @@ class LightingComponent(
     var shadowIntensity: Float = 1f,
 ) : Component() {
 
-    /**
-     * Resets all properties to default values.
-     */
-    fun reset() {
+    override fun reset() {
         sunDirection.set(0f, -1f, 0f)
         sunColor.set(1f, 1f, 1f)
         sunIntensity = 1f

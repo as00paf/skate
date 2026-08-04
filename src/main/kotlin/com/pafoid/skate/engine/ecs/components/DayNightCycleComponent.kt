@@ -99,7 +99,7 @@ data class DayNightCycleComponent(
         ambientIntensity = 1.0f
     }
 
-    fun reset() {
+    override fun reset() {
         timeOfDay = 12f
         dayDuration = 300f
         timeOfDay = 12.0f
