@@ -67,7 +67,7 @@ class PhysicsSystem(
             val rigidBody = go.getComponent<RigidBody3D>() ?: continue
 
             var physicsComponent = go.getComponent<PhysicsComponent>()
-            if (physicsComponent == null) {
+            if (physicsComponent == null) {// TODO: fix, this is a big problem
                 physicsComponent = PhysicsComponent()
                 go.addComponent(physicsComponent)
             }

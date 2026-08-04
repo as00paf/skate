@@ -6,13 +6,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 @Serializable
-class RagdollComponent : Component() {
-    // TODO: check Ragdoll Builder
-    var state: RagdollState = RagdollState.ANIMATED
-
+data class RagdollComponent(// TODO: check Ragdoll Builder
+    var state: RagdollState = RagdollState.ANIMATED,
     @Transient // Managed manually, do not serialize raw physics objects
-    val boneBodies = mutableMapOf<String, PhysicsRigidBody>()
-
+    val boneBodies: MutableMap<String, PhysicsRigidBody> = mutableMapOf<String, PhysicsRigidBody>(),
     @Transient
-    val joints = mutableListOf<IPhysicsConstraint>()
+    val joints: MutableList<IPhysicsConstraint> = mutableListOf<IPhysicsConstraint>()
+) : Component() {
 }
