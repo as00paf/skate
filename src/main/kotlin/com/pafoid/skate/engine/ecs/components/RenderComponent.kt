@@ -6,7 +6,7 @@ import com.pafoid.skate.engine.render.data.RenderMode
 import kotlinx.serialization.Serializable
 
 @Serializable
-class RenderComponent(
+data class RenderComponent(
     var model: TexturedModel? = null,
     var albedoTextureGuid: String = "",
     var normalMapGuid: String = "",
