@@ -6,19 +6,18 @@ import kotlinx.serialization.Serializable
 import org.joml.Vector2f
 
 @Serializable
-class InputStateComponent : Component() {
+data class InputStateComponent(
     @Contextual
-    var moveDirection = Vector2f(0f, 0f)
-    var sprintPressed = false
-    var crouchPressed = false
-    var jumpPressed = false
-    var jumpHeld = false
-
+    var moveDirection: Vector2f = Vector2f(0f, 0f),
+    var sprintPressed: Boolean = false,
+    var crouchPressed: Boolean = false,
+    var jumpPressed: Boolean = false,
+    var jumpHeld: Boolean = false,
     @Contextual
-    var cameraLook = Vector2f(0f, 0f)
-
-    var pausePressed = false
-    var resetPressed = false
+    var cameraLook: Vector2f = Vector2f(0f, 0f),
+    var pausePressed: Boolean = false,
+    var resetPressed: Boolean = false,
+) : Component() {
 
     override fun reset() {
         // Movement
