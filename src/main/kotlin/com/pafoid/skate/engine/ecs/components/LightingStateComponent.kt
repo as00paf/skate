@@ -14,7 +14,7 @@ import org.joml.Vector3f
  * @property useAmbient Whether to use ambient lighting
  */
 @Serializable
-class LightingStateComponent(
+data class LightingStateComponent(
     @Contextual
     var ambientLight: Vector3f = Vector3f(0.3f, 0.3f, 0.35f),
     var useAmbient: Boolean = true

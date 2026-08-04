@@ -12,7 +12,6 @@ import com.pafoid.skate.engine.ecs.components.ComponentType.DIRECTIONAL_LIGHT
 import com.pafoid.skate.engine.ecs.components.ComponentType.ENVIRONMENT
 import com.pafoid.skate.engine.ecs.components.ComponentType.INPUT_STATE
 import com.pafoid.skate.engine.ecs.components.ComponentType.LIGHTING
-import com.pafoid.skate.engine.ecs.components.ComponentType.MODULAR_TILE
 import com.pafoid.skate.engine.ecs.components.ComponentType.NON_PICKABLE
 import com.pafoid.skate.engine.ecs.components.ComponentType.PHYSICS
 import com.pafoid.skate.engine.ecs.components.ComponentType.PLAYER_CONTROLLER
@@ -91,7 +90,6 @@ abstract class Component {
                 is GridLines -> ComponentType.GRID_LINES
                 is InputStateComponent -> INPUT_STATE
                 is LightingComponent -> LIGHTING
-                is ModularTile -> MODULAR_TILE
                 is NonPickable -> NON_PICKABLE
                 is PhysicsComponent -> PHYSICS
                 is PlayerController -> PLAYER_CONTROLLER

@@ -15,7 +15,6 @@ enum class ComponentType {
     GRID_LINES,
     INPUT_STATE,
     LIGHTING,
-    MODULAR_TILE,
     NON_PICKABLE,
     PHYSICS,
     PLAYER_CONTROLLER,
@@ -44,7 +43,6 @@ enum class ComponentType {
             GRID_LINES -> GridLines()
             INPUT_STATE -> InputStateComponent()
             LIGHTING -> LightingComponent()
-            MODULAR_TILE -> ModularTile()
             NON_PICKABLE -> NonPickable()
             PHYSICS -> PhysicsComponent()
             PLAYER_CONTROLLER -> PlayerController()

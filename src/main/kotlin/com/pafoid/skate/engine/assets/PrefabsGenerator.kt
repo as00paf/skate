@@ -21,10 +21,10 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.game.prefabs.Floor
 import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
-import com.pafoid.skate.game.prefabs.Tile
 import org.joml.Vector3f
 import java.io.File
 
@@ -64,7 +64,7 @@ class PrefabsGenerator(
             path = modelPath,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
-        return Tile("Tile", model)
+        return Floor("Tile", model)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {

@@ -16,7 +16,6 @@ import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
-import com.pafoid.skate.engine.ecs.components.ModularTile
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
@@ -59,7 +58,6 @@ class Serializer {
             subclass(BoneOverride::class)
             subclass(SkeletonComponent::class)
             subclass(Animator::class)
-            subclass(ModularTile::class)
             subclass(SpriteRenderer::class)
             subclass(RagdollComponent::class)
 

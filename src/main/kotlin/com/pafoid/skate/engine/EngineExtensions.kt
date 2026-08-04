@@ -17,7 +17,6 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
-import com.pafoid.skate.engine.ecs.components.ModularTile
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
@@ -47,7 +46,6 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.GRID_LINES -> getComponent<GridLines>()
         ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()
         ComponentType.LIGHTING -> getComponent<LightingComponent>()
-        ComponentType.MODULAR_TILE -> getComponent<ModularTile>()
         ComponentType.NON_PICKABLE -> getComponent<NonPickable>()
         ComponentType.PHYSICS -> getComponent<PhysicsComponent>()
         ComponentType.PLAYER_CONTROLLER -> getComponent<PlayerController>()
