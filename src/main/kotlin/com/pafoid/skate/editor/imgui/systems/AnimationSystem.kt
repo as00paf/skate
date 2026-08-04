@@ -42,7 +42,7 @@ fun AnimationSystem.imgui(stringManager: StringManager) {
             val currentAnim = animator.currentAnimation
             val isPlaying = animator.isPlaying
             val currentTime = animator.currentTime
-            val duration = animator.duration
+            val duration = currentAnim?.duration ?: 0f
             val blendTime = animator.blendTime
 
             ImGui.text("$goName:")

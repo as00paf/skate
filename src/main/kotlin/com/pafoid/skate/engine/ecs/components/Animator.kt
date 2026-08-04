@@ -13,31 +13,21 @@ import kotlinx.serialization.Transient
 import java.io.File
 
 @Serializable
-class Animator : Component() {
-
-    @Transient
-    var currentAnimation: Animation? = null
-        get() {
-            if (field == null) return animations.firstOrNull()
-            return field
-        }
-        private set
-
-    var currentTime = 0f
-    var isPlaying = false
-    var blendTime = 0f
-    var blendDuration = 0.2f
-    @Transient
-    var previousAnimation: Animation? = null
-    var previousTime = 0f
-
+data class Animator(
+    val animations: MutableList<Animation> = mutableListOf(),
+    @Transient var currentAnimation: Animation? = null,
+    @Transient var previousAnimation: Animation? = null,
+    var currentTime: Float = 0f,
+    var isPlaying: Boolean = false,
+    var blendTime: Float = 0f,
+    var blendDuration: Float = 0.2f,
+    var previousTime: Float = 0f,
+) : Component() {
     // Event-driven state
     var isMoving = false
     var isSprinting = false
     var isInAir = false
     var isGrounded = true
-
-    val animations: MutableList<Animation> = mutableListOf()
 
     // Track current animation state to avoid redundant play() calls
     private var currentState: AnimationState = AnimationState.IDLE
@@ -47,9 +37,6 @@ class Animator : Component() {
             val anim = currentAnimation ?: return 0f
             return (currentTime % anim.duration) / anim.duration
         }
-
-    val duration: Float
-        get() = currentAnimation?.duration ?: 0f
 
     fun addAnimation(animation: Animation): Boolean {
         val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return false
