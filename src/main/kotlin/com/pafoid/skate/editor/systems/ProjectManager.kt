@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.EngineAssetCopier
 import com.pafoid.skate.editor.project.Project
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
@@ -51,7 +52,7 @@ class ProjectManager(
             val project = Project(
                 name = name,
                 projectPath = projectFile.absolutePath,
-                iconPath = assetsDir.absolutePath + "\\Textures\\app_icon.png",
+                iconPath = assetsDir.absolutePath + Assets.Textures.APP_ICON,
                 defaultScene = scenesDir.path + "\\MainScene.scene",
             )
 

@@ -122,17 +122,20 @@ class PrefabsTab(
         val texId = if (data.modelPath != null) {
             val baseModel = assetsManager.loadModel(data.modelPath)
 
-            val texture = assetsManager.getTexture(data.material?.texturePath ?: Assets.Textures.DEFAULT)
+            val texture =
+                data.material?.texturePath?.let { assetsManager.getTexture(it) } ?: assetsManager.getBundledTexture(
+                    Assets.Bundled.DEFAULT_TEXTURE
+                )
             val model =
                 TexturedModel(
-                    data.material?.texturePath ?: Assets.Textures.DEFAULT,
+                    data.material?.texturePath ?: Assets.Bundled.DEFAULT_TEXTURE,
                     mesh = baseModel.mesh,
                     material = Material(texture)
                 )
             val cacheId = "${data.modelPath}_${data.material?.name}"
             thumbnailCache.getThumbnail(cacheId, model)
         } else {
-            assetsManager.getTexture(Assets.Textures.DEFAULT).texId
+            assetsManager.getBundledTexture(Assets.Bundled.DEFAULT_TEXTURE).texId
         }
 
         ImGui.pushID(data.name)

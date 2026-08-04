@@ -19,6 +19,7 @@ import com.pafoid.skate.engine.utils.AssetsResolver
 import com.pafoid.skate.engine.utils.Atlas
 import org.lwjgl.system.MemoryUtil
 import java.io.File
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class AssetsManager(
@@ -71,14 +72,16 @@ class AssetsManager(
             textureLoader.loadFromFile(path)
         } catch (e: Exception) {
             logger.log("Failed to load texture : $path. Error: ${e.message}. Loading default texture.", LogLevel.ERROR)
-            textureLoader.loadFromFile((Assets.Textures.DEFAULT))// TODO: should be bundled asset
+            getBundledTexture(Assets.Bundled.DEFAULT_TEXTURE)
         }
         textures[absolutePath] = texture
         return texture
     }
 
-    fun getBundledTexture(path: String): Texture? {
-        val result = AssetsManager::class.java.getResourceAsStream(path)?.readAllBytes() ?: return null
+    fun getBundledTexture(path: String): Texture {
+        textures[path]?.let { return it }
+        val result = AssetsManager::class.java.getResourceAsStream(path)?.readAllBytes()
+            ?: throw (MissingResourceException("Missing $path resource", "Texture", path))
         val data = MemoryUtil.memAlloc(result.size)
         data.put(result)
         data.flip()

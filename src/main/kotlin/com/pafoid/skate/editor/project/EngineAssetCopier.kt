@@ -34,6 +34,13 @@ class EngineAssetCopier {
                 copiedCount++
             }
 
+            // Copy assets bundled in jar
+            val outputFile = File(assetsDir, Assets.Textures.APP_ICON)
+            outputFile.parentFile?.mkdirs()
+            EngineAssetCopier::class.java.getResourceAsStream(Assets.Bundled.APP_ICON)
+                ?.copyTo(outputFile.outputStream())
+            copiedCount++
+
             Result.success(copiedCount)
         } catch (e: Exception) {
             Result.failure(e)

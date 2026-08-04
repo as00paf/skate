@@ -38,7 +38,7 @@ fun bindTexture(
     assetsManager: AssetsManager
 ) {
     GL13.glActiveTexture(GL13.GL_TEXTURE0 + slot)
-    val tex = texture ?: assetsManager.getTexture(Assets.Textures.DEFAULT)
+    val tex = texture ?: assetsManager.getBundledTexture(Assets.Bundled.DEFAULT_TEXTURE)
     glBindTexture(GL_TEXTURE_2D, tex.texId)
 }
 

@@ -13,12 +13,11 @@ object Assets {
         const val SHADOW = "/shaders/shadow.glsl"
     }
     object Textures {
-        const val APP_ICON = "assets/textures/app_icon.png"
+        const val APP_ICON = "\\textures\\app_icon.png"
         const val SPLASH = "assets/textures/splash_screen.png"
 
         const val XBOX_CONTROLLER = "assets/textures/xbox_controller.png"
 
-        const val DEFAULT = "assets/textures/default.png"
         const val WHITE = "assets/textures/white.png"
         const val ASPHALT = "assets/textures/asphalt.png"
         const val CONCRETE_SIMPLE = "assets/textures/concrete_simple.png"
@@ -122,6 +121,8 @@ object Assets {
         const val SKY = "EngineDefaults\\Textures\\sky_hdri.png"
         const val APP_ICON = "/app_icon.png"
 
+        const val DEFAULT_TEXTURE = "/textures/default.png"
+
         val bundledAssets = listOf(
             // Characters
             JAMES to Models.JAMES,
@@ -163,7 +164,6 @@ object Assets {
             SKY to Textures.SKY_HDRI,
             // Game
             "..\\builds\\skate-game.jar" to "build\\libs\\skate-game.jar",
-            "\\Textures\\app_icon.png" to Textures.APP_ICON,// TODO: should be added by resource from input stream
         )
     }
 }
