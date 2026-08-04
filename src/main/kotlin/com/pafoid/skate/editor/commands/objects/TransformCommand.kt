@@ -10,8 +10,8 @@ class TransformCommand(
     oldTransform: Transform,
     newTransform: Transform
 ) : Command {
-    private val oldT = Transform().apply { copyFrom(oldTransform) }
-    private val newT = Transform().apply { copyFrom(newTransform) }
+    private val oldT = oldTransform.copy()
+    private val newT = newTransform.copy()
 
     override fun execute() {
         gameObject.getComponent<Transform>()?.copyFrom(newT)

@@ -9,7 +9,7 @@ import org.joml.Vector3f
 import java.util.*
 
 @Serializable
-class Transform(
+data class Transform(
     @Contextual val translation: Vector3f = Vector3f(),
     @Contextual val scale: Vector3f = Vector3f(1f, 1f, 1f),
     @Contextual val rotation: Vector3f = Vector3f()
@@ -29,22 +29,16 @@ class Transform(
         rotation.set(initialRotation)
     }
 
-    // TODO: should be removed by making this a data class
-    fun copy(to: Transform) {
-        to.translation.set(this.translation)
-        to.scale.set(this.scale)
-        to.rotation.set(this.rotation)
-    }
-
     fun copyFrom(from: Transform) {
         this.translation.set(from.translation)
         this.scale.set(from.scale)
         this.rotation.set(from.rotation)
     }
+
     override fun equals(other: Any?): Boolean {
         if (other == null) return false
         if (other !is Transform) return false
-        
+
         return other.translation == this.translation && other.scale == this.scale && other.rotation == this.rotation
     }
 
