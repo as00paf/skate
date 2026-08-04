@@ -8,9 +8,11 @@ import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
 @Serializable
-class BoxCollider3D(@Contextual val halfExtents: Vector3f = Vector3f(1f, 1f, 1f)) : Component(), Collider3D {
-    @Contextual override val offset: Vector3f = Vector3f()
+data class BoxCollider3D(
+    @Contextual val halfExtents: Vector3f = Vector3f(1f, 1f, 1f),
+    @Contextual override val offset: Vector3f = Vector3f(),
     var margin: Float = 0.04f
+) : Component(), Collider3D {
 
     override fun createShape(): CollisionShape {
         val shape = BoxCollisionShape(JmeVector3f(halfExtents.x, halfExtents.y, halfExtents.z))

@@ -46,10 +46,13 @@ class Skater(
             linearDamping = 0.2f
             angularDamping = 0.3f
         })
-        addComponent(BoxCollider3D(hitBoxSize).apply {
-            offset.set(transform.translation.add(Vector3f(0f, -0.115f, 0f)))
-            margin = 0.01f
-        })
+        addComponent(
+            BoxCollider3D(
+                hitBoxSize,
+                transform.translation.add(Vector3f(0f, -0.115f, 0f)),
+                0.01f
+            )
+        )
         addComponent(InputStateComponent())
         addComponent(PlayerStateManager())
         addComponent(PlayerController())

@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 @Serializable
-class AudioComponent(
+data class AudioComponent(
     var soundFilePath: String = "",
     var is3D: Boolean = true,
     var loops: Boolean = false,
