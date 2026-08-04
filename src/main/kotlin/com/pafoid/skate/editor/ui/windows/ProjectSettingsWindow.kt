@@ -135,7 +135,7 @@ class ProjectSettingsWindow(
         ImGui.spacing()
         ImGui.text(stringManager.getString("settings.project.recent_projects"))
         ImGui.separator()
-        val recent = getRecentProjectsDisplayInfo()
+        val recent = settingsManager.recentProjects
         if (recent.isEmpty()) {
             MImGui.textDisabled(stringManager.getString("settings.project.recent_projects.none"))
             return
@@ -150,10 +150,10 @@ class ProjectSettingsWindow(
                 ImGui.tableSetColumnIndex(0)
                 ImGui.text(p.name)
                 ImGui.tableSetColumnIndex(1)
-                ImGui.text(truncatePath(p.path))
+                ImGui.text(truncatePath(p.projectPath))
                 ImGui.tableSetColumnIndex(2)
-                if (p.exists) {
-                    ImGui.text(p.getLastOpenedString())
+                if (File(project.projectPath).exists()) {
+                    ImGui.text(getLastOpenedString(p.lastOpenedDate))
                 } else {
                     ImGui.pushStyleColor(ImGuiCol.Text, 0.83f, 0.13f, 0.17f, 1f)
                     ImGui.text(stringManager.getString("settings.project.recent_projects.table.not_found"))
@@ -164,29 +164,17 @@ class ProjectSettingsWindow(
         }
     }
 
-    private fun getRecentProjectsDisplayInfo() = settingsManager.recentProjects.map { project ->
-        RecentProjectDisplayInfo(
-            name = project.name,
-            path = project.projectPath,
-            lastOpened = project.lastOpenedDate,
-            exists = File(project.projectPath).exists()
-        )
-    }
-
-    private fun truncatePath(path: String) = if (path.length > 40) "\u2026${path.takeLast(37)}" else path
-
-    companion object {
-        private fun matchesSearch(query: String, vararg terms: String) = if (query.isBlank()) true else terms.any { it.contains(query, ignoreCase = true) }
-    }
-}
-
-// TODO: remove
-data class RecentProjectDisplayInfo(val name: String, val path: String, val lastOpened: Long, val exists: Boolean) {
-    fun getLastOpenedString(): String {
+    fun getLastOpenedString(lastOpened: Long): String {
         val instant = Instant.ofEpochMilli(lastOpened)
         val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
             .withLocale(Locale.getDefault())
             .withZone(ZoneId.systemDefault())
         return formatter.format(instant)
     }
+
+    private fun truncatePath(path: String) = if (path.length > 40) "\u2026${path.takeLast(37)}" else path
+
+    private fun matchesSearch(query: String, vararg terms: String) =
+        if (query.isBlank()) true else terms.any { it.contains(query, ignoreCase = true) }
+
 }

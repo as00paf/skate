@@ -30,9 +30,6 @@ class AssetsPacker(private val logger: LoggerService) {
             Pair(AssetInfo(FileTypeResolver.resolve(it), it.absolutePath), it)
         }.sortedBy { it.first.type }
 
-        // TODO: Add shaders because they are not copied in the project's assets
-
-
         var currentPosition = 0
         sortedFiles.forEach {
             when (it.first.type) {
