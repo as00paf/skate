@@ -3,14 +3,15 @@ package com.pafoid.skate.engine.ecs.components
 import kotlinx.serialization.Serializable
 
 @Serializable
-class SkateboardController : Component() {
-    var flipLeftPressed = false
-    var flipRightPressed = false
-    var kickflipPressed = false
-    var heelflipPressed = false
-    var grabPressed = false
-    var manualPressed = false
-    var stanceChangePressed = false
+data class SkateboardController(
+    var flipLeftPressed: Boolean = false,
+    var flipRightPressed: Boolean = false,
+    var kickflipPressed: Boolean = false,
+    var heelflipPressed: Boolean = false,
+    var grabPressed: Boolean = false,
+    var manualPressed: Boolean = false,
+    var stanceChangePressed: Boolean = false,
+) : Component() {
 
     override fun reset() {
         flipLeftPressed = false

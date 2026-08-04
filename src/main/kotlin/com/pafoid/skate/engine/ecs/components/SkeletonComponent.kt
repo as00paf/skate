@@ -8,7 +8,7 @@ import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 
 @Serializable
-class SkeletonComponent(
+data class SkeletonComponent(
     val pose: SkeletonPose
 ) : Component() {
     @Transient
