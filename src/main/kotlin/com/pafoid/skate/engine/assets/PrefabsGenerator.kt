@@ -42,15 +42,10 @@ class PrefabsGenerator(
     fun spawnSkater(skate: GameObject? = null): GameObject {
         val path = projectAssetsDir + Assets.Bundled.JAMES
         val model = assetsManager.loadModel(path)
-        val skater = Skater("Skater", model, skate)
-        Skater.DEFAULT_ANIMATIONS.forEach { path ->
-            skater.animator.addAnimation(
-                assetsManager.loadAnimationSync(
-                    projectAssetsDir + path,
-                    skater.skeletonComponent.pose.skeleton
-                )
-            )// TODO: should be able to load without skeleton
+        val animations = Skater.DEFAULT_ANIMATIONS.map { path ->
+            assetsManager.loadAnimationSync(projectAssetsDir + path)
         }
+        val skater = Skater("Skater", model, skate, animations = animations)
         return skater
     }
 

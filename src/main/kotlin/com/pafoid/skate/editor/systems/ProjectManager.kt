@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.systems.InputSystem
@@ -79,6 +80,7 @@ class ProjectManager(
             eventSystem.publish(ProjectEvent.Created(project))
             Result.success(project)
         } catch (e: Exception) {
+            logger.logEditor("Could not create project: ${e.message}", LogLevel.ERROR)
             Result.failure(e)
         }
     }
@@ -120,6 +122,14 @@ class ProjectManager(
 
                 scene.gameObjects.forEach { gameObject ->
                     gameObject.getComponent<RenderComponent>()?.resolveModelFromByteArray(engine.assetsManager)
+
+                    gameObject.getComponent<Animator>()?.let { animator ->
+                        val resolved = animator.animations.mapNotNull { animation ->
+                            engine.assetsManager.resolveAnimation(animation.path)
+                        }
+                        animator.animations.clear()
+                        animator.animations.addAll(resolved)
+                    }
                 }
                 sceneManager.openScene(scene)
             } ?: run {

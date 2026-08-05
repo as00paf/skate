@@ -6,46 +6,60 @@ import com.pafoid.skate.engine.assets.data.models.animations.AnimationChannel
 import com.pafoid.skate.engine.assets.data.models.animations.AnimationPath
 import com.pafoid.skate.engine.assets.data.models.animations.AnimationSampler
 import com.pafoid.skate.engine.assets.data.models.animations.InterpolationType
-import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import org.joml.Quaternionf
-import org.joml.Vector3f
 import org.lwjgl.assimp.AIAnimation
 import org.lwjgl.assimp.AINodeAnim
+import org.lwjgl.assimp.AIScene
 import org.lwjgl.assimp.Assimp.aiGetErrorString
 import org.lwjgl.assimp.Assimp.aiImportFile
+import org.lwjgl.assimp.Assimp.aiImportFileFromMemory
 import org.lwjgl.assimp.Assimp.aiProcess_JoinIdenticalVertices
 import org.lwjgl.assimp.Assimp.aiProcess_LimitBoneWeights
 import org.lwjgl.assimp.Assimp.aiProcess_Triangulate
 import org.lwjgl.assimp.Assimp.aiReleaseImport
-import java.math.BigDecimal
-import java.math.RoundingMode
+import java.nio.ByteBuffer
 
 class AnimationLoader {
 
-    fun loadAnimations(filePath: String, skeleton: Skeleton): List<Animation> {
+    fun loadAnimations(data: ByteBuffer, path: String): List<Animation> {
+        val scene = aiImportFileFromMemory(
+            data,
+            aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights,
+            ""
+        )
+            ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
+
+        return loadAnimations(scene, path)
+    }
+
+    fun loadAnimations(path: String): List<Animation> {
         val scene = aiImportFile(
-            filePath,
+            path,
             aiProcess_Triangulate or aiProcess_JoinIdenticalVertices or aiProcess_LimitBoneWeights
         )
             ?: throw RuntimeException("Error loading animations: " + aiGetErrorString())
 
+        return loadAnimations(scene, path)
+    }
+
+    private fun loadAnimations(scene: AIScene, path: String): List<Animation> {
+        val name = path.substringBefore(".fbx").replaceBeforeLast("/", "").replace("/", "").capitalize()
         val animations = mutableListOf<Animation>()
         val sceneAnimations = scene.mAnimations() ?: throw Error("No animation found in animation file")
 
         val aiAnimInfo =
-            getAnimInfo(AIAnimation.create(sceneAnimations.get(0)), skeleton)
+            getAnimInfo(AIAnimation.create(sceneAnimations.get(0)))
 
         for (i in 0 until scene.mNumAnimations()) {
             val aiAnim = AIAnimation.create(sceneAnimations.get(i))
-            animations.add(processAnimation(filePath, aiAnim, aiAnimInfo))
+            animations.add(processAnimation(path, name, aiAnim, aiAnimInfo))
         }
 
         aiReleaseImport(scene)
         return animations
     }
 
-    private fun getAnimInfo(aiAnim: AIAnimation, skeleton: Skeleton): AiAnimationInfo {
-        val rootNodeName = skeleton.rootBone.children.first().name
+    private fun getAnimInfo(aiAnim: AIAnimation): AiAnimationInfo {
         var isRoot = false
         var i = 0
         var aiChannel: AINodeAnim? = null
@@ -54,7 +68,7 @@ class AnimationLoader {
             aiChannel = AINodeAnim.create(animationChannels.get(1))
             val originalName = aiChannel.mNodeName().dataString()
             val nodeName = BoneNameMapper.map(originalName)
-            isRoot = nodeName.equals(rootNodeName, ignoreCase = true) || nodeName.equals("Hips", ignoreCase = true)
+            isRoot = nodeName.equals("Hips", ignoreCase = true)
 
             i++
         }
@@ -63,34 +77,23 @@ class AnimationLoader {
 
         val firstPosY = aiChannel.mPositionKeys()?.get(0)?.mValue()?.y() ?: 0f
 
-        val hipBonePos = Vector3f()
-        val hipBone = skeleton.rootBone.children.firstOrNull { it.name == "Hips" }
-        hipBone?.bindLocalTransform?.getTranslation(hipBonePos)
-
-        val finalScale = hipBonePos.y() / firstPosY
-        val finalRoundedScale = BigDecimal(finalScale.toDouble())
-            .setScale(2, RoundingMode.HALF_EVEN)
-            .toFloat()
-
         return AiAnimationInfo(
-            finalRoundedScale,
-            firstPosY - hipBonePos.y(),
-            rootNodeName,
+            0f,
+            firstPosY,
         )
     }
 
     data class AiAnimationInfo(
         val scale: Float = 1.0f,
         val hipsOffset: Float = 0f,
-        val rootNodeName: String = "Hips"
     )
 
     fun processAnimation(
-        path: String,
+        filePath: String,
+        name: String,
         aiAnim: AIAnimation,
         info: AiAnimationInfo,
     ): Animation {
-        val name = path.substringBefore(".fbx").replaceBeforeLast("/", "").replace("/", "").capitalize()
         val duration = aiAnim.mDuration().toFloat()
         val ticksPerSecond = if (aiAnim.mTicksPerSecond() != 0.0) aiAnim.mTicksPerSecond().toFloat() else 60f
         val durationInSeconds = duration / ticksPerSecond
@@ -101,7 +104,7 @@ class AnimationLoader {
             val aiChannel = AINodeAnim.create(animationChannels.get(i))
             val originalName = aiChannel.mNodeName().dataString()
             val nodeName = BoneNameMapper.map(originalName)
-            val isRoot = nodeName.equals(info.rootNodeName, ignoreCase = true)
+            val isRoot = nodeName.equals("Hips", ignoreCase = true)
 
             // Translation
             // For root bones, we zero out translation to keep animations in place
@@ -169,7 +172,7 @@ class AnimationLoader {
             }
         }
 
-        return Animation(name, channels, durationInSeconds, path)
+        return Animation(name, channels, durationInSeconds, filePath)
     }
 
 }

@@ -11,10 +11,10 @@ import org.joml.Vector3f
  */
 @Serializable
 class Animation(
-    val name: String,
+    var name: String,
     @Transient val channels: List<AnimationChannel> = emptyList(),
-    val duration: Float,
-    val path: String
+    var duration: Float,
+    var path: String
 ) {
     /**
      * Updates the [skeleton] based on the specified [time].

@@ -3,6 +3,7 @@ package com.pafoid.skate.game.prefabs
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -26,6 +27,7 @@ class Skater(
     scale: Vector3f = Vector3f(1f, 1f, 1f),
     mass: Float = 100f,// 100kg mass
     hitBoxSize: Vector3f = Vector3f(0.2f, 0.95f, 0.2f),
+    animations: List<Animation> = emptyList()
 ): GameObject(name) {
 
     val transform = Transform(position, scale, rotation)
@@ -61,6 +63,8 @@ class Skater(
         addComponent(playerController)
         addComponent(BoneOverride())
         addComponent(physicsComponent)
+
+        animations.forEach { animator.addAnimation(it) }
     }
 
     companion object {

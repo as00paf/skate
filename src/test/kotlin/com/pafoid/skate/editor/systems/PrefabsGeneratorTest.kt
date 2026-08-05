@@ -47,7 +47,7 @@ class PrefabsGeneratorTest {
         // Stub ResourceManager synchronous methods used by prefabs
         every { assetsManager.loadModel(any()) } returns texturedModel
         every { assetsManager.getModel(any()) } returns characterModel
-        every { assetsManager.loadAnimationSync(any(), any()) } returns animation
+        every { assetsManager.loadAnimationSync(any()) } returns animation
         every { assetsManager.getTexture(any()) } returns tex
 
         val prefabs = PrefabsGenerator(mockk<Engine>())

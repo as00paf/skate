@@ -46,7 +46,6 @@ data class Animator(
      * Called by SceneSerializer after scene deserialization.
      */
     fun resolveAnimationsFromPaths(assetsManager: AssetsManager, logger: LoggerService) {
-        val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return
         val animationPaths = animations.map { it.path }
         animations.clear()
         currentAnimation = null
@@ -55,7 +54,7 @@ data class Animator(
             val file = File(path)
             if (file.exists()) {
                 try {
-                    val animation = assetsManager.loadAnimationSync(path, skeleton)
+                    val animation = assetsManager.loadAnimationSync(path)
                     animations.add(animation)
                 } catch (e: Exception) {
                     logger.log("Failed to load animation from path: $path - ${e.message}", LogLevel.ERROR)

@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
-import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.assets.loaders.AnimationLoader
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
@@ -51,6 +50,7 @@ class AssetsManager(
     }
 
     fun resolveModel(path: String): TexturedModel? {
+        models[path]?.let { return it }
         val data = assetsResolver.resolveData(path) ?: return null
         val model = assimpLoader.loadModel(data, path)
         models[path] = model
@@ -58,10 +58,19 @@ class AssetsManager(
     }
 
     fun resolveTexture(path: String): Texture? {
+        textures[path]?.let { return it }
         val data = assetsResolver.resolveData(path) ?: return null
         val texture = textureLoader.loadFromBuffer(data)
         textures[path] = texture
         return texture
+    }
+
+    fun resolveAnimation(path: String): Animation? {
+        animations[path]?.let { return it }
+        val data = assetsResolver.resolveData(path) ?: return null
+        val animation = animationLoader.loadAnimations(data, path)
+        animations[path] = animation[0] // TODO: support multiple animations per files
+        return animation[0]
     }
 
     fun getTexture(path: String): Texture {
@@ -165,13 +174,13 @@ class AssetsManager(
         return models[File(path).absolutePath]
     }
 
-    fun loadAnimationSync(path: String, skeleton: Skeleton): Animation {
+    fun loadAnimationSync(path: String): Animation {
         val file = File(path)
         val absolutePath = file.absolutePath
 
         animations[absolutePath]?.let { return it }
         return try {
-            val loadedAnimation = animationLoader.loadAnimations(path, skeleton)[0]
+            val loadedAnimation = animationLoader.loadAnimations(path)[0]
             animations[absolutePath] = loadedAnimation
             loadedAnimation
         } catch (e: Exception) {
