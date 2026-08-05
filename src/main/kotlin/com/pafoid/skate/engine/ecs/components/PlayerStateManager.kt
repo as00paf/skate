@@ -2,22 +2,15 @@ package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.game.player.PlayerState
-import com.pafoid.skate.game.skateboard.Stance
 import kotlinx.serialization.Serializable
 
 @Serializable
-class PlayerStateManager : Component() {
+class PlayerStateManager() : Component() {
 
     var currentState: PlayerState = PlayerState.IDLE
-        private set
-    var isSwitch = false
 
-    var currentStance = Stance.REGULAR
-
+    // TODO: delete this class and move content to animator
     override fun update(dt: Float) {
-        handleOffBoardControls(dt)
-    }
-    private fun handleOffBoardControls(dt: Float) {
         val controller = gameObject.getComponent<PlayerController>() ?: return
         val physics = gameObject.getComponent<PhysicsComponent>() ?: return
 
@@ -26,28 +19,22 @@ class PlayerStateManager : Component() {
 
         // Read speed from PhysicsComponent instead of directly from rigidBody
         val speed = physics.speed
-
-        val newState =
-            if (controller.isJumping) {
-                PlayerState.JUMPING
-            } else if (!controller.isGrounded) {
-                PlayerState.FALLING
-            } else if (speed > 0.1f && hasIntent) {
-                if (speed > 5f) {
-                    PlayerState.RUNNING
-                } else {
-                    PlayerState.WALKING
-                }
+        val newState = if (controller.isJumping) {
+            PlayerState.JUMPING
+        } else if (!controller.isGrounded) {
+            PlayerState.FALLING
+        } else if (speed > 0.1f && hasIntent) {
+            if (speed > 5f) {
+                PlayerState.RUNNING
             } else {
-                PlayerState.IDLE
+                PlayerState.WALKING
             }
+        } else {
+            PlayerState.IDLE
+        }
 
-        transitionToState(newState)
-    }
 
-    fun transitionToState(newState: PlayerState) {
         if (currentState == newState) return
-
         currentState = newState
     }
 

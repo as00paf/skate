@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
@@ -65,12 +64,7 @@ class PhysicsSystem(
 
         for (go in cache) {
             val rigidBody = go.getComponent<RigidBody3D>() ?: continue
-
-            var physicsComponent = go.getComponent<PhysicsComponent>()
-            if (physicsComponent == null) {// TODO: fix, this is a big problem
-                physicsComponent = PhysicsComponent()
-                go.addComponent(physicsComponent)
-            }
+            val physicsComponent = go.getComponent<PhysicsComponent>() ?: continue
 
             rigidBody.rawBody?.let { body ->
                 try {

@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
+import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -28,6 +29,7 @@ class Floor(
                 receiveShadow = true  // But receives shadows from objects
             )
         )
+        addComponent(PhysicsComponent())
         addComponent(RigidBody3D(0f, bodyType = BodyType.Static))
         addComponent(BoxCollider3D(Vector3f(1f, 1f, 1f)))
     }

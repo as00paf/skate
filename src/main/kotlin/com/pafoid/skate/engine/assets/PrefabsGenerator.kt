@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
@@ -14,12 +13,11 @@ import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
+import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
-import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.game.prefabs.Floor
 import com.pafoid.skate.game.prefabs.MaterialType
@@ -45,12 +43,13 @@ class PrefabsGenerator(
         val path = projectAssetsDir + Assets.Bundled.JAMES
         val model = assetsManager.loadModel(path)
         val skater = Skater("Skater", model, skate)
-        val skeleton = skater.getComponent<SkeletonComponent>()?.pose?.skeleton
-        val animator = skater.getComponent<Animator>()
-        if (skeleton != null && animator != null) {
-            Skater.DEFAULT_ANIMATIONS.forEach { path ->
-                animator.addAnimation(assetsManager.loadAnimationSync(projectAssetsDir + path, skeleton))
-            }
+        Skater.DEFAULT_ANIMATIONS.forEach { path ->
+            skater.animator.addAnimation(
+                assetsManager.loadAnimationSync(
+                    projectAssetsDir + path,
+                    skater.skeletonComponent.pose.skeleton
+                )
+            )// TODO: should be able to load without skeleton
         }
         return skater
     }
@@ -79,6 +78,7 @@ class PrefabsGenerator(
             path = modelPath,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
+        rail.addComponent(PhysicsComponent())
         rail.addComponent(RenderComponent(model))
         rail.addComponent(RigidBody3D(0f, bodyType = BodyType.Static).apply { friction = 0.05f })
         rail.addComponent(CylinderCollider3D(radius = 0.05f, height = 2.0f, axis = 0))
@@ -98,6 +98,7 @@ class PrefabsGenerator(
         )
         ledge.addComponent(RenderComponent(model = model))
         ledge.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
+        ledge.addComponent(PhysicsComponent())
         ledge.addComponent(BoxCollider3D(Vector3f(0.5f, 0.25f, 0.5f)))
         return ledge
     }
@@ -114,6 +115,7 @@ class PrefabsGenerator(
             path = modelPath,
         )
         kicker.addComponent(RenderComponent(model = texturedModel))
+        kicker.addComponent(PhysicsComponent())
         kicker.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
         return kicker
     }
@@ -131,6 +133,7 @@ class PrefabsGenerator(
         )
         go.addComponent(RenderComponent(model = texturedModel))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.6f; bodyType = BodyType.Static })
+        go.addComponent(PhysicsComponent())
         go.addComponent(BoxCollider3D(Vector3f(1f, 0.1f, 1f)))
         return go
     }
@@ -146,9 +149,8 @@ class PrefabsGenerator(
             mesh = baseModel.mesh,
             material = Material(assetsManager.getTexture(mat.texturePath))
         )
-        go.addComponent(
-            RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true)
-        )
+        go.addComponent(RenderComponent(model = texturedModel, castShadow = true, receiveShadow = true))
+        go.addComponent(PhysicsComponent())
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
 
         return go
@@ -167,7 +169,7 @@ class PrefabsGenerator(
         )
         go.addComponent(RenderComponent(model = texturedModel))
         go.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
-
+        go.addComponent(PhysicsComponent())
         return go
     }
 

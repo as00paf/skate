@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
+import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.PlayerStateManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -30,16 +31,22 @@ class Skater(
 
     val transform = Transform(position, scale, rotation)
     val renderComponent = RenderComponent(model)
+    val animator = Animator()
+    val stateManager = PlayerStateManager()
+    val skeletonComponent = SkeletonComponent(SkeletonPose(model.skeleton!!))
+    val playerController = PlayerController()
+    val physicsComponent = PhysicsComponent()
 
     init {
         // Parenting: Skater follows Skateboard
         skate?.addChild(this)
 
-        val skeleton = model.skeleton?.copy()
         addComponent(transform)
         addComponent(renderComponent)
-        skeleton?.let { addComponent(SkeletonComponent(SkeletonPose(it))) }
-        addComponent(Animator())
+        addComponent(stateManager)
+        addComponent(animator)
+        addComponent(skeletonComponent)
+
         addComponent(RigidBody3D(mass).apply {
             useCCD = true
             friction = 1.2f
@@ -54,15 +61,16 @@ class Skater(
             )
         )
         addComponent(InputStateComponent())
-        addComponent(PlayerStateManager())
-        addComponent(PlayerController())
+        addComponent(playerController)
         addComponent(BoneOverride())
+        addComponent(physicsComponent)
     }
 
     companion object {
         val DEFAULT_ANIMATIONS = listOf(
             Assets.Bundled.IDLE_0,
             Assets.Bundled.IDLE_1,
+            Assets.Bundled.FALLING_IDLE,
             Assets.Bundled.JUMP,
             Assets.Bundled.WALKING,
             Assets.Bundled.RUNNING,

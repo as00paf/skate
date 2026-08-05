@@ -107,7 +107,6 @@ data class Animator(
                     PlayerState.FALLING -> play("falling idle")
                     PlayerState.LANDING -> play("hard landing")
                     PlayerState.IDLE -> play("idle")
-                    else -> {}
                 }
             }
         }

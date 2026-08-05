@@ -17,7 +17,8 @@ class ApplyAnimationCommand(
 ) : ExecuteOnlyCommand {
     override fun execute() {
         val animator =
-            gameObject.getComponent<Animator>() ?: gameObject.addComponent(Animator()).getComponent<Animator>()
+            gameObject.getComponent<Animator>() ?: gameObject.addComponent(Animator(mutableListOf(newAnimation)))
+                .getComponent<Animator>()
         val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton
         val isValid = animator?.validateSkeletonCompatibility(skeleton, newAnimation) == true
         val alreadyHasAnimation = animator?.animations?.any { it.name == newAnimation.name } == true

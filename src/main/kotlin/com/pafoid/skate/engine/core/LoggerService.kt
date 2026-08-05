@@ -23,10 +23,10 @@ class LoggerService {
         log(message, level, source = "engine", true)
 
     fun logEditor(message: String, level: LogLevel = LogLevel.INFO) =
-        log(message, level, source = "editor")
+        log(message, level, source = "editor", level == LogLevel.ERROR)
 
     fun logGame(message: String, level: LogLevel = LogLevel.INFO) =
-        log(message, level, source = "game")
+        log(message, level, source = "game", level == LogLevel.ERROR)
 
     enum class LogLevel {
         INFO, ACTION, WARN, ERROR
