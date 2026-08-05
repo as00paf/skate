@@ -16,7 +16,6 @@ enum class ComponentType {
     INPUT_STATE,
     LIGHTING,
     NON_PICKABLE,
-    PHYSICS,
     PLAYER_CONTROLLER,
     RENDER,
     RIGID_BODY_3D,
@@ -43,7 +42,6 @@ enum class ComponentType {
             INPUT_STATE -> InputStateComponent()
             LIGHTING -> LightingComponent()
             NON_PICKABLE -> NonPickable()
-            PHYSICS -> PhysicsComponent()
             PLAYER_CONTROLLER -> PlayerController()
             RENDER -> RenderComponent()
             RIGID_BODY_3D -> RigidBody3D()

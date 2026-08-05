@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
-import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -35,7 +34,6 @@ class Skater(
     val animator = Animator()
     val skeletonComponent = SkeletonComponent(SkeletonPose(model.skeleton!!))
     val playerController = PlayerController()
-    val physicsComponent = PhysicsComponent()
 
     init {
         // Parenting: Skater follows Skateboard
@@ -62,7 +60,6 @@ class Skater(
         addComponent(InputStateComponent())
         addComponent(playerController)
         addComponent(BoneOverride())
-        addComponent(physicsComponent)
 
         animations.forEach { animator.addAnimation(it) }
     }

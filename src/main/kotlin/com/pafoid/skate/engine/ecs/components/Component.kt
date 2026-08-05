@@ -13,7 +13,6 @@ import com.pafoid.skate.engine.ecs.components.ComponentType.ENVIRONMENT
 import com.pafoid.skate.engine.ecs.components.ComponentType.INPUT_STATE
 import com.pafoid.skate.engine.ecs.components.ComponentType.LIGHTING
 import com.pafoid.skate.engine.ecs.components.ComponentType.NON_PICKABLE
-import com.pafoid.skate.engine.ecs.components.ComponentType.PHYSICS
 import com.pafoid.skate.engine.ecs.components.ComponentType.PLAYER_CONTROLLER
 import com.pafoid.skate.engine.ecs.components.ComponentType.RAGDOLL
 import com.pafoid.skate.engine.ecs.components.ComponentType.RENDER
@@ -90,7 +89,6 @@ abstract class Component {
                 is InputStateComponent -> INPUT_STATE
                 is LightingComponent -> LIGHTING
                 is NonPickable -> NON_PICKABLE
-                is PhysicsComponent -> PHYSICS
                 is PlayerController -> PLAYER_CONTROLLER
                 is RenderComponent -> RENDER
                 is RigidBody3D -> RIGID_BODY_3D

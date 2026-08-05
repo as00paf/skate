@@ -17,7 +17,6 @@ import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.NonPickable
-import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -45,7 +44,6 @@ class Serializer {
             // Core components
             subclass(Transform::class)
             subclass(RenderComponent::class)
-            subclass(PhysicsComponent::class)
             subclass(AudioComponent::class)
             subclass(GridLines::class)
             subclass(CameraComponent::class)

@@ -33,6 +33,7 @@ data class RenderComponent(
         }
     }
 
+    // TODO: move ?
     fun resolveModelFromByteArray(
         assetsManager: AssetsManager,
     ) {

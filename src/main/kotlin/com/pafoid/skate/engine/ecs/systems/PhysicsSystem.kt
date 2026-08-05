@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
-import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
@@ -12,7 +11,6 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysics3D
-import com.pafoid.skate.engine.physics3d.toVector3f
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import org.joml.Vector3f
 
@@ -64,16 +62,10 @@ class PhysicsSystem(
 
         for (go in cache) {
             val rigidBody = go.getComponent<RigidBody3D>() ?: continue
-            val physicsComponent = go.getComponent<PhysicsComponent>() ?: continue
 
-            rigidBody.rawBody?.let { body ->
+            rigidBody.rawBody?.let {
                 try {
-                    rigidBody.update(0f)
-
-                    physicsComponent.updateFromPhysics(
-                        body.getLinearVelocity(null).toVector3f(),
-                        body.getAngularVelocity(null).toVector3f()
-                    )
+                    rigidBody.update(dt)
                 } catch (e: AssertionError) {
                     // Body is not yet in physics world - skip this frame
                 }

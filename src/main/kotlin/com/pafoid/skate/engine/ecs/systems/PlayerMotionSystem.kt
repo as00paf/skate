@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
-import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
@@ -91,14 +90,13 @@ class PlayerMotionSystem(
     private fun updateState(dt: Float) {
         cache.forEach { gameObject ->
             val controller = gameObject.getComponent<PlayerController>() ?: return@forEach
-            val physics = gameObject.getComponent<PhysicsComponent>() ?: return@forEach
+            val physics = gameObject.getComponent<RigidBody3D>()?.rawBody ?: return@forEach
             val animator = gameObject.getComponent<Animator>() ?: return@forEach
 
             val intent = controller.desiredMoveDirection.length()
             val hasIntent = intent > 0.15f
 
-            // Read speed from PhysicsComponent instead of directly from rigidBody
-            val speed = physics.speed
+            val speed = physics.getLinearVelocity(null).length()
             val newState = if (controller.isJumping) {
                 PlayerState.JUMPING
             } else if (!controller.isGrounded) {
