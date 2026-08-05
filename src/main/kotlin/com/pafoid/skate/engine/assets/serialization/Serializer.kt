@@ -19,7 +19,6 @@ import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
-import com.pafoid.skate.engine.ecs.components.PlayerStateManager
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -79,7 +78,6 @@ class Serializer {
             subclass(CustomCollider3D::class)
             subclass(CapsuleCollider3D::class)
             subclass(PlayerController::class)
-            subclass(PlayerStateManager::class)
         }
     }
 

@@ -93,23 +93,7 @@ data class Animator(
     }
 
     override fun update(dt: Float) {
-        val stateManager = gameObject.getComponent<PlayerStateManager>()
-        if (stateManager != null) {
-            val targetState = stateManager.currentState
 
-            // Only play animation if state changed
-            if (targetState != currentState) {
-                currentState = targetState
-                when (currentState) {
-                    PlayerState.WALKING -> play("walking")
-                    PlayerState.RUNNING -> play("running")
-                    PlayerState.JUMPING -> play("jump")
-                    PlayerState.FALLING -> play("falling idle")
-                    PlayerState.LANDING -> play("hard landing")
-                    PlayerState.IDLE -> play("idle")
-                }
-            }
-        }
     }
 
     fun validateSkeletonCompatibility(skeleton: Skeleton?, animation: Animation): Boolean {

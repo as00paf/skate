@@ -18,7 +18,6 @@ enum class ComponentType {
     NON_PICKABLE,
     PHYSICS,
     PLAYER_CONTROLLER,
-    PLAYER_STATE_MANAGER,
     RENDER,
     RIGID_BODY_3D,
     RAGDOLL,
@@ -46,7 +45,6 @@ enum class ComponentType {
             NON_PICKABLE -> NonPickable()
             PHYSICS -> PhysicsComponent()
             PLAYER_CONTROLLER -> PlayerController()
-            PLAYER_STATE_MANAGER -> PlayerStateManager()
             RENDER -> RenderComponent()
             RIGID_BODY_3D -> RigidBody3D()
             RAGDOLL -> RagdollComponent()

@@ -11,7 +11,6 @@ import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
-import com.pafoid.skate.engine.ecs.components.PlayerStateManager
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
@@ -32,7 +31,6 @@ class Skater(
     val transform = Transform(position, scale, rotation)
     val renderComponent = RenderComponent(model)
     val animator = Animator()
-    val stateManager = PlayerStateManager()
     val skeletonComponent = SkeletonComponent(SkeletonPose(model.skeleton!!))
     val playerController = PlayerController()
     val physicsComponent = PhysicsComponent()
@@ -43,7 +41,6 @@ class Skater(
 
         addComponent(transform)
         addComponent(renderComponent)
-        addComponent(stateManager)
         addComponent(animator)
         addComponent(skeletonComponent)
 

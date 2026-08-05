@@ -20,7 +20,6 @@ import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
-import com.pafoid.skate.engine.ecs.components.PlayerStateManager
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -49,7 +48,6 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.NON_PICKABLE -> getComponent<NonPickable>()
         ComponentType.PHYSICS -> getComponent<PhysicsComponent>()
         ComponentType.PLAYER_CONTROLLER -> getComponent<PlayerController>()
-        ComponentType.PLAYER_STATE_MANAGER -> getComponent<PlayerStateManager>()
         ComponentType.RAGDOLL -> getComponent<RagdollComponent>()
         ComponentType.RENDER -> getComponent<RenderComponent>()
         ComponentType.RIGID_BODY_3D -> getComponent<RigidBody3D>()

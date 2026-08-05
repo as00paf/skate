@@ -3,6 +3,8 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.PhysicsComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
@@ -14,6 +16,7 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.utils.Interpolator
+import com.pafoid.skate.game.player.PlayerState
 import org.joml.Quaternionf
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -77,9 +80,49 @@ class PlayerMotionSystem(
         if (!scene.isRunning) return
         if (cacheDirty) rebuildCache()
 
+        updateState(dt)
+
         cache.forEach {
             val body = it.getComponent<RigidBody3D>()
             body?.let { body -> applyMotion(it, body) }
+        }
+    }
+
+    private fun updateState(dt: Float) {
+        cache.forEach { gameObject ->
+            val controller = gameObject.getComponent<PlayerController>() ?: return@forEach
+            val physics = gameObject.getComponent<PhysicsComponent>() ?: return@forEach
+            val animator = gameObject.getComponent<Animator>() ?: return@forEach
+
+            val intent = controller.desiredMoveDirection.length()
+            val hasIntent = intent > 0.15f
+
+            // Read speed from PhysicsComponent instead of directly from rigidBody
+            val speed = physics.speed
+            val newState = if (controller.isJumping) {
+                PlayerState.JUMPING
+            } else if (!controller.isGrounded) {
+                PlayerState.FALLING
+            } else if (speed > 0.1f && hasIntent) {
+                if (speed > 5f) {
+                    PlayerState.RUNNING
+                } else {
+                    PlayerState.WALKING
+                }
+            } else {
+                PlayerState.IDLE
+            }
+
+            if (animator.currentState == newState) return
+            animator.currentState = newState
+            when (animator.currentState) {
+                PlayerState.WALKING -> animator.play("walking")
+                PlayerState.RUNNING -> animator.play("running")
+                PlayerState.JUMPING -> animator.play("jump")
+                PlayerState.FALLING -> animator.play("falling idle")
+                PlayerState.LANDING -> animator.play("hard landing")
+                PlayerState.IDLE -> animator.play("idle")
+            }
         }
     }
 
