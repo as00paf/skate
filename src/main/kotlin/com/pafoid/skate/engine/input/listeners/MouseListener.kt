@@ -113,13 +113,12 @@ class MouseListener {
         return (relativeY / gameViewportSize.y).coerceIn(0f, 1f)
     }
 
-    fun getScrollX(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollX.toFloat()
-    fun getScrollY(): Float = if (ImGui.getIO().wantCaptureMouse) 0f else scrollY.toFloat()
+    fun getScrollX(): Float = scrollX.toFloat()// TODO: stop with the conversions
+    fun getScrollY(): Float = scrollY.toFloat()
+
     fun isDragging() = isDragging
     fun isMouseButtonDown(button: Int, ignoreImGui: Boolean = false): Boolean {
         val down = if (button < mouseButtonPressed.size) mouseButtonPressed[button] else false
         return if (ignoreImGui) down else down && !ImGui.getIO().wantCaptureMouse
     }
-
-
 }

@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.getComponent
 import org.joml.Vector3f
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.sign
 
@@ -131,7 +132,8 @@ class EditorCamera(
         val scroll = editorState.mouseScroll
         if (scroll != 0f && editorState.isInsideViewport) {
             val addValue = abs(scroll * scrollSensitivity).toDouble().pow(1.0 / camera.zoom)
-            camera.addZoom((addValue.toFloat() * -sign(scroll)))
+            val zoomValue = max(camera.zoom + (addValue.toFloat() * -sign(scroll)), 0.1f)
+            camera.zoom = zoomValue
         }
     }
 }
