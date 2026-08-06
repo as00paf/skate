@@ -8,11 +8,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import com.pafoid.skate.engine.utils.Ray
-import org.joml.Matrix4f
-import org.joml.Vector2f
 import org.joml.Vector3f
-import org.joml.Vector4f
 import kotlin.math.abs
 
 class TranslateGizmo(
@@ -30,6 +26,8 @@ class TranslateGizmo(
 
     private var oldTransform: Transform? = null
 
+    var sensitivity = 0.0005f
+
     fun update(activeGameObject: GameObject?, camera: CameraComponent) {
         val go = activeGameObject ?: return
         go.getComponent<Transform>()?.let{ transform ->
@@ -43,14 +41,23 @@ class TranslateGizmo(
 
             // TODO: fix snapping
             if (xAxisActive) {
-                transform.translation.x += calculateDelta(go, camera, Vector3f(1f, 0f, 0f))
-                //if (go.getComponent<ModularTile>() != null) transform.translation.x = (transform.translation.x / 2.0f).roundToInt() * 2.0f
+                transform.translation.x += inputProvider.mouseDistanceFrom(
+                    pos,
+                    camera,
+                    Vector3f(1f, 0f, 0f)
+                ) * sensitivity
             } else if (yAxisActive) {
-                transform.translation.y += calculateDelta(go, camera, Vector3f(0f, 1f, 0f))
-                //if (go.getComponent<ModularTile>() != null) transform.translation.y = (transform.translation.y / 2.0f).roundToInt() * 2.0f
+                transform.translation.y += inputProvider.mouseDistanceFrom(
+                    pos,
+                    camera,
+                    Vector3f(0f, 1f, 0f)
+                ) * sensitivity
             } else if (zAxisActive) {
-                transform.translation.z += calculateDelta(go, camera, Vector3f(0f, 0f, 1f))
-                //if (go.getComponent<ModularTile>() != null) transform.translation.z = (transform.translation.z / 2.0f).roundToInt() * 2.0f
+                transform.translation.z += inputProvider.mouseDistanceFrom(
+                    pos,
+                    camera,
+                    Vector3f(0f, 0f, 1f)
+                ) * sensitivity
             }
 
             drawArrow(pos, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f), dynamicArrowLength, dynamicConeSize) // X - Red/Yellow
@@ -121,57 +128,5 @@ class TranslateGizmo(
             yAxisActive = false
             zAxisActive = false
         }
-    }
-
-    private fun rayToLineDist(ray: Ray, origin: Vector3f, direction: Vector3f, length: Float): Float {
-        var minDist = Float.MAX_VALUE
-        for (i in 0..10) {
-            val p = Vector3f(origin).add(Vector3f(direction).mul(length * (i/10f)))
-            val dist = ray.distanceToPoint(p)
-            if (dist < minDist) minDist = dist
-        }
-        return minDist
-    }
-
-    private fun calculateDelta(activeGameObject: GameObject?, camera: CameraComponent, axis: Vector3f): Float {
-        val view = camera.view
-        val proj = camera.projection
-        val viewportSize = inputProvider.getGameViewportSize()
-
-        val go = activeGameObject ?: return 0f
-        val transform = go.getComponent<Transform>() ?: return 0f
-        val origin = Vector3f(transform.translation)
-        val p2 = Vector3f(origin).add(axis)
-
-        val s1 = worldToScreen(origin, view, proj, viewportSize.x, viewportSize.y)
-        val s2 = worldToScreen(p2, view, proj, viewportSize.x, viewportSize.y)
-
-        val axisScreen = s2.sub(s1)
-        if (axisScreen.lengthSquared() < 0.0001f) return 0f
-
-        val axisScreenDir = axisScreen.normalize()
-        val mouseDelta = Vector2f(inputProvider.getMouseDx(), inputProvider.getMouseDy())
-
-        val projection = mouseDelta.dot(axisScreenDir)
-        val dist = Vector3f(camera.position).distance(origin)
-        val sensitivity = 0.0005f * dist
-
-        return projection * sensitivity
-    }
-    
-    private fun worldToScreen(worldPos: Vector3f, view: Matrix4f, proj: Matrix4f, width: Float, height: Float): Vector2f {
-        val coords = Vector4f(worldPos, 1.0f)
-        view.transform(coords)
-        proj.transform(coords)
-        
-        if (coords.w == 0f) return Vector2f()
-        
-        coords.x /= coords.w
-        coords.y /= coords.w
-        
-        val x = (coords.x + 1) * width / 2f
-        val y = (1 - coords.y) * height / 2f
-        
-        return Vector2f(x, y)
     }
 }

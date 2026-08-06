@@ -123,4 +123,39 @@ class InputProvider(
 
         return Ray(rayOrigin, rayDirection)
     }
+
+    fun worldToScreen(worldPos: Vector3f, camera: CameraComponent): Vector2f {
+        val coords = Vector4f(worldPos, 1.0f)
+        camera.view.transform(coords)
+        camera.projection.transform(coords)
+
+        if (coords.w == 0f) return Vector2f()
+
+        coords.x /= coords.w
+        coords.y /= coords.w
+
+        val x = (coords.x + 1) * camera.viewportWidth / 2f
+        val y = (1 - coords.y) * camera.viewportHeight / 2f
+
+        return Vector2f(x, y)
+    }
+
+    fun mouseDistanceFrom(origin: Vector3f, camera: CameraComponent, axis: Vector3f): Float {
+        val p2 = Vector3f(origin).add(axis)
+
+        val s1 = worldToScreen(origin, camera)
+        val s2 = worldToScreen(p2, camera)
+
+        val axisScreen = s2.sub(s1)
+        // Guard against NaN: axis is perpendicular to camera or object scale is zero
+        if (axisScreen.lengthSquared() < 0.0001f) return 0f
+
+        val axisScreenDir = axisScreen.normalize()
+        val mouseDelta = Vector2f(getMouseDx(), getMouseDy())
+
+        val projection = mouseDelta.dot(axisScreenDir)
+        val dist = Vector3f(camera.position).distance(origin)
+
+        return projection * dist
+    }
 }

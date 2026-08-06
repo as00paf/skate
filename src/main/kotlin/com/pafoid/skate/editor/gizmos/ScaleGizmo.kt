@@ -8,11 +8,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import com.pafoid.skate.engine.utils.Ray
-import org.joml.Matrix4f
-import org.joml.Vector2f
 import org.joml.Vector3f
-import org.joml.Vector4f
 
 class ScaleGizmo(
     inputProvider: InputProvider,
@@ -28,6 +24,8 @@ class ScaleGizmo(
     private var zAxisHot = false
 
     private var oldTransform: Transform? = null
+
+    var sensitivity = 0.001f
 
     fun update(go: GameObject?, camera: CameraComponent) {
         go?.getComponent<Transform>()?.let { transform ->
@@ -56,13 +54,13 @@ class ScaleGizmo(
             }
 
             if (xAxisActive) {
-                transform.scale.x += calculateDelta(transform, camera, Vector3f(1f, 0f, 0f))
+                transform.scale.x += inputProvider.mouseDistanceFrom(pos, camera, Vector3f(1f, 0f, 0f)) * sensitivity
                 transform.scale.x = transform.scale.x.coerceAtLeast(0.01f)
             } else if (yAxisActive) {
-                transform.scale.y += calculateDelta(transform, camera, Vector3f(0f, 1f, 0f))
+                transform.scale.y += inputProvider.mouseDistanceFrom(pos, camera, Vector3f(0f, 1f, 0f)) * sensitivity
                 transform.scale.y = transform.scale.y.coerceAtLeast(0.01f)
             } else if (zAxisActive) {
-                transform.scale.z += calculateDelta(transform, camera, Vector3f(0f, 0f, 1f))
+                transform.scale.z += inputProvider.mouseDistanceFrom(pos, camera, Vector3f(0f, 0f, 1f)) * sensitivity
                 transform.scale.z = transform.scale.z.coerceAtLeast(0.01f)
             }
 
@@ -132,53 +130,5 @@ class ScaleGizmo(
         // Right
         debugRenderer.addTriangle3D(v2, v3, v7, color)
         debugRenderer.addTriangle3D(v2, v7, v6, color)
-    }
-
-    private fun rayToLineDist(ray: Ray, origin: Vector3f, direction: Vector3f, length: Float): Float {
-        var minDist = Float.MAX_VALUE
-        for (i in 0..10) {
-            val p = Vector3f(origin).add(Vector3f(direction).mul(length * (i/10f)))
-            val dist = ray.distanceToPoint(p)
-            if (dist < minDist) minDist = dist
-        }
-        return minDist
-    }
-
-    private fun calculateDelta(transform: Transform, camera: CameraComponent, axis: Vector3f): Float {
-        val view = camera.view
-        val proj = camera.projection
-        val viewportSize = inputProvider.getGameViewportSize()
-
-        val origin = Vector3f(transform.translation)
-        val p2 = Vector3f(origin).add(axis)
-
-        val s1 = worldToScreen(origin, view, proj, viewportSize.x, viewportSize.y)
-        val s2 = worldToScreen(p2, view, proj, viewportSize.x, viewportSize.y)
-
-        val axisScreen = s2.sub(s1)
-        // Guard against NaN: axis is perpendicular to camera or object scale is zero
-        if (axisScreen.lengthSquared() < 0.0001f) return 0f
-
-        val axisScreenDir = axisScreen.normalize()
-        val mouseDelta = Vector2f(inputProvider.getMouseDx(), inputProvider.getMouseDy())
-
-        val projection = mouseDelta.dot(axisScreenDir)
-        val dist = Vector3f(camera.position).distance(origin)
-        val sensitivity = 0.001f * dist
-
-        return projection * sensitivity
-    }
-    
-    private fun worldToScreen(worldPos: Vector3f, view: Matrix4f, proj: Matrix4f, width: Float, height: Float): Vector2f {
-        val coords = Vector4f(worldPos, 1.0f)
-        view.transform(coords)
-        proj.transform(coords)
-        
-        if (coords.w == 0f) return Vector2f()
-        
-        val x = (coords.x + 1) * width / 2f
-        val y = (1 - coords.y) * height / 2f
-        
-        return Vector2f(x, y)
     }
 }
