@@ -63,6 +63,12 @@ class CameraComponent : Component() {
         calculateView()
     }
 
+    fun lookAt(target: Vector3f) {
+        val dir = Vector3f(target).sub(position).normalize()
+        pitch = asin(-dir.y.toDouble()).toDegrees().toFloat()
+        yaw = atan2(dir.x.toDouble(), -dir.z.toDouble()).toDegrees().toFloat()
+    }
+
     private fun calculateProjection() {
         projection.identity()
 
@@ -88,12 +94,6 @@ class CameraComponent : Component() {
         val negativeCameraPos = Vector3f(position).negate()
         view.translate(negativeCameraPos)
         Matrix4f(view).invert(inverseView)
-    }
-
-    fun lookAt(target: Vector3f) {
-        val dir = Vector3f(target).sub(position).normalize()
-        pitch = asin(-dir.y.toDouble()).toDegrees().toFloat()
-        yaw = atan2(dir.x.toDouble(), -dir.z.toDouble()).toDegrees().toFloat()
     }
 
     private fun calculateForwardAndRight(): Pair<Vector3f, Vector3f> {
