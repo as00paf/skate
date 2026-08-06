@@ -148,6 +148,4 @@ class GameCamera(
         }
 
     fun lookAt(target: Vector3f) = camera.lookAt(target)
-    fun screenToRay(screenX: Float, screenY: Float, width: Float, height: Float) =
-        camera.screenToRay(screenX, screenY, width, height)
 }

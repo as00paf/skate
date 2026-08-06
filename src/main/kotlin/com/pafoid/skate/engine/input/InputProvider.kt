@@ -2,10 +2,15 @@ package com.pafoid.skate.engine.input
 
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.Time
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.input.listeners.GamepadListener
 import com.pafoid.skate.engine.input.listeners.KeyListener
 import com.pafoid.skate.engine.input.listeners.MouseListener
+import com.pafoid.skate.engine.utils.Ray
+import org.joml.Matrix4f
 import org.joml.Vector2f
+import org.joml.Vector3f
+import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.GLFW_CURSOR
 import org.lwjgl.glfw.GLFW.GLFW_CURSOR_DISABLED
@@ -93,5 +98,29 @@ class InputProvider(
         val window = glfwGetCurrentContext()
         if (window == 0L) return false
         return glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED
+    }
+
+    // Utils
+    fun screenToRay(camera: CameraComponent): Ray {
+        val screenX = getMouseScreenX()
+        val screenY = getMouseScreenY()
+
+        // Convert screen coordinates to NDC (-1 to 1)
+        val x = (2.0f * screenX) / camera.viewportWidth - 1.0f
+        val y = 1.0f - (2.0f * screenY) / camera.viewportHeight
+
+        val invProjView = Matrix4f(camera.projection).mul(camera.view).invert()
+
+        // Ray start (near plane) and end (far plane) in world space
+        val near = Vector4f(x, y, -1f, 1f).mul(invProjView)
+        val far = Vector4f(x, y, 1f, 1f).mul(invProjView)
+
+        near.div(near.w)
+        far.div(far.w)
+
+        val rayOrigin = Vector3f(near.x, near.y, near.z)
+        val rayDirection = Vector3f(far.x - near.x, far.y - near.y, far.z - near.z).normalize()
+
+        return Ray(rayOrigin, rayDirection)
     }
 }

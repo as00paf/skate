@@ -73,10 +73,7 @@ class ScaleGizmo(
     }
 
     private fun checkInput(pos: Vector3f, camera: CameraComponent, length: Float, threshold: Float) {
-        val mouseX = inputProvider.getMouseScreenX()
-        val mouseY = inputProvider.getMouseScreenY()
-        val viewportSize = inputProvider.getGameViewportSize()
-        val ray = camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
+        val ray = inputProvider.screenToRay(camera)
 
         // Reset hover states
         xAxisHot = false

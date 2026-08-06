@@ -8,8 +8,8 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.input.InputProvider
 import imgui.ImGui
-import imgui.ImVec2
 import org.joml.Vector3f
 import kotlin.math.abs
 
@@ -17,11 +17,8 @@ class ViewportDragDropHandler(
     private val viewportRenderer: ViewportRenderer,
     private val editorCamera: EditorCamera,
     private val eventSystem: EventSystem,
+    private val inputProvider: InputProvider
 ) {
-
-    // Reusable buffers
-    private val tempMousePos = ImVec2()
-
     fun renderDragDropTarget(scene: Scene?) {
         if (scene == null) return
 
@@ -43,8 +40,7 @@ class ViewportDragDropHandler(
             val prefabPayload = payloadRail ?: payloadLedge ?: payloadKicker ?: payloadManualPad ?: payloadBank ?: payloadQuarterPipe ?: payloadSkateboard
 
             if (prefabPayload != null) {
-                ImGui.getMousePos(tempMousePos)
-                val hitPoint = computeDropPosition(tempMousePos.x, tempMousePos.y)
+                val hitPoint = computeDropPosition()
 
                 if (hitPoint != null) {
                     val prefabType = when {
@@ -65,7 +61,7 @@ class ViewportDragDropHandler(
 
             if (payloadTexture != null) {
                 val hoveredObject = scene.hoveredGameObject
-                val dropPosition = computeDropPosition(tempMousePos.x, tempMousePos.y)
+                val dropPosition = computeDropPosition()
                 eventSystem.publish(ViewportAction.DropTexture(payloadTexture, hoveredObject, dropPosition))
             }
 
@@ -87,10 +83,8 @@ class ViewportDragDropHandler(
         }
     }
 
-    private fun computeDropPosition(mouseX: Float, mouseY: Float): Vector3f? {
-        val relX = mouseX - viewportRenderer.imageScreenPosX
-        val relY = mouseY - viewportRenderer.imageScreenPosY
-        val ray = editorCamera.camera.screenToRay(relX, relY, viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)
+    private fun computeDropPosition(): Vector3f? {
+        val ray = inputProvider.screenToRay(editorCamera.camera)
 
         if (abs(ray.direction.y) > 0.0001f) {
             val t = -ray.origin.y / ray.direction.y

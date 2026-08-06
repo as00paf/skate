@@ -47,7 +47,7 @@ class MeasureTool(
         measurementPos = null
 
         if (relX >= 0 && relX <= viewportSize.x && relY >= 0 && relY <= viewportSize.y) {
-            val ray = camera.screenToRay(relX, relY, viewportSize.x, viewportSize.y)
+            val ray = inputProvider.screenToRay(camera)
 
             if (abs(ray.direction.y) > 0.0001f) {
                 val t = -ray.origin.y / ray.direction.y

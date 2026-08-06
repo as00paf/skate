@@ -58,10 +58,7 @@ class RotationGizmo(
         threshold: Float
     ) {
         val pos = transform.translation
-        val mouseX = inputProvider.getMouseScreenX()
-        val mouseY = inputProvider.getMouseScreenY()
-        val viewportSize = inputProvider.getGameViewportSize()
-        val ray = camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
+        val ray = inputProvider.screenToRay(camera)
 
         // Reset hover states
         xAxisHot = false

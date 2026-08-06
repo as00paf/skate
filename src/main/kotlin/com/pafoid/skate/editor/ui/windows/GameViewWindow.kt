@@ -33,7 +33,7 @@ class GameViewWindow(
     private val viewportRenderer = ViewportRenderer(engine)
     private val viewportContextMenu = ViewportContextMenu(stringManager, engine.eventSystem)
     private val viewportDragDropHandler =
-        ViewportDragDropHandler(viewportRenderer, editor.editorCamera, engine.eventSystem)
+        ViewportDragDropHandler(viewportRenderer, editor.editorCamera, engine.eventSystem, engine.inputProvider)
     private val viewportToolbar = ViewportToolbar(engine, stringManager, editor.gizmoSystem)
     private val viewportActionHandler = ViewportActionHandler(
         engine = engine,

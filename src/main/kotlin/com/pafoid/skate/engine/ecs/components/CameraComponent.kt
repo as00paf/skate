@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.utils.Ray
 import com.pafoid.skate.engine.utils.toDegrees
 import com.pafoid.skate.engine.utils.toRadians
 import kotlinx.serialization.Contextual
@@ -9,7 +8,6 @@ import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
-import org.joml.Vector4f
 import kotlin.math.asin
 import kotlin.math.atan2
 
@@ -96,26 +94,6 @@ class CameraComponent : Component() {
         val dir = Vector3f(target).sub(position).normalize()
         pitch = asin(-dir.y.toDouble()).toDegrees().toFloat()
         yaw = atan2(dir.x.toDouble(), -dir.z.toDouble()).toDegrees().toFloat()
-    }
-
-    fun screenToRay(screenX: Float, screenY: Float, width: Float, height: Float): Ray {
-        // Convert screen coordinates to NDC (-1 to 1)
-        val x = (2.0f * screenX) / width - 1.0f
-        val y = 1.0f - (2.0f * screenY) / height
-
-        val invProjView = Matrix4f(projection).mul(view).invert()
-
-        // Ray start (near plane) and end (far plane) in world space
-        val near = Vector4f(x, y, -1f, 1f).mul(invProjView)
-        val far = Vector4f(x, y, 1f, 1f).mul(invProjView)
-
-        near.div(near.w)
-        far.div(far.w)
-
-        val rayOrigin = Vector3f(near.x, near.y, near.z)
-        val rayDirection = Vector3f(far.x - near.x, far.y - near.y, far.z - near.z).normalize()
-
-        return Ray(rayOrigin, rayDirection)
     }
 
     private fun calculateForwardAndRight(): Pair<Vector3f, Vector3f> {

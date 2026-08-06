@@ -85,11 +85,7 @@ class TranslateGizmo(
     private fun checkInput(go: GameObject, camera: CameraComponent, length: Float, threshold: Float) {
         val transform = go.getComponent<Transform>() ?: return
         val pos = transform.translation
-
-        val mouseX = inputProvider.getMouseScreenX()
-        val mouseY = inputProvider.getMouseScreenY()
-        val viewportSize = inputProvider.getGameViewportSize()
-        val ray = camera.screenToRay(mouseX, mouseY, viewportSize.x, viewportSize.y)
+        val ray = inputProvider.screenToRay(camera)
 
         xAxisHot = false
         yAxisHot = false
