@@ -53,7 +53,7 @@ class PropertiesWindow(
                     true
                 ) || it.javaClass.simpleName.contains(searchString.get())
             }
-            components.forEachIndexed { index, component ->
+            components.sortedBy { it.javaClass.simpleName }.forEachIndexed { index, component ->
                 renderComponentWithContextMenu(go, component, index)
             }
 
