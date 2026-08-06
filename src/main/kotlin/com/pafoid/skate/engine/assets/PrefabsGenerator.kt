@@ -170,7 +170,7 @@ class PrefabsGenerator(
             .addComponent(LightingStateComponent())
             .addComponent(DayNightCycleComponent())
             .addComponent(DirectionalLightComponent())
-            .addComponent(CameraComponent().also { it.position.set(Vector3f(0f, 5f, 20f)) })
+            .addComponent(CameraComponent(Vector3f(0f, 5f, 20f)))
         scene.gameObjects.addAll(spawnDefaultsSync())
         sceneManager.saveScene(scene, sceneDir.path)
         sceneManager.openScene(scene)
