@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.render.data.CameraPreset
-import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.engine.utils.Ray
 import com.pafoid.skate.engine.utils.toDegrees
 import com.pafoid.skate.engine.utils.toRadians
@@ -48,13 +46,6 @@ class CameraComponent : Component() {
 
     var aspectRatio: Float = 16f / 9f
 
-    // Interpolation
-    private var targetPreset: CameraPreset? = null
-    private var lerpTime = 0f
-    private var lerpDuration = 0f
-    private var startFov = 0f
-    private var startDistance = 0f
-
     @Transient
     val camForward = Vector3f(0f, 0f, -1f)
     @Transient
@@ -68,45 +59,10 @@ class CameraComponent : Component() {
     @Transient
     val inverseView = Matrix4f()
 
-    fun addZoom(value: Float) {
-        zoom += value
-        if (zoom <= 0.1f) {
-            zoom = 0.1f
-        }
-    }
-
-    fun applyPreset(preset: CameraPreset) {
-        targetPreset = null
-        fov = preset.fov
-        zoom = 1.0f
-    }
-
-    fun lerpToPreset(preset: CameraPreset, duration: Float) {
-        targetPreset = preset
-        lerpDuration = duration
-        lerpTime = 0f
-        startFov = fov
-        startDistance = zoom
-    }
-
     override fun update(dt: Float) {
-        getForwardAndRight()
-        handleLerp(dt)
+        calculateForwardAndRight()
         calculateProjection()
         calculateView()
-    }
-
-    private fun handleLerp(dt: Float) {
-        val target = targetPreset ?: return
-        lerpTime += dt
-        val t = (lerpTime / lerpDuration).coerceIn(0f, 1f)
-
-        fov = Interpolator.lerp(startFov, target.fov, t)
-        zoom = Interpolator.lerp(startDistance, target.zoom, t)
-
-        if (t >= 1f) {
-            targetPreset = null
-        }
     }
 
     private fun calculateProjection() {
@@ -162,7 +118,7 @@ class CameraComponent : Component() {
         return Ray(rayOrigin, rayDirection)
     }
 
-    private fun getForwardAndRight(): Pair<Vector3f, Vector3f> {
+    private fun calculateForwardAndRight(): Pair<Vector3f, Vector3f> {
         camForward.set(Vector3f(0f, 0f, -1f))
         val viewInv = Matrix4f(inverseView)
         viewInv.transformDirection(camForward)
