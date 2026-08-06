@@ -7,6 +7,10 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
+import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
+import org.lwjgl.opengl.GL11.glBindTexture
+import org.lwjgl.opengl.GL13.GL_TEXTURE0
+import org.lwjgl.opengl.GL13.glActiveTexture
 
 /**
  * Responsible for uploading lighting uniforms to shaders.
@@ -27,7 +31,8 @@ class LightingUniformsLoader {
         lightingStateComponent: LightingStateComponent?,
         directionalLight: DirectionalLightComponent?,
         environmentComponent: EnvironmentComponent? = null,
-        shadowMapTextureId: Int = 0
+        shadowMapTextureId: Int = 0,
+        shadowMapResolution: Float = 0f,
     ) {
         // Directional light (sun) - single unified light source
         if (directionalLight != null) {
@@ -52,6 +57,19 @@ class LightingUniformsLoader {
             shader.uploadInt(Uniforms.SHADOW_MAP, Uniforms.SHADOW_TEXTURE_UNIT)
             // Upload texel size for PCF (assuming square shadow map)
             // This will be set by the caller based on actual shadow map resolution
+            shader.uploadFloat(Uniforms.SHADOW_MAP_TEXEL_SIZE, 1.0f / shadowMapResolution)
+            // Upload shadow bias uniforms
+            if (directionalLight != null) {
+                shader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, directionalLight.depthBias)
+                shader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, directionalLight.slopeScaledBias)
+            } else {
+                shader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, 0.001f)
+                shader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, 0.002f)
+            }
+
+            // Bind shadow map texture to texture unit
+            glActiveTexture(GL_TEXTURE0 + Uniforms.SHADOW_TEXTURE_UNIT)
+            glBindTexture(GL_TEXTURE_2D, shadowMapTextureId)
         }
 
         // Fog - use EnvironmentComponent if available and enabled, otherwise use defaults

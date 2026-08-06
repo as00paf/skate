@@ -70,7 +70,6 @@ class GeometryPass(
     override fun execute(scene: Scene) {
         val activeGameObject = scene.selectedGameObject
         val hoveredGameObject = scene.hoveredGameObject
-        val currentShadowMap = shadowMapTextureId
 
         // Setup framebuffer
         if (useFbo) {
@@ -110,25 +109,9 @@ class GeometryPass(
             lightingStateComponent,
             directionalLight,
             environmentComponent,
-            currentShadowMap
+            shadowMapTextureId,
+            shadowMapResolution
         )
-
-        // Upload shadow map texel size for PCF
-        if (currentShadowMap > 0) {
-            defaultShader.uploadFloat(Uniforms.SHADOW_MAP_TEXEL_SIZE, 1.0f / shadowMapResolution)
-            // Upload shadow bias uniforms
-            if (directionalLight != null) {
-                defaultShader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, directionalLight.depthBias)
-                defaultShader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, directionalLight.slopeScaledBias)
-            } else {
-                defaultShader.uploadFloat(Uniforms.SHADOW_DEPTH_BIAS, 0.001f)
-                defaultShader.uploadFloat(Uniforms.SHADOW_SLOPE_SCALED_BIAS, 0.002f)
-            }
-
-            // Bind shadow map texture to texture unit
-            glActiveTexture(GL_TEXTURE0 + Uniforms.SHADOW_TEXTURE_UNIT)
-            glBindTexture(GL_TEXTURE_2D, currentShadowMap)
-        }
 
         // Render all 3D game objects
         scene.gameObjects.forEach { go ->
