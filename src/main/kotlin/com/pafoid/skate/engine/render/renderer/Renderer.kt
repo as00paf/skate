@@ -21,10 +21,6 @@ class Renderer(
         // Reset per-frame draw call counter
         EngineStats.resetDrawCalls()
 
-        // Update camera viewport dimensions once for all passes (correct aspect ratio)
-        cameraManager.camera.viewportWidth = renderResources.frameBuffer.width
-        cameraManager.camera.viewportHeight = renderResources.frameBuffer.height
-
         // Execute the render graph - this handles all preparation, execution, and cleanup of passes
         renderResources.renderGraph.execute(scene)
     }
@@ -74,5 +70,7 @@ class Renderer(
         renderResources.frameBuffer.resize(width, height)
         renderResources.pickingTexture.resize(width, height)
         renderResources.renderPasses.picking.resize(width, height)
+        cameraManager.camera.viewportWidth = renderResources.frameBuffer.width
+        cameraManager.camera.viewportHeight = renderResources.frameBuffer.height
     }
 }

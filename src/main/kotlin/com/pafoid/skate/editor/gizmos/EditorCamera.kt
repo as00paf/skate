@@ -32,8 +32,6 @@ class EditorCamera(
         camera.nearPlane = sceneCamera.nearPlane
         camera.farPlane = sceneCamera.farPlane
         camera.zoom = sceneCamera.zoom
-        camera.viewportWidth = sceneCamera.viewportWidth
-        camera.viewportHeight = sceneCamera.viewportHeight
     }
 
     fun update(dt: Float) {

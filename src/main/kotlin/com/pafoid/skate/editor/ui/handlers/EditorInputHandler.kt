@@ -89,7 +89,7 @@ class EditorInputHandler(
                 logger.logEditor("Duplicate GameObject requested: ${selected.name}")
             }
         } else {
-            if (inputProvider.isKeyPressed(inputMappings.toggleFullScreen.keyboardKey)) {
+            if (inputProvider.keyBeginPress(inputMappings.toggleFullScreen.keyboardKey)) {
                 eventSystem.publish(ViewportAction.ToggleFullScreen)
             }
             if (inputProvider.keyBeginPress(inputMappings.hierarchyDelete.keyboardKey) && selected != null) {

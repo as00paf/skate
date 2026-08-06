@@ -46,6 +46,7 @@ class Engine {
 
     val engineState = AtomicReference(EngineState.BOOTING)
     var runtimePlaying = false
+    val screens: MutableList<Screen> = mutableListOf()
     lateinit var renderer: Renderer
 
     fun start(glfwWindow: Long) {
@@ -61,10 +62,10 @@ class Engine {
 
             engineState.set(EngineState.RUNNING)
             initializeSystems()
+        }.invokeOnCompletion {
+            eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event -> runtimePlaying = event.playing }
+            logger.log("Engine initialization complete.")
         }
-
-        eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event -> runtimePlaying = event.playing }
-        logger.log("Engine initialization complete.")
     }
 
     private fun initCallbacks(glfwWindow: Long) {
@@ -116,18 +117,18 @@ class Engine {
 
             renderer.render(scene)
         }
+        screens.forEach { it.update(dt) }
         inputProvider.endFrame()
     }
 
     fun resizeFrameBuffer(width: Int, height: Int) {
         inputProvider.mouseListener.setGameViewportSize(Vector2f(width.toFloat(), height.toFloat()))
         renderer.resize(width, height)
-        cameraManager.camera.viewportWidth = width
-        cameraManager.camera.viewportHeight = height
     }
 
     fun destroy() {
         if (engineState.get() != EngineState.RUNNING) return
+        screens.forEach { it.destroy() }
         renderer.destroy()
         sceneManager.destroy()
         systemManager.destroy()

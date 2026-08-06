@@ -14,12 +14,11 @@ fun main(args:Array<String>){
 
     val editorScreen = EditorScreen(window, engine)
     editorScreen.init()
+    engine.screens.add(editorScreen)
 
     window.show { dt ->
         engine.update(dt)
-        editorScreen.update(dt)
     }
 
-    editorScreen.destroy()
     engine.destroy()
 }

@@ -7,7 +7,6 @@ import com.pafoid.skate.editor.gizmos.ScaleGizmo
 import com.pafoid.skate.editor.gizmos.SelectionGizmo
 import com.pafoid.skate.editor.gizmos.TranslateGizmo
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.ecs.Scene
 
 class GizmoSystem(
 // TODO: should use editor input state
@@ -32,7 +31,8 @@ class GizmoSystem(
     }
     val measureGizmo by lazy { MeasureTool(inputProvider, undoRedoManager, debugRenderer, settingsManager) }
 
-    fun update(dt: Float, scene: Scene) {
+    fun update(dt: Float) {
+        val scene = engine.sceneManager.currentScene ?: return
         // Reset all gizmos to inactive state
         translateGizmo.inUse = false
         rotationGizmo.inUse = false

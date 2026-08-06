@@ -159,7 +159,6 @@ class ImGuiLayer(
             end()
         } else {
             setupDockSpace(currentScene)
-            currentScene?.let { gizmoSystem.update(dt, it) }
         }
 
         endFrame()

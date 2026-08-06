@@ -3,10 +3,11 @@ package com.pafoid.skate.app
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.core.Screen
 import com.pafoid.skate.engine.core.Window
 import java.io.File
 
-class EditorScreen(private val window: Window, private val engine: Engine) {
+class EditorScreen(private val window: Window, private val engine: Engine) : Screen {
 
     private val projectManager = ProjectManager(engine)
 
@@ -28,11 +29,11 @@ class EditorScreen(private val window: Window, private val engine: Engine) {
         return projectManager.openProjectFile(projectFile)
     }
 
-    fun update(dt: Float) {
+    override fun update(dt: Float) {
         editor.update(dt)
     }
 
-    fun destroy() {
+    override fun destroy() {
         editor.destroy()
     }
 }

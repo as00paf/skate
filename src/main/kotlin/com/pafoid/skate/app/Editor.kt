@@ -63,6 +63,7 @@ class Editor(
         editorInputHandler.update()
         editorCamera.update(dt)
         imGuiLayer.update(dt)
+        gizmoSystem.update(dt)
     }
 
     fun destroy() {

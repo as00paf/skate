@@ -34,7 +34,7 @@ class RenderResourcesFactory(
 
     private var useFbo: Boolean = true
 
-    suspend fun create(width: Int, height: Int, useFbo: Boolean = true): RenderResources {
+    fun create(width: Int, height: Int, useFbo: Boolean = true): RenderResources {
         this.useFbo = useFbo
         logger.log("Initializing OpenGL state tracker...")
         GLStateTracker.initialize()
@@ -84,8 +84,8 @@ class RenderResourcesFactory(
         )
     }
 
-    private suspend fun loadShaders(): Shaders {
-        val shaders = listOf<suspend () -> Shader>(
+    private fun loadShaders(): Shaders {
+        val shaders = listOf<() -> Shader>(
             { assetsManager.getShader(Assets.Shaders.DEBUG) },
             { assetsManager.getShader(Assets.Shaders.SHADER_3D_DEFAULT) },
             { assetsManager.getShader(Assets.Shaders.SHADER_2D_BATCH) },
