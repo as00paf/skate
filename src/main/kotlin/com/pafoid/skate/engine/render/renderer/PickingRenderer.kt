@@ -79,8 +79,8 @@ class PickingRenderer(
 
         shader.start()
 
-        shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
-        shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
+        shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
+        shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
         
         // Transformation is handled on CPU for batching
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, identityMatrix)

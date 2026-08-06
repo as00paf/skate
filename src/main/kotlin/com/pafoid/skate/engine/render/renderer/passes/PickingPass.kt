@@ -112,8 +112,8 @@ class PickingPass(
         val camera = cameraManager.camera
 
         pickingShader3D.start()
-        pickingShader3D.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
-        pickingShader3D.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
+        pickingShader3D.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
+        pickingShader3D.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
 
         scene.gameObjects.forEach { go ->
             if (!go.isVisible || go.isLocked) return@forEach

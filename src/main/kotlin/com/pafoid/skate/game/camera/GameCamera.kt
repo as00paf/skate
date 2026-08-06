@@ -147,10 +147,6 @@ class GameCamera(
             camera.viewportHeight = value
         }
 
-    fun createProjectionMatrix() = camera.createProjectionMatrix()
-    fun createViewMatrix() = camera.createViewMatrix()
-    fun getInverseView() = camera.getInverseView()
-    fun getInverseProjection() = camera.getInverseProjection()
     fun lookAt(target: Vector3f) = camera.lookAt(target)
     fun screenToRay(screenX: Float, screenY: Float, width: Float, height: Float) =
         camera.screenToRay(screenX, screenY, width, height)

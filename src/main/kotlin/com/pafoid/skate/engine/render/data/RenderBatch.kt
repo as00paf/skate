@@ -135,10 +135,8 @@ class RenderBatch(
         // Use shader
         shader.start()
 
-        val viewMatrix = renderer.camera.createViewMatrix()
-        val projectionMatrix = renderer.camera.createProjectionMatrix()
-        shader.uploadMat4f(Uniforms.PROJECTION, projectionMatrix)
-        shader.uploadMat4f(Uniforms.VIEW, viewMatrix)
+        shader.uploadMat4f(Uniforms.PROJECTION, renderer.camera.projection)
+        shader.uploadMat4f(Uniforms.VIEW, renderer.camera.view)
 
         for (i in 0 until textureSlots.size) {
             glActiveTexture(GL_TEXTURE0 + i + 1)

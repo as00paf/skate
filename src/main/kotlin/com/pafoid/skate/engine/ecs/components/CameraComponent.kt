@@ -35,7 +35,18 @@ class CameraComponent : Component() {
 
     // Viewport dimensions for aspect ratio calculation
     var viewportWidth: Int = 1920
+        set(value) {
+            field = value
+            updateAspectRatio()
+        }
+
     var viewportHeight: Int = 1080
+        set(value) {
+            field = value
+            updateAspectRatio()
+        }
+
+    var aspectRatio: Float = 16f / 9f
 
     // Interpolation
     private var targetPreset: CameraPreset? = null
@@ -44,16 +55,18 @@ class CameraComponent : Component() {
     private var startFov = 0f
     private var startDistance = 0f
 
-    // Cached matrices to reduce GC pressure
-    @Transient
-    private val projectionMatrix = Matrix4f()
-    @Transient
-    private val viewMatrix = Matrix4f()
-
     @Transient
     val camForward = Vector3f(0f, 0f, -1f)
     @Transient
     val camRight = Vector3f(1f, 0f, 0f)
+    @Transient
+    val projection = Matrix4f()
+    @Transient
+    val inverseProjection = Matrix4f()
+    @Transient
+    val view = Matrix4f()
+    @Transient
+    val inverseView = Matrix4f()
 
     fun addZoom(value: Float) {
         zoom += value
@@ -79,6 +92,8 @@ class CameraComponent : Component() {
     override fun update(dt: Float) {
         getForwardAndRight()
         handleLerp(dt)
+        calculateProjection()
+        calculateView()
     }
 
     private fun handleLerp(dt: Float) {
@@ -94,48 +109,31 @@ class CameraComponent : Component() {
         }
     }
 
-    fun createProjectionMatrix(): Matrix4f {
-        projectionMatrix.identity()
-
-        // Calculate aspect ratio from current viewport dimensions
-        val aspectRatio = if (viewportHeight > 0) {
-            viewportWidth.toFloat() / viewportHeight.toFloat()
-        } else {
-            16f / 9f // Fallback to 16:9 if height is 0
-        }
+    private fun calculateProjection() {
+        projection.identity()
 
         if (isOrthographic) {
             val left = -projectionSize.x * zoom / 2f
             val right = projectionSize.x * zoom / 2f
             val bottom = -projectionSize.y * zoom / 2f
             val top = projectionSize.y * zoom / 2f
-            projectionMatrix.ortho(left, right, bottom, top, nearPlane, farPlane)
+            projection.ortho(left, right, bottom, top, nearPlane, farPlane)
         } else {
-            projectionMatrix.perspective(Math.toRadians(fov.toDouble()).toFloat() * zoom, aspectRatio, nearPlane, farPlane)
+            projection.perspective(Math.toRadians(fov.toDouble()).toFloat() * zoom, aspectRatio, nearPlane, farPlane)
         }
-
-        return projectionMatrix
+        Matrix4f(projection).invert(inverseProjection)
     }
 
-    fun createViewMatrix(): Matrix4f {
-        viewMatrix.identity()
+    private fun calculateView() {
+        view.identity()
 
-        viewMatrix.rotate(pitch.toRadians(), Vector3f(1f, 0f, 0f))
-        viewMatrix.rotate(yaw.toRadians(), Vector3f(0f, 1f, 0f))
-        viewMatrix.rotate(roll.toRadians(), Vector3f(0f, 0f, 1f))
+        view.rotate(pitch.toRadians(), Vector3f(1f, 0f, 0f))
+        view.rotate(yaw.toRadians(), Vector3f(0f, 1f, 0f))
+        view.rotate(roll.toRadians(), Vector3f(0f, 0f, 1f))
 
         val negativeCameraPos = Vector3f(position).negate()
-        viewMatrix.translate(negativeCameraPos)
-
-        return viewMatrix
-    }
-
-    fun getInverseView(): Matrix4f {
-        return createViewMatrix().invert()
-    }
-
-    fun getInverseProjection(): Matrix4f {
-        return createProjectionMatrix().invert()
+        view.translate(negativeCameraPos)
+        Matrix4f(view).invert(inverseView)
     }
 
     fun lookAt(target: Vector3f) {
@@ -149,10 +147,7 @@ class CameraComponent : Component() {
         val x = (2.0f * screenX) / width - 1.0f
         val y = 1.0f - (2.0f * screenY) / height
 
-        val projectionMatrix = createProjectionMatrix()
-        val viewMatrix = createViewMatrix()
-
-        val invProjView = Matrix4f(projectionMatrix).mul(viewMatrix).invert()
+        val invProjView = Matrix4f(projection).mul(view).invert()
 
         // Ray start (near plane) and end (far plane) in world space
         val near = Vector4f(x, y, -1f, 1f).mul(invProjView)
@@ -169,7 +164,7 @@ class CameraComponent : Component() {
 
     private fun getForwardAndRight(): Pair<Vector3f, Vector3f> {
         camForward.set(Vector3f(0f, 0f, -1f))
-        val viewInv = getInverseView()
+        val viewInv = Matrix4f(inverseView)
         viewInv.transformDirection(camForward)
         camForward.y = 0f
         camForward.normalize()
@@ -181,4 +176,13 @@ class CameraComponent : Component() {
 
         return camForward to camRight
     }
+
+    private fun updateAspectRatio() {
+        aspectRatio = if (viewportHeight > 0) {
+            viewportWidth.toFloat() / viewportHeight.toFloat()
+        } else {
+            16f / 9f // Fallback to 16:9 if height is 0
+        }
+    }
+
 }

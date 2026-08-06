@@ -97,8 +97,8 @@ class DebugRenderer(
         shader.start()
         val camera = cameraManager.camera
 
-        shader.uploadMat4f(PROJECTION, camera.createProjectionMatrix())
-        shader.uploadMat4f(VIEW, camera.createViewMatrix())
+        shader.uploadMat4f(PROJECTION, camera.projection)
+        shader.uploadMat4f(VIEW, camera.view)
 
         if (triangles.isNotEmpty()) {
             var index = 0

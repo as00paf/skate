@@ -124,8 +124,8 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         modelMatrix.rotateY(-angle + Math.toRadians((environmentComponent?.skyRotation ?: 0f).toDouble()).toFloat())
 
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, modelMatrix)
-        shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
-        shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
+        shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
+        shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
         sun?.color?.let { shader.uploadVec3f(Uniforms.SUN_COLOR, it) }
 
         // Upload sky settings from EnvironmentComponent

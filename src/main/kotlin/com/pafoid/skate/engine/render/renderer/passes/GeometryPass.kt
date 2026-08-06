@@ -98,8 +98,8 @@ class GeometryPass(
 
         // 3D Rendering Setup - Upload projection and view matrices
         defaultShader.start()
-        defaultShader.uploadMat4f(Attribs.PROJECTION_MATRIX, camera.createProjectionMatrix())
-        defaultShader.uploadMat4f(Attribs.VIEW_MATRIX, camera.createViewMatrix())
+        defaultShader.uploadMat4f(Attribs.PROJECTION_MATRIX, camera.projection)
+        defaultShader.uploadMat4f(Attribs.VIEW_MATRIX, camera.view)
         lightingUniformsLoader.loadCameraPosition(defaultShader, camera) // New call
 
         // Upload lighting uniforms

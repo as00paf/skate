@@ -22,8 +22,8 @@ class SkyboxRenderer(private val shader: Shader, loader: VAOLoader) {
 
     fun render(camera: CameraComponent, cubeMap: CubeMap) {
         shader.start()
-        shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.createViewMatrix())
-        shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.createProjectionMatrix())
+        shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
+        shader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
 
         glBindVertexArray(cube.vaoId)
         glEnableVertexAttribArray(0)

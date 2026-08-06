@@ -148,8 +148,8 @@ class ScaleGizmo(
     }
 
     private fun calculateDelta(transform: Transform, camera: CameraComponent, axis: Vector3f): Float {
-        val view = camera.createViewMatrix()
-        val proj = camera.createProjectionMatrix()
+        val view = camera.view
+        val proj = camera.projection
         val viewportSize = inputProvider.getGameViewportSize()
 
         val origin = Vector3f(transform.translation)

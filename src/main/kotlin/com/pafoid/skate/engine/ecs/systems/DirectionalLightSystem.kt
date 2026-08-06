@@ -60,7 +60,7 @@ class DirectionalLightSystem(private val cameraManager: CameraManager) : System(
                 config.shadowDistance
             )
 
-            val invCameraViewProj = Matrix4f(tempProj).mul(camera.createViewMatrix()).invert()
+            val invCameraViewProj = Matrix4f(tempProj).mul(camera.view).invert()
 
             val frustumCorners = arrayOf(
                 Vector4f(-1f, -1f, -1f, 1f),

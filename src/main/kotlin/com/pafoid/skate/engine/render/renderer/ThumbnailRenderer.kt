@@ -109,7 +109,8 @@ class ThumbnailRenderer(
 
         // Upload view/projection matrices
         val projectionMatrix = Matrix4f().perspective(Math.toRadians(45.0).toFloat(), 1.0f, 0.1f, 100f)
-        val viewMatrix = camera.createViewMatrix()
+        camera.update(0f)
+        val viewMatrix = camera.view
         shader.uploadMat4f(ShaderConst.Uniforms.PROJECTION_MATRIX, projectionMatrix)
         shader.uploadMat4f(ShaderConst.Uniforms.VIEW_MATRIX, viewMatrix)
         shader.uploadMat4f(ShaderConst.Uniforms.TRANSFORMATION_MATRIX, transform.toMatrix())
