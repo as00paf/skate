@@ -32,7 +32,7 @@ class PropertiesWindow(
     private var selectedGameObject: GameObject? = null
 
     override fun imgui(pOpen: ImBoolean?) {
-        selectedGameObject = engine.sceneManager.currentScene?.selectedGameObject
+        selectedGameObject = engine.sceneManager.currentScene?.selectedGameObject ?: engine.sceneManager.currentScene
         
         ImGui.begin(stringManager.getString("window.properties"), pOpen)
         selectedGameObject?.let { go ->
@@ -63,7 +63,7 @@ class PropertiesWindow(
     }
     
     private fun renderComponentWithContextMenu(go: GameObject, component: Component, index: Int) {
-        val headerLabel = component.name
+        val headerLabel = component.javaClass.simpleName
         
         if (ImGui.collapsingHeader(headerLabel)) {
             component.imgui(stringManager, logger)
