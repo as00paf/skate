@@ -26,35 +26,35 @@ class LightingComponentsTest {
     @Test
     fun `LightingStateComponent default values are correct`() {
         // Arrange & Act
-        val component = LightingStateComponent()
+        val component = AmbientLightComponent()
 
         // Assert
-        assertEquals(0.3f, component.ambientLight.x, epsilon)
-        assertEquals(0.3f, component.ambientLight.y, epsilon)
-        assertEquals(0.35f, component.ambientLight.z, epsilon)
+        assertEquals(0.3f, component.lightColor.x, epsilon)
+        assertEquals(0.3f, component.lightColor.y, epsilon)
+        assertEquals(0.35f, component.lightColor.z, epsilon)
         assertTrue(component.useAmbient, "useAmbient should default to true")
     }
 
     @Test
     fun `LightingStateComponent custom values are preserved`() {
         // Arrange & Act
-        val component = LightingStateComponent(
-            ambientLight = Vector3f(0.5f, 0.5f, 0.6f),
+        val component = AmbientLightComponent(
+            lightColor = Vector3f(0.5f, 0.5f, 0.6f),
             useAmbient = false
         )
 
         // Assert
-        assertEquals(0.5f, component.ambientLight.x, epsilon)
-        assertEquals(0.5f, component.ambientLight.y, epsilon)
-        assertEquals(0.6f, component.ambientLight.z, epsilon)
+        assertEquals(0.5f, component.lightColor.x, epsilon)
+        assertEquals(0.5f, component.lightColor.y, epsilon)
+        assertEquals(0.6f, component.lightColor.z, epsilon)
         assertEquals(false, component.useAmbient)
     }
 
     @Test
     fun `LightingStateComponent reset restores defaults`() {
         // Arrange
-        val component = LightingStateComponent().apply {
-            ambientLight.set(1.0f, 1.0f, 1.0f)
+        val component = AmbientLightComponent().apply {
+            lightColor.set(1.0f, 1.0f, 1.0f)
             useAmbient = false
         }
 
@@ -62,20 +62,20 @@ class LightingComponentsTest {
         component.reset()
 
         // Assert
-        assertEquals(0.3f, component.ambientLight.x, epsilon)
-        assertEquals(0.3f, component.ambientLight.y, epsilon)
-        assertEquals(0.35f, component.ambientLight.z, epsilon)
+        assertEquals(0.3f, component.lightColor.x, epsilon)
+        assertEquals(0.3f, component.lightColor.y, epsilon)
+        assertEquals(0.35f, component.lightColor.z, epsilon)
         assertTrue(component.useAmbient)
     }
 
     @Test
     fun `LightingStateComponent reset creates new Vector3f instance`() {
         // Arrange
-        val component = LightingStateComponent()
-        val originalAmbient = component.ambientLight
+        val component = AmbientLightComponent()
+        val originalAmbient = component.lightColor
 
         // Act - modify and reset
-        component.ambientLight.set(1.0f, 1.0f, 1.0f)
+        component.lightColor.set(1.0f, 1.0f, 1.0f)
         component.reset()
 
         // Assert - original reference should not be affected

@@ -8,8 +8,8 @@ import com.pafoid.skate.editor.imgui.systems.imgui
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
-import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
@@ -29,7 +29,7 @@ class EnvironmentWindow(
         val dayNight = scene.getComponent<DayNightCycleComponent>()
         val lightSystem = systemManager.getSystem<DirectionalLightSystem>()
         val environmentSystem = systemManager.getSystem<EnvironmentSystem>()
-        val lightingStateComponent = scene.getComponent<LightingStateComponent>() ?: LightingStateComponent()
+        val ambientLightComponent = scene.getComponent<AmbientLightComponent>() ?: AmbientLightComponent()
 
         if (dayNight != null) {
             if (ImGui.collapsingHeader("${Icons.GEAR} ${stringManager.getString("lbl.environment.time_of_day")}")) {
@@ -187,14 +187,14 @@ class EnvironmentWindow(
         }
 
         if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment.lighting")}")) {
-            val useAmbient = ImBoolean(lightingStateComponent.useAmbient)
+            val useAmbient = ImBoolean(ambientLightComponent.useAmbient)
             if (ImGui.checkbox(stringManager.getString("lbl.environment.use_ambient"), useAmbient)) {
-                val oldVal = lightingStateComponent.useAmbient
+                val oldVal = ambientLightComponent.useAmbient
                 val newVal = useAmbient.get()
                 eventSystem.publish(
                     EnvironmentAction.SetUseAmbientRequested(
                         scene = scene,
-                        lightingStateComponent = lightingStateComponent,
+                        ambientLightComponent = ambientLightComponent,
                         oldValue = oldVal,
                         newValue = newVal
                     )
@@ -219,7 +219,7 @@ class EnvironmentWindow(
             val autoAmbientEnabled = dayNight?.autoAmbient ?: true
             if (autoAmbientEnabled) {
                 // Show computed ambient (read-only display)
-                val computedAmbient = dayNight?.ambientColor ?: lightingStateComponent.ambientLight
+                val computedAmbient = dayNight?.ambientColor ?: ambientLightComponent.lightColor
                 ImGui.text(
                     stringManager.getString("lbl.environment.ambient_auto").format(
                         computedAmbient.x,
@@ -229,15 +229,15 @@ class EnvironmentWindow(
                 )
             } else {
                 val ambient = floatArrayOf(
-                    lightingStateComponent.ambientLight.x,
-                    lightingStateComponent.ambientLight.y,
-                    lightingStateComponent.ambientLight.z
+                    ambientLightComponent.lightColor.x,
+                    ambientLightComponent.lightColor.y,
+                    ambientLightComponent.lightColor.z
                 )
                 if (MImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
                     eventSystem.publish(
                         EnvironmentAction.SetAmbientLightRequested(
-                            lightingStateComponent = lightingStateComponent,
-                            oldValue = Vector3f(lightingStateComponent.ambientLight),
+                            ambientLightComponent = ambientLightComponent,
+                            oldValue = Vector3f(ambientLightComponent.lightColor),
                             newValue = Vector3f(ambient[0], ambient[1], ambient[2]),
                         )
                     )

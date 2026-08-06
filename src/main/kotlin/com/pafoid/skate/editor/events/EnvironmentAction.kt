@@ -1,9 +1,9 @@
 package com.pafoid.skate.editor.events
 
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
-import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.events.Event
 import org.joml.Vector3f
 
@@ -17,7 +17,7 @@ sealed class EnvironmentAction(eventName: String) : Event(eventName) {
 
     data class SetUseAmbientRequested(
         val scene: Scene,
-        val lightingStateComponent: LightingStateComponent,
+        val ambientLightComponent: AmbientLightComponent,
         val oldValue: Boolean,
         val newValue: Boolean,
     ) : EnvironmentAction("environment.action.set_use_ambient_requested")
@@ -77,7 +77,7 @@ sealed class EnvironmentAction(eventName: String) : Event(eventName) {
     ) : EnvironmentAction("environment.action.set_slope_scaled_bias_requested")
 
     data class SetAmbientLightRequested(
-        val lightingStateComponent: LightingStateComponent,
+        val ambientLightComponent: AmbientLightComponent,
         val oldValue: Vector3f,
         val newValue: Vector3f,
     ) : EnvironmentAction("environment.action.set_ambient_light_requested")

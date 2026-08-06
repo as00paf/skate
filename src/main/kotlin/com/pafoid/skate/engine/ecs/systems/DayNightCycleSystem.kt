@@ -1,11 +1,9 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.addComponent
+import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
-import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.hasComponent
 import org.joml.Vector3f
 import kotlin.math.cos
 import kotlin.math.sin
@@ -43,16 +41,9 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
 
         // Update scene ambient light if auto mode is enabled
         if (config.autoAmbient) {
-            updateSceneAmbient(config)
-        }
-    }
-
-    private fun updateSceneAmbient(config: DayNightCycleComponent) {
-        val lightingStateComponent = scene.getComponent<LightingStateComponent>()
-            ?: LightingStateComponent()
-        lightingStateComponent.ambientLight.set(config.ambientColor).mul(config.ambientIntensity)
-        if (!scene.hasComponent<LightingStateComponent>()) {
-            scene.addComponent(lightingStateComponent)
+            scene.getComponent<AmbientLightComponent>()?.let {
+                it.lightColor.set(config.ambientColor).mul(config.ambientIntensity)
+            }
         }
     }
 

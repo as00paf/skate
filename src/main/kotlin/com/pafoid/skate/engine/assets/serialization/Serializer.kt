@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets.serialization
 
+import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.BoneOverride
@@ -15,7 +16,6 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.LightingComponent
-import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
@@ -60,7 +60,7 @@ class Serializer {
 
             // Environment components
             subclass(EnvironmentComponent::class)
-            subclass(LightingStateComponent::class)
+            subclass(AmbientLightComponent::class)
             subclass(LightingComponent::class)
             subclass(DayNightCycleComponent::class)
             subclass(DirectionalLightComponent::class)

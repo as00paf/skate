@@ -30,7 +30,7 @@ class EnvironmentActionHandler(
             undoRedoManager.executeCommand(
                 EnvironmentToggleCommand(
                     displayName = "Toggle Use Ambient",
-                    setter = { enabled -> event.lightingStateComponent.useAmbient = enabled },
+                    setter = { enabled -> event.ambientLightComponent.useAmbient = enabled },
                     oldValue = event.oldValue,
                     newValue = event.newValue,
                 )
@@ -160,7 +160,7 @@ class EnvironmentActionHandler(
                     displayName = "Set Ambient Light",
                     targetName = null,
                     setter = { ambient: Vector3f ->
-                        event.lightingStateComponent.ambientLight.set(ambient)
+                        event.ambientLightComponent.lightColor.set(ambient)
                     },
                     oldValue = event.oldValue,
                     newValue = event.newValue,

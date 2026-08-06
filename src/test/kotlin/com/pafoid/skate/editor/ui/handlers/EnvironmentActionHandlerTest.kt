@@ -4,9 +4,9 @@ import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.EnvironmentAction
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
-import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -49,12 +49,12 @@ class EnvironmentActionHandlerTest {
         }
         val handler = EnvironmentActionHandler(undoRedoManager, eventSystem)
 
-        val lightingState = LightingStateComponent(ambientLight = Vector3f(0.2f, 0.2f, 0.2f))
+        val lightingState = AmbientLightComponent(lightColor = Vector3f(0.2f, 0.2f, 0.2f))
         val dayNight = DayNightCycleComponent(ambientIntensity = 0.5f)
 
         eventSystem.publish(
             EnvironmentAction.SetAmbientLightRequested(
-                lightingStateComponent = lightingState,
+                ambientLightComponent = lightingState,
                 oldValue = Vector3f(0.2f, 0.2f, 0.2f),
                 newValue = Vector3f(0.4f, 0.5f, 0.6f),
             )
@@ -68,9 +68,9 @@ class EnvironmentActionHandlerTest {
         )
 
         verify(exactly = 2) { undoRedoManager.executeCommand(any()) }
-        assertEquals(0.4f, lightingState.ambientLight.x, 0.0001f)
-        assertEquals(0.5f, lightingState.ambientLight.y, 0.0001f)
-        assertEquals(0.6f, lightingState.ambientLight.z, 0.0001f)
+        assertEquals(0.4f, lightingState.lightColor.x, 0.0001f)
+        assertEquals(0.5f, lightingState.lightColor.y, 0.0001f)
+        assertEquals(0.6f, lightingState.lightColor.z, 0.0001f)
         assertEquals(1.8f, dayNight.ambientIntensity, 0.0001f)
     }
 }

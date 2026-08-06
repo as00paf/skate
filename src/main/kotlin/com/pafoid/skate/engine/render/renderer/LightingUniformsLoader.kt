@@ -1,10 +1,10 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
-import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
@@ -21,14 +21,14 @@ class LightingUniformsLoader {
      * Uploads all lighting uniforms to the specified shader.
      *
      * @param shader The shader to upload uniforms to
-     * @param lightingStateComponent Component containing ambient light state (optional)
+     * @param ambientLightComponent Component containing ambient light state (optional)
      * @param directionalLight The directional light config
      * @param environmentComponent Component containing fog settings (optional)
      * @param shadowMapTextureId The shadow map depth texture ID (optional)
      */
     fun loadLightingUniforms(
         shader: Shader,
-        lightingStateComponent: LightingStateComponent?,
+        ambientLightComponent: AmbientLightComponent?,
         directionalLight: DirectionalLightComponent?,
         environmentComponent: EnvironmentComponent? = null,
         shadowMapTextureId: Int = 0,
@@ -45,8 +45,8 @@ class LightingUniformsLoader {
         }
 
         // Ambient light - use LightingStateComponent if available
-        val ambient = if (lightingStateComponent?.useAmbient == true) {
-            lightingStateComponent.ambientLight
+        val ambient = if (ambientLightComponent?.useAmbient == true) {
+            ambientLightComponent.lightColor
         } else {
             Vector3f(0f, 0f, 0f)
         }

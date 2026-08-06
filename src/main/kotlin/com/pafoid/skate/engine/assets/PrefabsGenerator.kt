@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
@@ -12,7 +13,6 @@ import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
-import com.pafoid.skate.engine.ecs.components.LightingStateComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
@@ -167,7 +167,7 @@ class PrefabsGenerator(
         scene.addComponent(ScenePhysicsComponent())
             .addComponent(GridLines())
             .addComponent(EnvironmentComponent(skyTexture = skyTexture))
-            .addComponent(LightingStateComponent())
+            .addComponent(AmbientLightComponent())
             .addComponent(DayNightCycleComponent())
             .addComponent(DirectionalLightComponent())
             .addComponent(CameraComponent(Vector3f(0f, 5f, 20f)))
