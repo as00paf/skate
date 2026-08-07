@@ -2,7 +2,9 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.ViewportAction.AddComponent
 import com.pafoid.skate.editor.events.ViewportAction.RemoveComponent
+import com.pafoid.skate.editor.events.ViewportAction.RenameComponent
 import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
+import com.pafoid.skate.editor.events.ViewportAction.SetComponentEnabled
 import com.pafoid.skate.editor.events.ViewportAction.SetGameObjectEnabled
 import com.pafoid.skate.editor.imgui.IWindow
 import com.pafoid.skate.editor.imgui.components.imgui
@@ -66,6 +68,12 @@ class PropertiesWindow(
         val headerLabel = component.javaClass.simpleName
         
         if (ImGui.collapsingHeader(headerLabel)) {
+            enabledCheckbox(component)
+            ImGui.spacing()
+            componentName(component)
+            ImGui.spacing()
+            ImGui.separator()
+            ImGui.spacing()
             component.imgui(stringManager, logger)
         }
 
@@ -144,5 +152,28 @@ class PropertiesWindow(
             }
             ImGui.endPopup()
         }
+    }
+
+    fun enabledCheckbox(cmp: Component) {
+        val isEnabled = ImBoolean(cmp.enabled)
+        if (ImGui.checkbox("##cmp_enabled_checkbox", isEnabled)) {
+            eventSystem.publish(SetComponentEnabled(cmp, isEnabled.get()))
+        }
+
+        ImGui.sameLine()
+        ImGui.text(stringManager.getString("lbl.systems.enabled"))
+    }
+
+    fun componentName(cmp: Component) {
+        ImGui.text(stringManager.getString("lbl.name"))
+        ImGui.sameLine()
+        ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
+
+        val name = ImString(cmp.name, 128)
+        val flags = ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
+        if (ImGui.inputText("##name_input", name, flags)) {
+            eventSystem.publish(RenameComponent(cmp, name.get()))
+        }
+        ImGui.popItemWidth()
     }
 }

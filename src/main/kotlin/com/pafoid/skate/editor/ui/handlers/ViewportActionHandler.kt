@@ -7,8 +7,10 @@ import com.pafoid.skate.editor.commands.objects.ApplyAnimationCommand
 import com.pafoid.skate.editor.commands.objects.ApplyTextureCommand
 import com.pafoid.skate.editor.commands.objects.LockToggleCommand
 import com.pafoid.skate.editor.commands.objects.RemoveComponentCommand
+import com.pafoid.skate.editor.commands.objects.RenameComponentCommand
 import com.pafoid.skate.editor.commands.objects.RenameGameObjectCommand
 import com.pafoid.skate.editor.commands.objects.ReparentGameObjectCommand
+import com.pafoid.skate.editor.commands.objects.SetComponentEnabledCommand
 import com.pafoid.skate.editor.commands.objects.SetGameObjectEnabledCommand
 import com.pafoid.skate.editor.commands.objects.TransformCommand
 import com.pafoid.skate.editor.commands.objects.VisibilityToggleCommand
@@ -125,7 +127,7 @@ class ViewportActionHandler(
             handleDropTexture(event.texturePath, event.targetObject, event.dropPosition)
         }
         eventSystem.subscribe<DropSound> { event ->
-            handleDropSound(event.soundPath, event.targetObject)
+            addSoundToObject(event.targetObject, event.soundPath)
         }
         eventSystem.subscribe<ApplyAnimation> { event ->
             handleApplyAnimation(event.animation, event.targetObject)
@@ -141,22 +143,28 @@ class ViewportActionHandler(
             handleRename(event.gameObject, event.newName)
         }
         eventSystem.subscribe<SetGameObjectEnabled> { event ->
-            handleSetEnabled(event.gameObject, event.enabled)
+            undoRedoManager.executeCommand(SetGameObjectEnabledCommand(event.gameObject, event.enabled))
+        }
+        eventSystem.subscribe<ViewportAction.RenameComponent> { event ->
+            undoRedoManager.executeCommand(RenameComponentCommand(event.component, event.newName, event.component.name))
+        }
+        eventSystem.subscribe<ViewportAction.SetComponentEnabled> { event ->
+            undoRedoManager.executeCommand(SetComponentEnabledCommand(event.component, event.enabled))
         }
         eventSystem.subscribe<AddComponent> { event ->
-            handleAddComponent(event.gameObject, event.componentType)
+            undoRedoManager.executeCommand(AddComponentCommand(event.gameObject, event.componentType))
         }
         eventSystem.subscribe<RemoveComponent> { event ->
-            handleRemoveComponent(event.gameObject, event.componentType)
+            undoRedoManager.executeCommand(RemoveComponentCommand(event.gameObject, event.componentType))
         }
         eventSystem.subscribe<ToggleVisibility> { event ->
-            handleToggleVisibility(event.gameObject, event.visible)
+            undoRedoManager.executeCommand(VisibilityToggleCommand(event.gameObject, event.visible))
         }
         eventSystem.subscribe<ToggleLock> { event ->
-            handleToggleLock(event.gameObject, event.locked)
+            undoRedoManager.executeCommand(LockToggleCommand(event.gameObject, event.locked))
         }
         eventSystem.subscribe<Reparent> { event ->
-            handleReparent(event.child, event.newParent)
+            undoRedoManager.executeCommand(ReparentGameObjectCommand(event.child, event.newParent))
         }
         eventSystem.subscribe<CreateEmptyChild> { event ->
             handleCreateEmptyChild(event.parent)
@@ -165,7 +173,7 @@ class ViewportActionHandler(
             handleCutClipboard(event.gameObject)
         }
         eventSystem.subscribe<ViewportAction.CopyClipboard> { event ->
-            handleCopyClipboard(event.gameObject)
+            clipboardService.copy(event.gameObject)
         }
         eventSystem.subscribe<PasteClipboard> { event ->
             handlePasteClipboard(event.parent)
@@ -186,7 +194,7 @@ class ViewportActionHandler(
             undoRedoManager.executeCommand(TogglePhysicsDebugCommand(engine.systemManager))
         }
         eventSystem.subscribe<ToggleGizmo> { event ->
-            handleToggleGizmo(event.gizmoId)
+            gizmoSystem.toggleGizmo(event.gizmoId)
         }
 
         eventSystem.subscribe<FocusSelected> {
@@ -239,10 +247,6 @@ class ViewportActionHandler(
         }
     }
 
-    private fun handleDropSound(soundPath: String, targetObject: GameObject) {
-        addSoundToObject(targetObject, soundPath)
-    }
-
     private fun handleApplyAnimation(animation: Animation, targetObject: GameObject) {
         applyAnimationToObject(targetObject, animation)
     }
@@ -266,30 +270,6 @@ class ViewportActionHandler(
         undoRedoManager.executeCommand(RenameGameObjectCommand(gameObject, newName, oldName))
     }
 
-    private fun handleSetEnabled(gameObject: GameObject, enabled: Boolean) {
-        undoRedoManager.executeCommand(SetGameObjectEnabledCommand(gameObject, enabled))
-    }
-
-    private fun handleAddComponent(gameObject: GameObject, componentType: ComponentType) {
-        undoRedoManager.executeCommand(AddComponentCommand(gameObject, componentType))
-    }
-
-    private fun handleRemoveComponent(gameObject: GameObject, componentType: ComponentType) {
-        undoRedoManager.executeCommand(RemoveComponentCommand(gameObject, componentType))
-    }
-
-    private fun handleToggleVisibility(gameObject: GameObject, visible: Boolean) {
-        undoRedoManager.executeCommand(VisibilityToggleCommand(gameObject, visible))
-    }
-
-    private fun handleToggleLock(gameObject: GameObject, locked: Boolean) {
-        undoRedoManager.executeCommand(LockToggleCommand(gameObject, locked))
-    }
-
-    private fun handleReparent(child: GameObject, newParent: GameObject) {
-        undoRedoManager.executeCommand(ReparentGameObjectCommand(child, newParent))
-    }
-
     private fun handleCreateEmptyChild(parent: GameObject) {
         val scene = sceneManager.currentScene ?: return
         val childObj = GameObject("GameObject")
@@ -302,10 +282,6 @@ class ViewportActionHandler(
         val scene = sceneManager.currentScene ?: return
         clipboardService.cut(go)
         undoRedoManager.executeCommand(DeleteGameObjectCommand(go, scene, gameObjectManager))
-    }
-
-    private fun handleCopyClipboard(go: GameObject) {
-        clipboardService.copy(go)
     }
 
     private fun handlePasteClipboard(parent: GameObject?) {
@@ -334,10 +310,6 @@ class ViewportActionHandler(
         val scene = sceneManager.currentScene ?: return
         scene.reset()
         gameObjectManager.reset()
-    }
-
-    private fun handleToggleGizmo(gizmoId: Int) {
-        gizmoSystem.toggleGizmo(gizmoId)
     }
 
     private fun handleResetTransform(gameObject: GameObject) {

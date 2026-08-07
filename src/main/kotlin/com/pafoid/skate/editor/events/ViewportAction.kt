@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.events.Event
 import com.pafoid.skate.engine.render.data.LightType
@@ -24,6 +25,11 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
     data class ToggleVisibility(val gameObject: GameObject, val visible: Boolean) : ViewportAction("viewport.toggle_visibility")
     data class ToggleLock(val gameObject: GameObject, val locked: Boolean) : ViewportAction("viewport.toggle_lock")
 
+    data class RenameComponent(val component: Component, val newName: String) :
+        ViewportAction("viewport.rename_component")
+
+    data class SetComponentEnabled(val component: Component, val enabled: Boolean) :
+        ViewportAction("viewport.set_component_enabled")
     // TODO : use data classes
     data class TextureApplied(val gameObject: GameObject, val texturePath: String) : ViewportAction("editor.texture_applied")
 

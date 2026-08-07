@@ -24,8 +24,8 @@ class DirectionalLightSystem(private val cameraManager: CameraManager) : System(
 
     override fun update(dt: Float) {
         // Find day/night cycle system
-        val dayNight = scene.getComponent<DayNightCycleComponent>() ?: return
-        config = scene.getComponent<DirectionalLightComponent>() ?: return
+        val dayNight = scene.getComponent<DayNightCycleComponent>().takeIf { it?.enabled == true } ?: return
+        config = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true } ?: return
 
         // Update light from day/night cycle
         config?.direction?.set(dayNight.sunDirection)

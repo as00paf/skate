@@ -14,7 +14,8 @@ import java.lang.reflect.Modifier
 
 fun Component.imgui(stringManager: StringManager, logger: LoggerService) {
     try {
-        ImGui.pushID(this.javaClass.simpleName)
+        ImGui.pushID(this.javaClass.simpleName + this.name)
+
         val fields = getCachedFields(this.javaClass)
         fields.forEach { field ->
             val modifiers = field.modifiers
@@ -46,7 +47,7 @@ fun Component.imgui(stringManager: StringManager, logger: LoggerService) {
                 Boolean::class.java -> {
                     if (!isFinal) {
                         val typedValue = value as Boolean
-                        if (ImGui.checkbox("$localizedName", typedValue)) {
+                        if (ImGui.checkbox(localizedName, typedValue)) {
                             field.set(this, !typedValue)
                         }
                     }

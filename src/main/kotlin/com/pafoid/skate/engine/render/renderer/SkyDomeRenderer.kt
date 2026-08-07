@@ -115,7 +115,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         // Get time component for time of day
         val dayNightComponent = scene.getComponent<DayNightCycleComponent>()
         val timeOfDay = dayNightComponent?.timeOfDay ?: 12.0f
-        val sun = scene.getComponent<DirectionalLightComponent>()
+        val sun = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true }
 
         // Center on camera
         modelMatrix.identity().translation(camera.position)

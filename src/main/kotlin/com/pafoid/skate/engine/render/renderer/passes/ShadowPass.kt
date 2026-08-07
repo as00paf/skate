@@ -39,7 +39,7 @@ class ShadowPass(
 
     override fun execute(scene: Scene) {
         // Get directional light system from scene
-        val lightComponent = scene.getComponent<DirectionalLightComponent>()
+        val lightComponent = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true }
 
         // Skip if shadows are disabled or no light system
         if (lightComponent?.castShadows == false) {

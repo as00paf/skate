@@ -80,7 +80,7 @@ class GeometryPass(
         glViewport(0, 0, frameBuffer.width, frameBuffer.height)
 
         // Clear with sky color from EnvironmentComponent
-        val environmentComponent = scene.getComponent<EnvironmentComponent>()
+        val environmentComponent = scene.getComponent<EnvironmentComponent>().takeIf { it?.enabled == true }
         val renderSky = environmentComponent?.renderSky ?: true
         // Use sky color if renderSky is true, otherwise use fallback gray
         val skyColor = if (renderSky) {
@@ -102,8 +102,8 @@ class GeometryPass(
         lightingUniformsLoader.loadCameraPosition(defaultShader, camera) // New call
 
         // Upload lighting uniforms
-        val directionalLight = scene.getComponent<DirectionalLightComponent>()
-        val ambientLightComponent = scene.getComponent<AmbientLightComponent>()
+        val directionalLight = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true }
+        val ambientLightComponent = scene.getComponent<AmbientLightComponent>().takeIf { it?.enabled == true }
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,
             ambientLightComponent,
