@@ -31,8 +31,8 @@ class TextureLoader() {
         val channels = BufferUtils.createIntBuffer(1)
         stbi_set_flip_vertically_on_load(flipOnLoad)
         val image = stbi_load(filePath, width, height, channels, 4) // Force 4 channels
-        val texture = Texture(width.get(0), height.get(0), 1, 4, flipOnLoad, filePath, image)
-        uploadToGPU(texture)
+        val texture = Texture(width.get(0), height.get(0), 1, 4, flipOnLoad, filePath)
+        uploadToGPU(texture, image)
 
         return texture
     }
@@ -43,13 +43,13 @@ class TextureLoader() {
         val channels = BufferUtils.createIntBuffer(1)
         stbi_set_flip_vertically_on_load(flipOnLoad)
         val image = stbi_load_from_memory(buffer, width, height, channels, 4) // Force 4 channels
-        val texture = Texture(width.get(0), height.get(0), 1, 4, flipOnLoad, pixels = image)
-        uploadToGPU(texture)
+        val texture = Texture(width.get(0), height.get(0), 1, 4, flipOnLoad)
+        uploadToGPU(texture, image)
 
         return texture
     }
 
-    private fun uploadToGPU(texture: Texture) {// Must be called on GL thread
+    private fun uploadToGPU(texture: Texture, pixels: ByteBuffer?) {// Must be called on GL thread
         texture.texId = glGenTextures()
 
         glBindTexture(GL_TEXTURE_2D, texture.texId)
@@ -68,9 +68,9 @@ class TextureLoader() {
             0,
             GL_RGBA,
             GL_UNSIGNED_BYTE,
-            texture.pixels
+            pixels
         )
         glGenerateMipmap(GL_TEXTURE_2D)
-        texture.pixels?.let { stbi_image_free(it) }
+        pixels?.let { stbi_image_free(it) }
     }
 }
