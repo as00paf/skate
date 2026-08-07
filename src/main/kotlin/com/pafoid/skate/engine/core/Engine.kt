@@ -39,7 +39,7 @@ class Engine {
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
     val cameraManager = CameraManager(eventSystem)
-    val systemManager = SystemManager()
+    val systemManager = SystemManager(eventSystem)
     val sceneManager = SceneManager(assetsManager, eventSystem, serializer, systemManager, logger)
     val gameObjectManager = GameObjectManager()
     val prefabsGenerator = PrefabsGenerator(this)

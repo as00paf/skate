@@ -13,6 +13,7 @@ data class Project(
     var projectPath: String,
     var description: String = "",
     var defaultScene: String,
+    val scenesPath: List<String>,
     var physicsFPS: Int = 60,
     var gameplaySettings: GameplaySettings = GameplaySettings(),
 ) {

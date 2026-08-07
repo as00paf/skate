@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.events
 
 import com.pafoid.skate.editor.data.PrefabType
+import com.pafoid.skate.editor.data.PrimitiveType
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
@@ -13,7 +14,8 @@ import org.joml.Vector3f
 sealed class ViewportAction(eventName: String) : Event(eventName) {
     // Game Objects
     data class CreateEmpty(val scene: Scene) : ViewportAction("viewport.create_empty")
-    data class CreatePrimitive(val name: String, val halfExtents: Vector3f) : ViewportAction("viewport.create_primitive")
+    data class CreatePrimitive(val name: String, val type: PrimitiveType, val halfExtents: Vector3f) :
+        ViewportAction("viewport.create_primitive")
     data class CreateEmptyChild(val parent: GameObject) : ViewportAction("viewport.create_empty_child")
     data class AddComponent(val gameObject: GameObject, val componentType: ComponentType) : ViewportAction("viewport.add_component")
     data class RemoveComponent(val gameObject: GameObject, val componentType: ComponentType) : ViewportAction("viewport.remove_component")

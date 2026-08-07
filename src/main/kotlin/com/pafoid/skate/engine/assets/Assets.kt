@@ -85,6 +85,8 @@ object Assets {
         const val SKATEBOARD_GLB = "EngineDefaults\\Models\\skateboard_free_model.glb"
 
         const val CUBE = "EngineDefaults\\Models\\cube.obj"
+        const val CYLINDER = "EngineDefaults\\Models\\cube.obj"
+        const val SPHERE = "EngineDefaults\\Models\\cube.obj"
         const val RAIL = "EngineDefaults\\Models\\rail.obj"
         const val LEDGE = "EngineDefaults\\Models\\ledge.obj"
         const val KICKER = "EngineDefaults\\Models\\kicker.obj"

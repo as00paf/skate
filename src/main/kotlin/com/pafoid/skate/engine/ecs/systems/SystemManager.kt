@@ -1,8 +1,10 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.events.SceneAction
 
-class SystemManager {
+class SystemManager(private val eventSystem: EventSystem) {
     private val _systems = mutableListOf<System>()
     private val pendingSystems = mutableListOf<System>()
     private var systemsNeedSort = true
@@ -15,6 +17,9 @@ class SystemManager {
         sortSystemsIfNeeded()
         systems.forEach { it.start() }
         hasStarted = true
+        eventSystem.subscribe<SceneAction.Changed> { event ->
+            loadScene(event.scene)
+        }
     }
 
     fun loadScene(scene: Scene) {

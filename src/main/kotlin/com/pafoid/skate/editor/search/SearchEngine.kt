@@ -21,7 +21,7 @@ class SearchEngine(
         registerProvider(GameObjectSearchProvider(engine.sceneManager, engine.gameObjectManager, stringManager))
         registerProvider(AssetSearchProvider(engine.logger))
         registerProvider(ComponentSearchProvider(engine.sceneManager, engine.gameObjectManager, stringManager))
-        registerProvider(ActionSearchProvider(engine.sceneManager, engine.logger, engine.eventSystem))
+        registerProvider(ActionSearchProvider(engine))
     }
 
     fun registerProvider(provider: SearchProvider) {

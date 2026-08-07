@@ -40,6 +40,6 @@ sealed class SceneAction(eventName: String) : Event(eventName) {
     data class DeleteRequested(val scene: Scene) : SceneAction("scene.action.delete_requested")
 
     // Change
-    object Changed : SceneAction("scene.action.scene_changed")
+    data class Changed(val scene: Scene) : SceneAction("scene.action.scene_changed")
     object ResetScene : SceneAction("scene.action.reset_scene")
 }

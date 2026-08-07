@@ -97,8 +97,8 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
 
     fun render(camera: CameraComponent, scene: Scene) {
         // Get environment component for sky/fog settings
-        val environmentComponent = scene.getComponent<EnvironmentComponent>()
-        val renderSky = environmentComponent?.renderSky ?: true
+        val environmentComponent = scene.getComponent<EnvironmentComponent>()?.takeIf { it.enabled }
+        val renderSky = environmentComponent?.renderSky == true
         val hdriTexture = environmentComponent?.skyTexture
 
         // Skip sky rendering if renderSky is false
@@ -113,7 +113,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         shader.start()
 
         // Get time component for time of day
-        val dayNightComponent = scene.getComponent<DayNightCycleComponent>()
+        val dayNightComponent = scene.getComponent<DayNightCycleComponent>()?.takeIf { it.enabled }
         val timeOfDay = dayNightComponent?.timeOfDay ?: 12.0f
         val sun = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true }
 

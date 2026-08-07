@@ -3,7 +3,6 @@ package com.pafoid.skate.editor.search.providers
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
 import com.pafoid.skate.editor.events.ViewportAction.CreateLight
-import com.pafoid.skate.editor.events.ViewportAction.CreatePrimitive
 import com.pafoid.skate.editor.events.ViewportAction.Delete
 import com.pafoid.skate.editor.events.ViewportAction.Duplicate
 import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
@@ -14,19 +13,18 @@ import com.pafoid.skate.editor.search.BaseSearchProvider
 import com.pafoid.skate.editor.search.data.EditorAction
 import com.pafoid.skate.editor.search.data.SearchCategory
 import com.pafoid.skate.editor.search.data.SearchResult
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction
 import com.pafoid.skate.engine.render.data.LightType
-import org.joml.Vector3f
 
 class ActionSearchProvider(
-    private val sceneManager: SceneManager,
-    private val logger: LoggerService,
-    private val eventSystem: EventSystem,
+    val engine: Engine
 ) : BaseSearchProvider() {
+    private val sceneManager = engine.sceneManager
+    private val logger = engine.logger
+    private val eventSystem = engine.eventSystem
+
     override val category: SearchCategory = SearchCategory.ACTION
 
     private val actions = listOf(
@@ -125,7 +123,7 @@ class ActionSearchProvider(
             description = "Create a new empty scene",
             icon = Icons.PLUS,
             execute = { createScene() }
-        ),
+        )/*,
         EditorAction(
             actionId = "create_primitive",
             displayName = "Create Primitive",
@@ -133,7 +131,7 @@ class ActionSearchProvider(
             description = "Create a 3D primitive object",
             icon = Icons.CUBE,
             execute = { createPrimitive() }
-        ),
+        )*/,
         EditorAction(
             actionId = "create_light",
             displayName = "Create Light",
@@ -296,8 +294,8 @@ class ActionSearchProvider(
         logger.logEditor("Create scene requested")
     }
 
-    private fun createPrimitive() {
-        eventSystem.publish(CreatePrimitive("Cube", Vector3f(0.5f, 0.5f, 0.5f)))
+    private fun createPrimitive() {// TODO: fix
+        //eventSystem.publish(CreatePrimitive("Cube", Vector3f(0.5f, 0.5f, 0.5f)))
         logger.logEditor("Create primitive executed")
     }
 

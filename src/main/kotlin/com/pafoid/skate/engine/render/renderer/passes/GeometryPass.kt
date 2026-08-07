@@ -81,10 +81,10 @@ class GeometryPass(
 
         // Clear with sky color from EnvironmentComponent
         val environmentComponent = scene.getComponent<EnvironmentComponent>().takeIf { it?.enabled == true }
-        val renderSky = environmentComponent?.renderSky ?: true
+        val renderSky = environmentComponent?.renderSky == true
         // Use sky color if renderSky is true, otherwise use fallback gray
         val skyColor = if (renderSky) {
-            environmentComponent?.skyColor ?: Vector3f(0.6f, 0.7f, 0.9f)
+            environmentComponent.skyColor
         } else {
             Vector3f(0.2f, 0.2f, 0.2f) // Fallback dark gray when sky is disabled
         }

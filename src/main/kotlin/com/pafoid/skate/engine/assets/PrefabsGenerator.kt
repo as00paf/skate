@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -161,7 +162,7 @@ class PrefabsGenerator(
         return go
     }
 
-    fun createDefaultScene(sceneDir: File) {
+    fun createDefaultScenes(sceneDir: File): List<Scene> {
         val scene = sceneManager.createNewScene("MainScene", sceneDir.path)
         val skyTexture = assetsManager.getTexture(projectAssetsDir + Assets.Bundled.SKY)
         scene.addComponent(ScenePhysicsComponent())
@@ -173,7 +174,17 @@ class PrefabsGenerator(
             .addComponent(CameraComponent(Vector3f(0f, 5f, 20f)))
         scene.gameObjects.addAll(spawnDefaultsSync())
         sceneManager.saveScene(scene, sceneDir.path)
-        sceneManager.openScene(scene)
+
+        val openGlScene = sceneManager.createNewScene("OpenGLTest", sceneDir.path)
+        openGlScene
+            .addComponent(GridLines())
+            .addComponent(AmbientLightComponent())
+        sceneManager.saveScene(openGlScene, sceneDir.path)
+
+        val result = listOf(scene, openGlScene)
+        sceneManager.openScenes(result)
+
+        return result
     }
 
     fun spawnDefaultsSync(): List<GameObject> {

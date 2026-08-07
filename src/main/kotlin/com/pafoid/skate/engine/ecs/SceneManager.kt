@@ -87,7 +87,7 @@ class SceneManager(
 
         activeSceneIndex = sceneIndex
         logger.log("Switched to scene: ${currentScene?.name}", LogLevel.ACTION)
-        eventSystem.publish(SceneAction.Changed)
+        currentScene?.let { eventSystem.publish(SceneAction.Changed(it)) }
     }
 
     fun closeScene(scene: Scene) {

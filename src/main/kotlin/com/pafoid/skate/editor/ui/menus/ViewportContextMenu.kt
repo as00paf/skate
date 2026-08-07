@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.menus
 
 import com.pafoid.skate.editor.data.PrefabType
+import com.pafoid.skate.editor.data.PrimitiveType
 import com.pafoid.skate.editor.events.ViewportAction.CreateCamera
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
 import com.pafoid.skate.editor.events.ViewportAction.CreateLight
@@ -54,16 +55,16 @@ class ViewportContextMenu(
         // Create 3D Object submenu
         if (ImGui.beginMenu("${Icons.CUBE} ${stringManager.getString("context.viewport.create_3d_object")}")) {
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cube"))) {
-                eventSystem.publish(CreatePrimitive("Cube", Vector3f(0.5f, 0.5f, 0.5f)))
+                eventSystem.publish(CreatePrimitive("Cube", PrimitiveType.CUBE, Vector3f(0.5f, 0.5f, 0.5f)))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.sphere"))) {
-                eventSystem.publish(CreatePrimitive("Sphere", Vector3f(0.5f, 0.5f, 0.5f)))
+                eventSystem.publish(CreatePrimitive("Sphere", PrimitiveType.SPHERE, Vector3f(0.5f, 0.5f, 0.5f)))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.cylinder"))) {
-                eventSystem.publish(CreatePrimitive("Cylinder", Vector3f(0.5f, 1f, 0.5f)))
+                eventSystem.publish(CreatePrimitive("Cylinder", PrimitiveType.CYLINDER, Vector3f(0.5f, 1f, 0.5f)))
             }
             if (ImGui.menuItem(stringManager.getString("context.viewport.create_3d_object.plane"))) {
-                eventSystem.publish(CreatePrimitive("Plane", Vector3f(5f, 0f, 5f)))
+                eventSystem.publish(CreatePrimitive("Plane", PrimitiveType.PLANE, Vector3f(5f, 0f, 5f)))
             }
             ImGui.endMenu()
         }

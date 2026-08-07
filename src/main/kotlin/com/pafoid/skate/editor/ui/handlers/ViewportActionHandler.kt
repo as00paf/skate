@@ -21,6 +21,7 @@ import com.pafoid.skate.editor.commands.scene.DeleteGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.DuplicateGameObjectCommand
 import com.pafoid.skate.editor.commands.scene.SpawnPrefabCommand
 import com.pafoid.skate.editor.data.PrefabType
+import com.pafoid.skate.editor.data.PrimitiveType
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.events.ViewportAction.AddComponent
 import com.pafoid.skate.editor.events.ViewportAction.ApplyAnimation
@@ -92,6 +93,7 @@ class ViewportActionHandler(
     private val logger = engine.logger
     private val sceneManager = engine.sceneManager
     private val gameObjectManager = engine.gameObjectManager
+    private val assetsManager = engine.assetsManager
 
     fun init() {
         eventSystem.subscribe<GameObjectSelected> { event ->
@@ -110,7 +112,7 @@ class ViewportActionHandler(
             handleCreateEmpty(event.scene)
         }
         eventSystem.subscribe<CreatePrimitive> { event ->
-            handleCreatePrimitive(event.name, event.halfExtents)
+            handleCreatePrimitive(event.name, event.type, event.halfExtents)
         }
         eventSystem.subscribe<CreateLight> { event ->
             handleCreateLight(event.name, event.type)
@@ -211,9 +213,9 @@ class ViewportActionHandler(
         logger.logEditor("Created empty GameObject: ${newObj.name}")
     }
 
-    private fun handleCreatePrimitive(name: String, halfExtents: Vector3f) {
+    private fun handleCreatePrimitive(name: String, type: PrimitiveType, halfExtents: Vector3f) {
         val scene = sceneManager.currentScene ?: return
-        val command = CreatePrimitiveCommand(name, halfExtents, scene, gameObjectManager)
+        val command = CreatePrimitiveCommand(name, type, halfExtents, scene, gameObjectManager, assetsManager)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Created primitive: $name")
     }

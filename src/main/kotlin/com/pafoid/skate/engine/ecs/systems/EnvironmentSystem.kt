@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.config.EnvironmentPreset
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
@@ -15,21 +14,8 @@ class EnvironmentSystem : System(priority = ExecutionPriority.EARLY) {
         return scene.getComponent<EnvironmentComponent>()
     }
 
-    private fun getOrCreateEnvironmentComponent(): EnvironmentComponent {
-        val existingComponent = getEnvironmentComponent()
-        if (existingComponent != null) {
-            environmentComponent = existingComponent
-            return existingComponent
-        }
-
-        val createdComponent = EnvironmentComponent()
-        scene.addComponent(createdComponent)
-        environmentComponent = createdComponent
-        return createdComponent
-    }
-
     fun applyPreset(preset: EnvironmentPreset) {
-        getOrCreateEnvironmentComponent().applyPreset(preset)
+        environmentComponent?.applyPreset(preset)
     }
 
     fun reset() {
@@ -37,7 +23,7 @@ class EnvironmentSystem : System(priority = ExecutionPriority.EARLY) {
     }
 
     override fun update(dt: Float) {
-        getOrCreateEnvironmentComponent().update(dt)
+        environmentComponent?.update(dt)
     }
 
     override fun invalidateCache() {

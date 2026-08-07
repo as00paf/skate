@@ -50,13 +50,6 @@ class ProjectManager(
             val stringsFile = File(assetsDir, "strings.properties")
             stringsFile.writeText("project.name=$name")
 
-            val project = Project(
-                name = name,
-                projectPath = projectFile.absolutePath,
-                iconPath = assetsDir.absolutePath + Assets.Textures.APP_ICON,
-                defaultScene = scenesDir.path + "\\MainScene.scene",
-            )
-
             // Copy assets
             val copyResult = engineAssetCopier.copyBundledAssets(projectDir)
             if (copyResult.isSuccess) {
@@ -66,12 +59,18 @@ class ProjectManager(
                 logger.logEditor("Failed to copy engine assets: ${copyResult.exceptionOrNull()?.message}")
             }
 
-            currentProject = project
-
             // Create default scene with prefabs
             engine.prefabsGenerator.projectAssetsDir = assetsDir.absolutePath + "\\"
-            engine.prefabsGenerator.createDefaultScene(scenesDir)
+            val scenes = engine.prefabsGenerator.createDefaultScenes(scenesDir)
 
+            val project = Project(
+                name = name,
+                projectPath = projectFile.absolutePath,
+                iconPath = assetsDir.absolutePath + Assets.Textures.APP_ICON,
+                defaultScene = scenesDir.path + "\\MainScene.scene",
+                scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" }
+            )
+            currentProject = project
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
             saveProject()
@@ -111,7 +110,7 @@ class ProjectManager(
         engine.systemManager.getSystem<InputSystem>()?.mappings = project.gameplaySettings.inputMappings
 
         if (binData == null || assetAtlas == null || headerSize <= 0) {
-            loadDefaultScene(project)
+            loadDefaultScenes(project)
         } else {
             engine.assetsManager.initAssetsResolver(assetAtlas, binData, headerSize)
 
@@ -175,7 +174,7 @@ class ProjectManager(
         eventSystem.publish(ProjectEvent.Closed(project))
     }
 
-    private fun loadDefaultScene(project: Project) {
+    private fun loadDefaultScenes(project: Project) {
         val defaultSceneFile = File(project.defaultScene)
 
         if (!defaultSceneFile.exists()) {
@@ -183,11 +182,15 @@ class ProjectManager(
             return
         }
 
-        val scene = engine.serializer.decode<Scene?>(defaultSceneFile.readText()) ?: run {
+        val scenes = project.scenesPath.mapNotNull { path ->
+            val file = File(path)
+            engine.serializer.decode<Scene?>(file.readText())
+        }
+        if (scenes.isEmpty()) {
             logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}")
             return
         }
-        sceneManager.openScene(scene)
+        sceneManager.openScenes(scenes)
 
         logger.logEditor("Loaded default scene from ${defaultSceneFile.absolutePath}")
     }
