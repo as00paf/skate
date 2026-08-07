@@ -74,7 +74,7 @@ class LightingUniformsLoader {
 
         // Fog - use EnvironmentComponent if available and enabled, otherwise use defaults
         // When renderFog is false, upload zero density to disable fog effect
-        val fogEnabled = environmentComponent?.renderFog ?: true
+        val fogEnabled = environmentComponent?.renderFog == true
         shader.uploadVec3f(Uniforms.FOG_COLOR, environmentComponent?.fogColor ?: Vector3f(0.8f, 0.8f, 0.8f))
         shader.uploadFloat(Uniforms.FOG_DENSITY, if (fogEnabled) environmentComponent?.fogDensity ?: 0.0f else 0.0f)
         shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentComponent?.fogGradient ?: 1.5f)

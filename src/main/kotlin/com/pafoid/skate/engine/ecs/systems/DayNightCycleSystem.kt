@@ -20,7 +20,7 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        val config = scene.getComponent<DayNightCycleComponent>() ?: return
+        val config = scene.getComponent<DayNightCycleComponent>()?.takeIf { it.enabled } ?: return
 
         // Get day duration (use override if provided)
         val dayDuration = config.dayDuration
