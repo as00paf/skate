@@ -15,13 +15,6 @@ sealed class EnvironmentAction(eventName: String) : Event(eventName) {
         val newTime: Float,
     ) : EnvironmentAction("environment.action.set_time_of_day_requested")
 
-    data class SetUseAmbientRequested(
-        val scene: Scene,
-        val ambientLightComponent: AmbientLightComponent,
-        val oldValue: Boolean,
-        val newValue: Boolean,
-    ) : EnvironmentAction("environment.action.set_use_ambient_requested")
-
     data class SetAutoAmbientRequested(
         val dayNightCycle: DayNightCycleComponent,
         val oldValue: Boolean,

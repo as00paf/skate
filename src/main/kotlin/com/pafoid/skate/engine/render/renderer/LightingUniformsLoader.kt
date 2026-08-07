@@ -45,8 +45,8 @@ class LightingUniformsLoader {
         }
 
         // Ambient light - use LightingStateComponent if available
-        val ambient = if (ambientLightComponent?.useAmbient == true) {
-            ambientLightComponent.lightColor
+        val ambient = if (ambientLightComponent != null) {
+            Vector3f(ambientLightComponent.lightColor).mul(ambientLightComponent.intensity)
         } else {
             Vector3f(0f, 0f, 0f)
         }

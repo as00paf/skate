@@ -186,75 +186,65 @@ class EnvironmentWindow(
             }
         }
 
-        if (ImGui.collapsingHeader("${Icons.PALETTE} ${stringManager.getString("lbl.environment.lighting")}")) {
-            val useAmbient = ImBoolean(ambientLightComponent.useAmbient)
-            if (ImGui.checkbox(stringManager.getString("lbl.environment.use_ambient"), useAmbient)) {
-                val oldVal = ambientLightComponent.useAmbient
-                val newVal = useAmbient.get()
+        dayNight?.let { dayNight ->
+            val autoAmbient = ImBoolean(dayNight.autoAmbient)
+            if (ImGui.checkbox(stringManager.getString("lbl.environment.auto_ambient"), autoAmbient)) {
+                val oldVal = dayNight.autoAmbient
+                val newVal = autoAmbient.get()
                 eventSystem.publish(
-                    EnvironmentAction.SetUseAmbientRequested(
-                        scene = scene,
-                        ambientLightComponent = ambientLightComponent,
+                    EnvironmentAction.SetAutoAmbientRequested(
+                        dayNightCycle = dayNight,
                         oldValue = oldVal,
                         newValue = newVal
                     )
                 )
             }
+        }
 
-            dayNight?.let { dayNight ->
-                val autoAmbient = ImBoolean(dayNight.autoAmbient)
-                if (ImGui.checkbox(stringManager.getString("lbl.environment.auto_ambient"), autoAmbient)) {
-                    val oldVal = dayNight.autoAmbient
-                    val newVal = autoAmbient.get()
-                    eventSystem.publish(
-                        EnvironmentAction.SetAutoAmbientRequested(
-                            dayNightCycle = dayNight,
-                            oldValue = oldVal,
-                            newValue = newVal
-                        )
-                    )
-                }
-            }
-
-            val autoAmbientEnabled = dayNight?.autoAmbient ?: true
-            if (autoAmbientEnabled) {
-                // Show computed ambient (read-only display)
-                val computedAmbient = dayNight?.ambientColor ?: ambientLightComponent.lightColor
-                ImGui.text(
-                    stringManager.getString("lbl.environment.ambient_auto").format(
-                        computedAmbient.x,
-                        computedAmbient.y,
-                        computedAmbient.z
+        val autoAmbientEnabled = dayNight?.autoAmbient ?: true
+        if (autoAmbientEnabled) {
+            // Show computed ambient (read-only display)
+            val computedAmbient = dayNight?.ambientColor ?: ambientLightComponent.lightColor
+            ImGui.text(
+                stringManager.getString("lbl.environment.ambient_auto").format(
+                    computedAmbient.x,
+                    computedAmbient.y,
+                    computedAmbient.z
+                )
+            )
+        } else {
+            val ambient = floatArrayOf(
+                ambientLightComponent.lightColor.x,
+                ambientLightComponent.lightColor.y,
+                ambientLightComponent.lightColor.z
+            )
+            if (MImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
+                eventSystem.publish(
+                    EnvironmentAction.SetAmbientLightRequested(
+                        ambientLightComponent = ambientLightComponent,
+                        oldValue = Vector3f(ambientLightComponent.lightColor),
+                        newValue = Vector3f(ambient[0], ambient[1], ambient[2]),
                     )
                 )
-            } else {
-                val ambient = floatArrayOf(
-                    ambientLightComponent.lightColor.x,
-                    ambientLightComponent.lightColor.y,
-                    ambientLightComponent.lightColor.z
-                )
-                if (MImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
-                    eventSystem.publish(
-                        EnvironmentAction.SetAmbientLightRequested(
-                            ambientLightComponent = ambientLightComponent,
-                            oldValue = Vector3f(ambientLightComponent.lightColor),
-                            newValue = Vector3f(ambient[0], ambient[1], ambient[2]),
-                        )
-                    )
-                }
             }
+        }
 
-            dayNight?.let { dayNight ->
-                val ambientIntensityArr = floatArrayOf(dayNight.ambientIntensity)
-                if (ImGui.sliderFloat(stringManager.getString("lbl.environment.ambient_intensity"), ambientIntensityArr, 0.0f, 2.0f)) {
-                    eventSystem.publish(
-                        EnvironmentAction.SetAmbientIntensityRequested(
-                            dayNightCycle = dayNight,
-                            oldValue = dayNight.ambientIntensity,
-                            newValue = ambientIntensityArr[0].coerceIn(0.0f, 2.0f),
-                        )
+        dayNight?.let { dayNight ->
+            val ambientIntensityArr = floatArrayOf(dayNight.ambientIntensity)
+            if (ImGui.sliderFloat(
+                    stringManager.getString("lbl.environment.ambient_intensity"),
+                    ambientIntensityArr,
+                    0.0f,
+                    2.0f
+                )
+            ) {
+                eventSystem.publish(
+                    EnvironmentAction.SetAmbientIntensityRequested(
+                        dayNightCycle = dayNight,
+                        oldValue = dayNight.ambientIntensity,
+                        newValue = ambientIntensityArr[0].coerceIn(0.0f, 2.0f),
                     )
-                }
+                )
             }
         }
 

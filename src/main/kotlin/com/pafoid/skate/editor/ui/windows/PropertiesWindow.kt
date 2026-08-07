@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -38,8 +39,10 @@ class PropertiesWindow(
         
         ImGui.begin(stringManager.getString("window.properties"), pOpen)
         selectedGameObject?.let { go ->
-            enabledCheckbox(go)
-            ImGui.spacing()
+            if (go !is Scene) {
+                enabledCheckbox(go)
+                ImGui.spacing()
+            }
             objectName(go)
             ImGui.spacing()
             ImGui.separator()

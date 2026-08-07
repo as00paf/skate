@@ -26,17 +26,6 @@ class EnvironmentActionHandler(
             )
         }
 
-        eventSystem.subscribe<EnvironmentAction.SetUseAmbientRequested> { event ->
-            undoRedoManager.executeCommand(
-                EnvironmentToggleCommand(
-                    displayName = "Toggle Use Ambient",
-                    setter = { enabled -> event.ambientLightComponent.useAmbient = enabled },
-                    oldValue = event.oldValue,
-                    newValue = event.newValue,
-                )
-            )
-        }
-
         eventSystem.subscribe<EnvironmentAction.SetAutoAmbientRequested> { event ->
             undoRedoManager.executeCommand(
                 EnvironmentToggleCommand(
