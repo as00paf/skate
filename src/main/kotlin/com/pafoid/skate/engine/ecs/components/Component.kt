@@ -48,7 +48,7 @@ abstract class Component {
 
     var uId = -1
     var enabled = true
-    var name: String = ""
+    var name: String = this.javaClass.simpleName
 
     @Transient
     lateinit var gameObject: GameObject

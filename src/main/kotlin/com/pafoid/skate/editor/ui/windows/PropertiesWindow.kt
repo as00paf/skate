@@ -61,11 +61,13 @@ class PropertiesWindow(
 
             contextualMenu(go)
         }
+
+        ImGui.spacing()
         ImGui.end()
     }
     
     private fun renderComponentWithContextMenu(go: GameObject, component: Component, index: Int) {
-        val headerLabel = component.javaClass.simpleName
+        val headerLabel = component.name
         
         if (ImGui.collapsingHeader(headerLabel)) {
             enabledCheckbox(component)
@@ -75,6 +77,9 @@ class PropertiesWindow(
             ImGui.separator()
             ImGui.spacing()
             component.imgui(stringManager, logger)
+            ImGui.spacing()
+            ImGui.separator()
+            ImGui.spacing()
         }
 
         if (ImGui.beginPopupContextItem("${component.javaClass.simpleName}_context")) {
@@ -99,7 +104,7 @@ class PropertiesWindow(
     
     private fun enabledCheckbox(go: GameObject) {
         val isEnabled = ImBoolean(go.isEnabled)
-        if (ImGui.checkbox("##enabled_checkbox", isEnabled)) {
+        if (ImGui.checkbox("##enabled_checkbox" + go.uId, isEnabled)) {
             eventSystem.publish(SetGameObjectEnabled(go, isEnabled.get()))
         }
 
@@ -114,7 +119,7 @@ class PropertiesWindow(
 
         val name = ImString(go.name, 128)
         val flags = ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
-        if (ImGui.inputText("##name_input", name, flags)) {
+        if (ImGui.inputText("##name_input" + go.uId, name, flags)) {
             eventSystem.publish(RenameGameObject(go, name.get()))
         }
         ImGui.popItemWidth()
@@ -156,7 +161,7 @@ class PropertiesWindow(
 
     fun enabledCheckbox(cmp: Component) {
         val isEnabled = ImBoolean(cmp.enabled)
-        if (ImGui.checkbox("##cmp_enabled_checkbox", isEnabled)) {
+        if (ImGui.checkbox("##cmp_enabled_checkbox" + cmp.uId, isEnabled)) {
             eventSystem.publish(SetComponentEnabled(cmp, isEnabled.get()))
         }
 
@@ -171,9 +176,14 @@ class PropertiesWindow(
 
         val name = ImString(cmp.name, 128)
         val flags = ImGuiInputTextFlags.EnterReturnsTrue or ImGuiInputTextFlags.AutoSelectAll
-        if (ImGui.inputText("##name_input", name, flags)) {
+        if (ImGui.inputText("##name_input" + cmp.uId, name, flags)) {
             eventSystem.publish(RenameComponent(cmp, name.get()))
         }
+
+        ImGui.spacing()
+        ImGui.text("${stringManager.getString("lbl.type")}: ${cmp.javaClass.simpleName}")
+        ImGui.spacing()
+
         ImGui.popItemWidth()
     }
 }
