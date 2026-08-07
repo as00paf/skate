@@ -163,7 +163,7 @@ class EnvironmentActionHandler(
                     displayName = "Set Ambient Intensity",
                     targetName = null,
                     setter = { intensity: Float ->
-                        event.dayNightCycle.ambientIntensity = intensity.coerceIn(0.0f, 2.0f)
+                        event.ambientLightComponent.intensity = intensity
                     },
                     oldValue = event.oldValue,
                     newValue = event.newValue,

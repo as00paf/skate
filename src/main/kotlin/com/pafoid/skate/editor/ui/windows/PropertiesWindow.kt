@@ -79,7 +79,7 @@ class PropertiesWindow(
             ImGui.spacing()
             ImGui.separator()
             ImGui.spacing()
-            component.imgui(stringManager, logger)
+            component.imgui(stringManager, eventSystem, logger)
             ImGui.spacing()
             ImGui.separator()
             ImGui.spacing()

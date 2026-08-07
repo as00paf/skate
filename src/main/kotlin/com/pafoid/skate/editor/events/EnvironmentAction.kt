@@ -76,7 +76,7 @@ sealed class EnvironmentAction(eventName: String) : Event(eventName) {
     ) : EnvironmentAction("environment.action.set_ambient_light_requested")
 
     data class SetAmbientIntensityRequested(
-        val dayNightCycle: DayNightCycleComponent,
+        val ambientLightComponent: AmbientLightComponent,
         val oldValue: Float,
         val newValue: Float,
     ) : EnvironmentAction("environment.action.set_ambient_intensity_requested")

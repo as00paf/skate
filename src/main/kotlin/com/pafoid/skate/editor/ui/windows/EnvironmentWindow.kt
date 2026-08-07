@@ -229,25 +229,6 @@ class EnvironmentWindow(
             }
         }
 
-        dayNight?.let { dayNight ->
-            val ambientIntensityArr = floatArrayOf(dayNight.ambientIntensity)
-            if (ImGui.sliderFloat(
-                    stringManager.getString("lbl.environment.ambient_intensity"),
-                    ambientIntensityArr,
-                    0.0f,
-                    2.0f
-                )
-            ) {
-                eventSystem.publish(
-                    EnvironmentAction.SetAmbientIntensityRequested(
-                        dayNightCycle = dayNight,
-                        oldValue = dayNight.ambientIntensity,
-                        newValue = ambientIntensityArr[0].coerceIn(0.0f, 2.0f),
-                    )
-                )
-            }
-        }
-
         ImGui.end()
     }
 }
