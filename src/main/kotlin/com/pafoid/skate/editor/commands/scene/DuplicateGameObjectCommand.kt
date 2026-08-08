@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
@@ -26,9 +27,8 @@ class DuplicateGameObjectCommand(
 
         val originalRender = gameObject.getComponent<RenderComponent>()
         if (originalRender != null) {
-            val newRender = RenderComponent(
-                albedoTextureGuid = originalRender.albedoTextureGuid
-            )
+            val newRender = originalRender.copy()
+            originalRender.uId = Component.getIdCounter() + 1
             duplicated.addComponent(newRender)
         }
 

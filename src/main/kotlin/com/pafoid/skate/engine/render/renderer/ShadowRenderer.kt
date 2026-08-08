@@ -111,7 +111,7 @@ class ShadowRenderer(
 
             // Bind base color texture for alpha masking (if available)
             if (material.alphaMode == AlphaMode.MASK && material.baseColorTexture != null) {
-                bindTexture(TextureSlots.BASE_COLOR, material.baseColorTexture, assetsManager)
+                material.baseColorTexture?.texId?.let { bindTexture(TextureSlots.BASE_COLOR, it) }
                 shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
             }
 

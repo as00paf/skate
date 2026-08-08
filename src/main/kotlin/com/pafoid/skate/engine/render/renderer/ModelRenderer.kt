@@ -67,29 +67,29 @@ class ModelRenderer(
         part.vaoId.bindVAO(part.enabledAttributes)
 
         // Bind all PBR texture maps and upload uniforms
-        bindTexture(TextureSlots.BASE_COLOR, material.baseColorTexture, assetsManager)
+        material.baseColorTexture?.texId?.let { bindTexture(TextureSlots.BASE_COLOR, it) }
         shader.uploadInt(ShaderConst.Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
         shader.uploadVec4f(ShaderConst.Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
 
         val hasNormal = material.normalMap != null
-        bindTexture(TextureSlots.NORMAL, material.normalMap, assetsManager)
+        material.normalMap?.texId?.let { bindTexture(TextureSlots.NORMAL, it) }
         shader.uploadInt(ShaderConst.Uniforms.NORMAL_MAP, TextureSlots.NORMAL)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_NORMAL_MAP, hasNormal)
 
         val hasMR = material.metallicRoughnessTexture != null
-        bindTexture(TextureSlots.METALLIC_ROUGHNESS, material.metallicRoughnessTexture, assetsManager)
+        material.metallicRoughnessTexture?.texId?.let { bindTexture(TextureSlots.METALLIC_ROUGHNESS, it) }
         shader.uploadInt(ShaderConst.Uniforms.METALLIC_ROUGHNESS_TEXTURE, TextureSlots.METALLIC_ROUGHNESS)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, hasMR)
         shader.uploadFloat(ShaderConst.Uniforms.METALLIC_FACTOR, material.metallicFactor)
         shader.uploadFloat(ShaderConst.Uniforms.ROUGHNESS_FACTOR, material.roughnessFactor)
 
         val hasAO = material.aoTexture != null
-        bindTexture(TextureSlots.AO, material.aoTexture, assetsManager)
+        material.aoTexture?.texId?.let { bindTexture(TextureSlots.AO, it) }
         shader.uploadInt(ShaderConst.Uniforms.AO_TEXTURE, TextureSlots.AO)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_AO_TEXTURE, hasAO)
 
         val hasEmissive = material.emissiveTexture != null
-        bindTexture(TextureSlots.EMISSIVE, material.emissiveTexture, assetsManager)
+        material.emissiveTexture?.texId?.let { bindTexture(TextureSlots.EMISSIVE, it) }
         shader.uploadInt(ShaderConst.Uniforms.EMISSIVE_TEXTURE, TextureSlots.EMISSIVE)
         shader.uploadBoolean(ShaderConst.Uniforms.HAS_EMISSIVE_TEXTURE, hasEmissive)
         shader.uploadVec3f(ShaderConst.Uniforms.EMISSIVE_FACTOR, material.emissiveFactor)

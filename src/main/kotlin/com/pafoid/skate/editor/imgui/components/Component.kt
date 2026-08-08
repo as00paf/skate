@@ -78,7 +78,7 @@ fun Component.imgui(stringManager: StringManager, eventSystem: EventSystem, logg
                     Vector4f::class.java -> {
                         val typedValue = value as Vector4f
                         val imVec = floatArrayOf(typedValue.x, typedValue.y, typedValue.z, typedValue.w)
-                        if (ImGui.dragFloat4("$localizedName", imVec)) {
+                        if (ImGui.dragFloat4(localizedName, imVec)) {
                             typedValue.set(imVec[0], imVec[1], imVec[2], imVec[3])
                         }
                     }

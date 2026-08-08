@@ -1,8 +1,5 @@
 package com.pafoid.skate.engine.render.utils
 
-import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
-import com.pafoid.skate.engine.assets.data.Texture
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL13
@@ -30,16 +27,13 @@ fun Int.unbindVAO(attributes: List<Int>) {
  * 
  * @param slot The texture unit slot (0, 1, 2, etc.)
  * @param texture The texture to bind, or null to use the default texture
- * @param assetsManager The resource manager for loading the default texture
  */
 fun bindTexture(
     slot: Int,
-    texture: Texture?,
-    assetsManager: AssetsManager
+    textureId: Int
 ) {
     GL13.glActiveTexture(GL13.GL_TEXTURE0 + slot)
-    val tex = texture ?: assetsManager.getBundledTexture(Assets.Bundled.DEFAULT_TEXTURE)
-    glBindTexture(GL_TEXTURE_2D, tex.texId)
+    glBindTexture(GL_TEXTURE_2D, textureId)
 }
 
 /**
