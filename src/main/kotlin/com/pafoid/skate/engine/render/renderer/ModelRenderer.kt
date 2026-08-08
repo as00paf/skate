@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.MeshPart
@@ -31,7 +30,6 @@ import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL30
 
 class ModelRenderer(
-    private val assetsManager: AssetsManager,
     private val debugRenderer: DebugRenderer
 ) {
 

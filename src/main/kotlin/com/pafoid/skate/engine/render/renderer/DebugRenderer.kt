@@ -1,9 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.PROJECTION
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.VIEW
@@ -32,9 +29,8 @@ private const val MAX_LINES = 3000
 private const val MAX_TRIANGLES = 1000
 
 class DebugRenderer(
-    private val assetsManager: AssetsManager,
+    private val shader: Shader,
     private val cameraManager: CameraManager,
-    private val logger: LoggerService
 ) {
 
     private val lines = mutableListOf<Line3D>()
@@ -42,8 +38,7 @@ class DebugRenderer(
     
     private val lineVertexData = FloatArray(MAX_LINES * 6 * 2)
     private val triangleVertexData = FloatArray(MAX_TRIANGLES * 6 * 3)
-    
-    private lateinit var shader: Shader
+
     private var vaoId = -1
     private var vboId = -1
     
@@ -53,8 +48,6 @@ class DebugRenderer(
     private var started = false
 
     fun start() {
-        shader = assetsManager.getShader(Assets.Shaders.DEBUG)
-        
         started = true
 
         if (vaoId != -1) return
@@ -89,10 +82,9 @@ class DebugRenderer(
     }
 
     fun draw() {
-        if (!started || !::shader.isInitialized) {
+        if (!started) {
             start()
         }
-        if (!::shader.isInitialized) return
         
         shader.start()
         val camera = cameraManager.camera

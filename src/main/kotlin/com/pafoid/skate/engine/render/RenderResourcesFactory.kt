@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
-import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
@@ -85,28 +84,16 @@ class RenderResourcesFactory(
     }
 
     private fun loadShaders(): Shaders {
-        val shaders = listOf<() -> Shader>(
-            { assetsManager.getShader(Assets.Shaders.DEBUG) },
-            { assetsManager.getShader(Assets.Shaders.SHADER_3D_DEFAULT) },
-            { assetsManager.getShader(Assets.Shaders.SHADER_2D_BATCH) },
-            { assetsManager.getShader(Assets.Shaders.PICKING) },
-            { assetsManager.getShader(Assets.Shaders.PICKING_3D) },
-            { assetsManager.getShader(Assets.Shaders.SKYBOX) },
-            { assetsManager.getShader(Assets.Shaders.SKY_DOME) },
-            { assetsManager.getShader(Assets.Shaders.SHADOW) },
-            { assetsManager.getShader(Assets.Shaders.SPLASH) },
-        )
-
         return Shaders(
-            default = shaders[1].invoke(),
-            debug = shaders[0].invoke(),
-            batch = shaders[2].invoke(),
-            picking = shaders[3].invoke(),
-            picking3D = shaders[4].invoke(),
-            skybox = shaders[5].invoke(),
-            skyDome = shaders[6].invoke(),
-            shadow = shaders[7].invoke(),
-            splash = shaders[8].invoke()
+            default = assetsManager.getShader(Assets.Shaders.SHADER_3D_DEFAULT),
+            debug = assetsManager.getShader(Assets.Shaders.DEBUG),
+            batch = assetsManager.getShader(Assets.Shaders.SHADER_2D_BATCH),
+            picking = assetsManager.getShader(Assets.Shaders.PICKING),
+            picking3D = assetsManager.getShader(Assets.Shaders.PICKING_3D),
+            skybox = assetsManager.getShader(Assets.Shaders.SKYBOX),
+            skyDome = assetsManager.getShader(Assets.Shaders.SKY_DOME),
+            shadow = assetsManager.getShader(Assets.Shaders.SHADOW),
+            splash = assetsManager.getShader(Assets.Shaders.SPLASH),
         )
     }
 
@@ -118,9 +105,9 @@ class RenderResourcesFactory(
 
         val skyboxRenderer = SkyboxRenderer(shaders.skybox, vaoLoader)
         val skyDomeRenderer = SkyDomeRenderer(shaders.skyDome, vaoLoader)
-        val shadowRenderer = ShadowRenderer(shaders.shadow, assetsManager)
-        val debugRenderer = DebugRenderer(assetsManager, cameraManager, logger)
-        val modelRenderer = ModelRenderer(assetsManager, debugRenderer)
+        val shadowRenderer = ShadowRenderer(shaders.shadow)
+        val debugRenderer = DebugRenderer(shaders.debug, cameraManager)
+        val modelRenderer = ModelRenderer(debugRenderer)
         val splashRenderer = SplashRenderer(vaoLoader)
         splashRenderer.initialize()
 
