@@ -8,7 +8,6 @@ import kotlinx.serialization.Transient
 @Serializable
 data class `3dModel`(
     var path: String = "",
-    var material: Material = Material(),
     @Transient var mesh: List<MeshPart> = emptyList(),
     @Contextual var skeleton: Skeleton? = null,
 )

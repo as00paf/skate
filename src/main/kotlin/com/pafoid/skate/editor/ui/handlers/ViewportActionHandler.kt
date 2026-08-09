@@ -368,16 +368,13 @@ class ViewportActionHandler(
 
             val texture = engine.assetsManager.getTexture(texturePath)
             val baseModel = engine.assetsManager.loadModel(Assets.Models.CUBE)
-            val model = `3dModel`(
-                path = Assets.Models.CUBE,
-                mesh = baseModel.mesh,
-                material = Material(texture)
-            )
+            val model = `3dModel`(path = Assets.Models.CUBE, mesh = baseModel.mesh)
 
             engine.jobSystem.runOnMain {
-                val renderComponent = RenderComponent(model = model, castShadow = false, receiveShadow = true)
+                val renderComponent =
+                    RenderComponent(model, castShadow = false, receiveShadow = true, material = Material(texture))
                 planeObj.addComponent(renderComponent)
-                planeObj.addComponent(RigidBody3D(0f).apply { friction = 0.5f; bodyType = BodyType.Static })
+                planeObj.addComponent(RigidBody3D(0f, BodyType.Static).apply { friction = 0.5f; })
                 planeObj.addComponent(BoxCollider3D(Vector3f(5f, 0.05f, 5f)))
                 undoRedoManager.executeCommand(CreateGameObjectCommand(planeObj, scene, gameObjectManager))
                 logger.logEditor("Created textured plane at ${position.x}, ${position.y}, ${position.z}")

@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
+import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.MeshPart
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
@@ -57,7 +58,11 @@ class ModelRenderer(
         // Render mesh if requested
         if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
             for (part in model.mesh) {
-                if (simple) renderMeshPartSimple(part, shader) else renderMeshPart(part, shader)
+                if (simple) renderMeshPartSimple(part, shader) else renderMeshPart(
+                    part,
+                    shader,
+                    renderComponent.material
+                )
             }
         }
 
@@ -76,9 +81,10 @@ class ModelRenderer(
      */
     private fun renderMeshPart(
         part: MeshPart,
-        shader: Shader
+        shader: Shader,
+        overrideMaterial: Material? = null,
     ) {
-        val material = part.material
+        val material = overrideMaterial ?: part.material
         part.vaoId.bindVAO(part.enabledAttributes)
 
         // Bind all PBR texture maps and upload uniforms

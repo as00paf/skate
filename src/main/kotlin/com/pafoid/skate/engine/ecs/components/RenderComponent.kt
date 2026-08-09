@@ -18,22 +18,17 @@ data class RenderComponent(
 
     fun resolveModelFromPath(assetsManager: AssetsManager) {
         model = model?.path?.let { assetsManager.loadModel(it) }
-        val baseColor =
-            material?.baseColorTexture?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
-        val normalMap = material?.normalMap?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
-        val metallicRoughness = material?.metallicRoughnessTexture?.filePath?.takeIf { it.isNotBlank() }
-            ?.let { assetsManager.getTexture(it) }
-        val ambientOcclusionMap =
-            material?.aoTexture?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
-
-        model?.let { model ->
-            model.mesh.forEach { meshPart ->
-                val mat = meshPart.material
-                baseColor?.let { mat.baseColorTexture = it }
-                normalMap?.let { mat.normalMap = it }
-                metallicRoughness?.let { mat.metallicRoughnessTexture = it }
-                ambientOcclusionMap?.let { mat.aoTexture = it }
-            }
+        material?.baseColorTexture?.let {
+            it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
+        }
+        material?.normalMap?.let {
+            it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
+        }
+        material?.metallicRoughnessTexture?.let {
+            it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
+        }
+        material?.aoTexture?.let {
+            it.texId = assetsManager.getTexture(it.filePath.orEmpty()).texId
         }
     }
 
@@ -43,24 +38,17 @@ data class RenderComponent(
     ) {
         model?.path?.let { path ->
             model = assetsManager.resolveModel(path)
-            val baseColor = material?.baseColorTexture?.filePath?.takeIf { it.isNotBlank() }
-                ?.let { assetsManager.resolveTexture(it) }
-            val normalMap =
-                material?.normalMap?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
-            val metallicRoughness =
-                material?.metallicRoughnessTexture?.filePath?.takeIf { it.isNotBlank() }
-                    ?.let { assetsManager.resolveTexture(it) }
-            val ambientOcclusionMap =
-                material?.aoTexture?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
-
-            model?.let { model ->
-                model.mesh.forEach { meshPart ->
-                    val mat = meshPart.material
-                    baseColor?.let { mat.baseColorTexture = it }
-                    normalMap?.let { mat.normalMap = it }
-                    metallicRoughness?.let { mat.metallicRoughnessTexture = it }
-                    ambientOcclusionMap?.let { mat.aoTexture = it }
-                }
+            material?.baseColorTexture?.let {
+                it.texId = assetsManager.resolveTexture(it.filePath.orEmpty())?.texId ?: -1
+            }
+            material?.normalMap?.let {
+                it.texId = assetsManager.resolveTexture(it.filePath.orEmpty())?.texId ?: -1
+            }
+            material?.metallicRoughnessTexture?.let {
+                it.texId = assetsManager.resolveTexture(it.filePath.orEmpty())?.texId ?: -1
+            }
+            material?.aoTexture?.let {
+                it.texId = assetsManager.resolveTexture(it.filePath.orEmpty())?.texId ?: -1
             }
         }
     }
