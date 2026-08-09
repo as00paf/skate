@@ -42,6 +42,7 @@ class ModelRenderer(
         skeletonComponent: SkeletonComponent? = null,
         simple: Boolean = false
     ) {
+        val model = renderComponent.model ?: return // No model to render
         val transformationMatrix = transform.toWorldMatrix()
         val textureScale = renderComponent.textureScale
 
@@ -50,14 +51,8 @@ class ModelRenderer(
         shader.uploadFloat(Uniforms.TEXTURE_SCALE, textureScale)
         if (!simple && cameraPosition != null) shader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
 
-        val hasSkin = skeletonComponent?.pose != null
+        val hasSkin = skeletonComponent != null
         shader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-        if (skeletonComponent != null) {
-            shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.matrixPalette)
-        }
-
-        val skeleton = skeletonComponent?.pose?.skeleton
-        val model = renderComponent.model ?: return // No model to render
 
         // Render mesh if requested
         if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
@@ -66,11 +61,13 @@ class ModelRenderer(
             }
         }
 
-        // Render skeleton if requested
-        if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
-            if (skeleton != null) {
+        if (hasSkin) {
+            // Render skeleton if requested
+            if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
+                val skeleton = skeletonComponent.pose.skeleton
                 visualizeBoneRecursive(skeleton.rootBone, skeleton, transformationMatrix)
             }
+            shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.matrixPalette)
         }
     }
 
@@ -82,7 +79,6 @@ class ModelRenderer(
         shader: Shader
     ) {
         val material = part.material
-
         part.vaoId.bindVAO(part.enabledAttributes)
 
         // Bind all PBR texture maps and upload uniforms
