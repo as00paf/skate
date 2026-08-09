@@ -106,7 +106,7 @@ class AnimationSystem(
 
         // Apply global transforms and skin matrices (ALWAYS, even if not playing)
         SkeletonMath.computeGlobalTransforms(skeleton.rootBone, pose.localTransforms, pose.globalTransforms)
-        SkeletonMath.buildSkinMatrices(pose, skeletonComponent.getMatrixPalette())
+        SkeletonMath.buildSkinMatrices(pose, skeletonComponent.matrixPalette)
     }
 
     /**

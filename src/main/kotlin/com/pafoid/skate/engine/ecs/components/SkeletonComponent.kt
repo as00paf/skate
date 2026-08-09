@@ -15,7 +15,7 @@ data class SkeletonComponent(
     var selectedBone: Bone? = null
 
     @Transient
-    private val matrixPalette = Array(pose.skeleton.boneCount) { Matrix4f() }
+    val matrixPalette = Array(pose.skeleton.boneCount) { Matrix4f() }
 
     init {
         // Compute initial pose
@@ -28,6 +28,4 @@ data class SkeletonComponent(
         pose.reset()
         SkeletonMath.buildSkinMatrices(pose, matrixPalette)
     }
-
-    fun getMatrixPalette(): Array<Matrix4f> = matrixPalette
 }
