@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Component.Companion.getCachedFields
+import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import imgui.ImGui
 import imgui.type.ImInt
@@ -22,6 +23,10 @@ fun Component.imgui(stringManager: StringManager, eventSystem: EventSystem, logg
         }
 
         is Transform -> {
+            this.imgui(stringManager, eventSystem, logger)
+        }
+
+        is RenderComponent -> {
             this.imgui(stringManager, eventSystem, logger)
         }
 

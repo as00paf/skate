@@ -4,13 +4,14 @@ import com.pafoid.skate.editor.imgui.data.Color
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiStyleVar
+import imgui.type.ImInt
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 
 object MImGui {
 
-    private const val DEFAULT_COLUMN_WIDTH = 220f
+    const val DEFAULT_COLUMN_WIDTH = 220f
     private const val SENSIBILITY = 0.01f
     const val SENSIBILITY_SCALE = 0.005f
     const val SENSIBILITY_ROTATION = 0.1f
@@ -275,6 +276,20 @@ object MImGui {
         ImGui.popID()
 
         return valArray[0]
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Enum<*>> enumCheckbox(label: String, value: T): T {
+        val index = ImInt(value.ordinal)
+
+        val enumValues = value.declaringJavaClass.enumConstants.map { it.toString() }.toTypedArray()
+        ImGui.columns(2)
+        ImGui.setColumnWidth(0, DEFAULT_COLUMN_WIDTH)
+        ImGui.text(label)
+        ImGui.nextColumn()
+        ImGui.combo("##$label", index, enumValues, enumValues.size)
+        ImGui.columns(1)
+        return value.declaringJavaClass.enumConstants[index.get()] as T
     }
 
     /** Draws a two-column table with label and RGBA color picker. */
