@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.render.data.PickingMesh
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -46,10 +45,7 @@ class PickingRenderer(
     private val identityMatrix = Matrix4f()
 
     fun start() {
-        shader = assetsManager.getShader(Assets.Shaders.PICKING_3D) ?: run {
-            logger.log("Could not load picking shader", LogLevel.ERROR)
-            return
-        }
+        shader = assetsManager.getShader(Assets.Shaders.PICKING_3D)
         
         vaoId = glGenVertexArrays()
         glBindVertexArray(vaoId)

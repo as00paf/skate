@@ -11,7 +11,7 @@ data class RenderComponent(
     var model: `3dModel`? = null,
     val material: Material? = null,
     var textureScale: Float = 1.0f,
-    var renderMode: RenderMode = RenderMode.MESH,
+    var renderMode: RenderMode = RenderMode.BOTH,
     var castShadow: Boolean = true,
     var receiveShadow: Boolean = true
 ) : Component() {

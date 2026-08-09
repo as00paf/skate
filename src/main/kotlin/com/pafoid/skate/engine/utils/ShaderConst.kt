@@ -41,6 +41,7 @@ object ShaderConst {
         const val FOG_DENSITY = "uFogDensity"
         const val FOG_GRADIENT = "uFogGradient"
 
+        const val BASE_COLOR = "uBaseColor"
         const val BASE_COLOR_TEXTURE = "u_BaseColorTexture"
         const val BASE_COLOR_FACTOR = "u_BaseColorFactor"
 

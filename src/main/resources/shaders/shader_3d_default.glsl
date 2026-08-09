@@ -116,7 +116,8 @@ uniform sampler2D u_AOTexture;
 uniform sampler2D u_EmissiveTexture;
 
 // --- PBR Material Factors ---
-uniform vec4 u_BaseColorFactor;
+uniform vec4 uBaseColor;
+uniform float u_BaseColorFactor;
 uniform float u_MetallicFactor;
 uniform float u_RoughnessFactor;
 uniform vec3 u_EmissiveFactor;
@@ -244,7 +245,9 @@ void main()
 {
     // 1. Albedo & Alpha Setup
     vec4 baseColorSample = texture(u_BaseColorTexture, fTexCoords);
-    vec4 albedo = baseColorSample * u_BaseColorFactor * fColor;
+    vec4 factoredColor = uBaseColor * u_BaseColorFactor;
+    vec4 mixedColor = mix(factoredColor, baseColorSample, 0.5);
+    vec4 albedo = mixedColor * fColor;
 
     float alpha = albedo.a;
     if (u_AlphaMode == 0) { // OPAQUE

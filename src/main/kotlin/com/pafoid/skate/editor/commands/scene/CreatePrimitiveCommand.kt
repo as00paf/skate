@@ -41,7 +41,7 @@ class CreatePrimitiveCommand(
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
         val renderComponent =
-            RenderComponent(model, material = Material(texture))
+            RenderComponent(model, material = Material(texture, baseColorFactor = 1f))
         primitive.addComponent(renderComponent)
 
         gameObjectManager.addGameObject(primitive)

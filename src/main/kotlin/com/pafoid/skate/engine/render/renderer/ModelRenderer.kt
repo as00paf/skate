@@ -88,9 +88,10 @@ class ModelRenderer(
         part.vaoId.bindVAO(part.enabledAttributes)
 
         // Bind all PBR texture maps and upload uniforms
+        shader.uploadVec4f(Uniforms.BASE_COLOR, material.baseColor)
         material.baseColorTexture?.texId?.let { bindTexture(TextureSlots.BASE_COLOR, it) }
         shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
-        shader.uploadVec4f(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
+        shader.uploadFloat(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
 
         val hasNormal = material.normalMap != null
         material.normalMap?.texId?.let { bindTexture(TextureSlots.NORMAL, it) }

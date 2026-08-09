@@ -13,19 +13,16 @@ import com.pafoid.skate.engine.render.VAOLoader
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.assimp.AIBone
-import org.lwjgl.assimp.AIColor4D
 import org.lwjgl.assimp.AIMaterial
 import org.lwjgl.assimp.AIMesh
 import org.lwjgl.assimp.AINode
 import org.lwjgl.assimp.AIScene
 import org.lwjgl.assimp.AIString
 import org.lwjgl.assimp.AITexture
-import org.lwjgl.assimp.Assimp.AI_MATKEY_COLOR_DIFFUSE
 import org.lwjgl.assimp.Assimp.AI_MATKEY_GLTF_ALPHACUTOFF
 import org.lwjgl.assimp.Assimp.AI_MATKEY_GLTF_ALPHAMODE
 import org.lwjgl.assimp.Assimp.AI_MATKEY_TWOSIDED
 import org.lwjgl.assimp.Assimp.aiGetErrorString
-import org.lwjgl.assimp.Assimp.aiGetMaterialColor
 import org.lwjgl.assimp.Assimp.aiGetMaterialFloatArray
 import org.lwjgl.assimp.Assimp.aiGetMaterialIntegerArray
 import org.lwjgl.assimp.Assimp.aiGetMaterialString
@@ -233,11 +230,11 @@ class AssimpLoader(
 
             materialData.emissiveTexture =
                 loadMaterialTexture(scene, material, aiTextureType_EMISSIVE, filePath, embeddedTextures)
-            
-            val color = AIColor4D.create()
+
+            /*val color = AIColor4D.create()
             if (aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, 0, 0, color) == aiReturn_SUCCESS) {
-                materialData.baseColorFactor.set(color.r(), color.g(), color.b(), color.a())
-            }
+                materialData.baseColor.set(color.r(), color.g(), color.b(), color.a())
+            }*/
 
             val doubleSided = IntArray(1)
             if (aiGetMaterialIntegerArray(material, AI_MATKEY_TWOSIDED, 0, 0, doubleSided, intArrayOf(1)) == aiReturn_SUCCESS) {

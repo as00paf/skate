@@ -28,7 +28,8 @@ fun RenderComponent.imgui(stringManager: StringManager, eventSystem: EventSystem
 
     if (material != null) {
         MImGui.colorPicker4(stringManager.getString("material.baseColor"), material.baseColor)
-        MImGui.drawVec4Control(stringManager.getString("material.baseColorFactor"), material.baseColorFactor)
+        material.baseColorFactor =
+            MImGui.dragFloat(stringManager.getString("material.baseColorFactor"), material.baseColorFactor)
         material.metallicFactor =
             MImGui.dragFloat(stringManager.getString("material.metallicFactor"), material.metallicFactor)
         material.roughnessFactor =
