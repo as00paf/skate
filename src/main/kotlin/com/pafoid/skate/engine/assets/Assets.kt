@@ -165,16 +165,6 @@ object Assets {
             MANUAL_PAD to Models.MANUAL_PAD,
             BANK to Models.BANK,
             QUARTER_PIPE to Models.QUARTER_PIPE,
-            //Shaders
-            SPLASH to Shaders.SPLASH,
-            SHADER_3D_DEFAULT to Shaders.SHADER_3D_DEFAULT,
-            SHADER_2D_BATCH to Shaders.SHADER_2D_BATCH,
-            PICKING to Shaders.PICKING,
-            PICKING_3D to Shaders.PICKING_3D,
-            SKYBOX to Shaders.SKYBOX,
-            DEBUG to Shaders.DEBUG,
-            SKY_DOME to Shaders.SKY_DOME,
-            SHADOW to Shaders.SHADOW,
             // Textures
             ASPHALT to Textures.ASPHALT,
             CONCRETE_SIMPLE to Textures.CONCRETE_SIMPLE,

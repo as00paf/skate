@@ -52,7 +52,7 @@ class Engine {
     fun start(glfwWindow: Long) {
         initCallbacks(glfwWindow)
         jobSystem.runOnMain {
-            val resources = RenderResourcesFactory(assetsManager, cameraManager, logger).create(1920, 1080)
+            val resources = RenderResourcesFactory(this@Engine).create(1920, 1080)
             renderer = Renderer(resources, cameraManager)
 
             engineState.set(EngineState.LOADING)

@@ -1,6 +1,8 @@
 package com.pafoid.skate.editor.project
 
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import org.joml.Vector2i
 import java.io.File
 
 @Serializable
@@ -15,6 +17,8 @@ data class Project(
     var defaultScene: String,
     val scenesPath: List<String>,
     var physicsFPS: Int = 60,
+    @Contextual val resolution: Vector2i = Vector2i(1920, 1080),//TODO: Should be in gfx settings
+    var useFbo: Boolean = true,
     var gameplaySettings: GameplaySettings = GameplaySettings(),
 ) {
     fun getProjectDirectory(): File {

@@ -34,6 +34,7 @@ import kotlinx.serialization.modules.subclass
 
 class Serializer {
     val engineModule = SerializersModule {
+        contextual(Vector2iSerializer)
         contextual(Vector2fSerializer)
         contextual(Vector3fSerializer)
         contextual(Vector4fSerializer)

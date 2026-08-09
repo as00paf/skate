@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.render
 
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.render.graph.RenderGraphBuilder
@@ -22,14 +23,12 @@ import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.utils.GLStateTracker
 
-/**
- * Factory for creating all rendering resources.
- */
 class RenderResourcesFactory(
-    private val assetsManager: AssetsManager,
-    private val cameraManager: CameraManager,
-    private val logger: LoggerService,
+    engine: Engine,
 ) {
+    private val logger: LoggerService = engine.logger
+    private val assetsManager: AssetsManager = engine.assetsManager
+    private val cameraManager: CameraManager = engine.cameraManager
 
     private var useFbo: Boolean = true
 

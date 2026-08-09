@@ -34,6 +34,27 @@ class EngineAssetCopier {
                 copiedCount++
             }
 
+            // Copy bundled shaders
+            val shadersDir = File(assetsDir.absolutePath + "\\EngineDefaults")
+            shadersDir.mkdirs()
+            listOf(
+                Assets.Shaders.SPLASH,
+                Assets.Shaders.SHADER_3D_DEFAULT,
+                Assets.Shaders.SHADER_2D_BATCH,
+                Assets.Shaders.PICKING,
+                Assets.Shaders.PICKING_3D,
+                Assets.Shaders.SKYBOX,
+                Assets.Shaders.DEBUG,
+                Assets.Shaders.SKY_DOME,
+                Assets.Shaders.SHADOW,
+            ).forEach { path ->
+                val outputFile = File(shadersDir, path)
+                outputFile.parentFile?.mkdirs()
+                EngineAssetCopier::class.java.getResourceAsStream(path)
+                    ?.copyTo(outputFile.outputStream())
+                copiedCount++
+            }
+
             // Copy assets bundled in jar
             val outputFile = File(assetsDir, Assets.Textures.APP_ICON)
             outputFile.parentFile?.mkdirs()

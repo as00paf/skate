@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.Atlas
+import org.joml.Vector2i
 import java.io.File
 
 class ProjectManager(
@@ -44,7 +45,6 @@ class ProjectManager(
 
             val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
             val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
-            val shadersDir = File(projectDir, "Shaders").also { it.mkdirs() }
             File(projectDir, "Builds").mkdirs()
 
             // Create default strings file
@@ -69,7 +69,8 @@ class ProjectManager(
                 projectPath = projectFile.absolutePath,
                 iconPath = assetsDir.absolutePath + Assets.Textures.APP_ICON,
                 defaultScene = scenesDir.path + "\\MainScene.scene",
-                scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" }
+                scenesPath = scenes.map { "${scenesDir.path}\\${it.name}.scene" },
+                resolution = Vector2i(1920, 1080)
             )
             currentProject = project
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
