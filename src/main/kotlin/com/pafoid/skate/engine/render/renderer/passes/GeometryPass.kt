@@ -16,7 +16,6 @@ import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
-import com.pafoid.skate.engine.utils.ShaderConst.Attribs
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL30
@@ -97,8 +96,8 @@ class GeometryPass(
 
         // 3D Rendering Setup - Upload projection and view matrices
         defaultShader.start()
-        defaultShader.uploadMat4f(Attribs.PROJECTION_MATRIX, camera.projection)
-        defaultShader.uploadMat4f(Attribs.VIEW_MATRIX, camera.view)
+        defaultShader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
+        defaultShader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
         lightingUniformsLoader.loadCameraPosition(defaultShader, camera) // New call
 
         // Upload lighting uniforms

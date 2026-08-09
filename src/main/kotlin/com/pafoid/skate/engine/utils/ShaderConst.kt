@@ -12,10 +12,6 @@ object ShaderConst {
         const val POSITION = "aPos"
         const val TEX_COORDS = "aTexCoords"
         const val NORMAL = "aNormal"
-
-        const val PROJECTION_MATRIX = "projectionMatrix"
-        const val VIEW_MATRIX = "viewMatrix"
-        const val TRANSFORMATION_MATRIX = "transformationMatrix"
     }
 
     object Uniforms {

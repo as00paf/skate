@@ -123,6 +123,16 @@ object Assets {
         const val SKY = "EngineDefaults\\Textures\\sky_hdri.png"
         const val APP_ICON = "/app_icon.png"
 
+        const val SPLASH = "EngineDefaults\\Shaders\\splash.glsl"
+        const val SHADER_3D_DEFAULT = "EngineDefaults\\Shaders\\shader_3d_default.glsl"
+        const val SHADER_2D_BATCH = "EngineDefaults\\Shaders\\shader_2d_batch.glsl"
+        const val PICKING = "EngineDefaults\\Shaders\\picking.glsl"
+        const val PICKING_3D = "EngineDefaults\\Shaders\\shader_3d_picking.glsl"
+        const val SKYBOX = "EngineDefaults\\Shaders\\skybox.glsl"
+        const val DEBUG = "EngineDefaults\\Shaders\\debugLine2D.glsl"
+        const val SKY_DOME = "EngineDefaults\\Shaders\\skydome.glsl"
+        const val SHADOW = "EngineDefaults\\Shaders\\shadow.glsl"
+
         const val DEFAULT_TEXTURE = "/textures/default.png"
 
         val bundledAssets = listOf(
@@ -155,6 +165,16 @@ object Assets {
             MANUAL_PAD to Models.MANUAL_PAD,
             BANK to Models.BANK,
             QUARTER_PIPE to Models.QUARTER_PIPE,
+            //Shaders
+            SPLASH to Shaders.SPLASH,
+            SHADER_3D_DEFAULT to Shaders.SHADER_3D_DEFAULT,
+            SHADER_2D_BATCH to Shaders.SHADER_2D_BATCH,
+            PICKING to Shaders.PICKING,
+            PICKING_3D to Shaders.PICKING_3D,
+            SKYBOX to Shaders.SKYBOX,
+            DEBUG to Shaders.DEBUG,
+            SKY_DOME to Shaders.SKY_DOME,
+            SHADOW to Shaders.SHADOW,
             // Textures
             ASPHALT to Textures.ASPHALT,
             CONCRETE_SIMPLE to Textures.CONCRETE_SIMPLE,

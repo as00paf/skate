@@ -44,6 +44,7 @@ class ProjectManager(
 
             val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
             val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
+            val shadersDir = File(projectDir, "Shaders").also { it.mkdirs() }
             File(projectDir, "Builds").mkdirs()
 
             // Create default strings file
