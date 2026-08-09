@@ -44,7 +44,7 @@ class LightingUniformsLoader {
             shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, directionalLight.lightSpaceMatrix)
         }
 
-        // Ambient light - use LightingStateComponent if available
+        // Ambient light
         val ambient = if (ambientLightComponent != null) {
             Vector3f(ambientLightComponent.lightColor).mul(ambientLightComponent.intensity)
         } else {

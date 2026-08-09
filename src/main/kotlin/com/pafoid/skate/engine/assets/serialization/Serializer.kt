@@ -15,9 +15,9 @@ import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
-import com.pafoid.skate.engine.ecs.components.LightingComponent
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -62,7 +62,7 @@ class Serializer {
             // Environment components
             subclass(EnvironmentComponent::class)
             subclass(AmbientLightComponent::class)
-            subclass(LightingComponent::class)
+            subclass(PointLightComponent::class)
             subclass(DayNightCycleComponent::class)
             subclass(DirectionalLightComponent::class)
 

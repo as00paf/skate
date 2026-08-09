@@ -14,9 +14,9 @@ enum class ComponentType {
     ENVIRONMENT,
     GRID_LINES,
     INPUT_STATE,
-    LIGHTING,
     NON_PICKABLE,
     PLAYER_CONTROLLER,
+    POINT_LIGHT,
     RENDER,
     RIGID_BODY_3D,
     RAGDOLL,
@@ -40,9 +40,9 @@ enum class ComponentType {
             ENVIRONMENT -> EnvironmentComponent()
             GRID_LINES -> GridLines()
             INPUT_STATE -> InputStateComponent()
-            LIGHTING -> LightingComponent()
             NON_PICKABLE -> NonPickable()
             PLAYER_CONTROLLER -> PlayerController()
+            POINT_LIGHT -> PointLightComponent()
             RENDER -> RenderComponent()
             RIGID_BODY_3D -> RigidBody3D()
             RAGDOLL -> RagdollComponent()

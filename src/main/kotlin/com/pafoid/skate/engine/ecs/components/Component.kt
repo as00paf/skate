@@ -11,9 +11,9 @@ import com.pafoid.skate.engine.ecs.components.ComponentType.DAY_NIGHT_CYCLE
 import com.pafoid.skate.engine.ecs.components.ComponentType.DIRECTIONAL_LIGHT
 import com.pafoid.skate.engine.ecs.components.ComponentType.ENVIRONMENT
 import com.pafoid.skate.engine.ecs.components.ComponentType.INPUT_STATE
-import com.pafoid.skate.engine.ecs.components.ComponentType.LIGHTING
 import com.pafoid.skate.engine.ecs.components.ComponentType.NON_PICKABLE
 import com.pafoid.skate.engine.ecs.components.ComponentType.PLAYER_CONTROLLER
+import com.pafoid.skate.engine.ecs.components.ComponentType.POINT_LIGHT
 import com.pafoid.skate.engine.ecs.components.ComponentType.RAGDOLL
 import com.pafoid.skate.engine.ecs.components.ComponentType.RENDER
 import com.pafoid.skate.engine.ecs.components.ComponentType.RIGID_BODY_3D
@@ -87,7 +87,7 @@ abstract class Component {
                 is EnvironmentComponent -> ENVIRONMENT
                 is GridLines -> ComponentType.GRID_LINES
                 is InputStateComponent -> INPUT_STATE
-                is LightingComponent -> LIGHTING
+                is PointLightComponent -> POINT_LIGHT
                 is NonPickable -> NON_PICKABLE
                 is PlayerController -> PLAYER_CONTROLLER
                 is RenderComponent -> RENDER

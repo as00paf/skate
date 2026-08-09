@@ -8,7 +8,7 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.AudioComponent
-import com.pafoid.skate.engine.ecs.components.LightingComponent
+import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.hasComponent
@@ -80,7 +80,7 @@ class GameObjectSearchProvider(
 
     private fun determineSubcategory(go: GameObject): String {
         return when {
-            go.hasComponent<LightingComponent>() -> "Light"
+            go.hasComponent<PointLightComponent>() -> "Light"
             go.hasComponent<AudioComponent>() -> "Audio Source"
             go.hasComponent<RenderComponent>() -> "Mesh"
             else -> stringManager.getString("search.category.gameobject.default")
@@ -89,7 +89,7 @@ class GameObjectSearchProvider(
 
     private fun determineIcon(go: GameObject): String {
         return when {
-            go.hasComponent<LightingComponent>() -> Icons.SUN
+            go.hasComponent<PointLightComponent>() -> Icons.SUN
             go.hasComponent<AudioComponent>() -> Icons.MUSIC
             go.hasComponent<RenderComponent>() -> Icons.CUBE
             else -> Icons.CUBE
