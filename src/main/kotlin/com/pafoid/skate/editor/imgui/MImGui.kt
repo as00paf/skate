@@ -115,6 +115,92 @@ object MImGui {
         ImGui.popID()
     }
 
+    /**
+     * Draws a customized control for editing a [Vector4f].
+     *
+     * @param label The label to display for the control.
+     * @param values The vector to be edited.
+     * @param resetValue The value to set when a component's reset button is clicked.
+     * @param columnWidth The width of the label column.
+     * @param sens The sensitivity of the drag float controls.
+     */
+    fun drawVec4Control(
+        label: String,
+        values: Vector4f,
+        resetValue: Float = 0f,
+        columnWidth: Float = DEFAULT_COLUMN_WIDTH,
+        sens: Float = SENSIBILITY
+    ) {
+        ImGui.pushID(label)
+        ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, ImGui.getStyle().itemSpacingX, ImGui.getStyle().itemSpacingY)
+        ImGui.columns(2)
+        ImGui.setColumnWidth(0, columnWidth)
+        ImGui.text(label)
+        ImGui.nextColumn()
+
+        val lineHeight = ImGui.getFontSize() + ImGui.getStyle().framePaddingY * 2f
+        val buttonSizeX = lineHeight + 3
+        val buttonSizeY = lineHeight
+
+        val widthEach = (ImGui.calcItemWidth() - (buttonSizeX * 3f)) / 3f
+
+        // X
+        ImGui.pushItemWidth(widthEach)
+        ImGui.pushStyleColor(ImGuiCol.Button, Color.BLUE.x, Color.BLUE.y, Color.BLUE.z, Color.BLUE.w)
+        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.9f, 0.2f, 0.2f, 1.0f)
+        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.8f, 0.1f, 0.15f, 1.0f)
+        if (ImGui.button("X", buttonSizeX, buttonSizeY)) {
+            values.x = resetValue
+        }
+        ImGui.popStyleColor(3)
+
+        ImGui.sameLine()
+        val vecValuesX = floatArrayOf(values.x)
+        ImGui.dragFloat("##x", vecValuesX, sens)
+        values.x = vecValuesX[0]
+        ImGui.popItemWidth()
+        ImGui.sameLine()
+
+        // Y
+        ImGui.pushItemWidth(widthEach)
+        ImGui.pushStyleColor(ImGuiCol.Button, Color.GREEN.x, Color.GREEN.y, Color.GREEN.z, Color.GREEN.w)
+        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.3f, 0.8f, 0.3f, 1.0f)
+        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.2f, 0.7f, 0.2f, 1.0f)
+        if (ImGui.button("Y", buttonSizeX, buttonSizeY)) {
+            values.y = resetValue
+        }
+        ImGui.popStyleColor(3)
+
+        ImGui.sameLine()
+        val vecValuesY = floatArrayOf(values.y)
+        ImGui.dragFloat("##y", vecValuesY, sens)
+        values.y = vecValuesY[0]
+        ImGui.popItemWidth()
+        ImGui.sameLine()
+
+        // Z
+        ImGui.pushItemWidth(widthEach)
+        ImGui.pushStyleColor(ImGuiCol.Button, Color.RED.x, Color.RED.y, Color.RED.z, Color.RED.w)
+        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.2f, 0.35f, 0.9f, 1.0f)
+        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.1f, 0.25f, 0.8f, 1.0f)
+        if (ImGui.button("Z", buttonSizeX, buttonSizeY)) {
+            values.z = resetValue
+        }
+        ImGui.popStyleColor(3)
+
+        ImGui.sameLine()
+        val vecValuesZ = floatArrayOf(values.z)
+        ImGui.dragFloat("##z", vecValuesZ, sens)
+        values.z = vecValuesZ[0]
+        ImGui.popItemWidth()
+
+        ImGui.nextColumn()
+
+        ImGui.popStyleVar()
+        ImGui.columns(1)
+        ImGui.popID()
+    }
+
     private var uniformScaling: Boolean = true
 
     /**
@@ -279,7 +365,7 @@ object MImGui {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : Enum<*>> enumCheckbox(label: String, value: T): T {
+    fun <T : Enum<*>> enumDropdown(label: String, value: T): T {
         val index = ImInt(value.ordinal)
 
         val enumValues = value.declaringJavaClass.enumConstants.map { it.toString() }.toTypedArray()
@@ -298,7 +384,7 @@ object MImGui {
         ImGui.pushID(label)
 
         if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
-            ImGui.tableSetupColumn("Label", 0, DEFAULT_COLUMN_WIDTH)
+            ImGui.tableSetupColumn("Label", 0)
             ImGui.tableSetupColumn("Control")
             ImGui.tableNextRow()
             ImGui.tableSetColumnIndex(0)
