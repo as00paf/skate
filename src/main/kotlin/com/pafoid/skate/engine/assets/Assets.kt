@@ -32,6 +32,8 @@ object Assets {
     }
     object Models {
         const val CUBE = "assets/obj/cube.obj"
+        const val SPHERE = "assets/obj/sphere.obj"
+        const val CYLINDER = "assets/obj/cylinder.obj"
         const val RAIL = "assets/obj/rail.obj"
         const val LEDGE = "assets/obj/ledge.obj"
         const val KICKER = "assets/obj/kicker.obj"
@@ -86,7 +88,7 @@ object Assets {
 
         const val CUBE = "EngineDefaults\\Models\\cube.obj"
         const val CYLINDER = "EngineDefaults\\Models\\cube.obj"
-        const val SPHERE = "EngineDefaults\\Models\\cube.obj"
+        const val SPHERE = "EngineDefaults\\Models\\sphere.obj"
         const val RAIL = "EngineDefaults\\Models\\rail.obj"
         const val LEDGE = "EngineDefaults\\Models\\ledge.obj"
         const val KICKER = "EngineDefaults\\Models\\kicker.obj"
@@ -159,6 +161,8 @@ object Assets {
             // Models
             SKATEBOARD_GLB to Models.SKATEBOARD_GLB,
             CUBE to Models.CUBE,
+            SPHERE to Models.SPHERE,
+            CYLINDER to Models.CYLINDER,
             RAIL to Models.RAIL,
             LEDGE to Models.LEDGE,
             KICKER to Models.KICKER,

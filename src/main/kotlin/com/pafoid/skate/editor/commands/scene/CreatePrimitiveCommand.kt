@@ -28,20 +28,15 @@ class CreatePrimitiveCommand(
         transform.translation.set(0f, 1f, 0f)
         transform.scale.set(halfExtents)
         primitive.addComponent(transform)
-
-        val texture = assetsManager.getTexture(Assets.Bundled.WOOD_BROWN)
+        val material = Material(baseColorFactor = 1f)
         val baseModel = when (type) {
-            PrimitiveType.PLANE -> assetsManager.loadModel(Assets.Bundled.CUBE)
-            PrimitiveType.CUBE -> assetsManager.loadModel(Assets.Bundled.CUBE)
-            PrimitiveType.CYLINDER -> assetsManager.loadModel(Assets.Bundled.CYLINDER)
-            PrimitiveType.SPHERE -> assetsManager.loadModel(Assets.Bundled.SPHERE)
+            PrimitiveType.PLANE -> assetsManager.loadModel(Assets.Models.CUBE)
+            PrimitiveType.CUBE -> assetsManager.loadModel(Assets.Models.CUBE)
+            PrimitiveType.CYLINDER -> assetsManager.loadModel(Assets.Models.CYLINDER)
+            PrimitiveType.SPHERE -> assetsManager.loadModel(Assets.Models.SPHERE)
         }
-        val model = `3dModel`(
-            path = baseModel.path,
-            mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
-        )
-        val renderComponent =
-            RenderComponent(model, material = Material(texture, baseColorFactor = 1f))
+        val model = `3dModel`(path = baseModel.path, mesh = baseModel.mesh)
+        val renderComponent = RenderComponent(model, material = material)
         primitive.addComponent(renderComponent)
 
         gameObjectManager.addGameObject(primitive)

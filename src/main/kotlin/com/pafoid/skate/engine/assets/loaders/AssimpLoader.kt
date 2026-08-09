@@ -31,6 +31,7 @@ import org.lwjgl.assimp.Assimp.aiImportFile
 import org.lwjgl.assimp.Assimp.aiImportFileFromMemory
 import org.lwjgl.assimp.Assimp.aiProcess_CalcTangentSpace
 import org.lwjgl.assimp.Assimp.aiProcess_FlipUVs
+import org.lwjgl.assimp.Assimp.aiProcess_GenSmoothNormals
 import org.lwjgl.assimp.Assimp.aiProcess_JoinIdenticalVertices
 import org.lwjgl.assimp.Assimp.aiProcess_LimitBoneWeights
 import org.lwjgl.assimp.Assimp.aiProcess_Triangulate
@@ -55,8 +56,8 @@ class AssimpLoader(
 
     fun loadModel(buffer: ByteBuffer, filePath: String): `3dModel` {
         try {
-            val flags =
-                aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
+            val flags = aiProcess_GenSmoothNormals or
+                    aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
             val scene = aiImportFileFromMemory(buffer, flags, "")
                 ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
             return loadModel(scene, filePath)
@@ -70,7 +71,7 @@ class AssimpLoader(
         try {
             buffer.put(modelData)
             buffer.flip()
-            val flags =
+            val flags = aiProcess_GenSmoothNormals or
                 aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
             val scene = aiImportFileFromMemory(buffer, flags, "")
                 ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
@@ -275,13 +276,15 @@ class AssimpLoader(
             vertices[v * 3 + 1] = vVec.y
             vertices[v * 3 + 2] = vVec.z
 
-            val norms = mesh.mNormals() ?: continue
-            val normal = norms.get(v)
-            val nVec = Vector3f(normal.x(), normal.y(), normal.z())
-            transform.transformDirection(nVec)
-            normals[v * 3] = nVec.x
-            normals[v * 3 + 1] = nVec.y
-            normals[v * 3 + 2] = nVec.z
+            val norms = mesh.mNormals()
+            if (norms != null) {
+                val normal = norms.get(v)
+                val nVec = Vector3f(normal.x(), normal.y(), normal.z())
+                transform.transformDirection(nVec)
+                normals[v * 3] = nVec.x
+                normals[v * 3 + 1] = nVec.y
+                normals[v * 3 + 2] = nVec.z
+            }
 
             val meshTangents = mesh.mTangents()
 
