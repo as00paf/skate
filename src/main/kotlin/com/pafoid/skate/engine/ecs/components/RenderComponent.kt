@@ -21,14 +21,16 @@ data class RenderComponent(
 
     fun resolveModelFromPath(assetsManager: AssetsManager) {
         model = model?.path?.let { assetsManager.loadModel(it) }
+        val baseColor = albedoTextureGuid.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
+        val normalMap = normalMapGuid.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
+        val metallicRoughness = metallicRoughnessGuid.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
+
         model?.let { model ->
             model.mesh.forEach { meshPart ->
                 val mat = meshPart.material
-                albedoTextureGuid.takeIf { it.isNotBlank() }
-                    ?.let { mat.baseColorTexture = assetsManager.getTexture(it) }
-                normalMapGuid.takeIf { it.isNotBlank() }?.let { mat.normalMap = assetsManager.getTexture(it) }
-                metallicRoughnessGuid.takeIf { it.isNotBlank() }
-                    ?.let { mat.metallicRoughnessTexture = assetsManager.getTexture(it) }
+                baseColor?.let { mat.baseColorTexture = it }
+                normalMap?.let { mat.normalMap = it }
+                metallicRoughness?.let { mat.metallicRoughnessTexture = it }
             }
         }
     }
@@ -39,14 +41,17 @@ data class RenderComponent(
     ) {
         model?.path?.let { path ->
             model = assetsManager.resolveModel(path)
+            val baseColor = albedoTextureGuid.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
+            val normalMap = normalMapGuid.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
+            val metallicRoughness =
+                metallicRoughnessGuid.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
+
             model?.let { model ->
                 model.mesh.forEach { meshPart ->
                     val mat = meshPart.material
-                    albedoTextureGuid.takeIf { it.isNotBlank() }
-                        ?.let { mat.baseColorTexture = assetsManager.resolveTexture(it) }
-                    normalMapGuid.takeIf { it.isNotBlank() }?.let { mat.normalMap = assetsManager.resolveTexture(it) }
-                    metallicRoughnessGuid.takeIf { it.isNotBlank() }
-                        ?.let { mat.metallicRoughnessTexture = assetsManager.resolveTexture(it) }
+                    baseColor?.let { mat.baseColorTexture = it }
+                    normalMap?.let { mat.normalMap = it }
+                    metallicRoughness?.let { mat.metallicRoughnessTexture = it }
                 }
             }
         }
