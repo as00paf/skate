@@ -33,6 +33,89 @@ class ModelRenderer(
     private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
 
     /**
+     * Renders a game object with full PBR shading and optional skeleton visualization.
+     */
+    fun render(
+        go: GameObject,
+        transform: Transform,
+        renderComponent: RenderComponent,
+        defaultShader: Shader,
+        cameraPosition: Vector3f,
+        skeletonComponent: SkeletonComponent? = null
+    ) {
+        val transformationMatrix = transform.toWorldMatrix()
+        val textureScale = renderComponent.textureScale
+
+        // Upload global uniforms for this object
+        defaultShader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
+        defaultShader.uploadFloat(Uniforms.TEXTURE_SCALE, textureScale)
+        defaultShader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
+
+        val hasSkin = skeletonComponent?.pose != null
+        defaultShader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
+        if (skeletonComponent != null) {
+            defaultShader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.matrixPalette)
+        }
+
+        val skeleton = skeletonComponent?.pose?.skeleton
+        val model = renderComponent.model ?: return // No model to render
+
+        // Render mesh if requested
+        if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
+            for (part in model.mesh) {
+                renderMeshPart(part, defaultShader)
+            }
+        }
+
+        // Render skeleton if requested
+        if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
+            if (skeleton != null) {
+                visualizeBoneRecursive(skeleton.rootBone, skeleton, transformationMatrix)
+            }
+        }
+    }
+
+    /**
+     * Renders a game object with minimal shading (no textures, no PBR).
+     * Used for shadow passes, debug rendering, or other simplified scenarios.
+     */
+    fun renderSimple(
+        go: GameObject,
+        transform: Transform,
+        renderComponent: RenderComponent,
+        shader: Shader,
+        skeletonComponent: SkeletonComponent? = null
+    ) {
+        val transformationMatrix = transform.toWorldMatrix()
+        shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
+        shader.uploadFloat(Uniforms.TEXTURE_SCALE, renderComponent.textureScale)
+
+        val hasSkin = skeletonComponent?.pose != null
+        shader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
+        if (skeletonComponent?.pose != null) {
+            shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.matrixPalette)
+        }
+
+        val skeleton = skeletonComponent?.pose?.skeleton
+        val model = renderComponent.model ?: return
+
+        // Render mesh if requested
+        if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
+            for (part in model.mesh) {
+                renderMeshPartSimple(part, shader)
+            }
+        }
+
+        // Render skeleton if requested
+        if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
+            if (skeleton != null) {
+                visualizeBoneRecursive(skeleton.rootBone, skeleton, transformationMatrix)
+            }
+        }
+    }
+
+
+    /**
      * Renders a mesh part with full PBR material support.
      */
     private fun renderMeshPart(
@@ -130,98 +213,6 @@ class ModelRenderer(
 
         // Just unbind VAO without disabling attributes (disabling breaks skinning)
         GL30.glBindVertexArray(0)
-    }
-
-    /**
-     * Renders a game object with full PBR shading and optional skeleton visualization.
-     */
-    fun render(
-        go: GameObject,
-        transform: Transform,
-        renderComponent: RenderComponent,
-        defaultShader: Shader,
-        cameraPosition: Vector3f,
-        skeletonComponent: SkeletonComponent? = null
-    ) {
-        val transformationMatrix = transform.toWorldMatrix()
-        val textureScale = renderComponent.textureScale
-
-        // Upload global uniforms for this object
-        defaultShader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
-        defaultShader.uploadFloat(Uniforms.TEXTURE_SCALE, textureScale)
-        defaultShader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
-
-        val hasSkin = skeletonComponent?.pose != null
-        defaultShader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-        if (skeletonComponent != null) {
-            defaultShader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.matrixPalette)
-        }
-
-        val skeleton = skeletonComponent?.pose?.skeleton
-        val model = renderComponent.model ?: return // No model to render
-
-        // Render mesh if requested
-        if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
-            for (part in model.mesh) {
-                renderMeshPart(part, defaultShader)
-            }
-        }
-
-        // Render skeleton if requested
-        if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
-            if (skeleton != null) {
-                renderSkeleton(skeleton, transform)
-            }
-        }
-    }
-
-    /**
-     * Renders a game object with minimal shading (no textures, no PBR).
-     * Used for shadow passes, debug rendering, or other simplified scenarios.
-     */
-    fun renderSimple(
-        go: GameObject,
-        transform: Transform,
-        renderComponent: RenderComponent,
-        shader: Shader,
-        skeletonComponent: SkeletonComponent? = null
-    ) {
-        val transformationMatrix = transform.toWorldMatrix()
-        shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
-        shader.uploadFloat(Uniforms.TEXTURE_SCALE, renderComponent.textureScale)
-
-        val hasSkin = skeletonComponent?.pose != null
-        shader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
-        if (skeletonComponent?.pose != null) {
-            shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.matrixPalette)
-        }
-
-        val skeleton = skeletonComponent?.pose?.skeleton
-        val model = renderComponent.model ?: return
-
-        // Render mesh if requested
-        if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
-            for (part in model.mesh) {
-                renderMeshPartSimple(part, shader)
-            }
-        }
-
-        // Render skeleton if requested
-        if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
-            if (skeleton != null) {
-                renderSkeleton(skeleton, transform)
-            }
-        }
-    }
-
-    private fun renderSkeleton(
-        skeleton: Skeleton,
-        transform: Transform
-    ) {
-        val transformationMatrix = transform.toWorldMatrix()
-
-        // Use the same approach as in AnimationSystem for consistent visualization
-        visualizeBoneRecursive(skeleton.rootBone, skeleton, transformationMatrix)
     }
 
     private fun visualizeBoneRecursive(bone: Bone, skeleton: Skeleton, modelMatrix: Matrix4f) {
