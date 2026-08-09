@@ -69,6 +69,7 @@ class GeometryPass(
     override fun execute(scene: Scene) {
         val activeGameObject = scene.selectedGameObject
         val hoveredGameObject = scene.hoveredGameObject
+        val sprites = mutableListOf<SpriteRenderer>()
 
         // Setup framebuffer
         if (useFbo) {
@@ -112,7 +113,7 @@ class GeometryPass(
             shadowMapResolution
         )
 
-        // Render all 3D game objects
+        // Render all 3D game objects and collect 2D objects while iterating
         scene.gameObjects.forEach { go ->
             if (!go.isVisible) return@forEach
             val renderComponent = go.getComponent<RenderComponent>()
@@ -135,27 +136,22 @@ class GeometryPass(
                     skeletonComponent = skeletonComponent
                 )
             }
+            go.getComponent<SpriteRenderer>()?.let { if (it.enabled) sprites.add(it) }
         }
 
         defaultShader.stop()
 
         // Render 2D sprites
-        render2D(scene, batchShader)
+        render2D(sprites, batchShader)
 
         // Render Sky Dome
         skyDomeRenderer.render(camera, scene)
     }
 
-    private fun render2D(scene: Scene, shader: Shader) {
+    private fun render2D(sprites: List<SpriteRenderer>, shader: Shader) {
         renderer2D.bindShader(shader)
         renderer2D.bindCamera(cameraManager.camera)
-
-        scene.gameObjects.forEach { go ->
-            if (!go.isVisible) return@forEach
-            go.getComponent<SpriteRenderer>()?.let { sprite ->
-                renderer2D.add(go)
-            }
-        }
+        renderer2D.addAll(sprites)
         renderer2D.render()
         renderer2D.clear()
     }

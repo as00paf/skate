@@ -21,7 +21,11 @@ class Renderer2D {
         }
     }
 
-    private fun add(spr: SpriteRenderer) {
+    fun addAll(sprites: List<SpriteRenderer>) {
+        sprites.forEach { spr -> add(spr) }
+    }
+
+    fun add(spr: SpriteRenderer) {
         val zIndex = spr.zIndex
         val batches = batchesByZIndex.getOrPut(zIndex) { mutableListOf() }
 
