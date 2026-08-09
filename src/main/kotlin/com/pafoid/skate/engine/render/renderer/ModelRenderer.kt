@@ -24,9 +24,6 @@ import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
-import org.lwjgl.opengl.GL11.glBindTexture
-import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL30
 
 class ModelRenderer(
@@ -34,20 +31,6 @@ class ModelRenderer(
 ) {
 
     private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
-
-    /**
-     * Binds a texture to the specified slot, using the fallback texture if null.
-     * Also uploads the texture unit index to the shader.
-     */
-    private fun bindTexture(
-        slot: Int,
-        textureId: Int,
-        shader: Shader,
-    ) {
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + slot)
-        glBindTexture(GL_TEXTURE_2D, textureId)
-        shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, slot)
-    }
 
     /**
      * Renders a mesh part with full PBR material support.
@@ -125,9 +108,9 @@ class ModelRenderer(
         material.baseColorTexture?.let {
             bindTexture(
                 TextureSlots.BASE_COLOR,
-                it.texId,
-                shader,
+                it.texId
             )
+            shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
         }
         shader.uploadBoolean("u_HasBaseColorTexture", material.baseColorTexture != null)
 
