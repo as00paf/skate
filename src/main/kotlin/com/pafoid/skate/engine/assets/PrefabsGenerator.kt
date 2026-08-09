@@ -53,12 +53,10 @@ class PrefabsGenerator(
         val texturePath = projectAssetsDir + Assets.Bundled.ASPHALT
         val modelPath = projectAssetsDir + Assets.Bundled.CUBE
         val texture = assetsManager.getTexture(texturePath)
+        val material = Material(texture)
         val baseModel = assetsManager.loadModel(modelPath)
-        val model = `3dModel`(
-            path = modelPath,
-            mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
-        )
-        return Floor("Tile", model)
+        val model = `3dModel`(path = modelPath, mesh = baseModel.mesh)
+        return Floor("Tile", model, material)
     }
 
     fun spawnRail(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {

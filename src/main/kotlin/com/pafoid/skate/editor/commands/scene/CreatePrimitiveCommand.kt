@@ -41,7 +41,7 @@ class CreatePrimitiveCommand(
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
         val renderComponent =
-            RenderComponent(model, albedoTextureGuid = model.mesh[0].material.baseColorTexture?.filePath.orEmpty())
+            RenderComponent(model, material = Material(texture))
         primitive.addComponent(renderComponent)
 
         gameObjectManager.addGameObject(primitive)

@@ -2,13 +2,14 @@ package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
+import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.render.data.RenderMode
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class RenderComponent(
     var model: `3dModel`? = null,
-    var albedoTextureGuid: String = "",
+    val material: Material? = null,
     var normalMapGuid: String = "",
     var metallicRoughnessGuid: String = "",
     var shininess: Float = 10f,
@@ -21,7 +22,8 @@ data class RenderComponent(
 
     fun resolveModelFromPath(assetsManager: AssetsManager) {
         model = model?.path?.let { assetsManager.loadModel(it) }
-        val baseColor = albedoTextureGuid.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
+        val baseColor =
+            material?.baseColorTexture?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
         val normalMap = normalMapGuid.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
         val metallicRoughness = metallicRoughnessGuid.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
 
@@ -41,7 +43,8 @@ data class RenderComponent(
     ) {
         model?.path?.let { path ->
             model = assetsManager.resolveModel(path)
-            val baseColor = albedoTextureGuid.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
+            val baseColor = material?.baseColorTexture?.filePath?.takeIf { it.isNotBlank() }
+                ?.let { assetsManager.resolveTexture(it) }
             val normalMap = normalMapGuid.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
             val metallicRoughness =
                 metallicRoughnessGuid.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
