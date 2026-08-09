@@ -126,12 +126,12 @@ class PickingPass(
                 pickingShader3D.uploadBoolean(Uniforms.USE_BATCH, false)
 
                 // Use ModelRenderer's simple render (no textures/PBR)
-                modelRenderer.renderSimple(
-                    go = go,
+                modelRenderer.render(
                     transform = transform,
                     renderComponent = renderComponent,
                     shader = pickingShader3D,
-                    skeletonComponent = skeletonComponent
+                    skeletonComponent = skeletonComponent,
+                    simple = true
                 )
             }
         }

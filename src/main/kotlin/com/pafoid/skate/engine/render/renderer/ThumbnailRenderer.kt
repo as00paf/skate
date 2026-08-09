@@ -122,10 +122,9 @@ class ThumbnailRenderer(
 
         // Delegate actual model rendering to ModelRenderer
         modelRenderer.render(
-            go = tempGameObject,
             transform = transform,
             renderComponent = renderComponent,
-            defaultShader = shader,
+            shader = shader,
             cameraPosition = camera.position
         )
 

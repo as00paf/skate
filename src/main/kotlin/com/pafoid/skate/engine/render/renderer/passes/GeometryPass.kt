@@ -129,10 +129,9 @@ class GeometryPass(
                 val skeletonComponent = go.getComponent<SkeletonComponent>()
 
                 modelRenderer.render(
-                    go = go,
                     transform = transformComponent,
                     renderComponent = renderComponent,
-                    defaultShader = defaultShader,
+                    shader = defaultShader,
                     cameraPosition = camera.position,
                     skeletonComponent = skeletonComponent
                 )
