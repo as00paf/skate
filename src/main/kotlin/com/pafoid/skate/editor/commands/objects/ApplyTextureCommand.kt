@@ -4,9 +4,9 @@ import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.MeshPart
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -27,7 +27,7 @@ class ApplyTextureCommand(
             val newMeshPart = MeshPart(
                 material = newMaterial,
             )
-            val newModel = TexturedModel(mesh = listOf(newMeshPart))
+            val newModel = `3dModel`(mesh = listOf(newMeshPart))
 
             // Create new RenderComponent with updated model
             val newRenderComponent = RenderComponent(

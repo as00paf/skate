@@ -1,7 +1,7 @@
 package com.pafoid.skate.game.prefabs
 
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -10,7 +10,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import org.joml.Vector3f
 
 class Skateboard(
-    model: TexturedModel,
+    model: `3dModel`,
     position: Vector3f = Vector3f(0f, 1f, 0f),
     scale: Vector3f = Vector3f(0.0017f, 0.0017f, 0.0017f),
     mass: Float = 1.8f,// 1.8kg mass

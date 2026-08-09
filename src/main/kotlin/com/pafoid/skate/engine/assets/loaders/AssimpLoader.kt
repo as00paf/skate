@@ -2,11 +2,11 @@ package com.pafoid.skate.engine.assets.loaders
 
 import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.data.Texture
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.assets.data.models.BoneInfo
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.assets.data.models.MeshPart
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.render.VAOLoader
@@ -56,7 +56,7 @@ class AssimpLoader(
     private val vaoLoader: VAOLoader,
 ) {
 
-    fun loadModel(buffer: ByteBuffer, filePath: String): TexturedModel {
+    fun loadModel(buffer: ByteBuffer, filePath: String): `3dModel` {
         try {
             val flags =
                 aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights
@@ -68,7 +68,7 @@ class AssimpLoader(
         }
     }
 
-    fun loadModel(modelData: ByteArray, filePath: String): TexturedModel {
+    fun loadModel(modelData: ByteArray, filePath: String): `3dModel` {
         val buffer = MemoryUtil.memAlloc(modelData.size)
         try {
             buffer.put(modelData)
@@ -83,13 +83,13 @@ class AssimpLoader(
         }
     }
 
-    fun loadModel(filePath: String): TexturedModel {
+    fun loadModel(filePath: String): `3dModel` {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
         return loadModel(scene, filePath)
     }
 
-    fun loadModel(scene: AIScene, filePath: String = "*packed"): TexturedModel {
+    fun loadModel(scene: AIScene, filePath: String = "*packed"): `3dModel` {
         val meshParts = mutableListOf<MeshPart>()
         val embeddedTextures = mutableMapOf<String, Texture>()
 
@@ -148,7 +148,7 @@ class AssimpLoader(
         val skeleton = if (rootBone != null) Skeleton(rootBone, boneNames.size) else null
 
         aiReleaseImport(scene)
-        return TexturedModel(mesh = meshParts, skeleton = skeleton, path = filePath)
+        return `3dModel`(mesh = meshParts, skeleton = skeleton, path = filePath)
     }
 
     private fun buildHierarchy(aiNode: AINode, boneInfoMap: Map<String, BoneInfo>): Bone? {

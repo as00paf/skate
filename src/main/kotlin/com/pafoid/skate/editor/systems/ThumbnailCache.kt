@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.systems
 
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import org.lwjgl.opengl.GL11.glDeleteTextures
 
@@ -9,7 +9,7 @@ class ThumbnailCache(
 ) {
     private val thumbnails = mutableMapOf<String, Int>()
 
-    fun getThumbnail(id: String, model: TexturedModel): Int {
+    fun getThumbnail(id: String, model: `3dModel`): Int {
         thumbnails[id]?.let { return it }
 
         val texId = thumbnailRenderer.renderThumbnail(model)

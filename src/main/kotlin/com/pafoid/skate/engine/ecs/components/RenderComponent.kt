@@ -1,13 +1,13 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.assets.AssetsManager
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.render.data.RenderMode
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class RenderComponent(
-    var model: TexturedModel? = null,
+    var model: `3dModel`? = null,
     var albedoTextureGuid: String = "",
     var normalMapGuid: String = "",
     var metallicRoughnessGuid: String = "",

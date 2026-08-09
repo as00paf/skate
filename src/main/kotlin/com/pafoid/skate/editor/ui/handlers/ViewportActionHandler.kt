@@ -58,8 +58,8 @@ import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
@@ -368,7 +368,7 @@ class ViewportActionHandler(
 
             val texture = engine.assetsManager.getTexture(texturePath)
             val baseModel = engine.assetsManager.loadModel(Assets.Models.CUBE)
-            val model = TexturedModel(
+            val model = `3dModel`(
                 path = Assets.Models.CUBE,
                 mesh = baseModel.mesh,
                 material = Material(texture)

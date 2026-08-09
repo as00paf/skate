@@ -3,7 +3,7 @@ package com.pafoid.skate.engine.assets
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.SoundBuffer
 import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.loaders.AnimationLoader
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
@@ -37,7 +37,7 @@ class AssetsManager(
 
     private val textures = ConcurrentHashMap<String, Texture>()
     private val shaders = ConcurrentHashMap<String, Shader>()
-    private val models = ConcurrentHashMap<String, TexturedModel>()
+    private val models = ConcurrentHashMap<String, `3dModel`>()
     private val sounds = ConcurrentHashMap<String, SoundBuffer>()
     private val animations = ConcurrentHashMap<String, Animation>()
 
@@ -49,7 +49,7 @@ class AssetsManager(
         return assetsResolver.resolve<T>(path)
     }
 
-    fun resolveModel(path: String): TexturedModel? {
+    fun resolveModel(path: String): `3dModel`? {
         models[path]?.let { return it }
         val data = assetsResolver.resolveData(path) ?: return null
         val model = assimpLoader.loadModel(data, path)
@@ -141,7 +141,7 @@ class AssetsManager(
         return sounds[path] != null
     }
 
-    fun loadModel(modelData: ByteArray, filePath: String): TexturedModel {
+    fun loadModel(modelData: ByteArray, filePath: String): `3dModel` {
         return try {
             val model = assimpLoader.loadModel(modelData, filePath)
             models[model.path] = model
@@ -152,7 +152,7 @@ class AssetsManager(
         }
     }
 
-    fun loadModel(path: String): TexturedModel {
+    fun loadModel(path: String): `3dModel` {
         val file = File(path)
         val absolutePath = file.absolutePath
 
@@ -170,7 +170,7 @@ class AssetsManager(
         }
     }
 
-    fun getModel(path: String): TexturedModel? {
+    fun getModel(path: String): `3dModel`? {
         return models[File(path).absolutePath]
     }
 

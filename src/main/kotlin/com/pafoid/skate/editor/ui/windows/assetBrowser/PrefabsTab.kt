@@ -7,8 +7,8 @@ import com.pafoid.skate.editor.imgui.data.UiConstants.ASSET_BROWSER_ITEM_WIDTH
 import com.pafoid.skate.editor.systems.ThumbnailCache
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.PrefabsGenerator
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.game.prefabs.MaterialType
@@ -127,7 +127,7 @@ class PrefabsTab(
                     Assets.Bundled.DEFAULT_TEXTURE
                 )
             val model =
-                TexturedModel(
+                `3dModel`(
                     data.material?.texturePath ?: Assets.Bundled.DEFAULT_TEXTURE,
                     mesh = baseModel.mesh,
                     material = Material(texture)

@@ -4,7 +4,7 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -79,7 +79,7 @@ class ThumbnailRenderer(
      * @return A NEW OpenGL texture ID containing the rendered thumbnail.
      *         The caller must eventually delete this texture with glDeleteTextures.
      */
-    fun renderThumbnail(model: TexturedModel): Int {
+    fun renderThumbnail(model: `3dModel`): Int {
         // Save OpenGL state
         val lastFbo = glGetInteger(GL_FRAMEBUFFER_BINDING)
         val lastViewport = IntArray(4)
@@ -178,7 +178,7 @@ class ThumbnailRenderer(
      * Computes camera position and look-at target based on model bounding box.
      * Auto-frames the model for optimal thumbnail framing.
      */
-    private fun computeCameraTransform(model: TexturedModel): Pair<Vector3f, Vector3f> {
+    private fun computeCameraTransform(model: `3dModel`): Pair<Vector3f, Vector3f> {
         var minX = Float.MAX_VALUE
         var minY = Float.MAX_VALUE
         var minZ = Float.MAX_VALUE

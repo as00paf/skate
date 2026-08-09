@@ -2,7 +2,7 @@ package com.pafoid.skate.game.prefabs
 
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.SkeletonPose
 import com.pafoid.skate.engine.ecs.GameObject
@@ -19,7 +19,7 @@ import org.joml.Vector3f
 
 class Skater(
     name: String,
-    model: TexturedModel,
+    model: `3dModel`,
     skate: GameObject? = null,
     position: Vector3f = Vector3f(0f, 1.05f, 0f),
     rotation: Vector3f = Vector3f(0f, 90f, 0f),

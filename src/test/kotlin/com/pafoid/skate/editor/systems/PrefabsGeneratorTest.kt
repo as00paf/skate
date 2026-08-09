@@ -3,8 +3,8 @@ package com.pafoid.skate.editor.systems
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.data.Texture
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
@@ -39,13 +39,13 @@ class PrefabsGeneratorTest {
 
         // Prepare simple model/texture/animation objects to be returned by ResourceManager
         val tex = Texture().apply { filePath = "engine://textures/asphalt.png" }
-        val texturedModel = TexturedModel(material = Material(baseColorTexture = tex))
+        val model = `3dModel`(material = Material(baseColorTexture = tex))
         val skeleton = Skeleton(Bone(0, "root"), 1)
-        val characterModel = TexturedModel(mesh = listOf(), skeleton = skeleton)
+        val characterModel = `3dModel`(mesh = listOf(), skeleton = skeleton)
         val animation = Animation("idle", emptyList(), 1.0f, "anim/idle")
 
         // Stub ResourceManager synchronous methods used by prefabs
-        every { assetsManager.loadModel(any()) } returns texturedModel
+        every { assetsManager.loadModel(any()) } returns model
         every { assetsManager.getModel(any()) } returns characterModel
         every { assetsManager.loadAnimationSync(any()) } returns animation
         every { assetsManager.getTexture(any()) } returns tex

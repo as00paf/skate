@@ -5,8 +5,8 @@ import com.pafoid.skate.editor.data.PrimitiveType
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
-import com.pafoid.skate.engine.assets.data.models.TexturedModel
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.RenderComponent
@@ -36,7 +36,7 @@ class CreatePrimitiveCommand(
             PrimitiveType.CYLINDER -> assetsManager.loadModel(Assets.Bundled.CYLINDER)
             PrimitiveType.SPHERE -> assetsManager.loadModel(Assets.Bundled.SPHERE)
         }
-        val model = TexturedModel(
+        val model = `3dModel`(
             path = baseModel.path,
             mesh = baseModel.mesh.map { it.copy(material = Material(texture)) }
         )
