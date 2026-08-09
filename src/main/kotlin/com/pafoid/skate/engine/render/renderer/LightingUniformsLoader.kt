@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
@@ -30,6 +31,7 @@ class LightingUniformsLoader {
         shader: Shader,
         ambientLightComponent: AmbientLightComponent?,
         directionalLight: DirectionalLightComponent?,
+        pointLightComponents: List<PointLightComponent>,
         environmentComponent: EnvironmentComponent? = null,
         shadowMapTextureId: Int = 0,
         shadowMapResolution: Float = 0f,

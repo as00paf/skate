@@ -5,11 +5,13 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
+import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.CameraManager
+import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
@@ -95,10 +97,12 @@ class GeometryPass(
         // Upload lighting uniforms
         val directionalLight = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled }
         val ambientLightComponent = scene.getComponent<AmbientLightComponent>()?.takeIf { it.enabled }
+        val pointLights = scene.getAllComponents<PointLightComponent>().filter { it.enabled }
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,
             ambientLightComponent,
             directionalLight,
+            pointLights,
             environmentComponent,
             shadowMapTextureId,
             shadowMapResolution
