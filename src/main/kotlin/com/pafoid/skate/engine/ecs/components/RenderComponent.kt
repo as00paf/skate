@@ -10,8 +10,6 @@ import kotlinx.serialization.Serializable
 data class RenderComponent(
     var model: `3dModel`? = null,
     val material: Material? = null,
-    var normalMapGuid: String = "",
-    var metallicRoughnessGuid: String = "",
     var shininess: Float = 10f,
     var reflectivity: Float = 1f,
     var textureScale: Float = 1.0f,
@@ -24,8 +22,11 @@ data class RenderComponent(
         model = model?.path?.let { assetsManager.loadModel(it) }
         val baseColor =
             material?.baseColorTexture?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
-        val normalMap = normalMapGuid.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
-        val metallicRoughness = metallicRoughnessGuid.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
+        val normalMap = material?.normalMap?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
+        val metallicRoughness = material?.metallicRoughnessTexture?.filePath?.takeIf { it.isNotBlank() }
+            ?.let { assetsManager.getTexture(it) }
+        val ambientOcclusionMap =
+            material?.aoTexture?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.getTexture(it) }
 
         model?.let { model ->
             model.mesh.forEach { meshPart ->
@@ -33,6 +34,7 @@ data class RenderComponent(
                 baseColor?.let { mat.baseColorTexture = it }
                 normalMap?.let { mat.normalMap = it }
                 metallicRoughness?.let { mat.metallicRoughnessTexture = it }
+                ambientOcclusionMap?.let { mat.aoTexture = it }
             }
         }
     }
@@ -45,9 +47,13 @@ data class RenderComponent(
             model = assetsManager.resolveModel(path)
             val baseColor = material?.baseColorTexture?.filePath?.takeIf { it.isNotBlank() }
                 ?.let { assetsManager.resolveTexture(it) }
-            val normalMap = normalMapGuid.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
+            val normalMap =
+                material?.normalMap?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
             val metallicRoughness =
-                metallicRoughnessGuid.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
+                material?.metallicRoughnessTexture?.filePath?.takeIf { it.isNotBlank() }
+                    ?.let { assetsManager.resolveTexture(it) }
+            val ambientOcclusionMap =
+                material?.aoTexture?.filePath?.takeIf { it.isNotBlank() }?.let { assetsManager.resolveTexture(it) }
 
             model?.let { model ->
                 model.mesh.forEach { meshPart ->
@@ -55,6 +61,7 @@ data class RenderComponent(
                     baseColor?.let { mat.baseColorTexture = it }
                     normalMap?.let { mat.normalMap = it }
                     metallicRoughness?.let { mat.metallicRoughnessTexture = it }
+                    ambientOcclusionMap?.let { mat.aoTexture = it }
                 }
             }
         }
