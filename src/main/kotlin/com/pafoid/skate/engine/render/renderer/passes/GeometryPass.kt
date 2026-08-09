@@ -72,23 +72,14 @@ class GeometryPass(
         val sprites = mutableListOf<SpriteRenderer>()
 
         // Setup framebuffer
-        if (useFbo) {
-            frameBuffer.bind()
-        } else {
-            glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        }
+        if (useFbo) frameBuffer.bind() else glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glViewport(0, 0, frameBuffer.width, frameBuffer.height)
 
         // Clear with sky color from EnvironmentComponent
-        val environmentComponent = scene.getComponent<EnvironmentComponent>().takeIf { it?.enabled == true }
+        val environmentComponent = scene.getComponent<EnvironmentComponent>()?.takeIf { it.enabled }
         val renderSky = environmentComponent?.renderSky == true
-        // Use sky color if renderSky is true, otherwise use fallback gray
-        val skyColor = if (renderSky) {
-            environmentComponent.skyColor
-        } else {
-            Vector3f(0.2f, 0.2f, 0.2f) // Fallback dark gray when sky is disabled
-        }
-        clearColor(skyColor)
+        val skyColor = environmentComponent?.skyColor.takeIf { renderSky }
+        clearColor(skyColor ?: DEFAULT_SKY_COLOR)
 
         val camera = cameraManager.camera
 
@@ -102,8 +93,8 @@ class GeometryPass(
         lightingUniformsLoader.loadCameraPosition(defaultShader, camera) // New call
 
         // Upload lighting uniforms
-        val directionalLight = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true }
-        val ambientLightComponent = scene.getComponent<AmbientLightComponent>().takeIf { it?.enabled == true }
+        val directionalLight = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled }
+        val ambientLightComponent = scene.getComponent<AmbientLightComponent>()?.takeIf { it.enabled }
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,
             ambientLightComponent,
@@ -116,8 +107,8 @@ class GeometryPass(
         // Render all 3D game objects and collect 2D objects while iterating
         scene.gameObjects.forEach { go ->
             if (!go.isVisible) return@forEach
-            val renderComponent = go.getComponent<RenderComponent>()
-            val transformComponent = go.getComponent<Transform>()
+            val renderComponent = go.getComponent<RenderComponent>()?.takeIf { it.enabled }
+            val transformComponent = go.getComponent<Transform>()?.takeIf { it.enabled }
             if (renderComponent != null && transformComponent != null) {
                 // Hover & Selected states
                 var selectionState = 0.0f
@@ -172,5 +163,9 @@ class GeometryPass(
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, 0)
+    }
+
+    companion object {
+        val DEFAULT_SKY_COLOR = Vector3f(0.2f, 0.2f, 0.2f)
     }
 }
