@@ -79,6 +79,9 @@ class InputProvider(
         mouseListener.isMouseButtonDown(button, ignoreImGui)
 
     fun mouseButtonBeginPress(button: Int) = mouseListener.mouseButtonBeginPress(button)
+    fun leftMouseButtonBeginPress() = mouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_LEFT)
+    fun rightMouseButtonBeginPress() = mouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_RIGHT)
+    fun middleMouseButtonBeginPress() = mouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_MIDDLE)
 
     fun isInsideViewport(): Boolean {
         return mouseListener.getX() >= getGameViewportPos().x && mouseListener.getX() <= (getGameViewportPos().x + getGameViewportSize().x) &&

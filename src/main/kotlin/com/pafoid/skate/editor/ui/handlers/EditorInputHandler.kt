@@ -65,7 +65,7 @@ class EditorInputHandler(
         }
 
         editorInputState.orbitPressed =
-            inputProvider.mouseButtonBeginPress(GLFW.GLFW_MOUSE_BUTTON_MIDDLE) && editorInputState.isInsideViewport
+            inputProvider.middleMouseButtonBeginPress() && editorInputState.isInsideViewport
         editorInputState.orbitHeld =
             inputProvider.isMiddleMouseButtonDown(true) && editorInputState.isInsideViewport
 

@@ -41,7 +41,7 @@ class SelectionGizmo(
             scene.hoveredGameObject = hovered
             hoveredGameObjectUid = hovered?.uId ?: -1
 
-            if (inputProvider.isLeftMouseButtonDown(true)) {
+            if (inputProvider.leftMouseButtonBeginPress()) {
                 val event = if (hovered != null) ViewportAction.GameObjectSelected(hovered) else ViewportAction.SelectionCleared
                 eventSystem.publish(event)
             }
