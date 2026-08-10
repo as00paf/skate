@@ -13,7 +13,7 @@ data class DirectionalLightComponent(
     var color: Vector3f = Vector3f(1f, 0.95f, 0.8f),
     var intensity: Float = 1f,
     @Contextual
-    var lightSpaceMatrix: Matrix4f = Matrix4f(),
+    val lightSpaceMatrix: Matrix4f = Matrix4f(),
     var orthoLeft: Float = -20f,
     var orthoRight: Float = 20f,
     var orthoBottom: Float = -20f,
