@@ -8,6 +8,8 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.render.renderer.Renderer
+import imgui.ImGui
+import imgui.flag.ImGuiPopupFlags
 
 class SelectionGizmo(
     undoRedoManager: UndoRedoManager,
@@ -40,8 +42,11 @@ class SelectionGizmo(
             hoveredGameObjectUid = hovered?.uId ?: -1
 
             if (inputProvider.leftMouseButtonBeginPress()) {
-                val event = if (hovered != null) ViewportAction.GameObjectSelected(hovered) else ViewportAction.SelectionCleared
-                eventSystem.publish(event)
+                if (hovered != null) {
+                    eventSystem.publish(ViewportAction.GameObjectSelected(hovered))
+                } else if (!ImGui.isPopupOpen("add_component_popup", ImGuiPopupFlags.AnyPopupId)) {
+                    eventSystem.publish(ViewportAction.SelectionCleared)
+                }
             }
         } else {
             hoveredGameObjectUid = -1

@@ -32,13 +32,12 @@ class PropertiesWindow(
 ) : IWindow {
 
     private val searchString = ImString(128)
-    private var selectedGameObject: GameObject? = null
 
     override fun imgui(pOpen: ImBoolean?) {
-        selectedGameObject = engine.sceneManager.currentScene?.selectedGameObject ?: engine.sceneManager.currentScene
+        val go = engine.sceneManager.currentScene?.selectedGameObject ?: engine.sceneManager.currentScene
         
         ImGui.begin(stringManager.getString("window.properties"), pOpen)
-        selectedGameObject?.let { go ->
+        go?.let { go ->
             if (go !is Scene) {
                 enabledCheckbox(go)
                 ImGui.spacing()
