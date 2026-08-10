@@ -28,8 +28,10 @@ class EditorScenesTabBar(
             val openScenes = sceneManager.openScenes.toList()
             openScenes.forEachIndexed { index, scene ->
                 val open = ImBoolean(true)
-                var flags = 0
-                if (scene.isDirty) flags = flags or ImGuiTabItemFlags.UnsavedDocument
+                var flags = ImGuiTabItemFlags.None
+                if (scene.isDirty) {
+                    flags = flags or ImGuiTabItemFlags.UnsavedDocument
+                }
 
                 val displayName = scene.name.replace(".scene", "", ignoreCase = true)
                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }

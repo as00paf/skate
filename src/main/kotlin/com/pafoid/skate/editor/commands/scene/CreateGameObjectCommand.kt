@@ -14,6 +14,7 @@ class CreateGameObjectCommand(
     override fun execute() {
         gameObjectManager.addGameObject(gameObject)
         scene.selectedGameObject = gameObject
+        scene.isDirty = true
     }
 
     override fun undo() {

@@ -7,16 +7,14 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
-import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.renderer.Renderer
 
 class SelectionGizmo(
-    inputProvider: InputProvider,
     undoRedoManager: UndoRedoManager,
     engine: Engine,
-    private val eventSystem: EventSystem,
-    private val gameObjectManager: GameObjectManager,
-) : Gizmo(inputProvider, undoRedoManager) {
+) : Gizmo(engine, undoRedoManager) {
+    private val eventSystem: EventSystem = engine.eventSystem
+    private val gameObjectManager: GameObjectManager = engine.gameObjectManager
     private val renderer: Renderer = engine.renderer
 
     fun getHoveredObject(x: Float, y: Float): GameObject? {

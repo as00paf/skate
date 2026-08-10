@@ -1,14 +1,19 @@
 package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.utils.Ray
 import org.joml.Vector3f
 
 open class Gizmo(
-    protected val inputProvider: InputProvider,
-    protected val undoRedoManager: UndoRedoManager,
+    engine: Engine,
+    protected val undoRedoManager: UndoRedoManager
 ) {
+    protected val inputProvider: InputProvider = engine.inputProvider
+    protected val sceneManager: SceneManager = engine.sceneManager
+
     protected var xAxisActive = false
     protected var yAxisActive = false
     protected var zAxisActive = false

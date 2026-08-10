@@ -34,6 +34,7 @@ class DuplicateGameObjectCommand(
 
         gameObjectManager.addGameObject(duplicated)
         scene.selectedGameObject = duplicated
+        scene.isDirty = true
     }
 
     override fun undo() {

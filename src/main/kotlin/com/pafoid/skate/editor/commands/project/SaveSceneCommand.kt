@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import java.io.File
 
 class SaveSceneCommand(
     private val scene: Scene,
@@ -12,7 +13,7 @@ class SaveSceneCommand(
 ) : ExecuteOnlyCommand {
     override fun execute() {
         projectManager.currentProject?.let { project ->
-            sceneManager.saveScene(scene, project.projectPath)
+            sceneManager.saveScene(scene, File(project.getProjectDirectory(), "Scenes").absolutePath)
         }
     }
 

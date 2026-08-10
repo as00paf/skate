@@ -2,8 +2,8 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.CameraComponent
-import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.UnitSystem
 import com.pafoid.skate.engine.utils.UnitType
@@ -15,11 +15,11 @@ import org.joml.Vector3f
 import kotlin.math.abs
 
 class MeasureTool(
-    inputProvider: InputProvider,
+    engine: Engine,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
     private val settingsManager: EditorSettingsManager,
-) : Gizmo(inputProvider, undoRedoManager) {
+) : Gizmo(engine, undoRedoManager) {
     private var startPoint: Vector3f? = null
     private var endPoint: Vector3f? = null
 

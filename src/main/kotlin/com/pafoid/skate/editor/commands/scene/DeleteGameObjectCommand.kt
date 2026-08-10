@@ -14,6 +14,7 @@ class DeleteGameObjectCommand(
     override fun execute() {
         gameObjectManager.removeGameObject(gameObject)
         scene.selectedGameObject = null
+        scene.isDirty = true
     }
 
     override fun undo() {

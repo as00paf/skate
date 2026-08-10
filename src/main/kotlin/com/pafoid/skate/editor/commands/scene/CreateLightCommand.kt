@@ -45,6 +45,7 @@ class CreateLightCommand(
 
         gameObjectManager.addGameObject(lightObj)
         scene.selectedGameObject = lightObj
+        scene.isDirty = true
     }
 
     override fun undo() {

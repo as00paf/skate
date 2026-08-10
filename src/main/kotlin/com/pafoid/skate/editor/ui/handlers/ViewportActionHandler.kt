@@ -122,7 +122,7 @@ class ViewportActionHandler(
         }
 
         eventSystem.subscribe<SpawnPrefab> { event ->
-            handleSpawnPrefab(event.prefabType, event.position)
+            sceneManager.currentScene?.let { handleSpawnPrefab(event.prefabType, event.position, it) }
         }
 
         eventSystem.subscribe<DropTexture> { event ->
@@ -155,18 +155,22 @@ class ViewportActionHandler(
         }
         eventSystem.subscribe<AddComponent> { event ->
             undoRedoManager.executeCommand(AddComponentCommand(event.gameObject, event.componentType))
+            sceneManager.currentScene?.isDirty = true
         }
         eventSystem.subscribe<RemoveComponent> { event ->
             undoRedoManager.executeCommand(RemoveComponentCommand(event.gameObject, event.componentType))
+            sceneManager.currentScene?.isDirty = true
         }
         eventSystem.subscribe<ToggleVisibility> { event ->
             undoRedoManager.executeCommand(VisibilityToggleCommand(event.gameObject, event.visible))
+            sceneManager.currentScene?.isDirty = true
         }
         eventSystem.subscribe<ToggleLock> { event ->
             undoRedoManager.executeCommand(LockToggleCommand(event.gameObject, event.locked))
         }
         eventSystem.subscribe<Reparent> { event ->
             undoRedoManager.executeCommand(ReparentGameObjectCommand(event.child, event.newParent))
+            sceneManager.currentScene?.isDirty = true
         }
         eventSystem.subscribe<CreateEmptyChild> { event ->
             handleCreateEmptyChild(event.parent)
@@ -231,10 +235,11 @@ class ViewportActionHandler(
         val cameraObj = CameraComponent()
         undoRedoManager.executeCommand(AddComponentCommand(scene, ComponentType.CAMERA))
         logger.logEditor("Created camera: ${cameraObj.name}")
+        scene.isDirty = true
     }
 
-    private fun handleSpawnPrefab(prefabType: PrefabType, position: Vector3f?) {
-        val command = SpawnPrefabCommand(prefabType, position, engine.prefabsGenerator, gameObjectManager)
+    private fun handleSpawnPrefab(prefabType: PrefabType, position: Vector3f?, scene: Scene) {
+        val command = SpawnPrefabCommand(prefabType, position, engine.prefabsGenerator, gameObjectManager, scene)
         undoRedoManager.executeCommand(command)
         logger.logEditor("Spawned prefab: ${prefabType.name}")
     }
@@ -353,6 +358,7 @@ class ViewportActionHandler(
         undoRedoManager.executeCommand(
             ApplyTextureCommand(gameObject, texturePath, engine.assetsManager, eventSystem)
         )
+        sceneManager.currentScene?.isDirty = true
         logger.logEditor("Applied texture to ${gameObject.name}: $texturePath")
     }
 
@@ -389,6 +395,7 @@ class ViewportActionHandler(
         undoRedoManager.executeCommand(
             AddAudioComponentCommand(gameObject, soundPath)
         )
+        sceneManager.currentScene?.isDirty = true
 
         if (audioComponent != null) {
             logger.logEditor("Updated sound for ${gameObject.name}: $soundPath")
@@ -404,6 +411,7 @@ class ViewportActionHandler(
             undoRedoManager.executeCommand(
                 ApplyAnimationCommand(gameObject, animation, logger)
             )
+            sceneManager.currentScene?.isDirty = true
             logger.logEditor("Added animation to ${gameObject.name}: ${animation.name}")
         } else {
             logger.logEditor("Object has no Animator component")

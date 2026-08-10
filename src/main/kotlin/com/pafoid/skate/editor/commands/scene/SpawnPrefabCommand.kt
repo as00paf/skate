@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import org.joml.Vector3f
 
@@ -12,6 +13,7 @@ class SpawnPrefabCommand(
     private val position: Vector3f?,
     private val prefabsGenerator: PrefabsGenerator,
     private val gameObjectManager: GameObjectManager,
+    private val scene: Scene,
 ) : Command {
     private var createdObject: GameObject? = null
 
@@ -27,15 +29,19 @@ class SpawnPrefabCommand(
         }
         val pos = position ?: defaultPosition
 
-        createdObject = when (prefabType) {
+        val result = when (prefabType) {
             PrefabType.RAIL -> prefabsGenerator.spawnRail(pos, null)
             PrefabType.LEDGE -> prefabsGenerator.spawnLedge(pos, null)
             PrefabType.KICKER -> prefabsGenerator.spawnKicker(pos, null)
             PrefabType.MANUAL_PAD -> prefabsGenerator.spawnManualPad(pos, null)
             PrefabType.BANK -> prefabsGenerator.spawnBank(pos, null)
             PrefabType.QUARTER_PIPE -> prefabsGenerator.spawnQuarterPipe(pos, null)
-            else -> null
+            PrefabType.SKATEBOARD -> prefabsGenerator.spawnSkateboard()
+            PrefabType.SKATER -> prefabsGenerator.spawnSkater()
         }
+        createdObject = result
+        gameObjectManager.addGameObject(result)
+        scene.isDirty = true
     }
 
     override fun undo() {

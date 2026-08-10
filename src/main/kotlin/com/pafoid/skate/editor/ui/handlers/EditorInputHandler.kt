@@ -8,6 +8,7 @@ import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.events.SceneAction
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 
@@ -41,18 +42,20 @@ class EditorInputHandler(
         editorInputState.isInsideViewport = inputProvider.isInsideViewport()
 
         // Polling Keyboard
-        val moveInput = Vector2f()
-        if (inputProvider.isKeyPressed(inputMappings.moveForward.keyboardKey)) moveInput.y += 1f
-        if (inputProvider.isKeyPressed(inputMappings.moveBackward.keyboardKey)) moveInput.y -= 1f
-        if (inputProvider.isKeyPressed(inputMappings.moveLeft.keyboardKey)) moveInput.x -= 1f
-        if (inputProvider.isKeyPressed(inputMappings.moveRight.keyboardKey)) moveInput.x += 1f
-        if (moveInput.lengthSquared() > 1f) moveInput.normalize()
-        editorInputState.moveDirection.set(moveInput)
+        if (!inputProvider.isControlKeyDown()) {
+            val moveInput = Vector2f()
+            if (inputProvider.isKeyPressed(inputMappings.moveForward.keyboardKey)) moveInput.y += 1f
+            if (inputProvider.isKeyPressed(inputMappings.moveBackward.keyboardKey)) moveInput.y -= 1f
+            if (inputProvider.isKeyPressed(inputMappings.moveLeft.keyboardKey)) moveInput.x -= 1f
+            if (inputProvider.isKeyPressed(inputMappings.moveRight.keyboardKey)) moveInput.x += 1f
+            if (moveInput.lengthSquared() > 1f) moveInput.normalize()
+            editorInputState.moveDirection.set(moveInput)
 
-        var verticalInput = 0f
-        if (inputProvider.isKeyPressed(inputMappings.moveUp.keyboardKey)) verticalInput += 1f
-        if (inputProvider.isKeyPressed(inputMappings.moveDown.keyboardKey)) verticalInput -= 1f
-        editorInputState.verticalMovement = verticalInput
+            var verticalInput = 0f
+            if (inputProvider.isKeyPressed(inputMappings.moveUp.keyboardKey)) verticalInput += 1f
+            if (inputProvider.isKeyPressed(inputMappings.moveDown.keyboardKey)) verticalInput -= 1f
+            editorInputState.verticalMovement = verticalInput
+        }
 
         // Polling Mouse
         val dx = inputProvider.getMouseDx()
@@ -87,6 +90,11 @@ class EditorInputHandler(
             if (inputProvider.keyBeginPress(inputMappings.hierarchyDuplicate.keyboardKey) && selected != null) {
                 eventSystem.publish(ViewportAction.Duplicate(selected))
                 logger.logEditor("Duplicate GameObject requested: ${selected.name}")
+            }
+            if (inputProvider.keyBeginPress(GLFW.GLFW_KEY_S)) {
+                engine.sceneManager.currentScene?.let {
+                    eventSystem.publish(SceneAction.SaveRequested(it))
+                }
             }
         } else {
             if (inputProvider.keyBeginPress(inputMappings.toggleFullScreen.keyboardKey)) {

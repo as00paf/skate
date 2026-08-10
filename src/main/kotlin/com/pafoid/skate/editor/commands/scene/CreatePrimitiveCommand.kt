@@ -41,6 +41,7 @@ class CreatePrimitiveCommand(
 
         gameObjectManager.addGameObject(primitive)
         scene.selectedGameObject = primitive
+        scene.isDirty = true
     }
 
     override fun undo() {

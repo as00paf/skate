@@ -2,20 +2,20 @@ package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.commands.objects.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import org.joml.Vector3f
 import kotlin.math.abs
 
 class TranslateGizmo(
-    inputProvider: InputProvider,
+    engine: Engine,
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
-) : Gizmo(inputProvider, undoRedoManager) {
+) : Gizmo(engine, undoRedoManager) {
     private val arrowLength = 2.0f
     private val coneSize = 0.3f
     private val hitThreshold = 0.3f
@@ -119,6 +119,7 @@ class TranslateGizmo(
                 oldTransform?.let { old ->
                     if (old != transform) {
                         undoRedoManager.pushCommand(TransformCommand(go, old, transform))
+                        sceneManager.currentScene?.isDirty = true
                     }
                 }
                 println("Stop dragging ${transform.translation}")
