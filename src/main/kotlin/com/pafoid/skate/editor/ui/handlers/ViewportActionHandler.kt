@@ -158,7 +158,7 @@ class ViewportActionHandler(
             sceneManager.currentScene?.isDirty = true
         }
         eventSystem.subscribe<RemoveComponent> { event ->
-            undoRedoManager.executeCommand(RemoveComponentCommand(event.gameObject, event.componentType))
+            undoRedoManager.executeCommand(RemoveComponentCommand(event.gameObject, event.component))
             sceneManager.currentScene?.isDirty = true
         }
         eventSystem.subscribe<ToggleVisibility> { event ->

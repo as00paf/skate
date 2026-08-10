@@ -69,6 +69,7 @@ class SceneManager(
                 logger.log("Error while loading object: ${obj.name}. ${e.message}", LogLevel.ERROR)
             }
         }
+        scene.components.forEach { it.init(scene) }
     }
 
     private fun resolveObjectReferences(obj: GameObject) {
@@ -95,11 +96,6 @@ class SceneManager(
         if (index < 0) return
 
         val sceneToClose = openScenes[index]
-        if (sceneToClose.isDirty) {
-            logger.log("Warning: Closing unsaved scene ${sceneToClose.name}", LogLevel.WARN)
-            // TODO: Prompt the user for confirmation.
-        }
-
         logger.log("Destroying scene: ${sceneToClose.name}", LogLevel.ACTION)
 
         eventSystem.publish(SceneAction.Closing(scene))

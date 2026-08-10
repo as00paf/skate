@@ -22,10 +22,11 @@ class EditorScenesTabBar(
     private val eventSystem: EventSystem,
     private val stringManager: StringManager
 ) {
-
+    private var toRemove = -1
     fun render(sceneManager: SceneManager) {
         if (ImGui.beginTabBar("##EditorScenesTabBar", ImGuiTabBarFlags.Reorderable or ImGuiTabBarFlags.AutoSelectNewTabs)) {
             val openScenes = sceneManager.openScenes.toList()
+
             openScenes.forEachIndexed { index, scene ->
                 val open = ImBoolean(true)
                 var flags = ImGuiTabItemFlags.None
@@ -54,9 +55,12 @@ class EditorScenesTabBar(
                             eventSystem.publish(SaveAsRequested(scene))
                         }
                         ImGui.separator()
-                        val canClose = sceneManager.openScenes.size > 1
+                        val canClose = sceneManager.openScenes.isNotEmpty()
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close"), null, false, canClose)) {
-                            eventSystem.publish(CloseRequested(scene))
+                            if (scene.isDirty) {
+                                toRemove = index
+                                ImGui.openPopup(stringManager.getString("context.scene_tab.close_confirmation_title"))
+                            } else eventSystem.publish(CloseRequested(scene))
                         }
                         if (ImGui.menuItem(stringManager.getString("context.scene_tab.close_others"), null, false, canClose)) {
                             eventSystem.publish(CloseOthersRequested(scene))
@@ -75,9 +79,25 @@ class EditorScenesTabBar(
                 }
 
                 if (!open.get()) {
-                    eventSystem.publish(CloseRequested(scene))
+                    if (scene.isDirty) {
+                        toRemove = index
+                        ImGui.openPopup(stringManager.getString("context.scene_tab.close_confirmation_title"))
+                    } else eventSystem.publish(CloseRequested(scene))
                 }
             }
+
+            MImGui.showConfirmationModal(
+                title = stringManager.getString("context.scene_tab.close_confirmation_title"),
+                message = stringManager.getString("context.scene_tab.close_confirmation_message"),
+                confirmText = stringManager.getString("lbl.input_system.yes"),
+                cancelText = stringManager.getString("lbl.input_system.no"),
+                onConfirm = {
+                    if (toRemove >= 0) {
+                        eventSystem.publish(CloseRequested(openScenes[toRemove]))
+                    }
+                    toRemove = -1
+                }
+            )
 
             val addTabFlags =
                 ImGuiTabItemFlags.Trailing or ImGuiTabItemFlags.NoCloseWithMiddleMouseButton or ImGuiTabItemFlags.NoReorder

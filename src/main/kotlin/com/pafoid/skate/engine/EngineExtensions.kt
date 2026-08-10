@@ -73,6 +73,8 @@ fun <T : Component> GameObject.removeComponent(componentClass: KClass<T>) {
 
 inline fun <reified T : Component> GameObject.removeComponent() = removeComponent(T::class)
 
+fun GameObject.removeComponent(cmp: Component) = components.remove(cmp)
+
 inline fun <reified T> GameObject.hasComponent(): Boolean {
     return components.filterIsInstance<T>().isNotEmpty()
 }

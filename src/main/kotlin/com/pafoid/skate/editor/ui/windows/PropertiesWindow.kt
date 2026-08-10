@@ -7,6 +7,7 @@ import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
 import com.pafoid.skate.editor.events.ViewportAction.SetComponentEnabled
 import com.pafoid.skate.editor.events.ViewportAction.SetGameObjectEnabled
 import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.components.imgui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.Engine
@@ -17,7 +18,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
-import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import imgui.flag.ImGuiInputTextFlags
@@ -89,16 +89,11 @@ class PropertiesWindow(
                 // Future enhancement: Copy component to clipboard for pasting to other objects
             }
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.properties.remove_component")}")) {
-                // Don't allow removing Transform component (core component)
-                if (component !is Transform) {
-                    component.type?.let { componentType ->
-                        eventSystem.publish(RemoveComponent(go, componentType))
-                    }
-                }
+                eventSystem.publish(RemoveComponent(go, component))
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.properties.reset_to_default")}")) {
-                // Future enhancement: Reset component properties to default values
+                component.reset()
             }
             ImGui.endPopup()
         }
@@ -169,6 +164,18 @@ class PropertiesWindow(
 
         ImGui.sameLine()
         ImGui.text(stringManager.getString("lbl.systems.enabled"))
+        ImGui.sameLine()
+        val buttonSize = ImGui.getFrameHeight()
+        if (ImGui.button(Icons.TRASH, buttonSize, buttonSize)) {
+            ImGui.openPopup(stringManager.getString("lbl.hierarchy.remove_component_title"))
+        }
+        MImGui.showConfirmationModal(
+            title = stringManager.getString("lbl.hierarchy.remove_component_title"),
+            message = stringManager.getString("lbl.hierarchy.remove_component"),
+            confirmText = stringManager.getString("lbl.input_system.yes"),
+            cancelText = stringManager.getString("lbl.input_system.no"),
+            onConfirm = { eventSystem.publish(RemoveComponent(cmp.gameObject, cmp)) }
+        )
     }
 
     fun componentName(cmp: Component) {

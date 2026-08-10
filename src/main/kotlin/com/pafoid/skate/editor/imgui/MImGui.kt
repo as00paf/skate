@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.imgui.data.Color
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiStyleVar
+import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImInt
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -754,5 +755,41 @@ object MImGui {
             ImGui.endTable()
         }
         ImGui.popID()
+    }
+
+    fun showConfirmationModal(
+        title: String,
+        message: String,
+        confirmText: String,
+        cancelText: String,
+        onConfirm: () -> Unit,
+        onCancel: (() -> Unit)? = null
+    ) {
+        if (ImGui.beginPopupModal(title, null, ImGuiWindowFlags.AlwaysAutoResize)) {
+            ImGui.text(message)
+            ImGui.spacing()
+            ImGui.spacing()
+            ImGui.separator()
+            ImGui.spacing()
+            ImGui.spacing()
+
+            // Confirm Button
+            if (ImGui.button(confirmText, 120f, 0f)) {
+                onConfirm()
+                ImGui.closeCurrentPopup()
+            }
+
+            // Keep default keyboard/gamepad focus on the Confirm button
+            ImGui.setItemDefaultFocus()
+            ImGui.sameLine()
+
+            // Cancel Button
+            if (ImGui.button(cancelText, 120f, 0f)) {
+                onCancel?.invoke()
+                ImGui.closeCurrentPopup()
+            }
+
+            ImGui.endPopup()
+        }
     }
 }
