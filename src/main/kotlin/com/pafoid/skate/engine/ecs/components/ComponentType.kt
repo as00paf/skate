@@ -22,6 +22,7 @@ enum class ComponentType {
     RAGDOLL,
     SCENE_PHYSICS,
     SKELETON,
+    SPOT_LIGHT,
     SPRITE_RENDERER,
     TRANSFORM;
 
@@ -48,6 +49,7 @@ enum class ComponentType {
             RAGDOLL -> RagdollComponent()
             SCENE_PHYSICS -> ScenePhysicsComponent()
             SKELETON -> null
+            SPOT_LIGHT -> SpotLightComponent()
             SPRITE_RENDERER -> SpriteRenderer()
             TRANSFORM -> Transform()
         }

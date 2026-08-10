@@ -23,6 +23,7 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
+import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import kotlinx.serialization.encodeToString
@@ -63,6 +64,7 @@ class Serializer {
             subclass(EnvironmentComponent::class)
             subclass(AmbientLightComponent::class)
             subclass(PointLightComponent::class)
+            subclass(SpotLightComponent::class)
             subclass(DayNightCycleComponent::class)
             subclass(DirectionalLightComponent::class)
 

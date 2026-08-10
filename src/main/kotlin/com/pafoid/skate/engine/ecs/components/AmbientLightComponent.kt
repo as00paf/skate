@@ -7,12 +7,12 @@ import org.joml.Vector3f
 @Serializable
 data class AmbientLightComponent(
     @Contextual
-    val lightColor: Vector3f = Vector3f(0.3f, 0.3f, 0.35f),
-    var intensity: Float = 1f,
+    val lightColor: Vector3f = Vector3f(1f),
+    var intensity: Float = .25f,
 ) : Component() {
 
     override fun reset() {
-        lightColor.set(0.3f, 0.3f, 0.35f)
-        intensity = 1f
+        lightColor.set(1f)
+        intensity = .25f
     }
 }

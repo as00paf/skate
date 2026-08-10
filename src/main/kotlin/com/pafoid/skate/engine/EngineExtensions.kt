@@ -24,6 +24,7 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
+import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import kotlin.reflect.KClass
@@ -51,6 +52,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.RIGID_BODY_3D -> getComponent<RigidBody3D>()
         ComponentType.SCENE_PHYSICS -> getComponent<ScenePhysicsComponent>()
         ComponentType.SKELETON -> getComponent<SkeletonComponent>()
+        ComponentType.SPOT_LIGHT -> getComponent<SpotLightComponent>()
         ComponentType.SPRITE_RENDERER -> getComponent<SpriteRenderer>()
         ComponentType.TRANSFORM -> getComponent<Transform>()
     }

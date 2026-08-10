@@ -1,11 +1,15 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
+import com.pafoid.skate.engine.ecs.components.SpotLightComponent
+import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
@@ -31,7 +35,8 @@ class LightingUniformsLoader {
         shader: Shader,
         ambientLightComponent: AmbientLightComponent?,
         directionalLight: DirectionalLightComponent?,
-        pointLightComponents: List<PointLightComponent>,
+        pointLightComponents: List<GameObject>,
+        spotLightComponents: List<GameObject>,
         environmentComponent: EnvironmentComponent? = null,
         shadowMapTextureId: Int = 0,
         shadowMapResolution: Float = 0f,
@@ -50,9 +55,39 @@ class LightingUniformsLoader {
         val ambient = if (ambientLightComponent != null) {
             Vector3f(ambientLightComponent.lightColor).mul(ambientLightComponent.intensity)
         } else {
-            Vector3f(0f, 0f, 0f)
+            Vector3f(0f)
         }
         shader.uploadVec3f(Uniforms.AMBIENT_LIGHT, ambient)
+
+        // Point Lights
+        val numPointLights = minOf(pointLightComponents.size, MAX_POINT_LIGHTS)
+        shader.uploadInt(Uniforms.POINT_LIGHTS_COUNT, numPointLights)
+        for (i in 0 until numPointLights) {
+            val go = pointLightComponents[i]
+            val transform = go.getComponent<Transform>() ?: continue
+            val light = go.getComponent<PointLightComponent>() ?: continue
+
+            shader.uploadVec3f("${Uniforms.POINT_LIGHTS}[$i].position", transform.translation)
+            shader.uploadVec3f("${Uniforms.POINT_LIGHTS}[$i].color", Vector3f(light.color).mul(light.intensity))
+            shader.uploadFloat("${Uniforms.POINT_LIGHTS}[$i].constant", light.constant)
+            shader.uploadFloat("${Uniforms.POINT_LIGHTS}[$i].linear", light.linear)
+            shader.uploadFloat("${Uniforms.POINT_LIGHTS}[$i].quadratic", light.quadratic)
+        }
+
+        // Spot Lights
+        val numSpotLights = minOf(spotLightComponents.size, MAX_SPOT_LIGHTS)
+        shader.uploadInt(Uniforms.SPOT_LIGHTS_COUNT, numSpotLights)
+        for (i in 0 until numSpotLights) {
+            val go = spotLightComponents[i]
+            val transform = go.getComponent<Transform>() ?: continue
+            val light = go.getComponent<SpotLightComponent>() ?: continue
+
+            shader.uploadVec3f("${Uniforms.SPOT_LIGHTS}[$i].position", transform.translation)
+            shader.uploadVec3f("${Uniforms.SPOT_LIGHTS}[$i].color", Vector3f(light.color).mul(light.intensity))
+            shader.uploadFloat("${Uniforms.SPOT_LIGHTS}[$i].constant", light.constant)
+            shader.uploadFloat("${Uniforms.SPOT_LIGHTS}[$i].linear", light.linear)
+            shader.uploadFloat("${Uniforms.SPOT_LIGHTS}[$i].quadratic", light.quadratic)
+        }
 
         // Shadow map texture (if available)
         if (shadowMapTextureId != 0) {
@@ -90,5 +125,10 @@ class LightingUniformsLoader {
      */
     fun loadCameraPosition(shader: Shader, camera: CameraComponent) {
         shader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
+    }
+
+    companion object {
+        const val MAX_POINT_LIGHTS = 8
+        const val MAX_SPOT_LIGHTS = 8
     }
 }

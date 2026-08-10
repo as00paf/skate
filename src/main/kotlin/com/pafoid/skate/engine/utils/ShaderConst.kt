@@ -27,6 +27,14 @@ object ShaderConst {
         const val LIGHT_COLOR = "lightColor"
         const val AMBIENT_LIGHT = "uAmbientLight"
 
+        const val LIGHT_CONSTANT = "uLightConstant"
+        const val LIGHT_LINEAR = "uLightLinear"
+        const val LIGHT_QUAD = "uLightQuad"
+        const val POINT_LIGHTS_COUNT = "uNumPointLights"
+        const val SPOT_LIGHTS_COUNT = "uNumSpotLights"
+        const val POINT_LIGHTS = "uPointLights"
+        const val SPOT_LIGHTS = "uSpotLights"
+
         const val SKY_TINT = "u_skyTint"
         const val SKY_EXPOSURE = "u_exposure"
         const val HDRI_TEXTURE= "u_hdriTexture"

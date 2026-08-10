@@ -14,7 +14,7 @@ data class Material(
     var aoTexture: Texture? = null,
     var emissiveTexture: Texture? = null,
     @Contextual val baseColor: Vector4f = Vector4f(1f),
-    var baseColorFactor: Float = 0f,
+    var baseColorFactor: Float = 1f,
     var metallicFactor: Float = 0f,
     var roughnessFactor: Float = 0.5f,
     @Contextual val emissiveFactor: Vector3f = Vector3f(0f),

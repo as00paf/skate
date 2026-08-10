@@ -24,6 +24,7 @@ import com.pafoid.skate.game.prefabs.MaterialType
 import com.pafoid.skate.game.prefabs.Skateboard
 import com.pafoid.skate.game.prefabs.Skater
 import org.joml.Vector3f
+import org.joml.Vector4f
 import java.io.File
 
 class PrefabsGenerator(
@@ -172,6 +173,12 @@ class PrefabsGenerator(
         openGlScene
             .addComponent(GridLines())
             .addComponent(AmbientLightComponent())
+        val cube = GameObject("Cube")
+        val cubeModel = assetsManager.getModel(projectAssetsDir + Assets.Bundled.CUBE)
+        cube
+            .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(1f, 0f, 0f, 1f))))
+            .addComponent(Transform())
+        openGlScene.gameObjects.add(cube)
         sceneManager.saveScene(openGlScene, sceneDir.path)
 
         val result = listOf(scene, openGlScene)

@@ -130,6 +130,9 @@ uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
 uniform vec3 uAmbientLight;
 uniform vec3 uFogColor;
+uniform float uLightConstant;
+uniform float uLightLinear;
+uniform float uLightQuad;
 
 // --- Shadow Mapping Uniforms ---
 uniform mat4 uLightSpaceMatrix;// Light's view-projection matrix
@@ -139,6 +142,7 @@ uniform float uShadowDepthBias;// Depth bias to prevent shadow acne
 uniform float uShadowSlopeScaledBias;// Slope-scaled bias multiplier
 
 // --- Feature Toggles ---
+uniform bool uHasBaseColorTexture;
 uniform bool u_HasNormalMap;
 uniform bool u_HasMetallicRoughnessTexture;
 uniform bool u_HasAOTexture;
@@ -160,6 +164,9 @@ float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW, vec3 nor
     // Perform perspective divide to get NDC coordinates
     vec3 projCoords = fragPosLightSpace / fragPosLightSpaceW;
 
+    // Transform from [-1,1] to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+
     // Early exit for out-of-bounds fragments (beyond shadow map coverage)
     // Returns 0.0 (no shadow) instead of sampling border color
     if (projCoords.x < -1.0 || projCoords.x > 1.0 ||
@@ -168,15 +175,12 @@ float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW, vec3 nor
         return 0.0;
     }
 
-    // Transform from [-1,1] to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-
     // Get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
 
     // Calculate slope-scaled bias
     // Surfaces at steep angles to light need more bias to prevent shadow acne
-    float NdotL = max(dot(normal, -lightDir), 0.0);
+    float NdotL = max(dot(normal, lightDir), 0.0);
     float slopeScale = 1.0 - NdotL;
     float bias = uShadowDepthBias + (uShadowSlopeScaledBias * slopeScale);
 
@@ -241,13 +245,108 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+struct PointLight {
+    vec3 position;
+    vec3 color;
+    float constant;
+    float linear;
+    float quadratic;
+};
+
+struct SpotLight {
+    vec3 position;
+    vec3 direction;
+    vec3 color;
+    float cutOff;      // cos(innerAngle)
+    float outerCutOff; // cos(outerAngle)
+    float constant;
+    float linear;
+    float quadratic;
+};
+
+#define MAX_POINT_LIGHTS 8
+#define MAX_SPOT_LIGHTS 8
+
+uniform PointLight uPointLights[MAX_POINT_LIGHTS];
+uniform int uNumPointLights;
+
+uniform SpotLight uSpotLights[MAX_SPOT_LIGHTS];
+uniform int uNumSpotLights;
+
+// Calculates Cook-Torrance PBR contribution for a single Point Light
+vec3 CalcPointLight(PointLight light, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness, float metallic)
+{
+    // 1. Light vector pointing from fragment to light position
+    vec3 L = normalize(light.position - fWorldPos);
+    vec3 H = normalize(V + L);
+
+    // 2. Distance Attenuation
+    float distance = length(light.position - fWorldPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+    vec3 radiance = light.color * attenuation;
+
+    // 3. Cook-Torrance BRDF
+    float NDF = DistributionGGX(N, H, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    vec3 nominator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+    vec3 specular = nominator / denominator;
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;
+
+    float NdotL = max(dot(N, L), 0.0);
+
+    // Diffuse + Specular scaled by radiance & incidence angle
+    return (kD * albedo / PI + specular) * radiance * NdotL;
+}
+
+// Calculates Cook-Torrance PBR contribution for a single Spot Light
+vec3 CalcSpotLight(SpotLight light, vec3 N, vec3 V, vec3 F0, vec3 albedo, float roughness, float metallic)
+{
+    vec3 L = normalize(light.position - fWorldPos);
+    vec3 H = normalize(V + L);
+
+    // Distance Attenuation
+    float distance = length(light.position - fWorldPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+
+    // Spot Light Cone Intensity (falloff between cutOff and outerCutOff)
+    float theta = dot(L, normalize(-light.direction));
+    float epsilon = light.cutOff - light.outerCutOff;
+    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+
+    vec3 radiance = light.color * attenuation * intensity;
+
+    // Cook-Torrance BRDF
+    float NDF = DistributionGGX(N, H, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    vec3 nominator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+    vec3 specular = nominator / denominator;
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;
+
+    float NdotL = max(dot(N, L), 0.0);
+
+    return (kD * albedo / PI + specular) * radiance * NdotL;
+}
+
 void main()
 {
     // 1. Albedo & Alpha Setup
     vec4 baseColorSample = texture(u_BaseColorTexture, fTexCoords);
-    vec4 factoredColor = uBaseColor * u_BaseColorFactor;
-    vec4 mixedColor = mix(factoredColor, baseColorSample, 0.5);
-    vec4 albedo = mixedColor * fColor;
+    vec4 albedo = uBaseColor * u_BaseColorFactor * fColor;
+    if (uHasBaseColorTexture) {
+        albedo *= baseColorSample;
+    }
 
     float alpha = albedo.a;
     if (u_AlphaMode == 0) { // OPAQUE
@@ -318,6 +417,16 @@ void main()
         // Apply shadow factor to sun light
         float shadow = calculateShadow(fFragPosLightSpace, fFragPosLightSpaceW, N, L);
         Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL * (1.0 - shadow);
+    }
+
+    // --- Point Lights Pass ---
+    for (int i = 0; i < uNumPointLights && i < MAX_POINT_LIGHTS; ++i) {
+        Lo += CalcPointLight(uPointLights[i], N, V, F0, albedo.rgb, roughness, metallic);
+    }
+
+    // --- Spot Lights Pass ---
+    for (int i = 0; i < uNumSpotLights && i < MAX_SPOT_LIGHTS; ++i) {
+        Lo += CalcSpotLight(uSpotLights[i], N, V, F0, albedo.rgb, roughness, metallic);
     }
 
     // 5. Ambient & Final Composition

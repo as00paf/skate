@@ -19,6 +19,7 @@ import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
+import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.HAS_BASE_COLOR_TEXTURE
 import com.pafoid.skate.engine.utils.TextureSlots
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -89,7 +90,12 @@ class ModelRenderer(
 
         // Bind all PBR texture maps and upload uniforms
         shader.uploadVec4f(Uniforms.BASE_COLOR, material.baseColor)
-        material.baseColorTexture?.texId?.let { bindTexture(TextureSlots.BASE_COLOR, it) }
+        var hasBaseColorTexture = false
+        material.baseColorTexture?.texId?.let {
+            bindTexture(TextureSlots.BASE_COLOR, it)
+            hasBaseColorTexture = true
+        }
+        shader.uploadBoolean(HAS_BASE_COLOR_TEXTURE, hasBaseColorTexture)
         shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
         shader.uploadFloat(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
 

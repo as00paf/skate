@@ -7,17 +7,16 @@ import org.joml.Vector3f
 @Serializable
 data class PointLightComponent(
     @Contextual
-    var direction: Vector3f = Vector3f(0f, -1f, 0f),
-    @Contextual
-    var color: Vector3f = Vector3f(1f, 0.95f, 0.8f),
+    val color: Vector3f = Vector3f(1f),
     var intensity: Float = 1f,
-    var cutOff: Float = 1f,
+    var constant: Float = 1f,
+    var linear: Float = 0f,
+    var quadratic: Float = 0f,
 ) : Component() {
 
     override fun reset() {
-        direction.set(0f, -1f, 0f)
-        color.set(1f, 0.95f, 0.8f)
-        intensity = 1f
-        cutOff = 1f
+        constant = 1f
+        linear = 0f
+        quadratic = 0f
     }
 }
