@@ -33,9 +33,6 @@ fun DirectionalLightComponent.imgui(stringManager: StringManager, eventSystem: E
     // Direction
     MImGui.drawVec3Control(stringManager.getString("component.DirectionalLightComponent.direction"), direction)
 
-    // Position
-    MImGui.drawVec3Control(stringManager.getString("component.DirectionalLightComponent.position"), position)
-
     orthoLeft = MImGui.dragFloat(stringManager.getString("component.DirectionalLightComponent.orthoLeft"), orthoLeft)
     orthoRight = MImGui.dragFloat(stringManager.getString("component.DirectionalLightComponent.orthoRight"), orthoRight)
     orthoBottom =

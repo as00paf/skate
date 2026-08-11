@@ -47,12 +47,10 @@ class LightingUniformsLoader {
             shader.uploadVec3f(Uniforms.SUN_DIRECTION, directionalLight.direction)
             val finalSunColor = Vector3f(directionalLight.color).mul(directionalLight.intensity)
             shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
-            shader.uploadVec3f(Uniforms.LIGHT_POSITION, directionalLight.position)
 
             // Upload light space matrix for shadow mapping
             shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, directionalLight.lightSpaceMatrix)
         } else {
-            shader.uploadVec3f(Uniforms.LIGHT_POSITION, Vector3f())
             shader.uploadVec3f(Uniforms.SUN_DIRECTION, Vector3f())
             shader.uploadVec3f(Uniforms.SUN_COLOR, Vector3f())
             shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, Matrix4f())
