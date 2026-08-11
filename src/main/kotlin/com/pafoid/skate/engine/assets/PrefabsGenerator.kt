@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
+import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.game.prefabs.Floor
@@ -172,13 +173,31 @@ class PrefabsGenerator(
         val openGlScene = sceneManager.createNewScene("OpenGLTest", sceneDir.path)
         openGlScene
             .addComponent(GridLines())
-            .addComponent(AmbientLightComponent())
+            .addComponent(AmbientLightComponent(intensity = 0.1f))
+            .addComponent(DirectionalLightComponent(color = Vector3f(0.195f, 0.163f, 0.68f)))
+        //Cube 1
         val cube = GameObject("Cube")
         val cubeModel = assetsManager.getModel(projectAssetsDir + Assets.Bundled.CUBE)
         cube
             .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(1f, 0f, 0f, 1f))))
-            .addComponent(Transform())
+            .addComponent(Transform(translation = Vector3f(0f, 10f, 0f), scale = Vector3f(0.4f)))
         openGlScene.gameObjects.add(cube)
+
+        // Cube 2
+        val lightCube = GameObject("LightCube")
+        lightCube
+            .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(1f, 1f, 1f, 1f))))
+            .addComponent(Transform(translation = Vector3f(-5f, 5f, 0f), scale = Vector3f(0.3f)))
+            .addComponent(SpotLightComponent())
+        openGlScene.gameObjects.add(lightCube)
+
+        //Plane
+        val plane = GameObject("Plane")
+        plane
+            .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(.5f, .5f, 1f, 1f))))
+            .addComponent(Transform(translation = Vector3f(0f, 1f, 0f), scale = Vector3f(5f, 0.001f, 5f)))
+        openGlScene.gameObjects.add(plane)
+
         sceneManager.saveScene(openGlScene, sceneDir.path)
 
         val result = listOf(scene, openGlScene)

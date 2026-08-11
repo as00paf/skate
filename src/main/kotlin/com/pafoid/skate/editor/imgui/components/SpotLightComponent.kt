@@ -20,7 +20,7 @@ fun SpotLightComponent.imgui(stringManager: StringManager, eventSystem: EventSys
     ImGui.sameLine()
     ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
     if (ImGui.sliderFloat(
-            "##light_intensity",
+            "##spot_light_intensity",
             intensityArr,
             0.0f,
             2.0f
@@ -29,6 +29,9 @@ fun SpotLightComponent.imgui(stringManager: StringManager, eventSystem: EventSys
         intensity = intensityArr[0].coerceIn(0.0f, 2.0f)
     }
     ImGui.popItemWidth()
+
+    // Direction
+    MImGui.drawVec3Control(stringManager.getString("component.SpotLightComponent.direction"), direction)
 
     constant = MImGui.dragFloat(stringManager.getString("component.SpotLightComponent.constant"), constant)
     linear = MImGui.dragFloat(stringManager.getString("component.SpotLightComponent.linear"), linear)

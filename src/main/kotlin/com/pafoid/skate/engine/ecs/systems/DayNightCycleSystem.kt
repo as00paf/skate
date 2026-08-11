@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import org.joml.Vector3f
@@ -41,9 +42,16 @@ class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
 
         // Update scene ambient light if auto mode is enabled
         if (config.autoAmbient) {
-            scene.getComponent<AmbientLightComponent>()?.let {
-                it.lightColor.set(config.ambientColor).mul(config.ambientIntensity)
-            }
+            scene.getComponent<AmbientLightComponent>()?.lightColor?.set(config.ambientColor)
+                ?.mul(config.ambientIntensity)
+        }
+
+        // Update directional light component too
+        scene.getComponent<DirectionalLightComponent>()?.let {
+            // Update light from day/night cycle
+            it.direction.set(config.sunDirection)
+            it.color.set(config.sunColor)
+            it.intensity = config.sunIntensity
         }
     }
 

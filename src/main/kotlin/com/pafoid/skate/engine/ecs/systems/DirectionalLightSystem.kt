@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
@@ -23,14 +22,7 @@ class DirectionalLightSystem(private val cameraManager: CameraManager) : System(
     private val lightPosition = Vector3f()
 
     override fun update(dt: Float) {
-        // Find day/night cycle system
-        val dayNight = scene.getComponent<DayNightCycleComponent>().takeIf { it?.enabled == true } ?: return
-        config = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true } ?: return
-
-        // Update light from day/night cycle
-        config?.direction?.set(dayNight.sunDirection)
-        config?.color?.set(dayNight.sunColor)
-        config?.intensity = dayNight.sunIntensity
+        config = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled } ?: return
 
         // Compute light space matrix for shadow mapping
         if (config?.castShadows == true) {

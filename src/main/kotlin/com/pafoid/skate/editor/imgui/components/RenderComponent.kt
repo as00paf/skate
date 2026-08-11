@@ -26,20 +26,21 @@ fun RenderComponent.imgui(stringManager: StringManager, eventSystem: EventSystem
         receiveShadow = !receiveShadow
     }
 
-    if (material != null) {
-        MImGui.colorPicker4(stringManager.getString("material.baseColor"), material.baseColor)
-        material.baseColorFactor =
-            MImGui.dragFloat(stringManager.getString("material.baseColorFactor"), material.baseColorFactor)
-        material.metallicFactor =
-            MImGui.dragFloat(stringManager.getString("material.metallicFactor"), material.metallicFactor)
-        material.roughnessFactor =
-            MImGui.dragFloat(stringManager.getString("material.roughnessFactor"), material.roughnessFactor)
-        MImGui.drawVec3Control(stringManager.getString("material.emissiveFactor"), material.emissiveFactor)
+    val mat = material ?: model?.mesh?.get(0)?.material
+    if (mat != null) {
+        MImGui.colorPicker4(stringManager.getString("material.baseColor"), mat.baseColor)
+        mat.baseColorFactor =
+            MImGui.dragFloat(stringManager.getString("material.baseColorFactor"), mat.baseColorFactor)
+        mat.metallicFactor =
+            MImGui.dragFloat(stringManager.getString("material.metallicFactor"), mat.metallicFactor)
+        mat.roughnessFactor =
+            MImGui.dragFloat(stringManager.getString("material.roughnessFactor"), mat.roughnessFactor)
+        MImGui.drawVec3Control(stringManager.getString("material.emissiveFactor"), mat.emissiveFactor)
         val doubleSidedLabel = stringManager.getString("material.doubleSided")
-        if (ImGui.checkbox(doubleSidedLabel, material.doubleSided)) {
-            material.doubleSided = !material.doubleSided
+        if (ImGui.checkbox(doubleSidedLabel, mat.doubleSided)) {
+            mat.doubleSided = !mat.doubleSided
         }
-        MImGui.enumDropdown(stringManager.getString("material.alphaMode"), material.alphaMode)
-        material.alphaCutoff = MImGui.dragFloat(stringManager.getString("material.alphaCutoff"), material.alphaCutoff)
+        MImGui.enumDropdown(stringManager.getString("material.alphaMode"), mat.alphaMode)
+        mat.alphaCutoff = MImGui.dragFloat(stringManager.getString("material.alphaCutoff"), mat.alphaCutoff)
     }
 }

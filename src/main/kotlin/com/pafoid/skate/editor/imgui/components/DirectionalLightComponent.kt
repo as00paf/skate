@@ -19,12 +19,7 @@ fun DirectionalLightComponent.imgui(stringManager: StringManager, eventSystem: E
     ImGui.text(stringManager.getString("component.DirectionalLightComponent.intensity"))
     ImGui.sameLine()
     ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
-    if (ImGui.sliderFloat(
-            "##light_intensity",
-            intensityArr,
-            0.0f,
-            2.0f
-        )
+    if (ImGui.sliderFloat("##dir_light_intensity", intensityArr, 0.0f, 2.0f)
     ) {
         intensity = intensityArr[0].coerceIn(0.0f, 2.0f)
     }

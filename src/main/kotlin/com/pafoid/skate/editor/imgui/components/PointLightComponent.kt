@@ -20,7 +20,7 @@ fun PointLightComponent.imgui(stringManager: StringManager, eventSystem: EventSy
     ImGui.sameLine()
     ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
     if (ImGui.sliderFloat(
-            "##light_intensity",
+            "##point_light_intensity",
             intensityArr,
             0.0f,
             2.0f

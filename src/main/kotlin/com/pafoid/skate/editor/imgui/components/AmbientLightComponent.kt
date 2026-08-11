@@ -28,7 +28,7 @@ fun AmbientLightComponent.imgui(stringManager: StringManager, eventSystem: Event
     ImGui.sameLine()
     ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
     if (ImGui.sliderFloat(
-            "##light_intensity",
+            "##ambient_light_intensity",
             ambientIntensityArr,
             0.0f,
             2.0f
