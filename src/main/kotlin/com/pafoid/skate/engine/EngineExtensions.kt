@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine
 
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.BoneOverride
@@ -62,7 +63,9 @@ inline fun <reified T : Component> GameObject.getComponent(): T? {
 }
 
 inline fun <reified T : Component> GameObject.getAllComponents(): List<T> {
-    return components.filterIsInstance<T>()
+    val childrenOrGOs = if (this is Scene) gameObjects else children
+    val componentsOfChildren = childrenOrGOs.flatMap { it.components.filterIsInstance<T>() }
+    return components.filterIsInstance<T>() + componentsOfChildren
 }
 
 inline fun <reified T : Component> GameObject.addComponent(component: T): GameObject = addComponent(T::class, component)

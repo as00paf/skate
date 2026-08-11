@@ -8,9 +8,11 @@ import org.joml.Vector3f
 @Serializable
 data class DirectionalLightComponent(
     @Contextual
-    var direction: Vector3f = Vector3f(0f, -1f, 0f),
+    val position: Vector3f = Vector3f(0f, -50f, 0f),
     @Contextual
-    var color: Vector3f = Vector3f(1f, 0.95f, 0.8f),
+    val direction: Vector3f = Vector3f(0f, -1f, 0f),
+    @Contextual
+    val color: Vector3f = Vector3f(1f, 0.95f, 0.8f),
     var intensity: Float = 1f,
     @Contextual
     val lightSpaceMatrix: Matrix4f = Matrix4f(),

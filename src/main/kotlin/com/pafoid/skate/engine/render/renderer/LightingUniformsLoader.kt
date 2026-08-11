@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL11.glBindTexture
@@ -46,9 +47,15 @@ class LightingUniformsLoader {
             shader.uploadVec3f(Uniforms.SUN_DIRECTION, directionalLight.direction)
             val finalSunColor = Vector3f(directionalLight.color).mul(directionalLight.intensity)
             shader.uploadVec3f(Uniforms.SUN_COLOR, finalSunColor)
+            shader.uploadVec3f(Uniforms.LIGHT_POSITION, directionalLight.position)
 
             // Upload light space matrix for shadow mapping
             shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, directionalLight.lightSpaceMatrix)
+        } else {
+            shader.uploadVec3f(Uniforms.LIGHT_POSITION, Vector3f())
+            shader.uploadVec3f(Uniforms.SUN_DIRECTION, Vector3f())
+            shader.uploadVec3f(Uniforms.SUN_COLOR, Vector3f())
+            shader.uploadMat4f(Uniforms.LIGHT_SPACE_MATRIX, Matrix4f())
         }
 
         // Ambient light

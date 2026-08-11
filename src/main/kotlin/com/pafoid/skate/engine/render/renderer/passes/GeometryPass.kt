@@ -96,8 +96,8 @@ class GeometryPass(
         lightingUniformsLoader.loadCameraPosition(defaultShader, camera) // New call
 
         // Upload lighting uniforms
-        val directionalLight = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled }
         val ambientLightComponent = scene.getComponent<AmbientLightComponent>()?.takeIf { it.enabled }
+        val directionalLight = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled }
         val pointLights = scene.getAllComponents<PointLightComponent>()
             .filter { it.enabled && it.gameObject.isVisible }.map { it.gameObject }
         val spotLights = scene.getAllComponents<SpotLightComponent>()

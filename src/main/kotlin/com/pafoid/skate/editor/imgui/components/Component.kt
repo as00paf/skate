@@ -8,7 +8,9 @@ import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Component.Companion.getCachedFields
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import imgui.ImGui
 import imgui.type.ImInt
@@ -19,20 +21,13 @@ import java.lang.reflect.Modifier
 
 fun Component.imgui(stringManager: StringManager, eventSystem: EventSystem, logger: LoggerService) {
     when (this) {
-        is AmbientLightComponent -> {
-            this.imgui(stringManager, eventSystem, logger)
-        }
-        is DirectionalLightComponent -> {
-            this.imgui(stringManager, eventSystem, logger)
-        }
+        is AmbientLightComponent -> this.imgui(stringManager, eventSystem, logger)
+        is DirectionalLightComponent -> this.imgui(stringManager, eventSystem, logger)
+        is PointLightComponent -> this.imgui(stringManager, eventSystem, logger)
+        is SpotLightComponent -> this.imgui(stringManager, eventSystem, logger)
 
-        is Transform -> {
-            this.imgui(stringManager, eventSystem, logger)
-        }
-
-        is RenderComponent -> {
-            this.imgui(stringManager, eventSystem, logger)
-        }
+        is Transform -> this.imgui(stringManager, eventSystem, logger)
+        is RenderComponent -> this.imgui(stringManager, eventSystem, logger)
 
         else -> try {
             ImGui.pushID(this.javaClass.simpleName + this.name)
