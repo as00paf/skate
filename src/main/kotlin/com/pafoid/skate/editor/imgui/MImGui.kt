@@ -329,6 +329,16 @@ object MImGui {
         ImGui.popID()
     }
 
+    fun sliderFloat(value: Float, label: String, min: Float = 0f, max: Float = 1f): Float {
+        val valueArr = floatArrayOf(value)
+        ImGui.text(label)
+        ImGui.sameLine()
+        ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
+        ImGui.sliderFloat("##slider_float_$label", valueArr, min, max)
+        ImGui.popItemWidth()
+        return valueArr[0]
+    }
+
     /** Draws a drag-float control. */
     fun dragFloat(label: String, value: Float): Float {
         ImGui.pushID(label)

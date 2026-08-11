@@ -88,10 +88,13 @@ class LightingUniformsLoader {
             val light = go.getComponent<SpotLightComponent>() ?: continue
 
             shader.uploadVec3f("${Uniforms.SPOT_LIGHTS}[$i].position", transform.translation)
+            shader.uploadVec3f("${Uniforms.SPOT_LIGHTS}[$i].direction", light.direction)
             shader.uploadVec3f("${Uniforms.SPOT_LIGHTS}[$i].color", Vector3f(light.color).mul(light.intensity))
             shader.uploadFloat("${Uniforms.SPOT_LIGHTS}[$i].constant", light.constant)
             shader.uploadFloat("${Uniforms.SPOT_LIGHTS}[$i].linear", light.linear)
             shader.uploadFloat("${Uniforms.SPOT_LIGHTS}[$i].quadratic", light.quadratic)
+            shader.uploadFloat("${Uniforms.SPOT_LIGHTS}[$i].cutOff", light.cutOff)
+            shader.uploadFloat("${Uniforms.SPOT_LIGHTS}[$i].outerCutOff", light.outerCutOff)
         }
 
         // Shadow map texture (if available)

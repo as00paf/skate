@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
-import imgui.ImGui
 
 fun SpotLightComponent.imgui(stringManager: StringManager, eventSystem: EventSystem, logger: LoggerService) {
     // Light color
@@ -15,27 +14,14 @@ fun SpotLightComponent.imgui(stringManager: StringManager, eventSystem: EventSys
     }
 
     // Light intensity
-    val intensityArr = floatArrayOf(intensity)
-    ImGui.text(stringManager.getString("component.SpotLightComponent.intensity"))
-    ImGui.sameLine()
-    ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
-    if (ImGui.sliderFloat(
-            "##spot_light_intensity",
-            intensityArr,
-            0.0f,
-            2.0f
-        )
-    ) {
-        intensity = intensityArr[0].coerceIn(0.0f, 2.0f)
-    }
-    ImGui.popItemWidth()
+    intensity = MImGui.sliderFloat(intensity, stringManager.getString("component.SpotLightComponent.intensity"))
 
     // Direction
     MImGui.drawVec3Control(stringManager.getString("component.SpotLightComponent.direction"), direction)
 
-    constant = MImGui.dragFloat(stringManager.getString("component.SpotLightComponent.constant"), constant)
-    linear = MImGui.dragFloat(stringManager.getString("component.SpotLightComponent.linear"), linear)
-    quadratic = MImGui.dragFloat(stringManager.getString("component.SpotLightComponent.quadratic"), quadratic)
+    constant = MImGui.sliderFloat(constant, stringManager.getString("component.SpotLightComponent.constant"))
+    linear = MImGui.sliderFloat(linear, stringManager.getString("component.SpotLightComponent.linear"))
+    quadratic = MImGui.sliderFloat(quadratic, stringManager.getString("component.SpotLightComponent.quadratic"))
     cutOff = MImGui.dragFloat(stringManager.getString("component.SpotLightComponent.cutOff"), cutOff)
     outerCutOff = MImGui.dragFloat(stringManager.getString("component.SpotLightComponent.outerCutOff"), outerCutOff)
 

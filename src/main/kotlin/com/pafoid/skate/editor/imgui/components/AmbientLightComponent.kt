@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
-import imgui.ImGui
 import org.joml.Vector3f
 
 fun AmbientLightComponent.imgui(stringManager: StringManager, eventSystem: EventSystem, logger: LoggerService) {
@@ -23,24 +22,14 @@ fun AmbientLightComponent.imgui(stringManager: StringManager, eventSystem: Event
     }
 
     // Light intensity
-    val ambientIntensityArr = floatArrayOf(intensity)
-    ImGui.text(stringManager.getString("lbl.environment.ambient_intensity"))
-    ImGui.sameLine()
-    ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
-    if (ImGui.sliderFloat(
-            "##ambient_light_intensity",
-            ambientIntensityArr,
-            0.0f,
-            2.0f
+    intensity = MImGui.sliderFloat(intensity, stringManager.getString("lbl.environment.ambient_intensity"))
+
+    /*eventSystem.publish(
+        EnvironmentAction.SetAmbientIntensityRequested(
+            ambientLightComponent = this,
+            oldValue = intensity,
+            newValue = ambientIntensityArr[0].coerceIn(0.0f, 2.0f),
         )
-    ) {
-        eventSystem.publish(
-            EnvironmentAction.SetAmbientIntensityRequested(
-                ambientLightComponent = this,
-                oldValue = intensity,
-                newValue = ambientIntensityArr[0].coerceIn(0.0f, 2.0f),
-            )
-        )
-    }
-    ImGui.popItemWidth()
+    )*/
+
 }

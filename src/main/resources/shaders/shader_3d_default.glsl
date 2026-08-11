@@ -130,9 +130,6 @@ uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
 uniform vec3 uAmbientLight;
 uniform vec3 uFogColor;
-uniform float uLightConstant;
-uniform float uLightLinear;
-uniform float uLightQuad;
 
 // --- Shadow Mapping Uniforms ---
 uniform mat4 uLightSpaceMatrix;// Light's view-projection matrix

@@ -5,7 +5,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
-import imgui.ImGui
 
 fun PointLightComponent.imgui(stringManager: StringManager, eventSystem: EventSystem, logger: LoggerService) {
     // Light color
@@ -15,23 +14,10 @@ fun PointLightComponent.imgui(stringManager: StringManager, eventSystem: EventSy
     }
 
     // Light intensity
-    val intensityArr = floatArrayOf(intensity)
-    ImGui.text(stringManager.getString("component.PointLightComponent.intensity"))
-    ImGui.sameLine()
-    ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
-    if (ImGui.sliderFloat(
-            "##point_light_intensity",
-            intensityArr,
-            0.0f,
-            2.0f
-        )
-    ) {
-        intensity = intensityArr[0].coerceIn(0.0f, 2.0f)
-    }
-    ImGui.popItemWidth()
+    intensity = MImGui.sliderFloat(intensity, stringManager.getString("component.PointLightComponent.intensity"))
 
-    constant = MImGui.dragFloat(stringManager.getString("component.PointLightComponent.constant"), constant)
-    linear = MImGui.dragFloat(stringManager.getString("component.PointLightComponent.linear"), linear)
-    quadratic = MImGui.dragFloat(stringManager.getString("component.PointLightComponent.quadratic"), quadratic)
+    constant = MImGui.sliderFloat(constant, stringManager.getString("component.PointLightComponent.constant"))
+    linear = MImGui.sliderFloat(linear, stringManager.getString("component.PointLightComponent.linear"))
+    quadratic = MImGui.sliderFloat(quadratic, stringManager.getString("component.PointLightComponent.quadratic"))
 
 }

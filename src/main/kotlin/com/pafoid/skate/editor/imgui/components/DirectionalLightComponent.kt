@@ -15,15 +15,7 @@ fun DirectionalLightComponent.imgui(stringManager: StringManager, eventSystem: E
     }
 
     // Light intensity
-    val intensityArr = floatArrayOf(intensity)
-    ImGui.text(stringManager.getString("component.DirectionalLightComponent.intensity"))
-    ImGui.sameLine()
-    ImGui.pushItemWidth(ImGui.getContentRegionAvailX())
-    if (ImGui.sliderFloat("##dir_light_intensity", intensityArr, 0.0f, 2.0f)
-    ) {
-        intensity = intensityArr[0].coerceIn(0.0f, 2.0f)
-    }
-    ImGui.popItemWidth()
+    intensity = MImGui.sliderFloat(intensity, stringManager.getString("component.DirectionalLightComponent.intensity"))
 
     // Direction
     MImGui.drawVec3Control(stringManager.getString("component.DirectionalLightComponent.direction"), direction)
