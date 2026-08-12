@@ -3,6 +3,7 @@ package com.pafoid.skate.editor.imgui.components
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Component.Companion.getCachedFields
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
@@ -28,6 +29,7 @@ fun Component.imgui(engine: Engine) {
         is Transform -> this.imgui(engine)
         is RenderComponent -> this.imgui(engine)
         is SpriteRenderer -> this.imgui(engine)
+        is CameraComponent -> this.imgui(engine)
 
         else -> try {
             ImGui.pushID(this.javaClass.simpleName + this.name)
