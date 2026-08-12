@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
@@ -9,113 +8,95 @@ import org.joml.Vector3f
 import kotlin.math.cos
 import kotlin.math.sin
 
-class DayNightCycleSystem() : System(priority = ExecutionPriority.EARLY) {
-
-    // Color constants for interpolation
-    private val noonColor = Vector3f(1.0f, 0.95f, 0.8f)  // Warm sunlight
-    private val duskColor = Vector3f(1.0f, 0.6f, 0.3f)   // Orange sunset
-    private val nightColor = Vector3f(0.3f, 0.4f, 0.6f)  // Cool moonlight
-    private val dawnColor = Vector3f(1.0f, 0.7f, 0.5f)   // Pink/orange dawn
-    private val nightAmbient = Vector3f(0.05f, 0.05f, 0.1f)
-    private val dayAmbient = Vector3f(0.3f, 0.3f, 0.35f)
+class DayNightCycleSystem : System(priority = ExecutionPriority.EARLY) {
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        val config = scene.getComponent<DayNightCycleComponent>()?.takeIf { it.enabled } ?: return
+        val cycleCmp = scene.getComponent<DayNightCycleComponent>()?.takeIf { it.enabled } ?: return
+        val dirLightCmp = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled }
+        val ambientLightCmp = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled }
 
         // Get day duration (use override if provided)
-        val dayDuration = config.dayDuration
+        val dayDuration = cycleCmp.dayDuration
 
         // Advance cycle time (convert dt to hours)
         val hoursPerSecond = 24f / dayDuration
-        config.timeOfDay = (config.timeOfDay + dt * hoursPerSecond) % 24f
+        cycleCmp.timeOfDay = (cycleCmp.timeOfDay + dt * hoursPerSecond) % 24f
 
         // Compute sun direction from cycle time
-        updateSunDirection(config)
-
-        // Interpolate sun color based on time of day
-        updateSunColor(config)
-
-        // Update derived values
-        config.isDaytime = config.timeOfDay in 6f..18f
-        config.shadowIntensity = if (config.isDaytime) 1f else 0.3f
-
-        // Update scene ambient light if auto mode is enabled
-        if (config.autoAmbient) {
-            scene.getComponent<AmbientLightComponent>()?.lightColor?.set(config.ambientColor)
-                ?.mul(config.ambientIntensity)
+        dirLightCmp?.let {
+            updateSunDirection(cycleCmp, it)
+            updateSunColor(cycleCmp, it)
         }
 
-        // Update directional light component too
-        scene.getComponent<DirectionalLightComponent>()?.let {
-            // Update light from day/night cycle
-            it.direction.set(config.sunDirection)
-            it.color.set(config.sunColor)
-            it.intensity = config.sunIntensity
+        // Update derived values
+        cycleCmp.isDaytime = cycleCmp.timeOfDay in 6f..18f
+        cycleCmp.shadowIntensity = if (cycleCmp.isDaytime) 1f else 0.3f
+
+        // Update scene ambient light if auto mode is enabled
+        if (cycleCmp.autoAmbient && ambientLightCmp != null) {
+            ambientLightCmp.color.set(cycleCmp.nightAmbient).lerp(cycleCmp.dayAmbient, ambientLightCmp.intensity)
         }
     }
 
-    private fun updateSunDirection(config: DayNightCycleComponent) {
+    private fun updateSunDirection(cycleCmp: DayNightCycleComponent, dirLightCmp: DirectionalLightComponent) {
         // Convert cycle time to angle (0-24 hours → 0-360 degrees)
         // Offset by 6 hours so noon = 0° (sun at zenith)
-        val hoursFromNoon = config.timeOfDay - 12f
+        val hoursFromNoon = cycleCmp.timeOfDay - 12f
         val angleRadians = Math.toRadians(((hoursFromNoon / 24f) * 360f - 90f).toDouble())
 
         // Sun direction: Y component is sin (height), X component is cos (horizontal)
-        config.sunDirection.set(
+        dirLightCmp.direction.set(
             cos(angleRadians).toFloat(),
             sin(angleRadians).toFloat(),
             0f
         ).normalize()
     }
 
-    private fun updateSunColor(config: DayNightCycleComponent) {
-        val time = config.timeOfDay
+    private fun updateSunColor(cycleCmp: DayNightCycleComponent, dirLightCmp: DirectionalLightComponent) {
+        val time = cycleCmp.timeOfDay
+        var intensity: Float
 
         // Determine current phase and interpolation factor
         when {
             // Dawn: 5-7 hours (blend night → dawn → noon)
             time < 7f -> {
-                val t = ((time - 5f) / 2f).coerceIn(0f, 1f)
+                intensity = ((time - 5f) / 2f).coerceIn(0f, 1f)
                 if (time < 6f) {
                     // Night to dawn
-                    lerpColor(nightColor, dawnColor, t, config.sunColor)
+                    lerpColor(cycleCmp.nightColor, cycleCmp.dawnColor, intensity, dirLightCmp.color)
                 } else {
                     // Dawn to noon
-                    lerpColor(dawnColor, noonColor, t, config.sunColor)
+                    lerpColor(cycleCmp.dawnColor, cycleCmp.noonColor, intensity, dirLightCmp.color)
                 }
-                config.sunIntensity = t
+                dirLightCmp.intensity = intensity
             }
 
             // Day: 7-17 hours (full brightness)
             time < 17f -> {
-                config.sunColor.set(noonColor)
-                config.sunIntensity = 1f
+                dirLightCmp.color.set(cycleCmp.noonColor)
+                dirLightCmp.intensity = 1f
             }
 
             // Dusk: 17-19 hours (blend noon → dusk → night)
             time < 19f -> {
-                val t = ((time - 17f) / 2f).coerceIn(0f, 1f)
+                intensity = ((time - 17f) / 2f).coerceIn(0f, 1f)
                 if (time < 18f) {
                     // Noon to dusk
-                    lerpColor(noonColor, duskColor, t, config.sunColor)
+                    lerpColor(cycleCmp.noonColor, cycleCmp.duskColor, intensity, dirLightCmp.color)
                 } else {
                     // Dusk to night
-                    lerpColor(duskColor, nightColor, t, config.sunColor)
+                    lerpColor(cycleCmp.duskColor, cycleCmp.nightColor, intensity, dirLightCmp.color)
                 }
-                config.sunIntensity = 1f - t
+                dirLightCmp.intensity = 1f - intensity
             }
 
             // Night: 19-5 hours (dark)
             else -> {
-                config.sunColor.set(nightColor)
-                config.sunIntensity = 0f
+                dirLightCmp.color.set(cycleCmp.nightColor)
+                dirLightCmp.intensity = 0f
             }
         }
-
-        // Compute ambient color (interpolates between night and day ambient)
-        // Intensity multiplier is applied in updateSceneAmbient() so slider updates work
-        config.ambientColor.set(nightAmbient).lerp(dayAmbient, config.sunIntensity)
     }
 
     private fun lerpColor(from: Vector3f, to: Vector3f, t: Float, result: Vector3f) {

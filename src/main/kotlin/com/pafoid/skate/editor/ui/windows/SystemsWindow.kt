@@ -7,9 +7,6 @@ import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.AnimationSystem
 import com.pafoid.skate.engine.ecs.systems.AudioSystem
-import com.pafoid.skate.engine.ecs.systems.DayNightCycleSystem
-import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
-import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.System
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -55,9 +52,6 @@ class SystemsWindow(
                 when (system) {
                     is AnimationSystem -> system.imgui(stringManager)
                     is AudioSystem -> system.imgui(stringManager)
-                    is DayNightCycleSystem -> system.imgui(stringManager)
-                    is DirectionalLightSystem -> system.imgui(stringManager)
-                    is EnvironmentSystem -> system.imgui(stringManager)
                 }
             }
 

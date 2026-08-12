@@ -9,7 +9,6 @@ import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
 import com.pafoid.skate.editor.ui.windows.CommandHistoryWindow
 import com.pafoid.skate.editor.ui.windows.ConsoleWindow
 import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
-import com.pafoid.skate.editor.ui.windows.EnvironmentWindow
 import com.pafoid.skate.editor.ui.windows.GameViewWindow
 import com.pafoid.skate.editor.ui.windows.InputTestingWindow
 import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
@@ -40,7 +39,6 @@ class WindowRegistry(
     val propertiesWindow = PropertiesWindow(stringManager, engine, engine.eventSystem, engine.logger)
     val gameViewWindow = GameViewWindow(engine, editor, settingsManager, stringManager)
     val assetBrowser = AssetBrowserWindow(engine, stringManager, engine.prefabsGenerator, editor.undoRedoManager)
-    val environmentWindow = EnvironmentWindow(stringManager, engine.eventSystem, engine.systemManager)
     val profilerWindow = ProfilerWindow(stringManager)
     val consoleWindow = ConsoleWindow(engine.logger, stringManager, engine.eventSystem)
     val physicsTunerWindow = PhysicsTunerWindow(stringManager, engine)
@@ -64,7 +62,6 @@ class WindowRegistry(
         EditorWindow("window.properties", propertiesWindow, ImBoolean(false)),
         EditorWindow("window.game_viewport", gameViewWindow, ImBoolean(false)),
         EditorWindow("window.asset_browser", assetBrowser, ImBoolean(false)),
-        EditorWindow("window.environment", environmentWindow, requiresScene = true),
         EditorWindow("window.profiler", profilerWindow, ImBoolean(false)),
         EditorWindow("window.console", consoleWindow, ImBoolean(false)),
         EditorWindow("window.physics_tuner", physicsTunerWindow, requiresScene = true),
@@ -96,14 +93,11 @@ class WindowRegistry(
             "window.properties",
             "window.game_viewport",
             "window.asset_browser",
-            "window.environment",
             "window.profiler",
             "window.console",
             "window.physics_tuner",
-            "window.systems",
             "window.command_history",
             "window.project",
-            "window.audio_inspector",
             "window.render_graph",
         )
 

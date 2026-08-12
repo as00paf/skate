@@ -18,7 +18,7 @@ class EditorScreen(private val window: Window, private val engine: Engine) : Scr
         if (!loadLastProject()) {
             engine.eventSystem.publish(WindowAction.Show("window.project_wizard"))
         } else {
-            engine.eventSystem.publish(WindowAction.ShowDefault)
+            engine.eventSystem.publish(WindowAction.ShowDefault)// TODO: fix, should use windows from imgui.ini
         }
     }
 
