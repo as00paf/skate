@@ -11,7 +11,7 @@ import org.joml.Vector4f
 data class SpriteRenderer(
     @Contextual val color: Vector4f = Vector4f(1f, 1f, 1f, 1f),
     @Contextual var sprite: Sprite = Sprite(),
-    val zIndex: Int = 0
+    var zIndex: Int = 0
 ): Component() {
 
     fun resolveTextureFromPaths(assetsManager: AssetsManager, logger: LoggerService) {

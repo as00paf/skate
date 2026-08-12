@@ -232,13 +232,13 @@ class RenderBatch(
         val texId = findTextureId(sprite.sprite.texture)
         val entityId = EntityIdEncoder.encode(sprite.gameObject.uId)
 
-        val isRotated = transform.rotation.z != 0f
-        if (isRotated) {
-            transformMatrix.identity()
-            transformMatrix.translate(transform.translation.x, transform.translation.y, 0f)
-            transformMatrix.rotate(Math.toRadians(transform.rotation.z.toDouble()).toFloat(), 0f, 0f, 1f)
-            transformMatrix.scale(transform.scale.x, transform.scale.y, 1f)
-        }
+        transformMatrix.identity()
+        transformMatrix.translate(transform.translation.x, transform.translation.y, transform.translation.z)
+        transformMatrix.rotate(Math.toRadians(transform.rotation.x.toDouble()).toFloat(), 1f, 0f, 0f)
+        transformMatrix.rotate(Math.toRadians(transform.rotation.y.toDouble()).toFloat(), 0f, 1f, 0f)
+        transformMatrix.rotate(Math.toRadians(transform.rotation.z.toDouble()).toFloat(), 0f, 0f, 1f)
+        transformMatrix.scale(transform.scale.x, transform.scale.y, transform.scale.z)
+
 
         // Load 4 vertices per sprite (quad corners)
         for (i in 0..3) {
@@ -253,13 +253,7 @@ class RenderBatch(
                 3 -> currentPos.y = 1f
             }
 
-            // Transform position
-            if (isRotated) {
-                currentPos.mul(transformMatrix)
-            } else {
-                currentPos.x = currentPos.x * transform.scale.x + transform.translation.x
-                currentPos.y = currentPos.y * transform.scale.y + transform.translation.y
-            }
+            currentPos.mul(transformMatrix)
 
             loadVertex(offset, currentPos, color, texCoords[i], texId, entityId)
             offset += VERTEX_SIZE
