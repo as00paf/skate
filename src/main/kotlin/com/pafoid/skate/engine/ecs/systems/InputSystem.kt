@@ -40,7 +40,7 @@ class InputSystem(
         inputProvider.refreshGamepadState()
         if (!scene.isRunning) return
 
-        scene.gameObjects.forEach { go ->
+        scene.children.forEach { go ->
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
 
             inputState.reset()

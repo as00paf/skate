@@ -61,7 +61,7 @@ class SceneManager(
         envComponent?.skyTexture?.filePath?.let { filePath ->
             envComponent.skyTexture = assetsManager.getTexture(filePath)
         }
-        scene.gameObjects.forEach { obj ->
+        scene.children.forEach { obj ->
             try {
                 obj.components.forEach { it.init(obj) }
                 resolveObjectReferences(obj)

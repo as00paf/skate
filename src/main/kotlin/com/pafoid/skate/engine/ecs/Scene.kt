@@ -7,8 +7,6 @@ import kotlinx.serialization.Transient
 @Serializable
 class Scene(@SerialName("sceneName") override var name: String = "MainScene") : GameObject(name) {
 
-    val gameObjects = mutableListOf<GameObject>()
-
     @Transient
     var hoveredGameObject: GameObject? = null
     @Transient

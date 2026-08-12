@@ -59,7 +59,7 @@ class ShadowPass(
         // Render all shadow casters
         lightSpaceMatrix?.let {
             shadowRenderer.render(
-                gameObjects = scene.gameObjects.filter { it.isVisible },
+                gameObjects = scene.children.filter { it.isVisible },
                 lightSpaceMatrix = lightSpaceMatrix,
             )
         }

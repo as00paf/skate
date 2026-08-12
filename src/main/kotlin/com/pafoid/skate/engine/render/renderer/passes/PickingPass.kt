@@ -115,7 +115,7 @@ class PickingPass(
         pickingShader3D.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
         pickingShader3D.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
 
-        scene.gameObjects.forEach { go ->
+        scene.children.forEach { go ->
             if (!go.isVisible || go.isLocked) return@forEach
             val renderComponent = go.getComponent<RenderComponent>()
             val transform = go.getComponent<Transform>()
@@ -142,7 +142,7 @@ class PickingPass(
         renderer2D.bindShader(shader)
         renderer2D.bindCamera(cameraManager.camera)
 
-        scene.gameObjects.forEach { go ->
+        scene.children.forEach { go ->
             if (!go.isVisible || go.isLocked) return@forEach
             go.getComponent<SpriteRenderer>()?.let { sprite ->
                 renderer2D.add(go)

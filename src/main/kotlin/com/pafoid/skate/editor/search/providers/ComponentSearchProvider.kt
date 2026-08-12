@@ -20,7 +20,7 @@ class ComponentSearchProvider(
 
     override suspend fun search(query: String): List<SearchResult> {
         val scene = sceneManager.currentScene ?: return emptyList()
-        val gameObjects = scene.gameObjects
+        val gameObjects = scene.children
 
         return gameObjects
             .flatMap { go ->

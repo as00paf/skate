@@ -187,7 +187,7 @@ class PlayerMotionSystem(
 
     override fun rebuildCache() {
         cache.addAll(
-            scene.gameObjects.filter { it.hasComponent<PlayerController>() && it.hasComponent<IPhysicsBody3D>() }
+            scene.children.filter { it.hasComponent<PlayerController>() && it.hasComponent<IPhysicsBody3D>() }
         )
         cacheDirty = false
     }

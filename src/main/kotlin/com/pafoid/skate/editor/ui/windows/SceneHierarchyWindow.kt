@@ -151,7 +151,7 @@ class SceneHierarchyWindow(
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.visibility"), ImGuiTableColumnFlags.WidthFixed, 24f)
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.lock"), ImGuiTableColumnFlags.WidthFixed, 24f)
 
-            scene.gameObjects.toList().forEach { obj ->
+            scene.children.toList().forEach { obj ->
                 if (obj.parent == null) {
                     doTreeNode(obj, filter)
                 }
@@ -204,7 +204,7 @@ class SceneHierarchyWindow(
 
     private fun buildFlatList(scene: Scene): List<GameObject> {
         val result = mutableListOf<GameObject>()
-        scene.gameObjects.toList().forEach { obj ->
+        scene.children.toList().forEach { obj ->
             if (obj.parent == null) {
                 flattenTreeNode(obj, result)
             }
@@ -464,7 +464,7 @@ class SceneHierarchyWindow(
     }
 
     private fun expandAll(scene: Scene) {
-        scene.gameObjects.toList().forEach { obj ->
+        scene.children.toList().forEach { obj ->
             if (obj.children.isNotEmpty()) {
                 expandedNodes.add(obj.uId)
             }

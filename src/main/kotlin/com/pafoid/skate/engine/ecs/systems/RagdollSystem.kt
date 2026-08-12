@@ -126,7 +126,7 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
 
     override fun rebuildCache() {
         cache.clear()
-        scene.gameObjects.forEach { go ->
+        scene.children.forEach { go ->
             if (go.hasComponent<SkeletonComponent>() && go.hasComponent<RagdollComponent>() && go.hasComponent<Transform>()) {
                 cache.add(go)
             }

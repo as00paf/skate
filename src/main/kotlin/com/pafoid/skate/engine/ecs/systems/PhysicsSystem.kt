@@ -36,7 +36,7 @@ class PhysicsSystem(
 
     override fun start() {
         cacheDirty = true
-        scene.gameObjects.forEach { go ->
+        scene.children.forEach { go ->
             physics3d.add(go)
         }
     }
@@ -56,7 +56,7 @@ class PhysicsSystem(
         }
 
         // Remove cached items no longer in scene
-        val toRemove = cache.filter { !scene.gameObjects.filter { it.hasComponent<RigidBody3D>() }.contains(it) }
+        val toRemove = cache.filter { !scene.children.filter { it.hasComponent<RigidBody3D>() }.contains(it) }
         toRemove.forEach { physics3d.remove(it) }
         cache.removeAll(toRemove)
 
@@ -105,7 +105,7 @@ class PhysicsSystem(
 
     override fun rebuildCache() {
         cache.clear()
-        for (go in scene.gameObjects) {
+        for (go in scene.children) {
             if (go.hasComponent<RigidBody3D>()) {
                 cache.add(go)
             }

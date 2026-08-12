@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.ecs
 
 fun Scene.collectGameObjectsDepthFirst(): List<GameObject> {
-    val allObjects = ArrayList<GameObject>(gameObjects.size)
-    gameObjects.forEach { root ->
+    val allObjects = ArrayList<GameObject>(children.size)
+    children.forEach { root ->
         root.collectDepthFirstInto(allObjects)
     }
     return allObjects

@@ -8,21 +8,21 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
 
     override fun init(scene: Scene) {
         super.init(scene)
-        scene.gameObjects.forEach {
+        scene.children.forEach {
             it.components.forEach { component -> component.init(it) }
             it.start()
         }
     }
 
     override fun start() {
-        scene.gameObjects.forEach { go ->
+        scene.children.forEach { go ->
             go.start()
         }
     }
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        val iterator = scene.gameObjects.iterator()
+        val iterator = scene.children.iterator()
         while (iterator.hasNext()) {
             val go = iterator.next()
             if (go.isDead) {
@@ -34,31 +34,29 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
     }
 
     fun addGameObject(gameObject: GameObject) {
-        scene.gameObjects.add(gameObject)
+        scene.children.add(gameObject)
         gameObject.start()
     }
 
     fun removeGameObject(gameObject: GameObject) {
-        scene.gameObjects.remove(gameObject)
+        scene.children.remove(gameObject)
         gameObject.destroy()
     }
 
     fun getGameObject(id: Int): GameObject? {
-        return scene.gameObjects.firstOrNull { it.uId == id }
+        return scene.children.firstOrNull { it.uId == id }
     }
 
     fun getGameObject(name: String): GameObject? {
-        return scene.gameObjects.firstOrNull { it.name == name }
+        return scene.children.firstOrNull { it.name == name }
     }
 
-    fun reset() {//TODO: still missing some stuff
-        scene.gameObjects.forEach {
-            it.reset()
-        }
+    fun reset() {
+        scene.reset()
     }
     
     override fun destroy() {
-        scene.gameObjects.forEach { it.destroy() }
-        scene.gameObjects.clear()
+        scene.children.forEach { it.destroy() }
+        scene.children.clear()
     }
 }

@@ -177,7 +177,7 @@ class PrefabsGenerator(
             .addComponent(DayNightCycleComponent())
             .addComponent(DirectionalLightComponent())
 
-        scene.gameObjects.addAll(spawnDefaultsSync())
+        scene.children.addAll(spawnDefaultsSync())
         sceneManager.saveScene(scene, sceneDir.path)
 
         val openGlScene = sceneManager.createNewScene("OpenGLTest", sceneDir.path)
@@ -191,7 +191,7 @@ class PrefabsGenerator(
         cube
             .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(1f, 0f, 0f, 1f))))
             .addComponent(Transform(translation = Vector3f(0f, 10f, 0f), scale = Vector3f(0.4f)))
-        openGlScene.gameObjects.add(cube)
+        openGlScene.children.add(cube)
 
         // Cube 2
         val lightCube = GameObject("LightCube")
@@ -199,14 +199,14 @@ class PrefabsGenerator(
             .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(1f, 1f, 1f, 1f))))
             .addComponent(Transform(translation = Vector3f(-5f, 5f, 0f), scale = Vector3f(0.3f)))
             .addComponent(SpotLightComponent())
-        openGlScene.gameObjects.add(lightCube)
+        openGlScene.children.add(lightCube)
 
         //Plane
         val plane = GameObject("Plane")
         plane
             .addComponent(RenderComponent(cubeModel, Material(baseColor = Vector4f(.5f, .5f, 1f, 1f))))
             .addComponent(Transform(translation = Vector3f(0f, 1f, 0f), scale = Vector3f(5f, 0.001f, 5f)))
-        openGlScene.gameObjects.add(plane)
+        openGlScene.children.add(plane)
 
         sceneManager.saveScene(openGlScene, sceneDir.path)
 

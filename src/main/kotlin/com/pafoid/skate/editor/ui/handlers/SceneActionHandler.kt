@@ -89,6 +89,11 @@ class SceneActionHandler(
         eventSystem.subscribe<OpenFailed> { event ->
             handleOpenFailed(event.reason)
         }
+        eventSystem.subscribe<SceneAction.Changed> { event ->
+            if (sceneManager.currentScene?.isRunning == false) {
+                engine.cameraManager.camera = editorCamera.camera
+            }
+        }
     }
 
     private fun handleOpenSceneFile(sceneFile: File) {

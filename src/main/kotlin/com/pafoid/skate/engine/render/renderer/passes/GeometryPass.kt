@@ -115,7 +115,7 @@ class GeometryPass(
         )
 
         // Render all 3D game objects and collect 2D objects while iterating
-        scene.gameObjects.forEach { go ->
+        scene.children.forEach { go ->
             if (!go.isVisible) return@forEach
             val renderComponent = go.getComponent<RenderComponent>()?.takeIf { it.enabled }
             val transformComponent = go.getComponent<Transform>()?.takeIf { it.enabled }

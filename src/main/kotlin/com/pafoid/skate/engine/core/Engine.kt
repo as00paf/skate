@@ -39,7 +39,7 @@ class Engine {
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
     val cameraManager = CameraManager(eventSystem)
-    val systemManager = SystemManager(eventSystem)
+    val systemManager = SystemManager()
     val sceneManager = SceneManager(assetsManager, eventSystem, serializer, systemManager, logger)
     val gameObjectManager = GameObjectManager()
     val prefabsGenerator = PrefabsGenerator(this)
@@ -51,21 +51,19 @@ class Engine {
 
     fun start(glfwWindow: Long) {
         initCallbacks(glfwWindow)
-        jobSystem.runOnMain {
-            val resources = RenderResourcesFactory(this@Engine).create(1920, 1080)
-            renderer = Renderer(resources, cameraManager)
 
-            engineState.set(EngineState.LOADING)
+        val resources = RenderResourcesFactory(this@Engine).create(1920, 1080)
+        renderer = Renderer(resources, cameraManager)
 
-            nativeLibraryLoader.loadNativeLibrary()
-            audioEngine.init()
+        engineState.set(EngineState.LOADING)
 
-            engineState.set(EngineState.RUNNING)
-            initializeSystems()
-        }.invokeOnCompletion {
-            eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event -> runtimePlaying = event.playing }
-            logger.log("Engine initialization complete.")
-        }
+        nativeLibraryLoader.loadNativeLibrary()
+        audioEngine.init()
+
+        engineState.set(EngineState.RUNNING)
+        initializeSystems()
+        eventSystem.subscribe<EngineAction.SetRuntimePlaying> { event -> runtimePlaying = event.playing }
+        logger.log("Engine initialization complete.")
     }
 
     private fun initCallbacks(glfwWindow: Long) {

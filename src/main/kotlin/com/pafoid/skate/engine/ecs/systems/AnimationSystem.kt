@@ -147,7 +147,7 @@ class AnimationSystem(
 
     override fun rebuildCache() {
         cache.clear()
-        scene.gameObjects.forEach { go ->
+        scene.children.forEach { go ->
             if (go.hasComponent<SkeletonComponent>() && go.hasComponent<Animator>()) {
                 cache.add(go)
             }

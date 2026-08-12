@@ -121,7 +121,7 @@ class ProjectManager(
                     scene.getComponent<EnvironmentComponent>()?.skyTexture = engine.assetsManager.resolveTexture(path)
                 }
 
-                scene.gameObjects.forEach { gameObject ->
+                scene.children.forEach { gameObject ->
                     gameObject.getComponent<RenderComponent>()?.resolveModelFromByteArray(engine.assetsManager)
 
                     gameObject.getComponent<Animator>()?.let { animator ->

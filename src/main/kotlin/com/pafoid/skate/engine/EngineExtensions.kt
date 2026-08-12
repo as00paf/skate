@@ -64,7 +64,7 @@ inline fun <reified T : Component> GameObject.getComponent(): T? {
 }
 
 inline fun <reified T : Component> GameObject.getAllComponents(): List<T> {
-    val childrenOrGOs = if (this is Scene) gameObjects else children
+    val childrenOrGOs = if (this is Scene) children else children
     val componentsOfChildren = childrenOrGOs.flatMap { it.components.filterIsInstance<T>() }
     return components.filterIsInstance<T>() + componentsOfChildren
 }
