@@ -1,9 +1,7 @@
 package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.editor.imgui.MImGui
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Component.Companion.getCachedFields
@@ -11,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
+import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import imgui.ImGui
 import imgui.type.ImInt
@@ -19,15 +18,16 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import java.lang.reflect.Modifier
 
-fun Component.imgui(stringManager: StringManager, eventSystem: EventSystem, logger: LoggerService) {
+fun Component.imgui(engine: Engine) {
     when (this) {
-        is AmbientLightComponent -> this.imgui(stringManager, eventSystem, logger)
-        is DirectionalLightComponent -> this.imgui(stringManager, eventSystem, logger)
-        is PointLightComponent -> this.imgui(stringManager, eventSystem, logger)
-        is SpotLightComponent -> this.imgui(stringManager, eventSystem, logger)
+        is AmbientLightComponent -> this.imgui(engine)
+        is DirectionalLightComponent -> this.imgui(engine)
+        is PointLightComponent -> this.imgui(engine)
+        is SpotLightComponent -> this.imgui(engine)
 
-        is Transform -> this.imgui(stringManager, eventSystem, logger)
-        is RenderComponent -> this.imgui(stringManager, eventSystem, logger)
+        is Transform -> this.imgui(engine)
+        is RenderComponent -> this.imgui(engine)
+        is SpriteRenderer -> this.imgui(engine)
 
         else -> try {
             ImGui.pushID(this.javaClass.simpleName + this.name)
@@ -42,7 +42,7 @@ fun Component.imgui(stringManager: StringManager, eventSystem: EventSystem, logg
                 val type = field.type
                 val value = field.get(this)
                 val name = field.name
-                val localizedName = stringManager.getString("component.${this.javaClass.simpleName}.$name")
+                val localizedName = engine.stringManager.getString("component.${this.javaClass.simpleName}.$name")
                 val isFinal = Modifier.isFinal(modifiers)
 
                 when (type) {

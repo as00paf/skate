@@ -2,7 +2,7 @@ package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
-import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.BoneOverride
@@ -13,18 +13,18 @@ import imgui.flag.ImGuiTreeNodeFlags
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
-fun SkeletonComponent.imgui(stringManager: StringManager, logger: LoggerService) {
+fun SkeletonComponent.imgui(engine: Engine) {
     val skeleton = pose.skeleton
     val go = gameObject
     //if (go != sceneManager.currentScene?.selectedGameObject) return
 
-    if (ImGui.button(stringManager.getString("btn.save_pose"))) {
+    if (ImGui.button(engine.stringManager.getString("btn.save_pose"))) {
         val boneOverride = go.getComponent<BoneOverride>() ?: BoneOverride().also { go.addComponent(it) }
         // TODO: use event system
         //poseSerializer.savePose(boneOverride, "assets/poses/${poseFileName.get()}.json")
     }
     ImGui.sameLine()
-    if (ImGui.button(stringManager.getString("btn.load_pose"))) {
+    if (ImGui.button(engine.stringManager.getString("btn.load_pose"))) {
         // TODO: use event system
         /* val loadedOverride = poseSerializer.loadPose("assets/poses/${poseFileName.get()}.json")
          loadedOverride?.let { bo ->
@@ -42,7 +42,7 @@ fun SkeletonComponent.imgui(stringManager: StringManager, logger: LoggerService)
             ImGuiTreeNodeFlags.DefaultOpen or ImGuiTreeNodeFlags.FramePadding
         )
     ) {
-        drawBoneNode(stringManager, go, skeleton.rootBone)
+        drawBoneNode(engine.stringManager, go, skeleton.rootBone)
         ImGui.treePop()
     }
 }

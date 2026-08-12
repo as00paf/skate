@@ -1,6 +1,9 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.Color
+import com.pafoid.skate.editor.imgui.data.Icons
+import com.pafoid.skate.engine.assets.AssetsManager
+import com.pafoid.skate.engine.assets.data.Texture
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiStyleVar
@@ -9,6 +12,8 @@ import imgui.type.ImInt
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import java.io.File
+import kotlin.math.max
 
 object MImGui {
 
@@ -358,6 +363,7 @@ object MImGui {
     }
 
     /** Draws a drag-int control. */
+    // TODO: fix table
     fun dragInt(label: String, value: Int): Int {
         ImGui.pushID(label)
 
@@ -387,6 +393,36 @@ object MImGui {
         ImGui.combo("##$label", index, enumValues, enumValues.size)
         ImGui.columns(1)
         return value.declaringJavaClass.enumConstants[index.get()] as T
+    }
+
+    fun textureDropdown(label: String, value: Texture?, assetsManager: AssetsManager, defaultValue: String): Texture? {
+        val values = assetsManager.getTextures()
+        val labels = values.map { texture ->
+            texture.filePath?.let { File(it).nameWithoutExtension } ?: "Embedded Texture"
+        }.toMutableList()
+        if (value == null) labels.add(0, defaultValue)
+        val index = ImInt(max(0, values.indexOf(value)))
+
+        var removed = false
+        return if (ImGui.beginTable("##${label}_table", 2, 0, 2f)) {
+            ImGui.tableSetupColumn("##Label", 0)
+            ImGui.tableSetupColumn("##Control")
+
+            ImGui.tableNextRow()
+            ImGui.tableSetColumnIndex(0)
+            ImGui.text(label)
+            ImGui.tableSetColumnIndex(1)
+
+            val result = ImGui.combo("##$label", index, labels.toTypedArray(), labels.size)
+            ImGui.sameLine()
+            removed = ImGui.button(Icons.TRASH, 15f, 15f)
+
+            ImGui.endTable()
+            if (removed) null
+            else if (result) {
+                if (value == null) values.getOrNull(index.get() - 1) else values.getOrNull(index.get())
+            } else value
+        } else null
     }
 
     /** Draws a two-column table with label and RGBA color picker. */

@@ -197,4 +197,9 @@ class AssetsManager(
     fun hasAnimation(filePath: String): Boolean {
         return animations[filePath] != null
     }
+
+    fun getTextures(): List<Texture> = textures.values.toList()
+    fun getAnimations(): List<Animation> = animations.values.toList()
+    fun get3dModels(): List<`3dModel`> = models.values.toList()
+    fun getShaders(): List<Shader> = shaders.values.toList()
 }

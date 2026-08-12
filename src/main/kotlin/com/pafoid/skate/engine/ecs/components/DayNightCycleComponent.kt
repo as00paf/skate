@@ -9,11 +9,11 @@ data class DayNightCycleComponent(
     var timeOfDay: Float = 12f,
     var dayDuration: Float = 300f,
     @Contextual
-    var sunDirection: Vector3f = Vector3f(0f, -1f, 0f),
+    val sunDirection: Vector3f = Vector3f(0f, -1f, 0f),
     @Contextual
-    var sunColor: Vector3f = Vector3f(1f, 1f, 1f),
+    val sunColor: Vector3f = Vector3f(1f, 1f, 1f),
     @Contextual
-    var ambientColor: Vector3f = Vector3f(0.5f, 0.5f, 0.5f),
+    val ambientColor: Vector3f = Vector3f(0.5f, 0.5f, 0.5f),
     var sunIntensity: Float = 1f,
     var shadowIntensity: Float = 1f,
     var isDaytime: Boolean = true,

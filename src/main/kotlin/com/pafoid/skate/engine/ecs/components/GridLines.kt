@@ -6,15 +6,15 @@ import org.joml.Vector3f
 
 @Serializable
 data class GridLines(
-    var majorStep: Float = 10.0f,  // Godot default: 10m spacing for major lines
-    var minorStep: Float = 1.0f,   // Godot default: 1m spacing for minor lines
+    var majorStep: Float = 10.0f,  // Godot default= 10m spacing for major lines
+    var minorStep: Float = 1.0f,   // Godot default= 1m spacing for minor lines
     @Contextual
     var majorColor: Vector3f = Vector3f(0.25f, 0.25f, 0.25f),  // Even darker to match Godot's subtle grid
     @Contextual
     var minorColor: Vector3f = Vector3f(0.15f, 0.15f, 0.15f),  // Very subtle minor lines
     var minExtent: Float = 50.0f,  // Godot shows a very large grid by default
     var maxExtent: Float = 500.0f,  // Much larger maximum for far camera distances
-    var lodCloseDistance: Float = 50.0f,  // Minor lines visible much further (Godot: ~50m)
+    var lodCloseDistance: Float = 50.0f,  // Minor lines visible much further (Godot= ~50m)
     var lodFarDistance: Float = 200.0f,  // Minor lines fade out at very far distance
     var showGrid: Boolean = true,
     var showOriginAxes: Boolean = true,

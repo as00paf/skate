@@ -2,17 +2,15 @@ package com.pafoid.skate.editor.imgui.components
 
 import com.pafoid.skate.editor.events.EnvironmentAction
 import com.pafoid.skate.editor.imgui.MImGui
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import org.joml.Vector3f
 
-fun AmbientLightComponent.imgui(stringManager: StringManager, eventSystem: EventSystem, logger: LoggerService) {
+fun AmbientLightComponent.imgui(engine: Engine) {
     // Light color
     val ambient = floatArrayOf(lightColor.x, lightColor.y, lightColor.z)
-    if (MImGui.colorEdit3(stringManager.getString("lbl.environment.ambient_light"), ambient)) {
-        eventSystem.publish(
+    if (MImGui.colorEdit3(engine.stringManager.getString("lbl.environment.ambient_light"), ambient)) {
+        engine.eventSystem.publish(
             EnvironmentAction.SetAmbientLightRequested(
                 ambientLightComponent = this,
                 oldValue = Vector3f(lightColor),
@@ -22,7 +20,7 @@ fun AmbientLightComponent.imgui(stringManager: StringManager, eventSystem: Event
     }
 
     // Light intensity
-    intensity = MImGui.sliderFloat(intensity, stringManager.getString("lbl.environment.ambient_intensity"))
+    intensity = MImGui.sliderFloat(intensity, engine.stringManager.getString("lbl.environment.ambient_intensity"))
 
     /*eventSystem.publish(
         EnvironmentAction.SetAmbientIntensityRequested(

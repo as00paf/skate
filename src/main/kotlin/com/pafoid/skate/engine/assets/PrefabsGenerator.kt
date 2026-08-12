@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.assets
 
 import com.pafoid.skate.engine.addComponent
+import com.pafoid.skate.engine.assets.data.Sprite
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
 import com.pafoid.skate.engine.assets.data.models.Material
 import com.pafoid.skate.engine.core.Engine
@@ -18,6 +19,7 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
+import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.game.prefabs.Floor
@@ -59,6 +61,14 @@ class PrefabsGenerator(
         val baseModel = assetsManager.loadModel(modelPath)
         val model = `3dModel`(path = modelPath, mesh = baseModel.mesh)
         return Floor("Tile", model, material)
+    }
+
+    fun spawnSprite(): GameObject {
+        val texture = assetsManager.getTexture(Assets.Textures.APP_ICON)
+        val spriteRenderer = SpriteRenderer(Vector4f(1f), Sprite(texture))
+        return GameObject("Sprite")
+            .addComponent(spriteRenderer)
+            .addComponent(Transform(Vector3f(5f, 1.5f, 5f)))
     }
 
     fun spawnRail(position: Vector3f = Vector3f(), material: MaterialType?): GameObject {
@@ -210,6 +220,7 @@ class PrefabsGenerator(
         val skate = spawnSkateboard()
         val skater = spawnSkater()
         val floor = spawnFloor()
-        return listOfNotNull(skate, skater, floor)
+        val sprite = spawnSprite()
+        return listOfNotNull(skate, skater, floor, sprite)
     }
 }
