@@ -21,7 +21,7 @@ data class EnvironmentComponent(
     var fogGradient: Float = 1.5f,
     var renderSky: Boolean = true,
     var renderFog: Boolean = true
-) : Component() {
+) : SceneComponent() {
 
     override fun reset() {
         skyColor.set(0.6f, 0.7f, 0.9f)

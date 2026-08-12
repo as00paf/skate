@@ -51,7 +51,7 @@ class PropertiesWindow(
             ImGui.separator()
             ImGui.spacing()
 
-            val components = go.getAllComponents().filter {
+            val components = go.components.filter {
                 it.name.contains(
                     searchString.get(),
                     true

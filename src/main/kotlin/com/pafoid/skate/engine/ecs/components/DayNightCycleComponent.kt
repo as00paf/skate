@@ -20,7 +20,7 @@ data class DayNightCycleComponent(
     var ambientIntensity: Float = 1.0f,
     var autoAmbient: Boolean = true,
     var timeScale: Float = 1.0f,
-) : Component() {
+) : SceneComponent() {
 
     fun getFormattedTime(): String {
         val hours = timeOfDay.toInt()

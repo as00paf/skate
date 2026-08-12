@@ -23,6 +23,7 @@ import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
+import com.pafoid.skate.engine.ecs.components.SceneComponent
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
@@ -83,6 +84,13 @@ inline fun <reified T> GameObject.hasComponent(): Boolean {
 }
 
 fun <T : Component> GameObject.addComponent(componentClass: KClass<T>, component: T): GameObject {
+    if ((this is Scene && component !is SceneComponent) ||
+        (this !is Scene && component is SceneComponent)
+    ) {
+        println("Could not add component ${componentClass.simpleName} to $this gameObject")
+        return this
+    }
+
     components.removeAll { componentClass.isInstance(it) }
     component.generateId()
     components.add(component)

@@ -24,7 +24,7 @@ class ComponentSearchProvider(
 
         return gameObjects
             .flatMap { go ->
-                go.getAllComponents()
+                go.components
                     .mapNotNull { component ->
                         val score = calculateRelevance(component.javaClass.simpleName, query)
                         if (score > 0.0f) {

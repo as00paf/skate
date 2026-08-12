@@ -23,7 +23,6 @@ open class GameObject(
 
     var uId = ID_COUNTER++
     var isDead: Boolean = false
-    var doSerialization = true
     var isEnabled = true
     var isVisible = true
     var isLocked = false
@@ -60,15 +59,6 @@ open class GameObject(
 
     fun generateUid() { uId = ID_COUNTER++ }
 
-    fun getAllComponents(): List<Component> = components
-    fun setNoSerialize():GameObject {
-        doSerialization = false
-        return this
-    }
-    fun doSerialization():Boolean {
-        return doSerialization
-    }
-
     fun destroy() {
         this.isDead = true
         components.forEach { it.destroy() }
@@ -78,7 +68,7 @@ open class GameObject(
         val objAsJSON = serializer.encode(this)
         val result = serializer.decode<GameObject>(objAsJSON)
         result.generateUid()
-        result.getAllComponents().forEach {
+        result.components.forEach {
             it.generateId()
             it.init(result) // Re-initialize with the new parent
         }

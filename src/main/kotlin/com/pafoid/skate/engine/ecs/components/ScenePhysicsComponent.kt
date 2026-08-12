@@ -9,5 +9,5 @@ data class ScenePhysicsComponent(
     var debugEnabled: Boolean = false,
     @Contextual var gravity: Vector3f = Vector3f(0f, -9.81f, 0f),
 
-    ) : Component() {
+    ) : SceneComponent() {
 }

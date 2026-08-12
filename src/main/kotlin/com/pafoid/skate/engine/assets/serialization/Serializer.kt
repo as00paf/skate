@@ -47,11 +47,14 @@ class Serializer {
             subclass(Transform::class)
             subclass(RenderComponent::class)
             subclass(AudioComponent::class)
-            subclass(GridLines::class)
             subclass(CameraComponent::class)
 
-            // Input components
-            subclass(InputStateComponent::class)
+            // Physics components
+            subclass(RigidBody3D::class)
+            subclass(BoxCollider3D::class)
+            subclass(CylinderCollider3D::class)
+            subclass(CustomCollider3D::class)
+            subclass(CapsuleCollider3D::class)
 
             // Animation components
             subclass(BoneOverride::class)
@@ -60,25 +63,24 @@ class Serializer {
             subclass(SpriteRenderer::class)
             subclass(RagdollComponent::class)
 
-            // Environment components
-            subclass(EnvironmentComponent::class)
-            subclass(AmbientLightComponent::class)
+            // Light components
+            subclass(AmbientLightComponent::class)//Scene component
+            subclass(DirectionalLightComponent::class)//Scene component
             subclass(PointLightComponent::class)
             subclass(SpotLightComponent::class)
-            subclass(DayNightCycleComponent::class)
-            subclass(DirectionalLightComponent::class)
 
-            // Editor components
+            // Debug/Editor components
             subclass(NonPickable::class)
 
-            // Physics components
+            // Scene components
+            subclass(GridLines::class)
             subclass(ScenePhysicsComponent::class)
-            subclass(RigidBody3D::class)
-            subclass(BoxCollider3D::class)
-            subclass(CylinderCollider3D::class)
-            subclass(CustomCollider3D::class)
-            subclass(CapsuleCollider3D::class)
+            subclass(EnvironmentComponent::class)
+            subclass(DayNightCycleComponent::class)
+
+            // Custom
             subclass(PlayerController::class)
+            subclass(InputStateComponent::class)
         }
     }
 

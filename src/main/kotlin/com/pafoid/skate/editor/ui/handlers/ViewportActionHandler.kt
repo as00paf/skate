@@ -154,7 +154,7 @@ class ViewportActionHandler(
             undoRedoManager.executeCommand(SetComponentEnabledCommand(event.component, event.enabled))
         }
         eventSystem.subscribe<AddComponent> { event ->
-            undoRedoManager.executeCommand(AddComponentCommand(event.gameObject, event.componentType))
+            undoRedoManager.executeCommand(AddComponentCommand(event.gameObject, event.componentType, logger))
             sceneManager.currentScene?.isDirty = true
         }
         eventSystem.subscribe<RemoveComponent> { event ->
@@ -233,7 +233,7 @@ class ViewportActionHandler(
 
     private fun handleCreateCamera(scene: Scene) {
         val cameraObj = CameraComponent()
-        undoRedoManager.executeCommand(AddComponentCommand(scene, ComponentType.CAMERA))
+        undoRedoManager.executeCommand(AddComponentCommand(scene, ComponentType.CAMERA, logger))
         logger.logEditor("Created camera: ${cameraObj.name}")
         scene.isDirty = true
     }

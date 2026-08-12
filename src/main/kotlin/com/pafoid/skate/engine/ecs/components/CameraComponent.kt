@@ -21,6 +21,7 @@ data class CameraComponent(
     var nearPlane: Float = 0.1f,
     var farPlane: Float = 1000f,
     var zoom: Float = 1.0f,
+    var isDefault: Boolean = false
 ) : Component() {
 
     @Transient

@@ -33,7 +33,7 @@ data class GridLines(
     @Contextual
     var snapMarkerColor: Vector3f = Vector3f(0.0f, 1.0f, 0.0f),
     var originAxesThickness: Float = 0.04f  // Thickness of axis lines (quad-based rendering)
-) : Component() {
+) : SceneComponent() {
 
     fun resetToDefaults() {
         majorStep = 10.0f

@@ -9,7 +9,7 @@ data class AmbientLightComponent(
     @Contextual
     val lightColor: Vector3f = Vector3f(1f),
     var intensity: Float = .25f,
-) : Component() {
+) : SceneComponent() {
 
     override fun reset() {
         lightColor.set(1f)

@@ -3,7 +3,7 @@ package com.pafoid.skate.editor.gizmos
 import com.pafoid.skate.editor.data.EditorInputState
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.CameraComponent
-import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.getAllComponents
 import org.joml.Vector3f
 import kotlin.math.abs
 import kotlin.math.max
@@ -23,7 +23,7 @@ class EditorCamera(
     private var isRotating: Boolean = false
 
     fun init(scene: Scene) {
-        val sceneCamera = scene.getComponent<CameraComponent>() ?: return
+        val sceneCamera = scene.getAllComponents<CameraComponent>().firstOrNull { it.isDefault } ?: return
         camera.position.set(sceneCamera.position)
         camera.yaw = sceneCamera.yaw
         camera.pitch = sceneCamera.pitch

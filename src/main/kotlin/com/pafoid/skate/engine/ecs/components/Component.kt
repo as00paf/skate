@@ -101,3 +101,7 @@ abstract class Component {
             }
         }
 }
+
+@Serializable
+@Polymorphic
+abstract class SceneComponent : Component()

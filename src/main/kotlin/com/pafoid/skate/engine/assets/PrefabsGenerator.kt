@@ -176,7 +176,7 @@ class PrefabsGenerator(
             .addComponent(AmbientLightComponent())
             .addComponent(DayNightCycleComponent())
             .addComponent(DirectionalLightComponent())
-            .addComponent(CameraComponent(Vector3f(0f, 5f, 20f)))
+
         scene.gameObjects.addAll(spawnDefaultsSync())
         sceneManager.saveScene(scene, sceneDir.path)
 
@@ -217,10 +217,11 @@ class PrefabsGenerator(
     }
 
     fun spawnDefaultsSync(): List<GameObject> {
+        val camera = GameObject("Camera").addComponent(CameraComponent(Vector3f(0f, 5f, 20f), isDefault = true))
         val skate = spawnSkateboard()
         val skater = spawnSkater()
         val floor = spawnFloor()
         val sprite = spawnSprite()
-        return listOfNotNull(skate, skater, floor, sprite)
+        return listOfNotNull(camera, skate, skater, floor, sprite)
     }
 }

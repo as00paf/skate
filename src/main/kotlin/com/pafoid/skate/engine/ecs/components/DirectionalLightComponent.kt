@@ -26,7 +26,7 @@ data class DirectionalLightComponent(
     var depthBias: Float = 0.001f,
     var slopeScaledBias: Float = 0.002f,
     var castShadows: Boolean = true
-) : Component() {
+) : SceneComponent() {
 
     override fun reset() {
         direction.set(0f, -1f, 0f)
