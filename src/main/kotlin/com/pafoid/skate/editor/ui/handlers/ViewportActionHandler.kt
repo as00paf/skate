@@ -76,6 +76,7 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.events.CameraAction
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.events.SceneAction.ResetScene
+import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.render.data.LightType
@@ -304,7 +305,8 @@ class ViewportActionHandler(
             sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = 1.0f
             eventSystem.publish(CameraAction.SetCamera(editorCamera.camera))
         } else {
-            val sceneCamera = sceneManager.currentScene?.getComponent<CameraComponent>()
+            val sceneCameras = sceneManager.currentScene?.getAllComponents<CameraComponent>().orEmpty()
+            val sceneCamera = sceneCameras.firstOrNull { it.isDefault } ?: sceneCameras.firstOrNull()
             sceneCamera?.let { eventSystem.publish(CameraAction.SetCamera(it)) }
         }
     }
