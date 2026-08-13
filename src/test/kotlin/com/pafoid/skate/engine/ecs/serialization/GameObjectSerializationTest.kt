@@ -26,8 +26,6 @@ class GameObjectSerializationTest {
     @BeforeEach
     fun setUp() {
         serializer = Serializer()
-        // Reset ID counters for consistent tests
-        GameObject.init(0)
     }
 
     @Test

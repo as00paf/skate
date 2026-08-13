@@ -14,10 +14,6 @@ open class GameObject(
     companion object {
         private var ID_COUNTER: Int = 0
 
-        fun init(maxId: Int) {
-            ID_COUNTER = maxId
-        }
-
         fun getIdCounter(): Int = ID_COUNTER
     }
 
