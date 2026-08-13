@@ -42,8 +42,7 @@ class Editor(
 
     val gizmoSystem = GizmoSystem(engine, settingsManager, undoRedoManager, editorCamera)
 
-    val imGuiLayer =
-        ImGuiLayer(engine, this, engine.stringManager, projectManager, settingsManager, gizmoSystem)
+    val imGuiLayer = ImGuiLayer(engine, this, projectManager)
     val editorEventHandler = EditorEventHandler(engine.eventSystem, imGuiLayer, undoRedoManager)
 
     fun init(window: Window) {

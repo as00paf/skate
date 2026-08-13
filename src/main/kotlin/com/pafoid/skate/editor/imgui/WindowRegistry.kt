@@ -1,8 +1,6 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.app.Editor
-import com.pafoid.skate.editor.imgui.data.EditorWindow
-import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.ui.windows.AssetBrowserWindow
 import com.pafoid.skate.editor.ui.windows.AudioInspectorWindow
@@ -12,7 +10,6 @@ import com.pafoid.skate.editor.ui.windows.EditorSettingsWindow
 import com.pafoid.skate.editor.ui.windows.GameViewWindow
 import com.pafoid.skate.editor.ui.windows.InputTestingWindow
 import com.pafoid.skate.editor.ui.windows.KeyBindingsWindow
-import com.pafoid.skate.editor.ui.windows.PhysicsTunerWindow
 import com.pafoid.skate.editor.ui.windows.ProfilerWindow
 import com.pafoid.skate.editor.ui.windows.ProjectSettingsWindow
 import com.pafoid.skate.editor.ui.windows.ProjectSwitcherDialog
@@ -23,83 +20,44 @@ import com.pafoid.skate.editor.ui.windows.RenderGraphWindow
 import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.StringManager
-import imgui.type.ImBoolean
 
 class WindowRegistry(
     engine: Engine,
     editor: Editor,
     projectManager: ProjectManager,
-    settingsManager: EditorSettingsManager,
-    stringManager: StringManager
 ) {
-    val hierarchyWindow =
-        SceneHierarchyWindow(engine, stringManager, editor.clipboardService, engine.logger, engine.eventSystem)
-    val propertiesWindow = PropertiesWindow(stringManager, engine, engine.eventSystem, engine.logger)
-    val gameViewWindow = GameViewWindow(engine, editor, settingsManager, stringManager)
-    val assetBrowser = AssetBrowserWindow(engine, stringManager, engine.prefabsGenerator, editor.undoRedoManager)
-    val profilerWindow = ProfilerWindow(stringManager)
-    val consoleWindow = ConsoleWindow(engine.logger, stringManager, engine.eventSystem)
-    val physicsTunerWindow = PhysicsTunerWindow(stringManager, engine)
-    val inputTestingWindow = InputTestingWindow(engine, stringManager)
-    val editorSettingsWindow = EditorSettingsWindow(settingsManager, stringManager)
-    val projectSettingsWindow =
-        ProjectSettingsWindow(settingsManager, stringManager, projectManager, engine.eventSystem)
-    val keyBindingsWindow = KeyBindingsWindow(settingsManager, stringManager)
-    val commandHistoryWindow = CommandHistoryWindow(editor.undoRedoManager, stringManager, engine.eventSystem)
-    val renderGraphWindow = RenderGraphWindow(stringManager, engine)
-    val searchEverywhereWindow = SearchEverywhereWindow(engine, stringManager)
-    val projectWizardWindow = ProjectWizardWindow(engine.logger, stringManager, engine.eventSystem)
-    val projectSwitcherDialog = ProjectSwitcherDialog(settingsManager, stringManager, engine.eventSystem)
-    val audioInspectorWindow = AudioInspectorWindow(stringManager)
-    val projectWindow =
-        ProjectWindow(stringManager, engine.logger, projectManager, engine.eventSystem, engine.serializer)
-
     val windows: List<EditorWindow> = listOf(
-        EditorWindow("window.hierarchy", hierarchyWindow, requiresScene = true),
-        EditorWindow("window.properties", propertiesWindow, ImBoolean(false)),
-        EditorWindow("window.game_viewport", gameViewWindow, ImBoolean(false)),
-        EditorWindow("window.asset_browser", assetBrowser, ImBoolean(false)),
-        EditorWindow("window.profiler", profilerWindow, ImBoolean(false)),
-        EditorWindow("window.console", consoleWindow, ImBoolean(false)),
-        EditorWindow("window.physics_tuner", physicsTunerWindow, requiresScene = true),
-        EditorWindow("window.input_testing", inputTestingWindow, ImBoolean(false)),
-        EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(false)),
-        EditorWindow("window.render_graph", renderGraphWindow, ImBoolean(false)),
-        EditorWindow("window.editor_settings", editorSettingsWindow, ImBoolean(false)),
-        EditorWindow("window.project_settings", projectSettingsWindow, ImBoolean(false)),
-        EditorWindow("window.keybindings", keyBindingsWindow, ImBoolean(false)),
-        EditorWindow("window.audio_inspector", audioInspectorWindow, requiresScene = true),
-        EditorWindow("window.project", projectWindow, ImBoolean(false)),
-        EditorWindow("window.project_switcher", projectSwitcherDialog, requiresScene = false),
-        EditorWindow("window.project_wizard", projectWizardWindow, requiresScene = false),
-        EditorWindow("window.search", searchEverywhereWindow, requiresScene = false),
+        SceneHierarchyWindow(engine, editor.clipboardService),
+        PropertiesWindow(engine),
+        GameViewWindow(engine, editor),
+        AssetBrowserWindow(engine, editor.undoRedoManager),
+        ProfilerWindow(engine.stringManager),
+        ConsoleWindow(engine),
+        InputTestingWindow(engine),
+        EditorSettingsWindow(editor.settingsManager, engine.stringManager),
+        ProjectSettingsWindow(engine, editor.settingsManager, projectManager),
+        KeyBindingsWindow(editor.settingsManager, engine.stringManager),
+        CommandHistoryWindow(engine, editor.undoRedoManager),
+        RenderGraphWindow(engine),
+        SearchEverywhereWindow(engine),
+        ProjectWizardWindow(engine),
+        ProjectSwitcherDialog(engine, editor.settingsManager),
+        AudioInspectorWindow(engine),
+        ProjectWindow(engine, projectManager),
     )
 
+    val menuBar = EditorMenuBar(engine, editor, this, projectManager)
+    val statusBar = EditorStatusBar(engine)
+
     fun getWindow(key: String): EditorWindow? {
-        return windows.find { it.nameKey == key }
+        return windows.find { it.name == key }
     }
 
     fun hideAllWindows() {
-        windows.forEach { it.showFlag.set(false) }
+        windows.forEach { it.isOpen.set(false) }
     }
 
     fun showDefaultWindows() {
-        val defaultVisible = setOf(
-            "window.hierarchy",
-            "window.properties",
-            "window.game_viewport",
-            "window.asset_browser",
-            "window.profiler",
-            "window.console",
-            "window.physics_tuner",
-            "window.command_history",
-            "window.project",
-            "window.render_graph",
-        )
-
-        windows.forEach {
-            it.showFlag.set(it.nameKey in defaultVisible)
-        }
+        windows.forEach { it.isOpen.set(it.isDefault) }
     }
 }

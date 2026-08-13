@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.data.EditorInputMappings
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.engine.core.StringManager
@@ -35,7 +35,7 @@ import org.lwjgl.glfw.GLFW
 class EditorSettingsWindow(
     private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager
-) : IWindow {
+) : EditorWindow("window.editor_settings") {
 
     private data class Category(
         val id: String,
@@ -72,8 +72,8 @@ class EditorSettingsWindow(
         )
     }
 
-    override fun imgui(pOpen: ImBoolean?) {
-        if (pOpen?.get() == false) return
+    override fun imgui() {
+        if (!isOpen.get()) return
         if (!hasPendingChanges) syncTempSettings()
 
         val viewport = ImGui.getMainViewport()
@@ -81,7 +81,7 @@ class EditorSettingsWindow(
         setNextWindowPos(viewport.centerX, viewport.centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
         setNextWindowSize(defaultWidth, 550f, ImGuiCond.FirstUseEver)
 
-        if (begin(stringManager.getString("window.editor_settings"), pOpen, ImGuiWindowFlags.NoDocking)) {
+        if (begin(stringManager.getString("window.editor_settings"), isOpen, ImGuiWindowFlags.NoDocking)) {
             val avail = ImVec2()
             ImGui.getContentRegionAvail(avail)
             val windowW = avail.x
@@ -139,14 +139,14 @@ class EditorSettingsWindow(
             val btnW = 100f
             if (button(stringManager.getString("btn.ok"), btnW, 0f)) {
                 saveSettings()
-                pOpen?.set(false)
+                isOpen.set(false)
             }
             sameLine()
             if (button(stringManager.getString("btn.cancel"), btnW, 0f)) {
                 syncTempSettings()
                 hasPendingChanges = false
                 rebindingAction = null
-                pOpen?.set(false)
+                isOpen.set(false)
             }
             sameLine()
             ImGui.beginDisabled(!hasPendingChanges)

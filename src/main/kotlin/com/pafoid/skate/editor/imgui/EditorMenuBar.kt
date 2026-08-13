@@ -1,12 +1,12 @@
 package com.pafoid.skate.editor.imgui
 
+import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.Color
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants.EDITOR_MENU_BAR_HEIGHT
-import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
@@ -14,24 +14,23 @@ import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
 import com.pafoid.skate.engine.assets.Assets
-import com.pafoid.skate.engine.assets.AssetsManager
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.core.Engine
 import imgui.ImGui
 import imgui.ImGui.menuItem
 import imgui.internal.ImGui.image
 
 class EditorMenuBar(
-    private val stringManager: StringManager,
-    private val assetsManager: AssetsManager,
-    private val projectManager: ProjectManager,
-    private val settingsManager: EditorSettingsManager,
-    sceneManager: SceneManager,
+    engine: Engine,
+    editor: Editor,
     windowRegistry: WindowRegistry,
-    private val eventSystem: EventSystem,
+    private val projectManager: ProjectManager,
 ) {
+    private val eventSystem = engine.eventSystem
+    private val stringManager = engine.stringManager
+    private val assetsManager = engine.assetsManager
+    private val sceneManager = engine.sceneManager
+    private val settingsManager = editor.settingsManager
+
     private var appIconTexId = -1
 
     private val fileMenu = FileMenuBuilder(stringManager, eventSystem)
@@ -44,16 +43,16 @@ class EditorMenuBar(
         eventSystem.subscribe<ProjectEvent.Opened> { event ->
             appIconTexId = assetsManager.getTexture(event.project.iconPath).texId
         }
-        eventSystem.subscribe<ProjectEvent.Closed> { event ->
+        eventSystem.subscribe<ProjectEvent.Closed> {
             appIconTexId = assetsManager.getBundledTexture(Assets.Bundled.APP_ICON).texId
         }
         appIconTexId = assetsManager.getBundledTexture(Assets.Bundled.APP_ICON).texId
     }
 
-    fun render(currentScene: Scene?) {
+    fun render() {
         if (ImGui.beginMenuBar()) {
             renderAppIcon()
-            renderHamburgerMenu(currentScene)
+            renderHamburgerMenu()
             renderProjectInfo()
             windowControls.render()
 
@@ -70,7 +69,7 @@ class EditorMenuBar(
         }
     }
 
-    private fun renderHamburgerMenu(currentScene: Scene?) {
+    private fun renderHamburgerMenu() {
         val btnSize = 30f
         val offsetY = (EDITOR_MENU_BAR_HEIGHT - btnSize) / 2f
         ImGui.setCursorPosY(offsetY)
@@ -80,7 +79,7 @@ class EditorMenuBar(
         }
 
         if (ImGui.beginPopup("main_hamburger_menu")) {
-            fileMenu.render(currentScene)
+            fileMenu.render(sceneManager.currentScene)
             editMenu.render()
             settingsMenu.render()
             viewMenu.render()

@@ -3,27 +3,27 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.WindowAction
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.RecentProjectDisplayInfo
 import com.pafoid.skate.editor.systems.EditorSettingsManager
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.Engine
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiMouseCursor
 import imgui.flag.ImGuiWindowFlags
-import imgui.type.ImBoolean
 import java.io.File
 
 class ProjectSwitcherDialog(
+    engine: Engine,
     private val settingsManager: EditorSettingsManager,
-    private val stringManager: StringManager,
-    private val eventSystem: EventSystem,
-) : IWindow {
+) : EditorWindow("window.project_switcher") {
+
+    private val stringManager = engine.stringManager
+    private val eventSystem = engine.eventSystem
 
     private fun renderRecentProjectItem(project: RecentProjectDisplayInfo) {
         ImGui.pushID(project.path)
@@ -78,7 +78,7 @@ class ProjectSwitcherDialog(
         }
     }
 
-    override fun imgui(pOpen: ImBoolean?) {
+    override fun imgui() {
         val centerX = ImGui.getMainViewport().centerX
         val centerY = ImGui.getMainViewport().centerY
 
@@ -87,7 +87,7 @@ class ProjectSwitcherDialog(
 
         if (ImGui.begin(
                 stringManager.getString("window.switch_project"),
-                pOpen,
+                isOpen,
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
             )
         ) {

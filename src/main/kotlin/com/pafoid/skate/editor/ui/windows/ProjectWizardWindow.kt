@@ -4,22 +4,19 @@ import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.WindowAction
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.project.ItemType
 import com.pafoid.skate.editor.project.ProjectWizard
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
-import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiWindowFlags
-import imgui.type.ImBoolean
 import imgui.type.ImString
 import java.io.File
 import javax.swing.JFileChooser
@@ -27,16 +24,19 @@ import javax.swing.UIManager
 import javax.swing.filechooser.FileFilter
 
 class ProjectWizardWindow(
-    private val logger: LoggerService,
-    private val stringManager: StringManager,
-    private val eventSystem: EventSystem,
-) : IWindow {
+    engine: Engine,
+) : EditorWindow("window.project_wizard") {
+
+    private val logger = engine.logger
+    private val stringManager = engine.stringManager
+    private val eventSystem = engine.eventSystem
+
     val wizard: ProjectWizard = ProjectWizard()
 
     private val projectNameInput = ImString(128)
     private val projectPathInput = ImString(512)
 
-    override fun imgui(pOpen: ImBoolean?) {
+    override fun imgui() {
         val viewport = ImGui.getMainViewport()
         val centerX = if (viewport.sizeX > 0) viewport.centerX else 400f
         val centerY = if (viewport.sizeY > 0) viewport.centerY else 300f
@@ -48,7 +48,7 @@ class ProjectWizardWindow(
 
         if (ImGui.begin(
                 stringManager.getString("wizard.project.title"),
-                pOpen,
+                isOpen,
                 ImGuiWindowFlags.NoResize or ImGuiWindowFlags.Modal
             )
         ) {

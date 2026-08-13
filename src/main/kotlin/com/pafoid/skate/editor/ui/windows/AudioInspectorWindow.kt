@@ -1,27 +1,29 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.IWindowWithScene
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.addComponent
-import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.removeComponent
 import imgui.ImGui
 import imgui.type.ImString
 
-class AudioInspectorWindow(private val stringManager: StringManager) : IWindowWithScene {
+class AudioInspectorWindow(engine: Engine) : EditorWindow("window.audio_inspector") {
 
-    override fun imgui(scene: Scene) {
+    private val stringManager = engine.stringManager
+    private val sceneManager = engine.sceneManager
+
+    override fun imgui() {
         ImGui.begin(stringManager.getString("window.audio_inspector"))
-        renderAudioComponentInspector(scene)
+        renderAudioComponentInspector()
         ImGui.end()
     }
 
-    private fun renderAudioComponentInspector(scene: Scene) {
+    private fun renderAudioComponentInspector() {
         if (ImGui.collapsingHeader(stringManager.getString("lbl.audio.selected_object"))) {
-            val selectedObject = scene.selectedGameObject
+            val selectedObject = sceneManager.currentScene?.selectedGameObject
 
             if (selectedObject == null) {
                 MImGui.textDisabled(stringManager.getString("lbl.audio.no_object_selected"))

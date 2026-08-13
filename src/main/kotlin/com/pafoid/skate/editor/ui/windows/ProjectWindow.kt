@@ -6,16 +6,13 @@ import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ProjectEvent.CreateFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.DeleteFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.FileSystemScanner
 import com.pafoid.skate.editor.systems.FileTypeResolver
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.engine.assets.serialization.Serializer
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.events.SceneAction
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags
@@ -43,7 +40,6 @@ import imgui.internal.ImGui.text
 import imgui.internal.ImGui.textColored
 import imgui.internal.ImGui.treeNodeEx
 import imgui.internal.ImGui.treePop
-import imgui.type.ImBoolean
 import imgui.type.ImString
 import org.lwjgl.glfw.GLFW
 import java.awt.Desktop
@@ -53,13 +49,14 @@ import java.io.File
 import java.io.IOException
 
 class ProjectWindow(
-    private val stringManager: StringManager,
-    private val logger: LoggerService,
+    engine: Engine,
     private val projectManager: ProjectManager,
-    private val eventSystem: EventSystem,
-    serializer: Serializer
-) : IWindow {
-    private val fileSystemScanner = FileSystemScanner(projectManager, logger, serializer)
+) : EditorWindow("window.project", true) {
+    private val eventSystem = engine.eventSystem
+    private val stringManager = engine.stringManager
+    private val logger = engine.logger
+
+    private val fileSystemScanner = FileSystemScanner(projectManager, logger, engine.serializer)
     private val searchText = ImString("", 256)
     private var treeCache: List<FileSystemItem> = emptyList()
     private var needsRefresh = true
@@ -98,8 +95,8 @@ class ProjectWindow(
     private var creatingIsDir = false
     private val createInput = ImString("", 128)
 
-    override fun imgui(pOpen: ImBoolean?) {
-        if (pOpen?.get() == false) return
+    override fun imgui() {
+        if (!isOpen.get()) return
 
         if (begin(stringManager.getString("window.project"), ImGuiWindowFlags.None)) {
             // Refresh tree if needed

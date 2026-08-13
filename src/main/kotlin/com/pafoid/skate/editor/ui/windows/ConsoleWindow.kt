@@ -1,13 +1,11 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.ConsoleAction
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.Icons
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.LoggerService.LogEntry
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
-import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
@@ -15,11 +13,10 @@ import imgui.type.ImBoolean
 import imgui.type.ImString
 import org.lwjgl.glfw.GLFW
 
-class ConsoleWindow(
-    private val logger: LoggerService,
-    private val stringManager: StringManager,
-    private val eventSystem: EventSystem,
-) : IWindow {
+class ConsoleWindow(engine: Engine) : EditorWindow("window.console", true) {
+    private val logger = engine.logger
+    private val stringManager = engine.stringManager
+    private val eventSystem = engine.eventSystem
 
     private val searchText = ImString(256)
     private val selectedLogs = mutableSetOf<LogEntry>()
@@ -29,8 +26,8 @@ class ConsoleWindow(
 
     private val autoScroll = ImBoolean(true)
 
-    override fun imgui(pOpen: ImBoolean?) {
-        if (!ImGui.begin(stringManager.getString("window.console"), pOpen)) {
+    override fun imgui() {
+        if (!ImGui.begin(stringManager.getString("window.console"), isOpen)) {
             ImGui.end()
             return
         }

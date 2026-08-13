@@ -1,11 +1,11 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.WindowAction
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.ImVec2
@@ -22,7 +22,6 @@ import imgui.internal.ImGui.inputText
 import imgui.internal.ImGui.sameLine
 import imgui.internal.ImGui.setNextWindowPos
 import imgui.internal.ImGui.setNextWindowSize
-import imgui.type.ImBoolean
 import imgui.type.ImString
 import java.io.File
 import java.time.Instant
@@ -32,11 +31,14 @@ import java.time.format.FormatStyle
 import java.util.*
 
 class ProjectSettingsWindow(
+    engine: Engine,
     private val settingsManager: EditorSettingsManager,
-    private val stringManager: StringManager,
     private val projectManager: ProjectManager,
-    private val eventSystem: EventSystem,
-) : IWindow {
+
+    ) : EditorWindow("window.project_settings") {
+    private val eventSystem = engine.eventSystem
+    private val stringManager: StringManager = engine.stringManager
+
     // TODO: extract
     private data class Category(
         val id: String,
@@ -54,15 +56,15 @@ class ProjectSettingsWindow(
         )
     }
 
-    override fun imgui(pOpen: ImBoolean?) {
-        if (pOpen?.get() == false) return
+    override fun imgui() {
+        if (!isOpen.get()) return
 
         val viewport = ImGui.getMainViewport()
         val defaultWidth = viewport.workSizeX * 0.5f
         setNextWindowPos(viewport.centerX, viewport.centerY, ImGuiCond.FirstUseEver, 0.5f, 0.5f)
         setNextWindowSize(defaultWidth, 550f, ImGuiCond.FirstUseEver)
 
-        if (begin(stringManager.getString("window.project_settings"), pOpen, ImGuiWindowFlags.NoDocking)) {
+        if (begin(stringManager.getString("window.project_settings"), isOpen, ImGuiWindowFlags.NoDocking)) {
             if (!projectManager.hasProject()) {
                 ImGui.text(stringManager.getString("settings.project.no_project"))
                 MImGui.textDisabled(stringManager.getString("settings.project.no_project_description"))
@@ -72,7 +74,7 @@ class ProjectSettingsWindow(
                 }
                 ImGui.spacing()
                 if (button(stringManager.getString("btn.close"))) {
-                    pOpen?.set(false)
+                    isOpen.set(false)
                 }
             } else {
                 val avail = ImVec2()
@@ -109,11 +111,11 @@ class ProjectSettingsWindow(
                 val btnW = 100f
                 if (button(stringManager.getString("btn.ok"), btnW, 0f)) {
                     projectManager.saveProject()
-                    pOpen?.set(false)
+                    isOpen.set(false)
                 }
                 sameLine()
                 if (button(stringManager.getString("btn.cancel"), btnW, 0f)) {
-                    pOpen?.set(false)
+                    isOpen.set(false)
                 }
                 sameLine()
                 if (button(stringManager.getString("btn.apply"), btnW, 0f)) {

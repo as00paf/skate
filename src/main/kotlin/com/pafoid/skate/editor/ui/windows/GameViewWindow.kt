@@ -2,9 +2,8 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.imgui.EditorScenesTabBar
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
-import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.ui.handlers.ViewportActionHandler
 import com.pafoid.skate.editor.ui.handlers.ViewportDragDropHandler
 import com.pafoid.skate.editor.ui.menus.ViewportContextMenu
@@ -12,23 +11,19 @@ import com.pafoid.skate.editor.ui.windows.viewport.ViewportOverlays
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportRenderer
 import com.pafoid.skate.editor.ui.windows.viewport.ViewportToolbar
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
-import imgui.type.ImBoolean
 import org.joml.Vector2f
 
 class GameViewWindow(
     private val engine: Engine,
-    editor: Editor,
-    private val settingsManager: EditorSettingsManager,
-    private val stringManager: StringManager,
-) : IWindow {
-
+    private val editor: Editor,
+) : EditorWindow("window.game_viewport", true) {
+    private val stringManager = engine.stringManager
     private val sceneManager = engine.sceneManager
 
-    private val viewportOverlays = ViewportOverlays(TrickUIWindow(engine.eventSystem), settingsManager)
+    private val viewportOverlays = ViewportOverlays(TrickUIWindow(engine.eventSystem), editor.settingsManager)
 
     private val viewportRenderer = ViewportRenderer(engine)
     private val viewportContextMenu = ViewportContextMenu(stringManager, engine.eventSystem)
@@ -47,7 +42,7 @@ class GameViewWindow(
     private val gamepadOverlay = GamepadOverlay(
         engine.assetsManager,
         engine.inputProvider,
-        settingsManager,
+        editor.settingsManager,
         stringManager,
         engine.eventSystem
     )
@@ -59,7 +54,7 @@ class GameViewWindow(
         viewportActionHandler.init()
     }
 
-    override fun imgui(pOpen: ImBoolean?) {
+    override fun imgui() {
         val noTabItem = 1 shl 23
         ImGui.begin(stringManager.getString("window.game_viewport"), ImGuiWindowFlags.NoScrollbar or ImGuiWindowFlags.NoScrollWithMouse or ImGuiWindowFlags.NoTitleBar or noTabItem)
 
@@ -85,7 +80,7 @@ class GameViewWindow(
 
         viewportOverlays.render(windowPos, windowSize, sceneManager.currentScene)
 
-        if (settingsManager.editorSettings.showGamepadOverlay) {
+        if (editor.settingsManager.editorSettings.showGamepadOverlay) {
             gamepadOverlay.imgui(
                 Vector2f(viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY),
                 Vector2f(viewportRenderer.imageSizeX, viewportRenderer.imageSizeY)

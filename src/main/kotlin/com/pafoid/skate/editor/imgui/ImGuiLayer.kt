@@ -3,14 +3,10 @@ package com.pafoid.skate.editor.imgui
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
 import com.pafoid.skate.editor.imgui.data.UiConstants
-import com.pafoid.skate.editor.systems.EditorSettingsManager
-import com.pafoid.skate.editor.systems.GizmoSystem
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.core.WindowController
-import com.pafoid.skate.engine.ecs.Scene
 import imgui.ImVec2
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiConfigFlags
@@ -52,13 +48,14 @@ import org.lwjgl.glfw.GLFW
 import java.io.File
 
 class ImGuiLayer(
-    private val engine: Engine,
+    engine: Engine,
     editor: Editor,
-    private val stringManager: StringManager,
     projectManager: ProjectManager,
-    settingsManager: EditorSettingsManager,
-    private val gizmoSystem: GizmoSystem,
 ) {
+    private val stringManager = engine.stringManager
+    private val eventSystem = engine.eventSystem
+    private val renderer = engine.renderer
+
     private val imGuiGlfw = ImGuiImplGlfw()
     private val imGuiGl3 = ImGuiImplGl3()
     private val glslVersion = "#version 330"
@@ -69,18 +66,7 @@ class ImGuiLayer(
 
     private var layoutInitialized = false
 
-    private val windowRegistry = WindowRegistry(engine, editor, projectManager, settingsManager, stringManager)
-
-    private val menuBar: EditorMenuBar = EditorMenuBar(
-        stringManager,
-        engine.assetsManager,
-        projectManager,
-        settingsManager,
-        engine.sceneManager,
-        windowRegistry,
-        engine.eventSystem
-    )
-    private val statusBar = EditorStatusBar(stringManager)
+    private val windowRegistry = WindowRegistry(engine, editor, projectManager)
     private val windowManager = WindowManager(stringManager, windowRegistry, engine.eventSystem)
 
     fun init(windowController: WindowController) {
@@ -101,10 +87,10 @@ class ImGuiLayer(
         ImGuiStyleManager.setupStyle()
 
         windowManager.init()
-        windowController.onToggleMaximize = { maximized -> menuBar.setMaximized(maximized) }
-        engine.eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
-        engine.eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
-        engine.eventSystem.subscribe<EditorEvent.ToggleMaximize> { windowController.toggleMaximize() }
+        windowController.onToggleMaximize = { maximized -> windowRegistry.menuBar.setMaximized(maximized) }
+        eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
+        eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
+        eventSystem.subscribe<EditorEvent.ToggleMaximize> { windowController.toggleMaximize() }
     }
 
     private fun setupLayout(dockspaceId: Int) {
@@ -136,7 +122,6 @@ class ImGuiLayer(
     }
 
     fun update(dt: Float) {
-        val currentScene = engine.sceneManager.currentScene
 
         startFrame()
 
@@ -153,12 +138,12 @@ class ImGuiLayer(
 
             getContentRegionAvail(tempVec2)
 
-            val texId = engine.renderer.frameBuffer.getTextureId()
+            val texId = renderer.frameBuffer.getTextureId()
             image(texId.toLong(), tempVec2.x, tempVec2.y, 0f, 1f, 1f, 0f)
 
             end()
         } else {
-            setupDockSpace(currentScene)
+            setupDockSpace()
         }
 
         endFrame()
@@ -182,7 +167,7 @@ class ImGuiLayer(
         }
     }
 
-    private fun setupDockSpace(currentScene: Scene?) {
+    private fun setupDockSpace() {
         var windowFlags = ImGuiWindowFlags.MenuBar or ImGuiWindowFlags.NoDocking
 
         val viewport = getMainViewport()
@@ -208,9 +193,7 @@ class ImGuiLayer(
         setupLayout(getID("DockSpace"))
         dockSpace(getID("DockSpace"))
 
-        menuBar.render(currentScene)
-        statusBar.render(currentScene)
-        windowManager.update(currentScene)
+        windowManager.update()
 
         end()
     }

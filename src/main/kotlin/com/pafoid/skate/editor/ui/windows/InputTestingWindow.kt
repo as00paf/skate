@@ -1,12 +1,8 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.IWindowWithScene
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.InputStateComponent
-import com.pafoid.skate.engine.getComponent
 import imgui.ImGui
 import imgui.flag.ImGuiCol
 import imgui.flag.ImGuiWindowFlags
@@ -15,29 +11,22 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 class InputTestingWindow(
-    private val engine: Engine,
-    private val stringManager: StringManager,
-) : IWindowWithScene {
-
+    engine: Engine,
+) : EditorWindow("window.input_testing") {
+    private val stringManager = engine.stringManager
     private val inputProvider = engine.inputProvider
 
     private var showRawAxes = true
-    private var showProcessedState = true
     private var showSettings = true
     private var showBindings = false
 
-    override fun imgui(scene: Scene) {
+    override fun imgui() {
         ImGui.begin(stringManager.getString("window.input_testing"))
 
         // Collapsing headers for sections
         showRawAxes = ImGui.collapsingHeader(stringManager.getString("lbl.input_testing.raw_gamepad"), ImGuiWindowFlags.None)
         if (showRawAxes) {
             renderRawGamepadSection()
-        }
-
-        showProcessedState = ImGui.collapsingHeader(stringManager.getString("lbl.input_testing.processed_state"), ImGuiWindowFlags.None)
-        if (showProcessedState) {
-            renderProcessedStateSection()
         }
 
         showSettings = ImGui.collapsingHeader(stringManager.getString("lbl.input_testing.settings"), ImGuiWindowFlags.None)
@@ -211,74 +200,6 @@ class InputTestingWindow(
 
     private fun applyDeadzone(value: Float, deadzone: Float): Float {
         return if (abs(value) < deadzone) 0f else value
-    }
-
-    private fun renderProcessedStateSection() {
-        ImGui.indent()
-
-        val skater = engine.gameObjectManager.getGameObject("Skater")
-        val inputState = skater?.getComponent<InputStateComponent>()
-
-        if (inputState == null) {
-            MImGui.errorText(stringManager.getString("lbl.input_testing.no_input_state"))
-            ImGui.unindent()
-            return
-        }
-
-        ImGui.separator()
-
-        // Movement
-        ImGui.text(stringManager.getString("lbl.input_testing.movement"))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.move_direction").format(inputState.moveDirection.x, inputState.moveDirection.y))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.sprint").format(if (inputState.sprintPressed) "true" else "false"))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.crouch").format(if (inputState.crouchPressed) "true" else "false"))
-
-        ImGui.spacing()
-
-        // Jump
-        ImGui.text(stringManager.getString("lbl.input_testing.jump"))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.jump_pressed").format(if (inputState.jumpPressed) "true" else "false"))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.jump_held").format(if (inputState.jumpHeld) "true" else "false"))
-
-        ImGui.spacing()
-
-        // TODO: cleanup
-
-        // Tricks
-        ImGui.text(stringManager.getString("lbl.input_testing.tricks"))
-        /*ImGui.text("  Flip Left: ${inputState.flipLeftPressed}")
-        ImGui.text("  Flip Right: ${inputState.flipRightPressed}")
-        ImGui.text("  Kickflip: ${inputState.kickflipPressed}")
-        ImGui.text("  Heelflip: ${inputState.heelflipPressed}")
-        ImGui.text("  Grab: ${inputState.grabPressed}")
-        ImGui.text("  Manual: ${inputState.manualPressed}")*/
-
-        ImGui.spacing()
-
-        // Camera
-        ImGui.text(stringManager.getString("lbl.input_testing.camera"))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.camera_look").format(inputState.cameraLook.x, inputState.cameraLook.y))
-        //ImGui.text("  " + stringManager.getString("lbl.input_testing.camera_reset_val").format(if (inputState.cameraResetPressed) "true" else "false"))
-
-        ImGui.spacing()
-
-        // Game State
-        ImGui.text(stringManager.getString("lbl.input_testing.game_state"))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.pause_val").format(if (inputState.pausePressed) "true" else "false"))
-        ImGui.text("  " + stringManager.getString("lbl.input_testing.reset_val").format(if (inputState.resetPressed) "true" else "false"))
-        //ImGui.text("  " + stringManager.getString("lbl.input_testing.stance_val").format(if (inputState.stanceChangePressed) "true" else "false"))
-
-        ImGui.spacing()
-
-        // Physics State
-        /* ImGui.text(stringManager.getString("lbl.input_testing.physics_state"))
-         if (inputState.isGrounded) {
-             MImGui.successText("  " + stringManager.getString("lbl.input_testing.is_grounded").format(inputState.isGrounded))
-         } else {
-             MImGui.errorText("  " + stringManager.getString("lbl.input_testing.is_grounded").format(inputState.isGrounded))
-         }*/
-
-        ImGui.unindent()
     }
 
     private fun renderSettingsSection() {

@@ -6,14 +6,11 @@ import com.pafoid.skate.editor.events.ViewportAction.RenameComponent
 import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
 import com.pafoid.skate.editor.events.ViewportAction.SetComponentEnabled
 import com.pafoid.skate.editor.events.ViewportAction.SetGameObjectEnabled
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.components.imgui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Component
@@ -25,18 +22,18 @@ import imgui.type.ImBoolean
 import imgui.type.ImString
 
 class PropertiesWindow(
-    private val stringManager: StringManager,
-    private val engine: Engine,
-    private val eventSystem: EventSystem,
-    private val logger: LoggerService
-) : IWindow {
+    private val engine: Engine
+) : EditorWindow("window.properties", true) {
+    private val stringManager = engine.stringManager
+    private val eventSystem = engine.eventSystem
+    private val sceneManager = engine.sceneManager
 
     private val searchString = ImString(128)
 
-    override fun imgui(pOpen: ImBoolean?) {
-        val go = engine.sceneManager.currentScene?.selectedGameObject ?: engine.sceneManager.currentScene
-        
-        ImGui.begin(stringManager.getString("window.properties"), pOpen)
+    override fun imgui() {
+        val go = sceneManager.currentScene?.selectedGameObject ?: sceneManager.currentScene
+
+        ImGui.begin(stringManager.getString("window.properties"), isOpen)
         go?.let { go ->
             if (go !is Scene) {
                 enabledCheckbox(go)
@@ -57,8 +54,8 @@ class PropertiesWindow(
                     true
                 ) || it.javaClass.simpleName.contains(searchString.get())
             }
-            components.sortedBy { it.javaClass.simpleName }.forEachIndexed { index, component ->
-                renderComponentWithContextMenu(go, component, index)
+            components.sortedBy { it.javaClass.simpleName }.forEach { component ->
+                renderComponentWithContextMenu(go, component)
             }
 
             contextualMenu(go)
@@ -67,8 +64,8 @@ class PropertiesWindow(
         ImGui.spacing()
         ImGui.end()
     }
-    
-    private fun renderComponentWithContextMenu(go: GameObject, component: Component, index: Int) {
+
+    private fun renderComponentWithContextMenu(go: GameObject, component: Component) {
         val headerLabel = component.name
         
         if (ImGui.collapsingHeader(headerLabel)) {

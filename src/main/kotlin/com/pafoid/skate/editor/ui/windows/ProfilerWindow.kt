@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.render.EngineStats
@@ -10,7 +10,7 @@ import imgui.type.ImBoolean
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadMXBean
 
-class ProfilerWindow(private val stringManager: StringManager) : IWindow {
+class ProfilerWindow(private val stringManager: StringManager) : EditorWindow("window.profiler", true) {
     private val threadBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
     private val threadIds = mutableMapOf<String, Long>()
     private val threadCpuUsage = mutableMapOf<String, Float>()
@@ -59,15 +59,8 @@ class ProfilerWindow(private val stringManager: StringManager) : IWindow {
         }
     }
 
-    override fun imgui(pOpen: ImBoolean?) {
-        if (pOpen != null) {
-            if (!ImGui.begin("${Icons.CHART_LINE} ${stringManager.getString("window.profiler")}", pOpen)) {
-                ImGui.end()
-                return
-            }
-        } else {
-            ImGui.begin("${Icons.CHART_LINE} ${stringManager.getString("window.profiler")}")
-        }
+    override fun imgui() {
+        ImGui.begin("${Icons.CHART_LINE} ${stringManager.getString("window.profiler")}")
 
         val io = ImGui.getIO()
         val frameTime = 1000.0f / io.framerate

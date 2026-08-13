@@ -1,15 +1,18 @@
 package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.editor.imgui.data.UiConstants.STATUS_BAR_HEIGHT
-import com.pafoid.skate.engine.core.StringManager
-import com.pafoid.skate.engine.ecs.Scene
+import com.pafoid.skate.engine.core.Engine
 import imgui.ImGui
 import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiStyleVar
 import imgui.flag.ImGuiWindowFlags
 
-class EditorStatusBar(private val stringManager: StringManager) {
-    fun render(currentScene: Scene?) {
+class EditorStatusBar(engine: Engine) {
+    private val stringManager = engine.stringManager
+    private val sceneManager = engine.sceneManager
+
+    fun render() {
+        val currentScene = sceneManager.currentScene
         val viewport = ImGui.getMainViewport()
         ImGui.setNextWindowPos(
             viewport.workPosX,

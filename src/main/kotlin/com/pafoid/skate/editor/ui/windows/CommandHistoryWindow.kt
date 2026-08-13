@@ -2,27 +2,27 @@ package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.commands.Command
 import com.pafoid.skate.editor.events.UndoRedoAction
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.UndoRedoManager
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.core.Engine
 import imgui.ImGui
 import imgui.flag.ImGuiCol
-import imgui.type.ImBoolean
 
 class CommandHistoryWindow(
-    private val undoRedoManager: UndoRedoManager,
-    private val stringManager: StringManager,
-    private val eventSystem: EventSystem,
-) : IWindow {
+    engine: Engine,
+    private val undoRedoManager: UndoRedoManager
+) : EditorWindow("window.command_history", true) {
+
+    private val stringManager = engine.stringManager
+    private val eventSystem = engine.eventSystem
 
     private var scrollToBottom = false
     private val undoStackHeight = 250f
     private val redoStackHeight = 150f
 
-    override fun imgui(pOpen: ImBoolean?) {
-        ImGui.begin(stringManager.getString("window.command_history"), pOpen)
+    override fun imgui() {
+        ImGui.begin(stringManager.getString("window.command_history"), isOpen)
 
         renderToolbar()
 
@@ -131,7 +131,7 @@ class CommandHistoryWindow(
                 scrollToBottom = true
             }
             if (ImGui.isItemHovered()) {
-                ImGui.setTooltip("${stringManager.getString("lbl.command_history.shortcuts")}")
+                ImGui.setTooltip(stringManager.getString("lbl.command_history.shortcuts"))
             }
         }
 

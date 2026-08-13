@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.editor.ui.windows.assetBrowser.AnimationsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.PrefabsTab
@@ -8,17 +8,16 @@ import com.pafoid.skate.editor.ui.windows.assetBrowser.SoundsTab
 import com.pafoid.skate.editor.ui.windows.assetBrowser.TexturesTab
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
-import imgui.type.ImBoolean
 import imgui.type.ImString
 
 class AssetBrowserWindow(
-    private val engine: Engine,
-    private val stringManager: StringManager,
-    private val prefabsGenerator: PrefabsGenerator,
+    engine: Engine,
     private val undoRedoManager: UndoRedoManager,
-) : IWindow {
+) : EditorWindow("window.asset_browser", true) {
+    private val stringManager = engine.stringManager
+    private val prefabsGenerator: PrefabsGenerator = engine.prefabsGenerator
+
     private val animationsTab: AnimationsTab = AnimationsTab(engine, stringManager)
     private val texturesTab: TexturesTab = TexturesTab(stringManager, engine, undoRedoManager)
     private val prefabsTab: PrefabsTab = PrefabsTab(engine, stringManager, prefabsGenerator)
@@ -36,7 +35,7 @@ class AssetBrowserWindow(
         texturesTab.refreshAssets()
     }
 
-    override fun imgui(pOpen: ImBoolean?) {
+    override fun imgui() {
         ImGui.begin(stringManager.getString("window.asset_browser"))
 
         if (ImGui.beginTabBar("AssetBrowserTabs")) {

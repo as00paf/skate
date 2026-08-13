@@ -1,6 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.search.SearchEngine
 import com.pafoid.skate.editor.search.data.SearchCategory
@@ -9,7 +9,6 @@ import com.pafoid.skate.editor.search.data.SearchResultWithCategory
 import com.pafoid.skate.editor.search.history.SearchHistory
 import com.pafoid.skate.editor.search.history.SearchHistoryEntry
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.StringManager
 import imgui.ImGui
 import imgui.ImVec4
 import imgui.flag.ImGuiCol
@@ -23,8 +22,9 @@ import kotlinx.coroutines.Job
 
 class SearchEverywhereWindow(
     private val engine: Engine,
-    private val stringManager: StringManager,
-) : IWindow {
+) : EditorWindow("window.search") {
+    private val stringManager = engine.stringManager
+
     private val searchHistory: SearchHistory = SearchHistory(serializer = engine.serializer)
     private val searchEngine: SearchEngine = SearchEngine(engine, stringManager)
 
@@ -63,7 +63,7 @@ class SearchEverywhereWindow(
         recentSearches = searchHistory.getRecent(limit = 5)
     }
 
-    override fun imgui(pOpen: ImBoolean?) {
+    override fun imgui() {
         val viewport = ImGui.getMainViewport()
         val centerX = viewport.workCenterX
         val centerY = viewport.workCenterY
@@ -79,7 +79,7 @@ class SearchEverywhereWindow(
 
         ImGui.begin(stringManager.getString("search.everywhere.title"), null, windowFlags)
 
-        handleKeyboardInput(pOpen)
+        handleKeyboardInput(isOpen)
         renderSearchInput()
 
         ImGui.separator()
@@ -93,7 +93,7 @@ class SearchEverywhereWindow(
         if (searchQuery.get().isBlank()) {
             renderRecentSearches()
         } else {
-            renderResults(pOpen)
+            renderResults(isOpen)
         }
         ImGui.endChild()
 

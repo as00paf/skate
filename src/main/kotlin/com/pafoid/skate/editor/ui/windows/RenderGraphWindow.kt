@@ -1,10 +1,9 @@
 package com.pafoid.skate.editor.ui.windows
 
-import com.pafoid.skate.editor.imgui.IWindow
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import imgui.ImGui
@@ -13,9 +12,9 @@ import imgui.flag.ImGuiTreeNodeFlags
 import imgui.type.ImBoolean
 
 class RenderGraphWindow(
-    private val stringManager: StringManager,
     private val engine: Engine,
-) : IWindow {
+) : EditorWindow("window.render_graph") {
+    private val stringManager = engine.stringManager
     private val renderer: Renderer by lazy { engine.renderer }
 
     private var autoUpdate = true
@@ -23,8 +22,8 @@ class RenderGraphWindow(
     private var selectedPass: RenderPass? = null
     private var zoomLevel = 1.0f
 
-    override fun imgui(pOpen: ImBoolean?) {
-        ImGui.begin(stringManager.getString("window.render_graph"), pOpen)
+    override fun imgui() {
+        ImGui.begin(stringManager.getString("window.render_graph"), isOpen)
 
         renderToolbar()
         ImGui.separator()
@@ -44,9 +43,6 @@ class RenderGraphWindow(
     }
 
     private fun renderToolbar() {
-        if (ImGui.button("${Icons.ARROW_ROTATE} ${stringManager.getString("lbl.render_graph.refresh")}")) {
-            // Force refresh (metrics already update automatically)
-        }
         if (ImGui.isItemHovered()) {
             ImGui.setTooltip(stringManager.getString("tooltip.render_graph.refresh"))
         }
@@ -70,7 +66,7 @@ class RenderGraphWindow(
         }
 
         ImGui.sameLine()
-        ImGui.text("${stringManager.getString("lbl.render_graph.zoom")}")
+        ImGui.text(stringManager.getString("lbl.render_graph.zoom"))
         ImGui.sameLine()
         val zoomArr = floatArrayOf(zoomLevel)
         if (ImGui.sliderFloat("##Zoom", zoomArr, 0.5f, 2.0f, "%.1f")) {

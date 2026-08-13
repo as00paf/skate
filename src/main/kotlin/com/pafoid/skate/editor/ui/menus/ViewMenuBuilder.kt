@@ -15,7 +15,7 @@ class ViewMenuBuilder(
         if (beginMenu(stringManager.getString("menu.view"))) {
             if (beginMenu(stringManager.getString("menu.view.windows"))) {
                 windowRegistry.windows.forEach { window ->
-                    checkbox(stringManager.getString(window.nameKey), window.showFlag)
+                    checkbox(stringManager.getString(window.name), window.isOpen)
                 }
                 endMenu()
             }

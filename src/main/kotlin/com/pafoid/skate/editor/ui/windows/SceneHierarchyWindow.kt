@@ -11,13 +11,10 @@ import com.pafoid.skate.editor.events.ViewportAction.RenameGameObject
 import com.pafoid.skate.editor.events.ViewportAction.Reparent
 import com.pafoid.skate.editor.events.ViewportAction.ToggleLock
 import com.pafoid.skate.editor.events.ViewportAction.ToggleVisibility
-import com.pafoid.skate.editor.imgui.IWindowWithScene
+import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.ClipboardService
 import com.pafoid.skate.engine.core.Engine
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.core.StringManager
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.events.SceneAction
@@ -41,13 +38,12 @@ import org.lwjgl.glfw.GLFW.GLFW_KEY_UP
 private const val SPECIAL_UID_SCENE_RENAME = -999
 
 class SceneHierarchyWindow(
-    private val engine: Engine,
-    private val stringManager: StringManager,
+    val engine: Engine,
     private val clipboardService: ClipboardService,
-    private val logger: LoggerService,
-    private val eventSystem: EventSystem,
-) : IWindowWithScene {
+) : EditorWindow("window.hierarchy", true) {
     private val sceneManager = engine.sceneManager
+    private val eventSystem = engine.eventSystem
+    private val stringManager = engine.stringManager
 
     private val searchQuery = ImString(256)
     private var isLinked = false
@@ -60,14 +56,8 @@ class SceneHierarchyWindow(
     private val expandedNodes = mutableSetOf<Int>()
     private var flatObjectList: List<GameObject> = emptyList()
 
-    init {
-        // Subscribe to SceneRenamed to update UI if needed
-        eventSystem.subscribe<SceneAction.Renamed> { event ->
-            logger.logEditor("Scene renamed: '${event.oldName}' -> '${event.newName}'")
-        }
-    }
-
-    override fun imgui(scene: Scene) {
+    override fun imgui() {
+        val scene = sceneManager.currentScene ?: return
         ImGui.begin(stringManager.getString("window.hierarchy"))
 
         // Scene name header with rename button
