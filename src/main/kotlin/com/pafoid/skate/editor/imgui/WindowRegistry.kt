@@ -22,7 +22,6 @@ import com.pafoid.skate.editor.ui.windows.PropertiesWindow
 import com.pafoid.skate.editor.ui.windows.RenderGraphWindow
 import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
-import com.pafoid.skate.editor.ui.windows.SystemsWindow
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
 import imgui.type.ImBoolean
@@ -43,7 +42,6 @@ class WindowRegistry(
     val consoleWindow = ConsoleWindow(engine.logger, stringManager, engine.eventSystem)
     val physicsTunerWindow = PhysicsTunerWindow(stringManager, engine)
     val inputTestingWindow = InputTestingWindow(engine, stringManager)
-    val systemsWindow = SystemsWindow(stringManager, engine)
     val editorSettingsWindow = EditorSettingsWindow(settingsManager, stringManager)
     val projectSettingsWindow =
         ProjectSettingsWindow(settingsManager, stringManager, projectManager, engine.eventSystem)
@@ -66,7 +64,6 @@ class WindowRegistry(
         EditorWindow("window.console", consoleWindow, ImBoolean(false)),
         EditorWindow("window.physics_tuner", physicsTunerWindow, requiresScene = true),
         EditorWindow("window.input_testing", inputTestingWindow, ImBoolean(false)),
-        EditorWindow("window.systems", systemsWindow, requiresScene = true),
         EditorWindow("window.command_history", commandHistoryWindow, ImBoolean(false)),
         EditorWindow("window.render_graph", renderGraphWindow, ImBoolean(false)),
         EditorWindow("window.editor_settings", editorSettingsWindow, ImBoolean(false)),
