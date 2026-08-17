@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.assets.loaders
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.utils.ShaderConst
-import com.pafoid.skate.engine.utils.ShaderConst.Attribs
 import org.lwjgl.opengl.GL20
 import java.io.IOException
 import java.nio.file.Files
@@ -96,16 +95,6 @@ class ShaderLoader(private var verbose:Boolean = false) {
         GL20.glAttachShader(shaderProgId, vertexShaderId)
         GL20.glAttachShader(shaderProgId, fragmentShaderId)
 
-        // Bind attribs to common locations used across shaders (pos=0, color=1, texcoords=2, texId=3, entityId=4, normal=5, tangent=6)
-        // TODO: this needs to be constant accross shaders
-        bindAttribute(shaderProgId, 0, Attribs.POSITION)
-        /*bindAttribute(shaderProgId, 1, Attribs.COLOR)
-        bindAttribute(shaderProgId, 2, Attribs.TEX_COORDS)
-        bindAttribute(shaderProgId, 3, Attribs.TEX_ID)
-        bindAttribute(shaderProgId, 4, Attribs.ENTITY_ID)
-        bindAttribute(shaderProgId, 5, Attribs.NORMAL)
-        bindAttribute(shaderProgId, 6, Attribs.TANGENT)
-*/
         GL20.glLinkProgram(shaderProgId)
 
         // Check for linking errors

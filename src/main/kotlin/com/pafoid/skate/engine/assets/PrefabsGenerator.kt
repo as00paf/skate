@@ -64,7 +64,7 @@ class PrefabsGenerator(
     }
 
     fun spawnSprite(): GameObject {
-        val texture = assetsManager.getTexture(Assets.Textures.APP_ICON)
+        val texture = assetsManager.getBundledTexture(Assets.Bundled.APP_ICON)
         val spriteRenderer = SpriteRenderer(Vector4f(1f), Sprite(texture))
         return GameObject("Sprite")
             .addComponent(spriteRenderer)

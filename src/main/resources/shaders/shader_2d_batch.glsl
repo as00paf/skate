@@ -3,8 +3,8 @@
 layout (location=0) in vec2 aPos;
 layout (location=1) in vec4 aColor;
 layout (location=2) in vec2 aTexCoords;
-layout (location=3) in float aTexId;
-layout (location=4) in float aEntityId;
+layout (location = 8) in float aTexId;
+layout (location = 9) in float aEntityId;
 
 uniform mat4 uProjection;
 uniform mat4 uView;

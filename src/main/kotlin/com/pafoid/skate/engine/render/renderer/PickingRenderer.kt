@@ -58,7 +58,7 @@ class PickingRenderer(
         glEnableVertexAttribArray(0)
         
         // Entity ID (mapped to location 10 in shader)
-        glVertexAttribPointer(10, 1, GL_FLOAT, false, VERTEX_SIZE * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES.toLong())
+        glVertexAttribPointer(9, 1, GL_FLOAT, false, VERTEX_SIZE * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES.toLong())
         glEnableVertexAttribArray(10)
         
         started = true

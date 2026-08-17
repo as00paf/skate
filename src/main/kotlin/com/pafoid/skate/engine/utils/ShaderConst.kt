@@ -8,14 +8,17 @@ object ShaderConst {
     const val FRAGMENT = "fragment"
     const val VERTEX = "vertex"
 
-    object Attribs {
-        const val POSITION = "aPos"
-        const val TEX_COORDS = "aTexCoords"
-        const val NORMAL = "aNormal"
-        const val TANGENT = "aTangent"
-        const val COLOR = "aColor"
-        const val TEX_ID = "aTexId"
-        const val ENTITY_ID = "aEntityId"
+    enum class Attribs(name: String) {
+        POSITION("aPos"),           //0
+        TEX_COORDS("aTexCoords"),   //1
+        NORMAL("aNormal"),          //2
+        TANGENT("aTangent"),        //3
+        COLOR("aColor"),            //4
+        TEX_COORDS_1("aTexCoords1"),//5
+        JOINTS("aJoints"),          //6
+        WEIGHTS("aWeights"),        //7
+        TEX_ID("aTexId"),           //8
+        ENTITY_ID("aEntityId"),     //9
     }
 
     object Uniforms {
@@ -43,9 +46,6 @@ object ShaderConst {
         const val SUN_DIRECTION = "uSunDirection"
         const val SUN_COLOR = "uSunColor"
 
-        const val MOON_DIRECTION = "uMoonDirection"
-        const val MOON_COLOR = "uMoonColor"
-
         const val FOG_COLOR = "uFogColor"
         const val FOG_DENSITY = "uFogDensity"
         const val FOG_GRADIENT = "uFogGradient"
@@ -72,8 +72,6 @@ object ShaderConst {
         const val JOINT_MATRICES = "u_JointMatrices"
 
         const val VIEW = "uView"
-        const val MODEL = "uModel"
-        const val OBJECT_ID = "uObjectId"
         const val ENTITY_ID = "uEntityId"
         const val SELECTED = "uSelected"
 

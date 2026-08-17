@@ -4,7 +4,7 @@ layout (location=0) in vec3 aPos;
 layout (location=1) in vec2 aTexCoords;
 layout (location=6) in ivec4 aJoints;
 layout (location=7) in vec4 aWeights;
-layout (location=10) in float aEntityId;
+layout (location = 9) in float aEntityId;
 
 uniform mat4 transformationMatrix;
 uniform mat4 projectionMatrix;
