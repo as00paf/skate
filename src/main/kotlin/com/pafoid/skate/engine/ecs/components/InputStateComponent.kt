@@ -8,13 +8,13 @@ import org.joml.Vector2f
 @Serializable
 data class InputStateComponent(
     @Contextual
-    var moveDirection: Vector2f = Vector2f(0f, 0f),
+    val moveDirection: Vector2f = Vector2f(0f, 0f),
     var sprintPressed: Boolean = false,
     var crouchPressed: Boolean = false,
     var jumpPressed: Boolean = false,
     var jumpHeld: Boolean = false,
     @Contextual
-    var cameraLook: Vector2f = Vector2f(0f, 0f),
+    val cameraLook: Vector2f = Vector2f(0f, 0f),
     var pausePressed: Boolean = false,
     var resetPressed: Boolean = false,
 ) : Component() {
