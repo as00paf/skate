@@ -38,10 +38,11 @@ out vec4 color;
 
 void main()
 {
-    if(fTexId > 0) {
+    // fTexId == -1.0 indicates no texture; valid slots are 0..(N-1)
+    if (fTexId >= 0.0) {
         int id = int(fTexId);
         color = fColor * texture(uTextures[id], fTexCoords);
-    }else {
+    } else {
         color = fColor;
     }
 }

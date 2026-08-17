@@ -19,6 +19,10 @@ import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
+import com.pafoid.skate.engine.render.utils.withBlendState
+import com.pafoid.skate.engine.render.utils.withCullFace
+import com.pafoid.skate.engine.render.utils.withDepthMask
+import com.pafoid.skate.engine.render.utils.withDepthTest
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL30
@@ -86,9 +90,6 @@ class GeometryPass(
 
         val camera = cameraManager.camera
 
-        // 2D Rendering Setup
-        renderer2D.bindCamera(camera)
-
         // 3D Rendering Setup - Upload projection and view matrices
         defaultShader.start()
         defaultShader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
@@ -143,6 +144,8 @@ class GeometryPass(
         defaultShader.stop()
 
         // Render 2D sprites
+        // 2D Rendering Setup
+        renderer2D.bindCamera(camera)
         render2D(sprites, batchShader)
 
         // Render Sky Dome
@@ -150,11 +153,19 @@ class GeometryPass(
     }
 
     private fun render2D(sprites: List<SpriteRenderer>, shader: Shader) {
-        renderer2D.bindShader(shader)
-        renderer2D.bindCamera(cameraManager.camera)
-        renderer2D.addAll(sprites)
-        renderer2D.render()
-        renderer2D.clear()
+        withDepthTest(true) {
+            withBlendState(false) {
+                withDepthMask(true) {
+                    withCullFace(false) {
+                        renderer2D.bindShader(shader)
+                        renderer2D.bindCamera(cameraManager.camera)
+                        renderer2D.addAll(sprites)
+                        renderer2D.render()
+                        renderer2D.clear()
+                    }
+                }
+            }
+        }
     }
 
     private fun clearColor(sky: Vector3f) {

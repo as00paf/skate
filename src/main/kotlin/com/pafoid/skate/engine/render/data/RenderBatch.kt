@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.components.toMatrix
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.utils.EntityIdEncoder
@@ -21,11 +22,13 @@ import com.pafoid.skate.engine.utils.RenderConsts.VERTEX_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts.VERTEX_SIZE_BYTES
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
 import org.joml.Matrix4f
+import org.joml.Vector2f
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL11.glBindTexture
 import org.lwjgl.opengl.GL20
+import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_ARRAY_BUFFER
 import org.lwjgl.opengl.GL30.GL_DYNAMIC_DRAW
 import org.lwjgl.opengl.GL30.GL_ELEMENT_ARRAY_BUFFER
@@ -39,7 +42,6 @@ import org.lwjgl.opengl.GL30.glBindBuffer
 import org.lwjgl.opengl.GL30.glBindVertexArray
 import org.lwjgl.opengl.GL30.glBufferData
 import org.lwjgl.opengl.GL30.glBufferSubData
-import org.lwjgl.opengl.GL30.glDisableVertexAttribArray
 import org.lwjgl.opengl.GL30.glDrawElements
 import org.lwjgl.opengl.GL30.glEnableVertexAttribArray
 import org.lwjgl.opengl.GL30.glGenBuffers
@@ -120,7 +122,7 @@ class RenderBatch(
         }
     }
 
-    fun render(shader: Shader = renderer.shader) {
+    fun render(shader: Shader) {
         var rebufferData = false
         for (i in 0 until numSprites) {
             loadVertexProperties(i)
@@ -138,10 +140,12 @@ class RenderBatch(
         shader.uploadMat4f(Uniforms.PROJECTION, renderer.camera.projection)
         shader.uploadMat4f(Uniforms.VIEW, renderer.camera.view)
 
+        // Bind textures to texture units starting at GL_TEXTURE0 so sampler indices match slot indices
         for (i in 0 until textureSlots.size) {
-            glActiveTexture(GL_TEXTURE0 + i + 1)
+            glActiveTexture(GL_TEXTURE0 + i)
             glBindTexture(GL_TEXTURE_2D, textureSlots[i].texId)
         }
+        // Upload sampler indices that map uTextures[0] -> texture unit 0, etc.
         shader.uploadIntArray(Uniforms.TEXTURES, intArrayOf(0, 1, 2, 3, 4, 5, 6, 7))
 
         glBindVertexArray(vaoId)
@@ -153,11 +157,6 @@ class RenderBatch(
 
         glDrawElements(GL_TRIANGLES, numSprites * 6, GL_UNSIGNED_INT, 0)
 
-        glDisableVertexAttribArray(0)
-        glDisableVertexAttribArray(1)
-        glDisableVertexAttribArray(2)
-        glDisableVertexAttribArray(3)
-        glDisableVertexAttribArray(4)
         glBindVertexArray(0)
 
         shader.stop()
@@ -168,13 +167,15 @@ class RenderBatch(
      * Returns 0 if no texture, or slot index + 1 if found.
      */
     private fun findTextureId(texture: Texture?): Int {
-        if (texture == null) return 0
+        // Return -1 when there is no texture to indicate 'no texture' sentinel
+        if (texture == null) return -1
         for (i in textureSlots.indices) {
             if (textureSlots[i] == texture) {
-                return i + 1
+                // Use zero-based texture slot indices that map directly to sampler indices
+                return i
             }
         }
-        return 0
+        return -1
     }
 
     /**
@@ -191,7 +192,7 @@ class RenderBatch(
         offset: Int,
         position: Vector4f,
         color: Vector4f,
-        texCoord: org.joml.Vector2f,
+        texCoord: Vector2f,
         texId: Int,
         entityId: Float
     ) {
@@ -232,13 +233,7 @@ class RenderBatch(
         val texId = findTextureId(sprite.sprite.texture)
         val entityId = EntityIdEncoder.encode(sprite.gameObject.uId)
 
-        transformMatrix.identity()
-        transformMatrix.translate(transform.translation.x, transform.translation.y, transform.translation.z)
-        transformMatrix.rotate(Math.toRadians(transform.rotation.x.toDouble()).toFloat(), 1f, 0f, 0f)
-        transformMatrix.rotate(Math.toRadians(transform.rotation.y.toDouble()).toFloat(), 0f, 1f, 0f)
-        transformMatrix.rotate(Math.toRadians(transform.rotation.z.toDouble()).toFloat(), 0f, 0f, 1f)
-        transformMatrix.scale(transform.scale.x, transform.scale.y, transform.scale.z)
-
+        transformMatrix.set(transform.toMatrix())
 
         // Load 4 vertices per sprite (quad corners)
         for (i in 0..3) {
@@ -313,11 +308,11 @@ class RenderBatch(
 
     fun destroy() {
         if (vaoId != 0) {
-            org.lwjgl.opengl.GL30.glDeleteVertexArrays(vaoId)
+            GL30.glDeleteVertexArrays(vaoId)
             vaoId = 0
         }
         if (vboId != 0) {
-            org.lwjgl.opengl.GL30.glDeleteBuffers(vboId)
+            GL30.glDeleteBuffers(vboId)
             vboId = 0
         }
     }

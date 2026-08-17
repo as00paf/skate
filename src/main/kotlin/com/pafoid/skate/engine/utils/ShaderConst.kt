@@ -12,6 +12,10 @@ object ShaderConst {
         const val POSITION = "aPos"
         const val TEX_COORDS = "aTexCoords"
         const val NORMAL = "aNormal"
+        const val TANGENT = "aTangent"
+        const val COLOR = "aColor"
+        const val TEX_ID = "aTexId"
+        const val ENTITY_ID = "aEntityId"
     }
 
     object Uniforms {

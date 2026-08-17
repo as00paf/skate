@@ -103,3 +103,13 @@ inline fun withCullFace(enabled: Boolean, block: () -> Unit) {
         GLStateTracker.setCullFaceEnabled(previousCullEnabled)
     }
 }
+
+inline fun withDepthTest(enabled: Boolean, block: () -> Unit) {
+    val previousState = GLStateTracker.isDepthTestEnabled()
+    try {
+        GLStateTracker.setDepthTestEnabled(enabled)
+        block()
+    } finally {
+        GLStateTracker.setDepthMask(previousState)
+    }
+}
