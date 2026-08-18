@@ -45,10 +45,6 @@ open class RigidBody3D(
     var rawBody: PhysicsRigidBody? = null
 
     @Transient
-    private val tempQuat = Quaternionf()
-    @Transient
-    private val tempEuler = Vector3f()
-    @Transient
     private val position: JmeVector3f = JmeVector3f()
     @Transient
     private val rotation: Quaternion = Quaternion()
@@ -91,25 +87,6 @@ open class RigidBody3D(
         rawBody?.setAngularFactor(JmeVector3f(0f, 1f, 0f))
         rawBody?.setPhysicsLocation(position)
         rawBody?.setPhysicsRotation(rotation)
-    }
-
-    override fun update(dt: Float) {
-        rawBody?.let { body ->
-            val transform = gameObject.getComponent<Transform>() ?: return
-            val pos = body.getPhysicsLocation(null)
-            val rot = body.getPhysicsRotation(null)
-
-            transform.translation.set(pos.x, pos.y, pos.z)
-
-            // JME Quaternion to Euler (JOML) — reused temp objects
-            tempQuat.set(rot.x, rot.y, rot.z, rot.w)
-            tempQuat.getEulerAnglesXYZ(tempEuler)
-            transform.rotation.set(
-                Math.toDegrees(tempEuler.x.toDouble()).toFloat(),
-                Math.toDegrees(tempEuler.y.toDouble()).toFloat(),
-                Math.toDegrees(tempEuler.z.toDouble()).toFloat()
-            )
-        }
     }
 
     override fun applyCentralForce(force: JomlVector3f) {

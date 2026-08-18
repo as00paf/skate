@@ -1,11 +1,14 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
+import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.Landing
@@ -27,6 +30,9 @@ class PlayerMotionSystem(
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     private val cache = mutableListOf<GameObject>()
+
+    private val tempQuat = Quaternionf()
+    private val tempEuler = Vector3f()
 
     init {
         eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
@@ -81,10 +87,29 @@ class PlayerMotionSystem(
 
         updateState(dt)
 
-        cache.forEach {
-            val body = it.getComponent<RigidBody3D>()
-            body?.let { body -> applyMotion(it, body) }
+        cache.forEach { go ->
+            val body = go.getComponent<RigidBody3D>()
+            body?.let { body ->
+                applyMotion(go, body)
+                go.getComponent<Transform>()?.let { updateTransform(go, it, body.rawBody) }
+            }
         }
+    }
+
+    private fun updateTransform(go: GameObject, transform: Transform, body: PhysicsRigidBody?) {
+        val pos = body?.getPhysicsLocation(null) ?: com.jme3.math.Vector3f()
+        val rot = body?.getPhysicsRotation(null) ?: Quaternion()
+
+        transform.translation.set(pos.x, pos.y, pos.z)
+
+        // JME Quaternion to Euler (JOML) — reused temp objects
+        tempQuat.set(rot.x, rot.y, rot.z, rot.w)
+        tempQuat.getEulerAnglesXYZ(tempEuler)
+        transform.rotation.set(
+            Math.toDegrees(tempEuler.x.toDouble()).toFloat(),
+            Math.toDegrees(tempEuler.y.toDouble()).toFloat(),
+            Math.toDegrees(tempEuler.z.toDouble()).toFloat()
+        )
     }
 
     private fun updateState(dt: Float) {

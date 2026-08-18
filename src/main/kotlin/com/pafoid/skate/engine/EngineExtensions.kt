@@ -59,14 +59,19 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.TRANSFORM -> getComponent<Transform>()
     }
 
+fun GameObject.getAllChildren(): List<GameObject> {
+    return children.flatMap { child ->
+        listOf(child) + child.getAllChildren()
+    }
+}
+
 inline fun <reified T : Component> GameObject.getComponent(): T? {
     return components.filterIsInstance<T>().firstOrNull()
 }
 
 inline fun <reified T : Component> GameObject.getAllComponents(): List<T> {
-    val childrenOrGOs = if (this is Scene) children else children
-    val componentsOfChildren = childrenOrGOs.flatMap { it.components.filterIsInstance<T>() }
-    return components.filterIsInstance<T>() + componentsOfChildren
+    val descendants = getAllChildren()
+    return descendants.flatMap { it.components.filterIsInstance<T>() }
 }
 
 inline fun <reified T : Component> GameObject.addComponent(component: T): GameObject = addComponent(T::class, component)

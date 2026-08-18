@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.render.renderer.passes
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
+import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
@@ -144,21 +145,19 @@ class GeometryPass(
         defaultShader.stop()
 
         // Render 2D sprites
-        // 2D Rendering Setup
-        renderer2D.bindCamera(camera)
-        render2D(sprites, batchShader)
+        render2D(camera, sprites, batchShader)
 
         // Render Sky Dome
         skyDomeRenderer.render(camera, scene)
     }
 
-    private fun render2D(sprites: List<SpriteRenderer>, shader: Shader) {
+    private fun render2D(camera: CameraComponent, sprites: List<SpriteRenderer>, shader: Shader) {
         withDepthTest(true) {
             withBlendState(false) {
                 withDepthMask(true) {
                     withCullFace(false) {
                         renderer2D.bindShader(shader)
-                        renderer2D.bindCamera(cameraManager.camera)
+                        renderer2D.bindCamera(camera)
                         renderer2D.addAll(sprites)
                         renderer2D.render()
                         renderer2D.clear()
