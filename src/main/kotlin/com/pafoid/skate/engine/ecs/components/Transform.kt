@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.getComponent
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -60,8 +61,8 @@ fun Transform.toMatrix(): Matrix4f {
 
 fun Transform.toWorldMatrix(): Matrix4f {
     val worldMatrix = toMatrix()
-    val parent = gameObject.parent
-    if (parent != null) {
+    val parent = gameObject?.parent
+    if (parent != null && parent !is Scene) {
         val parentTransform = parent.getComponent<Transform>()
         val parentMatrix = parentTransform?.toWorldMatrix() ?: Matrix4f().identity() // fallback for backward compatibility
         parentMatrix.mul(worldMatrix, worldMatrix)

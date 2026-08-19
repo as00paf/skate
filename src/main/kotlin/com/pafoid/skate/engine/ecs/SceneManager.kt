@@ -78,7 +78,9 @@ class SceneManager(
         obj.getComponent<SpriteRenderer>()?.resolveTextureFromPaths(assetsManager, logger)
 
         obj.children.forEach { child ->
+            child.components.forEach { it.init(child) }
             resolveObjectReferences(child)
+            child.parent = obj
         }
     }
 

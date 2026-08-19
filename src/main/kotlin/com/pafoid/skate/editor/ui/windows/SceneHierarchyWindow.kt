@@ -195,7 +195,7 @@ class SceneHierarchyWindow(
     private fun buildFlatList(scene: Scene): List<GameObject> {
         val result = mutableListOf<GameObject>()
         scene.children.toList().forEach { obj ->
-            if (obj.parent == null) {
+            if (obj.parent == scene) {
                 flattenTreeNode(obj, result)
             }
         }

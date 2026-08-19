@@ -15,7 +15,7 @@ import org.joml.Vector3f
 
 fun SkeletonComponent.imgui(engine: Engine) {
     val skeleton = pose.skeleton
-    val go = gameObject
+    val go = gameObject ?: return
     //if (go != sceneManager.currentScene?.selectedGameObject) return
 
     if (ImGui.button(engine.stringManager.getString("btn.save_pose"))) {

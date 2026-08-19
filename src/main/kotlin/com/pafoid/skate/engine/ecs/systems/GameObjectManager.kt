@@ -3,12 +3,13 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
+import com.pafoid.skate.engine.getAllChildren
 
 class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
 
     override fun init(scene: Scene) {
         super.init(scene)
-        scene.children.forEach {
+        scene.getAllChildren().forEach {
             it.components.forEach { component -> component.init(it) }
             it.start()
         }

@@ -59,10 +59,12 @@ class Editor(
     }
 
     fun update(dt: Float) {
-        editorInputHandler.update()
-        editorCamera.update(dt)
+        if (engine.sceneManager.currentScene?.isRunning == false) {
+            editorInputHandler.update()
+            editorCamera.update(dt)
+            gizmoSystem.update(dt)
+        }
         imGuiLayer.update(dt)
-        gizmoSystem.update(dt)
     }
 
     fun destroy() {

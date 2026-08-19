@@ -32,7 +32,7 @@ data class Animator(
         }
 
     fun addAnimation(animation: Animation): Boolean {
-        val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return false
+        val skeleton = gameObject?.getComponent<SkeletonComponent>()?.pose?.skeleton ?: return false
         val isValid = validateSkeletonCompatibility(skeleton, animation)
         val alreadyHasAnimation = animations.any { it.name == animation.name }
 

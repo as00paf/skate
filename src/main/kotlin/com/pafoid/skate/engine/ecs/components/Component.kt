@@ -51,11 +51,9 @@ abstract class Component {
     var name: String = this.javaClass.simpleName
 
     @Transient
-    lateinit var gameObject: GameObject
-        private set
+    var gameObject: GameObject? = null
 
     open fun init(gameObject: GameObject) {
-        if (::gameObject.isInitialized) return
         this.gameObject = gameObject
         if (uId == -1) {
             uId = ID_COUNTER++

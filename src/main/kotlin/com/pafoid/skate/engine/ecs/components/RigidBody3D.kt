@@ -74,7 +74,7 @@ open class RigidBody3D(
 
     override fun reset() {
         super.reset()
-        val transform = gameObject.getComponent<Transform>()
+        val transform = gameObject?.getComponent<Transform>()
         val initialTranslation = transform?.translation?.let { JmeVector3f(it.x, it.y, it.z) } ?: JmeVector3f()
         val initialRotation = transform?.rotation?.let { Quaternion(it.x, it.y, it.z, 1f) } ?: Quaternion()
         position.set(initialTranslation)
@@ -106,7 +106,7 @@ open class RigidBody3D(
     }
 
     override fun getVelocityInPoint(worldPos: JomlVector3f): JomlVector3f {
-        val transform = gameObject.getComponent<Transform>() ?: return JomlVector3f()
+        val transform = gameObject?.getComponent<Transform>() ?: return JomlVector3f()
         val relPos = JomlVector3f(worldPos).sub(transform.translation)
         val vAtPoint = JomlVector3f(angularVelocity).cross(relPos).add(linearVelocity)
         return vAtPoint

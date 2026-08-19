@@ -223,7 +223,8 @@ class RenderBatch(
      */
     private fun loadVertexProperties(index: Int) {
         val sprite = sprites[index] ?: return
-        val transform = sprite.gameObject.getComponent<Transform>() ?: return
+        val go = sprite.gameObject ?: return
+        val transform = go.getComponent<Transform>() ?: return
 
         // Find offset within array (4 vertices per sprite)
         var offset = index * 4 * VERTEX_SIZE
@@ -231,7 +232,7 @@ class RenderBatch(
         val color = sprite.color
         val texCoords = sprite.sprite.texCoords
         val texId = findTextureId(sprite.sprite.texture)
-        val entityId = EntityIdEncoder.encode(sprite.gameObject.uId)
+        val entityId = EntityIdEncoder.encode(go.uId)
 
         transformMatrix.set(transform.toMatrix())
 

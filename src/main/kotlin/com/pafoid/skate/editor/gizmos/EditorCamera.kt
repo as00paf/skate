@@ -13,7 +13,7 @@ import kotlin.math.sign
 class EditorCamera(
     private val editorState: EditorInputState,
 ) {
-    var camera = CameraComponent()
+    var camera = CameraComponent().also { it.name = "EditorCamera" }
 
     private val scrollSensitivity = 0.01f
     private val rotationSensitivity = 0.01f

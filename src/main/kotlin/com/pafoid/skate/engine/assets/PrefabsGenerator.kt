@@ -60,7 +60,7 @@ class PrefabsGenerator(
         val material = Material(texture)
         val baseModel = assetsManager.loadModel(modelPath)
         val model = `3dModel`(path = modelPath, mesh = baseModel.mesh)
-        return Floor("Tile", model, material)
+        return Floor("Floor", model, material)
     }
 
     fun spawnSprite(): GameObject {
@@ -217,11 +217,13 @@ class PrefabsGenerator(
     }
 
     fun spawnDefaultsSync(): List<GameObject> {
+        //val camera = GameObject("Camera").addComponent(CameraComponent(Vector3f(-10f, 5f, 0f), isDefault = true))
         val camera = GameObject("Camera").addComponent(CameraComponent(Vector3f(0f, 5f, 20f), isDefault = true))
         val skate = spawnSkateboard()
         val skater = spawnSkater()
+        skater.addChild(camera)
         val floor = spawnFloor()
         val sprite = spawnSprite()
-        return listOfNotNull(camera, skate, skater, floor, sprite)
+        return listOfNotNull(/*camera, */skate, skater, floor, sprite)
     }
 }

@@ -86,7 +86,7 @@ class PropertiesWindow(
                 // Future enhancement: Copy component to clipboard for pasting to other objects
             }
             if (ImGui.menuItem("${Icons.TRASH} ${stringManager.getString("context.properties.remove_component")}")) {
-                eventSystem.publish(RemoveComponent(go, component))
+                eventSystem.publish(RemoveComponent(component))
             }
             ImGui.separator()
             if (ImGui.menuItem("${Icons.ARROW_ROTATE} ${stringManager.getString("context.properties.reset_to_default")}")) {
@@ -171,7 +171,7 @@ class PropertiesWindow(
             message = stringManager.getString("lbl.hierarchy.remove_component"),
             confirmText = stringManager.getString("lbl.input_system.yes"),
             cancelText = stringManager.getString("lbl.input_system.no"),
-            onConfirm = { eventSystem.publish(RemoveComponent(cmp.gameObject, cmp)) }
+            onConfirm = { eventSystem.publish(RemoveComponent(cmp)) }
         )
     }
 

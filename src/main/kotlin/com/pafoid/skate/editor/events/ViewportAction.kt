@@ -18,7 +18,7 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
         ViewportAction("viewport.create_primitive")
     data class CreateEmptyChild(val parent: GameObject) : ViewportAction("viewport.create_empty_child")
     data class AddComponent(val gameObject: GameObject, val componentType: ComponentType) : ViewportAction("viewport.add_component")
-    data class RemoveComponent(val gameObject: GameObject, val component: Component) :
+    data class RemoveComponent(val component: Component) :
         ViewportAction("viewport.remove_component")
     data class Duplicate(val gameObject: GameObject) : ViewportAction("viewport.duplicate")
     data class Delete(val gameObject: GameObject, val scene: Scene) : ViewportAction("viewport.delete")

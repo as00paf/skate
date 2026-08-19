@@ -51,7 +51,7 @@ class PlayerController : Component() {
     var motionData = MotionData()
 
     override fun update(dt: Float) {
-        val inputState = gameObject.getComponent<InputStateComponent>() ?: return
+        val inputState = gameObject?.getComponent<InputStateComponent>() ?: return
 
         // PRIORITIZE event-driven movement state; fallback to InputStateComponent polling
         val useEvents = movementMagnitude > 0.15f

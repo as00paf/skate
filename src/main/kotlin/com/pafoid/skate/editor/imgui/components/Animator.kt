@@ -11,8 +11,8 @@ import imgui.ImGui
 import imgui.flag.ImGuiDragDropFlags
 
 fun Animator.imgui(engine: Engine) {
-    val renderComponent = gameObject.getComponent<RenderComponent>()
-    val skeletonComponent = gameObject.getComponent<SkeletonComponent>()
+    val renderComponent = gameObject?.getComponent<RenderComponent>()
+    val skeletonComponent = gameObject?.getComponent<SkeletonComponent>()
     val model = renderComponent?.model
 
     if (model == null) {
@@ -42,13 +42,13 @@ fun Animator.imgui(engine: Engine) {
         val newAnimation = ImGui.acceptDragDropPayload<Animation>("ANIMATION", ImGuiDragDropFlags.None)
         if (newAnimation != null) {
 
-            val skeleton = gameObject.getComponent<SkeletonComponent>()?.pose?.skeleton
+            val skeleton = gameObject?.getComponent<SkeletonComponent>()?.pose?.skeleton
             val isValid = validateSkeletonCompatibility(skeleton, newAnimation)
             val alreadyHasAnimation = animations.any { it.name == newAnimation.name }
 
             when {
                 skeleton == null -> engine.logger.log(
-                    "Animation '${newAnimation.name}' cannot be added because ${gameObject.name} does not currently have a skeleton.",
+                    "Animation '${newAnimation.name}' cannot be added because ${gameObject?.name} does not currently have a skeleton.",
                     LogLevel.ERROR
                 )
 
@@ -58,7 +58,7 @@ fun Animator.imgui(engine: Engine) {
                 )
 
                 alreadyHasAnimation -> engine.logger.log(
-                    "'${gameObject.name}' already contains '${newAnimation.name}' animation.",
+                    "'${gameObject?.name}' already contains '${newAnimation.name}' animation.",
                     LogLevel.ERROR
                 )
 
