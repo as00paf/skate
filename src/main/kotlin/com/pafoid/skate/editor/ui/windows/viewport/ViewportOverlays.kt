@@ -4,21 +4,15 @@ import com.pafoid.skate.editor.imgui.data.UiConstants.FPS_OVERLAY_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.FPS_OVERLAY_WIDTH
 import com.pafoid.skate.editor.imgui.data.UiConstants.OVERLAY_PADDING
 import com.pafoid.skate.editor.imgui.data.UiConstants.SPEED_OVERLAY_HEIGHT
-import com.pafoid.skate.editor.imgui.data.UiConstants.SPEED_OVERLAY_WIDTH
 import com.pafoid.skate.editor.imgui.data.UiConstants.TOOLBAR_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.TRICK_OVERLAY_HEIGHT
 import com.pafoid.skate.editor.imgui.data.UiConstants.TRICK_OVERLAY_WIDTH
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.ui.windows.TrickUIWindow
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.RigidBody3D
-import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.utils.UnitSystem
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
-import kotlin.math.roundToInt
-import kotlin.math.sqrt
 
 class ViewportOverlays(
     private val trickUIWindow: TrickUIWindow,
@@ -54,7 +48,7 @@ class ViewportOverlays(
     
     private fun renderSpeedometerOverlay(windowPos: ImVec2, windowSize: ImVec2, scene: Scene?) {
         // Speedometer Overlay (Bottom Left)
-        val skateGo = scene?.children?.find { it.name == "Skateboard" }
+        /*val skateGo = scene?.children?.find { it.name == "Skateboard" }
         val rb = skateGo?.getComponent<RigidBody3D>()
         val velocity = rb?.linearVelocity
 
@@ -84,7 +78,7 @@ class ViewportOverlays(
             )
             ImGui.textColored(1f, 1f, 1f, 1f, "${speedDisplay.roundToInt()} $unitLabel")
             ImGui.endChild()
-        }
+        }*/
     }
     
     private fun renderTrickOverlay(windowPos: ImVec2, windowSize: ImVec2) {

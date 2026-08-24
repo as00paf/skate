@@ -10,10 +10,10 @@ interface IPhysics3D {
     fun setGravity(gravity: Vector3f)
     fun raycastClosest(from: Vector3f, to: Vector3f, excludeBody: IPhysicsBody3D? = null): Float?
     fun add(go: GameObject)
-    fun update(go: GameObject)
     fun remove(go: GameObject)
     fun addConstraint(constraint: IPhysicsConstraint)
     fun removeConstraint(constraint: IPhysicsConstraint)
     fun update(dt: Float)
+    fun debugDraw(dt: Float)
     fun destroy()
 }

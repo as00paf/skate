@@ -22,6 +22,7 @@ import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
+import com.pafoid.skate.engine.utils.toRadiansF
 import org.joml.Quaternionf
 
 class BulletPhysics3D(
@@ -89,7 +90,7 @@ class BulletPhysics3D(
 
         // Draw debug line when debug is enabled
         if (debugEnabled) {
-            debugRenderer?.addLine3D(from, to, JomlVector3f(1f, 0f, 1f), 1)
+            debugRenderer.addLine3D(from, to, JomlVector3f(1f, 0f, 1f), 1)
         }
 
         val results = physicsSpace.rayTest(start, end)
@@ -115,62 +116,52 @@ class BulletPhysics3D(
             val desiredMass = if (rb.bodyType == BodyType.Static) 0f else rb.mass
             
             // Check if we need to rebuild due to mass change
-            if (rb.rawBody != null) {
-                if (rb.rawBody?.mass != desiredMass) {
+            val rawBody = rb.rawBody
+
+            if (rawBody != null) {
+                if (rawBody.mass != desiredMass) {
                     physicsSpace.remove(rb.rawBody)
                     rb.rawBody = null
                 } else {
                     // Body exists and mass is correct, just sync properties
-                    update(go)
+                    syncBodyProperties(rawBody, rb, go)
                     return
                 }
             }
 
-            if (rb.rawBody == null) {
-                val colliders = go.components.filterIsInstance<Collider3D>()
-                val compound = CompoundCollisionShape()
-                
-                colliders.forEach { c ->
-                    val shape = c.createShape()
-                    compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
-                }
+            val colliders = go.components.filterIsInstance<Collider3D>()
+            val compound = CompoundCollisionShape()
 
-                // If no colliders, provide a default box
-                if (colliders.isEmpty()) {
-                    val shape = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
-                    shape.margin = 0.04f
-                    compound.addChildShape(shape, JmeVector3f(0f, 0f, 0f))
-                }
-
-                val body = PhysicsRigidBody(compound, desiredMass)
-                rb.rawBody = body
-                update(go) // Initial property sync
-                
-                if (rb.bodyType == BodyType.Kinematic) {
-                    body.isKinematic = true
-                }
-
-                if (rb.useCCD) {
-                    body.setCcdMotionThreshold(0.1f)
-                    body.setCcdSweptSphereRadius(0.1f)
-                }
-                body.userObject = go
-                physicsSpace.add(body)
+            colliders.forEach { c ->
+                val shape = c.createShape()
+                compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
             }
+
+            // If no colliders, provide a default box
+            if (colliders.isEmpty()) {
+                val shape = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
+                shape.margin = 0.04f
+                compound.addChildShape(shape, JmeVector3f(0f, 0f, 0f))
+            }
+
+            val body = PhysicsRigidBody(compound, desiredMass)
+            rb.rawBody = body
+            syncBodyProperties(body, rb, go)// Initial property sync
+
+            if (rb.bodyType == BodyType.Kinematic) {
+                body.isKinematic = true
+            }
+
+            if (rb.useCCD) {
+                body.setCcdMotionThreshold(0.1f)
+                body.setCcdSweptSphereRadius(0.1f)
+            }
+            body.userObject = go
+            physicsSpace.add(body)
+
         }
     }
 
-    /**
-     * Updates the physics properties of a GameObject's rigid body based on its component state.
-     * This is typically used to sync changes from the game logic to the physics engine.
-     *
-     * @param go The GameObject to update.
-     */
-    override fun update(go: GameObject) {
-        val rb = go.getComponent<RigidBody3D>()
-        val body = rb?.rawBody ?: return
-        syncBodyProperties(body, rb, go)
-    }
 
     /**
      * Synchronizes properties from our component-based representation ([RigidBody3D], [GameObject] transform)
@@ -192,14 +183,15 @@ class BulletPhysics3D(
         body.setDamping(rb.linearDamping, rb.angularDamping)
 
         val q = Quaternionf().rotationXYZ(
-            Math.toRadians(rot.x.toDouble()).toFloat(),
-            Math.toRadians(rot.y.toDouble()).toFloat(),
-            Math.toRadians(rot.z.toDouble()).toFloat()
+            rot.x.toRadiansF(),
+            rot.y.toRadiansF(),
+            rot.z.toRadiansF()
         )
         body.setPhysicsRotation(Quaternion(q.x, q.y, q.z, q.w))
 
         val collider = go.getComponent<BoxCollider3D>() ?: return
         body.collisionShape.margin = collider.margin
+        //body.collisionShape.setScale(JmeVector3f(collider.halfExtents.x, collider.halfExtents.y, collider.halfExtents.z))
     }
 
     /**
@@ -246,7 +238,9 @@ class BulletPhysics3D(
             EngineStats.physicsStepTime.set(endTime - startTime)
             accumulatorSeconds -= fixedTimestepSeconds
         }
+    }
 
+    override fun debugDraw(dt: Float) {
         if (debugEnabled) {
             val debugColor = JomlVector3f(0f, 1f, 0f)
             physicsSpace.rigidBodyList.forEach { body ->
@@ -260,7 +254,7 @@ class BulletPhysics3D(
             }
         }
     }
-    
+
     /**
      * Dispatches the correct debug drawing method based on the [CollisionShape]'s type.
      *
@@ -295,9 +289,9 @@ class BulletPhysics3D(
         color: JomlVector3f
     ) {
         // Complex shapes - just draw a small cross for now to indicate position
-        debugRenderer?.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
-        debugRenderer?.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
-        debugRenderer?.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
+        debugRenderer.addLine3D(JomlVector3f(pos).add(-0.5f, 0f, 0f), JomlVector3f(pos).add(0.5f, 0f, 0f), color)
+        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, -0.5f, 0f), JomlVector3f(pos).add(0f, 0.5f, 0f), color)
+        debugRenderer.addLine3D(JomlVector3f(pos).add(0f, 0f, -0.5f), JomlVector3f(pos).add(0f, 0f, 0.5f), color)
     }
 
     /**
@@ -374,7 +368,7 @@ class BulletPhysics3D(
                 height = scaledHalfExtents.y * 2f
             }
         }
-        debugRenderer?.addCylinder3D(pos, rot, radius, height, axis, color)
+        debugRenderer.addCylinder3D(pos, rot, radius, height, axis, color)
     }
 
     /**
@@ -398,7 +392,7 @@ class BulletPhysics3D(
         // For debug drawing, a cylinder provides an approximate visualization of the capsule.
         // Rendering full spheres at the ends is often overkill for wireframe debug view.
         // The total height of capsule in bullet is height + 2 * radius
-        debugRenderer?.addCylinder3D(pos, rot, radius, height + 2f * radius, axis, color)
+        debugRenderer.addCylinder3D(pos, rot, radius, height + 2f * radius, axis, color)
     }
 
     /**
@@ -420,7 +414,7 @@ class BulletPhysics3D(
             halfExtents.z * scale.z
         )
 
-        debugRenderer?.addBox3D(pos, rot, scaledHalfExtents, color)
+        debugRenderer.addBox3D(pos, rot, scaledHalfExtents, color)
     }
 
     override fun destroy() {

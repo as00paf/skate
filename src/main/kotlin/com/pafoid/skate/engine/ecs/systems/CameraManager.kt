@@ -8,7 +8,7 @@ import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.events.CameraAction
 import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.utils.toRadians
+import com.pafoid.skate.engine.utils.toRadiansF
 import org.joml.Matrix4f
 import org.joml.Vector3f
 
@@ -84,9 +84,9 @@ class CameraManager(
         with(camera) {
             view.identity()
 
-            view.rotate(pitch.toRadians(), Vector3f(1f, 0f, 0f))
-            view.rotate(yaw.toRadians(), Vector3f(0f, 1f, 0f))
-            view.rotate(roll.toRadians(), Vector3f(0f, 0f, 1f))
+            view.rotate(pitch.toRadiansF(), Vector3f(1f, 0f, 0f))
+            view.rotate(yaw.toRadiansF(), Vector3f(0f, 1f, 0f))
+            view.rotate(roll.toRadiansF(), Vector3f(0f, 0f, 1f))
 
             val negativeCameraPos = Vector3f(position).negate()
             view.translate(negativeCameraPos)

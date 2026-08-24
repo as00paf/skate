@@ -17,11 +17,14 @@ data class Transform(
 ): Component() {
 
     @Transient
-    private val initialTranslation = translation.clone() as Vector3f
+    val worldMatrix: Matrix4f = Matrix4f()
     @Transient
-    private val initialScale = scale.clone() as Vector3f
+    private val initialTranslation = Vector3f(translation)
     @Transient
-    private val initialRotation = rotation.clone() as Vector3f
+    private val initialScale = Vector3f(scale)
+
+    @Transient
+    private val initialRotation = Vector3f(rotation)
 
     override fun reset() {
         super.reset()

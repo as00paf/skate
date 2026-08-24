@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.physics3d.BodyType
 import org.joml.Vector3f
 
 class Skateboard(
@@ -27,7 +28,10 @@ class Skateboard(
                 model = model,
             )
         )
-        addComponent(RigidBody3D(mass).apply { friction = 0.1f })
+        addComponent(RigidBody3D(mass, bodyType = BodyType.Dynamic).apply {
+            friction = 0.1f
+            useCCD = true
+        })
         addComponent(BoxCollider3D(hitBoxSize))
     }
 }

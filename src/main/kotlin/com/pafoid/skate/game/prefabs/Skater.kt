@@ -24,7 +24,7 @@ class Skater(
     position: Vector3f = Vector3f(0f, 1.05f, 0f),
     rotation: Vector3f = Vector3f(0f, 90f, 0f),
     scale: Vector3f = Vector3f(1f, 1f, 1f),
-    mass: Float = 100f,// 100kg mass
+    mass: Float = 180f,// kg
     hitBoxSize: Vector3f = Vector3f(0.2f, 0.95f, 0.2f),
     animations: List<Animation> = emptyList()
 ): GameObject(name) {

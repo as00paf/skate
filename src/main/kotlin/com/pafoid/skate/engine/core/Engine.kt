@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.ecs.systems.TransformSystem
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
@@ -77,6 +78,7 @@ class Engine {
         val debugRenderer = renderer.renderResources.renderers.debug
         val engineSystems = listOf(
             gameObjectManager, // Core
+            TransformSystem(),
             cameraManager,
             InputSystem(inputProvider, eventSystem),
             AudioSystem(audioEngine, logger, assetsManager, cameraManager),

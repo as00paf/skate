@@ -106,3 +106,12 @@ fun <T : Component> GameObject.addComponent(componentClass: KClass<T>, component
 fun String.fileExtension(): String {
     return this.substring(this.lastIndexOf('.') + 1)
 }
+
+inline fun <K, V> Iterable<K>.associateWithNotNull(
+    valueTransform: (K) -> V?,
+): Map<K, V> = buildMap {
+    for (key in this@associateWithNotNull) {
+        val value = valueTransform(key) ?: continue
+        this[key] = value
+    }
+}

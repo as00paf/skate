@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.utils.toDegrees
+import com.pafoid.skate.engine.utils.toDegreesF
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -55,8 +55,8 @@ data class CameraComponent(
 
     fun lookAt(target: Vector3f) {
         val dir = Vector3f(target).sub(position).normalize()
-        pitch = asin(-dir.y.toDouble()).toDegrees().toFloat()
-        yaw = atan2(dir.x.toDouble(), -dir.z.toDouble()).toDegrees().toFloat()
+        pitch = asin(-dir.y).toDegreesF()
+        yaw = atan2(dir.x, -dir.z).toDegreesF()
     }
 
     private fun updateAspectRatio() {

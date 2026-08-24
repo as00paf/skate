@@ -50,6 +50,8 @@ class PlayerController : Component() {
     @Transient
     var motionData = MotionData()
 
+
+    //TODO: move
     override fun update(dt: Float) {
         val inputState = gameObject?.getComponent<InputStateComponent>() ?: return
 
