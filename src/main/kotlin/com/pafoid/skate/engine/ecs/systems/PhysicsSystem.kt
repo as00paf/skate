@@ -23,14 +23,14 @@ class PhysicsSystem(
 
     private val physics3d: IPhysics3D = BulletPhysics3D(debugRenderer)
 
-    private val cache = mutableListOf<GameObject>()
+    private val cache = mutableListOf<PhysicsObject>()
 
     override fun init(scene: Scene) {
         super.init(scene)
         rebuildCache()
         cacheDirty = false
-        cache.forEach { go ->
-            physics3d.add(go)
+        cache.forEach {
+            physics3d.add(it.go)
         }
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->
@@ -61,16 +61,14 @@ class PhysicsSystem(
         }
 
         // Remove cached items no longer in scene
-        val toRemove = cache.filter { !scene.children.filter { it.hasComponent<RigidBody3D>() }.contains(it) }
-        toRemove.forEach { physics3d.remove(it) }
+        val toRemove = cache.filter { !scene.children.filter { it.hasComponent<RigidBody3D>() }.contains(it.go) }
+        toRemove.forEach { physics3d.remove(it.go) }
         cache.removeAll(toRemove)
 
-        for (go in cache) {
-            val rigidBody = go.getComponent<RigidBody3D>() ?: continue
-
-            rigidBody.rawBody?.let { body ->
+        for (po in cache) {
+            po.body.rawBody?.let { body ->
                 try {
-                    val transform = go.getComponent<Transform>() ?: return
+                    val transform = po.transform ?: return
                     val pos = body.getPhysicsLocation(null)
                     val rot = body.getPhysicsRotation(null)
 
@@ -87,10 +85,10 @@ class PhysicsSystem(
                 } catch (e: AssertionError) {
                     // Body is not yet in physics world - skip this frame
                 }
-            } ?: physics3d.add(go) // Add to physics if raw body is null
+            } ?: physics3d.add(po.go) // Add to physics if raw body is null
 
-            go.getComponent<PlayerController>()?.let {//TODO: move
-                it.isGrounded = checkIfGrounded(rigidBody)
+            po.go.getComponent<PlayerController>()?.let {//TODO: move
+                it.isGrounded = checkIfGrounded(po.body)
             }
         }
     }
@@ -124,9 +122,11 @@ class PhysicsSystem(
     override fun rebuildCache() {
         cache.clear()
         for (go in scene.children) {
-            if (go.hasComponent<RigidBody3D>()) {
-                cache.add(go)
+            go.getComponent<RigidBody3D>()?.let { body ->
+                cache.add(PhysicsObject(go, go.getComponent<Transform>(), body))
             }
         }
     }
+
+    data class PhysicsObject(val go: GameObject, val transform: Transform?, val body: RigidBody3D)
 }

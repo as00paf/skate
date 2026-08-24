@@ -32,6 +32,6 @@ class Skateboard(
             friction = 0.1f
             useCCD = true
         })
-        addComponent(BoxCollider3D(hitBoxSize))
+        addComponent(BoxCollider3D(hitBoxSize.mul(500f)))
     }
 }

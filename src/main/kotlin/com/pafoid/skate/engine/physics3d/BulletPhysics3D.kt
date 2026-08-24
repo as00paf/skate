@@ -146,7 +146,6 @@ class BulletPhysics3D(
 
             val body = PhysicsRigidBody(compound, desiredMass)
             rb.rawBody = body
-            syncBodyProperties(body, rb, go)// Initial property sync
 
             if (rb.bodyType == BodyType.Kinematic) {
                 body.isKinematic = true
@@ -158,7 +157,7 @@ class BulletPhysics3D(
             }
             body.userObject = go
             physicsSpace.add(body)
-
+            syncBodyProperties(body, rb, go)// Initial property sync
         }
     }
 
@@ -178,7 +177,6 @@ class BulletPhysics3D(
         val scale = transform.scale
 
         body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
-        body.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
         body.friction = rb.friction
         body.setDamping(rb.linearDamping, rb.angularDamping)
 
@@ -191,7 +189,7 @@ class BulletPhysics3D(
 
         val collider = go.getComponent<BoxCollider3D>() ?: return
         body.collisionShape.margin = collider.margin
-        //body.collisionShape.setScale(JmeVector3f(collider.halfExtents.x, collider.halfExtents.y, collider.halfExtents.z))
+        body.collisionShape.setScale(JmeVector3f(scale.x, scale.y, scale.z))
     }
 
     /**

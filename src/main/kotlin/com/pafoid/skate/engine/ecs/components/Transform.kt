@@ -22,7 +22,6 @@ data class Transform(
     private val initialTranslation = Vector3f(translation)
     @Transient
     private val initialScale = Vector3f(scale)
-
     @Transient
     private val initialRotation = Vector3f(rotation)
 
