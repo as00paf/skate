@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.associateWithNotNull
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
@@ -13,22 +11,28 @@ import org.joml.Quaternionf
 
 class TransformSystem : System(priority = ExecutionPriority.EARLY) {
 
-    private val cache = mutableMapOf<Transform, GameObject>()
+    private val cache = mutableListOf<Transform>()
 
     override fun init(scene: Scene) {
         super.init(scene)
         rebuildCache()
+        cacheDirty = false
+    }
+
+    override fun start() {
+        cacheDirty = true
     }
 
     override fun update(dt: Float) {
-        cache.forEach { (transform, go) ->
-            updateTransform(go, transform)
+        if (cacheDirty) rebuildCache()
+        cache.forEach { transform ->
+            updateTransform(transform)
         }
     }
 
-    private fun updateTransform(gameObject: GameObject, transform: Transform) {
+    private fun updateTransform(transform: Transform) {
         val localMatrix = getLocalMatrix(transform)
-        val parentTransform = gameObject.parent?.getComponent<Transform>()
+        val parentTransform = transform.gameObject?.parent?.getComponent<Transform>()
         if (parentTransform != null) {
             parentTransform.worldMatrix.mul(localMatrix, transform.worldMatrix)
         } else {
@@ -48,18 +52,13 @@ class TransformSystem : System(priority = ExecutionPriority.EARLY) {
         return matrix
     }
 
-    override fun destroy() {
-        invalidateCache()
-    }
-
     override fun invalidateCache() {
         cache.clear()
+        cacheDirty = true
     }
 
     override fun rebuildCache() {
         cache.clear()
-        cache.putAll(
-            scene.getAllComponents<Transform>().associateWithNotNull { it.gameObject }
-        )
+        cache.addAll(scene.getAllComponents<Transform>())
     }
 }

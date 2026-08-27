@@ -21,7 +21,9 @@ abstract class System(
 
     open fun update(dt: Float) {}
 
-    open fun destroy() {}
+    open fun destroy() {
+        invalidateCache()
+    }
 
     open fun invalidateCache() {}
 
