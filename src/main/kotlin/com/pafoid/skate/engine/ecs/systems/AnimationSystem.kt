@@ -1,24 +1,18 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.core.LoggerService
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.utils.SkeletonMath
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
-class AnimationSystem(
-    private val eventSystem: EventSystem, private val logger: LoggerService
-) : System(priority = ExecutionPriority.DEFAULT) {
+class AnimationSystem : System(priority = ExecutionPriority.DEFAULT) {
 
-    val cache = mutableListOf<GameObject>()
+    val cache = mutableListOf<AnimatedGameObject>()
 
     override fun init(scene: Scene) {
         super.init(scene)
@@ -34,25 +28,17 @@ class AnimationSystem(
         if (!scene.isRunning) return
         if (cacheDirty) rebuildCache()
 
-        for (go in cache) {
-            val animator = go.getComponent<Animator>()
-            val skeletonComponent = go.getComponent<SkeletonComponent>()
-
-            if (animator != null && skeletonComponent != null) {
-                // Update animator state first (selects animation based on state)
-                animator.update(dt)
-                // Then update the animation
-                updateAnimation(animator, skeletonComponent, dt)
-            }
+        cache.forEach { ago ->
+            // Update animator state first (selects animation based on state)
+            ago.animator.update(dt)
+            // Then update the animation
+            updateAnimation(ago, dt)
         }
     }
 
-    private fun updateAnimation(
-        animator: Animator,
-        skeletonComponent: SkeletonComponent,
-        dt: Float
-    ) {
-        val pose = skeletonComponent.pose
+    private fun updateAnimation(ago: AnimatedGameObject, dt: Float) {
+        val animator = ago.animator
+        val pose = ago.skeleton.pose
         val skeleton = pose.skeleton
 
         if (animator.isPlaying) {
@@ -106,7 +92,7 @@ class AnimationSystem(
 
         // Apply global transforms and skin matrices (ALWAYS, even if not playing)
         SkeletonMath.computeGlobalTransforms(skeleton.rootBone, pose.localTransforms, pose.globalTransforms)
-        SkeletonMath.buildSkinMatrices(pose, skeletonComponent.matrixPalette)
+        SkeletonMath.buildSkinMatrices(pose, ago.skeleton.matrixPalette)
     }
 
     /**
@@ -119,15 +105,15 @@ class AnimationSystem(
         to: Matrix4f,
         alpha: Float
     ) {
-        val t1 = Vector3f();
-        val r1 = Quaternionf();
+        val t1 = Vector3f()
+        val r1 = Quaternionf()
         val s1 = Vector3f()
         from.getTranslation(t1)
         from.getUnnormalizedRotation(r1)
         from.getScale(s1)
 
-        val t2 = Vector3f();
-        val r2 = Quaternionf();
+        val t2 = Vector3f()
+        val r2 = Quaternionf()
         val s2 = Vector3f()
         to.getTranslation(t2)
         to.getUnnormalizedRotation(r2)
@@ -148,9 +134,11 @@ class AnimationSystem(
     override fun rebuildCache() {
         cache.clear()
         scene.children.forEach { go ->
-            if (go.hasComponent<SkeletonComponent>() && go.hasComponent<Animator>()) {
-                cache.add(go)
-            }
+            val animator = go.getComponent<Animator>() ?: return@forEach
+            val skeleton = go.getComponent<SkeletonComponent>() ?: return@forEach
+            cache.add(AnimatedGameObject(animator, skeleton))
         }
     }
+
+    data class AnimatedGameObject(val animator: Animator, val skeleton: SkeletonComponent)
 }

@@ -87,7 +87,7 @@ class Engine {
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager, eventSystem),
-            AnimationSystem(eventSystem, logger),
+            AnimationSystem(),
             RagdollSystem(),
         )
 
