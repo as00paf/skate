@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.events.CameraAction
 import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
@@ -51,7 +50,7 @@ class CameraManager(
         camera.gameObject?.parent?.let { parent ->
             val parentTransform = parent.getComponent<Transform>()
             val parentMatrix =
-                parentTransform?.toWorldMatrix() ?: Matrix4f().identity() // fallback for backward compatibility
+                parentTransform?.worldMatrix ?: Matrix4f().identity() // fallback for backward compatibility
             parentMatrix.mul(matrix, matrix)
         }
         matrix.getTranslation(newPos)

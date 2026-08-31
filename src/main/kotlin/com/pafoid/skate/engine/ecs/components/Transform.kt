@@ -1,7 +1,5 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.getComponent
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -15,15 +13,18 @@ data class Transform(
     @Contextual val scale: Vector3f = Vector3f(1f, 1f, 1f),
     @Contextual val rotation: Vector3f = Vector3f()
 ): Component() {
-
-    @Transient
-    val worldMatrix: Matrix4f = Matrix4f()
     @Transient
     private val initialTranslation = Vector3f(translation)
     @Transient
     private val initialScale = Vector3f(scale)
     @Transient
     private val initialRotation = Vector3f(rotation)
+
+    @Transient
+    val localMatrix: Matrix4f = Matrix4f()
+
+    @Transient
+    val worldMatrix: Matrix4f = Matrix4f()
 
     override fun reset() {
         super.reset()
@@ -48,26 +49,4 @@ data class Transform(
     override fun hashCode(): Int {
         return Objects.hash(translation, scale, rotation)
     }
-}
-
-fun Transform.toMatrix(): Matrix4f {
-    val matrix = Matrix4f()
-    matrix.identity()
-    matrix.translate(translation)
-    matrix.rotate(Math.toRadians(rotation.x.toDouble()).toFloat(), Vector3f(1f, 0f, 0f))
-    matrix.rotate(Math.toRadians(rotation.y.toDouble()).toFloat(), Vector3f(0f, 1f, 0f))
-    matrix.rotate(Math.toRadians(rotation.z.toDouble()).toFloat(), Vector3f(0f, 0f, 1f))
-    matrix.scale(scale)
-    return matrix
-}
-
-fun Transform.toWorldMatrix(): Matrix4f {
-    val worldMatrix = toMatrix()
-    val parent = gameObject?.parent
-    if (parent != null && parent !is Scene) {
-        val parentTransform = parent.getComponent<Transform>()
-        val parentMatrix = parentTransform?.toWorldMatrix() ?: Matrix4f().identity() // fallback for backward compatibility
-        parentMatrix.mul(worldMatrix, worldMatrix)
-    }
-    return worldMatrix
 }

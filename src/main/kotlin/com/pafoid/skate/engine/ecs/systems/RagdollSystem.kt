@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
@@ -57,7 +56,7 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
                         // Transform from world to GameObject local space
                         // Actually globalTransforms are in GameObject space.
                         // So we multiply by inverse GameObject transform.
-                        val invGoMat = goTransform.toWorldMatrix().invert()
+                        val invGoMat = Matrix4f(goTransform.worldMatrix).invert()
 
                         tempMat.translationRotateScale(
                             tempVecJoml,
@@ -85,8 +84,7 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
                             val globalTrans = pose.globalTransforms[bone.index]
 
                             // Transform from GameObject space to World space
-                            val goMat = goTransform.toWorldMatrix()
-                            val worldMat = Matrix4f(goMat).mul(globalTrans)
+                            val worldMat = Matrix4f(goTransform.worldMatrix).mul(globalTrans)
 
                             worldMat.getTranslation(tempVecJoml)
                             worldMat.getUnnormalizedRotation(tempQuatJoml)

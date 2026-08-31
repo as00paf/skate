@@ -4,7 +4,6 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.toMatrix
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.utils.EntityIdEncoder
@@ -21,7 +20,6 @@ import com.pafoid.skate.engine.utils.RenderConsts.TEX_ID_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts.VERTEX_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts.VERTEX_SIZE_BYTES
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
-import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
@@ -65,7 +63,6 @@ class RenderBatch(
     private val maxTextureSlots = GL11.glGetInteger(GL20.GL_MAX_TEXTURE_IMAGE_UNITS)
 
     // Reusable objects to minimize allocations in hot loop
-    private val transformMatrix = Matrix4f()
     private val currentPos = Vector4f()
 
     fun start() {
@@ -234,8 +231,6 @@ class RenderBatch(
         val texId = findTextureId(sprite.sprite.texture)
         val entityId = EntityIdEncoder.encode(go.uId)
 
-        transformMatrix.set(transform.toMatrix())
-
         // Load 4 vertices per sprite (quad corners)
         for (i in 0..3) {
             currentPos.set(0f, 0f, 0f, 1f)
@@ -249,7 +244,7 @@ class RenderBatch(
                 3 -> currentPos.y = 1f
             }
 
-            currentPos.mul(transformMatrix)
+            currentPos.mul(transform.worldMatrix)
 
             loadVertex(offset, currentPos, color, texCoords[i], texId, entityId)
             offset += VERTEX_SIZE

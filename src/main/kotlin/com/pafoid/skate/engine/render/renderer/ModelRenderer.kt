@@ -9,7 +9,6 @@ import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.data.RenderMode
 import com.pafoid.skate.engine.render.utils.bindTexture
@@ -45,11 +44,10 @@ class ModelRenderer(
         simple: Boolean = false
     ) {
         val model = renderComponent.model ?: return // No model to render
-        val transformationMatrix = transform.toWorldMatrix()
         val textureScale = renderComponent.textureScale
 
         // Upload global uniforms for this object
-        shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transformationMatrix)
+        shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, transform.worldMatrix)
         shader.uploadFloat(Uniforms.TEXTURE_SCALE, textureScale)
         if (!simple && cameraPosition != null) shader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
 
@@ -71,7 +69,7 @@ class ModelRenderer(
             // Render skeleton if requested
             if (renderComponent.renderMode == RenderMode.SKELETON || renderComponent.renderMode == RenderMode.BOTH) {
                 val skeleton = skeletonComponent.pose.skeleton
-                visualizeBoneRecursive(skeleton.rootBone, skeleton, transformationMatrix)
+                visualizeBoneRecursive(skeleton.rootBone, skeleton, transform.worldMatrix)
             }
             shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.matrixPalette)
         }

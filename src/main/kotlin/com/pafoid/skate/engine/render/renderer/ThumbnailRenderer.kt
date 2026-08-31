@@ -1,15 +1,12 @@
 package com.pafoid.skate.engine.render.renderer
 
-import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.toMatrix
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.utils.ShaderConst
 import org.joml.Matrix4f
@@ -98,14 +95,9 @@ class ThumbnailRenderer(
         camera.lookAt(lookAt)
 
         // Create temporary GameObject (not added to any Scene)
-        val tempGameObject = GameObject("ThumbnailTemp")
         transform.translation.set(0f, 0f, 0f)
         transform.rotation.set(0f, 0f, 0f)
         transform.scale.set(1f, 1f, 1f)
-        tempGameObject.addComponent(transform)
-
-        val renderComponent = RenderComponent(model = model, castShadow = false, receiveShadow = false)
-        tempGameObject.addComponent(renderComponent)
 
         // Upload view/projection matrices
         val projectionMatrix = Matrix4f().perspective(Math.toRadians(45.0).toFloat(), 1.0f, 0.1f, 100f)
@@ -113,7 +105,7 @@ class ThumbnailRenderer(
         val viewMatrix = camera.view
         shader.uploadMat4f(ShaderConst.Uniforms.PROJECTION_MATRIX, projectionMatrix)
         shader.uploadMat4f(ShaderConst.Uniforms.VIEW_MATRIX, viewMatrix)
-        shader.uploadMat4f(ShaderConst.Uniforms.TRANSFORMATION_MATRIX, transform.toMatrix())
+        shader.uploadMat4f(ShaderConst.Uniforms.TRANSFORMATION_MATRIX, transform.worldMatrix)
 
         // Upload basic lighting for thumbnails
         shader.uploadVec3f(ShaderConst.Uniforms.LIGHT_POSITION, Vector3f(5f, 5f, 5f))
@@ -123,7 +115,7 @@ class ThumbnailRenderer(
         // Delegate actual model rendering to ModelRenderer
         modelRenderer.render(
             transform = transform,
-            renderComponent = renderComponent,
+            renderComponent = RenderComponent(model = model, castShadow = false, receiveShadow = false),
             shader = shader,
             cameraPosition = camera.position
         )

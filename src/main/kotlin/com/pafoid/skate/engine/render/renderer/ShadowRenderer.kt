@@ -6,7 +6,6 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.toWorldMatrix
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.utils.bindTexture
 import com.pafoid.skate.engine.render.utils.bindVAO
@@ -85,7 +84,6 @@ class ShadowRenderer(
         shader: Shader
     ) {
         val model = renderComponent.model ?: return
-        val worldMatrix = transform.toWorldMatrix()
 
         // Render each mesh part
         model.mesh.forEach { part ->
@@ -112,10 +110,12 @@ class ShadowRenderer(
                 shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
             }
 
+
+            shader.uploadMat4f(Uniforms.MODEL_MATRIX, transform.worldMatrix)
+
             if (skeleton != null) {
                 // Skinned mesh: upload bone matrices and enable skinning
                 val boneMatrices = skeleton.matrixPalette
-                shader.uploadMat4f(Uniforms.MODEL_MATRIX, worldMatrix)
                 shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, boneMatrices)
                 shader.uploadBoolean(Uniforms.HAS_SKIN, true)
 
@@ -123,7 +123,6 @@ class ShadowRenderer(
                 GL11.glDrawElements(GL11.GL_TRIANGLES, part.vertexCount, GL11.GL_UNSIGNED_INT, 0)
             } else {
                 // Static mesh: no skinning
-                shader.uploadMat4f(Uniforms.MODEL_MATRIX, worldMatrix)
                 shader.uploadBoolean(Uniforms.HAS_SKIN, false)
 
                 // Render without skinning
