@@ -143,7 +143,7 @@ class InputProvider(
         return Vector2f(x, y)
     }
 
-    fun mouseDistanceFrom(origin: Vector3f, camera: CameraComponent, axis: Vector3f): Float {
+    fun mouseDistanceFrom(origin: Vector3f, camera: CameraComponent, cameraPosition: Vector3f, axis: Vector3f): Float {
         val p2 = Vector3f(origin).add(axis)
 
         val s1 = worldToScreen(origin, camera)
@@ -157,7 +157,7 @@ class InputProvider(
         val mouseDelta = Vector2f(getMouseDx(), getMouseDy())
 
         val projection = mouseDelta.dot(axisScreenDir)
-        val dist = Vector3f(camera.position).distance(origin)
+        val dist = Vector3f(cameraPosition).distance(origin)
 
         return projection * dist
     }

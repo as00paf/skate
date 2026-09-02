@@ -25,10 +25,10 @@ class RotationGizmo(
     private var zAxisHot = false
     private var oldTransform: Transform? = null
 
-    fun update(activeGameObject: GameObject?, camera: CameraComponent) {
+    fun update(activeGameObject: GameObject?, camera: CameraComponent, cameraPosition: Vector3f) {
         activeGameObject?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
-            val dist = Vector3f(camera.position).distance(pos)
+            val dist = cameraPosition.distance(pos)
             val dynamicRadius = radius * (dist * 0.1f)
             val dynamicThreshold = hitThreshold * (dist * 0.1f)
 

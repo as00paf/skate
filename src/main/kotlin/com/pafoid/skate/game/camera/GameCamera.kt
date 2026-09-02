@@ -5,9 +5,6 @@ import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import org.joml.Vector3f
-import kotlin.math.cos
-import kotlin.math.sin
-
 /**
  * Third-person gameplay camera controller.
  *
@@ -45,47 +42,9 @@ class GameCamera(
         val rawTarget = target ?: return
         val targetPos = Vector3f(rawTarget).add(targetOffset)
 
-        handleInput(inputState, dt)
-        clampPitch()
-
-        // Calculate camera position
-        val horizontalDist = desiredDistance * cos(Math.toRadians(camera.pitch.toDouble())).toFloat()
-        val verticalDist = desiredDistance * sin(Math.toRadians(camera.pitch.toDouble())).toFloat()
-
-        val offsetX = horizontalDist * sin(Math.toRadians(camera.yaw.toDouble())).toFloat()
-        val offsetZ = horizontalDist * cos(Math.toRadians(camera.yaw.toDouble())).toFloat()
-
-        val desiredPos = Vector3f(targetPos.x - offsetX, targetPos.y + verticalDist, targetPos.z + offsetZ)
-
         // Physics clipping
-        val finalPos = handleClipping(targetPos, desiredPos)
-        camera.position.set(finalPos)
-    }
-
-    /**
-     * Handles camera input from [InputStateComponent].
-     * Combines gamepad right stick and mouse look input.
-     *
-     * @param inputState Input state containing camera look values
-     * @param dt Delta time for smoothing
-     */
-    private fun handleInput(inputState: InputStateComponent, dt: Float) {
-        val cameraLook = inputState.cameraLook
-
-        // Apply camera look from InputStateComponent (combines gamepad + mouse)
-        // Mouse look is added to cameraLook by InputSystem when cursor is disabled
-        if (cameraLook.lengthSquared() > 0f) {
-            camera.yaw += cameraLook.x * inputSettings.controllerSensitivity * dt * 60f
-            camera.pitch += cameraLook.y * inputSettings.controllerSensitivity * dt * 60f
-        }
-    }
-
-    /**
-     * Clamps pitch to prevent camera flipping.
-     */
-    private fun clampPitch() {
-        if (camera.pitch > 89f) camera.pitch = 89f
-        if (camera.pitch < -89f) camera.pitch = -89f
+        //val finalPos = handleClipping(targetPos, desiredPos)
+        //camera.position.set(finalPos)
     }
 
     /**
@@ -108,44 +67,4 @@ class GameCamera(
         return to
     }
 
-    // Delegate common camera operations to the wrapped camera
-
-    val position: Vector3f get() = camera.position
-    var pitch: Float
-        get() = camera.pitch
-        set(value) {
-            camera.pitch = value
-        }
-    var yaw: Float
-        get() = camera.yaw
-        set(value) {
-            camera.yaw = value
-        }
-    var roll: Float
-        get() = camera.roll
-        set(value) {
-            camera.roll = value
-        }
-    var fov: Float
-        get() = camera.fov
-        set(value) {
-            camera.fov = value
-        }
-    var zoom: Float
-        get() = camera.zoom
-        set(value) {
-            camera.zoom = value
-        }
-    var viewportWidth: Int
-        get() = camera.viewportWidth
-        set(value) {
-            camera.viewportWidth = value
-        }
-    var viewportHeight: Int
-        get() = camera.viewportHeight
-        set(value) {
-            camera.viewportHeight = value
-        }
-
-    fun lookAt(target: Vector3f) = camera.lookAt(target)
 }

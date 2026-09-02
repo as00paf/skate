@@ -28,7 +28,7 @@ class Editor(
 
     val editorInputHandler =
         EditorInputHandler(clipboardService, undoRedoManager, editorInputState, engine, settingsManager)
-    val editorCamera = EditorCamera(editorInputState)
+    val editorCamera = EditorCamera(engine, editorInputState)
 
     val editorActionHandler =
         EditorActionHandler(
@@ -47,6 +47,7 @@ class Editor(
 
     fun init(window: Window) {
         engine.cameraManager.camera = editorCamera.camera
+        engine.cameraManager.transform = editorCamera.transform
         editorEventHandler.init()
 
         engine.jobSystem.runIO {

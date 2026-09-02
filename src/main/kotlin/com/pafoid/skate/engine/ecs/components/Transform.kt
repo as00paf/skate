@@ -1,11 +1,14 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.utils.toDegreesF
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.util.*
+import kotlin.math.asin
+import kotlin.math.atan2
 
 @Serializable
 data class Transform(
@@ -37,6 +40,13 @@ data class Transform(
         this.translation.set(from.translation)
         this.scale.set(from.scale)
         this.rotation.set(from.rotation)
+    }
+
+    fun lookAt(target: Vector3f) {
+        val dir = Vector3f(target).sub(translation).normalize()
+        rotation.x = asin(-dir.y).toDegreesF()
+        rotation.y = atan2(dir.x, -dir.z).toDegreesF()
+        rotation.z = 0f
     }
 
     override fun equals(other: Any?): Boolean {

@@ -90,12 +90,13 @@ class GeometryPass(
         clearColor(skyColor ?: DEFAULT_SKY_COLOR)
 
         val camera = cameraManager.camera
+        val cameraPosition = cameraManager.transform.worldMatrix.getTranslation(Vector3f())
 
         // 3D Rendering Setup - Upload projection and view matrices
         defaultShader.start()
         defaultShader.uploadMat4f(Uniforms.PROJECTION_MATRIX, camera.projection)
         defaultShader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
-        lightingUniformsLoader.loadCameraPosition(defaultShader, camera) // New call
+        lightingUniformsLoader.loadCameraPosition(defaultShader, cameraPosition)
 
         // Upload lighting uniforms
         val ambientLightComponent = scene.getComponent<AmbientLightComponent>()?.takeIf { it.enabled }
@@ -135,7 +136,7 @@ class GeometryPass(
                     transform = transformComponent,
                     renderComponent = renderComponent,
                     shader = defaultShader,
-                    cameraPosition = camera.position,
+                    cameraPosition = cameraPosition,
                     skeletonComponent = skeletonComponent
                 )
             }
@@ -148,7 +149,7 @@ class GeometryPass(
         render2D(camera, sprites, batchShader)
 
         // Render Sky Dome
-        skyDomeRenderer.render(camera, scene)
+        skyDomeRenderer.render(camera, cameraPosition, scene)
     }
 
     private fun render2D(camera: CameraComponent, sprites: List<SpriteRenderer>, shader: Shader) {

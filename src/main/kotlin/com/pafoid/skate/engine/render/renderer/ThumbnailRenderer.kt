@@ -4,11 +4,11 @@ import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.models.`3dModel`
-import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.utils.ShaderConst
+import com.pafoid.skate.engine.utils.toRadiansF
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
@@ -64,7 +64,7 @@ class ThumbnailRenderer(
     private var fbo: FrameBuffer = FrameBuffer(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
 
     // Reusable temp buffers
-    private val camera = CameraComponent()
+    private val cameraTransform = Transform()
     private val transform = Transform()
 
     init {
@@ -91,8 +91,8 @@ class ThumbnailRenderer(
 
         // Auto-frame camera based on model bounds
         val (cameraPos, lookAt) = computeCameraTransform(model)
-        camera.position.set(cameraPos)
-        camera.lookAt(lookAt)
+        cameraTransform.translation.set(cameraPos)
+        cameraTransform.lookAt(lookAt)
 
         // Create temporary GameObject (not added to any Scene)
         transform.translation.set(0f, 0f, 0f)
@@ -101,8 +101,11 @@ class ThumbnailRenderer(
 
         // Upload view/projection matrices
         val projectionMatrix = Matrix4f().perspective(Math.toRadians(45.0).toFloat(), 1.0f, 0.1f, 100f)
-        camera.update(0f)
-        val viewMatrix = camera.view
+        val viewMatrix = Matrix4f()
+            .rotate(cameraTransform.rotation.x.toRadiansF(), Vector3f(1f, 0f, 0f))
+            .rotate(cameraTransform.rotation.y.toRadiansF(), Vector3f(0f, 1f, 0f))
+            .rotate(cameraTransform.rotation.z.toRadiansF(), Vector3f(0f, 0f, 1f))
+            .translate(Vector3f(cameraPos).negate())
         shader.uploadMat4f(ShaderConst.Uniforms.PROJECTION_MATRIX, projectionMatrix)
         shader.uploadMat4f(ShaderConst.Uniforms.VIEW_MATRIX, viewMatrix)
         shader.uploadMat4f(ShaderConst.Uniforms.TRANSFORMATION_MATRIX, transform.worldMatrix)
@@ -117,7 +120,7 @@ class ThumbnailRenderer(
             transform = transform,
             renderComponent = RenderComponent(model = model, castShadow = false, receiveShadow = false),
             shader = shader,
-            cameraPosition = camera.position
+            cameraPosition = cameraPos
         )
 
         // Create a NEW texture and copy FBO content into it

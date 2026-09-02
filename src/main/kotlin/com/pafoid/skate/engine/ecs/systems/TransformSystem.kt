@@ -30,7 +30,7 @@ class TransformSystem : System(priority = ExecutionPriority.EARLY) {
         }
     }
 
-    private fun updateTransform(transform: Transform) {
+    fun updateTransform(transform: Transform) {
         updateLocalMatrix(transform)
         val parentTransform = transform.gameObject?.parent?.getComponent<Transform>()
         if (parentTransform != null) {

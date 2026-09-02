@@ -154,9 +154,8 @@ class DebugRenderer(
         if (lineLength < 0.001f) return
         
         val lineDir = direction.normalize()
-
-        val cameraPos = cameraManager.camera.position
-        val cameraToLine = Vector3f(from).sub(cameraPos).normalize()
+        val cameraToLine =
+            Vector3f(from).sub(cameraManager.transform.worldMatrix.getTranslation(Vector3f())).normalize()
         
         var perpendicular = Vector3f(lineDir).cross(cameraToLine).normalize()
         

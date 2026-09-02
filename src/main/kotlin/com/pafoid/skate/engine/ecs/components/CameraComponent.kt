@@ -1,20 +1,12 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.pafoid.skate.engine.utils.toDegreesF
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import kotlin.math.asin
-import kotlin.math.atan2
 
 @Serializable
 data class CameraComponent(
-    @Contextual val position: Vector3f = Vector3f(),
-    var pitch: Float = 0f,
-    var yaw: Float = 0f,
-    var roll: Float = 0f,
     var isOrthographic: Boolean = false,
     var fov: Float = 45f,
     var nearPlane: Float = 0.1f,
@@ -52,12 +44,6 @@ data class CameraComponent(
     val view = Matrix4f()
     @Transient
     val inverseView = Matrix4f()
-
-    fun lookAt(target: Vector3f) {
-        val dir = Vector3f(target).sub(position).normalize()
-        pitch = asin(-dir.y).toDegreesF()
-        yaw = atan2(dir.x, -dir.z).toDegreesF()
-    }
 
     private fun updateAspectRatio() {
         aspectRatio = if (viewportHeight > 0) {

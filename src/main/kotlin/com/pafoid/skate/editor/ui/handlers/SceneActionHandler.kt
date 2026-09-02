@@ -92,6 +92,7 @@ class SceneActionHandler(
         eventSystem.subscribe<SceneAction.Changed> { event ->
             if (sceneManager.currentScene?.isRunning == false) {
                 engine.cameraManager.camera = editorCamera.camera
+                engine.cameraManager.transform = editorCamera.transform
             }
         }
     }

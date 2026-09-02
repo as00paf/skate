@@ -303,11 +303,18 @@ class ViewportActionHandler(
     private fun handleSetRuntimePlaying(playing: Boolean) {
         if (!playing) {
             sceneManager.currentScene?.getComponent<DayNightCycleComponent>()?.timeScale = 1.0f
-            eventSystem.publish(CameraAction.SetCamera(editorCamera.camera))
+            eventSystem.publish(CameraAction.SetCamera(editorCamera.camera, editorCamera.transform))
         } else {
             val sceneCameras = sceneManager.currentScene?.getAllComponents<CameraComponent>().orEmpty()
             val sceneCamera = sceneCameras.firstOrNull { it.isDefault } ?: sceneCameras.firstOrNull()
-            sceneCamera?.let { eventSystem.publish(CameraAction.SetCamera(it)) }
+            sceneCamera?.let {
+                eventSystem.publish(
+                    CameraAction.SetCamera(
+                        it,
+                        it.gameObject?.getComponent<Transform>()
+                    )
+                )
+            }
         }
     }
 
@@ -337,17 +344,15 @@ class ViewportActionHandler(
         val transform = selected.getComponent<Transform>() ?: return
         val pos = transform.translation
 
-        val camera = editorCamera.camera
         val offset = Vector3f(5f, 5f, 5f)
-        camera.position.set(Vector3f(pos).add(offset))
-        camera.lookAt(pos)
+        editorCamera.transform.translation.set(Vector3f(pos).add(offset))
+        editorCamera.transform.lookAt(pos)
         logger.logEditor("Focused on: ${selected.name}")
     }
 
     private fun handleResetCamera() {
-        val camera = editorCamera.camera
-        camera.position.set(0f, 5f, 20f)// Should be initial values from scene file
-        camera.yaw = 0f
+        editorCamera.transform.translation.set(0f, 5f, 20f)// Should be initial values from scene file
+        editorCamera.transform.rotation.set(0f, 0f, 0f)
         logger.logEditor("Reset camera")
     }
 

@@ -1,8 +1,11 @@
 package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.data.EditorInputState
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.CameraComponent
+import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.systems.TransformSystem
 import com.pafoid.skate.engine.getAllComponents
 import org.joml.Vector3f
 import kotlin.math.abs
@@ -11,9 +14,11 @@ import kotlin.math.pow
 import kotlin.math.sign
 
 class EditorCamera(
+    private val engine: Engine,
     private val editorState: EditorInputState,
 ) {
     var camera = CameraComponent().also { it.name = "EditorCamera" }
+    var transform = Transform(Vector3f(0f, 5f, 20f))
 
     private val scrollSensitivity = 0.01f
     private val rotationSensitivity = 0.01f
@@ -24,10 +29,6 @@ class EditorCamera(
 
     fun init(scene: Scene) {
         val sceneCamera = scene.getAllComponents<CameraComponent>().firstOrNull { it.isDefault } ?: return
-        camera.position.set(sceneCamera.position)
-        camera.yaw = sceneCamera.yaw
-        camera.pitch = sceneCamera.pitch
-        camera.roll = sceneCamera.roll
         camera.isOrthographic = sceneCamera.isOrthographic
         camera.fov = sceneCamera.fov
         camera.nearPlane = sceneCamera.nearPlane
@@ -36,6 +37,7 @@ class EditorCamera(
     }
 
     fun update(dt: Float) {
+        engine.systemManager.getSystem<TransformSystem>()?.updateTransform(transform)
         handleFreeFlyMovement()
         handleRotation()
         handleZoom()
@@ -50,12 +52,12 @@ class EditorCamera(
             val dy = editorState.mouseLook.y
 
             if (abs(dx) > 0.01f || abs(dy) > 0.01f) {
-                camera.yaw += dx * sensitivity
-                camera.pitch += dy * sensitivity
+                transform.rotation.y += dx * sensitivity
+                transform.rotation.x += dy * sensitivity
 
                 // Clamp pitch to avoid flipping
-                if (camera.pitch > 89f) camera.pitch = 89f
-                if (camera.pitch < -89f) camera.pitch = -89f
+                if (transform.rotation.x > 89f) transform.rotation.x = 89f
+                if (transform.rotation.x < -89f) transform.rotation.x = -89f
             }
         }
 
@@ -65,25 +67,25 @@ class EditorCamera(
         // WASD horizontal movement
         val moveDir = editorState.moveDirection
         if (moveDir.y > 0f) { // Forward (W)
-            camera.position.add(Vector3f(forward).mul(moveSpeed))
+            transform.translation.add(Vector3f(forward).mul(moveSpeed))
         }
         if (moveDir.y < 0f) { // Backward (S)
-            camera.position.sub(Vector3f(forward).mul(moveSpeed))
+            transform.translation.sub(Vector3f(forward).mul(moveSpeed))
         }
         if (moveDir.x > 0f) { // Right (D)
-            camera.position.add(Vector3f(right).mul(moveSpeed))
+            transform.translation.add(Vector3f(right).mul(moveSpeed))
         }
         if (moveDir.x < 0f) { // Left (A)
-            camera.position.sub(Vector3f(right).mul(moveSpeed))
+            transform.translation.sub(Vector3f(right).mul(moveSpeed))
         }
 
         // Vertical movement (Space/Shift)
         val verticalInput = editorState.verticalMovement
         if (verticalInput > 0f) { // Up (Space)
-            camera.position.y += moveSpeed
+            transform.translation.y += moveSpeed
         }
         if (verticalInput < 0f) { // Down (Shift)
-            camera.position.y -= moveSpeed
+            transform.translation.y -= moveSpeed
         }
     }
 
@@ -93,11 +95,13 @@ class EditorCamera(
         }
 
         if (reset) {
-            camera.position.lerp(Vector3f(0f, 0f, 20f), lerpTime)
+            transform.translation.lerp(Vector3f(0f, 0f, 20f), lerpTime)
+            transform.rotation.lerp(Vector3f(0f, 0f, 0f), lerpTime)
             camera.zoom += ((1.0f - camera.zoom) * lerpTime)
             lerpTime += 0.1f * dt
-            if (abs(camera.position.x) <= 0.1f && abs(camera.position.y) <= 0.1f) {
-                camera.position.set(0f, 0f, 20f)
+            if (abs(transform.translation.x) <= 0.1f && abs(transform.translation.y) <= 0.1f) {
+                transform.translation.set(0f, 0f, 20f)
+                transform.rotation.set(0f, 0f, 0f)
                 camera.zoom = 1f
                 reset = false
                 lerpTime = 0f
@@ -119,11 +123,11 @@ class EditorCamera(
             val dy = editorState.mouseLook.y
 
             if (abs(dx) > 0.01f || abs(dy) > 0.01f) {
-                camera.yaw += dx * rotationSensitivity
-                camera.pitch += dy * rotationSensitivity
+                transform.rotation.y += dx * rotationSensitivity
+                transform.rotation.x += dy * rotationSensitivity
 
-                if (camera.pitch > 89f) camera.pitch = 89f
-                if (camera.pitch < -89f) camera.pitch = -89f
+                if (transform.rotation.x > 89f) transform.rotation.x = 89f
+                if (transform.rotation.x < -89f) transform.rotation.x = -89f
             }
         }
     }

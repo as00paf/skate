@@ -36,7 +36,6 @@ class SceneManager(
         logger.log("Loading scene: ${scene.name}", LogLevel.INFO)
         resolveSceneReferences(scene)
         openScenes.add(scene)
-        systemManager.loadScene(scene)
         switchScene(scene)
         eventSystem.publish(SceneAction.Opened(scene))
 
@@ -89,6 +88,8 @@ class SceneManager(
         if (sceneIndex < 0) return
 
         activeSceneIndex = sceneIndex
+        systemManager.loadScene(scene)
+
         logger.log("Switched to scene: ${currentScene?.name}", LogLevel.ACTION)
         currentScene?.let { eventSystem.publish(SceneAction.Changed(it)) }
     }

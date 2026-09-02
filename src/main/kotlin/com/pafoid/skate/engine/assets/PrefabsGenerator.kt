@@ -185,6 +185,10 @@ class PrefabsGenerator(
             .addComponent(GridLines())
             .addComponent(AmbientLightComponent(intensity = 0.1f))
             .addComponent(DirectionalLightComponent(color = Vector3f(0.195f, 0.163f, 0.68f)))
+        val camera = GameObject("Camera")
+            .addComponent(CameraComponent(isDefault = true))
+            .addComponent(Transform(Vector3f(0f, 5f, 25f)))
+        openGlScene.children.add(camera)
         //Cube 1
         val cube = GameObject("Cube")
         val cubeModel = assetsManager.getModel(projectAssetsDir + Assets.Bundled.CUBE)
@@ -217,13 +221,15 @@ class PrefabsGenerator(
     }
 
     fun spawnDefaultsSync(): List<GameObject> {
-        //val camera = GameObject("Camera").addComponent(CameraComponent(Vector3f(-10f, 5f, 0f), isDefault = true))
-        val camera = GameObject("Camera").addComponent(CameraComponent(Vector3f(0f, 5f, 20f), isDefault = true))
+        val camera = GameObject("Camera")
+            .addComponent(CameraComponent(isDefault = true))
+            //.addComponent(Transform(Vector3f(0f, 5f, -20f)))
+            .addComponent(Transform(Vector3f(0f, 5f, 25f)))
         val skate = spawnSkateboard()
         val skater = spawnSkater()
-        skater.addChild(camera)
+        //skater.addChild(camera)
         val floor = spawnFloor()
         val sprite = spawnSprite()
-        return listOfNotNull(/*camera, */skate, skater, floor, sprite)
+        return listOfNotNull(camera, skate, skater, floor, sprite)
     }
 }

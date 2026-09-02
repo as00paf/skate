@@ -119,7 +119,7 @@ class DirectionalLightSystem(private val cameraManager: CameraManager) : System(
             
         } else {
             // Manual bounds path
-            lightTarget.set(camera.position)
+            lightTarget.set(cameraManager.transform.worldMatrix.getTranslation(Vector3f()))
 
             val left = config.orthoLeft
             val right = config.orthoRight

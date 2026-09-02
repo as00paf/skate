@@ -65,9 +65,23 @@ class GizmoSystem(
         // Update only the active gizmo
         when (usingGizmo) {
             SELECTION_GIZMO -> selectionGizmo.update(scene)
-            TRANSLATE_GIZMO -> translateGizmo.update(scene.selectedGameObject, editorCamera.camera)
-            ROTATION_GIZMO -> rotationGizmo.update(scene.selectedGameObject, editorCamera.camera)
-            SCALE_GIZMO -> scaleGizmo.update(scene.selectedGameObject, editorCamera.camera)
+            TRANSLATE_GIZMO -> translateGizmo.update(
+                scene.selectedGameObject,
+                editorCamera.camera,
+                editorCamera.transform.translation
+            )
+
+            ROTATION_GIZMO -> rotationGizmo.update(
+                scene.selectedGameObject,
+                editorCamera.camera,
+                editorCamera.transform.translation
+            )
+
+            SCALE_GIZMO -> scaleGizmo.update(
+                scene.selectedGameObject,
+                editorCamera.camera,
+                editorCamera.transform.translation
+            )
             MEASURE_GIZMO -> measureGizmo.update(editorCamera.camera)
         }
     }

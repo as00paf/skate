@@ -54,7 +54,7 @@ class DebugPass(
     private fun renderGridLines(scene: Scene, gridLines: GridLines) {
         if (!gridLines.showGrid || scene.isRunning) return
 
-        val camPos = cameraManager.camera.position
+        val camPos = cameraManager.transform.worldMatrix.getTranslation(Vector3f())
 
         val cameraDistance = abs(camPos.y)
         val extent = calculateGridExtent(gridLines.minExtent, gridLines.maxExtent, cameraDistance)

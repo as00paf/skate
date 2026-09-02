@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.render.renderer
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
-import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
@@ -129,10 +128,10 @@ class LightingUniformsLoader {
      * Uploads only the camera position uniform to the shader.
      *
      * @param shader The shader to upload the uniform to
-     * @param camera The camera providing the position
+     * @param cameraPosition The camera position
      */
-    fun loadCameraPosition(shader: Shader, camera: CameraComponent) {
-        shader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
+    fun loadCameraPosition(shader: Shader, cameraPosition: Vector3f) {
+        shader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
     }
 
     companion object {

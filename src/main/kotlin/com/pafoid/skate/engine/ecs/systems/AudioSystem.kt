@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
+import org.joml.Vector3f
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
 
@@ -62,7 +63,7 @@ class AudioSystem(
         }
 
         val camera = cameraManager.camera
-        val pos = camera.position
+        val pos = cameraManager.transform.worldMatrix.getTranslation(Vector3f())
         val forward = camera.camForward
 
         audioEngine.setListenerPosition(pos.x, pos.y, pos.z)

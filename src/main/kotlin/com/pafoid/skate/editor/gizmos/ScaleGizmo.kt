@@ -27,11 +27,11 @@ class ScaleGizmo(
 
     var sensitivity = 0.001f
 
-    fun update(go: GameObject?, camera: CameraComponent) {
+    fun update(go: GameObject?, camera: CameraComponent, cameraPosition: Vector3f) {
         go?.getComponent<Transform>()?.let { transform ->
             val pos = transform.translation
 
-            val dist = Vector3f(camera.position).distance(pos)
+            val dist = cameraPosition.distance(pos)
             val dynamicLength = handleLength * (dist * 0.1f)
             val dynamicBoxSize = boxSize * (dist * 0.1f)
             val dynamicThreshold = hitThreshold * (dist * 0.1f)
@@ -54,13 +54,28 @@ class ScaleGizmo(
             }
 
             if (xAxisActive) {
-                transform.scale.x += inputProvider.mouseDistanceFrom(pos, camera, Vector3f(1f, 0f, 0f)) * sensitivity
+                transform.scale.x += inputProvider.mouseDistanceFrom(
+                    pos,
+                    camera,
+                    cameraPosition,
+                    Vector3f(1f, 0f, 0f)
+                ) * sensitivity
                 transform.scale.x = transform.scale.x.coerceAtLeast(0.01f)
             } else if (yAxisActive) {
-                transform.scale.y += inputProvider.mouseDistanceFrom(pos, camera, Vector3f(0f, 1f, 0f)) * sensitivity
+                transform.scale.y += inputProvider.mouseDistanceFrom(
+                    pos,
+                    camera,
+                    cameraPosition,
+                    Vector3f(0f, 1f, 0f)
+                ) * sensitivity
                 transform.scale.y = transform.scale.y.coerceAtLeast(0.01f)
             } else if (zAxisActive) {
-                transform.scale.z += inputProvider.mouseDistanceFrom(pos, camera, Vector3f(0f, 0f, 1f)) * sensitivity
+                transform.scale.z += inputProvider.mouseDistanceFrom(
+                    pos,
+                    camera,
+                    cameraPosition,
+                    Vector3f(0f, 0f, 1f)
+                ) * sensitivity
                 transform.scale.z = transform.scale.z.coerceAtLeast(0.01f)
             }
 

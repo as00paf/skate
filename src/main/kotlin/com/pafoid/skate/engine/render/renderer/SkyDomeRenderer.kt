@@ -95,7 +95,7 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         )
     }
 
-    fun render(camera: CameraComponent, scene: Scene) {
+    fun render(camera: CameraComponent, cameraPosition: Vector3f, scene: Scene) {
         // Get environment component for sky/fog settings
         val environmentComponent = scene.getComponent<EnvironmentComponent>()?.takeIf { it.enabled }
         val renderSky = environmentComponent?.renderSky == true
@@ -118,10 +118,10 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         val sun = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true }
 
         // Center on camera
-        modelMatrix.identity().translation(camera.position)
+        modelMatrix.identity().translation(cameraPosition)
         // Match rotation to sun direction + manual offset
         val angle = (timeOfDay / 24.0f - 0.5f) * 2.0f * PI.toFloat()
-        modelMatrix.rotateY(-angle + Math.toRadians((environmentComponent?.skyRotation ?: 0f).toDouble()).toFloat())
+        modelMatrix.rotateY(-angle + Math.toRadians((environmentComponent.skyRotation ?: 0f).toDouble()).toFloat())
 
         shader.uploadMat4f(Uniforms.TRANSFORMATION_MATRIX, modelMatrix)
         shader.uploadMat4f(Uniforms.VIEW_MATRIX, camera.view)
@@ -129,14 +129,14 @@ class SkyDomeRenderer(private val shader: Shader, loader: VAOLoader) {
         sun?.color?.let { shader.uploadVec3f(Uniforms.SUN_COLOR, it) }
 
         // Upload sky settings from EnvironmentComponent
-        shader.uploadVec3f(Uniforms.SKY_TINT, environmentComponent?.skyTint ?: Vector3f(1f, 1f, 1f))
-        shader.uploadFloat(Uniforms.SKY_EXPOSURE, environmentComponent?.skyExposure ?: 1.0f)
+        shader.uploadVec3f(Uniforms.SKY_TINT, environmentComponent.skyTint)
+        shader.uploadFloat(Uniforms.SKY_EXPOSURE, environmentComponent.skyExposure)
 
         // Upload fog settings from EnvironmentComponent
-        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentComponent?.fogColor ?: Vector3f(0.8f, 0.8f, 0.8f))
-        shader.uploadFloat(Uniforms.FOG_DENSITY, environmentComponent?.fogDensity ?: 0.0f)
-        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentComponent?.fogGradient ?: 1.5f)
-        shader.uploadVec3f(Uniforms.CAMERA_POSITION, camera.position)
+        shader.uploadVec3f(Uniforms.FOG_COLOR, environmentComponent.fogColor)
+        shader.uploadFloat(Uniforms.FOG_DENSITY, environmentComponent.fogDensity)
+        shader.uploadFloat(Uniforms.FOG_GRADIENT, environmentComponent.fogGradient)
+        shader.uploadVec3f(Uniforms.CAMERA_POSITION, cameraPosition)
 
         // Draw sky texture
         hdriTexture?.texId?.let { texId ->

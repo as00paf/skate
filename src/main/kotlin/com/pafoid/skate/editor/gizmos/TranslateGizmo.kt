@@ -28,11 +28,11 @@ class TranslateGizmo(
 
     var sensitivity = 0.0005f
 
-    fun update(activeGameObject: GameObject?, camera: CameraComponent) {
+    fun update(activeGameObject: GameObject?, camera: CameraComponent, cameraPosition: Vector3f) {
         val go = activeGameObject ?: return
         go.getComponent<Transform>()?.let{ transform ->
             val pos = transform.translation
-            val dist = Vector3f(camera.position).distance(pos)
+            val dist = cameraPosition.distance(pos)
             val dynamicArrowLength = arrowLength * (dist * 0.1f)
             val dynamicConeSize = coneSize * (dist * 0.1f)
             val dynamicHitThreshold = hitThreshold * (dist * 0.1f)
@@ -44,18 +44,21 @@ class TranslateGizmo(
                 transform.translation.x += inputProvider.mouseDistanceFrom(
                     pos,
                     camera,
+                    cameraPosition,
                     Vector3f(1f, 0f, 0f)
                 ) * sensitivity
             } else if (yAxisActive) {
                 transform.translation.y += inputProvider.mouseDistanceFrom(
                     pos,
                     camera,
+                    cameraPosition,
                     Vector3f(0f, 1f, 0f)
                 ) * sensitivity
             } else if (zAxisActive) {
                 transform.translation.z += inputProvider.mouseDistanceFrom(
                     pos,
                     camera,
+                    cameraPosition,
                     Vector3f(0f, 0f, 1f)
                 ) * sensitivity
             }

@@ -15,11 +15,13 @@ class CameraManager(
     eventSystem: EventSystem,
 ) : System(priority = SystemManager.ExecutionPriority.EARLY) {
 
-    var camera: CameraComponent = CameraComponent().also { it.position.set(Vector3f(0f, 5f, 20f)) }
+    var camera = CameraComponent()
+    var transform = Transform()
 
     init {
         eventSystem.subscribe<CameraAction.SetCamera> { event ->
             camera = event.camera
+            event.transform?.let { transform = it }
         }
     }
 
@@ -27,34 +29,16 @@ class CameraManager(
         super.init(scene)
         val sceneCameras = scene.getAllComponents<CameraComponent>()
         val defaultCamera = sceneCameras.firstOrNull { it.isDefault } ?: sceneCameras.firstOrNull()
-        defaultCamera?.let { camera = it }
+        defaultCamera?.let {
+            camera = it
+            it.gameObject?.getComponent<Transform>()?.let { t -> transform = t }
+        }
     }
 
     override fun update(dt: Float) {
-        if (camera.gameObject != null) calculateWorldPosition()
         calculateForwardAndRight()
         calculateProjection()
         calculateView()
-    }
-
-    private val matrix = Matrix4f()
-    private val newPos = Vector3f()
-
-    //TODO: move to new TransformSystem
-    private fun calculateWorldPosition() {
-        matrix.identity()
-        matrix.translation(camera.position)
-        matrix.rotation(Math.toRadians(camera.pitch.toDouble()).toFloat(), Vector3f(1f, 0f, 0f))
-        matrix.rotation(Math.toRadians(camera.yaw.toDouble()).toFloat(), Vector3f(0f, 1f, 0f))
-        matrix.rotation(Math.toRadians(camera.roll.toDouble()).toFloat(), Vector3f(0f, 0f, 1f))
-        camera.gameObject?.parent?.let { parent ->
-            val parentTransform = parent.getComponent<Transform>()
-            val parentMatrix =
-                parentTransform?.worldMatrix ?: Matrix4f().identity() // fallback for backward compatibility
-            parentMatrix.mul(matrix, matrix)
-        }
-        matrix.getTranslation(newPos)
-        //camera.position.set(newPos)
     }
 
     private fun calculateProjection() {
@@ -83,11 +67,11 @@ class CameraManager(
         with(camera) {
             view.identity()
 
-            view.rotate(pitch.toRadiansF(), Vector3f(1f, 0f, 0f))
-            view.rotate(yaw.toRadiansF(), Vector3f(0f, 1f, 0f))
-            view.rotate(roll.toRadiansF(), Vector3f(0f, 0f, 1f))
+            view.rotate(transform.rotation.x.toRadiansF(), Vector3f(1f, 0f, 0f))
+            view.rotate(transform.rotation.y.toRadiansF(), Vector3f(0f, 1f, 0f))
+            view.rotate(transform.rotation.z.toRadiansF(), Vector3f(0f, 0f, 1f))
 
-            val negativeCameraPos = Vector3f(position).negate()
+            val negativeCameraPos = Vector3f(transform.worldMatrix.getTranslation(Vector3f())).negate()
             view.translate(negativeCameraPos)
             Matrix4f(view).invert(inverseView)
         }
