@@ -43,7 +43,7 @@ class PrefabsGenerator(
         return Skateboard(assetsManager.loadModel(path))
     }
 
-    fun spawnSkater(skate: GameObject? = null): GameObject {
+    fun spawnSkater(skate: GameObject? = null): Skater {
         val path = projectAssetsDir + Assets.Bundled.JAMES
         val model = assetsManager.loadModel(path)
         val animations = Skater.DEFAULT_ANIMATIONS.map { path ->
@@ -221,15 +221,21 @@ class PrefabsGenerator(
     }
 
     fun spawnDefaultsSync(): List<GameObject> {
+        val skater = spawnSkater()
         val camera = GameObject("Camera")
             .addComponent(CameraComponent(isDefault = true))
             //.addComponent(Transform(Vector3f(0f, 5f, -20f)))
             .addComponent(Transform(Vector3f(0f, 5f, 25f)))
+        /*.addComponent(NativeScriptComponent(
+            onUpdate = { me, dt ->
+                me.gameObject?.getComponent<Transform>()?.lookAt(skater.transform.translation)
+            }
+        ))*/
         val skate = spawnSkateboard()
-        val skater = spawnSkater()
         //skater.addChild(camera)
         val floor = spawnFloor()
         val sprite = spawnSprite()
+
         return listOfNotNull(camera, skate, skater, floor, sprite)
     }
 }

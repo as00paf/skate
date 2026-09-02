@@ -16,6 +16,7 @@ import com.pafoid.skate.engine.ecs.systems.InputSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
+import com.pafoid.skate.engine.ecs.systems.ScriptingSystem
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.ecs.systems.TransformSystem
 import com.pafoid.skate.engine.events.EngineAction
@@ -89,6 +90,7 @@ class Engine {
             PlayerMotionSystem(cameraManager, eventSystem),
             AnimationSystem(),
             RagdollSystem(),
+            ScriptingSystem(),
         )
 
         engineSystems.forEach {
