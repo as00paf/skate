@@ -16,6 +16,8 @@ object Assets {
         const val APP_ICON = "\\textures\\app_icon.png"
         const val SPLASH = "assets/textures/splash_screen.png"
 
+        const val CAMERA = "assets/textures/camera.png"
+
         const val XBOX_CONTROLLER = "assets/textures/xbox_controller.png"
 
         const val WHITE = "assets/textures/white.png"

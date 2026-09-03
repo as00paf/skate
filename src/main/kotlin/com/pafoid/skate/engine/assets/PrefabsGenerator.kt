@@ -221,11 +221,16 @@ class PrefabsGenerator(
     }
 
     fun spawnDefaultsSync(): List<GameObject> {
+        val cameraTexture = assetsManager.getTexture(Assets.Textures.CAMERA)
         val skater = spawnSkater()
         val camera = GameObject("Camera")
             .addComponent(CameraComponent(isDefault = true))
             //.addComponent(Transform(Vector3f(0f, 5f, -20f)))
-            .addComponent(Transform(Vector3f(0f, 5f, 25f)))
+            .addComponent(Transform(Vector3f(0f, 3f, 10f)))
+            .addComponent(SpriteRenderer(sprite = Sprite(cameraTexture).also {
+                it.width = cameraTexture.width.toFloat()
+                it.height = cameraTexture.height.toFloat()
+            }))
         /*.addComponent(NativeScriptComponent(
             onUpdate = { me, dt ->
                 me.gameObject?.getComponent<Transform>()?.lookAt(skater.transform.translation)

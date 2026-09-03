@@ -21,6 +21,7 @@ class TransformSystem : System(priority = ExecutionPriority.EARLY) {
 
     override fun start() {
         cacheDirty = true
+        update(0f)
     }
 
     override fun update(dt: Float) {
@@ -32,7 +33,7 @@ class TransformSystem : System(priority = ExecutionPriority.EARLY) {
 
     fun updateTransform(transform: Transform) {
         updateLocalMatrix(transform)
-        val parentTransform = transform.gameObject?.parent?.getComponent<Transform>()
+        val parentTransform = transform.gameObject?.parent?.getComponent<Transform>()// TODO: Could be cached
         if (parentTransform != null) {
             parentTransform.worldMatrix.mul(transform.localMatrix, transform.worldMatrix)
         } else {

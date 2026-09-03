@@ -1,11 +1,9 @@
 package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.CameraComponent
-import com.pafoid.skate.engine.ecs.components.SpriteRenderer
-import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.data.RenderBatch
+import com.pafoid.skate.engine.render.data.Renderable2D
 
 class Renderer2D {
     // Batches grouped by z-index for proper layering
@@ -14,27 +12,20 @@ class Renderer2D {
     lateinit var shader: Shader
     lateinit var camera: CameraComponent
 
-    fun add(go: GameObject) {
-        val spr = go.getComponent<SpriteRenderer>()
-        if (spr != null) {
-            add(spr)
-        }
+    fun addAll(renderables: List<Renderable2D>) {
+        renderables.forEach { add(it) }
     }
 
-    fun addAll(sprites: List<SpriteRenderer>) {
-        sprites.forEach { spr -> add(spr) }
-    }
-
-    fun add(spr: SpriteRenderer) {
-        val zIndex = spr.zIndex
+    fun add(renderable: Renderable2D) {
+        val zIndex = renderable.spriteRenderer.zIndex
         val batches = batchesByZIndex.getOrPut(zIndex) { mutableListOf() }
 
         var added = false
         for (batch in batches) {
             if (batch.hasRoom()) {
-                val texture = spr.sprite.texture
+                val texture = renderable.spriteRenderer.sprite.texture
                 if (texture == null || (batch.hasTexture(texture) || batch.hasTextureRoom())) {
-                    batch.addSprite(spr)
+                    batch.addSprite(renderable)
                     added = true
                     break
                 }
@@ -45,7 +36,7 @@ class Renderer2D {
             val newBatch = RenderBatch(1000, zIndex, this)
             newBatch.start()
             batches.add(newBatch)
-            newBatch.addSprite(spr)
+            newBatch.addSprite(renderable)
         }
     }
 

@@ -13,9 +13,11 @@ import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.CameraManager
+import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.FrameBuffer
+import com.pafoid.skate.engine.render.data.Renderable2D
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
@@ -77,7 +79,7 @@ class GeometryPass(
     override fun execute(scene: Scene) {
         val activeGameObject = scene.selectedGameObject
         val hoveredGameObject = scene.hoveredGameObject
-        val sprites = mutableListOf<SpriteRenderer>()
+        val renderables = mutableListOf<Renderable2D>()
 
         // Setup framebuffer
         if (useFbo) frameBuffer.bind() else glBindFramebuffer(GL_FRAMEBUFFER, 0)
@@ -118,48 +120,50 @@ class GeometryPass(
         )
 
         // Render all 3D game objects and collect 2D objects while iterating
-        scene.children.forEach { go ->
+        scene.getAllChildren().forEach { go ->
             if (!go.isVisible) return@forEach
             val renderComponent = go.getComponent<RenderComponent>()?.takeIf { it.enabled }
-            val transformComponent = go.getComponent<Transform>()?.takeIf { it.enabled }
-            if (renderComponent != null && transformComponent != null) {
-                // Hover & Selected states
-                var selectionState = 0.0f
-                if (go == activeGameObject) selectionState = 1.0f
-                else if (go == hoveredGameObject) selectionState = 2.0f
+            val transform = go.getComponent<Transform>()?.takeIf { it.enabled }
+            if (transform != null) {
+                if (renderComponent != null) {
+                    // Hover & Selected states
+                    var selectionState = 0.0f
+                    if (go == activeGameObject) selectionState = 1.0f
+                    else if (go == hoveredGameObject) selectionState = 2.0f
 
-                defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
+                    defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
 
-                val skeletonComponent = go.getComponent<SkeletonComponent>()
+                    val skeletonComponent = go.getComponent<SkeletonComponent>()
 
-                modelRenderer.render(
-                    transform = transformComponent,
-                    renderComponent = renderComponent,
-                    shader = defaultShader,
-                    cameraPosition = cameraPosition,
-                    skeletonComponent = skeletonComponent
-                )
+                    modelRenderer.render(
+                        transform = transform,
+                        renderComponent = renderComponent,
+                        shader = defaultShader,
+                        cameraPosition = cameraPosition,
+                        skeletonComponent = skeletonComponent
+                    )
+                }
+                go.getComponent<SpriteRenderer>()?.let { if (it.enabled) renderables.add(Renderable2D(it, transform)) }
             }
-            go.getComponent<SpriteRenderer>()?.let { if (it.enabled) sprites.add(it) }
         }
 
         defaultShader.stop()
 
         // Render 2D sprites
-        render2D(camera, sprites, batchShader)
+        render2D(camera, renderables, batchShader)
 
         // Render Sky Dome
         skyDomeRenderer.render(camera, cameraPosition, scene)
     }
 
-    private fun render2D(camera: CameraComponent, sprites: List<SpriteRenderer>, shader: Shader) {
+    private fun render2D(camera: CameraComponent, renderables: List<Renderable2D>, shader: Shader) {
         withDepthTest(true) {
             withBlendState(false) {
                 withDepthMask(true) {
                     withCullFace(false) {
                         renderer2D.bindShader(shader)
                         renderer2D.bindCamera(camera)
-                        renderer2D.addAll(sprites)
+                        renderer2D.addAll(renderables)
                         renderer2D.render()
                         renderer2D.clear()
                     }

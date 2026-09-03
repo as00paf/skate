@@ -2,9 +2,6 @@ package com.pafoid.skate.engine.render.data
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
-import com.pafoid.skate.engine.ecs.components.SpriteRenderer
-import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.utils.EntityIdEncoder
 import com.pafoid.skate.engine.utils.RenderConsts.COLOR_OFFSET
@@ -52,7 +49,7 @@ class RenderBatch(
     private val renderer: Renderer2D
 ) : Comparable<RenderBatch> {
 
-    private val sprites = arrayOfNulls<SpriteRenderer>(maxBatchSize * 4)
+    private val sprites = arrayOfNulls<Renderable2D>(maxBatchSize * 4)
     private var numSprites = 0
     private var hasRoom = true
     private var vertices: FloatArray = FloatArray(maxBatchSize * 4 * VERTEX_SIZE)
@@ -98,13 +95,13 @@ class RenderBatch(
         glEnableVertexAttribArray(4)
     }
 
-    fun addSprite(spr: SpriteRenderer) {
+    fun addSprite(renderable2D: Renderable2D) {
         // Get index and add renderObject
         val index = numSprites
-        sprites[index] = spr
+        sprites[index] = renderable2D
         numSprites++
 
-        val texture = spr.sprite.texture
+        val texture = renderable2D.spriteRenderer.sprite.texture
         if (texture != null) {
             if (!textureSlots.contains(texture)) {
                 textureSlots.add(texture)
@@ -219,16 +216,16 @@ class RenderBatch(
      * Handles both rotated and non-rotated sprites.
      */
     private fun loadVertexProperties(index: Int) {
-        val sprite = sprites[index] ?: return
-        val go = sprite.gameObject ?: return
-        val transform = go.getComponent<Transform>() ?: return
+        val transform = sprites[index]?.transform ?: return
+        val spriteRenderer = sprites[index]?.spriteRenderer ?: return
+        val go = spriteRenderer.gameObject ?: return
 
         // Find offset within array (4 vertices per sprite)
         var offset = index * 4 * VERTEX_SIZE
 
-        val color = sprite.color
-        val texCoords = sprite.sprite.texCoords
-        val texId = findTextureId(sprite.sprite.texture)
+        val color = spriteRenderer.color
+        val texCoords = spriteRenderer.sprite.texCoords
+        val texId = findTextureId(spriteRenderer.sprite.texture)
         val entityId = EntityIdEncoder.encode(go.uId)
 
         // Load 4 vertices per sprite (quad corners)
