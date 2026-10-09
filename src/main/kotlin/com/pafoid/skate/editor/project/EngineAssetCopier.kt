@@ -40,6 +40,7 @@ class EngineAssetCopier {
             listOf(
                 Assets.Shaders.SPLASH,
                 Assets.Shaders.SHADER_3D_DEFAULT,
+                Assets.Shaders.SHADER_3D_TEXTURE,
                 Assets.Shaders.SHADER_2D_BATCH,
                 Assets.Shaders.PICKING,
                 Assets.Shaders.PICKING_3D,

@@ -26,6 +26,7 @@ import com.pafoid.skate.engine.render.renderer.passes.RenderPass
  * @param skyDome The HDRI sky dome shader
  * @param shadow The shadow mapping shader for depth-only rendering
  * @param splash The splash screen shader
+ * @param texture3D The 3D texture shader
  */
 data class Shaders(
     val default: Shader,
@@ -36,7 +37,8 @@ data class Shaders(
     val skybox: Shader,
     val skyDome: Shader,
     val shadow: Shader,
-    val splash: Shader
+    val splash: Shader,
+    val texture3D: Shader,
 )
 
 /**

@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.render.data
 
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
-import com.pafoid.skate.engine.ecs.components.Transform
+import org.joml.Matrix4f
 
-data class Renderable2D(val spriteRenderer: SpriteRenderer, val transform: Transform)
+data class Renderable2D(val spriteRenderer: SpriteRenderer, val position: Matrix4f)

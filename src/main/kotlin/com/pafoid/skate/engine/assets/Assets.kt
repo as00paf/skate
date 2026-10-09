@@ -4,6 +4,7 @@ object Assets {
     object Shaders {
         const val SPLASH = "/shaders/splash.glsl"
         const val SHADER_3D_DEFAULT = "/shaders/shader_3d_default.glsl"
+        const val SHADER_3D_TEXTURE = "/shaders/shader_3d_texture.glsl"
         const val SHADER_2D_BATCH = "/shaders/shader_2d_batch.glsl"
         const val PICKING = "/shaders/picking.glsl"
         const val PICKING_3D = "/shaders/shader_3d_picking.glsl"

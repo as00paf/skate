@@ -77,8 +77,6 @@ class GeometryPass(
     override val inputs: Set<String> = setOf("ShadowMap")
 
     override fun execute(scene: Scene) {
-        val activeGameObject = scene.selectedGameObject
-        val hoveredGameObject = scene.hoveredGameObject
         val renderables = mutableListOf<Renderable2D>()
 
         // Setup framebuffer
@@ -128,8 +126,8 @@ class GeometryPass(
                 if (renderComponent != null) {
                     // Hover & Selected states
                     var selectionState = 0.0f
-                    if (go == activeGameObject) selectionState = 1.0f
-                    else if (go == hoveredGameObject) selectionState = 2.0f
+                    if (go.uId == scene.selectedGameObject?.uId) selectionState = 1.0f
+                    else if (go.uId == scene.hoveredGameObject?.uId) selectionState = 2.0f
 
                     defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
 
@@ -143,7 +141,8 @@ class GeometryPass(
                         skeletonComponent = skeletonComponent
                     )
                 }
-                go.getComponent<SpriteRenderer>()?.let { if (it.enabled) renderables.add(Renderable2D(it, transform)) }
+                go.getComponent<SpriteRenderer>()
+                    ?.let { if (it.enabled) renderables.add(Renderable2D(it, transform.worldMatrix)) }
             }
         }
 

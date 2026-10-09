@@ -93,6 +93,7 @@ class RenderResourcesFactory(
             skyDome = assetsManager.getShader(Assets.Shaders.SKY_DOME),
             shadow = assetsManager.getShader(Assets.Shaders.SHADOW),
             splash = assetsManager.getShader(Assets.Shaders.SPLASH),
+            texture3D = assetsManager.getShader(Assets.Shaders.SHADER_3D_TEXTURE),
         )
     }
 

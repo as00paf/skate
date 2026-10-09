@@ -2,12 +2,12 @@ package com.pafoid.skate.engine.render.renderer
 
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.components.CameraComponent
-import com.pafoid.skate.engine.render.data.RenderBatch
+import com.pafoid.skate.engine.render.data.RenderBatch2D
 import com.pafoid.skate.engine.render.data.Renderable2D
 
 class Renderer2D {
     // Batches grouped by z-index for proper layering
-    private val batchesByZIndex = mutableMapOf<Int, MutableList<RenderBatch>>()
+    private val batchesByZIndex = mutableMapOf<Int, MutableList<RenderBatch2D>>()
 
     lateinit var shader: Shader
     lateinit var camera: CameraComponent
@@ -33,7 +33,7 @@ class Renderer2D {
         }
 
         if (!added) {
-            val newBatch = RenderBatch(1000, zIndex, this)
+            val newBatch = RenderBatch2D(1000, zIndex, this)
             newBatch.start()
             batches.add(newBatch)
             newBatch.addSprite(renderable)

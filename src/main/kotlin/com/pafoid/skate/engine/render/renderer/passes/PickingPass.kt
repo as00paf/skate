@@ -148,7 +148,7 @@ class PickingPass(
             if (!go.isVisible || go.isLocked) return@forEach
             go.getComponent<SpriteRenderer>()?.let { sprite ->
                 go.getComponent<Transform>()?.let {
-                    renderer2D.add(Renderable2D(sprite, it))
+                    renderer2D.add(Renderable2D(sprite, it.worldMatrix))
                 }
             }
         }
