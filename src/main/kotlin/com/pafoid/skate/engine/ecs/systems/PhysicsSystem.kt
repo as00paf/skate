@@ -10,8 +10,8 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
-import com.pafoid.skate.engine.physics3d.BulletPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.toDegreesF
 import org.joml.Quaternionf
@@ -21,7 +21,7 @@ class PhysicsSystem(
     private val debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.EARLY) {
 
-    private val physics3d: IPhysics3D = BulletPhysics3D(debugRenderer)
+    private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer)
 
     private val cache = mutableListOf<PhysicsObject>()
 

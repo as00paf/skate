@@ -28,6 +28,22 @@ class EngineLayeringGuardTest {
     }
 
     @Test
+    fun EngineLayering_OnlyPhysics3DFactoryConstructsBulletPhysics() {
+        val projectRoot = Paths.get(System.getProperty("user.dir")).toAbsolutePath()
+        val sourceRoot = projectRoot.resolve("src/main/kotlin")
+        val allowed = setOf("Physics3DFactory.kt", "BulletPhysics3D.kt")
+        val violations = Files.walk(sourceRoot).use { paths ->
+            paths
+                .filter { it.isRegularFile() && it.fileName.toString().endsWith(".kt") }
+                .filter { it.fileName.toString() !in allowed }
+                .filter { Regex("""\bBulletPhysics3D\(""").containsMatchIn(it.readText()) }
+                .map { it.invariantSeparatorsPathString }
+                .toList()
+        }
+        assertTrue(violations.isEmpty(), "Only Physics3DFactory may construct BulletPhysics3D: $violations")
+    }
+
+    @Test
     fun EngineLayering_CriticalEnginePathsDoNotImportEditorPackage() {
         val projectRoot = Paths.get(System.getProperty("user.dir")).toAbsolutePath()
         val engineRoot = projectRoot.resolve("src/main/kotlin/com/pafoid/skate/engine")
