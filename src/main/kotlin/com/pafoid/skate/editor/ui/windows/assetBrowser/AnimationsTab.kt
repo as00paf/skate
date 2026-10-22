@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.Assets
@@ -33,7 +34,7 @@ class AnimationsTab(
             ImGui.setTooltip(file.name)
         }
 
-        if (ImGui.beginPopupContextItem()) {
+        if (ImGui.beginPopupContextItem(contextPopupId("animation"))) {
             if (ImGui.menuItem("${Icons.PLAY} ${stringManager.getString("context.asset_browser.preview_animation")}")) {
                 previewAnimation(file)
             }

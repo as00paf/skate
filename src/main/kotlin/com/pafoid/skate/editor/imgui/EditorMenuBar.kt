@@ -36,7 +36,7 @@ class EditorMenuBar(
     private val fileMenu = FileMenuBuilder(stringManager, eventSystem)
     private val editMenu = EditMenuBuilder(stringManager, sceneManager, eventSystem)
     private val settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem)
-    private val viewMenu = ViewMenuBuilder(stringManager, windowRegistry)
+    private val viewMenu = ViewMenuBuilder(stringManager, eventSystem, windowRegistry)
     private val windowControls = WindowControlsRenderer(eventSystem, stringManager)
 
     init {

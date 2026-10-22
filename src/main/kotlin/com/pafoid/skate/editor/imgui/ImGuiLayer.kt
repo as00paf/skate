@@ -2,6 +2,7 @@ package com.pafoid.skate.editor.imgui
 
 import com.pafoid.skate.app.Editor
 import com.pafoid.skate.editor.events.EditorEvent
+import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.data.UiConstants
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.assets.Assets
@@ -65,6 +66,9 @@ class ImGuiLayer(
     var isViewportMaximized = false
 
     private var layoutInitialized = false
+    private var forceLayoutRebuild = false
+
+    private val layoutStore = EditorLayoutStore(File(Assets.Files.IMGUI), File(EditorLayoutStore.OPEN_WINDOWS_FILE))
 
     private val windowRegistry = WindowRegistry(engine, editor, projectManager)
     private val windowManager = WindowManager(stringManager, windowRegistry, engine.eventSystem)
@@ -87,18 +91,38 @@ class ImGuiLayer(
         ImGuiStyleManager.setupStyle()
 
         windowManager.init()
+        eventSystem.subscribe<WindowAction.ResetLayout> { resetLayout() }
         windowController.onToggleMaximize = { maximized -> windowRegistry.menuBar.setMaximized(maximized) }
         eventSystem.subscribe<EditorEvent.Exit> { windowController.close() }
         eventSystem.subscribe<EditorEvent.Minimize> { windowController.minimize() }
         eventSystem.subscribe<EditorEvent.ToggleMaximize> { windowController.toggleMaximize() }
     }
 
+    /** Reopens the windows that were open when the layout was last saved. Returns false if none were saved. */
+    fun restoreWindowState(): Boolean {
+        val open = layoutStore.loadOpenWindows() ?: return false
+        windowRegistry.windows.forEach { it.isOpen.set(it.name in open) }
+        return true
+    }
+
+    private fun saveLayout() {
+        ImGui.saveIniSettingsToDisk(layoutStore.iniFile.path)
+        layoutStore.saveOpenWindows(windowRegistry.windows.filter { it.isOpen.get() }.map { it.name })
+    }
+
+    private fun resetLayout() {
+        layoutStore.clear()
+        windowRegistry.showDefaultWindows()
+        forceLayoutRebuild = true
+        layoutInitialized = false
+    }
+
     private fun setupLayout(dockspaceId: Int) {
         if (layoutInitialized) return
         layoutInitialized = true
 
-        val iniFile = File(Assets.Files.IMGUI)
-        if (iniFile.exists()) return
+        if (!forceLayoutRebuild && layoutStore.hasSavedDockLayout()) return
+        forceLayoutRebuild = false
 
         dockBuilderRemoveNode(dockspaceId)
         dockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags.PassthruCentralNode)
@@ -199,6 +223,7 @@ class ImGuiLayer(
     }
 
     fun destroy() {
+        saveLayout()
         imGuiGl3.shutdown()
         imGuiGlfw.shutdown()
         destroyContext()

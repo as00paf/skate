@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.data.PrefabData
 import com.pafoid.skate.editor.data.PrefabType
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -141,7 +142,7 @@ class PrefabsTab(
             spawnPrefab(data)
         }
 
-        if (ImGui.beginPopupContextItem()) {
+        if (ImGui.beginPopupContextItem(contextPopupId("prefab"))) {
             if (ImGui.menuItem("${Icons.PLUS} ${stringManager.getString("context.asset_browser.spawn_in_scene")}")) {
                 spawnPrefab(data)
             }
