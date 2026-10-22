@@ -69,3 +69,16 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 | `SceneTargetingCommandsTest delete scene...` | `ProjectManager.currentProject` unstubbed (test stale) | QA |
 | `SkateboardModelInspectionTest` | `TextureLoader.loadFromBuffer` unstubbed (test stale) | QA |
 | `ViewportRendererScreenshotTest` | `ScreenshotUtils.takeScreenshot` not called | EDT/REN |
+
+## QA-02 — coverage baseline (JaCoCo)
+
+Run: `cmd.exe /c gradlew.bat test jacocoTestReport` (report is produced even when tests fail).
+Output: `build/reports/jacoco/test/html/index.html`, `jacocoTestReport.xml`. Line coverage per package (57 packages; failing tests still count their executed lines).
+
+Lowest-covered packages (line coverage, lines): 0% — `engine.render.renderer` (823), `editor.imgui.components` (403), `editor.gizmos` (399),
+`engine.render.renderer.passes` (375), `editor.ui.windows.assetBrowser` (358), `engine.render.utils` (98), `engine.utils.testing` (78),
+`editor.imgui.data` (69), `editor.search.history` (66), `app` (55), `engine.physics3d.constraints` (48), `game`, `game.camera`, `game.skateboard`.
+Very low: `editor.ui.windows` 0.7% (2610 lines), `engine.render` 1.4% (436), `editor.ui.windows.viewport` 1.9%, `editor.imgui` 2.1% (965),
+`engine.render.data` 4.9%, `editor.ui.menus` 8.2%, `engine.assets.data` 9.5%, `editor.systems` 10.6%, `engine.assets.loaders` 11.7%, `editor.commands.objects` 12.7%.
+Testable (non-GL) priorities for QA-03: `editor.systems`, `editor.commands.*`, `engine.assets.loaders`/`data`, `engine.input`, `engine.core`, `engine.ecs`.
+Rendering/ImGui packages need GL/ImGui contexts and are low priority for unit tests.
