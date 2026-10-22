@@ -129,9 +129,9 @@ class ImGuiLayer(
         dockBuilderSetNodeSize(dockspaceId, getMainViewport().sizeX, getMainViewport().sizeY)
 
         val mainBodyId = ImInt(0)
-        val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, 0.18f, null, mainBodyId)
-        val rightId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, 0.22f, null, mainBodyId)
-        val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, 0.28f, null, mainBodyId)
+        val leftId = dockBuilderSplitNode(dockspaceId, ImGuiDir.Left, DefaultDockLayout.LEFT_RATIO, null, mainBodyId)
+        val rightId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Right, DefaultDockLayout.RIGHT_RATIO, null, mainBodyId)
+        val bottomId = dockBuilderSplitNode(mainBodyId.get(), ImGuiDir.Down, DefaultDockLayout.BOTTOM_RATIO, null, mainBodyId)
 
         val centralNode = ImGui.dockBuilderGetNode(mainBodyId.get())
         val noTabBar = imgui.internal.flag.ImGuiDockNodeFlags.NoTabBar
