@@ -11,7 +11,8 @@ class StringManagerTest {
 
     @BeforeEach
     fun setup() {
-        stringManager = StringManager(mockk(), "test_strings", "en") // Start with English
+        stringManager = StringManager(mockk(relaxed = true), "en")
+        stringManager.loadStrings("src/test/resources/values/test_strings.properties")
     }
 
     @Test

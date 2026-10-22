@@ -1,6 +1,7 @@
 package com.pafoid.skate.editor.ui.windows
 
 import com.pafoid.skate.editor.events.ProjectEvent
+import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Texture
@@ -24,15 +25,15 @@ class GamepadOverlayLifecycleTest {
 
         val eventSystem = EventSystem()
         val overlay = GamepadOverlay(
-            assetsManager = mockk(),
-            gamepadListener = mockk(),
+            assetsManager = assetsManager,
+            inputProvider = mockk(),
             settingsManager = mockk(),
             stringManager = mockk(),
-            eventSystem = mockk()
+            eventSystem = eventSystem
         )
         assertEquals(101, resolveControllerTexture(overlay).texId)
 
-        eventSystem.publish(ProjectEvent.Closed("AnyProject"))
+        eventSystem.publish(ProjectEvent.Closed(Project(name = "AnyProject", projectPath = "AnyProject/AnyProject.skateproj", defaultScene = "Main.scene", scenesPath = emptyList())))
         assertNull(readCachedControllerTexture(overlay))
 
         assertEquals(202, resolveControllerTexture(overlay).texId)

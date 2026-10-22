@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.editor
 
 import com.pafoid.skate.editor.commands.Command
+import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -23,9 +24,19 @@ class UndoRedoManagerTest {
         override fun getTargetName(): String? = null
     }
 
+    class MockExecuteOnlyCommand(private val state: MutableList<String>, private val value: String) : ExecuteOnlyCommand {
+        override fun execute() {
+            state.add(value)
+        }
+
+        override fun undo() {}
+        override fun getDisplayName(): String = "Mock Execute Only"
+        override fun getTargetName(): String? = null
+    }
+
     @Test
     fun `test undo redo`() {
-        val manager = UndoRedoManager(mockk(), mockk())
+        val manager = UndoRedoManager(mockk(relaxed = true), mockk(relaxed = true))
         val state = mutableListOf<String>()
 
         val cmd1 = MockCommand(state, "A")
@@ -52,7 +63,7 @@ class UndoRedoManagerTest {
 
     @Test
     fun `execute only command is not tracked and clears redo history`() {
-        val manager = UndoRedoManager(mockk(), mockk())
+        val manager = UndoRedoManager(mockk(relaxed = true), mockk(relaxed = true))
         val state = mutableListOf<String>()
         manager.executeCommand(MockCommand(state, "A"))
         manager.executeCommand(MockCommand(state, "B"))
@@ -61,7 +72,7 @@ class UndoRedoManagerTest {
         assertEquals(1, manager.getUndoCount())
         assertEquals(1, manager.getRedoCount())
 
-        manager.executeCommand(MockCommand(state, "EXEC"))
+        manager.executeCommand(MockExecuteOnlyCommand(state, "EXEC"))
 
         assertEquals(listOf("A", "EXEC"), state)
         assertEquals(1, manager.getUndoCount())

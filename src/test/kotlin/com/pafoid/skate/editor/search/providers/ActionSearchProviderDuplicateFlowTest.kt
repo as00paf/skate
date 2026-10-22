@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.engine.core.Engine
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
@@ -29,7 +30,11 @@ class ActionSearchProviderDuplicateFlowTest {
         var received: ViewportAction.Duplicate? = null
         eventSystem.subscribe<ViewportAction.Duplicate> { received = it }
 
-        val provider = ActionSearchProvider(sceneManager, logger, eventSystem)
+        val engine = mockk<Engine>()
+        every { engine.sceneManager } returns sceneManager
+        every { engine.logger } returns logger
+        every { engine.eventSystem } returns eventSystem
+        val provider = ActionSearchProvider(engine)
         val duplicateResult = provider.search("duplicate")
             .firstOrNull { it.metadata["actionId"] == "duplicate" }
 

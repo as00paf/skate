@@ -10,12 +10,10 @@ import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
-import com.pafoid.skate.engine.events.TrickInput
 import com.pafoid.skate.engine.input.InputBinding
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.MouseListener
-import com.pafoid.skate.game.skateboard.TrickType
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -50,14 +48,12 @@ class InputSystemTest {
 
         val inputMappings = InputMappings().apply {
             jump = InputBinding(gamepadButton = 0, keyboardKey = GLFW.GLFW_KEY_SPACE)
-            kickflip = InputBinding(gamepadButton = 2, keyboardKey = GLFW.GLFW_KEY_W)
             moveUp = InputBinding(gamepadAxis = 1)
             moveDown = InputBinding(gamepadAxis = 1)
             moveLeft = InputBinding(gamepadAxis = 0)
             moveRight = InputBinding(gamepadAxis = 0)
         }
 
-        every { settingsManager.loadInputMappings() } returns inputMappings
         every { inputProvider.isCursorDisabled() } returns true
 
         inputSystem = InputSystem(
@@ -65,6 +61,7 @@ class InputSystemTest {
             eventSystem = eventSystem
         )
         inputSystem.init(scene)
+        inputSystem.mappings = inputMappings
     }
 
     @Test
@@ -77,7 +74,7 @@ class InputSystemTest {
     @Test
     fun `gamepad state refresh runs before polling`() {
         val player = GameObject("TestPlayer").addComponent(InputStateComponent())
-        scene.gameObjects.add(player)
+        scene.children.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
 
@@ -92,7 +89,7 @@ class InputSystemTest {
     @Test
     fun `JumpPressed event published when jump button pressed`() {
         val player = GameObject("TestPlayer").addComponent(InputStateComponent())
-        scene.gameObjects.add(player)
+        scene.children.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns true
         every { inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) } returns FloatArray(6)
@@ -111,7 +108,7 @@ class InputSystemTest {
     @Test
     fun `JumpReleased event published when jump button released`() {
         val player = GameObject("TestPlayer").addComponent(InputStateComponent())
-        scene.gameObjects.add(player)
+        scene.children.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns true
         every { inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) } returns FloatArray(6)
@@ -134,7 +131,7 @@ class InputSystemTest {
     @Test
     fun `movement emits neutral input once on stick release`() {
         val player = GameObject("TestPlayer").addComponent(InputStateComponent())
-        scene.gameObjects.add(player)
+        scene.children.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns true
         every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns BooleanArray(10)
@@ -155,28 +152,9 @@ class InputSystemTest {
     }
 
     @Test
-    fun `TrickInput events published for trick buttons`() {
-        val player = GameObject("TestPlayer").addComponent(InputStateComponent())
-        scene.gameObjects.add(player)
-
-        every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns true
-        every { inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) } returns FloatArray(6)
-        val buttons = BooleanArray(10)
-        buttons[2] = true
-        every { inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1) } returns buttons
-
-        val receivedTricks = mutableListOf<TrickInput>()
-        eventSystem.subscribe<TrickInput> { receivedTricks.add(it) }
-
-        inputSystem.update(0.016f)
-
-        assertTrue(receivedTricks.any { it.trickType == TrickType.KICKFLIP && it.isPressed })
-    }
-
-    @Test
     fun `system handles missing joystick gracefully`() {
         val player = GameObject("TestPlayer").addComponent(InputStateComponent())
-        scene.gameObjects.add(player)
+        scene.children.add(player)
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
 
         inputSystem.update(0.016f)
@@ -186,7 +164,7 @@ class InputSystemTest {
     fun `mouse look contributes to camera look when cursor is disabled`() {
         val inputState = InputStateComponent()
         val player = GameObject("TestPlayer").addComponent(inputState)
-        scene.gameObjects.add(player)
+        scene.children.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
         every { mouseListener.dx } returns 4f
@@ -203,7 +181,7 @@ class InputSystemTest {
     fun `mouse look ignored when cursor is not disabled`() {
         val inputState = InputStateComponent()
         val player = GameObject("TestPlayer").addComponent(inputState)
-        scene.gameObjects.add(player)
+        scene.children.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
         every { mouseListener.dx } returns 5f

@@ -24,9 +24,9 @@ class CapsuleCollider3DTest {
         val collider = CapsuleCollider3D(
             radius = 1.2f,
             height = 3.5f,
-            axis = 0
+            axis = 0,
+            offset = Vector3f(1f, 2f, 3f)
         )
-        collider.offset = Vector3f(1f, 2f, 3f)
 
         assertEquals(1.2f, collider.radius)
         assertEquals(3.5f, collider.height)

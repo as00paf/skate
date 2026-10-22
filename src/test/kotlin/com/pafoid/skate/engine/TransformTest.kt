@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine
 
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.ecs.components.toMatrix
+import com.pafoid.skate.engine.ecs.systems.TransformSystem
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -9,10 +9,15 @@ import org.junit.jupiter.api.Test
 
 class TransformTest {
 
+    private fun toMatrix(t: Transform): Matrix4f {
+        TransformSystem().updateTransform(t)
+        return t.worldMatrix
+    }
+
     @Test
     fun `test identity transform matrix`() {
         val t = Transform()
-        val matrix = t.toMatrix()
+        val matrix = toMatrix(t)
         
         val expected = Matrix4f().identity()
         assertMatrixEquals(expected, matrix)
@@ -21,7 +26,7 @@ class TransformTest {
     @Test
     fun `test translation in transform matrix`() {
         val t = Transform(translation = Vector3f(10f, 20f, 30f))
-        val matrix = t.toMatrix()
+        val matrix = toMatrix(t)
         
         val expected = Matrix4f().translation(10f, 20f, 30f)
         assertMatrixEquals(expected, matrix)
@@ -30,7 +35,7 @@ class TransformTest {
     @Test
     fun `test rotation in transform matrix`() {
         val t = Transform(rotation = Vector3f(90f, 0f, 0f))
-        val matrix = t.toMatrix()
+        val matrix = toMatrix(t)
         
         val expected = Matrix4f().rotate(Math.toRadians(90.0).toFloat(), 1f, 0f, 0f)
         assertMatrixEquals(expected, matrix)
@@ -43,7 +48,7 @@ class TransformTest {
             rotation = Vector3f(0f, 90f, 0f),
             scale = Vector3f(2f, 2f, 2f)
         )
-        val matrix = t.toMatrix()
+        val matrix = toMatrix(t)
         
         val expected = Matrix4f()
             .translate(1f, 2f, 3f)

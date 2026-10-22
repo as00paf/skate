@@ -3,7 +3,6 @@ package com.pafoid.skate.engine.scenes.components
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
-import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.InputProvider
@@ -35,9 +34,7 @@ class PlayerControllerTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        val camera = CameraComponent()
-        every { scene.camera } returns camera
-        every { scene.gameObjects } returns mutableListOf()
+        every { scene.children } returns mutableListOf()
         every { sceneManager.currentScene } returns scene
 
         every { inputProvider.keyBeginPress(any()) } returns false

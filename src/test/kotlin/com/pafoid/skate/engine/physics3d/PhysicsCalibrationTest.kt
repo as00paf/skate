@@ -6,11 +6,11 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
-import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import io.mockk.mockk
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
+import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import org.junit.jupiter.api.Test
 import kotlin.math.sqrt
 
@@ -24,7 +24,8 @@ class PhysicsCalibrationTest {
 
     @Test
     fun `test freefall timing with standard gravity`() {
-        val physics = BulletPhysics3D(NativeLibraryLoader(), debugRenderer)
+        NativeLibraryLoader().loadNativeLibrary()
+        val physics = BulletPhysics3D(debugRenderer)
         val gravity = 9.81f
         physics.setGravity(Vector3f(0f, -gravity, 0f))
 

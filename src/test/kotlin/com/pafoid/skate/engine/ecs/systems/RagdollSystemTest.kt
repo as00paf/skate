@@ -65,7 +65,7 @@ class RagdollSystemTest {
         gameObject.addComponent(skeletonComponent)
         gameObject.addComponent(transform)
 
-        every { scene.gameObjects } returns mutableListOf(gameObject)
+        every { scene.children } returns mutableListOf(gameObject)
 
         // Act
         ragdollSystem.update(0.016f)
@@ -107,7 +107,7 @@ class RagdollSystemTest {
         gameObject.addComponent(skeletonComponent)
         gameObject.addComponent(transform)
 
-        every { scene.gameObjects } returns mutableListOf(gameObject)
+        every { scene.children } returns mutableListOf(gameObject)
 
         // Act
         ragdollSystem.update(0.016f)
