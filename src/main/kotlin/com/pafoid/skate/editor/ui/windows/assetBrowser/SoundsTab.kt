@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.assets.data.SoundBuffer
@@ -61,7 +62,7 @@ class SoundsTab(
         ImGui.tableNextColumn()
         ImGui.selectable(file.name, false)
 
-        if (ImGui.beginPopupContextItem()) {
+        if (ImGui.beginPopupContextItem(contextPopupId("sound"))) {
             val playStopLabel = if (isPlaying) 
                 "${Icons.STOP} ${stringManager.getString("context.asset_browser.play_stop")}" 
             else 

@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmpty
 import com.pafoid.skate.editor.events.ViewportAction.CreateEmptyChild
 import com.pafoid.skate.editor.events.ViewportAction.Delete
@@ -320,7 +321,7 @@ class SceneHierarchyWindow(
             }
         }
 
-        if (ImGui.beginPopupContextItem()) {
+        if (ImGui.beginPopupContextItem(contextPopupId("hierarchy", obj.uId))) {
             if (ImGui.beginMenu("${Icons.PLUS} ${stringManager.getString("context.hierarchy.create_empty_child")}")) {
                 if (ImGui.menuItem(stringManager.getString("lbl.gameobject.empty"))) {
                     eventSystem.publish(CreateEmptyChild(obj))

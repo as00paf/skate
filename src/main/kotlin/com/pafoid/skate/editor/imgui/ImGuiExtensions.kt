@@ -42,3 +42,10 @@ fun ImGuiIO.loadFonts(fontsByteArray: ByteArray) {
 fun ImGuiStyle.setColor(imGuiColor: Int, color: Vector4f) {
     setColor(imGuiColor, color.x, color.y, color.z, color.w)
 }
+
+/**
+ * Explicit, non-empty id for item popups. Passing no id makes ImGui use the last item's id, which is 0
+ * (assert `id != 0`) when the last item has no id, e.g. after a separator or when a docked window is clipped.
+ */
+fun contextPopupId(scope: String, key: Any? = null): String =
+    if (key == null) "##ctx_$scope" else "##ctx_${scope}_$key"

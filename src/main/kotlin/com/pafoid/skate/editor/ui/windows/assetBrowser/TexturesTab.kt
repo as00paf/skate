@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
+import com.pafoid.skate.editor.imgui.contextPopupId
 import com.pafoid.skate.editor.commands.objects.ApplyTextureCommand
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
@@ -38,7 +39,7 @@ class TexturesTab(
         }
         
         // Context menu on right-click
-        if (ImGui.beginPopupContextItem()) {
+        if (ImGui.beginPopupContextItem(contextPopupId("texture"))) {
             if (ImGui.menuItem("${Icons.CHECK} ${stringManager.getString("context.asset_browser.apply_to_selected")}")) {
                 applyTextureToSelected(file.path)
             }
