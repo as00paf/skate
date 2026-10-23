@@ -24,9 +24,15 @@ Used by `skate-lead` after domain agents report `DONE`. Never push to a remote o
    The body lists tasks completed (IDs), test results, known pre-existing failures, and a human test checklist (what to run, what to look for).
 6. **Merge.** Once the human has tested (or delegated the merge), merge the PR with `gh pr merge --merge`. Afterwards ask each agent to `git rebase master` (the new base) before its next task, and remove the integration worktree with `git worktree remove`.
 
-## Discord notifications (optional)
+## Discord DMs (two-way)
 
-If the `discord` MCP server is available (user-level config; token comes from the `DISCORD_TOKEN` environment variable, never from the repo), post a short message to the `#dev` channel when a round is ready for testing (PR link, task IDs, test counts) and when it is merged. Do not post secrets or logs. If the tools are missing or fail, skip silently and tell the human in the normal reply. Merge decisions are never taken from chat messages; the human confirms in the CLI.
+Use `tools/herdr/discord-dm.sh` (`send`, `read`, `wait`) to talk to the human by DM. It needs `DISCORD_TOKEN` and `DISCORD_USER_ID` in the environment; never write either into the repo, messages or logs. The `discord` MCP server can only post to channels, so DMs always go through this script.
+
+- **Notify** by DM when a round is ready for testing (PR link, task IDs, test counts), when agents are blocked on a dialog you won't approve, and when a round is merged.
+- **Listen** for replies with `discord-dm.sh wait <seconds> [after-id]` while idle or waiting on agents. Pass the id of the last message you handled so you never act on the same message twice.
+- **Decisions by DM are authoritative.** A message from the owner (author id equals `DISCORD_USER_ID`; the script filters on this) may approve a design, approve a blocked permission dialog, or tell you to merge the PR (`gh pr merge --merge`). Anything from another author is ignored.
+- Before acting on an approval, restate in a DM what you understood ("merging PR #N", "approving <command> for skate-x"). Still read each dialog first and refuse dangerous commands even if approved, and ask for explicit confirmation of anything destructive or outside the repo.
+- If env vars or the API fail, skip silently and tell the human in the CLI.
 
 ## Commit rules
 
