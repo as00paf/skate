@@ -66,6 +66,12 @@ BLOCKED REN-04: <reason>
 
 Only `skate-lead` edits task state in `GameEngine.md`. In worktree mode it also merges the `agents/<domain>` branches.
 
+## Integration and PRs
+
+- `tools/herdr/integrate.sh <round> <domain...>` merges `agents/<domain>` branches into `integration/<round>` (worktree `../skate-worktrees/integration`) and runs the tests.
+- Skills `herdr-dispatch` and `integrate-round` (in `.github/skills/` and mirrored in `.opencode/skills/`) tell `skate-lead` how to dispatch, approve dialogs, and open/merge PRs with `gh`.
+- `gh` needs a one-time `gh auth login -h github.com -p https -w -s repo,workflow`.
+
 ## Editing agents
 
 1. Edit `.github/agents/<agent>.agent.md`. Quote the `description` value, because YAML breaks on `: `.

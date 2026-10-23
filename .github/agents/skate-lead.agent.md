@@ -61,6 +61,14 @@ herdr agent send-keys skate-render esc                       # dismiss a stuck d
 4. **Integrate (worktree mode):** Merge finished `agents/<domain>` branches into the current feature branch one at a time. Run the full `cmd.exe /c gradlew.bat test` after each merge. On conflicts, ask the owning agent to rebase its branch onto the feature branch (`git rebase <feature-branch>` inside its worktree) instead of resolving domain code yourself.
 5. **Report:** After each round, summarize for the human: what is done, in progress, blocked, and what is next.
 
+## Git and GitHub
+
+- Skills (load them when relevant): `herdr-dispatch` (start/dispatch/poll/approve dialogs) and `integrate-round` (merge branches, test, commit, PR, merge). Merging is scripted by `tools/herdr/integrate.sh <round> <domain...>`.
+- Integrate in the `../skate-worktrees/integration` worktree on `integration/<round>`, never in the human's working tree.
+- Use `gh` for PRs. If `gh auth status` fails, start `gh auth login -h github.com -p https -w -s repo,workflow` in the background, give the human the one-time code and URL, and wait. Never handle tokens yourself.
+- The human tests a round before it reaches `master`. Open the PR with a test checklist; merge it only when the human says so.
+- Git identity is repo-local config. If it is missing, ask the human instead of inventing one.
+
 ## Rules
 
 - Keep `GameEngine.md` consistent: IDs are stable and never reused, and new tasks follow the existing format.
