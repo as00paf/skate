@@ -23,12 +23,11 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
     private val tempQuatJoml = Quaternionf()
     private val tempMat = Matrix4f()
 
-    private val cache = mutableListOf<GameObject>()
+    private val ragdolls = query(SkeletonComponent::class, RagdollComponent::class, Transform::class, topLevelOnly = true)
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        if (cacheDirty) rebuildCache()
-        cache.forEach { go ->
+        ragdolls.forEach { go ->
             val ragdoll = go.getComponent<RagdollComponent>() ?: return@forEach
             val skeletonComp = go.getComponent<SkeletonComponent>() ?: return@forEach
             val goTransform = go.getComponent<Transform>() ?: return@forEach
@@ -113,20 +112,6 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
                     // Simplified: just fall back to ANIMATED for now.
                     ragdoll.state = RagdollState.ANIMATED
                 }
-            }
-        }
-    }
-
-    override fun invalidateCache() {
-        cache.clear()
-        cacheDirty = true
-    }
-
-    override fun rebuildCache() {
-        cache.clear()
-        scene.children.forEach { go ->
-            if (go.hasComponent<SkeletonComponent>() && go.hasComponent<RagdollComponent>() && go.hasComponent<Transform>()) {
-                cache.add(go)
             }
         }
     }
