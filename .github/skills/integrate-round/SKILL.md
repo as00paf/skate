@@ -24,6 +24,10 @@ Used by `skate-lead` after domain agents report `DONE`. Never push to a remote o
    The body lists tasks completed (IDs), test results, known pre-existing failures, and a human test checklist (what to run, what to look for).
 6. **Merge.** Once the human has tested (or delegated the merge), merge the PR with `gh pr merge --merge`. Afterwards ask each agent to `git rebase master` (the new base) before its next task, and remove the integration worktree with `git worktree remove`.
 
+## Discord notifications (optional)
+
+If the `discord` MCP server is available (user-level config; token comes from the `DISCORD_TOKEN` environment variable, never from the repo), post a short message to the `#dev` channel when a round is ready for testing (PR link, task IDs, test counts) and when it is merged. Do not post secrets or logs. If the tools are missing or fail, skip silently and tell the human in the normal reply. Merge decisions are never taken from chat messages; the human confirms in the CLI.
+
 ## Commit rules
 
 - Commit messages: `<TASK-ID>: <imperative summary>`; backlog/doc-only commits use `chore(...)`/`docs(...)`.
