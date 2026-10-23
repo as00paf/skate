@@ -435,6 +435,10 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: Prioritize math (`MathExtensions`, `SkeletonMath`, `Ray`, `Interpolator`), serialization, commands/undo, `EventSystem`, `JobSystem` and `StringManager`. Use mockk for GL/AL boundaries; no integration tests.
   - Done when: Every listed area has tests in `src/test/...` following `Area_Behavior` naming.
   - Deps: QA-02
+- [ ] **QA-08** `P1` Fix failing and remove obsolete unit tests
+  - Do: `gradlew.bat test` currently has 20 failures (e.g. `UiMutationPipelineGuardTest`, `DeleteFileCommandTest`, `SceneTargetingCommandsTest`, `ViewportRendererScreenshotTest`, `EngineFixedTimestepTest`, `SkateboardModelInspectionTest`, `AudioSystemTest`, `EnvironmentSystemTest`, `InputSystemTest`, `RagdollSystemTest`, `StringManagerTest`). Fix each against the current API, or delete tests that cover removed or obsolete behavior (and say why in the commit).
+  - Done when: `gradlew.bat test` is fully green and `docs/bugs.md` has no test-failure entries left.
+  - Deps: QA-07
 - [ ] **QA-04** `P1` Industry-standards audit
   - Do: Check resource lifetimes (`AutoCloseable`/dispose everywhere), logging via `LoggerService` (no `println`), error handling, thread-safety of shared state, frame-allocation hotspots, units/coordinate-system conventions, and config/versioning.
   - Done when: The findings are in `docs/design/QA-04.md`, with per-domain follow-ups reported to the lead.
