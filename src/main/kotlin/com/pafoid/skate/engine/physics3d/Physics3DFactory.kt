@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.physics3d
 
+import com.pafoid.skate.engine.physics3d.bullet.BulletPhysics3D
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 
 enum class PhysicsBackend { BULLET }

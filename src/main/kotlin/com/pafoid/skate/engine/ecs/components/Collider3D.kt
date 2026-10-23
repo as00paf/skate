@@ -1,9 +1,9 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.jme3.bullet.collision.shapes.CollisionShape
+import com.pafoid.skate.engine.physics3d.ColliderShape
 import org.joml.Vector3f
 
 interface Collider3D {
     val offset: Vector3f
-    fun createShape(): CollisionShape
+    fun toShape(): ColliderShape
 }

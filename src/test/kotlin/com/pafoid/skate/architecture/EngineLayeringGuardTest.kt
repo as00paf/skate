@@ -44,6 +44,21 @@ class EngineLayeringGuardTest {
     }
 
     @Test
+    fun EngineLayering_OnlyBulletBackendPackageImportsBulletTypes() {
+        val projectRoot = Paths.get(System.getProperty("user.dir")).toAbsolutePath()
+        val sourceRoot = projectRoot.resolve("src/main/kotlin")
+        val violations = Files.walk(sourceRoot).use { paths ->
+            paths
+                .filter { it.isRegularFile() && it.fileName.toString().endsWith(".kt") }
+                .filter { !it.invariantSeparatorsPathString.contains("/engine/physics3d/bullet/") }
+                .filter { Regex("""\bcom\.jme3\.""").containsMatchIn(it.readText()) }
+                .map { it.invariantSeparatorsPathString.substringAfter("src/main/kotlin/") }
+                .toList()
+        }
+        assertTrue(violations.isEmpty(), "Only engine/physics3d/bullet may reference com.jme3: $violations")
+    }
+
+    @Test
     fun EngineLayering_CriticalEnginePathsDoNotImportEditorPackage() {
         val projectRoot = Paths.get(System.getProperty("user.dir")).toAbsolutePath()
         val engineRoot = projectRoot.resolve("src/main/kotlin/com/pafoid/skate/engine")

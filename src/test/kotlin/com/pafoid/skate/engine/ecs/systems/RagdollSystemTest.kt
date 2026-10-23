@@ -1,8 +1,8 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.jme3.bullet.objects.PhysicsRigidBody
-import com.jme3.math.Quaternion
-import com.jme3.math.Vector3f
+import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
+import org.joml.Quaternionf
+import org.joml.Vector3f
 import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.assets.data.models.animations.Bone
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
@@ -45,15 +45,15 @@ class RagdollSystemTest {
         val pose = SkeletonPose(skeleton)
         val skeletonComponent = SkeletonComponent(pose)
 
-        val mockBody = mockk<PhysicsRigidBody>(relaxed = true)
+        val mockBody = mockk<IRigidBodyHandle>(relaxed = true)
 
-        every { mockBody.getPhysicsLocation(any()) } answers {
+        every { mockBody.getLocation(any()) } answers {
             val out = arg<Vector3f>(0)
             out.set(1f, 2f, 3f)
             out
         }
-        every { mockBody.getPhysicsRotation(any()) } answers {
-            val out = arg<Quaternion>(0)
+        every { mockBody.getRotation(any()) } answers {
+            val out = arg<Quaternionf>(0)
             out.set(0f, 0f, 0f, 1f)
             out
         }
@@ -99,7 +99,7 @@ class RagdollSystemTest {
             1f, 1f, 1f
         )
 
-        val mockBody = mockk<PhysicsRigidBody>(relaxed = true)
+        val mockBody = mockk<IRigidBodyHandle>(relaxed = true)
         ragdollComponent.boneBodies["Root"] = mockBody
 
         val gameObject = GameObject("TestGO")
@@ -115,7 +115,7 @@ class RagdollSystemTest {
         // Assert
         val capturedLoc = io.mockk.slot<Vector3f>()
         verify {
-            mockBody.setPhysicsLocation(capture(capturedLoc))
+            mockBody.setLocation(capture(capturedLoc))
         }
         assertEquals(5f, capturedLoc.captured.x, 0.001f)
         assertEquals(5f, capturedLoc.captured.y, 0.001f)

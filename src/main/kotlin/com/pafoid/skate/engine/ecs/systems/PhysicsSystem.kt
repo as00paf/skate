@@ -44,6 +44,7 @@ class PhysicsSystem(
     }
 
     private val tempQuat = Quaternionf()
+    private val tempPos = Vector3f()
     private val tempEuler = Vector3f()
 
     override fun update(dt: Float) {
@@ -69,14 +70,12 @@ class PhysicsSystem(
             po.body.rawBody?.let { body ->
                 try {
                     val transform = po.transform ?: return
-                    val pos = body.getPhysicsLocation(null)
-                    val rot = body.getPhysicsRotation(null)
+                    val pos = body.getLocation(tempPos)
+                    val rot = body.getRotation(tempQuat)
 
                     transform.translation.set(pos.x, pos.y, pos.z)
 
-                    // JME Quaternion to Euler (JOML) — reused temp objects
-                    tempQuat.set(rot.x, rot.y, rot.z, rot.w)
-                    tempQuat.getEulerAnglesXYZ(tempEuler)
+                    rot.getEulerAnglesXYZ(tempEuler)
                     transform.rotation.set(
                         tempEuler.x.toDegreesF(),
                         tempEuler.y.toDegreesF(),
