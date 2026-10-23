@@ -75,7 +75,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Cache shaders, meshes (VAO/VBO), textures and uniform locations by key, with ref-counting and explicit disposal. Remove duplicate GPU uploads.
   - Done when: Loading the same asset twice creates one GPU resource. Disposing the scene frees all of them. Unit tests cover cache hit, miss and eviction.
   - Deps: REN-01
-- [~] @skate-render **REN-03** `P1` Introduce a render state/sort layer
+- [x] **REN-03** `P1` Introduce a render state/sort layer
   - Do: Batch draw calls by shader → material → mesh. Track GL state to skip redundant binds.
   - Done when: `EngineStats` reports draw calls and state changes, and both drop on the sample scene. Sort-key generation has unit tests.
   - Deps: REN-02
@@ -127,7 +127,7 @@ Asset management works but needs a complete review.
 - [x] **AST-01** `P0` Asset pipeline review
   - Do: Review `AssetsManager`, `Assets`, the loaders (`AssimpLoader`, `TextureLoader`, `SoundLoader`, `ShaderLoader`, `AnimationLoader`), `serialization/` and `AssetsResolver`.
   - Done when: `docs/design/AST-01.md` lists defects, threading issues and a target design (asset handles/GUIDs, async loading via `JobSystem`, ref-counting).
-- [~] @skate-assets **AST-02** `P1` Stable asset IDs and handles
+- [!] needs EDT to route rename/delete/move through asset code @skate-assets **AST-02** `P1` Stable asset IDs and handles
   - Do: Give every asset a GUID plus a `.meta` sidecar. Scenes and prefabs reference GUIDs, not paths.
   - Done when: Renaming or moving a file in the editor does not break references, and GUID/meta round-trips have unit tests.
   - Deps: AST-01
@@ -155,7 +155,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
 - [x] **ECS-01** `P0` ECS review
   - Do: Review `GameObject`, `Scene`, `SceneManager`, `SystemManager`, `GameObjectManager`, `TransformSystem` and component storage. Find all half-implemented caches (`Component.kt`, `System.kt`, `SceneManager.kt` and the systems that use them).
   - Done when: `docs/design/ECS-01.md` lists the issues and a target design (component storage, queries, system ordering, cache invalidation).
-- [~] @skate-ecs **ECS-02** `P1` Finish component query caching
+- [x] **ECS-02** `P1` Finish component query caching
   - Do: Cache component queries per system with invalidation when components are added or removed. Remove the ad-hoc caches in individual systems.
   - Done when: All systems use the shared query API, and invalidation has unit tests.
   - Deps: ECS-01
@@ -179,7 +179,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
 - [x] **PHY-01** `P0` Introduce `Physics3DFactory`
   - Do: `PhysicsSystem` currently constructs `BulletPhysics3D` directly. Add a `Physics3DFactory` (backend chosen by config) and route all construction through it. The architecture guard already expects this.
   - Done when: No code outside the factory constructs `BulletPhysics3D`, and the guard test passes.
-- [~] @skate-physics **PHY-02** `P1` Make `IPhysics3D` backend-agnostic
+- [x] **PHY-02** `P1` Make `IPhysics3D` backend-agnostic
   - Do: Remove Bullet types from `IPhysics3D`/`IPhysicsBody3D`/`IPhysicsConstraint` signatures and keep them inside `physics3d/bullet/`.
   - Done when: Only the Bullet backend package imports `com.jme3.bullet`. A guard test enforces this.
   - Deps: PHY-01
@@ -203,7 +203,7 @@ The animation system needs improvements.
 - [x] **ANI-01** `P0` Animation review
   - Do: Review `AnimationSystem`, `Animator`, `SkeletonComponent`, `BoneOverride`, `AnimationLoader`, `BoneNameMapper` and `SkeletonMath`.
   - Done when: `docs/design/ANI-01.md` lists defects and a target design.
-- [~] @skate-animation **ANI-02** `P1` Animation blending and state machine
+- [x] **ANI-02** `P1` Animation blending and state machine
   - Do: Crossfades, blend trees (1D/2D), an animation state machine asset with parameters and transitions, and animation events.
   - Done when: The player transitions smoothly between push, ride and trick states. Blending and transition logic have unit tests.
   - Deps: ANI-01
@@ -224,7 +224,7 @@ The animation system needs improvements.
 
 Audio needs a more complete implementation.
 
-- [~] @skate-audio **AUD-01** `P1` Audio review and design
+- [x] **AUD-01** `P1` Audio review and design
   - Do: Review `AudioEngine`, `AudioSystem`, `AudioComponent` and `SoundLoader`.
   - Done when: `docs/design/AUD-01.md` describes the target design: buses/mixer, voices, streaming, 3D.
 - [ ] **AUD-02** `P1` Mixer and buses
@@ -248,7 +248,7 @@ Audio needs a more complete implementation.
 
 Input works well but needs review and controller dead-zone support.
 
-- [~] @skate-input **INP-01** `P1` Input review
+- [x] **INP-01** `P1` Input review
   - Do: Review `engine/input/**`, `InputSystem` and the listeners.
   - Done when: The issues are documented in `docs/design/INP-01.md` and the quick fixes are applied.
 - [ ] **INP-02** `P1` Configurable controller dead zones
@@ -364,7 +364,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-12** `P0` Sensible default window layout
   - Do: Build a default dock layout used on first run and by "Reset Layout" (e.g. Scene Hierarchy left, Viewport centre, Properties right, Asset Browser/Console bottom, toolbar on top) via DockBuilder in `ImGuiLayer`, applied when no saved `imgui.ini` exists. Keep EDT-01 persistence working.
   - Done when: A fresh editor start (no imgui.ini) and Reset Layout both show that layout; the layout definition has unit tests where feasible.
-- [~] @skate-editor **EDT-02** `P1` ImGui and viewport configuration
+- [x] **EDT-02** `P1` ImGui and viewport configuration
   - Do: Clean up `ImGuiLayer`/`WindowManager`/`WindowRegistry`. Fix the viewport's resizing, DPI scaling and multi-viewport handling, and the game view vs. scene view split.
   - Done when: The viewport renders at the correct resolution and DPI on resize and when moved between monitors.
   - Deps: EDT-01
@@ -401,7 +401,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
 
-- [~] @skate-tooling **TLG-01** `P1` Skate CLI
+- [x] **TLG-01** `P1` Skate CLI
   - Do: Add a headless CLI (`tools/cli`, Gradle `application`) for: create project, validate project/assets, pack/export, run scene headless and print engine stats.
   - Done when: `skate --help` lists the commands, which reuse engine services (no duplicate logic). Argument parsing has unit tests.
 - [ ] **TLG-02** `P2` MCP server
@@ -431,7 +431,7 @@ A lot of features are broken. Many unit tests are missing (**no integration test
 - [x] **QA-02** `P0` Unit-test coverage baseline
   - Do: Add JaCoCo to Gradle and report coverage per package.
   - Done when: The coverage report is generated by `gradlew.bat test jacocoTestReport`, and the lowest-covered packages are listed in `docs/bugs.md`.
-- [~] @skate-qa **QA-03** `P1` Unit tests for pure logic
+- [x] **QA-03** `P1` Unit tests for pure logic
   - Do: Prioritize math (`MathExtensions`, `SkeletonMath`, `Ray`, `Interpolator`), serialization, commands/undo, `EventSystem`, `JobSystem` and `StringManager`. Use mockk for GL/AL boundaries; no integration tests.
   - Done when: Every listed area has tests in `src/test/...` following `Area_Behavior` naming.
   - Deps: QA-02

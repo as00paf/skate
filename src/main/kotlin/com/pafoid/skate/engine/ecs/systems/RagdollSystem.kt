@@ -22,11 +22,6 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
 
     private val ragdolls = query(SkeletonComponent::class, RagdollComponent::class, Transform::class, topLevelOnly = true)
 
-    override fun init(scene: Scene) {
-        super.init(scene)
-        cacheDirty = true
-    }
-
     override fun update(dt: Float) {
         if (!scene.isRunning) return
         ragdolls.forEach { go ->
