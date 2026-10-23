@@ -6,5 +6,6 @@ sealed class WindowAction(eventName: String) : Event(eventName) {
     data class Show(val name: String) : WindowAction("window.show")
     data class Hide(val name: String) : WindowAction("window.hide")
     object ShowDefault : WindowAction("window.showDefault")
+    object ResetLayout : WindowAction("window.resetLayout")
     object HideAll : WindowAction("window.hideAll")
 }

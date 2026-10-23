@@ -20,7 +20,8 @@ class FrictionPropagationTest {
         @JvmStatic
         @BeforeAll
         fun beforeAll() {
-            physics = BulletPhysics3D(NativeLibraryLoader(), mockk())
+            NativeLibraryLoader().loadNativeLibrary()
+            physics = BulletPhysics3D(mockk())
         }
     }
 
@@ -44,7 +45,7 @@ class FrictionPropagationTest {
         physics.add(go)
         
         // Update the game object to ensure rawBody is initialized
-        physics.update(go)
+        physics.update(1f / 60f)
 
         // The rawBody should now be initialized after adding to physics
         assertNotNull(rb.rawBody, "Raw body should be initialized after adding to physics")
@@ -60,7 +61,7 @@ class FrictionPropagationTest {
         physics.add(go)
         
         // Update the game object to ensure rawBody is initialized
-        physics.update(go)
+        physics.update(1f / 60f)
 
         rb.friction = 0.88f
 
@@ -88,7 +89,7 @@ class FrictionPropagationTest {
         physics.add(go)
         
         // Update the game object to ensure rawBody is initialized
-        physics.update(go)
+        physics.update(1f / 60f)
 
         // The rawBody should now be initialized after adding to physics
         assertNotNull(rb.rawBody, "Raw body should be initialized after adding to physics")

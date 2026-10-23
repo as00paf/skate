@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.data.LightType
 import io.mockk.mockk
+import com.pafoid.skate.editor.data.PrimitiveType
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -26,9 +27,11 @@ class SyncCommandSemanticsTest {
     fun `create primitive command is execute only`() {
         val command = CreatePrimitiveCommand(
             "Cube",
+            PrimitiveType.CUBE,
             Vector3f(0.5f),
             mockk<Scene>(relaxed = true),
-            mockk<GameObjectManager>(relaxed = true)
+            mockk<GameObjectManager>(relaxed = true),
+            mockk<AssetsManager>(relaxed = true)
         )
         assertEquals(CommandCategory.EXECUTE_ONLY, command.getCategory())
     }

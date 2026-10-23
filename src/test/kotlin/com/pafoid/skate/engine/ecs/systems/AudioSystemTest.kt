@@ -6,12 +6,12 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.CameraComponent
+import com.pafoid.skate.engine.ecs.components.Transform
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
-import org.joml.Vector3f
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,19 +22,17 @@ class AudioSystemTest {
     private val logger = mockk<LoggerService>(relaxed = true)
     private val assetsManager = mockk<AssetsManager>(relaxed = true)
     private val scene = mockk<Scene>(relaxed = true)
-    private val camera = mockk<CameraComponent>(relaxed = true)
+    private val cameraManager = mockk<CameraManager>(relaxed = true)
 
     private lateinit var audioSystem: AudioSystem
 
     @BeforeEach
     fun setUp() {
-        every { scene.camera } returns camera
-        every { scene.gameObjects } returns mutableListOf()
-        every { camera.position } returns Vector3f(0f, 0f, 0f)
-        every { camera.yaw } returns 0f
-        every { camera.pitch } returns 0f
+        every { scene.children } returns mutableListOf()
+        every { cameraManager.camera } returns CameraComponent()
+        every { cameraManager.transform } returns Transform()
 
-        audioSystem = AudioSystem(audioEngine, logger, assetsManager)
+        audioSystem = AudioSystem(audioEngine, logger, assetsManager, cameraManager)
         audioSystem.init(scene)
     }
 

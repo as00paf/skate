@@ -68,7 +68,7 @@ Paths are relative to `src/main/kotlin/com/pafoid/skate/` unless they start at t
 
 The renderer works but needs cleaner APIs, caching, dynamic shaders, better materials, better lighting and shadows, post-processing, particles, and a path to Vulkan via an RHI.
 
-- [ ] **REN-01** `P0` Audit the renderer and write a target architecture
+- [x] **REN-01** `P0` Audit the renderer and write a target architecture
   - Do: Document the current flow `Renderer` → `RenderGraph` → passes (`GeometryPass`, `ShadowPass`, `PickingPass`, `DebugPass`) and every direct GL call outside `render/`. List the redundant state changes and per-frame allocations.
   - Done when: `docs/design/REN-01.md` describes the current state, pain points and target layering (RHI → render graph → passes → high-level API), with an ordered migration plan.
 - [ ] **REN-02** `P1` Add a GPU resource cache
@@ -124,7 +124,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
 
 Asset management works but needs a complete review.
 
-- [ ] **AST-01** `P0` Asset pipeline review
+- [x] **AST-01** `P0` Asset pipeline review
   - Do: Review `AssetsManager`, `Assets`, the loaders (`AssimpLoader`, `TextureLoader`, `SoundLoader`, `ShaderLoader`, `AnimationLoader`), `serialization/` and `AssetsResolver`.
   - Done when: `docs/design/AST-01.md` lists defects, threading issues and a target design (asset handles/GUIDs, async loading via `JobSystem`, ref-counting).
 - [ ] **AST-02** `P1` Stable asset IDs and handles
@@ -152,7 +152,7 @@ Asset management works but needs a complete review.
 
 The ECS is in good working shape but needs a complete review. It is probably missing components, and caching is half implemented.
 
-- [ ] **ECS-01** `P0` ECS review
+- [x] **ECS-01** `P0` ECS review
   - Do: Review `GameObject`, `Scene`, `SceneManager`, `SystemManager`, `GameObjectManager`, `TransformSystem` and component storage. Find all half-implemented caches (`Component.kt`, `System.kt`, `SceneManager.kt` and the systems that use them).
   - Done when: `docs/design/ECS-01.md` lists the issues and a target design (component storage, queries, system ordering, cache invalidation).
 - [ ] **ECS-02** `P1` Finish component query caching
@@ -176,7 +176,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
 
 Physics needs overall improvements, a swappable physics engine, and a joint component.
 
-- [ ] **PHY-01** `P0` Introduce `Physics3DFactory`
+- [x] **PHY-01** `P0` Introduce `Physics3DFactory`
   - Do: `PhysicsSystem` currently constructs `BulletPhysics3D` directly. Add a `Physics3DFactory` (backend chosen by config) and route all construction through it. The architecture guard already expects this.
   - Done when: No code outside the factory constructs `BulletPhysics3D`, and the guard test passes.
 - [ ] **PHY-02** `P1` Make `IPhysics3D` backend-agnostic
@@ -200,7 +200,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
 
 The animation system needs improvements.
 
-- [ ] **ANI-01** `P0` Animation review
+- [x] **ANI-01** `P0` Animation review
   - Do: Review `AnimationSystem`, `Animator`, `SkeletonComponent`, `BoneOverride`, `AnimationLoader`, `BoneNameMapper` and `SkeletonMath`.
   - Done when: `docs/design/ANI-01.md` lists defects and a target design.
 - [ ] **ANI-02** `P1` Animation blending and state machine
@@ -355,9 +355,15 @@ Multiplayer and Steam support need to be added.
 
 All editor mutations must go through `Command` classes and the service layer (see the architecture guards).
 
-- [ ] **EDT-01** `P0` Persist window layout across sessions
+- [x] **EDT-01** `P0` Persist window layout across sessions
   - Do: Load and save `imgui.ini` properly (see the TODO in `app/EditorScreen.kt`), restore docked windows and viewports, and add a "Reset layout" menu item.
   - Done when: Restarting the editor restores the exact layout. Load/save paths have unit tests.
+- [x] **EDT-11** `P0` Fix crash when reorganizing ImGui windows
+  - Do: Dear ImGui assertion `id != 0` in `ImGui.beginPopupContextItem()` at `SceneHierarchyWindow.doTreeNode` (SceneHierarchyWindow.kt:323, called from `WindowManager.update`) when docking/reordering windows. Give the popup an explicit non-empty string ID (e.g. `beginPopupContextItem("ctx##${obj.uId}")`), audit all other `beginPopupContext*`/`beginPopup` calls in `editor/` for the same bug, and make sure item IDs are unique and stable.
+  - Done when: Dragging, docking and reordering windows no longer asserts; the ID-building logic has a unit test where feasible.
+- [x] **EDT-12** `P0` Sensible default window layout
+  - Do: Build a default dock layout used on first run and by "Reset Layout" (e.g. Scene Hierarchy left, Viewport centre, Properties right, Asset Browser/Console bottom, toolbar on top) via DockBuilder in `ImGuiLayer`, applied when no saved `imgui.ini` exists. Keep EDT-01 persistence working.
+  - Done when: A fresh editor start (no imgui.ini) and Reset Layout both show that layout; the layout definition has unit tests where feasible.
 - [ ] **EDT-02** `P1` ImGui and viewport configuration
   - Do: Clean up `ImGuiLayer`/`WindowManager`/`WindowRegistry`. Fix the viewport's resizing, DPI scaling and multi-viewport handling, and the game view vs. scene view split.
   - Done when: The viewport renders at the correct resolution and DPI on resize and when moved between monitors.
@@ -416,10 +422,13 @@ All editor mutations must go through `Command` classes and the service layer (se
 
 A lot of features are broken. Many unit tests are missing (**no integration tests for now**), and many industry standards were not followed.
 
-- [ ] **QA-01** `P0` Broken-feature triage
+- [x] **QA-01** `P0` Broken-feature triage
   - Do: Run the editor and sample game, then list every broken feature with repro steps, the suspected file and the owning domain prefix.
   - Done when: `docs/bugs.md` exists and each bug is reported to the lead for assignment.
-- [ ] **QA-02** `P0` Unit-test coverage baseline
+- [x] **QA-07** `P0` Fix the test source set compilation
+  - Do: `gradlew.bat test` does not compile (about 25 files, e.g. `PhysicsComponentTest`, `PointLightComponentsTest`, `PlayerControllerTest`, `StringManagerTest`, `OpenSceneFileCommandTest`). Fix or update them to the current APIs so the whole suite compiles and runs; unblocks PHY-01 and EDT-01 verification.
+  - Done when: `gradlew.bat test` compiles and runs; remaining failures are listed in `docs/bugs.md`.
+- [~] @skate-qa **QA-02** `P0` Unit-test coverage baseline
   - Do: Add JaCoCo to Gradle and report coverage per package.
   - Done when: The coverage report is generated by `gradlew.bat test jacocoTestReport`, and the lowest-covered packages are listed in `docs/bugs.md`.
 - [ ] **QA-03** `P1` Unit tests for pure logic

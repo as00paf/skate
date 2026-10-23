@@ -26,7 +26,7 @@ class GameObjectManagerTest {
         gameObjects = mutableListOf()
         pendingObjects = mutableListOf()
 
-        every { scene.gameObjects } returns gameObjects
+        every { scene.children } returns gameObjects
 
         gameObjectManager = GameObjectManager()
         gameObjectManager.init(scene)

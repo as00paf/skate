@@ -21,12 +21,13 @@ class WindowManager(
     }
 
     fun dockWindows(mainBodyId: ImInt, leftId: Int, rightId: Int, bottomId: Int) {
-        windowRegistry.windows.filter { it.isOpen.get() }.forEach { window ->
-            val dockId = when (window.name) {
-                "window.hierarchy", "window.properties", "window.systems", "window.asset_browser", "window.command_history", "window.render_graph" -> leftId
-                "window.console", "window.profiler", "window.physics_tuner", "window.environment" -> bottomId
-                "window.game_viewport" -> mainBodyId.get()
-                else -> mainBodyId.get()
+        windowRegistry.windows.forEach { window ->
+            val dockId = when (DefaultDockLayout.zoneOf(window.name)) {
+                DefaultDockLayout.Zone.LEFT -> leftId
+                DefaultDockLayout.Zone.RIGHT -> rightId
+                DefaultDockLayout.Zone.BOTTOM -> bottomId
+                DefaultDockLayout.Zone.CENTER -> mainBodyId.get()
+                null -> return@forEach
             }
             dockBuilderDockWindow(stringManager.getString(window.name), dockId)
         }

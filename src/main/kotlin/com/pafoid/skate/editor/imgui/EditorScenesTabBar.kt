@@ -43,7 +43,7 @@ class EditorScenesTabBar(
                     }
 
                     // Scene tab context menu
-                    if (ImGui.beginPopupContextItem()) {
+                    if (ImGui.beginPopupContextItem(contextPopupId("sceneTab", scene.uId))) {
                         if (ImGui.menuItem("${Icons.EDIT} ${stringManager.getString("context.scene_tab.rename")}")) {
                             eventSystem.publish(RenameRequested(scene, scene.name))
                         }

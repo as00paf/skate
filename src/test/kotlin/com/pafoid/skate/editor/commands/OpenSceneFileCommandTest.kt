@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
 class OpenSceneFileCommandTest {
@@ -40,42 +42,41 @@ class OpenSceneFileCommandTest {
         jobSystem.destroy()
     }
 
-    @Test
-    fun `execute opens scene and publishes success when file loads`() {
-        val scenePath = "C:/scene/Test.scene"
-        val sceneFile = File(scenePath)
-        every { serializer.decode<Scene?>(sceneFile.readText()) } returns mockk()
-        var opened: SceneAction.OpenSucceeded? = null
-        eventSystem.subscribe<SceneAction.OpenSucceeded> { opened = it }
+    @TempDir
+    lateinit var tempDir: File
 
-        val command = createCommand(scenePath)
+    @Test
+    fun `execute opens scene when file loads`() {
+        val sceneFile = File(tempDir, "Test.scene").apply { writeText("{}") }
+        every { serializer.decode<Scene?>("{}") } returns loadedScene
+
+        val command = createCommand(sceneFile)
         command.execute()
 
-        verify { sceneManager.openScene(any(), any()) }
-        assertNotNull(command.openedScene)
-        assertEquals(loadedScene, opened?.scene)
+        verify { sceneManager.openScene(loadedScene) }
+        assertEquals(loadedScene, command.openedScene)
+        assertTrue(command.didCompleteSuccessfully())
     }
 
     @Test
     fun `execute publishes failure and does not open scene when load fails`() {
-        val scenePath = "C:/scene/Broken.scene"
-        val sceneFile = File(scenePath)
-        every { serializer.decode<Scene?>(sceneFile.readText()) } returns null
+        val sceneFile = File(tempDir, "Broken.scene").apply { writeText("{}") }
+        every { serializer.decode<Scene?>("{}") } returns null
         var failed: SceneAction.OpenFailed? = null
         eventSystem.subscribe<SceneAction.OpenFailed> { failed = it }
 
-        val command = createCommand(scenePath)
+        val command = createCommand(sceneFile)
         command.execute()
 
-        verify(exactly = 0) { sceneManager.openScene(any(), any()) }
+        verify(exactly = 0) { sceneManager.openScene(any()) }
         assertNull(command.openedScene)
         assertFalse(command.didCompleteSuccessfully())
         assertNotNull(failed)
     }
 
-    private fun createCommand(scenePath: String): OpenSceneFileCommand {
+    private fun createCommand(sceneFile: File): OpenSceneFileCommand {
         return OpenSceneFileCommand(
-            sceneFile = File(scenePath),
+            sceneFile = sceneFile,
             serializer = serializer,
             sceneManager = sceneManager,
             eventSystem = eventSystem,
