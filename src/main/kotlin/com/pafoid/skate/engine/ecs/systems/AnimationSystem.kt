@@ -33,6 +33,17 @@ class AnimationSystem : System(priority = ExecutionPriority.DEFAULT) {
         val pose = ago.skeleton.pose
         val skeleton = pose.skeleton
 
+        val machine = animator.stateMachine
+        if (machine != null) {
+            machine.update(dt)
+            val result = machine.pose
+            for (i in 0 until minOf(result.boneCount, pose.localTransforms.size)) {
+                result.toMatrix(i, pose.localTransforms[i])
+            }
+            SkeletonMath.buildSkinMatrices(pose, ago.skeleton.matrixPalette)
+            return
+        }
+
         if (animator.isPlaying) {
             val animation = animator.currentAnimation
             if (animation != null) {
