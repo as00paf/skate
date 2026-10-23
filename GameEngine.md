@@ -119,6 +119,10 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Build a minimal `VulkanRhi` that renders the sample scene's geometry pass.
   - Done when: A config flag switches backend, and the spike's findings are documented.
   - Deps: REN-12
+- [ ] **REN-14** `P1` Renderer2D primitives for runtime UI
+  - Do: Add scissor push/pop, 9-slice quads and glyph quad submission to `Renderer2D` as required by `docs/design/GUI-01.md`.
+  - Done when: Unit tests cover the new calls and a UI sample draws a clipped 9-slice panel with text.
+  - Deps: GUI-01
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -147,6 +151,10 @@ Asset management works but needs a complete review.
   - Do: Rework `AssetsPacker` and `ProjectExporter`: pack only referenced assets, compress, write a manifest and checksums, and produce a runnable `gameJar`.
   - Done when: An exported sample project runs standalone, and packing and manifest generation have unit tests.
   - Deps: AST-02
+- [ ] **AST-07** `P1` Fix `PrefabsGenerator` scene mutation
+  - Do: `PrefabsGenerator.kt` uses `scene.children.add/addAll`, which bypasses the ECS query caches. Use the scene API instead.
+  - Done when: Generated prefabs invalidate queries correctly, covered by a test.
+  - Deps: ECS-02
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -171,6 +179,9 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: Link instances to prefab assets with per-property overrides that survive prefab edits.
   - Done when: Editing a prefab updates its instances but keeps their overrides, with unit tests.
   - Deps: ECS-02, AST-02
+- [ ] **ECS-06** `P1` Remove engine dependency on `game.skateboard.TrickType`
+  - Do: `InputEvents.kt` imports `game.skateboard.TrickType`. Make the event generic (or move the type into the engine) and update users.
+  - Done when: An architecture guard shows `engine/` does not import `game/`.
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -261,6 +272,10 @@ Input works well but needs review and controller dead-zone support.
 - [ ] **INP-04** `P3` Rumble and controller hot-plug
   - Do: Handle controller connect/disconnect events and rumble/haptics where GLFW allows.
   - Done when: Unplugging and replugging a controller keeps the player's input working.
+- [ ] **INP-05** `P1` Engine-level key/action read API
+  - Do: Provide an engine API to read keys/actions that does not depend on the editor, as required by `docs/design/SCR-01.md`.
+  - Done when: Scripts and runtime code read input without editor imports, covered by tests.
+  - Deps: INP-01
 
 ### Gameplay — `GPL` (`skate-gameplay`)
 
@@ -285,6 +300,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Make `GameCamera` data-driven (follow, orbit, collision avoidance, spring arm, shake).
   - Done when: Camera parameters can be tuned in the editor, and spring-arm collision has unit tests.
   - Deps: GPL-01
+- [ ] **GPL-06** `P2` Skate push/ride/trick animation controller
+  - Do: Author the push/ride/trick controller on top of the ANI-02 state machine and blend trees.
+  - Done when: The player transitions between push, ride and trick states with blending in the sample game.
+  - Deps: ANI-02, GPL-01
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -396,6 +415,14 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Done when: The checklist is in `docs/design/EDT-10.md` and its items are resolved.
 
 ---
+- [ ] **EDT-13** `P1` Route project-window file operations through asset commands
+  - Do: Route `RenameFileCommand`, `DeleteFileCommand` and project-window moves through the asset-ID-aware API so `.meta` files stay in sync (unblocks AST-02).
+  - Done when: Renaming, deleting or moving a file in the editor keeps its `.meta` and GUID; tests under `editor/commands`.
+  - Deps: AST-02
+- [ ] **EDT-14** `P2` Audio bus and mute UI
+  - Do: Add UI bus volume, mute toggles and the new `AudioComponent` inspector fields from `docs/design/AUD-01.md`.
+  - Done when: Bus volumes and mutes can be edited in the editor and persist.
+  - Deps: AUD-02
 
 ## Testing & tooling
 
