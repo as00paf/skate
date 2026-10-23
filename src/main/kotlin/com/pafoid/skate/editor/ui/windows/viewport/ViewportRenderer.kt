@@ -25,10 +25,14 @@ class ViewportRenderer(
         ImGui.image(texId.toLong(), imageSizeX, imageSizeY, 0f, 1f, 1f, 0f)
     }
 
+    /** Scale of the monitor hosting the viewport window (1 on standard DPI, 2 on HiDPI), refreshed each frame. */
+    var dpiScale = 1f
+
     fun updateFramebuffer() {
-        val fbWidth = imageSizeX.toInt()
-        val fbHeight = imageSizeY.toInt()
-        
+        dpiScale = sanitizeDpiScale(ImGui.getWindowViewport().dpiScale)
+        val fbWidth = framebufferExtent(imageSizeX, dpiScale)
+        val fbHeight = framebufferExtent(imageSizeY, dpiScale)
+
         // Skip if dimensions are invalid or unchanged
         if (fbWidth <= 0 || fbHeight <= 0) return
 
@@ -44,5 +48,13 @@ class ViewportRenderer(
             if (frameBuffer.width <= 0 || frameBuffer.height <= 0) return
             ScreenshotUtils.takeScreenshot(frameBuffer.width, frameBuffer.height, frameBuffer.fboId)
         }
+    }
+
+    companion object {
+        fun sanitizeDpiScale(scale: Float): Float = if (scale.isFinite() && scale > 0f) scale else 1f
+
+        /** Physical pixel extent for a logical (ImGui) extent at the given DPI scale. */
+        fun framebufferExtent(logical: Float, dpiScale: Float): Int =
+            Math.round(logical * sanitizeDpiScale(dpiScale))
     }
 }
