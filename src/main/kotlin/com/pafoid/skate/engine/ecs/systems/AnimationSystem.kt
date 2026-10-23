@@ -1,6 +1,5 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
@@ -12,23 +11,16 @@ import org.joml.Vector3f
 
 class AnimationSystem : System(priority = ExecutionPriority.DEFAULT) {
 
-    val cache = mutableListOf<AnimatedGameObject>()
-
-    override fun init(scene: Scene) {
-        super.init(scene)
-        rebuildCache()
-        cacheDirty = false
-    }
-
-    override fun start() {
-        cacheDirty = true
-    }
+    private val animated = query(Animator::class, SkeletonComponent::class, topLevelOnly = true)
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        if (cacheDirty) rebuildCache()
 
-        cache.forEach { ago ->
+        animated.forEach { go ->
+            val ago = AnimatedGameObject(
+                go.getComponent<Animator>() ?: return@forEach,
+                go.getComponent<SkeletonComponent>() ?: return@forEach,
+            )
             // Update animator state first (selects animation based on state)
             ago.animator.update(dt)
             // Then update the animation
@@ -124,20 +116,6 @@ class AnimationSystem : System(priority = ExecutionPriority.DEFAULT) {
         s1.lerp(s2, alpha)
 
         out.translationRotateScale(t1, r1, s1)
-    }
-
-    override fun invalidateCache() {
-        cache.clear()
-        cacheDirty = true
-    }
-
-    override fun rebuildCache() {
-        cache.clear()
-        scene.children.forEach { go ->
-            val animator = go.getComponent<Animator>() ?: return@forEach
-            val skeleton = go.getComponent<SkeletonComponent>() ?: return@forEach
-            cache.add(AnimatedGameObject(animator, skeleton))
-        }
     }
 
     data class AnimatedGameObject(val animator: Animator, val skeleton: SkeletonComponent)

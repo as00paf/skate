@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.addComponent
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.removeComponent
 
 class AddAudioComponentCommand(
     private val gameObject: GameObject,
@@ -29,7 +30,7 @@ class AddAudioComponentCommand(
     override fun undo() {
         if (!hadAudioComponent) {
             val created = createdComponent ?: return
-            gameObject.components.removeIf { it == created }
+            gameObject.removeComponent(created)
         } else {
             val audioComponent = gameObject.getComponent<AudioComponent>()
             audioComponent?.let { it.soundFilePath = oldSoundPath }

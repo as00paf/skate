@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.ecs.GameObject
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -12,7 +11,6 @@ import com.pafoid.skate.engine.events.Landing
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.events.Takeoff
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.utils.Interpolator
 import com.pafoid.skate.game.player.PlayerState
@@ -26,7 +24,7 @@ class PlayerMotionSystem(
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
-    private val cache = mutableListOf<GameObject>()
+    private val players = query(PlayerController::class, IPhysicsBody3D::class, topLevelOnly = true)
 
     private val tempQuat = Quaternionf()
     private val tempEuler = Vector3f()
@@ -39,13 +37,13 @@ class PlayerMotionSystem(
     }
 
     private fun onJumpPressed(event: JumpPressed) {
-        cache.forEach { go ->
+        players.forEach { go ->
             go.getComponent<PlayerController>()?.jumpPressed = true
         }
     }
 
     private fun onLanding(event: Landing) {
-        cache.forEach { go ->
+        players.forEach { go ->
             go.getComponent<PlayerController>()?.let {
                 it.isGrounded = true
                 it.isJumping = false
@@ -54,7 +52,7 @@ class PlayerMotionSystem(
     }
 
     private fun onTakeoff(event: Takeoff) {
-        cache.forEach { go ->
+        players.forEach { go ->
             go.getComponent<PlayerController>()?.let {
                 it.isGrounded = false
                 it.isJumping = true
@@ -63,7 +61,7 @@ class PlayerMotionSystem(
     }
 
     private fun onMovementInput(event: MovementInput) {
-        cache.forEach { go ->
+        players.forEach { go ->
             go.getComponent<PlayerController>()?.let {
                 it.movementDirection.set(event.direction)
                 it.movementMagnitude = event.magnitude
@@ -71,20 +69,12 @@ class PlayerMotionSystem(
         }
     }
 
-    override fun init(scene: Scene) {
-        super.init(scene)
-        invalidateCache()
-        rebuildCache()
-        // TODO: listen for component change action to update cache
-    }
-
     override fun update(dt: Float) {
         if (!scene.isRunning) return
-        if (cacheDirty) rebuildCache()
 
         updateState(dt)
 
-        cache.forEach { go ->
+        players.forEach { go ->
             val body = go.getComponent<RigidBody3D>()
             body?.let { body ->
                 applyMotion(go, body)
@@ -93,7 +83,7 @@ class PlayerMotionSystem(
     }
 
     private fun updateState(dt: Float) {
-        cache.forEach { gameObject ->
+        players.forEach { gameObject ->
             val controller = gameObject.getComponent<PlayerController>() ?: return@forEach
             val physics = gameObject.getComponent<RigidBody3D>()?.rawBody ?: return@forEach
             val animator = gameObject.getComponent<Animator>() ?: return@forEach
@@ -183,17 +173,5 @@ class PlayerMotionSystem(
         desiredMoveDirection.add(rightPart)
 
         return desiredMoveDirection.normalize()
-    }
-
-    override fun invalidateCache() {
-        cache.clear()
-        cacheDirty = true
-    }
-
-    override fun rebuildCache() {
-        cache.addAll(
-            scene.children.filter { it.hasComponent<PlayerController>() && it.hasComponent<IPhysicsBody3D>() }
-        )
-        cacheDirty = false
     }
 }

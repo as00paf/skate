@@ -23,14 +23,15 @@ class PhysicsSystem(
 
     private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer)
 
-    private val cache = mutableListOf<PhysicsObject>()
+    private val bodies = query(RigidBody3D::class, topLevelOnly = true, includeDisabled = true)
+    private val tracked = mutableSetOf<GameObject>()
 
     override fun init(scene: Scene) {
         super.init(scene)
-        rebuildCache()
-        cacheDirty = false
-        cache.forEach {
-            physics3d.add(it.go)
+        tracked.clear()
+        bodies.forEach {
+            tracked.add(it)
+            physics3d.add(it)
         }
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->
@@ -39,17 +40,12 @@ class PhysicsSystem(
         }
     }
 
-    override fun start() {
-        cacheDirty = true
-    }
-
     private val tempQuat = Quaternionf()
     private val tempEuler = Vector3f()
 
     override fun update(dt: Float) {
         physics3d.debugDraw(dt)
         if (!scene.isRunning) return
-        if (cacheDirty) rebuildCache()
         // Step Bullet at deterministic fixed-step first so downstream ECS reads current frame data.
         val timeScale = scene.getComponent<DayNightCycleComponent>()?.timeScale ?: 1.0f
         physics3d.update(dt * timeScale)
@@ -60,12 +56,17 @@ class PhysicsSystem(
             }
         }
 
-        // Remove cached items no longer in scene
-        val toRemove = cache.filter { !scene.children.filter { it.hasComponent<RigidBody3D>() }.contains(it.go) }
-        toRemove.forEach { physics3d.remove(it.go) }
-        cache.removeAll(toRemove)
+        // Remove bodies whose object left the scene or lost its RigidBody3D
+        val live = bodies.entities
+        val liveSet = live.toHashSet()
+        val removed = tracked.filter { it !in liveSet }
+        removed.forEach { physics3d.remove(it) }
+        tracked.removeAll(removed.toSet())
+        tracked.addAll(live)
 
-        for (po in cache) {
+        for (go in live) {
+            val body = go.getComponent<RigidBody3D>() ?: continue
+            val po = PhysicsObject(go, go.getComponent<Transform>(), body)
             po.body.rawBody?.let { body ->
                 try {
                     val transform = po.transform ?: return
@@ -113,20 +114,6 @@ class PhysicsSystem(
     }
 
     fun isDebugEnabled(): Boolean = physics3d.debugEnabled
-
-    override fun invalidateCache() {
-        cache.clear()
-        cacheDirty = true
-    }
-
-    override fun rebuildCache() {
-        cache.clear()
-        for (go in scene.children) {
-            go.getComponent<RigidBody3D>()?.let { body ->
-                cache.add(PhysicsObject(go, go.getComponent<Transform>(), body))
-            }
-        }
-    }
 
     data class PhysicsObject(val go: GameObject, val transform: Transform?, val body: RigidBody3D)
 }

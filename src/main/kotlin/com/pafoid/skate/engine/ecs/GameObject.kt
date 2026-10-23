@@ -33,11 +33,13 @@ open class GameObject(
         child.parent?.removeChild(child)
         child.parent = this
         children.add(child)
+        EcsChanges.touch()
     }
 
     fun removeChild(child: GameObject) {
         children.remove(child)
         child.parent = null
+        EcsChanges.touch()
     }
 
     open fun start() {}

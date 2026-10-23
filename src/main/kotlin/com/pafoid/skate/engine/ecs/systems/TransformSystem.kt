@@ -1,9 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
-import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.utils.toRadiansF
 import org.joml.Matrix4f
@@ -11,23 +9,15 @@ import org.joml.Vector3f
 
 class TransformSystem : System(priority = ExecutionPriority.EARLY) {
 
-    private val cache = mutableListOf<Transform>()
-
-    override fun init(scene: Scene) {
-        super.init(scene)
-        rebuildCache()
-        cacheDirty = false
-    }
+    private val transforms = query(Transform::class, includeDisabled = true)
 
     override fun start() {
-        cacheDirty = true
         update(0f)
     }
 
     override fun update(dt: Float) {
-        if (cacheDirty) rebuildCache()
-        cache.forEach { transform ->
-            updateTransform(transform)
+        transforms.forEach { go ->
+            go.getComponent<Transform>()?.let { updateTransform(it) }
         }
     }
 
@@ -51,15 +41,5 @@ class TransformSystem : System(priority = ExecutionPriority.EARLY) {
             localMatrix.scale(scale)
             return localMatrix
         }
-    }
-
-    override fun invalidateCache() {
-        cache.clear()
-        cacheDirty = true
-    }
-
-    override fun rebuildCache() {
-        cache.clear()
-        cache.addAll(scene.getAllComponents<Transform>())
     }
 }
