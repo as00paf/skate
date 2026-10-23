@@ -27,6 +27,7 @@ class ViewportRendererScreenshotTest {
         val renderer = mockk<Renderer>()
         val frameBuffer = mockk<FrameBuffer>()
         every { renderer.frameBuffer } returns frameBuffer
+        every { engine.renderer } returns renderer
         every { frameBuffer.width } returns 1920
         every { frameBuffer.height } returns 1080
         every { frameBuffer.fboId } returns 77
@@ -47,6 +48,7 @@ class ViewportRendererScreenshotTest {
         val renderer = mockk<Renderer>()
         val frameBuffer = mockk<FrameBuffer>()
         every { renderer.frameBuffer } returns frameBuffer
+        every { engine.renderer } returns renderer
         every { frameBuffer.width } returns 0
         every { frameBuffer.height } returns 1080
 
