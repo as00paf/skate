@@ -91,7 +91,7 @@ class PlayerMotionSystem(
             val intent = controller.desiredMoveDirection.length()
             val hasIntent = intent > 0.15f
 
-            val speed = physics.getLinearVelocity(null).length()
+            val speed = physics.linearVelocity.length()
             val newState = if (controller.isJumping) {
                 PlayerState.JUMPING
             } else if (!controller.isGrounded) {

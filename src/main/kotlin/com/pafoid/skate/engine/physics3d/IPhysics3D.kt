@@ -10,6 +10,9 @@ interface IPhysics3D {
     fun setGravity(gravity: Vector3f)
     fun raycastClosest(from: Vector3f, to: Vector3f, excludeBody: IPhysicsBody3D? = null): Float?
     fun add(go: GameObject)
+
+    /** Creates a standalone body (e.g. a ragdoll bone) that is not tied to a GameObject. */
+    fun createRigidBody(shape: ColliderShape, mass: Float): IRigidBodyHandle
     fun remove(go: GameObject)
     fun addConstraint(constraint: IPhysicsConstraint)
     fun removeConstraint(constraint: IPhysicsConstraint)

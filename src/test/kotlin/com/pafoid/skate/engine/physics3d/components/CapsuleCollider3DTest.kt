@@ -1,10 +1,9 @@
 package com.pafoid.skate.engine.physics3d.components
 
-import com.jme3.bullet.collision.shapes.CapsuleCollisionShape
+import com.pafoid.skate.engine.physics3d.ColliderShape
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import org.joml.Vector3f
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class CapsuleCollider3DTest {
@@ -35,15 +34,9 @@ class CapsuleCollider3DTest {
     }
 
     @Test
-    fun `createShape returns CapsuleCollisionShape with correct properties`() {
+    fun `toShape returns Capsule description with correct properties`() {
         val collider = CapsuleCollider3D(radius = 0.8f, height = 2.0f, axis = 2)
-        val shape = collider.createShape()
 
-        assertTrue(shape is CapsuleCollisionShape)
-        val capsuleShape = shape as CapsuleCollisionShape
-
-        // JBullet CapsuleCollisionShape does not expose getters for radius/height/axis directly easily 
-        // without using reflection or specific downcasting depending on JBullet version,
-        // but we verify the type is correct.
+        assertEquals(ColliderShape.Capsule(0.8f, 2.0f, 2), collider.toShape())
     }
 }

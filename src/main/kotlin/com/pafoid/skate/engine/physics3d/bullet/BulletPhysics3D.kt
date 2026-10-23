@@ -1,6 +1,8 @@
-package com.pafoid.skate.engine.physics3d
-
+package com.pafoid.skate.engine.physics3d.bullet
 import com.jme3.bullet.PhysicsSpace
+import com.jme3.bullet.joints.ConeJoint
+import com.jme3.bullet.joints.HingeJoint
+import com.jme3.bullet.joints.PhysicsJoint
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape
@@ -17,10 +19,16 @@ import com.pafoid.skate.engine.ecs.components.Collider3D
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.physics3d.BodyType
+import com.pafoid.skate.engine.physics3d.ColliderShape
+import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
+import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
+import com.pafoid.skate.engine.physics3d.constraints.ConeTwistConstraint3D
+import com.pafoid.skate.engine.physics3d.constraints.HingeConstraint3D
 import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
-import com.pafoid.skate.engine.utils.JmeVector3f
 import com.pafoid.skate.engine.utils.JomlVector3f
 import com.pafoid.skate.engine.utils.toRadiansF
 import org.joml.Quaternionf
@@ -116,11 +124,11 @@ class BulletPhysics3D(
             val desiredMass = if (rb.bodyType == BodyType.Static) 0f else rb.mass
             
             // Check if we need to rebuild due to mass change
-            val rawBody = rb.rawBody
+            val rawBody = (rb.rawBody as? BulletRigidBodyHandle)?.body
 
             if (rawBody != null) {
                 if (rawBody.mass != desiredMass) {
-                    physicsSpace.remove(rb.rawBody)
+                    physicsSpace.remove(rawBody)
                     rb.rawBody = null
                 } else {
                     // Body exists and mass is correct, just sync properties
@@ -133,7 +141,7 @@ class BulletPhysics3D(
             val compound = CompoundCollisionShape()
 
             colliders.forEach { c ->
-                val shape = c.createShape()
+                val shape = createShape(c.toShape())
                 compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
             }
 
@@ -145,7 +153,7 @@ class BulletPhysics3D(
             }
 
             val body = PhysicsRigidBody(compound, desiredMass)
-            rb.rawBody = body
+            rb.rawBody = BulletRigidBodyHandle(body)
 
             if (rb.bodyType == BodyType.Kinematic) {
                 body.isKinematic = true
@@ -201,20 +209,55 @@ class BulletPhysics3D(
     override fun remove(go: GameObject) {
         val rb = go.getComponent<RigidBody3D>()
         rb?.rawBody?.let {
-            physicsSpace.remove(it)
+            (it as? BulletRigidBodyHandle)?.let { handle -> physicsSpace.remove(handle.body) }
             rb.rawBody = null
         }
     }
 
+    override fun createRigidBody(shape: ColliderShape, mass: Float): IRigidBodyHandle =
+        BulletRigidBodyHandle(PhysicsRigidBody(createShape(shape), mass))
+
+    private fun createShape(shape: ColliderShape): CollisionShape = when (shape) {
+        is ColliderShape.Box -> BoxCollisionShape(shape.halfExtents.toJme()).also { it.margin = shape.margin }
+        is ColliderShape.Capsule -> CapsuleCollisionShape(shape.radius, shape.height, shape.axis)
+        is ColliderShape.Cylinder ->
+            CylinderCollisionShape(shape.radius, shape.height, shape.axis).also { it.margin = shape.margin }
+        is ColliderShape.ConvexHull -> HullCollisionShape(*shape.points.map { it.toJme() }.toTypedArray())
+    }
+
     override fun addConstraint(constraint: IPhysicsConstraint) {
-        val joint = constraint.rawJoint ?: constraint.createJoint()
+        val joint = (constraint.rawJoint as? PhysicsJoint) ?: createJoint(constraint)
         physicsSpace.add(joint)
     }
 
     override fun removeConstraint(constraint: IPhysicsConstraint) {
-        constraint.rawJoint?.let {
+        (constraint.rawJoint as? PhysicsJoint)?.let {
             physicsSpace.remove(it)
         }
+    }
+
+    private fun bodyOf(handle: IRigidBodyHandle): PhysicsRigidBody =
+        (handle as? BulletRigidBodyHandle)?.body
+            ?: throw IllegalArgumentException("Rigid body was not created by the Bullet backend")
+
+    private fun createJoint(constraint: IPhysicsConstraint): PhysicsJoint {
+        val joint: PhysicsJoint = when (constraint) {
+            is HingeConstraint3D -> HingeJoint(
+                bodyOf(constraint.bodyA), bodyOf(constraint.bodyB),
+                constraint.pivotA.toJme(), constraint.pivotB.toJme(),
+                constraint.axisA.toJme(), constraint.axisB.toJme()
+            ).also { it.setLimit(constraint.limitMin, constraint.limitMax) }
+
+            is ConeTwistConstraint3D -> ConeJoint(
+                bodyOf(constraint.bodyA), bodyOf(constraint.bodyB),
+                constraint.pivotA.toJme(), constraint.pivotB.toJme(),
+                constraint.rotA.toJme(), constraint.rotB.toJme()
+            ).also { it.setLimit(constraint.swingSpan1, constraint.swingSpan2, constraint.twistSpan) }
+
+            else -> throw IllegalArgumentException("Unsupported constraint ${constraint::class.simpleName}")
+        }
+        constraint.rawJoint = joint
+        return joint
     }
 
     /**

@@ -1,7 +1,7 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
@@ -16,14 +16,16 @@ import org.joml.Vector3f
 
 class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
 
-    private val tempVecJme = com.jme3.math.Vector3f()
-    private val tempQuatJme = Quaternion()
-
     private val tempVecJoml = Vector3f()
     private val tempQuatJoml = Quaternionf()
     private val tempMat = Matrix4f()
 
     private val ragdolls = query(SkeletonComponent::class, RagdollComponent::class, Transform::class, topLevelOnly = true)
+
+    override fun init(scene: Scene) {
+        super.init(scene)
+        cacheDirty = true
+    }
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
@@ -41,11 +43,8 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
                     ragdoll.boneBodies.forEach { (boneName, body) ->
                         val bone = skeleton.getBoneByName(boneName) ?: return@forEach
 
-                        val loc = body.getPhysicsLocation(tempVecJme)
-                        val rot = body.getPhysicsRotation(tempQuatJme)
-
-                        tempVecJoml.set(loc.x, loc.y, loc.z)
-                        tempQuatJoml.set(rot.x, rot.y, rot.z, rot.w)
+                        body.getLocation(tempVecJoml)
+                        body.getRotation(tempQuatJoml)
 
                         // We need to convert world space physics to local space of the parent bone or 
                         // just override the global transform directly.
@@ -89,15 +88,8 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
                             worldMat.getUnnormalizedRotation(tempQuatJoml)
                             tempQuatJoml.normalize()
 
-                            body.setPhysicsLocation(com.jme3.math.Vector3f(tempVecJoml.x, tempVecJoml.y, tempVecJoml.z))
-                            body.setPhysicsRotation(
-                                Quaternion(
-                                    tempQuatJoml.x,
-                                    tempQuatJoml.y,
-                                    tempQuatJoml.z,
-                                    tempQuatJoml.w
-                                )
-                            )
+                            body.setLocation(tempVecJoml)
+                            body.setRotation(tempQuatJoml)
 
                             // Ensure body is kinematic while animated
                             if (!body.isKinematic) {
