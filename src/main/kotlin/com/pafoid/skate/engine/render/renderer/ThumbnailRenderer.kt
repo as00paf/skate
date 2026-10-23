@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
+import com.pafoid.skate.engine.render.state.GLBindings
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
@@ -115,6 +116,7 @@ class ThumbnailRenderer(
         shader.uploadVec3f(ShaderConst.Uniforms.LIGHT_COLOR, Vector3f(2.0f, 2.0f, 2.0f))
         shader.uploadVec3f(ShaderConst.Uniforms.AMBIENT_LIGHT, Vector3f(0.8f, 0.8f, 0.8f))
 
+        GLBindings.cache.reset()
         // Delegate actual model rendering to ModelRenderer
         modelRenderer.render(
             transform = transform,
@@ -122,6 +124,8 @@ class ThumbnailRenderer(
             shader = shader,
             cameraPosition = cameraPos
         )
+
+        GLBindings.cache.reset()
 
         // Create a NEW texture and copy FBO content into it
         val thumbnailTextureId = createTextureFromFbo(fbo)

@@ -11,9 +11,13 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.getAllChildren
+import com.pafoid.skate.engine.render.state.DrawQueue
+import com.pafoid.skate.engine.render.state.SortKey
+import com.pafoid.skate.engine.assets.data.models.AlphaMode
 import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.FrameBuffer
@@ -76,6 +80,8 @@ class GeometryPass(
     override val description: String = "Renders all 3D geometry and sprites to the framebuffer"
     override val inputs: Set<String> = setOf("ShadowMap")
 
+    private val drawQueue = DrawQueue<DrawItem>()
+
     override fun execute(scene: Scene) {
         val renderables = mutableListOf<Renderable2D>()
 
@@ -117,34 +123,40 @@ class GeometryPass(
             shadowMapResolution
         )
 
-        // Render all 3D game objects and collect 2D objects while iterating
+        // Collect 3D draws and 2D sprites, then draw 3D sorted: opaque by material → mesh, transparent last in scene order
+        drawQueue.clear()
         scene.getAllChildren().forEach { go ->
             if (!go.isVisible) return@forEach
             val renderComponent = go.getComponent<RenderComponent>()?.takeIf { it.enabled }
             val transform = go.getComponent<Transform>()?.takeIf { it.enabled }
             if (transform != null) {
                 if (renderComponent != null) {
-                    // Hover & Selected states
-                    var selectionState = 0.0f
-                    if (go.uId == scene.selectedGameObject?.uId) selectionState = 1.0f
-                    else if (go.uId == scene.hoveredGameObject?.uId) selectionState = 2.0f
-
-                    defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
-
-                    val skeletonComponent = go.getComponent<SkeletonComponent>()
-
-                    modelRenderer.render(
-                        transform = transform,
-                        renderComponent = renderComponent,
-                        shader = defaultShader,
-                        cameraPosition = cameraPosition,
-                        skeletonComponent = skeletonComponent
-                    )
+                    drawQueue.add(sortKeyOf(renderComponent), DrawItem(go, renderComponent, transform))
                 }
                 go.getComponent<SpriteRenderer>()
                     ?.let { if (it.enabled) renderables.add(Renderable2D(it, transform.worldMatrix)) }
             }
         }
+        drawQueue.sort()
+
+        for (i in 0 until drawQueue.size) {
+            val (go, renderComponent, transform) = drawQueue.itemAt(i)
+            // Hover & Selected states
+            var selectionState = 0.0f
+            if (go.uId == scene.selectedGameObject?.uId) selectionState = 1.0f
+            else if (go.uId == scene.hoveredGameObject?.uId) selectionState = 2.0f
+
+            defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
+
+            modelRenderer.render(
+                transform = transform,
+                renderComponent = renderComponent,
+                shader = defaultShader,
+                cameraPosition = cameraPosition,
+                skeletonComponent = go.getComponent<SkeletonComponent>()
+            )
+        }
+        drawQueue.clear()
 
         defaultShader.stop()
 
@@ -153,6 +165,16 @@ class GeometryPass(
 
         // Render Sky Dome
         skyDomeRenderer.render(camera, cameraPosition, scene)
+    }
+
+    private data class DrawItem(val go: GameObject, val renderComponent: RenderComponent, val transform: Transform)
+
+    private fun sortKeyOf(renderComponent: RenderComponent): Long {
+        val parts = renderComponent.model?.mesh
+        val first = parts?.firstOrNull() ?: return SortKey.build(false, 0, 0, 0)
+        val material = renderComponent.material ?: first.material
+        if (material.alphaMode == AlphaMode.BLEND) return SortKey.build(true, 0, 0, 0)
+        return SortKey.build(false, 0, material.baseColorTexture?.texId ?: 0, first.vaoId)
     }
 
     private fun render2D(camera: CameraComponent, renderables: List<Renderable2D>, shader: Shader) {

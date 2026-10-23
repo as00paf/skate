@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.utils
 
+import com.pafoid.skate.engine.render.EngineStats
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.glBlendFunc
 import org.lwjgl.opengl.GL11.glDepthFunc
@@ -58,6 +59,7 @@ object GLStateTracker {
                 glDisable(GL_BLEND)
             }
             blendEnabled = enabled
+            EngineStats.stateChanges.incrementAndGet()
         }
     }
 
@@ -73,6 +75,7 @@ object GLStateTracker {
         if (blendSrcFactor != sfactor || blendDstFactor != dfactor) {
             glBlendFunc(sfactor, dfactor)
             blendSrcFactor = sfactor
+            EngineStats.stateChanges.incrementAndGet()
             blendDstFactor = dfactor
         }
     }
@@ -88,6 +91,7 @@ object GLStateTracker {
                 glDisable(GL_DEPTH_TEST)
             }
             depthTestEnabled = enabled
+            EngineStats.stateChanges.incrementAndGet()
         }
     }
 
@@ -104,6 +108,7 @@ object GLStateTracker {
         if (depthMaskEnabled != enabled) {
             glDepthMask(enabled)
             depthMaskEnabled = enabled
+            EngineStats.stateChanges.incrementAndGet()
         }
     }
 
@@ -119,6 +124,7 @@ object GLStateTracker {
         if (depthFunc != func) {
             glDepthFunc(func)
             depthFunc = func
+            EngineStats.stateChanges.incrementAndGet()
         }
     }
 
@@ -138,6 +144,7 @@ object GLStateTracker {
                 glDisable(GL_CULL_FACE)
             }
             cullFaceEnabled = enabled
+            EngineStats.stateChanges.incrementAndGet()
         }
     }
 

@@ -22,6 +22,7 @@ class Renderer(
     fun render(scene: Scene) {
         // Reset per-frame draw call counter
         EngineStats.resetDrawCalls()
+        EngineStats.resetStateChanges()
 
         // Execute the render graph - this handles all preparation, execution, and cleanup of passes
         renderResources.renderGraph.execute(scene)

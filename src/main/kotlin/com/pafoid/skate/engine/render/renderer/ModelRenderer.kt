@@ -11,9 +11,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.data.RenderMode
-import com.pafoid.skate.engine.render.utils.bindTexture
-import com.pafoid.skate.engine.render.utils.bindVAO
-import com.pafoid.skate.engine.render.utils.unbindVAO
+import com.pafoid.skate.engine.render.state.GLBindings
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.withCullFace
 import com.pafoid.skate.engine.render.utils.withDepthMask
@@ -24,7 +22,7 @@ import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL20
 
 class ModelRenderer(
     private val debugRenderer: DebugRenderer
@@ -84,7 +82,7 @@ class ModelRenderer(
         overrideMaterial: Material? = null,
     ) {
         val material = overrideMaterial ?: part.material
-        part.vaoId.bindVAO(part.enabledAttributes)
+        bindMesh(part)
 
         // Bind all PBR texture maps and upload uniforms
         shader.uploadVec4f(Uniforms.BASE_COLOR, material.baseColor)
@@ -138,8 +136,6 @@ class ModelRenderer(
                 }
             }
         }
-
-        part.vaoId.unbindVAO(part.enabledAttributes)
     }
 
     /**
@@ -152,7 +148,7 @@ class ModelRenderer(
     ) {
         val material = part.material
 
-        part.vaoId.bindVAO(part.enabledAttributes)
+        bindMesh(part)
 
         material.baseColorTexture?.let {
             bindTexture(
@@ -177,8 +173,17 @@ class ModelRenderer(
             EngineStats.drawCalls.incrementAndGet()
         }
 
-        // Just unbind VAO without disabling attributes (disabling breaks skinning)
-        GL30.glBindVertexArray(0)
+    }
+
+    // The VAO stays bound (and its attributes enabled) until the pass ends; attributes live in VAO state.
+    private fun bindMesh(part: MeshPart) {
+        if (GLBindings.cache.bindVao(part.vaoId)) {
+            part.enabledAttributes.forEach { GL20.glEnableVertexAttribArray(it) }
+        }
+    }
+
+    private fun bindTexture(slot: Int, textureId: Int) {
+        GLBindings.cache.bindTexture(slot, textureId)
     }
 
     private fun visualizeBoneRecursive(bone: Bone, skeleton: Skeleton, modelMatrix: Matrix4f) {
