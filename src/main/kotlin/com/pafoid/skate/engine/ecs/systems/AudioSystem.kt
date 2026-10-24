@@ -97,7 +97,7 @@ class AudioSystem(
 
                 if (source != null) {
                     // Update state
-                    source.setVolume(audioComponent.volume)
+                    source.setVolume(audioEngine.mixer.sourceGain(audioComponent.bus, audioComponent.volume))
                     source.setLooping(audioComponent.loops)
                     source.setRelative(!audioComponent.is3D)
 

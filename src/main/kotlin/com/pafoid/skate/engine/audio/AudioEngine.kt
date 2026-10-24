@@ -17,6 +17,11 @@ class AudioEngine(
     var isInitialized = false
         private set
 
+    val mixer = Mixer()
+
+    /** Applies volume/mute settings live; takes effect on the next AudioSystem update. */
+    fun applyConfig(config: AudioConfig) = mixer.applyConfig(config)
+
     fun init(): Boolean {
         if (isInitialized) return true
 
@@ -101,8 +106,8 @@ class AudioEngine(
         AL10.alListener3f(AL10.AL_VELOCITY, x, y, z)
     }
 
+    /** Master gain is applied per source through the mixer; the AL listener gain stays at 1. */
     fun setMasterVolume(gain: Float) {
-        if (!isInitialized) return
-        AL10.alListenerf(AL10.AL_GAIN, gain.coerceIn(0f, 1f))
+        mixer.bus(BusId.MASTER).volume = gain
     }
 }
