@@ -43,7 +43,7 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 
 ## QA-07 — test source set compiles; remaining state
 
-`cmd.exe /c gradlew.bat test`: 167 tests, 20 failed, 1 skipped.
+`cmd.exe /c gradlew.bat test` is fully green as of QA-08 (no test-failure entries remain).
 
 ### Quarantined tests (moved to `src/test-quarantine/`, not in any source set; need rewrite, owner QA)
 `PhysicsComponentTest`, `PlayerStateManagerTest`, `PointLightComponentsTest` (`useAmbient` gone), `GridLinesTest` (`GridConfig` gone),
@@ -53,22 +53,8 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 
 ### Production bugs revealed
 - BUG-014 (GPL/REN): `CameraInterpolator.handleLerp` is private and never called, so `lerpToPreset` does nothing. Test `CameraTest` lerp case is `@Disabled`.
-- BUG-015 (EDT): `ProjectSettingsWindow.kt:113,122` call `projectManager.saveProject()` directly. Fails `UiMutationPipelineGuardTest` (project mutations).
-- BUG-016 (EDT): `assetBrowser/TexturesTab.kt:92` calls `undoRedoManager.executeCommand(` directly. Fails `UiMutationPipelineGuardTest` (executeCommand).
-- BUG-017 (ECS/Assets): `StringManager.setLocale` derives the path from the last loaded path, so fr->en yields `..._fr_en.properties`. Fails `StringManagerTest setLocale`.
-
-### Remaining failing tests (not yet triaged as test-vs-production; owner to confirm)
-| Test | Symptom | Suspected owner |
-|---|---|---|
-| `AudioSystemTest update listener uses configured master volume` | `setMasterVolume(0.35)` not re-applied on update | AUD |
-| `InputSystemTest mouse look contributes to camera look` | expected 0.4, was 0.0 | INP |
-| `RagdollSystemTest` (2) | `setPhysicsLocation` not called; matrix mismatch | PHY/ANI |
-| `EngineFixedTimestepTest` (2) | `scene.update(0.016)` not called | ECS |
-| `EnvironmentSystemTest` (6) | NPE at `scene.getComponent<EnvironmentComponent>()!!` / assertion; system no longer creates component on Scene | REN |
-| `DeleteFileCommandTest` (2) | verifies `log(...)`, production uses `logEditor` (test stale) | QA |
-| `SceneTargetingCommandsTest delete scene...` | `ProjectManager.currentProject` unstubbed (test stale) | QA |
-| `SkateboardModelInspectionTest` | `TextureLoader.loadFromBuffer` unstubbed (test stale) | QA |
-| `ViewportRendererScreenshotTest` | `ScreenshotUtils.takeScreenshot` not called | EDT/REN |
+- BUG-015/016/017: fixed by QA-08 (ProjectSettingsWindow now publishes `ProjectEvent.SaveRequested`; TexturesTab publishes `ViewportAction.DropTexture`; `StringManager.setLocale` uses the originally loaded base path).
+- BUG-018 (REN): `EnvironmentSystem.environmentComponent` is never assigned, so `applyPreset(...)` and `update(dt)` on the system are no-ops (only `reset()` works, via the scene lookup). Tests that covered system-level preset application were rewritten against `EnvironmentComponent`.
 
 ## QA-02 — coverage baseline (JaCoCo)
 

@@ -1,7 +1,7 @@
 package com.pafoid.skate.editor.ui.windows.assetBrowser
 
 import com.pafoid.skate.editor.imgui.contextPopupId
-import com.pafoid.skate.editor.commands.objects.ApplyTextureCommand
+import com.pafoid.skate.editor.events.ViewportAction
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.editor.systems.UndoRedoManager
@@ -90,9 +90,7 @@ class TexturesTab(
             return
         }
 
-        undoRedoManager.executeCommand(
-            ApplyTextureCommand(selectedObject, texturePath, assetsManager, engine.eventSystem)
-        )
+        engine.eventSystem.publish(ViewportAction.DropTexture(texturePath, selectedObject))
         engine.logger.logEditor("Applied texture ${texturePath} to ${selectedObject.name}")
     }
 
