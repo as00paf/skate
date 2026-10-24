@@ -90,7 +90,7 @@ class Engine {
             PlayerMotionSystem(cameraManager, eventSystem),
             AnimationSystem(),
             RagdollSystem(),
-            ScriptingSystem(),
+            ScriptingSystem(logger, eventSystem),
         )
 
         engineSystems.forEach {

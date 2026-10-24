@@ -23,6 +23,7 @@ enum class ComponentType {
     RIGID_BODY_3D,
     RAGDOLL,
     SCENE_PHYSICS,
+    SCRIPT,
     SKELETON,
     SPOT_LIGHT,
     SPRITE_RENDERER,
@@ -52,6 +53,7 @@ enum class ComponentType {
             RIGID_BODY_3D -> RigidBody3D()
             RAGDOLL -> RagdollComponent()
             SCENE_PHYSICS -> ScenePhysicsComponent()
+            SCRIPT -> ScriptComponent()
             SKELETON -> null
             SPOT_LIGHT -> SpotLightComponent()
             SPRITE_RENDERER -> SpriteRenderer()

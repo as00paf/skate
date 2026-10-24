@@ -95,6 +95,7 @@ abstract class Component {
                 is RigidBody3D -> RIGID_BODY_3D
                 is RagdollComponent -> RAGDOLL
                 is ScenePhysicsComponent -> SCENE_PHYSICS
+                is ScriptComponent -> ComponentType.SCRIPT
                 is SkeletonComponent -> SKELETON
                 is SpriteRenderer -> SPRITE_RENDERER
                 is Transform -> TRANSFORM

@@ -17,6 +17,7 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.NativeScriptComponent
+import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
@@ -74,6 +75,7 @@ class Serializer {
 
             // Scripting
             subclass(NativeScriptComponent::class)
+            subclass(ScriptComponent::class)
 
             // Debug/Editor components
             subclass(NonPickable::class)
