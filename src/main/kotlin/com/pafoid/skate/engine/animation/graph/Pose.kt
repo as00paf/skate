@@ -33,6 +33,25 @@ class Pose(val boneCount: Int) {
     )
 
     companion object {
+        /** Like [blend], but each bone's weight is `w * mask[bone]`: base shows through where the mask is 0. */
+        fun blendMasked(base: Pose, overlay: Pose, w: Float, mask: BoneMask, out: Pose) {
+            require(base.boneCount == overlay.boneCount && base.boneCount == out.boneCount) { "Pose bone count mismatch" }
+            val qa = Quaternionf()
+            val qb = Quaternionf()
+            for (i in 0 until base.boneCount) {
+                val k = (w * mask.weight(i)).coerceIn(0f, 1f)
+                for (c in 0 until 3) {
+                    val o = i * 3 + c
+                    out.translations[o] = base.translations[o] + (overlay.translations[o] - base.translations[o]) * k
+                    out.scales[o] = base.scales[o] + (overlay.scales[o] - base.scales[o]) * k
+                }
+                val o = i * 4
+                qa.set(base.rotations[o], base.rotations[o + 1], base.rotations[o + 2], base.rotations[o + 3])
+                qb.set(overlay.rotations[o], overlay.rotations[o + 1], overlay.rotations[o + 2], overlay.rotations[o + 3])
+                if (k > 0f) qa.slerp(qb, k)
+                out.rotations[o] = qa.x; out.rotations[o + 1] = qa.y; out.rotations[o + 2] = qa.z; out.rotations[o + 3] = qa.w
+            }
+        }
         /** Writes `lerp(a, b, w)` into [out]; rotations use shortest-path slerp. [out] may alias [a] or [b]. */
         fun blend(a: Pose, b: Pose, w: Float, out: Pose) {
             require(a.boneCount == b.boneCount && a.boneCount == out.boneCount) { "Pose bone count mismatch" }
