@@ -19,6 +19,7 @@ class AudioSystem(
     private val assetsManager: AssetsManager,
     private val cameraManager: CameraManager
 ) : System(priority = ExecutionPriority.LATE) {
+    override val runsAfter = listOf(CameraManager::class)
 
     private var isInitialized = false
     var masterVolume = 1.0f

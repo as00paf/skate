@@ -15,6 +15,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 
 class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
+    override val runsAfter = listOf(AnimationSystem::class)
 
     private val tempVecJoml = Vector3f()
     private val tempQuatJoml = Quaternionf()

@@ -21,6 +21,9 @@ class PhysicsSystem(
     private val debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.EARLY) {
 
+    override val phase = SystemPhase.UPDATE
+    override val runsBefore = listOf(PlayerMotionSystem::class)
+
     private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer)
 
     private val bodies = query(RigidBody3D::class, topLevelOnly = true, includeDisabled = true)
