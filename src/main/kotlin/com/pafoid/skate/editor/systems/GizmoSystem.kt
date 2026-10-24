@@ -17,6 +17,10 @@ class GizmoSystem(
 ) {
     var usingGizmo = NONE
 
+    var localSpace = false
+    /** Translation snap step in world units; 0 disables snapping. */
+    var translateSnap = 0f
+
     // Gizmos are owned directly by this system, not registered as separate systems
     private val debugRenderer by lazy { engine.renderer.renderResources.renderers.debug }
     private val translateGizmo by lazy { TranslateGizmo(engine, undoRedoManager, debugRenderer) }
@@ -65,7 +69,10 @@ class GizmoSystem(
         // Update only the active gizmo
         when (usingGizmo) {
             SELECTION_GIZMO -> selectionGizmo.update(scene)
-            TRANSLATE_GIZMO -> translateGizmo.update(
+            TRANSLATE_GIZMO -> translateGizmo.also {
+                it.localSpace = localSpace
+                it.snapStep = translateSnap
+            }.update(
                 scene.selectedGameObject,
                 editorCamera.camera,
                 editorCamera.transform.translation

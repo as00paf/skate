@@ -16,57 +16,79 @@ class TranslateGizmo(
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
 ) : Gizmo(engine, undoRedoManager) {
-    private val arrowLength = 2.0f
-    private val coneSize = 0.3f
-    private val hitThreshold = 0.3f
-    
-    private var xAxisHot = false
-    private var yAxisHot = false
-    private var zAxisHot = false
+    private val arrowLength = 1.0f
+    private val coneSize = 0.12f
+    private val hitThreshold = 0.1f
+
+    private var hotAxis = -1
+    private var activeAxis = -1
+    private var dragStartParam = 0f
+    private var dragStartPos = Vector3f()
+    private var dragAxisDir = Vector3f()
 
     private var oldTransform: Transform? = null
 
-    var sensitivity = 0.0005f
+    var localSpace = false
+    var snapStep = 0f
+
+    private val axisColors = arrayOf(Vector3f(1f, 0f, 0f), Vector3f(0f, 1f, 0f), Vector3f(0f, 0f, 1f))
+    private val highlight = Vector3f(1f, 1f, 0f)
 
     fun update(activeGameObject: GameObject?, camera: CameraComponent, cameraPosition: Vector3f) {
         val go = activeGameObject ?: return
-        go.getComponent<Transform>()?.let{ transform ->
-            val pos = transform.translation
-            val dist = cameraPosition.distance(pos)
-            val dynamicArrowLength = arrowLength * (dist * 0.1f)
-            val dynamicConeSize = coneSize * (dist * 0.1f)
-            val dynamicHitThreshold = hitThreshold * (dist * 0.1f)
+        val transform = go.getComponent<Transform>() ?: return
+        val pos = transform.translation
+        val fov = Math.toRadians(camera.fov.toDouble()).toFloat()
+        val size = GizmoMath.screenSpaceScale(cameraPosition.distance(pos), fov)
+        val length = arrowLength * size
+        val coneLen = coneSize * size
+        val axes = GizmoMath.axes(transform.rotation, localSpace)
+        val ray = inputProvider.screenToRay(camera)
 
-            checkInput(go, camera, dynamicArrowLength, dynamicHitThreshold)
-
-            // TODO: fix snapping
-            if (xAxisActive) {
-                transform.translation.x += inputProvider.mouseDistanceFrom(
-                    pos,
-                    camera,
-                    cameraPosition,
-                    Vector3f(1f, 0f, 0f)
-                ) * sensitivity
-            } else if (yAxisActive) {
-                transform.translation.y += inputProvider.mouseDistanceFrom(
-                    pos,
-                    camera,
-                    cameraPosition,
-                    Vector3f(0f, 1f, 0f)
-                ) * sensitivity
-            } else if (zAxisActive) {
-                transform.translation.z += inputProvider.mouseDistanceFrom(
-                    pos,
-                    camera,
-                    cameraPosition,
-                    Vector3f(0f, 0f, 1f)
-                ) * sensitivity
-            }
-
-            drawArrow(pos, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f), dynamicArrowLength, dynamicConeSize) // X - Red/Yellow
-            drawArrow(pos, Vector3f(0f, 1f, 0f), if (yAxisActive || yAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 1f, 0f), dynamicArrowLength, dynamicConeSize) // Y - Green/Yellow
-            drawArrow(pos, Vector3f(0f, 0f, 1f), if (zAxisActive || zAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 0f, 1f), dynamicArrowLength, dynamicConeSize) // Z - Blue/Yellow
+        if (activeAxis < 0) {
+            hotAxis = GizmoMath.pickAxis(ray.origin, ray.direction, pos, axes, length, hitThreshold * size)
+            if (hotAxis >= 0 && inputProvider.isLeftMouseButtonDown(true)) beginDrag(hotAxis, axes[hotAxis], transform, ray)
         }
+
+        if (activeAxis >= 0) {
+            if (inputProvider.isLeftMouseButtonDown(true)) {
+                drag(transform, ray)
+            } else {
+                endDrag(go, transform)
+            }
+        }
+
+        for (i in 0..2) {
+            val color = if (i == activeAxis || i == hotAxis) highlight else axisColors[i]
+            drawArrow(pos, axes[i], color, length, coneLen)
+        }
+    }
+
+    private fun beginDrag(axis: Int, dir: Vector3f, transform: Transform, ray: com.pafoid.skate.engine.utils.Ray) {
+        val t = GizmoMath.closestAxisParam(ray.origin, ray.direction, transform.translation, dir) ?: return
+        activeAxis = axis
+        dragAxisDir = Vector3f(dir)
+        dragStartPos = Vector3f(transform.translation)
+        dragStartParam = t
+        oldTransform = Transform().apply { copyFrom(transform) }
+        inUse = true
+    }
+
+    private fun drag(transform: Transform, ray: com.pafoid.skate.engine.utils.Ray) {
+        val t = GizmoMath.closestAxisParam(ray.origin, ray.direction, dragStartPos, dragAxisDir) ?: return
+        val delta = GizmoMath.snap(t - dragStartParam, snapStep)
+        transform.translation.set(dragStartPos).add(Vector3f(dragAxisDir).mul(delta))
+    }
+
+    private fun endDrag(go: GameObject, transform: Transform) {
+        oldTransform?.let { old ->
+            if (old != transform) {
+                undoRedoManager.pushCommand(TransformCommand(go, old, transform))
+                sceneManager.currentScene?.isDirty = true
+            }
+        }
+        oldTransform = null
+        activeAxis = -1
     }
 
     private fun drawArrow(origin: Vector3f, direction: Vector3f, color: Vector3f, length: Float, cSize: Float) {
@@ -90,47 +112,5 @@ class TranslateGizmo(
 
         debugRenderer.addTriangle3D(p1, p2, p3, color)
         debugRenderer.addTriangle3D(p1, p2, p4, color)
-    }
-
-    private fun checkInput(go: GameObject, camera: CameraComponent, length: Float, threshold: Float) {
-        val transform = go.getComponent<Transform>() ?: return
-        val pos = transform.translation
-        val ray = inputProvider.screenToRay(camera)
-
-        xAxisHot = false
-        yAxisHot = false
-        zAxisHot = false
-
-        if (rayToLineDist(ray, pos, Vector3f(1f, 0f, 0f), length) < threshold) xAxisHot = true
-        else if (rayToLineDist(ray, pos, Vector3f(0f, 1f, 0f), length) < threshold) yAxisHot = true
-        else if (rayToLineDist(ray, pos, Vector3f(0f, 0f, 1f), length) < threshold) zAxisHot = true
-
-        if (inputProvider.isLeftMouseButtonDown(true)) {
-            if (!xAxisActive && !yAxisActive && !zAxisActive) {
-                if (xAxisHot) xAxisActive = true
-                else if (yAxisHot) yAxisActive = true
-                else if (zAxisHot) zAxisActive = true
-
-                if (xAxisActive || yAxisActive || zAxisActive) {
-                    oldTransform = Transform().apply { copyFrom(transform) }
-                    println("Start dragging ${transform.translation}")
-                }
-            }
-        } else {
-            if (xAxisActive || yAxisActive || zAxisActive) {
-                // We were dragging and just stopped
-                oldTransform?.let { old ->
-                    if (old != transform) {
-                        undoRedoManager.pushCommand(TransformCommand(go, old, transform))
-                        sceneManager.currentScene?.isDirty = true
-                    }
-                }
-                println("Stop dragging ${transform.translation}")
-                oldTransform = null
-            }
-            xAxisActive = false
-            yAxisActive = false
-            zAxisActive = false
-        }
     }
 }
