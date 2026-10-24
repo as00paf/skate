@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.audio.BusId
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -8,7 +9,8 @@ data class AudioComponent(
     var soundFilePath: String = "",
     var is3D: Boolean = true,
     var loops: Boolean = false,
-    var volume: Float = 1.0f
+    var volume: Float = 1.0f,
+    var bus: BusId = BusId.SFX
 ) : Component() {
 
     @Transient

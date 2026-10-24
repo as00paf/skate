@@ -12,6 +12,9 @@ import kotlin.math.floor
 
 class DirectionalLightSystem(private val cameraManager: CameraManager) : System(priority = ExecutionPriority.EARLY) {
 
+    override val phase = SystemPhase.LATE_UPDATE
+    override val runsAfter = listOf(CameraManager::class)
+
     // System-owned configuration
     var config: DirectionalLightComponent? = null
 

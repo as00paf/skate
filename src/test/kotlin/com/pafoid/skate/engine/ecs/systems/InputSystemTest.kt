@@ -167,8 +167,8 @@ class InputSystemTest {
         scene.children.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
-        every { mouseListener.dx } returns 4f
-        every { mouseListener.dy } returns -2f
+        every { inputProvider.getMouseDx() } returns 4f
+        every { inputProvider.getMouseDy() } returns -2f
         every { inputProvider.isCursorDisabled() } returns true
 
         inputSystem.update(0.016f)
@@ -184,8 +184,8 @@ class InputSystemTest {
         scene.children.add(player)
 
         every { inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1) } returns false
-        every { mouseListener.dx } returns 5f
-        every { mouseListener.dy } returns 5f
+        every { inputProvider.getMouseDx() } returns 5f
+        every { inputProvider.getMouseDy() } returns 5f
         every { inputProvider.isCursorDisabled() } returns false
 
         inputSystem.update(0.016f)

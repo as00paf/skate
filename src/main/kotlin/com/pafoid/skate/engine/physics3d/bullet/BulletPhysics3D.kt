@@ -3,6 +3,8 @@ import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.joints.ConeJoint
 import com.jme3.bullet.joints.HingeJoint
 import com.jme3.bullet.joints.PhysicsJoint
+import com.jme3.bullet.joints.SixDofJoint
+import com.jme3.bullet.joints.SliderJoint
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape
@@ -12,6 +14,7 @@ import com.jme3.bullet.collision.shapes.CylinderCollisionShape
 import com.jme3.bullet.collision.shapes.HullCollisionShape
 import com.jme3.bullet.collision.shapes.MeshCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.math.Matrix3f
 import com.jme3.math.Quaternion
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
@@ -25,7 +28,10 @@ import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
 import com.pafoid.skate.engine.physics3d.constraints.ConeTwistConstraint3D
+import com.pafoid.skate.engine.physics3d.constraints.FixedConstraint3D
 import com.pafoid.skate.engine.physics3d.constraints.HingeConstraint3D
+import com.pafoid.skate.engine.physics3d.constraints.SixDofConstraint3D
+import com.pafoid.skate.engine.physics3d.constraints.SliderConstraint3D
 import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -217,6 +223,13 @@ class BulletPhysics3D(
     override fun createRigidBody(shape: ColliderShape, mass: Float): IRigidBodyHandle =
         BulletRigidBodyHandle(PhysicsRigidBody(createShape(shape), mass))
 
+    override fun createStaticAnchor(location: JomlVector3f): IRigidBodyHandle {
+        val body = PhysicsRigidBody(BoxCollisionShape(0.01f), 0f)
+        body.setPhysicsLocation(location.toJme())
+        physicsSpace.add(body)
+        return BulletRigidBodyHandle(body)
+    }
+
     private fun createShape(shape: ColliderShape): CollisionShape = when (shape) {
         is ColliderShape.Box -> BoxCollisionShape(shape.halfExtents.toJme()).also { it.margin = shape.margin }
         is ColliderShape.Capsule -> CapsuleCollisionShape(shape.radius, shape.height, shape.axis)
@@ -240,6 +253,13 @@ class BulletPhysics3D(
         (handle as? BulletRigidBodyHandle)?.body
             ?: throw IllegalArgumentException("Rigid body was not created by the Bullet backend")
 
+    // Slider joints slide along the frame's X axis, so build a frame that maps X onto the requested axis
+    private fun xAxisFrame(axis: org.joml.Vector3f): Matrix3f {
+        val dir = org.joml.Vector3f(axis).normalize()
+        return org.joml.Quaternionf().rotationTo(org.joml.Vector3f(1f, 0f, 0f), dir)
+            .get(org.joml.Matrix3f()).toJme()
+    }
+
     private fun createJoint(constraint: IPhysicsConstraint): PhysicsJoint {
         val joint: PhysicsJoint = when (constraint) {
             is HingeConstraint3D -> HingeJoint(
@@ -253,6 +273,37 @@ class BulletPhysics3D(
                 constraint.pivotA.toJme(), constraint.pivotB.toJme(),
                 constraint.rotA.toJme(), constraint.rotB.toJme()
             ).also { it.setLimit(constraint.swingSpan1, constraint.swingSpan2, constraint.twistSpan) }
+
+            is FixedConstraint3D -> SixDofJoint(
+                bodyOf(constraint.bodyA), bodyOf(constraint.bodyB),
+                constraint.pivotA.toJme(), constraint.pivotB.toJme(),
+                Matrix3f.IDENTITY.clone(), Matrix3f.IDENTITY.clone(), true
+            ).also {
+                it.setLinearLowerLimit(JmeVector3f.ZERO.clone())
+                it.setLinearUpperLimit(JmeVector3f.ZERO.clone())
+                it.setAngularLowerLimit(JmeVector3f.ZERO.clone())
+                it.setAngularUpperLimit(JmeVector3f.ZERO.clone())
+            }
+
+            is SixDofConstraint3D -> SixDofJoint(
+                bodyOf(constraint.bodyA), bodyOf(constraint.bodyB),
+                constraint.pivotA.toJme(), constraint.pivotB.toJme(),
+                Matrix3f.IDENTITY.clone(), Matrix3f.IDENTITY.clone(), true
+            ).also {
+                it.setLinearLowerLimit(constraint.linearLower.toJme())
+                it.setLinearUpperLimit(constraint.linearUpper.toJme())
+                it.setAngularLowerLimit(constraint.angularLower.toJme())
+                it.setAngularUpperLimit(constraint.angularUpper.toJme())
+            }
+
+            is SliderConstraint3D -> SliderJoint(
+                bodyOf(constraint.bodyA), bodyOf(constraint.bodyB),
+                constraint.pivotA.toJme(), constraint.pivotB.toJme(),
+                xAxisFrame(constraint.axisA), xAxisFrame(constraint.axisB), true
+            ).also {
+                it.setLowerLinLimit(constraint.lowerLimit)
+                it.setUpperLinLimit(constraint.upperLimit)
+            }
 
             else -> throw IllegalArgumentException("Unsupported constraint ${constraint::class.simpleName}")
         }

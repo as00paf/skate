@@ -8,6 +8,15 @@ import kotlin.reflect.KClass
 abstract class System(
     val priority: ExecutionPriority = ExecutionPriority.DEFAULT
 ) {
+    /** Phase this system runs in. Defaults to the phase matching [priority]. */
+    open val phase: SystemPhase get() = priority.phase
+
+    /** Systems of the same phase that must run before this one. */
+    open val runsAfter: List<KClass<out System>> get() = emptyList()
+
+    /** Systems of the same phase that must run after this one. */
+    open val runsBefore: List<KClass<out System>> get() = emptyList()
+
     var enabled = true
     private val queries = mutableListOf<ComponentQuery>()
 
@@ -22,6 +31,12 @@ abstract class System(
     open fun start() {}
 
     open fun update(dt: Float) {}
+
+    /** Called with a constant step; only invoked for [SystemPhase.FIXED_UPDATE] systems. */
+    open fun fixedUpdate(fixedDt: Float) {}
+
+    /** Called once per frame for [SystemPhase.RENDER] systems. */
+    open fun render(alpha: Float) {}
 
     open fun destroy() {
         invalidateCache()
