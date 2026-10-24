@@ -6,6 +6,7 @@ sealed interface CliCommand {
     data class Validate(val project: String) : CliCommand
     data class Pack(val project: String) : CliCommand
     data class Export(val project: String, val output: String) : CliCommand
+    data class Sample(val dir: String) : CliCommand
     data class Run(val project: String, val scene: String?, val frames: Int, val dt: Float) : CliCommand
 }
 
@@ -25,6 +26,7 @@ object CliArguments {
           export <project> --out <folder>           Pack and copy the build output into <folder>
           run <project> [--scene <name>] [--frames <n>] [--dt <seconds>]
                                                     Run a scene headless and print engine stats
+          sample [--dir <folder>]                   Generate the FeatureShowcase sample project (see docs/samples.md)
           help, --help, -h                          Show this help
 
         <project> is a .skateproject file or the folder containing one.
@@ -43,6 +45,7 @@ object CliArguments {
                 CliCommand.Export(it.positional(), it.required("--out"))
             }
             "run" -> parseRun(rest)
+            "sample" -> CliCommand.Sample(parseArgs(name, rest, setOf("--dir")).also { it.noPositionals() }.options["--dir"] ?: ".")
             else -> throw CliParseException("Unknown command '$name'")
         }
     }
@@ -67,6 +70,10 @@ object CliArguments {
         fun positional(label: String = "project"): String {
             if (positionals.size != 1) throw CliParseException("'$command' expects exactly one <$label> argument")
             return positionals[0]
+        }
+
+        fun noPositionals() {
+            if (positionals.isNotEmpty()) throw CliParseException("'$command' takes no positional arguments")
         }
 
         fun required(option: String): String =
