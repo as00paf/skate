@@ -117,6 +117,7 @@ class Engine {
                 scene.update(dt)
             }
 
+            systemManager.render()
             renderer.render(scene)
         }
         screens.forEach { it.update(dt) }

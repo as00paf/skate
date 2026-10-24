@@ -9,6 +9,8 @@ import org.joml.Vector3f
 
 class TransformSystem : System(priority = ExecutionPriority.EARLY) {
 
+    override val phase = SystemPhase.LATE_UPDATE
+
     private val transforms = query(Transform::class, includeDisabled = true)
 
     override fun start() {
