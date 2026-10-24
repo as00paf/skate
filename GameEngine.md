@@ -419,6 +419,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Route `RenameFileCommand`, `DeleteFileCommand` and project-window moves through the asset-ID-aware API so `.meta` files stay in sync (unblocks AST-02).
   - Done when: Renaming, deleting or moving a file in the editor keeps its `.meta` and GUID; tests under `editor/commands`.
   - Deps: AST-02
+- [ ] **EDT-15** `P1` Joint component inspector
+  - Do: Add editor UI to create, edit and remove the PHY-03 joint component (type, connected body, anchors, limits, motor), through commands in `editor/commands`.
+  - Done when: Joints can be created and edited in the editor with undo/redo; command tests under `editor/commands`.
+  - Deps: PHY-03
 - [ ] **EDT-14** `P2` Audio bus and mute UI
   - Do: Add UI bus volume, mute toggles and the new `AudioComponent` inspector fields from `docs/design/AUD-01.md`.
   - Done when: Bus volumes and mutes can be edited in the editor and persist.
