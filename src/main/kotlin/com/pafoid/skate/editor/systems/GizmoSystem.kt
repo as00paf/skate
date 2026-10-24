@@ -20,6 +20,24 @@ class GizmoSystem(
     var localSpace = false
     /** Translation snap step in world units; 0 disables snapping. */
     var translateSnap = 0f
+    var rotateSnapDegrees = 0f
+    var scaleSnap = 0f
+
+    val snapEnabled get() = translateSnap > 0f || rotateSnapDegrees > 0f || scaleSnap > 0f
+
+    fun toggleSnap() {
+        val on = !snapEnabled
+        translateSnap = if (on) DEFAULT_TRANSLATE_SNAP else 0f
+        rotateSnapDegrees = if (on) DEFAULT_ROTATE_SNAP else 0f
+        scaleSnap = if (on) DEFAULT_SCALE_SNAP else 0f
+    }
+
+    fun toggleSpace() {
+        localSpace = !localSpace
+    }
+
+    /** Objects the gizmos act on. The scene currently tracks a single selection; multi-select plugs in here. */
+    private fun selection(scene: com.pafoid.skate.engine.ecs.Scene) = listOfNotNull(scene.selectedGameObject)
 
     // Gizmos are owned directly by this system, not registered as separate systems
     private val debugRenderer by lazy { engine.renderer.renderResources.renderers.debug }
@@ -72,23 +90,17 @@ class GizmoSystem(
             TRANSLATE_GIZMO -> translateGizmo.also {
                 it.localSpace = localSpace
                 it.snapStep = translateSnap
-            }.update(
-                scene.selectedGameObject,
-                editorCamera.camera,
-                editorCamera.transform.translation
-            )
+            }.update(selection(scene), editorCamera.camera, editorCamera.transform.translation)
 
-            ROTATION_GIZMO -> rotationGizmo.update(
-                scene.selectedGameObject,
-                editorCamera.camera,
-                editorCamera.transform.translation
-            )
+            ROTATION_GIZMO -> rotationGizmo.also {
+                it.localSpace = localSpace
+                it.snapDegrees = rotateSnapDegrees
+            }.update(selection(scene), editorCamera.camera, editorCamera.transform.translation)
 
-            SCALE_GIZMO -> scaleGizmo.update(
-                scene.selectedGameObject,
-                editorCamera.camera,
-                editorCamera.transform.translation
-            )
+            SCALE_GIZMO -> scaleGizmo.also {
+                it.localSpace = localSpace
+                it.snapStep = scaleSnap
+            }.update(selection(scene), editorCamera.camera, editorCamera.transform.translation)
             MEASURE_GIZMO -> measureGizmo.update(editorCamera.camera)
         }
     }
@@ -102,6 +114,9 @@ class GizmoSystem(
     }
 
     companion object {
+        const val DEFAULT_TRANSLATE_SNAP = 0.5f
+        const val DEFAULT_ROTATE_SNAP = 15f
+        const val DEFAULT_SCALE_SNAP = 0.1f
         const val NONE = -1
         const val TRANSLATE_GIZMO = 0
         const val ROTATION_GIZMO = 1

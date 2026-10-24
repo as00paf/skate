@@ -1,8 +1,10 @@
 package com.pafoid.skate.editor.gizmos
 
 import org.joml.Matrix3f
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.round
 import kotlin.math.tan
 
@@ -81,4 +83,91 @@ object GizmoMath {
     fun snap(value: Float, step: Float): Float = if (step <= 0f) value else round(value / step) * step
 
     fun isFacingAxis(cameraForward: Vector3f, axis: Vector3f): Boolean = abs(cameraForward.dot(axis)) > 0.999f
+
+    fun rayPlaneHit(rayOrigin: Vector3f, rayDir: Vector3f, planePoint: Vector3f, normal: Vector3f): Vector3f? {
+        val denom = normal.dot(rayDir)
+        if (abs(denom) < 1e-5f) return null
+        val t = Vector3f(planePoint).sub(rayOrigin).dot(normal) / denom
+        if (t < 0f) return null
+        return Vector3f(rayOrigin).add(Vector3f(rayDir).mul(t))
+    }
+
+    /** Distance from the ray/plane hit point to the circle of [radius] around [center]; MAX_VALUE if no hit. */
+    fun distanceToCircle(rayOrigin: Vector3f, rayDir: Vector3f, center: Vector3f, normal: Vector3f, radius: Float): Float {
+        val hit = rayPlaneHit(rayOrigin, rayDir, center, normal) ?: return Float.MAX_VALUE
+        return abs(hit.distance(center) - radius)
+    }
+
+    /** Index of the nearest rotation ring within [threshold], or -1. */
+    fun pickRing(
+        rayOrigin: Vector3f, rayDir: Vector3f, center: Vector3f,
+        axes: Array<Vector3f>, radius: Float, threshold: Float,
+    ): Int {
+        var best = -1
+        var bestDist = threshold
+        axes.forEachIndexed { i, axis ->
+            val d = distanceToCircle(rayOrigin, rayDir, center, axis, radius)
+            if (d < bestDist) {
+                bestDist = d
+                best = i
+            }
+        }
+        return best
+    }
+
+    /** Signed angle in radians from [from] to [to] around [axis]. */
+    fun signedAngle(from: Vector3f, to: Vector3f, axis: Vector3f): Float =
+        atan2(axis.dot(Vector3f(from).cross(to)), from.dot(to))
+
+    /**
+     * Plane handle under the ray, or -1. Handle i lies in the plane perpendicular to axis i,
+     * spanning [PLANE_MIN]..[PLANE_MAX] (in units of [size]) along the other two axes.
+     */
+    fun pickPlane(rayOrigin: Vector3f, rayDir: Vector3f, origin: Vector3f, axes: Array<Vector3f>, size: Float): Int {
+        var best = -1
+        var bestT = Float.MAX_VALUE
+        for (i in 0..2) {
+            val hit = rayPlaneHit(rayOrigin, rayDir, origin, axes[i]) ?: continue
+            val rel = Vector3f(hit).sub(origin)
+            val u = rel.dot(axes[(i + 1) % 3]) / size
+            val v = rel.dot(axes[(i + 2) % 3]) / size
+            if (u in PLANE_MIN..PLANE_MAX && v in PLANE_MIN..PLANE_MAX) {
+                val t = hit.distance(rayOrigin)
+                if (t < bestT) {
+                    bestT = t
+                    best = i
+                }
+            }
+        }
+        return best
+    }
+
+    const val PLANE_MIN = 0.2f
+    const val PLANE_MAX = 0.5f
+
+    fun pivot(points: List<Vector3f>): Vector3f {
+        val c = Vector3f()
+        if (points.isEmpty()) return c
+        points.forEach { c.add(it) }
+        return c.div(points.size.toFloat())
+    }
+
+    fun quaternionOf(rotationDegrees: Vector3f): Quaternionf = Quaternionf().rotationXYZ(
+        Math.toRadians(rotationDegrees.x.toDouble()).toFloat(),
+        Math.toRadians(rotationDegrees.y.toDouble()).toFloat(),
+        Math.toRadians(rotationDegrees.z.toDouble()).toFloat(),
+    )
+
+    fun eulerDegrees(q: Quaternionf): Vector3f {
+        val e = q.getEulerAnglesXYZ(Vector3f())
+        return Vector3f(
+            Math.toDegrees(e.x.toDouble()).toFloat(),
+            Math.toDegrees(e.y.toDouble()).toFloat(),
+            Math.toDegrees(e.z.toDouble()).toFloat(),
+        )
+    }
+
+    /** Rotates [rotationDegrees] by [angleRadians] around the world-space [axis]. */
+    fun rotateEuler(rotationDegrees: Vector3f, axis: Vector3f, angleRadians: Float): Vector3f =
+        eulerDegrees(Quaternionf().rotationAxis(angleRadians, axis).mul(quaternionOf(rotationDegrees)))
 }

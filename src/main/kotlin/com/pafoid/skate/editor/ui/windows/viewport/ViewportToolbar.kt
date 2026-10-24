@@ -105,6 +105,22 @@ class ViewportToolbar(
             if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.scale_tool"))
         }
 
+        // Local/world space toggle
+        buttons.add {
+            val key = if (gizmoSystem.localSpace) "lbl.viewport_toolbar.space_local" else "lbl.viewport_toolbar.space_world"
+            if (ImGui.button(stringManager.getString(key) + "##gizmoSpace")) gizmoSystem.toggleSpace()
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.gizmo_space"))
+        }
+
+        // Snapping toggle
+        buttons.add {
+            val on = gizmoSystem.snapEnabled
+            if (on) ImGui.pushStyleColor(ImGuiCol.Button, 0.2f, 0.6f, 0.2f, 1f)
+            if (ImGui.button(stringManager.getString("lbl.viewport_toolbar.snap") + "##gizmoSnap")) gizmoSystem.toggleSnap()
+            if (on) ImGui.popStyleColor()
+            if (ImGui.isItemHovered()) ImGui.setTooltip(stringManager.getString("tooltip.viewport_toolbar.snap"))
+        }
+
         // Measure Tool
         buttons.add {
             val isActive = gizmoSystem.usingGizmo == GizmoSystem.MEASURE_GIZMO

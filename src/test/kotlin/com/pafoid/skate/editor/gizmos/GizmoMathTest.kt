@@ -61,4 +61,39 @@ class GizmoMathTest {
         assertEquals(1.5f, GizmoMath.snap(1.4f, 0.5f), eps)
         assertEquals(1.4f, GizmoMath.snap(1.4f, 0f), eps)
     }
+
+    @Test
+    fun GizmoMath_PickRing_HitsCircleInAxisPlane() {
+        val axes = GizmoMath.axes(Vector3f(), false)
+        // looking down -z at the z-ring (radius 1): point (1,0) is on the ring
+        assertEquals(2, GizmoMath.pickRing(Vector3f(1f, 0f, 10f), Vector3f(0f, 0f, -1f), Vector3f(), axes, 1f, 0.1f).let { if (it == 2) 2 else it })
+        assertEquals(-1, GizmoMath.pickRing(Vector3f(0.3f, 0.3f, 10f), Vector3f(0f, 0f, -1f), Vector3f(), axes, 1f, 0.1f))
+    }
+
+    @Test
+    fun GizmoMath_SignedAngle_QuarterTurnAroundZ() {
+        val a = GizmoMath.signedAngle(Vector3f(1f, 0f, 0f), Vector3f(0f, 1f, 0f), Vector3f(0f, 0f, 1f))
+        assertEquals(Math.PI.toFloat() / 2f, a, eps)
+    }
+
+    @Test
+    fun GizmoMath_PickPlane_HitsHandleSquare() {
+        val axes = GizmoMath.axes(Vector3f(), false)
+        // looking down -z: z-plane handle (index 2) spans x,y in 0.2..0.5 * size
+        assertEquals(2, GizmoMath.pickPlane(Vector3f(0.35f, 0.35f, 10f), Vector3f(0f, 0f, -1f), Vector3f(), axes, 1f))
+        assertEquals(-1, GizmoMath.pickPlane(Vector3f(0.9f, 0.9f, 10f), Vector3f(0f, 0f, -1f), Vector3f(), axes, 1f))
+    }
+
+    @Test
+    fun GizmoMath_Pivot_IsCentroid() {
+        val p = GizmoMath.pivot(listOf(Vector3f(0f, 0f, 0f), Vector3f(2f, 4f, 6f)))
+        assertEquals(1f, p.x, eps); assertEquals(2f, p.y, eps); assertEquals(3f, p.z, eps)
+    }
+
+    @Test
+    fun GizmoMath_RotateEuler_AroundWorldAxis() {
+        val e = GizmoMath.rotateEuler(Vector3f(), Vector3f(0f, 1f, 0f), Math.toRadians(45.0).toFloat())
+        assertEquals(45f, e.y, 0.01f)
+        assertEquals(0f, e.x, 0.01f)
+    }
 }
