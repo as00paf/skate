@@ -22,6 +22,7 @@ import com.pafoid.skate.engine.ecs.components.NativeScriptComponent
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
+import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -48,6 +49,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.ENVIRONMENT -> getComponent<EnvironmentComponent>()
         ComponentType.GRID_LINES -> getComponent<GridLines>()
         ComponentType.INPUT_STATE -> getComponent<InputStateComponent>()
+        ComponentType.JOINT -> getComponent<JointComponent>()
         ComponentType.POINT_LIGHT -> getComponent<PointLightComponent>()
         ComponentType.NATIVE_SCRIPT -> getComponent<NativeScriptComponent>()
         ComponentType.NON_PICKABLE -> getComponent<NonPickable>()
@@ -129,4 +131,4 @@ inline fun <K, V> Iterable<K>.associateWithNotNull(
         val value = valueTransform(key) ?: continue
         this[key] = value
     }
-}
+}

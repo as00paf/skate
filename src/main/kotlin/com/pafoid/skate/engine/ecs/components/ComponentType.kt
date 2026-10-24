@@ -14,6 +14,7 @@ enum class ComponentType {
     ENVIRONMENT,
     GRID_LINES,
     INPUT_STATE,
+    JOINT,
     NATIVE_SCRIPT,
     NON_PICKABLE,
     PLAYER_CONTROLLER,
@@ -42,6 +43,7 @@ enum class ComponentType {
             ENVIRONMENT -> EnvironmentComponent()
             GRID_LINES -> GridLines()
             INPUT_STATE -> InputStateComponent()
+            JOINT -> JointComponent()
             NATIVE_SCRIPT -> NativeScriptComponent()
             NON_PICKABLE -> NonPickable()
             PLAYER_CONTROLLER -> PlayerController()
