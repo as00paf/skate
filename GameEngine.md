@@ -79,7 +79,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Batch draw calls by shader → material → mesh. Track GL state to skip redundant binds.
   - Done when: `EngineStats` reports draw calls and state changes, and both drop on the sample scene. Sort-key generation has unit tests.
   - Deps: REN-02
-- [ ] **REN-04** `P1` REWRITE Material system
+- [~] @skate-render **REN-04** `P1` REWRITE Material system
   - Do: Data-driven `Material` (shader ref + typed parameter block + texture slots). Support PBR metallic/roughness as the default and serialize materials as assets.
   - Done when: Models render through materials instead of hardcoded uniforms, materials can be edited and saved, and parameter binding has unit tests.
   - Deps: REN-02
@@ -131,7 +131,7 @@ Asset management works but needs a complete review.
 - [x] **AST-01** `P0` Asset pipeline review
   - Do: Review `AssetsManager`, `Assets`, the loaders (`AssimpLoader`, `TextureLoader`, `SoundLoader`, `ShaderLoader`, `AnimationLoader`), `serialization/` and `AssetsResolver`.
   - Done when: `docs/design/AST-01.md` lists defects, threading issues and a target design (asset handles/GUIDs, async loading via `JobSystem`, ref-counting).
-- [!] needs EDT to route rename/delete/move through asset code @skate-assets **AST-02** `P1` Stable asset IDs and handles
+- [~] @skate-assets **AST-02** `P1` Stable asset IDs and handles
   - Do: Give every asset a GUID plus a `.meta` sidecar. Scenes and prefabs reference GUIDs, not paths.
   - Done when: Renaming or moving a file in the editor does not break references, and GUID/meta round-trips have unit tests.
   - Deps: AST-01
@@ -167,7 +167,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: Cache component queries per system with invalidation when components are added or removed. Remove the ad-hoc caches in individual systems.
   - Done when: All systems use the shared query API, and invalidation has unit tests.
   - Deps: ECS-01
-- [ ] **ECS-03** `P1` Explicit system ordering and phases
+- [~] @skate-ecs **ECS-03** `P1` Explicit system ordering and phases
   - Do: Define `PreUpdate / FixedUpdate / Update / LateUpdate / Render` phases with declared dependencies.
   - Done when: System order is deterministic, and ordering resolution has unit tests.
   - Deps: ECS-01
@@ -194,7 +194,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Remove Bullet types from `IPhysics3D`/`IPhysicsBody3D`/`IPhysicsConstraint` signatures and keep them inside `physics3d/bullet/`.
   - Done when: Only the Bullet backend package imports `com.jme3.bullet`. A guard test enforces this.
   - Deps: PHY-01
-- [ ] **PHY-03** `P1` Joint component
+- [~] @skate-physics **PHY-03** `P1` Joint component
   - Do: Add a `JointComponent` that supports fixed, hinge, cone-twist, slider and 6DOF joints, built on the existing `HingeConstraint3D`/`ConeTwistConstraint3D`. Make it serializable and editable.
   - Done when: Joints can be created in the editor and persist in the scene. Joint creation and limits have unit tests.
   - Deps: PHY-02
@@ -218,7 +218,7 @@ The animation system needs improvements.
   - Do: Crossfades, blend trees (1D/2D), an animation state machine asset with parameters and transitions, and animation events.
   - Done when: The player transitions smoothly between push, ride and trick states. Blending and transition logic have unit tests.
   - Deps: ANI-01
-- [ ] **ANI-03** `P2` Retargeting and masks
+- [~] @skate-animation **ANI-03** `P2` Retargeting and masks
   - Do: Humanoid retargeting via `BoneNameMapper`, plus per-bone layer masks (e.g. upper body).
   - Done when: One animation plays on two different rigs, with unit tests for the mapping.
   - Deps: ANI-02
@@ -238,7 +238,7 @@ Audio needs a more complete implementation.
 - [x] **AUD-01** `P1` Audio review and design
   - Do: Review `AudioEngine`, `AudioSystem`, `AudioComponent` and `SoundLoader`.
   - Done when: `docs/design/AUD-01.md` describes the target design: buses/mixer, voices, streaming, 3D.
-- [ ] **AUD-02** `P1` Mixer and buses
+- [~] @skate-audio **AUD-02** `P1` Mixer and buses
   - Do: Master/music/SFX/UI buses with volume and mute, wired to `AudioSettings`.
   - Done when: The settings change the volume live, and the mixer math has unit tests.
   - Deps: AUD-01
@@ -272,7 +272,7 @@ Input works well but needs review and controller dead-zone support.
 - [ ] **INP-04** `P3` Rumble and controller hot-plug
   - Do: Handle controller connect/disconnect events and rumble/haptics where GLFW allows.
   - Done when: Unplugging and replugging a controller keeps the player's input working.
-- [ ] **INP-05** `P1` Engine-level key/action read API
+- [~] @skate-input **INP-05** `P1` Engine-level key/action read API
   - Do: Provide an engine API to read keys/actions that does not depend on the editor, as required by `docs/design/SCR-01.md`.
   - Done when: Scripts and runtime code read input without editor imports, covered by tests.
   - Deps: INP-01
@@ -309,7 +309,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
 
 In-game UI components need to be added (separate from the ImGui editor).
 
-- [~] @skate-gameui **GUI-01** `P1` Runtime UI design
+- [x] **GUI-01** `P1` Runtime UI design
   - Do: Design a retained-mode UI for games: canvas, anchors and layout, and widgets (text, image, button, slider, progress bar, panel, list), with input focus and gamepad navigation, rendered through `Renderer2D` and `StringManager`.
   - Done when: `docs/design/GUI-01.md` is approved by the lead.
 - [ ] **GUI-02** `P1` Core widgets and layout
@@ -329,10 +329,10 @@ In-game UI components need to be added (separate from the ImGui editor).
 
 Scripting needs to be implemented. Kotlin Script is the primary language; TypeScript and maybe Lua come later.
 
-- [~] @skate-scripting **SCR-01** `P1` Scripting architecture
+- [x] **SCR-01** `P1` Scripting architecture
   - Do: Design a language-agnostic script API (lifecycle `onCreate/onUpdate/onFixedUpdate/onDestroy`, component access, events, input, physics queries) behind a `ScriptHost` interface. The existing `NativeScriptComponent`/`ScriptingSystem` is the starting point.
   - Done when: `docs/design/SCR-01.md` is approved by the lead.
-- [ ] **SCR-02** `P1` Kotlin Script (`.kts`) host
+- [~] @skate-scripting **SCR-02** `P1` Kotlin Script (`.kts`) host
   - Do: Embed the Kotlin scripting host, compile scripts with caching, and expose the API from SCR-01.
   - Done when: A `.kts` script attached to an entity runs in the editor's play mode and the exported game. API bindings have unit tests.
   - Deps: SCR-01
@@ -387,7 +387,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Clean up `ImGuiLayer`/`WindowManager`/`WindowRegistry`. Fix the viewport's resizing, DPI scaling and multi-viewport handling, and the game view vs. scene view split.
   - Done when: The viewport renders at the correct resolution and DPI on resize and when moved between monitors.
   - Deps: EDT-01
-- [ ] **EDT-03** `P1` Modernize gizmos
+- [~] @skate-editor **EDT-03** `P1` Modernize gizmos
   - Do: Rework the translate/rotate/scale gizmos (`editor/gizmos`): screen-space constant size, plane handles, local/world toggle, snapping, multi-selection pivot, hover highlight and correct picking.
   - Done when: All gizmos work under any camera angle, and gizmo math has unit tests.
 - [ ] **EDT-04** `P1` Visual representation of cameras and lights
@@ -441,7 +441,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [ ] **TLG-04** `P2` Sample project: Marble Run
   - Do: Physics-heavy sample (rolling bodies, joints, triggers, camera follow).
   - Deps: PHY-03, PHY-04
-- [ ] **TLG-05** `P1` Sample project: Feature showcase
+- [~] @skate-tooling **TLG-05** `P1` Sample project: Feature showcase
   - Do: One scene per engine feature (lights, shadows, materials, post-fx, particles, animation, audio, physics, UI) that serves as a manual regression suite.
   - Done when: Each scene is documented in `docs/samples.md` with what to look for.
 
