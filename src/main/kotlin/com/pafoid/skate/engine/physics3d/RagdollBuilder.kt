@@ -1,8 +1,6 @@
 package com.pafoid.skate.engine.physics3d
 
-import com.jme3.bullet.objects.PhysicsRigidBody
 import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
-import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.physics3d.constraints.ConeTwistConstraint3D
 import org.joml.Matrix3f
@@ -18,7 +16,7 @@ object RagdollBuilder {// TODO: move
      * Builds a ragdoll configuration for a standard mixamorig skeleton.
      * Maps essential bones to capsule colliders and connects them with cone-twist constraints.
      */
-    fun buildMixamoRagdoll(skeleton: Skeleton, totalMass: Float = 70f): RagdollComponent {
+    fun buildMixamoRagdoll(physics: IPhysics3D, skeleton: Skeleton, totalMass: Float = 70f): RagdollComponent {
         val ragdoll = RagdollComponent()
 
         // Define common mixamo bone names that need physics bodies and their mass fraction
@@ -49,9 +47,9 @@ object RagdollBuilder {// TODO: move
                 val height = 0.3f
 
                 // Construct collision shape
-                val shape = CapsuleCollider3D(radius, height, 1).createShape()
+                val shape = ColliderShape.Capsule(radius, height, 1)
                 val mass = totalMass * massFraction
-                val body = PhysicsRigidBody(shape, mass)
+                val body = physics.createRigidBody(shape, mass)
 
                 // Initialize as kinematic (animated mode by default)
                 body.isKinematic = true

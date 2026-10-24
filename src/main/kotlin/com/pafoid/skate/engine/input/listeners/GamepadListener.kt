@@ -66,10 +66,10 @@ class GamepadListener(private val logger: LoggerService) {
         }
     }
 
-    fun isGamepadPresent(jid: Int): Boolean = gamepadPresent[jid]
+    fun isGamepadPresent(jid: Int): Boolean = jid in gamepadPresent.indices && gamepadPresent[jid]
 
     fun getAxes(jid: Int): FloatArray? {
-        if (!gamepadPresent[jid]) return null
+        if (!isGamepadPresent(jid)) return null
         val axes: FloatBuffer? = glfwGetJoystickAxes(jid)
         return if (axes != null) {
             val array = FloatArray(axes.remaining())
@@ -79,22 +79,22 @@ class GamepadListener(private val logger: LoggerService) {
     }
 
     fun getButtons(jid: Int): BooleanArray? {
-        if (!gamepadPresent[jid]) return null
+        if (!isGamepadPresent(jid)) return null
         return currentButtons[jid]
     }
 
     fun buttonPressed(jid: Int, button: Int): Boolean {
-        if (!gamepadPresent[jid] || button >= 15) return false
+        if (!isGamepadPresent(jid) || button >= 15) return false
         return currentButtons[jid][button]
     }
 
     fun buttonBeginPress(jid: Int, button: Int): Boolean {
-        if (!gamepadPresent[jid] || button >= 15) return false
+        if (!isGamepadPresent(jid) || button >= 15) return false
         return currentButtons[jid][button] && !lastButtons[jid][button]
     }
 
     fun buttonWasPressed(jid: Int, button: Int): Boolean {
-        if (!gamepadPresent[jid] || button >= 15) return false
+        if (!isGamepadPresent(jid) || button >= 15) return false
         return (!currentButtons[jid][button] && lastButtons[jid][button]) || (currentButtons[jid][button] && !lastButtons[jid][button])
     }
 

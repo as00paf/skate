@@ -1,8 +1,6 @@
 package com.pafoid.skate.engine.physics3d.constraints
 
-import com.jme3.bullet.joints.PhysicsJoint
-
 interface IPhysicsConstraint {
-    var rawJoint: PhysicsJoint?
-    fun createJoint(): PhysicsJoint
+    /** Backend-owned joint object, set by the backend when the constraint is added. */
+    var rawJoint: Any?
 }

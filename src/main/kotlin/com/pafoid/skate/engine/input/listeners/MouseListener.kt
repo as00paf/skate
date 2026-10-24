@@ -27,8 +27,8 @@ class MouseListener {
         lastY = yPos
         xPos = xpos
         yPos = ypos
-        dx = xpos.toFloat() - lastX.toFloat()
-        dy = ypos.toFloat() - lastY.toFloat()
+        dx += xpos.toFloat() - lastX.toFloat()
+        dy += ypos.toFloat() - lastY.toFloat()
     }
 
     fun mouseButtonCallback(window: Long, button: Int, action: Int, mods: Int) {
@@ -38,7 +38,7 @@ class MouseListener {
                 mouseButtonPressed[button] = true
             }
         } else if (action == GLFW_RELEASE) {
-            mouseButtonsDown--
+            mouseButtonsDown = (mouseButtonsDown - 1).coerceAtLeast(0)
             if (button < mouseButtonPressed.size) {
                 mouseButtonPressed[button] = false
                 isDragging = false
@@ -56,6 +56,8 @@ class MouseListener {
         scrollY = 0.0
         lastX = xPos
         lastY = yPos
+        dx = 0f
+        dy = 0f
         System.arraycopy(mouseButtonPressed, 0, mouseButtonPressedLastFrame, 0, mouseButtonPressed.size)
     }
     
@@ -73,6 +75,8 @@ class MouseListener {
         lastY = 0.0
         mouseButtonsDown = 0
         isDragging = false
+        dx = 0f
+        dy = 0f
         mouseButtonPressed.fill(false)
     }
 

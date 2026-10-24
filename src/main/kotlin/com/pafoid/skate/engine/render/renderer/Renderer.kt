@@ -5,11 +5,13 @@ import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.RenderResources
+import com.pafoid.skate.engine.render.cache.GpuResources
 import com.pafoid.skate.engine.render.graph.RenderGraph
 
 class Renderer(
     var renderResources: RenderResources,
     val cameraManager: CameraManager,
+    val gpuResources: GpuResources = GpuResources(),
 ) {
     val frameBuffer: FrameBuffer
         get() = renderResources.frameBuffer
@@ -20,6 +22,7 @@ class Renderer(
     fun render(scene: Scene) {
         // Reset per-frame draw call counter
         EngineStats.resetDrawCalls()
+        EngineStats.resetStateChanges()
 
         // Execute the render graph - this handles all preparation, execution, and cleanup of passes
         renderResources.renderGraph.execute(scene)
@@ -41,6 +44,8 @@ class Renderer(
     }
 
     fun destroy() {
+        gpuResources.disposeAll()
+
         // Destroy shaders
         renderResources.shaders.default.destroy()
         renderResources.shaders.batch.destroy()

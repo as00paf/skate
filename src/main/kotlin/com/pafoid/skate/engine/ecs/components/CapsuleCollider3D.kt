@@ -1,7 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.jme3.bullet.collision.shapes.CapsuleCollisionShape
-import com.jme3.bullet.collision.shapes.CollisionShape
+import com.pafoid.skate.engine.physics3d.ColliderShape
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f
@@ -14,7 +13,5 @@ data class CapsuleCollider3D(
     @Contextual override val offset: Vector3f = Vector3f()
 ) : Component(), Collider3D {
 
-    override fun createShape(): CollisionShape {
-        return CapsuleCollisionShape(radius, height, axis)
-    }
+    override fun toShape(): ColliderShape = ColliderShape.Capsule(radius, height, axis)
 }

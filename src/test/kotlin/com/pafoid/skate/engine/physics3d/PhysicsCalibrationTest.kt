@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.physics3d.bullet.BulletPhysics3D
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import io.mockk.mockk
 import org.joml.Vector3f
@@ -51,7 +52,7 @@ class PhysicsCalibrationTest {
             physics.update(dt)
 
             // Sync transform back from RB
-            val loc = rb.rawBody?.getPhysicsLocation(null)
+            val loc = rb.rawBody?.getLocation(Vector3f())
             if (loc != null) {
                 transform.translation.set(loc.x, loc.y, loc.z)
             }

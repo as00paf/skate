@@ -1,5 +1,9 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset
+import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
+import com.pafoid.skate.engine.animation.graph.ClipMotion
+import com.pafoid.skate.engine.animation.graph.Motion
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.BoneNameMapper
 import com.pafoid.skate.engine.assets.data.models.animations.Animation
@@ -24,6 +28,20 @@ data class Animator(
     var previousTime: Float = 0f,
     var currentState: PlayerState = PlayerState.IDLE
 ) : Component() {
+
+    /** Optional state machine; when set, it drives the pose instead of the single-clip playback. */
+    @Transient
+    var stateMachine: AnimationStateMachine? = null
+
+    /** Builds a runtime state machine from [asset], resolving motions by name from [animations] (clips) and [extraMotions]. */
+    fun useController(
+        asset: AnimationControllerAsset,
+        skeleton: Skeleton,
+        extraMotions: Map<String, Motion> = emptyMap(),
+    ): AnimationStateMachine {
+        val motions = animations.associate { it.name to ClipMotion.of(it, skeleton) as Motion } + extraMotions
+        return AnimationStateMachine(asset, motions, skeleton.boneCount).also { stateMachine = it }
+    }
 
     val normalizedTime: Float
         get() {

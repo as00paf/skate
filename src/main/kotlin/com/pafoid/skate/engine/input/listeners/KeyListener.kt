@@ -9,7 +9,7 @@ class KeyListener {
     private var keyBeginPressed = BooleanArray(350)
 
     fun keyCallback(window: Long, key: Int, scanCode: Int, action: Int, mods: Int) {
-        if(key > -1){
+        if(key in keyPressed.indices){
             if(action == GLFW_PRESS) {
                 keyPressed[key] = true
                 keyBeginPressed[key] = true
@@ -24,9 +24,9 @@ class KeyListener {
         keyBeginPressed.fill(false)
     }
 
-    fun isKeyPressed(key: Int): Boolean = if (key < keyPressed.size) keyPressed[key] && !ImGui.getIO().wantCaptureKeyboard else false
+    fun isKeyPressed(key: Int): Boolean = if (key in keyPressed.indices) keyPressed[key] && !ImGui.getIO().wantCaptureKeyboard else false
 
     fun keyBeginPress(key: Int): Boolean {
-        return if (key < keyBeginPressed.size) keyBeginPressed[key] && !ImGui.getIO().wantCaptureKeyboard else false
+        return if (key in keyBeginPressed.indices) keyBeginPressed[key] && !ImGui.getIO().wantCaptureKeyboard else false
     }
 }

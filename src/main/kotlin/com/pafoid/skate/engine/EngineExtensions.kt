@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine
 
+import com.pafoid.skate.engine.ecs.EcsChanges
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
@@ -80,11 +81,22 @@ inline fun <reified T : Component> GameObject.addComponent(component: T): GameOb
 
 fun <T : Component> GameObject.removeComponent(componentClass: KClass<T>) {
     components.removeAll { componentClass.isInstance(it) }
+    EcsChanges.touch()
 }
 
 inline fun <reified T : Component> GameObject.removeComponent() = removeComponent(T::class)
 
-fun GameObject.removeComponent(cmp: Component) = components.remove(cmp)
+fun GameObject.removeComponent(cmp: Component): Boolean {
+    val removed = components.remove(cmp)
+    if (removed) EcsChanges.touch()
+    return removed
+}
+
+/** Adds [component] as-is (no replacement, no init) and notifies queries. */
+fun GameObject.attachComponent(component: Component) {
+    components.add(component)
+    EcsChanges.touch()
+}
 
 inline fun <reified T> GameObject.hasComponent(): Boolean {
     return components.filterIsInstance<T>().isNotEmpty()
@@ -101,6 +113,7 @@ fun <T : Component> GameObject.addComponent(componentClass: KClass<T>, component
     components.removeAll { componentClass.isInstance(it) }
     component.generateId()
     components.add(component)
+    EcsChanges.touch()
     component.init(this)
     return this
 }
@@ -116,4 +129,4 @@ inline fun <K, V> Iterable<K>.associateWithNotNull(
         val value = valueTransform(key) ?: continue
         this[key] = value
     }
-}
+}

@@ -7,7 +7,9 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.ComponentType
 import com.pafoid.skate.engine.ecs.components.SceneComponent
+import com.pafoid.skate.engine.attachComponent
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.removeComponent
 
 class AddComponentCommand(
     private val gameObject: GameObject,
@@ -28,16 +30,16 @@ class AddComponentCommand(
         }
 
         replacedComponent = gameObject.getComponent(componentType)
-        replacedComponent?.let { gameObject.components.remove(it) }
-        gameObject.components.add(component)
+        replacedComponent?.let { gameObject.removeComponent(it) }
+        gameObject.attachComponent(component)
         component.init(gameObject)
         addedComponent = component
     }
 
     override fun undo() {
-        addedComponent?.let { gameObject.components.remove(it) }
+        addedComponent?.let { gameObject.removeComponent(it) }
         replacedComponent?.let {
-            gameObject.components.add(it)
+            gameObject.attachComponent(it)
             it.init(gameObject)
         }
     }

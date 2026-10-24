@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.ecs.EcsChanges
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
@@ -28,6 +29,7 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
             val go = iterator.next()
             if (go.isDead) {
                 iterator.remove()
+                EcsChanges.touch()
                 continue
             }
             go.update(dt)
@@ -36,11 +38,13 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
 
     fun addGameObject(gameObject: GameObject) {
         scene.children.add(gameObject)
+        EcsChanges.touch()
         gameObject.start()
     }
 
     fun removeGameObject(gameObject: GameObject) {
         scene.children.remove(gameObject)
+        EcsChanges.touch()
         gameObject.destroy()
     }
 
@@ -59,5 +63,6 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
     override fun destroy() {
         scene.children.forEach { it.destroy() }
         scene.children.clear()
+        EcsChanges.touch()
     }
 }

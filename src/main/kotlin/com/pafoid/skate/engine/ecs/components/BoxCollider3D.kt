@@ -1,8 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
-import com.jme3.bullet.collision.shapes.BoxCollisionShape
-import com.jme3.bullet.collision.shapes.CollisionShape
-import com.pafoid.skate.engine.utils.JmeVector3f
+import com.pafoid.skate.engine.physics3d.ColliderShape
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f
@@ -14,9 +12,5 @@ data class BoxCollider3D(
     var margin: Float = 0.04f
 ) : Component(), Collider3D {
 
-    override fun createShape(): CollisionShape {
-        val shape = BoxCollisionShape(JmeVector3f(halfExtents.x, halfExtents.y, halfExtents.z))
-        shape.margin = margin
-        return shape
-    }
+    override fun toShape(): ColliderShape = ColliderShape.Box(Vector3f(halfExtents), margin)
 }

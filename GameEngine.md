@@ -71,11 +71,11 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
 - [x] **REN-01** `P0` Audit the renderer and write a target architecture
   - Do: Document the current flow `Renderer` → `RenderGraph` → passes (`GeometryPass`, `ShadowPass`, `PickingPass`, `DebugPass`) and every direct GL call outside `render/`. List the redundant state changes and per-frame allocations.
   - Done when: `docs/design/REN-01.md` describes the current state, pain points and target layering (RHI → render graph → passes → high-level API), with an ordered migration plan.
-- [ ] **REN-02** `P1` Add a GPU resource cache
+- [x] **REN-02** `P1` Add a GPU resource cache
   - Do: Cache shaders, meshes (VAO/VBO), textures and uniform locations by key, with ref-counting and explicit disposal. Remove duplicate GPU uploads.
   - Done when: Loading the same asset twice creates one GPU resource. Disposing the scene frees all of them. Unit tests cover cache hit, miss and eviction.
   - Deps: REN-01
-- [ ] **REN-03** `P1` Introduce a render state/sort layer
+- [x] **REN-03** `P1` Introduce a render state/sort layer
   - Do: Batch draw calls by shader → material → mesh. Track GL state to skip redundant binds.
   - Done when: `EngineStats` reports draw calls and state changes, and both drop on the sample scene. Sort-key generation has unit tests.
   - Deps: REN-02
@@ -119,6 +119,10 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Build a minimal `VulkanRhi` that renders the sample scene's geometry pass.
   - Done when: A config flag switches backend, and the spike's findings are documented.
   - Deps: REN-12
+- [ ] **REN-14** `P1` Renderer2D primitives for runtime UI
+  - Do: Add scissor push/pop, 9-slice quads and glyph quad submission to `Renderer2D` as required by `docs/design/GUI-01.md`.
+  - Done when: Unit tests cover the new calls and a UI sample draws a clipped 9-slice panel with text.
+  - Deps: GUI-01
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -127,7 +131,7 @@ Asset management works but needs a complete review.
 - [x] **AST-01** `P0` Asset pipeline review
   - Do: Review `AssetsManager`, `Assets`, the loaders (`AssimpLoader`, `TextureLoader`, `SoundLoader`, `ShaderLoader`, `AnimationLoader`), `serialization/` and `AssetsResolver`.
   - Done when: `docs/design/AST-01.md` lists defects, threading issues and a target design (asset handles/GUIDs, async loading via `JobSystem`, ref-counting).
-- [ ] **AST-02** `P1` Stable asset IDs and handles
+- [!] needs EDT to route rename/delete/move through asset code @skate-assets **AST-02** `P1` Stable asset IDs and handles
   - Do: Give every asset a GUID plus a `.meta` sidecar. Scenes and prefabs reference GUIDs, not paths.
   - Done when: Renaming or moving a file in the editor does not break references, and GUID/meta round-trips have unit tests.
   - Deps: AST-01
@@ -147,6 +151,10 @@ Asset management works but needs a complete review.
   - Do: Rework `AssetsPacker` and `ProjectExporter`: pack only referenced assets, compress, write a manifest and checksums, and produce a runnable `gameJar`.
   - Done when: An exported sample project runs standalone, and packing and manifest generation have unit tests.
   - Deps: AST-02
+- [ ] **AST-07** `P1` Fix `PrefabsGenerator` scene mutation
+  - Do: `PrefabsGenerator.kt` uses `scene.children.add/addAll`, which bypasses the ECS query caches. Use the scene API instead.
+  - Done when: Generated prefabs invalidate queries correctly, covered by a test.
+  - Deps: ECS-02
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -155,7 +163,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
 - [x] **ECS-01** `P0` ECS review
   - Do: Review `GameObject`, `Scene`, `SceneManager`, `SystemManager`, `GameObjectManager`, `TransformSystem` and component storage. Find all half-implemented caches (`Component.kt`, `System.kt`, `SceneManager.kt` and the systems that use them).
   - Done when: `docs/design/ECS-01.md` lists the issues and a target design (component storage, queries, system ordering, cache invalidation).
-- [ ] **ECS-02** `P1` Finish component query caching
+- [x] **ECS-02** `P1` Finish component query caching
   - Do: Cache component queries per system with invalidation when components are added or removed. Remove the ad-hoc caches in individual systems.
   - Done when: All systems use the shared query API, and invalidation has unit tests.
   - Deps: ECS-01
@@ -171,6 +179,9 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: Link instances to prefab assets with per-property overrides that survive prefab edits.
   - Done when: Editing a prefab updates its instances but keeps their overrides, with unit tests.
   - Deps: ECS-02, AST-02
+- [ ] **ECS-06** `P1` Remove engine dependency on `game.skateboard.TrickType`
+  - Do: `InputEvents.kt` imports `game.skateboard.TrickType`. Make the event generic (or move the type into the engine) and update users.
+  - Done when: An architecture guard shows `engine/` does not import `game/`.
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -179,7 +190,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
 - [x] **PHY-01** `P0` Introduce `Physics3DFactory`
   - Do: `PhysicsSystem` currently constructs `BulletPhysics3D` directly. Add a `Physics3DFactory` (backend chosen by config) and route all construction through it. The architecture guard already expects this.
   - Done when: No code outside the factory constructs `BulletPhysics3D`, and the guard test passes.
-- [ ] **PHY-02** `P1` Make `IPhysics3D` backend-agnostic
+- [x] **PHY-02** `P1` Make `IPhysics3D` backend-agnostic
   - Do: Remove Bullet types from `IPhysics3D`/`IPhysicsBody3D`/`IPhysicsConstraint` signatures and keep them inside `physics3d/bullet/`.
   - Done when: Only the Bullet backend package imports `com.jme3.bullet`. A guard test enforces this.
   - Deps: PHY-01
@@ -203,7 +214,7 @@ The animation system needs improvements.
 - [x] **ANI-01** `P0` Animation review
   - Do: Review `AnimationSystem`, `Animator`, `SkeletonComponent`, `BoneOverride`, `AnimationLoader`, `BoneNameMapper` and `SkeletonMath`.
   - Done when: `docs/design/ANI-01.md` lists defects and a target design.
-- [ ] **ANI-02** `P1` Animation blending and state machine
+- [x] **ANI-02** `P1` Animation blending and state machine
   - Do: Crossfades, blend trees (1D/2D), an animation state machine asset with parameters and transitions, and animation events.
   - Done when: The player transitions smoothly between push, ride and trick states. Blending and transition logic have unit tests.
   - Deps: ANI-01
@@ -224,7 +235,7 @@ The animation system needs improvements.
 
 Audio needs a more complete implementation.
 
-- [ ] **AUD-01** `P1` Audio review and design
+- [x] **AUD-01** `P1` Audio review and design
   - Do: Review `AudioEngine`, `AudioSystem`, `AudioComponent` and `SoundLoader`.
   - Done when: `docs/design/AUD-01.md` describes the target design: buses/mixer, voices, streaming, 3D.
 - [ ] **AUD-02** `P1` Mixer and buses
@@ -248,7 +259,7 @@ Audio needs a more complete implementation.
 
 Input works well but needs review and controller dead-zone support.
 
-- [ ] **INP-01** `P1` Input review
+- [x] **INP-01** `P1` Input review
   - Do: Review `engine/input/**`, `InputSystem` and the listeners.
   - Done when: The issues are documented in `docs/design/INP-01.md` and the quick fixes are applied.
 - [ ] **INP-02** `P1` Configurable controller dead zones
@@ -261,6 +272,10 @@ Input works well but needs review and controller dead-zone support.
 - [ ] **INP-04** `P3` Rumble and controller hot-plug
   - Do: Handle controller connect/disconnect events and rumble/haptics where GLFW allows.
   - Done when: Unplugging and replugging a controller keeps the player's input working.
+- [ ] **INP-05** `P1` Engine-level key/action read API
+  - Do: Provide an engine API to read keys/actions that does not depend on the editor, as required by `docs/design/SCR-01.md`.
+  - Done when: Scripts and runtime code read input without editor imports, covered by tests.
+  - Deps: INP-01
 
 ### Gameplay — `GPL` (`skate-gameplay`)
 
@@ -285,12 +300,16 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Make `GameCamera` data-driven (follow, orbit, collision avoidance, spring arm, shake).
   - Done when: Camera parameters can be tuned in the editor, and spring-arm collision has unit tests.
   - Deps: GPL-01
+- [ ] **GPL-06** `P2` Skate push/ride/trick animation controller
+  - Do: Author the push/ride/trick controller on top of the ANI-02 state machine and blend trees.
+  - Done when: The player transitions between push, ride and trick states with blending in the sample game.
+  - Deps: ANI-02, GPL-01
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
 In-game UI components need to be added (separate from the ImGui editor).
 
-- [ ] **GUI-01** `P1` Runtime UI design
+- [~] @skate-gameui **GUI-01** `P1` Runtime UI design
   - Do: Design a retained-mode UI for games: canvas, anchors and layout, and widgets (text, image, button, slider, progress bar, panel, list), with input focus and gamepad navigation, rendered through `Renderer2D` and `StringManager`.
   - Done when: `docs/design/GUI-01.md` is approved by the lead.
 - [ ] **GUI-02** `P1` Core widgets and layout
@@ -310,7 +329,7 @@ In-game UI components need to be added (separate from the ImGui editor).
 
 Scripting needs to be implemented. Kotlin Script is the primary language; TypeScript and maybe Lua come later.
 
-- [ ] **SCR-01** `P1` Scripting architecture
+- [~] @skate-scripting **SCR-01** `P1` Scripting architecture
   - Do: Design a language-agnostic script API (lifecycle `onCreate/onUpdate/onFixedUpdate/onDestroy`, component access, events, input, physics queries) behind a `ScriptHost` interface. The existing `NativeScriptComponent`/`ScriptingSystem` is the starting point.
   - Done when: `docs/design/SCR-01.md` is approved by the lead.
 - [ ] **SCR-02** `P1` Kotlin Script (`.kts`) host
@@ -364,7 +383,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-12** `P0` Sensible default window layout
   - Do: Build a default dock layout used on first run and by "Reset Layout" (e.g. Scene Hierarchy left, Viewport centre, Properties right, Asset Browser/Console bottom, toolbar on top) via DockBuilder in `ImGuiLayer`, applied when no saved `imgui.ini` exists. Keep EDT-01 persistence working.
   - Done when: A fresh editor start (no imgui.ini) and Reset Layout both show that layout; the layout definition has unit tests where feasible.
-- [ ] **EDT-02** `P1` ImGui and viewport configuration
+- [x] **EDT-02** `P1` ImGui and viewport configuration
   - Do: Clean up `ImGuiLayer`/`WindowManager`/`WindowRegistry`. Fix the viewport's resizing, DPI scaling and multi-viewport handling, and the game view vs. scene view split.
   - Done when: The viewport renders at the correct resolution and DPI on resize and when moved between monitors.
   - Deps: EDT-01
@@ -396,12 +415,20 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Done when: The checklist is in `docs/design/EDT-10.md` and its items are resolved.
 
 ---
+- [ ] **EDT-13** `P1` Route project-window file operations through asset commands
+  - Do: Route `RenameFileCommand`, `DeleteFileCommand` and project-window moves through the asset-ID-aware API so `.meta` files stay in sync (unblocks AST-02).
+  - Done when: Renaming, deleting or moving a file in the editor keeps its `.meta` and GUID; tests under `editor/commands`.
+  - Deps: AST-02
+- [ ] **EDT-14** `P2` Audio bus and mute UI
+  - Do: Add UI bus volume, mute toggles and the new `AudioComponent` inspector fields from `docs/design/AUD-01.md`.
+  - Done when: Bus volumes and mutes can be edited in the editor and persist.
+  - Deps: AUD-02
 
 ## Testing & tooling
 
 ### Tooling & samples — `TLG` (`skate-tooling`)
 
-- [ ] **TLG-01** `P1` Skate CLI
+- [x] **TLG-01** `P1` Skate CLI
   - Do: Add a headless CLI (`tools/cli`, Gradle `application`) for: create project, validate project/assets, pack/export, run scene headless and print engine stats.
   - Done when: `skate --help` lists the commands, which reuse engine services (no duplicate logic). Argument parsing has unit tests.
 - [ ] **TLG-02** `P2` MCP server
@@ -428,13 +455,17 @@ A lot of features are broken. Many unit tests are missing (**no integration test
 - [x] **QA-07** `P0` Fix the test source set compilation
   - Do: `gradlew.bat test` does not compile (about 25 files, e.g. `PhysicsComponentTest`, `PointLightComponentsTest`, `PlayerControllerTest`, `StringManagerTest`, `OpenSceneFileCommandTest`). Fix or update them to the current APIs so the whole suite compiles and runs; unblocks PHY-01 and EDT-01 verification.
   - Done when: `gradlew.bat test` compiles and runs; remaining failures are listed in `docs/bugs.md`.
-- [~] @skate-qa **QA-02** `P0` Unit-test coverage baseline
+- [x] **QA-02** `P0` Unit-test coverage baseline
   - Do: Add JaCoCo to Gradle and report coverage per package.
   - Done when: The coverage report is generated by `gradlew.bat test jacocoTestReport`, and the lowest-covered packages are listed in `docs/bugs.md`.
-- [ ] **QA-03** `P1` Unit tests for pure logic
+- [x] **QA-03** `P1` Unit tests for pure logic
   - Do: Prioritize math (`MathExtensions`, `SkeletonMath`, `Ray`, `Interpolator`), serialization, commands/undo, `EventSystem`, `JobSystem` and `StringManager`. Use mockk for GL/AL boundaries; no integration tests.
   - Done when: Every listed area has tests in `src/test/...` following `Area_Behavior` naming.
   - Deps: QA-02
+- [~] @skate-qa **QA-08** `P1` Fix failing and remove obsolete unit tests
+  - Do: `gradlew.bat test` currently has 20 failures (e.g. `UiMutationPipelineGuardTest`, `DeleteFileCommandTest`, `SceneTargetingCommandsTest`, `ViewportRendererScreenshotTest`, `EngineFixedTimestepTest`, `SkateboardModelInspectionTest`, `AudioSystemTest`, `EnvironmentSystemTest`, `InputSystemTest`, `RagdollSystemTest`, `StringManagerTest`). Fix each against the current API, or delete tests that cover removed or obsolete behavior (and say why in the commit).
+  - Done when: `gradlew.bat test` is fully green and `docs/bugs.md` has no test-failure entries left.
+  - Deps: QA-07
 - [ ] **QA-04** `P1` Industry-standards audit
   - Do: Check resource lifetimes (`AutoCloseable`/dispose everywhere), logging via `LoggerService` (no `println`), error handling, thread-safety of shared state, frame-allocation hotspots, units/coordinate-system conventions, and config/versioning.
   - Done when: The findings are in `docs/design/QA-04.md`, with per-domain follow-ups reported to the lead.

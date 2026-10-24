@@ -26,5 +26,9 @@ class InputMappings(
         jump = InputBinding(gamepadButton = 0)
         sprint = InputBinding(gamepadAxis = 4)
         crouch = InputBinding(gamepadButton = 4)
+
+        // Camera
+        cameraLookX = InputBinding(gamepadAxis = 2)
+        cameraLookY = InputBinding(gamepadAxis = 3)
     }
 }

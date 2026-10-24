@@ -44,6 +44,7 @@ class InputSystem(
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
 
             inputState.reset()
+            inputState.jumpHeld = false
             pollGamepadInput(inputState)
             pollMouseInput(inputState)
             updateJumpState(inputState)
