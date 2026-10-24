@@ -174,7 +174,7 @@ class GeometryPass(
         val first = parts?.firstOrNull() ?: return SortKey.build(false, 0, 0, 0)
         val material = renderComponent.material ?: first.material
         if (material.alphaMode == AlphaMode.BLEND) return SortKey.build(true, 0, 0, 0)
-        return SortKey.build(false, 0, material.baseColorTexture?.texId ?: 0, first.vaoId)
+        return SortKey.build(false, 0, material.id, first.vaoId)
     }
 
     private fun render2D(camera: CameraComponent, renderables: List<Renderable2D>, shader: Shader) {

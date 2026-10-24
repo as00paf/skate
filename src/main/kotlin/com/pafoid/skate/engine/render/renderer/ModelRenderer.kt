@@ -11,6 +11,8 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.render.data.RenderMode
+import com.pafoid.skate.engine.render.material.MaterialBinder
+import com.pafoid.skate.engine.render.material.ShaderUniformSink
 import com.pafoid.skate.engine.render.state.GLBindings
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.withCullFace
@@ -27,6 +29,11 @@ import org.lwjgl.opengl.GL20
 class ModelRenderer(
     private val debugRenderer: DebugRenderer
 ) {
+
+    private val materialBinder = MaterialBinder { slot, id -> GLBindings.cache.bindTexture(slot, id) }
+    private val sinks = java.util.IdentityHashMap<Shader, ShaderUniformSink>()
+
+    private fun sinkFor(shader: Shader) = sinks.getOrPut(shader) { ShaderUniformSink(shader) }
 
     private val boneColor = Vector3f(0f, 1f, 1f) // Cyan for bones
 
@@ -84,48 +91,8 @@ class ModelRenderer(
         val material = overrideMaterial ?: part.material
         bindMesh(part)
 
-        // Bind all PBR texture maps and upload uniforms
-        shader.uploadVec4f(Uniforms.BASE_COLOR, material.baseColor)
-        var hasBaseColorTexture = false
-        material.baseColorTexture?.texId?.let {
-            bindTexture(TextureSlots.BASE_COLOR, it)
-            hasBaseColorTexture = true
-        }
-        shader.uploadBoolean(HAS_BASE_COLOR_TEXTURE, hasBaseColorTexture)
-        shader.uploadInt(Uniforms.BASE_COLOR_TEXTURE, TextureSlots.BASE_COLOR)
-        shader.uploadFloat(Uniforms.BASE_COLOR_FACTOR, material.baseColorFactor)
-
-        val hasNormal = material.normalMap != null
-        material.normalMap?.texId?.let { bindTexture(TextureSlots.NORMAL, it) }
-        shader.uploadInt(Uniforms.NORMAL_MAP, TextureSlots.NORMAL)
-        shader.uploadBoolean(Uniforms.HAS_NORMAL_MAP, hasNormal)
-
-        val hasMR = material.metallicRoughnessTexture != null
-        material.metallicRoughnessTexture?.texId?.let { bindTexture(TextureSlots.METALLIC_ROUGHNESS, it) }
-        shader.uploadInt(Uniforms.METALLIC_ROUGHNESS_TEXTURE, TextureSlots.METALLIC_ROUGHNESS)
-        shader.uploadBoolean(Uniforms.HAS_METALLIC_ROUGHNESS_TEXTURE, hasMR)
-        shader.uploadFloat(Uniforms.METALLIC_FACTOR, material.metallicFactor)
-        shader.uploadFloat(Uniforms.ROUGHNESS_FACTOR, material.roughnessFactor)
-
-        val hasAO = material.aoTexture != null
-        material.aoTexture?.texId?.let { bindTexture(TextureSlots.AO, it) }
-        shader.uploadInt(Uniforms.AO_TEXTURE, TextureSlots.AO)
-        shader.uploadBoolean(Uniforms.HAS_AO_TEXTURE, hasAO)
-
-        val hasEmissive = material.emissiveTexture != null
-        material.emissiveTexture?.texId?.let { bindTexture(TextureSlots.EMISSIVE, it) }
-        shader.uploadInt(Uniforms.EMISSIVE_TEXTURE, TextureSlots.EMISSIVE)
-        shader.uploadBoolean(Uniforms.HAS_EMISSIVE_TEXTURE, hasEmissive)
-        shader.uploadVec3f(Uniforms.EMISSIVE_FACTOR, material.emissiveFactor)
-
-        // Alpha mode
-        val alphaInt = when (material.alphaMode) {
-            AlphaMode.OPAQUE -> 0
-            AlphaMode.MASK -> 1
-            AlphaMode.BLEND -> 2
-        }
-        shader.uploadInt(Uniforms.ALPHA_MODE, alphaInt)
-        shader.uploadFloat(Uniforms.ALPHA_CUTOFF, material.alphaCutoff)
+        materialBinder.bind(material, sinkFor(shader))
+        val alphaInt = material.alphaMode.ordinal
 
         // Configure render state
         withBlendState(alphaInt == 2) {
