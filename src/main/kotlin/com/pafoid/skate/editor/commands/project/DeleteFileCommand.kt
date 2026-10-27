@@ -1,14 +1,14 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
+import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.core.LoggerService
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 class DeleteFileCommand(
     private val filePath: String,
-    private val logger: LoggerService
+    private val logger: LoggerService,
+    private val registry: AssetRegistry? = null,
 ) : ExecutionTrackedCommand {
 
     private var tempFile: File? = null
@@ -30,16 +30,10 @@ class DeleteFileCommand(
         val trashFile = File(tmpDir, ".trash_${originalFile.name}_${System.currentTimeMillis()}")
 
         try {
-            val movedViaRename = originalFile.renameTo(trashFile)
-            if (!movedViaRename) {
-                // Cross-filesystem fallback (e.g. system temp on a different drive on Windows)
-                try {
-                    Files.move(originalFile.toPath(), trashFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                } catch (e: Exception) {
-                    failureReason = "could not move to trash"
-                    logger.logEditor("Failed to delete: ${originalFile.name} — could not move to trash")
-                    return
-                }
+            if (!AssetFileOps.trash(originalFile, trashFile)) {
+                failureReason = "could not move to trash"
+                logger.logEditor("Failed to delete: ${originalFile.name} — could not move to trash")
+                return
             }
             tempFile = trashFile
             executeSucceeded = true
@@ -55,19 +49,10 @@ class DeleteFileCommand(
             return
         }
         val temp = tempFile ?: return
-        if (temp.exists()) {
-            val renamedBack = temp.renameTo(originalFile)
-            if (!renamedBack) {
-                // Cross-filesystem fallback
-                try {
-                    Files.move(temp.toPath(), originalFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                    logger.logEditor("Restored: ${originalFile.name}")
-                } catch (e: Exception) {
-                    logger.logEditor("Failed to restore: ${originalFile.name}")
-                }
-            } else {
-                logger.logEditor("Restored: ${originalFile.name}")
-            }
+        if (AssetFileOps.restore(temp, originalFile, registry)) {
+            logger.logEditor("Restored: ${originalFile.name}")
+        } else if (temp.exists()) {
+            logger.logEditor("Failed to restore: ${originalFile.name}")
         }
     }
 

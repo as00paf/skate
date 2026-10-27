@@ -1,7 +1,11 @@
 package com.pafoid.skate.editor.gizmos
 
 import com.pafoid.skate.editor.systems.UndoRedoManager
+import com.pafoid.skate.editor.commands.objects.TransformCommand
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.utils.Ray
@@ -30,4 +34,23 @@ open class Gizmo(
         return minDist
     }
 
+    /** Transform of every target at drag start, used for relative edits and one undo command per object. */
+    private var snapshots: List<Pair<GameObject, Transform>> = emptyList()
+
+    protected fun beginSnapshot(targets: List<GameObject>) {
+        snapshots = targets.mapNotNull { go -> go.getComponent<Transform>()?.let { go to Transform().apply { copyFrom(it) } } }
+    }
+
+    protected val snapshotTargets: List<Pair<GameObject, Transform>> get() = snapshots
+
+    protected fun commitSnapshot() {
+        snapshots.forEach { (go, old) ->
+            val current = go.getComponent<Transform>() ?: return@forEach
+            if (old != current) {
+                undoRedoManager.pushCommand(TransformCommand(go, old, current))
+                sceneManager.currentScene?.isDirty = true
+            }
+        }
+        snapshots = emptyList()
+    }
 }
