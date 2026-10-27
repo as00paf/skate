@@ -1,13 +1,21 @@
 package com.pafoid.skate.engine.assets.loaders
 
 import com.pafoid.skate.engine.assets.data.Shader
+import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.utils.ShaderConst
 import org.lwjgl.opengl.GL20
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 
-class ShaderLoader(private var verbose:Boolean = false) {
+class ShaderCompileException(message: String) : RuntimeException(message)
+
+class ShaderLoader(private var verbose: Boolean = false, private val logger: LoggerService? = null) {
+
+    private fun log(message: String, level: LoggerService.LogLevel = LoggerService.LogLevel.INFO) {
+        logger?.log(message, level)
+    }
+
 
     fun loadCustomShader(filePath: String): Shader {
         val src = String(Files.readAllBytes(Paths.get(filePath)))
@@ -52,8 +60,8 @@ class ShaderLoader(private var verbose:Boolean = false) {
         }
 
         if(verbose) {
-            println("Vertex Source : '$vertexSrc'")
-            println("Fragment Source : '$fragmentSrc'")
+            log("Vertex Source : '$vertexSrc'")
+            log("Fragment Source : '$fragmentSrc'")
         }
 
         return compile(filePath, vertexSrc, fragmentSrc)
@@ -70,9 +78,9 @@ class ShaderLoader(private var verbose:Boolean = false) {
         var success = GL20.glGetShaderi(vertexShaderId, GL20.GL_COMPILE_STATUS)
         if(success == GL20.GL_FALSE) {
             val len = GL20.glGetShaderi(vertexShaderId, GL20.GL_INFO_LOG_LENGTH)
-            println("Error: $filePath \r\nVertex compilation failed")
-            println(GL20.glGetShaderInfoLog(vertexShaderId, len))
-            assert(false) { "Vertex compilation failed" }
+            fail(filePath, "Vertex compilation failed", GL20.glGetShaderInfoLog(vertexShaderId, len)) {
+                GL20.glDeleteShader(vertexShaderId)
+            }
         }
 
         // Then load and compile the fragment shader
@@ -85,9 +93,10 @@ class ShaderLoader(private var verbose:Boolean = false) {
         success = GL20.glGetShaderi(fragmentShaderId, GL20.GL_COMPILE_STATUS)
         if(success == GL20.GL_FALSE) {
             val len = GL20.glGetShaderi(fragmentShaderId, GL20.GL_INFO_LOG_LENGTH)
-            println("Error: '$filePath'\r\nFragment compilation failed")
-            println(GL20.glGetShaderInfoLog(fragmentShaderId, len))
-            assert(false) { "Fragment compilation failed" }
+            fail(filePath, "Fragment compilation failed", GL20.glGetShaderInfoLog(fragmentShaderId, len)) {
+                GL20.glDeleteShader(vertexShaderId)
+                GL20.glDeleteShader(fragmentShaderId)
+            }
         }
 
         // Link shaders and check for error
@@ -101,12 +110,20 @@ class ShaderLoader(private var verbose:Boolean = false) {
         success = GL20.glGetProgrami(shaderProgId, GL20.GL_LINK_STATUS)
         if(success == GL20.GL_FALSE) {
             val len = GL20.glGetProgrami(shaderProgId, GL20.GL_INFO_LOG_LENGTH)
-            println("Error: '$filePath'\r\nLinking of shaders failed")
-            println(GL20.glGetProgramInfoLog(shaderProgId, len))
-            assert(false) {"Linking of shaders failed"}
+            fail(filePath, "Linking of shaders failed", GL20.glGetProgramInfoLog(shaderProgId, len)) {
+                GL20.glDeleteProgram(shaderProgId)
+                GL20.glDeleteShader(vertexShaderId)
+                GL20.glDeleteShader(fragmentShaderId)
+            }
         }
 
         return Shader(shaderProgId, vertexShaderId, fragmentShaderId)
+    }
+
+    private fun fail(filePath: String, what: String, infoLog: String, cleanup: () -> Unit): Nothing {
+        cleanup()
+        log("$what for '$filePath': $infoLog", LoggerService.LogLevel.ERROR)
+        throw ShaderCompileException("$what for '$filePath'")
     }
 
     private fun bindAttribute(shaderProgId:Int, attribute: Int, varName: String) {

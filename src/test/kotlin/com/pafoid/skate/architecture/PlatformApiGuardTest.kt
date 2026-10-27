@@ -72,9 +72,6 @@ class PlatformApiGuardTest {
             "editor/imgui/components/Component.kt",
             "editor/search/history/SearchHistory.kt",
             "editor/search/SearchEngine.kt",
-            "engine/assets/loaders/AssimpExtensions.kt",
-            "engine/assets/loaders/ShaderLoader.kt",
-            "engine/assets/loaders/SoundLoader.kt",
             "engine/core/LoggerService.kt",
             "engine/core/Window.kt",
             "engine/EngineExtensions.kt",
@@ -93,8 +90,6 @@ class PlatformApiGuardTest {
     fun ResourceLifetime_FilesThatAllocateGlOrAlObjectsAlsoDeleteThem() {
         val exceptions = setOf(
             "engine/assets/data/CubeMap.kt",
-            "engine/assets/loaders/ShaderLoader.kt",
-            "engine/assets/loaders/SoundLoader.kt",
             "engine/render/renderer/DebugRenderer.kt",
             "engine/render/renderer/PickingRenderer.kt",
         )

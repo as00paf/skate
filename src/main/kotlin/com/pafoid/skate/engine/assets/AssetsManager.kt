@@ -31,17 +31,17 @@ class AssetsManager(
 
     val assetsResolver = AssetsResolver(serializer, logger)
 
-    private val shaderLoader = ShaderLoader(false)
+    private val shaderLoader = ShaderLoader(false, logger)
     private val textureLoader = TextureLoader()
     private val assimpLoader = AssimpLoader(textureLoader, vaoLoader)
     private val animationLoader = AnimationLoader()
     private val soundLoader = SoundLoader(logger)
 
-    private val textures = ConcurrentHashMap<String, Texture>()
-    private val shaders = ConcurrentHashMap<String, Shader>()
-    private val models = ConcurrentHashMap<String, `3dModel`>()
-    private val sounds = ConcurrentHashMap<String, SoundBuffer>()
-    private val animations = ConcurrentHashMap<String, Animation>()
+    private val textures = ResourceCache<Texture> { textureLoader.delete(it) }
+    private val shaders = ResourceCache<Shader> { it.destroy() }
+    private val models = ResourceCache<`3dModel`> { model -> model.mesh.forEach { vaoLoader.deleteVAO(it.vaoId) } }
+    private val sounds = ResourceCache<SoundBuffer> { soundLoader.delete(it) }
+    private val animations = ResourceCache<Animation> { }
 
     private var loadService: AssetLoadService? = null
 
@@ -140,6 +140,39 @@ class AssetsManager(
         val texture = textureLoader.loadFromBuffer(data)
         textures[path] = texture
         return texture
+    }
+
+    // Result-returning variants: no silent fallback to default assets.
+    fun loadTextureResult(path: String): AssetResult<Texture> = AssetResult.attempt(path) {
+        val key = File(path).absolutePath
+        textures[key] ?: textureLoader.loadFromFile(path).also { textures[key] = it }
+    }
+
+    fun loadModelResult(path: String): AssetResult<`3dModel`> = AssetResult.attempt(path) {
+        val key = File(path).absolutePath
+        models[key] ?: assimpLoader.loadModel(key).also { models[key] = it }
+    }
+
+    fun loadSoundResult(path: String): AssetResult<SoundBuffer> = AssetResult.attempt(path) {
+        val key = File(path).absolutePath
+        sounds[key] ?: soundLoader.load(path).also { sounds[key] = it }
+    }
+
+    fun loadShaderResult(path: String): AssetResult<Shader> = AssetResult.attempt(path) {
+        val key = File(path).absolutePath
+        shaders[key] ?: shaderLoader.loadShader(path).also { shaders[key] = it }
+    }
+
+    // Unloading frees the native resources (GL textures/VAOs/programs, AL buffers).
+    fun unloadTexture(path: String): Boolean = textures.unload(File(path).absolutePath) || textures.unload(path)
+    fun unloadModel(path: String): Boolean = models.unload(File(path).absolutePath) || models.unload(path)
+    fun unloadSound(path: String): Boolean = sounds.unload(File(path).absolutePath) || sounds.unload(path)
+    fun unloadShader(path: String): Boolean = shaders.unload(File(path).absolutePath) || shaders.unload(path)
+    fun unloadAnimation(path: String): Boolean = animations.unload(File(path).absolutePath) || animations.unload(path)
+
+    /** Frees everything this manager owns. Call on shutdown or full project unload, on the GL/AL thread. */
+    fun unloadAll() {
+        textures.clear(); models.clear(); sounds.clear(); shaders.clear(); animations.clear()
     }
 
     fun hasTexture(path: String): Boolean {
