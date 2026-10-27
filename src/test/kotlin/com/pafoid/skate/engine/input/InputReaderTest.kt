@@ -29,11 +29,19 @@ class InputReaderTest {
         override fun wasGamepadButtonPressed(button: Int, pad: Int) = button in pads
     }
 
+    private fun reader(raw: FakeRaw, vararg defs: ActionDefinition): ActionInputReader {
+        val map = ActionMap()
+        defs.forEach { map.define(it) }
+        return ActionInputReader(raw, map)
+    }
+
+    private fun def(id: String, vararg b: ActionBinding, context: InputContext = InputContext.GAMEPLAY) =
+        ActionDefinition(id, context, "Test", defaults = b.toList())
+
     @Test
     fun InputReader_ActionReadsKeyAndGamepadSources() {
         val raw = FakeRaw()
-        val reader = ActionInputReader(raw)
-        reader.actions.bind("jump", ActionBinding.Key(Keys.SPACE)).bind("jump", ActionBinding.GamepadButton(0))
+        val reader = reader(raw, def("jump", ActionBinding.Key(Keys.SPACE), ActionBinding.GamepadButton(0)))
         assertFalse(reader.isActionDown("jump"))
         raw.keys.add(Keys.SPACE)
         assertTrue(reader.isActionDown("jump"))
@@ -44,19 +52,17 @@ class InputReaderTest {
     @Test
     fun InputReader_AxisAppliesDeadZoneAndScale() {
         val raw = FakeRaw()
-        val reader = ActionInputReader(raw)
-        reader.actions.bind("moveY", ActionBinding.GamepadAxis(1, scale = -1f, deadZone = 0.2f))
+        val reader = reader(raw, def("moveY", ActionBinding.GamepadAxis(1, scale = -1f)))
         raw.axes[1] = 0.1f
         assertEquals(0f, reader.actionValue("moveY"))
-        raw.axes[1] = -0.8f
-        assertEquals(0.8f, reader.actionValue("moveY"), 1e-6f)
+        raw.axes[1] = -1f
+        assertEquals(1f, reader.actionValue("moveY"), 1e-6f)
     }
 
     @Test
     fun InputReader_StrongestBindingWinsAndUnknownActionIsZero() {
         val raw = FakeRaw()
-        val reader = ActionInputReader(raw)
-        reader.actions.bind("moveX", ActionBinding.Key(Keys.D)).bind("moveX", ActionBinding.GamepadAxis(0))
+        val reader = reader(raw, def("moveX", ActionBinding.Key(Keys.D), ActionBinding.GamepadAxis(0)))
         raw.keys.add(Keys.D); raw.axes[0] = -0.4f
         assertEquals(1f, reader.actionValue("moveX"))
         assertEquals(0f, reader.actionValue("nope"))
@@ -66,8 +72,7 @@ class InputReaderTest {
     @Test
     fun InputReader_WasActionPressedFiresOncePerPress() {
         val raw = FakeRaw()
-        val reader = ActionInputReader(raw)
-        reader.actions.bind("jump", ActionBinding.Key(Keys.SPACE))
+        val reader = reader(raw, def("jump", ActionBinding.Key(Keys.SPACE)))
         reader.update()
         assertFalse(reader.wasActionPressed("jump"))
         raw.keys.add(Keys.SPACE)
@@ -81,24 +86,48 @@ class InputReaderTest {
     }
 
     @Test
-    fun InputReader_ApplyMappingsBindsStandardActions() {
+    fun InputReader_InactiveContextReadsZero() {
         val raw = FakeRaw()
-        val reader = ActionInputReader(raw)
-        reader.actions.applyMappings(InputMappings())
-        raw.pads.add(0)
-        assertTrue(reader.isActionDown("jump"))
-        raw.axes[1] = -1f // stick up
-        assertEquals(1f, reader.actionValue("moveY"))
-        raw.axes[4] = 0.9f
-        assertTrue(reader.isActionDown("sprint"))
+        val reader = reader(raw, def("gizmo", ActionBinding.Key(Keys.W), context = InputContext.EDITOR))
+        raw.keys.add(Keys.W)
+        assertFalse(reader.isActionDown("gizmo"))
+        reader.activeContexts.add(InputContext.EDITOR)
+        assertTrue(reader.isActionDown("gizmo"))
+    }
+
+    @Test
+    fun InputReader_DefaultActionsKeyboardAndTrigger() {
+        val raw = FakeRaw()
+        val map = DefaultActions.register(ActionMap())
+        val reader = ActionInputReader(raw, map)
+        raw.keys.add(Keys.A)
+        assertEquals(-1f, reader.actionValue(DefaultActions.MOVE_X))
+        raw.keys.clear(); raw.axes[1] = -1f // stick up
+        assertEquals(1f, reader.actionValue(DefaultActions.MOVE_Y), 0.01f)
+        raw.axes[1] = 0f; raw.axes[4] = 0.9f
+        assertTrue(reader.isActionDown(DefaultActions.SPRINT))
+    }
+
+    @Test
+    fun InputReader_RebindTakesEffectImmediately() {
+        val raw = FakeRaw()
+        val map = DefaultActions.register(ActionMap())
+        val reader = ActionInputReader(raw, map)
+        map.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.E))
+        raw.keys.add(Keys.SPACE)
+        assertFalse(reader.isActionDown(DefaultActions.JUMP))
+        raw.keys.clear(); raw.keys.add(Keys.E)
+        assertTrue(reader.isActionDown(DefaultActions.JUMP))
     }
 
     @Test
     fun InputReader_ApiFileHasNoEditorOrBackendImports() {
         val src = Paths.get(System.getProperty("user.dir"))
-            .resolve("src/main/kotlin/com/pafoid/skate/engine/input/InputReader.kt").readText()
-        listOf("org.lwjgl", "imgui", "com.pafoid.skate.editor").forEach {
-            assertFalse(src.contains("import $it"), "InputReader.kt must not import $it")
+            .resolve("src/main/kotlin/com/pafoid/skate/engine/input").let { dir ->
+                listOf("InputReader.kt", "ActionMap.kt").map { dir.resolve(it).readText() }
+            }
+        listOf("org.lwjgl", "imgui", "com.pafoid.skate.editor").forEach { banned ->
+            src.forEach { assertFalse(it.contains("import $banned"), "Action API must not import $banned") }
         }
     }
 }

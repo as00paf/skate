@@ -10,8 +10,6 @@ import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
-import com.pafoid.skate.engine.input.InputBinding
-import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.listeners.MouseListener
 import io.mockk.every
@@ -46,14 +44,6 @@ class InputSystemTest {
         scene = Scene("TestScene")
         scene.isRunning = true
 
-        val inputMappings = InputMappings().apply {
-            jump = InputBinding(gamepadButton = 0, keyboardKey = GLFW.GLFW_KEY_SPACE)
-            moveUp = InputBinding(gamepadAxis = 1)
-            moveDown = InputBinding(gamepadAxis = 1)
-            moveLeft = InputBinding(gamepadAxis = 0)
-            moveRight = InputBinding(gamepadAxis = 0)
-        }
-
         every { inputProvider.isCursorDisabled() } returns true
 
         inputSystem = InputSystem(
@@ -61,7 +51,6 @@ class InputSystemTest {
             eventSystem = eventSystem
         )
         inputSystem.init(scene)
-        inputSystem.mappings = inputMappings
     }
 
     @Test

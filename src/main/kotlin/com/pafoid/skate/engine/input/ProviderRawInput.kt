@@ -17,6 +17,6 @@ class ProviderRawInput(private val provider: InputProvider) : RawInput {
     override fun scrollY() = provider.getMouseScrollY()
     override fun isGamepadConnected(pad: Int) = provider.isJoystickPresent(jid(pad))
     override fun gamepadAxis(axis: Int, pad: Int) = provider.getAxes(jid(pad))?.getOrNull(axis) ?: 0f
-    override fun isGamepadButtonDown(button: Int, pad: Int) = provider.buttonPressed(jid(pad), button)
+    override fun isGamepadButtonDown(button: Int, pad: Int) = provider.getButtons(jid(pad))?.getOrNull(button) ?: false
     override fun wasGamepadButtonPressed(button: Int, pad: Int) = provider.buttonBeginPress(jid(pad), button)
 }
