@@ -25,6 +25,7 @@ fun runCli(args: List<String>): Int {
             is CliCommand.Validate -> return validate(service, command)
             is CliCommand.Sample -> {
                 val project = when (command.name) {
+                    "tetris" -> TetrisProjectBuilder().build(File(command.dir).absoluteFile)
                     "marble-run" -> MarbleRunProjectBuilder().build(File(command.dir).absoluteFile)
                     else -> ShowcaseProjectBuilder().build(File(command.dir).absoluteFile)
                 }

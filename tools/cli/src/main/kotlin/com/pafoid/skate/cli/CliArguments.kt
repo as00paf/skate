@@ -14,7 +14,7 @@ class CliParseException(message: String) : Exception(message)
 
 object CliArguments {
     const val DEFAULT_SAMPLE = "feature-showcase"
-    val SAMPLES = listOf(DEFAULT_SAMPLE, "marble-run")
+    val SAMPLES = listOf(DEFAULT_SAMPLE, "marble-run", "tetris")
     const val DEFAULT_FRAMES = 60
     const val DEFAULT_DT = 1f / 60f
 
@@ -28,7 +28,7 @@ object CliArguments {
           export <project> --out <folder>           Pack and copy the build output into <folder>
           run <project> [--scene <name>] [--frames <n>] [--dt <seconds>]
                                                     Run a scene headless and print engine stats
-          sample [feature-showcase|marble-run] [--dir <folder>]
+          sample [feature-showcase|marble-run|tetris] [--dir <folder>]
                                                     Generate a sample project (see docs/samples.md)
           help, --help, -h                          Show this help
 
