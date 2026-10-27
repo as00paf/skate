@@ -13,6 +13,7 @@ import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.ecs.systems.PhysicsDebugDrawSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
@@ -77,6 +78,7 @@ class Engine {
 
     private fun initializeSystems() {
         val debugRenderer = renderer.renderResources.renderers.debug
+        val physicsSystem = PhysicsSystem(debugRenderer)
         val engineSystems = listOf(
             gameObjectManager, // Core
             TransformSystem(),
@@ -84,7 +86,8 @@ class Engine {
             InputSystem(inputProvider, eventSystem),
             AudioSystem(audioEngine, logger, assetsManager, cameraManager),
             EnvironmentSystem(),
-            PhysicsSystem(debugRenderer),
+            physicsSystem,
+            PhysicsDebugDrawSystem(physicsSystem),
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager, eventSystem),

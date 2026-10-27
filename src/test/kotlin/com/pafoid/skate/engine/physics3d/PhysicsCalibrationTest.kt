@@ -49,7 +49,7 @@ class PhysicsCalibrationTest {
 
         // Simulate until it hits 0
         while (transform.translation.y > 0 && totalTime < 2.0f) {
-            physics.update(dt)
+            physics.step(dt)
 
             // Sync transform back from RB
             val loc = rb.rawBody?.getLocation(Vector3f())

@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
@@ -23,8 +22,7 @@ class PhysicsSystem(
     private val debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.EARLY) {
 
-    override val phase = SystemPhase.UPDATE
-    override val runsBefore = listOf(PlayerMotionSystem::class)
+    override val phase = SystemPhase.FIXED_UPDATE
 
     private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer)
 
@@ -50,12 +48,12 @@ class PhysicsSystem(
     private val tempPos = Vector3f()
     private val tempEuler = Vector3f()
 
-    override fun update(dt: Float) {
-        physics3d.debugDraw(dt)
+    /** Draws physics debug shapes; called once per frame (fixed steps may run zero or several times per frame). */
+    fun drawDebug(dt: Float) = physics3d.debugDraw(dt)
+
+    override fun fixedUpdate(fixedDt: Float) {
         if (!scene.isRunning) return
-        // Step Bullet at deterministic fixed-step first so downstream ECS reads current frame data.
-        val timeScale = scene.getComponent<DayNightCycleComponent>()?.timeScale ?: 1.0f
-        physics3d.update(dt * timeScale)
+        physics3d.step(fixedDt)
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->
             if (physics3d.getGravity() != component.gravity) {
@@ -151,4 +149,11 @@ class PhysicsSystem(
     fun isDebugEnabled(): Boolean = physics3d.debugEnabled
 
     data class PhysicsObject(val go: GameObject, val transform: Transform?, val body: RigidBody3D)
+}
+
+/** Per-frame companion of [PhysicsSystem], which itself only runs in the fixed-update phase. */
+class PhysicsDebugDrawSystem(private val physicsSystem: PhysicsSystem) : System() {
+    override val runsAfter = listOf(PlayerMotionSystem::class)
+
+    override fun update(dt: Float) = physicsSystem.drawDebug(dt)
 }
