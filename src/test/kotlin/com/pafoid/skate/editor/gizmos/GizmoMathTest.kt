@@ -96,4 +96,34 @@ class GizmoMathTest {
         assertEquals(45f, e.y, 0.01f)
         assertEquals(0f, e.x, 0.01f)
     }
+
+    @Test
+    fun GizmoMath_GizmoSize_OrthographicIgnoresDistance_PerspectiveUsesZoomedFov() {
+        assertEquals(
+            GizmoMath.gizmoSize(true, 5f, 45f, 2f, 1000),
+            GizmoMath.gizmoSize(true, 500f, 45f, 2f, 1000), eps,
+        )
+        assertEquals(300f, GizmoMath.gizmoSize(true, 1f, 45f, 2f, 1000), eps)
+        val zoomed = GizmoMath.gizmoSize(false, 10f, 30f, 2f, 1080)
+        assertEquals(GizmoMath.screenSpaceScale(10f, Math.toRadians(60.0).toFloat()), zoomed, eps)
+    }
+
+    @Test
+    fun GizmoMath_FacingViewer_FlipsAxesPointingAwayFromCamera() {
+        val axes = GizmoMath.axes(Vector3f(), false)
+        val flipped = GizmoMath.facingViewer(axes, Vector3f(1f, -1f, -1f).normalize())
+        assertEquals(-1f, flipped[0].x, eps)
+        assertEquals(1f, flipped[1].y, eps)
+        assertEquals(1f, flipped[2].z, eps)
+        assertEquals(1f, axes[0].x, eps)
+    }
+
+    @Test
+    fun GizmoMath_ToParentSpace_UndoesParentRotationAndScale() {
+        val parent = org.joml.Matrix4f().rotateY(Math.toRadians(90.0).toFloat()).scale(2f)
+        val local = GizmoMath.toParentSpace(Vector3f(0f, 0f, -2f), parent)
+        assertEquals(1f, local.x, eps)
+        assertEquals(0f, local.z, eps)
+        assertEquals(Vector3f(1f, 2f, 3f), GizmoMath.toParentSpace(Vector3f(1f, 2f, 3f), null))
+    }
 }

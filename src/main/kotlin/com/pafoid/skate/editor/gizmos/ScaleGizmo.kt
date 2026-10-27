@@ -38,8 +38,7 @@ class ScaleGizmo(
         val transforms = targets.mapNotNull { it.getComponent<Transform>() }
         if (transforms.isEmpty()) return
         val pivot = if (active >= 0) dragPivot else GizmoMath.pivot(transforms.map { it.translation })
-        val fov = Math.toRadians(camera.fov.toDouble()).toFloat()
-        val size = GizmoMath.screenSpaceScale(cameraPosition.distance(pivot), fov)
+        val size = GizmoMath.gizmoSize(camera.isOrthographic, cameraPosition.distance(pivot), camera.fov, camera.zoom, camera.viewportHeight)
         val length = handleLength * size
         val axes = GizmoMath.axes(transforms.first().rotation, localSpace)
         val ray = inputProvider.screenToRay(camera)

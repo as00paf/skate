@@ -37,7 +37,7 @@ class GizmoSystem(
     }
 
     /** Objects the gizmos act on. The scene currently tracks a single selection; multi-select plugs in here. */
-    private fun selection(scene: com.pafoid.skate.engine.ecs.Scene) = listOfNotNull(scene.selectedGameObject)
+    private fun selection(scene: com.pafoid.skate.engine.ecs.Scene) = scene.selectedGameObjects
 
     // Gizmos are owned directly by this system, not registered as separate systems
     private val debugRenderer by lazy { engine.renderer.renderResources.renderers.debug }

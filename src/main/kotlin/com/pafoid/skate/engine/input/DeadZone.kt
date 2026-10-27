@@ -56,17 +56,23 @@ data class StickDeadZone(
     /** Outer dead zone: input beyond `1 - outer` reads as full deflection. */
     var outer: Float = 0.02f,
     /** Response curve exponent: 1 = linear, >1 = finer control near the centre. */
-    var curve: Float = 1f
+    var curve: Float = 1f,
+    /** Multiplier applied to the processed stick value (1 = unchanged). */
+    var sensitivity: Float = 1f
 ) {
-    fun apply(x: Float, y: Float, out: Vector2f): Vector2f = when (mode) {
-        DeadZoneMode.AXIAL -> DeadZoneMath.axial(x, y, inner, outer, curve, out)
-        DeadZoneMode.RADIAL -> DeadZoneMath.radial(x, y, inner, outer, curve, out)
+    fun apply(x: Float, y: Float, out: Vector2f): Vector2f {
+        when (mode) {
+            DeadZoneMode.AXIAL -> DeadZoneMath.axial(x, y, inner, outer, curve, out)
+            DeadZoneMode.RADIAL -> DeadZoneMath.radial(x, y, inner, outer, curve, out)
+        }
+        return out.mul(sensitivity)
     }
 
     fun validate() {
         inner = inner.coerceIn(0f, 0.9f)
         outer = outer.coerceIn(0f, 0.5f)
         curve = curve.coerceIn(0.1f, 8f)
+        sensitivity = sensitivity.coerceIn(0.1f, 5f)
     }
 }
 
