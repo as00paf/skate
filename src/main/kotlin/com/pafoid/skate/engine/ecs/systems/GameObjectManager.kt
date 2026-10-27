@@ -37,12 +37,14 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
     }
 
     fun addGameObject(gameObject: GameObject) {
+        scene.assertSceneMutationOnMainThread("addGameObject")
         scene.children.add(gameObject)
         EcsChanges.touch()
         gameObject.start()
     }
 
     fun removeGameObject(gameObject: GameObject) {
+        scene.assertSceneMutationOnMainThread("removeGameObject")
         scene.children.remove(gameObject)
         EcsChanges.touch()
         gameObject.destroy()
