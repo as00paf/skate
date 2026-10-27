@@ -67,6 +67,7 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
 
                     // Rebuild skin matrices based on the overwritten global transforms
                     SkeletonMath.buildSkinMatricesFromGlobal(pose, skeletonComp.matrixPalette)
+                    skeletonComp.markPaletteDirty()
                 }
 
                 RagdollState.ANIMATED -> {

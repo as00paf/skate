@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.core
 
+import com.pafoid.skate.engine.animation.FrustumVisibility
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -25,6 +26,7 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.render.renderer.SkinningUbo
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 import java.util.concurrent.atomic.AtomicReference
@@ -91,7 +93,7 @@ class Engine {
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager, eventSystem),
-            AnimationSystem(),
+            AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }),
             RagdollSystem(),
             ScriptingSystem(logger, eventSystem),
         )
@@ -136,6 +138,7 @@ class Engine {
         if (engineState.get() != EngineState.RUNNING) return
         screens.forEach { it.destroy() }
         renderer.destroy()
+        SkinningUbo.destroy()
         sceneManager.destroy()
         systemManager.destroy()
     }
