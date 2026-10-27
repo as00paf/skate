@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import org.lwjgl.openal.AL
 import org.lwjgl.openal.AL10
+import org.lwjgl.openal.AL11
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
 import java.nio.IntBuffer
@@ -104,6 +105,14 @@ class AudioEngine(
     fun setListenerVelocity(x: Float, y: Float, z: Float) {
         if (!isInitialized) return
         AL10.alListener3f(AL10.AL_VELOCITY, x, y, z)
+    }
+
+    /** Distance attenuation is computed per source in [SpatialAudio], so OpenAL's own model is disabled. */
+    fun configureSpatial(dopplerFactor: Float = 1f, speedOfSound: Float = SpatialAudio.DEFAULT_SPEED_OF_SOUND) {
+        if (!isInitialized) return
+        AL10.alDistanceModel(AL10.AL_NONE)
+        AL10.alDopplerFactor(dopplerFactor)
+        AL11.alSpeedOfSound(speedOfSound)
     }
 
     /** Master gain is applied per source through the mixer; the AL listener gain stays at 1. */

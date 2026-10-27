@@ -5,6 +5,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.AudioListener
 import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -39,6 +40,7 @@ fun GameObject.getComponent(type: ComponentType) =
     when (type) {
         ComponentType.ANIMATOR -> getComponent<Animator>()
         ComponentType.AUDIO -> getComponent<AudioComponent>()
+        ComponentType.AUDIO_LISTENER -> getComponent<AudioListener>()
         ComponentType.BONE_OVERRIDE -> getComponent<BoneOverride>()
         ComponentType.BOX_COLLIDER_3D -> getComponent<BoxCollider3D>()
         ComponentType.CAMERA -> getComponent<CameraComponent>()
