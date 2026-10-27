@@ -30,7 +30,7 @@ class OpenSceneFileCommandTest {
 
     @BeforeEach
     fun setup() {
-        serializer = mockk(relaxed = true)
+        serializer = Serializer()
         sceneManager = mockk(relaxed = true)
         eventSystem = EventSystem()
         jobSystem = JobSystem()
@@ -47,21 +47,19 @@ class OpenSceneFileCommandTest {
 
     @Test
     fun `execute opens scene when file loads`() {
-        val sceneFile = File(tempDir, "Test.scene").apply { writeText("{}") }
-        every { serializer.decode<Scene?>("{}") } returns loadedScene
+        val sceneFile = File(tempDir, "Test.scene").apply { writeText(serializer.encode(Scene("Loaded"))) }
 
         val command = createCommand(sceneFile)
         command.execute()
 
-        verify { sceneManager.openScene(loadedScene) }
-        assertEquals(loadedScene, command.openedScene)
+        verify { sceneManager.openScene(any()) }
+        assertEquals("Loaded", command.openedScene?.name)
         assertTrue(command.didCompleteSuccessfully())
     }
 
     @Test
     fun `execute publishes failure and does not open scene when load fails`() {
-        val sceneFile = File(tempDir, "Broken.scene").apply { writeText("{}") }
-        every { serializer.decode<Scene?>("{}") } returns null
+        val sceneFile = File(tempDir, "Broken.scene").apply { writeText("null") }
         var failed: SceneAction.OpenFailed? = null
         eventSystem.subscribe<SceneAction.OpenFailed> { failed = it }
 

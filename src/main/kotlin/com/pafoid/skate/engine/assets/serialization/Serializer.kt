@@ -118,7 +118,8 @@ class Serializer {
 
     /** Decodes a versioned file, running migrations on old (or unversioned) files first. */
     inline fun <reified T> decodeFile(kind: FileKind, text: String): T {
-        val upgraded = migrations.upgrade(kind, json.parseToJsonElement(text))
+        val element = json.parseToJsonElement(text)
+        val upgraded = if (element is JsonObject) migrations.upgrade(kind, element) else element
         return json.decodeFromJsonElement(kotlinx.serialization.serializer<T>(), upgraded)
     }
 }
