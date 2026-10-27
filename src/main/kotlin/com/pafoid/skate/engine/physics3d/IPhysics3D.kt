@@ -19,7 +19,8 @@ interface IPhysics3D {
     fun remove(go: GameObject)
     fun addConstraint(constraint: IPhysicsConstraint)
     fun removeConstraint(constraint: IPhysicsConstraint)
-    fun update(dt: Float)
+    /** Advances the simulation by exactly one fixed step of [fixedDt] seconds. */
+    fun step(fixedDt: Float)
     fun debugDraw(dt: Float)
     fun destroy()
 }

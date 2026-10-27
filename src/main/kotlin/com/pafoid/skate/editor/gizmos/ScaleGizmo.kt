@@ -1,6 +1,5 @@
 package com.pafoid.skate.editor.gizmos
 
-import com.pafoid.skate.editor.commands.objects.TransformCommand
 import com.pafoid.skate.editor.systems.UndoRedoManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.ecs.GameObject
@@ -15,135 +14,120 @@ class ScaleGizmo(
     undoRedoManager: UndoRedoManager,
     private val debugRenderer: DebugRenderer,
 ) : Gizmo(engine, undoRedoManager) {
-    private val handleLength = 2.0f
-    private val boxSize = 0.3f
-    private val hitThreshold = 0.3f
+    private val handleLength = 1.0f
+    private val boxSize = 0.1f
+    private val hitThreshold = 0.1f
 
-    private var xAxisHot = false
-    private var yAxisHot = false
-    private var zAxisHot = false
+    /** 0..2 axis handles, 3 = uniform handle at the pivot. */
+    private var hot = -1
+    private var active = -1
+    private var dragAxisDir = Vector3f()
+    private var dragPivot = Vector3f()
+    private var dragStartParam = 0f
+    private var dragLength = 1f
+    private var uniformFactor = 1f
 
-    private var oldTransform: Transform? = null
+    var localSpace = true
+    /** Scale factor snap step; 0 disables snapping. */
+    var snapStep = 0f
 
-    var sensitivity = 0.001f
+    private val axisColors = arrayOf(Vector3f(1f, 0f, 0f), Vector3f(0f, 1f, 0f), Vector3f(0f, 0f, 1f))
+    private val highlight = Vector3f(1f, 1f, 0f)
 
-    fun update(go: GameObject?, camera: CameraComponent, cameraPosition: Vector3f) {
-        go?.getComponent<Transform>()?.let { transform ->
-            val pos = transform.translation
-
-            val dist = cameraPosition.distance(pos)
-            val dynamicLength = handleLength * (dist * 0.1f)
-            val dynamicBoxSize = boxSize * (dist * 0.1f)
-            val dynamicThreshold = hitThreshold * (dist * 0.1f)
-
-            checkInput(pos, camera, dynamicLength, dynamicThreshold)
-
-            if (inputProvider.isLeftMouseButtonDown(true)) {
-                if (xAxisActive || yAxisActive || zAxisActive) {
-                    if (oldTransform == null) {
-                        oldTransform = Transform().apply { copyFrom(transform) }
-                    }
-                }
-            } else {
-                oldTransform?.let { old ->
-                    if (old != transform) {
-                        undoRedoManager.pushCommand(TransformCommand(go, old, transform))
-                    }
-                }
-                oldTransform = null
-            }
-
-            if (xAxisActive) {
-                transform.scale.x += inputProvider.mouseDistanceFrom(
-                    pos,
-                    camera,
-                    cameraPosition,
-                    Vector3f(1f, 0f, 0f)
-                ) * sensitivity
-                transform.scale.x = transform.scale.x.coerceAtLeast(0.01f)
-            } else if (yAxisActive) {
-                transform.scale.y += inputProvider.mouseDistanceFrom(
-                    pos,
-                    camera,
-                    cameraPosition,
-                    Vector3f(0f, 1f, 0f)
-                ) * sensitivity
-                transform.scale.y = transform.scale.y.coerceAtLeast(0.01f)
-            } else if (zAxisActive) {
-                transform.scale.z += inputProvider.mouseDistanceFrom(
-                    pos,
-                    camera,
-                    cameraPosition,
-                    Vector3f(0f, 0f, 1f)
-                ) * sensitivity
-                transform.scale.z = transform.scale.z.coerceAtLeast(0.01f)
-            }
-
-            drawHandle(pos, Vector3f(1f, 0f, 0f), if (xAxisActive || xAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(1f, 0f, 0f), dynamicLength, dynamicBoxSize)
-            drawHandle(pos, Vector3f(0f, 1f, 0f), if (yAxisActive || yAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 1f, 0f), dynamicLength, dynamicBoxSize)
-            drawHandle(pos, Vector3f(0f, 0f, 1f), if (zAxisActive || zAxisHot) Vector3f(1f, 1f, 0f) else Vector3f(0f, 0f, 1f), dynamicLength, dynamicBoxSize)
-        }
-    }
-
-    private fun checkInput(pos: Vector3f, camera: CameraComponent, length: Float, threshold: Float) {
+    fun update(targets: List<GameObject>, camera: CameraComponent, cameraPosition: Vector3f) {
+        val transforms = targets.mapNotNull { it.getComponent<Transform>() }
+        if (transforms.isEmpty()) return
+        val pivot = if (active >= 0) dragPivot else GizmoMath.pivot(transforms.map { it.translation })
+        val fov = Math.toRadians(camera.fov.toDouble()).toFloat()
+        val size = GizmoMath.screenSpaceScale(cameraPosition.distance(pivot), fov)
+        val length = handleLength * size
+        val axes = GizmoMath.axes(transforms.first().rotation, localSpace)
         val ray = inputProvider.screenToRay(camera)
 
-        // Reset hover states
-        xAxisHot = false
-        yAxisHot = false
-        zAxisHot = false
-
-        if (rayToLineDist(ray, pos, Vector3f(1f, 0f, 0f), length) < threshold) xAxisHot = true
-        else if (rayToLineDist(ray, pos, Vector3f(0f, 1f, 0f), length) < threshold) yAxisHot = true
-        else if (rayToLineDist(ray, pos, Vector3f(0f, 0f, 1f), length) < threshold) zAxisHot = true
-
-        if (inputProvider.isLeftMouseButtonDown(true)) {
-            if (!xAxisActive && !yAxisActive && !zAxisActive) {
-                if (xAxisHot) xAxisActive = true
-                else if (yAxisHot) yAxisActive = true
-                else if (zAxisHot) zAxisActive = true
+        if (active < 0) {
+            val axis = GizmoMath.pickAxis(ray.origin, ray.direction, pivot, axes, length, hitThreshold * size)
+            hot = if (axis >= 0) axis
+            else if (ray.distanceToPoint(pivot) < boxSize * size) 3 else -1
+            if (hot >= 0 && inputProvider.isLeftMouseButtonDown(true)) {
+                val param = if (hot < 3) GizmoMath.closestAxisParam(ray.origin, ray.direction, pivot, axes[hot]) else 0f
+                if (param != null) {
+                    active = hot
+                    dragPivot = Vector3f(pivot)
+                    dragLength = length
+                    dragStartParam = param
+                    if (hot < 3) dragAxisDir = Vector3f(axes[hot])
+                    uniformFactor = 1f
+                    inUse = true
+                    beginSnapshot(targets)
+                }
             }
+        }
+        if (active >= 0) {
+            if (inputProvider.isLeftMouseButtonDown(true)) drag(ray) else {
+                commitSnapshot()
+                active = -1
+            }
+        }
+
+        for (i in 0..2) drawHandle(pivot, axes[i], if (i == active || i == hot) highlight else axisColors[i], length, boxSize * size)
+        drawCube(pivot, boxSize * size, if (active == 3 || hot == 3) highlight else Vector3f(1f, 1f, 1f))
+    }
+
+    private fun drag(ray: com.pafoid.skate.engine.utils.Ray) {
+        val factors = Vector3f(1f, 1f, 1f)
+        if (active < 3) {
+            val t = GizmoMath.closestAxisParam(ray.origin, ray.direction, dragPivot, dragAxisDir) ?: return
+            val f = GizmoMath.snap(1f + (t - dragStartParam) / dragLength, snapStep)
+            when (active) { 0 -> factors.x = f; 1 -> factors.y = f; else -> factors.z = f }
         } else {
-            xAxisActive = false
-            yAxisActive = false
-            zAxisActive = false
+            uniformFactor *= 1f - inputProvider.getMouseDy() * 0.01f
+            val f = GizmoMath.snap(uniformFactor, snapStep)
+            factors.set(f, f, f)
+        }
+        snapshotTargets.forEach { (go, start) ->
+            val t = go.getComponent<Transform>() ?: return@forEach
+            t.scale.set(
+                (start.scale.x * factors.x).coerceAtLeast(MIN_SCALE),
+                (start.scale.y * factors.y).coerceAtLeast(MIN_SCALE),
+                (start.scale.z * factors.z).coerceAtLeast(MIN_SCALE),
+            )
+            if (snapshotTargets.size > 1) {
+                val axisFactor = if (active < 3) factors[active] else factors.x
+                val d = Vector3f(start.translation).sub(dragPivot)
+                if (active < 3) {
+                    val along = d.dot(dragAxisDir)
+                    d.add(Vector3f(dragAxisDir).mul(along * (axisFactor - 1f)))
+                } else d.mul(axisFactor)
+                t.translation.set(dragPivot).add(d)
+            }
         }
     }
 
     private fun drawHandle(origin: Vector3f, direction: Vector3f, color: Vector3f, length: Float, size: Float) {
         val end = Vector3f(origin).add(Vector3f(direction).mul(length))
         debugRenderer.addLine3D(origin, end, color)
-        
-        // Solid Cube at end
-        val h = size / 2f
-        val center = end
-        
-        val v1 = Vector3f(center).add(-h, -h, -h)
-        val v2 = Vector3f(center).add( h, -h, -h)
-        val v3 = Vector3f(center).add( h,  h, -h)
-        val v4 = Vector3f(center).add(-h,  h, -h)
-        val v5 = Vector3f(center).add(-h, -h,  h)
-        val v6 = Vector3f(center).add( h, -h,  h)
-        val v7 = Vector3f(center).add( h,  h,  h)
-        val v8 = Vector3f(center).add(-h,  h,  h)
+        drawCube(end, size, color)
+    }
 
-        // Front
-        debugRenderer.addTriangle3D(v5, v6, v7, color)
-        debugRenderer.addTriangle3D(v5, v7, v8, color)
-        // Back
-        debugRenderer.addTriangle3D(v1, v3, v2, color)
-        debugRenderer.addTriangle3D(v1, v4, v3, color)
-        // Top
-        debugRenderer.addTriangle3D(v4, v7, v3, color)
-        debugRenderer.addTriangle3D(v4, v8, v7, color)
-        // Bottom
-        debugRenderer.addTriangle3D(v1, v2, v6, color)
-        debugRenderer.addTriangle3D(v1, v6, v5, color)
-        // Left
-        debugRenderer.addTriangle3D(v1, v5, v8, color)
-        debugRenderer.addTriangle3D(v1, v8, v4, color)
-        // Right
-        debugRenderer.addTriangle3D(v2, v3, v7, color)
-        debugRenderer.addTriangle3D(v2, v7, v6, color)
+    private fun drawCube(center: Vector3f, size: Float, color: Vector3f) {
+        val h = size / 2f
+        val v1 = Vector3f(center).add(-h, -h, -h)
+        val v2 = Vector3f(center).add(h, -h, -h)
+        val v3 = Vector3f(center).add(h, h, -h)
+        val v4 = Vector3f(center).add(-h, h, -h)
+        val v5 = Vector3f(center).add(-h, -h, h)
+        val v6 = Vector3f(center).add(h, -h, h)
+        val v7 = Vector3f(center).add(h, h, h)
+        val v8 = Vector3f(center).add(-h, h, h)
+        debugRenderer.addTriangle3D(v5, v6, v7, color); debugRenderer.addTriangle3D(v5, v7, v8, color)
+        debugRenderer.addTriangle3D(v1, v3, v2, color); debugRenderer.addTriangle3D(v1, v4, v3, color)
+        debugRenderer.addTriangle3D(v4, v7, v3, color); debugRenderer.addTriangle3D(v4, v8, v7, color)
+        debugRenderer.addTriangle3D(v1, v2, v6, color); debugRenderer.addTriangle3D(v1, v6, v5, color)
+        debugRenderer.addTriangle3D(v1, v5, v8, color); debugRenderer.addTriangle3D(v1, v8, v4, color)
+        debugRenderer.addTriangle3D(v2, v3, v7, color); debugRenderer.addTriangle3D(v2, v7, v6, color)
+    }
+
+    companion object {
+        const val MIN_SCALE = 0.01f
     }
 }

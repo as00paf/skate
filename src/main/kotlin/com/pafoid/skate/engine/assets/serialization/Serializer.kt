@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.assets.serialization
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.AudioListener
 import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -31,6 +32,7 @@ import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.polymorphic
@@ -50,6 +52,7 @@ class Serializer {
             subclass(Transform::class)
             subclass(RenderComponent::class)
             subclass(AudioComponent::class)
+            subclass(AudioListener::class)
             subclass(CameraComponent::class)
 
             // Physics components
@@ -105,5 +108,20 @@ class Serializer {
 
     inline fun <reified T> decode(value: String): T {
         return json.decodeFromString<T>(value)
+    }
+
+    val migrations = SchemaMigrations()
+
+    /** Encodes a scene/prefab/project file with its `schema` version stamped at the root. */
+    inline fun <reified T> encodeFile(kind: FileKind, value: T): String {
+        val root = json.encodeToJsonElement(kotlinx.serialization.serializer<T>(), value) as JsonObject
+        return json.encodeToString(JsonObject.serializer(), migrations.stamp(kind, root))
+    }
+
+    /** Decodes a versioned file, running migrations on old (or unversioned) files first. */
+    inline fun <reified T> decodeFile(kind: FileKind, text: String): T {
+        val element = json.parseToJsonElement(text)
+        val upgraded = if (element is JsonObject) migrations.upgrade(kind, element) else element
+        return json.decodeFromJsonElement(kotlinx.serialization.serializer<T>(), upgraded)
     }
 }

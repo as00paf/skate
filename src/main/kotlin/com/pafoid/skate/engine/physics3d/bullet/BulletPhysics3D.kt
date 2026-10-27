@@ -44,10 +44,6 @@ class BulletPhysics3D(
 ) : IPhysics3D {
     private val physicsSpace: PhysicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
 
-    private var accumulatorSeconds = 0.0
-    private val fixedTimestepSeconds = 1.0 / 60.0
-    private val maxFrameDeltaSeconds = 0.25
-
     override var debugEnabled = false
 
     init {
@@ -311,25 +307,13 @@ class BulletPhysics3D(
         return joint
     }
 
-    /**
-     * Steps the physics simulation forward by the given delta time.
-     * It uses a fixed timestep accumulator to ensure deterministic physics behavior
-     * regardless of the rendering frame rate.
-     *
-     * @param dt The time elapsed since the last frame in seconds.
-     */
-    override fun update(dt: Float) {
-        if (!dt.isFinite() || dt <= 0f) return
+    /** Advances the simulation by one fixed step; the caller owns the time accumulation. */
+    override fun step(fixedDt: Float) {
+        if (!fixedDt.isFinite() || fixedDt <= 0f) return
 
-        val clampedDtSeconds = dt.coerceAtMost(maxFrameDeltaSeconds.toFloat()).toDouble()
-        accumulatorSeconds += clampedDtSeconds
-        while (accumulatorSeconds >= fixedTimestepSeconds) {
-            val startTime = System.nanoTime()
-            physicsSpace.update(fixedTimestepSeconds.toFloat(), 0)
-            val endTime = System.nanoTime()
-            EngineStats.physicsStepTime.set(endTime - startTime)
-            accumulatorSeconds -= fixedTimestepSeconds
-        }
+        val startTime = System.nanoTime()
+        physicsSpace.update(fixedDt, 0)
+        EngineStats.physicsStepTime.set(System.nanoTime() - startTime)
     }
 
     override fun debugDraw(dt: Float) {

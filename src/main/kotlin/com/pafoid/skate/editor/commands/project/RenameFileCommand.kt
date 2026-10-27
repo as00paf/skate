@@ -1,13 +1,15 @@
 package com.pafoid.skate.editor.commands.project
 
 import com.pafoid.skate.editor.commands.ExecutionTrackedCommand
+import com.pafoid.skate.engine.assets.AssetRegistry
 import com.pafoid.skate.engine.core.LoggerService
 import java.io.File
 
 class RenameFileCommand(
     private val oldPath: String,
     private val newName: String,
-    private val logger: LoggerService
+    private val logger: LoggerService,
+    private val registry: AssetRegistry? = null,
 ) : ExecutionTrackedCommand {
 
     private val oldFile = File(oldPath)
@@ -43,7 +45,7 @@ class RenameFileCommand(
             return
         }
 
-        val renamed = oldFile.renameTo(newFile)
+        val renamed = AssetFileOps.move(oldFile, newFile, registry)
         if (!renamed) {
             failureReason = "rename failed: ${oldFile.name} → $newName"
             logger.logEditor("Rename failed: ${oldFile.name} → $newName")
@@ -59,7 +61,7 @@ class RenameFileCommand(
             return
         }
 
-        val renamedBack = newFile.renameTo(oldFile)
+        val renamedBack = AssetFileOps.move(newFile, oldFile, registry)
         if (renamedBack) {
             logger.logEditor("Renamed back: $newName → ${oldFile.name}")
         } else {

@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs.components
 
+import com.pafoid.skate.engine.audio.AttenuationModel
 import com.pafoid.skate.engine.audio.BusId
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -10,7 +11,12 @@ data class AudioComponent(
     var is3D: Boolean = true,
     var loops: Boolean = false,
     var volume: Float = 1.0f,
-    var bus: BusId = BusId.SFX
+    var bus: BusId = BusId.SFX,
+    var attenuationModel: AttenuationModel = AttenuationModel.INVERSE_CLAMPED,
+    var minDistance: Float = 1f,
+    var maxDistance: Float = 50f,
+    var rolloff: Float = 1f,
+    var dopplerFactor: Float = 1f
 ) : Component() {
 
     @Transient

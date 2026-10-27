@@ -23,6 +23,12 @@ interface ScriptContext {
 
     /** Inspector-exposed values stored on the script component. */
     val properties: Map<String, String>
+
+    /** Survives hot reloads of this script instance; keep values worth preserving here. */
+    val state: MutableMap<String, Any?>
+
+    /** Number of times this script was hot reloaded; 0 on first creation. Check it in `onCreate`. */
+    val reloadCount: Int
 }
 
 interface ScriptTransform {

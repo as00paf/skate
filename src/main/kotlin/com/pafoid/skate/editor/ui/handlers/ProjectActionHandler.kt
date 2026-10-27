@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.commands.project.CloseProjectCommand
 import com.pafoid.skate.editor.commands.project.CreateFileCommand
 import com.pafoid.skate.editor.commands.project.CreateProjectCommand
 import com.pafoid.skate.editor.commands.project.DeleteFileCommand
+import com.pafoid.skate.editor.commands.project.MoveFileCommand
 import com.pafoid.skate.editor.commands.project.LoadLastProjectCommand
 import com.pafoid.skate.editor.commands.project.OpenProjectFileCommand
 import com.pafoid.skate.editor.commands.project.RenameFileCommand
@@ -19,6 +20,7 @@ import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.CreateProjectSucceeded
 import com.pafoid.skate.editor.events.ProjectEvent.DeleteFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.LoadLastProjectRequested
+import com.pafoid.skate.editor.events.ProjectEvent.MoveFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectFailed
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectRequested
 import com.pafoid.skate.editor.events.ProjectEvent.OpenProjectSucceeded
@@ -83,11 +85,15 @@ class ProjectActionHandler(
             executeAndPublishOnSuccess(command, event.path, "create")
         }
         eventSystem.subscribe<RenameFileRequested> { event ->
-            val command = RenameFileCommand(event.path, event.newName, logger)
+            val command = RenameFileCommand(event.path, event.newName, logger, projectManager.assetRegistry())
             executeAndPublishOnSuccess(command, event.path, "rename")
         }
+        eventSystem.subscribe<MoveFileRequested> { event ->
+            val command = MoveFileCommand(event.path, event.targetDir, logger, projectManager.assetRegistry())
+            executeAndPublishOnSuccess(command, event.path, "move")
+        }
         eventSystem.subscribe<DeleteFileRequested> { event ->
-            val command = DeleteFileCommand(event.path, logger)
+            val command = DeleteFileCommand(event.path, logger, projectManager.assetRegistry())
             executeAndPublishOnSuccess(command, event.path, "delete")
         }
         eventSystem.subscribe<CloseProjectRequested> {

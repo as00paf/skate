@@ -4,10 +4,16 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.render.data.RenderBatch2D
 import com.pafoid.skate.engine.render.data.Renderable2D
+import com.pafoid.skate.engine.render.ui.UiBatchRenderer
+import com.pafoid.skate.engine.render.ui.UiDrawList
 
 class Renderer2D {
     // Batches grouped by z-index for proper layering
     private val batchesByZIndex = mutableMapOf<Int, MutableList<RenderBatch2D>>()
+
+    /** Runtime-UI primitives (scissor stack, 9-slice, glyph quads); drawn after world batches by [renderUi]. */
+    val ui = UiDrawList()
+    private var uiRenderer: UiBatchRenderer? = null
 
     lateinit var shader: Shader
     lateinit var camera: CameraComponent
@@ -58,7 +64,18 @@ class Renderer2D {
         }
     }
 
+    /** Draws and clears the recorded UI primitives in screen pixels (origin top-left). */
+    fun renderUi(screenWidth: Int, screenHeight: Int) {
+        if (ui.quadCount > 0) {
+            val r = uiRenderer ?: UiBatchRenderer().also { uiRenderer = it }
+            r.render(ui, shader, screenWidth, screenHeight)
+        }
+        ui.clear()
+    }
+
     fun destroy() {
+        uiRenderer?.destroy()
+        uiRenderer = null
         // Destroy batches
         batchesByZIndex.values.flatten().forEach { it.destroy() }
         batchesByZIndex.clear()

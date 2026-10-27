@@ -17,6 +17,8 @@ import org.lwjgl.opengl.GL20.glUniform3f
 import org.lwjgl.opengl.GL20.glUniform4f
 import org.lwjgl.opengl.GL20.glUniformMatrix4fv
 import org.lwjgl.opengl.GL20.glUseProgram
+import org.lwjgl.opengl.GL31.glGetUniformBlockIndex
+import org.lwjgl.opengl.GL31.glUniformBlockBinding
 
 class Shader(
     private val shaderProgId: Int = -1,
@@ -30,6 +32,17 @@ class Shader(
      * Uniform locations are stable for the lifetime of a shader program.
      */
     private val uniformCache = mutableMapOf<String, Int>()
+    private val linkedBlocks = mutableSetOf<String>()
+
+    /** Links the std140 uniform block [blockName] to [binding] once per program. Returns false if the shader lacks it. */
+    fun bindUniformBlock(blockName: String, binding: Int): Boolean {
+        if (blockName in linkedBlocks) return true
+        val index = glGetUniformBlockIndex(shaderProgId, blockName)
+        if (index < 0) return false
+        glUniformBlockBinding(shaderProgId, index, binding)
+        linkedBlocks.add(blockName)
+        return true
+    }
 
     /**
      * Reusable buffers to minimize garbage collection pressure in hot paths.

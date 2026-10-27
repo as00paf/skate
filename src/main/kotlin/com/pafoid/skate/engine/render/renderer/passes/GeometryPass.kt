@@ -143,7 +143,7 @@ class GeometryPass(
             val (go, renderComponent, transform) = drawQueue.itemAt(i)
             // Hover & Selected states
             var selectionState = 0.0f
-            if (go.uId == scene.selectedGameObject?.uId) selectionState = 1.0f
+            if (scene.isSelected(go)) selectionState = 1.0f
             else if (go.uId == scene.hoveredGameObject?.uId) selectionState = 2.0f
 
             defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
@@ -174,7 +174,7 @@ class GeometryPass(
         val first = parts?.firstOrNull() ?: return SortKey.build(false, 0, 0, 0)
         val material = renderComponent.material ?: first.material
         if (material.alphaMode == AlphaMode.BLEND) return SortKey.build(true, 0, 0, 0)
-        return SortKey.build(false, 0, material.baseColorTexture?.texId ?: 0, first.vaoId)
+        return SortKey.build(false, 0, material.id, first.vaoId)
     }
 
     private fun render2D(camera: CameraComponent, renderables: List<Renderable2D>, shader: Shader) {

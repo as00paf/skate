@@ -139,4 +139,6 @@ class ScriptContextImpl(
     override val time: ScriptTime,
     override val log: ScriptLog,
     override val properties: Map<String, String>,
+    override val state: MutableMap<String, Any?>,
+    override val reloadCount: Int,
 ) : ScriptContext

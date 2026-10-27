@@ -19,7 +19,7 @@ class CreateGameObjectCommand(
 
     override fun undo() {
         gameObjectManager.removeGameObject(gameObject)
-        scene.selectedGameObject = null
+        scene.removeFromSelection(gameObject)
     }
 
     override fun getDisplayName(): String = "Create GameObject"

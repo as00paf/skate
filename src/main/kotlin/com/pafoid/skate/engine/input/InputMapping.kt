@@ -13,6 +13,7 @@ class InputMappings(
     var jump: InputBinding = InputBinding(gamepadButton = 0),  // BUTTON_A
     var cameraLookX: InputBinding = InputBinding(gamepadAxis = 2),  // AXIS_RIGHT_X
     var cameraLookY: InputBinding = InputBinding(gamepadAxis = 3),
+    var deadZones: DeadZoneSettings = DeadZoneSettings(),
 ) {
 
     fun reset() {
@@ -30,5 +31,7 @@ class InputMappings(
         // Camera
         cameraLookX = InputBinding(gamepadAxis = 2)
         cameraLookY = InputBinding(gamepadAxis = 3)
+
+        deadZones = DeadZoneSettings()
     }
 }

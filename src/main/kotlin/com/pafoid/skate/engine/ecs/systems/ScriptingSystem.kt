@@ -29,7 +29,7 @@ class ScriptingSystem(
         services = services,
         sceneRoot = { scene },
         onError = { eventSystem?.publish(ScriptErrorEvent(it)) },
-        logSink = { level, message -> logger?.log(message, level, source = "script") },
+        logSink = { level, message -> logger?.log(message, level, source = "engine") },
     )
 
     override fun init(scene: Scene) {
