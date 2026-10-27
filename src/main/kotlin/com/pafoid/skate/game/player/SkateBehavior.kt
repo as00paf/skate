@@ -7,6 +7,9 @@ import com.pafoid.skate.engine.gameplay.CharacterInput
 import com.pafoid.skate.engine.gameplay.CharacterMotion
 import com.pafoid.skate.engine.gameplay.LocomotionBehavior
 import com.pafoid.skate.engine.gameplay.MotionMath
+import com.pafoid.skate.engine.gameplay.MountMath
+import com.pafoid.skate.engine.gameplay.MountRequest
+import com.pafoid.skate.engine.gameplay.Mountable
 import com.pafoid.skate.engine.gameplay.StateMachine
 import org.joml.Vector3f
 import kotlin.math.abs
@@ -34,7 +37,7 @@ class SkateContext(var config: SkateControllerConfig) {
 class SkateBehavior(
     private val config: SkateControllerConfig,
     private val onFoot: LocomotionBehavior = LocomotionBehavior(config.onFoot),
-) : CharacterBehavior {
+) : CharacterBehavior, Mountable {
 
     /** Stub until rail detection exists (PHY): supplies whether a grindable surface is in reach. */
     var grindSensor: () -> Boolean = { false }
@@ -42,7 +45,7 @@ class SkateBehavior(
     private val context = SkateContext(config)
     val machine = buildMachine()
 
-    var mounted: Boolean = config.startMounted
+    override var mounted: Boolean = config.startMounted
         set(value) {
             if (field == value) return
             field = value
@@ -56,7 +59,20 @@ class SkateBehavior(
 
     override val state: String get() = if (mounted) machine.current.name else onFoot.state
 
+    override val mountTargetName: String get() = config.mount.targetName
+    override val mountOffset = Vector3f(0f, config.mount.offsetY, 0f)
+
     override fun update(input: CharacterInput, dt: Float): CharacterMotion {
+        val request = MountMath.toggle(mounted, input.mountPressed, input.mountDistance, config.mount.range)
+        when (request) {
+            MountRequest.MOUNT -> mounted = true
+            MountRequest.DISMOUNT -> mounted = false
+            MountRequest.NONE -> {}
+        }
+        return step(input, dt).copy(mount = request)
+    }
+
+    private fun step(input: CharacterInput, dt: Float): CharacterMotion {
         if (!mounted) return onFoot.update(input, dt)
 
         fill(input, dt)

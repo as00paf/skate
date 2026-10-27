@@ -8,6 +8,9 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.gameplay.CharacterInput
 import com.pafoid.skate.engine.gameplay.CharacterMotion
 import com.pafoid.skate.engine.gameplay.MotionMath
+import com.pafoid.skate.engine.gameplay.MountRequest
+import com.pafoid.skate.engine.gameplay.Mountable
+import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.gameplay.ground.GroundMotion
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
@@ -30,8 +33,10 @@ class PlayerMotionSystem(
             val body = go.getComponent<RigidBody3D>() ?: return@forEach
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
 
-            val motion = controller.behavior.update(buildInput(controller, inputState, body, dt), dt)
+            val mount = (controller.behavior as? Mountable)?.let { findMount(it.mountTargetName, go) }
+            val motion = controller.behavior.update(buildInput(controller, inputState, body, mount, body.getWorldPosition()), dt)
             apply(motion, body, controller, dt)
+            if (motion.mount != MountRequest.NONE) mount?.let { placeMount(motion.mount, controller.behavior as Mountable, it, body) }
 
             if (motion.state != controller.state) {
                 controller.state = motion.state
@@ -44,7 +49,8 @@ class PlayerMotionSystem(
         controller: PlayerController,
         input: InputStateComponent,
         body: IPhysicsBody3D,
-        dt: Float,
+        mount: RigidBody3D?,
+        position: Vector3f,
     ): CharacterInput {
         val velocity = body.linearVelocity
         val camera = cameraManager.camera
@@ -54,6 +60,8 @@ class PlayerMotionSystem(
             sprint = input.sprintPressed,
             jumpPressed = input.jumpPressed,
             jumpHeld = input.jumpHeld,
+            mountPressed = input.mountPressed,
+            mountDistance = mount?.getWorldPosition()?.distance(position) ?: Float.NaN,
             crouch = input.crouchPressed,
             grounded = controller.isGrounded,
             horizontalSpeed = speed,
@@ -62,6 +70,19 @@ class PlayerMotionSystem(
             cameraForward = Vector3f(camera.camForward),
             cameraRight = Vector3f(camera.camRight),
         )
+    }
+
+    private fun findMount(name: String, self: GameObject): RigidBody3D? =
+        scene.children.firstOrNull { it !== self && it.name == name }?.getComponent<RigidBody3D>()
+
+    /** Mounting puts the mount under the character's feet; dismounting leaves it where it is. */
+    private fun placeMount(request: MountRequest, mountable: Mountable, mount: RigidBody3D, body: IPhysicsBody3D) {
+        if (request != MountRequest.MOUNT) return
+        val feet = body.getWorldPosition().add(mountable.mountOffset)
+        mount.rawBody?.setLocation(feet)
+        mount.setRotation(Quaternionf().rotateY(MotionMath.yawOfRotation(body.getRotation())))
+        mount.linearVelocity = Vector3f()
+        mount.angularVelocity = Vector3f()
     }
 
     /** Follows slopes, climbs steps and snaps to the ground by adjusting vertical velocity. */

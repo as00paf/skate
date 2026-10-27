@@ -71,6 +71,7 @@ class InputSystem(
         inputProvider.refreshGamepadState()
         actionReader.update()
         rumble.update(dt)
+        val mountEdge = reader.wasActionPressed(DefaultActions.TOGGLE_MOUNT)
         if (!scene.isRunning) return
 
         scene.children.forEach { go ->
@@ -81,6 +82,7 @@ class InputSystem(
             pollActions(inputState)
             pollMouseInput(inputState)
             updateJumpState(inputState)
+            inputState.mountPressed = mountEdge
         }
 
         inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)

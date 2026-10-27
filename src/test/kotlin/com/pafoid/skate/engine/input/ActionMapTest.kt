@@ -79,7 +79,7 @@ class ActionMapTest {
     @Test
     fun ActionMap_ResetContextOnlyAffectsThatContext() {
         val m = map()
-        m.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.E))
+        m.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.Q))
         m.rebind(DefaultActions.UI_CONFIRM, 0, ActionBinding.Key(Keys.Q))
         m.resetContext(InputContext.GAMEPLAY)
         assertFalse(m.isCustomized(DefaultActions.JUMP))
@@ -91,7 +91,7 @@ class ActionMapTest {
     @Test
     fun ActionMap_ProfileRoundTripsThroughJsonAndStoresOnlyOverrides() {
         val m = map()
-        m.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.E))
+        m.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.Q))
         m.addBinding(DefaultActions.MOVE_X, ActionBinding.Key(Keys.RIGHT))
         val profile = m.toProfile("Mine")
         assertEquals(setOf(DefaultActions.JUMP, DefaultActions.MOVE_X), profile.overrides.keys)
@@ -117,12 +117,12 @@ class ActionMapTest {
     fun ActionMap_InputMappingsPersistBindingsAndDeadZones() {
         val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
         val m = map()
-        m.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.E))
+        m.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.Q))
         val mappings = InputMappings()
         mappings.storeBindings(m)
         val loaded = json.decodeFromString<InputMappings>(json.encodeToString(InputMappings.serializer(), mappings))
         val fresh = map().also { it.loadProfile(loaded.bindings) }
-        assertEquals(ActionBinding.Key(Keys.E), fresh.bindings(DefaultActions.JUMP)[0])
+        assertEquals(ActionBinding.Key(Keys.Q), fresh.bindings(DefaultActions.JUMP)[0])
         // old project files (pre-action-map fields) still load
         assertEquals(BindingProfile(), json.decodeFromString<InputMappings>("""{"jump":{"gamepadButton":2}}""").bindings)
     }

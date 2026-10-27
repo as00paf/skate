@@ -33,6 +33,11 @@
             "AIR": "falling idle"
         }
     },
+    "mount": {
+        "range": 1.5,
+        "targetName": "Skateboard",
+        "offsetY": 0.0
+    },
     "input": {
         "moveDeadZone": 0.15,
         "pushStickThreshold": 0.6

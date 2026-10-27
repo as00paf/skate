@@ -11,6 +11,7 @@ data class SkateControllerConfig(
     /** Start on the board. When false the character walks (on-foot [onFoot] config) until mounted. */
     val startMounted: Boolean = false,
     val onFoot: LocomotionConfig = LocomotionConfig(),
+    val mount: MountTuning = MountTuning(),
     val input: InputTuning = InputTuning(),
     val push: PushTuning = PushTuning(),
     val ride: RideTuning = RideTuning(),
@@ -28,6 +29,16 @@ data class SkateControllerConfig(
         "MANUAL" to "idle",
         "BAIL" to "falling idle",
     ),
+)
+
+@Serializable
+data class MountTuning(
+    /** Max distance in meters between character and board to mount. */
+    val range: Float = 1.5f,
+    /** Scene object name of the board. */
+    val targetName: String = "Skateboard",
+    /** Board height relative to the character origin (feet) when mounting. */
+    val offsetY: Float = 0f,
 )
 
 @Serializable

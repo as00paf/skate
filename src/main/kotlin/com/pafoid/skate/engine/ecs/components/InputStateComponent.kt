@@ -13,6 +13,8 @@ data class InputStateComponent(
     var crouchPressed: Boolean = false,
     var jumpPressed: Boolean = false,
     var jumpHeld: Boolean = false,
+    /** Edge: the mount toggle action went down this frame. */
+    var mountPressed: Boolean = false,
     @Contextual
     val cameraLook: Vector2f = Vector2f(0f, 0f),
     var pausePressed: Boolean = false,
@@ -27,6 +29,7 @@ data class InputStateComponent(
 
         // Jump (jumpHeld is set based on current button state)
         jumpPressed = false
+        mountPressed = false
 
         // Camera
         cameraLook.set(0f, 0f)
