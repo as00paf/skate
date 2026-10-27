@@ -10,7 +10,6 @@ import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.events.Collision
 import com.pafoid.skate.engine.events.TriggerEntered
@@ -35,7 +34,6 @@ class PhysicsSystem(
     private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer)
 
     private val bodies = query(RigidBody3D::class, topLevelOnly = true, includeDisabled = true)
-    private val tracked = mutableSetOf<GameObject>()
     private val activeJoints = mutableMapOf<JointComponent, IPhysicsConstraint>()
 
     init {
@@ -57,29 +55,34 @@ class PhysicsSystem(
 
     override fun init(scene: Scene) {
         super.init(scene)
-        tracked.clear()
         states.clear()
+        stateList.clear()
         bodies.forEach {
-            tracked.add(it)
+            trackedState(it)
             physics3d.add(it)
         }
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->
             physics3d.debugEnabled = component.debugEnabled
+            appliedGravity.set(component.gravity)
             physics3d.setGravity(component.gravity)
         }
     }
 
-    private val tempQuat = Quaternionf()
+    // Scratch values reused every step/frame so the sync loops do not allocate
     private val tempPos = Vector3f()
     private val tempEuler = Vector3f()
+    private val blendedRot = Quaternionf()
+    private val appliedGravity = Vector3f(0f, -9.81f, 0f)
 
     /** The two most recent simulated poses of a body, blended per frame so motion stays smooth at any frame rate. */
-    private class BodyState {
+    private class BodyState(val go: GameObject) {
         val prevPos = Vector3f()
         val currPos = Vector3f()
         val prevRot = Quaternionf()
         val currRot = Quaternionf()
+        var transform: Transform? = null
+        var stamp = 0L
         private var initialized = false
 
         fun push(handle: IRigidBodyHandle) {
@@ -97,16 +100,21 @@ class PhysicsSystem(
         }
     }
 
-    private val states = mutableMapOf<GameObject, BodyState>()
-    private val blendedRot = Quaternionf()
+    private val states = HashMap<GameObject, BodyState>()
+    private val stateList = ArrayList<BodyState>()
+    private var stepStamp = 0L
+
+    private fun trackedState(go: GameObject): BodyState =
+        states.getOrPut(go) { BodyState(go).also { stateList.add(it) } }
 
     /** Per-frame work: writes interpolated poses into transforms and draws debug shapes. */
     fun onFrame(dt: Float, alpha: Float) {
         physics3d.debugDraw(dt)
         if (!scene.isRunning) return
 
-        for ((go, state) in states) {
-            val transform = go.getComponent<Transform>() ?: continue
+        for (i in stateList.indices) {
+            val state = stateList[i]
+            val transform = state.transform ?: state.go.getComponent<Transform>()?.also { state.transform = it } ?: continue
             state.prevPos.lerp(state.currPos, alpha, tempPos)
             state.prevRot.nlerp(state.currRot, alpha, blendedRot)
 
@@ -121,61 +129,80 @@ class PhysicsSystem(
         physics3d.step(fixedDt)
 
         scene.getComponent<ScenePhysicsComponent>()?.let { component ->
-            if (physics3d.getGravity() != component.gravity) {
+            if (appliedGravity != component.gravity) {
+                appliedGravity.set(component.gravity)
                 physics3d.setGravity(component.gravity)
             }
         }
 
-        // Remove bodies whose object left the scene or lost its RigidBody3D
-        val live = bodies.entities
-        val liveSet = live.toHashSet()
-        val removed = tracked.filter { it !in liveSet }
-        removed.forEach { physics3d.remove(it) }
-        tracked.removeAll(removed.toSet())
-        tracked.addAll(live)
-
-        for (go in live) {
-            val body = go.getComponent<RigidBody3D>() ?: continue
+        val stamp = ++stepStamp
+        var liveCount = 0
+        bodies.forEach { go ->
+            liveCount++
+            val state = trackedState(go)
+            state.stamp = stamp
+            val body = go.getComponent<RigidBody3D>() ?: return@forEach
             val handle = body.rawBody
             if (handle == null) {
                 physics3d.add(go) // Add to physics if raw body is null
             } else {
-                states.getOrPut(go) { BodyState() }.push(handle)
+                state.push(handle)
             }
 
             go.getComponent<PlayerController>()?.let { probeGround(it, body) }
         }
-        states.keys.retainAll(liveSet)
+        if (stateList.size != liveCount) removeStaleBodies(stamp)
 
         syncJoints()
     }
 
+    /** Drops bodies whose object left the scene or lost its RigidBody3D; only runs when membership changed. */
+    private fun removeStaleBodies(stamp: Long) {
+        val stale = stateList.filter { it.stamp != stamp }
+        stale.forEach {
+            physics3d.remove(it.go)
+            states.remove(it.go)
+        }
+        stateList.removeAll(stale.toSet())
+    }
+
     /** Creates joints whose bodies are ready and removes joints whose component or object is gone. */
     private fun syncJoints() {
-        val live = bodies.entities.mapNotNull { go -> go.getComponent<JointComponent>()?.let { go to it } }
+        var liveActive = 0
+        bodies.forEach { go ->
+            val joint = go.getComponent<JointComponent>() ?: return@forEach
+            if (joint.constraint != null) {
+                if (joint in activeJoints) liveActive++
+                return@forEach
+            }
+            createJoint(go, joint)
+        }
+        if (liveActive != activeJoints.size) removeStaleJoints()
+    }
 
-        activeJoints.filter { (joint, _) -> live.none { it.second === joint } }.forEach { (joint, _) ->
+    private fun removeStaleJoints() {
+        val live = bodies.entities.mapNotNull { it.getComponent<JointComponent>() }
+        activeJoints.keys.filter { joint -> live.none { it === joint } }.forEach { joint ->
             joint.constraint?.let { physics3d.removeConstraint(it) }
             joint.constraint = null
             activeJoints.remove(joint)
         }
+    }
 
-        for ((go, joint) in live) {
-            if (joint.constraint != null) continue
-            val bodyA = go.getComponent<RigidBody3D>()?.rawBody ?: continue
-            val bodyB = if (joint.connectedBodyId == -1) {
-                // Static world anchor placed at this body's anchor point
-                val worldAnchor = Vector3f(joint.anchor).add(bodyA.getLocation(Vector3f()))
-                joint.connectedAnchor.set(0f, 0f, 0f)
-                physics3d.createStaticAnchor(worldAnchor)
-            } else {
-                bodies.entities.firstOrNull { it.uId == joint.connectedBodyId }?.getComponent<RigidBody3D>()?.rawBody ?: continue
-            }
-            val constraint = joint.createConstraint(bodyA, bodyB)
-            physics3d.addConstraint(constraint)
-            joint.constraint = constraint
-            activeJoints[joint] = constraint
+    private fun createJoint(go: GameObject, joint: JointComponent) {
+        val bodyA = go.getComponent<RigidBody3D>()?.rawBody ?: return
+        val bodyB = if (joint.connectedBodyId == -1) {
+            // Static world anchor placed at this body's anchor point
+            val worldAnchor = Vector3f(joint.anchor).add(bodyA.getLocation(Vector3f()))
+            joint.connectedAnchor.set(0f, 0f, 0f)
+            physics3d.createStaticAnchor(worldAnchor)
+        } else {
+            bodies.entities.firstOrNull { it.uId == joint.connectedBodyId }?.getComponent<RigidBody3D>()?.rawBody ?: return
         }
+        val constraint = joint.createConstraint(bodyA, bodyB)
+        physics3d.addConstraint(constraint)
+        joint.constraint = constraint
+        activeJoints[joint] = constraint
     }
 
     /** Probes the ground below a player-controlled body and any climbable step ahead of it. */
@@ -197,8 +224,6 @@ class PhysicsSystem(
     }
 
     fun isDebugEnabled(): Boolean = physics3d.debugEnabled
-
-    data class PhysicsObject(val go: GameObject, val transform: Transform?, val body: RigidBody3D)
 }
 
 /** Per-frame companion of [PhysicsSystem], which itself only runs in the fixed-update phase. */

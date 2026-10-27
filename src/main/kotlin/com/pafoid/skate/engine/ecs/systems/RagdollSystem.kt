@@ -1,6 +1,6 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
@@ -20,8 +20,22 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
     private val tempVecJoml = Vector3f()
     private val tempQuatJoml = Quaternionf()
     private val tempMat = Matrix4f()
+    private val invGoMat = Matrix4f()
+    private val tempWorldMat = Matrix4f()
 
     private val ragdolls = query(SkeletonComponent::class, RagdollComponent::class, Transform::class, topLevelOnly = true)
+
+    /** Resolves bone names to indices; redone only when the skeleton or the set of bone bodies changes. */
+    private fun bindingsFor(ragdoll: RagdollComponent, skeleton: Skeleton): Array<RagdollComponent.BoneBinding> {
+        if (ragdoll.boundSkeleton !== skeleton || ragdoll.boundBodyCount != ragdoll.boneBodies.size) {
+            ragdoll.bindings = ragdoll.boneBodies.keys.mapNotNull { name ->
+                skeleton.getBoneByName(name)?.let { RagdollComponent.BoneBinding(name, it.index) }
+            }.toTypedArray()
+            ragdoll.boundSkeleton = skeleton
+            ragdoll.boundBodyCount = ragdoll.boneBodies.size
+        }
+        return ragdoll.bindings
+    }
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
@@ -35,34 +49,19 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
 
             when (ragdoll.state) {
                 RagdollState.RAGDOLL -> {
-                    // Physics drives bones
-                    ragdoll.boneBodies.forEach { (boneName, body) ->
-                        val bone = skeleton.getBoneByName(boneName) ?: return@forEach
+                    // Physics drives bones: overwrite the GameObject-space global transforms of the ragdolled bones,
+                    // from which the skin matrices are rebuilt below.
+                    goTransform.worldMatrix.invert(invGoMat)
+                    val bindings = bindingsFor(ragdoll, skeleton)
+                    for (i in bindings.indices) {
+                        val binding = bindings[i]
+                        val body = ragdoll.boneBodies[binding.name] ?: continue
+                        if (binding.boneIndex !in pose.globalTransforms.indices) continue
 
                         body.getLocation(tempVecJoml)
                         body.getRotation(tempQuatJoml)
-
-                        // We need to convert world space physics to local space of the parent bone or 
-                        // just override the global transform directly.
-                        // The engine builds skin matrices from pose.globalTransforms.
-                        // So we can overwrite pose.globalTransforms for the ragdolled bones.
-
-                        // Transform from world to GameObject local space
-                        // Actually globalTransforms are in GameObject space.
-                        // So we multiply by inverse GameObject transform.
-                        val invGoMat = Matrix4f(goTransform.worldMatrix).invert()
-
-                        tempMat.translationRotateScale(
-                            tempVecJoml,
-                            tempQuatJoml,
-                            Vector3f(1f, 1f, 1f) // Scale from physics shape or keep 1
-                        )
-
-                        val goSpaceMat = Matrix4f(invGoMat).mul(tempMat)
-
-                        if (bone.index in pose.globalTransforms.indices) {
-                            pose.globalTransforms[bone.index].set(goSpaceMat)
-                        }
+                        tempMat.translationRotate(tempVecJoml, tempQuatJoml)
+                        invGoMat.mul(tempMat, pose.globalTransforms[binding.boneIndex])
                     }
 
                     // Rebuild skin matrices based on the overwritten global transforms
@@ -72,26 +71,25 @@ class RagdollSystem : System(priority = ExecutionPriority.DEFAULT) {
 
                 RagdollState.ANIMATED -> {
                     // Animation drives physics (Kinematic sync)
-                    ragdoll.boneBodies.forEach { (boneName, body) ->
-                        val bone = skeleton.getBoneByName(boneName) ?: return@forEach
+                    val bindings = bindingsFor(ragdoll, skeleton)
+                    for (i in bindings.indices) {
+                        val binding = bindings[i]
+                        val body = ragdoll.boneBodies[binding.name] ?: continue
+                        if (binding.boneIndex !in pose.globalTransforms.indices) continue
 
-                        if (bone.index in pose.globalTransforms.indices) {
-                            val globalTrans = pose.globalTransforms[bone.index]
+                        // Transform from GameObject space to World space
+                        goTransform.worldMatrix.mul(pose.globalTransforms[binding.boneIndex], tempWorldMat)
 
-                            // Transform from GameObject space to World space
-                            val worldMat = Matrix4f(goTransform.worldMatrix).mul(globalTrans)
+                        tempWorldMat.getTranslation(tempVecJoml)
+                        tempWorldMat.getUnnormalizedRotation(tempQuatJoml)
+                        tempQuatJoml.normalize()
 
-                            worldMat.getTranslation(tempVecJoml)
-                            worldMat.getUnnormalizedRotation(tempQuatJoml)
-                            tempQuatJoml.normalize()
+                        body.setLocation(tempVecJoml)
+                        body.setRotation(tempQuatJoml)
 
-                            body.setLocation(tempVecJoml)
-                            body.setRotation(tempQuatJoml)
-
-                            // Ensure body is kinematic while animated
-                            if (!body.isKinematic) {
-                                body.isKinematic = true
-                            }
+                        // Ensure body is kinematic while animated
+                        if (!body.isKinematic) {
+                            body.isKinematic = true
                         }
                     }
                 }

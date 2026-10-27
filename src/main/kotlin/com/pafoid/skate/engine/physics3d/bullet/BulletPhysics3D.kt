@@ -1,7 +1,9 @@
 package com.pafoid.skate.engine.physics3d.bullet
 import com.jme3.bullet.PhysicsSpace
+import com.jme3.bullet.collision.PhysicsCollisionListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.ConvexShape
+import com.pafoid.skate.engine.physics3d.ALL_LAYERS
 import com.pafoid.skate.engine.physics3d.PhysicsContactListener
 import com.pafoid.skate.engine.physics3d.PhysicsHit
 import com.jme3.bullet.joints.ConeJoint
@@ -82,6 +84,31 @@ class BulletPhysics3D(
 
     override var contactListener: PhysicsContactListener? = null
 
+    private val rayStart = JmeVector3f()
+    private val rayEnd = JmeVector3f()
+    private val rayResults = ArrayList<PhysicsRayTestResult>()
+
+    /** Reuses scratch vectors and the result list so per-step ground checks only allocate inside Bullet. */
+    override fun raycastClosest(from: JomlVector3f, to: JomlVector3f, excludeBody: IPhysicsBody3D?): Float? {
+        if (debugEnabled) {
+            debugRenderer.addLine3D(from, to, JomlVector3f(1f, 0f, 1f), 1)
+        }
+        val excluded = excludedObject(excludeBody)
+        rayStart.set(from.x, from.y, from.z)
+        rayEnd.set(to.x, to.y, to.z)
+        rayResults.clear()
+        physicsSpace.rayTest(rayStart, rayEnd, rayResults)
+
+        var closest: Float? = null
+        for (i in rayResults.indices) {
+            val hit = rayResults[i]
+            if (isQueryable(hit.collisionObject, ALL_LAYERS, excluded) && (closest == null || hit.hitFraction < closest)) {
+                closest = hit.hitFraction
+            }
+        }
+        return closest
+    }
+
     override fun raycast(from: JomlVector3f, to: JomlVector3f, layerMask: Int, excludeBody: IPhysicsBody3D?): PhysicsHit? =
         raycastAll(from, to, layerMask, excludeBody).firstOrNull()
 
@@ -159,6 +186,7 @@ class BulletPhysics3D(
             if (rawBody != null) {
                 if (rawBody.mass != desiredMass) {
                     physicsSpace.remove(rawBody)
+                    contactBodies.remove(rawBody)
                     rb.rawBody = null
                 } else {
                     // Body exists and mass is correct, just sync properties
@@ -204,6 +232,7 @@ class BulletPhysics3D(
             }
             body.userObject = go
             physicsSpace.add(body)
+            contactBodies.add(body)
             syncBodyProperties(body, rb, go)// Initial property sync
         }
     }
@@ -250,7 +279,10 @@ class BulletPhysics3D(
         forgetContacts(go)
         val rb = go.getComponent<RigidBody3D>()
         rb?.rawBody?.let {
-            (it as? BulletRigidBodyHandle)?.let { handle -> physicsSpace.remove(handle.body) }
+            (it as? BulletRigidBodyHandle)?.let { handle ->
+                physicsSpace.remove(handle.body)
+                contactBodies.remove(handle.body)
+            }
             rb.rawBody = null
         }
     }
@@ -370,65 +402,119 @@ class BulletPhysics3D(
         return (smallest * 0.5f).coerceAtLeast(0.01f)
     }
 
-    private data class PairKey(val a: Int, val b: Int)
+    private class PendingContact {
+        var kind = 0
+        lateinit var a: GameObject
+        lateinit var b: GameObject
+        val point = JomlVector3f()
+        val normal = JomlVector3f()
+        var impulse = 0f
+    }
 
-    private var activeCollisions = emptySet<PairKey>()
-    private var activeTriggerOverlaps = emptyMap<GameObject, Set<GameObject>>()
+    private val contactBodies = ArrayList<PhysicsRigidBody>()
+    private val pending = ArrayList<PendingContact>()
+    private var pendingCount = 0
+    private var collisionsNow = LongSet()
+    private var collisionsPrev = LongSet()
+    private var overlapsNow = LongSet()
+    private var overlapsPrev = LongSet()
+    private val overlapObjects = HashMap<Long, Pair<GameObject, GameObject>>()
+
+    // Updated per contactTest so a single listener instance serves every body
+    private var testBody: PhysicsRigidBody? = null
+    private var testSelf: GameObject? = null
+    private var testIsTrigger = false
+
+    private val contactCollector = PhysicsCollisionListener { event ->
+        val body = testBody ?: return@PhysicsCollisionListener
+        val self = testSelf ?: return@PhysicsCollisionListener
+        val bodyIsA = event.objectA === body
+        val other = if (bodyIsA) event.objectB else event.objectA
+        val otherGo = other.userObject as? GameObject ?: return@PhysicsCollisionListener
+        if (!other.isContactResponse) return@PhysicsCollisionListener
+
+        if (testIsTrigger) {
+            val key = (self.uId.toLong() shl 32) or otherGo.uId.toLong()
+            overlapsNow.add(key)
+            if (!overlapsPrev.contains(key)) {
+                overlapObjects[key] = self to otherGo
+                queue(PENDING_TRIGGER_ENTER, self, otherGo)
+            }
+        } else {
+            val key = (minOf(self.uId, otherGo.uId).toLong() shl 32) or maxOf(self.uId, otherGo.uId).toLong()
+            if (collisionsNow.add(key) && !collisionsPrev.contains(key)) {
+                val contact = queue(PENDING_COLLISION, self, otherGo)
+                event.getPositionWorldOnB(tempContactVec)
+                contact.point.set(tempContactVec.x, tempContactVec.y, tempContactVec.z)
+                event.getNormalWorldOnB(tempContactVec)
+                contact.normal.set(tempContactVec.x, tempContactVec.y, tempContactVec.z)
+                if (!bodyIsA) contact.normal.negate()
+                contact.impulse = event.appliedImpulse
+            }
+        }
+    }
+    private val tempContactVec = JmeVector3f()
+
+    private fun queue(kind: Int, a: GameObject, b: GameObject): PendingContact {
+        if (pendingCount == pending.size) pending.add(PendingContact())
+        return pending[pendingCount++].also {
+            it.kind = kind
+            it.a = a
+            it.b = b
+        }
+    }
 
     private fun dispatchContacts() {
         val listener = contactListener ?: return
-        val collisions = HashSet<PairKey>()
-        val started = ArrayList<(PhysicsContactListener) -> Unit>()
-        val overlaps = HashMap<GameObject, MutableSet<GameObject>>()
+        collisionsPrev = collisionsNow.also { collisionsNow = collisionsPrev }
+        collisionsNow.clear()
+        overlapsPrev = overlapsNow.also { overlapsNow = overlapsPrev }
+        overlapsNow.clear()
+        pendingCount = 0
 
-        for (body in physicsSpace.rigidBodyList) {
+        for (i in contactBodies.indices) {
+            val body = contactBodies[i]
             val self = body.userObject as? GameObject ?: continue
-            val isTrigger = !body.isContactResponse
-            if (!isTrigger && body.isStatic) continue
+            testIsTrigger = !body.isContactResponse
+            if (!testIsTrigger && body.isStatic) continue
+            testBody = body
+            testSelf = self
+            physicsSpace.contactTest(body, contactCollector)
+        }
+        testBody = null
+        testSelf = null
 
-            physicsSpace.contactTest(body) { event ->
-                val bodyIsA = event.objectA === body
-                val other = if (bodyIsA) event.objectB else event.objectA
-                val otherGo = other.userObject as? GameObject ?: return@contactTest
-                if (!other.isContactResponse) return@contactTest
+        overlapsPrev.forEach { key ->
+            if (!overlapsNow.contains(key)) overlapObjects.remove(key)?.let { queue(PENDING_TRIGGER_EXIT, it.first, it.second) }
+        }
 
-                if (isTrigger) {
-                    overlaps.getOrPut(self) { HashSet() }.add(otherGo)
-                } else if (PairKey(minOf(self.uId, otherGo.uId), maxOf(self.uId, otherGo.uId)).let {
-                        collisions.add(it) && it !in activeCollisions
-                    }
-                ) {
-                    val point = event.getPositionWorldOnB(null).toVector3f()
-                    val normal = event.getNormalWorldOnB(null).toVector3f().also { if (!bodyIsA) it.negate() }
-                    val impulse = event.appliedImpulse
-                    started.add { it.onCollisionStarted(self, otherGo, point, normal, impulse) }
-                }
+        // Dispatch last: listeners may add or remove bodies, which touches the sets above
+        for (i in 0 until pendingCount) {
+            val c = pending[i]
+            when (c.kind) {
+                PENDING_COLLISION -> listener.onCollisionStarted(c.a, c.b, c.point, c.normal, c.impulse)
+                PENDING_TRIGGER_ENTER -> listener.onTriggerEnter(c.a, c.b)
+                else -> listener.onTriggerExit(c.a, c.b)
             }
         }
-
-        val previousOverlaps = activeTriggerOverlaps
-        activeCollisions = collisions
-        activeTriggerOverlaps = overlaps
-        started.forEach { it(listener) }
-        overlaps.forEach { (trigger, others) ->
-            others.filter { it !in (previousOverlaps[trigger] ?: emptySet()) }.forEach { listener.onTriggerEnter(trigger, it) }
-        }
-        previousOverlaps.forEach { (trigger, others) ->
-            others.filter { it !in (overlaps[trigger] ?: emptySet()) }.forEach { listener.onTriggerExit(trigger, it) }
-        }
+        pendingCount = 0
     }
 
     /** Drops contact state for a removed object, reporting trigger exits so listeners do not keep stale overlaps. */
     private fun forgetContacts(go: GameObject) {
-        val listener = contactListener
-        val updated = HashMap<GameObject, Set<GameObject>>()
-        activeTriggerOverlaps.forEach { (trigger, others) ->
-            if (trigger === go) return@forEach
-            if (go in others) listener?.onTriggerExit(trigger, go)
-            updated[trigger] = others - go
+        val gone = overlapObjects.filterValues { it.first === go || it.second === go }
+        gone.forEach { (key, pair) ->
+            overlapObjects.remove(key)
+            overlapsNow.retainWhere { it != key }
+            if (pair.second === go) contactListener?.onTriggerExit(pair.first, go)
         }
-        activeTriggerOverlaps = updated
-        activeCollisions = activeCollisions.filterTo(HashSet()) { it.a != go.uId && it.b != go.uId }
+        collisionsNow.retainWhere { (it shr 32).toInt() != go.uId && (it and 0xFFFFFFFFL).toInt() != go.uId }
+    }
+
+    private companion object {
+        const val PENDING_COLLISION = 0
+        const val PENDING_TRIGGER_ENTER = 1
+        const val PENDING_TRIGGER_EXIT = 2
     }
 
     override fun debugDraw(dt: Float) {
