@@ -107,7 +107,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Add a `ParticleEmitter` component (CPU first, GPU instancing for draw) with an emission shape, lifetime, velocity/size/color over life and a texture atlas.
   - Done when: Emitters can be added in the editor and play in game, and the simulation step is unit-tested.
   - Deps: REN-03, ECS-03
-- [ ] **REN-11** `P2` 2D/3D texture rendering improvements
+- [~] @skate-render **REN-11** `P2` 2D/3D texture rendering improvements
   - Do: Clean up `Renderer2D`, `TextureRenderer3D` and sprite batching. Add mipmaps/anisotropy from `TextureQuality`, sprite atlases and billboards.
   - Done when: Sprites and billboards batch correctly, and texture quality settings take effect.
   - Deps: REN-02
