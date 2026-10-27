@@ -14,6 +14,27 @@ object GizmoMath {
     fun screenSpaceScale(distance: Float, fovRadians: Float, screenFraction: Float = 0.15f): Float =
         2f * distance.coerceAtLeast(0.001f) * tan(fovRadians / 2f) * screenFraction
 
+    /**
+     * Gizmo world size for a camera: perspective cameras use the effective vertical fov (fov * zoom, as the
+     * projection does), orthographic cameras use the visible height (viewportHeight * zoom) regardless of distance.
+     */
+    fun gizmoSize(
+        orthographic: Boolean, distance: Float, fovDegrees: Float, zoom: Float, viewportHeight: Int,
+        screenFraction: Float = 0.15f,
+    ): Float =
+        if (orthographic) viewportHeight * zoom * screenFraction
+        else screenSpaceScale(distance, Math.toRadians((fovDegrees * zoom).toDouble()).toFloat(), screenFraction)
+
+    /** Copies of [axes] flipped so each points toward the viewer ([viewDir] runs from camera to gizmo). */
+    fun facingViewer(axes: Array<Vector3f>, viewDir: Vector3f): Array<Vector3f> =
+        Array(axes.size) { i -> if (axes[i].dot(viewDir) > 0f) Vector3f(axes[i]).negate() else Vector3f(axes[i]) }
+
+    /** Converts a world-space translation delta into the local space of a parent with [parentWorld] (null = root). */
+    fun toParentSpace(delta: Vector3f, parentWorld: org.joml.Matrix4f?): Vector3f {
+        if (parentWorld == null) return Vector3f(delta)
+        return org.joml.Matrix4f(parentWorld).invert().transformDirection(Vector3f(delta))
+    }
+
     /** Unit axis directions (x, y, z) in world space or in the space of the given Euler rotation in degrees. */
     fun axes(rotationDegrees: Vector3f, local: Boolean): Array<Vector3f> {
         val m = Matrix3f()
