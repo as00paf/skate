@@ -34,66 +34,30 @@ object Keys {
     const val ESCAPE = 256; const val ENTER = 257; const val TAB = 258
     const val RIGHT = 262; const val LEFT = 263; const val DOWN = 264; const val UP = 265
     const val LEFT_SHIFT = 340; const val LEFT_CONTROL = 341
-}
 
-sealed class ActionBinding {
-    data class Key(val key: Int, val scale: Float = 1f) : ActionBinding()
-    data class MouseButton(val button: Int, val scale: Float = 1f) : ActionBinding()
-    data class GamepadButton(val button: Int, val scale: Float = 1f) : ActionBinding()
-    data class GamepadAxis(
-        val axis: Int,
-        val scale: Float = 1f,
-        val deadZone: Float = 0.15f
-    ) : ActionBinding()
-}
-
-class ActionMap {
-    private val actions = LinkedHashMap<String, MutableList<ActionBinding>>()
-
-    val names: Set<String> get() = actions.keys
-
-    fun bind(action: String, binding: ActionBinding): ActionMap {
-        actions.getOrPut(action) { mutableListOf() }.add(binding)
-        return this
-    }
-
-    fun clear(action: String) {
-        actions.remove(action)
-    }
-
-    fun bindings(action: String): List<ActionBinding> = actions[action] ?: emptyList()
-
-    /** Binds the gamepad part of [mappings] to the standard action names. */
-    fun applyMappings(mappings: InputMappings) {
-        listOf("jump", "sprint", "crouch", "moveX", "moveY", "lookX", "lookY").forEach(::clear)
-        fun gamepad(action: String, b: InputBinding, scale: Float = 1f) {
-            if (b.gamepadAxis >= 0) {
-                val s = if (b.inverted) -scale else scale
-                bind(action, ActionBinding.GamepadAxis(b.gamepadAxis, s))
-            }
-            if (b.gamepadButton >= 0) bind(action, ActionBinding.GamepadButton(b.gamepadButton))
-            if (b.keyboardKey >= 0) bind(action, ActionBinding.Key(b.keyboardKey))
-        }
-        gamepad("jump", mappings.jump)
-        gamepad("sprint", mappings.sprint)
-        gamepad("crouch", mappings.crouch)
-        gamepad("moveX", mappings.moveRight)
-        // GLFW reports stick-up as negative
-        gamepad("moveY", mappings.moveUp, -1f)
-        gamepad("lookX", mappings.cameraLookX)
-        gamepad("lookY", mappings.cameraLookY, -1f)
+    fun nameOf(key: Int): String = when (key) {
+        SPACE -> "Space"; ESCAPE -> "Escape"; ENTER -> "Enter"; TAB -> "Tab"
+        RIGHT -> "Right"; LEFT -> "Left"; DOWN -> "Down"; UP -> "Up"
+        LEFT_SHIFT -> "Left Shift"; LEFT_CONTROL -> "Left Ctrl"
+        in 48..57, in 65..90 -> key.toChar().toString()
+        else -> "Key $key"
     }
 }
 
 class ActionInputReader(
     private val raw: RawInput,
     val actions: ActionMap = ActionMap(),
-    private val pressThreshold: Float = 0.5f
+    private val pressThreshold: Float = 0.5f,
+    private val deadZones: () -> DeadZoneSettings = { DeadZoneSettings() }
 ) : InputReader, RawInput by raw {
+
+    /** Contexts whose actions are read; the others report 0. */
+    val activeContexts: MutableSet<InputContext> = mutableSetOf(InputContext.GAMEPLAY, InputContext.UI)
 
     private val wasDown = HashMap<String, Boolean>()
     private val downNow = HashMap<String, Boolean>()
     private val watched = HashSet<String>()
+    private val stick = org.joml.Vector2f()
 
     /**
      * Call once per frame, before readers run, to advance action edge detection.
@@ -105,29 +69,60 @@ class ActionInputReader(
         for (name in watched) downNow[name] = isActionDown(name)
     }
 
+    private fun bindingsOf(name: String): List<ActionBinding> {
+        val def = actions.definition(name) ?: return emptyList()
+        return if (def.context in activeContexts) actions.bindings(name) else emptyList()
+    }
+
     override fun actionValue(name: String): Float {
         var best = 0f
-        for (b in actions.bindings(name)) {
+        for (b in bindingsOf(name)) {
             val v = valueOf(b)
             if (kotlin.math.abs(v) > kotlin.math.abs(best)) best = v
         }
         return best
     }
 
-    override fun isActionDown(name: String): Boolean = kotlin.math.abs(actionValue(name)) >= pressThreshold
+    override fun isActionDown(name: String): Boolean = bindingsOf(name).any { isDown(it) }
 
     override fun wasActionPressed(name: String): Boolean {
         if (watched.add(name)) downNow[name] = isActionDown(name)
         return (downNow[name] ?: false) && wasDown[name] != true
     }
 
+    private fun isDown(b: ActionBinding): Boolean = when (b) {
+        is ActionBinding.Key -> raw.isKeyDown(b.key)
+        is ActionBinding.MouseButton -> raw.isMouseButtonDown(b.button)
+        is ActionBinding.GamepadButton -> raw.isGamepadButtonDown(b.button)
+        is ActionBinding.GamepadAxis -> when (b.axis) {
+            4 -> deadZones().leftTrigger.isPressed(raw.gamepadAxis(4))
+            5 -> deadZones().rightTrigger.isPressed(raw.gamepadAxis(5))
+            else -> kotlin.math.abs(valueOf(b)) >= pressThreshold
+        }
+    }
+
     private fun valueOf(b: ActionBinding): Float = when (b) {
         is ActionBinding.Key -> if (raw.isKeyDown(b.key)) b.scale else 0f
         is ActionBinding.MouseButton -> if (raw.isMouseButtonDown(b.button)) b.scale else 0f
         is ActionBinding.GamepadButton -> if (raw.isGamepadButtonDown(b.button)) b.scale else 0f
-        is ActionBinding.GamepadAxis -> {
-            val v = raw.gamepadAxis(b.axis)
-            if (kotlin.math.abs(v) < b.deadZone) 0f else v * b.scale
+        is ActionBinding.GamepadAxis -> processedAxis(b.axis) * b.scale
+    }
+
+    /** Raw axis passed through the dead zone of the stick/trigger that owns it. */
+    private fun processedAxis(axis: Int): Float {
+        val zones = deadZones()
+        return when (axis) {
+            0, 1 -> {
+                zones.leftStick.apply(raw.gamepadAxis(0), raw.gamepadAxis(1), stick)
+                if (axis == 0) stick.x else stick.y
+            }
+            2, 3 -> {
+                zones.rightStick.apply(raw.gamepadAxis(2), raw.gamepadAxis(3), stick)
+                if (axis == 2) stick.x else stick.y
+            }
+            4 -> zones.leftTrigger.apply(raw.gamepadAxis(4))
+            5 -> zones.rightTrigger.apply(raw.gamepadAxis(5))
+            else -> raw.gamepadAxis(axis)
         }
     }
 }

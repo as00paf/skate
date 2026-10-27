@@ -25,8 +25,10 @@ class StringManager(
                 properties.load(it)
             }
         } catch (e: Exception) {
-            logger.logEditor("Failed to load strings for baseName $path and locale $currentLocale", LogLevel.ERROR)
-            e.printStackTrace()
+            logger.log(
+                "Failed to load strings for baseName $path and locale $currentLocale",
+                LogLevel.ERROR, source = "editor", throwable = e
+            )
             return false
         }
         return true

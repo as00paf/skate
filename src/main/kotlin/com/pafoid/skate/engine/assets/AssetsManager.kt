@@ -11,6 +11,8 @@ import com.pafoid.skate.engine.assets.loaders.ShaderLoader
 import com.pafoid.skate.engine.assets.loaders.SoundLoader
 import com.pafoid.skate.engine.assets.loaders.TextureLoader
 import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.core.JobSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.render.VAOLoader
@@ -40,6 +42,46 @@ class AssetsManager(
     private val models = ConcurrentHashMap<String, `3dModel`>()
     private val sounds = ConcurrentHashMap<String, SoundBuffer>()
     private val animations = ConcurrentHashMap<String, Animation>()
+
+    private var loadService: AssetLoadService? = null
+
+    /** Enables the async API. Call once from the main thread; [JobSystem.update] must run every frame. */
+    fun attachAsyncLoading(jobSystem: JobSystem, eventSystem: EventSystem?) {
+        loadService = AssetLoadService(jobSystem, eventSystem) { logger.log(it, LogLevel.ERROR) }
+    }
+
+    private fun service(): AssetLoadService =
+        loadService ?: throw IllegalStateException("attachAsyncLoading() was not called")
+
+    /** Non-blocking texture request; the ticket yields the default texture until ready. Release when done. */
+    fun requestTexture(path: String): AssetTicket<Texture> {
+        val absolutePath = File(path).absolutePath
+        val placeholder = runCatching { getBundledTexture(Assets.Bundled.DEFAULT_TEXTURE) }.getOrNull()
+        return service().request(
+            key = absolutePath,
+            placeholder = placeholder,
+            decode = { textureLoader.decodeFromFile(absolutePath) },
+            upload = { textureLoader.upload(it) },
+            dispose = { textureLoader.delete(it) },
+            discard = { textureLoader.discard(it) }
+        )
+    }
+
+    /** Non-blocking model request: the file import runs on a worker, VAO/texture creation on the main thread. */
+    fun requestModel(path: String): AssetTicket<`3dModel`> {
+        val absolutePath = File(path).absolutePath
+        val placeholder = runCatching { loadModel(Assets.Models.CUBE) }.getOrNull()
+        return service().request(
+            key = absolutePath,
+            placeholder = placeholder,
+            decode = { assimpLoader.importScene(absolutePath) },
+            upload = { assimpLoader.buildModel(it, absolutePath) },
+            dispose = { model -> model.mesh.forEach { vaoLoader.deleteVAO(it.vaoId) } },
+            discard = { assimpLoader.releaseScene(it) }
+        )
+    }
+
+    fun <T : Any> release(ticket: AssetTicket<T>) = service().release(ticket)
 
     fun initAssetsResolver(assetsAtlas: Atlas, binData: ByteArray, headerOffset: Int) {
         assetsResolver.initialize(assetsAtlas, binData, headerOffset)

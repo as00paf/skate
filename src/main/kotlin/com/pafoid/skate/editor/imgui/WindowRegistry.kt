@@ -33,7 +33,7 @@ class WindowRegistry(
         AssetBrowserWindow(engine, editor.undoRedoManager),
         ProfilerWindow(engine.stringManager),
         ConsoleWindow(engine),
-        InputTestingWindow(engine),
+        InputTestingWindow(engine, projectManager),
         EditorSettingsWindow(editor.settingsManager, engine.stringManager),
         ProjectSettingsWindow(engine, editor.settingsManager, projectManager),
         KeyBindingsWindow(editor.settingsManager, engine.stringManager, projectManager),

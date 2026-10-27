@@ -4,13 +4,20 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.gameplay.ground.GroundDetector
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.events.Collision
+import com.pafoid.skate.engine.events.TriggerEntered
+import com.pafoid.skate.engine.events.TriggerExited
 import com.pafoid.skate.engine.physics3d.IPhysics3D
+import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
+import com.pafoid.skate.engine.physics3d.PhysicsContactListener
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
 import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
@@ -19,7 +26,8 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 
 class PhysicsSystem(
-    private val debugRenderer: DebugRenderer
+    private val debugRenderer: DebugRenderer,
+    private val eventSystem: EventSystem? = null,
 ) : System(priority = ExecutionPriority.EARLY) {
 
     override val phase = SystemPhase.FIXED_UPDATE
@@ -30,9 +38,27 @@ class PhysicsSystem(
     private val tracked = mutableSetOf<GameObject>()
     private val activeJoints = mutableMapOf<JointComponent, IPhysicsConstraint>()
 
+    init {
+        physics3d.contactListener = object : PhysicsContactListener {
+            override fun onCollisionStarted(a: GameObject, b: GameObject, point: Vector3f, normal: Vector3f, impulse: Float) {
+                eventSystem?.publish(Collision(a, b, point, normal, impulse))
+                eventSystem?.publish(Collision(b, a, point, Vector3f(normal).negate(), impulse))
+            }
+
+            override fun onTriggerEnter(trigger: GameObject, other: GameObject) {
+                eventSystem?.publish(TriggerEntered(trigger, other))
+            }
+
+            override fun onTriggerExit(trigger: GameObject, other: GameObject) {
+                eventSystem?.publish(TriggerExited(trigger, other))
+            }
+        }
+    }
+
     override fun init(scene: Scene) {
         super.init(scene)
         tracked.clear()
+        states.clear()
         bodies.forEach {
             tracked.add(it)
             physics3d.add(it)
@@ -48,8 +74,47 @@ class PhysicsSystem(
     private val tempPos = Vector3f()
     private val tempEuler = Vector3f()
 
-    /** Draws physics debug shapes; called once per frame (fixed steps may run zero or several times per frame). */
-    fun drawDebug(dt: Float) = physics3d.debugDraw(dt)
+    /** The two most recent simulated poses of a body, blended per frame so motion stays smooth at any frame rate. */
+    private class BodyState {
+        val prevPos = Vector3f()
+        val currPos = Vector3f()
+        val prevRot = Quaternionf()
+        val currRot = Quaternionf()
+        private var initialized = false
+
+        fun push(handle: IRigidBodyHandle) {
+            if (initialized) {
+                prevPos.set(currPos)
+                prevRot.set(currRot)
+            }
+            handle.getLocation(currPos)
+            handle.getRotation(currRot)
+            if (!initialized) {
+                prevPos.set(currPos)
+                prevRot.set(currRot)
+                initialized = true
+            }
+        }
+    }
+
+    private val states = mutableMapOf<GameObject, BodyState>()
+    private val blendedRot = Quaternionf()
+
+    /** Per-frame work: writes interpolated poses into transforms and draws debug shapes. */
+    fun onFrame(dt: Float, alpha: Float) {
+        physics3d.debugDraw(dt)
+        if (!scene.isRunning) return
+
+        for ((go, state) in states) {
+            val transform = go.getComponent<Transform>() ?: continue
+            state.prevPos.lerp(state.currPos, alpha, tempPos)
+            state.prevRot.nlerp(state.currRot, alpha, blendedRot)
+
+            transform.translation.set(tempPos)
+            blendedRot.getEulerAnglesXYZ(tempEuler)
+            transform.rotation.set(tempEuler.x.toDegreesF(), tempEuler.y.toDegreesF(), tempEuler.z.toDegreesF())
+        }
+    }
 
     override fun fixedUpdate(fixedDt: Float) {
         if (!scene.isRunning) return
@@ -71,30 +136,16 @@ class PhysicsSystem(
 
         for (go in live) {
             val body = go.getComponent<RigidBody3D>() ?: continue
-            val po = PhysicsObject(go, go.getComponent<Transform>(), body)
-            po.body.rawBody?.let { body ->
-                try {
-                    val transform = po.transform ?: return
-                    val pos = body.getLocation(tempPos)
-                    val rot = body.getRotation(tempQuat)
-
-                    transform.translation.set(pos.x, pos.y, pos.z)
-
-                    rot.getEulerAnglesXYZ(tempEuler)
-                    transform.rotation.set(
-                        tempEuler.x.toDegreesF(),
-                        tempEuler.y.toDegreesF(),
-                        tempEuler.z.toDegreesF()
-                    )
-                } catch (e: AssertionError) {
-                    // Body is not yet in physics world - skip this frame
-                }
-            } ?: physics3d.add(po.go) // Add to physics if raw body is null
-
-            po.go.getComponent<PlayerController>()?.let {//TODO: move
-                it.isGrounded = checkIfGrounded(po.body)
+            val handle = body.rawBody
+            if (handle == null) {
+                physics3d.add(go) // Add to physics if raw body is null
+            } else {
+                states.getOrPut(go) { BodyState() }.push(handle)
             }
+
+            go.getComponent<PlayerController>()?.let { probeGround(it, body) }
         }
+        states.keys.retainAll(liveSet)
 
         syncJoints()
     }
@@ -127,19 +178,18 @@ class PhysicsSystem(
         }
     }
 
-    fun checkIfGrounded(body: RigidBody3D): Boolean {
-        val originPosition = body.getWorldPosition()
+    /** Probes the ground below a player-controlled body and any climbable step ahead of it. */
+    private fun probeGround(controller: PlayerController, body: RigidBody3D) {
+        val config = controller.behavior.ground
+        val detector = GroundDetector(config) { from, to -> physics3d.raycastClosest(from, to, body) }
+        val origin = body.getWorldPosition()
+        val feet = Vector3f(origin.x, origin.y - config.footOffset, origin.z)
 
-        // Start the ray from the player's feet (below the collider)
-        val feetY = originPosition.y
-        val rayStart = Vector3f(originPosition.x, feetY, originPosition.z)
+        controller.wasGrounded = controller.ground.standing
+        controller.ground = detector.probe(feet)
 
-        // Ray goes down a small distance to detect ground
-        val rayLength = 0.05f
-        val rayEnd = Vector3f(rayStart.x, rayStart.y - rayLength, rayStart.z)
-
-        // Exclude the player's own physics body from the raycast
-        return physics3d.raycastClosest(rayStart, rayEnd, body) != null
+        val velocity = body.linearVelocity
+        controller.stepAhead = if (config.stepUp) detector.findStep(feet, velocity.x, velocity.z) else null
     }
 
     fun toggleDebug() {
@@ -152,8 +202,8 @@ class PhysicsSystem(
 }
 
 /** Per-frame companion of [PhysicsSystem], which itself only runs in the fixed-update phase. */
-class PhysicsDebugDrawSystem(private val physicsSystem: PhysicsSystem) : System() {
+class PhysicsFrameSystem(private val physicsSystem: PhysicsSystem) : System() {
     override val runsAfter = listOf(PlayerMotionSystem::class)
 
-    override fun update(dt: Float) = physicsSystem.drawDebug(dt)
+    override fun update(dt: Float) = physicsSystem.onFrame(dt, fixedStepAlpha)
 }

@@ -14,6 +14,10 @@ object RenderConsts2D {
     const val ENTITY_ID_OFFSET = TEX_ID_OFFSET + TEX_ID_SIZE * Float.SIZE_BYTES
 
     const val VERTEX_SIZE = 10
+
+    /** Size of the `uTextures` sampler array in the batch shaders. */
+    const val MAX_BATCH_TEXTURES = 8
+    val SAMPLER_INDICES = IntArray(MAX_BATCH_TEXTURES) { it }
     const val VERTEX_SIZE_BYTES = VERTEX_SIZE * Float.SIZE_BYTES
 }
 

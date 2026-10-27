@@ -123,14 +123,12 @@ class SoundsTab(
         val isPlaying = currentPlayingFile == file && playingSource?.isPlaying() == true
         
         if (isPlaying) {
-            playingSource?.stop()
-            playingSource?.delete()
+            playingSource?.close()
             playingSource = null
             currentPlayingFile = null
         } else {
             // Stop any currently playing sound
-            playingSource?.stop()
-            playingSource?.delete()
+            playingSource?.close()
 
             currentPlayingFile = file
             try {
@@ -162,7 +160,7 @@ class SoundsTab(
     }
 
     fun destroy() {
-        playingSource?.delete()
+        playingSource?.close()
         playingSource = null
         currentPlayingFile = null
     }

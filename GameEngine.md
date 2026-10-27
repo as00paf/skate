@@ -107,7 +107,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Add a `ParticleEmitter` component (CPU first, GPU instancing for draw) with an emission shape, lifetime, velocity/size/color over life and a texture atlas.
   - Done when: Emitters can be added in the editor and play in game, and the simulation step is unit-tested.
   - Deps: REN-03, ECS-03
-- [~] @skate-render **REN-11** `P2` 2D/3D texture rendering improvements
+- [x] **REN-11** `P2` 2D/3D texture rendering improvements
   - Do: Clean up `Renderer2D`, `TextureRenderer3D` and sprite batching. Add mipmaps/anisotropy from `TextureQuality`, sprite atlases and billboards.
   - Done when: Sprites and billboards batch correctly, and texture quality settings take effect.
   - Deps: REN-02
@@ -123,7 +123,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Add scissor push/pop, 9-slice quads and glyph quad submission to `Renderer2D` as required by `docs/design/GUI-01.md`.
   - Done when: Unit tests cover the new calls and a UI sample draws a clipped 9-slice panel with text.
   - Deps: GUI-01
-- [ ] **REN-15** `P1` `GpuResource : AutoCloseable`
+- [~] @skate-render **REN-15** `P1` `GpuResource : AutoCloseable`
   - Do: Introduce a `GpuResource : AutoCloseable` base (id, idempotent `close()`) for textures, buffers, VAOs, FBOs; make `CubeMap`, `DebugRenderer`, `PickingRenderer` own and free theirs (QA-04 findings).
   - Done when: No GL object is created without an owner that deletes it; tests with mocked GL.
 
@@ -138,7 +138,7 @@ Asset management works but needs a complete review.
   - Do: Give every asset a GUID plus a `.meta` sidecar. Scenes and prefabs reference GUIDs, not paths.
   - Done when: Renaming or moving a file in the editor does not break references, and GUID/meta round-trips have unit tests.
   - Deps: AST-01
-- [ ] **AST-03** `P1` Async loading and unloading
+- [x] **AST-03** `P1` Async loading and unloading
   - Do: Decode on `JobSystem` workers and upload to the GPU on the main thread. Add placeholder assets while loading, ref-counted unload and an `AssetEvent` for load complete.
   - Done when: Scene load does not block the main thread on large models. Ref-count and lifecycle have unit tests.
   - Deps: AST-02
@@ -154,7 +154,7 @@ Asset management works but needs a complete review.
   - Do: Rework `AssetsPacker` and `ProjectExporter`: pack only referenced assets, compress, write a manifest and checksums, and produce a runnable `gameJar`.
   - Done when: An exported sample project runs standalone, and packing and manifest generation have unit tests.
   - Deps: AST-02
-- [ ] **AST-07** `P1` Fix `PrefabsGenerator` scene mutation
+- [~] @skate-assets **AST-07** `P1` Fix `PrefabsGenerator` scene mutation
   - Do: `PrefabsGenerator.kt` uses `scene.children.add/addAll`, which bypasses the ECS query caches. Use the scene API instead.
   - Done when: Generated prefabs invalidate queries correctly, covered by a test.
   - Deps: ECS-02
@@ -186,17 +186,17 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: Link instances to prefab assets with per-property overrides that survive prefab edits.
   - Done when: Editing a prefab updates its instances but keeps their overrides, with unit tests.
   - Deps: ECS-02, AST-02
-- [ ] **ECS-06** `P1` Remove engine dependency on `game.skateboard.TrickType`
+- [x] **ECS-06** `P1` Remove engine dependency on `game.skateboard.TrickType`
   - Do: `InputEvents.kt` imports `game.skateboard.TrickType`. Make the event generic (or move the type into the engine) and update users.
   - Done when: An architecture guard shows `engine/` does not import `game/`.
 - [x] **ECS-07** `P1` Multi-selection in `Scene`
   - Do: Add `selectedGameObjects` to `Scene` (keeping `selectedGameObject` as the primary) and update selection commands; needed by EDT-03 multi-target gizmos.
   - Done when: Gizmos transform all selected objects as a group; tests for selection add/remove/clear.
   - Deps: ECS-02
-- [ ] **ECS-08** `P1` Engine lifecycle, error logging and thread-safety
+- [x] **ECS-08** `P1` Engine lifecycle, error logging and thread-safety
   - Do: From QA-04: `Engine.destroy()` always releases what was created and cancels `JobSystem`; route handler/job exceptions through `LoggerService` with the exception; assert main-thread-only scene mutation; make `EventSystem` and `LoggerService` thread-safe; replace `println` in `Window`, `JobSystem`, `EventSystem`, `StringManager`.
   - Done when: Tests for destroy-after-failed-start and exception logging; no `println` in engine/core.
-- [ ] **ECS-09** `P1` Units and coordinate-system conventions
+- [x] **ECS-09** `P1` Units and coordinate-system conventions
   - Do: Write the convention (Y-up, right-handed, metres, degrees at component level, radians internally) in `docs/design/conventions.md` and add unit suffixes/KDoc to component fields.
   - Done when: Doc exists and public component fields state their units.
 
@@ -215,7 +215,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Add a `JointComponent` that supports fixed, hinge, cone-twist, slider and 6DOF joints, built on the existing `HingeConstraint3D`/`ConeTwistConstraint3D`. Make it serializable and editable.
   - Done when: Joints can be created in the editor and persist in the scene. Joint creation and limits have unit tests.
   - Deps: PHY-02
-- [ ] **PHY-04** `P2` Physics correctness and features
+- [x] **PHY-04** `P2` Physics correctness and features
   - Do: Fixed timestep with interpolation, collision layers/masks, triggers, raycast/shape-cast queries, physics materials (friction, restitution), CCD for fast bodies, and collision events through `PhysicsEvents`.
   - Done when: Each feature has unit tests, and the skateboard does not tunnel at high speed.
   - Deps: PHY-02
@@ -227,7 +227,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Override `fixedUpdate` in `PhysicsSystem` and register it in `FIXED_UPDATE` per ECS-03; remove the per-frame stepping workaround.
   - Done when: Physics steps at a fixed rate independent of frame time, covered by a test.
   - Deps: ECS-03
-- [ ] **PHY-07** `P2` Remove per-frame allocations in physics/ragdoll sync
+- [~] @skate-physics **PHY-07** `P2` Remove per-frame allocations in physics/ragdoll sync
   - Do: Hoist temporaries to fields in ragdoll/physics sync and audit degree/radian call sites (QA-04).
   - Done when: No allocations in the hot path (reviewed), degree/radian audit documented.
 
@@ -246,7 +246,7 @@ The animation system needs improvements.
   - Do: Humanoid retargeting via `BoneNameMapper`, plus per-bone layer masks (e.g. upper body).
   - Done when: One animation plays on two different rigs, with unit tests for the mapping.
   - Deps: ANI-02
-- [ ] **ANI-04** `P2` IK
+- [x] **ANI-04** `P2` IK
   - Do: Two-bone IK for feet on the board and hands, plus look-at.
   - Done when: The feet stick to the board during tricks, and the IK solver has unit tests.
   - Deps: ANI-02
@@ -270,7 +270,7 @@ Audio needs a more complete implementation.
   - Do: Add an `AudioListener` component and attenuation models, plus Doppler and velocity from physics.
   - Done when: Sounds pan and attenuate correctly, and attenuation has unit tests.
   - Deps: AUD-01
-- [ ] **AUD-04** `P2` Streaming and voice management
+- [x] **AUD-04** `P2` Streaming and voice management
   - Do: Stream long music files (OGG), cap voices with priority-based stealing, and add one-shot/looping/random-container sounds.
   - Done when: Music streams without loading the whole file into memory, and voice stealing has unit tests.
   - Deps: AUD-02
@@ -278,7 +278,7 @@ Audio needs a more complete implementation.
   - Do: Reverb zones and low-pass filters via OpenAL EFX.
   - Done when: Effects can be configured per zone or bus.
   - Deps: AUD-02
-- [ ] **AUD-06** `P2` Closeable audio handles
+- [x] **AUD-06** `P2` Closeable audio handles
   - Do: Make `AudioEngine` and `SoundSource` `AutoCloseable` (QA-04).
   - Done when: Handles are closed deterministically; tests.
   - Deps: AUD-02
@@ -293,11 +293,11 @@ Input works well but needs review and controller dead-zone support.
 - [x] **INP-02** `P1` Configurable controller dead zones
   - Do: `InputSystem` has a hardcoded scalar dead zone (`InputSystem.kt` ~L135). Add per-stick and per-trigger dead zones (axial and radial, plus an outer dead zone and a response curve), configurable in `InputSettings` and the editor's `KeyBindingsWindow`.
   - Done when: Dead zones persist in the settings, and each mode has unit tests.
-- [ ] **INP-03** `P2` Action maps and rebinding
+- [x] **INP-03** `P2` Action maps and rebinding
   - Do: Context-based action maps (gameplay/UI/editor), runtime rebinding with conflict detection, and saved bindings per project.
   - Done when: A binding can be changed in the editor and used in game. Conflict detection has unit tests.
   - Deps: INP-01
-- [ ] **INP-04** `P3` Rumble and controller hot-plug
+- [x] **INP-04** `P3` Rumble and controller hot-plug
   - Do: Handle controller connect/disconnect events and rumble/haptics where GLFW allows.
   - Done when: Unplugging and replugging a controller keeps the player's input working.
 - [x] **INP-05** `P1` Engine-level key/action read API
@@ -309,11 +309,11 @@ Input works well but needs review and controller dead-zone support.
 
 The player controller was hardcoded at first and needs a big overhaul. Some skateboarding prefab models are wrong, and many more prefabs are needed.
 
-- [~] @skate-gameplay **GPL-01** `P0` REWRITE Player/skate controller
+- [x] **GPL-01** `P0` REWRITE Player/skate controller
   - Do: Remove the hardcoded values and logic from `PlayerController`, `SkateboardController` and `PlayerMotionSystem`. Build a data-driven character controller with a state machine (idle, push, ride, air, grind, manual, bail), with tuning in a serializable config asset.
   - Done when: All tuning values are editable in the editor, the game-specific logic lives in `game/`, and the state transitions have unit tests.
   - Deps: ECS-03, PHY-02
-- [ ] **GPL-02** `P1` Generic character controller in the engine
+- [x] **GPL-02** `P1` Generic character controller in the engine
   - Do: A reusable kinematic/dynamic character controller (slopes, steps, ground snapping) in `engine/` that games can extend.
   - Done when: A non-skate sample (TLG-03) uses it, and the ground detection math has unit tests.
   - Deps: GPL-01
@@ -346,7 +346,7 @@ In-game UI components need to be added (separate from the ImGui editor).
 - [x] **GUI-01** `P1` Runtime UI design
   - Do: Design a retained-mode UI for games: canvas, anchors and layout, and widgets (text, image, button, slider, progress bar, panel, list), with input focus and gamepad navigation, rendered through `Renderer2D` and `StringManager`.
   - Done when: `docs/design/GUI-01.md` is approved by the lead.
-- [ ] **GUI-02** `P1` Core widgets and layout
+- [~] @skate-gameui **GUI-02** `P1` Core widgets and layout
   - Do: Implement GUI-01 in `engine/ui/` as ECS components and a UI system.
   - Done when: The sample game shows a HUD (score, trick name, timer) and a pause menu. Layout has unit tests.
   - Deps: GUI-01, REN-11
@@ -472,6 +472,26 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [ ] **EDT-18** `P2` Editor logging and user-data paths
   - Do: From QA-04: replace `println` in `SearchHistory`, `SearchEngine`, `TranslateGizmo`, `Component.kt`; log in `captureScreenshot`; move the wizard default path and `search_history.json` to the user-data directory.
   - Done when: No `println` in editor; user data stored outside the working directory.
+- [x] **EDT-19** `P1` Input Testing window rework
+  - Do: Rework `InputTestingWindow` into the single place to inspect and tune input devices. Today dead zones are hard-coded (`0.15`/`0.1`), only joystick 1 is shown and gamepad settings are split with the Key Bindings window. Show all connected devices (keyboard, mouse, gamepads) live; per stick: raw vs processed values, dead-zone shape (axial/radial), inner/outer dead zone, response curve and sensitivity, all editable via commands and persisted through the INP-02 settings; trigger thresholds; button/axis map of the active gamepad layout; recent-event log with clear/pause; copy-to-clipboard of device info; clean ImGui layout with tooltips and translated strings.
+  - Done when: Dead zones and sensitivity are edited here and take effect immediately in-game; no hard-coded dead zones remain; window documented in `docs/`; tests for the settings commands.
+  - Deps: INP-02
+- [ ] **EDT-20** `P1` Key Bindings window rework
+  - Do: Rework `KeyBindingsWindow` on top of the INP-03 action maps: list actions by category with search/filter; per-action keyboard, mouse and gamepad bindings with a click-to-rebind capture (cancel/clear); conflict detection with swap/unbind choices; reset per action/category/all; named profiles with import/export; gamepad-specific settings that currently live here move to the Input Testing window (EDT-19) so each setting has exactly one home; all changes via commands with undo/redo; translated and with tooltips.
+  - Done when: Any action can be rebound for keyboard and gamepad, conflicts are detected, bindings persist; command tests under `editor/commands`.
+  - Deps: INP-03, EDT-19
+- [ ] **EDT-21** `P1` View/Windows menu update
+  - Do: Update `ViewMenuBuilder` so View > Windows lists every window: group entries by category (Scene, Assets, Debug, Input, Scripting, Audio, Settings) with separators or submenus, show each window's shortcut and open state, add the new Input Testing, Key Bindings and Script Editor entries (EDT-19/20/22) with translated names (`menu.view.windows.*`), add 'Open all'/'Close all' and make `WindowRegistry` carry category metadata. Layout persistence (EDT-01) must keep working.
+  - Done when: All windows appear in the menu under the right category; opening/closing persists across sessions; menu test or registry test covers category grouping.
+  - Deps: EDT-19, EDT-20, EDT-22
+- [ ] **EDT-22** `P1` Script editor window
+  - Do: Add a Script Editor window for `.kts` scripts (SCR-02/03): open a script from the project window or an attached `ScriptComponent`, edit text with line numbers and basic syntax highlighting, save (Ctrl+S) which triggers hot reload, show compile/runtime errors inline and in a list that jumps to the line, create-new-script from a template, and register the window in `WindowRegistry` (appearing in View/Windows via EDT-21). Edits go through commands where they mutate the project.
+  - Done when: A script can be created, edited, saved and hot-reloaded from the editor and errors are shown with line numbers; tests for the non-UI logic.
+  - Deps: SCR-03
+- [x] **EDT-23** `P1` Fix translate gizmo behaviour and look
+  - Do: The human reports the translation gizmo (EDT-03) looks 'a little weird' in the viewport. Review `GizmoMath`/`TranslateGizmo` against the viewport (axis arrows, screen-constant size, plane handles, hover/active colours, depth/occlusion, perspective and orthographic cameras, local vs world, multi-selection pivot with ECS-07) and fix anything off; compare with the conventions of common editors (X red, Y green, Z blue, handles drawn on top, no distortion near the screen edges).
+  - Done when: Gizmo renders and drags correctly in perspective and ortho, local and world space, with multi-selection; screenshot or unit tests for `GizmoMath`; findings listed in the report.
+  - Deps: EDT-03, ECS-07
 
 ## Testing & tooling
 
@@ -487,7 +507,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [ ] **TLG-03** `P2` Sample project: Tetris
   - Do: A 2D/3D Tetris that exercises input, in-game UI, audio, scenes and scripting.
   - Deps: GUI-02, SCR-02
-- [ ] **TLG-04** `P2` Sample project: Marble Run
+- [~] @skate-tooling **TLG-04** `P2` Sample project: Marble Run
   - Do: Physics-heavy sample (rolling bodies, joints, triggers, camera follow).
   - Deps: PHY-03, PHY-04
 - [x] **TLG-05** `P1` Sample project: Feature showcase
@@ -518,10 +538,10 @@ A lot of features are broken. Many unit tests are missing (**no integration test
 - [x] **QA-04** `P1` Industry-standards audit
   - Do: Check resource lifetimes (`AutoCloseable`/dispose everywhere), logging via `LoggerService` (no `println`), error handling, thread-safety of shared state, frame-allocation hotspots, units/coordinate-system conventions, and config/versioning.
   - Done when: The findings are in `docs/design/QA-04.md`, with per-domain follow-ups reported to the lead.
-- [ ] **QA-05** `P2` More architecture guards
+- [x] **QA-05** `P2` More architecture guards
   - Do: Add guard tests for the rules that other tasks introduce (no GL outside RHI, no Bullet outside its backend, no `println`, etc.).
   - Deps: QA-04
-- [ ] **QA-06** `P2` CI
+- [x] **QA-06** `P2` CI
   - Do: Add a GitHub Actions workflow on `windows-latest` that runs `gradlew.bat build test`.
   - Done when: CI is green on `main`.
 

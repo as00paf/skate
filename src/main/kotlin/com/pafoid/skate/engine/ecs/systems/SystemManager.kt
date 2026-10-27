@@ -46,6 +46,7 @@ class SystemManager {
             }
             if (steps == maxFixedSteps) accumulator = accumulator.coerceAtMost(fixedTimeStep)
 
+            updateFixedStepAlpha()
             runPhase(SystemPhase.UPDATE) { it.update(dt) }
             runPhase(SystemPhase.LATE_UPDATE) { it.update(dt) }
         } finally {
@@ -54,6 +55,11 @@ class SystemManager {
 
         processPendingRemovals()
         processPendingSystems()
+    }
+
+    private fun updateFixedStepAlpha() {
+        val alpha = if (fixedTimeStep > 0f) (accumulator / fixedTimeStep).coerceIn(0f, 1f) else 0f
+        _systems.forEach { it.fixedStepAlpha = alpha }
     }
 
     /** Runs the [SystemPhase.RENDER] systems; [alpha] is the fixed-step interpolation factor. */

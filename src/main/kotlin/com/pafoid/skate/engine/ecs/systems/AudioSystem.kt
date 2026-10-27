@@ -3,6 +3,11 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
+import com.pafoid.skate.engine.audio.ClipPicker
+import com.pafoid.skate.engine.audio.StbVorbisDecoder
+import com.pafoid.skate.engine.audio.StreamPolicy
+import com.pafoid.skate.engine.audio.StreamingPlayer
+import com.pafoid.skate.engine.audio.VoiceManager
 import com.pafoid.skate.engine.audio.SpatialAudio
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
@@ -12,8 +17,10 @@ import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.ecs.GameObject
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import java.io.File
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
 
@@ -43,8 +50,9 @@ class AudioSystem(
     private val listenerVel = Vector3f()
     private val previousPositions = mutableMapOf<Int, Vector3f>()
 
-    // Maps Entity ID to its active SoundSource
-    private val activeSources = mutableMapOf<Int, SoundSource>()
+    private val playbacks = mutableMapOf<Int, Playback>()
+    private val clipPicker = ClipPicker()
+    private val failedClips = mutableSetOf<String>()
 
     override fun update(dt: Float) {
         if (!isInitialized) {
@@ -112,93 +120,154 @@ class AudioSystem(
         return if (previous == null) Vector3f() else SpatialAudio.velocityFromMotion(previous, pos, frameDt)
     }
 
+    private class Playback(val source: SoundSource, val stream: StreamingPlayer?) : AutoCloseable {
+        override fun close() {
+            source.stop()
+            stream?.close()
+            source.close()
+        }
+    }
+
+    private class SpatialState(val gain: Float, val pitch: Float, val position: Vector3f, val velocity: Vector3f)
+
+    private fun computeSpatial(gameObject: GameObject, ac: AudioComponent): SpatialState {
+        val base = audioEngine.mixer.sourceGain(ac.bus, ac.volume)
+        val transform = gameObject.getComponent<Transform>()
+        if (transform == null || !ac.is3D) return SpatialState(base, 1f, Vector3f(), Vector3f())
+        val worldPos = transform.worldMatrix.getTranslation(Vector3f())
+        val vel = motionVelocity(gameObject.uId, worldPos, gameObject.getComponent<RigidBody3D>())
+        val attenuation = SpatialAudio.attenuation(
+            ac.attenuationModel, worldPos.distance(listenerPos), ac.minDistance, ac.maxDistance, ac.rolloff
+        )
+        val pitch = SpatialAudio.dopplerPitch(listenerPos, listenerVel, worldPos, vel, ac.dopplerFactor)
+        return SpatialState(base * attenuation, pitch, worldPos, vel)
+    }
+
+    private fun applyParams(pb: Playback, ac: AudioComponent, sp: SpatialState) {
+        // Streamed sources loop by re-queueing, never through AL_LOOPING.
+        pb.stream?.looping = ac.loops
+        if (pb.stream == null) pb.source.setLooping(ac.loops)
+        pb.source.setRelative(!ac.is3D)
+        pb.source.setPosition(sp.position.x, sp.position.y, sp.position.z)
+        pb.source.setVelocity(sp.velocity.x, sp.velocity.y, sp.velocity.z)
+        pb.source.setVolume(sp.gain)
+        pb.source.setPitch(sp.pitch)
+    }
+
     private fun updateAudioSources() {
         val currentEntities = mutableSetOf<Int>()
 
         scene.children.forEach { gameObject ->
-            val audioComponent = gameObject.getComponent<AudioComponent>()
-            val transform = gameObject.getComponent<Transform>()
+            val ac = gameObject.getComponent<AudioComponent>() ?: return@forEach
+            val id = gameObject.uId
+            currentEntities.add(id)
+            val spatial = computeSpatial(gameObject, ac)
 
-            if (audioComponent != null) {
-                currentEntities.add(gameObject.uId)
-                var source = activeSources[gameObject.uId]
-
-                if (source == null && audioComponent.soundFilePath.isNotBlank()) {
-                    // Try to load the sound buffer
-                    val buffer = assetsManager.getSound(audioComponent.soundFilePath)
-                    if (buffer.bufferId != -1) {
-                        source = SoundSource(audioComponent.loops, !audioComponent.is3D)
-                        source.setBuffer(buffer.bufferId)
-                        activeSources[gameObject.uId] = source
-                    }
+            if (ac.playOnAwake && !ac.awoken) {
+                ac.awoken = true
+                ac.play()
+            }
+            if (ac.stopRequested) {
+                ac.stopRequested = false
+                releasePlayback(id)
+            }
+            if (ac.pauseRequested) {
+                ac.pauseRequested = false
+                playbacks[id]?.let {
+                    it.source.pause()
+                    it.stream?.paused = true
+                    ac.isPaused = true
                 }
+            }
+            if (ac.playRequested) {
+                ac.playRequested = false
+                startPlayback(id, ac, spatial)
+            }
 
-                if (source != null) {
-                    // Update state
-                    var gain = audioEngine.mixer.sourceGain(audioComponent.bus, audioComponent.volume)
-                    var pitch = 1f
-                    source.setLooping(audioComponent.loops)
-                    source.setRelative(!audioComponent.is3D)
-
-                    if (transform != null && audioComponent.is3D) {
-                        val worldPos = transform.worldMatrix.getTranslation(Vector3f())
-                        val vel = motionVelocity(gameObject.uId, worldPos, gameObject.getComponent<RigidBody3D>())
-                        source.setPosition(worldPos.x, worldPos.y, worldPos.z)
-                        source.setVelocity(vel.x, vel.y, vel.z)
-                        gain *= SpatialAudio.attenuation(
-                            audioComponent.attenuationModel,
-                            worldPos.distance(listenerPos),
-                            audioComponent.minDistance,
-                            audioComponent.maxDistance,
-                            audioComponent.rolloff
-                        )
-                        pitch = SpatialAudio.dopplerPitch(
-                            listenerPos, listenerVel, worldPos, vel, audioComponent.dopplerFactor
-                        )
-                    } else {
-                        // For 2D sounds (relative), position is usually 0,0,0 relative to listener
-                        source.setPosition(0f, 0f, 0f)
-                        source.setVelocity(0f, 0f, 0f)
-                    }
-                    source.setVolume(gain)
-                    source.setPitch(pitch)
-
-                    // Handle playback requests
-                    if (audioComponent.playRequested) {
-                        source.play()
-                        audioComponent.playRequested = false
-                        audioComponent.isPlaying = true
-                    }
-                    if (audioComponent.pauseRequested) {
-                        source.pause()
-                        audioComponent.pauseRequested = false
-                        audioComponent.isPlaying = false
-                    }
-                    if (audioComponent.stopRequested) {
-                        source.stop()
-                        audioComponent.stopRequested = false
-                        audioComponent.isPlaying = false
-                    }
-
-                    // Sync isPlaying state back to component
-                    audioComponent.isPlaying = source.isPlaying()
-                }
+            val pb = playbacks[id]
+            if (pb == null) {
+                ac.isPlaying = false
+                ac.isPaused = false
+                return@forEach
+            }
+            applyParams(pb, ac, spatial)
+            pb.stream?.update()
+            audioEngine.voices.updateAudibility(id, spatial.gain)
+            val finished = !ac.isPaused && (pb.stream?.isFinished ?: !pb.source.isPlaying())
+            if (finished) {
+                releasePlayback(id)
+                ac.isPlaying = false
+            } else {
+                ac.isPlaying = !ac.isPaused
             }
         }
 
-        // Cleanup sources for removed components/entities
-        val removedEntities = activeSources.keys - currentEntities
-        removedEntities.forEach { id ->
-            activeSources[id]?.delete()
-            activeSources.remove(id)
+        // Cleanup voices for removed components/entities
+        (playbacks.keys - currentEntities).forEach { id ->
+            releasePlayback(id)
             previousPositions.remove(id)
+            clipPicker.forget(id)
+        }
+    }
+
+    private fun releasePlayback(id: Int) {
+        playbacks.remove(id)?.close()
+        audioEngine.voices.release(id)
+    }
+
+    private fun startPlayback(id: Int, ac: AudioComponent, spatial: SpatialState) {
+        val existing = playbacks[id]
+        if (existing != null && ac.isPaused) {
+            existing.source.play()
+            existing.stream?.paused = false
+            ac.isPaused = false
+            return
+        }
+
+        val clip = clipPicker.pick(id, ac.soundFilePath, ac.clips)
+        if (clip.isBlank() || clip in failedClips) return
+
+        releasePlayback(id)
+        val result = audioEngine.voices.request(id, ac.priority, spatial.gain)
+        if (result is VoiceManager.Result.Denied) return
+        (result as VoiceManager.Result.Granted<*>).stolen?.let { releasePlayback(it as Int) }
+
+        try {
+            val playback = createPlayback(clip, ac)
+            playbacks[id] = playback
+            applyParams(playback, ac, spatial)
+            ac.isPaused = false
+            if (playback.stream != null) playback.stream.start() else playback.source.play()
+        } catch (e: Exception) {
+            audioEngine.voices.release(id)
+            failedClips.add(clip)
+            logger.log("AudioSystem: Cannot play '$clip' - ${e.message}", LogLevel.ERROR)
+        }
+    }
+
+    private fun createPlayback(clip: String, ac: AudioComponent): Playback {
+        val stream = StreamPolicy.shouldStream(clip, ac.bus, ac.streamMode, File(clip).length())
+        val source = SoundSource(!stream && ac.loops, !ac.is3D)
+        try {
+            if (stream) {
+                val player = StreamingPlayer(StbVorbisDecoder(clip), source.asStreamSink(), ac.loops)
+                return Playback(source, player)
+            }
+            val buffer = assetsManager.getSound(clip)
+            if (buffer.bufferId == -1) throw IllegalStateException("sound buffer not loaded")
+            source.setBuffer(buffer.bufferId)
+            return Playback(source, null)
+        } catch (e: Exception) {
+            source.close()
+            throw e
         }
     }
 
     override fun destroy() {
         isInitialized = false
-        activeSources.values.forEach { it.delete() }
-        activeSources.clear()
+        playbacks.values.forEach { it.close() }
+        playbacks.clear()
+        audioEngine.voices.clear()
     }
 
     private companion object {

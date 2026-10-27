@@ -9,9 +9,38 @@ import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
 import java.nio.IntBuffer
 
+/** The ALC calls used by [AudioEngine]; replaceable so device lifetime is testable without natives. */
+interface AlcApi {
+    fun openDevice(): Long
+    fun createContext(device: Long): Long
+    fun makeCurrent(context: Long)
+    fun currentContext(): Long
+    fun createCapabilities(device: Long)
+    fun destroyContext(context: Long)
+    fun closeDevice(device: Long)
+}
+
+object OpenAlcApi : AlcApi {
+    override fun openDevice() = ALC10.alcOpenDevice(null as CharSequence?)
+    override fun createContext(device: Long) = ALC10.alcCreateContext(device, null as IntBuffer?)
+    override fun makeCurrent(context: Long) {
+        ALC10.alcMakeContextCurrent(context)
+    }
+    override fun currentContext() = ALC10.alcGetCurrentContext()
+    override fun createCapabilities(device: Long) {
+        AL.createCapabilities(ALC.createCapabilities(device))
+    }
+    override fun destroyContext(context: Long) = ALC10.alcDestroyContext(context)
+    override fun closeDevice(device: Long) {
+        ALC10.alcCloseDevice(device)
+    }
+}
+
+/** Owns the OpenAL device and context. Close it (or use `use {}`) to free them. */
 class AudioEngine(
-    private val logger: LoggerService
-) {
+    private val logger: LoggerService,
+    private val api: AlcApi = OpenAlcApi
+) : AutoCloseable {
 
     private var device: Long = 0L
     private var context: Long = 0L
@@ -19,6 +48,7 @@ class AudioEngine(
         private set
 
     val mixer = Mixer()
+    val voices = VoiceManager<Int>()
 
     /** Applies volume/mute settings live; takes effect on the next AudioSystem update. */
     fun applyConfig(config: AudioConfig) = mixer.applyConfig(config)
@@ -27,22 +57,21 @@ class AudioEngine(
         if (isInitialized) return true
 
         try {
-            device = ALC10.alcOpenDevice(null as CharSequence?)
+            device = api.openDevice()
             if (device == 0L) {
                 logger.log("AudioEngine: Failed to open OpenAL device", LogLevel.ERROR)
                 return false
             }
 
-            context = ALC10.alcCreateContext(device, null as IntBuffer?)
+            context = api.createContext(device)
             if (context == 0L) {
                 logger.log("AudioEngine: Failed to create OpenAL context", LogLevel.ERROR)
-                ALC10.alcCloseDevice(device)
+                releaseHandles()
                 return false
             }
 
-            ALC10.alcMakeContextCurrent(context)
-            val deviceCaps = ALC.createCapabilities(device)
-            AL.createCapabilities(deviceCaps)
+            api.makeCurrent(context)
+            api.createCapabilities(device)
 
             isInitialized = true
             logger.log("AudioEngine: Initialized successfully")
@@ -50,35 +79,32 @@ class AudioEngine(
 
         } catch (e: Exception) {
             logger.log("AudioEngine: Init failed - ${e.message}", LogLevel.ERROR)
-            destroy()
+            releaseHandles()
             return false
         }
     }
 
-    fun destroy() {
-        if (!isInitialized) return
+    /** Idempotent. Releases the context and device, including after a partially failed [init]. */
+    override fun close() {
+        if (!isInitialized && device == 0L && context == 0L) return
+        voices.clear()
+        releaseHandles()
+        logger.log("AudioEngine: Destroyed")
+    }
 
+    private fun releaseHandles() {
         try {
-            val currentContext = ALC10.alcGetCurrentContext()
-            if (currentContext == context) {
-                ALC10.alcMakeContextCurrent(0L)
-            }
-
             if (context != 0L) {
-                ALC10.alcDestroyContext(context)
-                context = 0L
+                if (api.currentContext() == context) api.makeCurrent(0L)
+                api.destroyContext(context)
             }
-
-            if (device != 0L) {
-                ALC10.alcCloseDevice(device)
-                device = 0L
-            }
-
-            isInitialized = false
-            logger.log("AudioEngine: Destroyed")
-
+            if (device != 0L) api.closeDevice(device)
         } catch (e: Exception) {
             logger.log("AudioEngine: Cleanup failed - ${e.message}", LogLevel.ERROR)
+        } finally {
+            context = 0L
+            device = 0L
+            isInitialized = false
         }
     }
 
@@ -88,7 +114,7 @@ class AudioEngine(
 
     fun makeContextCurrent() {
         if (context != 0L) {
-            ALC10.alcMakeContextCurrent(context)
+            api.makeCurrent(context)
         }
     }
 

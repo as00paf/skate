@@ -14,7 +14,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
 
 class JobSystem(
-    private val maxMainThreadTasksPerUpdate: Int = DEFAULT_MAX_MAIN_THREAD_TASKS_PER_UPDATE
+    private val maxMainThreadTasksPerUpdate: Int = DEFAULT_MAX_MAIN_THREAD_TASKS_PER_UPDATE,
+    private val logger: LoggerService = LoggerService()
 ) {
     init {
         require(maxMainThreadTasksPerUpdate > 0) {
@@ -23,8 +24,7 @@ class JobSystem(
     }
 
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-        println("JobSystem Error: ${throwable.message}")
-        throwable.printStackTrace()
+        logger.logError("JobSystem error", throwable)
     }
 
     private val mainThreadTasks = ConcurrentLinkedQueue<Runnable>()
@@ -44,7 +44,11 @@ class JobSystem(
     fun update() {
         repeat(maxMainThreadTasksPerUpdate) {
             val task = mainThreadTasks.poll() ?: return
-            task.run()
+            try {
+                task.run()
+            } catch (e: Exception) {
+                logger.logError("Main-thread task failed", e)
+            }
         }
     }
 

@@ -41,7 +41,7 @@ class InputProvider(
         inputBuffer.push(
             Time.getTime(),
             getMousePos(),
-            getAxes(GLFW.GLFW_JOYSTICK_1)
+            getAxes(joystickForPad(0))
         )
         keyListener.endFrame()
         mouseListener.endFrame()
@@ -91,6 +91,8 @@ class InputProvider(
     fun getMouseScrollY() = mouseListener.getScrollY()
 
     // Gamepad
+    /** Joystick id of logical pad [pad] (0 = primary), or -1 when no such pad is connected. */
+    fun joystickForPad(pad: Int = 0): Int = gamepadListener.joystickForPad(pad)
     fun isJoystickPresent(jid: Int): Boolean = gamepadListener.isGamepadPresent(jid)
     fun getAxes(jid: Int): FloatArray? = gamepadListener.getAxes(jid)
     fun getButtons(jid: Int): BooleanArray? = gamepadListener.getButtons(jid)
