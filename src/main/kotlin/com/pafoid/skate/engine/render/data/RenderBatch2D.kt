@@ -14,6 +14,8 @@ import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_OFFSET
 import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_OFFSET
 import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts2D.MAX_BATCH_TEXTURES
+import com.pafoid.skate.engine.utils.RenderConsts2D.SAMPLER_INDICES
 import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.VERTEX_SIZE_BYTES
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -57,7 +59,8 @@ class RenderBatch2D(
 
     private var vaoId = 0
     private var vboId = 0
-    private val maxTextureSlots = GL11.glGetInteger(GL20.GL_MAX_TEXTURE_IMAGE_UNITS)
+    // The shader samples a fixed uTextures[MAX_BATCH_TEXTURES] array, so never exceed it even if the GPU has more units
+    private val maxTextureSlots = minOf(GL11.glGetInteger(GL20.GL_MAX_TEXTURE_IMAGE_UNITS), MAX_BATCH_TEXTURES)
 
     // Reusable objects to minimize allocations in hot loop
     private val currentPos = Vector4f()
@@ -140,7 +143,7 @@ class RenderBatch2D(
             glBindTexture(GL_TEXTURE_2D, textureSlots[i].texId)
         }
         // Upload sampler indices that map uTextures[0] -> texture unit 0, etc.
-        shader.uploadIntArray(Uniforms.TEXTURES, intArrayOf(0, 1, 2, 3, 4, 5, 6, 7))
+        shader.uploadIntArray(Uniforms.TEXTURES, SAMPLER_INDICES)
 
         glBindVertexArray(vaoId)
         glEnableVertexAttribArray(0)
