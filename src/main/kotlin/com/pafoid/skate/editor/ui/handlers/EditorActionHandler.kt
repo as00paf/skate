@@ -20,4 +20,5 @@ class EditorActionHandler(
         ProjectActionHandler(engine, projectManager, settingsManager, undoRedoManager, stringManager)
     val environmentActionHandler = EnvironmentActionHandler(undoRedoManager, engine.eventSystem)
     val consoleActionHandler = ConsoleActionHandler(engine.eventSystem, engine.logger, undoRedoManager)
+    val inputSettingsActionHandler = InputSettingsActionHandler(engine.eventSystem, projectManager, undoRedoManager)
 }
