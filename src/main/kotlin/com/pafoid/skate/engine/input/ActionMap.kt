@@ -213,6 +213,8 @@ object DefaultActions {
     const val JUMP = "jump"
     const val SPRINT = "sprint"
     const val CROUCH = "crouch"
+    /** Mount / dismount the character's board or vehicle (default: E, gamepad Y). */
+    const val TOGGLE_MOUNT = "toggle_mount"
     const val MOVE_X = "moveX"
     const val MOVE_Y = "moveY"
     const val LOOK_X = "lookX"
@@ -239,6 +241,8 @@ object DefaultActions {
             ActionBinding.Key(Keys.LEFT_SHIFT), ActionBinding.GamepadAxis(4))))
         map.define(ActionDefinition(CROUCH, g, "Actions", defaults = listOf(
             ActionBinding.Key(Keys.LEFT_CONTROL), ActionBinding.GamepadButton(4))))
+        map.define(ActionDefinition(TOGGLE_MOUNT, g, "Actions", defaults = listOf(
+            ActionBinding.Key(Keys.E), ActionBinding.GamepadButton(3))))
         map.define(ActionDefinition(UI_CONFIRM, ui, "Navigation", defaults = listOf(
             ActionBinding.Key(Keys.ENTER), ActionBinding.GamepadButton(0))))
         map.define(ActionDefinition(UI_CANCEL, ui, "Navigation", defaults = listOf(

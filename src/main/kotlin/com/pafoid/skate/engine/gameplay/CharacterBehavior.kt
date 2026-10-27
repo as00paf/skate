@@ -13,6 +13,10 @@ data class CharacterInput(
     val sprint: Boolean = false,
     val jumpPressed: Boolean = false,
     val jumpHeld: Boolean = false,
+    /** Edge: the mount toggle action was pressed this frame. */
+    val mountPressed: Boolean = false,
+    /** Distance in meters to the behavior's mount target, NaN when there is none. */
+    val mountDistance: Float = Float.NaN,
     val crouch: Boolean = false,
     val grounded: Boolean = true,
     /** Horizontal speed of the body in m/s. */
@@ -38,6 +42,8 @@ data class CharacterMotion(
     val impulse: Vector3f? = null,
     /** Animation clip to play when [state] changed. */
     val animation: String? = null,
+    /** Mount change that happened this frame; the system places the mount accordingly. */
+    val mount: MountRequest = MountRequest.NONE,
 )
 
 /** Data-driven character logic. Pure: no window, GL or physics world required. */
