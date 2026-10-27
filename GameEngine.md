@@ -79,7 +79,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Batch draw calls by shader → material → mesh. Track GL state to skip redundant binds.
   - Done when: `EngineStats` reports draw calls and state changes, and both drop on the sample scene. Sort-key generation has unit tests.
   - Deps: REN-02
-- [~] @skate-render **REN-04** `P1` REWRITE Material system
+- [x] **REN-04** `P1` REWRITE Material system
   - Do: Data-driven `Material` (shader ref + typed parameter block + texture slots). Support PBR metallic/roughness as the default and serialize materials as assets.
   - Done when: Models render through materials instead of hardcoded uniforms, materials can be edited and saved, and parameter binding has unit tests.
   - Deps: REN-02
@@ -119,7 +119,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Build a minimal `VulkanRhi` that renders the sample scene's geometry pass.
   - Done when: A config flag switches backend, and the spike's findings are documented.
   - Deps: REN-12
-- [ ] **REN-14** `P1` Renderer2D primitives for runtime UI
+- [~] @skate-render **REN-14** `P1` Renderer2D primitives for runtime UI
   - Do: Add scissor push/pop, 9-slice quads and glyph quad submission to `Renderer2D` as required by `docs/design/GUI-01.md`.
   - Done when: Unit tests cover the new calls and a UI sample draws a clipped 9-slice panel with text.
   - Deps: GUI-01
@@ -131,7 +131,7 @@ Asset management works but needs a complete review.
 - [x] **AST-01** `P0` Asset pipeline review
   - Do: Review `AssetsManager`, `Assets`, the loaders (`AssimpLoader`, `TextureLoader`, `SoundLoader`, `ShaderLoader`, `AnimationLoader`), `serialization/` and `AssetsResolver`.
   - Done when: `docs/design/AST-01.md` lists defects, threading issues and a target design (asset handles/GUIDs, async loading via `JobSystem`, ref-counting).
-- [~] @skate-assets **AST-02** `P1` Stable asset IDs and handles
+- [x] **AST-02** `P1` Stable asset IDs and handles
   - Do: Give every asset a GUID plus a `.meta` sidecar. Scenes and prefabs reference GUIDs, not paths.
   - Done when: Renaming or moving a file in the editor does not break references, and GUID/meta round-trips have unit tests.
   - Deps: AST-01
@@ -139,7 +139,7 @@ Asset management works but needs a complete review.
   - Do: Decode on `JobSystem` workers and upload to the GPU on the main thread. Add placeholder assets while loading, ref-counted unload and an `AssetEvent` for load complete.
   - Done when: Scene load does not block the main thread on large models. Ref-count and lifecycle have unit tests.
   - Deps: AST-02
-- [ ] **AST-04** `P1` Serialization versioning
+- [~] @skate-assets **AST-04** `P1` Serialization versioning
   - Do: Add a schema version to scene, prefab and project files, with migration functions.
   - Done when: Old files load through migrations, and each migration has a unit test.
   - Deps: AST-01
@@ -182,6 +182,10 @@ The ECS is in good working shape but needs a complete review. It is probably mis
 - [ ] **ECS-06** `P1` Remove engine dependency on `game.skateboard.TrickType`
   - Do: `InputEvents.kt` imports `game.skateboard.TrickType`. Make the event generic (or move the type into the engine) and update users.
   - Done when: An architecture guard shows `engine/` does not import `game/`.
+- [~] @skate-ecs **ECS-07** `P1` Multi-selection in `Scene`
+  - Do: Add `selectedGameObjects` to `Scene` (keeping `selectedGameObject` as the primary) and update selection commands; needed by EDT-03 multi-target gizmos.
+  - Done when: Gizmos transform all selected objects as a group; tests for selection add/remove/clear.
+  - Deps: ECS-02
 
 ### Physics — `PHY` (`skate-physics`)
 
@@ -206,6 +210,10 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Evaluate Jolt (via JNI bindings) or another engine behind `IPhysics3D`.
   - Done when: The findings and a minimal prototype are documented.
   - Deps: PHY-02
+- [~] @skate-physics **PHY-06** `P1` Run `PhysicsSystem` in the fixed-update phase
+  - Do: Override `fixedUpdate` in `PhysicsSystem` and register it in `FIXED_UPDATE` per ECS-03; remove the per-frame stepping workaround.
+  - Done when: Physics steps at a fixed rate independent of frame time, covered by a test.
+  - Deps: ECS-03
 
 ### Animation — `ANI` (`skate-animation`)
 
@@ -226,7 +234,7 @@ The animation system needs improvements.
   - Do: Two-bone IK for feet on the board and hands, plus look-at.
   - Done when: The feet stick to the board during tricks, and the IK solver has unit tests.
   - Deps: ANI-02
-- [ ] **ANI-05** `P2` GPU skinning performance
+- [~] @skate-animation **ANI-05** `P2` GPU skinning performance
   - Do: Upload bone palettes through a UBO/SSBO and skip the update for off-screen skinned meshes.
   - Done when: Profiler shows a reduced animation cost with many characters.
   - Deps: ANI-01, REN-02
@@ -242,7 +250,7 @@ Audio needs a more complete implementation.
   - Do: Master/music/SFX/UI buses with volume and mute, wired to `AudioSettings`.
   - Done when: The settings change the volume live, and the mixer math has unit tests.
   - Deps: AUD-01
-- [ ] **AUD-03** `P1` 3D spatial audio
+- [~] @skate-audio **AUD-03** `P1` 3D spatial audio
   - Do: Add an `AudioListener` component and attenuation models, plus Doppler and velocity from physics.
   - Done when: Sounds pan and attenuate correctly, and attenuation has unit tests.
   - Deps: AUD-01
@@ -262,7 +270,7 @@ Input works well but needs review and controller dead-zone support.
 - [x] **INP-01** `P1` Input review
   - Do: Review `engine/input/**`, `InputSystem` and the listeners.
   - Done when: The issues are documented in `docs/design/INP-01.md` and the quick fixes are applied.
-- [ ] **INP-02** `P1` Configurable controller dead zones
+- [~] @skate-input **INP-02** `P1` Configurable controller dead zones
   - Do: `InputSystem` has a hardcoded scalar dead zone (`InputSystem.kt` ~L135). Add per-stick and per-trigger dead zones (axial and radial, plus an outer dead zone and a response curve), configurable in `InputSettings` and the editor's `KeyBindingsWindow`.
   - Done when: Dead zones persist in the settings, and each mode has unit tests.
 - [ ] **INP-03** `P2` Action maps and rebinding
@@ -281,7 +289,7 @@ Input works well but needs review and controller dead-zone support.
 
 The player controller was hardcoded at first and needs a big overhaul. Some skateboarding prefab models are wrong, and many more prefabs are needed.
 
-- [ ] **GPL-01** `P0` REWRITE Player/skate controller
+- [~] @skate-gameplay **GPL-01** `P0` REWRITE Player/skate controller
   - Do: Remove the hardcoded values and logic from `PlayerController`, `SkateboardController` and `PlayerMotionSystem`. Build a data-driven character controller with a state machine (idle, push, ride, air, grind, manual, bail), with tuning in a serializable config asset.
   - Done when: All tuning values are editable in the editor, the game-specific logic lives in `game/`, and the state transitions have unit tests.
   - Deps: ECS-03, PHY-02
@@ -304,6 +312,9 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Author the push/ride/trick controller on top of the ANI-02 state machine and blend trees.
   - Done when: The player transitions between push, ride and trick states with blending in the sample game.
   - Deps: ANI-02, GPL-01
+- [ ] **GPL-07** `P2` Fix `CameraInterpolator.lerpToPreset` (BUG-014)
+  - Do: `handleLerp` is private and never called, so `lerpToPreset` does nothing. Wire it into the camera update and re-enable the disabled `CameraTest` lerp case.
+  - Done when: `CameraTest` lerp passes and BUG-014 is removed from `docs/bugs.md`.
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -336,7 +347,7 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
   - Do: Embed the Kotlin scripting host, compile scripts with caching, and expose the API from SCR-01.
   - Done when: A `.kts` script attached to an entity runs in the editor's play mode and the exported game. API bindings have unit tests.
   - Deps: SCR-01
-- [ ] **SCR-03** `P2` Script hot reload and error reporting
+- [~] @skate-scripting **SCR-03** `P2` Script hot reload and error reporting
   - Do: Recompile changed scripts, keep state where possible, and show errors in `ConsoleWindow` with file and line.
   - Done when: Editing a script during play mode applies without restarting.
   - Deps: SCR-02
@@ -387,7 +398,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Clean up `ImGuiLayer`/`WindowManager`/`WindowRegistry`. Fix the viewport's resizing, DPI scaling and multi-viewport handling, and the game view vs. scene view split.
   - Done when: The viewport renders at the correct resolution and DPI on resize and when moved between monitors.
   - Deps: EDT-01
-- [~] @skate-editor **EDT-03** `P1` Modernize gizmos
+- [x] **EDT-03** `P1` Modernize gizmos
   - Do: Rework the translate/rotate/scale gizmos (`editor/gizmos`): screen-space constant size, plane handles, local/world toggle, snapping, multi-selection pivot, hover highlight and correct picking.
   - Done when: All gizmos work under any camera angle, and gizmo math has unit tests.
 - [ ] **EDT-04** `P1` Visual representation of cameras and lights
@@ -415,7 +426,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Done when: The checklist is in `docs/design/EDT-10.md` and its items are resolved.
 
 ---
-- [ ] **EDT-13** `P1` Route project-window file operations through asset commands
+- [~] @skate-editor **EDT-13** `P1` Route project-window file operations through asset commands
   - Do: Route `RenameFileCommand`, `DeleteFileCommand` and project-window moves through the asset-ID-aware API so `.meta` files stay in sync (unblocks AST-02).
   - Done when: Renaming, deleting or moving a file in the editor keeps its `.meta` and GUID; tests under `editor/commands`.
   - Deps: AST-02
@@ -424,9 +435,17 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Done when: Joints can be created and edited in the editor with undo/redo; command tests under `editor/commands`.
   - Deps: PHY-03
 - [ ] **EDT-14** `P2` Audio bus and mute UI
-  - Do: Add UI bus volume, mute toggles and the new `AudioComponent` inspector fields from `docs/design/AUD-01.md`.
+  - Do: Call `engine.audioEngine.applyConfig(settings.audio.toConfig())` on startup. Add UI bus volume, mute toggles and the new `AudioComponent` inspector fields from `docs/design/AUD-01.md`.
   - Done when: Bus volumes and mutes can be edited in the editor and persist.
   - Deps: AUD-02
+- [ ] **EDT-16** `P2` Animator inspector: controller and mask selection
+  - Do: Expose the ANI-02 controller asset and ANI-03 bone mask selection in the Animator inspector via commands.
+  - Done when: Controller and mask can be assigned in the editor with undo/redo.
+  - Deps: ANI-03
+- [ ] **EDT-17** `P2` Material inspector and save-as-asset
+  - Do: Add a material inspector and a "save material as asset" action backed by the REN-04 `.skmat` assets, via commands.
+  - Done when: A material can be edited and saved as `.skmat` from the editor.
+  - Deps: REN-04
 
 ## Testing & tooling
 
@@ -435,7 +454,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **TLG-01** `P1` Skate CLI
   - Do: Add a headless CLI (`tools/cli`, Gradle `application`) for: create project, validate project/assets, pack/export, run scene headless and print engine stats.
   - Done when: `skate --help` lists the commands, which reuse engine services (no duplicate logic). Argument parsing has unit tests.
-- [ ] **TLG-02** `P2` MCP server
+- [~] @skate-tooling **TLG-02** `P2` MCP server
   - Do: Expose the CLI capabilities plus editor introspection (scene tree, components, logs) over MCP so agents can drive the engine.
   - Done when: An MCP client can list scenes and entities and trigger an export.
   - Deps: TLG-01
@@ -470,7 +489,7 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: `gradlew.bat test` currently has 20 failures (e.g. `UiMutationPipelineGuardTest`, `DeleteFileCommandTest`, `SceneTargetingCommandsTest`, `ViewportRendererScreenshotTest`, `EngineFixedTimestepTest`, `SkateboardModelInspectionTest`, `AudioSystemTest`, `EnvironmentSystemTest`, `InputSystemTest`, `RagdollSystemTest`, `StringManagerTest`). Fix each against the current API, or delete tests that cover removed or obsolete behavior (and say why in the commit).
   - Done when: `gradlew.bat test` is fully green and `docs/bugs.md` has no test-failure entries left.
   - Deps: QA-07
-- [ ] **QA-04** `P1` Industry-standards audit
+- [~] @skate-qa **QA-04** `P1` Industry-standards audit
   - Do: Check resource lifetimes (`AutoCloseable`/dispose everywhere), logging via `LoggerService` (no `println`), error handling, thread-safety of shared state, frame-allocation hotspots, units/coordinate-system conventions, and config/versioning.
   - Done when: The findings are in `docs/design/QA-04.md`, with per-domain follow-ups reported to the lead.
 - [ ] **QA-05** `P2` More architecture guards
