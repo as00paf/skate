@@ -16,7 +16,13 @@ import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.ProviderRawInput
 import org.lwjgl.glfw.GLFW
-import kotlin.math.abs
+import com.pafoid.skate.engine.input.DeadZoneSettings
+import com.pafoid.skate.engine.input.TriggerDeadZone
+import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_LEFT_TRIGGER
+import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_TRIGGER
+import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_X
+import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_Y
+import org.joml.Vector2f
 
 class InputSystem(
     val inputProvider: InputProvider,
@@ -82,9 +88,10 @@ class InputSystem(
         }
         val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
 
-        val moveAxis = getAxisFromBinding(mappings.moveUp, mappings.moveDown, axes, 0.15f)
-        val moveStrafe =
-            getAxisFromBinding(mappings.moveLeft, mappings.moveRight, axes, 0.15f)
+        val zones = mappings.deadZones
+        readStick(mappings.moveLeft, mappings.moveRight, mappings.moveUp, mappings.moveDown, axes, zones, stickValue)
+        val moveStrafe = stickValue.x
+        val moveAxis = stickValue.y
 
         if (moveAxis != 0f || moveStrafe != 0f) {
             inputState.moveDirection.set(moveStrafe, moveAxis)
@@ -96,8 +103,9 @@ class InputSystem(
             publishNeutralMovementIfNeeded(inputState)
         }
 
-        val lookX = getAxisFromBinding(mappings.cameraLookX, null, axes, 0.1f)
-        val lookY = getAxisFromBinding(mappings.cameraLookY, null, axes, 0.1f)
+        readStick(mappings.cameraLookX, null, mappings.cameraLookY, null, axes, zones, stickValue)
+        val lookX = stickValue.x
+        val lookY = stickValue.y
 
         if (lookX != 0f || lookY != 0f) {
             inputState.cameraLook.set(
@@ -111,7 +119,7 @@ class InputSystem(
             inputState.jumpHeld = jumpPressed
         }
 
-        inputState.sprintPressed = checkBindingActive(mappings.sprint, axes, buttons, 0.5f)
+        inputState.sprintPressed = checkBindingActive(mappings.sprint, axes, buttons, zones)
         inputState.crouchPressed = checkButtonBindingActive(mappings.crouch, buttons)
     }
 
@@ -144,33 +152,38 @@ class InputSystem(
         movementWasActive = false
     }
 
-    private fun getAxisFromBinding(
-        positiveBinding: InputBinding,
-        negativeBinding: InputBinding?,
+    private val stickValue = Vector2f()
+    private val fallbackTrigger = TriggerDeadZone()
+
+    private fun axisIndex(positive: InputBinding?, negative: InputBinding?): Int = when {
+        positive != null && positive.gamepadAxis >= 0 -> positive.gamepadAxis
+        negative != null && negative.gamepadAxis >= 0 -> negative.gamepadAxis
+        else -> -1
+    }
+
+    /** Reads a stick from the bound X/Y axes and applies the dead zone of the stick that owns the X axis. */
+    private fun readStick(
+        xPositive: InputBinding,
+        xNegative: InputBinding?,
+        yPositive: InputBinding,
+        yNegative: InputBinding?,
         axes: FloatArray,
-        deadzone: Float
-    ): Float {
-        val axisIndex = if (positiveBinding.gamepadAxis >= 0) {
-            positiveBinding.gamepadAxis
-        } else if (negativeBinding?.gamepadAxis != null && negativeBinding.gamepadAxis >= 0) {
-            negativeBinding.gamepadAxis
-        } else {
-            return 0f
-        }
+        zones: DeadZoneSettings,
+        out: Vector2f
+    ) {
+        val xi = axisIndex(xPositive, xNegative)
+        val yi = axisIndex(yPositive, yNegative)
+        val rawX = if (xi in axes.indices) axes[xi] else 0f
+        // GLFW reports stick-up (Y axes 1 and 3) as negative
+        val rawY = if (yi in axes.indices) (if (yi == 1 || yi == 3) -axes[yi] else axes[yi]) else 0f
+        val zone = if (xi == AXIS_RIGHT_X || xi == AXIS_RIGHT_Y) zones.rightStick else zones.leftStick
+        zone.apply(rawX, rawY, out)
+    }
 
-        if (axisIndex >= axes.size) return 0f
-
-        var value = axes[axisIndex]
-
-        // Invert Y-axis (axis 1 = left stick Y, axis 3 = right stick Y)
-        // because GLFW returns negative values when stick is pushed up
-        if (axisIndex == 1 || axisIndex == 3) {
-            value = -value
-        }
-
-        if (abs(value) < deadzone) return 0f
-
-        return value
+    private fun triggerZone(axis: Int, zones: DeadZoneSettings): TriggerDeadZone = when (axis) {
+        AXIS_LEFT_TRIGGER -> zones.leftTrigger
+        AXIS_RIGHT_TRIGGER -> zones.rightTrigger
+        else -> fallbackTrigger
     }
 
     private fun checkButtonBindingActive(binding: InputBinding, buttons: BooleanArray?): Boolean {
@@ -189,15 +202,16 @@ class InputSystem(
         binding: InputBinding,
         axes: FloatArray?,
         buttons: BooleanArray?,
-        triggerThreshold: Float
+        zones: DeadZoneSettings
     ): Boolean {
         if (binding.gamepadButton >= 0) {
             if (buttons?.getOrNull(binding.gamepadButton) == true) return true
         }
 
         if (binding.gamepadAxis >= 0 && axes != null && binding.gamepadAxis < axes.size) {
-            var value = axes[binding.gamepadAxis]
-            if (value > triggerThreshold) return true
+            val value = axes[binding.gamepadAxis]
+            val trigger = triggerZone(binding.gamepadAxis, zones)
+            if (trigger.isPressed(value)) return true
         }
 
         return false
