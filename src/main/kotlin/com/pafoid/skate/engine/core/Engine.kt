@@ -154,7 +154,7 @@ class Engine {
         }
         release("scenes") { sceneManager.destroy() }
         release("systems") { systemManager.destroy() }
-        release("audio") { audioEngine.destroy() }
+        release("audio") { audioEngine.close() }
         release("events") { eventSystem.destroy() }
         release("jobs") { jobSystem.destroy() }
         MainThread.unbind()

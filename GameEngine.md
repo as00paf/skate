@@ -186,7 +186,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: Link instances to prefab assets with per-property overrides that survive prefab edits.
   - Done when: Editing a prefab updates its instances but keeps their overrides, with unit tests.
   - Deps: ECS-02, AST-02
-- [~] @skate-ecs **ECS-06** `P1` Remove engine dependency on `game.skateboard.TrickType`
+- [x] **ECS-06** `P1` Remove engine dependency on `game.skateboard.TrickType`
   - Do: `InputEvents.kt` imports `game.skateboard.TrickType`. Make the event generic (or move the type into the engine) and update users.
   - Done when: An architecture guard shows `engine/` does not import `game/`.
 - [x] **ECS-07** `P1` Multi-selection in `Scene`
@@ -196,7 +196,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
 - [x] **ECS-08** `P1` Engine lifecycle, error logging and thread-safety
   - Do: From QA-04: `Engine.destroy()` always releases what was created and cancels `JobSystem`; route handler/job exceptions through `LoggerService` with the exception; assert main-thread-only scene mutation; make `EventSystem` and `LoggerService` thread-safe; replace `println` in `Window`, `JobSystem`, `EventSystem`, `StringManager`.
   - Done when: Tests for destroy-after-failed-start and exception logging; no `println` in engine/core.
-- [ ] **ECS-09** `P1` Units and coordinate-system conventions
+- [x] **ECS-09** `P1` Units and coordinate-system conventions
   - Do: Write the convention (Y-up, right-handed, metres, degrees at component level, radians internally) in `docs/design/conventions.md` and add unit suffixes/KDoc to component fields.
   - Done when: Doc exists and public component fields state their units.
 
@@ -278,7 +278,7 @@ Audio needs a more complete implementation.
   - Do: Reverb zones and low-pass filters via OpenAL EFX.
   - Done when: Effects can be configured per zone or bus.
   - Deps: AUD-02
-- [~] @skate-audio **AUD-06** `P2` Closeable audio handles
+- [x] **AUD-06** `P2` Closeable audio handles
   - Do: Make `AudioEngine` and `SoundSource` `AutoCloseable` (QA-04).
   - Done when: Handles are closed deterministically; tests.
   - Deps: AUD-02
@@ -297,7 +297,7 @@ Input works well but needs review and controller dead-zone support.
   - Do: Context-based action maps (gameplay/UI/editor), runtime rebinding with conflict detection, and saved bindings per project.
   - Done when: A binding can be changed in the editor and used in game. Conflict detection has unit tests.
   - Deps: INP-01
-- [~] @skate-input **INP-04** `P3` Rumble and controller hot-plug
+- [x] **INP-04** `P3` Rumble and controller hot-plug
   - Do: Handle controller connect/disconnect events and rumble/haptics where GLFW allows.
   - Done when: Unplugging and replugging a controller keeps the player's input working.
 - [x] **INP-05** `P1` Engine-level key/action read API
@@ -313,7 +313,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Remove the hardcoded values and logic from `PlayerController`, `SkateboardController` and `PlayerMotionSystem`. Build a data-driven character controller with a state machine (idle, push, ride, air, grind, manual, bail), with tuning in a serializable config asset.
   - Done when: All tuning values are editable in the editor, the game-specific logic lives in `game/`, and the state transitions have unit tests.
   - Deps: ECS-03, PHY-02
-- [~] @skate-gameplay **GPL-02** `P1` Generic character controller in the engine
+- [x] **GPL-02** `P1` Generic character controller in the engine
   - Do: A reusable kinematic/dynamic character controller (slopes, steps, ground snapping) in `engine/` that games can extend.
   - Done when: A non-skate sample (TLG-03) uses it, and the ground detection math has unit tests.
   - Deps: GPL-01
@@ -472,7 +472,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [ ] **EDT-18** `P2` Editor logging and user-data paths
   - Do: From QA-04: replace `println` in `SearchHistory`, `SearchEngine`, `TranslateGizmo`, `Component.kt`; log in `captureScreenshot`; move the wizard default path and `search_history.json` to the user-data directory.
   - Done when: No `println` in editor; user data stored outside the working directory.
-- [~] @skate-editor **EDT-19** `P1` Input Testing window rework
+- [x] **EDT-19** `P1` Input Testing window rework
   - Do: Rework `InputTestingWindow` into the single place to inspect and tune input devices. Today dead zones are hard-coded (`0.15`/`0.1`), only joystick 1 is shown and gamepad settings are split with the Key Bindings window. Show all connected devices (keyboard, mouse, gamepads) live; per stick: raw vs processed values, dead-zone shape (axial/radial), inner/outer dead zone, response curve and sensitivity, all editable via commands and persisted through the INP-02 settings; trigger thresholds; button/axis map of the active gamepad layout; recent-event log with clear/pause; copy-to-clipboard of device info; clean ImGui layout with tooltips and translated strings.
   - Done when: Dead zones and sensitivity are edited here and take effect immediately in-game; no hard-coded dead zones remain; window documented in `docs/`; tests for the settings commands.
   - Deps: INP-02
@@ -538,7 +538,7 @@ A lot of features are broken. Many unit tests are missing (**no integration test
 - [x] **QA-04** `P1` Industry-standards audit
   - Do: Check resource lifetimes (`AutoCloseable`/dispose everywhere), logging via `LoggerService` (no `println`), error handling, thread-safety of shared state, frame-allocation hotspots, units/coordinate-system conventions, and config/versioning.
   - Done when: The findings are in `docs/design/QA-04.md`, with per-domain follow-ups reported to the lead.
-- [~] @skate-qa **QA-05** `P2` More architecture guards
+- [x] **QA-05** `P2` More architecture guards
   - Do: Add guard tests for the rules that other tasks introduce (no GL outside RHI, no Bullet outside its backend, no `println`, etc.).
   - Deps: QA-04
 - [x] **QA-06** `P2` CI
