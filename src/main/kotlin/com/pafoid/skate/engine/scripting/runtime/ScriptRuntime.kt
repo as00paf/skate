@@ -30,11 +30,15 @@ class ScriptRuntime(
     private val logSink: (LogLevel, String) -> Unit = { _, _ -> },
     private val readSource: (String) -> String? = { path -> File(path).takeIf { it.isFile }?.readText() },
     val fixedDeltaTime: Float = 1f / 60f,
+    private val reloadCheckInterval: Float = 0.5f,
 ) {
     private class Instance(val component: ScriptComponent) {
         var script: Script? = null
         var context: ScriptContext? = null
         var failed = false
+        var sourceHash = 0
+        var reloads = 0
+        val state = mutableMapOf<String, Any?>()
         val live get() = script != null && !failed
     }
 
@@ -42,6 +46,7 @@ class ScriptRuntime(
     private val eventBus = ScriptEventBus()
     private val time = ScriptTimeImpl(fixedDeltaTime = fixedDeltaTime)
     private var accumulator = 0f
+    private var sinceReloadCheck = 0f
 
     fun update(components: List<ScriptComponent>, dt: Float) {
         dropRemoved(components)
@@ -52,6 +57,12 @@ class ScriptRuntime(
         active.forEach { component ->
             val instance = instances.getOrPut(component) { Instance(component) }
             if (instance.script == null && !instance.failed) create(instance)
+        }
+
+        sinceReloadCheck += dt
+        if (sinceReloadCheck >= reloadCheckInterval) {
+            sinceReloadCheck = 0f
+            checkForChanges(active)
         }
 
         accumulator = (accumulator + dt).coerceAtMost(fixedDeltaTime * MAX_FIXED_STEPS)
@@ -80,26 +91,69 @@ class ScriptRuntime(
     }
 
     private fun create(instance: Instance) {
-        val component = instance.component
-        val path = component.path
-        val host = hosts.hostFor(path)
-        if (host == null) return fail(instance, ScriptError(path, null, null, "No script host for '$path'"))
+        val path = instance.component.path
         val text = readSource(path)
             ?: return fail(instance, ScriptError(path, null, null, "Script file not found"))
+        instance.sourceHash = text.hashCode()
+        val script = instantiate(instance, text, reload = false) ?: return
+        instance.script = script
+        instance.context = buildContext(instance.component)
+        call(instance) { s, ctx -> s.onCreate(ctx) }
+    }
 
-        when (val result = host.load(ScriptSource(path, text))) {
-            is ScriptLoadResult.Failure -> return fail(instance, result.errors)
-            is ScriptLoadResult.Success -> try {
-                instance.script = result.factory.instantiate()
-            } catch (e: ScriptInstantiationException) {
-                return fail(instance, e.errors)
+    /** Hot reload: swap in the recompiled script; on any error the running script is kept. */
+    private fun checkForChanges(active: List<ScriptComponent>) {
+        active.forEach { component ->
+            val instance = instances[component] ?: return@forEach
+            if (instance.script == null && !instance.failed) return@forEach
+            val text = readSource(component.path) ?: return@forEach
+            if (text.hashCode() == instance.sourceHash) return@forEach
+            instance.sourceHash = text.hashCode()
+            reload(instance, text)
+        }
+    }
+
+    private fun reload(instance: Instance, text: String) {
+        val replacement = instantiate(instance, text, reload = true, markFailed = false) ?: return
+        val old = instance.script
+        val oldContext = instance.context
+        if (old != null && oldContext != null) {
+            try {
+                old.onDestroy(oldContext)
             } catch (t: Throwable) {
-                return fail(instance, errorFrom(path, t))
+                reportErrors(listOf(errorFrom(instance.component.path, t)))
             }
         }
+        eventBus.removeOwner(instance)
+        instance.script = replacement
+        instance.failed = false
+        instance.reloads++
+        instance.context = buildContext(instance.component)
+        logSink(LogLevel.INFO, "[${instance.component.path}] Reloaded")
+        call(instance) { s, ctx -> s.onCreate(ctx) }
+    }
 
-        instance.context = buildContext(component)
-        call(instance) { script, ctx -> script.onCreate(ctx) }
+    private fun instantiate(instance: Instance, text: String, reload: Boolean, markFailed: Boolean = true): Script? {
+        val path = instance.component.path
+        val host = hosts.hostFor(path)
+        val errors = when {
+            host == null -> listOf(ScriptError(path, null, null, "No script host for '$path'"))
+            else -> {
+                val source = ScriptSource(path, text)
+                when (val result = if (reload) host.reload(source) else host.load(source)) {
+                    is ScriptLoadResult.Failure -> result.errors
+                    is ScriptLoadResult.Success -> try {
+                        return result.factory.instantiate()
+                    } catch (e: ScriptInstantiationException) {
+                        e.errors
+                    } catch (t: Throwable) {
+                        listOf(errorFrom(path, t))
+                    }
+                }
+            }
+        }
+        if (markFailed) fail(instance, errors) else reportErrors(errors)
+        return null
     }
 
     private fun destroy(instance: Instance) {
@@ -123,10 +177,12 @@ class ScriptRuntime(
 
     private fun fail(instance: Instance, errors: List<ScriptError>) {
         instance.failed = true
-        errors.forEach {
-            logSink(LogLevel.ERROR, it.toString())
-            onError(it)
-        }
+        reportErrors(errors)
+    }
+
+    private fun reportErrors(errors: List<ScriptError>) = errors.forEach {
+        logSink(LogLevel.ERROR, it.toString())
+        onError(it)
     }
 
     private fun errorFrom(path: String, t: Throwable): ScriptError {
@@ -160,6 +216,8 @@ class ScriptRuntime(
             time = time,
             log = log,
             properties = component.properties.toMap(),
+            state = owner.state,
+            reloadCount = owner.reloads,
         )
     }
 
