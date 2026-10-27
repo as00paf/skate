@@ -55,12 +55,13 @@ object GameUi {
                         paddingLeft = 40f, paddingTop = 40f, paddingRight = 40f, paddingBottom = 40f,
                         spacing = 24f, fillCross = true,
                     )
-                ).placed(0.5f, 0.5f, 0f, 0f, 640f, 640f)
+                ).placed(0.5f, 0.5f, 0f, 0f, 640f, 744f)
             )
             addComponent(UIImageComponent(tint = Vector4f(0.1f, 0.1f, 0.14f, 0.95f)))
             addChild(text("Title", "pause.title", 64f, 0.5f).also { it.element().height = 90f })
             addChild(button("Resume", "pause.resume"))
             addChild(button("Restart", "pause.restart"))
+            addChild(button("Language", "pause.language"))
             addChild(button("Quit", "pause.quit"))
             addChild(text("VolumeLabel", "pause.volume", 36f, 0f).also { it.element().height = 48f })
             addChild(GameObject("Volume").apply {
@@ -100,6 +101,7 @@ class GameUiSystem(
     private val onRestart: () -> Unit = {},
     private val onQuit: () -> Unit = {},
     private val onVolumeChanged: (Float) -> Unit = {},
+    private val onLanguageToggle: () -> Unit = {},
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     var paused = false
@@ -122,6 +124,7 @@ class GameUiSystem(
             onRestart()
         }
         button("Quit")?.onClick = onQuit
+        button("Language")?.onClick = onLanguageToggle
         find(pauseMenu, "Volume")?.getComponent<UISliderComponent>()?.onValueChanged = onVolumeChanged
     }
 

@@ -23,10 +23,10 @@ import com.pafoid.skate.engine.ecs.systems.ScriptingSystem
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.ActionInputReader
-import com.pafoid.skate.engine.render.ui.GridFont
+import com.pafoid.skate.engine.render.ui.UiFont
 import com.pafoid.skate.engine.ui.ReaderUiInputSource
 import com.pafoid.skate.engine.ui.UiActions
-import com.pafoid.skate.engine.ui.UiBuiltInFont
+import com.pafoid.skate.engine.render.ui.SdfFont
 import com.pafoid.skate.engine.ui.UiInputSystem
 import com.pafoid.skate.engine.ui.UiLayoutSystem
 import com.pafoid.skate.engine.ui.UiRenderSystem
@@ -128,7 +128,7 @@ class Engine {
         val framebuffer = renderer.frameBuffer
         val geometry = renderer.renderResources.renderPasses.geometry
         (inputSystem.reader as? ActionInputReader)?.let { UiActions.bindDefaults(it.actions) }
-        var font: GridFont? = null
+        var font: UiFont? = null
         return listOf(
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
             UiInputSystem(
@@ -142,7 +142,7 @@ class Engine {
             UiRenderSystem(
                 drawList = { geometry.renderer2D.ui },
                 strings = stringManager,
-                font = { font ?: UiBuiltInFont.create().also { font = it } },
+                font = { font ?: SdfFont.create().also { font = it } },
                 textures = { assetsManager.getTexture(it) },
             ),
         )

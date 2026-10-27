@@ -10,7 +10,12 @@ class GridFont(
     val firstChar: Int = 32,
     /** Glyph cell width divided by height, used to derive advance from a font size. */
     val cellAspect: Float = 0.5f,
-) {
+) : UiFont {
+    override fun measure(text: String, size: Float): Float = text.length * size * cellAspect
+
+    override fun draw(list: UiDrawList, text: String, x: Float, y: Float, size: Float, r: Float, g: Float, b: Float, a: Float): Float =
+        list.drawText(this, text, x, y, size * cellAspect, size, r, g, b, a)
+
     fun hasGlyph(c: Char): Boolean = c.code - firstChar in 0 until columns * rows
 
     /** UV rect (u0, v0, u1, v1) of [c], or null when the font does not contain it. */

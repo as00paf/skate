@@ -12,6 +12,14 @@ class StringManager(
     private var basePath = ""
     private val properties = Properties()
     private val extraPaths = mutableListOf<String>()
+    private val localeListeners = mutableListOf<(String) -> Unit>()
+
+    val locale: String get() = currentLocale
+
+    /** Notified after [setLocale] changed the active locale, so UI can refresh text and fonts. */
+    fun addLocaleListener(listener: (String) -> Unit) {
+        localeListeners.add(listener)
+    }
 
     fun loadStrings(path: String): Boolean {
         basePath = path
@@ -29,8 +37,9 @@ class StringManager(
         return file.absolutePath.replace(".${file.extension}", "_$locale.${file.extension}")
     }
 
-    private fun loadFile(path: String): Boolean {
+    private fun loadFile(path: String, optional: Boolean = false): Boolean {
         currentPath = path
+        if (optional && !File(path).exists()) return false
         try {
             val inputFile = File(path)
             inputFile.inputStream().use {
@@ -50,8 +59,12 @@ class StringManager(
         if (currentLocale != locale) {
             currentLocale = locale
             properties.clear() // Clear existing properties before reloading
-            val loaded = loadFile(localized(basePath, locale))
-            extraPaths.forEach { loadFile(localized(it, locale)) }
+            // Default strings first so keys missing from a translation fall back instead of showing !!key!!
+            if (basePath.isNotEmpty()) loadFile(basePath)
+            extraPaths.forEach { loadFile(it) }
+            val loaded = basePath.isNotEmpty() && loadFile(localized(basePath, locale), optional = true)
+            extraPaths.forEach { loadFile(localized(it, locale), optional = true) }
+            localeListeners.toList().forEach { it(locale) }
             return loaded
         }
         return false
@@ -74,11 +87,17 @@ class StringManager(
         return String.format(fmt, *formatArgs)
     }
 
+    /**
+     * Picks `key.<category>` by the current locale's plural rule (`zero` wins for 0 when defined), falling back to
+     * `key.other`. The first format argument is the quantity.
+     */
     fun getQuantityString(key: String, quantity: Int, vararg formatArgs: Any): String {
-        val resourceKey = when (quantity) {
-            1 -> "$key.one"
-            else -> "$key.other"
-        }
+        val candidates = listOf(
+            if (quantity == 0) "$key.zero" else null,
+            "$key.${PluralRules.category(currentLocale, quantity).suffix}",
+            "$key.other",
+        )
+        val resourceKey = candidates.filterNotNull().firstOrNull { properties.containsKey(it) } ?: "$key.other"
         val formatString = properties.getProperty(resourceKey, "!!${resourceKey}!!")
         return String.format(formatString, quantity, *formatArgs)
     }

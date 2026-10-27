@@ -1,6 +1,9 @@
 package com.pafoid.skate.engine.ui
 
 import com.pafoid.skate.engine.input.ActionBinding
+import com.pafoid.skate.engine.input.ActionDefinition
+import com.pafoid.skate.engine.input.DefaultActions
+import com.pafoid.skate.engine.input.InputContext
 import com.pafoid.skate.engine.input.ActionMap
 import com.pafoid.skate.engine.input.InputReader
 import com.pafoid.skate.engine.input.Keys
@@ -55,37 +58,38 @@ class UiNavRepeater(private val initialDelay: Float = 0.4f, private val repeatIn
 }
 
 object UiActions {
-    const val UP = "ui_up"
-    const val DOWN = "ui_down"
-    const val LEFT = "ui_left"
-    const val RIGHT = "ui_right"
-    const val CONFIRM = "ui_confirm"
-    const val CANCEL = "ui_cancel"
-    const val NEXT = "ui_next"
-    const val PREVIOUS = "ui_prev"
+    const val UP = DefaultActions.UI_UP
+    const val DOWN = DefaultActions.UI_DOWN
+    const val LEFT = DefaultActions.UI_LEFT
+    const val RIGHT = DefaultActions.UI_RIGHT
+    const val CONFIRM = DefaultActions.UI_CONFIRM
+    const val CANCEL = DefaultActions.UI_CANCEL
+    const val NEXT = "ui.next"
+    const val PREVIOUS = "ui.prev"
 
-    /** Binds keyboard and gamepad defaults for the UI actions; games may rebind them afterwards. */
+    /**
+     * Completes the UI context of [map]: registers the tab actions and adds left-stick navigation on top of the
+     * keyboard/d-pad defaults of [DefaultActions]. Safe to call repeatedly; games may rebind afterwards.
+     */
     fun bindDefaults(map: ActionMap) {
-        listOf(UP, DOWN, LEFT, RIGHT, CONFIRM, CANCEL, NEXT, PREVIOUS).forEach(map::clear)
-        map.bind(UP, ActionBinding.Key(Keys.UP))
-            .bind(UP, ActionBinding.GamepadButton(GamepadConstants.BUTTON_DPAD_UP))
-            .bind(UP, ActionBinding.GamepadAxis(GamepadConstants.AXIS_LEFT_Y, -1f))
-            .bind(DOWN, ActionBinding.Key(Keys.DOWN))
-            .bind(DOWN, ActionBinding.GamepadButton(GamepadConstants.BUTTON_DPAD_DOWN))
-            .bind(DOWN, ActionBinding.GamepadAxis(GamepadConstants.AXIS_LEFT_Y, 1f))
-            .bind(LEFT, ActionBinding.Key(Keys.LEFT))
-            .bind(LEFT, ActionBinding.GamepadButton(GamepadConstants.BUTTON_DPAD_LEFT))
-            .bind(LEFT, ActionBinding.GamepadAxis(GamepadConstants.AXIS_LEFT_X, -1f))
-            .bind(RIGHT, ActionBinding.Key(Keys.RIGHT))
-            .bind(RIGHT, ActionBinding.GamepadButton(GamepadConstants.BUTTON_DPAD_RIGHT))
-            .bind(RIGHT, ActionBinding.GamepadAxis(GamepadConstants.AXIS_LEFT_X, 1f))
-            .bind(CONFIRM, ActionBinding.Key(Keys.ENTER))
-            .bind(CONFIRM, ActionBinding.GamepadButton(GamepadConstants.BUTTON_A))
-            .bind(CANCEL, ActionBinding.Key(Keys.ESCAPE))
-            .bind(CANCEL, ActionBinding.GamepadButton(GamepadConstants.BUTTON_B))
-            .bind(NEXT, ActionBinding.Key(Keys.TAB))
-            .bind(NEXT, ActionBinding.GamepadButton(GamepadConstants.BUTTON_RB))
-            .bind(PREVIOUS, ActionBinding.GamepadButton(GamepadConstants.BUTTON_LB))
+        if (map.definition(UP) == null) DefaultActions.register(map)
+        val ui = InputContext.UI
+        map.define(ActionDefinition(NEXT, ui, "Navigation", defaults = listOf(
+            ActionBinding.Key(Keys.TAB), ActionBinding.GamepadButton(GamepadConstants.BUTTON_RB))))
+        map.define(ActionDefinition(PREVIOUS, ui, "Navigation", defaults = listOf(
+            ActionBinding.GamepadButton(GamepadConstants.BUTTON_LB))))
+        val stick = mapOf(
+            UP to ActionBinding.GamepadAxis(GamepadConstants.AXIS_LEFT_Y, -1f),
+            DOWN to ActionBinding.GamepadAxis(GamepadConstants.AXIS_LEFT_Y, 1f),
+            LEFT to ActionBinding.GamepadAxis(GamepadConstants.AXIS_LEFT_X, -1f),
+            RIGHT to ActionBinding.GamepadAxis(GamepadConstants.AXIS_LEFT_X, 1f),
+        )
+        for ((id, binding) in stick) {
+            val defaults = map.definition(id)?.defaults ?: continue
+            if (defaults.none { it.sourceId() == binding.sourceId() }) {
+                map.define(map.definition(id)!!.copy(defaults = defaults + binding))
+            }
+        }
     }
 }
 

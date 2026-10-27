@@ -71,10 +71,12 @@ class UITextComponent(
     var key: String = "",
     var args: List<String> = emptyList(),
     @Contextual var color: Vector4f = Vector4f(1f, 1f, 1f, 1f),
-    /** Glyph cell height in canvas units. */
+    /** Line height in canvas units. */
     var fontSize: Float = 32f,
     var alignX: Float = 0f,
     var alignY: Float = 0.5f,
+    /** When set, [key] is a plural base (`key.one`, `key.few`, `key.other`, ...) chosen for this count in the current locale. */
+    var quantity: Int? = null,
 ) : Component()
 
 /** Solid color and/or textured rect; 9-slice when any inset is positive. */

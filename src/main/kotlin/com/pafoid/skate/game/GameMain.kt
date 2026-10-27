@@ -65,6 +65,7 @@ private fun installGameUi(window: Window) {
             pauseMenu = pauseMenu,
             onPauseChanged = { paused -> engine.eventSystem.publish(EngineAction.SetRuntimePlaying(!paused)) },
             onQuit = { GLFW.glfwSetWindowShouldClose(window.glfwWindow, true) },
+            onLanguageToggle = { engine.stringManager.setLocale(if (engine.stringManager.locale == "fr") "en" else "fr") },
         )
     )
 }

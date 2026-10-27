@@ -7,10 +7,9 @@ import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.ecs.systems.SystemPhase
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.engine.render.ui.GridFont
+import com.pafoid.skate.engine.render.ui.UiFont
 import com.pafoid.skate.engine.render.ui.NineSliceInsets
 import com.pafoid.skate.engine.render.ui.UiDrawList
-import com.pafoid.skate.engine.render.ui.drawText
 import org.joml.Vector4f
 import kotlin.math.roundToInt
 
@@ -21,7 +20,7 @@ import kotlin.math.roundToInt
 class UiRenderSystem(
     private val drawList: () -> UiDrawList?,
     private val strings: StringManager,
-    private val font: () -> GridFont?,
+    private val font: () -> UiFont?,
     private val textures: (String) -> Texture?,
 ) : System(priority = ExecutionPriority.LATE) {
 
@@ -57,7 +56,7 @@ class UiRenderSystem(
         go.getComponent<UIListComponent>()?.let { drawRows(list, it, x, y, w, h, s, o) }
         go.getComponent<UITextComponent>()?.let { t ->
             if (t.key.isNotEmpty()) {
-                label(list, resolve(t.key, t.args), x, y, w, h, t.fontSize * s, t.alignX, t.alignY, t.color, o)
+                label(list, resolve(t.key, t.args, t.quantity), x, y, w, h, t.fontSize * s, t.alignX, t.alignY, t.color, o)
             }
         }
         if (n.element.focused) outline(list, x, y, w, h, 3f * s, focusColorOf(go), o)
@@ -65,8 +64,9 @@ class UiRenderSystem(
 
     private fun focusColorOf(go: GameObject): Vector4f = go.getComponent<UIButtonComponent>()?.focusColor ?: FOCUS_DEFAULT
 
-    private fun resolve(key: String, args: List<String>): String =
-        if (args.isEmpty()) strings.getString(key) else strings.getString(key, *args.toTypedArray())
+    private fun resolve(key: String, args: List<String>, quantity: Int? = null): String =
+        if (quantity != null) strings.getQuantityString(key, quantity, *args.toTypedArray())
+        else if (args.isEmpty()) strings.getString(key) else strings.getString(key, *args.toTypedArray())
 
     private fun drawImage(list: UiDrawList, img: UIImageComponent, x: Float, y: Float, w: Float, h: Float, scale: Float, o: Float) {
         val path = img.texturePath
@@ -141,11 +141,10 @@ class UiRenderSystem(
     ) {
         val f = font() ?: return
         if (text.isEmpty() || cellH <= 0f) return
-        val cellW = cellH * f.cellAspect
-        val px = (x + (w - text.length * cellW) * alignX).roundToInt().toFloat()
-        val py = (y + (h - cellH) * alignY).roundToInt().toFloat()
+        val px = (x + (w - f.measure(text, cellH)) * alignX).roundToInt().toFloat()
+        val py = (y + (h - f.lineHeight(cellH)) * alignY).roundToInt().toFloat()
         list.pushScissor(x.toInt(), y.toInt(), w.toInt(), h.toInt())
-        list.drawText(f, text, px, py, cellW, cellH, c.x, c.y, c.z, c.w * o)
+        f.draw(list, text, px, py, cellH, c.x, c.y, c.z, c.w * o)
         list.popScissor()
     }
 
