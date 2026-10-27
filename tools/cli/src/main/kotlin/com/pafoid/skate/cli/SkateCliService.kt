@@ -133,16 +133,22 @@ class SkateCliService(
         return target
     }
 
-    fun run(path: String, sceneName: String?, frames: Int, dt: Float): RunStats {
-        val project = loadProject(path)
+    val logs get() = engine.logger.logs
+
+    fun loadScenes(project: Project): List<Scene> {
         val dir = project.getProjectDirectory()
-        val scenes = project.scenesPath.map { locate(it, dir) }.filter { it.exists() }.map {
+        return project.scenesPath.map { locate(it, dir) }.filter { it.exists() }.map {
             try {
                 serializer.decode<Scene>(it.readText())
             } catch (e: Exception) {
                 throw CliException("Scene ${it.name} is not valid: ${e.message?.lineSequence()?.firstOrNull()}")
             }
         }
+    }
+
+    fun run(path: String, sceneName: String?, frames: Int, dt: Float): RunStats {
+        val project = loadProject(path)
+        val scenes = loadScenes(project)
         if (scenes.isEmpty()) throw CliException("Project has no loadable scenes")
         val defaultName = File(project.defaultScene.replace('\\', '/')).nameWithoutExtension
         val scene = if (sceneName != null) {
