@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.gameplay.ground.GroundDetector
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -142,9 +143,7 @@ class PhysicsSystem(
                 states.getOrPut(go) { BodyState() }.push(handle)
             }
 
-            go.getComponent<PlayerController>()?.let {//TODO: move
-                it.isGrounded = checkIfGrounded(body)
-            }
+            go.getComponent<PlayerController>()?.let { probeGround(it, body) }
         }
         states.keys.retainAll(liveSet)
 
@@ -179,19 +178,18 @@ class PhysicsSystem(
         }
     }
 
-    fun checkIfGrounded(body: RigidBody3D): Boolean {
-        val originPosition = body.getWorldPosition()
+    /** Probes the ground below a player-controlled body and any climbable step ahead of it. */
+    private fun probeGround(controller: PlayerController, body: RigidBody3D) {
+        val config = controller.behavior.ground
+        val detector = GroundDetector(config) { from, to -> physics3d.raycastClosest(from, to, body) }
+        val origin = body.getWorldPosition()
+        val feet = Vector3f(origin.x, origin.y - config.footOffset, origin.z)
 
-        // Start the ray from the player's feet (below the collider)
-        val feetY = originPosition.y
-        val rayStart = Vector3f(originPosition.x, feetY, originPosition.z)
+        controller.wasGrounded = controller.ground.standing
+        controller.ground = detector.probe(feet)
 
-        // Ray goes down a small distance to detect ground
-        val rayLength = 0.05f
-        val rayEnd = Vector3f(rayStart.x, rayStart.y - rayLength, rayStart.z)
-
-        // Exclude the player's own physics body from the raycast
-        return physics3d.raycastClosest(rayStart, rayEnd, body) != null
+        val velocity = body.linearVelocity
+        controller.stepAhead = if (config.stepUp) detector.findStep(feet, velocity.x, velocity.z) else null
     }
 
     fun toggleDebug() {

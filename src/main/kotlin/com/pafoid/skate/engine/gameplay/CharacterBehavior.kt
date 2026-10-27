@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.gameplay
 
+import com.pafoid.skate.engine.gameplay.ground.GroundConfig
 import org.joml.Vector2f
 import org.joml.Vector3f
 import java.util.concurrent.ConcurrentHashMap
@@ -42,6 +43,10 @@ data class CharacterMotion(
 /** Data-driven character logic. Pure: no window, GL or physics world required. */
 interface CharacterBehavior {
     val state: String
+
+    /** Ground probing, slope, step and snapping tuning used by the motion system for this character. */
+    val ground: GroundConfig get() = GroundConfig()
+
     fun update(input: CharacterInput, dt: Float): CharacterMotion
 }
 

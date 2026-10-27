@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.gameplay
 
+import com.pafoid.skate.engine.gameplay.ground.GroundConfig
 import kotlinx.serialization.Serializable
 import org.joml.Vector3f
 
@@ -23,6 +24,8 @@ data class LocomotionConfig(
     val minAirTime: Float = 0.15f,
     /** Fraction of ground acceleration available while airborne. 0 disables air control. */
     val airControl: Float = 0.2f,
+    /** Ground detection, slopes, steps and snapping. Also used by behaviors that wrap this config. */
+    val ground: GroundConfig = GroundConfig(),
     /** Animation clip per [LocomotionState] name. */
     val animations: Map<String, String> = mapOf(
         "IDLE" to "idle",
@@ -43,7 +46,10 @@ class LocomotionContext {
 }
 
 /** Generic on-foot controller: idle, walk, run and jump with a wind-up. */
-class LocomotionBehavior(private val config: LocomotionConfig) : CharacterBehavior {
+/** Open so games can extend it (override [update] and call super for the walking part). */
+open class LocomotionBehavior(private val config: LocomotionConfig) : CharacterBehavior {
+
+    override val ground: GroundConfig get() = config.ground
 
     private val context = LocomotionContext().also { it.config = config }
     private val direction = Vector3f()

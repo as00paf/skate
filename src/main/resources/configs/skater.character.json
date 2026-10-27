@@ -12,6 +12,19 @@
         "coyoteTime": 0.1,
         "minAirTime": 0.15,
         "airControl": 0.2,
+        "ground": {
+            "footOffset": 0.0,
+            "probeStartHeight": 0.1,
+            "groundedDistance": 0.05,
+            "snapDistance": 0.3,
+            "sampleRadius": 0.15,
+            "maxSlopeDeg": 50.0,
+            "stepHeight": 0.3,
+            "stepProbeDistance": 0.4,
+            "maxSnapSpeed": 6.0,
+            "snapToGround": true,
+            "stepUp": true
+        },
         "animations": {
             "IDLE": "idle",
             "WALK": "walking",

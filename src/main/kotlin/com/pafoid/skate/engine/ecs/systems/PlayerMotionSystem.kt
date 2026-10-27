@@ -8,6 +8,7 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.gameplay.CharacterInput
 import com.pafoid.skate.engine.gameplay.CharacterMotion
 import com.pafoid.skate.engine.gameplay.MotionMath
+import com.pafoid.skate.engine.gameplay.ground.GroundMotion
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import org.joml.Quaternionf
@@ -30,7 +31,7 @@ class PlayerMotionSystem(
             val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
 
             val motion = controller.behavior.update(buildInput(controller, inputState, body, dt), dt)
-            apply(motion, body, dt)
+            apply(motion, body, controller, dt)
 
             if (motion.state != controller.state) {
                 controller.state = motion.state
@@ -63,11 +64,29 @@ class PlayerMotionSystem(
         )
     }
 
+    /** Follows slopes, climbs steps and snaps to the ground by adjusting vertical velocity. */
+    private fun applyGround(motion: CharacterMotion, body: IPhysicsBody3D, controller: PlayerController, dt: Float) {
+        val velocity = body.linearVelocity
+        val vy = GroundMotion.verticalVelocity(
+            config = controller.behavior.ground,
+            ground = controller.ground,
+            step = controller.stepAhead,
+            wasGrounded = controller.wasGrounded,
+            currentVy = velocity.y,
+            horizontalX = velocity.x,
+            horizontalZ = velocity.z,
+            jumping = motion.impulse != null,
+            dt = dt,
+        ) ?: return
+        velocity.y = vy
+        body.linearVelocity = velocity
+    }
+
     private companion object {
         const val MIN_HEADING_SPEED = 0.5f
     }
 
-    private fun apply(motion: CharacterMotion, body: IPhysicsBody3D, dt: Float) {
+    private fun apply(motion: CharacterMotion, body: IPhysicsBody3D, controller: PlayerController, dt: Float) {
         motion.horizontalVelocity?.let { target ->
             if (!target.x.isNaN() && !target.z.isNaN()) {
                 val velocity = body.linearVelocity
@@ -76,6 +95,7 @@ class PlayerMotionSystem(
                 body.linearVelocity = velocity
             }
         }
+        applyGround(motion, body, controller, dt)
 
         if (!motion.targetYaw.isNaN()) {
             val current = MotionMath.yawOfRotation(body.getRotation())

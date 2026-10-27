@@ -112,3 +112,7 @@ Status: **approved and implemented** (see §8 for deviations from the approved d
 - Deviation: `Animator.currentState` was removed (it was the only engine reference to `PlayerState`; also resolves ANI-01 N1).
 - Manual balance is signed degrees; stick forward/back corrects it (`SkateBehavior.manualAngle`).
 - Mounting is `SkateBehavior.mounted`; no input action exists yet to toggle it (NEEDS INP).
+
+## 9. GPL-02 additions (generic character controller)
+
+`engine/gameplay/ground`: `GroundConfig` (in `LocomotionConfig.ground`, so in the standalone config file), `GroundDetector` (3-ray surface normal estimate, step detection; uses only `RayCaster`/`raycastClosest` hit fractions), `GroundMath`, `GroundMotion` (vertical velocity for slope following, step climbing, ground snapping). `PhysicsSystem` probes ground per player each fixed step into `PlayerController.ground`; `PlayerMotionSystem` applies `GroundMotion` through vertical velocity (no position setter exists on `IPhysicsBody3D`). `LocomotionBehavior` is `open` and `CharacterBehavior.ground` is the extension point for games.

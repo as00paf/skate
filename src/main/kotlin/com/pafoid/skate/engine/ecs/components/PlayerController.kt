@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.components
 import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.LocomotionBehavior
+import com.pafoid.skate.engine.gameplay.ground.GroundInfo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -16,8 +17,19 @@ class PlayerController(
     var configPath: String = "",
 ) : Component() {
 
+    /** Latest ground probe, written by the physics system each fixed step. */
     @Transient
-    var isGrounded = false
+    var ground = GroundInfo()
+
+    /** Height of a climbable step ahead, if any (from the last probe). */
+    @Transient
+    var stepAhead: Float? = null
+
+    @Transient
+    var wasGrounded = false
+
+    /** Standing on walkable ground. Steep slopes count as airborne. */
+    val isGrounded: Boolean get() = ground.standing
 
     @Transient
     var state: String = ""
