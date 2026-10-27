@@ -43,7 +43,7 @@ class AudioEngineTest {
     fun `destroy - can be called without initialization`() {
         // Act & Assert - should not throw
         assertDoesNotThrow {
-            audioEngine.destroy()
+            audioEngine.close()
         }
         assertFalse(audioEngine.isInitialized)
     }
