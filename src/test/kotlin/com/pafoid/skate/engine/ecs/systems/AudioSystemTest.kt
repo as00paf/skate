@@ -14,6 +14,7 @@ import io.mockk.unmockkAll
 import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class AudioSystemTest {
@@ -92,7 +93,7 @@ class AudioSystemTest {
     }
 
     @Test
-    fun `update listener uses configured master volume instead of resetting to one`() {
+    fun `update keeps configured master volume instead of resetting to one`() {
         every { audioEngine.init() } returns true
         every { audioEngine.isInitialized } returns true
 
@@ -106,7 +107,7 @@ class AudioSystemTest {
 
         audioSystem.update(0.16f)
 
-        verify { audioEngine.setMasterVolume(0.35f) }
-        verify(exactly = 0) { audioEngine.setMasterVolume(1.0f) }
+        verify(exactly = 0) { audioEngine.setMasterVolume(any()) }
+        assertEquals(0.35f, audioSystem.masterVolume)
     }
 }

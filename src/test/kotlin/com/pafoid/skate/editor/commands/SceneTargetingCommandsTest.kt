@@ -8,6 +8,8 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.SceneManager
+import com.pafoid.skate.editor.project.Project
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
@@ -45,14 +47,17 @@ class SceneTargetingCommandsTest {
     }
 
     @Test
-    fun `delete scene command closes targeted scene reference`() {
+    fun `delete scene command deletes targeted scene reference`() {
         val scene = mockk<Scene>(relaxed = true)
         val sceneManager = mockk<SceneManager>(relaxed = true)
         val logger = mockk<LoggerService>(relaxed = true)
-        val projectManager: ProjectManager = mockk()
+        val projectManager = mockk<ProjectManager>(relaxed = true)
+        every { projectManager.currentProject } returns Project(
+            name = "P", projectPath = "P/P.skateproj", defaultScene = "Main.scene", scenesPath = emptyList()
+        )
 
         DeleteSceneCommand(scene, projectManager, sceneManager, logger).execute()
 
-        verify(exactly = 1) { sceneManager.closeScene(scene) }
+        verify(exactly = 1) { sceneManager.deleteScene("P/P.skateproj", scene) }
     }
 }

@@ -11,6 +11,7 @@ import com.pafoid.skate.engine.ecs.components.ComponentType.DAY_NIGHT_CYCLE
 import com.pafoid.skate.engine.ecs.components.ComponentType.DIRECTIONAL_LIGHT
 import com.pafoid.skate.engine.ecs.components.ComponentType.ENVIRONMENT
 import com.pafoid.skate.engine.ecs.components.ComponentType.INPUT_STATE
+import com.pafoid.skate.engine.ecs.components.ComponentType.JOINT
 import com.pafoid.skate.engine.ecs.components.ComponentType.NON_PICKABLE
 import com.pafoid.skate.engine.ecs.components.ComponentType.PLAYER_CONTROLLER
 import com.pafoid.skate.engine.ecs.components.ComponentType.POINT_LIGHT
@@ -86,6 +87,7 @@ abstract class Component {
                 is EnvironmentComponent -> ENVIRONMENT
                 is GridLines -> ComponentType.GRID_LINES
                 is InputStateComponent -> INPUT_STATE
+                is JointComponent -> JOINT
                 is PointLightComponent -> POINT_LIGHT
                 is NonPickable -> NON_PICKABLE
                 is PlayerController -> PLAYER_CONTROLLER
@@ -93,6 +95,7 @@ abstract class Component {
                 is RigidBody3D -> RIGID_BODY_3D
                 is RagdollComponent -> RAGDOLL
                 is ScenePhysicsComponent -> SCENE_PHYSICS
+                is ScriptComponent -> ComponentType.SCRIPT
                 is SkeletonComponent -> SKELETON
                 is SpriteRenderer -> SPRITE_RENDERER
                 is Transform -> TRANSFORM

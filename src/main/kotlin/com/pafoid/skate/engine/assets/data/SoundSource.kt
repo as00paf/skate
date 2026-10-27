@@ -62,7 +62,6 @@ class SoundSource(isLooping: Boolean, isRelative: Boolean) {
     fun stop() {
         if (isPlaying()) {
             alSourceStop(sourceId)
-            alSourcei(sourceId, AL_POSITION, 0)
         }
     }
 

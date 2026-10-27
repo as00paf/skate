@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.events.WindowAction
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
@@ -110,7 +111,7 @@ class ProjectSettingsWindow(
                 ImGui.spacing()
                 val btnW = 100f
                 if (button(stringManager.getString("btn.ok"), btnW, 0f)) {
-                    projectManager.saveProject()
+                    eventSystem.publish(ProjectEvent.SaveRequested)
                     isOpen.set(false)
                 }
                 sameLine()
@@ -119,7 +120,7 @@ class ProjectSettingsWindow(
                 }
                 sameLine()
                 if (button(stringManager.getString("btn.apply"), btnW, 0f)) {
-                    projectManager.saveProject()
+                    eventSystem.publish(ProjectEvent.SaveRequested)
                 }
             }
         }
