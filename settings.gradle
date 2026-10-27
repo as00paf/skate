@@ -3,3 +3,4 @@ plugins {
 }
 rootProject.name = 'skate'
 include(':tools:cli')
+include(':tools:mcp')
