@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.ecs
 
+import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
@@ -151,7 +152,7 @@ class SceneManager(
         if (!dir.exists()) dir.mkdirs()
         val file = File(dir, "$name.scene")
         try {
-            file.writeText(serializer.encode(newScene))
+            file.writeText(serializer.encodeFile(FileKind.SCENE, newScene))
             logger.log("Scene created: '$name'", LogLevel.ACTION)
         } catch (e: Exception) {
             logger.logEditor("Failed to create scene file ${file.absolutePath}: ${e.message}")
@@ -164,7 +165,7 @@ class SceneManager(
         if (!dir.exists()) dir.mkdirs()
         val file = File(dir, "${scene.name}.scene")
         return try {
-            file.writeText(serializer.encode(scene))
+            file.writeText(serializer.encodeFile(FileKind.SCENE, scene))
             scene.isDirty = false
             logger.logEditor("Scene saved to ${file.absolutePath}")
             true

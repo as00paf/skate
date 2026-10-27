@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.commands.project
 
+import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.commands.AsyncCommand
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.EventSystem
@@ -26,7 +27,7 @@ class OpenSceneFileCommand(
         completedSuccessfully = false
         openedScene = null
 
-        val scene = serializer.decode<Scene?>(sceneFile.readText())
+        val scene = serializer.decodeFile<Scene?>(FileKind.SCENE, sceneFile.readText())
         if (scene != null) {
             sceneManager.openScene(scene)
             openedScene = scene

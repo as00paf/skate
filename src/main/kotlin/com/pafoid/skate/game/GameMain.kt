@@ -1,5 +1,6 @@
 package com.pafoid.skate.game
 
+import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.ProjectManager
@@ -88,7 +89,7 @@ fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Proj
                 val end = start + info.size
                 val data = binFile.copyOfRange(start, end).toString(Charsets.UTF_8)
                 try {
-                    project = engine.serializer.decode<Project?>(data)
+                    project = engine.serializer.decodeFile<Project?>(FileKind.PROJECT, data)
                 } catch (e: Exception) {
                     engine.logger.logEngine("Error loading project file: $e")
                 }

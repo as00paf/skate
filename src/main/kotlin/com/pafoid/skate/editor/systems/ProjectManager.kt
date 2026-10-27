@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.systems
 
+import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.ProjectEvent
 import com.pafoid.skate.editor.project.EngineAssetCopier
@@ -95,7 +96,7 @@ class ProjectManager(
             return false
         }
         logger.logEditor("Opening project: ${projectFile.absolutePath}")
-        val project = engine.serializer.decode<Project>(projectFile.readText())
+        val project = engine.serializer.decodeFile<Project>(FileKind.PROJECT, projectFile.readText())
 
         return openProject(project)
     }
@@ -186,7 +187,7 @@ class ProjectManager(
 
         val scenes = project.scenesPath.mapNotNull { path ->
             val file = File(path)
-            engine.serializer.decode<Scene?>(file.readText())
+            engine.serializer.decodeFile<Scene?>(FileKind.SCENE, file.readText())
         }
         if (scenes.isEmpty()) {
             logger.logEditor("Failed to load default scene from ${defaultSceneFile.absolutePath}")
@@ -205,7 +206,7 @@ class ProjectManager(
 
         logger.logEditor("Saving project: ${project.name}")
         try {
-            File(project.projectPath).writeText(engine.serializer.encode(project))
+            File(project.projectPath).writeText(engine.serializer.encodeFile(FileKind.PROJECT, project))
             eventSystem.publish(ProjectEvent.Saved(project))
         } catch (e: Exception) {
             logger.logEditor("Error while saving project: ${e.message}", LogLevel.ERROR)

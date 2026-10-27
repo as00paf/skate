@@ -1,5 +1,6 @@
 package com.pafoid.skate.editor.commands.project
 
+import com.pafoid.skate.engine.assets.serialization.FileKind
 import com.pafoid.skate.editor.commands.ExecuteOnlyCommand
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
@@ -29,7 +30,7 @@ class SaveSceneAsCommand(
         if (path != null) {
             scene.name = File(path).nameWithoutExtension
             try {
-                File(path).writeText(serializer.encode(scene))
+                File(path).writeText(serializer.encodeFile(FileKind.SCENE, scene))
                 logger.logEditor("Scene saved to $path")
             } catch (e: Exception) {
                 logger.logEditor("Failed to save scene to $path: ${e.message}", LogLevel.ERROR)
