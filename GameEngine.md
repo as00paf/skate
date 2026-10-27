@@ -219,7 +219,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Fixed timestep with interpolation, collision layers/masks, triggers, raycast/shape-cast queries, physics materials (friction, restitution), CCD for fast bodies, and collision events through `PhysicsEvents`.
   - Done when: Each feature has unit tests, and the skateboard does not tunnel at high speed.
   - Deps: PHY-02
-- [ ] **PHY-05** `P3` Second physics backend spike
+- [~] @skate-physics **PHY-05** `P3` Second physics backend spike
   - Do: Evaluate Jolt (via JNI bindings) or another engine behind `IPhysics3D`.
   - Done when: The findings and a minimal prototype are documented.
   - Deps: PHY-02
@@ -274,7 +274,7 @@ Audio needs a more complete implementation.
   - Do: Stream long music files (OGG), cap voices with priority-based stealing, and add one-shot/looping/random-container sounds.
   - Done when: Music streams without loading the whole file into memory, and voice stealing has unit tests.
   - Deps: AUD-02
-- [ ] **AUD-05** `P3` Effects
+- [~] @skate-audio **AUD-05** `P3` Effects
   - Do: Reverb zones and low-pass filters via OpenAL EFX.
   - Done when: Effects can be configured per zone or bus.
   - Deps: AUD-02
@@ -378,7 +378,7 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
   - Do: Recompile changed scripts, keep state where possible, and show errors in `ConsoleWindow` with file and line.
   - Done when: Editing a script during play mode applies without restarting.
   - Deps: SCR-02
-- [ ] **SCR-04** `P3` TypeScript host
+- [~] @skate-scripting **SCR-04** `P3` TypeScript host
   - Do: Embed a JS engine (e.g. GraalJS or Javet), transpile TS, and use the same `ScriptHost` API.
   - Deps: SCR-02
 - [ ] **SCR-05** `P3` Lua host
@@ -389,7 +389,7 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
 
 Multiplayer and Steam support need to be added.
 
-- [ ] **NET-01** `P2` Multiplayer architecture
+- [~] @skate-online **NET-01** `P2` Multiplayer architecture
   - Do: Choose a model (client-server with prediction and reconciliation is recommended), transport (UDP, e.g. via Netty or KryoNet), replication of ECS components, and RPCs.
   - Done when: `docs/design/NET-01.md` is approved by the lead.
   - Deps: ECS-03
