@@ -24,7 +24,10 @@ fun runCli(args: List<String>): Int {
             is CliCommand.Create -> service.createProject(command.name, File(command.directory).absoluteFile)
             is CliCommand.Validate -> return validate(service, command)
             is CliCommand.Sample -> {
-                val project = ShowcaseProjectBuilder().build(File(command.dir).absoluteFile)
+                val project = when (command.name) {
+                    "marble-run" -> MarbleRunProjectBuilder().build(File(command.dir).absoluteFile)
+                    else -> ShowcaseProjectBuilder().build(File(command.dir).absoluteFile)
+                }
                 println("Generated sample project at ${project.path}")
             }
             is CliCommand.Pack -> service.pack(command.project)
