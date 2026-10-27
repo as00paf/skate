@@ -5,7 +5,9 @@ import org.lwjgl.openal.AL10.AL_FALSE
 import org.lwjgl.openal.AL10.AL_GAIN
 import org.lwjgl.openal.AL10.AL_LOOPING
 import org.lwjgl.openal.AL10.AL_PLAYING
+import org.lwjgl.openal.AL10.AL_PITCH
 import org.lwjgl.openal.AL10.AL_POSITION
+import org.lwjgl.openal.AL10.AL_VELOCITY
 import org.lwjgl.openal.AL10.AL_SOURCE_RELATIVE
 import org.lwjgl.openal.AL10.AL_SOURCE_STATE
 import org.lwjgl.openal.AL10.AL_TRUE
@@ -43,6 +45,14 @@ class SoundSource(isLooping: Boolean, isRelative: Boolean) {
 
     fun setVolume(volume: Float) {
         alSourcef(sourceId, AL_GAIN, volume)
+    }
+
+    fun setVelocity(x: Float, y: Float, z: Float) {
+        alSource3f(sourceId, AL_VELOCITY, x, y, z)
+    }
+
+    fun setPitch(pitch: Float) {
+        alSourcef(sourceId, AL_PITCH, pitch.coerceIn(0.01f, 8f))
     }
 
     fun setLooping(loop: Boolean) {

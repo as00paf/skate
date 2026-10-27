@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.assets.serialization
 import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.AudioListener
 import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -51,6 +52,7 @@ class Serializer {
             subclass(Transform::class)
             subclass(RenderComponent::class)
             subclass(AudioComponent::class)
+            subclass(AudioListener::class)
             subclass(CameraComponent::class)
 
             // Physics components

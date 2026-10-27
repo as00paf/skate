@@ -77,6 +77,7 @@ abstract class Component {
             return when (this) {
                 is Animator -> ANIMATOR
                 is AudioComponent -> AUDIO
+                is AudioListener -> ComponentType.AUDIO_LISTENER
                 is BoxCollider3D -> BOX_COLLIDER_3D
                 is CameraComponent -> ComponentType.CAMERA
                 is CapsuleCollider3D -> CAPSULE_COLLIDER
