@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.animation.AnimationUpdateGate
 import com.pafoid.skate.engine.animation.AnimationVisibility
+import com.pafoid.skate.engine.animation.ik.IkPass
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -25,6 +26,7 @@ class AnimationSystem(
     private val gates = IdentityHashMap<SkeletonComponent, AnimationUpdateGate>()
     private val tmpCenter = Vector3f()
     private val tmpScale = Vector3f()
+    private val tmpWorldToModel = Matrix4f()
 
     override fun invalidateCache() {
         super.invalidateCache()
@@ -68,6 +70,15 @@ class AnimationSystem(
         return test.isVisible(tmpCenter, skeleton.boundsRadius * scale)
     }
 
+    private fun applyIk(ago: AnimatedGameObject, sourceFresh: Boolean) {
+        val rig = ago.animator.ik
+        if (!rig.isActive && rig.basePose == null) return
+        val worldMatrix = ago.skeleton.gameObject?.getComponent<Transform>()?.worldMatrix
+        val worldToModel = worldMatrix?.let { tmpWorldToModel.set(it).invert() }
+        val pose = ago.skeleton.pose
+        IkPass.run(rig, pose.skeleton, pose.localTransforms, worldToModel, sourceFresh)
+    }
+
     private fun updateAnimation(ago: AnimatedGameObject, dt: Float) {
         val animator = ago.animator
         val pose = ago.skeleton.pose
@@ -80,10 +91,13 @@ class AnimationSystem(
             for (i in 0 until minOf(result.boneCount, pose.localTransforms.size)) {
                 result.toMatrix(i, pose.localTransforms[i])
             }
+            applyIk(ago, sourceFresh = true)
             SkeletonMath.buildSkinMatrices(pose, ago.skeleton.matrixPalette)
             ago.skeleton.markPaletteDirty()
             return
         }
+
+        var sourceFresh = false
 
         if (animator.isPlaying) {
             val animation = animator.currentAnimation
@@ -131,8 +145,11 @@ class AnimationSystem(
                         pose.localTransforms[bone.index].set(bone.localTransform)
                     }
                 }
+                sourceFresh = true
             }
         }
+
+        applyIk(ago, sourceFresh)
 
         // Apply global transforms and skin matrices (ALWAYS, even if not playing)
         SkeletonMath.computeGlobalTransforms(skeleton.rootBone, pose.localTransforms, pose.globalTransforms)
