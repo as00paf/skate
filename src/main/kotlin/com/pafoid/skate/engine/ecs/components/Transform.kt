@@ -12,8 +12,11 @@ import kotlin.math.atan2
 
 @Serializable
 data class Transform(
+    /** Local position in metres. */
     @Contextual val translation: Vector3f = Vector3f(),
+    /** Local scale factors (unitless). */
     @Contextual val scale: Vector3f = Vector3f(1f, 1f, 1f),
+    /** Local Euler rotation in degrees (X pitch, Y yaw, Z roll). */
     @Contextual val rotation: Vector3f = Vector3f()
 ): Component() {
     @Transient

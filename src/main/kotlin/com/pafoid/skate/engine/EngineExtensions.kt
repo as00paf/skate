@@ -86,6 +86,7 @@ inline fun <reified T : Component> GameObject.getAllComponents(): List<T> {
 inline fun <reified T : Component> GameObject.addComponent(component: T): GameObject = addComponent(T::class, component)
 
 fun <T : Component> GameObject.removeComponent(componentClass: KClass<T>) {
+    assertSceneMutationOnMainThread("removeComponent")
     components.removeAll { componentClass.isInstance(it) }
     EcsChanges.touch()
 }
@@ -93,6 +94,7 @@ fun <T : Component> GameObject.removeComponent(componentClass: KClass<T>) {
 inline fun <reified T : Component> GameObject.removeComponent() = removeComponent(T::class)
 
 fun GameObject.removeComponent(cmp: Component): Boolean {
+    assertSceneMutationOnMainThread("removeComponent")
     val removed = components.remove(cmp)
     if (removed) EcsChanges.touch()
     return removed
@@ -100,6 +102,7 @@ fun GameObject.removeComponent(cmp: Component): Boolean {
 
 /** Adds [component] as-is (no replacement, no init) and notifies queries. */
 fun GameObject.attachComponent(component: Component) {
+    assertSceneMutationOnMainThread("attachComponent")
     components.add(component)
     EcsChanges.touch()
 }
@@ -116,6 +119,7 @@ fun <T : Component> GameObject.addComponent(componentClass: KClass<T>, component
         return this
     }
 
+    assertSceneMutationOnMainThread("addComponent")
     components.removeAll { componentClass.isInstance(it) }
     component.generateId()
     components.add(component)
