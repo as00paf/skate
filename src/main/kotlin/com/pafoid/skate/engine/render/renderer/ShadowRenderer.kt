@@ -115,8 +115,7 @@ class ShadowRenderer(
 
             if (skeleton != null) {
                 // Skinned mesh: upload bone matrices and enable skinning
-                val boneMatrices = skeleton.matrixPalette
-                shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, boneMatrices)
+                SkinningUbo.bind(shader, skeleton)
                 shader.uploadBoolean(Uniforms.HAS_SKIN, true)
 
                 // Render with skinning

@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.FileSystemEvent
 import com.pafoid.skate.editor.events.ProjectEvent.CreateFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.DeleteFileRequested
+import com.pafoid.skate.editor.events.ProjectEvent.MoveFileRequested
 import com.pafoid.skate.editor.events.ProjectEvent.RenameFileRequested
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.imgui.MImGui
@@ -17,6 +18,7 @@ import com.pafoid.skate.engine.events.SceneAction
 import imgui.flag.ImGuiSelectableFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
+import imgui.internal.ImGui
 import imgui.internal.ImGui.beginDragDropSource
 import imgui.internal.ImGui.beginPopupContextWindow
 import imgui.internal.ImGui.end
@@ -177,6 +179,13 @@ class ProjectWindow(
         val headerLabel = "${starIcon}${Icons.FOLDER} ${item.name}"
 
         val opened = treeNodeEx(item.path, 0, headerLabel)
+
+        if (ImGui.beginDragDropTarget()) {
+            ImGui.acceptDragDropPayload<String>("FILE_PATH")?.let { dragged ->
+                if (dragged != item.path) eventSystem.publish(MoveFileRequested(dragged, item.path))
+            }
+            ImGui.endDragDropTarget()
+        }
 
         // Right-click context menu on folder
         if (isItemClicked(1)) {

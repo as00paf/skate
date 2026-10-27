@@ -143,7 +143,7 @@ class GeometryPass(
             val (go, renderComponent, transform) = drawQueue.itemAt(i)
             // Hover & Selected states
             var selectionState = 0.0f
-            if (go.uId == scene.selectedGameObject?.uId) selectionState = 1.0f
+            if (scene.isSelected(go)) selectionState = 1.0f
             else if (go.uId == scene.hoveredGameObject?.uId) selectionState = 2.0f
 
             defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)

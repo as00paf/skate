@@ -1,31 +1,71 @@
 package com.pafoid.skate.engine.ecs.systems
 
+import com.pafoid.skate.engine.animation.AnimationUpdateGate
+import com.pafoid.skate.engine.animation.AnimationVisibility
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
+import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.render.EngineStats
 import com.pafoid.skate.engine.utils.SkeletonMath
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import java.util.IdentityHashMap
 
-class AnimationSystem : System(priority = ExecutionPriority.DEFAULT) {
+class AnimationSystem(
+    /** Null disables visibility culling (everything updates every frame). */
+    var visibility: AnimationVisibility? = null,
+    /** Seconds between updates for off-screen characters; 0 disables the throttle. */
+    var offscreenInterval: Float = AnimationUpdateGate.DEFAULT_OFFSCREEN_INTERVAL,
+) : System(priority = ExecutionPriority.DEFAULT) {
 
     private val animated = query(Animator::class, SkeletonComponent::class, topLevelOnly = true)
+    private val gates = IdentityHashMap<SkeletonComponent, AnimationUpdateGate>()
+    private val tmpCenter = Vector3f()
+    private val tmpScale = Vector3f()
+
+    override fun invalidateCache() {
+        super.invalidateCache()
+        gates.clear()
+    }
 
     override fun update(dt: Float) {
         if (!scene.isRunning) return
+        visibility?.beginFrame()
 
+        var updated = 0
+        var skipped = 0
         animated.forEach { go ->
             val ago = AnimatedGameObject(
                 go.getComponent<Animator>() ?: return@forEach,
                 go.getComponent<SkeletonComponent>() ?: return@forEach,
             )
+            val gate = gates.getOrPut(ago.skeleton) { AnimationUpdateGate() }
+            gate.offscreenInterval = offscreenInterval
+            val step = gate.consume(isVisible(ago.skeleton), dt)
+            if (step <= 0f && dt > 0f) {
+                skipped++
+                return@forEach
+            }
+            updated++
             // Update animator state first (selects animation based on state)
-            ago.animator.update(dt)
+            ago.animator.update(step)
             // Then update the animation
-            updateAnimation(ago, dt)
+            updateAnimation(ago, step)
         }
+        EngineStats.animationsUpdated.set(updated)
+        EngineStats.animationsSkipped.set(skipped)
+    }
+
+    private fun isVisible(skeleton: SkeletonComponent): Boolean {
+        val test = visibility ?: return true
+        val world = skeleton.gameObject?.getComponent<Transform>()?.worldMatrix ?: return true
+        world.transformPosition(skeleton.boundsCenter, tmpCenter)
+        world.getScale(tmpScale)
+        val scale = maxOf(tmpScale.x, tmpScale.y, tmpScale.z)
+        return test.isVisible(tmpCenter, skeleton.boundsRadius * scale)
     }
 
     private fun updateAnimation(ago: AnimatedGameObject, dt: Float) {
@@ -41,6 +81,7 @@ class AnimationSystem : System(priority = ExecutionPriority.DEFAULT) {
                 result.toMatrix(i, pose.localTransforms[i])
             }
             SkeletonMath.buildSkinMatrices(pose, ago.skeleton.matrixPalette)
+            ago.skeleton.markPaletteDirty()
             return
         }
 
@@ -96,6 +137,7 @@ class AnimationSystem : System(priority = ExecutionPriority.DEFAULT) {
         // Apply global transforms and skin matrices (ALWAYS, even if not playing)
         SkeletonMath.computeGlobalTransforms(skeleton.rootBone, pose.localTransforms, pose.globalTransforms)
         SkeletonMath.buildSkinMatrices(pose, ago.skeleton.matrixPalette)
+        ago.skeleton.markPaletteDirty()
     }
 
     /**

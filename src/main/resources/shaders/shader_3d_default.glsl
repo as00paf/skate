@@ -42,7 +42,9 @@ uniform float uFogGradient;
 uniform mat4 uLightSpaceMatrix;// Light's view-projection matrix
 
 const int MAX_BONES = 100;
-uniform mat4 u_JointMatrices[MAX_BONES];
+layout(std140) uniform SkinBlock {
+    mat4 u_JointMatrices[MAX_BONES];
+};
 uniform bool u_HasSkin;
 
 void main()

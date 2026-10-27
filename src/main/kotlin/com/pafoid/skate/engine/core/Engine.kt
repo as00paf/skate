@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.core
 
+import com.pafoid.skate.engine.animation.FrustumVisibility
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -13,6 +14,7 @@ import com.pafoid.skate.engine.ecs.systems.DirectionalLightSystem
 import com.pafoid.skate.engine.ecs.systems.EnvironmentSystem
 import com.pafoid.skate.engine.ecs.systems.GameObjectManager
 import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.ecs.systems.PhysicsDebugDrawSystem
 import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
@@ -24,6 +26,7 @@ import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.render.renderer.SkinningUbo
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 import java.util.concurrent.atomic.AtomicReference
@@ -77,6 +80,7 @@ class Engine {
 
     private fun initializeSystems() {
         val debugRenderer = renderer.renderResources.renderers.debug
+        val physicsSystem = PhysicsSystem(debugRenderer)
         val engineSystems = listOf(
             gameObjectManager, // Core
             TransformSystem(),
@@ -84,11 +88,12 @@ class Engine {
             InputSystem(inputProvider, eventSystem),
             AudioSystem(audioEngine, logger, assetsManager, cameraManager),
             EnvironmentSystem(),
-            PhysicsSystem(debugRenderer),
+            physicsSystem,
+            PhysicsDebugDrawSystem(physicsSystem),
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager, eventSystem),
-            AnimationSystem(),
+            AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }),
             RagdollSystem(),
             ScriptingSystem(logger, eventSystem),
         )
@@ -133,6 +138,7 @@ class Engine {
         if (engineState.get() != EngineState.RUNNING) return
         screens.forEach { it.destroy() }
         renderer.destroy()
+        SkinningUbo.destroy()
         sceneManager.destroy()
         systemManager.destroy()
     }

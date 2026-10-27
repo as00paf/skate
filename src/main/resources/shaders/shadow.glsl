@@ -10,7 +10,9 @@ uniform mat4 uLightSpaceMatrix;
 uniform bool u_HasSkin;
 
 const int MAX_BONES = 100;
-uniform mat4 u_JointMatrices[MAX_BONES];
+layout(std140) uniform SkinBlock {
+    mat4 u_JointMatrices[MAX_BONES];
+};
 
 out vec2 fTexCoords;
 

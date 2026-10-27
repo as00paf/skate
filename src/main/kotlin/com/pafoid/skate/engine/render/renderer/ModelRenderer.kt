@@ -58,6 +58,8 @@ class ModelRenderer(
 
         val hasSkin = skeletonComponent != null
         shader.uploadBoolean(Uniforms.HAS_SKIN, hasSkin)
+        // Must precede the draw calls below (the palette used to be uploaded after them, one draw late)
+        if (skeletonComponent != null) SkinningUbo.bind(shader, skeletonComponent)
 
         // Render mesh if requested
         if (renderComponent.renderMode == RenderMode.MESH || renderComponent.renderMode == RenderMode.BOTH) {
@@ -76,7 +78,6 @@ class ModelRenderer(
                 val skeleton = skeletonComponent.pose.skeleton
                 visualizeBoneRecursive(skeleton.rootBone, skeleton, transform.worldMatrix)
             }
-            shader.uploadMat4fArray(Uniforms.JOINT_MATRICES, skeletonComponent.matrixPalette)
         }
     }
 

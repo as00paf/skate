@@ -3,12 +3,16 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
+import com.pafoid.skate.engine.audio.SpatialAudio
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.AudioListener
+import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10
@@ -33,6 +37,12 @@ class AudioSystem(
         }
     var lastNonMutedVolume = 1.0f
 
+    private var frameDt = 0f
+    private var spatialConfigured = false
+    private val listenerPos = Vector3f()
+    private val listenerVel = Vector3f()
+    private val previousPositions = mutableMapOf<Int, Vector3f>()
+
     // Maps Entity ID to its active SoundSource
     private val activeSources = mutableMapOf<Int, SoundSource>()
 
@@ -47,6 +57,11 @@ class AudioSystem(
             }
         }
 
+        frameDt = dt
+        if (!spatialConfigured) {
+            audioEngine.configureSpatial()
+            spatialConfigured = true
+        }
         updateListener()
         updateAudioSources()
     }
@@ -63,16 +78,38 @@ class AudioSystem(
             ALC.createCapabilities(audioEngine.getDevice())
         }
 
-        val camera = cameraManager.camera
-        val pos = cameraManager.transform.worldMatrix.getTranslation(Vector3f())
-        val forward = camera.camForward
+        val listenerObject = scene.children.firstOrNull { it.getComponent<AudioListener>()?.enabled == true }
+        val pos: Vector3f
+        val forward: Vector3f
+        val up: Vector3f
+        if (listenerObject != null) {
+            val m = listenerObject.getComponent<Transform>()?.worldMatrix ?: Matrix4f()
+            pos = m.getTranslation(Vector3f())
+            forward = m.transformDirection(Vector3f(0f, 0f, -1f)).normalize()
+            up = m.transformDirection(Vector3f(0f, 1f, 0f)).normalize()
+        } else {
+            val camera = cameraManager.camera
+            pos = cameraManager.transform.worldMatrix.getTranslation(Vector3f())
+            forward = Vector3f(camera.camForward)
+            up = Vector3f(camera.camRight).cross(forward).normalize()
+        }
+        val velocity = motionVelocity(listenerObject?.let { -it.uId - 1 } ?: CAMERA_KEY, pos, listenerObject?.getComponent<RigidBody3D>())
 
+        listenerPos.set(pos)
+        listenerVel.set(velocity)
         audioEngine.setListenerPosition(pos.x, pos.y, pos.z)
         audioEngine.setListenerOrientation(
             floatArrayOf(forward.x, forward.y, forward.z),
-            floatArrayOf(0f, 1f, 0f)
+            floatArrayOf(up.x, up.y, up.z)
         )
-        audioEngine.setListenerVelocity(0f, 0f, 0f)
+        audioEngine.setListenerVelocity(velocity.x, velocity.y, velocity.z)
+    }
+
+    /** Physics velocity when the entity has a body, otherwise finite difference of its position. */
+    private fun motionVelocity(key: Int, pos: Vector3f, body: RigidBody3D?): Vector3f {
+        val previous = previousPositions.put(key, Vector3f(pos))
+        if (body != null && body.rawBody != null) return Vector3f(body.linearVelocity)
+        return if (previous == null) Vector3f() else SpatialAudio.velocityFromMotion(previous, pos, frameDt)
     }
 
     private fun updateAudioSources() {
@@ -98,16 +135,33 @@ class AudioSystem(
 
                 if (source != null) {
                     // Update state
-                    source.setVolume(audioEngine.mixer.sourceGain(audioComponent.bus, audioComponent.volume))
+                    var gain = audioEngine.mixer.sourceGain(audioComponent.bus, audioComponent.volume)
+                    var pitch = 1f
                     source.setLooping(audioComponent.loops)
                     source.setRelative(!audioComponent.is3D)
 
                     if (transform != null && audioComponent.is3D) {
-                        source.setPosition(transform.translation.x, transform.translation.y, transform.translation.z)
+                        val worldPos = transform.worldMatrix.getTranslation(Vector3f())
+                        val vel = motionVelocity(gameObject.uId, worldPos, gameObject.getComponent<RigidBody3D>())
+                        source.setPosition(worldPos.x, worldPos.y, worldPos.z)
+                        source.setVelocity(vel.x, vel.y, vel.z)
+                        gain *= SpatialAudio.attenuation(
+                            audioComponent.attenuationModel,
+                            worldPos.distance(listenerPos),
+                            audioComponent.minDistance,
+                            audioComponent.maxDistance,
+                            audioComponent.rolloff
+                        )
+                        pitch = SpatialAudio.dopplerPitch(
+                            listenerPos, listenerVel, worldPos, vel, audioComponent.dopplerFactor
+                        )
                     } else {
                         // For 2D sounds (relative), position is usually 0,0,0 relative to listener
                         source.setPosition(0f, 0f, 0f)
+                        source.setVelocity(0f, 0f, 0f)
                     }
+                    source.setVolume(gain)
+                    source.setPitch(pitch)
 
                     // Handle playback requests
                     if (audioComponent.playRequested) {
@@ -137,6 +191,7 @@ class AudioSystem(
         removedEntities.forEach { id ->
             activeSources[id]?.delete()
             activeSources.remove(id)
+            previousPositions.remove(id)
         }
     }
 
@@ -144,5 +199,9 @@ class AudioSystem(
         isInitialized = false
         activeSources.values.forEach { it.delete() }
         activeSources.clear()
+    }
+
+    private companion object {
+        const val CAMERA_KEY = Int.MIN_VALUE
     }
 }
