@@ -30,6 +30,7 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.prefab.PrefabInstance
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -92,6 +93,7 @@ class Serializer {
             // Custom
             subclass(PlayerController::class)
             subclass(InputStateComponent::class)
+            subclass(PrefabInstance::class)
         }
     }
 
