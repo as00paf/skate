@@ -10,6 +10,7 @@ import com.pafoid.skate.editor.imgui.data.UiConstants.EDITOR_MENU_BAR_HEIGHT
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.editor.ui.menus.EditMenuBuilder
 import com.pafoid.skate.editor.ui.menus.FileMenuBuilder
+import com.pafoid.skate.editor.ui.menus.InputMenuBuilder
 import com.pafoid.skate.editor.ui.menus.SettingsMenuBuilder
 import com.pafoid.skate.editor.ui.menus.ViewMenuBuilder
 import com.pafoid.skate.editor.ui.menus.WindowControlsRenderer
@@ -36,6 +37,7 @@ class EditorMenuBar(
     private val fileMenu = FileMenuBuilder(stringManager, eventSystem)
     private val editMenu = EditMenuBuilder(stringManager, sceneManager, eventSystem)
     private val settingsMenu = SettingsMenuBuilder(stringManager, settingsManager, eventSystem)
+    private val inputMenu = InputMenuBuilder(stringManager, eventSystem)
     private val viewMenu = ViewMenuBuilder(stringManager, eventSystem, windowRegistry)
     private val windowControls = WindowControlsRenderer(eventSystem, stringManager)
 
@@ -50,6 +52,7 @@ class EditorMenuBar(
     }
 
     fun render() {
+        inputMenu.handleShortcut()
         if (ImGui.beginMenuBar()) {
             renderAppIcon()
             renderHamburgerMenu()
@@ -82,6 +85,7 @@ class EditorMenuBar(
             fileMenu.render(sceneManager.currentScene)
             editMenu.render()
             settingsMenu.render()
+            inputMenu.render()
             viewMenu.render()
             ImGui.separator()
 

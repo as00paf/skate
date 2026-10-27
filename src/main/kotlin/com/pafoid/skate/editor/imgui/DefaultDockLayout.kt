@@ -21,7 +21,6 @@ object DefaultDockLayout {
         "window.command_history" to Zone.BOTTOM,
         "window.render_graph" to Zone.BOTTOM,
         "window.physics_tuner" to Zone.BOTTOM,
-        "window.input_testing" to Zone.BOTTOM,
     )
 
     /** Dialogs, popups and settings windows have no zone and stay floating. */

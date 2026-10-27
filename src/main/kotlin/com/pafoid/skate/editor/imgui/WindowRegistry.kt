@@ -46,6 +46,11 @@ class WindowRegistry(
         ProjectWindow(engine, projectManager),
     )
 
+    /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */
+    val dockableWindows: List<EditorWindow> get() = dockable(windows)
+
+    val inputTestingDialog: EditorDialog = windows.filterIsInstance<InputTestingWindow>().first()
+
     val menuBar = EditorMenuBar(engine, editor, this, projectManager)
     val statusBar = EditorStatusBar(engine)
 
@@ -53,11 +58,17 @@ class WindowRegistry(
         return windows.find { it.name == key }
     }
 
+    fun dialog(name: String): EditorDialog? = windows.filterIsInstance<EditorDialog>().find { it.name == name }
+
     fun hideAllWindows() {
         windows.forEach { it.isOpen.set(false) }
     }
 
     fun showDefaultWindows() {
         windows.forEach { it.isOpen.set(it.isDefault) }
+    }
+
+    companion object {
+        fun dockable(windows: List<EditorWindow>): List<EditorWindow> = windows.filter { it !is EditorDialog }
     }
 }

@@ -18,7 +18,7 @@ class ViewMenuBuilder(
     fun render() {
         if (beginMenu(stringManager.getString("menu.view"))) {
             if (beginMenu(stringManager.getString("menu.view.windows"))) {
-                windowRegistry.windows.forEach { window ->
+                windowRegistry.dockableWindows.forEach { window ->
                     checkbox(stringManager.getString(window.name), window.isOpen)
                 }
                 endMenu()
