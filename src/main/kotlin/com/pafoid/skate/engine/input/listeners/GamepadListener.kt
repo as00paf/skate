@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.input.listeners
 
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.input.ButtonStates
 import com.pafoid.skate.engine.input.GamepadRegistry
 import org.lwjgl.glfw.GLFW.GLFW_CONNECTED
 import org.lwjgl.glfw.GLFW.GLFW_DISCONNECTED
@@ -12,12 +13,10 @@ import org.lwjgl.glfw.GLFW.glfwJoystickPresent
 import org.lwjgl.glfw.GLFW.glfwSetJoystickCallback
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-import kotlin.math.min
 
 class GamepadListener(private val logger: LoggerService) {
     val registry = GamepadRegistry(GLFW_JOYSTICK_LAST + 1)
-    private val lastButtons = Array(GLFW_JOYSTICK_LAST + 1) { BooleanArray(15) { false } }
-    private val currentButtons = Array(GLFW_JOYSTICK_LAST + 1) { BooleanArray(15) { false } }
+    private val buttonStates = ButtonStates(GLFW_JOYSTICK_LAST + 1)
     private var initialized = false
 
     fun init() {
@@ -53,19 +52,10 @@ class GamepadListener(private val logger: LoggerService) {
                 continue
             }
 
-            for (j in 0 until 15) {
-                lastButtons[i][j] = currentButtons[i][j]
-            }
-
             val buttons: ByteBuffer? = glfwGetJoystickButtons(i)
             if (buttons != null) {
-                for (j in 0 until 15) {
-                    currentButtons[i][j] = false
-                }
-
-                for (j in 0 until min(buttons.remaining(), 15)) {
-                    currentButtons[i][j] = buttons.get() == 1.toByte()
-                }
+                val base = buttons.position()
+                buttonStates.update(i, { buttons.get(base + it) == 1.toByte() }, buttons.remaining())
             }
         }
     }
@@ -87,23 +77,14 @@ class GamepadListener(private val logger: LoggerService) {
 
     fun getButtons(jid: Int): BooleanArray? {
         if (!isGamepadPresent(jid)) return null
-        return currentButtons[jid]
+        return buttonStates.buttons(jid)
     }
 
-    fun buttonPressed(jid: Int, button: Int): Boolean {
-        if (!isGamepadPresent(jid) || button >= 15) return false
-        return currentButtons[jid][button]
-    }
+    fun buttonPressed(jid: Int, button: Int): Boolean = isGamepadPresent(jid) && buttonStates.isDown(jid, button)
 
-    fun buttonBeginPress(jid: Int, button: Int): Boolean {
-        if (!isGamepadPresent(jid) || button >= 15) return false
-        return currentButtons[jid][button] && !lastButtons[jid][button]
-    }
+    fun buttonBeginPress(jid: Int, button: Int): Boolean = isGamepadPresent(jid) && buttonStates.beginPress(jid, button)
 
-    fun buttonWasPressed(jid: Int, button: Int): Boolean {
-        if (!isGamepadPresent(jid) || button >= 15) return false
-        return (!currentButtons[jid][button] && lastButtons[jid][button]) || (currentButtons[jid][button] && !lastButtons[jid][button])
-    }
+    fun buttonWasPressed(jid: Int, button: Int): Boolean = isGamepadPresent(jid) && buttonStates.changed(jid, button)
 
     fun refreshConnectedGamepads() {
         for (i in 0..GLFW_JOYSTICK_LAST) {
@@ -111,10 +92,5 @@ class GamepadListener(private val logger: LoggerService) {
         }
     }
 
-    private fun clearJoystickButtons(jid: Int) {
-        for (j in 0 until 15) {
-            currentButtons[jid][j] = false
-            lastButtons[jid][j] = false
-        }
-    }
+    private fun clearJoystickButtons(jid: Int) = buttonStates.clear(jid)
 }
