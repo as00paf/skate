@@ -40,7 +40,7 @@ class StreamingPlayer(
     var looping: Boolean = false,
     bufferCount: Int = 4,
     chunkSamples: Int = 32768
-) {
+) : AutoCloseable {
     private val chunk = ShortArray(chunkSamples - chunkSamples % decoder.channels)
     private val bufferIds = sink.createBuffers(bufferCount)
     private var endOfStream = false
@@ -76,7 +76,7 @@ class StreamingPlayer(
         sink.queue(bufferId)
     }
 
-    fun close() {
+    override fun close() {
         if (closed) return
         closed = true
         sink.unqueueProcessed()

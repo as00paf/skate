@@ -120,11 +120,11 @@ class AudioSystem(
         return if (previous == null) Vector3f() else SpatialAudio.velocityFromMotion(previous, pos, frameDt)
     }
 
-    private class Playback(val source: SoundSource, val stream: StreamingPlayer?) {
-        fun release() {
+    private class Playback(val source: SoundSource, val stream: StreamingPlayer?) : AutoCloseable {
+        override fun close() {
             source.stop()
             stream?.close()
-            source.delete()
+            source.close()
         }
     }
 
@@ -211,7 +211,7 @@ class AudioSystem(
     }
 
     private fun releasePlayback(id: Int) {
-        playbacks.remove(id)?.release()
+        playbacks.remove(id)?.close()
         audioEngine.voices.release(id)
     }
 
@@ -258,14 +258,14 @@ class AudioSystem(
             source.setBuffer(buffer.bufferId)
             return Playback(source, null)
         } catch (e: Exception) {
-            source.delete()
+            source.close()
             throw e
         }
     }
 
     override fun destroy() {
         isInitialized = false
-        playbacks.values.forEach { it.release() }
+        playbacks.values.forEach { it.close() }
         playbacks.clear()
         audioEngine.voices.clear()
     }
