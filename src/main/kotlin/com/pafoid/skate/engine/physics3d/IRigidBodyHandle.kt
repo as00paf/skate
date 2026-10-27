@@ -9,6 +9,19 @@ interface IRigidBodyHandle {
     val linearDamping: Float
     val angularDamping: Float
     var friction: Float
+    var restitution: Float
+
+    /** Bit flags identifying the layers this body lives on. */
+    var collisionLayer: Int
+
+    /** Bit flags of the layers this body collides with. */
+    var collisionMask: Int
+
+    /** Triggers detect overlaps but never produce a collision response. */
+    var isTrigger: Boolean
+
+    /** Enables swept (continuous) collision detection so fast bodies do not tunnel through thin geometry. */
+    fun setContinuousCollision(motionThreshold: Float, sweptRadius: Float)
     var isKinematic: Boolean
     var linearVelocity: Vector3f
     var angularVelocity: Vector3f

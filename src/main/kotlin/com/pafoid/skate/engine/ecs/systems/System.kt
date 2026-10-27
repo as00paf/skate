@@ -17,6 +17,10 @@ abstract class System(
     /** Systems of the same phase that must run after this one. */
     open val runsBefore: List<KClass<out System>> get() = emptyList()
 
+    /** Progress between the last two fixed steps in [0, 1]; set by [SystemManager] before the variable-rate phases. */
+    var fixedStepAlpha = 0f
+        internal set
+
     var enabled = true
     private val queries = mutableListOf<ComponentQuery>()
 
