@@ -8,8 +8,11 @@ import org.joml.Vector3f
 @Serializable
 data class CameraComponent(
     var isOrthographic: Boolean = false,
+    /** Vertical field of view in degrees. */
     var fov: Float = 45f,
+    /** Near clip distance in metres. */
     var nearPlane: Float = 0.1f,
+    /** Far clip distance in metres. */
     var farPlane: Float = 1000f,
     var zoom: Float = 1.0f,
     var isDefault: Boolean = false
