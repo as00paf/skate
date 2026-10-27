@@ -19,6 +19,7 @@ class AudioEngine(
         private set
 
     val mixer = Mixer()
+    val voices = VoiceManager<Int>()
 
     /** Applies volume/mute settings live; takes effect on the next AudioSystem update. */
     fun applyConfig(config: AudioConfig) = mixer.applyConfig(config)

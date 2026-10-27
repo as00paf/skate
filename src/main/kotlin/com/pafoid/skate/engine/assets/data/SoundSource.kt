@@ -1,6 +1,16 @@
 package com.pafoid.skate.engine.assets.data
 
 import org.lwjgl.openal.AL10.AL_BUFFER
+import org.lwjgl.openal.AL10.AL_BUFFERS_PROCESSED
+import org.lwjgl.openal.AL10.AL_BUFFERS_QUEUED
+import org.lwjgl.openal.AL10.AL_STOPPED
+import org.lwjgl.openal.AL10.AL_FORMAT_MONO16
+import org.lwjgl.openal.AL10.AL_FORMAT_STEREO16
+import org.lwjgl.openal.AL10.alBufferData
+import org.lwjgl.openal.AL10.alDeleteBuffers
+import org.lwjgl.openal.AL10.alGenBuffers
+import org.lwjgl.openal.AL10.alSourceQueueBuffers
+import org.lwjgl.openal.AL10.alSourceUnqueueBuffers
 import org.lwjgl.openal.AL10.AL_FALSE
 import org.lwjgl.openal.AL10.AL_GAIN
 import org.lwjgl.openal.AL10.AL_LOOPING
@@ -20,6 +30,8 @@ import org.lwjgl.openal.AL10.alSourcePlay
 import org.lwjgl.openal.AL10.alSourceStop
 import org.lwjgl.openal.AL10.alSourcef
 import org.lwjgl.openal.AL10.alSourcei
+
+import com.pafoid.skate.engine.audio.StreamSink
 
 class SoundSource(isLooping: Boolean, isRelative: Boolean) {
 
@@ -70,9 +82,7 @@ class SoundSource(isLooping: Boolean, isRelative: Boolean) {
     }
 
     fun stop() {
-        if (isPlaying()) {
-            alSourceStop(sourceId)
-        }
+        alSourceStop(sourceId)
     }
 
     fun pause() {
@@ -83,6 +93,27 @@ class SoundSource(isLooping: Boolean, isRelative: Boolean) {
 
     fun isPlaying(): Boolean {
         return alGetSourcei(sourceId, AL_SOURCE_STATE) == AL_PLAYING
+    }
+
+    /** Detaches any static buffer and returns a sink that streams PCM through this source. */
+    fun asStreamSink(): StreamSink {
+        stop()
+        alSourcei(sourceId, AL_BUFFER, 0)
+        return object : StreamSink {
+            override fun createBuffers(count: Int) = IntArray(count) { alGenBuffers() }
+            override fun deleteBuffers(ids: IntArray) = ids.forEach { alDeleteBuffers(it) }
+            override fun upload(bufferId: Int, pcm: ShortArray, sampleCount: Int, channels: Int, sampleRate: Int) {
+                alBufferData(bufferId, if (channels == 1) AL_FORMAT_MONO16 else AL_FORMAT_STEREO16, pcm.copyOf(sampleCount), sampleRate)
+            }
+            override fun queue(bufferId: Int) = alSourceQueueBuffers(sourceId, bufferId)
+            override fun unqueueProcessed(): IntArray {
+                val n = alGetSourcei(sourceId, AL_BUFFERS_PROCESSED)
+                return IntArray(n) { alSourceUnqueueBuffers(sourceId) }
+            }
+            override fun queuedCount() = alGetSourcei(sourceId, AL_BUFFERS_QUEUED)
+            override fun isStopped() = alGetSourcei(sourceId, AL_SOURCE_STATE) == AL_STOPPED
+            override fun play() = alSourcePlay(sourceId)
+        }
     }
 
     fun delete() {
