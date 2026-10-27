@@ -83,7 +83,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Data-driven `Material` (shader ref + typed parameter block + texture slots). Support PBR metallic/roughness as the default and serialize materials as assets.
   - Done when: Models render through materials instead of hardcoded uniforms, materials can be edited and saved, and parameter binding has unit tests.
   - Deps: REN-02
-- [ ] **REN-05** `P1` Dynamic shaders and shader variants
+- [~] @skate-render **REN-05** `P1` Dynamic shaders and shader variants
   - Do: Add shader `#include` and `#define` permutations (skinned, shadowed, fog, etc.) to `ShaderLoader`, compile variants on demand and cache them, and hot-reload shaders in editor builds.
   - Done when: Editing a `.glsl` file under `resources/shaders` updates the running editor, and variant keys plus preprocessor output are unit-tested.
   - Deps: REN-02
@@ -123,7 +123,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Add scissor push/pop, 9-slice quads and glyph quad submission to `Renderer2D` as required by `docs/design/GUI-01.md`.
   - Done when: Unit tests cover the new calls and a UI sample draws a clipped 9-slice panel with text.
   - Deps: GUI-01
-- [~] @skate-render **REN-15** `P1` `GpuResource : AutoCloseable`
+- [x] **REN-15** `P1` `GpuResource : AutoCloseable`
   - Do: Introduce a `GpuResource : AutoCloseable` base (id, idempotent `close()`) for textures, buffers, VAOs, FBOs; make `CubeMap`, `DebugRenderer`, `PickingRenderer` own and free theirs (QA-04 findings).
   - Done when: No GL object is created without an owner that deletes it; tests with mocked GL.
 
@@ -154,11 +154,11 @@ Asset management works but needs a complete review.
   - Do: Rework `AssetsPacker` and `ProjectExporter`: pack only referenced assets, compress, write a manifest and checksums, and produce a runnable `gameJar`.
   - Done when: An exported sample project runs standalone, and packing and manifest generation have unit tests.
   - Deps: AST-02
-- [~] @skate-assets **AST-07** `P1` Fix `PrefabsGenerator` scene mutation
+- [x] **AST-07** `P1` Fix `PrefabsGenerator` scene mutation
   - Do: `PrefabsGenerator.kt` uses `scene.children.add/addAll`, which bypasses the ECS query caches. Use the scene API instead.
   - Done when: Generated prefabs invalidate queries correctly, covered by a test.
   - Deps: ECS-02
-- [ ] **AST-08** `P2` Loader ownership, results and logging
+- [~] @skate-assets **AST-08** `P2` Loader ownership, results and logging
   - Do: From QA-04: `AssetsManager` owns texture/mesh/sound lifetimes and deletes on unload; loaders return a result type instead of `Boolean`/`null`; replace `println` in `AssimpExtensions`, `ShaderLoader`, `SoundLoader` with `LoggerService`.
   - Done when: Unloading frees native resources; no `println` in assets.
   - Deps: AST-03
@@ -182,7 +182,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: List the components missing compared with industry engines (e.g. `Tag/Layer`, `LOD`, `Trigger`, `AudioListener`, `Billboard`, `Lifetime`, `Prefab instance link`) and create follow-up tasks for the owning domains.
   - Done when: The gap list is in `docs/design/ECS-04.md` and the follow-ups are reported to the lead.
   - Deps: ECS-01
-- [ ] **ECS-05** `P2` Prefab instances and overrides
+- [~] @skate-ecs **ECS-05** `P2` Prefab instances and overrides
   - Do: Link instances to prefab assets with per-property overrides that survive prefab edits.
   - Done when: Editing a prefab updates its instances but keeps their overrides, with unit tests.
   - Deps: ECS-02, AST-02
@@ -227,7 +227,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Override `fixedUpdate` in `PhysicsSystem` and register it in `FIXED_UPDATE` per ECS-03; remove the per-frame stepping workaround.
   - Done when: Physics steps at a fixed rate independent of frame time, covered by a test.
   - Deps: ECS-03
-- [~] @skate-physics **PHY-07** `P2` Remove per-frame allocations in physics/ragdoll sync
+- [x] **PHY-07** `P2` Remove per-frame allocations in physics/ragdoll sync
   - Do: Hoist temporaries to fields in ragdoll/physics sync and audit degree/radian call sites (QA-04).
   - Done when: No allocations in the hot path (reviewed), degree/radian audit documented.
 
@@ -338,6 +338,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
 - [ ] **GPL-08** `P2` `GameMain` logging and paths
   - Do: Replace `println` and the hard-coded path in `GameMain` (QA-04, BUG-011).
   - Done when: No `println` or hard-coded paths in `game/`.
+- [~] @skate-gameplay **GPL-09** `P1` Walk/skate mount toggle
+  - Do: The human could walk but there is no way to switch between walking and skating. Add a `toggle_mount` input action (INP-03 action map; default gamepad button and keyboard key, rebindable) that mounts/dismounts the board: dismounted = generic locomotion (GPL-02), mounted = `SkateBehavior`; require the board to be within a configurable range when mounting, place the board under the character/at the character's feet, keep skateboarding-specific logic in `game/` and the generic mount/dismount interface in the engine so other games can use it for vehicles/mounts; add the action to the standalone controller config; tell the human which button/key is used.
+  - Done when: In the sample game the player can toggle between walking and skating with gamepad and keyboard; unit tests for the state transitions and range check.
+  - Deps: GPL-01, INP-03
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -346,7 +350,7 @@ In-game UI components need to be added (separate from the ImGui editor).
 - [x] **GUI-01** `P1` Runtime UI design
   - Do: Design a retained-mode UI for games: canvas, anchors and layout, and widgets (text, image, button, slider, progress bar, panel, list), with input focus and gamepad navigation, rendered through `Renderer2D` and `StringManager`.
   - Done when: `docs/design/GUI-01.md` is approved by the lead.
-- [~] @skate-gameui **GUI-02** `P1` Core widgets and layout
+- [x] **GUI-02** `P1` Core widgets and layout
   - Do: Implement GUI-01 in `engine/ui/` as ECS components and a UI system.
   - Done when: The sample game shows a HUD (score, trick name, timer) and a pause menu. Layout has unit tests.
   - Deps: GUI-01, REN-11
@@ -354,7 +358,7 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: Edit UI canvases in the editor viewport; coordinate the editor side with `skate-editor`.
   - Done when: UI can be built and saved without code.
   - Deps: GUI-02
-- [ ] **GUI-04** `P2` Fonts and localization
+- [~] @skate-gameui **GUI-04** `P2` Fonts and localization
   - Do: SDF font rendering, plus localized strings and plurals via `StringManager`.
   - Done when: Text stays crisp at all sizes, and switching locale updates the UI.
   - Deps: GUI-02
@@ -481,9 +485,9 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Done when: Any action can be rebound for keyboard and gamepad, conflicts are detected, bindings persist; command tests under `editor/commands`.
   - Deps: INP-03, EDT-19
 - [ ] **EDT-21** `P1` View/Windows menu update
-  - Do: Update `ViewMenuBuilder` so View > Windows lists every window: group entries by category (Scene, Assets, Debug, Input, Scripting, Audio, Settings) with separators or submenus, show each window's shortcut and open state, add the new Input Testing, Key Bindings and Script Editor entries (EDT-19/20/22) with translated names (`menu.view.windows.*`), add 'Open all'/'Close all' and make `WindowRegistry` carry category metadata. Layout persistence (EDT-01) must keep working.
+  - Do: Update `ViewMenuBuilder` so View > Windows lists every window: group entries by category (Scene, Assets, Debug, Input, Scripting, Audio, Settings) with separators or submenus, show each window's shortcut and open state, add the new Key Bindings and Script Editor entries (EDT-20/22); Input Testing is a dialog (EDT-24) and is NOT listed here with translated names (`menu.view.windows.*`), add 'Open all'/'Close all' and make `WindowRegistry` carry category metadata. Layout persistence (EDT-01) must keep working.
   - Done when: All windows appear in the menu under the right category; opening/closing persists across sessions; menu test or registry test covers category grouping.
-  - Deps: EDT-19, EDT-20, EDT-22
+  - Deps: EDT-20, EDT-22, EDT-24
 - [ ] **EDT-22** `P1` Script editor window
   - Do: Add a Script Editor window for `.kts` scripts (SCR-02/03): open a script from the project window or an attached `ScriptComponent`, edit text with line numbers and basic syntax highlighting, save (Ctrl+S) which triggers hot reload, show compile/runtime errors inline and in a list that jumps to the line, create-new-script from a template, and register the window in `WindowRegistry` (appearing in View/Windows via EDT-21). Edits go through commands where they mutate the project.
   - Done when: A script can be created, edited, saved and hot-reloaded from the editor and errors are shown with line numbers; tests for the non-UI logic.
@@ -492,6 +496,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: The human reports the translation gizmo (EDT-03) looks 'a little weird' in the viewport. Review `GizmoMath`/`TranslateGizmo` against the viewport (axis arrows, screen-constant size, plane handles, hover/active colours, depth/occlusion, perspective and orthographic cameras, local vs world, multi-selection pivot with ECS-07) and fix anything off; compare with the conventions of common editors (X red, Y green, Z blue, handles drawn on top, no distortion near the screen edges).
   - Done when: Gizmo renders and drags correctly in perspective and ortho, local and world space, with multi-selection; screenshot or unit tests for `GizmoMath`; findings listed in the report.
   - Deps: EDT-03, ECS-07
+- [~] @skate-editor **EDT-24** `P1` Input Testing as a closable dialog
+  - Do: Convert `InputTestingWindow` (EDT-19) from a dockable window into a modal-less dialog: closable with the title-bar X, a Close button and Esc; opened from a new Input > 'Input Testing...' menu item (and a shortcut), not shown in View > Windows and excluded from docked layout persistence (EDT-01) except for remembering its size/position. Reuse or extend the existing dialog pattern (`ProjectSwitcherDialog`, `ProjectWizardWindow`) into a small reusable `EditorDialog` base so other tool dialogs can use it. Keep every EDT-19 feature (devices, editable dead zones/curves, event log). Update `ViewMenuBuilder`/`WindowRegistry` so the entry is removed there and translations are added; migrate any saved layout that references the old window.
+  - Done when: Dialog opens from the menu, closes via X/Esc/Close button, is not in View > Windows, settings still persist, no stale layout entry; tests for the registry/menu change and the dialog state.
+  - Deps: EDT-19
 
 ## Testing & tooling
 
@@ -504,10 +512,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Expose the CLI capabilities plus editor introspection (scene tree, components, logs) over MCP so agents can drive the engine.
   - Done when: An MCP client can list scenes and entities and trigger an export.
   - Deps: TLG-01
-- [ ] **TLG-03** `P2` Sample project: Tetris
+- [~] @skate-tooling **TLG-03** `P2` Sample project: Tetris
   - Do: A 2D/3D Tetris that exercises input, in-game UI, audio, scenes and scripting.
   - Deps: GUI-02, SCR-02
-- [~] @skate-tooling **TLG-04** `P2` Sample project: Marble Run
+- [x] **TLG-04** `P2` Sample project: Marble Run
   - Do: Physics-heavy sample (rolling bodies, joints, triggers, camera follow).
   - Deps: PHY-03, PHY-04
 - [x] **TLG-05** `P1` Sample project: Feature showcase
