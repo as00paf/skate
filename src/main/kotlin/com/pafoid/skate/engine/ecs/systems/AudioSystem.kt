@@ -4,7 +4,9 @@ import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.SoundSource
 import com.pafoid.skate.engine.audio.AudioEngine
 import com.pafoid.skate.engine.audio.ClipPicker
+import com.pafoid.skate.engine.audio.ReverbZoneResolver
 import com.pafoid.skate.engine.audio.StbVorbisDecoder
+import com.pafoid.skate.engine.audio.ZoneShape
 import com.pafoid.skate.engine.audio.StreamPolicy
 import com.pafoid.skate.engine.audio.StreamingPlayer
 import com.pafoid.skate.engine.audio.VoiceManager
@@ -13,6 +15,7 @@ import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
+import com.pafoid.skate.engine.ecs.components.ReverbZone
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
@@ -71,6 +74,7 @@ class AudioSystem(
             spatialConfigured = true
         }
         updateListener()
+        updateReverbZone()
         updateAudioSources()
     }
 
@@ -120,6 +124,21 @@ class AudioSystem(
         return if (previous == null) Vector3f() else SpatialAudio.velocityFromMotion(previous, pos, frameDt)
     }
 
+    private var zoneSend = 0f
+    private var zoneLowPass = 1f
+
+    private fun updateReverbZone() {
+        val zones = scene.children.mapNotNull { go ->
+            val z = go.getComponent<ReverbZone>()?.takeIf { it.enabled } ?: return@mapNotNull null
+            val pos = go.getComponent<Transform>()?.worldMatrix?.getTranslation(Vector3f()) ?: return@mapNotNull null
+            ZoneShape(go.uId, pos, z.radius, z.priority, z.preset.params, z.sendLevel, z.lowPassGainHF)
+        }
+        val active = ReverbZoneResolver.resolve(listenerPos, zones)
+        zoneSend = active?.sendLevel ?: 0f
+        zoneLowPass = active?.lowPassGainHF ?: 1f
+        audioEngine.effects.setReverb(active?.params)
+    }
+
     private class Playback(val source: SoundSource, val stream: StreamingPlayer?) : AutoCloseable {
         override fun close() {
             source.stop()
@@ -152,6 +171,12 @@ class AudioSystem(
         pb.source.setVelocity(sp.velocity.x, sp.velocity.y, sp.velocity.z)
         pb.source.setVolume(sp.gain)
         pb.source.setPitch(sp.pitch)
+        val bus = audioEngine.mixer.bus(ac.bus)
+        audioEngine.effects.applySource(
+            pb.source.sourceId,
+            bus.effectiveLowPassGainHF * zoneLowPass,
+            bus.reverbSend * zoneSend
+        )
     }
 
     private fun updateAudioSources() {
@@ -211,7 +236,10 @@ class AudioSystem(
     }
 
     private fun releasePlayback(id: Int) {
-        playbacks.remove(id)?.close()
+        playbacks.remove(id)?.let {
+            audioEngine.effects.release(it.source.sourceId)
+            it.close()
+        }
         audioEngine.voices.release(id)
     }
 

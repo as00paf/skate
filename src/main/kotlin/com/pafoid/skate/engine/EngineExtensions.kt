@@ -6,6 +6,7 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
+import com.pafoid.skate.engine.ecs.components.ReverbZone
 import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -61,6 +62,7 @@ fun GameObject.getComponent(type: ComponentType) =
         ComponentType.RAGDOLL -> getComponent<RagdollComponent>()
         ComponentType.RENDER -> getComponent<RenderComponent>()
         ComponentType.RIGID_BODY_3D -> getComponent<RigidBody3D>()
+        ComponentType.REVERB_ZONE -> getComponent<ReverbZone>()
         ComponentType.SCENE_PHYSICS -> getComponent<ScenePhysicsComponent>()
         ComponentType.SKELETON -> getComponent<SkeletonComponent>()
         ComponentType.SPOT_LIGHT -> getComponent<SpotLightComponent>()

@@ -24,6 +24,21 @@ class AudioBus(val id: BusId, val parent: AudioBus? = null) {
         }
     var muted: Boolean = false
 
+    /** Low-pass strength for this bus (1 = off, lower = duller). Applies to this bus and its children. */
+    var lowPassGainHF: Float = 1f
+        set(value) {
+            field = if (value.isNaN()) 1f else value.coerceIn(0f, 1f)
+        }
+
+    /** How much of this bus feeds the active reverb zone. */
+    var reverbSend: Float = 0f
+        set(value) {
+            field = if (value.isNaN()) 0f else value.coerceIn(0f, 1f)
+        }
+
+    val effectiveLowPassGainHF: Float
+        get() = lowPassGainHF * (parent?.effectiveLowPassGainHF ?: 1f)
+
     /** volume x mute, multiplied through the parent chain. */
     val effectiveGain: Float
         get() = (if (muted) 0f else volume) * (parent?.effectiveGain ?: 1f)
@@ -39,6 +54,10 @@ class Mixer {
         BusId.SFX to AudioBus(BusId.SFX, master),
         BusId.UI to AudioBus(BusId.UI, master)
     )
+
+    init {
+        bus(BusId.SFX).reverbSend = 1f
+    }
 
     fun bus(id: BusId): AudioBus = buses.getValue(id)
 

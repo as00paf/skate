@@ -39,7 +39,8 @@ object OpenAlcApi : AlcApi {
 /** Owns the OpenAL device and context. Close it (or use `use {}`) to free them. */
 class AudioEngine(
     private val logger: LoggerService,
-    private val api: AlcApi = OpenAlcApi
+    private val api: AlcApi = OpenAlcApi,
+    val effects: EffectsManager = EffectsManager(OpenAlEfxApi)
 ) : AutoCloseable {
 
     private var device: Long = 0L
@@ -75,6 +76,7 @@ class AudioEngine(
 
             isInitialized = true
             logger.log("AudioEngine: Initialized successfully")
+            if (!effects.init()) logger.log("AudioEngine: EFX not supported, effects disabled", LogLevel.WARN)
             return true
 
         } catch (e: Exception) {
@@ -88,6 +90,7 @@ class AudioEngine(
     override fun close() {
         if (!isInitialized && device == 0L && context == 0L) return
         voices.clear()
+        runCatching { effects.close() }
         releaseHandles()
         logger.log("AudioEngine: Destroyed")
     }
