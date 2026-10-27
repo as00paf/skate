@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.assets.data
 
+import com.pafoid.skate.engine.render.GpuResource
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11.GL_LINEAR
 import org.lwjgl.opengl.GL11.GL_RGB
@@ -21,11 +22,14 @@ import org.lwjgl.stb.STBImage.stbi_image_free
 import org.lwjgl.stb.STBImage.stbi_load
 import org.lwjgl.stb.STBImage.stbi_set_flip_vertically_on_load
 
-class CubeMap {
+class CubeMap : AutoCloseable {
+    private var texture: GpuResource? = null
     private var id: Int = -1
 
     fun init(filePaths: Array<String>): CubeMap {
+        texture?.close()
         id = glGenTextures()
+        texture = GpuResource.texture(id)
         glBindTexture(GL_TEXTURE_CUBE_MAP, id)
 
         for (i in filePaths.indices) {
@@ -65,4 +69,10 @@ class CubeMap {
     }
 
     fun getId() = id
+
+    override fun close() {
+        texture?.close()
+        texture = null
+        id = -1
+    }
 }

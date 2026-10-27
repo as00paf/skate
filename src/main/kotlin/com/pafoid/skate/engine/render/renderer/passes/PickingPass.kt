@@ -72,6 +72,9 @@ class PickingPass(
     override val name: String = "PickingPass"
     override val description: String = "Renders object IDs for mouse picking and selection"
 
+    /** Frees the GL objects owned by the picking renderer. */
+    fun destroy() = pickingRenderer.destroy()
+
     fun resize(width: Int, height: Int) {
         pickingTexture.resize(width, height)
     }

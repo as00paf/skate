@@ -60,6 +60,8 @@ class Renderer(
         renderResources.renderers.skybox.destroy()
         renderResources.renderers.skyDome.destroy()
         renderResources.renderers.shadow.destroy()
+        renderResources.renderers.debug.destroy()
+        renderResources.renderPasses.picking.destroy()
 
         // Destroy framebuffer (includes texture and depth buffer)
         renderResources.frameBuffer.destroy()
