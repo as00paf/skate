@@ -13,13 +13,13 @@ class DeleteGameObjectCommand(
 
     override fun execute() {
         gameObjectManager.removeGameObject(gameObject)
-        scene.selectedGameObject = null
+        scene.removeFromSelection(gameObject)
         scene.isDirty = true
     }
 
     override fun undo() {
         gameObjectManager.addGameObject(gameObject)
-        scene.selectedGameObject = gameObject
+        scene.addToSelection(gameObject)
     }
 
     override fun getDisplayName(): String = "Delete GameObject"
