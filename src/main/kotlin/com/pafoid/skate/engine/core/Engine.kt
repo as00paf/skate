@@ -41,6 +41,7 @@ class Engine {
 
     val assetsManager = AssetsManager(serializer, logger)
     val stringManager = StringManager(logger)
+    init { assetsManager.attachAsyncLoading(jobSystem, eventSystem) }
     val audioEngine = AudioEngine(logger)
     val inputProvider = InputProvider(logger)
     val cameraManager = CameraManager(eventSystem)

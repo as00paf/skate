@@ -81,6 +81,20 @@ class AssimpLoader(
         }
     }
 
+    /** Thread-safe, CPU only: the heavy file import. Pass the result to [buildModel] on the GL thread. */
+    fun importScene(filePath: String): AIScene =
+        aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
+            ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
+
+    /** Must be called on the GL thread (creates VAOs and textures). Releases the imported scene. */
+    fun buildModel(scene: AIScene, filePath: String): `3dModel` = try {
+        loadModel(scene, filePath)
+    } finally {
+        org.lwjgl.assimp.Assimp.aiReleaseImport(scene)
+    }
+
+    fun releaseScene(scene: AIScene) = org.lwjgl.assimp.Assimp.aiReleaseImport(scene)
+
     fun loadModel(filePath: String): `3dModel` {
         val scene = aiImportFile(filePath, aiProcess_Triangulate or aiProcess_FlipUVs or aiProcess_JoinIdenticalVertices or aiProcess_CalcTangentSpace or aiProcess_LimitBoneWeights)
             ?: throw RuntimeException("Error loading model: " + aiGetErrorString())
