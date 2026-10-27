@@ -22,6 +22,7 @@ enum class ComponentType {
     POINT_LIGHT,
     RENDER,
     RIGID_BODY_3D,
+    REVERB_ZONE,
     RAGDOLL,
     SCENE_PHYSICS,
     SCRIPT,
@@ -53,6 +54,7 @@ enum class ComponentType {
             POINT_LIGHT -> PointLightComponent()
             RENDER -> RenderComponent()
             RIGID_BODY_3D -> RigidBody3D()
+            REVERB_ZONE -> ReverbZone()
             RAGDOLL -> RagdollComponent()
             SCENE_PHYSICS -> ScenePhysicsComponent()
             SCRIPT -> ScriptComponent()

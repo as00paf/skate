@@ -94,6 +94,7 @@ abstract class Component {
                 is PlayerController -> PLAYER_CONTROLLER
                 is RenderComponent -> RENDER
                 is RigidBody3D -> RIGID_BODY_3D
+                is ReverbZone -> ComponentType.REVERB_ZONE
                 is RagdollComponent -> RAGDOLL
                 is ScenePhysicsComponent -> SCENE_PHYSICS
                 is ScriptComponent -> ComponentType.SCRIPT
