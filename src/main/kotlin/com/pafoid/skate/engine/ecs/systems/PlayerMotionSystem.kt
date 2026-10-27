@@ -1,177 +1,89 @@
 package com.pafoid.skate.engine.ecs.systems
 
-import com.pafoid.skate.engine.core.EventSystem
-import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Animator
+import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
-import com.pafoid.skate.engine.events.JumpPressed
-import com.pafoid.skate.engine.events.Landing
-import com.pafoid.skate.engine.events.MovementInput
-import com.pafoid.skate.engine.events.Takeoff
+import com.pafoid.skate.engine.gameplay.CharacterInput
+import com.pafoid.skate.engine.gameplay.CharacterMotion
+import com.pafoid.skate.engine.gameplay.MotionMath
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
-import com.pafoid.skate.engine.utils.Interpolator
-import com.pafoid.skate.game.player.PlayerState
 import org.joml.Quaternionf
 import org.joml.Vector2f
 import org.joml.Vector3f
-import kotlin.math.atan2
 
+/** Thin driver: feeds input to each player's behavior and applies the returned motion to its body. */
 class PlayerMotionSystem(
     private val cameraManager: CameraManager,
-    private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     private val players = query(PlayerController::class, IPhysicsBody3D::class, topLevelOnly = true)
 
-    private val tempQuat = Quaternionf()
-    private val tempEuler = Vector3f()
-
-    init {
-        eventSystem.subscribe<JumpPressed> { onJumpPressed(it) }
-        eventSystem.subscribe<Landing> { onLanding(it) }
-        eventSystem.subscribe<Takeoff> { onTakeoff(it) }
-        eventSystem.subscribe<MovementInput> { onMovementInput(it) }
-    }
-
-    private fun onJumpPressed(event: JumpPressed) {
-        players.forEach { go ->
-            go.getComponent<PlayerController>()?.jumpPressed = true
-        }
-    }
-
-    private fun onLanding(event: Landing) {
-        players.forEach { go ->
-            go.getComponent<PlayerController>()?.let {
-                it.isGrounded = true
-                it.isJumping = false
-            }
-        }
-    }
-
-    private fun onTakeoff(event: Takeoff) {
-        players.forEach { go ->
-            go.getComponent<PlayerController>()?.let {
-                it.isGrounded = false
-                it.isJumping = true
-            }
-        }
-    }
-
-    private fun onMovementInput(event: MovementInput) {
-        players.forEach { go ->
-            go.getComponent<PlayerController>()?.let {
-                it.movementDirection.set(event.direction)
-                it.movementMagnitude = event.magnitude
-            }
-        }
-    }
-
     override fun update(dt: Float) {
         if (!scene.isRunning) return
 
-        updateState(dt)
-
         players.forEach { go ->
-            val body = go.getComponent<RigidBody3D>()
-            body?.let { body ->
-                applyMotion(go, body)
+            val controller = go.getComponent<PlayerController>() ?: return@forEach
+            val body = go.getComponent<RigidBody3D>() ?: return@forEach
+            val inputState = go.getComponent<InputStateComponent>() ?: return@forEach
+
+            val motion = controller.behavior.update(buildInput(controller, inputState, body, dt), dt)
+            apply(motion, body, dt)
+
+            if (motion.state != controller.state) {
+                controller.state = motion.state
+                motion.animation?.let { clip -> go.getComponent<Animator>()?.play(clip) }
             }
         }
     }
 
-    private fun updateState(dt: Float) {
-        players.forEach { gameObject ->
-            val controller = gameObject.getComponent<PlayerController>() ?: return@forEach
-            val physics = gameObject.getComponent<RigidBody3D>()?.rawBody ?: return@forEach
-            val animator = gameObject.getComponent<Animator>() ?: return@forEach
-
-            val intent = controller.desiredMoveDirection.length()
-            val hasIntent = intent > 0.15f
-
-            val speed = physics.linearVelocity.length()
-            val newState = if (controller.isJumping) {
-                PlayerState.JUMPING
-            } else if (!controller.isGrounded) {
-                PlayerState.FALLING
-            } else if (speed > 0.1f && hasIntent) {
-                if (speed > 5f) {
-                    PlayerState.RUNNING
-                } else {
-                    PlayerState.WALKING
-                }
-            } else {
-                PlayerState.IDLE
-            }
-
-            if (animator.currentState == newState) return
-            animator.currentState = newState
-            when (animator.currentState) {
-                PlayerState.WALKING -> animator.play("walking")
-                PlayerState.RUNNING -> animator.play("running")
-                PlayerState.JUMPING -> animator.play("jump")
-                PlayerState.FALLING -> animator.play("falling idle")
-                PlayerState.LANDING -> animator.play("hard landing")
-                PlayerState.IDLE -> animator.play("idle")
-            }
-        }
-    }
-
-    private fun applyMotion(gameObject: GameObject, body: IPhysicsBody3D) {
-        val playerController = gameObject.getComponent<PlayerController>()
-        val motionData = playerController?.motionData ?: return
+    private fun buildInput(
+        controller: PlayerController,
+        input: InputStateComponent,
+        body: IPhysicsBody3D,
+        dt: Float,
+    ): CharacterInput {
         val velocity = body.linearVelocity
-        val desiredMoveDirection = getDesiredMoveDirection(
-            playerController.desiredMoveDirection,
-            Pair(cameraManager.camera.camForward, cameraManager.camera.camRight),
-            motionData.inputDirection
+        val camera = cameraManager.camera
+        val speed = Vector2f(velocity.x, velocity.z).length()
+        return CharacterInput(
+            move = Vector2f(input.moveDirection),
+            sprint = input.sprintPressed,
+            jumpPressed = input.jumpPressed,
+            jumpHeld = input.jumpHeld,
+            crouch = input.crouchPressed,
+            grounded = controller.isGrounded,
+            horizontalSpeed = speed,
+            velocityYaw = if (speed > MIN_HEADING_SPEED) kotlin.math.atan2(velocity.x, velocity.z) else Float.NaN,
+            yaw = MotionMath.yawOfRotation(body.getRotation()),
+            cameraForward = Vector3f(camera.camForward),
+            cameraRight = Vector3f(camera.camRight),
         )
-        if (desiredMoveDirection.x.isNaN() || desiredMoveDirection.y.isNaN() || desiredMoveDirection.z.isNaN()) {
-            //logger.log("Desired move direction is NaN: $desiredMoveDirection")
-            return
-        }
-
-        velocity.x = desiredMoveDirection.x * motionData.speed
-        velocity.z = desiredMoveDirection.z * motionData.speed
-
-        body.linearVelocity = velocity
-        playerController.lastSpeed = motionData.speed
-
-        val rotation = body.getRotation()
-        val currentYaw = atan2(
-            2f * (rotation.w * rotation.y + rotation.x * rotation.z),
-            1f - 2f * (rotation.y * rotation.y + rotation.z * rotation.z)
-        )
-
-        if (!motionData.targetYaw.isNaN()) {
-            val newYaw = Interpolator.lerpAngle(currentYaw, motionData.targetYaw, motionData.rotationSpeed)
-
-            playerController.desiredRotation.set(Quaternionf().rotateY(newYaw))
-            body.setRotation(playerController.desiredRotation)
-        }
-
-        //Jump
-        with(playerController) {
-            if (isJumping && isGrounded && jumpTimer <= 0f) { // Jump
-                //logger.log("JUMP TIMER FINISHED!")
-                body.applyImpulse(Vector3f(0f, jumpImpulse, 0f))
-                jumpTimer = takeOffTime
-            }
-        }
     }
 
-    private fun getDesiredMoveDirection(
-        desiredMoveDirection: Vector3f,
-        camForwardAndRight: Pair<Vector3f, Vector3f>,
-        input: Vector2f
-    ): Vector3f {
-        desiredMoveDirection.zero()
-        camForwardAndRight.first.mul(input.y, desiredMoveDirection)
-        val rightPart = Vector3f(camForwardAndRight.second).mul(input.x)
-        desiredMoveDirection.add(rightPart)
+    private companion object {
+        const val MIN_HEADING_SPEED = 0.5f
+    }
 
-        return desiredMoveDirection.normalize()
+    private fun apply(motion: CharacterMotion, body: IPhysicsBody3D, dt: Float) {
+        motion.horizontalVelocity?.let { target ->
+            if (!target.x.isNaN() && !target.z.isNaN()) {
+                val velocity = body.linearVelocity
+                velocity.x = target.x
+                velocity.z = target.z
+                body.linearVelocity = velocity
+            }
+        }
+
+        if (!motion.targetYaw.isNaN()) {
+            val current = MotionMath.yawOfRotation(body.getRotation())
+            val yaw = if (motion.snapYaw) motion.targetYaw
+            else MotionMath.smoothAngle(current, motion.targetYaw, motion.yawRate, dt)
+            body.setRotation(Quaternionf().rotateY(yaw))
+        }
+
+        motion.impulse?.let { body.applyImpulse(it) }
     }
 }

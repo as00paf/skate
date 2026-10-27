@@ -15,6 +15,8 @@ import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.game.player.SkateBehavior
+import com.pafoid.skate.game.player.SkateGameplay
 import org.joml.Vector3f
 
 class Skater(
@@ -33,9 +35,10 @@ class Skater(
     val renderComponent = RenderComponent(model)
     val animator = Animator()
     val skeletonComponent = SkeletonComponent(SkeletonPose(model.skeleton!!))
-    val playerController = PlayerController()
+    val playerController = PlayerController(SkateBehavior.ID, CONFIG_PATH)
 
     init {
+        SkateGameplay.register()
         // Parenting: Skater follows Skateboard
         skate?.addChild(this)
 
@@ -65,6 +68,8 @@ class Skater(
     }
 
     companion object {
+        const val CONFIG_PATH = "configs/skater.character.json"
+
         val DEFAULT_ANIMATIONS = listOf(
             Assets.Bundled.IDLE_0,
             Assets.Bundled.IDLE_1,

@@ -1,6 +1,6 @@
 # GPL-01 — Player/skate controller rewrite (design note)
 
-Status: **awaiting design approval** (no rewrite code written).
+Status: **approved and implemented** (see §8 for deviations from the approved design).
 
 ## 1. Current state (problems)
 
@@ -100,3 +100,15 @@ Status: **awaiting design approval** (no rewrite code written).
 - Q1: Config as a standalone asset file (proposed) vs. inline component fields with a shared preset? Proposed: standalone asset so presets are shareable.
 - Q2: Drop on-foot walk/run states (proposed; GPL-02 covers it) or keep as a fallback machine?
 - Q3: Grind/manual need rail/ground-probe data; OK to stub `nearGrindable` via a tag query until PHY-02 lands?
+
+## 8. Implementation notes (approved answers and deviations)
+
+- Q1 standalone config: `PlayerController(behaviorId, configPath)`; config is a `*.character.json` file (project path first, bundled resource fallback, defaults on error). Bundled default: `src/main/resources/configs/skater.character.json` (a test asserts it equals the code defaults). `ConfigProperties.flatten/set` gives an inspector a generic leaf-property view; the inspector UI itself is an EDT follow-up.
+- Q2 on-foot: generic `LocomotionBehavior` (IDLE, WALK, RUN, TAKEOFF, AIR) in `engine/gameplay`, driven by `LocomotionConfig`; gamepad stick walks/runs camera-relative. `SkateBehavior` delegates to it while not `mounted` (config `startMounted=false`, so the Skater walks by default).
+- Q3 grind: `SkateBehavior.grindSensor` is a stub returning false until PHY provides rail queries.
+- Q4: generic pieces (`StateMachine`, `MotionMath`, `CharacterBehavior`/registry, `LocomotionBehavior`, config loading) are in `engine/gameplay`; skate states/config/solver/registration (`SkateGameplay.register()`) are in `game/player`. Engine has no `game.*` imports in these files.
+- Deviation: no crouch pop window for the ollie (`popWindowSec` dropped); the ollie impulse fires on takeoff. `AirTuning.minAirTime` guards landing detection instead.
+- Deviation: landing alignment uses real data (`CharacterInput.velocityYaw` vs facing), not a stub.
+- Deviation: `Animator.currentState` was removed (it was the only engine reference to `PlayerState`; also resolves ANI-01 N1).
+- Manual balance is signed degrees; stick forward/back corrects it (`SkateBehavior.manualAngle`).
+- Mounting is `SkateBehavior.mounted`; no input action exists yet to toggle it (NEEDS INP).

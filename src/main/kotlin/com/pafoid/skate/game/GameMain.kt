@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.project.Project
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
+import com.pafoid.skate.game.player.SkateGameplay
 import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.fileExtension
 import com.pafoid.skate.engine.utils.AssetsPacker
@@ -19,6 +20,7 @@ import java.nio.ByteBuffer
 private val engine = Engine()
 
 fun main(args: Array<String>) {
+    SkateGameplay.register()
     val binFile = loadBinFile() ?: return
     val (header, headerSize) = readFileHeader(binFile)
     if (header == null || headerSize <= 0) return

@@ -98,7 +98,7 @@ class Engine {
             PhysicsFrameSystem(physicsSystem),
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
-            PlayerMotionSystem(cameraManager, eventSystem),
+            PlayerMotionSystem(cameraManager),
             AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }),
             RagdollSystem(),
             ScriptingSystem(logger, eventSystem),
