@@ -138,7 +138,7 @@ Asset management works but needs a complete review.
   - Do: Give every asset a GUID plus a `.meta` sidecar. Scenes and prefabs reference GUIDs, not paths.
   - Done when: Renaming or moving a file in the editor does not break references, and GUID/meta round-trips have unit tests.
   - Deps: AST-01
-- [ ] **AST-03** `P1` Async loading and unloading
+- [~] @skate-assets **AST-03** `P1` Async loading and unloading
   - Do: Decode on `JobSystem` workers and upload to the GPU on the main thread. Add placeholder assets while loading, ref-counted unload and an `AssetEvent` for load complete.
   - Done when: Scene load does not block the main thread on large models. Ref-count and lifecycle have unit tests.
   - Deps: AST-02
@@ -193,7 +193,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: Add `selectedGameObjects` to `Scene` (keeping `selectedGameObject` as the primary) and update selection commands; needed by EDT-03 multi-target gizmos.
   - Done when: Gizmos transform all selected objects as a group; tests for selection add/remove/clear.
   - Deps: ECS-02
-- [ ] **ECS-08** `P1` Engine lifecycle, error logging and thread-safety
+- [~] @skate-ecs **ECS-08** `P1` Engine lifecycle, error logging and thread-safety
   - Do: From QA-04: `Engine.destroy()` always releases what was created and cancels `JobSystem`; route handler/job exceptions through `LoggerService` with the exception; assert main-thread-only scene mutation; make `EventSystem` and `LoggerService` thread-safe; replace `println` in `Window`, `JobSystem`, `EventSystem`, `StringManager`.
   - Done when: Tests for destroy-after-failed-start and exception logging; no `println` in engine/core.
 - [ ] **ECS-09** `P1` Units and coordinate-system conventions
@@ -215,7 +215,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Add a `JointComponent` that supports fixed, hinge, cone-twist, slider and 6DOF joints, built on the existing `HingeConstraint3D`/`ConeTwistConstraint3D`. Make it serializable and editable.
   - Done when: Joints can be created in the editor and persist in the scene. Joint creation and limits have unit tests.
   - Deps: PHY-02
-- [ ] **PHY-04** `P2` Physics correctness and features
+- [~] @skate-physics **PHY-04** `P2` Physics correctness and features
   - Do: Fixed timestep with interpolation, collision layers/masks, triggers, raycast/shape-cast queries, physics materials (friction, restitution), CCD for fast bodies, and collision events through `PhysicsEvents`.
   - Done when: Each feature has unit tests, and the skateboard does not tunnel at high speed.
   - Deps: PHY-02
@@ -246,7 +246,7 @@ The animation system needs improvements.
   - Do: Humanoid retargeting via `BoneNameMapper`, plus per-bone layer masks (e.g. upper body).
   - Done when: One animation plays on two different rigs, with unit tests for the mapping.
   - Deps: ANI-02
-- [ ] **ANI-04** `P2` IK
+- [~] @skate-animation **ANI-04** `P2` IK
   - Do: Two-bone IK for feet on the board and hands, plus look-at.
   - Done when: The feet stick to the board during tricks, and the IK solver has unit tests.
   - Deps: ANI-02
@@ -270,7 +270,7 @@ Audio needs a more complete implementation.
   - Do: Add an `AudioListener` component and attenuation models, plus Doppler and velocity from physics.
   - Done when: Sounds pan and attenuate correctly, and attenuation has unit tests.
   - Deps: AUD-01
-- [ ] **AUD-04** `P2` Streaming and voice management
+- [~] @skate-audio **AUD-04** `P2` Streaming and voice management
   - Do: Stream long music files (OGG), cap voices with priority-based stealing, and add one-shot/looping/random-container sounds.
   - Done when: Music streams without loading the whole file into memory, and voice stealing has unit tests.
   - Deps: AUD-02
@@ -293,7 +293,7 @@ Input works well but needs review and controller dead-zone support.
 - [x] **INP-02** `P1` Configurable controller dead zones
   - Do: `InputSystem` has a hardcoded scalar dead zone (`InputSystem.kt` ~L135). Add per-stick and per-trigger dead zones (axial and radial, plus an outer dead zone and a response curve), configurable in `InputSettings` and the editor's `KeyBindingsWindow`.
   - Done when: Dead zones persist in the settings, and each mode has unit tests.
-- [ ] **INP-03** `P2` Action maps and rebinding
+- [~] @skate-input **INP-03** `P2` Action maps and rebinding
   - Do: Context-based action maps (gameplay/UI/editor), runtime rebinding with conflict detection, and saved bindings per project.
   - Done when: A binding can be changed in the editor and used in game. Conflict detection has unit tests.
   - Deps: INP-01
@@ -488,7 +488,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Add a Script Editor window for `.kts` scripts (SCR-02/03): open a script from the project window or an attached `ScriptComponent`, edit text with line numbers and basic syntax highlighting, save (Ctrl+S) which triggers hot reload, show compile/runtime errors inline and in a list that jumps to the line, create-new-script from a template, and register the window in `WindowRegistry` (appearing in View/Windows via EDT-21). Edits go through commands where they mutate the project.
   - Done when: A script can be created, edited, saved and hot-reloaded from the editor and errors are shown with line numbers; tests for the non-UI logic.
   - Deps: SCR-03
-- [ ] **EDT-23** `P1` Fix translate gizmo behaviour and look
+- [~] @skate-editor **EDT-23** `P1` Fix translate gizmo behaviour and look
   - Do: The human reports the translation gizmo (EDT-03) looks 'a little weird' in the viewport. Review `GizmoMath`/`TranslateGizmo` against the viewport (axis arrows, screen-constant size, plane handles, hover/active colours, depth/occlusion, perspective and orthographic cameras, local vs world, multi-selection pivot with ECS-07) and fix anything off; compare with the conventions of common editors (X red, Y green, Z blue, handles drawn on top, no distortion near the screen edges).
   - Done when: Gizmo renders and drags correctly in perspective and ortho, local and world space, with multi-selection; screenshot or unit tests for `GizmoMath`; findings listed in the report.
   - Deps: EDT-03, ECS-07
@@ -541,7 +541,7 @@ A lot of features are broken. Many unit tests are missing (**no integration test
 - [ ] **QA-05** `P2` More architecture guards
   - Do: Add guard tests for the rules that other tasks introduce (no GL outside RHI, no Bullet outside its backend, no `println`, etc.).
   - Deps: QA-04
-- [ ] **QA-06** `P2` CI
+- [~] @skate-qa **QA-06** `P2` CI
   - Do: Add a GitHub Actions workflow on `windows-latest` that runs `gradlew.bat build test`.
   - Done when: CI is green on `main`.
 
