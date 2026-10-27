@@ -3,7 +3,7 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.commands.input.snapshot
 import com.pafoid.skate.editor.events.ConsoleAction
 import com.pafoid.skate.editor.events.InputSettingsAction
-import com.pafoid.skate.editor.imgui.EditorWindow
+import com.pafoid.skate.editor.imgui.EditorDialog
 import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
@@ -24,7 +24,7 @@ import org.lwjgl.glfw.GLFW
 class InputTestingWindow(
     private val engine: Engine,
     private val projectManager: ProjectManager,
-) : EditorWindow("window.input_testing") {
+) : EditorDialog("window.input_testing", engine.stringManager) {
     private val strings = engine.stringManager
     private val input = engine.inputProvider
     private val events = engine.eventSystem
@@ -43,9 +43,8 @@ class InputTestingWindow(
         if (ImGui.isItemHovered()) ImGui.setTooltip(s(key))
     }
 
-    override fun imgui() {
+    override fun content() {
         pollEvents()
-        ImGui.begin(s("window.input_testing"))
 
         val zones = projectManager.currentProject?.gameplaySettings?.inputMappings?.deadZones
         val pads = (GLFW.GLFW_JOYSTICK_1..GLFW.GLFW_JOYSTICK_LAST).filter { input.isJoystickPresent(it) }
@@ -53,8 +52,6 @@ class InputTestingWindow(
         if (ImGui.collapsingHeader(s("lbl.input_testing.devices"))) renderDevices(pads)
         if (ImGui.collapsingHeader(s("lbl.input_testing.gamepad_tuning"))) renderGamepad(pads, zones)
         if (ImGui.collapsingHeader(s("lbl.input_testing.event_log"))) renderLog()
-
-        ImGui.end()
     }
 
     private fun pollEvents() {

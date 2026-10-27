@@ -90,6 +90,7 @@ class ImGuiLayer(
 
         ImGuiStyleManager.setupStyle()
 
+        layoutStore.removeDockIds(windowRegistry.windows.filterIsInstance<EditorDialog>().map { stringManager.getString(it.name) })
         windowManager.init()
         eventSystem.subscribe<WindowAction.ResetLayout> { resetLayout() }
         windowController.onToggleMaximize = { maximized -> windowRegistry.menuBar.setMaximized(maximized) }
@@ -101,13 +102,13 @@ class ImGuiLayer(
     /** Reopens the windows that were open when the layout was last saved. Returns false if none were saved. */
     fun restoreWindowState(): Boolean {
         val open = layoutStore.loadOpenWindows() ?: return false
-        windowRegistry.windows.forEach { it.isOpen.set(it.name in open) }
+        windowRegistry.windows.forEach { it.isOpen.set(it !is EditorDialog && it.name in open) }
         return true
     }
 
     private fun saveLayout() {
         ImGui.saveIniSettingsToDisk(layoutStore.iniFile.path)
-        layoutStore.saveOpenWindows(windowRegistry.windows.filter { it.isOpen.get() }.map { it.name })
+        layoutStore.saveOpenWindows(windowRegistry.dockableWindows.filter { it.isOpen.get() }.map { it.name })
     }
 
     private fun resetLayout() {
