@@ -27,7 +27,10 @@ import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
 import com.pafoid.skate.engine.render.utils.withBlendState
+import com.pafoid.skate.engine.render.utils.GLStateTracker
 import com.pafoid.skate.engine.render.utils.withCullFace
+import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
+import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
 import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.render.utils.withDepthTest
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -66,7 +69,7 @@ class GeometryPass(
     private val defaultShader: Shader,
     private val batchShader: Shader,
     private val modelRenderer: ModelRenderer,
-    private val renderer2D: Renderer2D,
+    val renderer2D: Renderer2D,
     private val skyDomeRenderer: SkyDomeRenderer,
     private val frameBuffer: FrameBuffer,
     private val lightingUniformsLoader: LightingUniformsLoader,
@@ -165,6 +168,25 @@ class GeometryPass(
 
         // Render Sky Dome
         skyDomeRenderer.render(camera, cameraPosition, scene)
+
+        renderUi()
+    }
+
+    /** Runtime UI overlay: recorded by the UI systems earlier in the frame, drawn last without depth. */
+    private fun renderUi() {
+        if (renderer2D.ui.quadCount == 0) {
+            renderer2D.renderUi(frameBuffer.width, frameBuffer.height)
+            return
+        }
+        withDepthTest(false) {
+            withBlendState(true) {
+                withCullFace(false) {
+                    GLStateTracker.setBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                    renderer2D.bindShader(batchShader)
+                    renderer2D.renderUi(frameBuffer.width, frameBuffer.height)
+                }
+            }
+        }
     }
 
     private data class DrawItem(val go: GameObject, val renderComponent: RenderComponent, val transform: Transform)

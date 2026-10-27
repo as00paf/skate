@@ -81,6 +81,7 @@ object Assets {
     }
     object Strings {
         const val EDITOR_STRINGS_EN = "assets/strings/editor_strings.properties"
+        const val GAME_STRINGS_EN = "assets/strings/game_strings.properties"
         const val EDITOR_STRINGS_FR = "assets/strings/editor_strings_fr.properties"
     }
 

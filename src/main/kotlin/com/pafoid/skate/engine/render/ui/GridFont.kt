@@ -8,6 +8,8 @@ class GridFont(
     val columns: Int,
     val rows: Int,
     val firstChar: Int = 32,
+    /** Glyph cell width divided by height, used to derive advance from a font size. */
+    val cellAspect: Float = 0.5f,
 ) {
     fun hasGlyph(c: Char): Boolean = c.code - firstChar in 0 until columns * rows
 

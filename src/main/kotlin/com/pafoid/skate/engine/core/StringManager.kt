@@ -11,10 +11,22 @@ class StringManager(
     private var currentPath = ""
     private var basePath = ""
     private val properties = Properties()
+    private val extraPaths = mutableListOf<String>()
 
     fun loadStrings(path: String): Boolean {
         basePath = path
         return loadFile(path)
+    }
+
+    /** Merges another strings file (e.g. the game's) into the loaded ones; it is reloaded per locale by [setLocale]. */
+    fun addStrings(path: String): Boolean {
+        if (path !in extraPaths) extraPaths.add(path)
+        return loadFile(path)
+    }
+
+    private fun localized(path: String, locale: String): String {
+        val file = File(path)
+        return file.absolutePath.replace(".${file.extension}", "_$locale.${file.extension}")
     }
 
     private fun loadFile(path: String): Boolean {
@@ -38,10 +50,9 @@ class StringManager(
         if (currentLocale != locale) {
             currentLocale = locale
             properties.clear() // Clear existing properties before reloading
-            val currentFile = File(basePath)
-            val currentExt = currentFile.extension
-            val newFileName = currentFile.absolutePath.replace(".$currentExt", "_$locale.$currentExt")
-            return loadFile(newFileName)
+            val loaded = loadFile(localized(basePath, locale))
+            extraPaths.forEach { loadFile(localized(it, locale)) }
+            return loaded
         }
         return false
     }

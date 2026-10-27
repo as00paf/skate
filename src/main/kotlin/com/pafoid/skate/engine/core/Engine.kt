@@ -20,7 +20,17 @@ import com.pafoid.skate.engine.ecs.systems.PhysicsSystem
 import com.pafoid.skate.engine.ecs.systems.PlayerMotionSystem
 import com.pafoid.skate.engine.ecs.systems.RagdollSystem
 import com.pafoid.skate.engine.ecs.systems.ScriptingSystem
+import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
+import com.pafoid.skate.engine.input.ActionInputReader
+import com.pafoid.skate.engine.render.ui.GridFont
+import com.pafoid.skate.engine.ui.ReaderUiInputSource
+import com.pafoid.skate.engine.ui.UiActions
+import com.pafoid.skate.engine.ui.UiBuiltInFont
+import com.pafoid.skate.engine.ui.UiInputSystem
+import com.pafoid.skate.engine.ui.UiLayoutSystem
+import com.pafoid.skate.engine.ui.UiRenderSystem
+import com.pafoid.skate.engine.ui.UiScreenSize
 import com.pafoid.skate.engine.ecs.systems.TransformSystem
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.input.InputProvider
@@ -88,11 +98,12 @@ class Engine {
     private fun initializeSystems() {
         val debugRenderer = renderer.renderResources.renderers.debug
         val physicsSystem = PhysicsSystem(debugRenderer, eventSystem)
+        val inputSystem = InputSystem(inputProvider, eventSystem)
         val engineSystems = listOf(
             gameObjectManager, // Core
             TransformSystem(),
             cameraManager,
-            InputSystem(inputProvider, eventSystem),
+            inputSystem,
             AudioSystem(audioEngine, logger, assetsManager, cameraManager),
             EnvironmentSystem(),
             physicsSystem,
@@ -105,12 +116,36 @@ class Engine {
             },
             RagdollSystem(),
             ScriptingSystem(logger, eventSystem),
-        )
+        ) + uiSystems(inputSystem)
 
         engineSystems.forEach {
             systemManager.addSystem(it)
         }
         systemManager.start()
+    }
+
+    private fun uiSystems(inputSystem: InputSystem): List<System> {
+        val framebuffer = renderer.frameBuffer
+        val geometry = renderer.renderResources.renderPasses.geometry
+        (inputSystem.reader as? ActionInputReader)?.let { UiActions.bindDefaults(it.actions) }
+        var font: GridFont? = null
+        return listOf(
+            UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
+            UiInputSystem(
+                ReaderUiInputSource(inputSystem.reader) { x, y ->
+                    val mouse = inputProvider.mouseListener
+                    val size = mouse.gameViewportSize
+                    (x - mouse.gameViewportPos.x) * framebuffer.width / size.x to
+                        (y - mouse.gameViewportPos.y) * framebuffer.height / size.y
+                }
+            ),
+            UiRenderSystem(
+                drawList = { geometry.renderer2D.ui },
+                strings = stringManager,
+                font = { font ?: UiBuiltInFont.create().also { font = it } },
+                textures = { assetsManager.getTexture(it) },
+            ),
+        )
     }
 
     fun update(dt: Float) {

@@ -7,7 +7,13 @@ import com.pafoid.skate.editor.systems.ProjectManager
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.game.player.SkateGameplay
 import com.pafoid.skate.engine.core.Window
+import com.pafoid.skate.engine.assets.Assets
+import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.fileExtension
+import com.pafoid.skate.game.ui.GameHudState
+import com.pafoid.skate.game.ui.GameUi
+import com.pafoid.skate.game.ui.GameUiSystem
+import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.utils.AssetsPacker
 import com.pafoid.skate.engine.utils.Atlas
 import org.lwjgl.opengl.GL11
@@ -36,6 +42,7 @@ fun main(args: Array<String>) {
 
     if (projectManager.openProject(project, binFile, header, headerSize)) {
         engine.runtimePlaying = true
+        installGameUi(window)
         window.show { dt ->
             engine.update(dt)
             testDraw(window)
@@ -43,6 +50,23 @@ fun main(args: Array<String>) {
 
         engine.destroy()
     }
+}
+
+private fun installGameUi(window: Window) {
+    val scene = engine.sceneManager.currentScene ?: return
+    engine.stringManager.addStrings(Assets.Strings.GAME_STRINGS_EN)
+    val hud = GameUi.createHud()
+    val pauseMenu = GameUi.createPauseMenu()
+    GameUiSystem.attach(scene, hud, pauseMenu)
+    engine.systemManager.addSystem(
+        GameUiSystem(
+            state = GameHudState(),
+            hud = hud,
+            pauseMenu = pauseMenu,
+            onPauseChanged = { paused -> engine.eventSystem.publish(EngineAction.SetRuntimePlaying(!paused)) },
+            onQuit = { GLFW.glfwSetWindowShouldClose(window.glfwWindow, true) },
+        )
+    )
 }
 
 fun testDraw(window: Window) {// TODO : is working but needs to move
