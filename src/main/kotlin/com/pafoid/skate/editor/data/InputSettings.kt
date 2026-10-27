@@ -4,9 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class InputSettings(
-    var leftStickDeadzone: Float = 0.15f,
-    var rightStickDeadzone: Float = 0.1f,
-    var triggerThreshold: Float = 0.5f,
     var mouseSensitivity: Float = 0.1f,
     var controllerSensitivity: Float = 2.0f,
     var movementThreshold: Float = 0.15f,
@@ -19,9 +16,6 @@ data class InputSettings(
     var inputSmoothing: Float = 12f
 ) {
     fun validate() {
-        leftStickDeadzone = leftStickDeadzone.coerceIn(0f, 1f)
-        rightStickDeadzone = rightStickDeadzone.coerceIn(0f, 1f)
-        triggerThreshold = triggerThreshold.coerceIn(0f, 1f)
         mouseSensitivity = mouseSensitivity.coerceIn(0.01f, 1f)
         controllerSensitivity = controllerSensitivity.coerceIn(0.1f, 10f)
         movementThreshold = movementThreshold.coerceIn(0f, 0.5f)

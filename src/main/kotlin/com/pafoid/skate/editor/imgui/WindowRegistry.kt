@@ -36,7 +36,7 @@ class WindowRegistry(
         InputTestingWindow(engine),
         EditorSettingsWindow(editor.settingsManager, engine.stringManager),
         ProjectSettingsWindow(engine, editor.settingsManager, projectManager),
-        KeyBindingsWindow(editor.settingsManager, engine.stringManager),
+        KeyBindingsWindow(editor.settingsManager, engine.stringManager, projectManager),
         CommandHistoryWindow(engine, editor.undoRedoManager),
         RenderGraphWindow(engine),
         SearchEverywhereWindow(engine),
