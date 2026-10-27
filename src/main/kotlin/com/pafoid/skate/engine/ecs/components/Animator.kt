@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset
+import com.pafoid.skate.engine.animation.ik.IkRig
 import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
 import com.pafoid.skate.engine.animation.graph.ClipMotion
 import com.pafoid.skate.engine.animation.graph.Motion
@@ -32,6 +33,10 @@ data class Animator(
     /** Optional state machine; when set, it drives the pose instead of the single-clip playback. */
     @Transient
     var stateMachine: AnimationStateMachine? = null
+
+    /** Foot/hand/look-at IK applied after the pose is evaluated. */
+    @Transient
+    val ik: IkRig = IkRig()
 
     /** Builds a runtime state machine from [asset], resolving motions by name from [animations] (clips) and [extraMotions]. */
     fun useController(
