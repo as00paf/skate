@@ -65,6 +65,11 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:$kotlinVersion")
     implementation("org.jetbrains.kotlin:kotlin-scripting-dependencies:$kotlinVersion")
 
+    // TypeScript host: GraalJS runs the scripts, the TypeScript compiler (webjar) transpiles them
+    implementation("org.graalvm.polyglot:polyglot:24.1.1")
+    implementation("org.graalvm.polyglot:js-community:24.1.1")
+    implementation("org.webjars.npm:typescript:5.6.3")
+
     // Reflection
     implementation(kotlin("reflect"))
 

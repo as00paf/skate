@@ -41,15 +41,24 @@ object NoOpScriptPhysics : ScriptPhysics {
 object ScriptFacades {
     private val factories = mutableMapOf<KClass<*>, (GameObject) -> Any?>()
 
+    private val names = mutableMapOf<String, KClass<*>>()
+
     init {
         register(ScriptRigidBody::class) { go ->
             go.getComponent<RigidBody3D>()?.let { RigidBodyFacade(it) }
         }
+        registerName("RigidBody", ScriptRigidBody::class)
     }
 
     fun <T : Any> register(type: KClass<T>, factory: (GameObject) -> T?) {
         factories[type] = factory
     }
+
+    fun registerName(name: String, type: KClass<*>) {
+        names[name] = type
+    }
+
+    fun create(name: String, go: GameObject): Any? = names[name]?.let { create(it, go) }
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> create(type: KClass<T>, go: GameObject): T? = factories[type]?.invoke(go) as T?
@@ -85,6 +94,8 @@ class ScriptEntityImpl(val gameObject: GameObject) : ScriptEntity {
     override fun <T : Any> getComponent(type: KClass<T>): T? = ScriptFacades.create(type, gameObject)
 
     override fun hasComponent(type: KClass<*>): Boolean = ScriptFacades.create(type, gameObject) != null
+
+    override fun component(name: String): Any? = ScriptFacades.create(name, gameObject)
 }
 
 class ScriptSceneImpl(private val root: () -> GameObject) : ScriptScene {
