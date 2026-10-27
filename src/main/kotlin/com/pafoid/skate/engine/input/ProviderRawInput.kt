@@ -1,10 +1,8 @@
 package com.pafoid.skate.engine.input
 
-import org.lwjgl.glfw.GLFW
-
 /** [RawInput] backed by the GLFW listeners in [InputProvider]. */
 class ProviderRawInput(private val provider: InputProvider) : RawInput {
-    private fun jid(pad: Int) = GLFW.GLFW_JOYSTICK_1 + pad
+    private fun jid(pad: Int) = provider.joystickForPad(pad)
 
     override fun isKeyDown(key: Int) = provider.isKeyPressed(key)
     override fun wasKeyPressed(key: Int) = provider.keyBeginPress(key)

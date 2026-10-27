@@ -5,6 +5,8 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.events.EngineAction
+import com.pafoid.skate.engine.events.GamepadConnected
+import com.pafoid.skate.engine.events.GamepadDisconnected
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
@@ -16,6 +18,7 @@ import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
 import com.pafoid.skate.engine.input.InputReader
 import com.pafoid.skate.engine.input.ProviderRawInput
+import com.pafoid.skate.engine.input.RumbleManager
 import org.lwjgl.glfw.GLFW
 import kotlin.math.sqrt
 
@@ -35,6 +38,9 @@ class InputSystem(
     /** Active contexts (GAMEPLAY and UI by default); only their actions are read. */
     val activeContexts: MutableSet<com.pafoid.skate.engine.input.InputContext> get() = actionReader.activeContexts
 
+    /** Controller rumble. Unsupported (no-op) until a backend is assigned: GLFW has no haptics API. */
+    val rumble = RumbleManager()
+
     var mappings: InputMappings = InputMappings()
         set(value) {
             field = value
@@ -47,6 +53,14 @@ class InputSystem(
     override fun init(scene: Scene) {
         super.init(scene)
         inputProvider.initializeGamepad()
+        inputProvider.gamepadListener.registry.addListener { e ->
+            if (e.connected) {
+                eventSystem.publish(GamepadConnected(e.jid, e.name))
+            } else {
+                rumble.stopAll()
+                eventSystem.publish(GamepadDisconnected(e.jid))
+            }
+        }
         jumpButtonWasPressed = false
         movementWasActive = false
 
@@ -56,6 +70,7 @@ class InputSystem(
     override fun update(dt: Float) {
         inputProvider.refreshGamepadState()
         actionReader.update()
+        rumble.update(dt)
         if (!scene.isRunning) return
 
         scene.children.forEach { go ->
