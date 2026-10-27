@@ -158,7 +158,7 @@ Asset management works but needs a complete review.
   - Do: `PrefabsGenerator.kt` uses `scene.children.add/addAll`, which bypasses the ECS query caches. Use the scene API instead.
   - Done when: Generated prefabs invalidate queries correctly, covered by a test.
   - Deps: ECS-02
-- [~] @skate-assets **AST-08** `P2` Loader ownership, results and logging
+- [x] **AST-08** `P2` Loader ownership, results and logging
   - Do: From QA-04: `AssetsManager` owns texture/mesh/sound lifetimes and deletes on unload; loaders return a result type instead of `Boolean`/`null`; replace `println` in `AssimpExtensions`, `ShaderLoader`, `SoundLoader` with `LoggerService`.
   - Done when: Unloading frees native resources; no `println` in assets.
   - Deps: AST-03
@@ -182,7 +182,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: List the components missing compared with industry engines (e.g. `Tag/Layer`, `LOD`, `Trigger`, `AudioListener`, `Billboard`, `Lifetime`, `Prefab instance link`) and create follow-up tasks for the owning domains.
   - Done when: The gap list is in `docs/design/ECS-04.md` and the follow-ups are reported to the lead.
   - Deps: ECS-01
-- [~] @skate-ecs **ECS-05** `P2` Prefab instances and overrides
+- [x] **ECS-05** `P2` Prefab instances and overrides
   - Do: Link instances to prefab assets with per-property overrides that survive prefab edits.
   - Done when: Editing a prefab updates its instances but keeps their overrides, with unit tests.
   - Deps: ECS-02, AST-02
@@ -219,7 +219,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Fixed timestep with interpolation, collision layers/masks, triggers, raycast/shape-cast queries, physics materials (friction, restitution), CCD for fast bodies, and collision events through `PhysicsEvents`.
   - Done when: Each feature has unit tests, and the skateboard does not tunnel at high speed.
   - Deps: PHY-02
-- [~] @skate-physics **PHY-05** `P3` Second physics backend spike
+- [x] **PHY-05** `P3` Second physics backend spike
   - Do: Evaluate Jolt (via JNI bindings) or another engine behind `IPhysics3D`.
   - Done when: The findings and a minimal prototype are documented.
   - Deps: PHY-02
@@ -274,7 +274,7 @@ Audio needs a more complete implementation.
   - Do: Stream long music files (OGG), cap voices with priority-based stealing, and add one-shot/looping/random-container sounds.
   - Done when: Music streams without loading the whole file into memory, and voice stealing has unit tests.
   - Deps: AUD-02
-- [~] @skate-audio **AUD-05** `P3` Effects
+- [x] **AUD-05** `P3` Effects
   - Do: Reverb zones and low-pass filters via OpenAL EFX.
   - Done when: Effects can be configured per zone or bus.
   - Deps: AUD-02
@@ -304,6 +304,7 @@ Input works well but needs review and controller dead-zone support.
   - Do: Provide an engine API to read keys/actions that does not depend on the editor, as required by `docs/design/SCR-01.md`.
   - Done when: Scripts and runtime code read input without editor imports, covered by tests.
   - Deps: INP-01
+- [x] **INP-06** `P2` Lift gamepad button cap to 32 (ButtonStates)
 
 ### Gameplay — `GPL` (`skate-gameplay`)
 
@@ -338,7 +339,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
 - [ ] **GPL-08** `P2` `GameMain` logging and paths
   - Do: Replace `println` and the hard-coded path in `GameMain` (QA-04, BUG-011).
   - Done when: No `println` or hard-coded paths in `game/`.
-- [~] @skate-gameplay **GPL-09** `P1` Walk/skate mount toggle
+- [x] **GPL-09** `P1` Walk/skate mount toggle
   - Do: The human could walk but there is no way to switch between walking and skating. Add a `toggle_mount` input action (INP-03 action map; default gamepad button and keyboard key, rebindable) that mounts/dismounts the board: dismounted = generic locomotion (GPL-02), mounted = `SkateBehavior`; require the board to be within a configurable range when mounting, place the board under the character/at the character's feet, keep skateboarding-specific logic in `game/` and the generic mount/dismount interface in the engine so other games can use it for vehicles/mounts; add the action to the standalone controller config; tell the human which button/key is used.
   - Done when: In the sample game the player can toggle between walking and skating with gamepad and keyboard; unit tests for the state transitions and range check.
   - Deps: GPL-01, INP-03
@@ -358,7 +359,7 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: Edit UI canvases in the editor viewport; coordinate the editor side with `skate-editor`.
   - Done when: UI can be built and saved without code.
   - Deps: GUI-02
-- [~] @skate-gameui **GUI-04** `P2` Fonts and localization
+- [x] **GUI-04** `P2` Fonts and localization
   - Do: SDF font rendering, plus localized strings and plurals via `StringManager`.
   - Done when: Text stays crisp at all sizes, and switching locale updates the UI.
   - Deps: GUI-02
@@ -378,7 +379,7 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
   - Do: Recompile changed scripts, keep state where possible, and show errors in `ConsoleWindow` with file and line.
   - Done when: Editing a script during play mode applies without restarting.
   - Deps: SCR-02
-- [~] @skate-scripting **SCR-04** `P3` TypeScript host
+- [x] **SCR-04** `P3` TypeScript host
   - Do: Embed a JS engine (e.g. GraalJS or Javet), transpile TS, and use the same `ScriptHost` API.
   - Deps: SCR-02
 - [ ] **SCR-05** `P3` Lua host
@@ -389,7 +390,7 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
 
 Multiplayer and Steam support need to be added.
 
-- [~] @skate-online **NET-01** `P2` Multiplayer architecture
+- [!] awaiting design approval (docs/design/NET-01.md) **NET-01** `P2` Multiplayer architecture
   - Do: Choose a model (client-server with prediction and reconciliation is recommended), transport (UDP, e.g. via Netty or KryoNet), replication of ECS components, and RPCs.
   - Done when: `docs/design/NET-01.md` is approved by the lead.
   - Deps: ECS-03
@@ -496,7 +497,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: The human reports the translation gizmo (EDT-03) looks 'a little weird' in the viewport. Review `GizmoMath`/`TranslateGizmo` against the viewport (axis arrows, screen-constant size, plane handles, hover/active colours, depth/occlusion, perspective and orthographic cameras, local vs world, multi-selection pivot with ECS-07) and fix anything off; compare with the conventions of common editors (X red, Y green, Z blue, handles drawn on top, no distortion near the screen edges).
   - Done when: Gizmo renders and drags correctly in perspective and ortho, local and world space, with multi-selection; screenshot or unit tests for `GizmoMath`; findings listed in the report.
   - Deps: EDT-03, ECS-07
-- [~] @skate-editor **EDT-24** `P1` Input Testing as a closable dialog
+- [x] **EDT-24** `P1` Input Testing as a closable dialog
   - Do: Convert `InputTestingWindow` (EDT-19) from a dockable window into a modal-less dialog: closable with the title-bar X, a Close button and Esc; opened from a new Input > 'Input Testing...' menu item (and a shortcut), not shown in View > Windows and excluded from docked layout persistence (EDT-01) except for remembering its size/position. Reuse or extend the existing dialog pattern (`ProjectSwitcherDialog`, `ProjectWizardWindow`) into a small reusable `EditorDialog` base so other tool dialogs can use it. Keep every EDT-19 feature (devices, editable dead zones/curves, event log). Update `ViewMenuBuilder`/`WindowRegistry` so the entry is removed there and translations are added; migrate any saved layout that references the old window.
   - Done when: Dialog opens from the menu, closes via X/Esc/Close button, is not in View > Windows, settings still persist, no stale layout entry; tests for the registry/menu change and the dialog state.
   - Deps: EDT-19
@@ -512,7 +513,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Expose the CLI capabilities plus editor introspection (scene tree, components, logs) over MCP so agents can drive the engine.
   - Done when: An MCP client can list scenes and entities and trigger an export.
   - Deps: TLG-01
-- [~] @skate-tooling **TLG-03** `P2` Sample project: Tetris
+- [x] **TLG-03** `P2` Sample project: Tetris
   - Do: A 2D/3D Tetris that exercises input, in-game UI, audio, scenes and scripting.
   - Deps: GUI-02, SCR-02
 - [x] **TLG-04** `P2` Sample project: Marble Run
@@ -554,6 +555,7 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Done when: CI is green on `main`.
 
 ---
+- [x] **QA-09** `P2` StreamPolicy tests and pure-logic isolation guard for input/audio/ecs
 
 ## Agents & herdr
 
