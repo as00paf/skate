@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.core
 
 import com.pafoid.skate.engine.animation.FrustumVisibility
+import com.pafoid.skate.engine.animation.ik.IkDebugSink
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.PrefabsGenerator
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -99,7 +100,9 @@ class Engine {
             DayNightCycleSystem(),
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager),
-            AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }),
+            AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }).also {
+                it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }
+            },
             RagdollSystem(),
             ScriptingSystem(logger, eventSystem),
         )
