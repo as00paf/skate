@@ -26,7 +26,8 @@ class UiBatch(val texture: Texture?, val scissor: UiRect?, val firstQuad: Int) {
 
 /**
  * GL-free recorder of runtime-UI geometry: tinted textured quads, 9-slice panels, glyph quads and a scissor stack.
- * Vertices use the 2D batch layout (pos2, color4, uv2, texId, entityId); texId is 0 with a texture, -1 without.
+ * Vertices use the 2D batch layout (pos2, color4, uv2, texId, entityId); texId is 0 with a texture, -1 without;
+ * entityId is [SDF_MODE] for SDF glyphs and 0 otherwise.
  * Consecutive quads with the same texture and scissor share a batch; quads fully outside the scissor are culled.
  */
 class UiDrawList {
@@ -58,6 +59,7 @@ class UiDrawList {
         r: Float = 1f, g: Float = 1f, b: Float = 1f, a: Float = 1f,
         texture: Texture? = null,
         u0: Float = 0f, v0: Float = 0f, u1: Float = 1f, v1: Float = 1f,
+        sdf: Boolean = false,
     ) {
         if (w <= 0f || h <= 0f) return
         val clip = currentScissor
@@ -70,11 +72,12 @@ class UiDrawList {
         ensureCapacity(quadCount + 1)
         var o = quadCount * 4 * VERTEX_SIZE
         val texId = if (texture != null) 0f else -1f
+        val mode = if (sdf) SDF_MODE else 0f
         // Corner order matches RenderBatch2D: (0,0) (1,0) (1,1) (0,1)
-        o = vertex(o, x, y, r, g, b, a, u0, v0, texId)
-        o = vertex(o, x + w, y, r, g, b, a, u1, v0, texId)
-        o = vertex(o, x + w, y + h, r, g, b, a, u1, v1, texId)
-        vertex(o, x, y + h, r, g, b, a, u0, v1, texId)
+        o = vertex(o, x, y, r, g, b, a, u0, v0, texId, mode)
+        o = vertex(o, x + w, y, r, g, b, a, u1, v0, texId, mode)
+        o = vertex(o, x + w, y + h, r, g, b, a, u1, v1, texId, mode)
+        vertex(o, x, y + h, r, g, b, a, u0, v1, texId, mode)
         quadCount++
         batch.quadCount++
     }
@@ -85,6 +88,13 @@ class UiDrawList {
         u0: Float, v0: Float, u1: Float, v1: Float,
         r: Float = 1f, g: Float = 1f, b: Float = 1f, a: Float = 1f,
     ) = drawQuad(x, y, w, h, r, g, b, a, texture, u0, v0, u1, v1)
+
+    /** One glyph quad whose atlas alpha is a signed distance field (alpha-tested edge in the shader). */
+    fun drawSdfGlyph(
+        texture: Texture, x: Float, y: Float, w: Float, h: Float,
+        u0: Float, v0: Float, u1: Float, v1: Float,
+        r: Float = 1f, g: Float = 1f, b: Float = 1f, a: Float = 1f,
+    ) = drawQuad(x, y, w, h, r, g, b, a, texture, u0, v0, u1, v1, sdf = true)
 
     /**
      * 9-slice panel. Corners keep their texel size times [scale] (shrunk uniformly if the panel is smaller than the
@@ -121,16 +131,19 @@ class UiDrawList {
         if (needed > vertices.size) vertices = vertices.copyOf(maxOf(needed, vertices.size * 2))
     }
 
-    private fun vertex(o: Int, x: Float, y: Float, r: Float, g: Float, b: Float, a: Float, u: Float, v: Float, texId: Float): Int {
+    private fun vertex(o: Int, x: Float, y: Float, r: Float, g: Float, b: Float, a: Float, u: Float, v: Float, texId: Float, mode: Float): Int {
         vertices[o] = x; vertices[o + 1] = y
         vertices[o + 2] = r; vertices[o + 3] = g; vertices[o + 4] = b; vertices[o + 5] = a
         vertices[o + 6] = u; vertices[o + 7] = v
         vertices[o + 8] = texId
-        vertices[o + 9] = 0f
+        vertices[o + 9] = mode
         return o + VERTEX_SIZE
     }
 
     companion object {
+        /** Written to the entityId vertex slot to make the UI shader treat the texture alpha as a distance field. */
+        const val SDF_MODE = 1f
+
         /** Offsets of the 4 cut points along one axis; borders shrink proportionally when they do not fit. */
         fun nineSliceAxis(total: Float, start: Float, end: Float): FloatArray {
             val border = start + end

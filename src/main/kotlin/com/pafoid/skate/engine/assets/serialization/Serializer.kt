@@ -32,6 +32,14 @@ import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.ecs.prefab.PrefabInstance
+import com.pafoid.skate.engine.ui.UIButtonComponent
+import com.pafoid.skate.engine.ui.UICanvasComponent
+import com.pafoid.skate.engine.ui.UIElementComponent
+import com.pafoid.skate.engine.ui.UIImageComponent
+import com.pafoid.skate.engine.ui.UIListComponent
+import com.pafoid.skate.engine.ui.UIProgressBarComponent
+import com.pafoid.skate.engine.ui.UISliderComponent
+import com.pafoid.skate.engine.ui.UITextComponent
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -91,6 +99,16 @@ class Serializer {
             subclass(ScenePhysicsComponent::class)
             subclass(EnvironmentComponent::class)
             subclass(DayNightCycleComponent::class)
+
+            // Runtime UI
+            subclass(UICanvasComponent::class)
+            subclass(UIElementComponent::class)
+            subclass(UITextComponent::class)
+            subclass(UIImageComponent::class)
+            subclass(UIButtonComponent::class)
+            subclass(UISliderComponent::class)
+            subclass(UIProgressBarComponent::class)
+            subclass(UIListComponent::class)
 
             // Custom
             subclass(PlayerController::class)
