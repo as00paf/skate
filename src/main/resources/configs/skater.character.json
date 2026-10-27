@@ -1,0 +1,84 @@
+{
+    "startMounted": false,
+    "onFoot": {
+        "walkSpeed": 2.5,
+        "runSpeed": 7.5,
+        "acceleration": 20.0,
+        "rotationSpeed": 10.0,
+        "moveDeadZone": 0.15,
+        "runInputThreshold": 0.65,
+        "jumpImpulse": 300.0,
+        "takeOffTime": 0.9,
+        "coyoteTime": 0.1,
+        "minAirTime": 0.15,
+        "airControl": 0.2,
+        "ground": {
+            "footOffset": 0.0,
+            "probeStartHeight": 0.1,
+            "groundedDistance": 0.05,
+            "snapDistance": 0.3,
+            "sampleRadius": 0.15,
+            "maxSlopeDeg": 50.0,
+            "stepHeight": 0.3,
+            "stepProbeDistance": 0.4,
+            "maxSnapSpeed": 6.0,
+            "snapToGround": true,
+            "stepUp": true
+        },
+        "animations": {
+            "IDLE": "idle",
+            "WALK": "walking",
+            "RUN": "running",
+            "TAKEOFF": "jump",
+            "AIR": "falling idle"
+        }
+    },
+    "input": {
+        "moveDeadZone": 0.15,
+        "pushStickThreshold": 0.6
+    },
+    "push": {
+        "acceleration": 4.0,
+        "maxSpeed": 6.0
+    },
+    "ride": {
+        "idleSpeed": 0.3,
+        "rollingDrag": 0.6,
+        "brakeDecel": 6.0,
+        "turnRateSlow": 3.0,
+        "turnRateFast": 1.2,
+        "slowSpeed": 1.0,
+        "fastSpeed": 10.0
+    },
+    "air": {
+        "ollieImpulse": 300.0,
+        "minAirTime": 0.15,
+        "coyoteTime": 0.1,
+        "airTurnRate": 1.5,
+        "landingToleranceDeg": 60.0
+    },
+    "grind": {
+        "minEntrySpeed": 2.0,
+        "minHoldSpeed": 1.0,
+        "maxDurationSec": 4.0
+    },
+    "manual": {
+        "minSpeed": 2.0,
+        "balanceGain": 60.0,
+        "instability": 1.2,
+        "bailAngleDeg": 35.0
+    },
+    "bail": {
+        "recoverySec": 1.2,
+        "drag": 4.0
+    },
+    "animations": {
+        "IDLE": "idle",
+        "PUSH": "walking",
+        "RIDE": "idle",
+        "AIR": "falling idle",
+        "GRIND": "idle",
+        "MANUAL": "idle",
+        "BAIL": "falling idle"
+    }
+}

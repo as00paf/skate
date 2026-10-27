@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset
+import com.pafoid.skate.engine.animation.ik.IkRig
 import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
 import com.pafoid.skate.engine.animation.graph.ClipMotion
 import com.pafoid.skate.engine.animation.graph.Motion
@@ -11,7 +12,6 @@ import com.pafoid.skate.engine.assets.data.models.animations.Skeleton
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import com.pafoid.skate.engine.getComponent
-import com.pafoid.skate.game.player.PlayerState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.io.File
@@ -25,13 +25,16 @@ data class Animator(
     var isPlaying: Boolean = false,
     var blendTime: Float = 0f,
     var blendDuration: Float = 0.2f,
-    var previousTime: Float = 0f,
-    var currentState: PlayerState = PlayerState.IDLE
+    var previousTime: Float = 0f
 ) : Component() {
 
     /** Optional state machine; when set, it drives the pose instead of the single-clip playback. */
     @Transient
     var stateMachine: AnimationStateMachine? = null
+
+    /** Foot/hand/look-at IK applied after the pose is evaluated. */
+    @Transient
+    val ik: IkRig = IkRig()
 
     /** Builds a runtime state machine from [asset], resolving motions by name from [animations] (clips) and [extraMotions]. */
     fun useController(

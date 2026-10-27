@@ -1,4 +1,6 @@
-package com.pafoid.skate.engine.ecs.components
+package com.pafoid.skate.game.skateboard
+
+import com.pafoid.skate.engine.ecs.components.Component
 
 import kotlinx.serialization.Serializable
 

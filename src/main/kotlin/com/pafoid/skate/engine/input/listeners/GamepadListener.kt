@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.input.listeners
 
 import com.pafoid.skate.engine.core.LoggerService
+import com.pafoid.skate.engine.input.GamepadRegistry
 import org.lwjgl.glfw.GLFW.GLFW_CONNECTED
 import org.lwjgl.glfw.GLFW.GLFW_DISCONNECTED
 import org.lwjgl.glfw.GLFW.GLFW_JOYSTICK_LAST
@@ -14,7 +15,7 @@ import java.nio.FloatBuffer
 import kotlin.math.min
 
 class GamepadListener(private val logger: LoggerService) {
-    private val gamepadPresent = BooleanArray(GLFW_JOYSTICK_LAST + 1)
+    val registry = GamepadRegistry(GLFW_JOYSTICK_LAST + 1)
     private val lastButtons = Array(GLFW_JOYSTICK_LAST + 1) { BooleanArray(15) { false } }
     private val currentButtons = Array(GLFW_JOYSTICK_LAST + 1) { BooleanArray(15) { false } }
     private var initialized = false
@@ -22,21 +23,24 @@ class GamepadListener(private val logger: LoggerService) {
     fun init() {
         if (initialized) return
 
-        refreshConnectedGamepads()
+        registry.addListener { e ->
+            if (e.connected) {
+                logger.log("Joystick ${e.jid} connected: ${e.name}")
+            } else {
+                clearJoystickButtons(e.jid)
+                logger.log("Joystick ${e.jid} disconnected")
+            }
+        }
 
         glfwSetJoystickCallback { jid, event ->
-            if (jid !in 0..GLFW_JOYSTICK_LAST) return@glfwSetJoystickCallback
-            if (event == GLFW_CONNECTED) {
-                gamepadPresent[jid] = true
-                logger.log("Joystick $jid connected: ${glfwGetJoystickName(jid)}")
-            } else if (event == GLFW_DISCONNECTED) {
-                gamepadPresent[jid] = false
-                clearJoystickButtons(jid)
-                logger.log("Joystick $jid disconnected")
+            when (event) {
+                GLFW_CONNECTED -> registry.setPresent(jid, true) { glfwGetJoystickName(jid) }
+                GLFW_DISCONNECTED -> registry.setPresent(jid, false)
             }
         }
 
         initialized = true
+        refreshConnectedGamepads()
     }
 
     fun update() {
@@ -44,7 +48,7 @@ class GamepadListener(private val logger: LoggerService) {
         refreshConnectedGamepads()
 
         for (i in 0..GLFW_JOYSTICK_LAST) {
-            if (!gamepadPresent[i]) {
+            if (!registry.isPresent(i)) {
                 clearJoystickButtons(i)
                 continue
             }
@@ -66,7 +70,10 @@ class GamepadListener(private val logger: LoggerService) {
         }
     }
 
-    fun isGamepadPresent(jid: Int): Boolean = jid in gamepadPresent.indices && gamepadPresent[jid]
+    fun isGamepadPresent(jid: Int): Boolean = registry.isPresent(jid)
+
+    /** Joystick id behind logical pad [pad] (0 = primary), or -1. Survives replugging into another slot. */
+    fun joystickForPad(pad: Int): Int = registry.joystickForPad(pad)
 
     fun getAxes(jid: Int): FloatArray? {
         if (!isGamepadPresent(jid)) return null
@@ -100,7 +107,7 @@ class GamepadListener(private val logger: LoggerService) {
 
     fun refreshConnectedGamepads() {
         for (i in 0..GLFW_JOYSTICK_LAST) {
-            gamepadPresent[i] = glfwJoystickPresent(i)
+            registry.setPresent(i, glfwJoystickPresent(i)) { glfwGetJoystickName(i) }
         }
     }
 

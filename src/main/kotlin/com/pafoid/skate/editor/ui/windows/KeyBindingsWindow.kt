@@ -4,9 +4,6 @@ import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.systems.EditorSettingsManager
 import com.pafoid.skate.editor.systems.ProjectManager
-import com.pafoid.skate.engine.input.DeadZoneMode
-import com.pafoid.skate.engine.input.StickDeadZone
-import com.pafoid.skate.engine.input.TriggerDeadZone
 import com.pafoid.skate.engine.core.StringManager
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
@@ -145,49 +142,7 @@ class KeyBindingsWindow(
     }
 
     private fun renderGamepadTab() {
-        val zones = projectManager.currentProject?.gameplaySettings?.inputMappings?.deadZones
-        if (zones == null) {
-            text(stringManager.getString("lbl.deadzone.no_project"))
-            return
-        }
-        stickControls("left_stick", zones.leftStick)
-        stickControls("right_stick", zones.rightStick)
-        triggerControls("left_trigger", zones.leftTrigger)
-        triggerControls("right_trigger", zones.rightTrigger)
-        zones.validate()
-        text(stringManager.getString("lbl.deadzone.save_hint"))
-    }
-
-    private fun slider(id: String, label: String, value: Float, min: Float, max: Float): Float {
-        val v = floatArrayOf(value)
-        imgui.ImGui.sliderFloat("$label##$id", v, min, max)
-        return v[0]
-    }
-
-    private fun stickControls(id: String, zone: StickDeadZone) {
-        separator()
-        text(stringManager.getString("lbl.deadzone.$id"))
-        val modes = arrayOf(
-            stringManager.getString("lbl.deadzone.mode.axial"),
-            stringManager.getString("lbl.deadzone.mode.radial")
-        )
-        val mode = ImInt(zone.mode.ordinal)
-        if (combo("${stringManager.getString("lbl.deadzone.mode")}##$id", mode, modes, modes.size)) {
-            zone.mode = DeadZoneMode.entries[mode.get()]
-        }
-        zone.inner = slider("$id.inner", stringManager.getString("lbl.deadzone.inner"), zone.inner, 0f, 0.9f)
-        zone.outer = slider("$id.outer", stringManager.getString("lbl.deadzone.outer"), zone.outer, 0f, 0.5f)
-        zone.curve = slider("$id.curve", stringManager.getString("lbl.deadzone.curve"), zone.curve, 0.1f, 4f)
-    }
-
-    private fun triggerControls(id: String, zone: TriggerDeadZone) {
-        separator()
-        text(stringManager.getString("lbl.deadzone.$id"))
-        zone.inner = slider("$id.inner", stringManager.getString("lbl.deadzone.inner"), zone.inner, 0f, 0.9f)
-        zone.outer = slider("$id.outer", stringManager.getString("lbl.deadzone.outer"), zone.outer, 0f, 0.5f)
-        zone.curve = slider("$id.curve", stringManager.getString("lbl.deadzone.curve"), zone.curve, 0.1f, 4f)
-        zone.pressThreshold =
-            slider("$id.press", stringManager.getString("lbl.deadzone.press_threshold"), zone.pressThreshold, 0.05f, 1f)
+        text(stringManager.getString("lbl.keybindings.gamepad_moved"))
     }
 
     private fun renderHierarchyBindingsTab(inputMappings: EditorInputMappings) {

@@ -5,53 +5,64 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.events.EngineAction
+import com.pafoid.skate.engine.events.GamepadConnected
+import com.pafoid.skate.engine.events.GamepadDisconnected
 import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.input.ActionInputReader
-import com.pafoid.skate.engine.input.InputBinding
-import com.pafoid.skate.engine.input.InputReader
+import com.pafoid.skate.engine.input.ActionMap
+import com.pafoid.skate.engine.input.DefaultActions
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
+import com.pafoid.skate.engine.input.InputReader
 import com.pafoid.skate.engine.input.ProviderRawInput
+import com.pafoid.skate.engine.input.RumbleManager
 import org.lwjgl.glfw.GLFW
-import com.pafoid.skate.engine.input.DeadZoneSettings
-import com.pafoid.skate.engine.input.TriggerDeadZone
-import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_LEFT_TRIGGER
-import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_TRIGGER
-import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_X
-import com.pafoid.skate.engine.input.listeners.GamepadConstants.AXIS_RIGHT_Y
-import org.joml.Vector2f
+import kotlin.math.sqrt
 
 class InputSystem(
     val inputProvider: InputProvider,
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
-    private val actionReader = ActionInputReader(ProviderRawInput(inputProvider)).also {
-        it.actions.applyMappings(InputMappings())
-    }
+    /** Action definitions and live bindings. Rebind here, then call `mappings.storeBindings(actionMap)` to persist. */
+    val actionMap: ActionMap = DefaultActions.register(ActionMap())
+
+    private val actionReader = ActionInputReader(ProviderRawInput(inputProvider), actionMap) { mappings.deadZones }
 
     /** Editor-independent key/action read API for scripts and runtime code. */
     val reader: InputReader get() = actionReader
 
+    /** Active contexts (GAMEPLAY and UI by default); only their actions are read. */
+    val activeContexts: MutableSet<com.pafoid.skate.engine.input.InputContext> get() = actionReader.activeContexts
+
+    /** Controller rumble. Unsupported (no-op) until a backend is assigned: GLFW has no haptics API. */
+    val rumble = RumbleManager()
+
     var mappings: InputMappings = InputMappings()
         set(value) {
             field = value
-            actionReader.actions.applyMappings(value)
+            actionMap.loadProfile(value.bindings)
         }
 
     private var jumpButtonWasPressed = false
     private var movementWasActive = false
-    private var previousButtons: BooleanArray? = null
 
     override fun init(scene: Scene) {
         super.init(scene)
         inputProvider.initializeGamepad()
+        inputProvider.gamepadListener.registry.addListener { e ->
+            if (e.connected) {
+                eventSystem.publish(GamepadConnected(e.jid, e.name))
+            } else {
+                rumble.stopAll()
+                eventSystem.publish(GamepadDisconnected(e.jid))
+            }
+        }
         jumpButtonWasPressed = false
         movementWasActive = false
-        previousButtons = null
 
         eventSystem.subscribe<EngineAction.ApplyMappings> { event -> mappings = event.mappings }
     }
@@ -59,6 +70,7 @@ class InputSystem(
     override fun update(dt: Float) {
         inputProvider.refreshGamepadState()
         actionReader.update()
+        rumble.update(dt)
         if (!scene.isRunning) return
 
         scene.children.forEach { go ->
@@ -66,61 +78,35 @@ class InputSystem(
 
             inputState.reset()
             inputState.jumpHeld = false
-            pollGamepadInput(inputState)
+            pollActions(inputState)
             pollMouseInput(inputState)
             updateJumpState(inputState)
         }
 
-        if (inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) {
-            previousButtons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)?.clone()
-        }
+        inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)
     }
 
-    private fun pollGamepadInput(inputState: InputStateComponent) {
-        if (!inputProvider.isJoystickPresent(GLFW.GLFW_JOYSTICK_1)) {
-            publishNeutralMovementIfNeeded(inputState)
-            return
-        }
+    private fun pollActions(inputState: InputStateComponent) {
+        val moveX = reader.actionValue(DefaultActions.MOVE_X)
+        val moveY = reader.actionValue(DefaultActions.MOVE_Y)
 
-        val axes = inputProvider.getAxes(GLFW.GLFW_JOYSTICK_1) ?: run {
-            publishNeutralMovementIfNeeded(inputState)
-            return
-        }
-        val buttons = inputProvider.getButtons(GLFW.GLFW_JOYSTICK_1)
-
-        val zones = mappings.deadZones
-        readStick(mappings.moveLeft, mappings.moveRight, mappings.moveUp, mappings.moveDown, axes, zones, stickValue)
-        val moveStrafe = stickValue.x
-        val moveAxis = stickValue.y
-
-        if (moveAxis != 0f || moveStrafe != 0f) {
-            inputState.moveDirection.set(moveStrafe, moveAxis)
-            // Publish movement event
-            val magnitude = kotlin.math.sqrt(moveAxis * moveAxis + moveStrafe * moveStrafe)
+        if (moveX != 0f || moveY != 0f) {
+            inputState.moveDirection.set(moveX, moveY)
+            val magnitude = sqrt(moveX * moveX + moveY * moveY)
             eventSystem.publish(MovementInput(inputState.moveDirection, magnitude))
             movementWasActive = true
         } else {
             publishNeutralMovementIfNeeded(inputState)
         }
 
-        readStick(mappings.cameraLookX, null, mappings.cameraLookY, null, axes, zones, stickValue)
-        val lookX = stickValue.x
-        val lookY = stickValue.y
+        inputState.cameraLook.set(
+            reader.actionValue(DefaultActions.LOOK_X) * CONTROLLER_LOOK_SENSITIVITY,
+            reader.actionValue(DefaultActions.LOOK_Y) * CONTROLLER_LOOK_SENSITIVITY
+        )
 
-        if (lookX != 0f || lookY != 0f) {
-            inputState.cameraLook.set(
-                lookX * 2.0f,
-                lookY * 2.0f
-            )
-        }
-
-        if (buttons != null && mappings.jump.gamepadButton >= 0) {
-            val jumpPressed = buttons.getOrNull(mappings.jump.gamepadButton) ?: false
-            inputState.jumpHeld = jumpPressed
-        }
-
-        inputState.sprintPressed = checkBindingActive(mappings.sprint, axes, buttons, zones)
-        inputState.crouchPressed = checkButtonBindingActive(mappings.crouch, buttons)
+        inputState.jumpHeld = reader.isActionDown(DefaultActions.JUMP)
+        inputState.sprintPressed = reader.isActionDown(DefaultActions.SPRINT)
+        inputState.crouchPressed = reader.isActionDown(DefaultActions.CROUCH)
     }
 
     private fun pollMouseInput(inputState: InputStateComponent) {
@@ -152,68 +138,7 @@ class InputSystem(
         movementWasActive = false
     }
 
-    private val stickValue = Vector2f()
-    private val fallbackTrigger = TriggerDeadZone()
-
-    private fun axisIndex(positive: InputBinding?, negative: InputBinding?): Int = when {
-        positive != null && positive.gamepadAxis >= 0 -> positive.gamepadAxis
-        negative != null && negative.gamepadAxis >= 0 -> negative.gamepadAxis
-        else -> -1
-    }
-
-    /** Reads a stick from the bound X/Y axes and applies the dead zone of the stick that owns the X axis. */
-    private fun readStick(
-        xPositive: InputBinding,
-        xNegative: InputBinding?,
-        yPositive: InputBinding,
-        yNegative: InputBinding?,
-        axes: FloatArray,
-        zones: DeadZoneSettings,
-        out: Vector2f
-    ) {
-        val xi = axisIndex(xPositive, xNegative)
-        val yi = axisIndex(yPositive, yNegative)
-        val rawX = if (xi in axes.indices) axes[xi] else 0f
-        // GLFW reports stick-up (Y axes 1 and 3) as negative
-        val rawY = if (yi in axes.indices) (if (yi == 1 || yi == 3) -axes[yi] else axes[yi]) else 0f
-        val zone = if (xi == AXIS_RIGHT_X || xi == AXIS_RIGHT_Y) zones.rightStick else zones.leftStick
-        zone.apply(rawX, rawY, out)
-    }
-
-    private fun triggerZone(axis: Int, zones: DeadZoneSettings): TriggerDeadZone = when (axis) {
-        AXIS_LEFT_TRIGGER -> zones.leftTrigger
-        AXIS_RIGHT_TRIGGER -> zones.rightTrigger
-        else -> fallbackTrigger
-    }
-
-    private fun checkButtonBindingActive(binding: InputBinding, buttons: BooleanArray?): Boolean {
-        if (buttons == null || binding.gamepadButton < 0) return false
-        return buttons.getOrNull(binding.gamepadButton) ?: false
-    }
-
-    private fun checkButtonBindingBeginPress(binding: InputBinding, buttons: BooleanArray?): Boolean {
-        if (buttons == null || binding.gamepadButton < 0) return false
-        val current = buttons.getOrNull(binding.gamepadButton) ?: false
-        val previous = previousButtons?.getOrNull(binding.gamepadButton) ?: false
-        return current && !previous
-    }
-
-    private fun checkBindingActive(
-        binding: InputBinding,
-        axes: FloatArray?,
-        buttons: BooleanArray?,
-        zones: DeadZoneSettings
-    ): Boolean {
-        if (binding.gamepadButton >= 0) {
-            if (buttons?.getOrNull(binding.gamepadButton) == true) return true
-        }
-
-        if (binding.gamepadAxis >= 0 && axes != null && binding.gamepadAxis < axes.size) {
-            val value = axes[binding.gamepadAxis]
-            val trigger = triggerZone(binding.gamepadAxis, zones)
-            if (trigger.isPressed(value)) return true
-        }
-
-        return false
+    private companion object {
+        const val CONTROLLER_LOOK_SENSITIVITY = 2.0f
     }
 }

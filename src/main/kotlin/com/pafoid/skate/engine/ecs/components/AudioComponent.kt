@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.audio.AttenuationModel
 import com.pafoid.skate.engine.audio.BusId
+import com.pafoid.skate.engine.audio.StreamMode
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -16,12 +17,24 @@ data class AudioComponent(
     var minDistance: Float = 1f,
     var maxDistance: Float = 50f,
     var rolloff: Float = 1f,
-    var dopplerFactor: Float = 1f
+    var dopplerFactor: Float = 1f,
+    /** Higher wins when voices run out. */
+    var priority: Int = 128,
+    /** When not empty, a random clip (never the same twice in a row) is played instead of [soundFilePath]. */
+    var clips: List<String> = emptyList(),
+    var streamMode: StreamMode = StreamMode.AUTO,
+    var playOnAwake: Boolean = false
 ) : Component() {
 
     @Transient
     var isPlaying: Boolean = false
     
+    @Transient
+    var isPaused: Boolean = false
+
+    @Transient
+    var awoken: Boolean = false
+
     @Transient
     var playRequested: Boolean = false
     

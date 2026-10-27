@@ -2,6 +2,7 @@ package com.pafoid.skate.engine.ecs.components
 
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.physics3d.ALL_LAYERS
 import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
@@ -22,6 +23,34 @@ open class RigidBody3D(
         set(value) {
             field = value
             rawBody?.friction = value
+        }
+
+    /** Bounciness in [0, 1]; 0 absorbs all impact energy. */
+    var restitution: Float = 0.0f
+        set(value) {
+            field = value
+            rawBody?.restitution = value
+        }
+
+    /** Layer bit flags this body belongs to. */
+    var collisionLayer: Int = 1
+        set(value) {
+            field = value
+            rawBody?.collisionLayer = value
+        }
+
+    /** Layer bit flags this body collides with; [ALL_LAYERS] collides with everything. */
+    var collisionMask: Int = ALL_LAYERS
+        set(value) {
+            field = value
+            rawBody?.collisionMask = value
+        }
+
+    /** Triggers report overlaps through trigger events and never push other bodies. */
+    var isTrigger: Boolean = false
+        set(value) {
+            field = value
+            rawBody?.isTrigger = value
         }
 
     var linearDamping: Float = 0.0f

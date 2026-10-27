@@ -80,7 +80,7 @@ class AudioSystemTest {
         // In this basic test, we just ensure it doesn't crash when empty
         // Further tests could mock activeSources if we had access to it.
         // It's internal state, so we just verify it completes.
-        verify(exactly = 0) { audioEngine.destroy() } // The system doesn't destroy the engine, just itself
+        verify(exactly = 0) { audioEngine.close() } // The system doesn't destroy the engine, just itself
     }
 
     @Test

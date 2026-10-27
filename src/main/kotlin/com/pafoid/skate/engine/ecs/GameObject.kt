@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.ecs
 
 import com.pafoid.skate.engine.assets.serialization.Serializer
+import com.pafoid.skate.engine.core.MainThread
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getComponent
@@ -29,7 +30,21 @@ open class GameObject(
     var parent: GameObject? = null
     val children = mutableListOf<GameObject>()
 
+    /** Reports (see [MainThread]) a scene mutation attempted off the main thread while attached to a [Scene]. */
+    fun assertSceneMutationOnMainThread(what: String) {
+        if (MainThread.isMainThread()) return
+        var node: GameObject? = this
+        while (node != null) {
+            if (node is Scene) {
+                MainThread.assertOnMainThread("Scene mutation ($what on '$name')")
+                return
+            }
+            node = node.parent
+        }
+    }
+
     fun addChild(child: GameObject) {
+        assertSceneMutationOnMainThread("addChild")
         child.parent?.removeChild(child)
         child.parent = this
         children.add(child)
@@ -37,6 +52,7 @@ open class GameObject(
     }
 
     fun removeChild(child: GameObject) {
+        assertSceneMutationOnMainThread("removeChild")
         children.remove(child)
         child.parent = null
         EcsChanges.touch()
