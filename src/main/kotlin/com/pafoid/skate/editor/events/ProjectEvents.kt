@@ -21,6 +21,7 @@ sealed class ProjectEvent(eventName: String) : Event(eventName) {
     data class CreateProjectFailed(val name: String, val folderPath: String, val reason: String) : ProjectEvent("project.action.create_project_failed")
     data class CreateFileRequested(val path: String, val isDirectory: Boolean) : ProjectEvent("project.action.create_file_requested")
     data class RenameFileRequested(val path: String, val newName: String) : ProjectEvent("project.action.rename_file_requested")
+    data class MoveFileRequested(val path: String, val targetDir: String) : ProjectEvent("project.action.move_file_requested")
     data class DeleteFileRequested(val path: String) : ProjectEvent("project.action.delete_file_requested")
     object CloseProjectRequested : ProjectEvent("project.action.close_project_requested")
     object SaveRequested : ProjectEvent("project.action.save_project_requested")
