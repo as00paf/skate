@@ -6,13 +6,15 @@ sealed interface CliCommand {
     data class Validate(val project: String) : CliCommand
     data class Pack(val project: String) : CliCommand
     data class Export(val project: String, val output: String) : CliCommand
-    data class Sample(val dir: String) : CliCommand
+    data class Sample(val dir: String, val name: String = CliArguments.DEFAULT_SAMPLE) : CliCommand
     data class Run(val project: String, val scene: String?, val frames: Int, val dt: Float) : CliCommand
 }
 
 class CliParseException(message: String) : Exception(message)
 
 object CliArguments {
+    const val DEFAULT_SAMPLE = "feature-showcase"
+    val SAMPLES = listOf(DEFAULT_SAMPLE, "marble-run", "tetris")
     const val DEFAULT_FRAMES = 60
     const val DEFAULT_DT = 1f / 60f
 
@@ -26,7 +28,8 @@ object CliArguments {
           export <project> --out <folder>           Pack and copy the build output into <folder>
           run <project> [--scene <name>] [--frames <n>] [--dt <seconds>]
                                                     Run a scene headless and print engine stats
-          sample [--dir <folder>]                   Generate the FeatureShowcase sample project (see docs/samples.md)
+          sample [feature-showcase|marble-run|tetris] [--dir <folder>]
+                                                    Generate a sample project (see docs/samples.md)
           help, --help, -h                          Show this help
 
         <project> is a .skateproject file or the folder containing one.
@@ -45,9 +48,16 @@ object CliArguments {
                 CliCommand.Export(it.positional(), it.required("--out"))
             }
             "run" -> parseRun(rest)
-            "sample" -> CliCommand.Sample(parseArgs(name, rest, setOf("--dir")).also { it.noPositionals() }.options["--dir"] ?: ".")
+            "sample" -> parseSample(rest)
             else -> throw CliParseException("Unknown command '$name'")
         }
+    }
+
+    private fun parseSample(rest: List<String>): CliCommand.Sample {
+        val parsed = parseArgs("sample", rest, setOf("--dir"))
+        val name = if (parsed.positionals.isEmpty()) DEFAULT_SAMPLE else parsed.positional("sample")
+        if (name !in SAMPLES) throw CliParseException("Unknown sample '$name' (available: ${SAMPLES.joinToString()})")
+        return CliCommand.Sample(parsed.options["--dir"] ?: ".", name)
     }
 
     private fun parseCreate(rest: List<String>): CliCommand.Create {
@@ -72,9 +82,6 @@ object CliArguments {
             return positionals[0]
         }
 
-        fun noPositionals() {
-            if (positionals.isNotEmpty()) throw CliParseException("'$command' takes no positional arguments")
-        }
 
         fun required(option: String): String =
             options[option] ?: throw CliParseException("'$command' requires $option <value>")

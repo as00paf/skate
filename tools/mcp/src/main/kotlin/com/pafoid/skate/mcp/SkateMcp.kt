@@ -1,7 +1,9 @@
 package com.pafoid.skate.mcp
 
 import com.pafoid.skate.cli.CliException
+import com.pafoid.skate.cli.MarbleRunProjectBuilder
 import com.pafoid.skate.cli.ShowcaseProjectBuilder
+import com.pafoid.skate.cli.TetrisProjectBuilder
 import com.pafoid.skate.cli.SkateCliService
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.ecs.GameObject
@@ -58,9 +60,16 @@ class SkateMcpServer(
             val file = service.createProject(a.str("name"), File(a.str("dir")))
             buildJsonObject { put("project", file.path) }
         },
-        Tool("create_sample", "Generate the FeatureShowcase sample project", mapOf("dir" to "Parent folder"),
-            listOf("dir")) { a ->
-            buildJsonObject { put("project", ShowcaseProjectBuilder(serializer).build(File(a.str("dir"))).path) }
+        Tool("create_sample", "Generate a sample project (feature-showcase, marble-run or tetris)",
+            mapOf("dir" to "Parent folder", "name" to "Sample name (default feature-showcase)"), listOf("dir")) { a ->
+            val dir = File(a.str("dir"))
+            val project = when (val name = a.optStr("name") ?: "feature-showcase") {
+                "feature-showcase" -> ShowcaseProjectBuilder(serializer).build(dir)
+                "marble-run" -> MarbleRunProjectBuilder(serializer).build(dir)
+                "tetris" -> TetrisProjectBuilder(serializer).build(dir)
+                else -> throw ToolException("Unknown sample '$name'")
+            }
+            buildJsonObject { put("project", project.path) }
         },
         Tool("validate_project", "Validate a project and its scenes", mapOf("project" to PROJECT), listOf("project")) { a ->
             val r = service.validate(a.str("project"))
