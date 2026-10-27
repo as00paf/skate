@@ -15,6 +15,25 @@ class BulletRigidBodyHandle(val body: PhysicsRigidBody) : IRigidBodyHandle {
     override var friction: Float
         get() = body.friction
         set(value) { body.friction = value }
+    override var restitution: Float
+        get() = body.restitution
+        set(value) { body.restitution = value }
+    override var collisionLayer: Int
+        get() = body.collisionGroup
+        set(value) { body.collisionGroup = value }
+    override var collisionMask: Int
+        get() = body.collideWithGroups
+        set(value) { body.collideWithGroups = value }
+    private var kinematicBeforeTrigger = false
+    override var isTrigger: Boolean
+        get() = !body.isContactResponse
+        // Kinematic bodies never deactivate; Bullet skips overlap tests between two inactive bodies
+        set(value) {
+            if (value == isTrigger) return
+            body.isContactResponse = !value
+            if (value) kinematicBeforeTrigger = body.isKinematic
+            body.isKinematic = value || kinematicBeforeTrigger
+        }
     override var isKinematic: Boolean
         get() = body.isKinematic
         set(value) { body.isKinematic = value }
@@ -24,6 +43,11 @@ class BulletRigidBodyHandle(val body: PhysicsRigidBody) : IRigidBodyHandle {
     override var angularVelocity: Vector3f
         get() = body.getAngularVelocity(null).toVector3f()
         set(value) { body.setAngularVelocity(value.toJme()) }
+
+    override fun setContinuousCollision(motionThreshold: Float, sweptRadius: Float) {
+        body.ccdMotionThreshold = motionThreshold
+        body.ccdSweptSphereRadius = sweptRadius
+    }
 
     override fun setDamping(linear: Float, angular: Float) = body.setDamping(linear, angular)
     override fun setAngularFactor(factor: Vector3f) = body.setAngularFactor(factor.toJme())

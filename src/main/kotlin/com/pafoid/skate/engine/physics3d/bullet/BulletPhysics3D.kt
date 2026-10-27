@@ -1,5 +1,9 @@
 package com.pafoid.skate.engine.physics3d.bullet
 import com.jme3.bullet.PhysicsSpace
+import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.collision.shapes.ConvexShape
+import com.pafoid.skate.engine.physics3d.PhysicsContactListener
+import com.pafoid.skate.engine.physics3d.PhysicsHit
 import com.jme3.bullet.joints.ConeJoint
 import com.jme3.bullet.joints.HingeJoint
 import com.jme3.bullet.joints.PhysicsJoint
@@ -42,7 +46,14 @@ import org.joml.Quaternionf
 class BulletPhysics3D(
     private val debugRenderer: DebugRenderer
 ) : IPhysics3D {
-    private val physicsSpace: PhysicsSpace = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
+    // Bullet's default filter collides when either body's mask accepts the other; layers need both to agree
+    private class LayeredPhysicsSpace : PhysicsSpace(BroadphaseType.DBVT) {
+        override fun needsCollision(a: PhysicsCollisionObject, b: PhysicsCollisionObject): Boolean =
+            super.needsCollision(a, b) &&
+                (a.collisionGroup and b.collideWithGroups) != 0 && (b.collisionGroup and a.collideWithGroups) != 0
+    }
+
+    private val physicsSpace: PhysicsSpace = LayeredPhysicsSpace()
 
     override var debugEnabled = false
 
@@ -69,49 +80,66 @@ class BulletPhysics3D(
         physicsSpace.setGravity(JmeVector3f(gravity.x, gravity.y, gravity.z))
     }
 
-    /**
-     * Performs a ray test and returns only the closest hit.
-     *
-     * @param from The start point of the ray.
-     * @param to The end point of the ray.
-     * @param excludeBody Optional body to exclude from the raycast (e.g., the player's own body).
-     * @return The closest [RayTestResult], or null if no hit occurred.
-     */
-    override fun raycastClosest(from: JomlVector3f, to: JomlVector3f, excludeBody: IPhysicsBody3D?): Float? {
-        val results = rayTest(from, to, excludeBody)
-        return if (results.isEmpty()) null else results.minByOrNull { it.hitFraction }?.hitFraction
-    }
+    override var contactListener: PhysicsContactListener? = null
 
-    /**
-     * Performs a ray test (raycast) in the physics world and returns all hits.
-     *
-     * @param from The start point of the ray in world space.
-     * @param to The end point of the ray in world space.
-     * @param excludeBody Optional body to exclude from results.
-     * @return A list of [PhysicsRayTestResult] containing hit information.
-     */
-    private fun rayTest(
+    override fun raycast(from: JomlVector3f, to: JomlVector3f, layerMask: Int, excludeBody: IPhysicsBody3D?): PhysicsHit? =
+        raycastAll(from, to, layerMask, excludeBody).firstOrNull()
+
+    override fun raycastAll(
         from: JomlVector3f,
         to: JomlVector3f,
-        excludeBody: IPhysicsBody3D? = null
-    ): List<PhysicsRayTestResult> {
-        val start = JmeVector3f(from.x, from.y, from.z)
-        val end = JmeVector3f(to.x, to.y, to.z)
-
-        // Draw debug line when debug is enabled
+        layerMask: Int,
+        excludeBody: IPhysicsBody3D?,
+    ): List<PhysicsHit> {
         if (debugEnabled) {
             debugRenderer.addLine3D(from, to, JomlVector3f(1f, 0f, 1f), 1)
         }
 
-        val results = physicsSpace.rayTest(start, end)
-
-        if (excludeBody != null) {
-            val filtered = results.filter { it.collisionObject != excludeBody }
-            return filtered
-        }
-
-        return results
+        val excluded = excludedObject(excludeBody)
+        val delta = JomlVector3f(to).sub(from)
+        return physicsSpace.rayTest(from.toJme(), to.toJme())
+            .filter { isQueryable(it.collisionObject, layerMask, excluded) }
+            .sortedBy { it.hitFraction }
+            .map { hit ->
+                PhysicsHit(
+                    gameObject = hit.collisionObject.userObject as? GameObject,
+                    point = JomlVector3f(delta).mul(hit.hitFraction).add(from),
+                    normal = hit.getHitNormalLocal(null).toVector3f(),
+                    fraction = hit.hitFraction,
+                )
+            }
     }
+
+    override fun shapeCast(
+        shape: ColliderShape,
+        from: JomlVector3f,
+        to: JomlVector3f,
+        layerMask: Int,
+        excludeBody: IPhysicsBody3D?,
+    ): PhysicsHit? {
+        val convex = createShape(shape) as? ConvexShape
+            ?: throw IllegalArgumentException("Shape casts need a convex shape")
+        val excluded = excludedObject(excludeBody)
+        val delta = JomlVector3f(to).sub(from)
+        val hit = physicsSpace.sweepTest(convex, translationOnly(from), translationOnly(to), ArrayList(), 0f)
+            .filter { isQueryable(it.collisionObject, layerMask, excluded) }
+            .minByOrNull { it.hitFraction } ?: return null
+        return PhysicsHit(
+            gameObject = hit.collisionObject.userObject as? GameObject,
+            point = JomlVector3f(delta).mul(hit.hitFraction).add(from),
+            normal = hit.getHitNormalLocal(null).toVector3f(),
+            fraction = hit.hitFraction,
+        )
+    }
+
+    private fun translationOnly(location: JomlVector3f) =
+        com.jme3.math.Transform().also { it.translation.set(location.x, location.y, location.z) }
+
+    private fun excludedObject(body: IPhysicsBody3D?): PhysicsCollisionObject? =
+        ((body as? RigidBody3D)?.rawBody as? BulletRigidBodyHandle)?.body
+
+    private fun isQueryable(obj: PhysicsCollisionObject, layerMask: Int, excluded: PhysicsCollisionObject?): Boolean =
+        obj !== excluded && obj.isContactResponse && (obj.collisionGroup and layerMask) != 0
 
     /**
      * Adds a GameObject to the physics simulation.
@@ -140,30 +168,39 @@ class BulletPhysics3D(
             }
 
             val colliders = go.components.filterIsInstance<Collider3D>()
-            val compound = CompoundCollisionShape()
+            val shape: CollisionShape = if (colliders.size == 1 && colliders[0].offset.lengthSquared() == 0f) {
+                // Bullet only sweeps convex shapes for CCD, so avoid wrapping a lone collider in a compound
+                createShape(colliders[0].toShape())
+            } else {
+                val compound = CompoundCollisionShape()
+                colliders.forEach { c ->
+                    compound.addChildShape(createShape(c.toShape()), JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
+                }
 
-            colliders.forEach { c ->
-                val shape = createShape(c.toShape())
-                compound.addChildShape(shape, JmeVector3f(c.offset.x, c.offset.y, c.offset.z))
+                // If no colliders, provide a default box
+                if (colliders.isEmpty()) {
+                    val box = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
+                    box.margin = 0.04f
+                    compound.addChildShape(box, JmeVector3f(0f, 0f, 0f))
+                }
+                compound
             }
 
-            // If no colliders, provide a default box
-            if (colliders.isEmpty()) {
-                val shape = BoxCollisionShape(JmeVector3f(1f, 1f, 1f))
-                shape.margin = 0.04f
-                compound.addChildShape(shape, JmeVector3f(0f, 0f, 0f))
-            }
-
-            val body = PhysicsRigidBody(compound, desiredMass)
+            val body = PhysicsRigidBody(shape, desiredMass)
             rb.rawBody = BulletRigidBodyHandle(body)
 
             if (rb.bodyType == BodyType.Kinematic) {
                 body.isKinematic = true
             }
 
+            val handle = rb.rawBody!!
+            handle.restitution = rb.restitution
+            handle.collisionLayer = rb.collisionLayer
+            handle.collisionMask = rb.collisionMask
+            handle.isTrigger = rb.isTrigger
             if (rb.useCCD) {
-                body.setCcdMotionThreshold(0.1f)
-                body.setCcdSweptSphereRadius(0.1f)
+                val radius = ccdRadius(colliders, go.getComponent<Transform>()?.scale ?: JomlVector3f(1f))
+                handle.setContinuousCollision(radius, radius)
             }
             body.userObject = go
             physicsSpace.add(body)
@@ -188,6 +225,7 @@ class BulletPhysics3D(
 
         body.setPhysicsLocation(JmeVector3f(trans.x, trans.y, trans.z))
         body.friction = rb.friction
+        body.restitution = rb.restitution
         body.setDamping(rb.linearDamping, rb.angularDamping)
 
         val q = Quaternionf().rotationXYZ(
@@ -209,6 +247,7 @@ class BulletPhysics3D(
      * @param go The GameObject to remove.
      */
     override fun remove(go: GameObject) {
+        forgetContacts(go)
         val rb = go.getComponent<RigidBody3D>()
         rb?.rawBody?.let {
             (it as? BulletRigidBodyHandle)?.let { handle -> physicsSpace.remove(handle.body) }
@@ -314,6 +353,82 @@ class BulletPhysics3D(
         val startTime = System.nanoTime()
         physicsSpace.update(fixedDt, 0)
         EngineStats.physicsStepTime.set(System.nanoTime() - startTime)
+        dispatchContacts()
+    }
+
+    /** Half of the thinnest collider dimension: a swept sphere this size cannot skip over geometry thinner than the body. */
+    private fun ccdRadius(colliders: List<Collider3D>, scale: JomlVector3f): Float {
+        val smallest = colliders.minOfOrNull {
+            when (val shape = it.toShape()) {
+                is ColliderShape.Box ->
+                    minOf(shape.halfExtents.x * scale.x, shape.halfExtents.y * scale.y, shape.halfExtents.z * scale.z)
+                is ColliderShape.Capsule -> shape.radius * minOf(scale.x, scale.z)
+                is ColliderShape.Cylinder -> minOf(shape.radius * minOf(scale.x, scale.z), shape.height / 2f * scale.y)
+                is ColliderShape.ConvexHull -> 0.1f
+            }
+        } ?: 0.1f
+        return (smallest * 0.5f).coerceAtLeast(0.01f)
+    }
+
+    private data class PairKey(val a: Int, val b: Int)
+
+    private var activeCollisions = emptySet<PairKey>()
+    private var activeTriggerOverlaps = emptyMap<GameObject, Set<GameObject>>()
+
+    private fun dispatchContacts() {
+        val listener = contactListener ?: return
+        val collisions = HashSet<PairKey>()
+        val started = ArrayList<(PhysicsContactListener) -> Unit>()
+        val overlaps = HashMap<GameObject, MutableSet<GameObject>>()
+
+        for (body in physicsSpace.rigidBodyList) {
+            val self = body.userObject as? GameObject ?: continue
+            val isTrigger = !body.isContactResponse
+            if (!isTrigger && body.isStatic) continue
+
+            physicsSpace.contactTest(body) { event ->
+                val bodyIsA = event.objectA === body
+                val other = if (bodyIsA) event.objectB else event.objectA
+                val otherGo = other.userObject as? GameObject ?: return@contactTest
+                if (!other.isContactResponse) return@contactTest
+
+                if (isTrigger) {
+                    overlaps.getOrPut(self) { HashSet() }.add(otherGo)
+                } else if (PairKey(minOf(self.uId, otherGo.uId), maxOf(self.uId, otherGo.uId)).let {
+                        collisions.add(it) && it !in activeCollisions
+                    }
+                ) {
+                    val point = event.getPositionWorldOnB(null).toVector3f()
+                    val normal = event.getNormalWorldOnB(null).toVector3f().also { if (!bodyIsA) it.negate() }
+                    val impulse = event.appliedImpulse
+                    started.add { it.onCollisionStarted(self, otherGo, point, normal, impulse) }
+                }
+            }
+        }
+
+        val previousOverlaps = activeTriggerOverlaps
+        activeCollisions = collisions
+        activeTriggerOverlaps = overlaps
+        started.forEach { it(listener) }
+        overlaps.forEach { (trigger, others) ->
+            others.filter { it !in (previousOverlaps[trigger] ?: emptySet()) }.forEach { listener.onTriggerEnter(trigger, it) }
+        }
+        previousOverlaps.forEach { (trigger, others) ->
+            others.filter { it !in (overlaps[trigger] ?: emptySet()) }.forEach { listener.onTriggerExit(trigger, it) }
+        }
+    }
+
+    /** Drops contact state for a removed object, reporting trigger exits so listeners do not keep stale overlaps. */
+    private fun forgetContacts(go: GameObject) {
+        val listener = contactListener
+        val updated = HashMap<GameObject, Set<GameObject>>()
+        activeTriggerOverlaps.forEach { (trigger, others) ->
+            if (trigger === go) return@forEach
+            if (go in others) listener?.onTriggerExit(trigger, go)
+            updated[trigger] = others - go
+        }
+        activeTriggerOverlaps = updated
+        activeCollisions = activeCollisions.filterTo(HashSet()) { it.a != go.uId && it.b != go.uId }
     }
 
     override fun debugDraw(dt: Float) {
