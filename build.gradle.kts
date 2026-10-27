@@ -57,6 +57,14 @@ dependencies {
     // Serialization
     implementation(libs.kotlinx.serialization.json)
 
+    // Kotlin Script (.kts) host
+    val kotlinVersion = libs.versions.kotlin.get()
+    implementation("org.jetbrains.kotlin:kotlin-scripting-common:$kotlinVersion")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm:$kotlinVersion")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm-host:$kotlinVersion")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:$kotlinVersion")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-dependencies:$kotlinVersion")
+
     // Reflection
     implementation(kotlin("reflect"))
 

@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.systems
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DayNightCycleComponent
+import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
@@ -12,6 +13,7 @@ import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.hasComponent
 import com.pafoid.skate.engine.physics3d.IPhysics3D
 import com.pafoid.skate.engine.physics3d.Physics3DFactory
+import com.pafoid.skate.engine.physics3d.constraints.IPhysicsConstraint
 import com.pafoid.skate.engine.render.renderer.DebugRenderer
 import com.pafoid.skate.engine.utils.toDegreesF
 import org.joml.Quaternionf
@@ -21,10 +23,14 @@ class PhysicsSystem(
     private val debugRenderer: DebugRenderer
 ) : System(priority = ExecutionPriority.EARLY) {
 
+    override val phase = SystemPhase.UPDATE
+    override val runsBefore = listOf(PlayerMotionSystem::class)
+
     private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer)
 
     private val bodies = query(RigidBody3D::class, topLevelOnly = true, includeDisabled = true)
     private val tracked = mutableSetOf<GameObject>()
+    private val activeJoints = mutableMapOf<JointComponent, IPhysicsConstraint>()
 
     override fun init(scene: Scene) {
         super.init(scene)
@@ -90,6 +96,36 @@ class PhysicsSystem(
             po.go.getComponent<PlayerController>()?.let {//TODO: move
                 it.isGrounded = checkIfGrounded(po.body)
             }
+        }
+
+        syncJoints()
+    }
+
+    /** Creates joints whose bodies are ready and removes joints whose component or object is gone. */
+    private fun syncJoints() {
+        val live = bodies.entities.mapNotNull { go -> go.getComponent<JointComponent>()?.let { go to it } }
+
+        activeJoints.filter { (joint, _) -> live.none { it.second === joint } }.forEach { (joint, _) ->
+            joint.constraint?.let { physics3d.removeConstraint(it) }
+            joint.constraint = null
+            activeJoints.remove(joint)
+        }
+
+        for ((go, joint) in live) {
+            if (joint.constraint != null) continue
+            val bodyA = go.getComponent<RigidBody3D>()?.rawBody ?: continue
+            val bodyB = if (joint.connectedBodyId == -1) {
+                // Static world anchor placed at this body's anchor point
+                val worldAnchor = Vector3f(joint.anchor).add(bodyA.getLocation(Vector3f()))
+                joint.connectedAnchor.set(0f, 0f, 0f)
+                physics3d.createStaticAnchor(worldAnchor)
+            } else {
+                bodies.entities.firstOrNull { it.uId == joint.connectedBodyId }?.getComponent<RigidBody3D>()?.rawBody ?: continue
+            }
+            val constraint = joint.createConstraint(bodyA, bodyB)
+            physics3d.addConstraint(constraint)
+            joint.constraint = constraint
+            activeJoints[joint] = constraint
         }
     }
 

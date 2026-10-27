@@ -9,9 +9,12 @@ import com.pafoid.skate.engine.events.JumpPressed
 import com.pafoid.skate.engine.events.JumpReleased
 import com.pafoid.skate.engine.events.MovementInput
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.input.ActionInputReader
 import com.pafoid.skate.engine.input.InputBinding
+import com.pafoid.skate.engine.input.InputReader
 import com.pafoid.skate.engine.input.InputMappings
 import com.pafoid.skate.engine.input.InputProvider
+import com.pafoid.skate.engine.input.ProviderRawInput
 import org.lwjgl.glfw.GLFW
 import kotlin.math.abs
 
@@ -20,7 +23,18 @@ class InputSystem(
     private val eventSystem: EventSystem,
 ) : System(priority = ExecutionPriority.EARLY) {
 
+    private val actionReader = ActionInputReader(ProviderRawInput(inputProvider)).also {
+        it.actions.applyMappings(InputMappings())
+    }
+
+    /** Editor-independent key/action read API for scripts and runtime code. */
+    val reader: InputReader get() = actionReader
+
     var mappings: InputMappings = InputMappings()
+        set(value) {
+            field = value
+            actionReader.actions.applyMappings(value)
+        }
 
     private var jumpButtonWasPressed = false
     private var movementWasActive = false
@@ -38,6 +52,7 @@ class InputSystem(
 
     override fun update(dt: Float) {
         inputProvider.refreshGamepadState()
+        actionReader.update()
         if (!scene.isRunning) return
 
         scene.children.forEach { go ->

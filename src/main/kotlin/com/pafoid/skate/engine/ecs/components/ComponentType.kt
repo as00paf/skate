@@ -14,6 +14,7 @@ enum class ComponentType {
     ENVIRONMENT,
     GRID_LINES,
     INPUT_STATE,
+    JOINT,
     NATIVE_SCRIPT,
     NON_PICKABLE,
     PLAYER_CONTROLLER,
@@ -22,6 +23,7 @@ enum class ComponentType {
     RIGID_BODY_3D,
     RAGDOLL,
     SCENE_PHYSICS,
+    SCRIPT,
     SKELETON,
     SPOT_LIGHT,
     SPRITE_RENDERER,
@@ -42,6 +44,7 @@ enum class ComponentType {
             ENVIRONMENT -> EnvironmentComponent()
             GRID_LINES -> GridLines()
             INPUT_STATE -> InputStateComponent()
+            JOINT -> JointComponent()
             NATIVE_SCRIPT -> NativeScriptComponent()
             NON_PICKABLE -> NonPickable()
             PLAYER_CONTROLLER -> PlayerController()
@@ -50,6 +53,7 @@ enum class ComponentType {
             RIGID_BODY_3D -> RigidBody3D()
             RAGDOLL -> RagdollComponent()
             SCENE_PHYSICS -> ScenePhysicsComponent()
+            SCRIPT -> ScriptComponent()
             SKELETON -> null
             SPOT_LIGHT -> SpotLightComponent()
             SPRITE_RENDERER -> SpriteRenderer()

@@ -9,9 +9,15 @@ class StringManager(
     private var currentLocale: String = "en"
 ) {
     private var currentPath = ""
+    private var basePath = ""
     private val properties = Properties()
 
     fun loadStrings(path: String): Boolean {
+        basePath = path
+        return loadFile(path)
+    }
+
+    private fun loadFile(path: String): Boolean {
         currentPath = path
         try {
             val inputFile = File(path)
@@ -30,10 +36,10 @@ class StringManager(
         if (currentLocale != locale) {
             currentLocale = locale
             properties.clear() // Clear existing properties before reloading
-            val currentFile = File(currentPath)
+            val currentFile = File(basePath)
             val currentExt = currentFile.extension
             val newFileName = currentFile.absolutePath.replace(".$currentExt", "_$locale.$currentExt")
-            return loadStrings(newFileName)
+            return loadFile(newFileName)
         }
         return false
     }

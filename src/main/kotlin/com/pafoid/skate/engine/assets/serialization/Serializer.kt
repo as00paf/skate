@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.CapsuleCollider3D
+import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.CustomCollider3D
 import com.pafoid.skate.engine.ecs.components.CylinderCollider3D
@@ -16,6 +17,7 @@ import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
 import com.pafoid.skate.engine.ecs.components.GridLines
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
 import com.pafoid.skate.engine.ecs.components.NativeScriptComponent
+import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.NonPickable
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
@@ -56,6 +58,7 @@ class Serializer {
             subclass(CylinderCollider3D::class)
             subclass(CustomCollider3D::class)
             subclass(CapsuleCollider3D::class)
+            subclass(JointComponent::class)
 
             // Animation components
             subclass(BoneOverride::class)
@@ -72,6 +75,7 @@ class Serializer {
 
             // Scripting
             subclass(NativeScriptComponent::class)
+            subclass(ScriptComponent::class)
 
             // Debug/Editor components
             subclass(NonPickable::class)

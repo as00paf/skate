@@ -32,8 +32,8 @@ class DeleteFileCommandTest {
         command.undo()
 
         assertTrue(file.exists())
-        verify { logger.log(match { it.contains("Deleted: notes.txt") }, any(), any()) }
-        verify { logger.log(match { it.contains("Restored: notes.txt") }, any(), any()) }
+        verify { logger.logEditor(match { it.contains("Deleted: notes.txt") }, any()) }
+        verify { logger.logEditor(match { it.contains("Restored: notes.txt") }, any()) }
 
         tempDir.deleteRecursively()
     }
@@ -49,7 +49,7 @@ class DeleteFileCommandTest {
 
         assertFalse(command.wasSuccessful())
         assertNotNull(command.getFailureReason())
-        verify { logger.log(match { it.contains("Delete skipped, file does not exist") }, any(), any()) }
+        verify { logger.logEditor(match { it.contains("Delete skipped, file does not exist") }, any()) }
         tempDir.deleteRecursively()
     }
 

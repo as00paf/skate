@@ -90,7 +90,7 @@ class Engine {
             PlayerMotionSystem(cameraManager, eventSystem),
             AnimationSystem(),
             RagdollSystem(),
-            ScriptingSystem(),
+            ScriptingSystem(logger, eventSystem),
         )
 
         engineSystems.forEach {
@@ -117,6 +117,7 @@ class Engine {
                 scene.update(dt)
             }
 
+            systemManager.render()
             renderer.render(scene)
         }
         screens.forEach { it.update(dt) }

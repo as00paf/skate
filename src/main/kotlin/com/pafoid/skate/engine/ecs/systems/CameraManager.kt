@@ -15,6 +15,9 @@ class CameraManager(
     eventSystem: EventSystem,
 ) : System(priority = SystemManager.ExecutionPriority.EARLY) {
 
+    override val phase = SystemPhase.LATE_UPDATE
+    override val runsAfter = listOf(TransformSystem::class)
+
     var camera = CameraComponent()
     var transform = Transform()
 

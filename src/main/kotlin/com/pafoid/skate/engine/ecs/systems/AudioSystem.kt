@@ -19,6 +19,7 @@ class AudioSystem(
     private val assetsManager: AssetsManager,
     private val cameraManager: CameraManager
 ) : System(priority = ExecutionPriority.LATE) {
+    override val runsAfter = listOf(CameraManager::class)
 
     private var isInitialized = false
     var masterVolume = 1.0f
@@ -97,7 +98,7 @@ class AudioSystem(
 
                 if (source != null) {
                     // Update state
-                    source.setVolume(audioComponent.volume)
+                    source.setVolume(audioEngine.mixer.sourceGain(audioComponent.bus, audioComponent.volume))
                     source.setLooping(audioComponent.loops)
                     source.setRelative(!audioComponent.is3D)
 

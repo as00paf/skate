@@ -3,9 +3,7 @@ package com.pafoid.skate.engine
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.EngineState
 import com.pafoid.skate.engine.ecs.Scene
-import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.render.renderer.Renderer
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
@@ -14,24 +12,22 @@ import org.junit.jupiter.api.Test
 class EngineFixedTimestepTest {
 
     private lateinit var engine: Engine
-    private lateinit var mockSceneManager: SceneManager
     private lateinit var mockRenderer: Renderer
 
     @BeforeEach
     fun setup() {
-        mockSceneManager = mockk(relaxed = true)
         mockRenderer = mockk(relaxed = true)
 
         engine = Engine()
+        engine.renderer = mockRenderer
     }
 
     @Test
     fun `update should call scene update with actual delta time`() {
         val mockScene = mockk<Scene>(relaxed = true)
 
-        every { mockSceneManager.currentScene } returns mockScene
-        // TODO: Fix test - gameViewWindow is now private
-        // every { mockImGui.gameViewWindow } returns mockk<GameViewWindow>(relaxed = true)
+        engine.sceneManager.openScenes.add(mockScene)
+        engine.sceneManager.activeSceneIndex = 0
 
         engine.engineState.set(EngineState.RUNNING)
         engine.runtimePlaying = true
@@ -49,9 +45,8 @@ class EngineFixedTimestepTest {
     fun `update should pass accumulated time to scene`() {
         val mockScene = mockk<Scene>(relaxed = true)
 
-        every { mockSceneManager.currentScene } returns mockScene
-        // TODO: Fix test - gameViewWindow is now private
-        // every { mockImGui.gameViewWindow } returns mockk<GameViewWindow>(relaxed = true)
+        engine.sceneManager.openScenes.add(mockScene)
+        engine.sceneManager.activeSceneIndex = 0
 
         engine.engineState.set(EngineState.RUNNING)
         engine.runtimePlaying = true
@@ -70,8 +65,6 @@ class EngineFixedTimestepTest {
 
     @Test
     fun `update should skip render when no scene is active`() {
-        every { mockSceneManager.currentScene } returns null
-
         engine.engineState.set(EngineState.RUNNING)
         engine.runtimePlaying = false
 
