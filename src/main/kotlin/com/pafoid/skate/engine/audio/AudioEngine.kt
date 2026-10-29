@@ -54,6 +54,8 @@ class AudioEngine(
     /** Applies volume/mute settings live; takes effect on the next AudioSystem update. */
     fun applyConfig(config: AudioConfig) = mixer.applyConfig(config)
 
+    fun currentConfig(): AudioConfig = mixer.snapshot()
+
     fun init(): Boolean {
         if (isInitialized) return true
 
