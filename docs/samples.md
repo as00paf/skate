@@ -21,11 +21,12 @@ The generator is `ShowcaseProjectBuilder` in `tools/cli`; edit it to change a sc
 | `Materials` | Five gold spheres sweeping from rough/dielectric to smooth/metallic; an emissive orange cube that glows; an asphalt-textured cube; a translucent blue cube (alpha blend) through which the floor stays visible. |
 | `Physics` | Debug draw is on. A stack of five boxes settles on the static floor without jitter or tunnelling, and the capsule ball drops and rolls. Press Play in the editor. |
 | `Audio` | A looping 440 Hz tone (`Assets/tone.wav`, generated). `Emitter` is 3D: volume and panning change with camera position. `Ambient2D` is a quiet non-positional layer. Stopping play silences both. |
+| `UI` | In-game (non-ImGui) UI canvas: a title, a formatted text line (string-table keys from `Assets/strings.properties`), a tinted panel, a button with hover/press states, a 60% progress bar and a draggable slider. Text must read correctly (no `!!key!!`) and the layout stays centred when the window is resized. |
 | `Animation` | The bundled character with an `Animator` that is playing. Check that the model renders in bind pose without distortion; assign clips from `EngineDefaults/Characters/animations` to verify playback and blending. |
 
 ## Not covered yet
 
-The engine has no particle system, post-processing stack or runtime (non-ImGui) UI, so the task's *post-fx*, *particles* and *UI* scenes cannot be built yet. Add a scene for each to `ShowcaseProjectBuilder` and a row above when REN particles/post-fx and the GUI tasks land.
+The engine has no particle system or post-processing stack, so the *post-fx* and *particles* scenes cannot be built yet. Add a scene for each to `ShowcaseProjectBuilder` and a row above when REN particles/post-fx land.
 
 ## Marble Run (`MarbleRun`)
 
