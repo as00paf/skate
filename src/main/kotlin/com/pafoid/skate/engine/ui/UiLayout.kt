@@ -51,19 +51,19 @@ enum class UiLayoutKind { NONE, VERTICAL, HORIZONTAL, GRID }
 @Serializable
 /** Arranges the children of a node. Alignment values are 0..1 per axis (0 = start, 0.5 = center, 1 = end). */
 data class UiLayoutGroup(
-    val kind: UiLayoutKind = UiLayoutKind.NONE,
-    val paddingLeft: Float = 0f,
-    val paddingTop: Float = 0f,
-    val paddingRight: Float = 0f,
-    val paddingBottom: Float = 0f,
-    val spacing: Float = 0f,
-    val alignX: Float = 0f,
-    val alignY: Float = 0f,
+    var kind: UiLayoutKind = UiLayoutKind.NONE,
+    var paddingLeft: Float = 0f,
+    var paddingTop: Float = 0f,
+    var paddingRight: Float = 0f,
+    var paddingBottom: Float = 0f,
+    var spacing: Float = 0f,
+    var alignX: Float = 0f,
+    var alignY: Float = 0f,
     /** Stretch children across the cross axis (width for vertical, height for horizontal). */
-    val fillCross: Boolean = false,
-    val columns: Int = 1,
-    val cellWidth: Float = 100f,
-    val cellHeight: Float = 100f,
+    var fillCross: Boolean = false,
+    var columns: Int = 1,
+    var cellWidth: Float = 100f,
+    var cellHeight: Float = 100f,
 )
 
 /**

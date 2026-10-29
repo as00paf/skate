@@ -31,7 +31,7 @@ fun Component.imgui(engine: Engine) {
         is SpriteRenderer -> this.imgui(engine)
         is CameraComponent -> this.imgui(engine)
 
-        else -> try {
+        else -> if (this.isUiComponent()) this.uiImgui(engine) else try {
             ImGui.pushID(this.javaClass.simpleName + this.name)
 
             val fields = getCachedFields(this.javaClass)
