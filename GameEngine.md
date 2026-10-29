@@ -359,6 +359,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported: pressing E / gamepad Y (GPL-09) changes `mounted` but nothing visible happens. Wire the toggle so mounting switches the active locomotion (character controller off, skateboard physics/controller on, board attached to the player, camera preset change) and dismounting reverses it, and the player can walk away from the board. Keep it engine-generic (`Mountable`).
   - Done when: In the sample, the player walks to the board, presses the toggle and skates, presses it again and walks; tests cover the state transitions.
   - Deps: GPL-09
+- [~] @skate-gameplay **GPL-12** `P1` Align skateboard visual and rigid body
+  - Do: Human-reported: the skateboard model and its rigid body/collider are misaligned (offset, rotation, scale, centre of mass), causing many gameplay issues. Fix the prefab, collider shape and offsets, and the controller's use of them; add a debug check (collider vs mesh bounds) test. Coordinate with GPL-03 (same prefab files) — do GPL-03 and GPL-12 together.
+  - Done when: Board mesh, collider and rigid body coincide in the sample; ride, mount (GPL-11) and collisions behave; bounds-alignment unit test.
+  - Deps: GPL-03
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
