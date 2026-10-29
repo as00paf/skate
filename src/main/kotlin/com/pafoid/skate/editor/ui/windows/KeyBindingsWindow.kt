@@ -3,8 +3,13 @@ package com.pafoid.skate.editor.ui.windows
 import com.pafoid.skate.editor.data.EditorInputMappings
 import com.pafoid.skate.editor.imgui.EditorWindow
 import com.pafoid.skate.editor.systems.EditorSettingsManager
+import com.pafoid.skate.editor.input.BindingProfileStore
 import com.pafoid.skate.editor.systems.ProjectManager
+import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.StringManager
+import com.pafoid.skate.engine.ecs.systems.InputSystem
+import com.pafoid.skate.engine.input.ProviderRawInput
+import java.io.File
 import imgui.flag.ImGuiWindowFlags
 import imgui.internal.ImGui.begin
 import imgui.internal.ImGui.button
@@ -18,22 +23,33 @@ import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
 
 class KeyBindingsWindow(
+    engine: Engine,
     private val settingsManager: EditorSettingsManager,
     private val stringManager: StringManager,
     private val projectManager: ProjectManager
 ) : EditorWindow("window.keybindings") {
 
     private var keyBindingAction: String? = null
-    private var keyBindingTab = 0  // 0=Editor, 1=Camera, 2=Gamepad, 3=Hierarchy
+    private var keyBindingTab = 0  // 0=Game actions, 1=Editor, 2=Camera, 3=Gamepad, 4=Hierarchy
+
+    private val actionPanel = ActionBindingsPanel(
+        stringManager,
+        engine.eventSystem,
+        { engine.systemManager.getSystem<InputSystem>()?.actionMap.takeIf { projectManager.hasProject() } },
+        ProviderRawInput(engine.inputProvider),
+        { projectManager.getProjectDirectory()?.let { BindingProfileStore(File(it, BindingProfileStore.DIRECTORY)) } },
+    )
 
     private var inputMappings: EditorInputMappings = settingsManager.editorSettings.editorInputMappings
 
     override fun imgui() {
         if (!isOpen.get()) return
 
-        if (begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.AlwaysAutoResize)) {
+        imgui.ImGui.setNextWindowSize(780f, 520f, imgui.flag.ImGuiCond.FirstUseEver)
+        if (begin(stringManager.getString("window.keybindings"), ImGuiWindowFlags.None)) {
             // Tab selection using combo
             val tabNames = arrayOf(
+                stringManager.getString("lbl.keybindings.tab_actions"),
                 stringManager.getString("tab.keybindings.editor"),
                 stringManager.getString("tab.keybindings.camera"),
                 stringManager.getString("tab.keybindings.gamepad"),
@@ -48,10 +64,11 @@ class KeyBindingsWindow(
 
             // Render selected tab
             when (keyBindingTab) {
-                0 -> renderEditorBindingsTab(inputMappings)
-                1 -> renderCameraBindingsTab(inputMappings)
-                2 -> renderGamepadTab()
-                3 -> renderHierarchyBindingsTab(inputMappings)
+                0 -> actionPanel.render()
+                1 -> renderEditorBindingsTab(inputMappings)
+                2 -> renderCameraBindingsTab(inputMappings)
+                3 -> renderGamepadTab()
+                4 -> renderHierarchyBindingsTab(inputMappings)
             }
 
             separator()
@@ -60,10 +77,12 @@ class KeyBindingsWindow(
                 keyBindingAction = null
                 settingsManager.updateInputMappings(inputMappings)
             }
-            sameLine()
-            if (button(stringManager.getString("btn.reset_to_defaults"))) {
-                inputMappings.resetToDefault()
-                settingsManager.updateInputMappings(inputMappings)
+            if (keyBindingTab != 0) {
+                sameLine()
+                if (button(stringManager.getString("btn.reset_to_defaults"))) {
+                    inputMappings.resetToDefault()
+                    settingsManager.updateInputMappings(inputMappings)
+                }
             }
 
             // Handle Binding
