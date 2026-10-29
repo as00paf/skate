@@ -240,6 +240,7 @@ class ActionSearchProvider(
 
     private fun stopSimulation() {
         eventSystem.publish(EngineAction.SetRuntimePlaying(false))
+        eventSystem.publish(com.pafoid.skate.editor.events.ViewportAction.StopSimulation)
         logger.logEditor("Simulation stop requested")
     }
 
