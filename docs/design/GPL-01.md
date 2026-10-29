@@ -123,3 +123,7 @@ Status: **approved and implemented** (see §8 for deviations from the approved d
 - Engine (`engine/gameplay/Mounting.kt`): `Mountable` (mounted flag, target name, offset), `MountRequest`, pure `MountMath.inRange/toggle`. `CharacterInput` gains `mountPressed` and `mountDistance`; `CharacterMotion` gains `mount`. `PlayerMotionSystem` finds the target by name, reports its distance and, on MOUNT, places the target at the character's feet (zero velocity, same yaw). Dismount leaves it in place.
 - Game: `SkateBehavior` implements `Mountable`; mounting needs the board within `mount.range` (config `mount` section: `range` 1.5 m, `targetName` "Skateboard", `offsetY`). Dismounted = generic locomotion (GPL-02).
 - The action id itself is not in the character config: bindings are owned by the INP action map (rebinding is done there).
+
+## 11. GPL-11: mount toggle wiring
+
+`PlayerMotionSystem.syncMount` runs every frame for a `Mountable` character: the mount body goes on `MountMath.MOUNT_LAYER`, characters ignore that layer (walk over/away from a parked board), and while ridden the board is carried at the character's feet with its heading, zero velocity and collision mask 0. Dismounting restores the board's mask so it stays where it was left. `Mountable.cameraPreset` (walk/ride framing from the `mount` config) is pushed to `PlayerMotionSystem.onCameraPreset` on every mode change; `GameCamera.applyPreset` consumes it.

@@ -23,11 +23,12 @@ class Skater(
     name: String,
     model: `3dModel`,
     skate: GameObject? = null,
-    position: Vector3f = Vector3f(0f, 1.05f, 0f),
+    position: Vector3f = Vector3f(0f, 0.15f, 0f),
     rotation: Vector3f = Vector3f(0f, 90f, 0f),
     scale: Vector3f = Vector3f(1f, 1f, 1f),
     mass: Float = 180f,// kg
-    hitBoxSize: Vector3f = Vector3f(0.2f, 0.95f, 0.2f),
+    /** Collider half extents in meters; the james model is 1.82 m tall. */
+    hitBoxSize: Vector3f = Vector3f(0.2f, 0.91f, 0.2f),
     animations: List<Animation> = emptyList()
 ): GameObject(name) {
 
@@ -56,7 +57,7 @@ class Skater(
         addComponent(
             BoxCollider3D(
                 hitBoxSize,
-                transform.translation.add(Vector3f(0f, -0.115f, 0f)),
+                Vector3f(0f, hitBoxSize.y, 0f),// model origin is at the feet, so the box sits on top of it
                 0.01f
             )
         )

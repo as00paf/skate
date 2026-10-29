@@ -8,6 +8,8 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.gameplay.CharacterInput
 import com.pafoid.skate.engine.gameplay.CharacterMotion
 import com.pafoid.skate.engine.gameplay.MotionMath
+import com.pafoid.skate.engine.gameplay.CameraPreset
+import com.pafoid.skate.engine.gameplay.MountMath
 import com.pafoid.skate.engine.gameplay.MountRequest
 import com.pafoid.skate.engine.gameplay.Mountable
 import com.pafoid.skate.engine.ecs.GameObject
@@ -23,6 +25,10 @@ class PlayerMotionSystem(
     private val cameraManager: CameraManager,
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
+    /** Called when the active mode of a [Mountable] character changes, so the camera can reframe. */
+    var onCameraPreset: ((CameraPreset) -> Unit)? = null
+    private var lastPreset: CameraPreset? = null
+
     private val players = query(PlayerController::class, IPhysicsBody3D::class, topLevelOnly = true)
 
     override fun update(dt: Float) {
@@ -36,7 +42,16 @@ class PlayerMotionSystem(
             val mount = (controller.behavior as? Mountable)?.let { findMount(it.mountTargetName, go) }
             val motion = controller.behavior.update(buildInput(controller, inputState, body, mount, body.getWorldPosition()), dt)
             apply(motion, body, controller, dt)
-            if (motion.mount != MountRequest.NONE) mount?.let { placeMount(motion.mount, controller.behavior as Mountable, it, body) }
+            val mountable = controller.behavior as? Mountable
+            if (mountable != null && mount != null) {
+                if (motion.mount == MountRequest.MOUNT) lastPreset = null
+                syncMount(mountable, mount, body)
+                val preset = mountable.cameraPreset
+                if (preset != null && preset != lastPreset) {
+                    lastPreset = preset
+                    onCameraPreset?.invoke(preset)
+                }
+            }
 
             if (motion.state != controller.state) {
                 controller.state = motion.state
@@ -75,12 +90,21 @@ class PlayerMotionSystem(
     private fun findMount(name: String, self: GameObject): RigidBody3D? =
         scene.children.firstOrNull { it !== self && it.name == name }?.getComponent<RigidBody3D>()
 
-    /** Mounting puts the mount under the character's feet; dismounting leaves it where it is. */
-    private fun placeMount(request: MountRequest, mountable: Mountable, mount: RigidBody3D, body: IPhysicsBody3D) {
-        if (request != MountRequest.MOUNT) return
-        val feet = body.getWorldPosition().add(mountable.mountOffset)
-        mount.rawBody?.setLocation(feet)
-        mount.setRotation(Quaternionf().rotateY(MotionMath.yawOfRotation(body.getRotation())))
+    /**
+     * Keeps the mount consistent with the character: ridden, it is carried at the feet with the character's
+     * heading and collides with nothing; otherwise it is a normal body that stays where it was left.
+     */
+    private fun syncMount(mountable: Mountable, mount: RigidBody3D, character: RigidBody3D) {
+        mount.collisionLayer = MountMath.MOUNT_LAYER
+        val characterMask = MountMath.characterMask(character.collisionMask)
+        if (character.collisionMask != characterMask) character.collisionMask = characterMask
+
+        val mask = MountMath.mountMask(mountable.mounted)
+        if (mount.collisionMask != mask) mount.collisionMask = mask
+        if (!mountable.mounted) return
+
+        mount.rawBody?.setLocation(character.getWorldPosition().add(mountable.mountOffset))
+        mount.setRotation(Quaternionf().rotateY(MotionMath.yawOfRotation(character.getRotation())))
         mount.linearVelocity = Vector3f()
         mount.angularVelocity = Vector3f()
     }
