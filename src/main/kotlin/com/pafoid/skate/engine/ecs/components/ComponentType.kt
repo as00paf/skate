@@ -29,7 +29,8 @@ enum class ComponentType {
     SKELETON,
     SPOT_LIGHT,
     SPRITE_RENDERER,
-    TRANSFORM;
+    TRANSFORM,
+    VEHICLE;
 
     fun instantiate(): Component? {
         return when (this) {
@@ -56,6 +57,7 @@ enum class ComponentType {
             RIGID_BODY_3D -> RigidBody3D()
             REVERB_ZONE -> ReverbZone()
             RAGDOLL -> RagdollComponent()
+            VEHICLE -> VehicleComponent()
             SCENE_PHYSICS -> ScenePhysicsComponent()
             SCRIPT -> ScriptComponent()
             SKELETON -> null
