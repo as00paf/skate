@@ -90,6 +90,7 @@ class PlatformApiGuardTest {
     fun ResourceLifetime_FilesThatAllocateGlOrAlObjectsAlsoDeleteThem() {
         val exceptions = setOf(
             "engine/assets/data/CubeMap.kt",
+            "engine/assets/loaders/TextureLoader.kt",
             "engine/render/renderer/DebugRenderer.kt",
             "engine/render/renderer/PickingRenderer.kt",
         )

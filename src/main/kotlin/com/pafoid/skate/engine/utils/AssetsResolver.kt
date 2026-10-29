@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.utils
 
+import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.assets.serialization.Serializer
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
@@ -15,6 +16,9 @@ class AssetsResolver(
     lateinit var binData: ByteArray
     var headerOffset: Int = 0
     var initialized = false
+
+    fun read(info: AssetInfo): ByteArray =
+        PackBuilder.extract(binData, info.position + headerOffset, info.size, info.compressed)
 
     fun initialize(atlas: Atlas, binData: ByteArray, headerOffset: Int) {
         this.assetsAtlas = atlas
@@ -34,9 +38,7 @@ class AssetsResolver(
             logger.logEngine("Could not resolve ${T::class.java.simpleName} for path: $path", LogLevel.ERROR)
             return null
         }
-        val start = info.position + headerOffset
-        val end = start + info.size
-        val data = binData.copyOfRange(start, end).toString(Charsets.UTF_8)
+        val data = read(info).toString(Charsets.UTF_8)
         val serializable = serializer.decode<T>(data)
         return serializable
     }
@@ -52,11 +54,10 @@ class AssetsResolver(
             logger.logEngine("Could not resolve data for path: $path", LogLevel.ERROR)
             return null
         }
-        val start = info.position + headerOffset
-        val end = start + info.size
 
-        val data = MemoryUtil.memAlloc(info.size)
-        data.put(binData.copyOfRange(start, end))
+        val bytes = read(info)
+        val data = MemoryUtil.memAlloc(bytes.size)
+        data.put(bytes)
         data.flip()
 
         return data
@@ -73,11 +74,10 @@ class AssetsResolver(
             logger.logEngine("Could not resolve scene for path: $path", LogLevel.ERROR)
             return null
         }
-        val start = info.position + headerOffset
-        val end = start + info.size
 
-        val data = ByteBuffer.allocateDirect(info.size)
-        data.put(binData.copyOfRange(start, end))
+        val bytes = read(info)
+        val data = ByteBuffer.allocateDirect(bytes.size)
+        data.put(bytes)
         data.flip()
 
         return data
