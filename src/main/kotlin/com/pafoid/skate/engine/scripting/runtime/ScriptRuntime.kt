@@ -209,7 +209,7 @@ class ScriptRuntime(
         }
         return ScriptContextImpl(
             entity = entity,
-            scene = ScriptSceneImpl(sceneRoot),
+            scene = ScriptSceneImpl(sceneRoot, services.scenes),
             input = services.input,
             physics = services.physics,
             events = events,
