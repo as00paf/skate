@@ -151,9 +151,9 @@ class AnimationGraphTest {
     fun `StateMachine_FiresEventsOncePerCrossing_AndAcrossLoops`() {
         val m = machine(emptyList(), listOf(AnimEventDef(0.5f, "footstep")))
         m.update(0.4f); assertTrue(m.firedEvents.isEmpty())
-        m.update(0.2f); assertEquals(listOf("footstep"), m.firedEvents)
+        m.update(0.2f); assertEquals(listOf(FiredEvent("push", "footstep")), m.firedEvents)
         m.update(0.1f); assertTrue(m.firedEvents.isEmpty())
-        m.update(1.0f); assertEquals(listOf("footstep"), m.firedEvents) // next cycle
+        m.update(1.0f); assertEquals(listOf(FiredEvent("push", "footstep")), m.firedEvents) // next cycle
     }
 
     @Test

@@ -3,6 +3,9 @@ package com.pafoid.skate.engine.animation.graph
 import kotlin.math.ceil
 import kotlin.math.floor
 
+/** An [AnimEventDef] that was crossed; [state] is the state that owns it. */
+data class FiredEvent(val state: String, val name: String)
+
 /**
  * Runtime instance of an [AnimationControllerAsset]. Pure: advance with [update], read [pose].
  * Crossfades are weight based; interrupting a fade freezes the currently blended pose as the new fade source.
@@ -35,8 +38,8 @@ class AnimationStateMachine(
 
     val isTransitioning get() = nextState != null
 
-    /** Names of events fired during the last [update]. */
-    val firedEvents = mutableListOf<String>()
+    /** Events fired during the last [update], in firing order. */
+    val firedEvents = mutableListOf<FiredEvent>()
 
     init {
         asset.states.forEach { require(it.motion in motions) { "No motion '${it.motion}' for state '${it.name}'" } }
@@ -73,7 +76,7 @@ class AnimationStateMachine(
             while (true) {
                 val at = k + e.time
                 if (at >= to) break
-                if (at >= from && (state.loop || at <= 1f)) firedEvents.add(e.name)
+                if (at >= from && (state.loop || at <= 1f)) firedEvents.add(FiredEvent(state.name, e.name))
                 if (!state.loop) break
                 k++
             }
