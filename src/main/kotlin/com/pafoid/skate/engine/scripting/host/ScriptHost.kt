@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.scripting.host
 
 import com.pafoid.skate.engine.scripting.api.Script
+import com.pafoid.skate.engine.scripting.completion.CompletionProvider
 
 enum class ScriptLanguage { KOTLIN, TYPESCRIPT, LUA }
 
@@ -41,6 +42,9 @@ interface ScriptHost {
     /** Recompiles ignoring caches for [source] (used by hot reload). */
     fun reload(source: ScriptSource): ScriptLoadResult = load(source)
 
+    /** Code-completion for this language (SCR-06); null when the host offers none. */
+    val completionProvider: CompletionProvider? get() = null
+
     fun close() {}
 }
 
@@ -52,6 +56,8 @@ class ScriptHostRegistry {
     }
 
     fun hostFor(path: String): ScriptHost? = hosts[path.substringAfterLast('.', "").lowercase()]
+
+    fun completionProviderFor(path: String): CompletionProvider? = hostFor(path)?.completionProvider
 
     fun closeAll() = hosts.values.distinct().forEach { it.close() }
 }

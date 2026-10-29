@@ -136,3 +136,9 @@ tasks.register<Jar>("gameJar") {
         attributes["Main-Class"] = "com.pafoid.skate.game.GameMainKt"
     }
 }
+tasks.register<JavaExec>("completeScript") {
+    group = "skate"
+    description = "Prints script completions: --args=<file>@<line>:<col>"
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.pafoid.skate.engine.scripting.completion.CompleteScriptCliKt")
+}
