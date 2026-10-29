@@ -59,6 +59,8 @@ class EditorSettingsWindow(
     private var tempOverlaySize = 0.225f
     private var tempAutoSaveEnabled = true
     private var tempAutoSaveInterval = 5
+    private var tempCompletionAuto = true
+    private var tempCompletionDelay = 200
 
     private val tempShowOverlayBool = ImBoolean(true)
 
@@ -68,7 +70,8 @@ class EditorSettingsWindow(
             Category("keybindings", "settings.editor.keybindings", arrayOf("key", "binding", "gizmo", "translate", "rotate", "scale", "select", "measure", "deselect", "camera", "reset")) { renderKeyBindings() },
             Category("gamepad_overlay", "settings.editor.gamepad_overlay", arrayOf("gamepad", "overlay", "show", "size", "scale")) { renderGamepadOverlay() },
             Category("interface", "settings.editor.interface", arrayOf("interface", "theme")) { renderInterface() },
-            Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() }
+            Category("autosave", "settings.editor.autosave", arrayOf("auto", "save", "autosave", "interval")) { renderAutoSave() },
+            Category("script_editor", "settings.editor.script_editor", arrayOf("script", "completion", "popup", "delay", "autocomplete")) { renderScriptEditor() }
         )
     }
 
@@ -169,6 +172,8 @@ class EditorSettingsWindow(
             tempOverlaySize = editor.gamepadOverlaySize
             tempAutoSaveEnabled = editor.autoSaveEnabled
             tempAutoSaveInterval = editor.autorSaveIntervalMinutes
+            tempCompletionAuto = editor.completionAutoPopup
+            tempCompletionDelay = editor.completionDelayMs
             // Copy input mappings
             tempMappings = editor.editorInputMappings.copy()
         }
@@ -344,6 +349,33 @@ class EditorSettingsWindow(
         }
     }
 
+    private fun renderScriptEditor() {
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.completion.auto"),
+            helpTooltip = stringManager.getString("settings.editor.completion.auto.desc"),
+            onReset = { tempCompletionAuto = true; hasPendingChanges = true }
+        ) {
+            val flag = ImBoolean(tempCompletionAuto)
+            if (checkbox("##completion_auto", flag)) {
+                tempCompletionAuto = flag.get()
+                hasPendingChanges = true
+            }
+        }
+        val delay = intArrayOf(tempCompletionDelay)
+        MImGui.propertyRow(
+            label = stringManager.getString("settings.editor.completion.delay"),
+            helpTooltip = stringManager.getString("settings.editor.completion.delay.desc"),
+            onReset = { tempCompletionDelay = 200; hasPendingChanges = true }
+        ) {
+            ImGui.beginDisabled(!tempCompletionAuto)
+            if (dragInt("##completion_delay", delay, 5f, 0, 2000)) {
+                tempCompletionDelay = delay[0]
+                hasPendingChanges = true
+            }
+            ImGui.endDisabled()
+        }
+    }
+
     private fun saveSettings() {
         if (tempLanguage != settingsManager.editorSettings.language) {
             settingsManager.updateEditorSettings(language = tempLanguage)
@@ -359,6 +391,7 @@ class EditorSettingsWindow(
         // Save camera mappings
         settingsManager.updateInputMappings(tempMappings)
         settingsManager.updateAutoSaveSettings(tempAutoSaveEnabled, tempAutoSaveInterval)
+        settingsManager.updateCompletionSettings(tempCompletionAuto, tempCompletionDelay)
         hasPendingChanges = false
     }
 

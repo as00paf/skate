@@ -101,6 +101,12 @@ class EditorSettingsManager(
         saveSettings()
     }
 
+    fun updateCompletionSettings(autoPopup: Boolean, delayMs: Int) {
+        editorSettings.completionAutoPopup = autoPopup
+        editorSettings.completionDelayMs = delayMs.coerceIn(0, 2000)
+        saveSettings()
+    }
+
     fun updateInputMappings(inputMappings: EditorInputMappings) {
         try {
             editorSettings = editorSettings.copy(editorInputMappings = inputMappings)

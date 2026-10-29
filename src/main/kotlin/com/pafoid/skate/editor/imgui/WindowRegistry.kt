@@ -45,7 +45,7 @@ class WindowRegistry(
         ProjectSwitcherDialog(engine, editor.settingsManager),
         AudioInspectorWindow(engine),
         ProjectWindow(engine, projectManager),
-        ScriptEditorWindow(engine, projectManager),
+        ScriptEditorWindow(engine, projectManager, editor.settingsManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */
