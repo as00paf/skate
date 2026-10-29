@@ -93,6 +93,7 @@ class Engine {
         GLFW.glfwSetMouseButtonCallback(glfwWindow, inputProvider.mouseListener::mouseButtonCallback)
         GLFW.glfwSetScrollCallback(glfwWindow, inputProvider.mouseListener::mouseScrollCallback)
         GLFW.glfwSetKeyCallback(glfwWindow, inputProvider.keyListener::keyCallback)
+        GLFW.glfwSetCharCallback(glfwWindow, inputProvider.keyListener::charCallback)
     }
 
     private fun initializeSystems() {
