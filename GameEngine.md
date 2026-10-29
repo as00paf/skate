@@ -363,6 +363,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported: the skateboard model and its rigid body/collider are misaligned (offset, rotation, scale, centre of mass), causing many gameplay issues. Fix the prefab, collider shape and offsets, and the controller's use of them; add a debug check (collider vs mesh bounds) test. Coordinate with GPL-03 (same prefab files) — do GPL-03 and GPL-12 together.
   - Done when: Board mesh, collider and rigid body coincide in the sample; ride, mount (GPL-11) and collisions behave; bounds-alignment unit test.
   - Deps: GPL-03
+- [~] @skate-gameplay **GPL-13** `P1` Ride the board (stance on deck) and fix board scale
+  - Do: Human-reported after GPL-11: mounting leaves the board standing between the player's legs; the player must RIDE on top of it. Define a deck anchor/stance (feet on the deck, board under the player, facing along the board, centre of mass and collider matched), with the character parented/posed on the board while mounted (engine-generic `Mountable` seat/stance data, not skateboard-only). Also fix scale: the skateboard model is huge relative to the player; normalise model scale in the prefab/importer so board length fits the character, and make sure the collider and its physics-debug wireframe match the mesh (the human now sees extra wireframes and the board's own wireframe is missing; check for duplicated or mis-scaled collider/child bodies introduced by GPL-03/12).
+  - Done when: Mounted player visibly stands on the deck, board scale is proportionate, physics debug shows one collider matching the board; tests for stance placement and scale.
+  - Deps: GPL-11, GPL-12
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -538,6 +542,12 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: In the EDT-22 Script Editor, add a completion popup (Ctrl+Space and automatic after `.`/identifier characters) fed by SCR-06 off the UI thread: list with kind icons, signature and doc tooltip, Up/Down/Enter/Tab/Esc handling, filter as you type, snippet insertion, plus parameter hints and bracket auto-close. Add editor settings to toggle auto-popup and its delay.
   - Done when: Typing in a script shows context-appropriate completions and accepts them; UI-independent logic (filtering, insertion, cursor handling) unit-tested; translations added.
   - Deps: EDT-22, SCR-06
+- [~] @skate-editor **EDT-27** `P1` Scene reset must restore everything
+  - Do: Human-reported: resetting the scene in the editor does not reset everything. Audit the reset path (scene reload/restore snapshot, physics bodies and velocities, scripts, audio, animation state, ragdolls, mounted state, selection, undo history) and make it restore the exact pre-play state.
+  - Done when: Play, mutate, reset returns every object/component to its saved state; tests for the non-UI logic.
+- [~] @skate-editor **EDT-28** `P1` Hierarchy empty after creating a new project
+  - Do: Human-reported: after creating a new project in the editor, the Scene Hierarchy window does not show the current scene's game objects. Find why the hierarchy is not bound to the new project's active scene (stale scene reference, event not fired, lazy load) and fix it.
+  - Done when: New project shows its scene's objects in the hierarchy immediately; regression test.
 
 ## Testing & tooling
 
