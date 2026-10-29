@@ -11,16 +11,19 @@ import org.junit.jupiter.api.Test
 class PrefabGeometryTest {
 
     @Test
-    fun Prefab_SkateboardColliderIsLongAlongZAndSitsOnGround() {
+    fun Prefab_SkateboardPhysicsIsUnscaledAndCentred() {
         val board = Skateboard(`3dModel`())
         val box = board.getComponent<BoxCollider3D>()!!
-        val scale = board.getComponent<Transform>()!!.scale
+        val visual = board.children.single()
 
-        // World size after the transform scale: 0.2 m wide (x), 0.76 m long (z).
-        assertEquals(0.1f, box.halfExtents.x * scale.x, 1e-4f)
-        assertEquals(0.38f, box.halfExtents.z * scale.z, 1e-4f)
-        // Box bottom is at the model origin (ground contact).
-        assertEquals(0f, (box.offset.y - box.halfExtents.y) * scale.y, 1e-4f)
+        // Collider is in world meters on an unscaled root: 0.2 m wide (x), 0.76 m long (z), centred.
+        assertEquals(1f, board.getComponent<Transform>()!!.scale.x, 0f)
+        assertEquals(0.1f, box.halfExtents.x, 1e-4f)
+        assertEquals(0.38f, box.halfExtents.z, 1e-4f)
+        assertEquals(0f, box.offset.length(), 0f)
+        // The model origin (wheels on the ground) sits at the box bottom.
+        assertEquals(-box.halfExtents.y, visual.getComponent<Transform>()!!.translation.y, 1e-4f)
+        assertEquals(Skateboard.MODEL_SCALE, visual.getComponent<Transform>()!!.scale.x, 0f)
     }
 
     @Test

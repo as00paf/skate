@@ -92,4 +92,18 @@ class MountTest {
         assertEquals(0, mask and MountMath.MOUNT_LAYER)
         assertEquals(1, mask and 1)
     }
+
+    @Test
+    fun Mount_RiderHoversOnDeckAndBoardSitsUnderFeet() {
+        val mount = SkateControllerConfig().mount
+        val h = mount.rideHeight
+        // On the ground the rider is lifted to the deck, at the deck it holds, above it is airborne.
+        assertTrue(MountMath.hoverVelocity(true, 0f, h)!! > 0f)
+        assertEquals(0f, MountMath.hoverVelocity(true, h, h)!!, 1e-6f)
+        assertTrue(MountMath.hoverVelocity(true, h + 0.2f, h) == null)
+        assertTrue(MountMath.hoverVelocity(false, 0f, h) == null)
+        // Board centre (half its 0.1 m thickness) is under the feet, so its top is the deck the feet stand on.
+        assertEquals(-h / 2, mount.offsetY, 1e-6f)
+        assertEquals(h, SkateBehavior(SkateControllerConfig()).rideHeight, 0f)
+    }
 }

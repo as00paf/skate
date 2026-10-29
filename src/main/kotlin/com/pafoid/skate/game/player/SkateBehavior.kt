@@ -64,6 +64,7 @@ class SkateBehavior(
     override val cameraPreset: CameraPreset
         get() = (if (mounted) config.mount.rideCamera else config.mount.walkCamera).let { CameraPreset(it.distance, it.height) }
     override val mountOffset = Vector3f(0f, config.mount.offsetY, 0f)
+    override val rideHeight: Float get() = config.mount.rideHeight
 
     override fun update(input: CharacterInput, dt: Float): CharacterMotion {
         val request = MountMath.toggle(mounted, input.mountPressed, input.mountDistance, config.mount.range)

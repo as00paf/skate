@@ -65,20 +65,26 @@ class SkateboardAlignmentTest {
         val source = File("assets/obj/skateboard_free_model.glb")
         assertTrue(source.exists(), "source model missing: ${source.absolutePath}")
         val board = Skateboard(`3dModel`())
-        val s = board.getComponent<Transform>()!!.scale
+        val visual = board.children.single().getComponent<Transform>()!!
+        val s = visual.scale
         val box = board.getComponent<BoxCollider3D>()!!
-        val mesh = glbBounds(source).let { b -> Bounds(FloatArray(3) { b.min[it] * s.x }, FloatArray(3) { b.max[it] * s.x }) }
+        // Mesh bounds in the board root frame (the visual child is scaled and shifted).
+        val mesh = glbBounds(source).let { b ->
+            Bounds(
+                FloatArray(3) { b.min[it] * s.x + visual.translation.get(it) },
+                FloatArray(3) { b.max[it] * s.x + visual.translation.get(it) },
+            )
+        }
 
-        val half = floatArrayOf(box.halfExtents.x * s.x, box.halfExtents.y * s.y, box.halfExtents.z * s.z)
-        val center = floatArrayOf(box.offset.x * s.x, box.offset.y * s.y, box.offset.z * s.z)
+        val half = floatArrayOf(box.halfExtents.x, box.halfExtents.y, box.halfExtents.z)
+        val center = floatArrayOf(box.offset.x, box.offset.y, box.offset.z)
         val tol = 0.01f
         for (axis in 0 until 3) {
             assertTrue(center[axis] - half[axis] >= mesh.min[axis] - tol, "collider below mesh on axis $axis")
             assertTrue(center[axis] + half[axis] <= mesh.max[axis] + tol, "collider above mesh on axis $axis")
         }
-        // Model origin is the ground contact: mesh and collider both start at y = 0.
-        assertEquals(0f, mesh.min[1], tol)
-        assertEquals(0f, center[1] - half[1], tol)
+        // Mesh and collider bottoms coincide (the wheels' ground contact).
+        assertEquals(mesh.min[1], center[1] - half[1], tol)
         // Length axis is Z for both, and they are centred on the same point.
         assertTrue(mesh.max[2] - mesh.min[2] > mesh.max[0] - mesh.min[0])
         assertEquals((mesh.min[2] + mesh.max[2]) / 2, center[2], tol)

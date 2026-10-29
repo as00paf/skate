@@ -20,23 +20,25 @@ class Skateboard(
     ): GameObject("Skateboard") {
 
     init {
+        // Physics lives on the root at scale 1 with a centred box so the collider and its debug wireframe are exact;
+        // only the visual child carries the model scale.
         val transformComponent = Transform()
         transformComponent.translation.set(position)
-        transformComponent.scale.set(scale)
         addComponent(transformComponent)
-        addComponent(
-            RenderComponent(
-                model = model,
-            )
-        )
         addComponent(RigidBody3D(mass, bodyType = BodyType.Dynamic).apply {
             friction = 0.1f
             useCCD = true
         })
-        // The collider is scaled by the transform, so convert meters to model units.
-        // The box spans from the ground (model origin) up to the deck.
-        val local = Vector3f(hitBoxHalfExtents).div(scale)
-        addComponent(BoxCollider3D(local, Vector3f(0f, local.y * scale.y, 0f).div(scale)))
+        addComponent(BoxCollider3D(Vector3f(hitBoxHalfExtents), Vector3f()))
+
+        // The model origin is the ground contact, so the visual sits at the bottom of the box.
+        val visual = GameObject("Skateboard Model")
+        visual.addComponent(Transform().apply {
+            translation.set(0f, -hitBoxHalfExtents.y, 0f)
+            this.scale.set(scale)
+        })
+        visual.addComponent(RenderComponent(model = model))
+        addChild(visual)
     }
 
     companion object {

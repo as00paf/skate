@@ -112,6 +112,14 @@ class PlayerMotionSystem(
     /** Follows slopes, climbs steps and snaps to the ground by adjusting vertical velocity. */
     private fun applyGround(motion: CharacterMotion, body: IPhysicsBody3D, controller: PlayerController, dt: Float) {
         val velocity = body.linearVelocity
+        val mountable = controller.behavior as? Mountable
+        if (mountable != null && mountable.mounted && motion.impulse == null) {
+            MountMath.hoverVelocity(controller.ground.found, controller.ground.distance, mountable.rideHeight)?.let {
+                velocity.y = it
+                body.linearVelocity = velocity
+                return
+            }
+        }
         val vy = GroundMotion.verticalVelocity(
             config = controller.behavior.ground,
             ground = controller.ground,
