@@ -16,6 +16,11 @@ open class GameObject(
         private var ID_COUNTER: Int = 0
 
         fun getIdCounter(): Int = ID_COUNTER
+
+        const val LAYER_COUNT = 32
+        const val ALL_LAYERS_MASK = -1
+
+        fun layerBit(layer: Int): Int = 1 shl layer
     }
 
     var uId = ID_COUNTER++
@@ -23,6 +28,16 @@ open class GameObject(
     var isEnabled = true
     var isVisible = true
     var isLocked = false
+
+    /** Free-form tag for lookup (`Scene.findByTag`); empty means untagged. */
+    var tag: String = ""
+
+    /** Layer index in [0, [LAYER_COUNT]); used by layer masks in queries, culling and picking. Default layer is 0. */
+    var layer: Int = 0
+        set(value) {
+            require(value in 0 until LAYER_COUNT) { "layer must be in 0..${LAYER_COUNT - 1}, was $value" }
+            field = value
+        }
 
     val components = mutableListOf<Component>()
 
