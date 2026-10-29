@@ -141,8 +141,11 @@ class UiDrawList {
     }
 
     companion object {
-        /** Written to the entityId vertex slot to make the UI shader treat the texture alpha as a distance field. */
-        const val SDF_MODE = 1f
+        /**
+         * Written to the entityId vertex slot to make the shader treat the texture alpha as a distance field.
+         * Negative on purpose: encoded entity ids are always >= 1, so world sprites can never match it.
+         */
+        const val SDF_MODE = -2f
 
         /** Offsets of the 4 cut points along one axis; borders shrink proportionally when they do not fit. */
         fun nineSliceAxis(total: Float, start: Float, end: Float): FloatArray {
