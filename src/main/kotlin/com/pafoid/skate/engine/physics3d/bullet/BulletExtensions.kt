@@ -17,8 +17,9 @@ fun Quaternionf.toQuaternion(): Quaternion = Quaternion(x, y, z, w)
 
 fun org.joml.Matrix3f.toJme(): Matrix3f {
     val m = Matrix3f()
-    m.set(0, 0, m00); m.set(0, 1, m01); m.set(0, 2, m02)
-    m.set(1, 0, m10); m.set(1, 1, m11); m.set(1, 2, m12)
-    m.set(2, 0, m20); m.set(2, 1, m21); m.set(2, 2, m22)
+    // JOML fields are named m{column}{row}, jme's set takes (row, column)
+    m.set(0, 0, m00); m.set(0, 1, m10); m.set(0, 2, m20)
+    m.set(1, 0, m01); m.set(1, 1, m11); m.set(1, 2, m21)
+    m.set(2, 0, m02); m.set(2, 1, m12); m.set(2, 2, m22)
     return m
 }
