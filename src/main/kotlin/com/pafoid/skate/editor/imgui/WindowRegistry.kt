@@ -19,6 +19,7 @@ import com.pafoid.skate.editor.ui.windows.PropertiesWindow
 import com.pafoid.skate.editor.ui.windows.RenderGraphWindow
 import com.pafoid.skate.editor.ui.windows.SceneHierarchyWindow
 import com.pafoid.skate.editor.ui.windows.SearchEverywhereWindow
+import com.pafoid.skate.editor.ui.windows.ScriptEditorWindow
 import com.pafoid.skate.engine.core.Engine
 
 class WindowRegistry(
@@ -44,6 +45,7 @@ class WindowRegistry(
         ProjectSwitcherDialog(engine, editor.settingsManager),
         AudioInspectorWindow(engine),
         ProjectWindow(engine, projectManager),
+        ScriptEditorWindow(engine, projectManager),
     )
 
     /** Windows listed in View > Windows and stored in the layout; dialogs are excluded. */
