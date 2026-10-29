@@ -4,6 +4,8 @@ import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
+import com.pafoid.skate.engine.ecs.components.RagdollComponent
+import com.pafoid.skate.engine.ecs.components.RagdollState
 import com.pafoid.skate.engine.gameplay.ground.GroundDetector
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
@@ -27,14 +29,15 @@ import org.joml.Vector3f
 class PhysicsSystem(
     private val debugRenderer: DebugRenderer,
     private val eventSystem: EventSystem? = null,
+    private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer),
 ) : System(priority = ExecutionPriority.EARLY) {
 
     override val phase = SystemPhase.FIXED_UPDATE
 
-    private val physics3d: IPhysics3D = Physics3DFactory.create(debugRenderer)
-
     private val bodies = query(RigidBody3D::class, topLevelOnly = true, includeDisabled = true)
     private val activeJoints = mutableMapOf<JointComponent, IPhysicsConstraint>()
+    private val ragdolls = query(RagdollComponent::class, topLevelOnly = true, includeDisabled = true)
+    private val activeRagdolls = HashSet<RagdollComponent>()
 
     init {
         physics3d.contactListener = object : PhysicsContactListener {
@@ -154,6 +157,33 @@ class PhysicsSystem(
         if (stateList.size != liveCount) removeStaleBodies(stamp)
 
         syncJoints()
+        syncRagdolls()
+    }
+
+    /**
+     * Ragdoll bones are created by the backend ([RagdollBuilder][com.pafoid.skate.engine.physics3d.RagdollBuilder]);
+     * here their joints join the world once, bones follow the ragdoll state, and everything leaves with the component.
+     */
+    private fun syncRagdolls() {
+        var live = 0
+        ragdolls.forEach { go ->
+            val ragdoll = go.getComponent<RagdollComponent>() ?: return@forEach
+            live++
+            if (activeRagdolls.add(ragdoll)) ragdoll.joints.forEach { physics3d.addConstraint(it) }
+            if (ragdoll.state == RagdollState.RAGDOLL) {
+                ragdoll.boneBodies.values.forEach { if (it.isKinematic) it.isKinematic = false }
+            }
+        }
+        if (live != activeRagdolls.size) removeStaleRagdolls()
+    }
+
+    private fun removeStaleRagdolls() {
+        val liveSet = ragdolls.entities.mapNotNull { it.getComponent<RagdollComponent>() }
+        activeRagdolls.filter { r -> liveSet.none { it === r } }.forEach { ragdoll ->
+            ragdoll.joints.forEach { physics3d.removeConstraint(it) }
+            ragdoll.boneBodies.values.forEach { physics3d.removeRigidBody(it) }
+            activeRagdolls.remove(ragdoll)
+        }
     }
 
     /** Drops bodies whose object left the scene or lost its RigidBody3D; only runs when membership changed. */
