@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.scripting.host.KotlinScriptHost
+import com.pafoid.skate.engine.scripting.host.LuaScriptHost
 import com.pafoid.skate.engine.scripting.host.ScriptHostRegistry
 import com.pafoid.skate.engine.scripting.host.TypeScriptHost
 import com.pafoid.skate.engine.scripting.runtime.ScriptErrorEvent
@@ -24,6 +25,7 @@ class ScriptingSystem(
     hosts: ScriptHostRegistry = ScriptHostRegistry().apply {
         register(KotlinScriptHost())
         register(TypeScriptHost())
+        register(LuaScriptHost())
     },
 ) : System(priority = ExecutionPriority.DEFAULT) {
 

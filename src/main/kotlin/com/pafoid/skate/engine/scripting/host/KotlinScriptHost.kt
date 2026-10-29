@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.scripting.host
 
+import com.pafoid.skate.engine.scripting.completion.ApiCompletionProvider
+import com.pafoid.skate.engine.scripting.completion.CompletionProvider
+import com.pafoid.skate.engine.scripting.completion.LanguageProfile
 import com.pafoid.skate.engine.scripting.api.Script
 import com.pafoid.skate.engine.scripting.api.SkateScript
 import java.io.File
@@ -66,6 +69,8 @@ class KotlinScriptHost(private val cacheDir: File? = null) : ScriptHost {
     @Volatile
     var compilations = 0
         private set
+
+    override val completionProvider: CompletionProvider by lazy { ApiCompletionProvider(LanguageProfile.KOTLIN) }
 
     override fun load(source: ScriptSource): ScriptLoadResult = compile(source, useCache = true)
 
