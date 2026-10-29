@@ -155,6 +155,7 @@ class Engine {
 
         jobSystem.update()
         assetsManager.pollHotReload()
+        assetsManager.pollShaderChanges()
     }
 
     private fun updateRunningState(dt: Float) {

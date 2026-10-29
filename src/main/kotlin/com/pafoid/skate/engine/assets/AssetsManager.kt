@@ -8,6 +8,10 @@ import com.pafoid.skate.engine.assets.data.models.animations.Animation
 import com.pafoid.skate.engine.assets.loaders.AnimationLoader
 import com.pafoid.skate.engine.assets.loaders.AssimpLoader
 import com.pafoid.skate.engine.assets.loaders.ShaderLoader
+import com.pafoid.skate.engine.render.shader.ShaderFeature
+import com.pafoid.skate.engine.render.shader.ShaderHotReloader
+import com.pafoid.skate.engine.render.shader.ShaderVariantCache
+import com.pafoid.skate.engine.render.shader.ShaderVariantKey
 import com.pafoid.skate.engine.assets.loaders.SoundLoader
 import com.pafoid.skate.engine.assets.loaders.TextureLoader
 import com.pafoid.skate.engine.assets.serialization.Serializer
@@ -32,7 +36,20 @@ class AssetsManager(
 
     val assetsResolver = AssetsResolver(serializer, logger)
 
-    private val shaderLoader = ShaderLoader(false, logger)
+    // Editor/dev runs from the repo: shader edits under resources/shaders are picked up live
+    private val shaderDevRoot = File("src/main/resources").takeIf { File(it, "shaders").isDirectory }
+    private val shaderLoader = ShaderLoader(false, logger, shaderDevRoot)
+    private val shaderPaths = mutableMapOf<String, String>()
+    private val shaderVariants = ShaderVariantCache<Shader>(
+        compile = { shaderLoader.loadShader(it.path, it.defines) },
+        destroy = { it.destroy() },
+    )
+    private val shaderReloader: ShaderHotReloader? = shaderDevRoot?.let { root ->
+        ShaderHotReloader(File(root, "shaders")) { changed ->
+            logger.log("Shader sources changed: ${changed.joinToString()}", LogLevel.INFO)
+            reloadShaders()
+        }
+    }
     private val textureLoader = TextureLoader()
     private val assimpLoader = AssimpLoader(textureLoader, vaoLoader)
     private val animationLoader = AnimationLoader()
@@ -255,7 +272,7 @@ class AssetsManager(
 
     fun loadShaderResult(path: String): AssetResult<Shader> = AssetResult.attempt(path) {
         val key = File(path).absolutePath
-        shaders[key] ?: shaderLoader.loadShader(path).also { shaders[key] = it }
+        shaders[key] ?: shaderLoader.loadShader(path).also { shaders[key] = it; shaderPaths[key] = path }
     }
 
     // Unloading frees the native resources (GL textures/VAOs/programs, AL buffers).
@@ -268,10 +285,36 @@ class AssetsManager(
     /** Frees everything this manager owns. Call on shutdown or full project unload, on the GL/AL thread. */
     fun unloadAll() {
         textures.clear(); models.clear(); sounds.clear(); shaders.clear(); animations.clear()
+        shaderVariants.disposeAll(); shaderPaths.clear()
     }
 
     fun hasTexture(path: String): Boolean {
         return textures[path] != null
+    }
+
+    /** Returns the permutation of [path] compiled with [features], compiling it on first use. */
+    fun getShaderVariant(path: String, features: Collection<ShaderFeature>): Shader {
+        if (features.isEmpty()) return getShader(path)
+        return shaderVariants.get(ShaderVariantKey.of(path, features))
+    }
+
+    /** Polls shader sources for edits (dev runs only); call once per frame on the GL thread. */
+    fun pollShaderChanges() = shaderReloader?.poll()
+
+    /** Recompiles all loaded shaders and variants in place; a shader that fails to compile keeps its old program. */
+    fun reloadShaders() {
+        for ((key, path) in shaderPaths.toMap()) {
+            val old = shaders[key] ?: continue
+            try {
+                old.replaceWith(shaderLoader.loadShader(path))
+            } catch (e: Exception) {
+                logger.log("Shader reload failed for $path, keeping previous version: ${e.message}", LogLevel.ERROR)
+            }
+        }
+        for (path in shaderVariants.allPaths()) {
+            shaderVariants.reload(path) { old, fresh -> old.replaceWith(fresh) }
+                .forEach { (k, e) -> logger.log("Shader variant ${k.id} reload failed: ${e.message}", LogLevel.ERROR) }
+        }
     }
 
     fun getShader(path: String): Shader {
@@ -282,6 +325,7 @@ class AssetsManager(
         return try {
             val shader = shaderLoader.loadShader(path)
             shaders[absolutePath] = shader
+            shaderPaths[absolutePath] = path
             shader
         } catch (e: Exception) {
             logger.log("Failed to load shader: $path. Error: ${e.message}", LogLevel.ERROR)
