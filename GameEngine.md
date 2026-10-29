@@ -405,6 +405,10 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
 - [~] @skate-scripting **SCR-05** `P3` Lua host
   - Do: Embed LuaJ (or similar) using the same `ScriptHost` API.
   - Deps: SCR-02
+- [~] @skate-scripting **SCR-06** `P1` Script code-completion service
+  - Do: Language-agnostic `CompletionProvider` in the script API (engine side, no ImGui): given script text and cursor offset, return completions (members/methods of the script API, entity/component properties, keywords, snippets) with signature and doc text; implement for Kotlin Script using the host's REPL/IDE-style completion where available, otherwise an index of the public script API built by reflection and the Kotlin symbol table; design so TypeScript/Lua hosts can plug in. Fast and cancellable, never on the render thread.
+  - Done when: Unit tests for member, top-level and partial-identifier completion and for error-tolerant text; documented extension point for other hosts.
+  - Deps: SCR-03
 
 ### Networking & platform — `NET` (`skate-online`)
 
@@ -530,6 +534,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Inspector for `ReverbZone` and bus low-pass/reverb-send controls in the audio mixer UI, via commands.
   - Done when: Settings editable with undo and persisted.
   - Deps: AUD-05
+- [ ] **EDT-26** `P1` Script editor code completion UI
+  - Do: In the EDT-22 Script Editor, add a completion popup (Ctrl+Space and automatic after `.`/identifier characters) fed by SCR-06 off the UI thread: list with kind icons, signature and doc tooltip, Up/Down/Enter/Tab/Esc handling, filter as you type, snippet insertion, plus parameter hints and bracket auto-close. Add editor settings to toggle auto-popup and its delay.
+  - Done when: Typing in a script shows context-appropriate completions and accepts them; UI-independent logic (filtering, insertion, cursor handling) unit-tested; translations added.
+  - Deps: EDT-22, SCR-06
 
 ## Testing & tooling
 
