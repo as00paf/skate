@@ -341,7 +341,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Author the push/ride/trick controller on top of the ANI-02 state machine and blend trees.
   - Done when: The player transitions between push, ride and trick states with blending in the sample game.
   - Deps: ANI-02, GPL-01
-- [ ] **GPL-07** `P2` Fix `CameraInterpolator.lerpToPreset` (BUG-014)
+- [x] **GPL-07** `P2` Fix `CameraInterpolator.lerpToPreset` (BUG-014)
   - Do: `handleLerp` is private and never called, so `lerpToPreset` does nothing. Wire it into the camera update and re-enable the disabled `CameraTest` lerp case.
   - Done when: `CameraTest` lerp passes and BUG-014 is removed from `docs/bugs.md`.
 - [ ] **GPL-08** `P2` `GameMain` logging and paths
@@ -351,7 +351,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: The human could walk but there is no way to switch between walking and skating. Add a `toggle_mount` input action (INP-03 action map; default gamepad button and keyboard key, rebindable) that mounts/dismounts the board: dismounted = generic locomotion (GPL-02), mounted = `SkateBehavior`; require the board to be within a configurable range when mounting, place the board under the character/at the character's feet, keep skateboarding-specific logic in `game/` and the generic mount/dismount interface in the engine so other games can use it for vehicles/mounts; add the action to the standalone controller config; tell the human which button/key is used.
   - Done when: In the sample game the player can toggle between walking and skating with gamepad and keyboard; unit tests for the state transitions and range check.
   - Deps: GPL-01, INP-03
-- [ ] **GPL-10** `P2` Wire foot-target IK to the skate/character controllers
+- [x] **GPL-10** `P2` Wire foot-target IK to the skate/character controllers
   - Do: Implement docs/design/ANI-04-ik-wiring.md on the gameplay side (foot targets from ground raycasts).
   - Done when: Feet plant on slopes in the sample; tests for target computation.
   - Deps: ANI-04
