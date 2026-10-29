@@ -4,6 +4,7 @@ import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
+import com.pafoid.skate.engine.ecs.components.ReverbZone
 import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -30,6 +31,15 @@ import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.ecs.prefab.PrefabInstance
+import com.pafoid.skate.engine.ui.UIButtonComponent
+import com.pafoid.skate.engine.ui.UICanvasComponent
+import com.pafoid.skate.engine.ui.UIElementComponent
+import com.pafoid.skate.engine.ui.UIImageComponent
+import com.pafoid.skate.engine.ui.UIListComponent
+import com.pafoid.skate.engine.ui.UIProgressBarComponent
+import com.pafoid.skate.engine.ui.UISliderComponent
+import com.pafoid.skate.engine.ui.UITextComponent
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -53,6 +63,7 @@ class Serializer {
             subclass(RenderComponent::class)
             subclass(AudioComponent::class)
             subclass(AudioListener::class)
+            subclass(ReverbZone::class)
             subclass(CameraComponent::class)
 
             // Physics components
@@ -89,9 +100,20 @@ class Serializer {
             subclass(EnvironmentComponent::class)
             subclass(DayNightCycleComponent::class)
 
+            // Runtime UI
+            subclass(UICanvasComponent::class)
+            subclass(UIElementComponent::class)
+            subclass(UITextComponent::class)
+            subclass(UIImageComponent::class)
+            subclass(UIButtonComponent::class)
+            subclass(UISliderComponent::class)
+            subclass(UIProgressBarComponent::class)
+            subclass(UIListComponent::class)
+
             // Custom
             subclass(PlayerController::class)
             subclass(InputStateComponent::class)
+            subclass(PrefabInstance::class)
         }
     }
 

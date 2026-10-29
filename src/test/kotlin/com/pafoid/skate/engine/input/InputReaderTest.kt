@@ -113,10 +113,10 @@ class InputReaderTest {
         val raw = FakeRaw()
         val map = DefaultActions.register(ActionMap())
         val reader = ActionInputReader(raw, map)
-        map.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.E))
+        map.rebind(DefaultActions.JUMP, 0, ActionBinding.Key(Keys.Q))
         raw.keys.add(Keys.SPACE)
         assertFalse(reader.isActionDown(DefaultActions.JUMP))
-        raw.keys.clear(); raw.keys.add(Keys.E)
+        raw.keys.clear(); raw.keys.add(Keys.Q)
         assertTrue(reader.isActionDown(DefaultActions.JUMP))
     }
 

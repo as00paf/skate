@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
+import com.pafoid.skate.engine.render.GpuResource
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.AssetsManager
 import com.pafoid.skate.engine.assets.data.Shader
@@ -37,19 +38,28 @@ class PickingRenderer(
     private var totalVertices = 0
 
     private lateinit var shader: Shader
-    private var vaoId = -1
-    private var vboId = -1
+    private var vao: GpuResource? = null
+    private var vbo: GpuResource? = null
+    private val vaoId get() = vao?.id ?: -1
+    private val vboId get() = vbo?.id ?: -1
     private var started = false
 
     private val tempVec = Vector4f()
     private val identityMatrix = Matrix4f()
 
+    /** Frees the GL objects; [start] may be called again afterwards. */
+    fun destroy() {
+        vao?.close(); vbo?.close()
+        vao = null; vbo = null
+        started = false
+    }
+
     fun start() {
         shader = assetsManager.getShader(Assets.Shaders.PICKING_3D)
         
-        vaoId = glGenVertexArrays()
+        vao = GpuResource.vertexArray(glGenVertexArrays())
         glBindVertexArray(vaoId)
-        vboId = glGenBuffers()
+        vbo = GpuResource.buffer(glGenBuffers())
         glBindBuffer(GL_ARRAY_BUFFER, vboId)
         glBufferData(GL_ARRAY_BUFFER, vertexArray.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
         

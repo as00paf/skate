@@ -14,50 +14,26 @@ fun AIMatrix4x4.toJomlMatrix(): Matrix4f {
     )
 }
 
-fun AIScene.printMetadata(from: String) {
+fun AIScene.printMetadata(from: String, log: (String) -> Unit) {
     val metadata = mMetaData() ?: run {
-        println("No scene metadata")
+        log("No scene metadata")
         return
     }
 
-    val numProperties = metadata.mNumProperties()
     val keys = metadata.mKeys()
     val values = metadata.mValues()
 
-    for (i in 0 until numProperties) {
+    for (i in 0 until metadata.mNumProperties()) {
         val key = keys[i].dataString()
         val entry = values[i]
-
-        print("$from Metadata [$key] = ")
-
-        when (entry.mType()) {
-            Assimp.AI_BOOL ->
-                println(entry.mData(1).get(0) != 0.toByte())
-
-            Assimp.AI_INT32 ->
-                println(entry.mData(4).getInt(0))
-
-            Assimp.AI_UINT64 ->
-                println(entry.mData(8).getLong(0))
-
-            Assimp.AI_FLOAT ->
-                println(entry.mData(4).getFloat(0))
-
-            Assimp.AI_DOUBLE ->
-                println(entry.mData(8).getDouble(0))
-
-            /*Assimp.AI_AISTRING -> {
-                val aiStr = AIString.create(entry.mData())
-                entry.mData(aiStr.length)
-                println(aiStr.dataString())
-            }
-
-            Assimp.AI_AIVECTOR3D -> {
-                val vec = AIVector3D.create(entry.mData())
-                println("(${vec.x()}, ${vec.y()}, ${vec.z()})")
-            }*/
-
-            else -> println("Unknown metadata type")
+        val value: String = when (entry.mType()) {
+            Assimp.AI_BOOL -> (entry.mData(1).get(0) != 0.toByte()).toString()
+            Assimp.AI_INT32 -> entry.mData(4).getInt(0).toString()
+            Assimp.AI_UINT64 -> entry.mData(8).getLong(0).toString()
+            Assimp.AI_FLOAT -> entry.mData(4).getFloat(0).toString()
+            Assimp.AI_DOUBLE -> entry.mData(8).getDouble(0).toString()
+            else -> "Unknown metadata type"
         }
+        log("$from Metadata [$key] = $value")
     }
 }

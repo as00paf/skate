@@ -74,3 +74,39 @@ class StringManagerTest {
         assertEquals("Hello World", stringManager.getString("test.hello"))
     }
 }
+
+class StringManagerLocaleTest {
+    @org.junit.jupiter.api.io.TempDir
+    lateinit var dir: java.io.File
+
+    private fun write(name: String, text: String) = java.io.File(dir, name).also { it.writeText(text) }.path
+
+    @Test
+    fun StringManager_LocaleFallsBackToDefaultAndNotifiesListeners() {
+        val base = write("s.properties", "a=A\nb=B\nn.one=%d item\nn.other=%d items\n")
+        write("s_fr.properties", "a=Aa\nn.one=%d objet\nn.other=%d objets\n")
+        val sm = StringManager(mockk(relaxed = true), "en")
+        sm.loadStrings(base)
+        val seen = mutableListOf<String>()
+        sm.addLocaleListener { seen += it }
+
+        sm.setLocale("fr")
+        assertEquals("Aa", sm.getString("a"))
+        assertEquals("B", sm.getString("b"), "untranslated key falls back to default")
+        assertEquals("0 objet", sm.getQuantityString("n", 0), "French treats 0 as singular")
+        assertEquals("2 objets", sm.getQuantityString("n", 2))
+        sm.setLocale("de")
+        assertEquals("A", sm.getString("a"), "missing locale file keeps defaults")
+        assertEquals(listOf("fr", "de"), seen)
+        assertEquals("de", sm.locale)
+    }
+
+    @Test
+    fun StringManager_ExplicitZeroFormWinsForZero() {
+        val base = write("z.properties", "n.zero=none\nn.other=%d things\n")
+        val sm = StringManager(mockk(relaxed = true), "en")
+        sm.loadStrings(base)
+        assertEquals("none", sm.getQuantityString("n", 0))
+        assertEquals("3 things", sm.getQuantityString("n", 3))
+    }
+}

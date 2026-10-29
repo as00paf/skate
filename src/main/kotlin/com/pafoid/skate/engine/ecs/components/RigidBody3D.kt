@@ -7,6 +7,7 @@ import com.pafoid.skate.engine.physics3d.BodyType
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import com.pafoid.skate.engine.physics3d.IRigidBodyHandle
 import com.pafoid.skate.engine.utils.JomlVector3f
+import com.pafoid.skate.engine.utils.toRadiansF
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.joml.Quaternionf
@@ -72,6 +73,8 @@ open class RigidBody3D(
     private val position: Vector3f = Vector3f()
     @Transient
     private val rotation: Quaternionf = Quaternionf()
+    @Transient
+    private val origin: Vector3f = Vector3f()
 
     override var linearVelocity: JomlVector3f
         get() = rawBody?.linearVelocity ?: JomlVector3f()
@@ -94,13 +97,13 @@ open class RigidBody3D(
         super.reset()
         val transform = gameObject?.getComponent<Transform>()
         val initialTranslation = transform?.translation?.let { Vector3f(it) } ?: Vector3f()
-        val initialRotation = transform?.rotation?.let { Quaternionf(it.x, it.y, it.z, 1f) } ?: Quaternionf()
+        val initialRotation = transform?.rotation?.let { Quaternionf().rotationXYZ(it.x.toRadiansF(), it.y.toRadiansF(), it.z.toRadiansF()) } ?: Quaternionf()
         position.set(initialTranslation)
         rotation.set(initialRotation)
         linearDamping = 0f
         angularDamping = 0f
-        linearVelocity.set(JomlVector3f())
-        angularVelocity.set(JomlVector3f())
+        linearVelocity = JomlVector3f()
+        angularVelocity = JomlVector3f()
 
         rawBody?.setAngularFactor(Vector3f(0f, 1f, 0f))
         rawBody?.setLocation(position)
@@ -112,7 +115,7 @@ open class RigidBody3D(
     }
 
     override fun applyImpulse(impulse: JomlVector3f) {
-        rawBody?.applyImpulse(impulse, Vector3f())
+        rawBody?.applyImpulse(impulse, origin)
     }
 
     override fun applyTorqueImpulse(torque: JomlVector3f) {

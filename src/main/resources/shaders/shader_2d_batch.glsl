@@ -41,7 +41,14 @@ void main()
     // fTexId == -1.0 indicates no texture; valid slots are 0..(N-1)
     if (fTexId >= 0.0) {
         int id = int(fTexId);
-        color = fColor * texture(uTextures[id], fTexCoords);
+        vec4 texel = texture(uTextures[id], fTexCoords);
+        if (fEntityId > 0.5) {
+            // SDF glyph: the atlas alpha is a distance field with the edge at 0.5; antialias over one screen pixel
+            float w = max(fwidth(texel.a) * 0.75, 0.0001);
+            color = vec4(fColor.rgb, fColor.a * smoothstep(0.5 - w, 0.5 + w, texel.a));
+        } else {
+            color = fColor * texel;
+        }
     } else {
         color = fColor;
     }

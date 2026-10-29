@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.render.renderer
 
+import com.pafoid.skate.engine.render.GpuResource
 import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.ecs.systems.CameraManager
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms.PROJECTION
@@ -39,22 +40,32 @@ class DebugRenderer(
     private val lineVertexData = FloatArray(MAX_LINES * 6 * 2)
     private val triangleVertexData = FloatArray(MAX_TRIANGLES * 6 * 3)
 
-    private var vaoId = -1
-    private var vboId = -1
-    
-    private var triangleVaoId = -1
-    private var triangleVboId = -1
+    private var vao: GpuResource? = null
+    private var vbo: GpuResource? = null
+    private var triangleVao: GpuResource? = null
+    private var triangleVbo: GpuResource? = null
+    private val vaoId get() = vao?.id ?: -1
+    private val vboId get() = vbo?.id ?: -1
+    private val triangleVaoId get() = triangleVao?.id ?: -1
+    private val triangleVboId get() = triangleVbo?.id ?: -1
     
     private var started = false
+
+    /** Frees all GL objects; [start] may be called again afterwards. */
+    fun destroy() {
+        listOf(vao, vbo, triangleVao, triangleVbo).forEach { it?.close() }
+        vao = null; vbo = null; triangleVao = null; triangleVbo = null
+        started = false
+    }
 
     fun start() {
         started = true
 
         if (vaoId != -1) return
         
-        vaoId = glGenVertexArrays()
+        vao = GpuResource.vertexArray(glGenVertexArrays())
         glBindVertexArray(vaoId)
-        vboId = glGenBuffers()
+        vbo = GpuResource.buffer(glGenBuffers())
         glBindBuffer(GL_ARRAY_BUFFER, vboId)
         glBufferData(GL_ARRAY_BUFFER, lineVertexData.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 0)
@@ -62,9 +73,9 @@ class DebugRenderer(
         glVertexAttribPointer(1, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES.toLong())
         glEnableVertexAttribArray(1)
 
-        triangleVaoId = glGenVertexArrays()
+        triangleVao = GpuResource.vertexArray(glGenVertexArrays())
         glBindVertexArray(triangleVaoId)
-        triangleVboId = glGenBuffers()
+        triangleVbo = GpuResource.buffer(glGenBuffers())
         glBindBuffer(GL_ARRAY_BUFFER, triangleVboId)
         glBufferData(GL_ARRAY_BUFFER, triangleVertexData.size.toLong() * Float.SIZE_BYTES, GL_DYNAMIC_DRAW)
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 6 * Float.SIZE_BYTES, 0)

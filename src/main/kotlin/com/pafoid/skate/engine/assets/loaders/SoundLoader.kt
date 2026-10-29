@@ -8,6 +8,7 @@ import org.lwjgl.openal.AL10.AL_FORMAT_MONO8
 import org.lwjgl.openal.AL10.AL_FORMAT_STEREO16
 import org.lwjgl.openal.AL10.AL_FORMAT_STEREO8
 import org.lwjgl.openal.AL10.alBufferData
+import org.lwjgl.openal.AL10.alDeleteBuffers
 import org.lwjgl.openal.AL10.alGenBuffers
 import org.lwjgl.stb.STBVorbis.stb_vorbis_decode_filename
 import org.lwjgl.system.MemoryStack
@@ -42,10 +43,14 @@ class SoundLoader(private val logger: LoggerService) {
                 }
             }
         } catch (e: Exception) {
-            logger.log("SoundBuffer: Exception loading '$filePath' - ${e.message}", LogLevel.ERROR)
-            e.printStackTrace()
+            logger.logError("SoundBuffer: Exception loading '$filePath'", e)
             throw e
         }
+    }
+
+    fun delete(sound: SoundBuffer) {
+        if (sound.bufferId != -1) alDeleteBuffers(sound.bufferId)
+        sound.bufferId = -1
     }
 
     private fun loadOgg(path: String): SoundBuffer {

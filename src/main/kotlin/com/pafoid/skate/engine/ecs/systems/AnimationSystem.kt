@@ -2,6 +2,8 @@ package com.pafoid.skate.engine.ecs.systems
 
 import com.pafoid.skate.engine.animation.AnimationUpdateGate
 import com.pafoid.skate.engine.animation.AnimationVisibility
+import com.pafoid.skate.engine.animation.ik.IkDebugDraw
+import com.pafoid.skate.engine.animation.ik.IkDebugSink
 import com.pafoid.skate.engine.animation.ik.IkPass
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
@@ -21,6 +23,10 @@ class AnimationSystem(
     /** Seconds between updates for off-screen characters; 0 disables the throttle. */
     var offscreenInterval: Float = AnimationUpdateGate.DEFAULT_OFFSCREEN_INTERVAL,
 ) : System(priority = ExecutionPriority.DEFAULT) {
+
+    /** Receives IK debug lines (world space) when [drawIkDebug] is on; wired to the renderer's debug drawer by the engine. */
+    var ikDebugSink: IkDebugSink? = null
+    var drawIkDebug: Boolean = false
 
     private val animated = query(Animator::class, SkeletonComponent::class, topLevelOnly = true)
     private val gates = IdentityHashMap<SkeletonComponent, AnimationUpdateGate>()
@@ -56,6 +62,7 @@ class AnimationSystem(
             ago.animator.update(step)
             // Then update the animation
             updateAnimation(ago, step)
+            if (drawIkDebug) drawIkDebug(ago)
         }
         EngineStats.animationsUpdated.set(updated)
         EngineStats.animationsSkipped.set(skipped)
@@ -68,6 +75,13 @@ class AnimationSystem(
         world.getScale(tmpScale)
         val scale = maxOf(tmpScale.x, tmpScale.y, tmpScale.z)
         return test.isVisible(tmpCenter, skeleton.boundsRadius * scale)
+    }
+
+    private fun drawIkDebug(ago: AnimatedGameObject) {
+        val sink = ikDebugSink ?: return
+        val pose = ago.skeleton.pose
+        val world = ago.skeleton.gameObject?.getComponent<Transform>()?.worldMatrix
+        IkDebugDraw.collect(ago.animator.ik, pose.skeleton, pose.localTransforms, world, sink)
     }
 
     private fun applyIk(ago: AnimatedGameObject, sourceFresh: Boolean) {

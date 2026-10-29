@@ -116,3 +116,10 @@ Status: **approved and implemented** (see §8 for deviations from the approved d
 ## 9. GPL-02 additions (generic character controller)
 
 `engine/gameplay/ground`: `GroundConfig` (in `LocomotionConfig.ground`, so in the standalone config file), `GroundDetector` (3-ray surface normal estimate, step detection; uses only `RayCaster`/`raycastClosest` hit fractions), `GroundMath`, `GroundMotion` (vertical velocity for slope following, step climbing, ground snapping). `PhysicsSystem` probes ground per player each fixed step into `PlayerController.ground`; `PlayerMotionSystem` applies `GroundMotion` through vertical velocity (no position setter exists on `IPhysicsBody3D`). `LocomotionBehavior` is `open` and `CharacterBehavior.ground` is the extension point for games.
+
+## 10. GPL-09: walk/skate mount toggle
+
+- Action `toggle_mount` (`DefaultActions.TOGGLE_MOUNT`, GAMEPLAY context, rebindable): default **E** / gamepad **Y** (button 3). `InputSystem` turns it into the `InputStateComponent.mountPressed` edge.
+- Engine (`engine/gameplay/Mounting.kt`): `Mountable` (mounted flag, target name, offset), `MountRequest`, pure `MountMath.inRange/toggle`. `CharacterInput` gains `mountPressed` and `mountDistance`; `CharacterMotion` gains `mount`. `PlayerMotionSystem` finds the target by name, reports its distance and, on MOUNT, places the target at the character's feet (zero velocity, same yaw). Dismount leaves it in place.
+- Game: `SkateBehavior` implements `Mountable`; mounting needs the board within `mount.range` (config `mount` section: `range` 1.5 m, `targetName` "Skateboard", `offsetY`). Dismounted = generic locomotion (GPL-02).
+- The action id itself is not in the character config: bindings are owned by the INP action map (rebinding is done there).

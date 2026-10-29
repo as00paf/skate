@@ -48,6 +48,9 @@ interface ScriptEntity {
     /** Returns a whitelisted facade (e.g. [ScriptRigidBody]) or null when the entity lacks it. */
     fun <T : Any> getComponent(type: KClass<T>): T?
     fun hasComponent(type: KClass<*>): Boolean
+
+    /** Name-based lookup for hosts without Kotlin types, e.g. "RigidBody". */
+    fun component(name: String): Any?
 }
 
 inline fun <reified T : Any> ScriptEntity.getComponent(): T? = getComponent(T::class)

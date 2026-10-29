@@ -9,6 +9,7 @@ import com.pafoid.skate.engine.ecs.systems.SystemManager.ExecutionPriority
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.scripting.host.KotlinScriptHost
 import com.pafoid.skate.engine.scripting.host.ScriptHostRegistry
+import com.pafoid.skate.engine.scripting.host.TypeScriptHost
 import com.pafoid.skate.engine.scripting.runtime.ScriptErrorEvent
 import com.pafoid.skate.engine.scripting.runtime.ScriptRuntime
 import com.pafoid.skate.engine.scripting.runtime.ScriptServices
@@ -17,7 +18,10 @@ class ScriptingSystem(
     private val logger: LoggerService? = null,
     private val eventSystem: EventSystem? = null,
     services: ScriptServices = ScriptServices(),
-    hosts: ScriptHostRegistry = ScriptHostRegistry().apply { register(KotlinScriptHost()) },
+    hosts: ScriptHostRegistry = ScriptHostRegistry().apply {
+        register(KotlinScriptHost())
+        register(TypeScriptHost())
+    },
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     private val nativeScripts = query(NativeScriptComponent::class)
