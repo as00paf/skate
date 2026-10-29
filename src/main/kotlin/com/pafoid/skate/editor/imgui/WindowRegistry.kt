@@ -43,7 +43,7 @@ class WindowRegistry(
         SearchEverywhereWindow(engine),
         ProjectWizardWindow(engine),
         ProjectSwitcherDialog(engine, editor.settingsManager),
-        AudioInspectorWindow(engine),
+        AudioInspectorWindow(engine, projectManager),
         ProjectWindow(engine, projectManager),
         ScriptEditorWindow(engine, projectManager, editor.settingsManager),
     )
