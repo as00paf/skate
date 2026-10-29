@@ -70,6 +70,10 @@ dependencies {
     implementation("org.graalvm.polyglot:js-community:24.1.1")
     implementation("org.webjars.npm:typescript:5.6.3")
 
+    // Networking (UDP transport)
+    implementation(libs.netty.transport)
+    implementation(libs.netty.buffer)
+
     // Reflection
     implementation(kotlin("reflect"))
 
