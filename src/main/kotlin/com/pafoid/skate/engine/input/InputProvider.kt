@@ -50,6 +50,9 @@ class InputProvider(
     // Keys
     fun isKeyPressed(key: Int): Boolean = keyListener.isKeyPressed(key)
     fun keyBeginPress(key: Int): Boolean = keyListener.keyBeginPress(key)
+    /** Text typed since the last call (Unicode, respects layout/IME); for text fields. */
+    fun consumeTypedText(): String = keyListener.text.consumeText()
+    fun isKeyRepeated(key: Int): Boolean = keyListener.text.wasRepeated(key)
     fun isControlKeyDown(): Boolean =
         isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) || isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
 

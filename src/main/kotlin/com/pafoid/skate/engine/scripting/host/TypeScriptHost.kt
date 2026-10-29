@@ -1,5 +1,8 @@
 package com.pafoid.skate.engine.scripting.host
 
+import com.pafoid.skate.engine.scripting.completion.ApiCompletionProvider
+import com.pafoid.skate.engine.scripting.completion.CompletionProvider
+import com.pafoid.skate.engine.scripting.completion.LanguageProfile
 import com.pafoid.skate.engine.scripting.api.Script
 import com.pafoid.skate.engine.scripting.api.ScriptContext
 import com.pafoid.skate.engine.scripting.api.ScriptEntity
@@ -55,6 +58,8 @@ class TypeScriptHost : ScriptHost {
     @Volatile
     var compilations = 0
         private set
+
+    override val completionProvider: CompletionProvider by lazy { ApiCompletionProvider(LanguageProfile.TYPESCRIPT) }
 
     override fun load(source: ScriptSource): ScriptLoadResult = compile(source, useCache = true)
 

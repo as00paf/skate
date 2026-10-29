@@ -69,6 +69,11 @@ dependencies {
     implementation("org.graalvm.polyglot:polyglot:24.1.1")
     implementation("org.graalvm.polyglot:js-community:24.1.1")
     implementation("org.webjars.npm:typescript:5.6.3")
+    implementation("org.luaj:luaj-jse:3.0.1")
+
+    // Networking (UDP transport)
+    implementation(libs.netty.transport)
+    implementation(libs.netty.buffer)
 
     // Reflection
     implementation(kotlin("reflect"))
@@ -130,4 +135,10 @@ tasks.register<Jar>("gameJar") {
     manifest {
         attributes["Main-Class"] = "com.pafoid.skate.game.GameMainKt"
     }
+}
+tasks.register<JavaExec>("completeScript") {
+    group = "skate"
+    description = "Prints script completions: --args=<file>@<line>:<col>"
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.pafoid.skate.engine.scripting.completion.CompleteScriptCliKt")
 }

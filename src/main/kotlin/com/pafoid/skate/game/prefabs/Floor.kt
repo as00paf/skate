@@ -15,7 +15,8 @@ class Floor(
     name: String,
     model: `3dModel`,
     material: Material,
-    position: Vector3f = Vector3f(0f, 0f, 0f),
+    /** Default puts the top surface at y = 0 (the unit cube is 2 m tall, scaled by 0.1 in y). */
+    position: Vector3f = Vector3f(0f, -0.1f, 0f),
     size: Int = 10,
 ): GameObject(name) {
 

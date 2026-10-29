@@ -36,7 +36,10 @@
     "mount": {
         "range": 1.5,
         "targetName": "Skateboard",
-        "offsetY": 0.0
+        "offsetY": -0.05,
+        "rideHeight": 0.1,
+        "walkCamera": { "distance": 4.0, "height": 1.4 },
+        "rideCamera": { "distance": 6.0, "height": 1.0 }
     },
     "input": {
         "moveDeadZone": 0.15,

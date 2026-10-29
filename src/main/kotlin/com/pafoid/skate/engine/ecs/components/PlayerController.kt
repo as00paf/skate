@@ -4,6 +4,8 @@ import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.LocomotionBehavior
 import com.pafoid.skate.engine.gameplay.ground.GroundInfo
+import com.pafoid.skate.engine.gameplay.ik.FootIkConfig
+import com.pafoid.skate.engine.gameplay.ik.FootTarget
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -27,6 +29,13 @@ class PlayerController(
 
     @Transient
     var wasGrounded = false
+
+    /** Foot IK tuning and the latest per-leg ground targets (written by the physics system after each probe). */
+    @Transient
+    var footIk = FootIkConfig()
+
+    @Transient
+    val footTargets: List<FootTarget> = List(footIk.legs.size) { FootTarget() }
 
     /** Standing on walkable ground. Steep slopes count as airborne. */
     val isGrounded: Boolean get() = ground.standing

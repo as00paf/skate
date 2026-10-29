@@ -82,6 +82,11 @@ class SimplePhysics3D : IPhysics3D {
     override fun createRigidBody(shape: ColliderShape, mass: Float): IRigidBodyHandle =
         SimpleBody(mass, boundingRadius(shape)).also { bodies.add(it) }
 
+    override fun removeRigidBody(handle: IRigidBodyHandle) {
+        bodies.remove(handle)
+        touching.removeAll { it.first === handle || it.second === handle }
+    }
+
     override fun addConstraint(constraint: IPhysicsConstraint) =
         throw UnsupportedOperationException("SimplePhysics3D does not support joints")
 
