@@ -23,6 +23,8 @@ import com.pafoid.skate.engine.ecs.systems.ScriptingSystem
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.ActionInputReader
+import com.pafoid.skate.engine.scripting.runtime.ReaderScriptInput
+import com.pafoid.skate.engine.scripting.runtime.ScriptServices
 import com.pafoid.skate.engine.render.ui.UiFont
 import com.pafoid.skate.engine.ui.ReaderUiInputSource
 import com.pafoid.skate.engine.ui.UiActions
@@ -117,7 +119,11 @@ class Engine {
                 it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }
             },
             RagdollSystem(),
-            ScriptingSystem(logger, eventSystem, sceneManager = sceneManager),
+            ScriptingSystem(
+                logger, eventSystem,
+                ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
+                sceneManager = sceneManager,
+            ),
         ) + uiSystems(inputSystem)
 
         engineSystems.forEach {
