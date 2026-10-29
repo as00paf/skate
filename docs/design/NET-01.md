@@ -26,16 +26,9 @@ interface Connection { val id: ConnectionId; fun send(channel: Channel, payload:
 enum class Channel { RELIABLE_ORDERED, UNRELIABLE_SEQUENCED, UNRELIABLE }
 ```
 
-Options considered:
+**Decision (approved): Netty, UDP** (`netty-transport` NIO datagram channel, `io.netty:netty-transport`, `netty-buffer`). Netty owns socket IO/threads only; the reliability layer (sequence, ack + 32-bit ack bitfield, reliable-ordered resend, fragmentation) is ours on top of `DatagramPacket`, since Netty provides none for UDP. Netty event-loop threads only enqueue received datagrams; `Transport.poll` is called from the ECS PreUpdate phase so game state is touched on one thread. Netty is confined to `UdpTransport`; `InMemoryTransport` (loopback, listen server, tests) and the later `SteamTransport` (NET-05) implement the same `Transport` interface. Rejected: KryoNet (unmaintained, reflective serialization), own `DatagramChannel` layer.
 
-| Option | Pros | Cons |
-|---|---|---|
-| **Own thin layer on `java.nio` `DatagramChannel`** (recommended) | No dependency, fully controllable, trivially fakeable (`InMemoryTransport`), small surface we need (3 channels, fragmentation, acks) | We write reliability/ack/fragmentation (~500 LOC) |
-| KryoNet | Ready TCP+UDP | Unmaintained, TCP+UDP split, reflection-based serialization conflicts with our determinism requirement |
-| Netty | Mature, async | Heavy dependency, pipeline model is overkill, still needs our own reliability on UDP |
-| Steam Networking Sockets | NAT punch, relay | Steam-only; becomes `SteamTransport` in NET-05 behind the same interface |
-
-Recommendation: **`DatagramChannel` + custom reliability** (`UdpTransport`), plus `InMemoryTransport` (loopback, used by listen-server and all unit tests — no real sockets in tests). Packet header: protocol id/version, sequence, ack + ack bitfield (32). Connection handshake: `Hello(protocolVersion, buildHash, name)` → `Welcome(clientId, tick, tickRate)` / `Reject(reason)`; challenge token to prevent spoofed-source floods. MTU budget 1200 bytes; fragmentation only for reliable channel (scene/state bootstrap).
+Reliability/packet header: protocol id/version, sequence, ack + ack bitfield (32). Connection handshake: `Hello(protocolVersion, buildHash, name)` → `Welcome(clientId, tick, tickRate)` / `Reject(reason)`; challenge token to prevent spoofed-source floods. MTU budget 1200 bytes; fragmentation only for reliable channel (scene/state bootstrap).
 
 ## 4. Serialization
 
@@ -83,10 +76,10 @@ Unit only, no sockets: codec round-trips and golden bytes, delta encode/decode a
 - No breaking change to existing code in NET-01 (doc only).
 - Later (reported when needed): `NEEDS ECS`: stable component-mutation notification for replicated writes (ECS-02 covers) and prefab instantiate-by-id API; `NEEDS GPL`: player step function separable from Bullet for prediction; `NEEDS INP`: per-tick input sampling struct; `NEEDS PHY`: kinematic/character-controller option and collider history access.
 
-## 12. Assumptions / open questions for the lead
+## 12. Approved decisions
 
-1. Own UDP layer (§3) approved over KryoNet/Netty?
-2. Tick 60 Hz / snapshot 20 Hz / 100 ms interpolation defaults acceptable?
-3. Predict only the local player; remote Bullet bodies are interpolated, not simulated (§2).
-4. Listen-server is a first-class mode (loopback transport).
-5. Max 16 players for v1.
+1. Transport: Netty UDP behind `Transport`, reliability layer on top (§3).
+2. Tick 60 Hz, snapshots 20 Hz, interpolation delay 100 ms.
+3. Predict the local player only; remote bodies are interpolated.
+4. Listen-server is first-class (loopback transport).
+5. 16 players for v1.
