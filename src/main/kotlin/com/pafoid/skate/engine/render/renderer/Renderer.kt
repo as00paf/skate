@@ -62,6 +62,7 @@ class Renderer(
         renderResources.renderers.shadow.destroy()
         renderResources.renderers.debug.destroy()
         renderResources.renderPasses.picking.destroy()
+        renderResources.renderPasses.geometry.destroy()
 
         // Destroy framebuffer (includes texture and depth buffer)
         renderResources.frameBuffer.destroy()
