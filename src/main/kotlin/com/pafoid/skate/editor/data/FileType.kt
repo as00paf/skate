@@ -13,7 +13,7 @@ enum class FileType(val extensions: List<String>) {
     MODEL_3D(listOf("obj", "glb", "dae", "gltf")),
     ANIMATION(listOf("fbx")),
     SOUND(listOf("wav", "ogg", "mp3")),
-    PREFAB(listOf()),
+    PREFAB(listOf("prefab")),
     JSON(listOf("json")),
     CONFIG(listOf("config")),
     SHADER(listOf("glsl")),
