@@ -112,6 +112,7 @@ class Engine {
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager),
             AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }).also {
+                it.eventSystem = eventSystem
                 it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }
             },
             RagdollSystem(),

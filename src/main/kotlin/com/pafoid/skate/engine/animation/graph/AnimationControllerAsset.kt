@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.animation.graph
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 enum class ConditionOp { GREATER, LESS, EQUALS, TRUE, FALSE, TRIGGER }
 
@@ -52,6 +53,8 @@ data class AnimationControllerAsset(
     val defaultState: String,
     val states: List<StateDef>,
     val transitions: List<TransitionDef> = emptyList(),
+    /** Named blend trees/clip refs. A state's `motion` key resolves here first, then to a clip name. */
+    val motions: Map<String, MotionDef> = emptyMap(),
 ) {
     init {
         require(states.any { it.name == defaultState }) { "Unknown default state '$defaultState'" }
@@ -60,5 +63,25 @@ data class AnimationControllerAsset(
         transitions.forEach {
             require(it.to in names && (it.from == null || it.from in names)) { "Transition references unknown state: $it" }
         }
+    }
+
+    /** Problems that would stop [Animator.useController] from building this controller; [availableClips] are the clip names on hand. */
+    fun issues(availableClips: Set<String>): List<String> {
+        val problems = mutableListOf<String>()
+        for ((key, def) in motions) {
+            (def.clipNames() - availableClips).forEach { problems += "Motion '$key' uses unknown clip '$it'" }
+        }
+        for (state in states) {
+            if (state.motion !in motions && state.motion !in availableClips) problems += "State '${state.name}' uses unknown motion '${state.motion}'"
+            state.events.filter { it.time !in 0f..1f }.forEach { problems += "State '${state.name}' event '${it.name}' time ${it.time} is outside 0..1" }
+        }
+        return problems
+    }
+
+    fun toJson(): String = JSON.encodeToString(serializer(), this)
+
+    companion object {
+        private val JSON = Json { prettyPrint = true; encodeDefaults = true; ignoreUnknownKeys = true }
+        fun fromJson(text: String): AnimationControllerAsset = JSON.decodeFromString(serializer(), text)
     }
 }
