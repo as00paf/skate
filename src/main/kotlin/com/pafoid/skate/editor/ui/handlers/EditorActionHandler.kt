@@ -22,6 +22,7 @@ class EditorActionHandler(
     val consoleActionHandler = ConsoleActionHandler(engine.eventSystem, engine.logger, undoRedoManager)
     val inputSettingsActionHandler = InputSettingsActionHandler(engine.eventSystem, projectManager, undoRedoManager)
     val scriptEditorActionHandler = ScriptEditorActionHandler(engine.eventSystem, undoRedoManager, engine.logger)
+    val jointActionHandler = JointActionHandler(engine.eventSystem, undoRedoManager)
     val keyBindingsActionHandler = KeyBindingsActionHandler(
         engine.eventSystem, projectManager, undoRedoManager
     ) { engine.systemManager.getSystem<com.pafoid.skate.engine.ecs.systems.InputSystem>()?.actionMap }
