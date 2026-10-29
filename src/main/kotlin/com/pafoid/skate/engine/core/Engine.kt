@@ -115,7 +115,7 @@ class Engine {
                 it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }
             },
             RagdollSystem(),
-            ScriptingSystem(logger, eventSystem),
+            ScriptingSystem(logger, eventSystem, sceneManager = sceneManager),
         ) + uiSystems(inputSystem)
 
         engineSystems.forEach {

@@ -1,6 +1,7 @@
 package com.pafoid.skate.engine.scripting.api
 
 import org.joml.Vector3f
+import org.joml.Vector4f
 import kotlin.reflect.KClass
 
 /** Language-agnostic script lifecycle. Every host adapts its scripts to this interface. */
@@ -64,6 +65,36 @@ interface ScriptRigidBody {
 interface ScriptScene {
     fun find(name: String): ScriptEntity?
     fun findAll(name: String): List<ScriptEntity>
+
+    /** Name of the scene currently running. */
+    val name: String
+
+    /** Asks the engine to switch to the open scene called [sceneName]; applied after the current update. False when unknown. */
+    fun load(sceneName: String): Boolean
+}
+
+/** Facade of an entity's audio source (`entity.getComponent<ScriptAudioSource>()`, name "AudioSource"). */
+interface ScriptAudioSource {
+    var volume: Float
+    var loops: Boolean
+    val isPlaying: Boolean
+    fun play()
+    fun stop()
+    fun pause()
+}
+
+/** Facade of an entity's render material (name "Material"). Colors are RGBA in [0, 1]; setters copy their argument. */
+interface ScriptMaterial {
+    var color: Vector4f
+    var emissive: Vector3f
+}
+
+/** Facade of an entity's UI text (name "UiText"). [key] is a string-table key; [args] fill its format placeholders. */
+interface ScriptUiText {
+    var key: String
+    var args: List<String>
+    var color: Vector4f
+    var visible: Boolean
 }
 
 interface ScriptInput {
