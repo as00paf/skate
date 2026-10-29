@@ -45,6 +45,26 @@ class PureLogicIsolationGuardTest {
     }
 
     @Test
+    fun PureLogic_NetworkingAndShaderCoreStayPlatformFree() {
+        val netFiles = sourceRoot.resolve("engine/net").let { dir ->
+            Files.list(dir).use { it.filter { f -> f.fileName.toString().endsWith(".kt") }.toList() }
+        }.map { sourceRoot.relativize(it).invariantSeparatorsPathString }
+        val files = netFiles + listOf(
+            "engine/render/shader/ShaderPreprocessor.kt",
+            "engine/render/shader/ShaderVariantCache.kt",
+            "engine/gameplay/ik/FootIk.kt",
+            "engine/input/TextInputBuffer.kt",
+            "engine/assets/PrefabStore.kt",
+        )
+        val forbidden = listOf("import org.lwjgl.", "import com.pafoid.skate.editor.", "import imgui.")
+        val violations = files.flatMap { f ->
+            importsOf(f).filter { line -> forbidden.any { line.startsWith(it) } }.map { "$f -> $it" }
+        }
+        assertTrue(netFiles.size >= 5, "engine/net unexpectedly empty: $netFiles")
+        assertTrue(violations.isEmpty(), "Pure-logic files must not import GL/AL/editor: $violations")
+    }
+
+    @Test
     fun EngineLayering_EngineDoesNotImportEditorExceptExportTools() {
         val exceptions = setOf("engine/utils/AssetsPacker.kt", "engine/utils/ProjectExporter.kt")
         val violators = Files.walk(sourceRoot.resolve("engine")).use { paths ->
