@@ -1,5 +1,6 @@
 package com.pafoid.skate.game.player
 
+import com.pafoid.skate.engine.gameplay.CameraPreset
 import com.pafoid.skate.engine.gameplay.CharacterBehavior
 import com.pafoid.skate.engine.gameplay.CharacterBehaviors
 import com.pafoid.skate.engine.gameplay.CharacterConfigs
@@ -60,7 +61,10 @@ class SkateBehavior(
     override val state: String get() = if (mounted) machine.current.name else onFoot.state
 
     override val mountTargetName: String get() = config.mount.targetName
+    override val cameraPreset: CameraPreset
+        get() = (if (mounted) config.mount.rideCamera else config.mount.walkCamera).let { CameraPreset(it.distance, it.height) }
     override val mountOffset = Vector3f(0f, config.mount.offsetY, 0f)
+    override val rideHeight: Float get() = config.mount.rideHeight
 
     override fun update(input: CharacterInput, dt: Float): CharacterMotion {
         val request = MountMath.toggle(mounted, input.mountPressed, input.mountDistance, config.mount.range)

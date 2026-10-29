@@ -287,8 +287,15 @@ class BulletPhysics3D(
         }
     }
 
-    override fun createRigidBody(shape: ColliderShape, mass: Float): IRigidBodyHandle =
-        BulletRigidBodyHandle(PhysicsRigidBody(createShape(shape), mass))
+    override fun createRigidBody(shape: ColliderShape, mass: Float): IRigidBodyHandle {
+        val body = PhysicsRigidBody(createShape(shape), mass)
+        physicsSpace.add(body)
+        return BulletRigidBodyHandle(body)
+    }
+
+    override fun removeRigidBody(handle: IRigidBodyHandle) {
+        (handle as? BulletRigidBodyHandle)?.let { physicsSpace.remove(it.body) }
+    }
 
     override fun createStaticAnchor(location: JomlVector3f): IRigidBodyHandle {
         val body = PhysicsRigidBody(BoxCollisionShape(0.01f), 0f)

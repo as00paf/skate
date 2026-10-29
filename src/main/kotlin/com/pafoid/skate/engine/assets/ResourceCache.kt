@@ -11,6 +11,7 @@ class ResourceCache<T : Any>(private val deleter: (T) -> Unit) {
 
     val values: Collection<T> get() = map.values
     val size: Int get() = map.size
+    val keys: Set<String> get() = map.keys.toSet()
 
     operator fun get(key: String): T? = map[key]
 

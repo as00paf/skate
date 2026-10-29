@@ -21,7 +21,7 @@ Used by `skate-lead` after domain agents report `DONE`. Never push to a remote o
 4. **Verify.** The full test run must show no failures beyond those already listed in `docs/bugs.md`. Record the test counts for the PR body.
 5. **PR.** `git push -u origin integration/<round-name>` then
    `gh pr create --base master --head integration/<round-name> --title "Round <name>: <summary>" --body-file <file>`.
-   The body lists tasks completed (IDs), test results, known pre-existing failures, and a human test checklist (what to run, what to look for).
+   The body lists tasks completed (IDs), test results, known pre-existing failures, and a human test checklist (what to run, what to look for). The checklist MUST be very detailed, numbered, click-by-click steps, starting from a clean state: the exact command to launch the editor, how to create a NEW project (or generate a sample with `skate sample <name>`) because every test needs a fresh project, which menu items/keys/buttons to use, and the expected result of each step. Never assume prior knowledge of the editor. Collect the steps from each agent (ask for them in the dispatch) and repeat them in the PR body and the Discord DM.
 6. **Merge.** Once the human has tested (or delegated the merge), merge the PR with `gh pr merge --merge`. Afterwards ask each agent to `git rebase master` (the new base) before its next task, and remove the integration worktree with `git worktree remove`.
 
 ## Discord DMs (two-way)

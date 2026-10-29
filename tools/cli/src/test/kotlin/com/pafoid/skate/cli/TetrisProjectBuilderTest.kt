@@ -11,6 +11,10 @@ import com.pafoid.skate.engine.scripting.host.ScriptError
 import com.pafoid.skate.engine.scripting.host.ScriptHostRegistry
 import com.pafoid.skate.engine.scripting.runtime.ScriptRuntime
 import com.pafoid.skate.engine.scripting.runtime.ScriptServices
+import com.pafoid.skate.engine.scripting.runtime.ScriptSceneSwitcher
+import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ui.UITextComponent
 import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -30,7 +34,14 @@ class TetrisProjectBuilderTest {
         override fun action(name: String) = 0f
     }
 
+    private class FakeSwitcher : ScriptSceneSwitcher {
+        val requested = mutableListOf<String>()
+        override val currentName = "Game"
+        override fun request(name: String) = requested.add(name)
+    }
+
     private val input = FakeInput()
+    private val switcher = FakeSwitcher()
     private val logs = mutableListOf<String>()
     private val errors = mutableListOf<ScriptError>()
     private lateinit var dir: java.io.File
@@ -43,14 +54,18 @@ class TetrisProjectBuilderTest {
         dir = Files.createTempDirectory("skate-tetris").toFile()
         val project = TetrisProjectBuilder().build(dir)
         val service = SkateCliService(out = {})
-        scene = service.loadScenes(service.loadProject(project.path)).single()
+        scene = service.loadScenes(service.loadProject(project.path)).first { it.name == "Game" }
         // Mirrors SceneManager.resolveSceneReferences, which binds components after a scene is loaded
-        scene.children.forEach { go -> go.components.forEach { it.init(go) } }
+        fun bind(go: GameObject) {
+            go.components.forEach { it.init(go) }
+            go.children.forEach { bind(it) }
+        }
+        scene.children.forEach { bind(it) }
         component = scene.children.first { it.name == "TetrisController" }.getComponent<ScriptComponent>()!!
         component.properties["seed"] = "7"
         val registry = ScriptHostRegistry().apply { register(KotlinScriptHost()) }
         runtime = ScriptRuntime(
-            registry, ScriptServices(input = input), sceneRoot = { scene },
+            registry, ScriptServices(input = input, scenes = switcher), sceneRoot = { scene },
             onError = { errors += it }, logSink = { _, m -> logs += m },
         )
     }
@@ -103,4 +118,30 @@ class TetrisProjectBuilderTest {
         assertEquals(4, visibleCells())
         assertTrue(errors.isEmpty(), errors.toString())
     }
+
+    @Test
+    fun Tetris_GameOverRequestsGameOverSceneAndPlaysSound() {
+        frame()
+        repeat(30) { frame(32) }
+        assertTrue("GameOver" in switcher.requested, switcher.requested.toString())
+        val over = scene.children.first { it.name == "SfxOver" }.getComponent<AudioComponent>()!!
+        assertTrue(over.playRequested)
+        assertTrue(errors.isEmpty(), errors.toString())
+    }
+
+    @Test
+    fun Tetris_LockingUpdatesHudSoundAndPieceColors() {
+        frame()
+        frame(32)
+        val hud = findDeep(scene, "ScoreText").getComponent<UITextComponent>()!!
+        assertEquals(3, hud.args.size)
+        assertTrue(scene.children.first { it.name == "SfxLock" }.getComponent<AudioComponent>()!!.playRequested)
+        val colors = scene.children.filter { it.name.startsWith("Cell_") && it.getComponent<Transform>()!!.translation.y > -500f }
+            .map { it.getComponent<RenderComponent>()!!.material!!.baseColor }
+        assertTrue(colors.any { it.x != 0.2f || it.y != 0.8f }, "cells should be tinted per piece")
+    }
+
+    private fun findDeep(go: GameObject, name: String): GameObject =
+        go.children.firstNotNullOfOrNull { if (it.name == name) it else runCatching { findDeep(it, name) }.getOrNull() }
+            ?: error("missing $name")
 }

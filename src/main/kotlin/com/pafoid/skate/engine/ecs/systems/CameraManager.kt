@@ -7,6 +7,8 @@ import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.events.CameraAction
 import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.render.data.CameraPreset
+import com.pafoid.skate.engine.utils.CameraInterpolator
 import com.pafoid.skate.engine.utils.toRadiansF
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -20,6 +22,20 @@ class CameraManager(
 
     var camera = CameraComponent()
     var transform = Transform()
+
+    private var interpolator: CameraInterpolator? = null
+    private var interpolatedCamera: CameraComponent? = null
+
+    private fun interpolator(): CameraInterpolator {
+        if (interpolator == null || interpolatedCamera !== camera) {
+            interpolator = CameraInterpolator(camera)
+            interpolatedCamera = camera
+        }
+        return interpolator!!
+    }
+
+    /** Smoothly moves the active camera's fov/zoom to [preset] over [duration] seconds. */
+    fun lerpToPreset(preset: CameraPreset, duration: Float) = interpolator().lerpToPreset(preset, duration)
 
     init {
         eventSystem.subscribe<CameraAction.SetCamera> { event ->
@@ -39,6 +55,7 @@ class CameraManager(
     }
 
     override fun update(dt: Float) {
+        interpolator().update(dt)
         calculateForwardAndRight()
         calculateProjection()
         calculateView()

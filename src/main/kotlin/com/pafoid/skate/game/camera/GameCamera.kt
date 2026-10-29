@@ -4,6 +4,7 @@ import com.pafoid.skate.editor.data.InputSettings
 import com.pafoid.skate.engine.ecs.SceneManager
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.InputStateComponent
+import com.pafoid.skate.engine.gameplay.CameraPreset
 import org.joml.Vector3f
 /**
  * Third-person gameplay camera controller.
@@ -30,6 +31,12 @@ class GameCamera(
     var target: Vector3f? = null
     var desiredDistance = 10.0f
     var targetOffset = Vector3f(0f, 0.5f, 0f)
+
+    /** Reframes the camera for the character's current mode (walking vs riding). */
+    fun applyPreset(preset: CameraPreset) {
+        desiredDistance = preset.distance
+        targetOffset.set(0f, preset.height, 0f)
+    }
 
     /**
      * Updates the camera based on input and third-person logic.

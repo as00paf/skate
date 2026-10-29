@@ -5,6 +5,8 @@ import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.AudioListener
 import com.pafoid.skate.engine.ecs.components.ReverbZone
+import com.pafoid.skate.engine.net.NetState
+import com.pafoid.skate.engine.net.NetworkIdentity
 import com.pafoid.skate.engine.ecs.components.BoneOverride
 import com.pafoid.skate.engine.ecs.components.BoxCollider3D
 import com.pafoid.skate.engine.ecs.components.CameraComponent
@@ -64,6 +66,8 @@ class Serializer {
             subclass(AudioComponent::class)
             subclass(AudioListener::class)
             subclass(ReverbZone::class)
+            subclass(NetworkIdentity::class)
+            subclass(NetState::class)
             subclass(CameraComponent::class)
 
             // Physics components

@@ -56,3 +56,36 @@ class MixerTest {
         assertEquals(true, config.uiMuted)
     }
 }
+
+class BusEffectsConfigTest {
+    private val eps = 1e-5f
+
+    @org.junit.jupiter.api.Test
+    fun Mixer_ConfigAppliesBusEffectsLive() {
+        val mixer = Mixer()
+        mixer.applyConfig(AudioConfig(musicLowPass = 0.4f, masterLowPass = 0.5f, uiReverbSend = 0.7f, sfxReverbSend = 0f))
+        assertEquals(0.2f, mixer.bus(BusId.MUSIC).effectiveLowPassGainHF, eps)
+        assertEquals(0.7f, mixer.bus(BusId.UI).reverbSend, eps)
+        assertEquals(0f, mixer.bus(BusId.SFX).reverbSend, eps)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun Mixer_DefaultConfigKeepsDefaultEffects() {
+        val mixer = Mixer()
+        mixer.bus(BusId.SFX).lowPassGainHF = 0.1f
+        mixer.applyConfig(AudioConfig())
+        assertEquals(1f, mixer.bus(BusId.SFX).lowPassGainHF, eps)
+        assertEquals(1f, mixer.bus(BusId.SFX).reverbSend, eps)
+        assertEquals(0f, mixer.bus(BusId.MUSIC).reverbSend, eps)
+    }
+
+    @org.junit.jupiter.api.Test
+    fun Mixer_AudioSettingsEffectsAreValidatedAndMapped() {
+        val config = com.pafoid.skate.editor.settings.AudioSettings(
+            musicLowPass = -1f, sfxReverbSend = 3f, uiLowPass = 0.3f
+        ).toConfig()
+        assertEquals(0f, config.musicLowPass, eps)
+        assertEquals(1f, config.sfxReverbSend, eps)
+        assertEquals(0.3f, config.uiLowPass, eps)
+    }
+}

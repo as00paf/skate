@@ -15,6 +15,7 @@ import com.pafoid.skate.engine.core.EventSystem
 import com.pafoid.skate.engine.core.JobSystem
 import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
+import com.pafoid.skate.engine.events.AssetEvent
 import com.pafoid.skate.engine.render.VAOLoader
 import com.pafoid.skate.engine.utils.AssetsResolver
 import com.pafoid.skate.engine.utils.Atlas
@@ -44,10 +45,104 @@ class AssetsManager(
     private val animations = ResourceCache<Animation> { }
 
     private var loadService: AssetLoadService? = null
+    private var jobSystem: JobSystem? = null
+    private var eventSystem: EventSystem? = null
+    private val reloader = AssetReloader { key, e -> logger.log("Hot reload failed for $key: ${e.message}", LogLevel.ERROR) }
+    private var lastPollNanos = 0L
 
     /** Enables the async API. Call once from the main thread; [JobSystem.update] must run every frame. */
     fun attachAsyncLoading(jobSystem: JobSystem, eventSystem: EventSystem?) {
+        this.jobSystem = jobSystem
+        this.eventSystem = eventSystem
         loadService = AssetLoadService(jobSystem, eventSystem) { logger.log(it, LogLevel.ERROR) }
+    }
+
+    /**
+     * Hot reload: call every frame from the main thread. At most once per [intervalMs] it checks the files behind
+     * cached textures, models and sounds and reloads changed ones in place (same object, new GPU payload),
+     * publishing [AssetEvent.Reloaded]. Returns the keys whose reload was started.
+     */
+    fun pollHotReload(intervalMs: Long = 500, nowNanos: Long = System.nanoTime()): List<String> {
+        if (nowNanos - lastPollNanos < intervalMs * 1_000_000) return emptyList()
+        lastPollNanos = nowNanos
+        syncWatches()
+        return reloader.poll()
+    }
+
+    private fun syncWatches() {
+        val live = HashSet<String>()
+        fun track(keys: Set<String>, reload: (String, File) -> Unit) {
+            for (key in keys) {
+                val file = File(key)
+                if (!file.isAbsolute || !file.isFile) continue
+                live += key
+                reloader.watch(key, file) { reload(key, it) }
+            }
+        }
+        track(textures.keys, ::reloadTexture)
+        track(models.keys, ::reloadModel)
+        track(sounds.keys, ::reloadSound)
+        reloader.watchedKeys.filter { it !in live }.forEach { reloader.unwatch(it) }
+    }
+
+    private fun reloadTexture(key: String, file: File) {
+        val jobs = jobSystem ?: return
+        jobs.runAsync {
+            val data = try {
+                textureLoader.decodeFromFile(file.path)
+            } catch (e: Exception) {
+                jobs.runOnMain { reloadFailed(key, e) }
+                return@runAsync
+            }
+            jobs.runOnMain {
+                val texture = textures[key]
+                if (texture == null) textureLoader.discard(data) else {
+                    textureLoader.replace(texture, data)
+                    eventSystem?.publish(AssetEvent.Reloaded(key))
+                }
+            }
+        }
+    }
+
+    private fun reloadModel(key: String, file: File) {
+        val jobs = jobSystem ?: return
+        jobs.runAsync {
+            val scene = try {
+                assimpLoader.importScene(file.path)
+            } catch (e: Exception) {
+                jobs.runOnMain { reloadFailed(key, e) }
+                return@runAsync
+            }
+            jobs.runOnMain {
+                val model = models[key]
+                if (model == null) { assimpLoader.releaseScene(scene); return@runOnMain }
+                try {
+                    val fresh = assimpLoader.buildModel(scene, key)
+                    val old = model.mesh
+                    model.mesh = fresh.mesh
+                    model.skeleton = fresh.skeleton
+                    old.forEach { vaoLoader.deleteVAO(it.vaoId) }
+                    eventSystem?.publish(AssetEvent.Reloaded(key))
+                } catch (e: Exception) {
+                    reloadFailed(key, e)
+                }
+            }
+        }
+    }
+
+    private fun reloadSound(key: String, file: File) {
+        val sound = sounds[key] ?: return
+        val fresh = soundLoader.load(file.path)
+        val oldId = sound.bufferId
+        sound.bufferId = fresh.bufferId
+        sound.durationInSeconds = fresh.durationInSeconds
+        if (oldId != -1) org.lwjgl.openal.AL10.alDeleteBuffers(oldId)
+        eventSystem?.publish(AssetEvent.Reloaded(key))
+    }
+
+    private fun reloadFailed(key: String, e: Throwable) {
+        logger.log("Hot reload failed for $key: ${e.message}", LogLevel.ERROR)
+        eventSystem?.publish(AssetEvent.Failed(key, e.message ?: e::class.java.simpleName))
     }
 
     private fun service(): AssetLoadService =

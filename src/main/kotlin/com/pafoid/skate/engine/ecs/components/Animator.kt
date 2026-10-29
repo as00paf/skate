@@ -42,7 +42,9 @@ data class Animator(
         skeleton: Skeleton,
         extraMotions: Map<String, Motion> = emptyMap(),
     ): AnimationStateMachine {
-        val motions = animations.associate { it.name to ClipMotion.of(it, skeleton) as Motion } + extraMotions
+        val clips = animations.associate { it.name to ClipMotion.of(it, skeleton) as Motion } + extraMotions
+        val trees = asset.motions.mapValues { (_, def) -> def.build { clips[it] } }
+        val motions = clips + trees
         return AnimationStateMachine(asset, motions, skeleton.boneCount).also { stateMachine = it }
     }
 

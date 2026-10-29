@@ -5,6 +5,9 @@ import com.pafoid.skate.engine.animation.AnimationVisibility
 import com.pafoid.skate.engine.animation.ik.IkDebugDraw
 import com.pafoid.skate.engine.animation.ik.IkDebugSink
 import com.pafoid.skate.engine.animation.ik.IkPass
+import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.events.AnimationEvent
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -22,6 +25,8 @@ class AnimationSystem(
     var visibility: AnimationVisibility? = null,
     /** Seconds between updates for off-screen characters; 0 disables the throttle. */
     var offscreenInterval: Float = AnimationUpdateGate.DEFAULT_OFFSCREEN_INTERVAL,
+    /** When set, controller event markers are published as [AnimationEvent]s. */
+    var eventSystem: EventSystem? = null,
 ) : System(priority = ExecutionPriority.DEFAULT) {
 
     /** Receives IK debug lines (world space) when [drawIkDebug] is on; wired to the renderer's debug drawer by the engine. */
@@ -84,6 +89,13 @@ class AnimationSystem(
         IkDebugDraw.collect(ago.animator.ik, pose.skeleton, pose.localTransforms, world, sink)
     }
 
+    private fun publishEvents(ago: AnimatedGameObject, machine: AnimationStateMachine) {
+        val events = eventSystem ?: return
+        if (machine.firedEvents.isEmpty()) return
+        val owner = ago.skeleton.gameObject ?: return
+        for (e in machine.firedEvents) events.publish(AnimationEvent(owner, e.name, e.state))
+    }
+
     private fun applyIk(ago: AnimatedGameObject, sourceFresh: Boolean) {
         val rig = ago.animator.ik
         if (!rig.isActive && rig.basePose == null) return
@@ -101,6 +113,7 @@ class AnimationSystem(
         val machine = animator.stateMachine
         if (machine != null) {
             machine.update(dt)
+            publishEvents(ago, machine)
             val result = machine.pose
             for (i in 0 until minOf(result.boneCount, pose.localTransforms.size)) {
                 result.toMatrix(i, pose.localTransforms[i])

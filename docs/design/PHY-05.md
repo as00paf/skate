@@ -18,9 +18,9 @@ It has no dependencies and imports no Bullet type. Scope:
 - The interface compiled against a non-Bullet backend with **no changes**. `PhysicsSystem`, `RigidBody3D` and the
   ragdoll code only touch `IPhysics3D` / `IRigidBodyHandle`, so swapping backends needs no ECS edits.
 - Leaks / sharp edges found:
-  - `IPhysicsConstraint.rawJoint: Any?` is untyped, and joint creation (`JointComponent.createConstraint`) is still
-    Bullet-flavoured, so a second backend must also provide its own constraint factory. Joints are the main gap to close
-    before a real second backend is feasible (suggest `IPhysics3D.createConstraint(JointSpec)`).
+  - Constraints are already backend-neutral descriptors (`HingeConstraint3D` etc.); only `rawJoint: Any?` is
+    backend-owned. A second backend just has to translate them in `addConstraint` (follow-up PHY-08 fixed the Bullet
+    side: ragdoll registration, constraint frame transpose, joint tests).
   - `IPhysics3D.add(go)` makes each backend read `RigidBody3D`/`Collider3D`/`Transform` itself; the mapping code
     (mass, layers, trigger, shape selection) is duplicated per backend. A shared helper that builds a backend-neutral
     body description would remove that.

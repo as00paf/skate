@@ -18,9 +18,43 @@ interface Mountable {
 
     /** Offset from the character origin (feet) where the mount is placed when mounting. */
     val mountOffset: Vector3f
+
+    /** Height in meters the character stands above the ground while mounted (the mount's thickness). */
+    val rideHeight: Float get() = 0f
+
+    /** Camera framing for the current mode (mounted or not), or null to leave the camera alone. */
+    val cameraPreset: CameraPreset? get() = null
 }
 
+/** Third-person framing: distance behind the character and height of the look-at point. */
+data class CameraPreset(val distance: Float, val height: Float)
+
 object MountMath {
+
+    /** Hover speed per meter of height error, and its cap. */
+    private const val HOVER_GAIN = 12f
+    private const val HOVER_MAX_SPEED = 2f
+
+    /** Extra height above [rideHeight] past which the rider counts as airborne (ollie) and is not held. */
+    const val HOVER_AIRBORNE_MARGIN = 0.03f
+
+    /**
+     * Vertical velocity that holds the feet [rideHeight] above the surface, or null when the rider is
+     * airborne or no surface is below. [distance] is the feet-to-surface distance.
+     */
+    fun hoverVelocity(found: Boolean, distance: Float, rideHeight: Float): Float? {
+        if (!found || distance > rideHeight + HOVER_AIRBORNE_MARGIN) return null
+        return ((rideHeight - distance) * HOVER_GAIN).coerceIn(-HOVER_MAX_SPEED, HOVER_MAX_SPEED)
+    }
+
+    /** Layer of mount bodies; characters never collide with it so they can walk through/over their mount. */
+    const val MOUNT_LAYER = 2
+
+    /** While ridden the mount is carried by the character, so it collides with nothing; otherwise with everything. */
+    fun mountMask(mounted: Boolean): Int = if (mounted) 0 else -1
+
+    /** Character collision mask that ignores [MOUNT_LAYER]. */
+    fun characterMask(current: Int): Int = current and MOUNT_LAYER.inv()
 
     /** True when a mount at [distance] meters can be mounted; NaN (no target in the scene) never can. */
     fun inRange(distance: Float, range: Float): Boolean = !distance.isNaN() && distance <= range

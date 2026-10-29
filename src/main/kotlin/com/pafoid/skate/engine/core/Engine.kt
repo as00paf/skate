@@ -23,6 +23,8 @@ import com.pafoid.skate.engine.ecs.systems.ScriptingSystem
 import com.pafoid.skate.engine.ecs.systems.System
 import com.pafoid.skate.engine.ecs.systems.SystemManager
 import com.pafoid.skate.engine.input.ActionInputReader
+import com.pafoid.skate.engine.scripting.runtime.ReaderScriptInput
+import com.pafoid.skate.engine.scripting.runtime.ScriptServices
 import com.pafoid.skate.engine.render.ui.UiFont
 import com.pafoid.skate.engine.ui.ReaderUiInputSource
 import com.pafoid.skate.engine.ui.UiActions
@@ -93,6 +95,7 @@ class Engine {
         GLFW.glfwSetMouseButtonCallback(glfwWindow, inputProvider.mouseListener::mouseButtonCallback)
         GLFW.glfwSetScrollCallback(glfwWindow, inputProvider.mouseListener::mouseScrollCallback)
         GLFW.glfwSetKeyCallback(glfwWindow, inputProvider.keyListener::keyCallback)
+        GLFW.glfwSetCharCallback(glfwWindow, inputProvider.keyListener::charCallback)
     }
 
     private fun initializeSystems() {
@@ -112,10 +115,15 @@ class Engine {
             DirectionalLightSystem(cameraManager),
             PlayerMotionSystem(cameraManager),
             AnimationSystem(FrustumVisibility { cameraManager.camera.projection to cameraManager.camera.view }).also {
+                it.eventSystem = eventSystem
                 it.ikDebugSink = IkDebugSink { from, to, color -> debugRenderer.addLine3D(from, to, color) }
             },
             RagdollSystem(),
-            ScriptingSystem(logger, eventSystem),
+            ScriptingSystem(
+                logger, eventSystem,
+                ScriptServices(input = ReaderScriptInput(inputSystem.reader)),
+                sceneManager = sceneManager,
+            ),
         ) + uiSystems(inputSystem)
 
         engineSystems.forEach {
@@ -154,6 +162,7 @@ class Engine {
         }
 
         jobSystem.update()
+        assetsManager.pollHotReload()
     }
 
     private fun updateRunningState(dt: Float) {

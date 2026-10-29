@@ -5,6 +5,15 @@ import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.Transform
 import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.getComponent
+import com.pafoid.skate.engine.assets.data.models.Material
+import com.pafoid.skate.engine.ecs.components.AudioComponent
+import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ui.UIElementComponent
+import com.pafoid.skate.engine.ui.UITextComponent
+import com.pafoid.skate.engine.scripting.api.ScriptAudioSource
+import com.pafoid.skate.engine.scripting.api.ScriptMaterial
+import com.pafoid.skate.engine.scripting.api.ScriptUiText
+import org.joml.Vector4f
 import com.pafoid.skate.engine.scripting.api.ScriptContext
 import com.pafoid.skate.engine.scripting.api.ScriptEntity
 import com.pafoid.skate.engine.scripting.api.ScriptEvents
@@ -22,7 +31,19 @@ import kotlin.reflect.KClass
 class ScriptServices(
     val input: ScriptInput = NoOpScriptInput,
     val physics: ScriptPhysics = NoOpScriptPhysics,
+    val scenes: ScriptSceneSwitcher = NoOpScriptSceneSwitcher,
 )
+
+/** Engine-side scene switching. [request] returns whether a scene with that name exists; the switch itself is deferred. */
+interface ScriptSceneSwitcher {
+    val currentName: String
+    fun request(name: String): Boolean
+}
+
+object NoOpScriptSceneSwitcher : ScriptSceneSwitcher {
+    override val currentName = ""
+    override fun request(name: String) = false
+}
 
 object NoOpScriptInput : ScriptInput {
     override fun isKeyDown(key: Int) = false
@@ -48,6 +69,21 @@ object ScriptFacades {
             go.getComponent<RigidBody3D>()?.let { RigidBodyFacade(it) }
         }
         registerName("RigidBody", ScriptRigidBody::class)
+
+        register(ScriptAudioSource::class) { go ->
+            go.getComponent<AudioComponent>()?.let { AudioSourceFacade(it) }
+        }
+        registerName("AudioSource", ScriptAudioSource::class)
+
+        register(ScriptMaterial::class) { go ->
+            go.getComponent<RenderComponent>()?.material?.let { MaterialFacade(it) }
+        }
+        registerName("Material", ScriptMaterial::class)
+
+        register(ScriptUiText::class) { go ->
+            go.getComponent<UITextComponent>()?.let { UiTextFacade(it) }
+        }
+        registerName("UiText", ScriptUiText::class)
     }
 
     fun <T : Any> register(type: KClass<T>, factory: (GameObject) -> T?) {
@@ -76,6 +112,43 @@ private class RigidBodyFacade(private val body: RigidBody3D) : ScriptRigidBody {
         set(value) { body.angularVelocity = Vector3f(value) }
 }
 
+private class AudioSourceFacade(private val audio: AudioComponent) : ScriptAudioSource {
+    override var volume: Float
+        get() = audio.volume
+        set(value) = audio.applyVolume(value)
+    override var loops: Boolean
+        get() = audio.loops
+        set(value) = audio.applyLooping(value)
+    override val isPlaying: Boolean get() = audio.isPlaying
+    override fun play() = audio.play()
+    override fun stop() = audio.stopPlayback()
+    override fun pause() = audio.pause()
+}
+
+private class MaterialFacade(private val material: Material) : ScriptMaterial {
+    override var color: Vector4f
+        get() = Vector4f(material.baseColor)
+        set(value) { material.baseColor.set(value) }
+    override var emissive: Vector3f
+        get() = Vector3f(material.emissiveFactor)
+        set(value) { material.emissiveFactor.set(value) }
+}
+
+private class UiTextFacade(private val text: UITextComponent) : ScriptUiText {
+    override var key: String
+        get() = text.key
+        set(value) { text.key = value }
+    override var args: List<String>
+        get() = text.args
+        set(value) { text.args = value.toList() }
+    override var color: Vector4f
+        get() = Vector4f(text.color)
+        set(value) { text.color.set(value) }
+    override var visible: Boolean
+        get() = text.gameObject?.getComponent<UIElementComponent>()?.visible ?: true
+        set(value) { text.gameObject?.getComponent<UIElementComponent>()?.visible = value }
+}
+
 private class TransformFacade(transform: Transform) : ScriptTransform {
     override val position: Vector3f = transform.translation
     override val rotation: Vector3f = transform.rotation
@@ -98,7 +171,14 @@ class ScriptEntityImpl(val gameObject: GameObject) : ScriptEntity {
     override fun component(name: String): Any? = ScriptFacades.create(name, gameObject)
 }
 
-class ScriptSceneImpl(private val root: () -> GameObject) : ScriptScene {
+class ScriptSceneImpl(
+    private val root: () -> GameObject,
+    private val switcher: ScriptSceneSwitcher = NoOpScriptSceneSwitcher,
+) : ScriptScene {
+    override val name: String get() = switcher.currentName
+
+    override fun load(sceneName: String): Boolean = switcher.request(sceneName)
+
     private fun all() = root().getAllChildren()
 
     override fun find(name: String): ScriptEntity? =
