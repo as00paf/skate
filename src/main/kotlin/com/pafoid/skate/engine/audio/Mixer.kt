@@ -14,7 +14,14 @@ data class AudioConfig(
     val masterMuted: Boolean = false,
     val musicMuted: Boolean = false,
     val sfxMuted: Boolean = false,
-    val uiMuted: Boolean = false
+    val uiMuted: Boolean = false,
+    val masterLowPass: Float = 1f,
+    val musicLowPass: Float = 1f,
+    val sfxLowPass: Float = 1f,
+    val uiLowPass: Float = 1f,
+    val musicReverbSend: Float = 0f,
+    val sfxReverbSend: Float = 1f,
+    val uiReverbSend: Float = 0f
 )
 
 class AudioBus(val id: BusId, val parent: AudioBus? = null) {
@@ -66,6 +73,10 @@ class Mixer {
         configure(BusId.MUSIC, config.musicVolume, config.musicMuted)
         configure(BusId.SFX, config.sfxVolume, config.sfxMuted)
         configure(BusId.UI, config.uiVolume, config.uiMuted)
+        bus(BusId.MASTER).lowPassGainHF = config.masterLowPass
+        bus(BusId.MUSIC).apply { lowPassGainHF = config.musicLowPass; reverbSend = config.musicReverbSend }
+        bus(BusId.SFX).apply { lowPassGainHF = config.sfxLowPass; reverbSend = config.sfxReverbSend }
+        bus(BusId.UI).apply { lowPassGainHF = config.uiLowPass; reverbSend = config.uiReverbSend }
     }
 
     private fun configure(id: BusId, volume: Float, muted: Boolean) {
