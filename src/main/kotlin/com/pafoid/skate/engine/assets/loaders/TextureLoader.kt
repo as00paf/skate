@@ -48,6 +48,16 @@ class TextureLoader() {
 
     fun discard(data: TextureData) = stbi_image_free(data.pixels)
 
+    /** Hot reload: swaps the GPU payload of [texture] for [data] while keeping the same object. GL thread only. */
+    fun replace(texture: Texture, data: TextureData) {
+        delete(texture)
+        texture.width = data.width
+        texture.height = data.height
+        texture.channels = 4
+        texture.flip = data.flip
+        uploadToGPU(texture, data.pixels)
+    }
+
     fun delete(texture: Texture) {
         if (texture.texId >= 0) org.lwjgl.opengl.GL11.glDeleteTextures(texture.texId)
         texture.texId = -1
