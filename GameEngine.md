@@ -355,6 +355,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Implement docs/design/ANI-04-ik-wiring.md on the gameplay side (foot targets from ground raycasts).
   - Done when: Feet plant on slopes in the sample; tests for target computation.
   - Deps: ANI-04
+- [~] @skate-gameplay **GPL-11** `P1` Make the walk/skate toggle actually switch modes
+  - Do: Human-reported: pressing E / gamepad Y (GPL-09) changes `mounted` but nothing visible happens. Wire the toggle so mounting switches the active locomotion (character controller off, skateboard physics/controller on, board attached to the player, camera preset change) and dismounting reverses it, and the player can walk away from the board. Keep it engine-generic (`Mountable`).
+  - Done when: In the sample, the player walks to the board, presses the toggle and skates, presses it again and walks; tests cover the state transitions.
+  - Deps: GPL-09
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
