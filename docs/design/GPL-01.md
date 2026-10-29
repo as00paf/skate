@@ -127,3 +127,16 @@ Status: **approved and implemented** (see §8 for deviations from the approved d
 ## 11. GPL-11: mount toggle wiring
 
 `PlayerMotionSystem.syncMount` runs every frame for a `Mountable` character: the mount body goes on `MountMath.MOUNT_LAYER`, characters ignore that layer (walk over/away from a parked board), and while ridden the board is carried at the character's feet with its heading, zero velocity and collision mask 0. Dismounting restores the board's mask so it stays where it was left. `Mountable.cameraPreset` (walk/ride framing from the `mount` config) is pushed to `PlayerMotionSystem.onCameraPreset` on every mode change; `GameCamera.applyPreset` consumes it.
+
+## 12. GPL-13 — ride ON the board, board physics/visual split
+
+Human feedback on GPL-11: the board stood between the rider's legs and the debug draw showed extra wireframes while the board's own was missing.
+
+- **Prefab split:** the `Skateboard` root is unscaled and holds the `RigidBody3D` and a centred, zero-offset `BoxCollider3D` in world meters (0.1 / 0.05 / 0.38). A child `Skateboard Model` carries the 0.0017 model scale and sits at `-halfY` so the wheels touch the box bottom. A scaled, offset (compound) collider made the debug wireframe wrong; the plain box does not. Measured model size is 0.2 x 0.13 x 0.81 m against the 1.82 m skater, so the scale itself is correct.
+- **Rider on the deck:** `MountTuning.rideHeight` (0.1 m, wheels to deck top) is the height the feet hover above the ground while mounted (`Mountable.rideHeight`, `MountMath.hoverVelocity`, applied in `PlayerMotionSystem.applyGround`). Airborne (ollie) releases the hold. `MountTuning.offsetY` is now -0.05 (board centre under the feet).
+- Limitation: hover is a velocity hold on the character body, not a collider change; no PHY changes needed.
+
+## 13. GPL-07 / GPL-10
+
+- **GPL-07:** `CameraInterpolator.update(dt)` is public and `CameraManager` advances it every frame; `CameraManager.lerpToPreset(preset, duration)` starts a blend. BUG-014 removed; the `CameraTest` lerp case is enabled.
+- **GPL-10 (foot planting, on foot):** `PhysicsSystem.probeGround` raycasts beside each foot (`FootIkConfig.legs[].lateral`) and stores a `FootTarget` per leg on `PlayerController.footTargets` (`FootPlacement.compute`: surface hit lifted by `ankleHeight`, invalid when no ground or beyond `maxReach`). `PlayerMotionSystem` feeds them to `FootIkBinder`, which registers the Mixamo leg `TwoBoneIkConstraint`s on `Animator.ik` and ramps the weight (0.15 s); weight is 0 while mounted or airborne. Limitations: targets are position-only (no foot tilt), the foot IK config is a code default (`PlayerController.footIk`) until an inspector/config asset exists, board sockets for riding stay in the ANI-04 design for later.

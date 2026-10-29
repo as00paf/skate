@@ -14,6 +14,7 @@ import com.pafoid.skate.engine.gameplay.MountRequest
 import com.pafoid.skate.engine.gameplay.Mountable
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.gameplay.ground.GroundMotion
+import com.pafoid.skate.engine.gameplay.ik.FootIkBinder
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.physics3d.IPhysicsBody3D
 import org.joml.Quaternionf
@@ -28,6 +29,8 @@ class PlayerMotionSystem(
     /** Called when the active mode of a [Mountable] character changes, so the camera can reframe. */
     var onCameraPreset: ((CameraPreset) -> Unit)? = null
     private var lastPreset: CameraPreset? = null
+
+    private val footBinders = java.util.WeakHashMap<PlayerController, FootIkBinder>()
 
     private val players = query(PlayerController::class, IPhysicsBody3D::class, topLevelOnly = true)
 
@@ -51,6 +54,12 @@ class PlayerMotionSystem(
                     lastPreset = preset
                     onCameraPreset?.invoke(preset)
                 }
+            }
+
+            go.getComponent<Animator>()?.let { animator ->
+                val footIk = footBinders.getOrPut(controller) { FootIkBinder(controller.footIk) }
+                val riding = (controller.behavior as? Mountable)?.mounted == true
+                footIk.update(animator.ik, controller.footTargets, controller.ground.standing && !riding, dt)
             }
 
             if (motion.state != controller.state) {
@@ -112,6 +121,14 @@ class PlayerMotionSystem(
     /** Follows slopes, climbs steps and snaps to the ground by adjusting vertical velocity. */
     private fun applyGround(motion: CharacterMotion, body: IPhysicsBody3D, controller: PlayerController, dt: Float) {
         val velocity = body.linearVelocity
+        val mountable = controller.behavior as? Mountable
+        if (mountable != null && mountable.mounted && motion.impulse == null) {
+            MountMath.hoverVelocity(controller.ground.found, controller.ground.distance, mountable.rideHeight)?.let {
+                velocity.y = it
+                body.linearVelocity = velocity
+                return
+            }
+        }
         val vy = GroundMotion.verticalVelocity(
             config = controller.behavior.ground,
             ground = controller.ground,

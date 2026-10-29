@@ -6,7 +6,9 @@ import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.PlayerController
 import com.pafoid.skate.engine.ecs.components.RagdollComponent
 import com.pafoid.skate.engine.ecs.components.RagdollState
+import com.pafoid.skate.engine.gameplay.MotionMath
 import com.pafoid.skate.engine.gameplay.ground.GroundDetector
+import com.pafoid.skate.engine.gameplay.ik.FootPlacement
 import com.pafoid.skate.engine.ecs.components.RigidBody3D
 import com.pafoid.skate.engine.ecs.components.ScenePhysicsComponent
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -247,6 +249,14 @@ class PhysicsSystem(
 
         val velocity = body.linearVelocity
         controller.stepAhead = if (config.stepUp) detector.findStep(feet, velocity.x, velocity.z) else null
+
+        val yaw = MotionMath.yawOfRotation(body.getRotation())
+        controller.footIk.legs.forEachIndexed { i, leg ->
+            val target = controller.footTargets.getOrNull(i) ?: return@forEachIndexed
+            FootPlacement.compute(feet, yaw, leg, controller.footIk, target) { from, to ->
+                physics3d.raycast(from, to, excludeBody = body)
+            }
+        }
     }
 
     fun toggleDebug() {
