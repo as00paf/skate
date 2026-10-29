@@ -126,6 +126,10 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
 - [x] **REN-15** `P1` `GpuResource : AutoCloseable`
   - Do: Introduce a `GpuResource : AutoCloseable` base (id, idempotent `close()`) for textures, buffers, VAOs, FBOs; make `CubeMap`, `DebugRenderer`, `PickingRenderer` own and free theirs (QA-04 findings).
   - Done when: No GL object is created without an owner that deletes it; tests with mocked GL.
+- [ ] **REN-16** `P2` Review SDF font branch of `shader_2d_batch.glsl`
+  - Do: Review the SDF branch added by GUI-04 for correctness, batching and edge/outline quality.
+  - Done when: Findings fixed or documented; test or screenshot check recorded.
+  - Deps: GUI-04
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -162,6 +166,10 @@ Asset management works but needs a complete review.
   - Do: From QA-04: `AssetsManager` owns texture/mesh/sound lifetimes and deletes on unload; loaders return a result type instead of `Boolean`/`null`; replace `println` in `AssimpExtensions`, `ShaderLoader`, `SoundLoader` with `LoggerService`.
   - Done when: Unloading frees native resources; no `println` in assets.
   - Deps: AST-03
+- [~] @skate-assets **AST-09** `P2` Persist prefab templates as `.prefab` files
+  - Do: Serialize `PrefabAsset.template` to a `.prefab` file via the asset serializer and load it back, so ECS-05 prefab instances survive project reload.
+  - Done when: Round-trip test for prefab assets with instances and overrides.
+  - Deps: ECS-05
 
 ### ECS — `ECS` (`skate-ecs`)
 
@@ -178,7 +186,7 @@ The ECS is in good working shape but needs a complete review. It is probably mis
   - Do: Define `PreUpdate / FixedUpdate / Update / LateUpdate / Render` phases with declared dependencies.
   - Done when: System order is deterministic, and ordering resolution has unit tests.
   - Deps: ECS-01
-- [ ] **ECS-04** `P2` Component gap analysis
+- [~] @skate-ecs **ECS-04** `P2` Component gap analysis
   - Do: List the components missing compared with industry engines (e.g. `Tag/Layer`, `LOD`, `Trigger`, `AudioListener`, `Billboard`, `Lifetime`, `Prefab instance link`) and create follow-up tasks for the owning domains.
   - Done when: The gap list is in `docs/design/ECS-04.md` and the follow-ups are reported to the lead.
   - Deps: ECS-01
@@ -318,7 +326,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: A reusable kinematic/dynamic character controller (slopes, steps, ground snapping) in `engine/` that games can extend.
   - Done when: A non-skate sample (TLG-03) uses it, and the ground detection math has unit tests.
   - Deps: GPL-01
-- [ ] **GPL-03** `P1` Fix wrong skate prefab models
+- [~] @skate-gameplay **GPL-03** `P1` Fix wrong skate prefab models
   - Do: Audit `Skater`, `Skateboard`, `Floor` and `PrefabsGenerator` against their source assets, and fix scale, pivots, orientation and materials.
   - Done when: All prefabs spawn correctly oriented and scaled. A checklist is in the PR.
 - [ ] **GPL-04** `P2` Prefab library expansion
@@ -343,6 +351,10 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: The human could walk but there is no way to switch between walking and skating. Add a `toggle_mount` input action (INP-03 action map; default gamepad button and keyboard key, rebindable) that mounts/dismounts the board: dismounted = generic locomotion (GPL-02), mounted = `SkateBehavior`; require the board to be within a configurable range when mounting, place the board under the character/at the character's feet, keep skateboarding-specific logic in `game/` and the generic mount/dismount interface in the engine so other games can use it for vehicles/mounts; add the action to the standalone controller config; tell the human which button/key is used.
   - Done when: In the sample game the player can toggle between walking and skating with gamepad and keyboard; unit tests for the state transitions and range check.
   - Deps: GPL-01, INP-03
+- [ ] **GPL-10** `P2` Wire foot-target IK to the skate/character controllers
+  - Do: Implement docs/design/ANI-04-ik-wiring.md on the gameplay side (foot targets from ground raycasts).
+  - Done when: Feet plant on slopes in the sample; tests for target computation.
+  - Deps: ANI-04
 
 ### In-game UI — `GUI` (`skate-gameui`)
 
@@ -382,7 +394,7 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
 - [x] **SCR-04** `P3` TypeScript host
   - Do: Embed a JS engine (e.g. GraalJS or Javet), transpile TS, and use the same `ScriptHost` API.
   - Deps: SCR-02
-- [ ] **SCR-05** `P3` Lua host
+- [~] @skate-scripting **SCR-05** `P3` Lua host
   - Do: Embed LuaJ (or similar) using the same `ScriptHost` API.
   - Deps: SCR-02
 
@@ -390,7 +402,8 @@ Scripting needs to be implemented. Kotlin Script is the primary language; TypeSc
 
 Multiplayer and Steam support need to be added.
 
-- [!] awaiting design approval (docs/design/NET-01.md) **NET-01** `P2` Multiplayer architecture
+- [x] **NET-01** `P2` Multiplayer architecture
+  - Approved by the human: Netty UDP transport instead of the own UDP layer; 60 Hz tick / 20 Hz snapshots / 100 ms interpolation; predict the local player only; listen-server is first-class (loopback); 16 players for v1. Update docs/design/NET-01.md accordingly.
   - Do: Choose a model (client-server with prediction and reconciliation is recommended), transport (UDP, e.g. via Netty or KryoNet), replication of ECS components, and RPCs.
   - Done when: `docs/design/NET-01.md` is approved by the lead.
   - Deps: ECS-03
@@ -406,6 +419,10 @@ Multiplayer and Steam support need to be added.
 - [ ] **NET-05** `P3` Steam networking transport
   - Do: Implement the NET-02 transport over Steam networking sockets and lobbies.
   - Deps: NET-02, NET-04
+- [~] @skate-online **NET-06** `P2` Update NET-01 design for Netty
+  - Do: Revise `docs/design/NET-01.md` §3/§12 to use Netty (UDP, reliability layer on top as needed) and record the approved decisions. Keep the transport behind the `Transport` interface.
+  - Done when: Design note updated and committed; NET-02 can start.
+  - Deps: NET-01
 
 ---
 
@@ -481,7 +498,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Rework `InputTestingWindow` into the single place to inspect and tune input devices. Today dead zones are hard-coded (`0.15`/`0.1`), only joystick 1 is shown and gamepad settings are split with the Key Bindings window. Show all connected devices (keyboard, mouse, gamepads) live; per stick: raw vs processed values, dead-zone shape (axial/radial), inner/outer dead zone, response curve and sensitivity, all editable via commands and persisted through the INP-02 settings; trigger thresholds; button/axis map of the active gamepad layout; recent-event log with clear/pause; copy-to-clipboard of device info; clean ImGui layout with tooltips and translated strings.
   - Done when: Dead zones and sensitivity are edited here and take effect immediately in-game; no hard-coded dead zones remain; window documented in `docs/`; tests for the settings commands.
   - Deps: INP-02
-- [ ] **EDT-20** `P1` Key Bindings window rework
+- [~] @skate-editor **EDT-20** `P1` Key Bindings window rework
   - Do: Rework `KeyBindingsWindow` on top of the INP-03 action maps: list actions by category with search/filter; per-action keyboard, mouse and gamepad bindings with a click-to-rebind capture (cancel/clear); conflict detection with swap/unbind choices; reset per action/category/all; named profiles with import/export; gamepad-specific settings that currently live here move to the Input Testing window (EDT-19) so each setting has exactly one home; all changes via commands with undo/redo; translated and with tooltips.
   - Done when: Any action can be rebound for keyboard and gamepad, conflicts are detected, bindings persist; command tests under `editor/commands`.
   - Deps: INP-03, EDT-19
@@ -501,6 +518,10 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Convert `InputTestingWindow` (EDT-19) from a dockable window into a modal-less dialog: closable with the title-bar X, a Close button and Esc; opened from a new Input > 'Input Testing...' menu item (and a shortcut), not shown in View > Windows and excluded from docked layout persistence (EDT-01) except for remembering its size/position. Reuse or extend the existing dialog pattern (`ProjectSwitcherDialog`, `ProjectWizardWindow`) into a small reusable `EditorDialog` base so other tool dialogs can use it. Keep every EDT-19 feature (devices, editable dead zones/curves, event log). Update `ViewMenuBuilder`/`WindowRegistry` so the entry is removed there and translations are added; migrate any saved layout that references the old window.
   - Done when: Dialog opens from the menu, closes via X/Esc/Close button, is not in View > Windows, settings still persist, no stale layout entry; tests for the registry/menu change and the dialog state.
   - Deps: EDT-19
+- [ ] **EDT-25** `P2` ReverbZone inspector and audio bus effect controls
+  - Do: Inspector for `ReverbZone` and bus low-pass/reverb-send controls in the audio mixer UI, via commands.
+  - Done when: Settings editable with undo and persisted.
+  - Deps: AUD-05
 
 ## Testing & tooling
 
@@ -522,6 +543,10 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **TLG-05** `P1` Sample project: Feature showcase
   - Do: One scene per engine feature (lights, shadows, materials, post-fx, particles, animation, audio, physics, UI) that serves as a manual regression suite.
   - Done when: Each scene is documented in `docs/samples.md` with what to look for.
+- [~] @skate-tooling **TLG-06** `P2` Script API for audio, scene switching, UI and material colours
+  - Do: Expose these in the script API (needed by the Tetris sample) and update the sample to use them with GUI widgets.
+  - Done when: Tetris runs with sound, UI score and game-over scene switch from scripts.
+  - Deps: TLG-03, GUI-02
 
 ### Quality — `QA` (`skate-qa`)
 
