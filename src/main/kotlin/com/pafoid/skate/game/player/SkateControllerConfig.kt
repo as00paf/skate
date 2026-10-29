@@ -39,7 +39,14 @@ data class MountTuning(
     val targetName: String = "Skateboard",
     /** Board height relative to the character origin (feet) when mounting. */
     val offsetY: Float = 0f,
+    /** Camera framing while walking. */
+    val walkCamera: CameraTuning = CameraTuning(4f, 1.4f),
+    /** Camera framing while skating (further back, lower). */
+    val rideCamera: CameraTuning = CameraTuning(6f, 1.0f),
 )
+
+@Serializable
+data class CameraTuning(val distance: Float, val height: Float)
 
 @Serializable
 data class InputTuning(

@@ -68,4 +68,28 @@ class MountTest {
         assertTrue(bindings.any { it is ActionBinding.Key && it.key == 69 })
         assertTrue(bindings.any { it is ActionBinding.GamepadButton && it.button == 3 })
     }
+
+    @Test
+    fun Mount_SwitchesLocomotionAndCameraBothWays() {
+        val b = SkateBehavior(SkateControllerConfig())
+        val walk = b.cameraPreset
+        assertEquals(SkateControllerConfig().mount.walkCamera.distance, walk.distance)
+
+        b.update(press(0.5f), 0.016f)
+        assertEquals(SkateControllerConfig().mount.rideCamera.distance, b.cameraPreset.distance)
+        assertTrue(b.mounted)
+
+        b.update(press(0.5f), 0.016f)
+        assertEquals(walk, b.cameraPreset)
+        assertFalse(b.mounted)
+    }
+
+    @Test
+    fun Mount_BoardCarriedWhenRiddenAndFreeWhenWalking() {
+        assertEquals(0, MountMath.mountMask(true))
+        assertEquals(-1, MountMath.mountMask(false))
+        val mask = MountMath.characterMask(-1)
+        assertEquals(0, mask and MountMath.MOUNT_LAYER)
+        assertEquals(1, mask and 1)
+    }
 }
