@@ -52,7 +52,6 @@ scan of `TODO`/`FIXME` markers in `src/main`. Runtime repro steps are marked
 `ProjectActionHandlerTest` (replaced by `ProjectActionHandlerFileOpsTest`, 4 tests).
 
 ### Production bugs revealed
-- BUG-014 (GPL/REN): `CameraInterpolator.handleLerp` is private and never called, so `lerpToPreset` does nothing. Test `CameraTest` lerp case is `@Disabled`.
 - BUG-015/016/017: fixed by QA-08 (ProjectSettingsWindow now publishes `ProjectEvent.SaveRequested`; TexturesTab publishes `ViewportAction.DropTexture`; `StringManager.setLocale` uses the originally loaded base path).
 - BUG-018 (REN): `EnvironmentSystem.environmentComponent` is never assigned, so `applyPreset(...)` and `update(dt)` on the system are no-ops (only `reset()` works, via the scene lookup). Tests that covered system-level preset application were rewritten against `EnvironmentComponent`.
 

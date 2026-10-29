@@ -26,10 +26,11 @@ class CameraInterpolator(private val camera: CameraComponent) {
         startDistance = camera.zoom
     }
 
-    private fun handleLerp(dt: Float) {
+    /** Advances an active [lerpToPreset]; call once per frame. */
+    fun update(dt: Float) {
         val target = targetPreset ?: return
         lerpTime += dt
-        val t = (lerpTime / lerpDuration).coerceIn(0f, 1f)
+        val t = if (lerpDuration <= 0f) 1f else (lerpTime / lerpDuration).coerceIn(0f, 1f)
 
         camera.fov = Interpolator.lerp(startFov, target.fov, t)
         camera.zoom = Interpolator.lerp(startDistance, target.zoom, t)
