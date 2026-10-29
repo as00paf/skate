@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.netty.transport)
     implementation(libs.netty.buffer)
 
+    // Steam (optional at runtime: PlatformServices falls back to a no-op when absent)
+    implementation(libs.steamworks4j)
+
     // Reflection
     implementation(kotlin("reflect"))
 
