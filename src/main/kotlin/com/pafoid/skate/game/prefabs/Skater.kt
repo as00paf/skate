@@ -24,7 +24,8 @@ class Skater(
     model: `3dModel`,
     skate: GameObject? = null,
     position: Vector3f = Vector3f(0f, 0.15f, 0f),
-    rotation: Vector3f = Vector3f(0f, 90f, 0f),
+    /** Yaw 0 faces +Z, the same direction as the skateboard's nose, so walking forward and riding agree. */
+    rotation: Vector3f = Vector3f(0f, 0f, 0f),
     scale: Vector3f = Vector3f(1f, 1f, 1f),
     mass: Float = 180f,// kg
     /** Collider half extents in meters; the james model is 1.82 m tall. */
