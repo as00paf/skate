@@ -83,3 +83,12 @@ Unit only, no sockets: codec round-trips and golden bytes, delta encode/decode a
 3. Predict the local player only; remote bodies are interpolated.
 4. Listen-server is first-class (loopback transport).
 5. 16 players for v1.
+
+## 13. NET-02 implementation notes (deviations from the sketch above)
+
+- Netty is confined to `UdpTransport`; handshake, timeouts and reliability live in `DatagramTransport`/`ReliabilityLayer`, shared with `InMemoryNetwork` (tests, loopback).
+- No fragmentation: a message is at most `Transport.MAX_PAYLOAD` (1000 B). Snapshots are split into parts (≤ ~800 B each) by the server and reassembled by the client; a snapshot is only acked when all parts arrived.
+- Rotation replicates as Euler degrees quantized to 1/128° (shortest-path blend) instead of smallest-three quaternions; position/scale 1/1024.
+- Delta compression is generic: a state is a flat `IntArray` of quantized fields (`ReplicationSchema`); a per-object `Long` mask plus zig-zag varint deltas against the last client-acked snapshot.
+- Client render time is `estimatedServerTick - 100 ms`, bounded to the buffered range (hold, no extrapolation yet).
+- Not in NET-02: RPCs, connect challenge/anti-spoof token, relevancy filtering, velocity replication. Listen server = host runs `ReplicationServer` on its own scene; other clients connect over UDP (or `InMemoryNetwork` in-process).
