@@ -22,6 +22,11 @@ import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.data.Renderable2D
+import com.pafoid.skate.engine.render.lighting.LightBuffer
+import com.pafoid.skate.engine.render.lighting.LightCulling
+import com.pafoid.skate.engine.render.lighting.LightData
+import com.pafoid.skate.engine.render.lighting.ModelBounds
+import com.pafoid.skate.engine.render.lighting.SceneLights
 import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
@@ -110,17 +115,19 @@ class GeometryPass(
         // Upload lighting uniforms
         val ambientLightComponent = scene.getComponent<AmbientLightComponent>()?.takeIf { it.enabled }
         val directionalLight = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled }
-        val pointLights = scene.getAllComponents<PointLightComponent>()
-            .filter { it.enabled && it.gameObject?.isVisible == true }.mapNotNull { it.gameObject }
-        val spotLights = scene.getAllComponents<SpotLightComponent>()
+        sceneLights.clear()
+        scene.getAllComponents<PointLightComponent>()
             .filter { it.enabled && it.gameObject?.isVisible == true }
-            .mapNotNull { it.gameObject }
+            .mapNotNullTo(sceneLights) { it.gameObject?.let(SceneLights::point) }
+        scene.getAllComponents<SpotLightComponent>()
+            .filter { it.enabled && it.gameObject?.isVisible == true }
+            .mapNotNullTo(sceneLights) { it.gameObject?.let(SceneLights::spot) }
+        lightBuffer.upload(sceneLights)
+        lightBuffer.bind(defaultShader)
         lightingUniformsLoader.loadLightingUniforms(
             defaultShader,
             ambientLightComponent,
             directionalLight,
-            pointLights,
-            spotLights,
             environmentComponent,
             shadowMapTextureId,
             shadowMapResolution
@@ -150,6 +157,13 @@ class GeometryPass(
             else if (go.uId == scene.hoveredGameObject?.uId) selectionState = 2.0f
 
             defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
+
+            val model = renderComponent.model
+            val lightCount = if (model == null || sceneLights.isEmpty()) 0 else {
+                val radius = ModelBounds.of(model).toWorld(transform.worldMatrix, boundsCenter)
+                LightCulling.select(sceneLights, boundsCenter, radius, objectLights, lightScores)
+            }
+            lightBuffer.setObjectLights(defaultShader, objectLights, lightCount)
 
             modelRenderer.render(
                 transform = transform,
@@ -188,6 +202,14 @@ class GeometryPass(
             }
         }
     }
+
+    private val lightBuffer = LightBuffer()
+    private val sceneLights = ArrayList<LightData>()
+    private val objectLights = IntArray(LightCulling.MAX_LIGHTS_PER_OBJECT)
+    private val lightScores = FloatArray(LightCulling.MAX_LIGHTS_PER_OBJECT)
+    private val boundsCenter = Vector3f()
+
+    fun destroy() = lightBuffer.destroy()
 
     private data class DrawItem(val go: GameObject, val renderComponent: RenderComponent, val transform: Transform)
 

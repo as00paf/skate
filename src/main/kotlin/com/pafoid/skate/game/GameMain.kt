@@ -14,6 +14,7 @@ import com.pafoid.skate.game.ui.GameHudState
 import com.pafoid.skate.game.ui.GameUi
 import com.pafoid.skate.game.ui.GameUiSystem
 import org.lwjgl.glfw.GLFW
+import com.pafoid.skate.engine.assets.pack.PackBuilder
 import com.pafoid.skate.engine.utils.AssetsPacker
 import com.pafoid.skate.engine.utils.Atlas
 import org.lwjgl.opengl.GL11
@@ -82,7 +83,8 @@ fun testDraw(window: Window) {// TODO : is working but needs to move
 }
 
 fun loadBinFile(): ByteArray? {
-    val file = File("C:\\workspace\\skate_workspace\\test\\Builds", AssetsPacker.BIN_FILE)// TODO: remove test
+    // Exported games ship game.bin next to the jar; -Dskate.bin=<path> overrides it.
+    val file = System.getProperty("skate.bin")?.let { File(it) } ?: File(AssetsPacker.BIN_FILE)
     if (!file.exists()) {
         println("${file.absolutePath} does not exist")
         return null
@@ -112,9 +114,8 @@ fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Proj
     atlas.keys.forEach { key ->
         atlas[key]?.forEach { info ->
             if (key in FileType.PROJECT_FILE.extensions) {
-                val start = info.position + offset
-                val end = start + info.size
-                val data = binFile.copyOfRange(start, end).toString(Charsets.UTF_8)
+                val data = PackBuilder.extract(binFile, info.position + offset, info.size, info.compressed)
+                    .toString(Charsets.UTF_8)
                 try {
                     project = engine.serializer.decodeFile<Project?>(FileKind.PROJECT, data)
                 } catch (e: Exception) {
@@ -131,9 +132,7 @@ fun loadProjectAndIcon(binFile: ByteArray, atlas: Atlas, offset: Int): Pair<Proj
             it.path == iconPath
         }
         info?.let {
-            val start = info.position + offset
-            val end = start + info.size
-            binFile.copyOfRange(start, end)
+            PackBuilder.extract(binFile, info.position + offset, info.size, info.compressed)
         }
     }
 

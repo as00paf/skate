@@ -83,7 +83,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Data-driven `Material` (shader ref + typed parameter block + texture slots). Support PBR metallic/roughness as the default and serialize materials as assets.
   - Done when: Models render through materials instead of hardcoded uniforms, materials can be edited and saved, and parameter binding has unit tests.
   - Deps: REN-02
-- [~] @skate-render **REN-05** `P1` Dynamic shaders and shader variants
+- [x] **REN-05** `P1` Dynamic shaders and shader variants
   - Do: Add shader `#include` and `#define` permutations (skinned, shadowed, fog, etc.) to `ShaderLoader`, compile variants on demand and cache them, and hot-reload shaders in editor builds.
   - Done when: Editing a `.glsl` file under `resources/shaders` updates the running editor, and variant keys plus preprocessor output are unit-tested.
   - Deps: REN-02
@@ -126,7 +126,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
 - [x] **REN-15** `P1` `GpuResource : AutoCloseable`
   - Do: Introduce a `GpuResource : AutoCloseable` base (id, idempotent `close()`) for textures, buffers, VAOs, FBOs; make `CubeMap`, `DebugRenderer`, `PickingRenderer` own and free theirs (QA-04 findings).
   - Done when: No GL object is created without an owner that deletes it; tests with mocked GL.
-- [ ] **REN-16** `P2` Review SDF font branch of `shader_2d_batch.glsl`
+- [x] **REN-16** `P2` Review SDF font branch of `shader_2d_batch.glsl`
   - Do: Review the SDF branch added by GUI-04 for correctness, batching and edge/outline quality.
   - Done when: Findings fixed or documented; test or screenshot check recorded.
   - Deps: GUI-04
