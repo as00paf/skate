@@ -24,19 +24,24 @@ class SceneVisualsGizmo(private val debugRenderer: DebugRenderer) {
     private val lightColor = Vector3f(1f, 0.9f, 0.3f)
     private val selectedColor = Vector3f(1f, 0.55f, 0f)
 
+    private fun hasCameraOrLight(go: GameObject): Boolean =
+        go.getComponent<CameraComponent>() != null || go.getComponent<PointLightComponent>() != null ||
+                go.getComponent<SpotLightComponent>() != null || go.getComponent<DirectionalLightComponent>() != null
+
     private fun visuals(scene: Scene): List<GameObject> {
         val out = ArrayList<GameObject>()
         fun walk(go: GameObject) {
-            if (go !== scene && (go.getComponent<CameraComponent>() != null || go.getComponent<PointLightComponent>() != null ||
-                    go.getComponent<SpotLightComponent>() != null || go.getComponent<DirectionalLightComponent>() != null)
-            ) out.add(go)
+            if (go !== scene && hasCameraOrLight(go)) out.add(go)
             go.children.forEach { walk(it) }
         }
+        // Scene-level components (e.g. the default directional light of a scene) live on the scene itself.
+        if (hasCameraOrLight(scene)) out.add(scene)
         walk(scene)
         return out
     }
 
-    private fun position(go: GameObject) = go.getComponent<Transform>()?.worldMatrix?.getTranslation(Vector3f())
+    private fun position(go: GameObject): Vector3f =
+        go.getComponent<Transform>()?.worldMatrix?.getTranslation(Vector3f()) ?: Vector3f()
 
     /** Icon radius that stays the same on screen: a fraction of the gizmo size for the current camera distance. */
     fun pickRadius(iconSize: Float) = iconSize * 0.9f
@@ -47,9 +52,8 @@ class SceneVisualsGizmo(private val debugRenderer: DebugRenderer) {
         val up = Vector3f(camera.view.m01(), camera.view.m11(), camera.view.m21())
         val selected = scene.selectedGameObjects
         for (go in visuals(scene)) {
-            val transform = go.getComponent<Transform>() ?: continue
-            val pos = position(go) ?: continue
-            val rotation = transform.worldMatrix.getNormalizedRotation(Quaternionf())
+            val pos = position(go)
+            val rotation = go.getComponent<Transform>()?.worldMatrix?.getNormalizedRotation(Quaternionf()) ?: Quaternionf()
             val isSelected = go in selected
             val size = iconSizeAt(pos)
             fun color(base: Vector3f) = if (isSelected) selectedColor else base
@@ -85,7 +89,7 @@ class SceneVisualsGizmo(private val debugRenderer: DebugRenderer) {
     /** The camera/light object whose icon is under [ray], or null. */
     fun pick(scene: Scene, ray: Ray, iconSizeAt: (Vector3f) -> Float): GameObject? {
         if (!visible) return null
-        val targets = visuals(scene).mapNotNull { go -> position(go)?.let { EditorVisuals.Target(go, it) } }
+        val targets = visuals(scene).mapNotNull { go -> EditorVisuals.Target(go, position(go)) }
         if (targets.isEmpty()) return null
         // Radius depends on distance, so test each target with its own size.
         var best: GameObject? = null
