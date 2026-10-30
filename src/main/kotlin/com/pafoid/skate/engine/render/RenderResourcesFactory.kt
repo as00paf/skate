@@ -19,6 +19,7 @@ import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
+import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
 import com.pafoid.skate.engine.render.utils.GLStateTracker
@@ -66,6 +67,7 @@ class RenderResourcesFactory(
             .addPass(renderPasses.shadow)
             .addPass(renderPasses.picking)
             .addPass(renderPasses.geometry)
+            .addPass(renderPasses.postProcess)
             .addPass(renderPasses.debug)
             .build()
 
@@ -164,6 +166,17 @@ class RenderResourcesFactory(
         )
         val debugPass = DebugPass(renderers.debug, cameraManager)
 
+        val postProcessPass = PostProcessPass(
+            frameBuffer = frameBuffer,
+            useFbo = useFbo,
+            bloomShader = assetsManager.getShader("/shaders/post_bloom.glsl"),
+            tonemapShader = assetsManager.getShader("/shaders/post_tonemap.glsl"),
+            gammaShader = assetsManager.getShader("/shaders/post_gamma.glsl"),
+            fxaaShader = assetsManager.getShader("/shaders/post_fxaa.glsl"),
+            ssaoShader = assetsManager.getShader("/shaders/post_ssao.glsl"),
+            vaoLoader = assetsManager.vaoLoader
+        )
+
         val shadowPass = if (shadowMap != null) {
             ShadowPass(
                 shadowRenderer = renderers.shadow,
@@ -181,7 +194,8 @@ class RenderResourcesFactory(
             picking = pickingPass,
             geometry = geometryPass,
             debug = debugPass,
-            shadow = shadowPass
+            shadow = shadowPass,
+            postProcess = postProcessPass
         )
     }
 }

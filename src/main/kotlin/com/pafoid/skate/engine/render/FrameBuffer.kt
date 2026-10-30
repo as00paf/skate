@@ -112,6 +112,8 @@ class FrameBuffer(var width: Int, var height: Int) {
 
     fun getTextureId() = texture.texId
 
+    fun getDepthTextureId(): Int = depthTexture
+
     fun destroy() {
         if (fboId != 0) {
             glDeleteFramebuffers(fboId)

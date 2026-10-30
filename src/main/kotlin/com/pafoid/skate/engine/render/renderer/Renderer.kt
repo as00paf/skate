@@ -71,6 +71,9 @@ class Renderer(
 
         // Destroy shadow map
         renderResources.shadowMap?.destroy()
+
+        // Destroy post processing pass and its shaders
+        renderResources.renderPasses.postProcess.destroy()
     }
 
     fun resize(width: Int, height: Int) {

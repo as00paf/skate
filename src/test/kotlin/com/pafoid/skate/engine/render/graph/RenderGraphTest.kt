@@ -38,4 +38,62 @@ class RenderGraphTest {
             pass2.executeWithTiming(any())
         }
     }
+
+    @Test
+    @DisplayName("should execute post process pass after geometry pass and before debug pass")
+    fun shouldExecutePostProcessPassAfterGeometryAndBeforeDebug() {
+        val scene = mockk<Scene>(relaxed = true)
+
+        val geometryPass = mockk<RenderPass>(relaxed = true) {
+            io.mockk.every { name } returns "GeometryPass"
+            io.mockk.every { isEnabled } returns true
+        }
+        val postProcessPass = mockk<RenderPass>(relaxed = true) {
+            io.mockk.every { name } returns "PostProcessPass"
+            io.mockk.every { isEnabled } returns true
+        }
+        val debugPass = mockk<RenderPass>(relaxed = true) {
+            io.mockk.every { name } returns "DebugPass"
+            io.mockk.every { isEnabled } returns true
+        }
+
+        val graph = RenderGraphBuilder()
+            .addPass(geometryPass)
+            .addPass(postProcessPass)
+            .addPass(debugPass)
+            .build()
+
+        graph.execute(scene)
+
+        verifyOrder {
+            geometryPass.executeWithTiming(any())
+            postProcessPass.executeWithTiming(any())
+            debugPass.executeWithTiming(any())
+        }
+    }
+
+    @Test
+    @DisplayName("should skip disabled passes during execution")
+    fun shouldSkipDisabledPassesDuringExecution() {
+        val scene = mockk<Scene>(relaxed = true)
+
+        val enabledPass = mockk<RenderPass>(relaxed = true) {
+            io.mockk.every { name } returns "EnabledPass"
+            io.mockk.every { isEnabled } returns true
+        }
+        val disabledPass = mockk<RenderPass>(relaxed = true) {
+            io.mockk.every { name } returns "DisabledPass"
+            io.mockk.every { isEnabled } returns false
+        }
+
+        val graph = RenderGraphBuilder()
+            .addPass(enabledPass)
+            .addPass(disabledPass)
+            .build()
+
+        graph.execute(scene)
+
+        io.mockk.verify(exactly = 1) { enabledPass.executeWithTiming(any()) }
+        io.mockk.verify(exactly = 0) { disabledPass.executeWithTiming(any()) }
+    }
 }
