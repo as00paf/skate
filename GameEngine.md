@@ -87,7 +87,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Add shader `#include` and `#define` permutations (skinned, shadowed, fog, etc.) to `ShaderLoader`, compile variants on demand and cache them, and hot-reload shaders in editor builds.
   - Done when: Editing a `.glsl` file under `resources/shaders` updates the running editor, and variant keys plus preprocessor output are unit-tested.
   - Deps: REN-02
-- [~] @skate-render **REN-06** `P2` REWRITE Lighting
+- [x] **REN-06** `P2` REWRITE Lighting
   - Do: Replace `LightingUniformsLoader` with a light buffer (UBO/SSBO) supporting N point/spot/directional lights. Add light culling per object (forward+) or a clustered approach.
   - Done when: The scene supports at least 64 dynamic lights without shader changes, and light culling math is unit-tested.
   - Deps: REN-04
@@ -154,7 +154,7 @@ Asset management works but needs a complete review.
   - Do: Watch the file system (reuse `FileSystemScanner`) and reload changed textures, models and sounds in place.
   - Done when: Editing a texture on disk updates the editor viewport.
   - Deps: AST-03
-- [~] @skate-assets **AST-06** `P2` Export and asset packing improvements
+- [x] **AST-06** `P2` Export and asset packing improvements
   - Do: Rework `AssetsPacker` and `ProjectExporter`: pack only referenced assets, compress, write a manifest and checksums, and produce a runnable `gameJar`.
   - Done when: An exported sample project runs standalone, and packing and manifest generation have unit tests.
   - Deps: AST-02
