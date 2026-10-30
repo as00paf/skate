@@ -7,7 +7,7 @@ enum class FileType(val extensions: List<String>) {
     FOLDER(listOf()),
     PROJECT_FILE(listOf("skateproject")),
     SCENE(listOf("scene")),
-    SCRIPT_KOTLIN(listOf("kt")),
+    SCRIPT_KOTLIN(listOf("kt", "kts")),
     SCRIPT_JAVA(listOf("java")),
     TEXTURE(listOf("jpeg", "png", "tga", "bmp", "psd", "gif", "hdr", "pic", "pnm")),
     MODEL_3D(listOf("obj", "glb", "dae", "gltf")),

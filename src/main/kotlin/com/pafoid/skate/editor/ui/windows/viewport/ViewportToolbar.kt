@@ -178,6 +178,7 @@ class ViewportToolbar(
                 ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.8f, 0.2f, 0.2f, 1f)
                 if (ImGui.button(Icons.STOP, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_HEIGHT)) {
                     eventSystem.publish(EngineAction.SetRuntimePlaying(false))
+                    eventSystem.publish(com.pafoid.skate.editor.events.ViewportAction.StopSimulation)
                     logger.logEditor("Simulation stopped")
                 }
                 ImGui.popStyleColor(2)

@@ -95,6 +95,35 @@ object ShaderConst {
         const val SHADOW_SLOPE_SCALED_BIAS = "uShadowSlopeScaledBias"
 
         /**
+         * Bloom effect uniforms.
+         */
+        const val BLOOM_INTENSITY = "uBloomIntensity"
+        const val BLOOM_THRESHOLD = "uBloomThreshold"
+
+        /**
+         * ACES tonemapping exposure uniform.
+         */
+        const val ACES_EXPOSURE = "uAcesExposure"
+
+        /**
+         * Gamma correction exponent uniform (linear -> sRGB).
+         */
+        const val GAMMA_VALUE = "uGamma"
+
+        /**
+         * FXAA anti-aliasing uniforms (mix factor and sampling texel size).
+         */
+        const val FXAA_TEXEL_SIZE = "uTexelSize"
+        const val FXAA_STRENGTH = "uFxaaStrength"
+
+        /**
+         * SSAO effect uniforms (radius in UV units, strength, depth sampler).
+         */
+        const val SSAO_RADIUS = "uSsaORadius"
+        const val SSAO_INTENSITY = "uSsaOIntensity"
+        const val SSAO_DEPTH_TEXTURE = "uDepthTexture"
+
+        /**
          * Shadow map texture unit for shadow mapping.
          * Must match the texture unit used when binding the shadow map texture.
          */

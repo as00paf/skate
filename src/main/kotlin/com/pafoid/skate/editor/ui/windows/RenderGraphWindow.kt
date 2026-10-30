@@ -5,6 +5,7 @@ import com.pafoid.skate.editor.imgui.MImGui
 import com.pafoid.skate.editor.imgui.data.Icons
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.render.renderer.Renderer
+import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import imgui.ImGui
 import imgui.flag.ImGuiCol
@@ -161,6 +162,18 @@ class RenderGraphWindow(
                 if (ImGui.checkbox("${stringManager.getString("lbl.render_graph.enabled")}##${pass.name}", enabled)) {
                     pass.toggleEnable()
                     clicked = true
+                }
+
+                // Post-processing effects can be toggled individually
+                if (pass is PostProcessPass) {
+                    ImGui.newLine()
+                    pass.getSettings().pipelineOrder.forEach { effect ->
+                        val effectEnabled = ImBoolean(pass.isEffectEnabled(effect))
+                        if (ImGui.checkbox("${stringManager.getString("lbl.post_process.effect")}##${pass.name}.${effect.name}", effectEnabled)) {
+                            pass.toggleEffect(effect)
+                            clicked = true
+                        }
+                    }
                 }
             } else {
                 MImGui.textDisabled(stringManager.getString("lbl.render_graph.required_pass"))

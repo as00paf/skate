@@ -24,6 +24,9 @@ class SelectionGizmo(
         return gameObjectManager.getGameObject(id)
     }
 
+    /** Fallback for objects without geometry (cameras, lights), consulted when the pixel pick finds nothing. */
+    var fallbackPick: (() -> GameObject?)? = null
+
     var hoveredGameObjectUid: Int = -1
         private set
 
@@ -37,7 +40,7 @@ class SelectionGizmo(
         if (inputProvider.isInsideViewport()) {
             val mousePos = inputProvider.getNormalizedMousePos()
 
-            val hovered = getHoveredObject(mousePos.x, mousePos.y)
+            val hovered = getHoveredObject(mousePos.x, mousePos.y) ?: fallbackPick?.invoke()
             scene.hoveredGameObject = hovered
             hoveredGameObjectUid = hovered?.uId ?: -1
 

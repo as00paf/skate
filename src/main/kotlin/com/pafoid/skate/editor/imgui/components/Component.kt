@@ -7,8 +7,11 @@ import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.Component
 import com.pafoid.skate.engine.ecs.components.Component.Companion.getCachedFields
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
+import com.pafoid.skate.engine.ecs.components.ReverbZone
+import com.pafoid.skate.engine.ecs.components.ScriptComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -30,6 +33,9 @@ fun Component.imgui(engine: Engine) {
         is RenderComponent -> this.imgui(engine)
         is SpriteRenderer -> this.imgui(engine)
         is CameraComponent -> this.imgui(engine)
+        is ScriptComponent -> this.imgui(engine)
+        is JointComponent -> this.imgui(engine)
+        is ReverbZone -> this.imgui(engine)
 
         else -> try {
             ImGui.pushID(this.javaClass.simpleName + this.name)

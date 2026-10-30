@@ -1,7 +1,9 @@
 package com.pafoid.skate.editor.systems
 
 import com.pafoid.skate.editor.gizmos.EditorCamera
+import com.pafoid.skate.editor.gizmos.GizmoMath
 import com.pafoid.skate.editor.gizmos.MeasureTool
+import com.pafoid.skate.editor.gizmos.SceneVisualsGizmo
 import com.pafoid.skate.editor.gizmos.RotationGizmo
 import com.pafoid.skate.editor.gizmos.ScaleGizmo
 import com.pafoid.skate.editor.gizmos.SelectionGizmo
@@ -45,6 +47,16 @@ class GizmoSystem(
     private val rotationGizmo by lazy { RotationGizmo(engine, undoRedoManager, debugRenderer) }
     private val scaleGizmo by lazy { ScaleGizmo(engine, undoRedoManager, debugRenderer) }
     private val selectionGizmo by lazy { SelectionGizmo(undoRedoManager, engine) }
+    val sceneVisuals by lazy { SceneVisualsGizmo(debugRenderer) }
+
+    private fun iconSizeAt(position: org.joml.Vector3f): Float {
+        val cam = editorCamera.camera
+        return GizmoMath.gizmoSize(
+            cam.isOrthographic, editorCamera.transform.translation.distance(position), cam.fov, cam.zoom,
+            cam.viewportHeight, ICON_SCREEN_FRACTION,
+        )
+    }
+
     val measureGizmo by lazy { MeasureTool(engine, undoRedoManager, debugRenderer, settingsManager) }
 
     fun update(dt: Float) {
@@ -58,6 +70,12 @@ class GizmoSystem(
 
         if (scene.isRunning) {
             return
+        }
+
+        val scene0 = scene
+        sceneVisuals.draw(scene0, editorCamera.camera, editorCamera.transform.translation, ::iconSizeAt)
+        selectionGizmo.fallbackPick = {
+            sceneVisuals.pick(scene0, engine.inputProvider.screenToRay(editorCamera.camera), ::iconSizeAt)
         }
 
         // Activate the selected gizmo
@@ -114,6 +132,7 @@ class GizmoSystem(
     }
 
     companion object {
+        const val ICON_SCREEN_FRACTION = 0.03f
         const val DEFAULT_TRANSLATE_SNAP = 0.5f
         const val DEFAULT_ROTATE_SNAP = 15f
         const val DEFAULT_SCALE_SNAP = 0.1f
