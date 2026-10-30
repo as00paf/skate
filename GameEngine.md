@@ -95,7 +95,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Cascaded shadow maps for directional lights, spot/point shadow maps and PCF filtering, with quality driven by `ShadowQuality`.
   - Done when: There is no shadow acne or peter-panning on the sample scene, every `ShadowQuality` level works, and cascade split math is unit-tested.
   - Deps: REN-06
-- [ ] **REN-08** `P2` Post-processing stack
+- [x] **REN-08** `P2` Post-processing stack
   - Do: HDR render target, tonemapping (ACES), gamma, bloom, FXAA and SSAO as render-graph passes that can be toggled per camera/environment.
   - Done when: Effects can be toggled at runtime and from the editor. Pass ordering and enable/disable have unit tests.
   - Deps: REN-03
@@ -466,7 +466,7 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-03** `P1` Modernize gizmos
   - Do: Rework the translate/rotate/scale gizmos (`editor/gizmos`): screen-space constant size, plane handles, local/world toggle, snapping, multi-selection pivot, hover highlight and correct picking.
   - Done when: All gizmos work under any camera angle, and gizmo math has unit tests.
-- [ ] **EDT-04** `P1` Visual representation of cameras and lights
+- [x] **EDT-04** `P1` Visual representation of cameras and lights
   - Do: Billboard icons plus wire gizmos (camera frustum, light range/cone, direction arrow), all selectable.
   - Done when: Every camera and light is visible and clickable in the scene view.
   - Deps: EDT-03
