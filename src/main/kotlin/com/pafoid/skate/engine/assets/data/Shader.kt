@@ -21,9 +21,9 @@ import org.lwjgl.opengl.GL31.glGetUniformBlockIndex
 import org.lwjgl.opengl.GL31.glUniformBlockBinding
 
 class Shader(
-    private val shaderProgId: Int = -1,
-    private val vertexShaderId: Int = -1,
-    private val fragmentShaderId: Int = -1
+    private var shaderProgId: Int = -1,
+    private var vertexShaderId: Int = -1,
+    private var fragmentShaderId: Int = -1
 ) {
     private var isUsed = false
 
@@ -195,11 +195,26 @@ class Shader(
         glUniformMatrix4fv(varLocation, false, buffer)
     }
 
+    /**
+     * Hot reload: frees this program's GL objects and adopts [fresh]'s, so every holder of this Shader sees the new
+     * program. [fresh] is left empty and must not be used afterwards.
+     */
+    fun replaceWith(fresh: Shader) {
+        val wasUsed = isUsed
+        destroy()
+        shaderProgId = fresh.shaderProgId
+        vertexShaderId = fresh.vertexShaderId
+        fragmentShaderId = fresh.fragmentShaderId
+        fresh.shaderProgId = -1; fresh.vertexShaderId = -1; fresh.fragmentShaderId = -1
+        if (wasUsed) start()
+    }
+
     fun destroy() {
         stop()
         glDeleteShader(vertexShaderId)
         glDeleteShader(fragmentShaderId)
         glDeleteProgram(shaderProgId)
         uniformCache.clear()
+        linkedBlocks.clear()
     }
 }

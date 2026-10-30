@@ -54,6 +54,8 @@ class ProjectManager(
                 return Result.failure(IllegalStateException("Project '$name' already exists in this folder"))
             }
 
+            if (hasProject()) closeProject()
+
             val assetsDir = File(projectDir, "Assets").also { it.mkdirs() }
             val scenesDir = File(projectDir, "Scenes").also { it.mkdirs() }
             File(projectDir, "Builds").mkdirs()
@@ -87,6 +89,8 @@ class ProjectManager(
             eventSystem.publish(EngineAction.ApplyMappings(project.gameplaySettings.inputMappings))
 
             saveProject()
+            // Open the new project's scenes so the editor (hierarchy, viewport) shows them immediately.
+            loadDefaultScenes(project)
 
             logger.logEditor("Project created successfully: ${project.name}")
             eventSystem.publish(ProjectEvent.Created(project))
