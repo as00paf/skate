@@ -77,15 +77,41 @@ class UiInputSystem(private val source: UiInputSource) : System(priority = Execu
     private var sliderId: Int? = null
     private var lastPointer: Pair<Float, Float>? = null
 
+    /**
+     * True while the mouse drives the UI. Then the highlight follows the pointer only; the focus outline (and its
+     * hover colour) shows again once keyboard/gamepad navigation is used.
+     */
+    private var pointerActive = false
+
+    /**
+     * Runs only while the scene plays (editor Play, or the game), or while a modal canvas is open outside authoring.
+     * In the editor's edit mode the viewport belongs to the rect gizmo, so widgets show their normal state.
+     */
     override fun update(dt: Float) {
         val all = canvases.entities
         // A visible modal canvas (e.g. a pause menu) keeps working while the scene itself is paused.
         val modalOpen = !authoring() && all.any { it.getComponent<UICanvasComponent>()?.let { c -> c.visible && c.modal } == true }
         if (!scene.isRunning && !modalOpen) {
-            consumedInput = false
+            reset(all)
             return
         }
         process(all, source.frame(dt))
+    }
+
+    /** Clears transient widget state so nothing stays hovered/pressed after Play stops. */
+    fun reset(canvasObjects: List<GameObject>) {
+        consumedInput = false
+        if (pressedId == null && sliderId == null && lastPointer == null && focusedId == null) return
+        for (n in canvasObjects.flatMap { UiTree.elements(it) }) {
+            n.element.focused = false
+            n.go.getComponent<UIButtonComponent>()?.let { it.hovered = false; it.pressed = false }
+            n.go.getComponent<UISliderComponent>()?.dragging = false
+        }
+        pressedId = null
+        sliderId = null
+        lastPointer = null
+        focusedId = null
+        pointerActive = false
     }
 
     fun process(canvasObjects: List<GameObject>, f: UiInputFrame) {
@@ -105,6 +131,8 @@ class UiInputSystem(private val source: UiInputSource) : System(priority = Execu
         lastPointer = f.pointerX to f.pointerY
         consumedInput = hit != null || modal
 
+        if (moved || f.pointerPressed) pointerActive = true
+        if (f.navigate.isNotEmpty() || f.next || f.previous || f.confirm) pointerActive = false
         if (hit != null && moved) focusedId = hit.go.uId
         if (focusedId == null && modal) focusedId = UiFocusNavigator.navigate(null, focusables(widgets), UiDirection.DOWN)
 
@@ -114,7 +142,7 @@ class UiInputSystem(private val source: UiInputSource) : System(priority = Execu
         if (f.cancel) active.lastOrNull { it.getComponent<UICanvasComponent>()?.onCancel != null }
             ?.getComponent<UICanvasComponent>()?.onCancel?.invoke()
 
-        focusedId?.let { id -> byId[id]?.element?.focused = true }
+        if (!pointerActive) focusedId?.let { id -> byId[id]?.element?.focused = true }
     }
 
     private fun activeCanvases(all: List<GameObject>): List<GameObject> {

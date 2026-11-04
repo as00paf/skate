@@ -94,8 +94,9 @@ class UIImageComponent(
 class UIButtonComponent(
     var labelKey: String = "",
     @Contextual var normalColor: Vector4f = Vector4f(0.2f, 0.2f, 0.25f, 0.9f),
-    @Contextual var hoverColor: Vector4f = Vector4f(0.3f, 0.3f, 0.4f, 0.9f),
-    @Contextual var pressedColor: Vector4f = Vector4f(0.1f, 0.1f, 0.15f, 0.9f),
+    // Hover and pressed must read as different at a glance, also over dark scenes.
+    @Contextual var hoverColor: Vector4f = Vector4f(0.3f, 0.45f, 0.8f, 0.95f),
+    @Contextual var pressedColor: Vector4f = Vector4f(0.12f, 0.2f, 0.45f, 1f),
     @Contextual var disabledColor: Vector4f = Vector4f(0.15f, 0.15f, 0.15f, 0.5f),
     @Contextual var focusColor: Vector4f = Vector4f(1f, 0.8f, 0.2f, 1f),
     @Contextual var labelColor: Vector4f = Vector4f(1f, 1f, 1f, 1f),
