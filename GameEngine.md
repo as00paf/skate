@@ -143,7 +143,7 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Far grid lines near the floor edge still z-fight in the default frame; with post-processing fully off, transparent materials can show the viewport background through them.
   - Done when: No grid flicker at default camera distance and transparent materials composite correctly with post off; test where feasible.
   - Deps: REN-18
-- [ ] **REN-20** `P1` Shadows and picking cover the whole hierarchy
+- [~] @skate-render **REN-20** `P1` Shadows and picking cover the whole hierarchy
   - Do: From EDT-31: `ShadowPass` only renders top-level objects, so child models (e.g. the skateboard's visual child) cast no shadows; also review EDT-31's `PickingPass` change (whole-hierarchy traversal, no skip while selected). Do it on top of REN-07.
   - Done when: Child models cast shadows; picking pass reviewed; traversal test.
   - Deps: REN-07, EDT-31
@@ -286,7 +286,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Human-reported on PR #12: the first run of a new default skate project shows duplicate collider boxes and the skater is stuck in the floor; it works after reopening. Register bodies exactly once in every path (new project, open, play/stop, scene switch).
   - Done when: First run works like a reopened project; body counts per path are unit-tested.
   - Deps: PHY-10
-- [ ] **PHY-13** `P2` Compound-hull and static mesh colliders
+- [~] @skate-physics **PHY-13** `P2` Compound-hull and static mesh colliders
   - Do: From GPL-04: concave obstacles carry one `CustomCollider3D` per hull (the bowl has ~80, the half pipe 21). Add a single compound-hull collider component and a static triangle-mesh collider for static geometry, serialized, in both backends; switch the GPL-04 prefabs to them.
   - Done when: Bowl and half pipe each carry one collider component with the same collision; serialization and shape building unit-tested.
   - Deps: GPL-04
@@ -381,7 +381,7 @@ Input works well but needs review and controller dead-zone support.
   - Do: `CursorMode` (normal/hidden/captured) with `set/getCursorMode` on the input provider; no cursor jump on mode change.
   - Done when: Mode changes are unit-tested without a window.
   - Deps: INP-05
-- [ ] **INP-09** `P2` Review the EDT-30 pointer contract
+- [~] @skate-input **INP-09** `P2` Review the EDT-30 pointer contract
   - Do: From EDT-30: review the `MouseListener`/`InputProvider` pointer source (`PointerSource`, view rect, target size) and the new contract that `RawInput.mouseX/Y` report render-target pixels; align input docs and remaining callers.
   - Done when: Contract documented in the input design note, remaining callers consistent, mapping tests cover game and editor sources.
   - Deps: EDT-30
@@ -447,7 +447,7 @@ The player controller was hardcoded at first and needs a big overhaul. Some skat
   - Do: Human-reported on PR #12: when riding, the skater is misaligned with the board, has no riding pose/animation, and skater and board float. Snap the skater to the deck pose, play a riding animation via the ANI-02 state machine, and fix the floating root cause.
   - Done when: Riding in the default project looks grounded and aligned with a riding pose; mount pose math and physics state switch unit-tested; `docs/testing/GPL-15.md`.
   - Deps: GPL-14
-- [ ] **GPL-16** `P1` Game-ready skateboard mesh
+- [~] @skate-gameplay **GPL-16** `P1` Game-ready skateboard mesh
   - Do: From REN-22: the skateboard prefab's model has 2.57M indices (~858K triangles, 55 parts); its shadow costs ~1.5 ms and picking ~1 ms per frame. Replace it with a decimated/game-ready mesh under ~20K triangles, keeping the GPL-14 orientation and collider fit.
   - Done when: The board renders the same at a glance with under 20K triangles; the frame time while orbiting is below the pre-round-11 baseline.
   - Deps: REN-22
@@ -523,7 +523,7 @@ Multiplayer and Steam support need to be added.
   - Do: Replicate transforms and player state for 2+ clients with interpolation.
   - Done when: Two local clients see each other skate. Serialization and delta compression have unit tests.
   - Deps: NET-01
-- [ ] **NET-03** `P3` Client-side prediction and lag compensation
+- [~] @skate-online **NET-03** `P3` Client-side prediction and lag compensation
   - Deps: NET-02
 - [x] **NET-04** `P2` Steam integration
   - Do: Integrate Steamworks via steamworks4j behind a `PlatformServices` interface (achievements, stats, leaderboards, rich presence, lobbies), with a no-op fallback when Steam is absent.
@@ -656,7 +656,7 @@ All editor mutations must go through `Command` classes and the service layer (se
   - Do: Human-reported on PR #12: picking misses the skateboard (model on a child object) and selects the floor behind it. Make picking reliable for child models and document whether the child or the prefab root is selected.
   - Done when: Clicking any visible model selects it (per the documented convention); id-to-object resolution unit-tested.
   - Deps: GPL-13
-- [ ] **EDT-32** `P1` Redo after a gizmo drag does nothing
+- [~] @skate-editor **EDT-32** `P1` Redo after a gizmo drag does nothing
   - Do: From PHY-11: `TransformCommand` stores a shallow `newTransform.copy()` and `Gizmo.commitSnapshot` passes the live `Transform`, so old/new share vectors with the object and redo has nothing to reapply. Snapshot both deeply (`Transform().apply { copyFrom(x) }`).
   - Done when: Undo/redo of gizmo moves, inspector edits and multi-selection transforms round-trip; tests.
 - [ ] **EDT-33** `P1` One rule for top-level objects in the hierarchy
@@ -741,7 +741,7 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: Extend the platform-free architecture guard to the networking, shader preprocessing, IK and text-input logic; keep master's suite green.
   - Done when: The guard test covers those packages and the full suite passes.
   - Deps: QA-09
-- [ ] **QA-12** `P2` Isolation guard for shadow and particle logic
+- [~] @skate-qa **QA-12** `P2` Isolation guard for shadow and particle logic
   - Do: From REN-07/REN-10: add `engine/render/shadow/` pure maths and `engine/render/particles/ParticleSimulator.kt`, `ParticlePool.kt` to `PureLogicIsolationGuardTest`.
   - Done when: The guard covers those files and the suite is green.
   - Deps: REN-07, REN-10
