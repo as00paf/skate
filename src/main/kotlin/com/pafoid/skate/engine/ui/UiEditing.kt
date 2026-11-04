@@ -76,9 +76,11 @@ object UiEditing {
         return null
     }
 
-    /** Topmost visible element of [canvas] containing the point, ignoring the canvas root itself. */
+    /** Topmost visible element of [canvas] containing the point; the canvas root counts only when it has a widget. */
     fun pick(canvas: GameObject, x: Float, y: Float): GameObject? =
-        UiTree.elements(canvas).lastOrNull { it.element.rect.let { r -> x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h } }?.go
+        UiTree.elements(canvas)
+            .filter { it.go !== canvas || UiRequirements.hasWidget(canvas) }
+            .lastOrNull { it.element.rect.let { r -> x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h } }?.go
 }
 
 enum class UiKind { CANVAS, PANEL, TEXT, IMAGE, BUTTON, SLIDER, PROGRESS_BAR, LIST }

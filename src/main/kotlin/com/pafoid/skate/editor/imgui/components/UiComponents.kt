@@ -6,6 +6,10 @@ import com.pafoid.skate.engine.ui.UIElementComponent
 import com.pafoid.skate.engine.ui.UIListComponent
 import com.pafoid.skate.engine.ui.UiAnchorPreset
 import com.pafoid.skate.engine.ui.UiListItem
+import com.pafoid.skate.engine.ui.UiProblem
+import com.pafoid.skate.engine.ui.UiRequirements
+import com.pafoid.skate.editor.events.ViewportAction
+import com.pafoid.skate.engine.ecs.components.ComponentType
 import imgui.ImGui
 import imgui.type.ImInt
 import imgui.type.ImString
@@ -20,10 +24,24 @@ fun Component.isUiComponent() = javaClass.name.startsWith("com.pafoid.skate.engi
 /** Inspector for every `engine.ui` component: field-by-field via reflection, labels from `ui.inspector.<field>`. */
 fun Component.uiImgui(engine: Engine) {
     ImGui.pushID(javaClass.simpleName)
+    requirementHint(engine)
     if (this is UIElementComponent) anchorPresetCombo(engine)
     drawObject(this, engine, this)
     if (this is UIListComponent) listItems(engine)
     ImGui.popID()
+}
+
+/** Explains why this object's UI cannot show yet, with a button that adds the missing component (undoable). */
+private fun Component.requirementHint(engine: Engine) {
+    val go = gameObject ?: return
+    val problem = UiRequirements.problem(go) ?: return
+    val strings = engine.stringManager
+    val (message, fix) = when (problem) {
+        UiProblem.NO_ELEMENT -> strings.getString("ui.hint.no_element") to ComponentType.UI_ELEMENT
+        UiProblem.NO_CANVAS -> strings.getString("ui.hint.no_canvas") to ComponentType.UI_CANVAS
+    }
+    ImGui.textColored(1f, 0.75f, 0.2f, 1f, message)
+    if (ImGui.button(strings.getString("ui.hint.fix"))) engine.eventSystem.publish(ViewportAction.AddComponent(go, fix))
 }
 
 private fun UIElementComponent.anchorPresetCombo(engine: Engine) {

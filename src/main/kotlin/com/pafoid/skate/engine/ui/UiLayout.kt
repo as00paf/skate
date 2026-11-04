@@ -84,10 +84,14 @@ class UiNodeSpec(
 )
 
 object UiLayout {
-    /** Resolves every node of the tree (including [root]) to a rect in canvas units; [root] fills the canvas. */
-    fun resolve(root: UiNodeSpec, canvasWidth: Float, canvasHeight: Float): Map<Int, UiRectF> {
+    /**
+     * Resolves every node of the tree (including [root]) to a rect in canvas units. [root] fills the canvas unless
+     * [anchorRoot], in which case its own anchors place it inside the canvas (a canvas object that is also an element).
+     */
+    fun resolve(root: UiNodeSpec, canvasWidth: Float, canvasHeight: Float, anchorRoot: Boolean = false): Map<Int, UiRectF> {
         val out = HashMap<Int, UiRectF>()
-        val rect = UiRectF(0f, 0f, canvasWidth, canvasHeight)
+        val full = UiRectF(0f, 0f, canvasWidth, canvasHeight)
+        val rect = if (anchorRoot) anchored(root, full) else full
         out[root.id] = rect
         arrangeChildren(root, rect, out)
         return out
