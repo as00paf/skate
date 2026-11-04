@@ -14,6 +14,8 @@ import com.pafoid.skate.editor.ui.handlers.EditorInputHandler
 import com.pafoid.skate.engine.assets.Assets.Strings.EDITOR_STRINGS_EN
 import com.pafoid.skate.engine.core.Engine
 import com.pafoid.skate.engine.core.Window
+import com.pafoid.skate.engine.ui.UiPointer
+import org.lwjgl.glfw.GLFW
 
 class Editor(
     private val engine: Engine,
@@ -26,6 +28,13 @@ class Editor(
 
     init {
         engine.uiAuthoring = true
+        // ImGui's mouse shares the desktop space of the viewport image rect (multi-viewports); the GLFW cursor does not.
+        engine.uiPointer = {
+            UiPointer(
+                imgui.ImGui.getMousePosX(), imgui.ImGui.getMousePosY(),
+                engine.inputProvider.isMouseButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT, ignoreImGui = true),
+            )
+        }
     }
 
     val undoRedoManager = UndoRedoManager(engine.eventSystem, engine.logger)

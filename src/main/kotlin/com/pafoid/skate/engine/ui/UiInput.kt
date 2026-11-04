@@ -31,6 +31,27 @@ fun interface UiInputSource {
     fun frame(dt: Float): UiInputFrame
 }
 
+/** Raw pointer sample: position in the space of the viewport rect given to [UiPointerMapping], and left button. */
+data class UiPointer(val x: Float, val y: Float, val down: Boolean)
+
+/** Pure conversion from pointer coordinates to pixels of the UI render target (origin top-left, y down). */
+object UiPointerMapping {
+    /**
+     * Maps ([x], [y]) inside the on-screen view of the render target (top-left [viewX], [viewY], size [viewW] x
+     * [viewH], in the pointer's units) to target pixels ([targetW] x [targetH]). The ratio absorbs DPI scaling and
+     * a stretched blit; a degenerate view leaves the point offset only.
+     */
+    fun toTarget(
+        x: Float, y: Float,
+        viewX: Float, viewY: Float, viewW: Float, viewH: Float,
+        targetW: Int, targetH: Int,
+    ): Pair<Float, Float> {
+        val sx = if (viewW > 0f) targetW / viewW else 1f
+        val sy = if (viewH > 0f) targetH / viewH else 1f
+        return (x - viewX) * sx to (y - viewY) * sy
+    }
+}
+
 /** Fires a held direction once, then again every [repeatInterval] after [initialDelay]. */
 class UiNavRepeater(private val initialDelay: Float = 0.4f, private val repeatInterval: Float = 0.12f) {
     private var heldFor = 0f
@@ -95,18 +116,20 @@ object UiActions {
 
 /**
  * [UiInputSource] over an [InputReader] using the `ui_*` actions of [UiActions].
- * [pointerMapper] converts raw mouse coordinates to screen pixels of the UI render target.
+ * [pointer] returns the pointer already in UI render-target pixels; by default the reader's mouse, unmapped.
  */
 class ReaderUiInputSource(
     private val reader: InputReader,
-    private val pointerMapper: (Float, Float) -> Pair<Float, Float> = { x, y -> x to y },
+    private val pointer: () -> UiPointer = { UiPointer(reader.mouseX(), reader.mouseY(), reader.isMouseButtonDown(0)) },
 ) : UiInputSource {
     private val repeaters = UiDirection.values().associateWith { UiNavRepeater() }
     private var wasDown = false
 
     override fun frame(dt: Float): UiInputFrame {
-        val down = reader.isMouseButtonDown(0)
-        val (px, py) = pointerMapper(reader.mouseX(), reader.mouseY())
+        val p = pointer()
+        val down = p.down
+        val px = p.x
+        val py = p.y
         val fired = HashSet<UiDirection>()
         for (d in UiDirection.values()) {
             if (repeaters.getValue(d).update(reader.isActionDown(actionOf(d)), dt)) fired.add(d)
