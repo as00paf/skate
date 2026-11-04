@@ -1,6 +1,6 @@
 # AUD-10 manual test: MP3 music in the default skate scene
 
-Before you start, put the track at `assets/sounds/music/aquarela do brasil.mp3` in the engine checkout. `git status` must not list it (it is ignored).
+The track is bundled in the engine at `assets/sounds/music/aquarela do brasil.mp3`.
 
 1. Start the editor and create a **new** project. Check that `Assets/EngineDefaults/Sounds/Music/aquarela do brasil.mp3` exists in the project folder.
 2. `MainScene` opens. Select `Music` in the hierarchy: it has an `AudioComponent` (2D, looping, bus Music). While editing, no music plays.

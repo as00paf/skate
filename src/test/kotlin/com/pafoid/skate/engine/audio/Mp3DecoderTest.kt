@@ -1,5 +1,6 @@
 package com.pafoid.skate.engine.audio
 
+import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.assets.data.SoundSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -28,6 +29,18 @@ class Mp3DecoderTest {
             // Written at amplitude 8000 per channel.
             assertTrue(peak(pcm, 0, 2) in 6000..10000, "left peak ${peak(pcm, 0, 2)}")
             assertTrue(peak(pcm, 1, 2) in 6000..10000, "right peak ${peak(pcm, 1, 2)}")
+        }
+    }
+
+    @Test
+    fun Mp3_BundledMusicTrackDecodesAsStereo44kWithAudibleContent() {
+        Mp3Decoder(File(Assets.Sounds.MUSIC)).use { mp3 ->
+            assertEquals(2, mp3.channels)
+            assertEquals(44100, mp3.sampleRate)
+            // The first 5 s are real music, not silence.
+            val chunk = ShortArray(44100 * 2 * 5)
+            assertEquals(chunk.size, mp3.read(chunk))
+            assertTrue(peak(chunk, 0, 2) > 1000 && peak(chunk, 1, 2) > 1000)
         }
     }
 

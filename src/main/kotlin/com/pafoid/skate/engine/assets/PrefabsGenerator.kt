@@ -281,8 +281,8 @@ class PrefabsGenerator(
 
     /**
      * Looping background music (AUD-10): non-positional, on the music bus, streamed, starting in Play. Points at the
-     * project's copy of [Assets.Bundled.MUSIC]; the track is not in git, so in projects created without it AudioSystem
-     * logs one warning and the scene plays silently.
+     * project's copy of [Assets.Bundled.MUSIC] (copied from the engine's bundled assets); if that copy is missing,
+     * AudioSystem logs one warning and the scene plays silently.
      */
     fun spawnMusic(): GameObject = GameObject("Music")
         .addComponent(AudioComponent(

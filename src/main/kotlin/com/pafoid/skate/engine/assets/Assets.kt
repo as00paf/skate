@@ -58,7 +58,7 @@ object Assets {
         const val JAMES = "assets/characters/james.glb"
     }
     object Sounds {
-        /** Background music for the default MainScene. Not in git (copyrighted): copied into new projects only if present locally. */
+        /** Background music for the default MainScene (by the project author), copied into new projects. */
         const val MUSIC = "assets/sounds/music/aquarela do brasil.mp3"
     }
     object Fonts {

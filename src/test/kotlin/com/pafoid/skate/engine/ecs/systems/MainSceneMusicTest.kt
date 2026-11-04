@@ -124,4 +124,27 @@ class MainSceneMusicTest {
         verify(exactly = 0) { logger.log(match { it.startsWith("AudioSystem") }, LogLevel.WARN, any()) }
         verify(exactly = 0) { logger.log(any(), LogLevel.ERROR, any()) }
     }
+
+    @Test
+    fun MainScene_BundledTrackIsCopiedIntoTheProjectAndStreamsInPlay() {
+        // The copy a new project gets: the bundled-asset entry for the music, from the engine checkout.
+        val (dest, source) = Assets.Bundled.bundledAssets.single { it.first == Assets.Bundled.MUSIC }
+        File(source).copyTo(File(assetsDir, dest))
+        val scene = loadMainSceneFromDisk()
+
+        val system = play(scene, frames = 1)
+        val music = al.playing.single()
+        // About 3 s of playback.
+        repeat(10) {
+            al.playQueued(music.id)
+            system.update(1f / 60f)
+        }
+
+        assertTrue(music.isPlaying && music.relative)
+        assertEquals(0.5f, music.gain, 1e-5f)
+        assertTrue(al.uploads.all { it.stereo && it.sampleRate == 44100 })
+        assertTrue(al.uploads.sumOf { it.samples } / 2f / 44100 > 3f)
+        verify(exactly = 0) { logger.log(match { it.startsWith("AudioSystem") }, LogLevel.WARN, any()) }
+        verify(exactly = 0) { logger.log(any(), LogLevel.ERROR, any()) }
+    }
 }
