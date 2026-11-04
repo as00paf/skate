@@ -62,6 +62,7 @@ class Renderer(
         renderResources.renderers.shadow.destroy()
         renderResources.renderers.debug.destroy()
         renderResources.renderPasses.picking.destroy()
+        renderResources.renderPasses.geometry.destroy()
 
         // Destroy framebuffer (includes texture and depth buffer)
         renderResources.frameBuffer.destroy()
@@ -71,6 +72,9 @@ class Renderer(
 
         // Destroy shadow map
         renderResources.shadowMap?.destroy()
+
+        // Destroy post processing pass and its shaders
+        renderResources.renderPasses.postProcess.destroy()
     }
 
     fun resize(width: Int, height: Int) {

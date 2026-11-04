@@ -52,6 +52,8 @@ sealed class ViewportAction(eventName: String) : Event(eventName) {
         ViewportAction("viewport.apply_animation")
 
     // Runtime
+    /** Simulation was stopped (not just paused): the next Play captures a new pre-play snapshot. */
+    object StopSimulation : ViewportAction("viewport.stop_simulation")
     data class SetSimulationTimeScale(val timeScale: Float) : ViewportAction("viewport.set_simulation_timescale")
     data class ResetTransform(val gameObject: GameObject) : ViewportAction("viewport.reset_transform")
 

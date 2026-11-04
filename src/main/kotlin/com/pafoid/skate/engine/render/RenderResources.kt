@@ -12,6 +12,7 @@ import com.pafoid.skate.engine.render.renderer.ThumbnailRenderer
 import com.pafoid.skate.engine.render.renderer.passes.DebugPass
 import com.pafoid.skate.engine.render.renderer.passes.GeometryPass
 import com.pafoid.skate.engine.render.renderer.passes.PickingPass
+import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 
 /**
@@ -67,12 +68,14 @@ data class Renderers(
  * @param geometry Renders the full scene with PBR shading
  * @param debug Renders debug visualization on top
  * @param shadow Renders depth-only shadow map pass
+ * @param postProcess Applies the post-processing effect stack (bloom, tonemapping, gamma, FXAA, SSAO)
  */
 data class RenderPasses(
     val picking: PickingPass,
     val geometry: GeometryPass,
     val debug: DebugPass,
-    val shadow: RenderPass
+    val shadow: RenderPass,
+    val postProcess: PostProcessPass
 )
 
 /**
