@@ -9,15 +9,12 @@ import com.pafoid.skate.engine.getComponent
 
 class EnvironmentSystem : System(priority = ExecutionPriority.EARLY) {
 
-    // Reference to Scene's EnvironmentComponent (updated each frame)
-    private var environmentComponent: EnvironmentComponent? = null
-
     fun getEnvironmentComponent(): EnvironmentComponent? {
         return scene.getComponent<EnvironmentComponent>()
     }
 
     fun applyPreset(preset: EnvironmentPreset) {
-        environmentComponent?.applyPreset(preset)
+        getEnvironmentComponent()?.applyPreset(preset)
     }
 
     fun reset() {
@@ -27,7 +24,7 @@ class EnvironmentSystem : System(priority = ExecutionPriority.EARLY) {
     private val buttons = query(UIButtonComponent::class)
 
     override fun update(dt: Float) {
-        environmentComponent?.update(dt)
+        getEnvironmentComponent()?.update(dt)
         bindFogCycleButton()
     }
 
@@ -38,11 +35,8 @@ class EnvironmentSystem : System(priority = ExecutionPriority.EARLY) {
         buttons.forEach { go ->
             if (go.name != name) return@forEach
             val button = go.getComponent<UIButtonComponent>() ?: return@forEach
-            if (button.onClick == null) button.onClick = { FogCycle.next(env) }
+            // Resolve the component on click: it may be replaced after binding (e.g. re-added in the inspector).
+            if (button.onClick == null) button.onClick = { getEnvironmentComponent()?.let(FogCycle::next) }
         }
-    }
-
-    override fun invalidateCache() {
-        environmentComponent = null
     }
 }

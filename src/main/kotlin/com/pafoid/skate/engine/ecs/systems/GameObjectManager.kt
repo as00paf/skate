@@ -29,6 +29,7 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
             val go = iterator.next()
             if (go.isDead) {
                 iterator.remove()
+                go.parent = null
                 EcsChanges.touch()
                 continue
             }
@@ -39,9 +40,11 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
     /**
      * Adds [gameObject] under [parent] (the scene by default, making it top-level) at [index] among its
      * children (appended when out of range). Sets the parent link, so [GameObject.isTopLevel] holds.
+     * Clears [GameObject.isDead], so an object removed by [removeGameObject] can be re-added (undo of delete).
      */
     fun addGameObject(gameObject: GameObject, parent: GameObject = scene, index: Int = -1) {
         scene.assertSceneMutationOnMainThread("addGameObject")
+        gameObject.isDead = false
         parent.addChild(gameObject, index)
         gameObject.start()
     }
