@@ -1,70 +1,144 @@
 package com.pafoid.skate.engine.render.renderer.passes
 
-import com.pafoid.skate.engine.core.LoggerService
 import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
+import com.pafoid.skate.engine.ecs.systems.CameraManager
+import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.ShadowMap
+import com.pafoid.skate.engine.render.lighting.LightData
+import com.pafoid.skate.engine.render.lighting.LightType
+import com.pafoid.skate.engine.render.lighting.SceneLights
 import com.pafoid.skate.engine.render.renderer.ShadowRenderer
+import com.pafoid.skate.engine.render.shadow.CascadeFitter
+import com.pafoid.skate.engine.render.shadow.CascadeSplits
+import com.pafoid.skate.engine.render.shadow.LocalShadows
+import com.pafoid.skate.engine.render.shadow.ShadowFrame
+import com.pafoid.skate.engine.render.shadow.ShadowQualityLevel
+import com.pafoid.skate.engine.render.shadow.ShadowSettings
+import org.joml.Vector3f
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 /**
- * Shadow mapping render pass.
+ * Renders every shadow map for the frame and publishes the result in [frame] for the geometry pass:
  *
- * Renders all shadow-casting objects into the shadow map depth texture.
- * This pass must be executed before the geometry pass so that shadows
- * can be sampled during main scene rendering.
+ * - **Directional light**: cascaded shadow maps (PSSM splits, sphere-fit and texel-snapped), one layer per cascade
+ *   in [cascadeMap].
+ * - **Spot / point lights**: the closest lights within the quality tier's layer budget get one layer (spot) or six
+ *   cube-face layers (point) in [localMap].
  *
- * ## Render Pipeline
- *
- * 1. Bind shadow map framebuffer
- * 2. Clear depth buffer
- * 3. Set viewport to shadow map resolution
- * 4. Render all objects with castShadow enabled
- * 5. Unbind shadow map
- *
- * @param shadowRenderer The shadow renderer for drawing objects
- * @param shadowMap The shadow map depth texture
- * @param logger Logger for debug output
+ * Resolution, cascade count, PCF radius and local budget come from [quality] (by default [ShadowSettings.quality]).
  */
 class ShadowPass(
     private val shadowRenderer: ShadowRenderer,
-    private val shadowMap: ShadowMap,
-    private val logger: LoggerService
+    private val cascadeMap: ShadowMap,
+    private val localMap: ShadowMap,
+    private val cameraManager: CameraManager,
+    val frame: ShadowFrame,
+    private val quality: () -> ShadowQualityLevel = { ShadowSettings.quality },
 ) : BaseRenderPass() {
 
     override val name: String = "ShadowPass"
-    override val description: String = "Renders shadow map from light's perspective"
+    override val description: String = "Renders cascaded sun shadows and spot/point light shadow maps"
     override val outputs: Set<String> = setOf("ShadowMap")
-    override val canDisable: Boolean = true  // Shadows can be disabled for performance
+    override val canDisable: Boolean = true
+
+    private val fitter = CascadeFitter()
+    private val sceneLights = ArrayList<LightData>()
+    private val cameraPosition = Vector3f()
 
     override fun execute(scene: Scene) {
-        // Get directional light system from scene
-        val lightComponent = scene.getComponent<DirectionalLightComponent>().takeIf { it?.enabled == true }
+        frame.reset()
+        val q = quality()
+        frame.quality = q
+        cameraManager.transform.worldMatrix.getTranslation(cameraPosition)
 
-        // Skip if shadows are disabled or no light system
-        if (lightComponent?.castShadows == false) {
-            logger.log("[ShadowPass] Skipped: castShadows=${lightComponent.castShadows}")
-            return
+        val light = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled && it.castShadows }
+        SceneLights.collect(scene, sceneLights)
+        LocalShadows.allocate(sceneLights, cameraPosition, q.localLayers, frame.localSlots)
+        if (light == null && frame.localSlots.isEmpty()) return
+
+        shadowRenderer.collect(scene.getAllChildren())
+        shadowRenderer.begin()
+        try {
+            if (light != null) renderCascades(light, q)
+            if (frame.localSlots.isNotEmpty()) renderLocal(q)
+        } finally {
+            shadowRenderer.end()
+            cascadeMap.unbind()
+        }
+        frame.publish()
+    }
+
+    private fun renderCascades(light: DirectionalLightComponent, q: ShadowQualityLevel) {
+        cascadeMap.ensure(q.cascadeResolution, q.cascadeCount)
+        val res = cascadeMap.resolution
+        val camera = cameraManager.camera
+        val near = max(camera.nearPlane, MIN_NEAR)
+        val far = max(near + 1f, min(light.shadowDistance, camera.farPlane))
+
+        val count: Int
+        if (light.autoCalculateBounds) {
+            count = q.cascadeCount
+            CascadeSplits.compute(near, far, count, CascadeSplits.DEFAULT_LAMBDA, frame.splits)
+            val fovY = Math.toRadians(camera.fov.toDouble()).toFloat() * camera.zoom
+            for (i in 0 until count) {
+                val corners = if (camera.isOrthographic) {
+                    fitter.orthographicSliceCorners(
+                        camera.inverseView, camera.viewportWidth * camera.zoom / 2f,
+                        camera.viewportHeight * camera.zoom / 2f, frame.splits[i], frame.splits[i + 1],
+                    )
+                } else {
+                    fitter.perspectiveSliceCorners(camera.inverseView, fovY, camera.aspectRatio, frame.splits[i], frame.splits[i + 1])
+                }
+                fitter.fit(corners, light.direction, res, CASTER_EXTENSION, frame.cascades[i])
+            }
+        } else {
+            // Manual bounds: one cascade of the component's ortho size centred on the camera.
+            count = 1
+            frame.splits[0] = near
+            frame.splits[1] = far
+            val radius = max(max(abs(light.orthoLeft), abs(light.orthoRight)), max(abs(light.orthoBottom), abs(light.orthoTop)))
+            fitter.fitSphere(cameraPosition, max(radius, 1f), light.direction, res, CASTER_EXTENSION, frame.cascades[0])
         }
 
-        // Bind shadow map framebuffer
-        shadowMap.bind()
-
-        // Clear depth buffer
-        shadowMap.clear()
-
-        // Get light space matrix from directional light config
-        val lightSpaceMatrix = lightComponent?.lightSpaceMatrix
-
-        // Render all shadow casters
-        lightSpaceMatrix?.let {
-            shadowRenderer.render(
-                gameObjects = scene.children.filter { it.isVisible },
-                lightSpaceMatrix = lightSpaceMatrix,
-            )
+        for (i in 0 until count) {
+            cascadeMap.bindLayer(i)
+            shadowRenderer.drawCascade(frame.cascades[i])
         }
+        frame.cascadeCount = count
+        frame.cascadeTextureId = cascadeMap.getDepthTextureId()
+        frame.cascadeResolution = res
+        frame.extraDepthBias = light.depthBias
+        frame.extraNormalOffset = light.slopeScaledBias
+    }
 
-        // Unbind shadow map
-        shadowMap.unbind()
+    private fun renderLocal(q: ShadowQualityLevel) {
+        localMap.ensure(q.localResolution, q.localLayers)
+        for (slot in frame.localSlots) {
+            val l = sceneLights[slot.lightIndex]
+            if (slot.type == LightType.SPOT) {
+                val m = LocalShadows.spotMatrix(l.position, l.direction, LocalShadows.spotFov(l.cosOuter), slot.near, slot.far, frame.localMatrices[slot.baseLayer])
+                localMap.bindLayer(slot.baseLayer)
+                shadowRenderer.drawLocal(l.position, l.range, m)
+            } else {
+                for (face in 0 until LocalShadows.POINT_FACES) {
+                    val layer = slot.baseLayer + face
+                    val m = LocalShadows.pointFaceMatrix(l.position, face, slot.near, slot.far, frame.localMatrices[layer])
+                    localMap.bindLayer(layer)
+                    shadowRenderer.drawLocal(l.position, l.range, m)
+                }
+            }
+        }
+        frame.localTextureId = localMap.getDepthTextureId()
+        frame.localResolution = localMap.resolution
+    }
+
+    companion object {
+        /** Extra depth towards the sun so casters outside the view slice still land in the cascade. */
+        const val CASTER_EXTENSION = 50f
+        private const val MIN_NEAR = 0.05f
     }
 }

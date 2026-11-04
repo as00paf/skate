@@ -1,15 +1,32 @@
 package com.pafoid.skate.engine.render.lighting
 
 import com.pafoid.skate.engine.ecs.GameObject
+import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
 import org.joml.Vector3f
 import kotlin.math.cos
 
 /** Converts light components to GPU-ready [LightData]. */
 object SceneLights {
+    /**
+     * Collects the scene's enabled, visible point lights then spot lights into [out]. The order is stable, so the
+     * shadow pass and the geometry pass agree on light indices.
+     */
+    fun collect(scene: Scene, out: MutableList<LightData>): MutableList<LightData> {
+        out.clear()
+        scene.getAllComponents<PointLightComponent>()
+            .filter { it.enabled && it.gameObject?.isVisible == true }
+            .mapNotNullTo(out) { it.gameObject?.let(::point) }
+        scene.getAllComponents<SpotLightComponent>()
+            .filter { it.enabled && it.gameObject?.isVisible == true }
+            .mapNotNullTo(out) { it.gameObject?.let(::spot) }
+        return out
+    }
+
     fun point(go: GameObject): LightData? {
         val t = go.getComponent<Transform>() ?: return null
         val l = go.getComponent<PointLightComponent>() ?: return null

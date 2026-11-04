@@ -88,10 +88,24 @@ object ShaderConst {
 
         const val LIGHT_SPACE_MATRIX = "uLightSpaceMatrix"
         const val MODEL_MATRIX = "uModelMatrix"
-        const val SHADOW_MAP = "uShadowMap"
-        const val SHADOW_MAP_TEXEL_SIZE = "uShadowMapTexelSize"
-        const val SHADOW_DEPTH_BIAS = "uShadowDepthBias"
-        const val SHADOW_SLOPE_SCALED_BIAS = "uShadowSlopeScaledBias"
+
+        /** Cascaded / local shadow uniforms (see `shader_3d_default.glsl`). */
+        const val CASCADE_SHADOW_MAP = "uCascadeShadowMap"
+        const val LOCAL_SHADOW_MAP = "uLocalShadowMap"
+        const val CASCADE_COUNT = "uCascadeCount"
+        const val CASCADE_MATRICES = "uCascadeMatrices"
+        const val CASCADE_SPLITS = "uCascadeSplits"
+        const val CASCADE_NORMAL_OFFSET = "uCascadeNormalOffset"
+        const val CASCADE_DEPTH_BIAS = "uCascadeDepthBias"
+        const val SHADOW_TEXEL_SIZE = "uShadowTexelSize"
+        const val SHADOW_FADE_START = "uShadowFadeStart"
+        const val PCF_RADIUS = "uPcfRadius"
+        const val SHADOWED_LIGHT_COUNT = "uShadowedLightCount"
+        const val SHADOW_LIGHT_INDEX = "uShadowLightIndex"
+        const val SHADOW_LIGHT_BASE = "uShadowLightBase"
+        const val SHADOW_LIGHT_TEXEL = "uShadowLightTexel"
+        const val LOCAL_SHADOW_MATRICES = "uLocalShadowMatrices"
+        const val LOCAL_SHADOW_TEXEL_SIZE = "uLocalShadowTexelSize"
 
         /**
          * Bloom effect uniforms.
@@ -127,5 +141,8 @@ object ShaderConst {
          * Must match the texture unit used when binding the shadow map texture.
          */
         const val SHADOW_TEXTURE_UNIT = 5
+
+        /** Texture unit for the spot/point light shadow map array. */
+        const val LOCAL_SHADOW_TEXTURE_UNIT = 6
     }
 }

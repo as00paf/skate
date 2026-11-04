@@ -95,7 +95,8 @@ data class RenderPasses(
  * @param pickingTexture The picking render target
  * @param renderers All renderer instances
  * @param renderPasses All render passes
- * @param shadowMap Optional shadow map for shadow mapping
+ * @param shadowMap Optional cascaded (directional light) shadow map array
+ * @param localShadowMap Optional spot/point light shadow map array
  * @param renderGraph The render graph for pass execution
  */
 data class RenderResources(
@@ -105,5 +106,6 @@ data class RenderResources(
     val renderers: Renderers,
     val renderPasses: RenderPasses,
     val renderGraph: RenderGraph,
-    val shadowMap: ShadowMap? = null
+    val shadowMap: ShadowMap? = null,
+    val localShadowMap: ShadowMap? = null,
 )
