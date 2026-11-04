@@ -151,12 +151,8 @@ class GeometryPass(
 
         for (i in 0 until drawQueue.size) {
             val (go, renderComponent, transform) = drawQueue.itemAt(i)
-            // Hover & Selected states
-            var selectionState = 0.0f
-            if (scene.isSelected(go)) selectionState = 1.0f
-            else if (go.uId == scene.hoveredGameObject?.uId) selectionState = 2.0f
-
-            defaultShader.uploadFloat(Uniforms.SELECTED, selectionState)
+            // Hover & Selected states, inherited from ancestors so a mesh-less root highlights its children
+            defaultShader.uploadFloat(Uniforms.SELECTED, SelectionHighlight.stateOf(go, scene))
 
             val model = renderComponent.model
             val lightCount = if (model == null || sceneLights.isEmpty()) 0 else {
