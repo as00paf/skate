@@ -32,7 +32,8 @@ class DuplicateGameObjectCommand(
             duplicated.addComponent(newRender)
         }
 
-        gameObjectManager.addGameObject(duplicated)
+        // A sibling of the original: top-level stays top-level, a child stays under the same parent.
+        gameObjectManager.addGameObject(duplicated, gameObject.parent ?: scene)
         scene.selectedGameObject = duplicated
         scene.isDirty = true
     }

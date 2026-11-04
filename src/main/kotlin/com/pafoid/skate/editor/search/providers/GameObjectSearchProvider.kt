@@ -67,14 +67,7 @@ class GameObjectSearchProvider(
     }
 
     private fun buildHierarchyPath(go: GameObject): String {
-        val path = mutableListOf<String>()
-        var current: GameObject? = go
-
-        while (current != null) {
-            path.add(current.name)
-            current = current.parent
-        }
-
+        val path = listOf(go.name) + go.ancestors().map { it.name }
         return path.asReversed().joinToString(" > ")
     }
 

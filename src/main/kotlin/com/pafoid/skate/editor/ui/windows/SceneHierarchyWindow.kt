@@ -65,6 +65,13 @@ class SceneHierarchyWindow(
         val sceneName = scene.name
         val headerLabel = "${Icons.FOLDER_OPEN} ${stringManager.getString("lbl.hierarchy.scene")}: $sceneName"
         ImGui.text(headerLabel)
+        // Dropping an object on the scene header makes it top-level.
+        if (ImGui.beginDragDropTarget()) {
+            ImGui.acceptDragDropPayload<Int>("GAMEOBJECT_UID")?.let { uid ->
+                engine.gameObjectManager.getGameObject(uid)?.let { eventSystem.publish(Reparent(it, scene)) }
+            }
+            ImGui.endDragDropTarget()
+        }
         ImGui.sameLine(ImGui.getContentRegionAvailX() - 30f)
         if (ImGui.button("${Icons.EDIT}##RenameScene")) {
             startSceneRename(scene)
@@ -143,7 +150,7 @@ class SceneHierarchyWindow(
             ImGui.tableSetupColumn(stringManager.getString("tbl.hierarchy.lock"), ImGuiTableColumnFlags.WidthFixed, 24f)
 
             scene.children.toList().forEach { obj ->
-                if (obj.parent == null) {
+                if (obj.isTopLevel) {
                     doTreeNode(obj, filter)
                 }
             }
@@ -196,7 +203,7 @@ class SceneHierarchyWindow(
     private fun buildFlatList(scene: Scene): List<GameObject> {
         val result = mutableListOf<GameObject>()
         scene.children.toList().forEach { obj ->
-            if (obj.parent == scene) {
+            if (obj.isTopLevel) {
                 flattenTreeNode(obj, result)
             }
         }
@@ -313,7 +320,8 @@ class SceneHierarchyWindow(
                 val payload = ImGui.acceptDragDropPayload<Int>("GAMEOBJECT_UID")
                 if (payload != null) {
                     val draggedObject = engine.gameObjectManager.getGameObject(payload)
-                    if (draggedObject != null && draggedObject != obj && !isChildOf(obj, draggedObject)) {
+                    // Cycles and no-op moves are rejected by the Reparent handler (ReparentGameObjectCommand.isValid).
+                    if (draggedObject != null && draggedObject !== obj) {
                         eventSystem.publish(Reparent(draggedObject, obj))
                     }
                 }
@@ -468,15 +476,6 @@ class SceneHierarchyWindow(
         scene ?: return
         expandedNodes.clear()
         rebuildFlatList(scene)
-    }
-
-    private fun isChildOf(potentialParent: GameObject, child: GameObject): Boolean {
-        var current = child.parent
-        while (current != null) {
-            if (current == potentialParent) return true
-            current = current.parent
-        }
-        return false
     }
 
     // Scene rename helpers
