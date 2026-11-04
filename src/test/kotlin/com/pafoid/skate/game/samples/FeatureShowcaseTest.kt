@@ -13,6 +13,13 @@ import com.pafoid.skate.engine.ecs.Scene
 import com.pafoid.skate.engine.ecs.components.Animator
 import com.pafoid.skate.engine.ecs.components.AudioComponent
 import com.pafoid.skate.engine.ecs.components.CameraComponent
+import com.pafoid.skate.engine.ecs.components.CameraFocusComponent
+import com.pafoid.skate.engine.ecs.components.CameraFocusTarget
+import com.pafoid.skate.engine.ecs.components.Transform
+import com.pafoid.skate.engine.core.EventSystem
+import com.pafoid.skate.engine.ecs.systems.CameraManager
+import org.joml.Vector3f
+import org.joml.Vector4f
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.JointComponent
 import com.pafoid.skate.engine.ecs.components.JointType
@@ -28,7 +35,6 @@ import com.pafoid.skate.engine.ecs.components.VehicleComponent
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.ui.UIButtonComponent
 import com.pafoid.skate.engine.ui.UICanvasComponent
-import com.pafoid.skate.engine.ui.UIListComponent
 import com.pafoid.skate.engine.ui.UISliderComponent
 import com.pafoid.skate.engine.ui.UITextComponent
 import io.mockk.every
@@ -115,14 +121,70 @@ class FeatureShowcaseTest {
     }
 
     @Test
-    fun `UI overlay has a legend entry per area, a button, a slider and formatted text`() {
+    fun `UI overlay has a focus button per area plus overview, a slider and formatted text`() {
         val canvas = withComponent<UICanvasComponent>().single()
+        val buttons = canvas.children.filter { it.getComponent<UIButtonComponent>() != null }.map { it.name }
+        val expected = listOf(FeatureShowcase.OVERVIEW) + FeatureShowcase.AREAS.map { it.key }
+        assertTrue(buttons.containsAll(expected.map { FeatureShowcase.focusButtonName(it) }), buttons.toString())
         val widgets = canvas.children.flatMap { it.components }
-        val legend = widgets.filterIsInstance<UIListComponent>().single()
-        assertEquals(FeatureShowcase.AREAS.size + 1, legend.items.size)
-        assertTrue(widgets.any { it is UIButtonComponent })
         assertTrue(widgets.any { it is UISliderComponent })
         assertTrue(widgets.filterIsInstance<UITextComponent>().any { it.args.isNotEmpty() })
+    }
+
+    @Test
+    fun `camera starts at the overview and has a focus target bound to every legend button`() {
+        val camera = withComponent<CameraComponent>().single()
+        val focus = camera.getComponent<CameraFocusComponent>()!!
+        val transform = camera.getComponent<Transform>()!!
+        val overview = FeatureShowcase.overviewTarget()
+        assertEquals(overview.position, transform.translation)
+        assertEquals(overview.rotation, transform.rotation)
+        assertTrue(transform.rotation.x > 0f, "camera must pitch down (+X), was ${transform.rotation}")
+        val canvasButtons = withComponent<UIButtonComponent>().map { it.name }.toSet()
+        assertEquals(FeatureShowcase.AREAS.size + 1, focus.targets.size)
+        focus.targets.forEach { assertTrue(it.buttonName in canvasButtons, "no button ${it.buttonName}") }
+    }
+
+    /** Projects [point] with the engine camera at [pose] (16:9, default fov); x and y in -1..1 means on screen. */
+    private fun ndc(pose: CameraFocusTarget, point: Vector3f): Vector3f {
+        val manager = CameraManager(EventSystem())
+        manager.camera = CameraComponent().apply { viewportWidth = 1920; viewportHeight = 1080 }
+        manager.transform = Transform(Vector3f(pose.position), rotation = Vector3f(pose.rotation))
+            .also { it.worldMatrix.translation(it.translation) }
+        manager.update(0f)
+        val clip = Vector4f(point, 1f).mul(manager.camera.view).mul(manager.camera.projection)
+        assertTrue(clip.w > 0f, "$point is behind the camera")
+        return Vector3f(clip.x / clip.w, clip.y / clip.w, clip.z / clip.w)
+    }
+
+    private fun corners(area: FeatureShowcase.Area) = listOf(-1f, 1f).flatMap { sx ->
+        listOf(-1f, 1f).map { sz -> Vector3f(area.center).add(sx * area.size.x, 0f, sz * area.size.z) }
+    }
+
+    @Test
+    fun `each focus view frames its whole pad, centred, from above`() {
+        FeatureShowcase.AREAS.forEach { area ->
+            val pose = FeatureShowcase.focusTarget(area)
+            assertTrue(pose.position.y > area.center.y + 2f && pose.position.z > area.center.z, "${area.key} eye ${pose.position}")
+            val centre = ndc(pose, Vector3f(area.center).add(0f, 1f, 0f))
+            assertEquals(0f, centre.x, 1e-3f, area.key)
+            assertEquals(0f, centre.y, 1e-3f, area.key)
+            corners(area).forEach { c ->
+                val p = ndc(pose, c)
+                assertTrue(kotlin.math.abs(p.x) < 1f && kotlin.math.abs(p.y) < 1f, "${area.key} corner $c off screen: $p")
+            }
+        }
+    }
+
+    @Test
+    fun `overview shows every pad`() {
+        val pose = FeatureShowcase.overviewTarget()
+        FeatureShowcase.AREAS.forEach { area ->
+            corners(area).forEach { c ->
+                val p = ndc(pose, c)
+                assertTrue(kotlin.math.abs(p.x) < 1f && kotlin.math.abs(p.y) < 1f, "${area.key} corner $c off screen: $p")
+            }
+        }
     }
 
     @Test

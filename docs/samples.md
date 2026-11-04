@@ -27,7 +27,9 @@ skate run <folder>/FeatureShowcase --frames 120
 
 One builder serves both: `FeatureShowcase` in `src/main/kotlin/com/pafoid/skate/game/samples/`. The editor calls it from `PrefabsGenerator.createDefaultScenes` with assets loaded; the CLI's `ShowcaseProjectBuilder` calls it with a path-only `PrefabsGenerator(engine, loadAssets = false)` (headless). **When a feature lands, add an area there and a row below** (GameEngine.md rule 8).
 
-Layout: a 60 x 40 m grey floor seen from a high default camera. Each area has a coloured ground pad named `[Area] Area`, and every object in it is named `[Area] ...`, so the Hierarchy groups them by name and selecting the pad highlights the area. Objects are top-level because physics and animation only drive top-level objects. A UI overlay legend (top-left) lists where each area is. Press **Play** for anything that moves.
+Layout: a 60 x 40 m grey floor. The default camera starts at an overview of every pad, from (0, 32, 55) looking down at the floor centre. Each area has a coloured ground pad named `[Area] Area`, and every object in it is named `[Area] ...`, so the Hierarchy groups them by name and selecting the pad highlights the area. Objects are top-level because physics and animation only drive top-level objects. The UI overlay legend (top-left) has one button per area plus **Overview**. In **Play** (editor or game), clicking one smoothly flies the camera to frame that area's pad from the +Z side, 35 degrees down; **Overview** returns to the start view. Press **Play** for anything that moves.
+
+Camera focus is the engine component `CameraFocusComponent` on `Camera`. It has named viewpoints, each bound to a runtime UI button by name; the button's `onClick` is wired when the scene runs. Movement is exponential smoothing per real frame time (sharpness 4/s, delta clamped to 0.1 s), so it takes the same time at any frame rate. Views are built with `CameraFocusTarget.lookingAt`, which uses `Transform.lookAt`. The camera's rotation is the view rotation, so **positive X pitch looks down**. Never hand-write camera angles in samples.
 
 | Area (position) | What to look for |
 |------|------------------|
@@ -41,7 +43,7 @@ Layout: a 60 x 40 m grey floor seen from a high default camera. Each area has a 
 | `Audio` (middle row, far right) | Play: a 440 Hz tone (`Assets/tone.wav`). `Emitter3D` is positional (louder and panned as the camera approaches); `Ambient2D` is a quiet non-positional layer. Stopping play silences both. |
 | `Prefabs` (front row, left) | The prefab library (GPL-04): ledge, hubba, manual pad, grind box, funbox, rail, handrail, kinked rail, 3- and 5-stair sets, kicker, bank, quarter pipe, crate, barrel and bench, in concrete and two woods. Each is static with its hull colliders (debug draw shows them). |
 | `Animation` (front row, right) | The bundled character looping the walking clip in place. |
-| `UI` (screen overlay) | In-game (non-ImGui) canvas: title and hint, the area legend (a list), and bottom-right a tinted panel, formatted text ("Formatted text: 42"), a button with solid hover/press backgrounds (GUI-07), a 60% progress bar and a draggable slider. No `!!key!!` text; the layout keeps its corners when the window is resized. |
+| `UI` (screen overlay) | In-game (non-ImGui) canvas: title and hint, the area legend (Overview plus one focus button per area), and bottom-right a tinted panel, formatted text ("Formatted text: 42"), a button with solid hover/press backgrounds (GUI-07), a 60% progress bar and a draggable slider. No `!!key!!` text; the layout keeps its corners when the window is resized. |
 
 Overlay strings are `showcase.*` keys in the bundled `game_strings` and `editor_strings` tables (EN and FR); projects' own `Assets/strings.properties` are not loaded by the engine yet.
 
@@ -49,7 +51,7 @@ Overlay strings are `showcase.*` keys in the bundled `game_strings` and `editor_
 
 - **Ragdoll**: `RagdollComponent` needs bone bodies from `RagdollBuilder`, which nothing calls from a scene yet.
 - **Driving the vehicle**: no script or input binding sets `VehicleComponent` throttle/steering.
-- **Area labels in 3D**: there is no world-space text, so areas are labelled by name and by the overlay legend.
+- **Area labels in 3D**: there is no world-space text, so areas are labelled by name and by the overlay legend buttons.
 - **CLI sample animation**: the headless CLI cannot load the character's skeleton, so in `skate sample` output the character stays in bind pose; the editor's default project animates.
 - **Post-processing toggles** and **fog** have no dedicated area yet.
 
