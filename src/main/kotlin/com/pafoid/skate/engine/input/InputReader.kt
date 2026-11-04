@@ -1,14 +1,20 @@
 package com.pafoid.skate.engine.input
 
-/** Raw device state. Implementations must not depend on the editor. */
+/**
+ * Raw device state as the running game sees it, identical in the editor's game view and a standalone build
+ * (contract: docs/design/INP-09.md). Implementations must not depend on the editor.
+ */
 interface RawInput {
     fun isKeyDown(key: Int): Boolean
     fun wasKeyPressed(key: Int): Boolean
+    /** Held, for a press that started inside the game view (it stays held if the pointer then leaves the view). */
     fun isMouseButtonDown(button: Int): Boolean
+    /** First frame of such a press. */
     fun wasMouseButtonPressed(button: Int): Boolean
-    /** Pointer in game render-target pixels (top-left origin), the same pixel picking and runtime UI use. */
+    /** Pointer in game render-target pixels (top-left origin, not clamped), the same pixel picking and runtime UI use. */
     fun mouseX(): Float
     fun mouseY(): Float
+    /** Cursor motion this frame in window (screen) units, unscaled by view or target size; for look sensitivity. */
     fun mouseDeltaX(): Float
     fun mouseDeltaY(): Float
     fun scrollY(): Float
