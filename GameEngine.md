@@ -130,6 +130,10 @@ The renderer works but needs cleaner APIs, caching, dynamic shaders, better mate
   - Do: Review the SDF branch added by GUI-04 for correctness, batching and edge/outline quality.
   - Done when: Findings fixed or documented; test or screenshot check recorded.
   - Deps: GUI-04
+- [ ] **REN-17** `P1` PostProcessPass feedback loop and DebugPass target review
+  - Do: From PHY-10: `PostProcessPass` samples `frameBuffer.getTextureId()` while that FBO is bound as the render target (undefined read/write feedback); ping-pong between two targets or use a separate output target. Review the PHY-10 `bindTarget` hook added to `DebugPass`/`RenderResourcesFactory` and fold it into the pass/target design.
+  - Done when: No pass reads a texture attached to its bound target; post effects and debug lines show in the viewport; test for target selection.
+  - Deps: REN-08, PHY-10
 
 ### Asset management — `AST` (`skate-assets`)
 
@@ -246,7 +250,7 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: `VehicleComponent` (+ `WheelConfig`) on a `RigidBody3D` chassis, solved by a backend-agnostic `RaycastVehicleSolver` (raycast suspension, engine/brake, lateral grip) from `PhysicsSystem.fixedUpdate`; see `docs/design/PHY-09.md`.
   - Done when: Suspension, drive and grip are unit-tested and the component is serializable.
   - Deps: PHY-02, PHY-06
-- [~] @skate-physics **PHY-10** `P0` Fix physics debug view not drawing collider boxes
+- [x] **PHY-10** `P0` Fix physics debug view not drawing collider boxes
   - Do: Human-reported on PR #12: the physics debug toggle no longer draws rigid body colliders in the editor. Find the root cause (round 10 or earlier render changes) and fix it.
   - Done when: Collider boxes draw again with debug on in editor and play; regression test.
   - Deps: PHY-09
@@ -415,7 +419,7 @@ In-game UI components need to be added (separate from the ImGui editor).
   - Do: SDF font rendering, plus localized strings and plurals via `StringManager`.
   - Done when: Text stays crisp at all sizes, and switching locale updates the UI.
   - Deps: GUI-02
-- [~] @skate-gameui **GUI-05** `P0` UI components added by hand do not show
+- [x] **GUI-05** `P0` UI components added by hand do not show
   - Do: Human-reported on PR #12: adding `UICanvasComponent`/`UIButtonComponent` to an empty GameObject via Add Component shows nothing in the editor or in game. Make that path work (auto-add required components or show a clear hint) and keep the create-UI menu path working.
   - Done when: A hand-built canvas + button renders in editor and game, is editable with the rect gizmo and survives save/reload; tests; `docs/testing/GUI-03.md` updated.
   - Deps: GUI-03
@@ -580,6 +584,10 @@ All editor mutations must go through `Command` classes and the service layer (se
 - [x] **EDT-28** `P1` Hierarchy empty after creating a new project
   - Do: Human-reported: after creating a new project in the editor, the Scene Hierarchy window does not show the current scene's game objects. Find why the hierarchy is not bound to the new project's active scene (stale scene reference, event not fired, lazy load) and fix it.
   - Done when: New project shows its scene's objects in the hierarchy immediately; regression test.
+- [ ] **EDT-29** `P2` Wire shadow quality setting to the engine
+  - Do: From REN-07: wherever `GraphicsSettings` is applied, set `ShadowSettings.quality = ShadowQualityLevel.fromName(graphicsSettings.shadowQuality.name)`; add a LOW/MEDIUM/HIGH selector for `ShadowPass` in `RenderGraphWindow`.
+  - Done when: Changing shadow quality in settings or the render graph window switches shadows at runtime; test for the mapping.
+  - Deps: REN-07
 
 ## Testing & tooling
 
@@ -643,6 +651,10 @@ A lot of features are broken. Many unit tests are missing (**no integration test
   - Do: Extend the platform-free architecture guard to the networking, shader preprocessing, IK and text-input logic; keep master's suite green.
   - Done when: The guard test covers those packages and the full suite passes.
   - Deps: QA-09
+- [ ] **QA-12** `P2` Isolation guard for shadow and particle logic
+  - Do: From REN-07/REN-10: add `engine/render/shadow/` pure maths and `engine/render/particles/ParticleSimulator.kt`, `ParticlePool.kt` to `PureLogicIsolationGuardTest`.
+  - Done when: The guard covers those files and the suite is green.
+  - Deps: REN-07, REN-10
 
 ## Agents & herdr
 
