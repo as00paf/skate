@@ -45,12 +45,14 @@ uniform bool uHasBaseColorTexture;
 
 void main()
 {
-    // Alpha masking: discard fragments below cutoff threshold
-    if (u_AlphaMode == 1 && uHasBaseColorTexture) { // MASK mode
+#ifdef ALPHA_TEST
+    // MASK parts only (ShadowRenderer draws them with this variant): discard texels below the cutoff
+    if (u_AlphaMode == 1 && uHasBaseColorTexture) {
         vec4 baseColor = texture(u_BaseColorTexture, fTexCoords);
         if (baseColor.a < u_AlphaCutoff) {
             discard;
         }
     }
-    // OPAQUE and BLEND modes: render all fragments (depth-only)
+#endif
+    // Default variant: no discard, so the GPU keeps its fast depth-only path (REN-22)
 }

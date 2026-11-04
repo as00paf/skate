@@ -76,8 +76,8 @@ class MouseListener {
     }
 
     fun mouseScrollCallback(window: Long, offsetX: Double, offsetY: Double) {
-        scrollX = offsetX
-        scrollY = offsetY
+        scrollX += offsetX // accumulate: several wheel ticks can arrive in one (slow) frame
+        scrollY += offsetY
     }
 
     fun endFrame() {
