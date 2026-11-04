@@ -254,6 +254,10 @@ Physics needs overall improvements, a swappable physics engine, and a joint comp
   - Do: Human-reported on PR #12: the physics debug toggle no longer draws rigid body colliders in the editor. Find the root cause (round 10 or earlier render changes) and fix it.
   - Done when: Collider boxes draw again with debug on in editor and play; regression test.
   - Deps: PHY-09
+- [ ] **PHY-11** `P1` Sync physics bodies when a transform is edited in the editor
+  - Do: Human-reported: editing a GameObject's position/rotation/scale in the inspector (or with gizmos/undo) does not update its `RigidBody3D`/collider in the physics world, so the body stays at its old pose. When a transform changes outside the simulation (edit mode, inspector/command edits, undo/redo, scene load), teleport the body to the new pose (reset velocities, rebuild the collider for scale changes) and keep the interpolation state consistent. Coordinate the editor-side change notification with `skate-editor`.
+  - Done when: Moving, rotating or scaling an object in the editor moves its collider (visible with physics debug on), and Play starts from the edited pose; tests for teleport on transform change, scale rebuild and undo.
+  - Deps: PHY-10
 
 ### Animation — `ANI` (`skate-animation`)
 
