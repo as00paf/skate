@@ -63,12 +63,15 @@ class InputProvider(
     fun getMousePos() = Vector2f(getMouseX(), getMouseY())
     fun getMouseDx() = mouseListener.dx
     fun getMouseDy() = mouseListener.dy
-    fun getMouseScreenX() = mouseListener.getScreenX()
-    fun getMouseScreenY() = mouseListener.getScreenY()
-    fun getMouseScreenPos() = Vector2f(getMouseScreenX(), getMouseScreenY())
-    fun getNormalizedMousePos() = Vector2f(mouseListener.getNormalizedX(), mouseListener.getNormalizedY())
-    fun getGameViewportPos() = mouseListener.gameViewportPos
-    fun getGameViewportSize() = mouseListener.gameViewportSize
+
+    /** Pointer offset from the game view's top-left, in pointer units, clamped to the view. */
+    fun getMouseViewPos() = mouseListener.viewLocal().let { (x, y) -> Vector2f(x, y) }
+
+    /** Pointer as a fraction of the game view in [0, 1]. Picking reads the target pixel at this position. */
+    fun getNormalizedMousePos() = mouseListener.viewNormalized().let { (x, y) -> Vector2f(x, y) }
+
+    /** Pointer in game render-target pixels (top-left origin); what runtime UI and game scripts see. */
+    fun getMouseTargetPos() = mouseListener.viewTarget().let { (x, y) -> Vector2f(x, y) }
 
     fun isLeftMouseButtonDown(ignoreImGui: Boolean = false) =
         mouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT, ignoreImGui)
@@ -88,8 +91,7 @@ class InputProvider(
     fun middleMouseButtonBeginPress() = mouseListener.mouseButtonBeginPress(GLFW_MOUSE_BUTTON_MIDDLE)
 
     fun isInsideViewport(): Boolean {
-        return mouseListener.getX() >= getGameViewportPos().x && mouseListener.getX() <= (getGameViewportPos().x + getGameViewportSize().x) &&
-                mouseListener.getY() >= getGameViewportPos().y && mouseListener.getY() <= (getGameViewportPos().y + getGameViewportSize().y)
+        return mouseListener.isInsideView()
     }
 
     fun getMouseScrollY() = mouseListener.getScrollY()
@@ -124,13 +126,9 @@ class InputProvider(
     }
 
     // Utils
+    /** World ray through the pointer. Built from NDC, so it does not depend on the camera's pixel size or DPI. */
     fun screenToRay(camera: CameraComponent): Ray {
-        val screenX = getMouseScreenX()
-        val screenY = getMouseScreenY()
-
-        // Convert screen coordinates to NDC (-1 to 1)
-        val x = (2.0f * screenX) / camera.viewportWidth - 1.0f
-        val y = 1.0f - (2.0f * screenY) / camera.viewportHeight
+        val (x, y) = mouseListener.viewNdc()
 
         val invProjView = Matrix4f(camera.projection).mul(camera.view).invert()
 
@@ -145,40 +143,5 @@ class InputProvider(
         val rayDirection = Vector3f(far.x - near.x, far.y - near.y, far.z - near.z).normalize()
 
         return Ray(rayOrigin, rayDirection)
-    }
-
-    fun worldToScreen(worldPos: Vector3f, camera: CameraComponent): Vector2f {
-        val coords = Vector4f(worldPos, 1.0f)
-        camera.view.transform(coords)
-        camera.projection.transform(coords)
-
-        if (coords.w == 0f) return Vector2f()
-
-        coords.x /= coords.w
-        coords.y /= coords.w
-
-        val x = (coords.x + 1) * camera.viewportWidth / 2f
-        val y = (1 - coords.y) * camera.viewportHeight / 2f
-
-        return Vector2f(x, y)
-    }
-
-    fun mouseDistanceFrom(origin: Vector3f, camera: CameraComponent, cameraPosition: Vector3f, axis: Vector3f): Float {
-        val p2 = Vector3f(origin).add(axis)
-
-        val s1 = worldToScreen(origin, camera)
-        val s2 = worldToScreen(p2, camera)
-
-        val axisScreen = s2.sub(s1)
-        // Guard against NaN: axis is perpendicular to camera or object scale is zero
-        if (axisScreen.lengthSquared() < 0.0001f) return 0f
-
-        val axisScreenDir = axisScreen.normalize()
-        val mouseDelta = Vector2f(getMouseDx(), getMouseDy())
-
-        val projection = mouseDelta.dot(axisScreenDir)
-        val dist = Vector3f(cameraPosition).distance(origin)
-
-        return projection * dist
     }
 }

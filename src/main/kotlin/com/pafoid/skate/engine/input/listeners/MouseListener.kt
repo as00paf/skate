@@ -1,7 +1,9 @@
 package com.pafoid.skate.engine.input.listeners
 
+import com.pafoid.skate.engine.input.PointerSource
+import com.pafoid.skate.engine.input.ViewRect
+import com.pafoid.skate.engine.input.ViewportPointerMapping
 import imgui.ImGui
-import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 
@@ -18,8 +20,25 @@ class MouseListener {
     private var mouseButtonsDown = 0
     private var mouseButtonPressed = BooleanArray(9)
     private var mouseButtonPressedLastFrame = BooleanArray(9)
-    val gameViewportPos = Vector2f()
-    val gameViewportSize = Vector2f(1920f, 1080f) // Default size
+
+    /**
+     * The single pointer source for everything compared with [viewRect]. Defaults to the GLFW cursor (window
+     * coordinates), which matches the game where the view fills the window. The editor swaps in ImGui's mouse,
+     * whose desktop coordinates match the viewport image rect even with multi-viewports.
+     */
+    var pointerSource: PointerSource = PointerSource { out -> out[0] = xPos.toFloat(); out[1] = yPos.toFloat() }
+
+    /** Where the game view is shown, in [pointerSource] units. */
+    var viewRect: ViewRect = ViewRect(0f, 0f, 1920f, 1080f)
+        private set
+
+    /** Pixel size of the render target displayed in [viewRect]. */
+    var targetWidth: Int = 1920
+        private set
+    var targetHeight: Int = 1080
+        private set
+
+    private val pointer = FloatArray(2)
 
     fun mousePosCallback(window: Long, xpos: Double, ypos: Double) {
         isDragging = mouseButtonsDown > 0
@@ -90,42 +109,44 @@ class MouseListener {
         mouseButtonPressed.fill(false)
     }
 
-    fun setGameViewportPos(pos: Vector2f) {
-        gameViewportPos.set(pos)
+    fun setViewRect(rect: ViewRect) {
+        if (!rect.isEmpty) viewRect = rect
     }
 
-    fun setGameViewportSize(size: Vector2f) {
-        if (size.x > 0 && size.y > 0) {
-            gameViewportSize.set(size)
+    fun setTargetSize(width: Int, height: Int) {
+        if (width > 0 && height > 0) {
+            targetWidth = width
+            targetHeight = height
         }
     }
 
+    /** Raw GLFW cursor, window coordinates. */
     fun getX(): Float = xPos.toFloat()
     fun getY(): Float = yPos.toFloat()
 
-    fun getScreenX(): Float {
-        val mousePos = ImGui.getMousePos()
-        val relativeX = mousePos.x - gameViewportPos.x
-        return relativeX.coerceIn(0f, gameViewportSize.x)
-    }
+    /** Pointer in [pointerSource] units (the space of [viewRect]). */
+    fun pointerX(): Float = readPointer()[0]
+    fun pointerY(): Float = readPointer()[1]
 
-    fun getScreenY(): Float {
-        val mousePos = ImGui.getMousePos()
-        val relativeY = mousePos.y - gameViewportPos.y
-        return relativeY.coerceIn(0f, gameViewportSize.y)
-    }
+    fun isInsideView(): Boolean = readPointer().let { ViewportPointerMapping.contains(it[0], it[1], viewRect) }
 
-    fun getNormalizedX(): Float {
-        val mousePos = ImGui.getMousePos()
-        val relativeX = mousePos.x - gameViewportPos.x
-        return (relativeX / gameViewportSize.x).coerceIn(0f, 1f)
-    }
+    /** Offset from the view's top-left in pointer units, clamped to the view. */
+    fun viewLocal(): Pair<Float, Float> = readPointer().let { ViewportPointerMapping.local(it[0], it[1], viewRect) }
 
-    fun getNormalizedY(): Float {
-        val mousePos = ImGui.getMousePos()
-        val relativeY = mousePos.y - gameViewportPos.y
-        return (relativeY / gameViewportSize.y).coerceIn(0f, 1f)
-    }
+    /** Fraction of the view in [0, 1]. */
+    fun viewNormalized(): Pair<Float, Float> =
+        readPointer().let { ViewportPointerMapping.normalized(it[0], it[1], viewRect) }
+
+    /** Render-target pixels, not clamped. */
+    fun viewTarget(): Pair<Float, Float> =
+        readPointer().let { ViewportPointerMapping.toTarget(it[0], it[1], viewRect, targetWidth, targetHeight) }
+
+    fun viewNdc(): Pair<Float, Float> = readPointer().let { ViewportPointerMapping.toNdc(it[0], it[1], viewRect) }
+
+    /** This frame's motion in render-target pixels. */
+    fun deltaTarget(): Pair<Float, Float> = ViewportPointerMapping.deltaToTarget(dx, dy, viewRect, targetWidth, targetHeight)
+
+    private fun readPointer(): FloatArray = pointer.also { pointerSource.read(it) }
 
     fun getScrollX(): Float = scrollX.toFloat()// TODO: stop with the conversions
     fun getScrollY(): Float = scrollY.toFloat()

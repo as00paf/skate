@@ -140,24 +140,6 @@ class UiHoverPressTest {
     }
 
     @Test
-    fun Mapping_EditorViewport_OffsetAndDpi() {
-        // Viewport image at desktop (100, 50), 800x450 logical, on a 2x monitor: framebuffer 1600x900.
-        val (x, y) = UiPointerMapping.toTarget(500f, 275f, 100f, 50f, 800f, 450f, 1600, 900)
-        assertEquals(800f, x)
-        assertEquals(450f, y)
-        val (ox, oy) = UiPointerMapping.toTarget(100f, 50f, 100f, 50f, 800f, 450f, 1600, 900)
-        assertEquals(0f, ox)
-        assertEquals(0f, oy)
-    }
-
-    @Test
-    fun Mapping_GameWindow_StretchedBlitAndIdentity() {
-        assertEquals(960f to 540f, UiPointerMapping.toTarget(1280f, 720f, 0f, 0f, 2560f, 1440f, 1920, 1080))
-        assertEquals(10f to 20f, UiPointerMapping.toTarget(10f, 20f, 0f, 0f, 1920f, 1080f, 1920, 1080))
-        assertEquals(5f to 5f, UiPointerMapping.toTarget(15f, 15f, 10f, 10f, 0f, 0f, 1920, 1080))
-    }
-
-    @Test
     fun ReaderSource_PointerEdgesComeFromThePointerSample() {
         var sample = UiPointer(1f, 2f, false)
         val source = ReaderUiInputSource(mockk<InputReader>(relaxed = true)) { sample }

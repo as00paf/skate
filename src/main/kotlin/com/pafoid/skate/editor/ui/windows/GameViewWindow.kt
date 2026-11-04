@@ -15,6 +15,7 @@ import com.pafoid.skate.editor.gizmos.UiRectGizmo
 import imgui.ImGui
 import imgui.ImVec2
 import imgui.flag.ImGuiWindowFlags
+import com.pafoid.skate.engine.input.ViewRect
 import org.joml.Vector2f
 
 class GameViewWindow(
@@ -90,17 +91,11 @@ class GameViewWindow(
             )
         }
 
-        // TODO: Should be done by engine
-        engine.inputProvider.mouseListener.setGameViewportPos(
-            Vector2f(
-                viewportRenderer.imageScreenPosX,
-                viewportRenderer.imageScreenPosY
-            )
-        )
-        engine.inputProvider.mouseListener.setGameViewportSize(
-            Vector2f(
-                viewportRenderer.imageSizeX,
-                viewportRenderer.imageSizeY
+        // The image rect in ImGui desktop coordinates, the space of the editor's pointer source.
+        engine.inputProvider.mouseListener.setViewRect(
+            ViewRect(
+                viewportRenderer.imageScreenPosX, viewportRenderer.imageScreenPosY,
+                viewportRenderer.imageSizeX, viewportRenderer.imageSizeY,
             )
         )
 

@@ -32,7 +32,6 @@ import com.pafoid.skate.engine.ui.UiActions
 import com.pafoid.skate.engine.render.ui.SdfFont
 import com.pafoid.skate.engine.ui.UiInputSystem
 import com.pafoid.skate.engine.ui.UiPointer
-import com.pafoid.skate.engine.ui.UiPointerMapping
 import com.pafoid.skate.engine.ui.UiLayoutSystem
 import com.pafoid.skate.engine.ui.UiRenderSystem
 import com.pafoid.skate.engine.ui.UiScreenSize
@@ -43,7 +42,6 @@ import com.pafoid.skate.engine.physics3d.native.NativeLibraryLoader
 import com.pafoid.skate.engine.render.RenderResourcesFactory
 import com.pafoid.skate.engine.render.renderer.Renderer
 import com.pafoid.skate.engine.render.renderer.SkinningUbo
-import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 import com.pafoid.skate.engine.core.LoggerService.LogLevel
 import java.util.concurrent.CopyOnWriteArrayList
@@ -75,16 +73,6 @@ class Engine {
     /** Set by the editor: UI is being edited, so modal canvases only react while the scene runs. */
     @Volatile
     var uiAuthoring = false
-
-    /**
-     * Pointer for the runtime UI, in the same space as the mouse listener's game viewport rect. Defaults to the GLFW
-     * cursor (window coordinates) and the raw left button. The editor overrides it with ImGui's mouse, because with
-     * multi-viewports the viewport rect is in desktop coordinates and ImGui owns the mouse over the viewport.
-     */
-    var uiPointer: () -> UiPointer = {
-        val mouse = inputProvider.mouseListener
-        UiPointer(mouse.getX(), mouse.getY(), mouse.isMouseButtonDown(0, ignoreImGui = true))
-    }
     val screens: MutableList<Screen> = CopyOnWriteArrayList()
     lateinit var renderer: Renderer
 
@@ -159,14 +147,10 @@ class Engine {
             UiLayoutSystem(screen = { UiScreenSize(framebuffer.width, framebuffer.height) }),
             UiInputSystem(
                 ReaderUiInputSource(inputSystem.reader) {
+                    // Same pointer source and view rect as picking; the raw button, since ImGui owns the editor viewport.
                     val mouse = inputProvider.mouseListener
-                    val raw = uiPointer()
-                    val (x, y) = UiPointerMapping.toTarget(
-                        raw.x, raw.y,
-                        mouse.gameViewportPos.x, mouse.gameViewportPos.y, mouse.gameViewportSize.x, mouse.gameViewportSize.y,
-                        framebuffer.width, framebuffer.height,
-                    )
-                    UiPointer(x, y, raw.down)
+                    val (x, y) = mouse.viewTarget()
+                    UiPointer(x, y, mouse.isMouseButtonDown(0, ignoreImGui = true))
                 }
             ).also { it.authoring = { uiAuthoring && !runtimePlaying } },
             UiRenderSystem(
@@ -206,7 +190,7 @@ class Engine {
     }
 
     fun resizeFrameBuffer(width: Int, height: Int) {
-        inputProvider.mouseListener.setGameViewportSize(Vector2f(width.toFloat(), height.toFloat()))
+        inputProvider.mouseListener.setTargetSize(width, height)
         renderer.resize(width, height)
     }
 
