@@ -101,8 +101,8 @@ Conventions:
 - A trigger volume is an invisible 2 m static box with `isTrigger` set.
 
 Generated meshes:
-- `SkateparkShapes` (skate obstacles) and the engine's `PropShapes` (bench, spawn marker) build meshes with
-  `engine/assets/procedural/MeshBuilder`. The meshes are committed as OBJ files in `assets/obj/` and copied into
+- `SkateparkShapes` (skate obstacles), `SkateboardShape` (the board) and the engine's `PropShapes` (bench, spawn
+  marker) build meshes with `engine/assets/procedural/MeshBuilder`. The meshes are committed as OBJ files in `assets/obj/` and copied into
   every new project under `EngineDefaults/Models`.
 - `SkateparkShapesTest` fails when a committed OBJ no longer matches its generator. After changing a shape,
   regenerate the files with:
@@ -110,6 +110,15 @@ Generated meshes:
 ```bash
 cmd.exe /c "set SKATE_REGEN_OBSTACLES=1&& gradlew.bat :test --tests *SkateparkShapesTest*"
 ```
+
+The skateboard (GPL-16) is a game-ready mesh of about 2.7K triangles, replacing an 858K-triangle download.
+- **Parts:** a 0.81 m × 0.20 m deck with concave, kicktails and round nose and tail, two trucks, and four 60 mm
+  wheels.
+- **Frame:** origin at the wheels' ground contact, nose toward +Z.
+- **Colours:** parts are coloured with vertex colours written into the OBJ (`v x y z r g b`): grip tape, maple edge,
+  red graphic, metal and urethane. It needs no texture.
+- **Fit:** the deck top (`DECK_TOP` = 0.096 m) matches the rider's `rideHeight`. The prefab's box collider spans from
+  the ground to the deck top, between the kicktails.
 
 To add a prefab:
 1. Add a `PrefabType`.

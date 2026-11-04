@@ -60,7 +60,7 @@ class PrefabsGenerator(
     var projectAssetsDir: String = ""
 
     fun spawnSkateboard(): GameObject {
-        val path = projectAssetsDir + Assets.Bundled.SKATEBOARD_GLB
+        val path = projectAssetsDir + Assets.Bundled.SKATEBOARD
         return Skateboard(assetsManager.loadModel(path))
     }
 
