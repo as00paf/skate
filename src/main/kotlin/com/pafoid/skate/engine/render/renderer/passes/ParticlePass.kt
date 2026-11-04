@@ -94,7 +94,7 @@ class ParticlePass(
                         glBindVertexArray(vao)
                         emitters.forEach { draw(it) }
                         glBindVertexArray(0)
-                        GLStateTracker.setBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                        GLStateTracker.setBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
                     }
                 }
             }
@@ -125,7 +125,10 @@ class ParticlePass(
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, tex)
 
-        GLStateTracker.setBlendFunc(GL_SRC_ALPHA, if (emitter.additive) GL_ONE else GL_ONE_MINUS_SRC_ALPHA)
+        // Alpha uses (ONE, ONE_MINUS_SRC_ALPHA) so the opaque scene target keeps alpha 1 (the editor composites it).
+        GLStateTracker.setBlendFuncSeparate(
+            GL_SRC_ALPHA, if (emitter.additive) GL_ONE else GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA,
+        )
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, count)
         EngineStats.drawCalls.incrementAndGet()
     }

@@ -3,6 +3,7 @@ package com.pafoid.skate.engine.ecs.components
 import com.pafoid.skate.engine.animation.graph.AnimParameters
 import com.pafoid.skate.engine.animation.graph.AnimationControllerAsset
 import com.pafoid.skate.engine.animation.ik.IkRig
+import com.pafoid.skate.engine.animation.procedural.HumanoidPoseBuilder
 import com.pafoid.skate.engine.animation.graph.AnimationStateMachine
 import com.pafoid.skate.engine.animation.graph.ClipMotion
 import com.pafoid.skate.engine.animation.graph.Motion
@@ -44,15 +45,29 @@ data class Animator(
     @Transient
     val ik: IkRig = IkRig()
 
-    /** Builds a runtime state machine from [asset], resolving motions by name from [animations] (clips) and [extraMotions]. */
+    /** The bool parameter set by the last [play] while a controller is active. */
+    @Transient
+    var requestedState: String? = null
+        private set
+
+    /**
+     * Builds a runtime state machine from [asset], resolving motions by name from [animations] (clips),
+     * [extraMotions] and the asset's procedural [AnimationControllerAsset.poses] (a real clip with the same name wins).
+     */
     fun useController(
         asset: AnimationControllerAsset,
         skeleton: Skeleton,
         extraMotions: Map<String, Motion> = emptyMap(),
     ): AnimationStateMachine {
         val clips = animations.associate { it.name to ClipMotion.of(it, skeleton) as Motion } + extraMotions
-        val trees = asset.motions.mapValues { (_, def) -> def.build { clips[it] } }
-        val motions = clips + trees
+        val missingPoses = asset.poses.filterKeys { it !in clips }
+        val poses = if (missingPoses.isEmpty()) emptyMap() else HumanoidPoseBuilder(skeleton).let { builder ->
+            missingPoses.mapValues { (name, def) -> def.build(name, builder) as Motion }
+        }
+        val sources = clips + poses
+        val trees = asset.motions.mapValues { (_, def) -> def.build { sources[it] } }
+        val motions = sources + trees
+        requestedState = null
         return AnimationStateMachine(asset, motions, skeleton.boneCount).also { stateMachine = it }
     }
 
@@ -67,13 +82,13 @@ data class Animator(
         val path = controllerPath ?: return false
         stateMachine = null
         skeleton ?: return false.also { logger.log("Controller '$path': no skeleton on this object", LogLevel.ERROR) }
-        val file = File(path)
-        if (!file.isFile) {
+        val text = readController(path)
+        if (text == null) {
             logger.log("Controller file not found: $path", LogLevel.ERROR)
             return false
         }
         return try {
-            val asset = AnimationControllerAsset.fromJson(file.readText())
+            val asset = AnimationControllerAsset.fromJson(text)
             val problems = asset.issues(animations.map { it.name }.toSet())
             if (problems.isNotEmpty()) {
                 problems.forEach { logger.log("Controller '$path': $it", LogLevel.ERROR) }
@@ -86,6 +101,14 @@ data class Animator(
             logger.log("Failed to load controller '$path': ${e.message}", LogLevel.ERROR)
             false
         }
+    }
+
+    /** A project file at [path], else a bundled classpath resource (e.g. `configs/skater.controller.json`). */
+    private fun readController(path: String): String? {
+        val file = File(path)
+        if (file.isFile) return file.readText()
+        return Animator::class.java.classLoader.getResourceAsStream(path.replace('\\', '/').trimStart('/'))
+            ?.use { it.readBytes().toString(Charsets.UTF_8) }
     }
 
     /** Points this animator at a controller file and builds it now. */
@@ -161,7 +184,18 @@ data class Animator(
         isPlaying = true
     }
 
+    /**
+     * Plays the clip whose name contains [name]. With a controller active, [name] is a request instead: its bool
+     * parameter is set (and the previous request's cleared) so the controller's transitions decide how to get there.
+     */
     fun play(name: String, blend: Float = 1f) {
+        val machine = stateMachine
+        if (machine != null) {
+            requestedState?.let { machine.parameters.setBool(it, false) }
+            machine.parameters.setBool(name, true)
+            requestedState = name
+            return
+        }
         val anim = animations.find { it.name.contains(name, ignoreCase = true) } ?: return
         play(anim, blend)
     }

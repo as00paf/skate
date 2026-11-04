@@ -57,6 +57,7 @@ class PlatformServicesTest {
         svc.update()
         assertNull(created); assertNull(joined); assertEquals(emptyList(), listed)
         assertNull(svc.lobbies.current)
+        assertNull(svc.peerNetwork)
         assertFalse(svc.lobbies.setData("k", "v")); assertNull(svc.lobbies.getData("k"))
     }
 

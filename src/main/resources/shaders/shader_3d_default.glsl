@@ -27,8 +27,7 @@ out vec3 fNormal;      // World Space Normal
 out vec4 fColor;
 out mat3 fTBN;         // Tangent-Bitangent-Normal matrix for Normal Mapping
 out float fVisibility;
-out vec3 fFragPosLightSpace;// Position in light space for shadow mapping (xyz)
-out float fFragPosLightSpaceW;// w component for perspective divide
+out float fViewDepth;  // Distance along the camera's forward axis, used to pick the shadow cascade
 
 uniform mat4 transformationMatrix; // Model-to-World Matrix
 uniform mat4 projectionMatrix;     // View-to-Clip Matrix
@@ -37,9 +36,6 @@ uniform mat4 viewMatrix;           // World-to-View (Camera) Matrix
 uniform float uTextureScale;
 uniform float uFogDensity;
 uniform float uFogGradient;
-
-// --- Shadow Mapping Uniforms ---
-uniform mat4 uLightSpaceMatrix;// Light's view-projection matrix
 
 const int MAX_BONES = 100;
 layout(std140) uniform SkinBlock {
@@ -65,15 +61,11 @@ void main()
     vec4 worldPos = transformationMatrix * skinMatrix * vec4(aPos, 1.0);
     fWorldPos = worldPos.xyz;
 
-    // 2. Light Space: Transform to light's view space for shadow mapping
-    vec4 fragPosLightSpace = uLightSpaceMatrix * worldPos;
-    fFragPosLightSpace = fragPosLightSpace.xyz;
-    fFragPosLightSpaceW = fragPosLightSpace.w;
-
-    // 3. View Space: Transform world coordinates relative to the camera
+    // 2. View Space: Transform world coordinates relative to the camera
     vec4 posRelativeToCamera = viewMatrix * worldPos;
+    fViewDepth = -posRelativeToCamera.z;
 
-    // 4. Clip Space: Final transformation for rasterization
+    // 3. Clip Space: Final transformation for rasterization
     gl_Position = projectionMatrix * posRelativeToCamera;
     
     fTexCoords = aTexCoords * uTextureScale;
@@ -107,8 +99,7 @@ in vec3 fNormal;
 in vec4 fColor;
 in mat3 fTBN;
 in float fVisibility;
-in vec3 fFragPosLightSpace;
-in float fFragPosLightSpaceW;
+in float fViewDepth;
 
 // --- PBR Textures (glTF 2.0 Standard) ---
 uniform sampler2D u_BaseColorTexture;
@@ -133,12 +124,28 @@ uniform vec3 uSunColor;
 uniform vec3 uAmbientLight;
 uniform vec3 uFogColor;
 
-// --- Shadow Mapping Uniforms ---
-uniform mat4 uLightSpaceMatrix;// Light's view-projection matrix
-uniform sampler2D uShadowMap;// Shadow map depth texture
-uniform float uShadowMapTexelSize;// 1.0 / shadowMapResolution for PCF
-uniform float uShadowDepthBias;// Depth bias to prevent shadow acne
-uniform float uShadowSlopeScaledBias;// Slope-scaled bias multiplier
+// --- Shadow Mapping Uniforms (see ShadowPass / LightingUniformsLoader) ---
+#define MAX_CASCADES 4
+#define MAX_LOCAL_SHADOW_LAYERS 18   // LocalShadows.MAX_LAYERS
+#define MAX_SHADOWED_LIGHTS 8        // LocalShadows.MAX_SHADOWED_LIGHTS
+
+uniform sampler2DArrayShadow uCascadeShadowMap; // one layer per cascade, hardware depth compare
+uniform sampler2DArrayShadow uLocalShadowMap;   // spot: 1 layer, point: 6 cube-face layers
+uniform int uCascadeCount;                      // 0 disables sun shadows
+uniform mat4 uCascadeMatrices[MAX_CASCADES];
+uniform vec4 uCascadeSplits;                    // far view depth of each cascade
+uniform vec4 uCascadeNormalOffset;              // world normal offset at grazing angles
+uniform vec4 uCascadeDepthBias;                 // receiver bias in [0,1] depth units
+uniform float uShadowTexelSize;                 // 1 / cascade resolution
+uniform float uShadowFadeStart;                 // view depth where sun shadows start fading out
+uniform int uPcfRadius;                         // 0: 2x2 hardware, 1: 3x3, 2: 5x5 taps
+
+uniform int uShadowedLightCount;
+uniform int uShadowLightIndex[MAX_SHADOWED_LIGHTS]; // index into uLights
+uniform int uShadowLightBase[MAX_SHADOWED_LIGHTS];  // first layer in uLocalShadowMap
+uniform float uShadowLightTexel[MAX_SHADOWED_LIGHTS]; // texel world size per metre from the light
+uniform mat4 uLocalShadowMatrices[MAX_LOCAL_SHADOW_LAYERS];
+uniform float uLocalShadowTexelSize;
 
 // --- Feature Toggles ---
 uniform bool uHasBaseColorTexture;
@@ -147,7 +154,7 @@ uniform bool u_HasMetallicRoughnessTexture;
 uniform bool u_HasAOTexture;
 uniform bool u_HasEmissiveTexture;
 
-uniform float uSelected; // 0.0 = None, 1.0 = Selected
+uniform float uSelected; // SelectionHighlight: 0.0 = none, 1.0 = selected, 2.0 = hovered
 
 out vec4 color;
 
@@ -155,46 +162,81 @@ const float PI = 3.14159265359;
 
 // --- PBR Math Functions (Cook-Torrance Microfacet Model) ---
 
-// Shadow Mapping Functions
+// Shadow Mapping Functions (all return the LIT fraction: 1 = fully lit)
 
-// Calculate shadow factor using 3x3 PCF (Percentage-Closer Filtering)
-float calculateShadow(vec3 fragPosLightSpace, float fragPosLightSpaceW, vec3 normal, vec3 lightDir)
+// Percentage-closer filtering: (2r+1)^2 hardware-compared taps, each itself a bilinear 2x2 PCF.
+float pcf(sampler2DArrayShadow map, vec3 uvz, float layer, float texel)
 {
-    // Perform perspective divide to get NDC coordinates
-    vec3 projCoords = fragPosLightSpace / fragPosLightSpaceW;
-
-    // Transform from [-1,1] to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-
-    // Early exit for out-of-bounds fragments (beyond shadow map coverage)
-    // Returns 0.0 (no shadow) instead of sampling border color
-    if (projCoords.x < -1.0 || projCoords.x > 1.0 ||
-    projCoords.y < -1.0 || projCoords.y > 1.0 ||
-    projCoords.z < 0.0 || projCoords.z > 1.0) {
-        return 0.0;
-    }
-
-    // Get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
-
-    // Calculate slope-scaled bias
-    // Surfaces at steep angles to light need more bias to prevent shadow acne
-    float NdotL = max(dot(normal, lightDir), 0.0);
-    float slopeScale = 1.0 - NdotL;
-    float bias = uShadowDepthBias + (uShadowSlopeScaledBias * slopeScale);
-
-    // 3x3 PCF sampling using uniform texel size
-    float shadow = 0.0;
-
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(uShadowMap, projCoords.xy + vec2(x, y) * uShadowMapTexelSize).r;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+    float sum = 0.0;
+    int n = 0;
+    for (int x = -uPcfRadius; x <= uPcfRadius; ++x) {
+        for (int y = -uPcfRadius; y <= uPcfRadius; ++y) {
+            sum += texture(map, vec4(uvz.xy + vec2(x, y) * texel, layer, uvz.z));
+            n++;
         }
     }
-    shadow /= 9.0;
+    return sum / float(n);
+}
 
-    return shadow;
+bool outsideMap(vec3 uvz)
+{
+    return uvz.x < 0.0 || uvz.x > 1.0 || uvz.y < 0.0 || uvz.y > 1.0 || uvz.z > 1.0;
+}
+
+// Normal offset grows with the angle to the light: none when facing it, full at grazing angles.
+float sinToLight(vec3 geomN, vec3 L)
+{
+    float c = clamp(dot(geomN, L), 0.0, 1.0);
+    return sqrt(1.0 - c * c);
+}
+
+// Cascaded sun shadow. Receivers are pushed along the geometric normal (normal offset) plus a tiny depth bias;
+// casters get slope-scaled polygon offset in the shadow pass, so no large constant bias (no peter-panning).
+float sunShadow(vec3 geomN, vec3 L)
+{
+    if (uCascadeCount <= 0) return 1.0;
+    float far = uCascadeSplits[uCascadeCount - 1];
+    if (fViewDepth > far) return 1.0;
+    int c = 0;
+    for (int i = 0; i < uCascadeCount - 1; ++i) {
+        if (fViewDepth > uCascadeSplits[i]) c = i + 1;
+    }
+    vec3 p = fWorldPos + geomN * (uCascadeNormalOffset[c] * sinToLight(geomN, L));
+    vec4 ls = uCascadeMatrices[c] * vec4(p, 1.0);
+    vec3 uvz = ls.xyz / ls.w * 0.5 + 0.5;
+    if (outsideMap(uvz)) return 1.0;
+    uvz.z -= uCascadeDepthBias[c];
+    float lit = pcf(uCascadeShadowMap, uvz, float(c), uShadowTexelSize);
+    float fade = clamp((fViewDepth - uShadowFadeStart) / max(far - uShadowFadeStart, 0.001), 0.0, 1.0);
+    return mix(lit, 1.0, fade);
+}
+
+// Mirrors LocalShadows.cubeFace: +X, -X, +Y, -Y, +Z, -Z.
+int cubeFace(vec3 v)
+{
+    vec3 a = abs(v);
+    if (a.x >= a.y && a.x >= a.z) return v.x > 0.0 ? 0 : 1;
+    if (a.y >= a.z) return v.y > 0.0 ? 2 : 3;
+    return v.z > 0.0 ? 4 : 5;
+}
+
+// Spot / point light shadow for light [lightIdx]; 1.0 when the light has no shadow map this frame.
+float localShadow(int lightIdx, vec3 lightPos, bool isPoint, vec3 geomN, vec3 L)
+{
+    for (int s = 0; s < uShadowedLightCount && s < MAX_SHADOWED_LIGHTS; ++s) {
+        if (uShadowLightIndex[s] != lightIdx) continue;
+        float dist = length(fWorldPos - lightPos);
+        float offset = uShadowLightTexel[s] * dist * (1.0 + 0.5 * float(uPcfRadius)) * sinToLight(geomN, L);
+        vec3 p = fWorldPos + geomN * offset;
+        int layer = uShadowLightBase[s];
+        if (isPoint) layer += cubeFace(p - lightPos);
+        vec4 ls = uLocalShadowMatrices[layer] * vec4(p, 1.0);
+        if (ls.w <= 0.0) return 1.0;
+        vec3 uvz = ls.xyz / ls.w * 0.5 + 0.5;
+        if (outsideMap(uvz)) return 1.0;
+        return pcf(uLocalShadowMap, uvz, float(layer), uLocalShadowTexelSize);
+    }
+    return 1.0;
 }
 
 // Normal Distribution Function (NDF) - GGX/Trowbridge-Reitz
@@ -376,6 +418,7 @@ void main()
     }
 
     vec3 V = normalize(uCameraPos - fWorldPos);
+    vec3 geomN = normalize(fNormal); // geometric normal for shadow normal offset (normal maps would add noise)
 
     // 3. Material Properties
     float metallic = u_MetallicFactor;
@@ -424,8 +467,8 @@ void main()
         float NdotL = max(dot(N, L), 0.0);
 
         // Apply shadow factor to sun light
-        float shadow = calculateShadow(fFragPosLightSpace, fFragPosLightSpaceW, N, L);
-        Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL * (1.0 - shadow);
+        float lit = sunShadow(geomN, L);
+        Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL * lit;
     }
 
     // --- Point Lights Pass ---
@@ -441,7 +484,8 @@ void main()
             p.constant = l.attenuation.x;
             p.linear = l.attenuation.y;
             p.quadratic = l.attenuation.z;
-            Lo += CalcPointLight(p, N, V, F0, albedo.rgb, roughness, metallic);
+            float lit = localShadow(idx, p.position, true, geomN, normalize(p.position - fWorldPos));
+            Lo += CalcPointLight(p, N, V, F0, albedo.rgb, roughness, metallic) * lit;
         } else {
             SpotLight sl;
             sl.position = l.positionRange.xyz;
@@ -452,7 +496,8 @@ void main()
             sl.constant = l.attenuation.x;
             sl.linear = l.attenuation.y;
             sl.quadratic = l.attenuation.z;
-            Lo += CalcSpotLight(sl, N, V, F0, albedo.rgb, roughness, metallic);
+            float lit = localShadow(idx, sl.position, false, geomN, normalize(sl.position - fWorldPos));
+            Lo += CalcSpotLight(sl, N, V, F0, albedo.rgb, roughness, metallic) * lit;
         }
     }
 
@@ -471,7 +516,10 @@ void main()
 
     // Selection highlight: green tint on colour only. Lowering alpha here made selected opaque objects see-through,
     // because the editor viewport composites the scene texture with its alpha.
-    if (uSelected > 0.5) {
+    // Hover is a lighter tint of the same colour so it reads as "would select" without looking selected.
+    if (uSelected > 1.5) {
+        finalColor.rgb = mix(finalColor.rgb, vec3(0.0, 1.0, 0.0), 0.15);
+    } else if (uSelected > 0.5) {
         finalColor.rgb = mix(finalColor.rgb, vec3(0.0, 1.0, 0.0), 0.4);
     }
 

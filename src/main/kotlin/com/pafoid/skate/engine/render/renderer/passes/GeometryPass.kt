@@ -6,10 +6,8 @@ import com.pafoid.skate.engine.ecs.components.AmbientLightComponent
 import com.pafoid.skate.engine.ecs.components.CameraComponent
 import com.pafoid.skate.engine.ecs.components.DirectionalLightComponent
 import com.pafoid.skate.engine.ecs.components.EnvironmentComponent
-import com.pafoid.skate.engine.ecs.components.PointLightComponent
 import com.pafoid.skate.engine.ecs.components.RenderComponent
 import com.pafoid.skate.engine.ecs.components.SkeletonComponent
-import com.pafoid.skate.engine.ecs.components.SpotLightComponent
 import com.pafoid.skate.engine.ecs.components.SpriteRenderer
 import com.pafoid.skate.engine.ecs.GameObject
 import com.pafoid.skate.engine.ecs.components.Transform
@@ -18,7 +16,6 @@ import com.pafoid.skate.engine.getAllChildren
 import com.pafoid.skate.engine.render.state.DrawQueue
 import com.pafoid.skate.engine.render.state.SortKey
 import com.pafoid.skate.engine.assets.data.models.AlphaMode
-import com.pafoid.skate.engine.getAllComponents
 import com.pafoid.skate.engine.getComponent
 import com.pafoid.skate.engine.render.FrameBuffer
 import com.pafoid.skate.engine.render.data.Renderable2D
@@ -31,11 +28,10 @@ import com.pafoid.skate.engine.render.renderer.LightingUniformsLoader
 import com.pafoid.skate.engine.render.renderer.ModelRenderer
 import com.pafoid.skate.engine.render.renderer.Renderer2D
 import com.pafoid.skate.engine.render.renderer.SkyDomeRenderer
+import com.pafoid.skate.engine.render.shadow.ShadowFrame
 import com.pafoid.skate.engine.render.utils.withBlendState
 import com.pafoid.skate.engine.render.utils.GLStateTracker
 import com.pafoid.skate.engine.render.utils.withCullFace
-import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
-import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
 import com.pafoid.skate.engine.render.utils.withDepthMask
 import com.pafoid.skate.engine.render.utils.withDepthTest
 import com.pafoid.skate.engine.utils.ShaderConst.Uniforms
@@ -67,8 +63,7 @@ import org.lwjgl.opengl.GL30.glViewport
  * @param frameBuffer The framebuffer for FBO rendering (provides width/height)
  * @param lightingUniformsLoader Helper for uploading lighting uniforms
  * @param getUseFbo Lambda to get current FBO usage setting at render time
- * @param shadowMapTextureId Default shadow map texture ID
- * @param shadowMapResolution Shadow map resolution for PCF texel size calculation
+ * @param shadowFrame Shadow maps published by the shadow pass this frame (null: no shadows)
  */
 class GeometryPass(
     private val defaultShader: Shader,
@@ -80,8 +75,7 @@ class GeometryPass(
     private val lightingUniformsLoader: LightingUniformsLoader,
     private val useFbo: Boolean,
     private val cameraManager: CameraManager,
-    private val shadowMapTextureId: Int = 0,
-    private val shadowMapResolution: Float = 2048f
+    private val shadowFrame: ShadowFrame? = null,
 ) : BaseRenderPass() {
 
     override val name: String = "GeometryPass"
@@ -115,13 +109,7 @@ class GeometryPass(
         // Upload lighting uniforms
         val ambientLightComponent = scene.getComponent<AmbientLightComponent>()?.takeIf { it.enabled }
         val directionalLight = scene.getComponent<DirectionalLightComponent>()?.takeIf { it.enabled }
-        sceneLights.clear()
-        scene.getAllComponents<PointLightComponent>()
-            .filter { it.enabled && it.gameObject?.isVisible == true }
-            .mapNotNullTo(sceneLights) { it.gameObject?.let(SceneLights::point) }
-        scene.getAllComponents<SpotLightComponent>()
-            .filter { it.enabled && it.gameObject?.isVisible == true }
-            .mapNotNullTo(sceneLights) { it.gameObject?.let(SceneLights::spot) }
+        SceneLights.collect(scene, sceneLights)
         lightBuffer.upload(sceneLights)
         lightBuffer.bind(defaultShader)
         lightingUniformsLoader.loadLightingUniforms(
@@ -129,8 +117,7 @@ class GeometryPass(
             ambientLightComponent,
             directionalLight,
             environmentComponent,
-            shadowMapTextureId,
-            shadowMapResolution
+            shadowFrame?.takeIf { it.consume() },
         )
 
         // Collect 3D draws and 2D sprites, then draw 3D sorted: opaque by material → mesh, transparent last in scene order
@@ -178,25 +165,6 @@ class GeometryPass(
 
         // Render Sky Dome
         skyDomeRenderer.render(camera, cameraPosition, scene)
-
-        renderUi()
-    }
-
-    /** Runtime UI overlay: recorded by the UI systems earlier in the frame, drawn last without depth. */
-    private fun renderUi() {
-        if (renderer2D.ui.quadCount == 0) {
-            renderer2D.renderUi(frameBuffer.width, frameBuffer.height)
-            return
-        }
-        withDepthTest(false) {
-            withBlendState(true) {
-                withCullFace(false) {
-                    GLStateTracker.setBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-                    renderer2D.bindShader(batchShader)
-                    renderer2D.renderUi(frameBuffer.width, frameBuffer.height)
-                }
-            }
-        }
     }
 
     private val lightBuffer = LightBuffer()

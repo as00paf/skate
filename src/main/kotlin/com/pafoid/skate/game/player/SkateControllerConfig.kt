@@ -21,14 +21,14 @@ data class SkateControllerConfig(
     val bail: BailTuning = BailTuning(),
     /** Animation clip per [SkateState] name. */
     val animations: Map<String, String> = mapOf(
-        // No skateboarding clips ship yet; these are the closest bundled ones (a distinct idle so mounting reads).
-        "IDLE" to "idle_1",
-        "PUSH" to "walking",
-        "RIDE" to "idle_1",
-        "AIR" to "falling idle",
-        "GRIND" to "idle_1",
-        "MANUAL" to "idle_1",
-        "BAIL" to "falling idle",
+        // State requests for configs/skater.controller.json (ANI-09); its procedural poses stand in until real clips ship.
+        "IDLE" to "ride_idle",
+        "PUSH" to "push",
+        "RIDE" to "ride",
+        "AIR" to "ollie",
+        "GRIND" to "grind",
+        "MANUAL" to "manual",
+        "BAIL" to "bail",
     ),
 )
 

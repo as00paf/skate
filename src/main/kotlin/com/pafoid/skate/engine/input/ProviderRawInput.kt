@@ -8,8 +8,8 @@ class ProviderRawInput(private val provider: InputProvider) : RawInput {
     override fun wasKeyPressed(key: Int) = provider.keyBeginPress(key)
     override fun wasMouseButtonPressed(button: Int) = provider.mouseButtonBeginPress(button)
     override fun isMouseButtonDown(button: Int) = provider.isMouseButtonDown(button)
-    override fun mouseX() = provider.getMouseX()
-    override fun mouseY() = provider.getMouseY()
+    override fun mouseX() = provider.mouseListener.viewTarget().first
+    override fun mouseY() = provider.mouseListener.viewTarget().second
     override fun mouseDeltaX() = provider.getMouseDx()
     override fun mouseDeltaY() = provider.getMouseDy()
     override fun scrollY() = provider.getMouseScrollY()

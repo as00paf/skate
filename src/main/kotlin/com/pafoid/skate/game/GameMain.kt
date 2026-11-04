@@ -10,6 +10,7 @@ import com.pafoid.skate.engine.core.Window
 import com.pafoid.skate.engine.assets.Assets
 import com.pafoid.skate.engine.events.EngineAction
 import com.pafoid.skate.engine.fileExtension
+import com.pafoid.skate.engine.input.ViewRect
 import com.pafoid.skate.game.ui.GameHudState
 import com.pafoid.skate.game.ui.GameUi
 import com.pafoid.skate.game.ui.GameUiSystem
@@ -49,7 +50,7 @@ fun main(args: Array<String>) {
             val w = IntArray(1)
             val h = IntArray(1)
             GLFW.glfwGetWindowSize(window.glfwWindow, w, h)
-            engine.inputProvider.mouseListener.setGameViewportSize(org.joml.Vector2f(w[0].toFloat(), h[0].toFloat()))
+            engine.inputProvider.mouseListener.setViewRect(ViewRect(0f, 0f, w[0].toFloat(), h[0].toFloat()))
             engine.update(dt)
             testDraw(window)
         }

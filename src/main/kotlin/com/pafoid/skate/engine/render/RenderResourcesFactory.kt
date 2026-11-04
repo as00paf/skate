@@ -26,6 +26,9 @@ import com.pafoid.skate.engine.render.renderer.passes.PickingPass
 import com.pafoid.skate.engine.render.renderer.passes.PostProcessPass
 import com.pafoid.skate.engine.render.renderer.passes.RenderPass
 import com.pafoid.skate.engine.render.renderer.passes.ShadowPass
+import com.pafoid.skate.engine.render.renderer.passes.UiPass
+import com.pafoid.skate.engine.render.shadow.ShadowFrame
+import com.pafoid.skate.engine.render.shadow.ShadowSettings
 import com.pafoid.skate.engine.render.utils.GLStateTracker
 
 class RenderResourcesFactory(
@@ -55,25 +58,23 @@ class RenderResourcesFactory(
         val renderers = createRenderers(shaders, assetsManager)
 
         logger.log("Creating render passes...")
-        val shadowMap = ShadowMap.createWithBestResolution(4096)
-        logger.log("Shadow map resolution: ${shadowMap.width}x${shadowMap.height}")
-        shadowMap.initialize()
+        val quality = ShadowSettings.quality
+        val shadowMap = ShadowMap()
+        shadowMap.ensure(quality.cascadeResolution, quality.cascadeCount)
+        val localShadowMap = ShadowMap()
+        logger.log("Shadow quality: $quality (cascades ${shadowMap.layers}x${shadowMap.resolution})")
         val renderPasses = createRenderPasses(
             shaders = shaders,
             renderers = renderers,
             frameBuffer = frameBuffer,
             pickingTexture = pickingTexture,
-            shadowMap = shadowMap
+            shadowMap = shadowMap,
+            localShadowMap = localShadowMap,
         )
 
         logger.log("Building render graph...")
         val renderGraph = RenderGraphBuilder()
-            .addPass(renderPasses.shadow)
-            .addPass(renderPasses.picking)
-            .addPass(renderPasses.geometry)
-            .addPass(renderPasses.particles)
-            .addPass(renderPasses.postProcess)
-            .addPass(renderPasses.debug)
+            .apply { renderPasses.inExecutionOrder().forEach { addPass(it) } }
             .build()
 
         logger.log("Render resources initialization complete.")
@@ -85,7 +86,8 @@ class RenderResourcesFactory(
             renderers = renderers,
             renderPasses = renderPasses,
             renderGraph = renderGraph,
-            shadowMap = shadowMap
+            shadowMap = shadowMap,
+            localShadowMap = localShadowMap,
         )
     }
 
@@ -136,7 +138,8 @@ class RenderResourcesFactory(
         renderers: Renderers,
         frameBuffer: FrameBuffer,
         pickingTexture: PickingTexture,
-        shadowMap: ShadowMap? = null
+        shadowMap: ShadowMap? = null,
+        localShadowMap: ShadowMap? = null,
     ): RenderPasses {
         val renderer2D = Renderer2D()
         val pickingRenderer = PickingRenderer(assetsManager, logger, cameraManager.camera)
@@ -154,8 +157,7 @@ class RenderResourcesFactory(
             cameraManager = cameraManager
         )
 
-        val shadowMapTextureId = shadowMap?.getDepthTextureId() ?: 0
-        val shadowMapRes = shadowMap?.width?.toFloat() ?: 2048f
+        val shadowFrame = ShadowFrame()
         val geometryPass = GeometryPass(
             defaultShader = shaders.default,
             batchShader = shaders.batch,
@@ -166,13 +168,20 @@ class RenderResourcesFactory(
             lightingUniformsLoader = lightingUniformsLoader,
             useFbo = useFbo,
             cameraManager = cameraManager,
-            shadowMapTextureId = shadowMapTextureId,
-            shadowMapResolution = shadowMapRes
+            shadowFrame = shadowFrame,
         )
-        val debugPass = DebugPass(renderers.debug, cameraManager, bindTarget = {
+        // Debug visuals and the runtime UI draw into the presented target after post-processing
+        val bindPresentedTarget = {
             if (useFbo) frameBuffer.bind() else glBindFramebuffer(GL_FRAMEBUFFER, 0)
             glViewport(0, 0, frameBuffer.width, frameBuffer.height)
-        })
+        }
+        val debugPass = DebugPass(renderers.debug, cameraManager, bindTarget = bindPresentedTarget)
+        val uiPass = UiPass(
+            renderer2D = renderer2D,
+            batchShader = shaders.batch,
+            bindTarget = bindPresentedTarget,
+            targetSize = { frameBuffer.width to frameBuffer.height },
+        )
         val particlePass = ParticlePass(
             shader = assetsManager.getShader("/shaders/particles.glsl"),
             frameBuffer = frameBuffer,
@@ -192,11 +201,13 @@ class RenderResourcesFactory(
             vaoLoader = assetsManager.vaoLoader
         )
 
-        val shadowPass = if (shadowMap != null) {
+        val shadowPass = if (shadowMap != null && localShadowMap != null) {
             ShadowPass(
                 shadowRenderer = renderers.shadow,
-                shadowMap = shadowMap,
-                logger = logger
+                cascadeMap = shadowMap,
+                localMap = localShadowMap,
+                cameraManager = cameraManager,
+                frame = shadowFrame,
             )
         } else {
             object : RenderPass {
@@ -211,6 +222,7 @@ class RenderResourcesFactory(
             debug = debugPass,
             shadow = shadowPass,
             postProcess = postProcessPass,
+            ui = uiPass,
             particles = particlePass,
         )
     }

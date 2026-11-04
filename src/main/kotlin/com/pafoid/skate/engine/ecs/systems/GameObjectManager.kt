@@ -50,12 +50,47 @@ class GameObjectManager : System(priority = ExecutionPriority.EARLY) {
         gameObject.destroy()
     }
 
+    private val idIndex = HashMap<Int, GameObject>()
+    private var indexVersion = -1L
+    private var indexRoot: Scene? = null
+
+    /** Times the id index was rebuilt; exposed for tests. */
+    var indexRebuildCount = 0
+        private set
+
+    /**
+     * Object with [id] anywhere in the scene hierarchy. Backed by an id index rebuilt lazily when the
+     * scene or the ECS structure version ([EcsChanges]) changes, so add/remove/reparent stay consistent.
+     * If two objects share an id, the first in pre-order wins.
+     */
     fun getGameObject(id: Int): GameObject? {
-        return scene.children.firstOrNull { it.uId == id }
+        val currentRoot = scene
+        if (indexVersion != EcsChanges.version || indexRoot !== currentRoot) {
+            idIndex.clear()
+            fun walk(node: GameObject) {
+                for (child in node.children) {
+                    idIndex.putIfAbsent(child.uId, child)
+                    walk(child)
+                }
+            }
+            walk(currentRoot)
+            indexVersion = EcsChanges.version
+            indexRoot = currentRoot
+            indexRebuildCount++
+        }
+        return idIndex[id]
     }
 
+    /** First object named [name] anywhere in the scene hierarchy, pre-order. */
     fun getGameObject(name: String): GameObject? {
-        return scene.children.firstOrNull { it.name == name }
+        fun walk(node: GameObject): GameObject? {
+            for (child in node.children) {
+                if (child.name == name) return child
+                walk(child)?.let { return it }
+            }
+            return null
+        }
+        return walk(scene)
     }
 
     fun reset() {

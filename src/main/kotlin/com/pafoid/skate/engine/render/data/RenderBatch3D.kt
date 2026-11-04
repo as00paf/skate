@@ -4,14 +4,19 @@ import com.pafoid.skate.engine.assets.data.Shader
 import com.pafoid.skate.engine.assets.data.Texture
 import com.pafoid.skate.engine.render.renderer.TextureRenderer3D
 import com.pafoid.skate.engine.utils.EntityIdEncoder
+import com.pafoid.skate.engine.utils.RenderConsts2D.COLOR_LOCATION
 import com.pafoid.skate.engine.utils.RenderConsts3D.COLOR_OFFSET
 import com.pafoid.skate.engine.utils.RenderConsts3D.COLOR_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts2D.ENTITY_ID_LOCATION
 import com.pafoid.skate.engine.utils.RenderConsts3D.ENTITY_ID_OFFSET
 import com.pafoid.skate.engine.utils.RenderConsts3D.ENTITY_ID_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts2D.POS_LOCATION
 import com.pafoid.skate.engine.utils.RenderConsts3D.POS_OFFSET
 import com.pafoid.skate.engine.utils.RenderConsts3D.POS_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_COORDS_LOCATION
 import com.pafoid.skate.engine.utils.RenderConsts3D.TEX_COORDS_OFFSET
 import com.pafoid.skate.engine.utils.RenderConsts3D.TEX_COORDS_SIZE
+import com.pafoid.skate.engine.utils.RenderConsts2D.TEX_ID_LOCATION
 import com.pafoid.skate.engine.utils.RenderConsts3D.TEX_ID_OFFSET
 import com.pafoid.skate.engine.utils.RenderConsts3D.TEX_ID_SIZE
 import com.pafoid.skate.engine.utils.RenderConsts2D.MAX_BATCH_TEXTURES
@@ -81,20 +86,20 @@ class RenderBatch3D(
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW)
 
         // Enable the buffer attribute pointers
-        glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, POS_OFFSET.toLong())
-        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(POS_LOCATION, POS_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, POS_OFFSET.toLong())
+        glEnableVertexAttribArray(POS_LOCATION)
 
-        glVertexAttribPointer(1, COLOR_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, COLOR_OFFSET.toLong())
-        glEnableVertexAttribArray(1)
+        glVertexAttribPointer(COLOR_LOCATION, COLOR_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, COLOR_OFFSET.toLong())
+        glEnableVertexAttribArray(COLOR_LOCATION)
 
-        glVertexAttribPointer(2, TEX_COORDS_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, TEX_COORDS_OFFSET.toLong())
-        glEnableVertexAttribArray(2)
+        glVertexAttribPointer(TEX_COORDS_LOCATION, TEX_COORDS_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, TEX_COORDS_OFFSET.toLong())
+        glEnableVertexAttribArray(TEX_COORDS_LOCATION)
 
-        glVertexAttribPointer(3, TEX_ID_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, TEX_ID_OFFSET.toLong())
-        glEnableVertexAttribArray(3)
+        glVertexAttribPointer(TEX_ID_LOCATION, TEX_ID_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, TEX_ID_OFFSET.toLong())
+        glEnableVertexAttribArray(TEX_ID_LOCATION)
 
-        glVertexAttribPointer(4, ENTITY_ID_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, ENTITY_ID_OFFSET.toLong())
-        glEnableVertexAttribArray(4)
+        glVertexAttribPointer(ENTITY_ID_LOCATION, ENTITY_ID_SIZE, GL_FLOAT, false, VERTEX_SIZE_BYTES, ENTITY_ID_OFFSET.toLong())
+        glEnableVertexAttribArray(ENTITY_ID_LOCATION)
     }
 
     fun addSprite(renderable3D: Renderable3D) {
@@ -145,11 +150,11 @@ class RenderBatch3D(
         shader.uploadIntArray(Uniforms.TEXTURES, SAMPLER_INDICES)
 
         glBindVertexArray(vaoId)
-        glEnableVertexAttribArray(0)
-        glEnableVertexAttribArray(1)
-        glEnableVertexAttribArray(2)
-        glEnableVertexAttribArray(3)
-        glEnableVertexAttribArray(4)
+        glEnableVertexAttribArray(POS_LOCATION)
+        glEnableVertexAttribArray(COLOR_LOCATION)
+        glEnableVertexAttribArray(TEX_COORDS_LOCATION)
+        glEnableVertexAttribArray(TEX_ID_LOCATION)
+        glEnableVertexAttribArray(ENTITY_ID_LOCATION)
 
         glDrawElements(GL_TRIANGLES, numSprites * 6, GL_UNSIGNED_INT, 0)
 

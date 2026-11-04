@@ -2,7 +2,6 @@ package com.pafoid.skate.engine.render.utils
 
 import com.pafoid.skate.engine.render.EngineStats
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.glBlendFunc
 import org.lwjgl.opengl.GL11.glDepthFunc
 import org.lwjgl.opengl.GL11.glDisable
 import org.lwjgl.opengl.GL11.glEnable
@@ -15,6 +14,11 @@ import org.lwjgl.opengl.GL30.GL_DEPTH_FUNC
 import org.lwjgl.opengl.GL30.GL_DEPTH_TEST
 import org.lwjgl.opengl.GL30.GL_DEPTH_WRITEMASK
 import org.lwjgl.opengl.GL30.glDepthMask
+import org.lwjgl.opengl.GL14.GL_BLEND_DST_ALPHA
+import org.lwjgl.opengl.GL14.GL_BLEND_DST_RGB
+import org.lwjgl.opengl.GL14.GL_BLEND_SRC_ALPHA
+import org.lwjgl.opengl.GL14.GL_BLEND_SRC_RGB
+import org.lwjgl.opengl.GL14.glBlendFuncSeparate
 
 /**
  * Centralized OpenGL state tracker that minimizes redundant OpenGL calls.
@@ -32,9 +36,8 @@ object GLStateTracker {
     private var cullFaceEnabled: Boolean = false
     private var depthFunc: Int = GL11.GL_LESS
 
-    // Blend function cache
-    private var blendSrcFactor: Int = GL11.GL_SRC_ALPHA
-    private var blendDstFactor: Int = GL11.GL_ONE_MINUS_SRC_ALPHA
+    // Blend function cache (RGB and alpha factors); synced from GL by initialize/invalidateCache
+    private val blendFactors = IntArray(4) { UNKNOWN }
 
     /**
      * Initializes the state tracker by querying current OpenGL state.
@@ -46,6 +49,7 @@ object GLStateTracker {
         depthMaskEnabled = glGetBoolean(GL_DEPTH_WRITEMASK)
         cullFaceEnabled = glIsEnabled(GL_CULL_FACE)
         depthFunc = glGetInteger(GL_DEPTH_FUNC)
+        readBlendFactors()
     }
 
     /**
@@ -69,16 +73,29 @@ object GLStateTracker {
     fun isBlendEnabled(): Boolean = blendEnabled
 
     /**
-     * Sets the blend function, only making the GL call if state changes.
+     * Sets the blend function for RGB and alpha alike, only making the GL call if state changes.
      */
-    fun setBlendFunc(sfactor: Int, dfactor: Int) {
-        if (blendSrcFactor != sfactor || blendDstFactor != dfactor) {
-            glBlendFunc(sfactor, dfactor)
-            blendSrcFactor = sfactor
-            EngineStats.stateChanges.incrementAndGet()
-            blendDstFactor = dfactor
-        }
+    fun setBlendFunc(sfactor: Int, dfactor: Int) = setBlendFuncSeparate(sfactor, dfactor, sfactor, dfactor)
+
+    /**
+     * Sets separate RGB and alpha blend factors, only making the GL call if state changes.
+     * Overlays drawn over an opaque target use (SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ONE, ONE_MINUS_SRC_ALPHA) so the
+     * target alpha stays 1: the editor viewport composites the scene texture with its alpha.
+     */
+    fun setBlendFuncSeparate(srcRgb: Int, dstRgb: Int, srcAlpha: Int, dstAlpha: Int) {
+        if (BlendFactors.matches(blendFactors, srcRgb, dstRgb, srcAlpha, dstAlpha)) return
+        glBlendFuncSeparate(srcRgb, dstRgb, srcAlpha, dstAlpha)
+        BlendFactors.store(blendFactors, srcRgb, dstRgb, srcAlpha, dstAlpha)
+        EngineStats.stateChanges.incrementAndGet()
     }
+
+    private fun readBlendFactors() = BlendFactors.store(
+        blendFactors,
+        glGetInteger(GL_BLEND_SRC_RGB), glGetInteger(GL_BLEND_DST_RGB),
+        glGetInteger(GL_BLEND_SRC_ALPHA), glGetInteger(GL_BLEND_DST_ALPHA),
+    )
+
+    private const val UNKNOWN = -1
 
     /**
      * Enables or disables depth testing, only making the GL call if state changes.
@@ -163,6 +180,7 @@ object GLStateTracker {
         depthMaskEnabled = glGetBoolean(GL_DEPTH_WRITEMASK)
         cullFaceEnabled = glIsEnabled(GL_CULL_FACE)
         depthFunc = glGetInteger(GL_DEPTH_FUNC)
+        readBlendFactors()
     }
 
     /**
@@ -175,5 +193,15 @@ object GLStateTracker {
         setDepthFunc(GL11.GL_LESS)
         setBlendEnabled(false)
         setCullFaceEnabled(false)
+    }
+}
+
+/** Pure bookkeeping for the cached blend factors ([GLStateTracker]); kept GL-free for unit tests. */
+internal object BlendFactors {
+    fun matches(cache: IntArray, srcRgb: Int, dstRgb: Int, srcAlpha: Int, dstAlpha: Int): Boolean =
+        cache[0] == srcRgb && cache[1] == dstRgb && cache[2] == srcAlpha && cache[3] == dstAlpha
+
+    fun store(cache: IntArray, srcRgb: Int, dstRgb: Int, srcAlpha: Int, dstAlpha: Int) {
+        cache[0] = srcRgb; cache[1] = dstRgb; cache[2] = srcAlpha; cache[3] = dstAlpha
     }
 }

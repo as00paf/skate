@@ -88,6 +88,7 @@ class AnimationStateMachine(
         val t = maxOf(sourceProgress, if (nextState != null) nextTime else normalizedTime)
         for (tr in asset.transitions) {
             if (tr.from != null && tr.from != source) continue
+            if (tr.from == null && source in tr.exceptFrom) continue
             if (tr.to == source) continue
             if (tr.conditions.isEmpty() && !tr.hasExitTime) continue
             if (tr.hasExitTime && t < tr.exitTime) continue

@@ -28,4 +28,5 @@
 
 `GeometryPass` tints each draw by `SelectionHighlight.stateOf`. An object is highlighted when it **or any
 ancestor** is selected (green) or hovered. Selection wins over hover. So a mesh-less physics or prefab root
-lights up every rendered object under it, and a drilled-down child lights up only its own subtree.
+lights up every rendered object under it, and a drilled-down child lights up only its own subtree. Hover is a
+lighter green than selection, and nothing is tinted while the scene is running.

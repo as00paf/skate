@@ -76,6 +76,7 @@ class Renderer(
 
         // Destroy shadow map
         renderResources.shadowMap?.destroy()
+        renderResources.localShadowMap?.destroy()
 
         // Destroy post processing pass and its shaders
         renderResources.renderPasses.postProcess.destroy()

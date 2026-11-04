@@ -83,12 +83,12 @@
         "drag": 4.0
     },
     "animations": {
-        "IDLE": "idle_1",
-        "PUSH": "walking",
-        "RIDE": "idle_1",
-        "AIR": "falling idle",
-        "GRIND": "idle_1",
-        "MANUAL": "idle_1",
-        "BAIL": "falling idle"
+        "IDLE": "ride_idle",
+        "PUSH": "push",
+        "RIDE": "ride",
+        "AIR": "ollie",
+        "GRIND": "grind",
+        "MANUAL": "manual",
+        "BAIL": "bail"
     }
 }

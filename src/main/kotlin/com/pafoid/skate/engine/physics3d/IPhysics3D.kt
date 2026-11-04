@@ -36,6 +36,13 @@ interface IPhysics3D {
     ): PhysicsHit?
     fun add(go: GameObject)
 
+    /**
+     * Moves [go]'s body to its Transform pose (position and rotation) and clears its velocities and forces, for poses
+     * set outside the simulation (editor edits, undo, respawn). Adds the body if it is not in the world yet.
+     * Scale changes need a rebuild: [remove] then [add].
+     */
+    fun teleport(go: GameObject)
+
     /** Adds an immovable body at [location] to the world, usable as the fixed end of a joint. */
     fun createStaticAnchor(location: Vector3f): IRigidBodyHandle
 
