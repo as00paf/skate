@@ -12,6 +12,7 @@
 | `Floor` | 20 x 20 m static asphalt slab, top surface at y = 0, box collider. |
 | `Concrete_Ledge` | Static concrete ledge at (3, 0.25, -3) with a box collider, to grind. |
 | `QuarterPipe`, `Funbox` | GPL-04 prefabs: a wooden quarter pipe 6 m behind the spawn (riding face toward the skater) and a concrete funbox at (-4, 0, 4). They also give the follow camera's spring arm something to collide with. |
+| `Music` | Looping background music (AUD-10): a non-positional `AudioComponent` on the `MUSIC` bus at volume 0.5, playing `Assets/EngineDefaults/Sounds/Music/aquarela do brasil.mp3` from Play until Stop. The MP3 is streamed. The track is copyrighted and **not in git**: it is copied into new projects only when `assets/sounds/music/aquarela do brasil.mp3` exists in the engine checkout (ignored by `.gitignore`). Without it, Play logs one `Sound file not found` warning and the scene runs silently. |
 | `HUD` | In-game UI canvas: `ScoreText` top-left (`hud.score`, "Score 0") and `RestartButton` top-right (`pause.restart`). Both keys exist in the bundled game and editor string tables. |
 
 No 2D sprites or test cubes. Feature demos live in `FeatureShowcase`, not in `MainScene`.

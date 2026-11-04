@@ -77,6 +77,8 @@ dependencies {
 
     // Steam (optional at runtime: PlatformServices falls back to a no-op when absent)
     implementation(libs.steamworks4j)
+    // MP3 decoding (MIT, pure Java, MPEG-1 Layer III), see engine/audio/Mp3Decoder.kt
+    implementation(libs.javamp3)
 
     // Reflection
     implementation(kotlin("reflect"))

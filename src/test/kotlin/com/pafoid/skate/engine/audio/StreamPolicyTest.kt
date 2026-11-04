@@ -8,7 +8,7 @@ class StreamPolicyTest {
     private val big = StreamPolicy.AUTO_THRESHOLD_BYTES + 1
 
     @Test
-    fun StreamPolicy_NonOgg_NeverStreams() {
+    fun StreamPolicy_Wav_NeverStreams() {
         assertFalse(StreamPolicy.shouldStream("music.wav", BusId.MUSIC, StreamMode.ALWAYS, big))
     }
 
@@ -31,5 +31,12 @@ class StreamPolicyTest {
     fun StreamPolicy_AutoMode_StreamsOnlySfxAboveThreshold() {
         assertFalse(StreamPolicy.shouldStream("a.ogg", BusId.SFX, StreamMode.AUTO, StreamPolicy.AUTO_THRESHOLD_BYTES))
         assertTrue(StreamPolicy.shouldStream("a.ogg", BusId.SFX, StreamMode.AUTO, big))
+    }
+
+    @Test
+    fun StreamPolicy_LongMp3StreamsAndShortSfxMp3LoadsWhole() {
+        assertTrue(StreamPolicy.shouldStream("music/aquarela do brasil.MP3", BusId.SFX, StreamMode.AUTO, big))
+        assertTrue(StreamPolicy.shouldStream("a.mp3", BusId.MUSIC, StreamMode.AUTO, 10))
+        assertFalse(StreamPolicy.shouldStream("a.mp3", BusId.SFX, StreamMode.AUTO, 10))
     }
 }

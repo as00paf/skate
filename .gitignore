@@ -57,3 +57,6 @@ project_settings.json
 /editor.config
 imgui.ini
 imgui.windows
+
+### Local-only assets (copyrighted, never commit) ###
+assets/sounds/music/*.mp3
