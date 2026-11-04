@@ -1,5 +1,9 @@
 package com.pafoid.skate.editor.ui.windows
 
+import com.pafoid.skate.editor.events.ScriptEditorAction
+import com.pafoid.skate.editor.events.WindowAction
+import com.pafoid.skate.editor.scripting.ScriptTemplates
+import com.pafoid.skate.editor.ui.handlers.ScriptEditorActionHandler
 import com.pafoid.skate.editor.data.FileSystemItem
 import com.pafoid.skate.editor.data.FileType
 import com.pafoid.skate.editor.events.FileSystemEvent
@@ -248,7 +252,15 @@ class ProjectWindow(
                 logger.logEditor("Opening scene: ${item.file.name}")
                 eventSystem.publish(SceneAction.OpenSceneFile(item.file))
             }
-            FileType.SCRIPT_KOTLIN, FileType.SCRIPT_JAVA, FileType.JSON,
+            FileType.SCRIPT_KOTLIN -> {
+                if (item.file.extension.equals(ScriptTemplates.EXTENSION, ignoreCase = true)) {
+                    eventSystem.publish(ScriptEditorAction.Open(item.file))
+                    eventSystem.publish(WindowAction.Show(ScriptEditorActionHandler.WINDOW))
+                } else {
+                    openInExternalEditor(item.file)
+                }
+            }
+            FileType.SCRIPT_JAVA, FileType.JSON,
             FileType.CONFIG, FileType.TEXT, FileType.SHADER, FileType.UNKNOWN -> {
                 openInExternalEditor(item.file)
             }
